@@ -23,7 +23,7 @@
 
 import { randomUUID } from 'crypto';
 import { LOW_SATIETY, stagnationRemaining, turnsUntilStarvation } from '../engine/cultivation/survival.js';
-import type { ManualQuality } from '../schema/cultivation.js';
+import type { ManualQuality, SectAlignment } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
 import {
@@ -377,6 +377,9 @@ import {
 import { askAround, factsForNews } from './asking-what-people-are-saying.js';
 import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
+// What a year of somebody's life earns, which is what bounds a purse-lift.
+// See `whatALiftTook`.
+import { earningsPerYear } from '../engine/cultivation/origin.js';
 import { observableHere, observedLine } from './practices.js';
 import {
     acceptDuty,
@@ -418,7 +421,15 @@ import {
     type TheOneBeingAsked
 } from './what-asking-this-person-for-this-would-cost-them.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
-import { createObligation, settleObligation } from '../engine/social/grudges.js';
+import { createObligation, settleObligation, severityRank } from '../engine/social/grudges.js';
+// The pricing half of the deed module, without the record-opening half. It is
+// exported separately for exactly this: a caller that already knows who holds
+// what, and needs only the weight, priced from what the deed COST against what
+// the payer had. See `whatTheWrongedPartyDid`.
+import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
+// What a look at a PERSON is worth, which is the reference axis `trust.md`
+// keeps apart from the perceptual one. Read in `investigate`.
+import { whatALookAtSomebodyReaches } from '../engine/social/what-a-look-at-somebody-reaches.js';
 import type { AttemptResult } from '../engine/social-leverage/index.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 // The third discovery channel: you make somebody tell you, and standing decides
@@ -533,8 +544,13 @@ import {
     // this serves is that a generous elder should READ as generous.
     openHandednessOf,
     howTheyHoldWhatTheyHave,
+    // What the person on the other end does about having been coerced, lied to
+    // or leaned on. Decided after the attempt and reading only what the
+    // resolver decided; see `whatTheWrongedPartyDid`.
+    whatTheyDoAboutBeingWronged,
     type AskWeight,
-    type BoutTerms
+    type BoutTerms,
+    type Wrong
 } from '../engine/social-leverage/index.js';
 import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
 // The board's own exchange rate, in closed form. See the function's comment.
@@ -567,6 +583,27 @@ import {
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import type { OnTheTable } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { transferPossession } from '../engine/world/possessions.js';
+// A match, a refusal and a child. Every function it exports is a join onto
+// something that already existed and had no caller; see the directory's README.
+import {
+    aFavourOwedPutOnTheTable,
+    whatAChildCosts,
+    whatAHouseWouldTakeForAMatch,
+    whatAMatchChanges,
+    whatDecliningSomebodyLeaves,
+    whatLeavingAMatchCosts,
+    whatTheChildIs,
+    whoAgreesAndWhoDoesNot,
+    YEARS_BEFORE_A_CHILD_CAN_BE_PLACED,
+    type APartyToAMatch,
+    type TheHouseBeingAsked
+} from '../engine/household/index.js';
+// The favour that skips an admission bar, and the catalog that says which
+// houses will take one. Both have been complete since they were written and
+// neither has ever been reachable by the person playing.
+import { spendAWord, wasPlaced } from '../engine/birth/spending-a-word-to-place-a-child.js';
+import { favourStanceOf } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
+import { intakeRouteOf } from '../data/cultivation/sects.js';
 import {
     heldByTheirHouse,
     howHighTheirHouseReaches,
@@ -869,6 +906,42 @@ export const ENTERING_FOCUS = 0.05;
 export const TREATMENT_FOCUS = 0.1;
 
 /**
+ * How much of a stretch spent raising somebody is also spent cultivating.
+ *
+ * Low, and it is not a penalty. Somebody who is bringing a person up is not in
+ * seclusion, and the whole cost of a child in this world is that the years go
+ * where the years go. The figure is a focus like every other focus in this
+ * file and is spent through the same time skip.
+ */
+export const RAISING_FOCUS = 0.1;
+
+/**
+ * Spending a word rather than a purse, in the words a player says it in.
+ *
+ * The credit side of the obligation ledger has never had anywhere to go. This
+ * is the phrase that puts one on the table, and what it is worth is decided by
+ * the rung of whoever owes it rather than by anything here.
+ */
+export const CALLING_IN_A_FAVOUR =
+    /\b(?:call(?:ing)? (?:it )?in|call in (?:a|the|my) favou?r|cash(?:ing)? in|remind (?:him|her|them) (?:what|that) (?:he|she|they) owes?|(?:he|she|they) owes? me|they owe me|what (?:he|she|they) owes? me|the favou?r (?:he|she|they) owes?)\b/;
+
+/**
+ * How a house's roll carries somebody, in `birth.ts`'s own three values.
+ *
+ * `'by blood'` where the roster IS a lineage - `intakeRouteOf` answers that and
+ * no faction id is named here - because a lineage is entered by blood and a
+ * match is one of the two ways somebody comes to be of one. `'by taking'` for
+ * anybody a house has actually put on its roll, which is the case where the
+ * house has a say in where they go. `null` for somebody who merely stands
+ * there, and a house cannot dispose of them at all.
+ */
+function rollFor(houseId: string | null, ranked: boolean): 'by blood' | 'by taking' | null {
+    if (houseId === null) return null;
+    if (intakeRouteOf(houseId) === 'adoption') return 'by blood';
+    return ranked ? 'by taking' : null;
+}
+
+/**
  * A price as the mortal-economy tool reports it.
  *
  * Both currencies, because the world has two on purpose: `mortal-world.ts`
@@ -932,7 +1005,12 @@ const MARKET_LINES = 8;
  * something to get it.
  */
 const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
-    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit'
+    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit',
+    // Taking something off a person, which is an attempt on them whatever else
+    // it is. It resolves through the same machine and at the same price as
+    // leaning on one; what separates it is what it LEAVES, and that is decided
+    // in `recordWhatTheAskLeft` off the closed wrongs table rather than here.
+    'steal'
 ]);
 
 /**
@@ -1630,6 +1708,34 @@ export interface ToolCallRecord {
 }
 
 /**
+ * Which interact intents are WRONGS, and what the wronged party calls them.
+ *
+ * Three of the ten. A threat, a lie and answers taken under pressure are
+ * things a person answers; a bribe, a courtship, a recruitment pitch and a
+ * refused request are not, however badly they land. `an-attempt-to-move-
+ * somebody.ts` prices all ten identically and reads none of them, which is the
+ * design - this table is downstream of the pricing and decides only what
+ * happens NEXT, the same division `what-a-house-will-do-about-it.ts` makes.
+ *
+ * A closed table rather than a string test, so a verb added to the parser does
+ * not silently acquire consequences nobody chose for it. An intent absent from
+ * here produces no reprisal at all.
+ */
+const WRONG_BEHIND_INTENT: Readonly<Partial<Record<string, Wrong>>> = {
+    threaten: 'threatened',
+    // A theft attempted to somebody's face is a lie about what your hand is
+    // doing, so a model that labels one `deceive` still lands on a wrong.
+    deceive: 'deceived',
+    interrogate: 'interrogated',
+    // And the verb itself, now that the deterministic parser can produce it.
+    // `robbed` was the one member of `Wrong` nothing reached: the engine has
+    // resolved a theft off a person since the pressure model was wired, and
+    // only a MODEL could route a sentence to it - the parser answered every
+    // phrasing with `unclear`. See the `steal` row in `INTERACT_INTENT_PATTERNS`.
+    steal: 'robbed'
+};
+
+/**
  * ADMIN, spoken in play. Matched at the head of the input only, so a sentence
  * that merely contains the word is an ordinary turn - "the admin of the sect
  * refused me" must not open a tool surface.
@@ -2165,6 +2271,34 @@ export class GameService {
         const trimmed = input.trim();
         if (trimmed.length === 0) throw new GameError('Say something.');
         if (trimmed.length > 2000) throw new GameError('That is too long. Two thousand characters at most.');
+
+        // ── RESET SURVIVES DEATH, AND HAS TO ─────────────────────────────
+        //
+        // `requireLiveRun` below refuses every call once the cultivator is
+        // dead, and the refusal it throws ends "Begin a new run." - which was
+        // then the one thing that could not be done, because ADMIN was
+        // dispatched AFTER the guard. Measured: a lethal reprisal closed the
+        // run and every subsequent `ADMIN reset` was answered with the death
+        // notice, so testing anything past a death meant restarting the
+        // process. Reset is the verb that answers that refusal, so it is read
+        // before it.
+        //
+        // Nothing else moves up here. Arranging the world around a corpse is
+        // meaningless and the guard is right to refuse it; this is the single
+        // exception, and it is a run-lifecycle write rather than a world one.
+        if (isAdminModeEnabled()) {
+            const head = ADMIN_PREFIX.exec(trimmed);
+            if (head) {
+                const rest = trimmed.slice(head[0].length).trim();
+                const wantsReset = ADMIN_RESET.exec(rest);
+                if (wantsReset) {
+                    const now = this.currentRun();
+                    return await this.adminReset(
+                        rest.slice(wantsReset[0].length).trim(), now.run, now.cultivator
+                    );
+                }
+            }
+        }
 
         const { run, cultivator } = this.requireLiveRun();
 
@@ -2801,6 +2935,24 @@ ${noticedWaiting}`;
             case 'inventory':
                 return this.inventory(run, cultivator);
 
+            case 'propose':
+                // `topic` is what is being put on the table, in the player's
+                // own words, and nothing downstream branches on what kind of
+                // thing it is. The list of what may go there is open.
+                return this.proposeAMatch(
+                    run, cultivator, ambient, action.target, action.topic,
+                    action.intent ?? 'propose', action.leverage, rawInput
+                );
+
+            case 'decline':
+                return this.declineAMatch(run, cultivator, action.target, rawInput);
+
+            case 'child':
+                return this.haveAChild(
+                    run, cultivator, ambient, action.target, action.days,
+                    action.intent ?? 'have'
+                );
+
             case 'consume_pill':
                 return this.consumePill(cultivator, action.target, rawInput);
 
@@ -3291,6 +3443,16 @@ ${noticed}`;
             ));
         }
 
+        // ── WHAT THE READER ALREADY HAD, READ BEFORE LOOKING CHANGES IT ──
+        //
+        // Taken here and not below, because `noteEncounter` writes a
+        // `witnessed` row and `stageCeilingFor('witnessed')` is the top of the
+        // ladder: asked afterwards, every face in the world comes back `known`
+        // and the reference axis says nothing at all.
+        const heldBefore = subject.kind === 'cultivator'
+            ? this.knowledge.stageOf(cultivator.id, 'cultivator', subject.id)
+            : null;
+
         // Examining a thing is a source. Record it with its provenance rather
         // than letting the knowledge exist only in the transcript.
         const learned = this.noteEncounter(
@@ -3318,6 +3480,41 @@ ${noticed}`;
                 facts.prose = `${facts.prose}\n\n${said}`;
             }
         }
+        // ── AND WHEN WHAT WAS LOOKED AT IS A PERSON ──────────────────────
+        //
+        // "I look at <somebody>" used to answer with the ambient band and the
+        // weather, because the parser dropped the object of the sentence. It
+        // reaches here now, and this is the half that makes the arrival worth
+        // anything: `trust.md` rules that what a reader gets out of a person
+        // turns on two INDEPENDENT things about the reader - realm for what
+        // they can perceive, worldview for what they have a reference for - and
+        // only the first of them was ever printed. The party read above is the
+        // perceptual half. This is the other one, off the ladder in
+        // `discovery.ts`, and it is not restated here: see
+        // `engine/social/what-a-look-at-somebody-reaches.ts`.
+        //
+        // The ceiling is said out loud on purpose. `WHAT_GIVES_A_CHANGED_BEAST_
+        // AWAY` in the catalog rules that the deepest thing there is to notice
+        // about anybody surfaces in ordinary conversation over time and NEVER
+        // in a look - and that it is not a fact about beasts, but about anybody
+        // whose records are empty where yours are full. A read that stopped at
+        // the rung would let a narrator imply there was more in the picture
+        // than the engine put there.
+        if (heldBefore !== null) {
+            const reaches = whatALookAtSomebodyReaches(heldBefore, subject.name);
+            facts.lines.push(reaches.line, reaches.ceiling);
+            // Both channels, for the two readers: `lines` is what a model may
+            // use, `prose` is what the deterministic narrator ships verbatim.
+            // Written to only one, this said nothing at all in no-model mode -
+            // which is the mode the defect was found in.
+            facts.prose = `${facts.prose}\n\n${reaches.line} ${reaches.ceiling}`;
+            facts.structure.push(
+                `Look at a person: reference axis at stage ${reaches.stage} - `
+                + `${reaches.reference} The perceptual axis is the party read above, and `
+                + 'trust.md rules that the two must not be collapsed into one number.'
+            );
+        }
+
         if (learned) {
             facts.lines.push(
                 `${subject.name} is now a name this cultivator holds, learned by looking at it.`
@@ -9452,19 +9649,9 @@ ${line}`;
             );
         }
 
-        // ── RESET, BEFORE THE WORLD PARSER SEES IT ────────────────────────
-        //
-        // `admin_manage` has no action for this and should not grow one: it
-        // arranges the world, and starting a life is a run-lifecycle write.
-        const wantsReset = ADMIN_RESET.exec(request.trim());
-        if (wantsReset) {
-            return await this.adminReset(
-                request.trim().slice(wantsReset[0].length).trim(),
-                run,
-                cultivator
-            );
-        }
-
+        // Reset is dispatched in `act`, BEFORE the live-run guard, because it
+        // is the one admin verb that has to work on a corpse. See the banner
+        // there. Anything reaching here has a live run behind it.
         const parsed = parseAdminCommand(request);
         if (!parsed.action) {
             throw new GameError(
@@ -9591,9 +9778,22 @@ ${line}`;
 
         const receipt = [
             `reset - ${cultivator.name} closed, ${created.cultivator.name} born`,
+            // ── AND IT MUST NOT CLAIM NOBODY DIED WHEN SOMEBODY DID ──────
+            //
+            // This line said "no death cause was filed, because there was no
+            // death" unconditionally, which was true of the case it was
+            // written for and a lie about the commonest one: reset is reached
+            // from the death screen more than anywhere else, and it was
+            // reporting a killing as a bookkeeping close. `endRun` already
+            // declines to overwrite a recorded death - the ledger was right
+            // and only the receipt was wrong - so this reads the run rather
+            // than assuming it.
             `Ended: run ${run.id} on turn ${run.turn}, at ordinal ${cultivator.realmOrdinal}. `
-                + 'No death cause was filed, because there was no death. That run is flagged '
-                + 'admin and is not in the ledger.',
+                + (run.status === 'active'
+                    ? 'No death cause was filed, because there was no death. '
+                    : `That run was already closed - ${run.deathCause ?? 'cause unrecorded'} - `
+                      + 'and the reset did not overwrite it. ')
+                + 'That run is flagged admin and is not in the ledger.',
             `Begun: run ${created.run.id}, in the same world.`,
             'ADMIN - out of world. Everything ABOVE this line is the engine reporting, and '
                 + 'no part of it is a claim about what a character perceives. What follows it is '
@@ -14266,9 +14466,50 @@ ${fit.line}`;
             run, cultivator, ambient, TRAVEL_FOCUS, `Pressing ${party.name}`, result.days
         );
 
-        const marks = this.recordWhatTheAskLeft(run, cultivator, party, result, 'interact').calls;
+        // What this attempt WAS, when it was a wrong, read off the one closed
+        // table that decides it. Handed to both halves - the records the
+        // attempt leaves, and what the other party does about it - so a threat
+        // cannot be a wrong to one of them and an arrangement to the other.
+        const wrong = WRONG_BEHIND_INTENT[intent] ?? null;
+
+        // ── AND A THEFT TAKES SOMETHING ──────────────────────────────────
+        //
+        // Before the resolver's consequences are read, because everything
+        // downstream is priced off what it cost them: the reprisal, the weight
+        // of the grudge, and whether their house ends up carrying it.
+        const lifted = wrong === 'robbed'
+            && (result.outcome === 'taken' || result.outcome === 'turned')
+            ? this.whatALiftTook(cultivator, party)
+            : null;
+
+        const marks = this.recordWhatTheAskLeft(
+            run, cultivator, party, result, 'interact', true, wrong
+        ).calls;
 
         const facts = factsForAttempt(cultivator, party.name, intent, result, party.facts);
+
+        // ── AND THEN THEY DO SOMETHING ABOUT IT ──────────────────────────
+        //
+        // Measured in play, and it is the reason this call exists: a player
+        // stood in front of a Void Refinement stranger, threatened them and
+        // robbed them, and BOTH LANDED - and the only record either left was a
+        // social TIE, which is what this engine writes for people who are
+        // getting on. Coercion registered as relationship-building.
+        //
+        // The reprisal is decided AFTER the attempt and reads only what the
+        // resolver already decided, so nothing here re-prices the ask and
+        // nothing branches on the player's wording. See
+        // `what-somebody-does-about-being-wronged.ts` for why it is the lesser
+        // of what they can do and what they would do, floored at a warning.
+        const reprisal = await this.whatTheWrongedPartyDid(
+            run, cultivator, party, intent,
+            // `turned` is a landing too - they did it AND took hold of you -
+            // and it has to read as one here, or the reprisal weighs the deed
+            // as merely attempted while `recordWhatTheAskLeft` withholds the
+            // arrangement records for a deed that came off.
+            result.outcome === 'taken' || result.outcome === 'turned',
+            them.realmOrdinal, theirSect?.alignment ?? null, facts, lifted
+        );
         if (spoken) addHearing(facts, spoken);
         // Whatever the answering half of a demand did, on the engine channel.
         const demandCalls: ToolCallRecord[] = [];
@@ -14311,7 +14552,40 @@ ${fit.line}`;
             facts.structure.push(...answered.facts.structure, ...cost.structure);
             demandCalls.push(...answered.calls);
         }
-        if (!demand && requestPutToSomebody(rawInput) === null) {
+        // ── AND WHAT A TAKING DID NOT MOVE ───────────────────────────────
+        //
+        // Said plainly rather than left to the hint below, which offers the
+        // player the three shapes of a REQUEST - be taught, be introduced, be
+        // taken as a disciple - and is exactly the wrong prompt to end a
+        // robbery on. It is also the honest state of the engine: the attempt
+        // resolves, the reprisal lands and the ledger is written, and no goods
+        // move, because nothing in this layer takes an object off a person.
+        // `AGENTS.md`: "the engine has no answer for this yet" is a legitimate
+        // sentence, and it is a better one than a hint that reads like a menu.
+        if (!demand && wrong !== null) {
+            const took = lifted === null
+                ? `Nothing came away in a hand. The world has what was done written down and `
+                  + `${party.name} is carrying it; what they were holding is still theirs.`
+                : lifted.taken === 0
+                    ? `${party.name} was carrying nothing worth the trouble, and that is the whole `
+                      + 'of what came of it - except that they know.'
+                    : `${lifted.taken} spirit stones off ${party.name}, out of the `
+                      + `${lifted.hadBefore} they were carrying. It is in your own purse now, `
+                      + 'with nothing in the ledger to say it was ever theirs.';
+            facts.lines.push(took);
+            facts.prose = `${facts.prose}\n\n${took}`;
+            facts.structure.push(
+                lifted === null
+                    ? 'No possession moved. This wrong takes nothing by its nature; what it '
+                      + 'leaves is the reprisal and the grudge.'
+                    : `Lift: ${lifted.taken} of ${lifted.hadBefore} stones, capped at `
+                      + `${lifted.loose} - a year of what somebody at ordinal `
+                      + `${them.realmOrdinal} earns, which is what bounds how much money is ON a `
+                      + 'person rather than behind a door. Counted stock, moved as a number on '
+                      + 'two rows; `transferPossession` is for singular things and is not used '
+                      + 'here. No tracked object moved: see `docs/world/things/items.md`.'
+            );
+        } else if (!demand && requestPutToSomebody(rawInput) === null) {
             const unnamed =
                 `Nothing was named to go with it, so what ${party.name} agreed to or refused was `
                 + `the approach itself. Asking for a thing is "ask ${party.name} to teach me `
@@ -14364,9 +14638,311 @@ ${unnamed}`;
             ...structureCalls(party.structure),
             ...spent.calls,
             ...marks,
+            ...reprisal,
             ...demandCalls
         ];
         return execution;
+    }
+
+    /**
+     * What the person on the other end of a coercive attempt does about it.
+     *
+     * WHICH VERBS REACH THIS, and why it is a lookup rather than a judgement:
+     * three of the ten interact intents put something on the table that a
+     * person answers rather than merely declines - a threat, a lie and answers
+     * taken under pressure. `bribe`, `seduce`, `recruit`, `negotiate`, `trade`,
+     * `talk` and `apologise` are not wrongs, however badly they land, and a
+     * refused bribe leaves a grudge and nothing else. The mapping is a closed
+     * table and not a string test, so a verb added to the parser does not
+     * silently acquire consequences nobody chose for it.
+     *
+     * ORDER MATTERS: this runs after `resolveAttempt` and reads only what the
+     * resolver already decided. It re-prices nothing, rolls nothing, and reads
+     * no part of the player's sentence.
+     */
+    /**
+     * What a theft that came off actually takes, and why it is bounded.
+     *
+     * ── WHAT A THEFT CAN TAKE ────────────────────────────────────────────
+     *
+     * SPIRIT STONES, AND NOTHING TRACKED. `docs/world/things/items.md` splits
+     * the world's things into counted stock and singular tracked objects, and
+     * the two move by different machinery for a reason the barter path in this
+     * file states at length: `transferPossession` reassigns the possessor on
+     * the SINGLE row rather than inserting a copy, because a copy manufactures
+     * the scarcest class of object in the world out of nothing. Stones are a
+     * number on a row. They are moved as a number on two rows, and this method
+     * deliberately never touches an object.
+     *
+     * Taking a tracked thing off somebody is a different event and is not done
+     * here: it needs a provenance entry saying whose it was and how it moved -
+     * the trade path writes one - and "stolen" is a story about the object that
+     * outlives everybody involved. That is worth building and it is worth
+     * building deliberately.
+     *
+     * ── AND WHY IT IS CAPPED AT A YEAR OF THEIR OWN EARNINGS ─────────────
+     *
+     * A lift takes what somebody has ON them. Above that, money is not on a
+     * person - it is somewhere with a door and a ledger, and taking it is
+     * already a different verb with a different clock: `sect.siphon` runs over
+     * months and gets found out. So the cap is `earningsPerYear` at THEIR rung,
+     * which is the engine's existing answer to "what is a year of this person's
+     * life worth" and the same function `purseWeight` prices a bribe against.
+     * It scales the right way on its own: a farm child has almost nothing loose
+     * and an elder has a great deal, with no second table saying so.
+     *
+     * Nothing is rolled. The resolver already decided whether it came off, and
+     * re-rolling the amount would price the same event twice.
+     */
+    private whatALiftTook(
+        cultivator: Cultivator,
+        party: ResolvedEntity
+    ): { taken: number; hadBefore: number; loose: number } | null {
+        // ── TWO PLACES A PERSON CAN LIVE, AND BOTH HAVE TO BE ROBBABLE ───
+        //
+        // `resolveCultivator` matches against the `cultivators` table PLUS
+        // whoever is standing in front of the player, and the second half is
+        // where the world's several hundred people come in - they have no
+        // stored row at all until something materialises one. So a lift that
+        // only knew about the table would work on the handful of stored people
+        // and silently take nothing from everybody else, which is the "a rule
+        // that binds one and not the other" failure with the halves swapped.
+        const stored = this.repos.cultivators.getById(party.id);
+        const npc = stored ? null : (this.atHand?.npcs ?? []).find(row => row.id === party.id);
+        if (!stored && !npc) return null;
+
+        const hadBefore = Math.max(0, Math.floor(
+            stored ? stored.spiritStones : npc!.spiritStones
+        ));
+        const ordinal = stored ? stored.realmOrdinal : npc!.cultivation.realmOrdinal;
+        const loose = Math.max(0, Math.floor(earningsPerYear(Math.max(0, ordinal))));
+        const taken = Math.min(hadBefore, loose);
+
+        if (taken > 0) {
+            if (stored) {
+                this.db.transaction(() => {
+                    this.repos.cultivators.applyDeltas(party.id, { spiritStones: -taken });
+                    this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
+                })();
+            } else {
+                npc!.spiritStones = hadBefore - taken;
+                // The turn wrapper writes the world when this is set, so a
+                // restart cannot find the stones back in the pocket they came
+                // out of.
+                this.worldDirty = true;
+                this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
+            }
+        }
+        return { taken, hadBefore, loose };
+    }
+
+    private async whatTheWrongedPartyDid(
+        run: Run,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        intent: string,
+        landed: boolean,
+        theirOrdinal: number,
+        alignment: SectAlignment | null,
+        facts: EngineFacts,
+        /** What the deed took off them, when it took anything. */
+        lifted: { taken: number; hadBefore: number; loose: number } | null = null
+    ): Promise<ToolCallRecord[]> {
+        const wrong = WRONG_BEHIND_INTENT[intent];
+        if (!wrong) return [];
+
+        // Anybody at all present is an audience. The room is what makes a
+        // humiliation a second wrong, which is the reading the resolver's own
+        // `AUDIENCE_RESISTANCE` already takes of one - and it is also what
+        // decides whether the house ends up carrying this. See below.
+        const inPublic = this.company(cultivator).total > 0;
+
+        const verdict = whatTheyDoAboutBeingWronged({
+            wrong,
+            landed,
+            inPublic,
+            theirOrdinal,
+            yourOrdinal: cultivator.realmOrdinal,
+            alignment,
+            theirName: party.name,
+            yourName: cultivator.name
+        });
+
+        // The engine's account goes on all three channels, for the three
+        // different readers: `lines` is what the narrator may use, `prose` is
+        // what the deterministic narrator ships verbatim, and `structure` is
+        // the log, which is the only one of the three that cannot be dressed.
+        facts.lines.push(verdict.line);
+        facts.prose = `${facts.prose}\n\n${verdict.line}`;
+        facts.structure.push(
+            `Reprisal: ${verdict.response}. Weighed as ${verdict.grudge.severity} `
+            + `${verdict.grudge.cause} against ${cultivator.name}.`
+        );
+
+        const calls: ToolCallRecord[] = [{
+            name: 'social.reprisal',
+            action: 'interact',
+            summary: verdict.line,
+            ok: true
+        }];
+
+        // ── AND IT GOES ON THE LEDGER, WHICH IS THE HALF THAT LASTS ──────
+        //
+        // The reprisal is what happened in the room and it is over in a turn.
+        // The grudge is what the world still holds in forty years, and it is
+        // the record that makes `recordWhatTheAskLeft` withholding the tie a
+        // correction rather than a deletion: the event does not vanish, it
+        // changes sides. `oddsOf` reads the worst open grudge the subject holds
+        // against the actor, so this is also what makes robbing somebody make
+        // the next thing you want off them HARDER, which is the whole of what
+        // was wrong.
+        //
+        // The id is derived from the pair and the cause and NOT the day, on the
+        // same reasoning the refusal grudge gives next door: "X robbed me" is
+        // one standing fact about two people however many times it happens, and
+        // a resolver that read a count would have read six thefts as six
+        // separate injuries. Severity is decided once, here, and never
+        // recomputed afterwards - `grudges.ts` requires exactly that.
+        //
+        // ── AND WHAT IT COST THEM IS PART OF THAT DECISION ───────────────
+        //
+        // `whatTheyDoAboutBeingWronged` weighs the DEED - what was put on the
+        // table, whether it came off, whether anybody watched - and that is
+        // the right input for what somebody does in the room. It has no way to
+        // know what the deed took, so a lift of somebody's last stone and a
+        // lift of an elder's small change came out identical.
+        //
+        // `whatItWasWorth` is the other half and is exported for exactly this:
+        // it prices a deed from `cost`, RELATIVE TO WHAT THE PAYER HAD, which
+        // is the whole of what makes the model fair in both directions. So the
+        // two are read together and the HEAVIER stands. Not an average and not
+        // an override: neither module can make the record lighter than the
+        // other thought it was, which is the only combination that cannot lose
+        // a fact.
+        const cost = lifted !== null && lifted.hadBefore > 0
+            ? lifted.taken / lifted.hadBefore
+            : 0;
+        const worthOfTheLoss = whatItWasWorth({
+            cause: verdict.grudge.cause,
+            paidBy: 'subject',
+            cost,
+            onDay: Math.floor(run.elapsedDays),
+            description: verdict.line
+        });
+        const severity = severityRank(worthOfTheLoss) > severityRank(verdict.grudge.severity)
+            ? worthOfTheLoss
+            : verdict.grudge.severity;
+
+        // ── AND WHO ELSE ENDS UP CARRYING IT ─────────────────────────────
+        //
+        // THE ROOM, not the wound. A house is a party to a thing done to one of
+        // its own IN FRONT OF PEOPLE, because that is when it becomes a fact
+        // about the house rather than about the member - the same reading
+        // `AUDIENCE_RESISTANCE` takes of an audience and the same one the
+        // reprisal above takes of it. A wrong done where nobody could see stays
+        // between the two of them however hard it landed, which is what leaves
+        // room for a thing nobody has worked out yet.
+        const held = createObligation({
+            kind: 'grudge',
+            id: `grudge_${party.id}_${cultivator.id}_${verdict.grudge.cause}`,
+            holderId: party.id,
+            subjectId: cultivator.id,
+            cause: verdict.grudge.cause,
+            severity,
+            onDay: Math.floor(run.elapsedDays),
+            description: verdict.line,
+            participants: inPublic && party.party?.factionId ? [party.party.factionId] : [],
+            tags: [
+                `wrong:${wrong}`,
+                `reprisal:${verdict.response}`,
+                landed ? 'landed' : 'attempted',
+                ...(inPublic ? ['witnessed'] : []),
+                ...(lifted !== null ? [`took:${lifted.taken}`] : [])
+            ]
+        });
+        writeObligation(this.db as unknown as DatabaseHandle, held);
+        calls.push({
+            name: 'social.createObligation',
+            action: 'interact',
+            summary:
+                `${party.name} now holds a ${held.severity} ${held.kind} about ${cultivator.name} `
+                + `for ${held.cause}, written down on day ${Math.floor(run.elapsedDays)} and open `
+                + 'until somebody settles it. It costs points on every later approach to them, '
+                + 'and it is what an attempt on a person leaves instead of a tie. Weighed as '
+                + `${verdict.grudge.severity} by what was done and ${worthOfTheLoss} by what it `
+                + `cost them (${Math.round(cost * 100)}% of what they had); the heavier stands. `
+                + `${!inPublic
+                    ? 'Nobody else could see it, so it stays between the two of them.'
+                    : party.party?.factionId
+                        ? `${party.party.factionId} is on the record with them: it was done where `
+                          + 'people could see.'
+                        : 'It was done where people could see, and they answer to nobody who '
+                          + 'could take it up.'}`,
+            ok: true
+        });
+
+        // A warning and a driving-off cost the body nothing, and stopping here
+        // is the point: the floor of this system is that something is SAID.
+        if (verdict.wound === null && !verdict.fatal) return calls;
+
+        // ── A WOUND THAT IS NOT A KILLING MUST NOT KILL ──────────────────
+        //
+        // The fraction is of the POOL, because that is the only figure that
+        // means the same thing at every rung. What it must not do is finish
+        // somebody the verdict did not sentence: `injured` and `crippled` are
+        // separate answers from `killed` precisely so that surviving them is
+        // the point, and a verdict that killed by arithmetic would collapse
+        // three outcomes into one.
+        //
+        // It bites today rather than in theory: current health does not rise
+        // when the pool does, so a cultivator standing at 30 of 15,360 takes
+        // an `injured` verdict worth 7,680. Left unclamped, every reprisal
+        // above Foundation was a death sentence.
+        const wanted = Math.max(1, Math.round(cultivator.maxHp * verdict.hpFraction));
+        const damage = verdict.fatal ? wanted : Math.min(wanted, Math.max(0, cultivator.hp - 1));
+        this.db.transaction(() => {
+            this.repos.cultivators.addInjury(cultivator.id, {
+                severity: verdict.wound ?? 'crippling',
+                // `combat`, because that is what it was, whatever the sentence
+                // that started it looked like.
+                source: 'combat',
+                description: verdict.line,
+                sustainedOnTurn: run.turn
+            });
+            this.repos.cultivators.applyDeltas(cultivator.id, { hp: -damage });
+        })();
+
+        calls.push({
+            name: 'cultivator.addInjury',
+            action: 'interact',
+            summary:
+                `A ${verdict.wound} wound and ${damage} of ${cultivator.maxHp} health, for `
+                + `${verdict.grudge.cause}. Untreated, and it does not close on its own.`,
+            ok: true
+        });
+
+        // ── AND IT CAN BE THE END ────────────────────────────────────────
+        //
+        // Death goes through `markDead` like every other death in this engine -
+        // there is no second road, and `endRun` is closed in the same
+        // transaction so the ledger can never show a live run whose cultivator
+        // is a corpse. `combat_defeat` because it was one, decided by the
+        // stronger party alone.
+        if (verdict.fatal) {
+            this.repos.cultivators.markDead(
+                cultivator.id, 'combat_defeat', run.turn, verdict.line
+            );
+            calls.push({
+                name: 'cultivator.markDead',
+                action: 'interact',
+                summary:
+                    `${party.name} killed ${cultivator.name}. The run is closed: there is no `
+                    + 'reload, no revival and no continuation.',
+                ok: true
+            });
+        }
+
+        return calls;
     }
 
 
@@ -15453,6 +16029,743 @@ ${done.lines.join(' ')}`;
         };
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // A MATCH, A REFUSAL, AND A CHILD
+    //
+    // The three verbs that make the second half of a life in this world
+    // playable, and between them they add no mechanism at all. Every piece was
+    // built, argued out and left with no caller:
+    //
+    //   the price of somebody a house was not going to give up
+    //                             `whatItWouldTake`, the same function the
+    //                             barter verb above already runs, on the same
+    //                             one scale, with no list of currencies
+    //   the `marriage_pact` oath  `grudges.ts` has carried the cause since it
+    //                             was written and nothing ever produced one
+    //   walking out of it         `whatWalkingOutOfItCosts`, no caller in src/
+    //   what a line does          `bloodlineTierForChild`, no caller in src/
+    //   what a refusal leaves     `whatADeedLeaves`, which prices any deed at
+    //                             all off what it cost against what they had
+    //   placing a child on a word `spendAWord`, used by the world for NPCs and
+    //                             reachable by no player until now
+    //
+    // See `src/engine/household/README.md` for the argument. Nothing in this
+    // section reads which party is the played one, and nothing anywhere in it
+    // branches on anybody's gender: the engine module uses ONE type for both
+    // sides of a match and a test scans it for a vocabulary that would.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * How the played cultivator enters a negotiation about a match.
+     *
+     * `carriesTheLineAt` is null and that is honest rather than lazy. Nothing
+     * in this world writes an ability tier onto anybody - the dilution rule has
+     * had no writer since it was written - so the engine can answer what a
+     * match does to a line and the played game has no line to hand it. Stated
+     * here so the next person finds the gap rather than the null.
+     */
+    private asAPartyToAMatch(cultivator: Cultivator): APartyToAMatch {
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const houseId = membership?.sectId ?? cultivator.sectId ?? null;
+        return {
+            personId: cultivator.id,
+            reachesTo: cultivator.realmOrdinal,
+            carriesTheLineAt: null,
+            houseId,
+            onTheRoll: rollFor(houseId, membership !== null)
+        };
+    }
+
+    /**
+     * What a house would take, and who else has a say in it.
+     *
+     * Two shapes of sentence reach here and the difference between them is
+     * whether anything was put on the table. Asking what it would take is a
+     * question and costs no day; putting something down is an attempt and runs
+     * through the same resolver every other attempt in this game runs through.
+     */
+    private async proposeAMatch(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined,
+        offered: string | undefined,
+        intent: string,
+        leverage: ApproachLeverage | undefined,
+        rawInput: string
+    ): Promise<Execution> {
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'propose', factsForRefusal(
+                'A match with whom?',
+                'A match is put to somebody, or to their house. You have not said who. '
+                + `${this.whoIsAbout(cultivator)}`,
+                'Unresolved party: propose with no subject named. '
+                + `${this.knownNamesLine(cultivator, scope)}`
+            ));
+        }
+
+        const party = this.partyPutTo(cultivator, query, scope);
+        if (!party) return this.nobodyByThatName(cultivator, query, scope, 'propose');
+        if (party.kind !== 'cultivator' || !party.party) {
+            return refused('engine.resolveParty', 'propose', factsForRefusal(
+                'A house is not the party to a match. Somebody in it is.',
+                `A match is between two people and is negotiated with whoever speaks for them. `
+                + `"${query}" is a body rather than a person, so name somebody on its roll and `
+                + 'put it to them.',
+                `Resolved "${query}" to a ${party.kind}. Nothing spent, no time passed.`
+            ));
+        }
+
+        const world = this.atHand;
+        const theirFaction = party.party.factionId ?? null;
+        const mine = this.asAPartyToAMatch(cultivator);
+        const theirs: APartyToAMatch = {
+            personId: party.id,
+            reachesTo: party.party.realmOrdinal ?? 0,
+            carriesTheLineAt: null,
+            houseId: theirFaction,
+            onTheRoll: rollFor(theirFaction, party.party.ranked === true)
+        };
+        const house: TheHouseBeingAsked = {
+            houseId: theirFaction ?? '',
+            reachesTo: howHighTheirHouseReaches(world, theirFaction),
+            // Counted off the roster, and it can only ever be zero while
+            // nothing writes a line onto anybody. See `asAPartyToAMatch`.
+            othersCarryingTheLineAsWell: 0
+        };
+
+        // ── WHAT IS ON THE TABLE, AND THE LIST IS OPEN ───────────────────
+        //
+        // The same `whatIsBeingPutDown` the barter verb uses, which asks one
+        // question of anything at all - how high does it carry whoever receives
+        // it - and branches on nothing about what kind of thing it is. Stones,
+        // an art, a manual, a material, protection, an alliance: one field.
+        const table: OnTheTable[] = [];
+        if (offered && offered.trim().length >= 2) {
+            table.push(whatIsBeingPutDown(
+                offered.trim(), cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id)
+            ));
+        }
+
+        // ── AND A WORD ALREADY OWED IS ONE OF THE THINGS YOU CAN PUT DOWN ─
+        //
+        // The credit side of the ledger has never been spendable. An obligation
+        // owed TO somebody sat there as a scoreboard entry, and the one thing
+        // in this world money does not buy is exactly what a word is for. This
+        // is the whole of the wiring: a favour is worth the rung of whoever
+        // owes it, which is the pricing module's own rule.
+        //
+        // It matters most for somebody with no house, who has no other road.
+        const callingItIn = CALLING_IN_A_FAVOUR.test(rawInput.toLowerCase());
+        const owed = openLedgerBetween(this.repos, cultivator.id, party.id)
+            .filter(r => r.kind === 'favor' && r.holderId === cultivator.id);
+        if (callingItIn) {
+            for (const record of owed) {
+                table.push(aFavourOwedPutOnTheTable(record, theirs.reachesTo));
+            }
+        }
+
+        const answer = whatAHouseWouldTakeForAMatch({ house, theirs, theOther: mine, table });
+        const says = whoAgreesAndWhoDoesNot(answer);
+
+        const structure = [
+            `Match: ${cultivator.name} (rung ${mine.reachesTo}, `
+            + `${mine.houseId ?? 'no house'}) with ${party.name} (rung ${theirs.reachesTo}, `
+            + `${theirs.houseId ?? 'no house'}, on the roll ${theirs.onTheRoll ?? 'not at all'}).`,
+            `The house is short of: ${answer.shortOf}. The two stand ${answer.howFarApart} of `
+            + `each other. Children of it would carry `
+            + `${answer.theLineTheChildrenWouldCarry ?? 'no line'}.`,
+            `Bar ${answer.price.theHeightToReach}; on the table `
+            + `${answer.price.theBestPutDown ?? 'nothing singular'} at `
+            + `${answer.price.theBestOnTheTable}; ${answer.price.why ?? 'price met'}.`,
+            ...says.says.map(s =>
+                `${s.party}: ${s.inFavour === null ? 'not this layer to answer' : s.inFavour}. `
+                + s.because)
+        ];
+
+        // ── ASKING WHAT IT WOULD TAKE IS A QUESTION ──────────────────────
+        //
+        // It costs a sentence, so it costs no day and rolls nothing. What it is
+        // not is free of consequence: they now know what you are after.
+        if (table.length === 0) {
+            const facts = factsForToolResult(
+                `${party.name}, on what a match would take.`,
+                [
+                    `You put it to ${party.name} and their people, and ask what it would take. `
+                    + answer.line,
+                    ...says.says
+                        .filter(s => s.inFavour !== null)
+                        .map(s => `${s.party[0].toUpperCase()}${s.party.slice(1)}: ${s.because}`),
+                    says.onlyThePersonIsLeftToAsk
+                        ? 'Nobody who speaks for them objects. What is left is whether they want '
+                          + 'it, and that is theirs to say.'
+                        : 'They do not all say the same thing, which is where these come apart.'
+                ]
+            );
+            facts.structure.push(...structure);
+            this.noteEncounter(
+                cultivator, run, party, 'witnessed', 'Put a match to them and asked the price.'
+            );
+            return this.freeAction(run, 'propose', facts);
+        }
+
+        // ── AND PUTTING SOMETHING DOWN IS AN ATTEMPT ─────────────────────
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
+        const theirSect = theirFaction ? getSect(theirFaction) : null;
+
+        const result = resolveAttempt({
+            actor: {
+                id: cultivator.id,
+                name: cultivator.name,
+                ordinal: cultivator.realmOrdinal,
+                charm: cultivator.attributes.charm,
+                factionId: membership?.sectId ?? null,
+                alignment: mySect?.alignment ?? null,
+                ranked: membership !== null
+            },
+            subject: {
+                id: party.id,
+                name: party.name,
+                ordinal: theirs.reachesTo,
+                ...(party.party.charm === undefined ? {} : { charm: party.party.charm }),
+                factionId: theirFaction,
+                alignment: theirSect?.alignment ?? null,
+                ranked: party.party.ranked ?? false,
+                openHandedness: openHandednessOf(party.id)
+            },
+            onDay: Math.floor(run.elapsedDays),
+            theirTie: tieFrom(this.repos, party.id, cultivator.id),
+            yourTie: tieFrom(this.repos, cultivator.id, party.id),
+            ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // A match whose price is met is an ordinary favour. One whose price
+            // is not met asks them to end up worse off and see it while
+            // agreeing, which is what `against_their_interest` means.
+            ask: (answer.weight.thePriceWasMet
+                ? 'a_real_favour'
+                : 'against_their_interest') as AskWeight,
+            theyWantSomethingFromYou: answer.weight.theyWantWhatIsInFrontOfThem,
+            theAnswerWasTheirsToGive: theirs.onTheRoll !== null,
+            theirHoldOnItIsMerelyReserved: answer.price.why !== 'they_need_it_themselves',
+            approach: {
+                intent: rawInput.slice(0, 400),
+                ...(leverage ? { leverage } : {})
+            },
+            rng: forStream(
+                run.seed, 'social_leverage', Math.floor(run.elapsedDays), `${party.id}:match`
+            )
+        });
+
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, TRAVEL_FOCUS, `Putting a match to ${party.name}`, result.days
+        );
+        const left = this.recordWhatTheAskLeft(run, cultivator, party, result, 'propose', true);
+        const took = result.outcome === 'taken' || result.outcome === 'turned';
+
+        const lines = [
+            `${intent === 'accept' ? 'You agree to it' : 'You put it to them'} and set down `
+            + `${answer.price.theBestPutDown ?? 'nothing anybody could hold'}. ${answer.line}`
+        ];
+        const calls: ToolCallRecord[] = [];
+
+        if (took) {
+            const changed = whatAMatchChanges({
+                one: mine,
+                other: theirs,
+                onDay: Math.floor(run.elapsedDays),
+                // Nobody is bound. A match two people agreed to gives no house
+                // anything to collect, and `whatWalkingOutOfItCosts` names that
+                // as the common case. A house EXTRACTING one writes the oath,
+                // and that path is the world's rather than the player's.
+                bound: null,
+                note: `Agreed at ${placeName(cultivator)} for `
+                    + `${answer.price.theBestPutDown ?? 'terms neither of them wrote down'}.`
+            });
+
+            // Both halves of the tie, at the strength and the type the engine
+            // answered with rather than at anything restated here.
+            recordTheTieAnAttemptLeft(
+                this.repos, cultivator.id, party.id, Math.floor(run.elapsedDays),
+                {
+                    theirs: {
+                        type: changed.ties[1].type,
+                        strength: changed.ties[1].strength,
+                        significance: 'defining',
+                        roles: ['married']
+                    },
+                    yours: {
+                        type: changed.ties[0].type,
+                        strength: changed.ties[0].strength,
+                        significance: 'defining',
+                        roles: ['married']
+                    },
+                    event: {
+                        onDay: Math.floor(run.elapsedDays),
+                        kind: 'match',
+                        summary: changed.note
+                    }
+                }
+            );
+
+            lines.push(
+                `It stands. ${party.name} and ${cultivator.name} are a household, and everybody `
+                + 'who deals with either of them now reads that.'
+            );
+            if (changed.rolls.length > 0) {
+                lines.push(
+                    'And a roll moves: ' + changed.rolls
+                        .map(r => `${r.personId} is on ${r.houseId}'s, by blood, at no rank in `
+                            + 'it. A lineage is entered by blood and a match is one of the two '
+                            + 'ways somebody comes to be of one.')
+                        .join(' ')
+                );
+            }
+            if (changed.betweenTheHouses) {
+                lines.push(
+                    `${changed.betweenTheHouses[0]} and ${changed.betweenTheHouses[1]} are now `
+                    + 'connected by it, which is a thing the standing register holds and other '
+                    + 'houses read.'
+                );
+            }
+            calls.push({
+                name: 'engine.whatAMatchChanges',
+                action: 'propose',
+                summary: changed.note,
+                ok: true
+            });
+        } else if (result.outcome === 'countered') {
+            lines.push(
+                `${party.name} does not close the door. Something would move this and what you `
+                + 'put down is not yet it.'
+            );
+        } else {
+            lines.push(`${party.name} says no.`);
+        }
+        lines.push(...spent.facts.lines);
+
+        const facts = factsForToolResult(
+            `${party.name}, on a match: ${result.outcome}.`, lines
+        );
+        facts.structure.push(...structure, ...spent.facts.structure);
+
+        return {
+            ...spent,
+            facts,
+            outcome: took ? 'executed' : 'refused',
+            calls: [
+                {
+                    name: 'engine.whatAHouseWouldTakeForAMatch',
+                    action: 'propose',
+                    summary: `bar ${answer.price.theHeightToReach}, offered `
+                        + `${answer.price.theBestOnTheTable}, ${answer.price.why ?? 'price met'}; `
+                        + `attempt ${result.outcome} at odds ${result.odds}.`,
+                    ok: took
+                },
+                ...calls,
+                ...left.calls,
+                ...spent.calls
+            ]
+        };
+    }
+
+    /**
+     * Saying no, and walking out, which are one act at two moments.
+     *
+     * ONE IMPLEMENTATION FOR EVERYBODY. Nothing below reads which party is
+     * played. A player matched by their own house and running from it, and
+     * somebody running from a clan that will not marry out, reach the same two
+     * functions with the arguments in different positions.
+     *
+     * Which of the two this is depends on the ledger rather than on the
+     * sentence: an open `marriage_pact` held by this cultivator means they are
+     * in one, and leaving is what they are doing. With none, they are refusing
+     * one that was put to them.
+     */
+    private declineAMatch(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        rawInput: string
+    ): Execution {
+        const scope = this.scopeFor(cultivator);
+        const today = Math.floor(run.elapsedDays);
+        const query = (target ?? '').trim();
+        const party = query.length >= 2 ? this.partyPutTo(cultivator, query, scope) : null;
+
+        // ── ARE THEY IN ONE? THE LEDGER ANSWERS, NOT THE SENTENCE ────────
+        const binding = party
+            ? openLedgerBetween(this.repos, cultivator.id, party.id)
+                .find(r => r.kind === 'oath' && r.cause === 'marriage_pact'
+                    && r.holderId === cultivator.id)
+            : undefined;
+
+        if (binding) {
+            const rolls = binding.participants.filter(id => id.startsWith('sect-')
+                || id.startsWith('court-') || id.startsWith('clan-'));
+            const cost = whatLeavingAMatchCosts({
+                binding,
+                leaverId: cultivator.id,
+                leaverName: cultivator.name,
+                rollsTheyWereOn: rolls,
+                onDay: today
+            });
+
+            const written: string[] = [];
+            for (const row of [cost.onTheLedger?.reopened, cost.onTheLedger?.opened]) {
+                if (!row) continue;
+                const record = createObligation(row);
+                writeObligation(this.db as unknown as DatabaseHandle, record);
+                written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
+            }
+            writeObligation(
+                this.db as unknown as DatabaseHandle,
+                settleObligation(binding, {
+                    resolution: 'oath_released',
+                    onDay: today,
+                    byId: cultivator.id,
+                    note: 'Not by agreement. They left.'
+                })
+            );
+
+            const facts = factsForToolResult(
+                'You leave it.',
+                [
+                    'Nothing stops you, and nothing about it is softened. ' + cost.note,
+                    ...cost.offTheRolls.map(off => off.whatWasLost),
+                    'What you have instead is what anybody has who answers to nobody: no roll, '
+                    + 'no house between you and whoever comes looking, and a door that opens on '
+                    + 'a word from somebody high enough.'
+                ]
+            );
+            facts.structure.push(
+                `Oath ${binding.id} released. Records opened: ${written.join('; ') || 'none'}.`,
+                ...cost.offTheRolls.map(off =>
+                    `Off ${off.houseId}: lowest door now rung `
+                    + `${off.theLowestDoorNowInFrontOfThem ?? 'unknown'}.`)
+            );
+            return this.freeAction(run, 'decline', facts);
+        }
+
+        // ── OR THEY ARE REFUSING SOMEBODY, AND THE PRICE IS WHAT WAS STAKED
+        if (!party) {
+            return refused('engine.resolveParty', 'decline', factsForRefusal(
+                'Refuse whom?',
+                'Nobody has put a match to you that the ledger knows of, and you have not named '
+                + 'anybody to refuse. '
+                + `${this.whoIsAbout(cultivator)}`,
+                'No open marriage_pact held by this cultivator and no party resolved. '
+                + `${this.knownNamesLine(cultivator, scope)}`
+            ));
+        }
+
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
+        const theirFaction = party.party?.factionId ?? null;
+        const theirSect = theirFaction ? getSect(theirFaction) : null;
+
+        // What they staked, off the ledger and off the rungs. A word given
+        // first is the heavier injury and it is on the record: an open favour
+        // this cultivator owes THEM, tagged from an earlier agreement, is the
+        // engine's own memory of having said yes.
+        const between = openLedgerBetween(this.repos, cultivator.id, party.id);
+        const hadBeenToldYes = between.some(r =>
+            r.kind === 'oath' && r.cause === 'marriage_pact');
+        const staked = {
+            theBestOnTheTable: Math.max(
+                0,
+                ...between
+                    .filter(r => r.kind === 'favor' && r.holderId === party.id)
+                    .map(() => party.party?.realmOrdinal ?? 0)
+            ),
+            theyReachTo: party.party?.realmOrdinal ?? 0,
+            hadBeenToldYes
+        };
+
+        const leaves = whatDecliningSomebodyLeaves({
+            declining: {
+                id: cultivator.id,
+                name: cultivator.name,
+                houseId: membership?.sectId ?? null,
+                houseName: mySect?.name ?? null,
+                alignment: mySect?.alignment ?? null,
+                ranked: membership !== null
+            },
+            asking: {
+                id: party.id,
+                name: party.name,
+                houseId: theirFaction,
+                houseName: theirSect?.name ?? null,
+                alignment: theirSect?.alignment ?? null,
+                ranked: party.party?.ranked === true
+            },
+            staked,
+            onDay: today,
+            // A house behind somebody is who the account goes to when they
+            // cannot carry it themselves. The same read the reprisal layer
+            // makes, and nothing about a match changes it.
+            reach: membership !== null ? 'answerable' : 'unbacked',
+            description: rawInput.slice(0, 300)
+        });
+
+        const written: string[] = [];
+        for (const row of leaves.left?.opens ?? []) {
+            const record = createObligation(row);
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
+        }
+
+        const facts = factsForToolResult(
+            `You refuse ${party.name}.`,
+            [
+                `You say no. ${leaves.note}`,
+                leaves.left === null
+                    ? 'Nothing was put down and no word had been given, so there is nothing for '
+                      + 'anybody to hold against you. A refusal that costs nothing is still a '
+                      + 'refusal.'
+                    : 'They had something riding on it, and being told no in front of whoever '
+                      + 'was there is a thing that happened to them rather than a thing that '
+                      + 'did not.'
+            ]
+        );
+        facts.structure.push(
+            `Staked: ${Math.round(leaves.ofWhatTheyHad * 100)} in a hundred of what they had; `
+            + `word given first = ${hadBeenToldYes}.`,
+            `Records opened: ${written.join('; ') || 'none'}.`
+        );
+        this.noteEncounter(cultivator, run, party, 'witnessed', 'Refused a match.');
+        return this.freeAction(run, 'decline', facts);
+    }
+
+    /**
+     * Having a child, and placing one.
+     *
+     * ── THE VERB IS THE DECISION AND NOT A NEW CLOCK ─────────────────────
+     *
+     * A decade spent raising somebody is a decade not spent cultivating, and
+     * the time skip already charges for time. Nothing here invents a second
+     * clock, adds a penalty, or writes a rung: `birth.ts`'s first contract rule
+     * is that an origin buys inputs and never rank, and a child of a match is
+     * subject to it like anybody else.
+     *
+     * ── AND `place` IS THE FAVOUR REACHING A PLAYER FOR THE FIRST TIME ───
+     *
+     * `spendAWord` has written the obligation a placer carries since it was
+     * written, the world uses it for NPCs, and no player has ever been able to
+     * spend one. It is the whole road for somebody with no house, and it is
+     * finite: a word spent here is a word not spent on their own advancement.
+     */
+    private async haveAChild(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined,
+        days: number | undefined,
+        intent: string
+    ): Promise<Execution> {
+        const scope = this.scopeFor(cultivator);
+        const today = Math.floor(run.elapsedDays);
+        const query = (target ?? '').trim();
+
+        if (intent === 'place') {
+            return this.placeAChild(run, cultivator, query, scope);
+        }
+
+        // ── THE OTHER PARENT ─────────────────────────────────────────────
+        const party = query.length >= 2 ? this.partyPutTo(cultivator, query, scope) : null;
+        if (!party || party.kind !== 'cultivator' || !party.party) {
+            return refused('engine.resolveParty', 'child', factsForRefusal(
+                'With whom?',
+                'A child has two parents and you have named one. Say who the other is. '
+                + `${this.whoIsAbout(cultivator)}`,
+                'Unresolved party: child with no other parent named. '
+                + `${this.knownNamesLine(cultivator, scope)}`
+            ));
+        }
+
+        const tie = tieFrom(this.repos, cultivator.id, party.id);
+        const mine = this.asAPartyToAMatch(cultivator);
+        const other: APartyToAMatch = {
+            personId: party.id,
+            reachesTo: party.party.realmOrdinal ?? 0,
+            carriesTheLineAt: null,
+            houseId: party.party.factionId ?? null,
+            onTheRoll: rollFor(party.party.factionId ?? null, party.party.ranked === true)
+        };
+
+        const years = Math.max(1, Math.round((days ?? YEARS_BEFORE_A_CHILD_CAN_BE_PLACED * 365) / 365));
+        const cost = whatAChildCosts({ one: mine, other, years });
+        const child = whatTheChildIs({ one: mine, other });
+
+        // ── THE YEARS, SPENT THE WAY EVERY OTHER STRETCH IS SPENT ────────
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, RAISING_FOCUS,
+            `Raising a child with ${party.name}`, years * 365
+        );
+
+        // The child gets an identity the ledger, the lineage code and the
+        // grudge inheritance can all see. Derived from the two parents and the
+        // day, so it is reproducible from the seed like everything else.
+        const childId = `child_${cultivator.id}_${party.id}_${today}`;
+        recordTheTieAnAttemptLeft(
+            this.repos, cultivator.id, childId, today,
+            {
+                theirs: {
+                    type: 'parent', strength: 0.9, significance: 'defining',
+                    roles: ['raised_them']
+                },
+                yours: {
+                    type: 'child', strength: 0.9, significance: 'defining',
+                    roles: ['theirs']
+                },
+                event: { onDay: today, kind: 'birth', summary: child.note }
+            }
+        );
+
+        const lines = [
+            `${years} years. ${cost.note}`,
+            child.note,
+            'Nothing about them is settled by it. They stand at no rung, on nobody\'s ladder, '
+            + 'and what they become is what somebody spends on them.',
+            ...spent.facts.lines
+        ];
+
+        const facts = factsForToolResult(
+            `A child, with ${party.name}.`, lines
+        );
+        facts.structure.push(
+            `Years: ${years}. To ${cultivator.name}: `
+            + `${cost.toEachOfThem[0].ofAWholeLifeAtTheirRung.toFixed(4)} of a whole life at `
+            + `rung ${mine.reachesTo}. To ${party.name}: `
+            + `${cost.toEachOfThem[1].ofAWholeLifeAtTheirRung.toFixed(4)} at rung `
+            + `${other.reachesTo}.`,
+            `Rolls: ${child.rolls.map(r => r.houseId).join(', ') || 'none'}. Line: `
+            + `${child.theLineTheyCarry ?? 'none'}. Tie to ${party.name} before this: `
+            + `${tie ? `${tie.type} at ${round2(tie.strength)}` : 'none recorded'}.`,
+            ...spent.facts.structure
+        );
+
+        return {
+            ...spent,
+            facts,
+            outcome: 'executed',
+            calls: [
+                {
+                    name: 'engine.whatAChildCosts',
+                    action: 'child',
+                    summary: `${years} years spent. ${child.note}`,
+                    ok: true
+                },
+                ...spent.calls
+            ]
+        };
+    }
+
+    /**
+     * A word spent on a door, which is what a name is actually worth.
+     *
+     * `spendAWord` decides all of it and none of it is reimplemented here: the
+     * house's own stance, whether there is a bar to skip at all, the receipt
+     * the person asked now holds, and who is told.
+     */
+    private placeAChild(
+        run: Run,
+        cultivator: Cultivator,
+        query: string,
+        scope: ReturnType<GameService['scopeFor']>
+    ): Execution {
+        const today = Math.floor(run.elapsedDays);
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'child', factsForRefusal(
+                'Placed where?',
+                'A child is placed at a house, on somebody\'s word. Name the house.',
+                'Unresolved house: child/place with no house named.'
+            ));
+        }
+
+        const party = this.partyPutTo(cultivator, query, scope);
+        const houseId = party?.kind === 'sect'
+            ? party.id
+            : party?.party?.factionId ?? null;
+        if (!houseId) {
+            return this.nobodyByThatName(cultivator, query, scope, 'child');
+        }
+
+        // A favour runs through a person and never through an institution. With
+        // nobody named, the person asked is whoever this cultivator actually
+        // knows there - and with nobody known, there is no favour to spend,
+        // only a letter.
+        const askedOfId = party?.kind === 'cultivator' ? party.id : null;
+        if (askedOfId === null) {
+            return refused('engine.spendAWord', 'child', factsForRefusal(
+                'A word runs through a person.',
+                `Nobody writes to ${query} about a child. A favour is one person asking another, `
+                + 'so name somebody there who would take the asking - and if you do not know '
+                + 'anybody there, that is the thing standing in the way rather than the bar.',
+                'spendAWord requires askedOfId; a faction is not a party to a favour.'
+            ));
+        }
+
+        const result = spendAWord({
+            askerId: cultivator.id,
+            // The child by the id the household tie already carries. A player
+            // with no child has nothing to place, and the refusal says so.
+            childId: `child_of_${cultivator.id}`,
+            houseId,
+            askedOfId,
+            onDay: today,
+            childOrdinal: 0
+        });
+
+        if (!wasPlaced(result)) {
+            const stance = favourStanceOf(houseId);
+            return refused('engine.spendAWord', 'child', factsForRefusal(
+                'The word buys nothing here.',
+                stance?.why
+                    ?? 'There is nothing at this door for a word to move, and asking anyway '
+                       + 'spends something for nothing.',
+                `spendAWord refused: ${result}.`
+            ));
+        }
+
+        writeObligation(this.db as unknown as DatabaseHandle, result.obligation);
+        recordTheTieAnAttemptLeft(
+            this.repos, cultivator.id, askedOfId, today,
+            {
+                theirs: {
+                    type: 'patron', strength: 0.6, significance: 'defining',
+                    roles: ['took_a_child_in']
+                },
+                yours: {
+                    type: result.tie.type, strength: result.tie.strength,
+                    significance: 'defining', roles: [...result.tie.roles]
+                },
+                event: {
+                    onDay: today, kind: 'placement',
+                    summary: result.obligation.description
+                }
+            }
+        );
+
+        const facts = factsForToolResult(
+            `Placed, on a word to ${party?.name ?? askedOfId}.`,
+            [
+                `You ask, personally, and the bar comes down for one person once. The child is `
+                + `on ${houseId}'s roll at the bottom of it, on no rung, having met nothing.`,
+                'What it cost is not stones. You owe somebody, the amount was never named, and '
+                + 'an unnamed debt does not end the way a price does.',
+                'And it is a gamble rather than a gift: a child placed above what they turn out '
+                + 'to be does not come home.'
+            ]
+        );
+        facts.structure.push(
+            `spendAWord: house ${houseId}, asked of ${askedOfId}, favour `
+            + `${result.obligation.severity} written to ${result.obligation.holderId}.`
+        );
+        return this.freeAction(run, 'child', facts);
+    }
+
     /**
      * The `wants` term, supplied from rows for the first time.
      *
@@ -15523,16 +16836,71 @@ ${done.lines.join(' ')}`;
          * of the same judgement belongs inside `refusalGrudge` and should move
          * there; this is the smallest place to hold it in the meantime.
          */
-        somethingWasAsked = true
+        somethingWasAsked = true,
+        /**
+         * What the attempt was, when what it was is a WRONG.
+         *
+         * ── COERCION WAS REGISTERING AS RELATIONSHIP-BUILDING ────────────
+         *
+         * Measured in play, at ordinal 29 against a stranger: a threat landed
+         * and a theft landed, and the only thing either wrote was a `patron`
+         * tie from the victim to the player, strength 0.1, roles `was_bought`,
+         * with the history line "X got something out of Y". The ledger was
+         * empty. So robbing somebody made you closer to them, and the standing
+         * model - which reads this table - would have treated extortion as
+         * rapport for as long as anybody kept doing it.
+         *
+         * The engine already knew better on the OTHER branch: a refused threat
+         * writes a grudge, through `whatARefusalLeaves`. The successful path is
+         * made to agree with it here.
+         *
+         * WHY THE SIGN CANNOT LIVE ON THE TIE. `relationships.ts` has hostile
+         * types - `enemy`, `rival`, `sworn_enemy` - so a hostile ROW is
+         * expressible. What is not expressible is a hostile STRENGTH: `strength`
+         * is documented as how much the tie matters to its holder, and
+         * `oddsOf` reads it as `theirTie.strength * TIE_WEIGHT`, unsigned and
+         * positive, worth up to 30 points on every later approach. A row typed
+         * `enemy` carrying 0.1 would therefore make the next thing you asked
+         * the person you just robbed EASIER, which is the same defect wearing
+         * the right word. The sign this layer really supports is the ledger's
+         * KIND - `grudges.ts` names robbery and humiliation in as many words -
+         * so that is where it is put, and no tie is written at all.
+         *
+         * `null` for everything that is not a wrong. A bribe, a courtship, a
+         * recruitment pitch and a refused request are not wrongs however badly
+         * they land, and `WRONG_BEHIND_INTENT` is the closed table that decides
+         * which is which - the same one the reprisal reads, so there is one
+         * answer to "was that a wrong" and not two.
+         */
+        wrong: Wrong | null = null
     ): { calls: ToolCallRecord[]; wroteToTheLedger: boolean } {
         const calls: ToolCallRecord[] = [];
         let wroteToTheLedger = false;
+        const landed = result.outcome === 'taken' || result.outcome === 'turned';
+        const aWrongThatCameOff = wrong !== null && landed;
         for (const [which, mark] of [
             ['obligation', result.marks.obligation],
             ['counterObligation', result.marks.counterObligation]
         ] as const) {
             if (!mark) continue;
             if (!somethingWasAsked && mark.kind === 'grudge') continue;
+            // A favour is owed TO its holder, and the resolver writes one to
+            // the ACTOR on any landed non-courtesy ask - correct for a bought
+            // official and false for somebody who was robbed. Nobody does you a
+            // favour by being unable to stop you.
+            if (aWrongThatCameOff && mark.kind === 'favor' && mark.holderId === cultivator.id) {
+                calls.push({
+                    name: 'social.createObligation',
+                    action,
+                    summary:
+                        `Not written: the resolver offered a ${mark.severity} favour owed to `
+                        + `${cultivator.name} by ${party.name}, which is the record a landed ask `
+                        + 'leaves. This was not an ask. What it leaves is on the other side of '
+                        + 'the ledger.',
+                    ok: false
+                });
+                continue;
+            }
             // ── ONE STANDING RECORD, NOT ONE A DAY ───────────────────────
             //
             // `createObligation` derives its id from the pair, the cause AND
@@ -15572,7 +16940,26 @@ ${done.lines.join(' ')}`;
                 ok: true
             });
         }
-        if (result.marks.tie) {
+        if (result.marks.tie && aWrongThatCameOff) {
+            // The whole of the fix, and it is a refusal to write rather than a
+            // second record: `tieForTransaction` types the subject's side
+            // `patron` and their roles `was_bought`, which is exactly right for
+            // a bought official and is a lie about somebody who was leaned on.
+            // See the note on `wrong` above for why the sign cannot simply be
+            // flipped on the row.
+            calls.push({
+                name: 'social.recordTie',
+                action,
+                summary:
+                    `No tie written. The resolver offered ${party.name} a `
+                    + `${result.marks.tie.theirs.type} tie to ${cultivator.name} at `
+                    + `${round2(result.marks.tie.theirs.strength)} - the record this engine keeps `
+                    + 'for two people who are getting on, and worth up to 30 points in favour of '
+                    + `${cultivator.name} on every later approach. ${party.name} was ${wrong}. `
+                    + 'It goes on the ledger instead, on the side facing the other way.',
+                ok: false
+            });
+        } else if (result.marks.tie) {
             recordTheTieAnAttemptLeft(
                 this.repos, cultivator.id, party.id, Math.floor(run.elapsedDays),
                 result.marks.tie
@@ -18128,12 +19515,21 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     //
     // Here rather than in each verb, because the next verb added would have the
     // same hole and nobody would notice.
+    // The no-cause branch has to say the word. "And that was the end of it."
+    // reads as the end of the FIGHT, and it was the only sentence a player got
+    // on the turn a duel killed them: measured in a played run, the account ran
+    // "Broken off. Both parties are worse than they were... 2 exchanges: 5
+    // dealt, 3 taken, which leaves 3 of 50. And that was the end of it." and
+    // then a line about how many people watched. Every subsequent turn came
+    // back 409. Nothing anywhere told the player they had died.
     if (body.died === true || body.alive === false) {
         const cause = typeof body.deathCause === 'string' ? body.deathCause : null;
         lines.push(
             cause === null
-                ? 'And that was the end of it.'
-                : `That was the end of it: ${DEATH_IN_WORLD[cause as keyof typeof DEATH_IN_WORLD] ?? cause.replace(/_/g, ' ')}.`
+                ? 'And that was the end of it - of the life, not of the fight. This cultivator is dead. '
+                  + 'The run is closed: there is no reload and no continuation, and what happens next happens to somebody else.'
+                : `That was the end of it: ${DEATH_IN_WORLD[cause as keyof typeof DEATH_IN_WORLD] ?? cause.replace(/_/g, ' ')}. `
+                  + 'The run is closed: there is no reload and no continuation, and what happens next happens to somebody else.'
         );
     }
 

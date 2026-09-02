@@ -429,7 +429,14 @@ describe('asking whether somebody could be moved does not move them', () => {
             ['deceive', who => `I deceive ${who}`],
             ['interrogate', who => `I interrogate ${who}`],
             ['recruit', who => `I recruit ${who}`],
-            ['negotiate', who => `I negotiate with ${who}`]
+            ['negotiate', who => `I negotiate with ${who}`],
+            // The eleventh, and the reason it is here is the reason this
+            // assertion exists at all: the engine has resolved a theft off a
+            // person through `interact` since the pressure model was wired, and
+            // the deterministic parser answered every phrasing of it with
+            // `unclear`. So the verb spent days for a player with a model
+            // configured and did nothing at all for a player without one.
+            ['steal', who => `I steal from ${who}`]
         ];
         expect(forms.map(([intent]) => intent).sort(), 'an intent was added and not played here')
             .toEqual([...INTERACT_INTENTS].sort());

@@ -565,6 +565,47 @@ export const ACTION_NAMES = [
      */
     'request',
     /**
+     * Proposing a match, and answering one that has been put to you.
+     *
+     * The other half of the life this game models. A cultivator climbs, stalls
+     * - which is what the Late Age premise says almost everybody does - and
+     * then has decades and a ceiling, and the thing to do with those decades is
+     * somebody else. None of the machinery for it was missing: the price of
+     * something singular its holder will not sell, the `marriage_pact` oath,
+     * the walk-out, the line that dilutes over three generations. What was
+     * missing is that a person at a table could reach any of it.
+     *
+     * `target` is who or whose house, `topic` is what is being put on the table
+     * and the list of what may go there is open, and `intent` says whether the
+     * sentence was proposing or agreeing. Nothing anywhere branches on gender,
+     * on who asked, or on which side of it the player is.
+     */
+    'propose',
+    /**
+     * Saying no to a match, and leaving one you are already in.
+     *
+     * One verb because they are one act pointed at two moments, and one
+     * implementation because the rule that binds NPCs binds the player: a
+     * player matched by their own house who runs, and somebody running from a
+     * clan that will not marry out, are the same call.
+     *
+     * A refusal is not free and is not automatic. What it leaves is priced by
+     * what the asking side staked, which is what stops "no" being a move
+     * nobody can afford and stops it being one that costs nothing.
+     */
+    'decline',
+    /**
+     * Having a child, and spending the years.
+     *
+     * The decision, not the clock. What the player chooses is to spend the
+     * time; the engine spends it the way it spends time everywhere, and this
+     * verb invents no second one. `days` carries the stretch and `target` the
+     * other parent - or, with `intent: 'place'`, the house a child is being
+     * placed at on somebody's word, which is `spendAWord` reaching a player for
+     * the first time.
+     */
+    'child',
+    /**
      * The parser did not understand, and nothing happens.
      *
      * A member of the closed set rather than a special case, so the exhaustive
@@ -711,6 +752,10 @@ export function theVerbsOwnName(text: string): ActionName | null {
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
     'move', 'gather', 'hunt', 'wait', 'work', 'refine', 'eat',
+    // Years, and they are the resource this world prices everything else in.
+    // A decade raising somebody is a decade nobody was cultivating in, and the
+    // food clock runs through it like any other stretch.
+    'child',
     // A course of care is a month lying still. It is the cheapest month in the
     // game and it is still a month, and the food clock runs through it.
     'treat',
@@ -815,7 +860,13 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
 export const FALLBACK_ACTION: ActionName = 'unclear';
 
 /** Actions that take a duration in days. Every other action ignores one. */
-export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'work', 'provision', 'legacy'] as const;
+export const TIMED_ACTIONS: readonly ActionName[] = [
+    'cultivate', 'seclude', 'work', 'provision', 'legacy',
+    // Raising somebody is a stretch of years and the sentence names it.
+    // The verb is the decision; the clock is the one every other stretch
+    // is spent on.
+    'child'
+] as const;
 
 /**
  * Actions that take a subject. The subject must resolve to a real entity - a
@@ -825,6 +876,11 @@ export const TIMED_ACTIONS: readonly ActionName[] = ['cultivate', 'seclude', 'wo
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
+    // Who is being proposed to, refused, or had a child with - or, for
+    // `child` with intent `place`, the house being asked. Resolved against the
+    // world like every other target, so a name nobody answers to reaches
+    // nothing.
+    'propose', 'decline', 'child',
     // The name being asked about. Matched against the holder's OWN rows and
     // never against the world, which is the whole gate - see `GameService.recall`.
     'recall',
@@ -1935,6 +1991,174 @@ const DUTY_PHRASES: readonly string[] = [...new Set(
  * sentences that are weighing rather than doing, because those belong to
  * `assess` and always did.
  */
+// ─────────────────────────────────────────────────────────────────────────
+// A MATCH, AND WHAT COMES OF ONE
+//
+// Three verbs a person types, and the reason they are three rather than one is
+// that they are three different questions to the engine: what would a house
+// take, what does saying no leave, and what do the years cost. Everything they
+// reach was already built and had no route to it.
+//
+// ── THE VOCABULARY TAKES BOTH OF EVERYTHING ──────────────────────────────
+//
+// Words like `son` and `daughter` appear below in pairs, and that is the
+// opposite of the asymmetry the design forbids: a player says the word they
+// say, and a parser that accepted one and not the other would decide something
+// about the world at the keyboard. Nothing downstream of here has any idea
+// which word was typed - the plan carries a name and a verb, and the engine
+// module that resolves it uses one type for both sides of a match.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The nouns that make a sentence about a match rather than about anything else. */
+export const A_MATCH_NOUN =
+    /\b(?:marriages?|marriage|match|matches|betrothals?|betrothed|engagements?|engaged|proposals?|unions?|weddings?|suitors?|in-?laws?)\b/;
+
+/** Saying it as a verb rather than as a noun. */
+export const MARRYING_VERBS =
+    /\b(?:marry|marries|marrying|married|wed|weds|wedding|betroth|betroths|betrothed)\b/;
+
+/** Putting a match to somebody, or saying yes to one already put to you. */
+export const PROPOSING_VERBS =
+    /\b(?:propose|proposes|proposing|offer|offers|offering|seek|seeks|seeking|ask|asks|asking|beg|begs|begging|approach|approaches|approaching|arrange|arranges|arranging|negotiate|negotiates|negotiating|accept|accepts|accepting|agree|agrees|agreeing|consent|consents|consenting|take|takes|taking)\b/;
+
+/** Saying yes, which is the same negotiation from the other side of the table. */
+export const AGREEING_TO_A_MATCH =
+    /\b(?:accept|accepts|accepting|agree|agrees|agreeing|consent|consents|consenting|say yes)\b/;
+
+/**
+ * Saying no, and walking out, in one vocabulary.
+ *
+ * One verb because they are one act pointed at two moments, and one
+ * implementation downstream because the rule that binds NPCs binds the player.
+ */
+export const DECLINING_VERBS =
+    /\b(?:decline|declines|declining|refuse|refuses|refusing|reject|rejects|rejecting|turn down|turns down|turning down|turn away|say no|says no|break off|breaks off|breaking off|call off|calls off|calling off|walk out|walks out|walking out|walk away|back out|backs out|run|runs|running|flee|flees|fleeing|escape|escapes|escaping|leave|leaves|leaving|will not|wont)\b/;
+
+/** What somebody is having, raising or placing. Both of every pair. */
+export const CHILD_NOUNS =
+    /\b(?:child|children|kid|kids|baby|babies|infant|infants|son|sons|daughter|daughters|heir|heirs|offspring|famil(?:y|ies)|household)\b/;
+
+/** Having one, and the decades that follow. */
+export const HAVING_A_CHILD =
+    /\b(?:have|has|having|raise|raises|raising|rear|rears|rearing|bring up|bringing up|brings up|start|starts|starting|found|founds|founding|bear|bears|bearing)\b/;
+
+/**
+ * Placing one, which is the favour reaching a player for the first time.
+ *
+ * `spendAWord` has written the obligation a placer carries since it was
+ * written, the world has used it for NPCs, and nothing has ever let the person
+ * playing spend one. For somebody with no house it is the only road there is.
+ */
+export const PLACING_A_CHILD =
+    /\b(?:place|places|placing|send|sends|sending|enrol|enrols|enroll|enrolls|enrolling|apprentice|apprentices|apprenticing)\b/;
+
+/** Who is being asked, out of the two shapes a proposal is said in. */
+export const PROPOSE_SUBJECT_VERBS =
+    /propose (?:a )?(?:match|marriage|union|betrothal)? ?(?:to|with)|propose to|propose|marriage to|marriage with|marriage into|match with|match for|match to|betrothal to|marry|marries|wed|weds|betroth|union with/;
+
+/** What is being put on the table, when the sentence names it. */
+export const WHAT_IS_BEING_OFFERED =
+    /\b(?:offer|offers|offering|put down|puts down|putting down|put up|pay|pays|paying|give|gives|giving|hand over)\s+(.{2,70}?)\s+(?:for|to|in exchange|in return)\b/i;
+
+/**
+ * Who a proposal is aimed at, including the shape `extractSubject` cannot read.
+ *
+ * "I ask X to marry me" puts the name in the middle of the sentence, and a
+ * trailing-noun extractor answers "X to marry me". That phrasing is the most
+ * natural one a person types, so it gets its own read rather than being lost.
+ */
+function whoTheMatchIsWith(input: string): string | undefined {
+    const inTheMiddle =
+        /\b(?:ask|asks|asking|beg|begs|begging|approach|approaches|approaching|want|wants|wanted)\s+(.{2,60}?)\s+(?:to marry|to wed|to be my|for (?:a |their |the )?(?:match|marriage|hand))/i
+            .exec(input);
+    if (inTheMiddle) return cleanPlace(inTheMiddle[1]);
+    const theirHouse =
+        /\b(?:match|marriage|betrothal|union)\s+(?:with|into|to)\s+(?:the\s+)?(.{2,60}?)\s*[.!?]?$/i
+            .exec(input);
+    if (theirHouse) return cleanPlace(theirHouse[1]);
+    return extractSubject(input, PROPOSE_SUBJECT_VERBS);
+}
+
+/**
+ * A match, a refusal, or a child - or null, which is the usual answer.
+ *
+ * Placed high in the table because a sentence about a match is full of other
+ * verbs' nouns - a house, a name, a purse, a favour - and every branch needs
+ * BOTH a verb and its own noun, so nothing here can fire on a sentence that
+ * merely mentions a family.
+ */
+function familyStep(text: string, input: string): PlannedAction | null {
+    // Asking ABOUT a match is a question, and the mood post-pass cannot help
+    // here because it would already have been handed a verb that costs
+    // something. Checked first and once.
+    const merelyAsking = /\b(?:about|whether|what|which|who|why|how)\b/.test(text);
+
+    // ── LEAVING, WHICH IS THE HALF THAT MAKES THE REST MEAN ANYTHING ─────
+    if (DECLINING_VERBS.test(text) && A_MATCH_NOUN.test(text) && !merelyAsking) {
+        return {
+            action: 'decline',
+            target: extractSubject(
+                input,
+                /(?:from|out of|off) (?:the |this |my |our )?(?:match|marriage|betrothal|engagement|union)|decline|refuse|reject|turn down|say no to/
+            ),
+            // What kind of no it is. Read for dispatch and never to decide an
+            // outcome - what leaving costs is the same function either way.
+            intent: /\b(?:run|runs|running|flee|flees|fleeing|escape|escapes|escaping|walk out|walks out|walking out|walk away|leave|leaves|leaving|break off|breaks off|call off)\b/.test(text)
+                ? 'leave'
+                : 'refuse'
+        };
+    }
+
+    // ── A CHILD: HAVING ONE, AND PLACING ONE ─────────────────────────────
+    if (CHILD_NOUNS.test(text) && !merelyAsking) {
+        if (PLACING_A_CHILD.test(text) && /\b(?:at|with|into|in|to)\b/.test(text)) {
+            return {
+                action: 'child',
+                intent: 'place',
+                // The house, not the child. Placing is a question put to a
+                // door, and the door is what has to resolve.
+                target: extractSubject(
+                    input,
+                    /place .{0,40} (?:at|with|in|into)|send .{0,40} to|enrol .{0,40} (?:at|in|with)|apprentice .{0,40} to|at|with/
+                )
+            };
+        }
+        if (HAVING_A_CHILD.test(text)) {
+            return {
+                action: 'child',
+                intent: 'have',
+                target: extractSubject(
+                    input,
+                    /(?:child|children|son|daughter|kid|famil(?:y|ies)|heir)s? (?:with|by)|with|by/
+                )
+            };
+        }
+    }
+
+    // ── PROPOSING, AND AGREEING, WHICH ARE ONE NEGOTIATION ───────────────
+    const proposing = MARRYING_VERBS.test(text)
+        || (PROPOSING_VERBS.test(text) && A_MATCH_NOUN.test(text));
+    if (proposing && !merelyAsking) {
+        const offered = WHAT_IS_BEING_OFFERED.exec(input);
+        return {
+            action: 'propose',
+            target: whoTheMatchIsWith(input),
+            // Which side of the table the sentence is spoken from. Dispatch
+            // only; the price and the answer are the same either way.
+            intent: AGREEING_TO_A_MATCH.test(text) && !/\b(?:propose|offer)\b/.test(text)
+                ? 'accept'
+                : 'propose',
+            // What is being put down, in the player's own words. NOTHING
+            // downstream branches on what kind of thing it is - it is asked one
+            // question, which is how high it carries whoever receives it - so
+            // the list of what may go here is open and always was.
+            ...(offered ? { topic: cleanPlace(offered[1]) } : {})
+        };
+    }
+
+    return null;
+}
+
 function siteStep(text: string, input: string): PlannedAction | null {
     if (WEIGHING_RATHER_THAN_GOING.test(text)) return null;
 
@@ -2685,7 +2909,7 @@ const LEVERAGE_BEHIND_INTENT: Readonly<Partial<Record<string, z.infer<typeof App
 
 export const INTERACT_INTENTS = [
     'talk', 'negotiate', 'trade', 'deceive', 'interrogate',
-    'threaten', 'bribe', 'recruit', 'apologise', 'seduce'
+    'threaten', 'bribe', 'recruit', 'apologise', 'seduce', 'steal'
 ] as const;
 
 /**
@@ -2711,7 +2935,12 @@ export const INTERACT_INTENTS = [
  * WITH and never whether an attempt was made.
  */
 export const PRESSING_SOMEBODY: ReadonlySet<string> = new Set([
-    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit'
+    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit',
+    // Taking off a person is an attempt against them, resolved by the same
+    // machine and at the same price as leaning on one. It is on this side of
+    // the split and not the free one because it spends the days it spends
+    // whether or not it comes off.
+    'steal'
 ]);
 
 export const PlannedActionSchema = z.object({
@@ -2993,6 +3222,32 @@ function extractDestination(input: string): string | undefined {
     return bare ? cleanPlace(bare[1]) : undefined;
 }
 
+/**
+ * What a look was pointed AT, when it was pointed at anything.
+ *
+ * Requires the preposition, so "I look around" and "I look for someone" keep
+ * the branches they already have and only a sentence with an object in it
+ * produces one.
+ */
+const LOOKED_AT = /\blooks?(?:ing)?\s+(?:at|over|upon)\s+(.{2,80}?)\s*[.!?]?$/i;
+
+/**
+ * Words that name the scene rather than anything in it.
+ *
+ * "I look at the sky" is a look. It has an object in it grammatically and no
+ * object in it as far as the world is concerned - there is no sky row, and
+ * routing it to the verb that resolves entities would answer a moment of
+ * atmosphere with "nothing here answers to it".
+ *
+ * A closed set, the same shape and for the same reason as `ANYBODY` and
+ * `POINTING`: everything in it is scenery or a synonym for the surroundings, so
+ * a name can never land in it. It is deliberately short - it exists to stop
+ * {@link LOOKED_AT} stealing the sentences the room read already owns, not to
+ * enumerate the sky.
+ */
+const THE_SCENE_ITSELF =
+    /^(?:the\s+)?(?:sky|skies|stars?|moon|sun|clouds?|weather|horizon|view|scenery|landscape|surroundings|ground|earth|it all|everything|this place|the place|my surroundings)$/i;
+
 function cleanPlace(raw: string): string | undefined {
     const cleaned = raw.replace(/^\s*the\s+/i, '').trim();
     return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
@@ -3032,6 +3287,28 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['enter', /\b(?:enter|go into|goes into|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
     ['follow', /\b(?:follow|shadow|trail|tail)\b/],
+    /**
+     * Getting there on something rather than on foot.
+     *
+     * `move` and not `interact`, because what a person arrives on is a fact
+     * about the JOURNEY: `engine/world/what-a-conveyance-does-to-a-journey.ts`
+     * prices a mount, a carriage and a spirit craft against the days and the
+     * range, and `trust.md` reads what a witness makes of the arrival off the
+     * same thing. A beast somebody rides is a way of covering ground, and the
+     * verb belongs beside `travel`.
+     *
+     * Ahead of `travel` so that "I ride to Nine Peaks" is labelled for what it
+     * was rather than folded into walking. The label is the whole of the
+     * difference for now - every `move` resolves through one movement routine
+     * whichever intent matched - which is exactly what makes it safe to add
+     * before the conveyance layer is reachable, and what stops the verb being
+     * unreachable when it is.
+     *
+     * `mount` is deliberately absent. `\bmount\b` does not match "mountain",
+     * but it does match "I mount the steps", and there is no demonstrated
+     * sentence needing it.
+     */
+    ['ride', /\b(?:ride|rides|riding|rode|ridden)\b/],
     ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
 ];
 
@@ -3062,7 +3339,7 @@ const AIMED_AT_THE_LADDER =
 
 const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
 
-const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move/;
+const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
 const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['deceive', /\b(?:lie to|deceive|mislead|misdirect|bluff|pretend|disguise|pose as|feign|trick)\b/],
@@ -3077,6 +3354,28 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
      */
     ['seduce', /\b(?:seduce|seduces|seducing|court|courting|woo|charm|flirt|flatter|win (?:him|her|them) over|make (?:him|her|them) fond of me|get close to)\b/],
     ['threaten', /\b(?:threaten|intimidate|menace|warn (?:him|her|them)|make (?:him|her|them) afraid)\b/],
+    /**
+     * Taking it off a PERSON, which is not the same verb as taking it out of a
+     * house's reserves.
+     *
+     * The sect branch above owns the reserves - it fires only on a sentence
+     * carrying a house or treasury noun, and it runs earlier - so "I steal from
+     * the sect treasury" is still a months-long siphon and "I steal from Shen
+     * Wanshi" is this. The grave is likewise already claimed, by `site`.
+     *
+     * WHY IT HAS TO BE HERE AT ALL. The engine has resolved a theft off a
+     * person since the pressure model was wired, through `interact`, and only a
+     * MODEL could reach it: the deterministic parser answered every phrasing of
+     * it with `unclear`. So the same sentence did something with a provider
+     * configured and nothing without one, which `both-modes-hand-the-engine-
+     * the-same-action.test.ts` exists to prevent and could not see, because it
+     * compares the parser against itself.
+     *
+     * `pick ... pocket` is on the list because it is the plainest way anybody
+     * says the small version, and `mug` and `rob` because they are what a
+     * player types when they mean the large one.
+     */
+    ['steal', /\b(?:steal|steals|stealing|stole|rob|robs|robbing|mug|mugs|mugging|pickpocket|pick (?:his|her|their|the)\s+\w*\s*pockets?|help myself to (?:his|her|their)|take (?:it )?off (?:him|her|them))\b/],
     ['bribe', /\b(?:bribe|pay off|grease|buy (?:his|her|their) silence)\b/],
     ['interrogate', /\b(?:interrogate|question|press (?:him|her|them)|demand to know|grill)\b/],
     ['trade', /\b(?:trade|buy|sell|purchase|barter|haggle|market|shop|price)\b/],
@@ -3126,7 +3425,7 @@ export function parseAsk(input: string): { person?: string; topic?: string } | n
     return { ...(person ? { person } : {}), ...(topic ? { topic } : {}) };
 }
 
-const INTERACT_SUBJECT_VERBS = /interact with|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell/;
+const INTERACT_SUBJECT_VERBS = /interact with|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
 
 function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>): string | undefined {
     for (const [label, pattern] of table) {
@@ -3978,6 +4277,13 @@ function planIntent(input: string): PlannedAction {
     // verb that costs nothing.
     const named = theVerbsOwnName(text);
     if (named !== null) return { action: named };
+
+    // A match, a refusal, or a child. High in the table because a sentence
+    // about a match is full of other verbs' nouns - a house, a name, a purse,
+    // a favour - and safe there because every branch of it needs both a verb
+    // and its own noun. See `familyStep`.
+    const family = familyStep(text, input);
+    if (family !== null) return family;
 
     // -- attacking somebody, which had no route at all --
     //
@@ -5105,6 +5411,39 @@ function planIntent(input: string): PlannedAction {
     if (/\b(?:who(?:'s| is| are)? (?:here|around|about|nearby)|is (?:anyone|anybody|somebody) (?:here|about|around)|look for (?:someone|somebody|anyone)|who else is|anybody about|see (?:anyone|anybody|who is here))\b/.test(text)
         || /\bwho (?:is|was|are|were)\s+(?:that|this|the one\b|he\b|she\b|they\b|them\b|these people|those people)/.test(text)) {
         return { action: 'look', intent: 'company' };
+    }
+
+    {
+        // ── LOOKING AT SOMEBODY IS NOT LOOKING AROUND ────────────────────
+        //
+        // Measured in play: "I look at <a person standing here>" answered with
+        // the weather, the ambient band and who else was about, because this
+        // branch produced a bare `look` and threw the object of the sentence
+        // away. The player had asked about a person and got the room - the
+        // deflection failure this repo keeps finding, and worse than a refusal
+        // because it reads like an answer.
+        //
+        // `investigate` is where reading a person already lives: it is the
+        // verb the glossary defines as "examine a place, a PERSON, a record,
+        // an inscription, an object", it is in `READ_ONLY_ACTIONS` so it
+        // cannot spend a day on a misparse, and its own no-subject branch
+        // falls back to exactly the room description this branch would have
+        // given. So a named object routes there and a bare look does not, and
+        // nothing that resolves to nothing costs anything.
+        //
+        // Deliberately NOT gated on whether the object is a person. The parser
+        // cannot tell a face from a stele and must not guess; what it can do
+        // is stop discarding the noun, and let the layer holding the roster
+        // and the catalogs decide what was meant.
+        //
+        // Checked ahead of the room read rather than inside it, because the
+        // room read is anchored on `^i looks?` and a pointed look is not always
+        // at the head of the sentence - "looking at the stele" reached nothing
+        // at all for as long as the two were one branch.
+        const at = LOOKED_AT.exec(input);
+        const named = at ? at[1].trim() : '';
+        const looked = at && !THE_SCENE_ITSELF.test(named) ? cleanPlace(named) : undefined;
+        if (looked) return { action: 'investigate', target: looked };
     }
 
     if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|take in (?:my|the) surroundings|where am i|what do i see|what is (?:here|around))\b/.test(text)

@@ -20,7 +20,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ACTION_NAMES, TIME_CONSUMING_ACTIONS, parseIntent, type ActionName } from '../../src/web/actions.js';
+import {
+    ACTION_NAMES,
+    INTERACT_INTENTS,
+    MOVE_INTENTS,
+    TIME_CONSUMING_ACTIONS,
+    parseIntent,
+    type ActionName
+} from '../../src/web/actions.js';
 
 /**
  * How a player asks for each action, in their own words.
@@ -410,6 +417,25 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // The trust hierarchy's strongest check, put to the character. Every one
     // of these names an ART, which is the whole of what keeps the verb from
     // stealing `recall`'s questions about names and faces.
+    propose: [
+        'I propose a match to Bai Jinglu',
+        'I ask Bai Jinglu to marry me',
+        'I offer the Xu a marriage',
+        'I want to marry into the Xu',
+        'I accept the match'
+    ],
+    decline: [
+        'I refuse the match',
+        'I turn down the proposal',
+        'I say no to the betrothal',
+        'I run from the marriage'
+    ],
+    child: [
+        'I have a child with Bai Jinglu',
+        'I raise a child with Bai Jinglu',
+        'I start a family with Bai Jinglu',
+        'I place my child at the Azure Cloud Pavilion'
+    ],
     recognise: [
         "is this the Azure Cloud Pavilion's art",
         'whose art is that',
@@ -438,6 +464,120 @@ describe('every action in the closed set is reachable from plain English', () =>
             name => name !== 'unclear' && !covered.has(name)
         );
         expect(uncovered, `no phrasings written for: ${uncovered.join(', ')}`).toEqual([]);
+    });
+});
+
+/**
+ * ── THE HOLE THIS FILE HAD, AND WHY IT COULD NOT SEE IT ──────────────────
+ *
+ * Everything above enumerates `ACTION_NAMES`, and that is the whole of what
+ * "unreachable" was ever checked against. But `interact` and `move` are not one
+ * behaviour each - they are DOORS, and what is behind them is chosen by the
+ * INTENT. Seven of the interact intents reach the pressure model and settle
+ * something; the rest describe somebody and settle nothing. So an intent the
+ * parser cannot produce is exactly as unreachable as an action it cannot
+ * produce, and nothing here was looking.
+ *
+ * Found by playing, which is the only thing that was ever going to find it:
+ * `steal from <somebody>` and `ride <somewhere>` both reached the engine when a
+ * MODEL routed the sentence and both answered `unclear` from the deterministic
+ * parser. Two supported verbs, reachable only by having a provider configured.
+ *
+ * `misparse.test.ts` could not catch it either, and for a reason worth naming:
+ * it asserts that a sentence does NOT reach the wrong verb, and `unclear` is
+ * never the wrong verb. `I steal from the market stall keeper` is in that file's
+ * own table, asserted not to be `market`, and it passed for as long as it
+ * reached nothing at all. A guard that only checks the negative cannot tell
+ * silence from correctness.
+ *
+ * So: every member of both intent vocabularies, in the words somebody types.
+ * A member added to either list without a phrasing here fails the last test in
+ * each block, the same way a new action does.
+ */
+describe('every intent behind a door is reachable from plain English too', () => {
+    const INTERACT_PHRASINGS: Record<string, readonly string[]> = {
+        talk: ['I talk to the old woman', 'I speak to the gate guard'],
+        negotiate: ['I negotiate with the broker', 'I bargain with the steward'],
+        // "I haggle with the stall keeper" is NOT here and it is not an
+        // oversight: it reaches `market`, which owns the counter, and that is
+        // the better answer to a sentence about a stall.
+        trade: ['I trade with the pedlar', 'I barter with the courier'],
+        deceive: ['I lie to the steward', 'I bluff the gate guard'],
+        interrogate: ['I interrogate the clerk', 'I press him for the truth'],
+        threaten: ['I threaten the clerk', 'I intimidate the gate guard'],
+        bribe: ['I bribe the gate guard', 'I pay off the clerk'],
+        // "I hire the porter" reaches `buy`, which is a live collision worth
+        // knowing about - hiring a person is not a line on a price board - and
+        // it belongs to whoever owns that branch rather than to this guard.
+        recruit: ['I recruit the swordsman', 'I enlist the swordsman'],
+        apologise: ['I apologise to the elder', 'I make amends with the steward'],
+        seduce: ['I seduce the steward', 'I woo the gate warden'],
+        // The pair that were unreachable. Written the several ways a player
+        // says them, per the repo's rule that a working near-synonym beside a
+        // failing one is a bug rather than a preference.
+        steal: [
+            'I steal from Shen Wanshi',
+            'I rob the merchant',
+            'I steal from the market stall keeper'
+        ]
+    };
+
+    for (const [intent, phrasings] of Object.entries(INTERACT_PHRASINGS)) {
+        it(`interact/${intent}: ${phrasings.length} phrasings all route there`, () => {
+            const misses = phrasings
+                .map(text => [text, parseIntent(text)] as const)
+                .filter(([, got]) => got.action !== 'interact' || got.intent !== intent)
+                .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
+            expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
+
+    it('covers every interact intent, so a new one cannot ship unreachable', () => {
+        const covered = new Set(Object.keys(INTERACT_PHRASINGS));
+        const uncovered = INTERACT_INTENTS.filter(name => !covered.has(name));
+        expect(uncovered, `no phrasings written for: ${uncovered.join(', ')}`).toEqual([]);
+    });
+
+    const MOVE_PHRASINGS: Record<string, readonly string[]> = {
+        travel: ['I travel to Nine Peaks', 'I set out for Scarwater'],
+        flee: ['I flee', 'I run away from the fight'],
+        approach: ['I approach the elder', 'I walk up to the gate warden'],
+        enter: ['I enter the village', 'I go into the courtyard'],
+        follow: ['I follow the merchant', 'I shadow the courier'],
+        // The other one that was unreachable. `move` and not `interact`,
+        // because what somebody arrives on is a fact about the journey - see
+        // the row in `MOVE_INTENT_PATTERNS` and
+        // `engine/world/what-a-conveyance-does-to-a-journey.ts`.
+        ride: ['I ride to Nine Peaks', 'I ride the horse to Scarwater']
+    };
+
+    for (const [intent, phrasings] of Object.entries(MOVE_PHRASINGS)) {
+        it(`move/${intent}: ${phrasings.length} phrasings all route there`, () => {
+            const misses = phrasings
+                .map(text => [text, parseIntent(text)] as const)
+                .filter(([, got]) => got.intent !== intent)
+                .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
+            expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
+        });
+    }
+
+    it('covers every move intent the prompt suggests', () => {
+        const covered = new Set(Object.keys(MOVE_PHRASINGS));
+        const uncovered = MOVE_INTENTS.filter(name => !covered.has(name));
+        expect(uncovered, `no phrasings written for: ${uncovered.join(', ')}`).toEqual([]);
+    });
+
+    /**
+     * And the negative, which is the half `misparse.test.ts` owns everywhere
+     * else: neither new verb may steal the sentence next door. Stealing from a
+     * HOUSE is months of siphoning, robbing a GRAVE is the site layer, and
+     * reading the reserves is a question rather than an act.
+     */
+    it('does not take the takings that already have a home', () => {
+        expect(parseIntent('I steal the sect treasury').action).toBe('sect');
+        expect(parseIntent('I steal the sect treasury').intent).toBe('siphon');
+        expect(parseIntent('I rob the grave of Shen Guyi').action).toBe('site');
+        expect(parseIntent('what do the sect reserves hold').action).toBe('sect');
     });
 });
 
