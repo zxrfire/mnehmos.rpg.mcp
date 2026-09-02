@@ -10,6 +10,11 @@
  * leave a closing window late. This module is the other half: the thing it is
  * FOR, which is getting somewhere.
  *
+ * THE CURVE HAS NO EXCEPTIONS. Every fold in the world is priced on
+ * {@link foldRangeInWalkingDays}, `convergence.ts` included, so there is no
+ * place on the map or in the engine where somebody at 44 reaches exactly as far
+ * as somebody at 29.
+ *
  * The unit is a WALKING DAY, because that is what every road in this world is
  * already quoted in - `travelDays` on a `RegionConnection` - and inventing a
  * second unit for distance would be a second opinion about how far apart two
@@ -23,19 +28,20 @@
  * institution already moves people without crossing the distance, and its
  * shape decides what a personal fold is allowed to be.
  *
- *   WHAT THE SPAN CAN DO      fold a courier down a route it has SURVEYED, and
- *                             build a one-way gate at ruinous cost. It holds
- *                             nine inherited terminals that still answer and
- *                             did not build any of them.
- *   WHAT IT CANNOT DO         produce an original true-distance measurement. It
- *                             maintains a Wide Age table and has never extended
- *                             it in five thousand years. Its own estimate of
- *                             what working a terminal takes is a realm nobody
- *                             in the world currently occupies.
- *   WHAT IT SELLS             the FIX, not the fold. A courier contract is
- *                             priced per li of TRUE distance, off figures only
- *                             the house can state, for pairs of points nobody
- *                             now living has surveyed.
+ *   WHAT THE SPAN CAN DO      SEND OTHER PEOPLE THROUGH. That is the whole
+ *                             difference and it is why they are a Dao house:
+ *                             everybody else who folds space does it only for
+ *                             themselves, because a personal fold is your own
+ *                             refinement doing the work. The house's
+ *                             UNDERSTANDING does the work instead, so a courier
+ *                             at ordinal 10 can be sent, and so can somebody
+ *                             who will never fold in their life.
+ *   WHAT IT CANNOT DO         produce an original true-distance measurement, or
+ *                             reopen one of the twenty-two closed terminals.
+ *                             Both are Wide Age work.
+ *   WHAT IT SELLS             the FIX, not the fold, and therefore the one
+ *                             journey nothing else in the world offers at any
+ *                             price: to somewhere the buyer has never been.
  *
  * So the binding scarcity in this world is not power. It is knowing where the
  * far end is. That is the constraint this module is built on, and it is why the
@@ -44,18 +50,22 @@
  *
  * ── The two are different shapes, and neither makes the other pointless ──
  *
- * The Span moves OTHER PEOPLE AND CARGO between FIXED POINTS, for a price, for
- * anybody who can pay, off a table it inherited. A cultivator moves THEMSELVES,
- * from wherever they happen to be standing, to somewhere they have been or can
- * see, and carries nothing and nobody. Neither substitutes for the other, and
- * the reason a Void Refinement cultivator still hires a courier is that a
- * courier can be sent somewhere the cultivator has never been.
+ * A PASSENGER NEEDS NO FIX OF THEIR OWN; they need the Span to have one. A
+ * cultivator folding themselves needs their own, and their own rung. So the
+ * ladder does not have the Span at the top of it - the Span cuts ACROSS it,
+ * available to anybody standing at a counter with the stones, and it is the
+ * only door somebody below {@link FOLD_FLOOR_ORDINAL} has to the far half of
+ * the map. `buying-passage-at-a-measured-span-counter.ts` is that half.
  *
- * And note where the ladders sit. The Span's reliable rung is 25 and its Elder
- * Surveyors stall in the mid-twenties, which is BELOW {@link FOLD_FLOOR_ORDINAL}.
- * The house that understands space better than anybody alive mostly cannot fold
- * at all, personally, and works off the table instead. Nothing here changes
- * that, and nothing here may hand a cultivator the table.
+ * ── And the Span's reliable rung is not an embarrassment ─────────────────
+ *
+ * `reliableOrdinal` 25 sits below the folding floor and that is not a house
+ * failing at its own trade, because its trade was never "our members fold" -
+ * it is moving other people, which is work a member below the floor does all
+ * day. The house is in a weak period against its own past and is working its
+ * way back up; `faction-character.ts` carries that as a live internal split
+ * rather than a mood. Do not write them as clerks maintaining a table they
+ * cannot use. Nothing here may hand a cultivator that table.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * WHAT RANGE DOES NOT BUY
@@ -140,9 +150,11 @@ export const FOLD_FLOOR_ORDINAL = 29;
  * nowhere else, which is the honest reading of the grant's own word for itself,
  * "short-range".
  *
- * `convergence.ts` prices a full-strength pierce at exactly this figure and now
- * reads it from here, because the two were the same physical fact carried in
- * two constants.
+ * `convergence.ts` reads this rather than restating it, because the two were
+ * the same physical fact carried in two constants. It is the FLOOR of this
+ * curve there as it is here: a rescuer folding into a closing site reaches as
+ * far as their own rung buys, and only somebody standing exactly at the floor
+ * gets this figure.
  */
 export const FOLD_RANGE_AT_THE_FLOOR = 6;
 
@@ -444,8 +456,9 @@ export const FOLD_TRAVEL_ENGINE_GAP = {
     whyItIsNotDoneHere: 'Both files are owned by other agents and one of them is uncommitted. A journey seam edited from two ends at once is the failure AGENTS.md names.'
 } as const;
 
-// The one place a fold's reach does NOT grow with the rung is
-// `convergence.ts`, and `PIERCE_REACH_DAYS` there carries the reason. It is a
-// deliberate boundary rather than an oversight: inside a closing convergence
-// the far end is receding, so there is nothing to take a fix on and nothing for
-// the ordinal to buy.
+// The curve has no exceptions. `convergence.ts` prices its escape from a
+// closing window off `foldRangeInWalkingDays` like everything else, then scales
+// it by what is left of the window - so rank buys depth and never time, and a
+// call that goes out late fails on geometry however high the person answering
+// stands. `PIERCE_REACH_DAYS` there is the floor of this curve rather than a
+// ceiling on it.

@@ -120,6 +120,18 @@
  *                    whole business and the thing it inherited rather than
  *                    derived.
  *
+ *   buying-passage-at-a-measured-span-counter.ts
+ *                    the other way to cross the map, and the only one open to
+ *                    somebody who will never fold: a ticket. The Span sends
+ *                    OTHER people through, which is what makes it a Dao house -
+ *                    its understanding does the work, so the passenger's rung
+ *                    does not carry them and does not gate them, it only
+ *                    decides what the crossing costs their body. A counter is
+ *                    also where the map is listed, which is the more important
+ *                    half: a board of places, distances and prices is how
+ *                    somebody who has never left their province finds out there
+ *                    is anywhere else.
+ *
  *   ruin-mechanics.ts  things a ruin does that are not damage: a map that
  *                    records rooms and never the edges, an identity worn in its
  *                    own era, qi as the only light, and a routine kept by the
@@ -200,6 +212,7 @@ export * from './seeding.js';
 export * from './provenance.js';
 export * from './convergence.js';
 export * from './how-far-somebody-can-fold-space-and-what-it-costs.js';
+export * from './buying-passage-at-a-measured-span-counter.js';
 export * from './ruin-mechanics.js';
 export * from './cascade.js';
 export * from './pressure.js';

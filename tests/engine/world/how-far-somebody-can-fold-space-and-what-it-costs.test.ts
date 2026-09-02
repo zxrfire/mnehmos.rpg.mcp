@@ -27,8 +27,14 @@ import {
     PIERCE_GRANT,
     PIERCE_REACH_DAYS,
     convergenceOf,
-    pierceReach
+    expeditionBudget,
+    pierceReach,
+    rescuersFor
 } from '../../../src/engine/world/convergence.js';
+import { withWings, type RuinWing } from '../../../src/engine/world/provenance.js';
+import { createNpc, setRealm, upsertRelationship } from '../../../src/engine/world/npc-state.js';
+import { makeLocation, makeThresholds } from '../../../src/engine/world/locations.js';
+import type { WorldState } from '../../../src/engine/world/world-state.js';
 import {
     grantsAvailableAt,
     grantsHeldWith,
@@ -47,6 +53,24 @@ const SHORTEST_ROAD = Math.min(...ROADS);
 const WIDEST_ROAD = Math.max(...ROADS);
 
 const HOLDS = [FOLD_GRANT] as const;
+
+/** A cycling site with wings at four depths, shallow to past the window. */
+function ruinWithWings(): LocationRecord {
+    const wing = (id: string, depthDays: number): RuinWing => ({
+        id, name: id, sealed: false, state: 'untouched',
+        workings: 0, lastWorkedOnDay: null, depthDays
+    });
+    return withWings(
+        makeLocation({
+            id: 'loc-fold-ruin',
+            name: 'the deep compound',
+            kind: 'ruin',
+            thresholds: makeThresholds(4, 8, 14, 20),
+            cycle: { periodDays: 3600, openDays: 30, phaseDay: 0 }
+        }),
+        [wing('near', 4), wing('mid', 14), wing('deep', 22), wing('far', 60)]
+    );
+}
 
 describe('the floor is the rung the capability layer already puts folding at', () => {
     it('starts exactly where spatial_folding becomes available', () => {
@@ -258,28 +282,33 @@ describe('arriving without having travelled is a fact a witness reads', () => {
     });
 });
 
-describe('the convergence pierce still behaves exactly as it did', () => {
+describe('the convergence pierce is priced on the same curve as every other fold', () => {
     const site = (): LocationRecord => ({
         cycle: { periodDays: 3600, openDays: 30, phaseDay: 0 },
         sealed: false
     } as unknown as LocationRecord);
 
-    it('prices a full-strength pierce at the fold\'s reach at the floor', () => {
+    it('starts a pierce at the fold\'s reach at the floor, and calls it the floor', () => {
         expect(PIERCE_REACH_DAYS).toBe(FOLD_RANGE_AT_THE_FLOOR);
         expect(PIERCE_REACH_DAYS).toBe(6);
         expect(PIERCE_GRANT).toBe(FOLD_GRANT);
+        // The floor of the curve, not a ceiling on it: somebody standing at the
+        // rung where folding begins gets exactly this and everybody above gets
+        // more.
+        const convergence = convergenceOf(site(), 0);
+        expect(pierceReach(convergence, { realmOrdinal: FOLD_FLOOR_ORDINAL, heldGrants: HOLDS }))
+            .toBe(PIERCE_REACH_DAYS);
     });
 
-    it('does not grow with the rung there, and that boundary is deliberate', () => {
-        // What a waning convergence spends is the site receding, and a receding
-        // far end is not a distance on anybody's table. Everywhere else a fold
-        // reaches further the higher the folder stands; here it does not, and a
-        // change that "fixes" this is changing that module's design.
+    it('reaches further into a closing site the higher the folder stands', () => {
+        // The ruling is range increases with ordinal, and a ruin door is not an
+        // exception to it. A master four realms above the one who came last
+        // time comes further in.
         const convergence = convergenceOf(site(), 0);
         const low = pierceReach(convergence, { realmOrdinal: 29, heldGrants: HOLDS });
         const high = pierceReach(convergence, { realmOrdinal: 44, heldGrants: HOLDS });
-        expect(low).toBe(high);
-        expect(low).toBe(PIERCE_REACH_DAYS);
+        expect(high).toBeGreaterThan(low);
+        expect(high).toBeCloseTo(foldRangeInWalkingDays(44), 1);
     });
 
     it('still returns nothing to anybody who cannot fold', () => {
@@ -288,12 +317,101 @@ describe('the convergence pierce still behaves exactly as it did', () => {
         expect(pierceReach(convergence, { realmOrdinal: 44, heldGrants: [] })).toBe(0);
     });
 
-    it('still wanes to nothing as the window closes', () => {
+    it('still wanes to nothing as the window closes, at every rung', () => {
+        // The property that does the work here was never shortness, it is the
+        // waning - and the waning multiplies whatever the folder brought, so it
+        // still reaches zero at the close for the highest person alive.
         const location = site();
-        const atOpen = pierceReach(convergenceOf(location, 0), { realmOrdinal: 44, heldGrants: HOLDS });
-        const atClose = pierceReach(convergenceOf(location, 30), { realmOrdinal: 44, heldGrants: HOLDS });
-        expect(atOpen).toBe(PIERCE_REACH_DAYS);
-        expect(atClose).toBe(0);
+        for (const ordinal of [FOLD_FLOOR_ORDINAL, 37, 44]) {
+            const atOpen = pierceReach(convergenceOf(location, 0), { realmOrdinal: ordinal, heldGrants: HOLDS });
+            const halfway = pierceReach(convergenceOf(location, 15), { realmOrdinal: ordinal, heldGrants: HOLDS });
+            const atClose = pierceReach(convergenceOf(location, 30), { realmOrdinal: ordinal, heldGrants: HOLDS });
+            expect(atOpen).toBeCloseTo(foldRangeInWalkingDays(ordinal), 1);
+            expect(halfway).toBeLessThan(atOpen);
+            expect(atClose).toBe(0);
+        }
+    });
+
+    it('does not let a wing be both foldable and beyond the window', () => {
+        // `bestEver` used to credit every actor with the floor reach, including
+        // the mortals who are the only people actually in here. Now that the
+        // reach is theirs, the ceiling has to be theirs too, or a wing comes
+        // back reachable-by-fold and out of reach in the same row.
+        const location = ruinWithWings();
+        for (const ordinal of [4, 20, FOLD_FLOOR_ORDINAL, 40]) {
+            const budget = expeditionBudget(location, 0, {
+                realmOrdinal: ordinal, heldGrants: HOLDS
+            });
+            for (const wing of budget.wings) {
+                expect(wing.needsPierce && wing.beyondTheWindow).toBe(false);
+            }
+        }
+    });
+
+    it('gives somebody higher a shorter list of wings they cannot reach', () => {
+        const location = ruinWithWings();
+        const low = expeditionBudget(location, 0, { realmOrdinal: 4, heldGrants: HOLDS });
+        const high = expeditionBudget(location, 0, { realmOrdinal: 40, heldGrants: HOLDS });
+        expect(high.unreachableWings.length).toBeLessThanOrEqual(low.unreachableWings.length);
+        expect(high.piercedDepth).toBeGreaterThan(low.piercedDepth);
+    });
+});
+
+describe('a rescuer\'s reach is their own, which is what makes the tie matter', () => {
+    const pavilion = (): LocationRecord => ({
+        id: 'loc-pav',
+        name: 'the Pavilion',
+        cycle: { periodDays: 400 * 365, openDays: 40, phaseDay: 0 },
+        sealed: false
+    } as unknown as LocationRecord);
+
+    function worldWithMaster(ordinal: number): WorldState {
+        const subject = setRealm(createNpc('inside', {
+            id: 'npc-inside', bornOnDay: 0, onDay: 3650, locationId: 'loc-pav'
+        }), 8, 3650);
+        const master = upsertRelationship(
+            setRealm(createNpc('master', {
+                id: 'npc-master', bornOnDay: 0, onDay: 3650, locationId: 'loc-hall'
+            }), ordinal, 3650),
+            {
+                targetId: 'npc-inside', targetName: subject.name,
+                kind: 'master', standing: 0.9, note: ''
+            },
+            0
+        );
+        return { npcs: [subject, master] } as unknown as WorldState;
+    }
+
+    const ask = (ordinal: number, depthDays: number, day: number) =>
+        rescuersFor(worldWithMaster(ordinal), {
+            subject: worldWithMaster(ordinal).npcs[0],
+            location: pavilion(), depthDays, day
+        });
+
+    it('reaches deeper for a higher master, on the same day, into the same site', () => {
+        const near = ask(FOLD_FLOOR_ORDINAL, 1, 1)[0];
+        const far = ask(44, 1, 1)[0];
+        expect(far.reach).toBeGreaterThan(near.reach);
+    });
+
+    it('turns a depth one master cannot cover into one another can', () => {
+        // The design consequence worth having: whose student you are is now a
+        // fact about how deep you may go, and it is legible before you go.
+        const depth = 20;
+        expect(ask(FOLD_FLOOR_ORDINAL, depth, 1)[0].reachesYou).toBe(false);
+        expect(ask(40, depth, 1)[0].reachesYou).toBe(true);
+    });
+
+    it('still fails on geometry when the call goes out late, at any rung', () => {
+        // Day 39 of a 40-day window. The waning multiplies whatever they
+        // brought, so rank does not buy back the time.
+        for (const ordinal of [FOLD_FLOOR_ORDINAL, 40, 44]) {
+            expect(ask(ordinal, 20, 39)[0].reachesYou).toBe(false);
+        }
+    });
+
+    it('still reports nobody where the tie is to somebody who cannot fold', () => {
+        expect(ask(FOLD_FLOOR_ORDINAL - 1, 1, 1)).toHaveLength(0);
     });
 });
 

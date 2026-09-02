@@ -1876,8 +1876,9 @@ existed reads as anonymous and untouched - the honest default.
 **`convergence.ts` - the consequence half of `OpeningCycle`.** That field has been on the
 record since the location layer was written and nothing in play consumed it. The escape
 from a closing window is `spatial_folding`, an existing Void Refinement grant, and its two
-properties do all the work: it is too high for anybody who explores ruins, and it is
-short-range, so it narrows as the window wanes and fails when it would matter most. **Do
+properties do all the work: it is too high for anybody who explores ruins, and it **wanes**
+with the window, so it fails when it would matter most. Note which property that is - the
+self-cancelling part was never that the fold is short, it is who is standing in there. **Do
 not add a consumable version.**
 
 **`how-far-somebody-can-fold-space-and-what-it-costs.ts` - the same grant, doing the thing
