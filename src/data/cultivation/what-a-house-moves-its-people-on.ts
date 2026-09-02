@@ -341,6 +341,97 @@ export function adjustCountedHolding(
 }
 
 /**
+ * The counted conveyance a transport line on the price board actually is.
+ *
+ * TWO CATALOGS THAT WERE ALWAYS ABOUT THE SAME OBJECTS, JOINED. `PRICES` in
+ * `mortal-world.ts` has carried a mule at fourteen stones and a cart at thirty
+ * since it was written - *the single largest purchase most mortals ever make* -
+ * and this file has carried what a mount and a carriage DO to a road. Nothing
+ * connected them, so buying the mule answered that there is no row in this
+ * engine for holding one, and `whatTheyCouldRide` offered a tracked craft that
+ * no player could come to own. Both halves existed; the join did not.
+ *
+ * A lookup against a closed catalog and nothing more. It reads no prose, it
+ * decides no price, and a third transport row added to the board is either in
+ * this table or it is not a thing you can put under you.
+ */
+export const CONVEYANCE_ON_THE_PRICE_BOARD: Readonly<Record<string, string>> = Object.freeze({
+    'price-mule': 'conv-mount-mortal',
+    'price-cart': 'conv-carriage-mortal'
+});
+
+export function conveyanceSoldAs(priceId: string): Conveyance | undefined {
+    const id = CONVEYANCE_ON_THE_PRICE_BOARD[priceId];
+    return id === undefined ? undefined : getConveyance(id);
+}
+
+/**
+ * The words somebody actually says when they want one.
+ *
+ * AGENTS.md: if a near-synonym works, the phrasing that fails is a bug. The
+ * board calls it a mule and the catalog calls it a broken spirit beast, and a
+ * player says *I buy a horse* - which was refused with the look people give
+ * somebody asking for a thing that is not sold, over an animal that is priced,
+ * stocked and rideable.
+ *
+ * A closed list of words against a closed list of rows, which is the same kind
+ * of lookup `resolvePrice` and `resolvePill` already are. It does not scan
+ * prose and it decides nothing but which row was meant.
+ *
+ * DELIBERATELY NARROW. "beast" is not here, because it would take "I buy a
+ * beast core" off the medicine board; nor is "trap". Every word in it has to
+ * be one that means a thing you get on and nothing else, because this runs
+ * ahead of the board's own fuzzy match - a whole word against a closed list is
+ * stronger evidence than a prefix against a name, which is how "I buy a
+ * carriage" was answering with the fixed rate for moving a corpse.
+ */
+const WHAT_PEOPLE_CALL_THEM: Readonly<Record<string, string>> = Object.freeze({
+    horse: 'price-mule',
+    mount: 'price-mule',
+    mule: 'price-mule',
+    donkey: 'price-mule',
+    pony: 'price-mule',
+    cart: 'price-cart',
+    carriage: 'price-cart',
+    wagon: 'price-cart',
+    waggon: 'price-cart'
+});
+
+/**
+ * The price row somebody meant, or undefined.
+ *
+ * Matches a whole word so "a cartographer" is not a cart and "the beast tide"
+ * is not a mule, and it deliberately answers with a PRICE row rather than a
+ * conveyance: what is being asked for is a purchase, and the purchase is the
+ * board's business.
+ */
+export function priceRowForSomethingToRide(said: string): string | undefined {
+    const words = said.toLowerCase().match(/[a-z]+/g) ?? [];
+    for (const word of words) {
+        const row = WHAT_PEOPLE_CALL_THEM[word];
+        if (row !== undefined) return row;
+    }
+    return undefined;
+}
+
+/**
+ * Everything counted this body holds, as conveyances.
+ *
+ * The read half of {@link adjustCountedHolding}, for a caller asking what is
+ * actually under somebody. A house and a person answer it the same way,
+ * because both carry a free-form `Record<string, number>` and this is four
+ * functions agreeing on a key over it.
+ */
+export function countedConveyancesHeld(
+    resources: Readonly<Record<string, number>>
+): readonly { conveyance: Conveyance; count: number }[] {
+    return CONVEYANCES
+        .filter(c => c.holding === 'counted')
+        .map(conveyance => ({ conveyance, count: countedHolding(resources, conveyance.id) }))
+        .filter(row => row.count > 0);
+}
+
+/**
  * What a house has, in the words somebody asking would get back.
  *
  * A count is only worth storing if it is answerable, and this is what makes it
