@@ -1006,6 +1006,53 @@ cannot ask about.
 `tests/web/lore.test.ts` holds the regression guard: every catalog must still be reachable
 by somebody on the player-facing path, so "written but unreachable" fails the build.
 
+### A catalog person and their world row are one person
+
+The failure the three files above are only worth anything if they avoid, and they were not
+avoiding it. `lore.ts` speaks of the catalogs' named people by their **catalog** id -
+`member-yan-shuling`, `hollow-court-shen-quan` - and `seedNamedFigures` instantiates each
+of them into the world as `npc-` plus that id. `KnowledgeGate` keys existence claims by
+exact id, so the record `hearsay.ts` wrote when somebody said a name in a market and the
+question `company()` asks when that person is standing in front of you were about two
+different people.
+
+Measured on a seeded world before the fix: **203 lore people, 428 world NPCs, zero ids in
+common.** Standing on the ground the Hollow Court's own people hold, having been told 175
+catalog names through the ordinary channel, the player could name **none** of the ten of
+them in the square - every one of whom they held a live knowledge record for. Told a name,
+walked up to that exact person, and still a stranger.
+
+[`../engine/world/a-catalog-person-and-their-world-row.ts`](../engine/world/a-catalog-person-and-their-world-row.ts)
+owns both directions of the mapping, sits beside the seeder that mints the world id so the
+two cannot drift, and `existenceClaimKey` folds a person onto the catalog id the way it
+already folds a place onto `placeKey`. Three rules it keeps:
+
+- **The fold is at the gate, never at the callers.** This table has a dozen readers and
+  half a dozen writers across three packages. Two of them had noticed the seam and were
+  each patching it locally, which is how it survived: every call site looked correct.
+- **The strip is a catalog lookup, never a prefix strip.** The world is full of `npc-95`,
+  `npc-apex-azure-dew-sect` and `npc-above-3`, and `id.slice(4)` renames the first to `95`
+  and invents a person. Nor is `member-` the rule: ten of the catalog's people, the Hollow
+  Court and the mountains under it, are filed under `hollow-court-`.
+- **Canonical is the catalog id.** 185 of the 203 have a world row; the guest elders, the
+  wanderers, the sealed ancestors and the bodies on the immortal channels have none.
+  Folding the other way means minting an id for somebody who has no row.
+
+`knowsNpc` in `accessForCultivator` had to stop being a set for the same reason. A set can
+carry only one of a person's two ids and the world digest asks with the other, so every
+catalog person the player had been told about was redacted out of every world event report.
+
+**One thing this makes visible for the first time, and it is a question rather than a bug.**
+A `whisper` record - a name through a wall, stance `suspects` - passes `isAwareOf`, which is
+the documented behaviour of that predicate. Until now no catalog person could be both
+whisper-known and present, so the case never arose; now it does, and `company()` will attach
+an overheard name to a face. Whether pointing at a body and saying *that is Yan Shuling*
+should need `placed` rather than a whisper is a design call on the predicate, not on the id,
+and it is left where it was.
+
+`tests/web/a-catalog-person-is-one-person.test.ts` is the guard, and it is a reproduction
+rather than an assertion that the fold is called.
+
 ### The other half: what a player sees
 
 `practices.ts` is the same problem with the opposite answer, and the two must not be
