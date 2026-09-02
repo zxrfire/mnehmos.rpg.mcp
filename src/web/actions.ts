@@ -32,6 +32,10 @@ import { SITE_PHRASES } from './trials.js';
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import {
+    A_TOPIC_ABOUT_THEMSELVES,
+    whatIsBeingAskedAboutThem
+} from '../engine/social/what-somebody-knows-about-themselves.js';
+import {
     askingWhatSomebodyIsAfter,
     requestPutToSomebody
 } from './what-a-request-asks-and-of-whom.js';
@@ -117,6 +121,53 @@ export const ACTION_NAMES = [
     'interact',
     'investigate',
     'move',
+    /**
+     * Getting there ON something rather than on foot.
+     *
+     * `what-a-conveyance-does-to-a-journey.ts` prices a mount, a drawn
+     * carriage, a spirit boat and flight on one's own blade against the days
+     * and the range, `bestForThisRoad` picks between them, and
+     * `whatArrivingOnThisSays` is what a watcher at the far gate reads off the
+     * arrival. None of it had a caller. `ride` was a LABEL on `move` - one of
+     * five intents, every one of which resolved through the same flat
+     * one-day journey - so "I ride to Scarwater" and "I walk to Scarwater"
+     * were the same event with a different word on the log, and "I ride the
+     * horse" asked after a place called `horse`.
+     *
+     * Its own member rather than a widened `move` because it is a different
+     * question. `move` asks where; this asks where AND on what, prices the
+     * road in the walking days the catalog states, and charges them.
+     */
+    'ride',
+    /**
+     * Stepping across the distance instead of covering it.
+     *
+     * `how-far-somebody-can-fold-space-and-what-it-costs.ts` has the whole of
+     * it - the range curve off the rung, the two fixes and only two, the
+     * quadratic settling, and the loudest arrival in the world - and its own
+     * `FOLD_TRAVEL_ENGINE_GAP` says where it would go. Nothing called it, so
+     * `spatial_folding` was a grant that granted a sentence in a document.
+     */
+    'fold',
+    /**
+     * Buying a place on somebody else's span, and reading the board first.
+     *
+     * The counter is the only door to the far half of the map for anybody
+     * below the folding floor, and the BOARD is the more important half:
+     * standing in front of it is how somebody who has never left their
+     * province finds out there are others. `boardAt` and
+     * `quotePassageAtACounter` were complete and unreachable.
+     */
+    'passage',
+    /**
+     * Giving your word, reading what you have given, and not keeping it.
+     *
+     * The oath contract shape was built and had no player path: a penalty
+     * clause, a witnessing house, a term of years, and enforcement that is
+     * structural rather than punitive. A house could put one on somebody and
+     * nobody could swear one, carry one knowingly, or break one.
+     */
+    'oath',
     // World-facing operations: distinct engine routines, distinct state effects.
     /**
      * Hitting somebody, which for a long time had no route at all.
@@ -130,6 +181,48 @@ export const ACTION_NAMES = [
      * a missing one that lets another verb eat the sentence is worse.
      */
     'attack',
+    /**
+     * Making somebody do something, with hands rather than with words.
+     *
+     * ── WHY IT IS ITS OWN VERB AND NOT A PHRASING THAT REACHES `threaten` ──
+     *
+     * Because they are two acts, not two words for one, and the design owner
+     * settled it in four: **"threaten is different, it's verbal."**
+     *
+     *   `threaten`   a promise of harm, and nothing has happened yet. This
+     *                repo's own `what-somebody-does-about-being-wronged.ts`
+     *                states the definition outright - "a threat costs its
+     *                target nothing until it is made good on" - which is
+     *                exactly why it sits among the `interact` intents beside
+     *                talking and bargaining. It is a thing you SAY.
+     *   `coerce`     the point at which the target stops being somebody being
+     *                talked to. Hands on, or the harm actually begun, or the
+     *                thing taken while they are held.
+     *
+     * A second door onto one resolver would be duplication and this is not
+     * one: coercion fails the way a FIGHT fails rather than the way a
+     * conversation fails. Somebody stronger than you does not decline to be
+     * coerced - they answer, and you find out what that costs. So it resolves
+     * through `resolveConfrontation` with `goal: 'coerce'`, beside attacking,
+     * and the two differ only in what the aggressor wants at the end: a fight
+     * wants them stopped, coercion wants them complying and still standing.
+     *
+     * `how-far-you-went-to-make-them-comply.ts` holds the ladder the two of
+     * them are rungs of, and holds it as a VALUE rather than as a branch, so a
+     * fourth level is a row and not a mechanism.
+     *
+     * ── AND IT IS THE SAME VERB WITH AN ANIMAL ON THE OTHER SIDE ──────────
+     *
+     * `BEAST_CHANGE_ORDINAL` does all the differentiating on its own. At and
+     * above it a beast is a person - a shape, a voice, and the ability to
+     * decline - and nothing here branches on whether the thing standing there
+     * is one. Below it the top of the ladder is available and the bottom is
+     * not: you cannot promise harm to something that does not take a promise,
+     * and you can force it. **Forcing an animal to submit is taming**, and it
+     * is this verb rather than a taming subsystem, which is why "I tame the
+     * beast" is one of the phrasings that reaches it.
+     */
+    'coerce',
     'cultivate',
     'seclude',
     'breakthrough',
@@ -670,17 +763,25 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
 ] as const;
 
 /**
- * `sect`, `posture`, `seal` and `offer` are in neither list on purpose. So is
- * `interact`, which is the fifth and the one that had to be found by playing -
+ * `sect`, `posture`, `seal`, `offer` and `oath` are in neither list on purpose.
+ * So is `interact`, which is the sixth and the one that had to be found by
+ * playing -
  * the note under {@link TIME_CONSUMING_ACTIONS} carries it.
  *
- * None of them spends days, and all three of the new ones commit the house to
- * something it cannot walk back, so classifying them as free would be as wrong
- * as classifying them as slow. Which one happened depends on whether a party
- * was named and on what the membership row says, so it is decided at the point
- * of execution - and the protection a misparse actually needs is supplied
- * instead by {@link DEFAULT_POSTURE_INTENT}, {@link DEFAULT_SEAL_INTENT} and
- * {@link DEFAULT_OFFER_INTENT}, every one of which is a read.
+ * None of them spends days, and every one of them commits somebody to
+ * something they cannot walk back, so classifying them as free would be as
+ * wrong as classifying them as slow. Which one happened depends on whether a
+ * party was named and on what the membership row says, so it is decided at the
+ * point of execution - and the protection a misparse actually needs is supplied
+ * instead by {@link DEFAULT_POSTURE_INTENT}, {@link DEFAULT_SEAL_INTENT},
+ * {@link DEFAULT_OFFER_INTENT} and {@link DEFAULT_OATH_INTENT}, every one of
+ * which is a read.
+ *
+ * `oath` is the newest and the sharpest case for the arrangement. Swearing one
+ * writes a permanent row with a named holder, a witnessing house and a penalty
+ * clause; breaking one writes a second naming the person and reopens whatever
+ * the first was closing. Neither spends a day, and neither may be reached by a
+ * sentence the parser did not understand.
  *
  * The original note, which still holds:
  *
@@ -752,6 +853,24 @@ export function theVerbsOwnName(text: string): ActionName | null {
 export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
     'move', 'gather', 'hunt', 'wait', 'work', 'refine', 'eat',
+    /**
+     * The three ways of covering ground that are not walking, and all three
+     * spend real days off the catalog's own `travelDays` rather than the flat
+     * one `move` spends.
+     *
+     * `ride` charges the road, priced by what is under the rider. `fold`
+     * charges the settling, which is quadratic in how hard they reached and is
+     * three days at full stretch. `passage` charges the wait for a departure
+     * and then the settling, which is worst for the people the ticket is worth
+     * most to.
+     *
+     * `passage` takes the coarse label the way `site` does: reading the board
+     * is a free read and buying a place on a span is not, and the whole action
+     * is declared dangerous because the conservative direction is the only safe
+     * one to be wrong in. What protects a misparse is
+     * {@link DEFAULT_PASSAGE_INTENT}, which is the read.
+     */
+    'ride', 'fold', 'passage',
     // Years, and they are the resource this world prices everything else in.
     // A decade raising somebody is a decade nobody was cultivating in, and the
     // food clock runs through it like any other stretch.
@@ -762,6 +881,16 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     // Not because it spends days. Because it can end the run inside one
     // turn, which is the thing this list is actually protecting against.
     'attack',
+    /**
+     * And the verb beside it, for the identical reason.
+     *
+     * Coercion resolves through `resolveConfrontation` with `goal: 'coerce'` -
+     * the same resolver, the same wounds, the same `evaluateDeathConditions` on
+     * the far side - and the two differ only in what the aggressor wants at the
+     * end. A misparse that can end the run inside one turn belongs on this list
+     * whatever the sentence was trying to say.
+     */
+    'coerce',
     /**
      * Here for the same reason, and it is not obvious from the name. An art
      * that FIGHTS the spirit root is learnable and routes through the qi
@@ -876,6 +1005,18 @@ export const TIMED_ACTIONS: readonly ActionName[] = [
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
+    /**
+     * Where they are going, resolved against the same three registers `move`
+     * resolves against - so a name the world has never heard of reaches
+     * nothing here either, and none of the three can store a sentence as a
+     * location.
+     *
+     * `oath` takes the other party instead: the house or the person a word is
+     * being given to, through the same knowledge-gated lookup, so swearing
+     * something to a house nobody has heard of is refused identically to
+     * swearing it to one that does not exist.
+     */
+    'ride', 'fold', 'passage', 'oath',
     // Who is being proposed to, refused, or had a child with - or, for
     // `child` with intent `place`, the house being asked. Resolved against the
     // world like every other target, so a name nobody answers to reaches
@@ -980,7 +1121,23 @@ export const TOPIC_ACTIONS: readonly ActionName[] = [
      * different answer from "they will not teach you that" and a player is
      * entitled to know which one they got.
      */
-    'request'
+    'request',
+    /**
+     * `ride` uses it for WHAT IS UNDER THEM, when the sentence names one.
+     * Matched against `CONVEYANCES` and ignored where it matches nothing:
+     * which conveyance actually suits the road is `bestForThisRoad`'s answer
+     * and never the word's, so naming a beast expresses a preference and
+     * cannot produce a journey the rider could not have made.
+     */
+    'ride',
+    /**
+     * `oath` uses it for WHAT IS BEING SWORN, in the swearer's own words. Free
+     * text, written into `terms` on the ledger row - which is the field
+     * `grudges.ts` requires an oath to carry - and read by no conditional. It
+     * is what somebody reads in eighty years when they are working out why
+     * this person was standing where they were standing.
+     */
+    'oath'
 ] as const;
 
 /**
@@ -1054,8 +1211,58 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * commitment. It does, by construction: see the four DEFAULT_* constants,
      * every one of which is the cheapest branch the action has.
      */
-    'petition', 'posture', 'seal', 'offer'
+    'petition', 'posture', 'seal', 'offer',
+    /**
+     * `passage` and `oath` are the sixth and seventh, and both carry the `site`
+     * rule: the label picks which step runs, one step of each SPENDS or COMMITS
+     * something, and an unrecognised label must fall through to the read.
+     *
+     * `passage` falls through to the board, which is a free list of what runs
+     * from this counter. `oath` falls through to reading what the swearer
+     * already carries, which touches their own ledger rows and nothing else.
+     * See {@link DEFAULT_PASSAGE_INTENT} and {@link DEFAULT_OATH_INTENT}.
+     */
+    'passage', 'oath'
 ] as const;
+
+/**
+ * The two steps at a Span counter, in the order they are tested.
+ *
+ * `board` is the discoverability half and is a read. `buy` moves a body across
+ * a province for a fare, and it is the only one that spends anything.
+ */
+export type PassageIntent = 'buy' | 'board';
+
+export const PASSAGE_INTENTS: readonly PassageIntent[] = ['buy', 'board'] as const;
+
+/**
+ * What a sentence about a counter means when it names no step.
+ *
+ * The board, which is the free one. Same construction as
+ * {@link DEFAULT_SEAL_INTENT}: the cheapest branch the action has, so a
+ * misparse that reaches `passage` reads a price list and pays nothing.
+ */
+export const DEFAULT_PASSAGE_INTENT: PassageIntent = 'board';
+
+/**
+ * The three things somebody can do about a word, in the order they are tested.
+ *
+ * `break` first, because a sentence about breaking one contains every word a
+ * sentence about swearing one contains.
+ */
+export type OathIntent = 'break' | 'swear' | 'read';
+
+export const OATH_INTENTS: readonly OathIntent[] = ['break', 'swear', 'read'] as const;
+
+/**
+ * What a sentence about an oath means when it names no step.
+ *
+ * Reading what is already carried. Nothing is sworn and nothing is broken by
+ * ambiguity, which matters more here than anywhere: a broken word is the one
+ * record in this game that opens a second account naming the person, and
+ * `faction-character.ts` says the penalty is structural rather than punitive.
+ */
+export const DEFAULT_OATH_INTENT: OathIntent = 'read';
 
 /** The things a member can do about their sect, in the order they are tested. */
 export type SectIntent =
@@ -3004,6 +3211,22 @@ export const PlannedActionSchema = z.object({
      */
     terms: z.enum(['agreed', 'open']).optional(),
     /**
+     * HOW THE FIGHT WAS OPENED, set by the parser for the same reason `terms`
+     * is: it is a fact about what the player did, not a label a model chooses.
+     *
+     * Opening from concealment is a different act from squaring up. It reaches
+     * `resolveConfrontation`'s own `opening`, where it gives the first exchange
+     * the `ambush` edge the table has priced since before this field existed
+     * and takes the target's answering swing in that round away - because they
+     * did not know they were in a fight, which is the whole content of it.
+     *
+     * What it does NOT change is what a blow does to a body. That would be two
+     * sets of physics reachable by choosing your words. What it changes besides
+     * the opening is what the deed says about the person who did it, which is
+     * the consequence layer's and is where an ambush actually costs something.
+     */
+    opening: z.enum(['open', 'from_concealment']).optional(),
+    /**
      * How many rations, where the sentence names a count rather than a span.
      *
      * Separate from `days` because they are different asks and the conversion
@@ -3287,29 +3510,137 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['enter', /\b(?:enter|go into|goes into|go inside|step into|climb into|breach|infiltrate|sneak into|slip into)\b/],
     ['approach', /\b(?:approach|draw near|walk up to|close on|come to)\b/],
     ['follow', /\b(?:follow|shadow|trail|tail)\b/],
-    /**
-     * Getting there on something rather than on foot.
-     *
-     * `move` and not `interact`, because what a person arrives on is a fact
-     * about the JOURNEY: `engine/world/what-a-conveyance-does-to-a-journey.ts`
-     * prices a mount, a carriage and a spirit craft against the days and the
-     * range, and `trust.md` reads what a witness makes of the arrival off the
-     * same thing. A beast somebody rides is a way of covering ground, and the
-     * verb belongs beside `travel`.
-     *
-     * Ahead of `travel` so that "I ride to Nine Peaks" is labelled for what it
-     * was rather than folded into walking. The label is the whole of the
-     * difference for now - every `move` resolves through one movement routine
-     * whichever intent matched - which is exactly what makes it safe to add
-     * before the conveyance layer is reachable, and what stops the verb being
-     * unreachable when it is.
-     *
-     * `mount` is deliberately absent. `\bmount\b` does not match "mountain",
-     * but it does match "I mount the steps", and there is no demonstrated
-     * sentence needing it.
-     */
-    ['ride', /\b(?:ride|rides|riding|rode|ridden)\b/],
+    // `ride` was here, as a LABEL, and the label was the whole of what it
+    // bought: every `move` resolves through one flat one-day journey whichever
+    // intent matched, so "I ride to Nine Peaks" and "I walk to Nine Peaks" were
+    // the same event with a different word on the log while a whole conveyance
+    // layer sat with no caller. It is its own verb now - see {@link RIDING} -
+    // and its branch is tested ahead of this table.
     ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
+];
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
+//
+// Every pattern here is EXPORTED, and that is load-bearing rather than
+// tidiness: the spelling repair harvests its vocabulary out of the patterns in
+// this module, and a word it has never seen gets respelled to the nearest one
+// it has. Measured before these existed - "I take a carriage to the next
+// province" came back as `propose`, because `carriage` is one edit from
+// `marriage` and the repair was the only tier that had an opinion about it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Putting something under you for the journey.
+ *
+ * `mount` as a bare noun is deliberately absent from the verb half. It does
+ * not match "mountain", and it does match "I mount the steps", and there is no
+ * demonstrated sentence needing it - but it IS accepted as the thing being
+ * ridden, because "I ride a mount to Kettle" names one and nothing else in the
+ * sentence could be meant.
+ */
+export const RIDING = new RegExp([
+    '\\b(?:ride|rides|riding|rode|ridden)\\b',
+    '\\b(?:saddle|saddles|saddling|saddled)\\b',
+    '\\b(?:take|takes|taking|took|hire|hires|hiring|hired|board|boards|boarding)\\s+'
+        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|his\\s+|her\\s+)?'
+        + '(?:spirit\\s+|drawn\\s+|shod\\s+|named\\s+|deep-?drawn\\s+|broken\\s+|river\\s+)*'
+        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|litter|sedan)\\b',
+    '\\b(?:by|on|aboard|astride)\\s+'
+        + '(?:a\\s+|an\\s+|the\\s+|my\\s+|spirit\\s+|drawn\\s+|shod\\s+|named\\s+)*'
+        + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull)\\b',
+    // The destination can sit between the verb and what is under them - "I fly
+    // to Scarwater on my sword" is how somebody actually says it - so the gap
+    // is bounded rather than adjacent. Bounded and not free: `on my sword` has
+    // to be in the same clause or the rule starts reading sentences that
+    // mention a blade three ideas later.
+    '\\b(?:fly|flies|flying|flew)\\b[^.!?]{0,40}?\\bon\\s+(?:my|his|her|the)\\s+(?:sword|blade)\\b',
+    '\\b(?:fly|flies|flying|flew)\\s+(?:there\\s+)?on\\s+(?:my|his|her|the)\\s+(?:sword|blade)\\b',
+    '\\bsword[- ]flight\\b'
+].join('|'));
+
+/** What is under them, when the sentence says. Matched against `CONVEYANCES`. */
+export const WHAT_IS_BEING_RIDDEN =
+    /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
+
+/**
+ * Stepping across the distance rather than covering it.
+ *
+ * Every phrasing here needs BOTH a folding verb and the word for what is being
+ * folded, or a phrase that can mean nothing else. "I fold the paper" reaches
+ * nothing, which is correct: there is no paper in this game and there is no
+ * reason to guess.
+ */
+export const FOLDING_SPACE = new RegExp([
+    '\\b(?:fold|folds|folding|folded)\\s+(?:through\\s+|across\\s+|open\\s+|up\\s+)?space\\b',
+    '\\bspace[- ]fold(?:s|ing|ed)?\\b',
+    '\\bspatial\\s+fold(?:s|ing)?\\b',
+    '\\b(?:step|steps|stepping|stepped)\\s+(?:through|across)\\s+(?:space|the\\s+distance)\\b',
+    '\\b(?:tear|tears|tearing|tore)\\s+(?:through|open)\\s+space\\b',
+    '\\b(?:fold|folds|folding|folded)\\s+(?:my\\s+way\\s+|myself\\s+)?(?:to|across|over|straight\\s+to)\\b',
+    '\\b(?:cross|crosses|crossing|cover|covers|covering)\\s+the\\s+distance\\s+in\\s+one\\s+step\\b'
+].join('|'));
+
+/**
+ * A counter, a board, and a place on somebody else's span.
+ *
+ * `board` on its own is not enough and must not be: the sect mission board owns
+ * that noun, and `SECT_DUTY_PATTERN` had it first. Every phrasing here carries
+ * either the house's name or the word for the thing being bought.
+ */
+export const A_SPAN_COUNTER = new RegExp([
+    '\\b(?:passage|ticket|fare|berth)\\b',
+    '\\b(?:measured\\s+)?span\\b',
+    '\\b(?:gate\\s+station|terminal|waystation)\\b'
+].join('|'));
+
+/** Whether the sentence is about a journey at all, as against a house's board. */
+export const A_COUNTER_NOT_A_MISSION_BOARD = new RegExp([
+    '\\b(?:passage|ticket|fare|berth)\\b',
+    '\\bspan\\b',
+    '\\b(?:gate\\s+station|terminal)\\b'
+].join('|'));
+
+const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    // Buying, first, because a sentence about buying one contains every word a
+    // sentence about reading the board contains.
+    ['buy', /\b(?:buy|buys|buying|bought|book|books|booking|booked|purchase|purchases|purchasing|pay for|pays for|take|takes|taking|took|get me|put me)\b/],
+    ['board', /\b(?:board|boards|list|lists|what|which|where|read|reads|reading|check|checks|look|looks|see|sees|price|prices|cost|costs|much|run|runs|go|goes|departs?)\b/]
+];
+
+/**
+ * A word given, carried or not kept.
+ *
+ * The NOUN is required in every branch. "I swear at him" is not an oath and
+ * must never be read as one, which is why swearing on its own does not fire -
+ * a sentence about giving your word says which word or says the noun.
+ */
+export const AN_OATH = new RegExp([
+    '\\b(?:oath|oaths|oathwright|vow|vows|indenture|indentured)\\b',
+    '\\b(?:my|our|his|her|their)\\s+word\\b',
+    '\\bword\\s+of\\s+honou?r\\b',
+    '\\bbound\\s+word\\b',
+    '\\bterm\\s+of\\s+service\\b',
+    '\\b(?:swear|swears|swearing|swore|sworn)\\s+(?:to|by|myself|it|that|before|brotherhood|an?\\b)',
+    '\\b(?:sworn|blood)\\s+(?:brother|brotherhood|sister|siblings?)\\b',
+    '\\bblood\\s+pact\\b',
+    '\\bpledge\\s+(?:myself|my|to)\\b'
+].join('|'));
+
+/** Who the word is given to, or who holds the one being broken. */
+export const OATH_SUBJECT_VERBS =
+    /oath to|oath with|oath before|vow to|swear to|swears to|swore to|pledge myself to|pledge to|my word to|break (?:my |the |our )?(?:oath|vow|word) (?:to|with)|indenture to|bound to|sworn to/;
+
+/** Where somebody is stepping, when the phrasing puts the place after the fold. */
+export const FOLD_SUBJECT_VERBS =
+    /fold space to|fold to|fold across to|step through space to|step across to|fold myself to|fold my way to|space to/;
+
+const OATH_INTENT_PATTERNS: ReadonlyArray<[OathIntent, RegExp]> = [
+    // Breaking, first, because every sentence about breaking one contains the
+    // vocabulary of swearing one. The order is the order of `OATH_INTENTS`.
+    ['break', /\b(?:break|breaks|breaking|broke|broken|renounce|renounces|renouncing|repudiate|repudiates|forswear|forswears|abandon|abandons|abandoning|go back on|goes back on|going back on|walk out of|walks out of|walk away from|run from|runs from|running from|will not keep|wont keep|do not keep|stop keeping)\b/],
+    ['swear', /\b(?:swear|swears|swearing|swore|give my word|gives my word|giving my word|take an oath|takes an oath|taking an oath|make an oath|makes an oath|pledge|pledges|pledging|bind myself|binds myself|binding myself)\b/],
+    ['read', /\b(?:what|which|who|where|how|read|reads|reading|carry|carries|carrying|hold|holds|holding|bound|owe|owes|owed|standing|check|checks)\b/]
 ];
 
 /**
@@ -3337,7 +3668,90 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 const AIMED_AT_THE_LADDER =
     /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|wall|ceiling|next (?:rank|realm))\b/;
 
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish/;
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for/;
+
+/**
+ * The fight was opened from cover, which is a different act from squaring up.
+ *
+ * Read off the SENTENCE and never from the model, for the reason `terms` is:
+ * whether somebody was seen coming is a fact about what they did, and a model
+ * choosing it would be a model deciding what a fight cost. It reaches
+ * `resolveConfrontation`'s `opening`, which gives the first exchange the
+ * ambush edge the table has always priced and takes the target's first swing
+ * away - and nothing about what a blow does to a body changes.
+ *
+ * "from behind" is here because it was landing INSIDE the target string:
+ * "I attack him from behind" resolved to a person called "him from behind"
+ * and then to nobody, so the commonest phrasing of the commonest ambush in
+ * the genre reached neither the verb nor a person.
+ */
+const OPENED_FROM_COVER = new RegExp(
+    '\\b(?:'
+    + 'sneak up on|sneaks up on|sneaking up on|creep up on|creeps up on|'
+    + 'from behind|from cover|from the shadows|from hiding|from concealment|'
+    + 'unseen|unnoticed|ambush|ambushes|ambushing|lie in wait|lying in wait|waylay|'
+    + 'catch (?:him|her|them|it) (?:unawares|off guard|by surprise)|'
+    + 'take (?:him|her|them|it) by surprise|by surprise|'
+    + 'while (?:he|she|they|it) (?:is|are) (?:not looking|unaware|asleep|distracted|turned away)|'
+    + 'while (?:he|she|they|it) sleeps|'
+    + 'before (?:he|she|they|it) (?:sees|notices|knows|can react)|'
+    + 'without being seen|without warning'
+    + ')\\b'
+);
+
+/**
+ * The tail of a sentence that says HOW a fight was opened, cut off the target.
+ *
+ * `extractSubject` takes everything after the verb, so the manner clause ended
+ * up inside the name. Stripped rather than parsed around, because the manner is
+ * already read by `OPENED_FROM_COVER` off the whole sentence.
+ */
+const HOW_THE_FIGHT_OPENED_TAIL =
+    /\s+(?:from (?:behind|cover|the shadows|hiding|concealment)|by surprise|unseen|unnoticed|while (?:he|she|they|it)\b.*|before (?:he|she|they|it)\b.*|without (?:being seen|warning)|and (?:strike|strikes|hit|hits|attack|attacks|kill|kills|cut|go for)\b.*)\s*$/i;
+
+/**
+ * Making somebody do something, with hands rather than with words.
+ *
+ * Each row is a label for what the compliance was FOR, and nothing in the
+ * engine branches on it - the goal handed to the resolver is `coerce` in every
+ * case. It is carried so the record and the narrator can say what was wanted.
+ *
+ * Ordered most specific first. Two exclusions are load-bearing:
+ *
+ *   `threaten` and `intimidate` are NOT here. They are words, they already
+ *   reach `interact`, and the whole distinction this verb exists for is that
+ *   coercion is the point at which the target stops being talked to.
+ *
+ *   bare "force" is NOT here either. "I force my way up to the next layer" is
+ *   a breakthrough, and every pattern below requires a person and a thing
+ *   being complied with, so the ladder sentence cannot reach any of them.
+ */
+const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
+    // An animal made to submit is a tamed animal. Same act, same resolver, and
+    // `BEAST_CHANGE_ORDINAL` does all the differentiating on its own - above
+    // it, what is standing there is a person and this is an indenture.
+    // "break the wolf in" is how somebody says it and "break in the wolf" is
+    // not, so the object sits inside the verb. Found by the intent walk.
+    ['tame', /\b(?:tame|tames|taming|break(?:s|ing)?(?:\s+\S+){0,3}\s+in\b|bring (?:it|him|her|them) to heel|subjugate)\b/],
+    ['talk', /\b(?:beat (?:it|the truth|an answer|the location|the name) out of|wring (?:it|the truth|an answer) (?:out )?(?:of|from)|make (?:him|her|them) talk|force (?:him|her|them) to talk|torture)\b/],
+    ['hand_over', /\b(?:force|forces|forcing|strong-?arm|strong-?arms|strong-?arming|extort|extorts|extorting|shake down|shakes down)\b[^.!?]*\b(?:into (?:handing|giving|paying|opening)|to hand|to give|to pay|to open|out of (?:him|her|them))\b/],
+    ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
+    ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
+    ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
+    ['hand_over', /\bforce (?:him|her|them|it) (?:to|into)\b/]
+];
+
+const COERCE_SUBJECT_VERBS =
+    /coerce|coerces|coercing|browbeat|strong-?arm|extort|shake down|subjugate|tame|tames|taming|break|force|forces|forcing|make|makes|making|beat (?:it|the truth|an answer) out of|wring/;
+
+/**
+ * The tail of a coercion that says what the compliance was FOR, cut off the
+ * target for the same reason the fight's manner clause is: "I force the
+ * merchant to hand over the ledger" names a merchant, not a merchant-to-hand-
+ * over-the-ledger.
+ */
+const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open)\b.*$/i;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
@@ -3439,8 +3853,54 @@ function extractSubject(input: string, verbs: RegExp): string | undefined {
         `\\b(?:${verbs.source})\\b\\s*(?:the|a|an|for|into|at|with|about|to|on|through|around)?\\s+(.{2,80}?)\\s*[.!?]?$`,
         'i'
     ).exec(input);
-    if (afterVerb) return cleanPlace(afterVerb[1]);
+    if (afterVerb) {
+        const got = cleanPlace(afterVerb[1]);
+        // ── A WORD THAT STANDS IN FOR SOMETHING ALREADY NAMED ────────────
+        //
+        // "I write out a copy of the Lesser Qi-Gathering Manual and sell it"
+        // came out of here as `it`, and `it` resolves to nothing, so the sale
+        // fell through to pricing the whole pouch. Same for "I copy out X and
+        // sell the copy", and it is not about copying: "I take the manual and
+        // sell it" is wrong in exactly the same way and always was.
+        //
+        // The set is closed and holds only words for THINGS. `him`, `her` and
+        // `them` are deliberately absent: those are how a player points at a
+        // person who is standing here, the party resolver already reads them,
+        // and redirecting one at a noun earlier in the sentence would break
+        // every "I strike at him" in the game.
+        if (got && STANDS_IN_FOR_SOMETHING_ALREADY_NAMED.test(got)) {
+            return whatWasNamedEarlier(input, verbs) ?? got;
+        }
+        return got;
+    }
     return extractTarget(input);
+}
+
+/**
+ * Words that name nothing and refer back to something the sentence already
+ * said. Things only - never a person. See {@link extractSubject}.
+ */
+const STANDS_IN_FOR_SOMETHING_ALREADY_NAMED =
+    /^(?:it|one|the one|the copy|a copy|copy|the copies|the thing|the same|the lot)$/i;
+
+/**
+ * The last thing NAMED before the verb, for a sentence whose object is a
+ * stand-in.
+ *
+ * Two shapes, in order, and both are ordinary English rather than anything to
+ * do with any one verb: "a copy OF the manual, and sell it" puts the thing
+ * after a preposition, and "the manual and sell it" puts it behind an article.
+ * Returns undefined when there is nothing named, and the caller then keeps the
+ * stand-in - which resolves to nothing and is refused, exactly as it was.
+ */
+function whatWasNamedEarlier(input: string, verbs: RegExp): string | undefined {
+    const upTo = new RegExp(`^(.*?)\\b(?:${verbs.source})\\b`, 'i').exec(input);
+    const before = (upTo?.[1] ?? '').trim();
+    if (before.length < 3) return undefined;
+    const named =
+        /\bof\s+(?:the\s+|a\s+|an\s+)?(.{2,70}?)\s*(?:,|\s+and\b|\s+then\b|$)/i.exec(before)
+        ?? /\b(?:the|a|an|my|his|her)\s+(.{2,70}?)\s*(?:,|\s+and\b|\s+then\b|$)/i.exec(before);
+    return named ? cleanPlace(named[1]) : undefined;
 }
 
 /**
@@ -4115,7 +4575,21 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             return { action: 'refine' };
 
         case 'move':
+        case 'ride':
+        case 'fold':
+            // Where they could go, priced. "Could I ride to Kettle" and "how
+            // far can I fold" are both questions about the map rather than
+            // journeys, and the destinations read answers each with the roads
+            // the catalog states and the days on them.
             return { action: 'destinations' };
+
+        case 'passage':
+        case 'oath':
+            // Both have a read as their DEFAULT intent, by the rule stated at
+            // INTENT_ACTIONS: the board, and what the swearer already carries.
+            // Dropping the intent reaches it. "What would passage to Kettle
+            // cost" is the board, and the board is a price list.
+            return { action: plan.action, ...(plan.target ? { target: plan.target } : {}) };
 
         case 'breakthrough':
         case 'cultivate':
@@ -4285,6 +4759,70 @@ function planIntent(input: string): PlannedAction {
     const family = familyStep(text, input);
     if (family !== null) return family;
 
+    // ── ASKING SOMEBODY A PLAIN FACT ABOUT THEMSELVES ────────────────────
+    //
+    // FOUND BY PLAYING, and the parse was the first of two defects rather than
+    // the second. Measured on the deterministic reader, from a fresh run
+    // standing in a square with three people in it:
+    //
+    //   "are you a girl?"          reached NOTHING - the fallback shrug
+    //   "how old are you?"         reached NOTHING
+    //   "what is your name?"       reached the PLAYER'S OWN status screen,
+    //                              because "your" read as the player's
+    //   "who do you serve?"        reached the teacher listing
+    //   "what house are you from?" reached the sect listing
+    //
+    // Five of the most ordinary sentences anybody says to a person in front of
+    // them, and not one of them reached the person. Above the ordinary ask
+    // because every branch below is looking for a noun these sentences are full
+    // of - a house, a name, an order - and safe there because each phrasing
+    // needs the second person AND its own noun, which no other verb's sentence
+    // carries. The closed set and the reasoning are in
+    // `engine/social/what-somebody-knows-about-themselves.ts`.
+    //
+    // No `target`, deliberately: these are said to whoever you are looking at,
+    // and `interact` already answers a topic with no name by putting it to
+    // whoever is at hand. Naming the person is still allowed and still works -
+    // it comes through the ordinary ask with the same canonical topic.
+    const ownFact = whatIsBeingAskedAboutThem(text);
+    if (ownFact !== null) {
+        return {
+            action: 'interact',
+            intent: 'talk',
+            topic: A_TOPIC_ABOUT_THEMSELVES[ownFact]
+        };
+    }
+
+    // ── MAKING SOMEBODY DO SOMETHING, WITH HANDS ─────────────────────────
+    //
+    // ABOVE `attack`, and the order is the whole point. Coercion sentences
+    // contain a person and an act of violence and would otherwise be read as a
+    // plain fight - measured before this landed: "I coerce the merchant into
+    // handing it over" reached NOTHING, from the table and from the meaning
+    // tier both, and "I force him to submit" reached `request`, which is asking
+    // somebody politely. That is worse than a refusal: the player spends a turn
+    // asking nicely for a thing they meant to take.
+    //
+    // Safe above `attack` because every pattern needs a person AND something
+    // they are being made to do. "I attack him" reaches none of them.
+    {
+        const wanted = COERCION_INTENT_PATTERNS.find(([, pattern]) => pattern.test(text));
+        if (wanted && !AIMED_AT_THE_LADDER.test(text)) {
+            const who = (extractSubject(input, COERCE_SUBJECT_VERBS) ?? '')
+                .replace(WHAT_THE_COMPLIANCE_WAS_FOR_TAIL, '')
+                .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
+                .trim();
+            return {
+                action: 'coerce',
+                ...(who.length >= 2 ? { target: who } : {}),
+                intent: wanted[0],
+                // Coercion opened from cover is the same distinction a fight
+                // opened from cover is, and it is read the same way.
+                ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {})
+            };
+        }
+    }
+
     // -- attacking somebody, which had no route at all --
     //
     // The engine has had combat the whole time: `resolveExchange`,
@@ -4304,11 +4842,33 @@ function planIntent(input: string): PlannedAction {
             // small, when what is actually true is that the target is enormous.
             + 'murder|murders|murdering|assassinate|assassinates|assassinating|slay|slays|'
             + 'do away with|make an end of|'
-            + 'take (?:him|her|them) on|put (?:him|her|them) down|finish (?:him|her|them)')
+            + 'take (?:him|her|them) on|put (?:him|her|them) down|finish (?:him|her|them)|'
+            // ── THE INTENTS THAT HAD NO TRIGGER ──────────────────────────
+            //
+            // Found by the intent walk in `coverage.test.ts`, which is what
+            // that walk exists for. `subdue` and `humiliate` were both readable
+            // as intents ten lines below and reachable by NOBODY: the only way
+            // into either was to say a different verb and hope the intent regex
+            // caught the adverb. So `attack/humiliate` - the outcome the genre
+            // is fondest of - was a label the engine could produce and a player
+            // could not ask for.
+            //
+            // "start a fight" and "pick a fight" are here for the plainer
+            // reason: they are how people say it, and the exemplar file has
+            // said so since it was written while the table had no line for them.
+            + 'subdue|subdues|pin|pins|restrain|restrains|humiliate|humiliates|'
+            + 'start a fight|starts a fight|pick a fight|picks a fight|make an example of')
             || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text))) {
         return {
             action: 'attack',
-            target: extractSubject(input, ATTACK_SUBJECT_VERBS),
+            // The manner clause is cut off the name. "I attack him from behind"
+            // resolved to a person called "him from behind" and then to nobody,
+            // so the commonest ambush phrasing in the genre reached neither the
+            // fight nor a person - the manner is read off the whole sentence by
+            // `OPENED_FROM_COVER` and does not belong in the target.
+            target: (extractSubject(input, ATTACK_SUBJECT_VERBS) ?? '')
+                .replace(HOW_THE_FIGHT_OPENED_TAIL, '').trim() || undefined,
+            ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {}),
             intent: /\b(?:kill|murder|assassinate|slay|finish|cut down|put (?:him|her|them) down)\b/.test(text)
                 ? 'kill'
                 : /\b(?:subdue|pin|restrain|capture|take alive)\b/.test(text)
@@ -4971,6 +5531,48 @@ function planIntent(input: string): PlannedAction {
         return { action: 'eat' };
     }
 
+    // ── A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
+    //
+    // Ahead of the sect block, which owns the noun `house` and answered "I
+    // swear an oath to the house" with a list of what would take you, and
+    // ahead of `move`, whose `flee` intent owns "run from". Every branch needs
+    // the oath NOUN, so a sentence that merely mentions a house cannot reach
+    // it and "I swear at him" is not a contract.
+    if (AN_OATH.test(text)) {
+        const step = (OATH_INTENT_PATTERNS.find(([, p]) => p.test(text))?.[0]
+            ?? DEFAULT_OATH_INTENT) as OathIntent;
+        const sworn = matterAsked(input);
+        return {
+            action: 'oath',
+            intent: step,
+            // Who it is given to, or who holds it. Absent for a read, which is
+            // about everything the swearer carries rather than about one party.
+            ...(step === 'read'
+                ? {}
+                : { target: extractSubject(input, OATH_SUBJECT_VERBS) }),
+            ...(sworn ? { topic: sworn } : {})
+        };
+    }
+
+    // ── A COUNTER, A BOARD, AND SOMEBODY ELSE'S SPAN ─────────────────────
+    //
+    // Ahead of `buy`, which took "I buy passage at the Span counter" and
+    // looked for a line on the price board called "passage at the Span
+    // counter"; ahead of `interact`, which answered "what does the Span board
+    // say" by walking the player over to talk to somebody; and ahead of
+    // `move`, because every sentence about going somewhere by span contains a
+    // destination.
+    if (A_COUNTER_NOT_A_MISSION_BOARD.test(text)) {
+        const step = (matchIntent(text, PASSAGE_INTENT_PATTERNS)
+            ?? DEFAULT_PASSAGE_INTENT) as PassageIntent;
+        const where = extractDestination(input);
+        return {
+            action: 'passage',
+            intent: step,
+            ...(where ? { target: where } : {})
+        };
+    }
+
     // ── buying a line off the board ──
     //
     // Deliberately BELOW `market`, `provision` and `eat`, all three of which
@@ -5113,6 +5715,32 @@ function planIntent(input: string): PlannedAction {
     // and "I travel to The Cut Face" remains a journey.
     if (asksAfterGroundTime(text)) {
         return { action: 'look', intent: 'ground_time' };
+    }
+
+    // ── STEPPING ACROSS THE DISTANCE ─────────────────────────────────────
+    //
+    // Ahead of `move`, which owns "to <a place>" and would otherwise answer a
+    // fold with a walk. Nothing above this line owns the word `space`.
+    if (FOLDING_SPACE.test(text)) {
+        return {
+            action: 'fold',
+            target: extractDestination(input) ?? extractSubject(input, FOLD_SUBJECT_VERBS)
+        };
+    }
+
+    // ── AND GETTING THERE ON SOMETHING ───────────────────────────────────
+    //
+    // Immediately ahead of `move`, and no higher. A sentence about riding to a
+    // grave is a sentence about a grave first, so `siteStep` keeps it; what
+    // this takes is what `move` would otherwise have taken and charged one
+    // flat day for.
+    if (RIDING.test(text)) {
+        const mount = WHAT_IS_BEING_RIDDEN.exec(input);
+        return {
+            action: 'ride',
+            target: extractDestination(input) ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+            ...(mount ? { topic: mount[1].trim().toLowerCase() } : {})
+        };
     }
 
     // ── move: one action, several ways of going ──
@@ -5672,6 +6300,15 @@ export function carryWhatOnlyTheSentenceKnows(action: PlannedAction, input: stri
     // could not tell a spar from an ambush unless the parser had run.
     if (merged.terms === undefined && fromSentence.terms !== undefined) {
         merged.terms = fromSentence.terms;
+    }
+
+    // Whether the fight was opened from cover. Same reasoning as `terms`, and
+    // the same measurement behind it: "I sneak up on him and strike" and "I
+    // attack him while he is not looking" both came back as a plain fight from
+    // the model, so the one act the genre is most fond of was invisible until
+    // the parser's reading was carried across.
+    if (merged.opening === undefined && fromSentence.opening !== undefined) {
+        merged.opening = fromSentence.opening;
     }
 
     // A count of rations is a different ask from a span of days, and the
