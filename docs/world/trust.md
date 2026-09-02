@@ -286,9 +286,26 @@ one reference in this world the gossip system cannot degrade.**
 some will not, and **the pattern of which is the actual information** — far more than any
 single verdict:
 
-- **The old pieces match and no face does** — the house kept its things and lost its line.
-- **The halls stand and the old pieces are gone** — hard centuries, debts paid with heirlooms.
+**Faces tell her nothing, and that is arithmetic rather than subtlety.** Everybody she knew
+is dead. A hall full of strangers is the *expected* result after that long and carries no
+information whatsoever — reading it as loss is simply reading the calendar.
+
+**What persists is families.** A name outlives every person who carries it, so **the surname
+is the continuity she can actually read** — which of the house's lines are still on the roll,
+generations down. The extreme case is a founding family whose name is still there after
+everything else has turned over.
+
+- **The old pieces are there and the old names are not** — the house kept its things and lost
+  its lines. **A family does not simply fade**; somebody was purged, exiled, or walked out,
+  and that is an event with a cause somebody is still carrying.
+- **The names are there and the old pieces are gone** — hard centuries. The same lines, and
+  the heirlooms sold to get through them.
 - **Everything matches, exactly** — somebody knew she was waking, and prepared the room.
+
+**And a surviving name is a way back in that nobody else has.** She can approach a stranger of
+a line she knew and have standing with them — not with the person, whom she has never met, but
+with the family. **That is a relationship her memory grounds and no living person can
+contest**, and it is her one route into a world where she knows nobody at all.
 
 **And her certainty is unshareable.** She knows the blade is wrong because she watched it
 made, and she cannot demonstrate that to anybody — there is no evidence, there is only her.
@@ -317,5 +334,8 @@ already running, she has to act on a reference class centuries out of date, and 
 being enormously powerful stops protecting her.
 
 The sealed ancestors are in the catalogs — `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`,
-`UNOWNED_ANCESTORS` — and at the time of writing nothing in `src/engine/` reads them. This model
+`UNOWNED_ANCESTORS` — and at the time of writing nothing in `src/engine/` reads them. The lineage
+half of this is wiring rather than new ground: `src/engine/world/lineage.ts` exists, regions
+already use clan surnames, and `named-figures.ts` carries a member who shares a surname with the
+sealed ancestor beneath his stone. This model
 is the first thing that gives them something to do, and it does it without a special case.
