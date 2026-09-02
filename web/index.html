@@ -188,6 +188,21 @@
               </button>
             </div>
 
+            <!--
+              What is live for you here, from derived.standingHere - the same
+              source as the `help` read and the refusal that names a way out,
+              so the three can never drift apart.
+
+              These are prompts and not a menu. They are capped at three, they
+              are ordered by urgency, and the row says so in its own label -
+              because the moment a player reads this as the list of legal moves,
+              the game has quietly stopped being one you speak to.
+            -->
+            <div class="standing" id="standing" hidden>
+              <span class="standing__label" id="standing-label">What is live here</span>
+              <div class="standing__row" id="standing-row"></div>
+            </div>
+
             <p class="refusal" id="refusal" hidden></p>
 
             <form class="command" id="command-form" autocomplete="off">

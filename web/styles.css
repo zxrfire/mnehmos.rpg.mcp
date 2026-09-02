@@ -663,6 +663,43 @@ kbd {
 }
 .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 
+/*
+  What is live here.
+
+  Deliberately quieter than .btn--quick: these are prompts the engine is
+  offering, not the three standing controls, and they should read as
+  suggestions a player can ignore or retype rather than as the game's buttons.
+  Hence the smaller type, the softer border, and the label above the row.
+*/
+.standing { margin-bottom: 10px; }
+.standing__label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-far);
+  margin-bottom: 5px;
+}
+.standing__row { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn--standing {
+  font-size: 12.5px;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--paper-mut);
+  transition: border-color var(--dur), color var(--dur), background var(--dur);
+}
+.btn--standing:hover:not(:disabled) {
+  border-style: solid;
+  border-color: var(--jade-600);
+  color: var(--paper);
+  background: var(--ink-800);
+}
+.btn--standing:disabled { opacity: 0.45; cursor: default; }
+/* Urgency the engine already ranked - the thing that is pressing now. */
+.btn--standing-now { border-color: var(--jade-600); color: var(--paper); }
+
 .command {
   display: flex;
   align-items: center;

@@ -1630,10 +1630,72 @@ function renderQuickActions() {
     refusal.hidden = !reason;
   }
 
+  renderStandingHere();
+
   const busy = S.busy;
   $('#btn-cultivate').disabled = busy;
   $('#command-send').disabled = busy;
   if (busy) btn.disabled = true;
+}
+
+/**
+ * What is live for you, standing here.
+ *
+ * `derived.standingHere` is the same computation behind the `help` read and
+ * behind the refusal that names a way out, so a player who never types `help`
+ * still sees the two or three things that matter most in this state.
+ *
+ * Three deliberate restraints, because the failure mode here is not a bug but
+ * a drift in what the game IS:
+ *
+ *   - CAPPED AT THREE. The engine will offer up to eight. A row of eight reads
+ *     as the set of legal moves, and this game is one you speak to in your own
+ *     words - the moment the row looks complete, the command line becomes
+ *     decoration.
+ *   - LABELLED AS PARTIAL. The heading says these are what is live, not what is
+ *     possible, and the engine's own reads all close by saying they are not the
+ *     list.
+ *   - THE SENTENCE IS THE PLAYER'S. Clicking fills the command input with `say`
+ *     verbatim and submits it, so the player sees the words go in and can learn
+ *     to type them. A button that silently performs a hidden action would teach
+ *     nothing, which is the whole point of the feature.
+ *
+ * `because` goes on the title rather than the face: the reason is worth having
+ * but it is a sentence, and three sentences here would out-shout the prose.
+ */
+function renderStandingHere() {
+  const wrap = $('#standing');
+  const row = $('#standing-row');
+  if (!wrap || !row) return;
+
+  const live = Array.isArray(S.derived?.standingHere) ? S.derived.standingHere : [];
+  const shown = live.filter(item => item && typeof item.say === 'string' && item.say).slice(0, 3);
+
+  if (shown.length === 0) {
+    wrap.hidden = true;
+    row.textContent = '';
+    return;
+  }
+
+  row.textContent = '';
+  for (const item of shown) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn--standing';
+    if (item.urgency === 'now') b.classList.add('btn--standing-now');
+    b.textContent = item.say;
+    if (typeof item.because === 'string' && item.because) b.title = item.because;
+    b.disabled = !!S.busy;
+    // The player's own sentence, visibly, rather than a hidden call.
+    b.addEventListener('click', () => {
+      const input = $('#command-input');
+      if (!input || S.busy) return;
+      input.value = item.say;
+      submitAction();
+    });
+    row.appendChild(b);
+  }
+  wrap.hidden = false;
 }
 
 function focusCommand() {
