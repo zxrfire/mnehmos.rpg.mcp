@@ -738,6 +738,16 @@ Three consequences, and they make the Court unlike every other institution in th
   A body that took the books as well would be a thief operating at a height nobody could
   answer - and would be treated as one, standing or no standing.
 
+  **And that line is not a courtesy. It is the line a house can actually enforce.** A manual
+  is an object - countable, lockable, missed the moment it goes - so a house polices it, and
+  is right to. What somebody already knows is not an object, and no house has ever had a way
+  to reach into a head. So they do not try, and the only instrument that binds memory at all
+  is [an oath the leaver has to agree to swear](#the-two-ways-out-and-the-instrument-that-separates-them).
+  **The secrecy economy is enforceable on objects and unenforceable on recollection**, which
+  is why both halves of this are true at once: arts are guarded everywhere in this file, and
+  the Court's disciples genuinely do teach each other what their houses taught them. Nobody
+  arrives carrying a book. Everybody arrives carrying a road.
+
   And the response to trying it is severe out of all proportion to the object. Crippling the
   offerer's cultivation is the illustration to hold in mind rather than a fixed tariff - what
   the setting fixes is the *severity and the reason*, not the specific act. **The reason is
