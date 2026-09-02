@@ -59,8 +59,12 @@ import {
     resolveConfrontation,
     resolveExchange,
     rollInitiative,
+    integrateInsight,
+    recordAchievement,
+    whatAFightTaught,
     type CombatantInput,
-    type Edge
+    type Edge,
+    type InsightCandidate
 } from '../../engine/cultivation/index.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
@@ -158,14 +162,42 @@ const ResolveSchema = z.object({
     action: z.literal('resolve'),
     cultivatorId: z.string().optional(),
     opponent: OpponentSchema,
-    goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate']).optional().default('drive_off')
-        .describe('What the cultivator is trying to achieve. Decides which endings are reachable.'),
+    goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate', 'coerce']).optional().default('drive_off')
+        .describe(
+            'What the cultivator is trying to achieve. Decides which endings are reachable. '
+            + '`coerce` is force applied to get compliance rather than to end anybody: it wants them '
+            + 'complying and still standing, and it reaches `submission` when they yield.'
+        ),
     techniqueId: z.string().optional(),
     vector: z.enum(['body', 'soul']).optional().default('body'),
     edges: z.array(EdgeSchema).optional().default([]),
     opponentEdges: z.array(EdgeSchema).optional().default([]),
     /** Whether the loser breaks off rather than be finished. Usually true. */
-    fightToTheEnd: z.boolean().optional().default(false)
+    fightToTheEnd: z.boolean().optional().default(false),
+    // Optional with NO default on purpose. A zod default makes the field
+    // REQUIRED on the inferred output type, and every existing caller
+    // constructs this object as that type - so a default here is a compile
+    // error in somebody else's file for a field they have no opinion about.
+    // Absent reads as `open` at the one place that consults it.
+    opening: z.enum(['open', 'from_concealment']).optional()
+        .describe(
+            'How the fight was opened. From concealment the opening exchange carries the ambush '
+            + 'edge and the target does not swing back in it. Nothing about what a blow does to a '
+            + 'body changes.'
+        ),
+    /**
+     * Whether the beaten party yields, read by the CALLER off who they are.
+     *
+     * The engine holds no will-to-submit number and must not: whether somebody
+     * kneels is a fact about their wants and their standing, or about a beast's
+     * own nature, and those live in the layer that holds the records. Omitted
+     * reads as the ordinary case, which is that they do.
+     */
+    submission: z.object({
+        yields: z.boolean(),
+        because: z.string().min(1)
+            .describe('The record the reading was taken off. Stated, never inferred.')
+    }).optional()
 });
 
 const FleeSchema = z.object({
@@ -390,6 +422,7 @@ function outcomeLine(outcome: string): string {
         case 'crippled': return 'Crippled.';
         case 'body_destroyed': return 'Body destroyed. Not necessarily ended.';
         case 'lethal': return 'Finished.';
+        case 'submission': return 'Beaten, alive, and yielding.';
         case 'stalemate': return 'Neither could finish it.';
         default: return outcome;
     }
@@ -642,9 +675,57 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         defenderEdges: args.opponentEdges ?? [],
         intent: {
             goal: args.goal,
-            willWithdraw: !(args.fightToTheEnd ?? false)
+            willWithdraw: !(args.fightToTheEnd ?? false),
+            opening: args.opening,
+            ...(args.submission
+                ? {
+                    yields: {
+                        willYield: args.submission.yields,
+                        because: args.submission.because
+                    }
+                }
+                : {})
         }
     });
+
+    // ── WHAT THE FIGHT TAUGHT ────────────────────────────────────────────
+    //
+    // Design owner: "Fighting should give you comprehension of your art (and
+    // your cultivation too, to some extent)."
+    //
+    // Read AFTER the resolution and applied below, so the lesson is about the
+    // fight that actually happened rather than the one that was intended.
+    // `what-a-fight-teaches.ts` decides how much and whether at all; nothing
+    // here has an opinion about the numbers.
+    //
+    // ITS OWN STREAM, and that is not a stylistic choice. Adding a draw to
+    // `combat_resolve` would shift every later draw on it and change fights
+    // that have nothing to do with this - AGENTS.md, a new RNG draw is a
+    // regression until proved otherwise. Seeded on the same parts as the fight
+    // so a replay of a run produces the same lesson.
+    const lesson = whatAFightTaught({
+        yourOrdinal: cultivator.realmOrdinal,
+        theirOrdinal: opponent.realmOrdinal,
+        // Exchanges this cultivator was actually IN. A fight the resolver ran
+        // between two other people would teach them nothing, and neither does
+        // one the gap ended before anybody moved.
+        exchanges: result.exchanges.filter(
+            x => x.attackerId === cultivator.id || x.defenderId === cultivator.id
+        ).length,
+        outcome: result.outcome,
+        // The art actually swung. Somebody who fought bare learned nothing
+        // about the sword they left at home.
+        subject: technique?.subject ?? null,
+        element: technique?.element ?? null,
+        cultivationProgress: cultivator.cultivationProgress
+    });
+    const teachingRng = forStream(
+        run.seed, 'fight_teaches', nextTurn,
+        PLAYER_ROLL_IDENTITY, opponentRollIdentity(opponent)
+    );
+    const comprehended = lesson.about !== null
+        && lesson.comprehensionChance > 0
+        && teachingRng.next() < lesson.comprehensionChance;
 
     // ── Persistence. One transaction: a confrontation that recorded the wounds
     // and not the outcome, or the outcome and not the wounds, is the drift this
@@ -652,6 +733,7 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
     const combat = new CombatRepository(repos.db);
     let death: { cause: string; description: string } | null = null;
     let opponentDeath: { cause: string; description: string } | null = null;
+    let learned: { name: string; degree: number; deepened: boolean } | null = null;
 
     const persist = repos.db.transaction(() => {
         const selfHpDelta = result.hp[cultivator.id] - cultivator.hp;
@@ -755,6 +837,67 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
             }
         }
 
+        // ── WHAT THE FIGHT TAUGHT, WRITTEN DOWN ──────────────────────────
+        //
+        // In the same transaction as the wounds, for the reason the block above
+        // gives: a fight that recorded what it cost and not what it taught is
+        // the same drift in the other direction.
+        //
+        // Zero for most fights, and zero always for a fight against somebody
+        // four or more rungs below - `what-a-fight-teaches.ts` reads that off
+        // REGARD_BANDS and there is no branch here that could disagree with it.
+        if (lesson.progress > 0) {
+            repos.cultivators.applyDeltas(cultivator.id, {
+                cultivationProgress: lesson.progress
+            });
+        }
+        if (comprehended && lesson.about !== null) {
+            const holder = repos.cultivators.getById(cultivator.id)!;
+            // The achievement is a record of an EVENT and the insight's id is
+            // derived from it, which is what makes a comprehension bought in a
+            // fight as traceable as one bought under lightning. `formInsight`
+            // is the only constructor and it takes the achievement by value.
+            const achievement = recordAchievement({
+                kind: 'survived_extraordinary',
+                onDay: day,
+                turn: nextTurn,
+                summary:
+                    `Used ${technique?.name ?? 'their art'} against ${opponent.name} `
+                    + `(${rankName(opponent.realmOrdinal)}) and was still standing after. `
+                    + lesson.why,
+                detail: {
+                    opponent: opponent.name,
+                    band: lesson.band,
+                    gap: lesson.gap,
+                    outcome: result.outcome
+                }
+            }, teachingRng);
+            const candidate: InsightCandidate = {
+                domain: lesson.about.domain,
+                subject: lesson.about.subject,
+                // `phenomenon`, and it is the honest kind: it happened TO them.
+                // That is also why it is always suited - a fight you were in is
+                // not a manual that might not fit you.
+                access: {
+                    kind: 'phenomenon',
+                    label: `a real fight with ${opponent.name}`
+                },
+                opening:
+                    `${lesson.about.subject}, used against somebody who could answer `
+                    + `(${lesson.band})`
+            };
+            const integrated = integrateInsight(holder.insights, candidate, achievement);
+            repos.cultivators.update(cultivator.id, {
+                insights: integrated.insights,
+                achievements: [...holder.achievements, achievement]
+            });
+            learned = {
+                name: `${integrated.insight.subject} degree ${integrated.insight.degree}`,
+                degree: integrated.insight.degree,
+                deepened: integrated.deepened
+            };
+        }
+
         // A standing feud is one of the ordinary outputs, so it is written down
         // rather than left to be remembered. Direction matters: the record is
         // held BY the loser ABOUT the winner.
@@ -834,6 +977,21 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         killRequirement: result.killRequirement,
         remnant: result.remnant,
         obligations: result.obligations,
+        // ── WHAT THE FIGHT TAUGHT ────────────────────────────────────────
+        //
+        // Reported whether or not anything landed, and the `why` is the whole
+        // point of reporting the empty case: a player who fought somebody far
+        // below them and learned nothing is owed the sentence saying so, or
+        // the mechanic is invisible and reads as not existing.
+        taught: {
+            band: lesson.band,
+            gap: lesson.gap,
+            comprehensionChance: round4(lesson.comprehensionChance),
+            comprehended: learned !== null,
+            insight: learned,
+            progress: round2(lesson.progress),
+            why: lesson.why
+        },
         died: death !== null,
         death,
         // Kept as separate fields rather than folded into `died`, which has

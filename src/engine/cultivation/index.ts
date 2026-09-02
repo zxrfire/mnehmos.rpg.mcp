@@ -53,6 +53,8 @@ export * from './deviation.js';
 export * from './toll.js';
 export * from './breakthrough.js';
 export * from './combat.js';
+export * from './how-far-you-went-to-make-them-comply.js';
+export * from './what-a-fight-teaches.js';
 export * from './regard.js';
 export * from './market.js';
 export * from './survival.js';
