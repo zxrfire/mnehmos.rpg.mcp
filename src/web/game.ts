@@ -239,6 +239,7 @@ import {
     sealKey,
     servesNoHouse,
     postureKey,
+    rankAndIndex,
     standingStructure,
     type HousePosition
 } from './standing.js';
@@ -2824,10 +2825,19 @@ ${noticed}`;
                 + (position
                     ? ''
                     : ' You hold no seat anywhere, so the second route is not open to you either.'),
-                `"${query}" resolved to faction ${asFaction.id}, not to a combatant. `
-                + `combat_manage.resolve takes a person. acting ordinal=${theirs ?? 'unknown'}; `
-                + `membership=${position?.sectId ?? 'none'}. Routes: attack a named member, or `
-                + 'posture/war from the seat.'
+                `"${query}" resolved to the faction ${asFaction.id}, and a faction is not a `
+                + 'combatant: the confrontation resolver takes a person. '
+                + (theirs === null
+                    ? 'What the strongest person they would put in a room stands at is not '
+                      + 'recorded anywhere this read can see.'
+                    : `The strongest person they will put in a room stands at `
+                      + `${rungAndOrdinal(theirs)}.`)
+                + (position
+                    ? ` This cultivator serves ${position.sectId}, so the other route is open to `
+                      + 'them: what a house does to a house is decided from the seat.'
+                    : ' This cultivator holds no membership anywhere, so the other route - what a '
+                      + 'house does to a house, decided from the seat - is not open to them either.')
+                + ' What is open is attacking a named member standing in the same place as them.'
             ));
         }
 
@@ -4032,9 +4042,10 @@ ${noticed}`;
                     + 'twice. Whatever you have earned there is earned there and does not travel; '
                     + 'walking out is a thing you do first, and out loud, and it costs what it '
                     + 'costs.',
-                    `sect_members holds ${held.sectId} at rank_index=${held.rankIndex} `
-                    + `(contribution=${held.contribution}). addMember would delete that row `
-                    + 'silently; the departure path owns the forfeiture and says so.'
+                    `The membership record already holds ${held.sectId}: ${rankAndIndex(held)}, `
+                    + `with ${held.contribution} contribution earned there. Being taken on `
+                    + 'elsewhere would delete that row in the same transaction and say nothing; '
+                    + 'the departure path owns the forfeiture and says it out loud.'
                 ));
             }
 
@@ -4086,7 +4097,9 @@ ${noticed}`;
                 'No door you know of.',
                 'You do not know the name of a single order that takes people on. Somebody would ' +
                 'have to say one in front of you first, and nobody has.',
-                `sect_manage.list returned ${all.length} admissible sect(s); none are known to this cultivator.`)
+                `${all.length} order(s) in the world would admit somebody. None of them is a name `
+                + 'this cultivator holds, and the listing is not offered as a substitute for '
+                + 'having heard one.')
             : factsForToolResult(
                 `${heard.length} order${heard.length === 1 ? '' : 's'} you could put yourself in front of.`,
                 [
@@ -4529,8 +4542,8 @@ ${noticed}`;
                         ? 'Who your own house answers to is not something you have been told.'
                         : `What is above ${position.sectName}, as far as you have been told, is `
                           + `${nameable.join(', then ')}.`),
-                    `chainToApex(${position.sectId}) does not contain ${named.id}. `
-                    + `${standingStructure(position, null)}`
+                    `The chain of houses ${position.sectId} answers up does not contain `
+                    + `${named.id} at any link. ${standingStructure(position, null)}`
                 ));
             }
         }
@@ -4549,8 +4562,7 @@ ${noticed}`;
         // a player is entitled to know what it says about them.
         execution.facts.structure.push(
             position
-                ? `Sent over ${position.rankTitle} of ${position.sectName} `
-                  + `(rank_index=${position.rankIndex} of ${position.rankCount}).`
+                ? `Sent over ${rankAndIndex(position)}.`
                 : 'Sent by somebody who serves no house. There is no rank on the letter.'
         );
         return execution;
@@ -4602,8 +4614,10 @@ ${noticed}`;
                 `${named.name} keeps no procedure of the kind. Whether that is because there is `
                 + 'nothing behind it to apply for, or because they have never written one down, '
                 + 'is not something anybody outside could tell you.',
-                `getHoldingsOf(${named.id}): ${holdings.length} holding(s), 0 with a stated form. `
-                + 'Counts are not disclosed either way - see Holding.countIsKnownTo.'
+                `${named.id} holds ${holdings.length} line item(s) of the kind, and not one of them `
+                + 'carries a stated form to fill in. What the counts are is not disclosed either '
+                + 'way: who a count is known to is a property of the holding, and it does not '
+                + 'include this cultivator.'
             ));
         }
 
@@ -4637,14 +4651,22 @@ ${noticed}`;
 
         const facts = factsForToolResult(`${named.name}: the form is filed.`, lines);
         facts.structure.push(
-            `Holding.theForm present on ${withForm.length} line item(s) at ${named.id}; `
-            + `releaseMode=${withForm.map(h => h.releaseMode).join(',')}, `
-            + `anyoneMayRefuse=${withForm.map(h => String(h.anyoneMayRefuse)).join(',')}. `
-            + 'Counts and grades withheld: countIsKnownTo does not include this cultivator.'
+            `${withForm.length} line item(s) at ${named.id} carry a form to fill in. `
+            + withForm.map(h =>
+                h.releaseMode === 'written_instruction'
+                    ? 'One is released on a written instruction somebody left, which means '
+                      + 'somebody can act on those terms'
+                      + (h.anyoneMayRefuse ? ', and any single member may still end it.' : '.')
+                    : 'One is released by a body deciding together'
+                      + (h.anyoneMayRefuse
+                          ? ', and any single member of that body may end it.'
+                          : ', and no single member may end it alone.')).join(' ')
+            + ' The counts and the grades are withheld: who the count is known to does not '
+            + 'include this cultivator.'
         );
         facts.structure.push(
-            'Refused by construction. No state in this engine satisfies '
-            + 'Holding.sufficientReason, and no argument may assert that it has been met.'
+            'Refused by construction. No state this engine can reach satisfies what the holder '
+            + 'counts as a sufficient reason, and no argument may assert that it has been met.'
         );
         // Whose name is on the form. NOT a gate, and deliberately not one: the
         // catalog says clerks are taught the Requisition as a single procedure
@@ -4656,8 +4678,7 @@ ${noticed}`;
         const filedBy = positionIn(this.repos, cultivator.id);
         facts.structure.push(
             filedBy
-                ? `Filed over ${filedBy.rankTitle} of ${filedBy.sectName} `
-                  + `(rank_index=${filedBy.rankIndex} of ${filedBy.rankCount}).`
+                ? `Filed over ${rankAndIndex(filedBy)}.`
                 : 'Filed by somebody who serves no house. The form does not require one.'
         );
 
@@ -4954,14 +4975,18 @@ ${noticed}`;
 
         const facts = factsForToolResult(DECLARED[which](position.sectName, named.name), lines);
         facts.structure.push(
-            `posture:${position.sectId}:${named.id} = ${which}, day ${onDay}, declared by `
-            + `${position.rankTitle} (rank_index=${position.rankIndex} of ${position.rankCount}, `
-            + 'seat).'
+            `The posture ${position.sectName} holds toward ${named.name} (${named.id}) is now `
+            + `"${which}", recorded on day ${onDay} against the pair of them. Declared by `
+            + `${rankAndIndex(position)}, which is the seat.`
         );
         if (own && theirActing !== null) {
             facts.structure.push(
-                `acting ordinals: ${position.sectName}=${own.acting}, ${named.name}=${theirActing}. `
-                + `Their one-off ceiling ${theirSeal?.sealedIsPublic ? `is ${theirSeal.ceiling}` : 'is not disclosed'}.`
+                `What each house can actually put in a room: ${position.sectName} at `
+                + `${rungAndOrdinal(own.acting)}, ${named.name} at ${rungAndOrdinal(theirActing)}. `
+                + (theirSeal?.sealedIsPublic
+                    ? `The one-off they could wake on top of that reaches `
+                      + `${rungAndOrdinal(theirSeal.ceiling)}, and they do not keep it quiet.`
+                    : 'Whether they hold a one-off to wake on top of that is not disclosed.')
             );
         }
         facts.structure.push(
@@ -5150,8 +5175,11 @@ ${noticed}`;
             execution.facts.lines.push(notYours);
             execution.facts.prose = `${execution.facts.prose}\n\n${notYours}`;
             execution.facts.structure.push(
-                `Not this cultivator's house: membership=${position?.sectId ?? 'none'}, `
-                + `target=${sectId}. Gated on reaching the seal, never on rank.`
+                `The seal belongs to ${sectId}, and this cultivator `
+                + (position
+                    ? `serves ${position.sectId}, which is a different house.`
+                    : 'serves no house at all.')
+                + ' Nothing here is gated on rank; it is gated on reaching the seal.'
             );
             execution.calls.push({
                 name: 'engine.wakeSeal',
@@ -5222,8 +5250,9 @@ ${noticed}`;
                 `There is nothing under ${position.sectName} that you have ever been shown, and `
                 + 'you would have been shown it. That is not the same as nothing being there, and '
                 + 'nobody alive can tell you which.',
-                `SECT_ANCESTRY[${position.sectId}].dormant is null. The negative is phrased `
-                + 'identically to a withheld positive by construction.'
+                `The ancestry the catalog holds for ${position.sectId} records nobody dormant. `
+                + 'The negative is phrased identically to a withheld positive by construction, so '
+                + 'this answer does not distinguish the two.'
             ));
         }
 
@@ -5278,17 +5307,23 @@ ${noticed}`;
 
         const facts = factsForToolResult(`${dormant.name} is awake.`, lines);
         facts.structure.push(
-            `sects.power_ordinal ${before} -> ${dormant.realmOrdinal} at ${position.sectId}. `
-            + 'sectThreat.ceiling has become sectThreat.acting and cannot be spent again.'
+            `What ${position.sectId} can put in a room has gone from `
+            + `${rungAndOrdinal(before)} to ${rungAndOrdinal(dormant.realmOrdinal)}. The ceiling `
+            + 'has become the acting figure and cannot be spent a second time.'
         );
         facts.structure.push(
-            `seal_spent:${position.sectId} written on day ${onDay}. `
-            + `sealGrade=${dormant.sealGrade}, sealReason=${dormant.sealReason}, `
-            + `publiclyKnown=${dormant.publiclyKnown}. Decided by ${position.rankTitle} `
-            + `(rank_index=${position.rankIndex} of ${position.rankCount}, seat).`
+            `The seal is recorded as spent at ${position.sectId} on day ${onDay}. It was a `
+            + `${dormant.sealGrade} seal holding somebody `
+            + (dormant.sealReason === 'protector'
+                ? 'banked whole and deliberately, as a reserve'
+                : 'kept at the end, because they were ending anyway')
+            + ', and outsiders '
+            + (dormant.publiclyKnown ? 'already knew there was something under the mountain.' : 'did not know there was anything under the mountain.')
+            + ` Decided by ${rankAndIndex(position)}, which is the seat.`
         );
         facts.structure.push(
-            `wakeCondition, unmet and not consulted: ${dormant.wakeCondition}`
+            'The condition the house wrote down for waking this one was not met and was not '
+            + `consulted. It reads: ${dormant.wakeCondition}`
         );
 
         this.repos.runs.incrementTurn(run.id, 1);
@@ -5439,7 +5474,9 @@ ${noticed}`;
                 + 'through. A rite performed to a name that is only a dead person is a rite; it is '
                 + 'just not an offering, and the elders who would have to conduct it would want to '
                 + 'know who you thought it was for.',
-                `SECT_ANCESTRY[${sectId}]: 0 ancestors with fate='ascended'.`
+                `The ancestry the catalog holds for ${sectId} lists nobody who crossed. An `
+                + 'offering has to be addressed to somebody on the far side, and there is nobody '
+                + 'there to address.'
             ));
         }
 
@@ -5450,7 +5487,9 @@ ${noticed}`;
                 + 'out, and the house does not hold a decade of everything it pays out. Making it '
                 + 'anyway would not be an offering; it would be the end of the house with an '
                 + 'offering in the middle of it.',
-                `offering cost ${cost} vs baseReservesFor(stipend)=${reserves} at ${sectId}.`
+                `The rite costs ${cost} stones against reserves of ${reserves} at ${sectId}, `
+                + `which is ${cost - reserves} more than the house holds. The reserves figure is `
+                + 'the same one the stipend is paid out of; there is not a second purse.'
             ));
         }
 
@@ -5492,9 +5531,10 @@ ${noticed}`;
 
         const facts = factsForToolResult('The offering is made.', lines);
         facts.structure.push(
-            `offering:${sectId} written on day ${onDay}, ${cost} stones (${OFFERING_MONTHS} months `
-            + `of payroll at ${monthly}/month) against reserves of ${reserves}. Decided by `
-            + `${seat.rankTitle} (rank_index=${seat.rankIndex} of ${seat.rankCount}, seat).`
+            `The offering is recorded at ${sectId} on day ${onDay}. It cost ${cost} stones, which `
+            + `is ${OFFERING_MONTHS} months of payroll at ${monthly} a month, taken against `
+            + `reserves of ${reserves} and leaving ${reserves - cost}. Decided by `
+            + `${rankAndIndex(seat)}, which is the seat.`
         );
         facts.structure.push(
             'Response is null and is not rolled. Nothing in this engine decides whether an '
@@ -5583,10 +5623,11 @@ ${noticed}`;
 
         const facts = factsForToolResult(`${name}: the line upward.`, lines);
         facts.structure.push(
-            `SECT_ANCESTRY[${sectId}]: ${ascended.length} ascended, `
-            + `claimsLivingAncestor=${records?.claimsLivingAncestor ?? false}. Channel detail `
-            + `${isOwn ? 'disclosed: caller is of this house' : 'withheld: caller is not of this house'}. `
-            + 'claimIsTrue and afterCrossing are not read.'
+            `The ancestry the catalog holds for ${sectId} lists ${ascended.length} who crossed, `
+            + `and the house ${records?.claimsLivingAncestor ? 'claims one of them is still alive up there' : 'makes no claim that any of them is still alive up there'}. `
+            + `The detail of how a house reaches them is ${isOwn ? 'disclosed here, because the caller is of this house' : 'withheld here, because the caller is not of this house'}. `
+            + 'Whether the claim is true, and what became of any of them after crossing, are held '
+            + 'by the engine and are not read on this path.'
         );
         return this.freeAction(run, 'offer', facts);
     }
@@ -5662,10 +5703,13 @@ ${noticed}`;
 
         const facts = factsForToolResult('The far side of the Lid.', lines);
         facts.structure.push(
-            `layer=immortal, abode=${resident.abode?.id ?? 'none'}, `
-            + `standing=${(resident.standing?.standing ?? 0).toFixed(2)} `
-            + `(rank ${resident.standing?.rankAmongResidents ?? '?'} of `
-            + `${resident.standing?.residentCount ?? '?'}). `
+            'This read is taken on the immortal layer. '
+            + (resident.abode
+                ? `The abode being stood in is ${resident.abode.id}. `
+                : 'Nothing has been settled here yet, so there is no abode to stand in. ')
+            + `Standing among the residents reads ${(resident.standing?.standing ?? 0).toFixed(2)}, `
+            + `which is rank ${resident.standing?.rankAmongResidents ?? 'unranked'} of `
+            + `${resident.standing?.residentCount ?? 'an unrecorded number of'} residents. `
             + 'No mortal-layer reader is called on this path: no practice, no hearsay, no '
             + 'province ambient.'
         );
@@ -5710,9 +5754,10 @@ ${noticed}`;
             // are a newcomer with no tenure, no house and no holdings - and the
             // ladder is not one of the axes, because everybody up here is 46.
             facts.structure.push(
-                `immortalStanding=${(resident.standing?.standing ?? 0).toFixed(2)}, `
-                + `rank ${resident.standing?.rankAmongResidents ?? '?'} of `
-                + `${resident.standing?.residentCount ?? '?'} residents. `
+                `Standing on the immortal layer reads `
+                + `${(resident.standing?.standing ?? 0).toFixed(2)}, which is rank `
+                + `${resident.standing?.rankAmongResidents ?? 'unranked'} of `
+                + `${resident.standing?.residentCount ?? 'an unrecorded number of'} residents. `
                 + `${resident.readings?.below.statement ?? ''}`.trim()
             );
         }
@@ -5751,7 +5796,8 @@ ${noticed}`;
                 'There is nothing to come down from.',
                 'You are standing in the world. Going down from here is a staircase, and there '
                 + 'is not one.',
-                `evaluateLidTransit(down) refused: ${transit.reason}. ${transit.detail}`
+                `The transit was refused going down, and the reason filed is `
+                + `${String(transit.reason ?? 'not recorded').replace(/_/g, ' ')}. ${transit.detail}`
             ));
         }
 
@@ -5870,7 +5916,8 @@ ${noticed}`;
             return refused('world.descend', 'descend', factsForRefusal(
                 'It does not open there.',
                 visit.detail,
-                `world.descend refused: ${visit.reason}.`
+                `The descent was refused, and the reason filed is `
+                + `${String(visit.reason).replace(/_/g, ' ')}.`
             ));
         }
 
@@ -5906,11 +5953,13 @@ ${noticed}`;
 
         const facts = factsForToolResult('You went down.', lines);
         facts.structure.push(
-            `descent: ${weathered.struck}/${weathered.strikes} strikes landed at `
-            + `${(weathered.perStrike * 100).toFixed(0)}% per strike; breaths=${visit.breaths} `
-            + `(window ${BREATHS_IN_THE_LOWER_REALM.min}-${BREATHS_IN_THE_LOWER_REALM.max}); `
-            + `carriedBack=${visit.carriedBack.length}, leftBehind=${visit.leftBehind.length}, `
-            + `refused=${visit.refused.length}.`
+            `Coming down, ${weathered.struck} of ${weathered.strikes} strikes landed, each one `
+            + `${(weathered.perStrike * 100).toFixed(0)}% to land. The visit lasted `
+            + `${visit.breaths} breaths, out of a window that runs `
+            + `${BREATHS_IN_THE_LOWER_REALM.min} to ${BREATHS_IN_THE_LOWER_REALM.max}. `
+            + `${visit.carriedBack.length} object(s) went back up with them, `
+            + `${visit.leftBehind.length} stayed under the ceiling, and `
+            + `${visit.refused.length} were refused passage either way.`
         );
         facts.structure.push(
             'Layer unchanged by design. The expulsion is not a second action: the visit is '
@@ -6017,7 +6066,8 @@ ${noticed}`;
             return refused('world.sendAcross', 'offer', factsForRefusal(
                 'It does not go.',
                 result.detail,
-                `world.sendAcross refused: ${result.reason}.`
+                `Sending it across was refused, and the reason filed is `
+                + `${String(result.reason).replace(/_/g, ' ')}.`
             ));
         }
 
@@ -7762,14 +7812,34 @@ ${noticed}`;
     ): Execution {
         if (isGuidingErrorBody(result)) {
             // `message` is written in the world's voice by the tool layer.
-            // `hint` is a tool invocation for a developer, and never goes to a
-            // player: it names the API rather than anything in the fiction.
+            //
+            // `hint` is a tool invocation for a developer - this comment said so
+            // already, and said "never goes to a player" - and it was going
+            // straight onto the mechanical line anyway, together with the bare
+            // error code. That was written when the structure channel was
+            // believed not to reach anybody: it does, `engineEntries` renders
+            // every line of it into the play log, and the result was read in
+            // play as
+            //
+            //   nothing_accrued. Time is advanced by
+            //   cultivation_manage.cultivate. Calling stipend twice does not
+            //   pay twice.
+            //
+            // - a database key and an MCP tool name, in the transcript, on the
+            // commonest refusal a house member meets. So the hint now goes to
+            // the inspector, where a tool name is exactly the right word, and
+            // the log gets the ruling said as a ruling. Every refusal this
+            // engine files goes through here, so this one branch is most of the
+            // remaining surface.
             const hint = typeof result.hint === 'string' ? result.hint : null;
-            return refused(name, action, factsForRefusal(
+            const execution = refused(name, action, factsForRefusal(
                 `${subject}: refused.`,
                 result.message,
-                `${result.error}${hint ? `. ${hint}` : ''}`
+                'The engine declined, and the reason it filed is '
+                + `${String(result.error).replace(/_/g, ' ')}.`
             ));
+            execution.calls[0].summary = `${result.error}${hint ? `. ${hint}` : ''}`;
+            return execution;
         }
 
         const body = result as Record<string, unknown>;
@@ -9062,8 +9132,8 @@ ${noticed}`;
                     `${pill.name} is not bought with money.`,
                     `${notForSale} What ${pill.name} does is not in question, and neither is your `
                     + 'purse: it is that a counter is the wrong place to be standing.',
-                    `pillTradeTier(${pill.id}) = barter at ${pill.grade} grade. No cash price `
-                    + 'exists to quote. Nothing bought, nothing spent, no time passed.'
+                    `${pill.id} trades by barter at ${pill.grade} grade, so no cash price exists `
+                    + 'to quote. Nothing bought, nothing spent, no time passed.'
                 ));
             }
 
@@ -10631,8 +10701,8 @@ ${noticed}`;
                 query.length >= 2 ? `No art called ${query}.` : 'No art named.',
                 'You turn the name over and it is not a method anybody was ever taught. Asking for '
                 + 'what there is to learn is a different question, and it has an answer.',
-                `Unresolved technique "${query || '(nothing named)'}". `
-                + 'technique_manage.list_available answers the general form.'
+                `Unresolved technique "${query || '(nothing named)'}". Asking what there is to `
+                + 'learn is a different read and it has an answer.'
             ));
         }
 

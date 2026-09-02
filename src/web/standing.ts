@@ -177,24 +177,56 @@ export function rankDoesNotReach(position: HousePosition, opensAt: number): stri
 }
 
 /**
+ * What each of the four tiers is, in the words the tier exists to mean.
+ *
+ * `tier=elder` is a column value. "Takes disciples in under their own line" is
+ * what the value is FOR, and it is the half a player can act on - so the
+ * structure channel says both, once, on the row it applies to.
+ */
+function tierInWords(tier: AuthorityTier): string {
+    switch (tier) {
+        case 'ordered': return 'the bottom rung, and it sends nobody anywhere';
+        case 'ordering': return 'a rung that can send the rungs below it and do nothing else';
+        case 'elder': return 'an elder rung, which sends below it and takes disciples in under its own line';
+        case 'seat': return 'the seat, which does all of that and holds the standard, the methods, and who is an elder besides';
+    }
+}
+
+/**
+ * A rung in a house, named, with its index kept beside it.
+ *
+ * The house sibling of `rungAndOrdinal` in `facts.ts`, and it exists for the
+ * same reason: `rank_index=2` is a column value, and six call sites in
+ * `game.ts` were each deciding separately how to say it. Both halves are kept,
+ * because they differ by one - a rank index counts from zero and a person in
+ * the house counts from the bottom - and a reader handed only the index against
+ * a house that lists five rungs cannot tell which end it started at.
+ */
+export function rankAndIndex(position: HousePosition): string {
+    return `${position.rankTitle} of ${position.sectName}, rank ${position.rankIndex + 1} of `
+        + `${position.rankCount} counting from the bottom (rank index ${position.rankIndex})`;
+}
+
+/**
  * The mechanical line that goes with either refusal above.
  *
  * On the structure channel rather than in the prose, on the same split every
  * other refusal in this package uses: the player is told what happened in the
- * world, and somebody reading the inspector is told which predicate said so.
+ * world, and somebody reading the log is told which predicate said so.
  */
 export function standingStructure(
     position: HousePosition | null,
     opensAt: number | null
 ): string {
     if (!position) {
-        return 'sect_members: no row for this cultivator. Authority is the rank index and '
-            + 'there is no rank index. Nothing else grants it.';
+        return 'This cultivator holds no membership in any house. Authority here is the rank '
+            + 'index and there is no rank index. Nothing else grants it.';
     }
-    return `sect_members.rank_index=${position.rankIndex} (${position.rankTitle}), `
-        + `ranks.length=${position.rankCount}, tier=${position.tier}`
-        + (opensAt === null ? '.' : `, opensAtRankIndex=${opensAt} `
-            + `(${position.ranks[opensAt] ?? 'none'}).`);
+    return `They stand as ${rankAndIndex(position)}, which is ${tierInWords(position.tier)}.`
+        + (opensAt === null
+            ? ''
+            : ` The act opens at ${position.ranks[opensAt] ?? 'a rung this house does not have'}, `
+              + `rank ${opensAt + 1} of ${position.rankCount} (rank index ${opensAt}).`);
 }
 
 /**

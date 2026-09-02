@@ -105,7 +105,7 @@ import { getPill } from '../data/cultivation/pills.js';
 import { getHerb } from '../data/cultivation/herbs.js';
 import { loosePlaceKey } from './knowledge.js';
 import { matchScore, MATCH_THRESHOLD } from './entities.js';
-import type { EngineFacts } from './facts.js';
+import { rungAndOrdinal, type EngineFacts } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT CAN BE PUT ASIDE
@@ -761,11 +761,20 @@ export function factsForBuried(
         'You will have to remember where this is. Nothing in your head goes any further than you do, and the next person to stand here will be somebody else.'
     ];
     return facts(`Buried at ${record.place}.`, lines, [
-        `${record.id} written to cultivation_sites, kind=cache, discovered=0, run_id=${record.buriedByRunId}, `
-        + `world day ${record.buriedOnWorldDay ?? 'unrecorded'}. Ground '${record.ground}', `
-        + `${record.burial.daysSpent}d, ordinal ${record.burial.burierOrdinal}, `
-        + `anchored=${record.burial.anchored}, watchers=${watchers}. `
-        + `Cultivator ${cultivator.id} debited ${record.goods.spiritStones} stones and ${record.goods.items.length} stack(s).`
+        `${record.id} is written into cultivation_sites as a cache, undiscovered, against run `
+        + `${record.buriedByRunId}, on `
+        + (record.buriedOnWorldDay === undefined || record.buriedOnWorldDay === null
+            ? 'a world day the run did not record'
+            : `world day ${record.buriedOnWorldDay}`)
+        + `. It went into ${record.ground.replace(/_/g, ' ')} ground over `
+        + `${record.burial.daysSpent} day(s) of work by somebody standing at `
+        + `${rungAndOrdinal(record.burial.burierOrdinal)}, and `
+        + (record.burial.anchored
+            ? 'the Anchorhold holds it on the survey of record.'
+            : 'nothing anchors it anywhere.'),
+        `${watchers} ${watchers === 1 ? 'person was' : 'people were'} close enough to see it done. `
+        + `Cultivator ${cultivator.id} was debited ${record.goods.spiritStones} stone(s) and `
+        + `${record.goods.items.length} stack(s) to fill it.`
     ]);
 }
 
@@ -815,10 +824,16 @@ export function factsForLodged(record: DepositRecord, view: CounterView, wroteDo
         `${view.terms.whatTheyWillNotDo}`
     ].filter(line => line.length > 0);
     return facts(`Lodged with ${view.houseName}.`, lines, [
-        `${record.id} written to cultivation_sites, kind=deposit, run_id=${record.lodgedByRunId}, `
-        + `faction=${record.factionId}, world day ${record.lodgedOnWorldDay ?? 'unrecorded'}, term ${record.termYears}y, `
-        + `fee ${record.feePaidStones} stones, ${record.wordCount} word(s) sealed. `
-        + 'The phrase itself is not stored: only a salted digest, and there is no function anywhere that reverses it.'
+        `${record.id} is written into cultivation_sites as a deposit, against run `
+        + `${record.lodgedByRunId}, held by ${record.factionId}, on `
+        + (record.lodgedOnWorldDay === undefined || record.lodgedOnWorldDay === null
+            ? 'a world day the run did not record'
+            : `world day ${record.lodgedOnWorldDay}`)
+        + `. The term is ${record.termYears} year(s) and the fee paid in advance was `
+        + `${record.feePaidStones} stone(s).`,
+        `${record.wordCount} word(s) were sealed as the form of words that collects it. The phrase `
+        + 'itself is not stored: only a salted digest, and there is no function anywhere that '
+        + 'reverses it.'
     ]);
 }
 
@@ -1308,7 +1323,7 @@ function bury(deps: LegacyDeps, days: number): LegacyOutcome {
         return decline(
             'Nowhere to bury it.',
             'You look for somewhere to put it and cannot say where you are well enough to find this again.',
-            'Cultivator.location is empty; a cache row would have no place key and could never be dug up.'
+            'This cultivator has no location on record, so a cache row would carry no place key and could never be dug up again.'
         );
     }
 

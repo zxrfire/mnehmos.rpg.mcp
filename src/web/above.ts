@@ -240,16 +240,17 @@ export function theTwoWaysDown(abodeName: string | null): string[] {
     ];
 }
 
-/** The mechanical account of the same, for the inspector. */
+/** The mechanical account of the same, for the log and the inspector. */
 export function theTwoWaysStructure(action: string, abodeId: string | null): string[] {
     return [
-        `existence.canExistBeyondTheLid = true; '${action}' is a mortal-world action and has no `
-        + 'form on this layer.',
-        `Re-offered as: offer/send (sendAcross, no tribulation, object ceiling `
-        + `${OBJECT_CEILING_BELOW_THE_LID}) or descend (evaluateLidTransit(down), 9 strikes, `
-        + `${BREATHS_IN_THE_LOWER_REALM.min}-${BREATHS_IN_THE_LOWER_REALM.max} breaths).`,
+        `This cultivator can exist beyond the Lid, and "${action}" is a mortal-world action with `
+        + 'no form on this layer, so it was re-offered rather than refused.',
+        `The two forms it takes: sending something down, which draws no tribulation and carries `
+        + `nothing above grade ${OBJECT_CEILING_BELOW_THE_LID}; or going down in person, which `
+        + `costs nine strikes and buys ${BREATHS_IN_THE_LOWER_REALM.min} to `
+        + `${BREATHS_IN_THE_LOWER_REALM.max} breaths on the ground.`,
         abodeId === null
-            ? 'No abode on record for this resident.'
-            : `Standing at ${abodeId} on the immortal layer.`
+            ? 'No abode is on record for this resident.'
+            : `They are standing at ${abodeId} on the immortal layer.`
     ];
 }
