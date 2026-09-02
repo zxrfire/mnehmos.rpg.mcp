@@ -1541,7 +1541,18 @@ export function summariseInjury(injury: Injury): Record<string, unknown> {
         treated: injury.treated,
         sustainedOnTurn: injury.sustainedOnTurn,
         cultivationPenalty: injury.cultivationPenalty,
-        breakthroughPenalty: injury.breakthroughPenalty
+        breakthroughPenalty: injury.breakthroughPenalty,
+        // The field that says WHICH wound this is, and the only one the summary
+        // used to drop. Two things wanted it back. A narrator handed a
+        // `severity` and a sentence was being asked to describe a severed
+        // meridian without being told it was one, when the catalog has a name, a
+        // permanence and a stated treatment for it. And a summary missing this
+        // is not a wound any more - it is a wound of its severity, which is
+        // exactly the reconstruction-from-a-count that `woundsCarriedBy` exists
+        // to apologise for - so nothing downstream could put a resolver's wound
+        // onto a record without inventing the half that had been thrown away.
+        // With it, this projection is lossless and `InjurySchema` parses it.
+        woundType: injury.woundType
     };
 }
 
