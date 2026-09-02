@@ -198,6 +198,22 @@ below falls straight out of it:
 - **Which makes using it suspicious in a specific way rather than a general one.** Anybody who
   has seen the notice is looking at a token whose owner is known to be alive somewhere else.
 
+**And the name itself is carried on an object, which is what stops a lineage from being only a
+claim.** A jade tag with the house's name cut into it. So *"I am of the Ru"* is not words — **it
+is a token**, and every rule above lands on it unchanged: it shatters when its holder dies, it
+can be cancelled, and a taken one is hot from the moment it is taken.
+
+**That is what makes a prestigious surname hard to lie about.** To pass as a Ru you need a Ru
+tag, and because it shatters you cannot take one off a body — **you would have to take a living
+Ru and keep them alive**, against a family sitting at the top of an apex house. Nobody runs that
+deception casually, which is precisely why the name is worth anything.
+
+**But the tag authenticates the line, not the person.** It says Ru. It does not say *which* Ru.
+So a genuine tag in the wrong hands still reads as *a Ru* — **it answers the question the family
+check asks and leaves the individual wide open**, which is the seam somebody would actually work.
+Verifying the object is realm-gated; verifying that this is the person it was issued to is not a
+question the object can answer at all.
+
 **Two things follow that are worth building toward.**
 
 **The unhoused are the safe target.** A rogue cultivator has no plate and no house to miss them,
