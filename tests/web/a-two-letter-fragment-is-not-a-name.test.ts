@@ -62,10 +62,23 @@ describe('a two-letter fragment is not a name', () => {
         }
     });
 
-    it('shows why the length guard alone is not enough', () => {
-        // Caught by the stop list, NOT by length: it would otherwise match.
-        expect(wouldMatch('her')).toBe(true);
+    /**
+     * This used to assert that "her" WOULD have matched, to show that the
+     * length guard alone was not enough and the stop list was carrying the
+     * case. The scorer has since been narrowed again - one word against a
+     * many-word name is not a reference to it - so "her" no longer reaches a
+     * technique by score either.
+     *
+     * The rule the test asserts is the one that has not changed: **the stop
+     * list refuses a pronoun before it is scored at all**, and it must keep
+     * doing so on its own. Scoring is a second line and not a replacement -
+     * a single-word catalog name would still be reachable by a pronoun that
+     * happened to equal it, and "resolving what `it` refers to is a different
+     * job from matching a name" whatever the score says.
+     */
+    it('refuses a pronoun before scoring, and the scorer no longer needs to be asked', () => {
         expect(STANDS_IN_FOR_A_THING.test('her')).toBe(true);
+        expect(wouldMatch('her')).toBe(false);
     });
 
     it('does not swallow real names that merely start like a pronoun', () => {
