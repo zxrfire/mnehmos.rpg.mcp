@@ -11,6 +11,7 @@ import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator'
 import type { Narrator } from '../../src/web/narrator';
 import { createApp, type ProviderStatus } from '../../src/web/server';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
+import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
 /** In-memory database with the real migrations, foreign keys on. */
@@ -118,6 +119,18 @@ export interface Harness {
 }
 
 export function makeGame(options: HarnessOptions = {}): Harness {
+    // The world registry in `cultivation-world.ts` is module state, and a
+    // vitest fork runs several test FILES in one process. Without this, a
+    // `worldEnabled` game joins whatever world the previous file left behind -
+    // built against a database this one has never seen - so its people, its
+    // sellers and its prices are somebody else's. That is the whole of the
+    // intermittent price failure that was read as flakiness for a long time:
+    // the test passed alone and failed in company, which is the signature.
+    //
+    // Every harness game gets a fresh database, so there is no case where
+    // inheriting the last file's world is what a caller wanted.
+    resetCultivationWorlds();
+
     if (options.worldSeed !== undefined) {
         // Not silently ignored: a test that thinks it pinned the world and did
         // not is a test that pins a coincidence.
