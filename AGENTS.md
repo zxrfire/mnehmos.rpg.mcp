@@ -781,10 +781,16 @@ variety, the things that variety would have produced are simply absent - fewer r
 thinner understanding, nothing to bring to a crossing that asks what you have understood. The
 loop stops being optimal on its own, and the reason it stops is legible in the fiction.
 
-Measured, for scale: six played runs using one action on repeat all died at ordinal 0-1 by age
-twenty, against a varied strategy on the same build reaching a median of 13 with most runs
-surviving. The gap is already large. The point is that it should be a fact about the lives, not
-a tax on the verb.
+**The image to hold is a greenhouse.** Somebody whose whole life was moving between caves and
+sitting in them has been raised under glass. Nothing went wrong for them, which sounds like
+good fortune and is the problem: they have never been tested, never had to come back from
+anything, never met somebody who wanted something from them. They are not being punished for
+grinding - they are simply thin, in a way that shows the moment the world asks them for
+anything they did not practise.
+
+And note what this does NOT license. A repetitive life failing *early* is not this rule
+working; it is something else killing them, and it should be investigated rather than credited.
+This effect is about who somebody has become over a long life, so it can only show up over one.
 
 ### Agency: do not ban it, and do not soften it
 
