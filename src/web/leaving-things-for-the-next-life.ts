@@ -1062,7 +1062,13 @@ export const LEGACY_NOUNS =
     // stones for what I am carrying" - `sell`'s own phrasing - was answered
     // with a list of custody counters. `everything i am carrying` stays,
     // because putting all of it somewhere IS this verb.
-    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
+    //
+    // `my pouch` went with it, one word over. A pouch is the container somebody
+    // CARRIES; the things in it are what they might leave, and the words for
+    // those - my things, my goods, my stones, my estate - are all still here.
+    // Measured: "what is in my pouch" was answered with the bequest-houses
+    // lecture, which is the plainest inventory question in the game.
+    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
 export const LEGACY_BURY_VERBS_ALONE = 'bury|buries|burying|cache|caches|caching|inter|inters';

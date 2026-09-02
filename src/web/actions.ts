@@ -1587,6 +1587,74 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * verb next door - "I pick the mushrooms" and "I pick a fight" must both go on
  * reaching what they reached.
  */
+/**
+ * Whose it is: a pronoun, or a name with an apostrophe on the end of it.
+ *
+ * The apostrophe is what makes a name safe to admit here - "Cao Antao's purse"
+ * says whose the purse is, and no other verb's sentence puts a possessive in
+ * front of a portable object.
+ */
+// Lowercase, because the intent table is matched against the lowered sentence.
+// The capitalisation that tells a NAME from a noun is used on the other side,
+// in `whoATheftIsAimedAt`, which reads the input as the player typed it.
+export const A_POSSESSIVE =
+    "his|her|their|its|somebody's|someone's|(?:the )?[a-z]+(?:\\s+[a-z]+){0,2}(?:'s|s')";
+
+/**
+ * A thing small enough to be taken off a person.
+ *
+ * Deliberately a short closed list of things somebody CARRIES. A road, a job, a
+ * duty and a contract are all things people take and none of them is on it,
+ * which is the whole of what keeps `take` safe in the theft row.
+ */
+export const A_PORTABLE_THING =
+    'purse|purses|pouch|pouches|pocket|pockets|sleeve|sleeves|coin|coins|stones?|'
+    + 'spirit stones?|jade|pendant|pendants|ring|rings|token|tokens|talisman|talismans|'
+    + 'blade|sword|sabre|saber|dagger|manual|manuals|book|books|scroll|scrolls|'
+    + 'pill|pills|elixir|elixirs|medicine|bag|bags|purseful|belongings|things';
+
+/**
+ * WHO A THEFT IS AIMED AT, WHICH IS NEVER THE THING BEING TAKEN.
+ *
+ * `resolveAttempt` prices a theft against the PERSON it is taken from - their
+ * rung, their house, what they will do about it afterwards - so a target of
+ * "his purse" is a resolution failure waiting to happen and reached nobody in
+ * play. Measured: "I steal his purse" came out with target `"his purse"`, and
+ * "I pick his pocket" with no target at all, so both were resolved against
+ * whoever happened to be nearest with no record of who was meant.
+ *
+ * Two forms, and between them they cover how anybody says it. Somebody's name
+ * with an apostrophe on it - "Cao Antao's purse" - and the thing taken off or
+ * from a named person. Where the sentence names nobody, this returns nothing on
+ * purpose: "I steal his purse" genuinely does not name anybody, and `interact`
+ * with no target already means whoever is at hand, which is the honest reading.
+ * A guessed name would be a wrong guess, and this file's rule is that a wrong
+ * guess is worse than a refusal.
+ */
+export function whoATheftIsAimedAt(input: string): string | undefined {
+    const owned = new RegExp(
+        `\\b([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)(?:'s|s')\\s+(?:${A_PORTABLE_THING})\\b`
+    ).exec(input);
+    if (owned) return owned[1];
+
+    const off = /\b(?:off|from|out of)\s+(?:the\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/.exec(input);
+    if (off) return off[1];
+
+    return undefined;
+}
+
+/**
+ * Whether what came out of the sentence is an object rather than somebody.
+ *
+ * Only consulted for a theft, and only to DROP a target: a subject carrying a
+ * portable-thing word is the thing being taken, and handing it to a resolver
+ * that is looking for a person produces "nobody by that name" about a purse.
+ */
+export function namesTheThingRatherThanThePerson(target: string | undefined): boolean {
+    if (!target) return false;
+    return new RegExp(`\\b(?:${A_PORTABLE_THING})\\b`, 'i').test(target);
+}
+
 export const POCKET_PICKING =
     /\b(?:pickpocket\w*|(?:pick|picks|picking|picked|lift|lifts|lifting|lifted|cut|cuts|cutting)(?!\s+up\b)\b[^.!?]{0,40}?\b(?:pocket|pockets|purse|purses|sleeve|sleeves))\b/;
 
@@ -2101,7 +2169,12 @@ export const SITE_FACE_NOUNS =
 
 /** What is behind the door, referred to without naming the site. */
 export const SITE_PRIZE_NOUNS =
-    /\b(?:what(?:'s| is) (?:behind|beyond|inside|under|on) |what(?:'s| is) (?:in there|left)|whatever(?:'s| is) (?:behind|inside|in there)|the prize|the inheritance|the grave goods|the contents|the manuals?)\b/;
+    // `the manuals` is PLURAL here, and the singular was a measured misroute.
+    // A shelf of manuals behind a door is a prize; one manual is an object
+    // somebody is carrying, and "I take the manual" - typed by a player who had
+    // just bought one - was read as grave-robbing. Every other noun on this list
+    // can only be the contents of something.
+    /\b(?:what(?:'s| is) (?:behind|beyond|inside|under|on) |what(?:'s| is) (?:in there|left)|whatever(?:'s| is) (?:behind|inside|in there)|the prize|the inheritance|the grave goods|the contents|the manuals\b)/;
 
 export const SITE_ENTER_VERBS =
     'enter|enters|entering|go inside|goes inside|step inside|steps inside|go in|goes in|'
@@ -3653,7 +3726,13 @@ function extractTarget(input: string): string | undefined {
  * which is the whole reason the label is allowed to be an open string.
  */
 const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
-    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from)\b/],
+    // Bare `run` is admitted only as the WHOLE sentence, and `run for it` and
+    // `get out of here` beside it. "I run" reached nothing while "I run away"
+    // worked, which is this file's near-synonym rule failing on the shortest
+    // form of the most urgent verb in the game. Anchored rather than added to
+    // the alternation, because "I run to the mountain" is a journey and "I run
+    // a stall" is not a verb this parser owns at all.
+    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from|run for it|get out of (?:here|there)|leg it)\b|^\s*(?:i\s+)?runs?\s*[.!?]*$/],
     // `go into` was absent while `go inside` and `step into` were present, so
     // "I go into the village" reached nothing. The site rule takes this
     // sentence first when a site noun is in it, and movement gets it otherwise,
@@ -3819,7 +3898,7 @@ const OATH_INTENT_PATTERNS: ReadonlyArray<[OathIntent, RegExp]> = [
 const AIMED_AT_THE_LADDER =
     /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|wall|ceiling|next (?:rank|realm))\b/;
 
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for/;
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for/;
 
 /**
  * The fight was opened from cover, which is a different act from squaring up.
@@ -3918,7 +3997,12 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
      * nothing downstream branches on the word the player typed.
      */
     ['seduce', /\b(?:seduce|seduces|seducing|court|courting|woo|charm|flirt|flatter|win (?:him|her|them) over|make (?:him|her|them) fond of me|get close to)\b/],
-    ['threaten', /\b(?:threaten|intimidate|menace|warn (?:him|her|them)|make (?:him|her|them) afraid)\b/],
+    // "I make it clear what happens if he refuses" is a threat said the way
+    // people say it, and it reached nothing at all - so a promise of harm, the
+    // one leverage in the game that costs its maker nothing until it is made
+    // good on, had no phrasing outside the word itself. Every alternative added
+    // names the consequence, which is what a threat is.
+    ['threaten', /\b(?:threaten|intimidate|menace|warn (?:him|her|them)|make (?:him|her|them) afraid|make it clear what happens|tell (?:him|her|them) what happens if|say what happens if|let (?:him|her|them) know what happens if)\b/],
     /**
      * Taking it off a PERSON, which is not the same verb as taking it out of a
      * house's reserves.
@@ -3940,7 +4024,62 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
      * says the small version, and `mug` and `rob` because they are what a
      * player types when they mean the large one.
      */
-    ['steal', /\b(?:steal|steals|stealing|stole|rob|robs|robbing|mug|mugs|mugging|pickpocket|pick (?:his|her|their|the)\s+\w*\s*pockets?|help myself to (?:his|her|their)|take (?:it )?off (?:him|her|them))\b/],
+    /**
+     * ── THE COMMONEST PHRASINGS OF THIS VERB DID NOT ROUTE AT ALL ────────
+     *
+     * Measured on the current tree, six ordinary ways of saying one thing:
+     *
+     *   "I take Cao Antao's purse"                     -> unclear
+     *   "I cut the purse off the nearest person's belt" -> unclear
+     *   "I take the jade off him"                       -> unclear
+     *   "I lift the pouch from his belt"                -> unclear
+     *   "I steal his purse"    -> steal, target "his purse", which is not a person
+     *   "I pick his pocket"    -> steal, no target at all
+     *   "I rob the merchant"   -> steal, target "merchant"
+     *
+     * One of seven came out usable, and `unclear` is the wrong answer to every
+     * one of the four: theft is an ordinary move with a resolver, a price and
+     * consequences behind it, and the engine has to be the one that refuses it.
+     * A reader that declines to route it hands the whole turn to guesswork.
+     *
+     * ── THE VOCABULARY WAS ALREADY IN THIS FILE, WIRED TO THE WRONG THING ─
+     *
+     * {@link POCKET_PICKING} matches `cut ... purse`, `lift ... sleeve` and
+     * `pick ... pocket` - every idiom that failed - and its only use was as a
+     * VETO in the foraging branch. One half of the file could recognise a
+     * cutpurse and the half that routes could not. It is read here rather than
+     * copied, so the two cannot drift.
+     *
+     * ── AND `take`, WHICH IS THE DANGEROUS PART ──────────────────────────
+     *
+     * `take` is the commonest verb in the language for this and the widest in
+     * the file: "I take the road east", "I take work", "I take a job" and "I
+     * take the culling contract" all have to keep what they reach, and the
+     * comment on {@link POCKET_PICKING} records what happened the last time
+     * something here was widened to cover an imagined case. So this does not
+     * admit `take`. It admits **take, plus a possessive or a person, plus a
+     * portable thing** - which is what every one of the failing sentences is,
+     * and which no other verb's sentence looks like.
+     */
+    ['steal', new RegExp([
+        /\b(?:steal|steals|stealing|stole|rob|robs|robbing|mug|mugs|mugging|pickpocket)\b/,
+        /\bhelp myself to (?:his|her|their)\b/,
+        /\btake (?:it )?off (?:him|her|them)\b/,
+        POCKET_PICKING,
+        // take/lift/cut/slip <somebody's> <portable thing>
+        new RegExp(
+            '\\b(?:take|takes|taking|took|lift|lifts|lifting|lifted|cut|cuts|cutting|'
+            + 'slip|slips|slipping|swipe|swipes|snatch|snatches|palm|palms)\\s+'
+            + `(?:${A_POSSESSIVE})\\s+(?:${A_PORTABLE_THING})\\b`
+        ),
+        // take/lift/cut the <portable thing> off/from <somebody>
+        new RegExp(
+            '\\b(?:take|takes|taking|took|lift|lifts|lifting|lifted|cut|cuts|cutting|'
+            + 'slip|slips|slipping|swipe|swipes|snatch|snatches|palm|palms)\\s+'
+            + `(?:the |a |an |that |this )?(?:${A_PORTABLE_THING})\\b[^.!?]{0,30}?`
+            + '\\b(?:off|from|out of)\\b'
+        )
+    ].map(r => r.source).join('|'))],
     ['bribe', /\b(?:bribe|pay off|grease|buy (?:his|her|their) silence)\b/],
     ['interrogate', /\b(?:interrogate|question|press (?:him|her|them)|demand to know|grill)\b/],
     ['trade', /\b(?:trade|buy|sell|purchase|barter|haggle|market|shop|price)\b/],
@@ -4569,7 +4708,25 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bhow\s+(?:does|do)\s+(?:one|somebody|someone|a\s+person)\b/,
     /\bwhat\s+would\s+it\s+take\s+to\b/,
     /\bwhere\s+(?:can|could|do|would|should)\s+i\b/,
-    /\bwhat\s+(?:are|is)\s+my\s+options\b/
+    /\bwhat\s+(?:are|is)\s+my\s+options\b/,
+    // ── AND THE PROGRESSIVE, WHICH IS A QUESTION ABOUT WHAT IS ALREADY SO ─
+    //
+    // Two more found by probing the reads that spend, and both spend:
+    //
+    //   "what is left to gather here"  -> gather, seven days bent over the ground
+    //   "what am I cultivating"        -> cultivate, thirty days
+    //
+    // Neither sentence contains a decision. "What am I cultivating" is somebody
+    // asking what method they are on, which is a fact about the sheet, and it
+    // sat them down for a month. The first is the same shape one step out: what
+    // is THERE, asked before going to get it.
+    //
+    // Both need the verb to be the thing asked ABOUT rather than the thing
+    // being done, which is what `what am I <verb>ing` and `what is (left|here)
+    // to <verb>` both say and no sentence that commits to anything says.
+    /\bwhat\s+(?:am|are)\s+i\s+[a-z]+ing\b/,
+    /\bwhat\s+(?:is|are)\s+(?:there\s+|left\s+)?(?:here\s+)?to\s+[a-z]+\b/,
+    /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/
 ].map(r => r.source).join('|'), 'i');
 
 /**
@@ -5022,6 +5179,19 @@ function planIntent(input: string): PlannedAction {
             // reason: they are how people say it, and the exemplar file has
             // said so since it was written while the table had no line for them.
             + 'subdue|subdues|pin|pins|restrain|restrains|humiliate|humiliates|'
+            // Two more the same probe found reaching `unclear`. `go at` is one
+            // letter from `go for`, which was already here; putting a blade
+            // through somebody is the exemplar corpus's own phrasing for this
+            // verb and there is nothing else either can mean.
+            + 'go at|goes at|going at|put a sword through|put a blade through|'
+            + 'puts a sword through|puts a blade through|run (?:him|her|them) through|'
+            // The pronoun sits INSIDE the phrase in the way people actually say
+            // these. `cut down` and `draw on` were both already here and both
+            // missed their commonest form, because "cut him down" and "draw my
+            // sword on him" put a word in the middle.
+            + 'cut (?:him|her|them) down|cuts (?:him|her|them) down|'
+            + 'draw (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
+            + 'draws (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
             + 'start a fight|starts a fight|pick a fight|picks a fight|make an example of')
             || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text))) {
         return {
@@ -6217,9 +6387,17 @@ function planIntent(input: string): PlannedAction {
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
         const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
+        const subject = extractSubject(input, INTERACT_SUBJECT_VERBS);
+        // A theft is aimed at a PERSON, and the sentence is about a thing. See
+        // `whoATheftIsAimedAt`: the owner where the sentence names one, and
+        // nobody where it does not, rather than the purse.
+        const target = interactIntent === 'steal'
+            ? whoATheftIsAimedAt(input)
+                ?? (namesTheThingRatherThanThePerson(subject) ? undefined : subject)
+            : subject;
         return {
             action: 'interact',
-            target: extractSubject(input, INTERACT_SUBJECT_VERBS),
+            target,
             intent: interactIntent,
             ...(leverage ? { leverage } : {})
         };

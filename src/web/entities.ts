@@ -51,6 +51,7 @@ import {
 } from '../data/cultivation/index.js';
 import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
+import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
@@ -359,6 +360,34 @@ function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string
         }
     }
     return winningScore >= MATCH_THRESHOLD ? winner : null;
+}
+
+/**
+ * The one thing they are carrying that answers to the word, or nothing.
+ *
+ * ── WHY THIS IS NOT `best` WITH A LOWER BAR ──────────────────────────────
+ *
+ * `matchScore`'s one-word rule - a bare word wins on a longer name only when it
+ * supplies half that name's own significant words - exists because a common
+ * word carried in a long catalog name is evidence the CATALOG IS LARGE rather
+ * than evidence the player meant that row. It is right, and it is the reason
+ * "manual" no longer reaches a book nobody mentioned.
+ *
+ * Over what somebody is carrying, that reasoning inverts. A pouch holds one or
+ * two things; there is no largeness for a common word to be evidence of, and a
+ * player who says "the manual" while holding exactly one manual has named it as
+ * precisely as anybody can. So a shared significant word is enough here.
+ *
+ * The safety property is UNIQUENESS rather than a score. If two things they are
+ * carrying answer to the word, this returns nothing and the caller refuses -
+ * because "which one" is a question the player can answer and a guess is not.
+ * That is the same rule `nearestVocabularyWord` follows for a tie, for the same
+ * reason: an ambiguity's honest answer is the refusal, not a coin toss.
+ */
+function theOneTheyHold<T>(query: string, items: readonly T[], nameOf: (item: T) => string): T | null {
+    if (STANDS_IN_FOR_A_THING.test(query.trim())) return null;
+    const hits = items.filter(item => matchScore(query, nameOf(item)) > 0);
+    return hits.length === 1 ? hits[0]! : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -730,13 +759,64 @@ function sectFacts(
     return facts;
 }
 
-/** An art, from the catalog. Mastery is read from the join table when known. */
+/**
+ * WHAT THEY ARE HOLDING BEATS WHAT IS IN THE BOOK.
+ *
+ * ── THE TURN THIS WAS FOUND ON ───────────────────────────────────────────
+ *
+ * A player at Qi Condensation Layer 1 had one thing in the world: the Lesser
+ * Qi-Gathering Manual, bought two turns earlier, the only book they held. They
+ * typed *"I open the manual and start learning it"*. The ruling:
+ *
+ *   Azure Dew Gathering Canon: refused.
+ *   The engine declined, and the reason it filed is no copy of this book.
+ *
+ * "the manual" reached a book they had never seen, off a catalog of hundreds,
+ * while the one in their hands was never considered - and the refusal was then
+ * perfectly reasoned about the wrong object: *"There is no such book to be
+ * found on any stall in the market; it is a thing kept in private houses."*
+ * Naming it exactly worked. So the only way through was to know and type the
+ * catalog title of the object in their own pouch, which is the
+ * you-must-know-a-string failure `AGENTS.md` rules out, sitting on the single
+ * most load-bearing turn in the game: the whole opening is one blocker, and it
+ * is *"a book, or somebody willing to teach them one"*.
+ *
+ * ── THE ORDER, AND WHY IT IS AN ORDER RATHER THAN A BETTER MATCHER ───────
+ *
+ * A matcher will always find something plausible in a catalog of hundreds, and
+ * plausible is exactly how a book nobody had seen beat the copy in the pouch.
+ * What fixes it is precedence, not scoring:
+ *
+ *   1. what the player HOLDS
+ *   2. what is standing in front of them
+ *   3. the catalog
+ *
+ * A bare noun - "the manual", "the sword", "the pill" - means the thing in
+ * their own hands every time, and the catalog is where you go only when nothing
+ * they hold answers to the word. This function implements 1 and 3; 2 has no
+ * meaning for a book. The general form belongs to one resolver every verb goes
+ * through - `learn the manual`, `read the manual`, `sell the manual` and `give
+ * him the manual` all have the same right answer - and it is written up in
+ * `AGENTS.md` under "The parser names the act. The engine is the one that says
+ * no". This is the demonstrated case, fixed where it was demonstrated.
+ *
+ * The held set is not a second catalog: `copiesHeldBy` returns technique ids,
+ * and they are looked up in `TECHNIQUES` like everything else. What changes is
+ * which rows are searched first.
+ */
 export function resolveTechnique(
     repos: CultivationRepos,
     query: string,
     cultivatorId: string
 ): ResolvedEntity | null {
-    const match = best(query, TECHNIQUES, technique => technique.name);
+    const heldIds = new Set([
+        ...copiesHeldBy(repos.db, cultivatorId),
+        ...TECHNIQUES.filter(t => repos.techniques.getKnown(cultivatorId, t.id)).map(t => t.id)
+    ]);
+    const held = TECHNIQUES.filter(technique => heldIds.has(technique.id));
+
+    const match = theOneTheyHold(query, held, technique => technique.name)
+        ?? best(query, TECHNIQUES, technique => technique.name);
     if (!match) return null;
 
     const known = repos.techniques.getKnown(cultivatorId, match.id);
