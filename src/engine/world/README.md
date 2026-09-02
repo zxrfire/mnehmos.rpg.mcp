@@ -1623,6 +1623,10 @@ time.ts          advanceTime: what fell due, what was running, what was missed
 manuals.ts       who holds a book, what shelf a house actually has, and who it
                  has decided is worth the top of it
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
+what-people-are-saying.ts
+                 the ledger in the mouths of people who were not there: one fact
+                 rendered from fields that may have been swapped on the way, by a
+                 named teller who always tells it the same way
 the-ties-an-ordinary-life-produces.ts
                  households, teaching lines, shared service and being passed
                  over - the supply of people who would notice you were gone
