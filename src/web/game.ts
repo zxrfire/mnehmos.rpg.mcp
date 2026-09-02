@@ -1925,6 +1925,40 @@ export interface ToolCallRecord {
  * not silently acquire consequences nobody chose for it. An intent absent from
  * here produces no reprisal at all.
  */
+/**
+ * Verbs that are two names for one act, so a sentence naming both named one.
+ *
+ * ── A DECLINED CLAUSE THAT DEMONSTRABLY RAN ──────────────────────────────
+ *
+ * Played: `I go into seclusion for a year and gather qi` reported
+ * *"Ran seclude. Not run: 'gather qi'"* over a year in which qi went 0 to 6.
+ * Seclusion is how qi is gathered - `cultivate` and `seclude` are two doors
+ * onto `runSeclusion` - so the honest-reporting line, which is the one thing a
+ * player is being asked to trust about what a turn did, taught them that a year
+ * of sitting still accumulates nothing.
+ *
+ * A CLOSED TABLE OF DISPATCH FACTS, not a similarity test. Each pair below is
+ * two `case` labels in `execute` that call the same method with the same
+ * arguments, and that is the only thing that puts a pair here: if the two ever
+ * stop reaching one handler, the row is wrong and should go. Which is why it is
+ * here, next to the dispatch, rather than in
+ * `the-part-of-the-sentence-that-was-not-run.ts` - that module reads the verb
+ * TABLE and has no way to know what two verbs resolve to.
+ *
+ * Symmetric on purpose: which of the two the player happened to type first is
+ * not a fact about whether they asked for two things.
+ */
+const SAME_ACT_UNDER_TWO_NAMES: ReadonlyArray<readonly [ActionName, ActionName]> = [
+    // Both reach `runSeclusion`. One names the posture, the other names what
+    // the posture is for.
+    ['cultivate', 'seclude']
+];
+
+function sameActUnderTwoNames(ran: ActionName, other: ActionName): boolean {
+    return SAME_ACT_UNDER_TWO_NAMES.some(([a, b]) =>
+        (a === ran && b === other) || (b === ran && a === other));
+}
+
 const WRONG_BEHIND_INTENT: Readonly<Partial<Record<string, Wrong>>> = {
     threaten: 'threatened',
     // A theft attempted to somebody's face is a lie about what your hand is
@@ -2732,9 +2766,29 @@ export class GameService {
         // STEP EXECUTED as though it had been declined, which is worse than the
         // silence it was written to replace: the whole value of the honest
         // report is that a player can trust it.
+        //
+        // AND IT IS OFF WHEN THE TWO CLAUSES ARE ONE ACT. Played, against a
+        // local model, and it is the worst shape this report can take:
+        //
+        //   > I go into seclusion for a year and gather qi
+        //   "Ran seclude. Not run: 'gather qi' [...] which on its own reads as
+        //    cultivate."
+        //
+        // Qi went 0 to 6 over that year. Seclusion IS gathering qi - `cultivate`
+        // and `seclude` are two names for one handler, `runSeclusion`, and the
+        // player was told that the thing that demonstrably happened had not
+        // happened. That is worse than a wrong number, because this line is
+        // precisely the thing the player is now being asked to trust.
+        //
+        // `SAME_ACT_UNDER_TWO_NAMES` is a closed table of verb pairs that reach
+        // one handler, not a similarity test. Two verbs that resolve to the same
+        // engine call cannot be two things a turn had to choose between, and
+        // that is a fact about the dispatch above rather than about the words.
+        const naming = theClauseThisTurnDidNotRun(trimmed, plan.action.action);
         const dropped = stepsOfThePlan(plan).length > 1
+            || (naming !== null && sameActUnderTwoNames(plan.action.action, naming.action))
             ? null
-            : theClauseThisTurnDidNotRun(trimmed, plan.action.action);
+            : naming;
         if (dropped) {
             const said = sayingWhatWasNotDone(dropped);
             // All three channels, because they are read by three different
@@ -10936,7 +10990,34 @@ ${line}`;
      * just because it is short. The target must be an art the cultivator
      * actually knows.
      */
-    private async train(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+    private async train(
+        cultivator: Cultivator,
+        target: string | undefined,
+        /**
+         * How long they said, and it was being thrown away.
+         *
+         * ── A SPAN NOBODY NAMED IS NOT A SPAN THE PLAYER CHOSE ───────────
+         *
+         * Played: `I sit down and practise it until I can break through` spent
+         * SEVEN DAYS and moved mastery 0% to 3%. "Until I can break through" is
+         * an open request; a week is not an answer to it, and the player had no
+         * way to tell they had been handed a default.
+         *
+         * Two things were wrong and the second is the larger. This method never
+         * read `action.days` at all - it passed the constant to `handlePractise`
+         * unconditionally - so `I practise for a year` spent a week too, and
+         * every duration the parser lifted off a practice sentence went in the
+         * bin. `handlePractise` has taken days, months and years since it was
+         * written, spends them, ages the cultivator by them and advances the
+         * run; nothing was reaching it.
+         *
+         * And where nobody named one, the default is SAID. An engine that
+         * quietly substitutes a figure and then reports it back as what was
+         * intended is telling the player their own intention, and it is the
+         * same defect as the truncated span in `shortSkip`, one layer up.
+         */
+        days?: number
+    ): Promise<Execution> {
         const query = (target ?? '').trim();
         let technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
 
@@ -10984,14 +11065,41 @@ ${line}`;
             ));
         }
 
+        const spent = Math.max(1, Math.round(days ?? TRAINING_DAYS));
         const result = await handlePractise({
             action: 'practise',
             techniqueId: technique.id,
             cultivatorId: cultivator.id,
-            days: TRAINING_DAYS
+            days: spent
         });
 
-        return this.fromToolResult('technique_manage.practise', 'train_technique', result, technique.name);
+        const execution = this.fromToolResult(
+            'technique_manage.practise', 'train_technique', result, technique.name
+        );
+        if (execution.outcome === 'executed') {
+            execution.facts.structure.push(
+                `Practised ${technique.name} for ${spent} day(s), `
+                + `${days === undefined
+                    ? `off TRAINING_DAYS because the sentence named no span`
+                    : 'off the span in the sentence'}. `
+                + 'The days are real: `handlePractise` ages the cultivator by them, rolls one '
+                + 'deviation check and advances the run.'
+            );
+            if (days === undefined) {
+                // Required, because it is a correction to the player's own
+                // sentence: they asked for something open-ended, or for nothing
+                // in particular, and got a figure the engine picked. A route,
+                // not an apology - the span is theirs to name.
+                sayThisWhateverTheNarratorDoes(
+                    execution.facts,
+                    `You did not say for how long, so it came to ${humanDays(spent)} - which is `
+                    + 'what a stretch runs when nobody names one, and is not long enough to be '
+                    + 'the answer to anything. Say the span and it runs that: "I practise it for '
+                    + 'ten years".'
+                );
+            }
+        }
+        return execution;
     }
 
     /**
