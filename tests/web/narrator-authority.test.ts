@@ -363,7 +363,18 @@ describe('narrator wiring', () => {
         const { narrator, status } = buildNarrator(config, factory);
 
         expect(narrator).toBeInstanceOf(ProviderNarrator);
-        expect(status).toEqual({ name: 'anthropic', model: 'claude-test', configured: true });
+        // The mode now travels with the status, so a client can tell the player
+        // which of the two ways of playing they are in rather than whether an
+        // environment variable is set. Still no branch on the provider NAME:
+        // the mode is read off the narrator that was actually built.
+        expect(status).toEqual({
+            name: 'anthropic',
+            model: 'claude-test',
+            configured: true,
+            mode: 'ai',
+            modeLabel: 'AI Mode',
+            modeLine: expect.stringContaining('anthropic')
+        });
     });
 
     it('degrades to the deterministic narrator when nothing is configured', () => {
@@ -376,5 +387,12 @@ describe('narrator wiring', () => {
 
         expect(narrator).toBeInstanceOf(DeterministicNarrator);
         expect(status.configured).toBe(false);
+
+        // And it says so as a MODE. "(not configured)" is a true sentence about
+        // an environment variable and the wrong thing to tell somebody, because
+        // nothing here is broken - the whole game is playable on this path.
+        expect(status.mode).toBe('local');
+        expect(status.modeLabel).toBe('Local Mode');
+        expect(status.modeLine).toContain('fully playable');
     });
 });

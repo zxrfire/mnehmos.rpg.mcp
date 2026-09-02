@@ -575,6 +575,7 @@ import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
 import { stagesHeldBy, stagesWrittenSince } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { FiledOutcome, Narrator } from './narrator.js';
+import { announceMode } from './which-mode-this-session-is-playing-in.js';
 import { composeStateSummary } from './prompt.js';
 import { handleAdminManage, isAdminModeEnabled, parseAdminCommand } from '../server/consolidated/admin-manage.js';
 import {
@@ -1983,6 +1984,14 @@ export class GameService {
 
         this.log.append(created.run.id, [
             ...(plan ? [{ role: 'narrator' as const, turn: 0, text: plan.note }] : []),
+            // WHICH OF THE TWO WAYS OF PLAYING THIS IS, in the log rather than
+            // only in a status bar. Without a key the bar read
+            // "narrator anthropic/claude-opus-5 (not configured)", which is a
+            // diagnostic about an environment variable and reads as a broken
+            // install. It is not one: the whole game is playable here. Said in
+            // both directions on purpose - a line that only appears when
+            // something is missing is an apology rather than a mode.
+            { role: 'engine' as const, turn: 0, text: announceMode(this.narrator).line },
             {
                 role: 'engine',
                 turn: 0,
