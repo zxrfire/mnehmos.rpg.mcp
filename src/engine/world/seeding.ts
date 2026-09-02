@@ -62,6 +62,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
+import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
 import {
     BREAKTHROUGH_PILL_STONES,
@@ -1359,7 +1360,12 @@ function seedNamedFigures(
         const faction = catalogById.get(member.factionId);
         if (!faction) continue;
 
-        const id = `npc-${member.id}`;
+        // The rule for what a catalog person's world row is called was written
+        // here and nowhere else knew it, so the knowledge layer filed the same
+        // human being under two ids and could not tell they were one person.
+        // `a-catalog-person-and-their-world-row.ts` owns the rule now, in both
+        // directions, so the two cannot drift.
+        const id = worldIdForCatalogPerson(member.id);
         if (state.npcs.some(n => n.id === id)) continue;
 
         const rng = forStream(state.seed, 'seed-named', id);
