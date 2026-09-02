@@ -1133,12 +1133,52 @@ function renderLog() {
 
   renderedLog = log.map((_, i) => sigAt(i));
 
+  // The passive rule, and it is the right one for every caller that is not the
+  // player acting: somebody who scrolled up to re-read something should not
+  // have the view yanked out from under them by a background refresh. The
+  // player's OWN turn is the exception, and it is handled at the call site in
+  // `submitAction` rather than by widening this condition - see the note there.
   if (nearBottom || shared === 0) scrollToBottom();
 }
 
+/**
+ * Put the newest entry on screen. Actually put it there.
+ *
+ * This function used to be one line and did not work, which cost another agent
+ * an afternoon: they correctly identified that `renderLog`'s `nearBottom` guard
+ * skips the scroll after the player's own action, made it call this, and
+ * measured no change at all. The guard was only the third of three reasons,
+ * and this was the other two.
+ *
+ *   - `.scroll` carries `scroll-behavior: smooth` (styles.css). That turns an
+ *     assignment to `scrollTop` from a move into a REQUEST for an animation.
+ *     Measured here at 1440x900 on a 4629px scroller: with smooth in force,
+ *     `scrollTop = scrollHeight` left scrollTop at 0, and it was still 0 a
+ *     second and a half later; with `auto` the same assignment landed on 4629
+ *     immediately. Smoothly scrolling the 21730px seen in a long log is not
+ *     something that finishes while anybody is watching, and the animation is
+ *     cancellable and re-targetable by anything that touches the scroller in
+ *     the meantime. So the jump opts out; `scroll-behavior` stays in the
+ *     stylesheet for scrolling the player does themselves.
+ *   - It ran ONLY inside `requestAnimationFrame`, so it inherited the frame
+ *     clock. A tab that is not producing frames never runs the callback and the
+ *     scroll simply never happens.
+ *
+ * Hence: land it now, from the layout we already have - reading `scrollHeight`
+ * flushes the rows just inserted - and land it again on the next frame, for
+ * anything that lays out late.
+ */
 function scrollToBottom() {
   const scroller = $('#scroll');
-  requestAnimationFrame(() => { scroller.scrollTop = scroller.scrollHeight; });
+  if (!scroller) return;
+  const land = () => {
+    const declared = scroller.style.scrollBehavior;
+    scroller.style.scrollBehavior = 'auto';
+    scroller.scrollTop = scroller.scrollHeight;
+    scroller.style.scrollBehavior = declared;
+  };
+  land();
+  requestAnimationFrame(land);
 }
 
 function setPending(on, text) {
@@ -1771,6 +1811,7 @@ async function submitAction(ev) {
       { role: 'engine', text: res.error, turn: S.run ? S.run.turn : 0, local: true }
     ]);
     renderLog();
+    scrollToBottom();           // the player acted; the refusal is the answer
     toast('Action refused', res.error);
     input.value = text;         // give it back rather than eating it
     focusCommand();
@@ -1802,6 +1843,24 @@ async function submitAction(ev) {
   }
 
   afterMutation();
+
+  // AFTER `afterMutation`, deliberately, and not inside `renderLog`.
+  //
+  // The player scrolled up, then acted - by typing, by pressing Enter, or by
+  // clicking one of the situation prompts, which come through here too. Their
+  // reply was rendering below the fold, measured at 1031px past the bottom on
+  // one turn and 21730px in a longer log, so the screen looked exactly as it
+  // had before they acted and the whole thing read as a dead button.
+  // `renderLog`'s guard is right to leave a scrolled-up reader alone; it is
+  // wrong for the turn they just took, and that is a fact only the call site
+  // knows.
+  //
+  // The position has to be taken here because `renderPlay` renders the log
+  // BEFORE the sheet and the situation panel, and the situation panel showing
+  // or hiding changes the command bar's height and so the scroller's own
+  // height. A scroll issued inside `renderLog` is computed against a layout
+  // that is about to change underneath it and lands short.
+  scrollToBottom();
 }
 
 async function doCultivate(days, { anyway = false } = {}) {

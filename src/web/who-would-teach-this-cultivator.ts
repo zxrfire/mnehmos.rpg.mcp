@@ -121,6 +121,43 @@ export interface TeacherRead {
 const rungs = (n: number): string => `${n} rung${n === 1 ? '' : 's'}`;
 
 /**
+ * Why the manual axis is worth naming on the engine channel at all.
+ *
+ * `manualState` decides how much a teacher is WORTH to this cultivator, which
+ * is the only reason this read files it. Printed as `manualState=no_method` it
+ * says nothing to the person reading the log; said in words it is the whole
+ * reason the question was asked.
+ */
+const WHY_A_TEACHER_MATTERS: Record<TeacherInput['manualState'], string> = {
+    no_method: 'No method is practised, so the rate multiplier is zero and nothing '
+        + 'accumulates however long they sit. A teacher is one of the two ways out of that.',
+    exhausted: 'The manual has stopped carrying them, so the rate multiplier is zero past '
+        + 'where it ends. Being taught across is one of the three ways past that.',
+    teaching: 'The manual is still carrying them, so a teacher would be an improvement '
+        + 'rather than the thing standing between them and any progress at all.'
+};
+
+/**
+ * One person above, as a sentence rather than three fields.
+ *
+ * `here` was printed as `here=true` and a boolean is not a reason. What being
+ * here MEANS is that they can be approached today; being on the roll and not in
+ * the room means finding them is its own piece of work. That is the fact the
+ * flag was standing in for, so the line says it.
+ */
+function mechanicalPerson(person: SomebodyAbove, playerOrdinal: number): string {
+    const gap = person.realmOrdinal - playerOrdinal;
+    return `${person.name} stands at ordinal ${person.realmOrdinal}, ${rungs(gap)} above `
+        + `ordinal ${playerOrdinal}. `
+        + (person.willTeach
+            ? 'Marked a master on the roll: they teach, inside stated limits. '
+            : 'Nothing on the roll marks them a teacher. ')
+        + (person.here
+            ? 'They are standing here, so they can be approached today.'
+            : 'They are on the roll and not in this place, so reaching them is its own journey.');
+}
+
+/**
  * Who could teach this cultivator, said only of people they have heard of.
  *
  * Masters first, then anybody else standing above them, then the count of the
@@ -139,8 +176,10 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
     const others = named.filter(p => !p.willTeach);
 
     structure.push(
-        `above=${input.above.length}, nameable=${named.length}, masters=${masters.length}, `
-        + `unnamed=${unnamed.length}, ordinal=${input.ordinal}, manualState=${input.manualState}`
+        `${input.above.length} stand above ordinal ${input.ordinal} on the roll and in the `
+        + `room. ${named.length} can be named, ${masters.length} of those teach, and `
+        + `${unnamed.length} are counted without a name because this cultivator has never `
+        + `met them. ${WHY_A_TEACHER_MATTERS[input.manualState]}`
     );
 
     for (const master of masters) {
@@ -156,9 +195,7 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
         if (master.knows) lines.push(`  What they hold: ${master.knows}`);
         if (master.mayNotSay) lines.push(`  What they will not say: ${master.mayNotSay}`);
         if (master.costsThem) lines.push(`  What asking costs them: ${master.costsThem}`);
-        structure.push(
-            `master ${master.name}: ordinal=${master.realmOrdinal}, gap=${gap}, here=${master.here}`
-        );
+        structure.push(mechanicalPerson(master, input.ordinal));
     }
 
     for (const person of others) {
@@ -169,9 +206,7 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
             + `Nothing on record says they teach.`
             + `${person.here ? ' They are here.' : ''}`
         );
-        structure.push(
-            `above ${person.name}: ordinal=${person.realmOrdinal}, gap=${gap}, here=${person.here}`
-        );
+        structure.push(mechanicalPerson(person, input.ordinal));
     }
 
     // The shape of what is hidden, without the names. A count and an altitude

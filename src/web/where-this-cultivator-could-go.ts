@@ -241,15 +241,128 @@ function crowd(place: Destination): string {
         : ` ${place.occupants} drawing on it, which it carries comfortably.`;
 }
 
+/**
+ * The engine channel for one destination, written as a sentence.
+ *
+ * Every figure the field dump carried is still here - the province, the days,
+ * the band, the head count against what the ground carries, the ceiling - and
+ * `travelDays` is the one that leaves, because it was `unstated` on every row
+ * in an ordinary read and a null repeated eight times is not a measurement.
+ * {@link unpricedRoads} says it once instead, and says why.
+ *
+ * This channel is read by the player, not only by an operator: the log is where
+ * the promise that the engine's arithmetic is visible is actually kept. So the
+ * standard it is written to is the breakthrough line - exact, checkable,
+ * unhedged, and a sentence.
+ */
+function mechanicalRow(place: Destination, standingCeiling: number): string {
+    const occupants = place.occupants ?? null;
+    const supported = place.supportedDraw ?? null;
+    const where = place.regionName === place.name
+        ? `${place.name}, a province`
+        : `${place.name}, in ${place.regionName}`;
+
+    const clauses: string[] = [];
+    if (place.travelDays !== null) {
+        clauses.push(`${place.travelDays} day${place.travelDays === 1 ? '' : 's'} out`);
+    }
+    // A province has no band on purpose: `ambientProfile` is a distribution
+    // across its settlements and flattening it would state a fact about ground
+    // nobody has stood on. Saying so beats printing `ambient=unstated`.
+    clauses.push(place.ambient
+        ? QI[place.ambient]
+        : 'no band stated, a province being a distribution rather than one ground');
+    clauses.push(occupants === null || supported === null
+        ? 'no occupancy on record'
+        : occupants > supported
+            ? `${occupants} drawing on ground that comfortably carries ${supported}, `
+              + 'which is over it'
+            : `${occupants} drawing on ground that comfortably carries ${supported}`);
+
+    // The ceiling only earns a clause where it DIFFERS from the one the header
+    // just stated for the ground they are standing on. Repeating "no ceiling -
+    // ordinal 46" against three settlements of one province is the same defect
+    // as `travelDays=unstated` on every row: a true figure, said so often it
+    // buries the row where it is not true.
+    const ceiling = place.localCeilingOrdinal === standingCeiling
+        ? ''
+        : place.localCeilingOrdinal >= MAX_ORDINAL
+            ? ` No ceiling: ordinal ${MAX_ORDINAL} is the top of the ladder and that province `
+              + 'stops nobody.'
+            : ` Carries nobody past ordinal ${place.localCeilingOrdinal}.`;
+
+    return `${where}: ${clauses.join('. ')}.${ceiling}`;
+}
+
+/**
+ * Why most rows above carry no number of days, said once rather than per row.
+ *
+ * The catalog prices roads BETWEEN provinces and prices nothing between two
+ * settlements of one, so a settlement two valleys over is genuinely unpriced.
+ * That is a real state and worth stating; stating it eight times as
+ * `travelDays=unstated` buried the rows that did carry a figure.
+ */
+function unpricedRoads(sorted: readonly Destination[]): string | null {
+    const unpriced = sorted.filter(place => place.travelDays === null).length;
+    if (unpriced === 0) return null;
+    return (unpriced === sorted.length
+        ? `None of these ${sorted.length} carry a stated travel time. `
+        : `${unpriced} of these ${sorted.length} carry no stated travel time. `)
+        + 'The catalog prices roads between provinces and prices nothing between two '
+        + 'settlements of one, so those are unpriced rather than near: no distance was '
+        + 'assumed for them.';
+}
+
+/**
+ * What this cultivator's map holds, and the shape of the holes in it.
+ *
+ * Two counts rather than one, because they answer different questions and
+ * printing only `reachable=9` next to a headline reading "3 places" is a
+ * contradiction a player has to resolve for themselves. What can be POINTED AT
+ * includes the ground under their feet and the province they are already in;
+ * what can be LEFT FOR does not.
+ *
+ * `unplaceable` was a bare integer, which said that something was missing and
+ * not what. It is the count of names held below `placed` - a word without a
+ * direction - and what it means for the player is that the road has to come
+ * from somebody else. Naming which ones is exactly the discovery this read
+ * refuses to spend, so the count says what kind of thing it is counting
+ * instead.
+ */
+function theNamesHeldAndUnplaceable(
+    pointable: number,
+    leavable: number,
+    input: DestinationsInput
+): string {
+    const held = input.unplaceable;
+    const where = `${input.placeName}, in ${input.regionName}, standing at ordinal `
+        + `${input.ordinal}`;
+    return (pointable === 0
+        ? `Nothing at all can be pointed at from ${where}.`
+        : `${pointable} place${pointable === 1 ? '' : 's'} can be pointed at from ${where}; `
+          + `${leavable} of ${pointable === 1 ? 'it' : 'them'} `
+          + `${leavable === 1 ? 'is' : 'are'} somewhere other than the ground underfoot and `
+          + `so can be set out for.`)
+        + (input.localCeilingOrdinal >= MAX_ORDINAL
+            ? ` ${input.regionName} has no ceiling: ordinal ${MAX_ORDINAL} is the top of the `
+              + 'ladder and this province stops nobody. Every row below shares that unless it '
+              + 'says otherwise.'
+            : ` ${input.regionName} carries nobody past ordinal `
+              + `${input.localCeilingOrdinal}, and every row below shares that ceiling unless `
+              + 'it says otherwise.')
+        + (held > 0
+            ? ` ${held} further name${held === 1 ? ' is' : 's are'} held at a stage below `
+              + `placed - the word without a direction - so ${held === 1 ? 'it' : 'they'} `
+              + `cannot be walked to and somebody would have to say where. `
+              + `${held === 1 ? 'It is' : 'They are'} counted and never listed: naming one `
+              + `would hand over a discovery that was meant to be earned.`
+            : '');
+}
+
 export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     const lines: string[] = [];
     const structure: string[] = [];
     const standing = rankName(input.ordinal);
-
-    structure.push(
-        `reachable=${input.reachable.length}, unplaceable=${input.unplaceable}, `
-        + `ordinal=${input.ordinal}, from=${input.regionName}`
-    );
 
     if (input.reachable.length === 0) {
         lines.push(
@@ -264,6 +377,7 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
                 + `would have to tell you where.`
             );
         }
+        structure.push(theNamesHeldAndUnplaceable(0, 0, input));
         return {
             headline: `Nowhere ${input.placeName} connects to that you could find.`,
             lines,
@@ -289,6 +403,8 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
         || b.localCeilingOrdinal - a.localCeilingOrdinal
         || (a.travelDays ?? Number.MAX_SAFE_INTEGER) - (b.travelDays ?? Number.MAX_SAFE_INTEGER)
         || a.name.localeCompare(b.name));
+
+    structure.push(theNamesHeldAndUnplaceable(input.reachable.length, sorted.length, input));
 
     // "You are in Low Fall, The Low Fall" - a settlement and the province it
     // sits in often share a name, and printing both reads as a stutter. Say the
@@ -326,15 +442,11 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
             + crowd(place)
             + ceiling
         );
-        structure.push(
-            `${place.name}: region=${place.regionName}, `
-            + `travelDays=${place.travelDays ?? 'unstated'}, `
-            + `ambient=${place.ambient ?? 'unstated'}, `
-            + `occupants=${place.occupants ?? 'unstated'}, `
-            + `supportedDraw=${place.supportedDraw ?? 'unstated'}, `
-            + `localCeilingOrdinal=${place.localCeilingOrdinal}`
-        );
+        structure.push(mechanicalRow(place, input.localCeilingOrdinal));
     }
+
+    const unpriced = unpricedRoads(sorted);
+    if (unpriced) structure.push(unpriced);
 
     if (input.unplaceable > 0) {
         lines.push(
