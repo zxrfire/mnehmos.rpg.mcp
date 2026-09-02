@@ -205,7 +205,11 @@ describe('the fallback is inert', () => {
             // produces restates a number the engine already computed, so none
             // of them can spend, teach, move or kill - and a player at a wall
             // has to be able to ask what it is a hundred times for nothing.
-            'ceiling', 'teacher', 'destinations'
+            'ceiling', 'teacher', 'destinations',
+            // And what the ground within reach would teach, which is a read
+            // over the player's own knowledge rows joined to the catalog. It
+            // names no place they could not already name.
+            'roads'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -401,6 +405,9 @@ describe('every verb is reachable from plain English', () => {
         ceiling: 'am I stuck',
         teacher: 'who could guide my cultivation',
         destinations: 'I want to travel somewhere else',
+        // And the read beside it, which answered nothing before this: the
+        // ground within reach that teaches a road.
+        roads: 'what can I learn here',
         // And the fourth, which was not merely eaten but eaten BY the third:
         // `teach me` belongs to the roster question, correctly, and it was
         // tested before anything looked at whether a person had been named.

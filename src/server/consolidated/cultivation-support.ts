@@ -81,7 +81,13 @@ import {
     type VisionSeed
 } from '../../schema/cultivation.js';
 import { declaredAmbientAt, regionIdOfPlace } from '../../data/cultivation/regions.js';
-import { daoGroundsIn } from '../../data/cultivation/places-that-teach-a-dao.js';
+import { daoGroundNamed, daoGroundsIn } from '../../data/cultivation/places-that-teach-a-dao.js';
+import {
+    groundFromCatalogRow,
+    howARoadCameFrom,
+    howSomebodyStandsToAGround,
+    type SomebodyStanding
+} from '../../engine/world/how-a-cultivator-comes-by-a-road.js';
 import {
     DAYS_PER_YEAR,
     ambientForBlock,
@@ -1821,27 +1827,47 @@ export function discoveryContextFor(
     // and by nobody holding the controller, which is the split this repo keeps
     // finding and AGENTS.md now names first.
     //
-    // Reachability is decided HERE rather than in the engine, because whether
-    // a house lets somebody onto its cliff is a fact about the world.
+    // Reachability is `howSomebodyStandsToAGround`, which is the WORLD'S OWN
+    // rule and not a second copy of it. It used to be a second copy - the
+    // floor, the membership check and the standing check were written out again
+    // here against the catalog while `daoGroundsInReachOf` ran the same three
+    // against the location table - and two copies of a rule is how the world's
+    // answer and the player's drift apart. Now the refusal a player reads, the
+    // exposure they get and the roads an NPC walks all come off one function.
     const daoGrounds: NonNullable<DiscoveryContext['daoGrounds']>[number][] = [];
-    const standingRegion = regionIdOfPlace(cultivator.location);
+    // ── WHICH PROVINCE THEY ARE ACTUALLY STANDING IN ─────────────────────
+    //
+    // `regionIdOfPlace` reads the region gazetteer, and A DAO GROUND IS NOT IN
+    // IT: the seeder plants these as world locations under a region node, so
+    // the catalog has never heard of "The Glass Field". A cultivator who had
+    // walked to one therefore resolved to no province at all and got NOTHING -
+    // the one place in the world guaranteed to teach them was the one place
+    // that could not. The catalog's own rows answer for themselves.
+    const standingRegion = regionIdOfPlace(cultivator.location)
+        ?? daoGroundNamed(cultivator.location)?.regionId;
     if (standingRegion) {
         const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
-        // A rank INDEX, from the house's own ladder, because `standingRequired`
-        // is an index and `sectRank` is the title.
-        const rank = house && cultivator.sectRank
-            ? house.ranks.indexOf(cultivator.sectRank)
-            : -1;
+        const who: SomebodyStanding = {
+            ordinal: cultivator.realmOrdinal,
+            regionCatalogId: standingRegion,
+            factionId: cultivator.sectId,
+            // A rank INDEX, from the house's own ladder, because
+            // `standingRequired` is an index and `sectRank` is the title.
+            factionRankIndex: house && cultivator.sectRank
+                ? house.ranks.indexOf(cultivator.sectRank)
+                : -1
+        };
 
         for (const ground of daoGroundsIn(standingRegion)) {
-            if (cultivator.realmOrdinal < ground.fromOrdinal) continue;
-            // Buried ground teaches nobody until the world digs it out, and
-            // finding one is the site layer's business rather than this one's.
-            if (ground.access === 'buried') continue;
-            if (ground.access === 'held') {
-                if (!house || ground.heldBy !== house.id) continue;
-                if (rank < ground.standingRequired) continue;
-            }
+            // A buried ground reads as unfound from here, which is the honest
+            // answer for a caller holding no `WorldState`: this surface cannot
+            // see whether the world has dug one out. The played game asks the
+            // location table, where `discovered` actually lives.
+            const stands = howSomebodyStandsToAGround(
+                groundFromCatalogRow(ground),
+                who
+            );
+            if (!stands.inReach) continue;
             daoGrounds.push({
                 domain: ground.domain,
                 subject: ground.subject,
@@ -1853,12 +1879,7 @@ export function discoveryContextFor(
                 // is not. Without this every place a player can reach priced as
                 // open ground, which is the dearest, and the three carvings
                 // would have been forty-year sits instead of readings.
-                // Buried never reaches here - it is skipped above, because
-                // digging one out is the site layer's business - so the three
-                // cases left are the three a standing cultivator can be in.
-                how: ground.access === 'held' ? 'ground_held' as const
-                    : ground.access === 'carving' ? 'carving' as const
-                    : 'ground_open' as const
+                how: howARoadCameFrom(ground.access)
             });
             sources.push({ kind: 'site', label: ground.name, id: ground.id });
         }

@@ -1400,12 +1400,50 @@ withholds the two kinds the world means somebody to find: dao ground, and anythi
 `FOUND_BY_PROSPECTING_TAG`. Default-deny, so the next kind of special ground somebody adds
 is withheld by construction rather than by being remembered.
 
+## Ground that teaches a road, and how a player ever meets one
+
+Closing the gate above made an absence visible that it did not create. Those two names were
+**the only place a player ever saw a dao ground**, stripped of everything that makes one
+what it is - and `daoGroundsInReachOf`, the function that decides who can get at one, had
+no caller anywhere in `src/web` or `src/server`. Twenty-three of these are seeded per
+world, the whole simulation walks roads off them, and nothing a player could type reached
+one.
+
+Three joints were missing, and together they are the loop:
+
+| Joint | Where it lives | What was wrong |
+|---|---|---|
+| A source | `offerGroundSomebodyGoesTo` in [`hearsay.ts`](hearsay.ts) | No channel in the game could put the name of a ground into anybody's knowledge, so the gate over them was default-deny across an empty set |
+| A province | `daoGroundNamed` behind `regionIdOfPlace` in `cultivation-support.ts` | A dao ground is a world location and is not in the region gazetteer, so somebody standing ON one resolved to no province and got nothing. The one place guaranteed to teach them was the one place that could not |
+| A sentence | the `roads` verb, over [`ground-that-teaches-a-road.ts`](ground-that-teaches-a-road.ts) | Nothing asked what a ground wanted, so a place a player could stand in changed nothing and said nothing |
+
+**The source is somebody who could point at it, never somebody who could read it.** That
+distinction is the content. A cart driver at the bottom of the ladder has crossed the
+Grinding Ford ten thousand times, will never take anything off it, and is exactly the
+person who can tell you where it is - `howSomebodyStandsToAGround` separates the two, and
+requiring the speaker to be able to READ it would have made a landmark a secret. Measured
+on a seeded world before that split existed: of 587 living NPCs, the ones standing in a
+settlement who could reach any ground at all were **10, 5, 7 and 5 people in four towns of
+one province, and zero everywhere else**, because every catalogued master sits on a region
+node rather than in a town.
+
+**The gate is untouched.** The `roads` read lists nothing the cultivator could not already
+name - `canPointAtLocation`, the same predicate `destinations` and `move` enforce - plus
+the ground under their feet, which they can obviously point at. The affordance line in
+`what-is-worth-doing-standing-here.ts` is offered only once they hold a record, so it
+cannot leak what the read would refuse to say.
+
+**And every refusal names what would work**, off the row's own fields rather than per
+place: the rung it becomes legible at, the province it is in, the house that keeps it and
+the rank that house lets people on it at. A twenty-fourth ground needs no branch anywhere.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
 - [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`places.ts`](places.ts) - the world map view, and the rule against inventing geography
+- [`ground-that-teaches-a-road.ts`](ground-that-teaches-a-road.ts) - dao ground as a player meets it, and what a ground that will not teach says instead
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - what phase 2 actually runs
 - [`../agent/provider/README.md`](../agent/provider/README.md) - provider selection and config precedence
 - [`../storage/README.md`](../storage/README.md) - the database both front doors share

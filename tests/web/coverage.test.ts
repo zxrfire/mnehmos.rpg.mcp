@@ -378,6 +378,23 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'where could I go',
         'what other places can I reach',
         'where are the qi denser'
+    ],
+    // The other half of the travel question, and the half that reached nothing
+    // at all: twenty-three places that teach a road are seeded per world and
+    // no sentence in the language got to one. Written the four or five ways
+    // somebody actually asks it, per the repo's own rule that a near-synonym
+    // reaching nothing is a bug - and checked against the neighbours it could
+    // be stolen by, which is `teacher` ("teach me") and `list_techniques`
+    // ("what can I learn").
+    roads: [
+        'what can I learn here',
+        'what is there to understand',
+        'what can this ground teach me',
+        'is there anything here that teaches',
+        'what roads are there',
+        'what places teach a dao',
+        'where can I learn a road',
+        'what can I comprehend around here'
     ]
 };
 

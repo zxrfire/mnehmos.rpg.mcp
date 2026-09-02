@@ -447,6 +447,18 @@ import {
     resolveFoundGround,
     type FoundGround
 } from './ground-the-world-found.js';
+import {
+    groundThatTeachesARoad,
+    groundUnderfoot,
+    howAPlayerStands,
+    thingsCarriedThatTeachARoad,
+    whatThisGroundTeaches,
+    whatThisGroundWants,
+    whatThisThingTeaches,
+    whatThisThingWants,
+    type GroundNearby,
+    type ThingThatTeaches
+} from './ground-that-teaches-a-road.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -2592,6 +2604,10 @@ ${noticedWaiting}`;
 
             case 'destinations':
                 return this.destinations(run, cultivator);
+
+            case 'roads':
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return this.roadsWithinReach(run, cultivator);
 
             case 'learn_technique':
                 return this.learnTechnique(cultivator, action.target);
@@ -10980,6 +10996,124 @@ ${noticed}`;
         return execution;
     }
 
+    /**
+     * What ground this cultivator can point at teaches, and what it wants.
+     *
+     * ── THE DEFECT ───────────────────────────────────────────────────────
+     *
+     * Twenty-three places that teach a road are seeded into every world, and
+     * `daoGroundsInReachOf` - the function that decides who can get at one -
+     * had NO CALLER anywhere in `src/web` or `src/server`. Every NPC alive was
+     * walking roads off ground the player could not name, could not be told
+     * about, and took nothing from while standing on it. This is the verb, and
+     * `ground-that-teaches-a-road.ts` is what it reads.
+     *
+     * ── THE GATE HOLDS, AND IS THE SAME GATE ─────────────────────────────
+     *
+     * Nothing here names a place the cultivator could not already name. The
+     * predicate is `canPointAtLocation`, which is what `destinations` and the
+     * move verb use, plus the one case it cannot cover: ground they are
+     * standing on, which they can obviously point at whatever the table says.
+     * A player who has been told about nothing gets a short honest answer that
+     * does not say what exists.
+     *
+     * ── AND EVERY REFUSAL NAMES WHAT WOULD WORK ──────────────────────────
+     *
+     * The bar, the reading against it, and the gap - the three facts the sect
+     * admission line answers with, which is the one refusal in this game that
+     * has always read well. Composed in
+     * `ground-that-teaches-a-road.ts` off the row's own fields, so a
+     * twenty-fourth ground needs no branch here or there.
+     */
+    private roadsWithinReach(run: Run, cultivator: Cultivator): Execution {
+        const world = this.atHand;
+        if (!world) {
+            return this.freeAction(run, 'roads', factsForRefusal(
+                'The ground is not saying anything.',
+                'You take stock of what is around you and there is nothing here the engine '
+                + 'holds a reading for.',
+                'World driver off; no location table to read dao ground out of.'
+            ));
+        }
+
+        const underfoot = groundUnderfoot(world, cultivator.location, loosePlaceKey);
+        const who = howAPlayerStands(
+            world,
+            underfoot ?? worldLocationFor(world, cultivator.location),
+            cultivator
+        );
+        const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
+        const mine = this.groundTheyCanPointAt(cultivator);
+
+        // Standing on it first, then what would teach them, then what would not
+        // - which is the order somebody actually cares about the answers in.
+        mine.sort((a, b) =>
+            Number(b.underfoot) - Number(a.underfoot)
+            || Number(b.standing.inReach) - Number(a.standing.inReach)
+            || (a.name < b.name ? -1 : 1));
+
+        const lines: string[] = [];
+        for (const row of mine) {
+            const wants = whatThisGroundWants(row, who);
+            const where = row.underfoot ? 'You are standing on it. ' : '';
+            lines.push(wants === null
+                ? `${where}${whatThisGroundTeaches(row)}`
+                : `${where}${wants.because} ${wants.wouldWork}`);
+        }
+
+        // ── AND THE GROUND YOU CAN CARRY ─────────────────────────────────
+        //
+        // A body at a great height imparts a dao, and an object fit for a path
+        // does the same thing: it is a locus you sit with rather than a place
+        // you go. One reader, so the two can never disagree about who receives
+        // anything. Nothing is listed that is not already bound to this
+        // cultivator - carried, or kept by a house that has taken them in - so
+        // this cannot name a thing they had no business knowing about.
+        const holding = { ...who, id: cultivator.id };
+        const carried = thingsCarriedThatTeachARoad(world, holding);
+        for (const thing of carried) {
+            const wants = whatThisThingWants(thing, holding);
+            lines.push(wants === null
+                ? whatThisThingTeaches(thing)
+                : `${wants.because} ${wants.wouldWork}`);
+        }
+
+        const inReach = mine.filter(row => row.standing.inReach).length
+            + carried.filter(row => row.standing.inReach).length;
+        const headline = mine.length + carried.length === 0
+            ? 'Nobody has pointed you at ground like that.'
+            : inReach > 0
+                ? 'What would teach you something, if you stayed with it.'
+                : 'You know where they are. None of them is saying anything to you.';
+
+        const facts = factsForToolResult(headline, lines.length > 0 ? lines : [
+            'Places where a road can be walked are not advertised and are not on any list. '
+            + 'They are ordinary ground that somebody local would mention without thinking, '
+            + 'if it came up.'
+        ]);
+        facts.structure.push(
+            `${mine.length} dao ground(s) this cultivator can point at and `
+            + `${carried.length} thing(s) carrying a road bound to them; ${inReach} in reach. `
+            + `Standing: ordinal ${who.ordinal}, province ${who.regionCatalogId ?? 'none'}, `
+            + `house ${who.factionId ?? 'none'} at rank index ${who.factionRankIndex}.`
+        );
+
+        const execution = this.freeAction(run, 'roads', facts);
+        execution.calls = [{
+            name: 'engine.howSomebodyStandsToAGround',
+            action: 'roads',
+            summary:
+                `${all.length} dao ground(s) in the world, ${mine.length} this cultivator can `
+                + `point at, plus ${carried.length} object(s) carrying a road bound to them; `
+                + `${inReach} in reach. Gated on canPointAt - the same predicate `
+                + `destinations and move enforce - plus the ground underfoot. Reach and `
+                + `refusal both from howSomebodyStandsToAGround, which is the rule the world `
+                + `runs for its own people.`,
+            ok: true
+        }];
+        return execution;
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // WHAT IS LIVE STANDING HERE
     //
@@ -11056,8 +11190,73 @@ ${noticed}`;
                     daysRemaining: this.crossroads.daysRemaining,
                     canWithdraw: this.crossroads.canWithdraw
                 }
-                : null
+                : null,
+            // Ground they can point at where a road can be walked. A count and
+            // never a name: this decides whether a LINE is offered, and the
+            // line routes to the read that is gated on the same knowledge rows.
+            // Somebody who has been told about none of them is offered nothing
+            // and learns nothing about what exists.
+            groundThatTeachesARoad: this.groundTheyCanPointAt(cultivator).length
+                + this.thingsTheyHoldThatTeach(cultivator).length
         };
+    }
+
+    /**
+     * Dao ground this cultivator holds a record for, or is standing on.
+     *
+     * The gate, in one place, so the affordance and the read cannot disagree
+     * about what the player knows. The predicate is the one `destinations` and
+     * the move verb enforce, over the same rows - `canPointAt` and never
+     * `isAwareOf`, because a name caught through a wall is a name and not a
+     * destination.
+     *
+     * The awareness table is read ONCE rather than per ground. This runs on
+     * every `look` and every `help`, and `canPointAtLocation` costs two queries
+     * a row.
+     */
+    /**
+     * Things bound to this cultivator that carry a road - carried, or kept by a
+     * house that has taken them in.
+     *
+     * No knowledge gate, because there is nothing to gate: an object is on this
+     * list only because it is already theirs or their house's, and nobody has
+     * to be told where their own hands are.
+     */
+    private thingsTheyHoldThatTeach(cultivator: Cultivator): ThingThatTeaches[] {
+        const world = this.atHand;
+        if (!world) return [];
+        return thingsCarriedThatTeachARoad(world, {
+            ...howAPlayerStands(
+                world,
+                groundUnderfoot(world, cultivator.location, loosePlaceKey)
+                    ?? worldLocationFor(world, cultivator.location),
+                cultivator
+            ),
+            id: cultivator.id
+        });
+    }
+
+    private groundTheyCanPointAt(cultivator: Cultivator): GroundNearby[] {
+        const world = this.atHand;
+        if (!world) return [];
+        const underfoot = groundUnderfoot(world, cultivator.location, loosePlaceKey);
+        const who = howAPlayerStands(
+            world,
+            underfoot ?? worldLocationFor(world, cultivator.location),
+            cultivator
+        );
+        const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
+        if (all.length === 0) return [];
+
+        const pointable = new Set<string>();
+        for (const row of this.knowledge.awareness(cultivator.id, 'place')) {
+            if (!this.knowledge.canPointAt(cultivator.id, 'place', row.id)) continue;
+            pointable.add(loosePlaceKey(row.name));
+            pointable.add(loosePlaceKey(row.id));
+        }
+        return all.filter(row => row.underfoot
+            || pointable.has(loosePlaceKey(row.id))
+            || pointable.has(loosePlaceKey(row.name)));
     }
 
     /**
@@ -14102,10 +14301,56 @@ ${done.lines.join(' ')}`;
         cultivator: Cultivator,
         practisingTechniqueId: string | null = null
     ) {
-        return discoveryContextFor(this.repos, cultivator, {
+        const context = discoveryContextFor(this.repos, cultivator, {
             runId: run.id,
             practisingTechniqueId
         }).context;
+
+        // ── AND WHAT THEY ARE CARRYING ──────────────────────────────────
+        //
+        // `roadsCarriedByObjectsInReachOf` has supplied this to every NPC in
+        // the world since it was written, and to nobody at the keyboard:
+        // `discoveryContextFor` holds no `WorldState` and objects live in one,
+        // so an object fit for somebody's path was a channel that bound the
+        // simulation and not the played game. This layer has the world, which
+        // is why the join is here.
+        //
+        // It goes into the SAME list as ground, tagged `artifact`, because it
+        // is the same fact - what is within this cultivator's reach to
+        // comprehend - and `simulateTimeSkip` reads the list back out as
+        // `roadsWithinReach`. A second field beside it would be a second
+        // exposure system, and the two would disagree inside a month.
+        //
+        // A body at a great height arrives through here and needs no code: it
+        // is an object with a `power` and a `daoDomain`, and both gates the
+        // ruling asks for - high enough to impart, close enough to receive -
+        // are the two this reader already applies.
+        const world = this.atHand;
+        if (!world) return context;
+        const carried = thingsCarriedThatTeachARoad(world, {
+            ...howAPlayerStands(
+                world,
+                groundUnderfoot(world, cultivator.location, loosePlaceKey)
+                    ?? worldLocationFor(world, cultivator.location),
+                cultivator
+            ),
+            id: cultivator.id
+        }).filter(thing => thing.standing.inReach);
+        if (carried.length === 0) return context;
+
+        return {
+            ...context,
+            daoGrounds: [
+                ...(context.daoGrounds ?? []),
+                ...carried.map(thing => ({
+                    domain: thing.domain,
+                    subject: thing.subject,
+                    label: thing.name,
+                    id: thing.id,
+                    how: 'artifact' as const
+                }))
+            ]
+        };
     }
 
     /**
