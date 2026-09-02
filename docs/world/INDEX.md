@@ -666,6 +666,48 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 
 ---
 
+---
+
+## Where a new piece of design goes
+
+Three homes, three different jobs. Most of the confusion in this repo comes from writing
+something into the wrong one, or into two at once.
+
+**`docs/world/*.md` - the rule as a reader needs it.** Prose, arguable, addressed to somebody
+deciding what should happen. **Every tier-2 section carries a `trigger="..."` marker**, and the
+trigger is the retrieval key: it is phrased as the situation you would be in when you need the
+section. Write the trigger as the question, not as the topic.
+
+**Comments in `src/data/cultivation/*.ts` - the rule as the data needs it.** Why this number is
+this number, sitting beside the number. **This is correct and should not be migrated out.** There
+is more design prose here than in the whole of `docs/world/`, and the notes are load-bearing: the
+comment beside `admissionOrdinal` explaining that `rankRealmBand` derives every band from it is
+the thing that stops somebody flattening a house's whole ladder. Design belongs next to the code
+it governs.
+
+**Exported design constants - the rule as the engine could read it.** This is the tier that goes
+wrong. **A constant is either wired or it is a comment wearing a type**, and two thirds of them
+are the latter. A dead constant compiles, tests clean, and reads like settled design to whoever
+finds it - so somebody re-derives a system that was already written, which has happened here more
+than once.
+
+### The four rules
+
+1. **One fact, one owner.** Where a second copy genuinely earns its place - both catalogs want to
+   be readable on their own - **pin the agreement with a test** so it cannot drift silently. See
+   `tests/data/one-fact-one-answer.test.ts`.
+2. **A pointer, not a paragraph.** When another file already covers something, link to it and say
+   in one line what it settles. Restating it creates a second copy to diverge and costs the reader
+   their context twice over. `node scripts/find-duplicated-prose.mjs` lists what is currently
+   doubled, and a ratchet test stops the count rising.
+3. **Findability is by question, not by noun.** The rule about using a stolen art lives under
+   *Items*, because a manual is an object - correct filing, useless retrieval. **Index on the
+   situation somebody is in.**
+4. **Say when something is not wired.** A design constant nothing reads is still worth having, but
+   it must not masquerade as behaviour. The table above is generated, so the claim stays honest
+   without anybody maintaining it.
+
+
 ## Keeping this current
 
 - `node scripts/build-world-index.mjs` rewrites the two generated tables.
