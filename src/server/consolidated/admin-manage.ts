@@ -2198,12 +2198,13 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
                 enginePrice: 'CombatantInput.artifactOrdinal - a second body of that rank beside you',
                 readBy: 'nothing in src/ today - not for the player, not for an NPC',
                 consequence:
-                    'The object is really in cultivator_pouch and carriedArtifact reads it back by ' +
-                    'name. TWO THINGS IT DOES NOT DO YET, both of them gaps in the game rather than ' +
-                    'in ADMIN: it changes no combat number until combatantFromCultivator in ' +
-                    'combat-manage.ts passes carriedArtifact through as artifactOrdinal, and no ' +
-                    'player-facing listing shows it until handleInventory grows an artifacts field ' +
-                    'beside pills and herbs. Stated rather than left to be found.'
+                    'The object is really in cultivator_pouch, carriedArtifact reads it back by ' +
+                    'name, and "what am I carrying" now lists it - that read used to answer ' +
+                    '"Nothing in the pouch at all" over a row that was really there, which is ' +
+                    'indistinguishable from the write never having happened. ONE THING IT STILL ' +
+                    'DOES NOT DO, and it is a gap in the game rather than in ADMIN: it changes no ' +
+                    'combat number until combatantFromCultivator in combat-manage.ts passes ' +
+                    'carriedArtifact through as artifactOrdinal. Stated rather than left to be found.'
             }
             : null,
         runFlagged: true,
