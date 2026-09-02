@@ -217,7 +217,7 @@ import {
     theClauseThisTurnDidNotRun,
     sayingWhatWasNotDone,
     theStructureLineFor
-} from './a-second-verb-in-the-sentence-that-was-not-run.js';
+} from './the-part-of-the-sentence-that-was-not-run.js';
 import {
     PROVISION_COST_STONES,
     whatFeedingThisStretchCosts,
@@ -1913,13 +1913,18 @@ export class GameService {
         // ── phase 2 ──
         const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
 
-        // ── AND THE HALF OF THE SENTENCE THAT DID NOT RUN ────────────────
+        // ── AND THE PART OF THE SENTENCE THAT DID NOT RUN ────────────────
         //
         // One turn is one action, and that stays true: nothing below runs a
-        // second verb. What it does is SAY that a second verb was there, which
+        // second verb. What it does is SAY that another verb was there, which
         // is the whole defect - `I buy a month of rations and eat` bought and
         // did not eat, and said nothing about the eating, so the player learned
         // it from a hunger banner that would not go away.
+        //
+        // It runs in both directions, and the other one is the worse of the
+        // two: the parser takes whichever verb its table reaches first, so
+        // `I gather herbs and go to the market` browses a board and the
+        // gathering disappears. The expensive half is the half that goes.
         //
         // Here rather than inside `execute` because it is a fact about the
         // sentence and not about any one verb: put in one branch it would cover
