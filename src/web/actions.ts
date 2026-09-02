@@ -40,6 +40,9 @@ import {
     requestPutToSomebody
 } from './what-a-request-asks-and-of-whom.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
+// The board's own trade names, so any job the listing prints is a job a player
+// can take by naming it. See `tradeNamedIn`.
+import { OCCUPATIONS } from '../data/cultivation/mortal-world.js';
 
 // A namespace import of THIS module, read lazily and only to take the phrase
 // patterns below back out as a spelling vocabulary. It is a live binding, so
@@ -2259,6 +2262,155 @@ export const WEIGHING_RATHER_THAN_GOING =
  * site added to the catalog becomes typeable with no edit to the parser. The
  * length floor keeps a two-character slug from ever becoming a wildcard.
  */
+/**
+ * ONE ROW PER SHAPE, NOT ONE ROW PER JOB.
+ *
+ * A trade name is printed as the person - "Water carrier", "Charcoal burner" -
+ * and typed as the work - "I carry water", "I burn charcoal". Both have to
+ * reach the same line on the board.
+ *
+ * The mapping is over the SHAPE of the name rather than over the catalog, so a
+ * job added tomorrow is typeable without anybody editing this: any
+ * `<thing> <agent>er` name yields its verb from this table, and a name whose
+ * agent noun is not here simply keeps its printed form, which still works
+ * because the listing prints exactly that. Nothing here can go stale against
+ * `mortal-world.ts`; at worst it covers one shape fewer than it could.
+ */
+const AN_AGENT_NOUN_AND_ITS_VERB: ReadonlyArray<readonly [string, string]> = [
+    ['carrier', 'carry'],
+    ['burner', 'burn'],
+    ['picker', 'pick'],
+    ['digger', 'dig'],
+    ['keeper', 'keep'],
+    ['sitter', 'sit'],
+    ['runner', 'run'],
+    ['culler', 'cull'],
+    ['gatherer', 'gather']
+];
+
+/**
+ * Every way of naming a line on the mortal work board.
+ *
+ * Derived from `OCCUPATIONS` rather than written out, on the precedent
+ * {@link siteNamed} already sets in this file: a phrase list that can drift
+ * from the content it describes is a phrase list that will. What is derived is
+ * the printed name with any parenthetical stripped - a player types "caravan
+ * guard", not "Caravan guard (mortal)" - plus the activity form above.
+ *
+ * Longest first, so "herb gathering, guarded ground" is not answered by "herb".
+ * The floor of four characters is the same guard `siteNamed` keeps: a
+ * three-letter fragment buried in a sentence is not somebody naming a trade.
+ */
+/**
+ * A TRADE NAME IS ALSO A PERSON, AND THAT COST FIVE TESTS ON THE FIRST TRY.
+ *
+ * `Courier`, `Physician (mortal)`, `Gleaner (burn zone)` are lines on a work
+ * board AND people standing in front of you AND, in one case, half the name of
+ * a faction. Matched on the noun alone, the first version of this branch took
+ * "I barter with the courier" (a trade), "I shadow the courier" (following
+ * somebody), "I ask about joining the Gleaners Company" (a sect application)
+ * and "a conversation with a physician" - four verbs' sentences, from a list
+ * that was meant to add one.
+ *
+ * That is the mistake `AGENTS.md` records about widening a pattern here, and
+ * the split it forces is the honest one:
+ *
+ *   `activity`  a verb phrase - "carry water", "burn charcoal". Nobody says
+ *               these about a person, so they stand on their own.
+ *   `name`      a noun - "courier", "physician", "water carrier". A bare trade
+ *               noun in a sentence is a PERSON until something says otherwise,
+ *               so these need the sentence to be about taking or doing work.
+ */
+type TradePhraseKind = 'activity' | 'name';
+
+/** What makes a trade NOUN a job rather than somebody standing there. */
+const TAKING_IT_AS_WORK =
+    /\b(?:takes?|taking|took|works?|working|hire|hires|hired|hiring|sign on|signs on|signed on|apply|applies|applied|applying|job|jobs|employment|wages?|paid|pay|pays|earn|earns|labour|labor)\b|\bas an?\b/;
+
+interface TradePhrase {
+    readonly said: string;
+    readonly name: string;
+    readonly kind: TradePhraseKind;
+    /** The phrase as a whole-word test, with an optional plural on the end. */
+    readonly matches: RegExp;
+}
+
+const TRADE_PHRASES: readonly TradePhrase[] = (() => {
+    const rows: TradePhrase[] = [];
+    const add = (said: string, name: string, kind: TradePhraseKind): void => {
+        // Letters, spaces and apostrophes only. Every trade name in the catalog
+        // is made of those, and sanitising rather than escaping means no regex
+        // metacharacter can ever reach the pattern below.
+        const key = said.toLowerCase().replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (key.length < 4 || rows.some(r => r.said === key)) return;
+        // A hyphen is a space. `Spirit-beast culler` is printed with one and
+        // typed either way, and the sanitiser above turns it into a space - so
+        // without this the one trade name the catalog hyphenates was the one
+        // name the parser would not accept back.
+        const between = key.split(' ').join('[\\s-]+');
+        rows.push({ said: key, name, kind, matches: new RegExp(`\\b${between}s?\\b`) });
+    };
+    for (const job of OCCUPATIONS) {
+        const printed = job.name.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        add(printed, job.name, 'name');
+        // "Herb gathering, guarded ground" - the clause after the comma says
+        // WHERE, and nobody types it.
+        const beforeTheComma = printed.split(',')[0]!.trim();
+        add(beforeTheComma, job.name, 'name');
+
+        const shaped = /^(.+?)\s+([a-z]+)$/i.exec(beforeTheComma);
+        const verb = shaped
+            ? AN_AGENT_NOUN_AND_ITS_VERB.find(([agent]) => agent === shaped[2]!.toLowerCase())
+            : undefined;
+        if (shaped && verb) add(`${verb[1]} ${shaped[1]!.toLowerCase()}`, job.name, 'activity');
+    }
+    return rows.sort((a, b) => b.said.length - a.said.length);
+})();
+
+/**
+ * The trade a sentence names, or nothing.
+ *
+ * Returns the PRINTED name, because that is what `GameService.work` matches
+ * against the board that is actually here - so this decides that a trade was
+ * named and never which one is available.
+ */
+export function tradeNamedIn(text: string): string | undefined {
+    const framed = TAKING_IT_AS_WORK.test(text);
+    for (const row of TRADE_PHRASES) {
+        if (row.kind === 'name' && !framed) continue;
+        if (row.matches.test(text)) return row.name;
+    }
+    return undefined;
+}
+
+/**
+ * The trade a WORK sentence half-names, for the handler to resolve.
+ *
+ * A looser read than {@link tradeNamedIn} and only safe because of where it is
+ * called: inside the employment branch, on a sentence the table has already
+ * decided is about taking work. "I take the charcoal work" names no trade this
+ * catalog prints - the line is `Charcoal burner` - and one distinctive word out
+ * of a trade's own name is enough to say which one was meant.
+ *
+ * Five characters, matched whole, against the words of the printed name. That
+ * floor is what keeps `tax`, `bell`, `cave` and `quay` from firing on the
+ * ordinary sentences they appear in, and the branch it runs in is what keeps
+ * "I want a drink of water" from ever reaching it.
+ *
+ * Nothing here decides whether the trade is on offer HERE. `GameService.work`
+ * matches the name against the board as it actually stands and refuses with the
+ * board attached, which is the refusal that names a route.
+ */
+export function theKindOfWorkNamed(text: string): string | undefined {
+    const words: readonly string[] = text.toLowerCase().match(/[a-z']+/g) ?? [];
+    for (const row of TRADE_PHRASES) {
+        for (const part of row.said.split(' ')) {
+            if (part.length >= 5 && words.includes(part)) return row.name;
+        }
+    }
+    return undefined;
+}
+
 export function siteNamed(text: string): string | undefined {
     for (const phrase of SITE_PHRASES) {
         if (phrase.length >= 6 && text.includes(phrase)) return phrase;
@@ -5653,7 +5805,25 @@ function planIntent(input: string): PlannedAction {
         // the one question that feeds them got a senior's opinion of their
         // progress. The anchor is the payment, which nothing else in this
         // table asks after.
-        || /\b(?:i (?:can|could) do|anything|something|any(?:thing)? going)\b[^.?!]*\bfor (?:pay|wages|money|coin|stones|a wage)\b/.test(text))
+        || /\b(?:i (?:can|could) do|anything|something|any(?:thing)? going)\b[^.?!]*\bfor (?:pay|wages|money|coin|stones|a wage)\b/.test(text)
+        // ── A TAKING OF WORK IS A TAKING, HOWEVER IT IS QUALIFIED ────────
+        //
+        // `take (?:any |whatever |some )?work` admitted three adjectives and
+        // nothing else, so the sentences somebody types when they are out of
+        // stones reached nothing at all: "I take the best paying work", "I take
+        // whatever pays best", "I take the charcoal work". The intent prompt
+        // names this as the life-or-death case in its own words - if the player
+        // is broke or hungry, `work` is almost always what they meant, and it
+        // is the one action that can kill them for asking - and the table did
+        // not honour it.
+        //
+        // Bounded rather than free: the taking verb and the word `work` in the
+        // same clause. A question about work is untouched, because none of
+        // these is a question and `ASKING_RATHER_THAN_DOING` runs over the
+        // whole sentence afterwards regardless.
+        || /\btakes?\b[^.?!]{0,30}?\bwork\b/.test(text)
+        || /\b(?:whatever|anything|something)\b[^.?!]{0,20}\bpays?\b/.test(text)
+        || /\bbest[- ]paying\b|\bpays? (?:the )?(?:best|most|fastest|quickest)\b/.test(text))
         // ── AND `work at` IS THE SAME WORD DOING THE SAME THING ──────────
         //
         // The guard above was written for `work on` and the alternation two
@@ -5672,7 +5842,14 @@ function planIntent(input: string): PlannedAction {
         return {
             action: 'work',
             days: parseDuration(text) ?? DEFAULT_WORK_DAYS,
+            // `... as a porter` first, which is the shape the extractor reads.
+            // Where the sentence names the trade some other way - "the charcoal
+            // work" - the catalog answers instead. Undefined is not a failure
+            // here: `GameService.work` reads an unnamed trade as "take any
+            // work" and picks the best-paying line on the board that is
+            // actually being put to them.
             target: extractSubject(input, /work as|hire (?:myself )?(?:out )?as|take work as|job as/)
+                ?? theKindOfWorkNamed(text)
         };
     }
 
@@ -6076,6 +6253,46 @@ function planIntent(input: string): PlannedAction {
         return { action: 'gather', target: extractSubject(input, /gather|forage|harvest|pick|collect|dig up/) };
     }
 
+    // ── A TRADE THE BOARD PRINTS IS A TRADE A PLAYER CAN NAME ────────────
+    //
+    // The named-trade half of `work` has been complete the whole time. It
+    // matches what the player typed against `findWorkForOrdinal(ordinal,
+    // settlementKind)` - the board as it actually is here - and it carries a
+    // comment about eighteen consecutive attempts that starved a run. It would
+    // have matched "water" against "Water carrier" on the day it was written.
+    // No sentence ever reached it.
+    //
+    // Found by playing a character at 1 HP of 40 with 2 spirit stones, whom the
+    // game had just advised, in its own prose: "Carrying water is the most
+    // certain, yielding nearly a full month's worth of vitality." They typed
+    // the game's own recommendation back at it:
+    //
+    //   > I carry water for a month
+    //   The thought does not resolve.
+    //
+    // `AGENTS.md` has a rule for exactly this and it is the plainest one in the
+    // file: THE PLAYER MUST BE ABLE TO TYPE BACK WHAT THE GAME PRINTED. The
+    // listing prints `Water carrier`, `Charcoal burner`, `Miner`, `Herb picker`,
+    // `Porter`, `Ferryman`, `Scribe`; the parser knew none of them.
+    //
+    // BELOW `gather`, `hunt` and `refine`, and that ordering is the whole of
+    // what makes it safe. "I pick herbs" is foraging and has to stay foraging;
+    // `Herb picker` is a job on a board and is reached by naming it. The verb
+    // above owns the sentence and this only ever sees what fell past it.
+    //
+    // The target is the printed NAME, because that is what the handler matches
+    // against - so nothing here decides which job, only that a job was named.
+    {
+        const trade = tradeNamedIn(text);
+        if (trade) {
+            return {
+                action: 'work',
+                days: parseDuration(text) ?? DEFAULT_WORK_DAYS,
+                target: trade
+            };
+        }
+    }
+
     // The bare forms, and `book`. "I practise", "I train", "I drill", "I spar"
     // and "I read my book" all reached nothing, because the rule demanded a
     // noun from a list that did not include the commonest word for the object.
@@ -6445,7 +6662,40 @@ function planIntent(input: string): PlannedAction {
         return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
     }
 
-    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around)\b/.test(text)) {
+    // ── AND THE LANGUAGE OF RECOVERY, WHICH IS NOT THE LANGUAGE OF SITTING ─
+    //
+    // Found by playing a character at 1 HP of 40 with two untreated injuries
+    // and 2 spirit stones. The engine's own required line told them what to do
+    // - "Sitting still mends it back, and a physician mends it faster" - the
+    // physician was correctly refused for price, and then six ordinary ways of
+    // saying the other half reached nothing at all:
+    //
+    //   "I lie up somewhere quiet"   "I lie low for a while"   "I recover"
+    //   "I let it heal"              "I stay off it"           "I lie up and let it heal"
+    //
+    // A player following the game's own instruction, one hit from dead, with no
+    // sentence that reaches the thing they were just told to do. `rest` and
+    // `sleep` were already here and are why the two phrasings that did work
+    // worked; the rest of the family was missing.
+    //
+    // WHY `wait` AND NOT `seclude`. They are different acts with different
+    // costs, and the second is close to the worst answer available to somebody
+    // who cannot afford food: sealing yourself in is a year of cultivation with
+    // rations against it. Recovering is lying still. The boundary holds in the
+    // other direction by ordering rather than by exclusion - the seclusion
+    // branch sits above this one and matches only its own words, so "I shut
+    // myself away", "I seal the door" and "I go into seclusion" are untouched.
+    //
+    // AND NO SPAN IS INVENTED. "until the wound has closed" is not a duration
+    // any reader can measure, so `parseDuration` declines it and the turn costs
+    // the one day a bare wait costs. Manufacturing a span the sentence does not
+    // contain is the defect this file has been trimming elsewhere, and it would
+    // be worst here: a guessed year, spent by somebody who cannot eat.
+    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around)\b/.test(text)
+        || /\b(?:lie up|lies up|lying up|lie low|lies low|lying low|recover|recovers|recovering|recuperate|recuperates|recuperating|convalesce|stay off it|stay off my feet|keep off my feet|stay in bed|take it easy)\b/.test(text)
+        || /\b(?:let|leave)\s+(?:it|them|the wound|the wounds|my wounds?|my meridians?)\s+(?:heal|mend|close|knit|settle)\b/.test(text)
+        || /\buntil\s+(?:the\s+)?(?:wound|wounds|injury|injuries|meridians?)\b[^.!?]{0,20}\b(?:closed?|heals?|healed|mends?|mended|knits?)\b/.test(text)
+        || /\buntil\s+i\s+can\s+(?:stand|walk|move|fight|travel)\b/.test(text)) {
         // Carry the duration when one is named. "I wait ten years" returned no
         // days at all, so the handler took its one-day default and the game
         // silently did a thousandth of what was asked - "Waiting of 1 day was
