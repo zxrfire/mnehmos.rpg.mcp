@@ -119,6 +119,74 @@ Two regions that differ sharply are worth more than five that blur. When adding 
 the question is not "what else could exist" but **"what does crossing this border change
 about how you live"** - and the answer must be concrete enough to write a scene about.
 
+## What is true of a place right now
+
+Everything above is a place's permanent character - the things that are true of it in
+every century. The other half of making one province not another is that **things are
+true of a place for a while and then stop being true**: a famine, a pass shut for the
+winter, a beast tide running, a district worked out, a blockade, a war on the ground a
+house stands on.
+
+That layer is
+[`what-is-true-of-a-place-right-now.ts`](../../../src/engine/world/what-is-true-of-a-place-right-now.ts),
+and its own header carries the mechanics. What belongs here is what an author has to
+decide when writing one.
+
+### The causation direction is the whole point
+
+**Mundane goods are never counted.** Nobody tracks how much grain a province holds, and
+consumption does not move a mundane good. A thousand travellers buying meals does not
+cause a famine. **A famine causes the meals to stop.**
+
+So when you want somewhere to be short of something, do not write a quantity. Write the
+event, and let availability be read off it. The status carries what is simply not to be
+had here while it is true, and there is no ledger behind that list.
+
+This is also the boundary with counted stock, which is a different thing and is counted:
+cultivator materials in a district are a number that goes down when people take them.
+*That district being worked out* is the status; the count reaching bottom is not.
+
+### Four things to decide, and one of them is the one that gets forgotten
+
+- **What is true**, in the sentence the world says about the place.
+- **What caused it.** Always. A status that appeared from nowhere undoes the rule that a
+  beast tide is a symptom of something that changed on the ground - and that the houses
+  which treat one as a monster problem rather than a survey problem are the ones it
+  happens to twice. Two kinds of cause exist and they are the same field: **a war is
+  caused by somebody choosing, a drought by nothing choosing.** Fill in who decided it,
+  or leave that empty. Nothing in the engine branches on which you wrote.
+- **What was visible beforehand.** The ordinary animals went first and went far. Measured
+  output fell before anything was seen and was filed as a survey error. Herds that do not
+  share ground were seen sharing it. These are what anybody who reads ground can observe
+  while understanding nothing about why, and they are the difference between a world that
+  surprises people and a world that ambushes them.
+- **When it is looked at again.** This is the one that gets forgotten, and forgetting it
+  is worse than leaving the status out: a famine that never lifts is a worse bug than no
+  famine. The date is not a promise about when it stops - a war has no such date - it is
+  the day somebody decides whether it is still true.
+
+### What is true, what is visible, and what anybody has worked out are three things
+
+Write all three separately and never collapse them. The status is the truth; the signs
+are what is observable; and what a given person has worked out is `KnowingStage` in the
+social layer, which is the only knowledge ladder in this repo and must not acquire a
+second one.
+
+The important flag is whether **anybody local has worked the cause out**, which is
+usually no. That is a ceiling on hearsay rather than on truth: asking around gets a
+visitor as far as the signs, and somebody who wants the reason has to go and read the
+ground themselves.
+
+**And what a status DOES is not gated on any of it.** A famine stops the millet for a
+traveller who has never heard the word. Knowing buys the reason, the warning and the way
+out - never the effect.
+
+### It has to be sayable
+
+A place where something is wrong says so in prose. It never silently returns different
+numbers and leaves somebody to work out why the millet cost four times what it cost last
+year.
+
 ## Factions
 
 A faction needs more than alignment, a rank ladder and a rivalry list.
@@ -146,4 +214,7 @@ For a region: *name three things that are true here and false one province over.
 For a faction: *describe them in one sentence that could not be said about any other
 faction in the catalog.*
 
-If either is hard, the thing is not finished.
+For a status: *name what caused it, what somebody standing here would have noticed
+beforehand, and the day the world looks at it again.*
+
+If any of the three is hard, the thing is not finished.
