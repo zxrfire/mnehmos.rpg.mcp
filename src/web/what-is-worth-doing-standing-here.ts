@@ -227,6 +227,22 @@ export interface StandingHere {
      * offering them five refusals in a row.
      */
     aboveTheLid: boolean;
+    /**
+     * A seclusion the engine stopped and has not resolved, waiting on an answer.
+     *
+     * Null on every ordinary turn. When it is set the cultivator is standing
+     * over a decision with a decade on one side of it, and it is the one entry
+     * in this whole file that is gone next turn whatever they do - so it is
+     * offered first, ahead even of the body, which is the only exception the
+     * ordering below makes and the reason it makes it.
+     *
+     * Only one sentence comes out of it. Sitting back down is the answer that
+     * needs vocabulary; going is every other sentence in the language, and a
+     * prompt for it would be a prompt for "do anything at all".
+     * `choosing-what-to-do-when-a-seclusion-is-broken.ts` holds the whole
+     * design.
+     */
+    brokenSeclusion: { daysRemaining: number; canWithdraw: boolean } | null;
 }
 
 /**
@@ -281,7 +297,14 @@ const SAY = {
     breakthrough: { id: 'breakthrough', say: 'I attempt a breakthrough', routesTo: 'breakthrough' },
     cultivate: { id: 'cultivate', say: 'I cultivate for a year', routesTo: 'cultivate' },
     room: { id: 'room', say: 'who is here', routesTo: 'look' },
-    news: { id: 'news', say: 'what news is there', routesTo: 'news' }
+    news: { id: 'news', say: 'what news is there', routesTo: 'news' },
+    // The one answer to a broken seclusion that needs words. It routes to
+    // `cultivate` here and it is INTERCEPTED before phase 1 while a fork is
+    // standing, so it resumes the interrupted sitting for its remaining days
+    // rather than opening a new one - see `GameService.act`. The routing is
+    // pinned all the same, because the fork can be gone by the time the
+    // sentence arrives and a sentence this file offers has to work either way.
+    sitBackDown: { id: 'sit_back_down', say: 'I sit back down', routesTo: 'cultivate' }
 } as const;
 
 type Line = typeof SAY[keyof typeof SAY];
@@ -310,6 +333,31 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const closeToIt = turns <= STARVATION_TURNS;
     const hungry = turns <= STARVATION_TURNS * WARNING_HORIZON;
     const canBuyAMeal = here.spiritStones >= here.mealCost;
+
+    // ── a question the engine left open, which expires this turn ──────────
+    //
+    // Ahead of the body, and it is the only thing in this file that goes ahead
+    // of the body. The rule below is that starvation comes first because every
+    // other line is something a starving cultivator will not live to finish -
+    // and this is the one line that will not exist to be finished. A seclusion
+    // was stopped by somebody arriving, the remaining years are still sitting
+    // there, and the next thing the player does settles it either way. Being
+    // shown the food first and the fork second means being shown the fork after
+    // it is gone.
+    //
+    // One sentence, not two. Going is every other sentence in the language, and
+    // "you may also do anything else" is not a prompt.
+    if (here.brokenSeclusion) {
+        const left = here.brokenSeclusion.daysRemaining;
+        const span = left >= 365
+            ? `${(left / 365).toFixed(1)} years`
+            : `${left} day${left === 1 ? '' : 's'}`;
+        add(at(SAY.sitBackDown, 'now', here.brokenSeclusion.canWithdraw
+            ? `The sitting stopped with ${span} of it unspent, and the road out is only open `
+              + 'while you are standing. Sitting back down spends them and is how you are found.'
+            : `The sitting stopped with ${span} of it unspent and there is no road out. Sitting `
+              + 'back down spends them, at the cost of being found seated.'));
+    }
 
     // ── the body, which is what actually kills people here ────────────────
     //

@@ -206,6 +206,7 @@ import {
     type ActionName,
     type OfferIntent,
     type PetitionIntent,
+    type Plan,
     type PlanSource,
     type PlannedAction,
     type PostureIntent,
@@ -310,7 +311,11 @@ import {
     type AdmissionReading,
     type Site
 } from '../data/cultivation/inheritance-trials.js';
-import { assessPower, resolveExchange } from '../engine/cultivation/combat.js';
+import {
+    assessPower,
+    combatPowerForOrdinal,
+    resolveExchange
+} from '../engine/cultivation/combat.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
@@ -318,6 +323,20 @@ import { PILLS, getPill } from '../data/cultivation/pills.js';
 // so already existed and nothing asked it.
 import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout } from './asked.js';
+import {
+    THE_ANSWER_IS_TO_GO,
+    THE_ANSWER_IS_TO_KEEP_SITTING,
+    crossroadsView,
+    howTheyAreReferredTo,
+    stillStands,
+    whatGoingCost,
+    whatStayingCommittedTo,
+    whatTheForkAsks,
+    whatTheForkAsksStructurally,
+    type CrossroadsView,
+    type SeclusionCrossroads,
+    type WhoIsClose
+} from './choosing-what-to-do-when-a-seclusion-is-broken.js';
 import {
     hearingProse,
     offerHearing,
@@ -1352,6 +1371,20 @@ export interface StateView {
     /** Everything the crossings have cut away from this cultivator, oldest first. */
     tolls: TollLedgerEntry[];
     log: LogEntry[];
+    /**
+     * A seclusion the engine stopped and has NOT resolved, waiting on an answer.
+     *
+     * Null on every ordinary turn. When it is set, the run is standing at a
+     * fork the engine deliberately did not take: somebody broke a long sitting
+     * and the two things that were always physically available - go, or sit
+     * back down - are both still open. See
+     * `choosing-what-to-do-when-a-seclusion-is-broken.ts`.
+     *
+     * The client renders two controls off this. It is emphatically not a modal
+     * jail: free text is still the whole game, and anything that is not sitting
+     * back down is going.
+     */
+    crossroads: CrossroadsView | null;
 }
 
 /**
@@ -1575,6 +1608,17 @@ export class GameService {
      * `consumeArrivals` is what takes it out, and it is not optional.
      */
     private pendingArrivals: ArrivableFact[] = [];
+    /**
+     * A seclusion that stopped because of somebody, with the answer still owed.
+     *
+     * Beside `pendingArrivals` and for the same reason: it is a fact about a
+     * turn in flight rather than a fact about the world, and the world layer
+     * has nothing to say about it. See
+     * `choosing-what-to-do-when-a-seclusion-is-broken.ts` for what each branch
+     * costs and why losing this is not a way to cheat - losing it is going, and
+     * going is what the engine did unasked before any of this existed.
+     */
+    private crossroads: SeclusionCrossroads | null = null;
     /**
      * Set when an action changed the world without spending a day.
      *
@@ -1897,21 +1941,69 @@ export class GameService {
         // passes that additionally skip it, and why those two and no others.
         this.refreshThePlayerRow(cultivator);
 
+        // ── A QUESTION THE ENGINE LEFT OPEN IS ANSWERED FIRST ────────────
+        //
+        // Captured here, before anything can clear it, because BOTH answers
+        // have to be findable afterwards: the two explicit ones below, and the
+        // implicit one, which is every other sentence in the language. See
+        // `settleAnyStandingCrossroads`.
+        //
+        // The two answers are matched before phase 1 rather than routed through
+        // it because they are not verbs. "I sit back down" would route to
+        // `cultivate` and start a FRESH sitting at the default length, which
+        // would hand the player back the years they had just been asked to
+        // choose about and charge them for a new stretch on top - the exact
+        // double-count the clock rule forbids.
+        const standing = stillStands(this.crossroads, run.id, cultivator)
+            ? this.crossroads
+            : null;
+        const clockOnEntry = run.elapsedDays;
+        const answered = standing === null
+            ? null
+            : THE_ANSWER_IS_TO_KEEP_SITTING.test(trimmed)
+                ? 'stay' as const
+                : THE_ANSWER_IS_TO_GO.test(trimmed)
+                    ? 'go' as const
+                    : null;
+
         // ── phase 1 ──
-        const plan = await this.narrator.plan(
-            trimmed,
-            composeStateSummary({
-                cultivator,
-                run,
-                ambient,
-                sectName: this.sectNameFor(cultivator),
-                knownTechniques: this.knownTechniqueNames(cultivator),
-                awareness: this.awarenessOf(cultivator)
-            })
-        );
+        const plan: Plan = answered !== null
+            ? {
+                action: { action: answered === 'stay' ? 'cultivate' : 'wait' },
+                source: 'fallback',
+                note: answered === 'stay'
+                    ? 'an open seclusion crossroads, answered by sitting back down'
+                    : 'an open seclusion crossroads, answered by getting up'
+            }
+            : await this.narrator.plan(
+                trimmed,
+                composeStateSummary({
+                    cultivator,
+                    run,
+                    ambient,
+                    sectName: this.sectNameFor(cultivator),
+                    knownTechniques: this.knownTechniqueNames(cultivator),
+                    awareness: this.awarenessOf(cultivator)
+                })
+            );
 
         // ── phase 2 ──
-        const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
+        const execution = answered === 'stay'
+            ? await this.sitBackDown(run, cultivator, ambient, standing!)
+            : answered === 'go'
+                ? this.getUpAndGo(run, standing!)
+                : await this.execute(plan.action, run, cultivator, ambient, trimmed);
+
+        // Doing something else with a day in it is going, and going says what
+        // it cost. Before phase 3, so the sentence is in the facts the narrator
+        // is handed. `clockOnEntry` is compared against the run as it stands
+        // NOW: a read that spent no day leaves the question open.
+        if (answered === null && standing !== null) {
+            const now = this.currentRun();
+            this.settleAnyStandingCrossroads(
+                execution, standing, now.cultivator, now.run.elapsedDays > clockOnEntry
+            );
+        }
 
         // ── AND THE PART OF THE SENTENCE THAT DID NOT RUN ────────────────
         //
@@ -2012,9 +2104,22 @@ export class GameService {
 
         const { run, cultivator } = this.requireLiveRun();
         const ambient = this.ambientFor(cultivator, run);
+        // Pressing Cultivate with a fork standing is going, and then sitting
+        // down again for a fresh stretch. Captured before `runSeclusion` clears
+        // it, for the same reason as in `act`.
+        const standing = stillStands(this.crossroads, run.id, cultivator)
+            ? this.crossroads
+            : null;
+        const clockOnEntry = run.elapsedDays;
         const execution = await this.runSeclusion(
             run, cultivator, ambient, requested, { acknowledged: options.anyway === true }
         );
+        if (standing !== null) {
+            const now = this.currentRun();
+            this.settleAnyStandingCrossroads(
+                execution, standing, now.cultivator, now.run.elapsedDays > clockOnEntry
+            );
+        }
         // The zero-return gate answers here too, and it is a refusal rather
         // than a failure: the button path has no sentence to put "anyway" into,
         // so it comes back as the engine's own words for the caller to show and
@@ -2469,7 +2574,7 @@ ${noticedWaiting}`;
                 // to guess again. Nothing is unlocked and nothing is cheapened:
                 // the sentence they typed still did nothing at all.
                 const pressing = theMostPressing(
-                    whatIsWorthDoingStandingHere(this.whatIsLiveHere(cultivator, ambient)),
+                    whatIsWorthDoingStandingHere(this.whatIsLiveHere(cultivator, ambient, run)),
                     3
                 );
                 const unread = this.freeAction(run, 'unclear', factsForRefusal(
@@ -7942,7 +8047,20 @@ ${noticed}`;
         cultivator: Cultivator,
         ambient: AmbientQi,
         days: number,
-        options: { sealed?: boolean; acknowledged?: boolean; askedFor?: number } = {}
+        options: {
+            sealed?: boolean;
+            acknowledged?: boolean;
+            askedFor?: number;
+            /**
+             * The fork this sitting is the second half of, when it is one.
+             *
+             * Set only by `sitBackDown`. It carries the rations the interrupted
+             * half left in the pack, so the resumed span is not charged a
+             * second time for food that was already bought, and it carries the
+             * sentence saying what the player committed to.
+             */
+            resuming?: SeclusionCrossroads;
+        } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
         const startDay = Math.floor(run.elapsedDays);
@@ -8007,7 +8125,9 @@ ${noticed}`;
         );
         const lived = daysActuallySpent(enc, startDay, days);
 
-        const provisioning = this.buyProvisions(cultivator, lived);
+        const provisioning = this.buyProvisions(
+            cultivator, lived, options.resuming?.rationsLeft ?? 0
+        );
         const provisioned = withEncounterDeltas(provisioning.cultivator, enc);
         const prepared = provisioning.covered >= lived;
         // Held rather than inlined: the ceiling is reported in the preamble
@@ -8167,6 +8287,49 @@ ${noticed}`;
             if (event.interrupts) facts.required.push(event.summary);
         }
 
+        // ── AND IF IT STOPPED BECAUSE OF SOMEBODY, IT IS A QUESTION ──────
+        //
+        // The one interrupt in the whole file that is not a fact about the
+        // cultivator's own body. A wound, a deviation, an empty pack - those
+        // have happened and the only honest thing to do is report them. A
+        // person at the cave mouth has not happened yet, and `time-skip.ts`
+        // already writes two sentences saying so and naming both costs.
+        //
+        // What it could not do was hold the question open, so the engine
+        // answered it: "You came out early. 5.3 years of the 40 years were
+        // spent; the rest was not yours to spend." The player was told they had
+        // a choice and then shown the outcome of a choice somebody else made.
+        //
+        // `raiseTheCrossroads` puts it back. Nothing here changes what was
+        // rolled, what it cost, or the chance of anything - the stretch stopped
+        // exactly where it stopped, and both branches out of it were always
+        // physically there. What changes is who takes one.
+        if (options.resuming) {
+            // Said before the fork is possibly raised again, so a second
+            // interruption reads as a second question rather than as the first
+            // one repeating.
+            const committed = whatStayingCommittedTo(
+                options.resuming,
+                howTheyAreReferredTo(
+                    options.resuming.whoIsClose,
+                    options.resuming.whoIsClose
+                        ? rankName(options.resuming.whoIsClose.realmOrdinal)
+                        : null
+                )
+            );
+            facts.lines.unshift(committed);
+            (facts.required ??= []).push(committed);
+        }
+        // `applied.run`, not `run`: the skip has already booked its turn, and a
+        // question stamped with the turn before the one it was asked on reads
+        // as a stale record to anybody auditing the log.
+        this.raiseTheCrossroads(applied.run, applied.cultivator, skip, facts, {
+            sealed,
+            acknowledged: options.acknowledged ?? false,
+            daysAsked: lived,
+            startDay
+        });
+
         // ── THE CEILING, BEFORE THE DECADE RATHER THAN AFTER ─────────────
         //
         // The engine files a `method_ceiling` event and it arrives inside a
@@ -8262,6 +8425,276 @@ ${noticed}`;
             hp: -dropped.hp,
             spiritStones: -dropped.spiritStones
         });
+    }
+
+    // ── A BROKEN SECLUSION IS A QUESTION ─────────────────────────────────
+    //
+    // Everything from here to `settleAnyStandingCrossroads` is one feature and
+    // it is described in full in
+    // `choosing-what-to-do-when-a-seclusion-is-broken.ts`. The short version:
+    // the engine stops a long sitting when somebody comes near, writes two very
+    // good sentences about the two things the cultivator could do, and then did
+    // one of them without asking. These four methods are the asking.
+
+    /**
+     * Hold the fork open for one turn, if the stretch stopped because of a person.
+     *
+     * Only `major_encounter`. Every other interrupt is a fact about the
+     * cultivator's own body that has already happened - a torn channel, a
+     * deviation, an empty pack - and there is nothing to decide about a thing
+     * that is already true. A person at the cave mouth has not arrived yet, and
+     * that is the entire difference.
+     *
+     * `canWithdraw` is READ off the event the engine filed, never re-rolled. It
+     * was decided by a sample drawn against the cultivator's own Fortune inside
+     * `simulateTimeSkip` and re-deciding it here would be a second opinion on
+     * something that already has one - the exact shape of defect the authority
+     * rule exists to forbid.
+     */
+    private raiseTheCrossroads(
+        run: Run,
+        cultivator: Cultivator,
+        skip: TimeSkipResult,
+        facts: EngineFacts,
+        context: {
+            sealed: boolean;
+            acknowledged: boolean;
+            /** The span the skip was handed, after the encounter layer's own cut. */
+            daysAsked: number;
+            startDay: number;
+        }
+    ): void {
+        // Whatever question was standing has been answered by getting here at
+        // all: this turn was a seclusion, which is either the resumption or a
+        // fresh sitting, and both settle the old one.
+        this.crossroads = null;
+
+        if (skip.interruptReason !== 'major_encounter') return;
+        if (!cultivator.alive) return;
+
+        const remaining = Math.floor(context.daysAsked - skip.simulatedDays);
+        // A stretch that stopped on its own last day has nothing left to
+        // decide about. Offering a fork over zero days would be a panel with
+        // nothing behind either button.
+        if (remaining < 1) return;
+
+        const filed = [...skip.events].reverse().find(event =>
+            event.kind === 'encounter' && event.data?.severity === 'major');
+        if (!filed) return;
+
+        const crossroads: SeclusionCrossroads = {
+            runId: run.id,
+            cultivatorId: cultivator.id,
+            raisedOnTurn: run.turn,
+            canWithdraw: filed.data?.canWithdraw === true,
+            sealed: context.sealed,
+            acknowledged: context.acknowledged,
+            daysAsked: Math.floor(context.daysAsked),
+            daysSpent: Math.floor(skip.simulatedDays),
+            daysRemaining: remaining,
+            stoppedOnDay: Math.floor(context.startDay + skip.simulatedDays),
+            rationsLeft: Math.max(0, Math.floor(skip.endState.rationsRemaining ?? 0)),
+            whoIsClose: this.whoIsCloseNow(cultivator)
+        };
+        this.crossroads = crossroads;
+
+        // ── AND THE SENTENCE THAT USED TO ANSWER IT COMES OUT ────────────
+        //
+        // `factsForTimeSkip` closes every interrupted stretch with "You came
+        // out early. 5.3 years of the 40 years were spent; the rest was not
+        // yours to spend." That is exactly right for a torn channel or an empty
+        // pack, where the stretch ended because something already happened. It
+        // is the defect itself when the stretch ended on a QUESTION: read live,
+        // it announced the outcome of a decision two paragraphs before the
+        // decision was put to the player, and it says the years are not theirs
+        // in the same breath as offering them.
+        //
+        // Removed here rather than conditioned at source because the condition
+        // is not knowable there - `factsForTimeSkip` sees an interrupt and not
+        // whether anybody is going to be asked about it. When these two files
+        // are next open together the branch belongs in `facts.ts`, keyed on the
+        // same fact this method tests.
+        const CAME_OUT_EARLY = 'You came out early.';
+        facts.prose = facts.prose
+            .split('\n\n')
+            .filter(paragraph => !paragraph.startsWith(CAME_OUT_EARLY))
+            .join('\n\n');
+
+        const question = whatTheForkAsks(crossroads, this.howToReferToThem(crossroads));
+        facts.lines.push(question);
+        // Required, for the same reason the provisioning line and every
+        // interrupting event are required: a narrator that drops the question
+        // leaves the player reading an outcome nobody chose, which is the whole
+        // defect this exists to close.
+        (facts.required ??= []).push(question);
+        facts.structure.push(whatTheForkAsksStructurally(crossroads));
+    }
+
+    /**
+     * Who the world says is close enough to matter.
+     *
+     * A READ, and nothing but a read. `present` is the same crowd the hearsay
+     * layer and every pointing phrase resolve against, in the same single total
+     * order, and the last of it is what `somebodyAtHand` already means by "the
+     * nearest cultivator" - see `oneCrowd` for why that order exists and why it
+     * must not be recomputed here.
+     *
+     * `combatPowerForOrdinal` prices both of them off the ladder alone. Deeper
+     * pricing would need attributes, wounds and what they are carrying, and the
+     * roster carries none of those - `assessPower` on a half-built combatant
+     * would be a worse number than an honest coarse one. What this is for is
+     * the operator's line saying who was outside and roughly what they were
+     * worth; nothing reads it back and nothing resolves against it.
+     *
+     * Null when the world is off or the place holds nobody, and the sentences
+     * degrade to the engine's own "whoever that is" rather than inventing a
+     * person to fill the slot.
+     */
+    private whoIsCloseNow(cultivator: Cultivator): WhoIsClose | null {
+        const here = this.present(cultivator);
+        if (here.length === 0) return null;
+        const them = here[here.length - 1];
+        return {
+            id: them.id,
+            name: them.name,
+            realmOrdinal: them.realmOrdinal,
+            theirPower: combatPowerForOrdinal(them.realmOrdinal),
+            yourPower: combatPowerForOrdinal(cultivator.realmOrdinal),
+            known: this.knowledge.isAwareOf(cultivator.id, 'cultivator', them.id)
+        };
+    }
+
+    /** A name only if it has been earned; otherwise the rung, which anybody can feel. */
+    private howToReferToThem(crossroads: SeclusionCrossroads): string {
+        return howTheyAreReferredTo(
+            crossroads.whoIsClose,
+            crossroads.whoIsClose ? rankName(crossroads.whoIsClose.realmOrdinal) : null
+        );
+    }
+
+    /**
+     * The player sat back down. Spend the rest of the sitting.
+     *
+     * The whole of staying is one call into the ordinary seclusion path for the
+     * remaining days, starting from the day it stopped - which the run's clock
+     * is already standing on, because the first half advanced it. Every roll in
+     * `time-skip.ts` and in `src/engine/encounters/` is keyed to an ABSOLUTE
+     * day, so the surviving days give exactly what they were always going to
+     * give and a forty-year sitting split into 5.3 and 34.7 is the same forty
+     * years. There is no second simulation and no modifier anywhere in it.
+     *
+     * It can be interrupted again, and if it is, that is a second question and
+     * not the first one repeating.
+     */
+    private async sitBackDown(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        crossroads: SeclusionCrossroads
+    ): Promise<Execution> {
+        this.crossroads = null;
+        return await this.runSeclusion(run, cultivator, ambient, crossroads.daysRemaining, {
+            sealed: crossroads.sealed,
+            // Already answered for this sitting. Asking again would refuse the
+            // second half of a stretch the player has explicitly recommitted to.
+            acknowledged: crossroads.acknowledged,
+            resuming: crossroads
+        });
+    }
+
+    /**
+     * The player got up. Say what that cost, and take no day for saying it.
+     *
+     * A turn of attention and nothing else. The remaining days are already
+     * gone - they were never spent, and this is the sentence that says so - and
+     * charging a day on top would be billing somebody for the act of answering.
+     */
+    private getUpAndGo(
+        run: Run,
+        crossroads: SeclusionCrossroads
+    ): Execution {
+        this.crossroads = null;
+        const them = this.howToReferToThem(crossroads);
+        const cost = whatGoingCost(crossroads, them);
+        const facts = factsForToolResult(
+            crossroads.canWithdraw
+                ? 'Up, and out by the road that does not cross them.'
+                : 'On your feet, which is all getting up buys.',
+            [cost],
+            cost
+        );
+        facts.required = [cost];
+        facts.structure.push(
+            `The crossroads raised on turn ${crossroads.raisedOnTurn} was answered by leaving. `
+            + `${crossroads.daysSpent} of ${crossroads.daysAsked} days stand spent and `
+            + `${crossroads.daysRemaining} were forfeited unspent. No day passed answering: the `
+            + 'remainder was never simulated, so there is nothing to take back and nothing to '
+            + 'refund. '
+            + (crossroads.canWithdraw
+                ? 'A clean withdrawal had been rolled available, so nobody saw the place.'
+                : 'No clean withdrawal had been rolled, so the only thing that changed is '
+                  + 'posture.')
+        );
+        const execution = this.freeAction(run, 'wait', facts);
+        execution.calls = [{
+            name: 'engine.seclusionCrossroads',
+            action: 'leave',
+            summary:
+                `The interrupted sitting was ended by the player. ${crossroads.daysRemaining} `
+                + 'unspent days forfeited; nothing was rolled and no day passed.',
+            ok: true
+        }];
+        return execution;
+    }
+
+    /**
+     * Anything that spends a day instead of sitting is going, and it says so.
+     *
+     * The fork is not a modal jail. A player who answers it by travelling, by
+     * eating, by taking work or by walking down the mountain has made the
+     * decision - they are not sitting any more - and the engine's job is to say
+     * what that cost rather than to refuse every verb until the question has
+     * been answered in the approved words. AGENTS.md, agency: do not ban.
+     *
+     * A FREE ACTION IS NOT GOING. The test is whether THE CLOCK MOVED, not
+     * whether a turn was taken. `freeAction` exists because "looking around
+     * must never be able to kill you, and in a permadeath game that is a rule,
+     * not a courtesy" - and charging thirty-four years for "what am I
+     * carrying", for a refusal, or for a sentence the parser could not resolve
+     * would break that rule harder than anything it was written against. None
+     * of those take the cultivator off the seat and none of them bring the
+     * person outside a day closer, so the question is still open and still
+     * theirs.
+     *
+     * Called after phase 2 and before phase 3 on every path that can take a
+     * turn, so the sentence is in the facts the narrator is handed rather than
+     * bolted onto prose that has already been written.
+     */
+    private settleAnyStandingCrossroads(
+        execution: Execution,
+        crossroads: SeclusionCrossroads,
+        cultivator: Cultivator,
+        clockMoved: boolean
+    ): void {
+        if (!clockMoved) return;
+        if (execution.outcome === 'refused') return;
+        // Identity, not a blanket clear. A player who answered by starting a
+        // FRESH sitting has had a new question raised inside this same turn by
+        // `raiseTheCrossroads`, and nulling the field here would throw it away
+        // and resolve the new fork silently - which is this bug, reintroduced
+        // one turn later by its own fix.
+        if (this.crossroads === crossroads) this.crossroads = null;
+        if (!cultivator.alive) return;
+
+        const cost = whatGoingCost(crossroads, this.howToReferToThem(crossroads));
+        execution.facts.lines.push(cost);
+        (execution.facts.required ??= []).push(cost);
+        execution.facts.structure.push(
+            `The crossroads raised on turn ${crossroads.raisedOnTurn} was answered by doing `
+            + `something else, which is leaving. ${crossroads.daysRemaining} unspent days of the `
+            + `${crossroads.daysAsked} were forfeited. Nothing was refunded and nothing further `
+            + 'was rolled for them.'
+        );
     }
 
     /**
@@ -10364,7 +10797,11 @@ ${noticed}`;
      * Cheap enough to run on every state read: one pouch query, one roster
      * read that is already in hand, and arithmetic.
      */
-    private whatIsLiveHere(cultivator: Cultivator, ambient: AmbientQi): StandingHere {
+    private whatIsLiveHere(
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        run: Run
+    ): StandingHere {
         const terms = this.rateTermsFor(cultivator);
         const road = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
 
@@ -10398,7 +10835,16 @@ ${noticed}`;
             peopleAboveHere: this.present(cultivator)
                 .filter(row => row.realmOrdinal > cultivator.realmOrdinal).length,
             thinGround: ambient === 'thin',
-            aboveTheLid: canExistBeyondTheLid(cultivator)
+            aboveTheLid: canExistBeyondTheLid(cultivator),
+            // The one entry here that is gone next turn whatever happens. See
+            // the field's note in the affordance module for why it is offered
+            // ahead of the body, which nothing else is.
+            brokenSeclusion: stillStands(this.crossroads, run.id, cultivator)
+                ? {
+                    daysRemaining: this.crossroads.daysRemaining,
+                    canWithdraw: this.crossroads.canWithdraw
+                }
+                : null
         };
     }
 
@@ -10419,7 +10865,7 @@ ${noticed}`;
     private affordancesFor(cultivator: Cultivator, run: Run): Affordance[] {
         try {
             return whatIsWorthDoingStandingHere(
-                this.whatIsLiveHere(cultivator, this.ambientFor(cultivator, run))
+                this.whatIsLiveHere(cultivator, this.ambientFor(cultivator, run), run)
             );
         } catch {
             return [];
@@ -10440,7 +10886,7 @@ ${noticed}`;
      * and then phrases it themselves.
      */
     private guidance(run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
-        const here = this.whatIsLiveHere(cultivator, ambient);
+        const here = this.whatIsLiveHere(cultivator, ambient, run);
         const live = whatIsWorthDoingStandingHere(here);
 
         const standing =
@@ -12965,7 +13411,20 @@ ${done.lines.join(' ')}`;
 
     private buyProvisions(
         cultivator: Cultivator,
-        days: number
+        days: number,
+        /**
+         * Rations an interrupted half of THIS SAME sitting left unopened.
+         *
+         * Not in the pack, because the time skip ate out of a count it was
+         * handed rather than out of the flag, and the leftovers of a stretch
+         * that stopped early have never gone back. Passed in by `sitBackDown`
+         * so a sitting split into two halves buys food once for the whole
+         * span - the alternative is charging a second purse for days that
+         * were already paid for, which is a price for staying that has
+         * nothing to do with the person outside and would quietly make going
+         * the correct answer every time.
+         */
+        stillUnopened = 0
     ): { cultivator: Cultivator; rations: number; covered: number; line: string } {
         // The arithmetic is not done here. It is done in
         // `what-feeding-a-stretch-of-seclusion-costs.ts`, which is also what
@@ -12976,10 +13435,23 @@ ${done.lines.join(' ')}`;
         // deliberately must not be charged again at the cave mouth for food
         // they are carrying, and the ones they carried in are the ones the
         // time skip eats.
-        const plan = whatFeedingThisStretchCosts(cultivator, this.rationsHeld(cultivator), days);
+        //
+        // `stillUnopened` counts with the pack for the purposes of the
+        // arithmetic - it is food that exists and has been paid for - and
+        // separately for the purposes of the WRITE below.
+        const alsoAtTheCaveMouth = Math.max(0, Math.floor(stillUnopened));
+        const plan = whatFeedingThisStretchCosts(
+            cultivator, this.rationsHeld(cultivator) + alsoAtTheCaveMouth, days
+        );
         const { carried, toBuy, cost } = plan;
         const rations = carried + toBuy;
-        if (carried > 0) this.setRationsHeld(cultivator, this.rationsHeld(cultivator) - carried);
+        // The unopened ones are already at the cave mouth and were never in the
+        // pack, so only the remainder comes off the flag. Taking `carried` off
+        // it wholesale would delete rations the player bought for a later trip.
+        const fromThePack = Math.max(0, carried - alsoAtTheCaveMouth);
+        if (fromThePack > 0) {
+            this.setRationsHeld(cultivator, this.rationsHeld(cultivator) - fromThePack);
+        }
 
         if (rations === 0) {
             return {
@@ -13611,7 +14083,15 @@ ${done.lines.join(' ')}`;
             // "You can look at the ledger and see the shape of who you used to
             // be" is a design requirement, so the ledger is on the wire.
             tolls: listTolls(this.db, cultivator.id),
-            log: this.log.list(run.id)
+            log: this.log.list(run.id),
+            // The fork, when one is standing. The client draws two controls off
+            // it; nothing about it is a gate, and free text is still the whole
+            // game. Re-checked against this run and this cultivator on every
+            // read rather than trusted, so a stale one cannot offer a decade
+            // that no longer exists.
+            crossroads: stillStands(this.crossroads, run.id, cultivator)
+                ? crossroadsView(this.crossroads, this.howToReferToThem(this.crossroads))
+                : null
         };
     }
 

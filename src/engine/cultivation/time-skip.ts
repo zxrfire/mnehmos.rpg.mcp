@@ -1568,7 +1568,11 @@ export function simulateTimeSkip(
         endState: {
             starvationTurns,
             bleedingTurns,
-            yearsAtCurrentRealm: currentYearsAtRealm()
+            yearsAtCurrentRealm: currentYearsAtRealm(),
+            // What the pack still holds. Reported, never acted on here - see
+            // the field's own note in the schema for the one caller that needs
+            // it and why a resumed sitting would otherwise buy its food twice.
+            rationsRemaining: rations
         },
         foundationEstablished:
             foundation === (cultivator.foundationQuality ?? 'none') ? null : foundation,
