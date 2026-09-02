@@ -1,7 +1,7 @@
 /**
  * Design guards for waiting.
  *
- * `docs/world/tone.md` says a run is interesting when the player has to choose
+ * `docs/world/writing/tone.md` says a run is interesting when the player has to choose
  * between two things the world will make them regret, and gives as its first
  * example "breakthrough now at poor odds, or stagnate toward settling". That
  * sentence was false: nothing a player accumulated appeared in the odds at all,

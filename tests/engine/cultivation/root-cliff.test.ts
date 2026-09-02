@@ -286,7 +286,7 @@ describe('untreated, the same root is a death sentence, and that is the design',
         // ninety days whatever else was true, so the arm could not miss.
         //
         // The design owner reversed that. A torn meridian is a torn muscle: it
-        // impairs and it does not kill (`docs/world/injuries.md`). So the exact
+        // impairs and it does not kill (`docs/world/climbing/injuries.md`). So the exact
         // 100% is gone with the mechanism that produced it, and the claim has
         // to be re-derived rather than the bar quietly widened.
         //

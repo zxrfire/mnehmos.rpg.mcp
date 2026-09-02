@@ -8744,7 +8744,7 @@ export function renderRegisterHtml(
      round, so the sheet answered neither question completely and a reader
      asking either one had to open both.
 
-     The line is the engine's own and is documented in docs/world/items.md
+     The line is the engine's own and is documented in docs/world/things/items.md
      under "Counted or tracked": whether the movement of this specific object
      is an event somebody should be able to find out about two centuries
      later. The almanac describes the KIND. The ledger tracks the ROW. -->

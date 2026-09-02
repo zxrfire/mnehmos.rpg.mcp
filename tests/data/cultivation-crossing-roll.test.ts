@@ -91,7 +91,7 @@ describe('every crossing is somebody', () => {
     });
 
     it('has somebody die up there, or the layer above has no stakes', () => {
-        // `docs/world/immortals.md` is explicit that ascension removes exactly
+        // `docs/world/climbing/immortals.md` is explicit that ascension removes exactly
         // two of the things that kill a cultivator and none of the rest. If
         // every crossing in the world is still alive, nothing in the catalog
         // says so.

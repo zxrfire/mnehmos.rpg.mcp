@@ -73,7 +73,7 @@
  * THE THIRD CHANNEL IS THE EXCEPTION AND HAS TO BE. A material is consumed, so
  * "in reach" is the wrong test for it: the road has to survive the object. It
  * does, because `spend` leaves the row in the world with `spentBy` on it rather
- * than deleting it - which `docs/world/items.md` asks for on its own account -
+ * than deleting it - which `docs/world/things/items.md` asks for on its own account -
  * and this module reads the road back off the spent row. The record of who used
  * one IS the comprehension.
  *

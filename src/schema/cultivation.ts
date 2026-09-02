@@ -51,7 +51,7 @@ export const STARVATION_TURNS = 5;
  * 47, and the three stretch lengths gave identical results because the ninety
  * day clock fired inside the first stretch whatever its length. A wound that
  * ends every life before it has begun is not a hazard, it is a wall in front of
- * the content. See `docs/world/injuries.md`.
+ * the content. See `docs/world/climbing/injuries.md`.
  *
  * What it means now is what `mendingBlocked` in time-skip.ts already used it
  * for: a body carrying this many open channels has stopped healing itself and
@@ -320,7 +320,7 @@ export const AMBIENT_QI_RATE_MULTIPLIER: Record<AmbientQi, number> = {
      * supplies, and the two boundaries above it need about 1.47x. 4x clears
      * all three with roughly a quarter margin, which is enough that a run can
      * plausibly do it and not so much that the site stops being the whole
-     * story. See `docs/world/the-late-age.md`.
+     * story. See `docs/world/history/the-late-age.md`.
      */
     sealed_vein: 4
 };
@@ -615,7 +615,7 @@ export const DeathCauseSchema = z.enum([
      * muscle and does not put anybody in the ground. `evaluateDeathConditions`
      * no longer returns it. It stays in the enum because a permadeath game's
      * run ledger is the only surviving account of a life, and saves written
-     * before the ruling carry it. See `docs/world/injuries.md`.
+     * before the ruling carry it. See `docs/world/climbing/injuries.md`.
      */
     'untreated_injuries',
     'starvation',

@@ -211,7 +211,7 @@ export function seedComprehensionMaterials(state: WorldState): ObjectRecord[] {
  *   TRIBUTE          Owed upward. A subsidiary holding something its backer
  *                    would want does not own it in any sense that matters; it
  *                    is holding it until asked, and the asking is a matter of
- *                    time. See the feeder relationship in `docs/world/sects.md`.
+ *                    time. See the feeder relationship in `docs/world/houses/sects.md`.
  *   A_FAVOUR_OWED    The most interesting one. Given to somebody far stronger,
  *                    a material buys not money but an obligation - and an
  *                    obligation from somebody at a height your house cannot

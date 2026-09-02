@@ -5,7 +5,7 @@
  * into. The first two decide what someone could become. The third decides
  * whether they will ever be in a position to find out.
  *
- * See `docs/world/origin.md`, which this file implements.
+ * See `docs/world/houses/origin.md`, which this file implements.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * THE HARD RULE: ORIGIN BUYS INPUTS, NEVER RANK

@@ -78,7 +78,7 @@
  * REGISTER
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `docs/world/tone.md` governs and this file obeys it the way every surface
+ * `docs/world/writing/tone.md` governs and this file obeys it the way every surface
  * around it does: it reports the record, the weight, who now carries it and
  * what a witness would say. It does not depict anything. That is not a special
  * dispensation for the grave causes - it is the same discipline the engine

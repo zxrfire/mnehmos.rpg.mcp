@@ -3,7 +3,7 @@
  *
  * ── Why this file exists ──────────────────────────────────────────────────
  *
- * Found by playing, and it is the same defect `docs/world/items.md` closes with
+ * Found by playing, and it is the same defect `docs/world/things/items.md` closes with
  * a warning about - one layer up. That build's commonest cause of death had no
  * reachable cure while the formula sat in the catalog. This time the cure IS
  * reachable, affordable, and in the player's own price range, and its NAME is

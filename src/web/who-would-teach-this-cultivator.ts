@@ -32,7 +32,7 @@
  *
  * ── THE DISCOVERY CONSTRAINT, WHICH IS THE HARD PART ─────────────────────
  *
- * `docs/world/discovery.md` is emphatic that the game must never name somebody
+ * `docs/world/houses/discovery.md` is emphatic that the game must never name somebody
  * the player has not heard of, and a read like this one is exactly where that
  * rule gets broken by accident: the honest implementation walks a roster and
  * prints it, and a player who has just joined a house is handed a cast list
@@ -100,7 +100,7 @@ export interface TeacherInput {
      *
      * `techniqueCeiling(...).state`. A master is worth a great deal more to
      * somebody whose book has ended than to somebody halfway through one, and
-     * `docs/world/manuals.md` makes personal transmission the route across a
+     * `docs/world/climbing/manuals.md` makes personal transmission the route across a
      * shelf gap: "a house that still holds a living master of the higher manual
      * can bring somebody across; one that has lost its last master cannot."
      */

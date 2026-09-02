@@ -4,7 +4,7 @@
  * `surnameOf` and `RESERVED_SURNAMES` have both sat in `history.ts` with no
  * consumer anywhere in `src/`. This file is the consumer: it is what makes a
  * name able to CORROBORATE a claim, which is the third row of the hierarchy in
- * `docs/world/trust.md` and the only job a name is entitled to do.
+ * `docs/world/houses/trust.md` and the only job a name is entitled to do.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * NAMES SIT LOW, AND THAT IS THE RULE RATHER THAN A DEFECT

@@ -82,7 +82,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-azure-dew-sect` · its entry: [`sects.ts:796`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 2 more files.
 
 **Constants most about it:** `AZURE_INTAKE`, `FOSTERAGE_TERMS`

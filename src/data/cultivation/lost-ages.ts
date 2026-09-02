@@ -2,7 +2,7 @@
  * The ancient tier: what a richer age made, what is left of it, and who is
  * holding the remains.
  *
- * The narrative material is `docs/world/ancient.md`. This file is the part a
+ * The narrative material is `docs/world/history/ancient.md`. This file is the part a
  * query can reach: which arts belong to the tier, what each one costs, which
  * materials the world no longer produces, who still has a copy, whose stock is
  * gone, and who is holding the one object that buys the only thing scarce at
@@ -42,7 +42,7 @@
  * -----------------------------------------------
  * Every holder named in this file is an apex, an ancient house, or a sect old
  * enough to have sent an expedition an age ago. That is deliberate and it is
- * `docs/world/discovery.md` applied to objects rather than to institutions: a
+ * `docs/world/houses/discovery.md` applied to objects rather than to institutions: a
  * disciple at a small house does not encounter any of this, meets nobody
  * practising it, and has no reason to believe the category exists. It becomes
  * visible on the way up.

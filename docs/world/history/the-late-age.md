@@ -67,8 +67,8 @@ generation of a dead sect were calibrated for that sect's disciples, and the cal
 was not gentle.
 
 Who left the good ones deliberately, and why they are gated rather than merely lethal, is
-[`immortals.md`](immortals.md). What separates a designed inheritance from a corpse with a
-pouch is [`economy.md`](economy.md).
+[`immortals.md`](../climbing/immortals.md). What separates a designed inheritance from a corpse with a
+pouch is [`economy.md`](../things/economy.md).
 
 ---
 
@@ -91,14 +91,14 @@ pouch is [`economy.md`](economy.md).
 The catalogs enforce the third of those directly: every technique and recipe carries a
 provenance of `taught`, `ruin` or `grave`, and no sect teaches a ruin- or grave-provenance
 art. See
-[`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
+[`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md).
 
 ## Related
 
 <!-- tier: 3 -->
 
-- [`qi.md`](qi.md) - why thin is the default
-- [`economy.md`](economy.md) - graves, inheritances, and what the digging is worth
-- [`sects.md`](sects.md) - institutions squatting in compounds they did not build
-- [`immortals.md`](immortals.md) - who put the good things in the sealed caves
-- [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md) - provenance as a content rule
+- [`qi.md`](../climbing/qi.md) - why thin is the default
+- [`economy.md`](../things/economy.md) - graves, inheritances, and what the digging is worth
+- [`sects.md`](../houses/sects.md) - institutions squatting in compounds they did not build
+- [`immortals.md`](../climbing/immortals.md) - who put the good things in the sealed caves
+- [`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - provenance as a content rule

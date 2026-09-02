@@ -246,7 +246,7 @@ new world found + the old world remains + old relationships remain
 ```
 
 This is the same rule as characters persisting after they are surpassed, applied to
-places. See [`../../../docs/world/people.md`](../../../docs/world/people.md).
+places. See [`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md).
 
 ### None of this is a required ladder
 
@@ -487,7 +487,7 @@ navigation, environmental hazard and competition. Even a powerful character shou
 encounter things they do not understand.
 
 What an inheritance *is*, as opposed to when it is available, is in
-[`../../../docs/world/economy.md`](../../../docs/world/economy.md).
+[`../../../docs/world/things/economy.md`](../../../docs/world/things/economy.md).
 
 ---
 
@@ -833,7 +833,7 @@ an old sword          source: a dead cultivator     acquired: inheritance
 
 This is what makes stolen goods, disputed inheritances, faction claims, investigations and
 century-old karmic consequences possible without a separate system for each. The economic
-consequences are in [`../../../docs/world/economy.md`](../../../docs/world/economy.md).
+consequences are in [`../../../docs/world/things/economy.md`](../../../docs/world/things/economy.md).
 
 ---
 
@@ -859,7 +859,7 @@ grudge. That is the continuity the whole design is aiming at.
 Existence is multi-valued, and `missing` and `unknown` are correct answers rather than
 placeholders. The state set is defined in
 [`../cultivation/README.md`](../cultivation/README.md). Why NPCs must be protagonists of
-their own lives is in [`../../../docs/world/people.md`](../../../docs/world/people.md).
+their own lives is in [`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md).
 
 ---
 
@@ -1837,7 +1837,7 @@ would answer it. `SEA_CROSSING_ENGINE_GAP` in that module is the machine-readabl
 ## Ruins, convergence, and chains of forced choices
 
 Four modules landed together and are one subject observed at different moments. The
-authoring guide is [`../../../docs/world/ruins.md`](../../../docs/world/ruins.md); this is
+authoring guide is [`../../../docs/world/places/ruins.md`](../../../docs/world/places/ruins.md); this is
 the contract.
 
 **`cascade.ts` - the world changing itself, in more than one step.** `pressure.ts` fires

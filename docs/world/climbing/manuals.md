@@ -7,8 +7,8 @@ be taken, and there are only so many of them. Almost everything interesting abou
 cultivation as a *social* activity follows from that one fact rather than from any rule
 about qi.
 
-Read alongside [`techniques.md`](techniques.md), which covers what an art can *do*, and
-[`escapes.md`](escapes.md), which covers what somebody does when their book runs out.
+Read alongside [`techniques.md`](./techniques.md), which covers what an art can *do*, and
+[`escapes.md`](../writing/escapes.md), which covers what somebody does when their book runs out.
 
 ## Sections
 
@@ -130,7 +130,7 @@ It is where the crossing leaves you standing, which is why complete books cap at
 **Including the last one, and that is the number people keep wanting to lower.** A book
 covering the final realm caps at 45, and the reflex on reading that is to correct it to 44,
 because 44 is the last rung anybody climbs to and 45 is the rung
-[the crossing](immortals.md) lands on. The sentence is right and the correction is not: a
+[the crossing](./immortals.md) lands on. The sentence is right and the correction is not: a
 cap is the first rung at which the paper stops carrying you, so a book capped at 44 stops
 the reader who is *standing* on 44 - the only person in the world who is gathering for the
 last crossing, since the attempt is made from there. Write 44 on those books and the
@@ -171,7 +171,7 @@ number somebody picked, and it reads as one.
 house's best manual stops at 36 is not evidence of a broken shelf: their book took them to
 Body Integration Perfection, which is exactly what a complete book does, and the two rungs
 past it came from somewhere else - a lucky encounter, an inheritance, a ruin. That gap sits
-above every house's shelf and it is why [`escapes.md`](escapes.md) has the routes it has.
+above every house's shelf and it is why [`escapes.md`](../writing/escapes.md) has the routes it has.
 
 **A gap *inside* a shelf is a defect.** A primer capping at 13 followed by a book requiring
 21 is eight rungs nobody in the house can cross, and a house that has stood for centuries
@@ -331,7 +331,7 @@ house hands a disciple a book earlier than their rank would reach it, bounded by
 copies it owns. The other one is spent from *outside* a house, by somebody who is not in it,
 on somebody who is not in it yet, and what it moves is a gate - it makes a house suspend its
 own admission bar for one person, once. See [Somebody's word, and the bar it
-skips](origin.md#somebodys-word-and-the-bar-it-skips). A person can be the subject of both
+skips](../houses/origin.md#somebodys-word-and-the-bar-it-skips). A person can be the subject of both
 in one life, in that order, and they are two separate debts to two separate people.
 
 **Somebody has to carry you over a gap.** Where a shelf does not join up, the setting's
@@ -356,7 +356,7 @@ materials, and its own 36 reached that peak by their own means.
 
 Crucially those materials **exist in the world today** and somebody else has them. This is
 not the ancient-materials problem - that is extinction, and it is covered in
-[`ancient.md`](ancient.md). This is *access*: modern methods still want materials, those
+[`ancient.md`](../history/ancient.md). This is *access*: modern methods still want materials, those
 materials are purchasable and sourceable, and sourcing them **requires backing.** So the gap
 is a motive to buy, dig, ally, marry or fight, rather than a decline a house passively
 suffers.

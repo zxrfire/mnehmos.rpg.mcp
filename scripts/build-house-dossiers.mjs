@@ -46,14 +46,29 @@ function houses() {
 
 function corpus() {
     const files = [];
-    for (const [dir, rel] of [[DOCS, 'docs/world'], [CATALOG, 'src/data/cultivation']]) {
-        for (const name of fs.readdirSync(dir)) {
-            if (!/\.(md|ts)$/.test(name)) continue;
-            if (name === 'BY-HOUSE.md' || name === 'INDEX.md') continue;
-            files.push({ rel: `${rel}/${name}`, base: name, dir: rel,
-                         text: fs.readFileSync(path.join(dir, name), 'utf8') });
+    // Recursive, because docs/world is no longer flat: it is grouped into
+    // climbing/, houses/, places/, things/, history/ and writing/. A
+    // non-recursive read here would report every house as being written about
+    // in the four files left at the top.
+    const walk = (dir, rel) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            const relPath = `${rel}/${entry.name}`;
+            if (entry.isDirectory()) {
+                walk(full, relPath);
+            } else if (/\.(md|ts)$/.test(entry.name)
+                && entry.name !== 'BY-HOUSE.md' && entry.name !== 'INDEX.md') {
+                files.push({
+                    rel: relPath,
+                    base: entry.name,
+                    dir: path.dirname(relPath),
+                    text: fs.readFileSync(full, 'utf8')
+                });
+            }
         }
-    }
+    };
+    walk(DOCS, 'docs/world');
+    walk(CATALOG, 'src/data/cultivation');
     return files;
 }
 

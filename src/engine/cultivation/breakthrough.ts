@@ -1388,7 +1388,7 @@ export function lifespanPressureOnsetAge(ordinal: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 // WAITING
 //
-// `docs/world/tone.md` says a run is interesting when the player has to choose
+// `docs/world/writing/tone.md` says a run is interesting when the player has to choose
 // between two things the world will make them regret, and gives the first
 // example as "breakthrough now at poor odds, or stagnate toward settling".
 //

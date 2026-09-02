@@ -21,10 +21,10 @@
  * WHAT THE SETTING ALREADY SAID
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * `docs/world/items.md` is unambiguous and this module is only its arithmetic:
+ * `docs/world/things/items.md` is unambiguous and this module is only its arithmetic:
  * below the line things have prices, common manuals sell at a market stall next
  * to the cooking pots, and a poor cultivator's first real decision is whether
- * the money goes on a book or on food. `docs/world/manuals.md` says the same
+ * the money goes on a book or on food. `docs/world/climbing/manuals.md` says the same
  * thing from the other side - common books are copyable by anybody holding one,
  * which is what makes them plentiful, and selling copies is an ordinary living
  * for a cultivator who needs stones and has nothing else to trade.

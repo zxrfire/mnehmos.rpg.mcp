@@ -53,7 +53,7 @@ export interface EngineFacts {
      *
      * OBSERVABLE ONLY. Everything here must be something a person in the room
      * could see, hear, feel or be told - never a category out of the schema.
-     * docs/world/tone.md: nobody tells the protagonist how anything works, and
+     * docs/world/writing/tone.md: nobody tells the protagonist how anything works, and
      * a bare label in a prompt is an invitation to paraphrase it into a
      * briefing. That is what a category in a prompt is FOR.
      */
@@ -205,7 +205,7 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     // this row is a function of it, the way `standingStructure` already does it.
     stagnation_aging: 'settled - the years this rung credits ran out, and the qi already inside them finished working on them instead',
     // RETIRED. Nothing produces this cause any more; the row is kept so a run
-    // ledger written before the ruling still renders. See `docs/world/injuries.md`.
+    // ledger written before the ruling still renders. See `docs/world/climbing/injuries.md`.
     untreated_injuries: 'the meridians gave out, untreated',
     starvation: 'starved - the flesh keeps its mortal arithmetic',
     failed_breakthrough: 'the meridians ruptured mid-breakthrough',
@@ -1558,7 +1558,7 @@ export function factsForToolResult(
 // say what is true. A knowledge row that says a name got said and nothing else
 // renders as a name that got said and nothing else, however thin that reads.
 //
-// The thinness is the content. `docs/world/discovery.md` wants a player to
+// The thinness is the content. `docs/world/houses/discovery.md` wants a player to
 // accumulate fragments they cannot place, and the moment this file starts
 // helpfully joining two of them up, the revelation the player was supposed to
 // earn over a hundred turns has been spent on a status read.
@@ -2684,7 +2684,7 @@ function inTheirOwnGrain(openHandedness: number): string {
  * can offer, and saying so plainly is more useful than implying there is a
  * price nobody has found yet.
  *
- * `docs/world/items.md` and `economy.md` hold the line these sentences are
+ * `docs/world/things/items.md` and `economy.md` hold the line these sentences are
  * drawn along - below it things have prices, above it cash is not the medium -
  * and `PURSE_REACH` in the resolver is the same line as arithmetic. Neither of
  * them is restated here; these say in words what that table already does.

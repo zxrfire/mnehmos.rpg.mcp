@@ -1,7 +1,7 @@
 /**
  * Characters assume you know.
  *
- * docs/world/discovery.md: the discovery rule governs the narrator's own voice
+ * docs/world/houses/discovery.md: the discovery rule governs the narrator's own voice
  * and must not gag the people in the world. A cultivator says a name flatly,
  * with no context, because of course you know it - and that is the primary way
  * names should enter a player's world.
@@ -351,7 +351,7 @@ describe('the prompt states the loosened rule', () => {
 /**
  * Asking is guidance, not a subsystem.
  *
- * docs/world/asking.md is explicit that this must not become a password
+ * docs/world/houses/asking.md is explicit that this must not become a password
  * system: no key matching, no phrase registry, no unlock flags, no persuasion
  * stat, no new engine surface. The LLM reads who the person is, what they know,
  * what they owe, and what the player just said. So what these tests pin down is

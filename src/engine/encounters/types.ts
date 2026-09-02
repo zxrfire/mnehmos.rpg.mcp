@@ -70,7 +70,7 @@ export type EncounterValence = 'good' | 'bad' | 'neutral';
  *
  * Read off `regard.ts` bands and nothing else, which is why there is no branch
  * anywhere on faction, title or importance. `above` is the one that carries
- * `docs/world/discovery.md`: something far enough up is not a fight that was
+ * `docs/world/houses/discovery.md`: something far enough up is not a fight that was
  * lost, it is a fight that was never offered.
  */
 export type EncounterStance =

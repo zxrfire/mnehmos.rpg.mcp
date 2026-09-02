@@ -4,7 +4,7 @@
  * The world simulation runs on a books economy. `manuals.ts` seeds sect
  * libraries, hands copies to members, decides what a house will teach an
  * outsider, prices the betrayal of selling one, and caps every NPC's ceiling at
- * the best book they actually hold. `docs/world/items.md` states the
+ * the best book they actually hold. `docs/world/things/items.md` states the
  * player-facing half plainly: common manuals sell at a market stall, and a poor
  * cultivator's first real decision is whether the money goes on a book or on
  * food.
@@ -97,7 +97,7 @@ line(`    open at ${rankName(widest.requiredOrdinal)} (ordinal ${widest.required
     + `carries to ${widest.cap}.`);
 line(`    ${widest.cap - widest.requiredOrdinal} rungs, for nothing, held by nobody, taught by no one.`);
 line();
-line(`  \`docs/world/items.md\` holds that a Core Formation manual should be uncommon at`);
+line(`  \`docs/world/things/items.md\` holds that a Core Formation manual should be uncommon at`);
 line('  worst and a Nascent Soul one rare at minimum, and that every road above the');
 line('  Void Refinement line is taught by exactly one house. All of that is true of the');
 line(`  WORLD - ${roads.filter(r => !isCommonlyHeld(r.id)).length} of these ${roads.length} roads are above the commonly-held line of `

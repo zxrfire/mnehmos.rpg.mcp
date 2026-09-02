@@ -14,7 +14,7 @@ a reader who has understood that has understood the entire top of the ladder fro
 bottom of it.
 
 The field is `addresses`, on `TechniqueSchema` in
-[`../../src/schema/cultivation.ts`](../../src/schema/cultivation.ts), and the ladder,
+[`../../src/schema/cultivation.ts`](../../../src/schema/cultivation.ts), and the ladder,
 floors and guards are defined in the block above it. Everything below describes what is
 already in that file. Nothing here adds a rule.
 
@@ -76,7 +76,7 @@ prose goes stale silently.
 
 Twenty-one rungs, then twelve, then eleven, then two, then one. Nobody arranged that; it
 falls out of anchoring the floors to realm boundaries, and it is the corridor thesis from
-[`escapes.md`](escapes.md) arriving on a second axis. What a cultivator is permitted to
+[`escapes.md`](../writing/escapes.md) arriving on a second axis. What a cultivator is permitted to
 address gets rarer the higher they go, and the last two steps are almost nothing wide.
 
 ### A wide swing is not a rung
@@ -158,7 +158,7 @@ axis of the word.
 **It cannot speak a rung.** A statement that somebody is at an ordinal, or is above the
 Lid, or is not, does nothing - because a rung is not an opinion the world holds about a
 body, it is what the body *is*. This is `WHAT_AN_ART_BUYS` in
-[`../../src/engine/cultivation/realms.ts`](../../src/engine/cultivation/realms.ts) read
+[`../../src/engine/cultivation/realms.ts`](../../../src/engine/cultivation/realms.ts) read
 from the other side: an art is worth most of a rung inside a realm and nothing at all
 across the Lid, at any mastery. A decree is an art. It buys what an art buys, and holding
 one makes nobody stronger.
@@ -226,7 +226,7 @@ is still a book about a breath.
 
 Modern is elemental and scales to the horizon. Ancient is categorical: it moves a resource
 between bodies, it puts spears in the ground somebody else can pick up, it takes a piece
-of ground out of the world, it makes a second body. See [`ancient.md`](ancient.md), which
+of ground out of the world, it makes a second body. See [`ancient.md`](../history/ancient.md), which
 is the authority on that distinction.
 
 **An ancient art must never buy a higher rung on this ladder.** If it did, old art would
@@ -343,7 +343,7 @@ dormant            Present, complete, proven, and unperformed. Nothing is missin
 ```
 
 `DORMANT_ARTS` in
-[`../../src/data/cultivation/faction-character.ts`](../../src/data/cultivation/faction-character.ts)
+[`../../src/data/cultivation/faction-character.ts`](../../../src/data/cultivation/faction-character.ts)
 is the fourth, and it is the least dramatic and the most useful, because it makes an
 institution's **history load-bearing in the present**.
 
@@ -418,7 +418,7 @@ Some arts consume something the world is short of, and the shortage is now somet
 engine produces rather than something the catalog believes.
 
 `masteryCeilingFor` in
-[`../../src/engine/cultivation/upkeep.ts`](../../src/engine/cultivation/upkeep.ts) reads
+[`../../src/engine/cultivation/upkeep.ts`](../../../src/engine/cultivation/upkeep.ts) reads
 the world's remaining supply and returns the mastery it carries somebody to. **It is an
 upkeep nobody can meet, never a rule saying you may not.** The art works. Nobody is
 refused anything. The jars are empty, and the practitioner is holding a book they can read
@@ -441,8 +441,8 @@ quietly holding a remnant it has never acknowledged. Both are authored. Neither 
 
 <!-- tier: 3 -->
 
-- [`ancient.md`](ancient.md) - the era axis, and the failure this page inherits its shape from
-- [`escapes.md`](escapes.md) - the corridor above the middle, which this ladder narrows in parallel
-- [`dao-houses.md`](dao-houses.md) - accumulated knowledge as a form of power, and why the archive matters
-- [`immortals.md`](immortals.md) - the two rungs above the Lid and what the breaths cost
-- [`the-late-age.md`](the-late-age.md) - why so much of this is on a shelf rather than in a hand
+- [`ancient.md`](../history/ancient.md) - the era axis, and the failure this page inherits its shape from
+- [`escapes.md`](../writing/escapes.md) - the corridor above the middle, which this ladder narrows in parallel
+- [`dao-houses.md`](../houses/dao-houses.md) - accumulated knowledge as a form of power, and why the archive matters
+- [`immortals.md`](./immortals.md) - the two rungs above the Lid and what the breaths cost
+- [`the-late-age.md`](../history/the-late-age.md) - why so much of this is on a shelf rather than in a hand

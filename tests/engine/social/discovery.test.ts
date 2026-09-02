@@ -1,7 +1,7 @@
 /**
  * The ladder of knowing.
  *
- * docs/world/discovery.md specifies six stages and two rules about them that
+ * docs/world/houses/discovery.md specifies six stages and two rules about them that
  * are easy to write down and easy to lose:
  *
  *   - Each step needs a source, and the sources are scarce.

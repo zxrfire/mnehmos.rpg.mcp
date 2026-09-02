@@ -39,7 +39,7 @@
  *
  * `trialForOrdinal` takes an ordinal and nothing else, which is deliberately
  * the same contract `triggersHeavenlyTribulation` already has, for the reason
- * `docs/world/manuals.md` gives: a manual cannot teach you the crossing. Two
+ * `docs/world/climbing/manuals.md` gives: a manual cannot teach you the crossing. Two
  * cultivators at the same wall meet the same thing whatever they practise, and
  * what a better book contributes is the foundation it spent the whole realm
  * building, arriving there with them. Do not add a parameter to this function.

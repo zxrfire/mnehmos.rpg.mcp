@@ -79,7 +79,7 @@ function everyDeath(): void {
         ['starvation', `${STARVATION_TURNS} turns at empty`,
             body({ satiety: 0, starvationTurns: STARVATION_TURNS }), {}],
         // The two `untreated_injuries` rows that stood here are gone with the
-        // cause. A torn meridian is a torn muscle - see docs/world/injuries.md.
+        // cause. A torn meridian is a torn muscle - see docs/world/climbing/injuries.md.
         // What replaces them is the negative check in section 2.
         ['obviously_fatal_choice', 'almost no hp, and starting a fight anyway',
             body({ hp: 2 }), { forcingCombat: true }],
@@ -123,7 +123,7 @@ function theBleedClock(): void {
     // decision: "torn meridians should not kill, they don't make you bleed out.
     // it should be the same as a torn muscle irl. very VERY annoying, but you
     // don't die." A probe that still asserted the death would report a working
-    // engine as broken. See docs/world/injuries.md.
+    // engine as broken. See docs/world/climbing/injuries.md.
     const wounded = body({ injuries: threeOpenWounds() });
     line(`  crippled at ${CRIPPLING_UNTREATED_INJURIES} untreated:  ${isBleedingOut(bleedStateOf(wounded).untreatedInjuries)}`);
     line(`  and at two:                    ${isBleedingOut(bleedStateOf(body({ injuries: threeOpenWounds().slice(0, 2) })).untreatedInjuries)}`);

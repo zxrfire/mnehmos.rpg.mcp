@@ -1,7 +1,7 @@
 /**
  * What being born somewhere is actually worth, measured.
  *
- * `docs/world/origin.md` makes a claim the design lives or dies on:
+ * `docs/world/houses/origin.md` makes a claim the design lives or dies on:
  *
  *   > A privileged origin should be VISIBLE IN THE RUN'S OPENING POSITION and
  *   > NOT VISIBLE IN ITS OUTCOME DISTRIBUTION, except at the very top where it
@@ -215,7 +215,7 @@ const MERIT_ADMISSION_ORDINAL = 5;
  *
  * The whole of it, and that is not generosity - `bestReadable` still stops them
  * at what they can actually work, so the limit becomes the reader rather than
- * their parents. That is precisely the axis `docs/world/origin.md` asks for:
+ * their parents. That is precisely the axis `docs/world/houses/origin.md` asks for:
  * privilege visible in the opening position and not in the outcome.
  *
  * A mediocre cultivator who climbs here is handed the working book and takes
@@ -365,7 +365,7 @@ const MAX_YEARS = 250_000;
  * `reachedAtLeast[MAX_ORDINAL]` was `undefined`, `privilegeLift.topLift` was
  * `NaN` on every run - serialising as `null` - and `wellBornShareOfSummits` was
  * a hard zero. Those two are the report's headline numbers and they are exactly
- * the ones that check the design constraint in `docs/world/origin.md`: that
+ * the ones that check the design constraint in `docs/world/houses/origin.md`: that
  * origin is not visible in the outcome distribution EXCEPT AT THE VERY TOP.
  * The exception clause had therefore never been measured at all.
  */
@@ -568,7 +568,7 @@ export function simulateLife(
         // This was got wrong once and the suite caught it. Feeding
         // `origin.roadQuality` all the way up made the road a PERMANENT term -
         // the one thing an origin confers that never expires - and privilege
-        // became visible in the outcome distribution, which `docs/world/origin.md`
+        // became visible in the outcome distribution, which `docs/world/houses/origin.md`
         // says is the failure condition for the whole axis. Measured: 9.8% of
         // top-tier children reached Core Formation against a 5% bar, and a
         // farmer's best life fell from ordinal 30 to 20 because the stall primer

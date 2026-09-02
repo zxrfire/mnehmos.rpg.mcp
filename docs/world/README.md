@@ -10,14 +10,14 @@ cruelty.
 The engineering contracts that implement all of this live next to the code they govern.
 Start from [`../../context.md`](../../context.md).
 
-> **Looking for where something is written down? Go to [`INDEX.md`](INDEX.md), not to this
+> **Looking for where something is written down? Go to [`INDEX.md`](./INDEX.md), not to this
 > table.** This file lists the material by subject; `INDEX.md` lists it by the *question* -
 > every section in this directory against the situation it answers, plus the design
 > rationale that lives in `src/data/cultivation/*.ts` where no search of `docs/` reaches
 > it. Three agents in one evening failed to find material that already existed and wrote
 > an invented answer instead; `INDEX.md` records what they were looking for.
 >
-> **And if the question is about one HOUSE, go to [`BY-HOUSE.md`](BY-HOUSE.md).** It is a
+> **And if the question is about one HOUSE, go to [`BY-HOUSE.md`](./BY-HOUSE.md).** It is a
 > generated reading list per house, because the median house is written about in fourteen
 > separate files and the most-written-about in thirty-three - so reading its entry in
 > `sects.ts` and stopping is how somebody concludes a thing is unwritten.
@@ -48,7 +48,7 @@ without a `trigger` is a bug.
 
 ### Tier 1 lives in one file
 
-[`NARRATOR-CORE.md`](NARRATOR-CORE.md) is the assembled Tier-1 text, maintained as a
+[`NARRATOR-CORE.md`](./NARRATOR-CORE.md) is the assembled Tier-1 text, maintained as a
 single file so a prompt builder can load one path rather than reassembling fragments. It
 is deliberately short enough to paste into every prompt without thought.
 
@@ -61,6 +61,26 @@ converge on `NARRATOR-CORE.md`.
 
 ---
 
+## The folders
+
+**Six of them, and each has its own README saying what it is for.** Read the one
+folder your question is in rather than this whole table - that is the point of
+the split. Twenty-eight files in one directory was a navigation problem and a
+context problem at once: an agent looking for a single rule had to carry the
+shape of the entire bible to find it.
+
+| Folder | What is in it |
+|---|---|
+| [`climbing/`](climbing/README.md) | What a cultivator **is** and what it costs to become more of one - the ladder, the body, the arts, and what is above the Lid |
+| [`houses/`](houses/README.md) | Who is out there, what they want, and what happens when you speak to one of them |
+| [`places/`](places/README.md) | Ground, and what makes one piece of it different from another |
+| [`things/`](things/README.md) | Objects, what they are worth, and what holding one says about you |
+| [`history/`](history/README.md) | When things happened, and what the world remembers of them |
+| [`writing/`](writing/README.md) | How this world is written, rather than what is in it |
+
+Four files stay at the top. Three are indexes - `INDEX.md`, `BY-HOUSE.md` and
+this one - and `NARRATOR-CORE.md` stays because the engine loads it at run time.
+
 ## The files
 
 Three of these were missing from this table for a long time - `closed-ground.md`,
@@ -69,33 +89,33 @@ directory's own index did not admit existed. Add the row when you add the file.
 
 | File | Covers | Default tier |
 |---|---|---|
-| [`INDEX.md`](INDEX.md) | **Where is X written down.** Every section against the situation it answers, generated from the `trigger` markers; plus the catalogs in `src/data/cultivation/` and what design question each answers | 3 |
-| [`NARRATOR-CORE.md`](NARRATOR-CORE.md) | The always-loaded core: authority, permadeath, qi, register | 1 |
-| [`qi.md`](qi.md) | Qi, spiritual veins, regional density, thin-region ceilings, contested qi, spirit stones | 1, 2 and 3 |
-| [`the-late-age.md`](the-late-age.md) | The aged world, depletion and monopoly, ruins, what survives, the texture to aim for | 2 and 3 |
-| [`ancient.md`](ancient.md) | Authoring guide: the ancient tier. Modern is elemental and ancient is categorical; the three kinds of absence; what an ancient art costs and who can pay it; the thousand-year medicine | 2 and 3 |
-| [`ruins.md`](ruins.md) | Authoring guide: ruins. The four axes (who left it, how gone-over, how long ago, who holds the door); convergence and the self-cancelling escape; loot as a record rather than a table; access; why a stripped ruin still teaches; mechanics that change the terms | 2 and 3 |
-| [`closed-ground.md`](closed-ground.md) | Ruins, sealed caves, inheritances and abandoned seats as one category; the inheritance economy - divesting before the end, at every rank rather than only at ascension; the clock behind both | 2 and 3 |
-| [`architecture.md`](architecture.md) | Built places: what a compound is generated from, precincts and rooms, house style as an archaeological fingerprint, access as a chain of gates, and what knowing a room means. Also the authoring guide for adding one | 2 and 3 |
-| [`techniques.md`](techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 1, 2 and 3 |
-| [`manuals.md`](manuals.md) | Books as items with a count: who can copy one, where a manual stops, the shelf a disciple climbs, what a house can teach against what it can supply, and an art as a signature | 2 and 3 |
-| [`sects.md`](sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 and 3 |
-| [`dao-houses.md`](dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 and 3 |
-| [`economy.md`](economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 and 3 |
-| [`items.md`](items.md) | Every object that can be held: counted against tracked, what money cannot buy, why a holder keeps what they cannot use, spent rows, possession as a signature | 2 and 3 |
-| [`immortals.md`](immortals.md) | The Immortal World as a place, ascension, what immortals leave behind, what crosses the Lid, immortal lineages | 2 and 3 |
-| [`injuries.md`](injuries.md) | What a wound costs: wounds of the body that impair and do not kill, against wounds of the cultivation that take a rung back; what a wound reaches, and the one axis it cannot touch | 2 and 3 |
-| [`people.md`](people.md) | NPCs as protagonists of their own lives, personality, prodigies, goals, morality, characters persisting after being surpassed | 2 and 3 |
-| [`tone.md`](tone.md) | The narrator's register, what to do and avoid, naming conventions, what makes a run interesting | 1 and 3 |
-| [`understanding.md`](understanding.md) | Understanding as an axis distinct from accumulation, personal realms, achievements, visions, and what separates two cultivators at the same rank | 2 and 3 |
-| [`discovery.md`](discovery.md) | How the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of | 2 and 3 |
-| [`asking.md`](asking.md) | Who you ask and what you say; genuine ignorance versus deflection, and why the player rather than the character is what improves across runs | 2 and 3 |
-| [`trust.md`](trust.md) | Being believed: the spectrum of signals, what a signal is worth when it cannot be checked, recognition running backwards to prestige, forging an expensive one, why the art is the strongest check | 2 and 3 |
-| [`origin.md`](origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank; the word that skips an admission bar, the one house where it buys nothing, and spending one on your own child | 2 and 3 |
-| [`past-the-ceiling.md`](past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
-| [`escapes.md`](escapes.md) | Stub. The material moved to `past-the-ceiling.md`; the engine module moved to `acquisition.ts`. Kept so links do not break, and deletable once nothing points here | 3 |
-| [`making-places-different.md`](making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
-| [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) | Design audit: the six capability questions answered for every realm, measured against the code, with what is built, what is indirect and what is absent; the same test applied to the four attributes | 3 |
+| [`INDEX.md`](./INDEX.md) | **Where is X written down.** Every section against the situation it answers, generated from the `trigger` markers; plus the catalogs in `src/data/cultivation/` and what design question each answers | 3 |
+| [`NARRATOR-CORE.md`](./NARRATOR-CORE.md) | The always-loaded core: authority, permadeath, qi, register | 1 |
+| [`qi.md`](./climbing/qi.md) | Qi, spiritual veins, regional density, thin-region ceilings, contested qi, spirit stones | 1, 2 and 3 |
+| [`the-late-age.md`](./history/the-late-age.md) | The aged world, depletion and monopoly, ruins, what survives, the texture to aim for | 2 and 3 |
+| [`ancient.md`](./history/ancient.md) | Authoring guide: the ancient tier. Modern is elemental and ancient is categorical; the three kinds of absence; what an ancient art costs and who can pay it; the thousand-year medicine | 2 and 3 |
+| [`ruins.md`](./places/ruins.md) | Authoring guide: ruins. The four axes (who left it, how gone-over, how long ago, who holds the door); convergence and the self-cancelling escape; loot as a record rather than a table; access; why a stripped ruin still teaches; mechanics that change the terms | 2 and 3 |
+| [`closed-ground.md`](./places/closed-ground.md) | Ruins, sealed caves, inheritances and abandoned seats as one category; the inheritance economy - divesting before the end, at every rank rather than only at ascension; the clock behind both | 2 and 3 |
+| [`architecture.md`](./places/architecture.md) | Built places: what a compound is generated from, precincts and rooms, house style as an archaeological fingerprint, access as a chain of gates, and what knowing a room means. Also the authoring guide for adding one | 2 and 3 |
+| [`techniques.md`](./climbing/techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 1, 2 and 3 |
+| [`manuals.md`](./climbing/manuals.md) | Books as items with a count: who can copy one, where a manual stops, the shelf a disciple climbs, what a house can teach against what it can supply, and an art as a signature | 2 and 3 |
+| [`sects.md`](./houses/sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 and 3 |
+| [`dao-houses.md`](./houses/dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 and 3 |
+| [`economy.md`](./things/economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 and 3 |
+| [`items.md`](./things/items.md) | Every object that can be held: counted against tracked, what money cannot buy, why a holder keeps what they cannot use, spent rows, possession as a signature | 2 and 3 |
+| [`immortals.md`](./climbing/immortals.md) | The Immortal World as a place, ascension, what immortals leave behind, what crosses the Lid, immortal lineages | 2 and 3 |
+| [`injuries.md`](./climbing/injuries.md) | What a wound costs: wounds of the body that impair and do not kill, against wounds of the cultivation that take a rung back; what a wound reaches, and the one axis it cannot touch | 2 and 3 |
+| [`people.md`](./houses/people.md) | NPCs as protagonists of their own lives, personality, prodigies, goals, morality, characters persisting after being surpassed | 2 and 3 |
+| [`tone.md`](./writing/tone.md) | The narrator's register, what to do and avoid, naming conventions, what makes a run interesting | 1 and 3 |
+| [`understanding.md`](./climbing/understanding.md) | Understanding as an axis distinct from accumulation, personal realms, achievements, visions, and what separates two cultivators at the same rank | 2 and 3 |
+| [`discovery.md`](./houses/discovery.md) | How the player learns the world is bigger than they thought, and the rule that the narrator may never name what the player has not heard of | 2 and 3 |
+| [`asking.md`](./houses/asking.md) | Who you ask and what you say; genuine ignorance versus deflection, and why the player rather than the character is what improves across runs | 2 and 3 |
+| [`trust.md`](./houses/trust.md) | Being believed: the spectrum of signals, what a signal is worth when it cannot be checked, recognition running backwards to prestige, forging an expensive one, why the art is the strongest check | 2 and 3 |
+| [`origin.md`](./houses/origin.md) | Where you were born and what it was worth; privilege buys inputs and never rank; the word that skips an admission bar, the one house where it buys nothing, and spending one on your own child | 2 and 3 |
+| [`past-the-ceiling.md`](./climbing/past-the-ceiling.md) | What a capped cultivator does next: the routes past a manual's ceiling, who each is open to, and what every layer must supply | 2 and 3 |
+| [`escapes.md`](./writing/escapes.md) | Stub. The material moved to `past-the-ceiling.md`; the engine module moved to `acquisition.ts`. Kept so links do not break, and deletable once nothing points here | 3 |
+| [`making-places-different.md`](./places/making-places-different.md) | Authoring guide: how to keep regions and factions from being interchangeable | 3 |
+| [`capability-gaps-by-realm.md`](./climbing/capability-gaps-by-realm.md) | Design audit: the six capability questions answered for every realm, measured against the code, with what is built, what is indirect and what is absent; the same test applied to the four attributes | 3 |
 
 Every file carries markers at section level, so a prompt builder may select on tier and
 take paragraphs rather than files. A tier-2 section without a `trigger` is a bug; the
@@ -126,13 +146,13 @@ anything else. Descend it until the rows stop applying.
 
 | Where they are | Hub |
 |---|---|
-| **The world at large** - a region, its ground, why cultivation goes well or badly here | [`qi.md`](qi.md) |
-| **A settlement** - a city, a town, a market, anywhere people simply live | [`economy.md`](economy.md), [`architecture.md`](architecture.md) |
-| **A sect or house** - its politics, its ladder, who it answers to | [`sects.md`](sects.md) |
-| **A Dao house** - karma, oaths, names, or space invoked as authority | [`dao-houses.md`](dao-houses.md) |
-| **Inside a built place** - a gate, a hall, a compound, somebody's residence | [`architecture.md`](architecture.md) |
-| **A ruin, sealed site, or convergence** | [`ruins.md`](ruins.md) |
-| **Above the Lid** | [`immortals.md`](immortals.md) |
+| **The world at large** - a region, its ground, why cultivation goes well or badly here | [`qi.md`](./climbing/qi.md) |
+| **A settlement** - a city, a town, a market, anywhere people simply live | [`economy.md`](./things/economy.md), [`architecture.md`](./places/architecture.md) |
+| **A sect or house** - its politics, its ladder, who it answers to | [`sects.md`](./houses/sects.md) |
+| **A Dao house** - karma, oaths, names, or space invoked as authority | [`dao-houses.md`](./houses/dao-houses.md) |
+| **Inside a built place** - a gate, a hall, a compound, somebody's residence | [`architecture.md`](./places/architecture.md) |
+| **A ruin, sealed site, or convergence** | [`ruins.md`](./places/ruins.md) |
+| **Above the Lid** | [`immortals.md`](./climbing/immortals.md) |
 
 ### Hop two: what is actually happening there
 
@@ -140,40 +160,40 @@ These cut across place. A scene commonly takes one row from each table.
 
 | What is happening | Hub |
 |---|---|
-| **Any turn at all** | [`NARRATOR-CORE.md`](NARRATOR-CORE.md), always |
-| A run begins, or somebody's birth starts to matter | [`origin.md`](origin.md) |
-| Somebody is admitted somewhere their own standing does not reach, or a child is placed at all | [`origin.md`](origin.md) |
-| A cultivator with standing has a child, or a placed child asks who arranged it | [`origin.md`](origin.md), [`people.md`](people.md) |
-| The player asks somebody a question | [`asking.md`](asking.md) |
-| The player hears of something they have never met | [`discovery.md`](discovery.md) |
-| An NPC is present, remembered, or being reasoned about | [`people.md`](people.md) |
-| An art is used, taught, refused, or compared | [`techniques.md`](techniques.md) |
-| A book is held, copied, bought, refused, or stolen | [`manuals.md`](manuals.md) |
-| Nobody present recognises what somebody is practising | [`ancient.md`](ancient.md) |
-| The player has run out of manual | [`past-the-ceiling.md`](past-the-ceiling.md) |
-| Two people of the same rank are not equally dangerous | [`understanding.md`](understanding.md) |
-| Something old, inherited, or built by somebody else is described | [`the-late-age.md`](the-late-age.md) |
-| Ownership, price, or provenance is disputed | [`economy.md`](economy.md) |
-| An object changes hands, is copied, spent, hidden, or refused; or somebody asks how many exist | [`items.md`](items.md) |
-| Somebody is wounded, asks what a wound will do to them, or fights and cultivates while carrying one | [`injuries.md`](injuries.md) |
-| The narrator is unsure how much to say, or in what voice | [`tone.md`](tone.md) |
-| A house's standing, ancestry, succession, or vault is in question | [`sects.md`](sects.md) |
-| A consequence arrives and nobody can trace where it came from | [`dao-houses.md`](dao-houses.md) |
-| Ascension, the Lid, or an ascended ancestor is raised | [`immortals.md`](immortals.md) |
+| **Any turn at all** | [`NARRATOR-CORE.md`](./NARRATOR-CORE.md), always |
+| A run begins, or somebody's birth starts to matter | [`origin.md`](./houses/origin.md) |
+| Somebody is admitted somewhere their own standing does not reach, or a child is placed at all | [`origin.md`](./houses/origin.md) |
+| A cultivator with standing has a child, or a placed child asks who arranged it | [`origin.md`](./houses/origin.md), [`people.md`](./houses/people.md) |
+| The player asks somebody a question | [`asking.md`](./houses/asking.md) |
+| The player hears of something they have never met | [`discovery.md`](./houses/discovery.md) |
+| An NPC is present, remembered, or being reasoned about | [`people.md`](./houses/people.md) |
+| An art is used, taught, refused, or compared | [`techniques.md`](./climbing/techniques.md) |
+| A book is held, copied, bought, refused, or stolen | [`manuals.md`](./climbing/manuals.md) |
+| Nobody present recognises what somebody is practising | [`ancient.md`](./history/ancient.md) |
+| The player has run out of manual | [`past-the-ceiling.md`](./climbing/past-the-ceiling.md) |
+| Two people of the same rank are not equally dangerous | [`understanding.md`](./climbing/understanding.md) |
+| Something old, inherited, or built by somebody else is described | [`the-late-age.md`](./history/the-late-age.md) |
+| Ownership, price, or provenance is disputed | [`economy.md`](./things/economy.md) |
+| An object changes hands, is copied, spent, hidden, or refused; or somebody asks how many exist | [`items.md`](./things/items.md) |
+| Somebody is wounded, asks what a wound will do to them, or fights and cultivates while carrying one | [`injuries.md`](./climbing/injuries.md) |
+| The narrator is unsure how much to say, or in what voice | [`tone.md`](./writing/tone.md) |
+| A house's standing, ancestry, succession, or vault is in question | [`sects.md`](./houses/sects.md) |
+| A consequence arrives and nobody can trace where it came from | [`dao-houses.md`](./houses/dao-houses.md) |
+| Ascension, the Lid, or an ascended ancestor is raised | [`immortals.md`](./climbing/immortals.md) |
 
 ### Never routed to a scene
 
 Tier 3 is for humans and for agents adding content. It is never injected:
 
-- [`making-places-different.md`](making-places-different.md) - before writing a new region
+- [`making-places-different.md`](./places/making-places-different.md) - before writing a new region
   or faction, so the next one is not the last one with the nouns swapped.
-- [`capability-gaps-by-realm.md`](capability-gaps-by-realm.md) - before adding anything to a
+- [`capability-gaps-by-realm.md`](./climbing/capability-gaps-by-realm.md) - before adding anything to a
   realm, so the addition is a decision rather than a multiplier, and so it is not something
   the engine already does under another name.
-- [`architecture.md`](architecture.md) - its authoring sections, before writing a new
+- [`architecture.md`](./places/architecture.md) - its authoring sections, before writing a new
   compound. Its descriptive sections are tier 2 and do route.
 
-[`ancient.md`](ancient.md) and [`architecture.md`](architecture.md) are both kinds at once:
+[`ancient.md`](./history/ancient.md) and [`architecture.md`](./places/architecture.md) are both kinds at once:
 authoring guides whose sections carry their own tier-2 triggers, because the material they
 govern also has to reach the table.
 

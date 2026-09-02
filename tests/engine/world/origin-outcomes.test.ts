@@ -1,7 +1,7 @@
 /**
  * The honesty constraint, measured.
  *
- * `docs/world/origin.md` stakes the whole axis on one claim:
+ * `docs/world/houses/origin.md` stakes the whole axis on one claim:
  *
  *   > A privileged origin should be visible in the run's OPENING POSITION and
  *   > not visible in its OUTCOME DISTRIBUTION, except at the very top where it

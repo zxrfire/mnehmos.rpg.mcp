@@ -205,7 +205,7 @@ const stones = (v: number) => v.toLocaleString('en-US');
  * its holder list filed under the same heading, and the Items tab that exists
  * to answer who-has-what pointed at the Key tab for the answer.
  *
- * Split on the line docs/world/items.md draws: the kind is described here, and
+ * Split on the line docs/world/things/items.md draws: the kind is described here, and
  * the rows with holders are in the function below. Nothing was reworded.
  *
  * The header shape, the table wrapper and the paragraph class are the sheet's

@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * A manual covers a realm to Perfection and stops. That is `requiredOrdinal`
- * and `cap`, it is COVERAGE, and `docs/world/manuals.md` settles it. This file
+ * and `cap`, it is COVERAGE, and `docs/world/climbing/manuals.md` settles it. This file
  * is the other axis:
  *
  *   A TRASH CORE FORMATION MANUAL AND AN EXCELLENT ONE COVER THE SAME RUNGS.
@@ -385,7 +385,7 @@ export function readManual(
  * That is the paperweight rule applied where it does not belong. It is correct
  * for a book somebody HOLDS - a ruin find, a stolen canon, the one object in
  * the room - because there is nothing else to read. It is wrong for an
- * institution, which holds a shelf: `docs/world/manuals.md` says rank reaches
+ * institution, which holds a shelf: `docs/world/climbing/manuals.md` says rank reaches
  * up the shelf and that admission buys something and never the core, so what a
  * house hands a disciple is the best thing they can actually work.
  *

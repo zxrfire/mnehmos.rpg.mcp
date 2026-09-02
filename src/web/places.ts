@@ -46,7 +46,7 @@
  * admin surface shows all of them and marks the undiscovered ones, so the
  * operator can see the fog the player is standing in; a player-facing map
  * drops `discovered === false` at the boundary and needs no other change.
- * `docs/world/discovery.md` is the authority on why that gate exists.
+ * `docs/world/houses/discovery.md` is the authority on why that gate exists.
  */
 
 import type { WorldState } from '../engine/world/world-state.js';

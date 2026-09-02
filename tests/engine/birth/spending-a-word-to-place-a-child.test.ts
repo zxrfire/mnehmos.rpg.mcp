@@ -105,7 +105,7 @@ describe('what a great name is actually worth at seven years old', () => {
     );
 
     it('without a word, resolves to houses that take anybody', () => {
-        // This is the defect `docs/world/origin.md` used to describe as
+        // This is the defect `docs/world/houses/origin.md` used to describe as
         // "a good allied sect at an age when it matters". Every house a Dao
         // house's name reaches at ordinal zero admits at the floor, so the
         // greatest name in the province buys what an afternoon's walk buys.

@@ -23,7 +23,7 @@
  * `untreated_injuries` was, by a wide margin, the commonest death in this game.
  * It is retired. A torn meridian is a torn muscle: very annoying, slow, and not
  * something you die of. It impairs - the rate, the fight, the body's ability to
- * mend itself - and it never ends a run. `docs/world/injuries.md` is the spec
+ * mend itself - and it never ends a run. `docs/world/climbing/injuries.md` is the spec
  * and `evaluateDeathConditions` is where the two clauses used to stand.
  *
  * The `bleedingTurns` counter and BLEED_OUT_TURNS survive that removal as an
@@ -150,7 +150,7 @@ export const SATIETY_BURN_BY_REALM: Readonly<Record<RealmKey, number>> = {
  * cost something ongoing, and a cultivator carrying it can in principle starve.
  * That is correct and is not what was retired: starvation is a fair death with
  * a visible clock and a cure you can buy in any settlement. Only channel wounds
- * stop killing people. See `docs/world/injuries.md` for the family split.
+ * stop killing people. See `docs/world/climbing/injuries.md` for the family split.
  */
 const FAILED_TRANSFORMATION = 'failed-transformation';
 
@@ -802,7 +802,7 @@ export function evaluateDeathConditions(
         // actually lands (`assessPower` and `resolveExchange` in combat.ts), and
         // it stops the body mending itself at all (`mendingBlocked` in
         // time-skip.ts). What it does not touch is comprehension - see the note
-        // in injuries.ts. `docs/world/injuries.md` is the spec.
+        // in injuries.ts. `docs/world/climbing/injuries.md` is the spec.
         //
         // What did NOT change, and must not: forcing a fight while barely able
         // to stand is still an obviously fatal choice, because that one is about

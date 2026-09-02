@@ -39,7 +39,7 @@
  *   COMPETITION   ranked, public, standing on the line. A house's prestige
  *                 moves with its chosen's placing, and the winner may be
  *                 SELECTED UPWARD into the host - the feeder relationship
- *                 `docs/world/sects.md` documents, which is the single most
+ *                 `docs/world/houses/sects.md` documents, which is the single most
  *                 consequential thing that can happen to a promising
  *                 cultivator and is the reason inter-sect competitions matter.
  *   EXPEDITION    several houses' chosen enter a site together and are scored,
@@ -1001,7 +1001,7 @@ function applyWounds(
  *   PRESTIGE   `resources.prestige` on the placing houses. A free-form resource
  *              key, which is what `resources` is for, rather than a new table.
  *   SELECTION  the winner, if they came from a house that answers to the host,
- *              is TAKEN UP. `docs/world/sects.md`: "a generation's outstanding
+ *              is TAKEN UP. `docs/world/houses/sects.md`: "a generation's outstanding
  *              disciple is selected upward... you arrive at the higher sect at
  *              the bottom." So they change faction, land at rank 0, and LOSE
  *              the chosen tag - their reputation does not travel and neither
@@ -1554,7 +1554,7 @@ function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['we
 /**
  * Write what the bout did to the objects in it.
  *
- * `docs/world/items.md`'s "spent is not gone": a ruined object keeps its row,
+ * `docs/world/things/items.md`'s "spent is not gone": a ruined object keeps its row,
  * its owner, its claims and every link of its provenance, and gains one more
  * saying where it ended. A house that cannot account for something should have
  * a record that says so, and a sect artifact broken by an outsider is a

@@ -1336,7 +1336,7 @@ describe('the inheritance grounds, through the whole service', () => {
  * their meridians would give out in `BLEED_OUT_TURNS` days and printed the
  * countdown as a number on the mechanical channel. Both were true and neither
  * is any more: the design owner ruled that a torn meridian is a torn muscle -
- * very annoying, and not something you die of (`docs/world/injuries.md`).
+ * very annoying, and not something you die of (`docs/world/climbing/injuries.md`).
  *
  * A warning that threatens a death the engine never delivers is worse than no
  * warning, because it teaches a player to discount the next one. So the

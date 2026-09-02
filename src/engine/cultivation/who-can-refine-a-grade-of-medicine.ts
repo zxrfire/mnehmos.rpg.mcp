@@ -70,7 +70,7 @@
  * The consequence is that "nobody makes it" needs no special case anywhere. A
  * refiner is checked against an ordinal, the ordinal is 46, and the only hand
  * in the world that has ever satisfied it belonged to somebody who came down on
- * purpose and had a quarter of a minute to do it in. `docs/world/immortals.md`
+ * purpose and had a quarter of a minute to do it in. `docs/world/climbing/immortals.md`
  * calls that crossing catastrophically expensive and it is the same event here.
  *
  * TWO CATALOGS SAID THIS FIRST AND THIS FILE IS NOT A THIRD OPINION.
@@ -106,7 +106,7 @@
  * everybody can make mortal grade, about a fifth can make earth, a few per cent
  * can make heaven, and nobody at all can make what is above it.
  *
- * That is where `docs/world/items.md`'s counted/tracked line comes from, and
+ * That is where `docs/world/things/items.md`'s counted/tracked line comes from, and
  * `buying-and-bartering-pills.ts` arrives at the same boundary from the price
  * side without knowing about this file. Only the bottom of the ladder has a
  * population large enough to produce indefinitely, so only the bottom is

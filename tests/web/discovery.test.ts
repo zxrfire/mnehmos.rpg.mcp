@@ -1,7 +1,7 @@
 /**
  * The discovery rule.
  *
- * docs/world/discovery.md: never reference an entity the player has no
+ * docs/world/houses/discovery.md: never reference an entity the player has no
  * knowledge record for. A Qi Condensation cultivator in a village does not know
  * the ancient sects exist, and that is the accurate state of almost everyone.
  *

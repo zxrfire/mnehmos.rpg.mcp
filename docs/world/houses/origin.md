@@ -3,7 +3,7 @@
 # Origin
 
 Where you started, and what it was worth. Read with
-[understanding.md](understanding.md) - talent is dealt once, and so is this.
+[understanding.md](../climbing/understanding.md) - talent is dealt once, and so is this.
 
 ## Sections
 
@@ -105,7 +105,7 @@ measurement to go on and is betting on the asker's judgement rather than on the 
 **What a word does not reach.** Some bars do not move, and the reason is never
 squeamishness - a bar that cannot be waived is one whose waiving would break something.
 It would kill the applicant, or dissolve the thing the house runs on, or admit a
-contribution the house has no use for. [`sects.md`](sects.md) and the catalog carry each
+contribution the house has no use for. [`sects.md`](./sects.md) and the catalog carry each
 house's own reason in its own words. The negative case this file already states is the
 sharpest one: the Hollow Court admits on evidence you could cross and *nothing else counts,
 which explicitly includes being somebody's child*, and it is correctly the house where no
@@ -120,12 +120,12 @@ right instrument there is a nomination, which is a different thing with a differ
 >
 > - **This one** - the admission favour. Spent from outside a house, by somebody who is not
 >   in it, on somebody who is not in it yet. It moves a gate.
-> - **Internal patronage** - [`manuals.md`](manuals.md), "The chosen". A house that has
+> - **Internal patronage** - [`manuals.md`](../climbing/manuals.md), "The chosen". A house that has
 >   decided a disciple is worth it hands them the top of the shelf years before their rank
 >   reaches it. That happens *inside* a house, to somebody already admitted, and how many a
 >   house can favour is decided by how many copies of the top book it holds. It moves a
 >   shelf, never a gate, and being favoured does not lift a manual's own entry requirement.
-> - **The obligation** - a favour *owed*, in the sense [`items.md`](items.md) uses when it
+> - **The obligation** - a favour *owed*, in the sense [`items.md`](../things/items.md) uses when it
 >   lists one among the things worth holding. That is not an act, it is the record an act
 >   leaves behind.
 >

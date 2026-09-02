@@ -142,7 +142,7 @@ export type DaoGroundDomain = z.infer<typeof DaoGroundDomainSchema>;
  * expensive because nothing on it is addressed to you and the only way through
  * it is to sit there for forty years. A carving is a TEXT: you read it, and
  * what is scarce about it is that there are three faces in the world and
- * getting to one is the entire journey. `docs/world/immortals.md` is explicit
+ * getting to one is the entire journey. `docs/world/climbing/immortals.md` is explicit
  * that a later reader "gets the surface an afternoon was worked out on without
  * the afternoon, and pays the whole of what reading costs" - so the price is
  * the floor, which is very high, and not the sitting.
@@ -521,7 +521,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
 
     // ── CARVING. Three worked faces, and nobody cut them for a reader. ────
     //
-    // `docs/world/immortals.md` is the authority and it is unusually specific.
+    // `docs/world/climbing/immortals.md` is the authority and it is unusually specific.
     // The living False Immortal is on the third path, has not done the durable
     // carving because he still has students, and what exists instead is
     // RESIDUE: "a lecture needs a surface, he works on whatever is there, and

@@ -1,7 +1,7 @@
 /**
  * Names entering the world through the mouths of people who assume you know them.
  *
- * docs/world/discovery.md, "Characters assume you know": the discovery rule
+ * docs/world/houses/discovery.md, "Characters assume you know": the discovery rule
  * governs the NARRATOR'S OWN VOICE and must not gag the people in the world. A
  * cultivator says a name flatly, with no context, because of course you know it
  * - everyone they have ever spoken to did. They are not withholding; it does
@@ -693,7 +693,7 @@ function offerGroundSomebodyGoesTo(
     // The first build of this channel wrote the speaker's name into the ambient
     // prose, so somebody walking through a square of a hundred strangers got
     // one of them named for free - a second discovery riding along on the
-    // first, and a straight leak of the gate `docs/world/discovery.md` sets.
+    // first, and a straight leak of the gate `docs/world/houses/discovery.md` sets.
     // Being addressed is a different case: the player resolved that person in
     // order to deal with them, and the `told` branch has always used their
     // name. Ambient talk is a voice, and a voice is not an introduction.

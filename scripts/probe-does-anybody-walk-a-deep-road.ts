@@ -15,7 +15,7 @@
  *             rather than inferred from the top.
  *   SCARCITY  how many distinct houses hold each deep road once the world has
  *             run, because copying is a thing the world does and the counting
- *             rule in docs/world/items.md is a measurement rather than a policy.
+ *             rule in docs/world/things/items.md is a measurement rather than a policy.
  *
  * Run: npx tsx scripts/probe-does-anybody-walk-a-deep-road.ts [years] [seed]
  */

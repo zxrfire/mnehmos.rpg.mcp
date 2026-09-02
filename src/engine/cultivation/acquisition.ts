@@ -4,7 +4,7 @@
  * `techniqueExhausted` in `cultivation.ts` stops a cultivator dead at their
  * manual's `cap`. Not a taper - a multiplier of zero. This module is the other
  * half of that: the arithmetic behind the doors out, specified in
- * [`docs/world/past-the-ceiling.md`](../../../docs/world/past-the-ceiling.md) as routes 1b and 7.
+ * [`docs/world/climbing/past-the-ceiling.md`](../../../docs/world/climbing/past-the-ceiling.md) as routes 1b and 7.
  *
  * Nothing here is a new subsystem. Every rule below is a function of something
  * the engine already reads:

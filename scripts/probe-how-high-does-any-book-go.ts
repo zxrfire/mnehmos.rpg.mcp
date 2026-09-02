@@ -86,7 +86,7 @@ console.log(`of the arts at the highest cap, taught by a living house: ${taughtA
 console.log(`uncapped (band runs off the ladder): ${roads.filter(t => t.cap === null).map(t => `${t.id}@${t.requiredOrdinal}`).join(', ')}`);
 
 // Every art above the Void Refinement line, and how many houses hold it. The
-// documented fact in docs/world/items.md, recounted rather than quoted.
+// documented fact in docs/world/things/items.md, recounted rather than quoted.
 const aboveVoid = capped.filter(t => t.cap > 32);
 const counts = aboveVoid.map(t => (teachersOf.get(t.id) ?? []).length);
 console.log(

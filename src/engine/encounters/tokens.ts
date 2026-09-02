@@ -8,7 +8,7 @@
  *
  * ── The rule this module enforces ────────────────────────────────────────
  *
- * `docs/world/discovery.md`: never reference an entity the player has no
+ * `docs/world/houses/discovery.md`: never reference an entity the player has no
  * knowledge record for. A summary is handed to a narrator, so a faction name
  * dropped into `{faction}` is a name spoken in the player's hearing. Two ways
  * that is legitimate and one way it is not:

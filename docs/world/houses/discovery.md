@@ -4,8 +4,8 @@
 
 How the player learns the world is bigger than they thought, and the rule that protects it.
 
-Read with [understanding.md](understanding.md) (access gates comprehension) and
-[sects.md](sects.md).
+Read with [understanding.md](../climbing/understanding.md) (access gates comprehension) and
+[sects.md](./sects.md).
 
 ## Three ways in, and they are different questions
 
@@ -160,7 +160,7 @@ successfully. A strong stranger with a bad name may not.
 
 ### It does not bypass the gate. It changes who opens it
 
-[`asking.md`](asking.md) gives three limits, and a demand can reach two of them:
+[`asking.md`](./asking.md) gives three limits, and a demand can reach two of them:
 
 ```text
 1  what this person could know          UNREACHABLE. No amount of standing moves it

@@ -56,7 +56,7 @@
  *      spent from OUTSIDE a house, by somebody who is not in it, on somebody
  *      who is not in it yet.
  *
- *   2. INTERNAL PATRONAGE - `docs/world/manuals.md`, "The chosen". A house
+ *   2. INTERNAL PATRONAGE - `docs/world/climbing/manuals.md`, "The chosen". A house
  *      that has decided a disciple is worth it hands them the top of the shelf
  *      years before their rank reaches it. That happens INSIDE a house, to
  *      somebody already admitted, and it is bounded by how many copies of the

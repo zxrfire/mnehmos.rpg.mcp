@@ -41,7 +41,7 @@
  *
  * ── What it does not do ──────────────────────────────────────────────────
  *
- * It does not resolve. `docs/world/discovery.md`: the send-off grants the
+ * It does not resolve. `docs/world/houses/discovery.md`: the send-off grants the
  * DIRECTION, not the answer. Nobody hands the player a map to the thing that
  * suits them, and this module never names a place. It is also refusable -
  * staying is a choice, and a player who sits in the cave until they die of old

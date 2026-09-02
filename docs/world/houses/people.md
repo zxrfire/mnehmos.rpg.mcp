@@ -7,8 +7,8 @@ contextual, why the powerful act indirectly, and why nobody is deleted when the 
 surpasses them. Load this whenever an NPC is in play, which is most of the time.
 
 The storage model behind all of it is
-[`../../src/engine/social/README.md`](../../src/engine/social/README.md) and
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`../../src/engine/social/README.md`](../../../src/engine/social/README.md) and
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 ## Sections
 
@@ -84,7 +84,7 @@ some pragmatic, some protective, and some are generous in a way that is going so
 
 Betrayal follows from this and never from a schedule. It arises from incentives, and it
 must make sense in retrospect - see
-[`../../src/engine/social/README.md`](../../src/engine/social/README.md).
+[`../../src/engine/social/README.md`](../../../src/engine/social/README.md).
 
 ---
 
@@ -98,8 +98,8 @@ restriction, incomplete information, resource cost, risk of exposure, hidden pro
 strategic usefulness, or a conflicting objective. **Never unexplained plot armour.**
 
 The most common real answer is a Dao house or a dormant sect ancestor: *"I could probably
-kill him. But what happens afterwards?"* See [`dao-houses.md`](dao-houses.md) and
-[`sects.md`](sects.md).
+kill him. But what happens afterwards?"* See [`dao-houses.md`](./dao-houses.md) and
+[`sects.md`](./sects.md).
 
 ## The powerful act indirectly
 
@@ -152,7 +152,7 @@ something they did three centuries ago.
 
 This is a code rule as well as a design rule: nothing in the social layer may rank people
 by cultivation. See
-[`../../src/engine/social/README.md`](../../src/engine/social/README.md).
+[`../../src/engine/social/README.md`](../../../src/engine/social/README.md).
 
 ### The cast grows sideways
 
@@ -178,7 +178,7 @@ historically important.
 
 Death does not remove someone from the simulation; it changes their mode of existence. The
 state set for that is in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 
 ---
 
@@ -204,7 +204,7 @@ such a journey can occur - to anyone, including no one.
 
 <!-- tier: 3 -->
 
-- [`../../src/engine/social/README.md`](../../src/engine/social/README.md) - relationships, grudges, belief, secrets
-- [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - NPC records, goals, lineage
-- [`sects.md`](sects.md) - the institutions these people are inside
-- [`tone.md`](tone.md) - how to write them
+- [`../../src/engine/social/README.md`](../../../src/engine/social/README.md) - relationships, grudges, belief, secrets
+- [`../../src/engine/world/README.md`](../../../src/engine/world/README.md) - NPC records, goals, lineage
+- [`sects.md`](./sects.md) - the institutions these people are inside
+- [`tone.md`](../writing/tone.md) - how to write them

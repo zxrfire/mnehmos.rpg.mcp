@@ -4,8 +4,8 @@
 
 What a wound does to a cultivator, what it costs, and what it does not touch.
 
-Read alongside [`items.md`](items.md), which prices the medicine, and
-[`understanding.md`](understanding.md), which owns the axis a wound cannot reach.
+Read alongside [`items.md`](../things/items.md), which prices the medicine, and
+[`understanding.md`](./understanding.md), which owns the axis a wound cannot reach.
 
 <!-- tier: 3 -->
 
@@ -64,7 +64,7 @@ only the second one takes something the ladder already gave you.
 torn meridian is still a channel wound and is still survivable; a cracked core is categorically
 worse than any amount of channel damage. That is why the medicine that mends the first is
 ordinary and the medicine that mends the second is not - see the scarcity rule in
-[`items.md`](items.md).
+[`items.md`](../things/items.md).
 
 ---
 
@@ -102,7 +102,7 @@ for decades and want them gone.
 And the one thing a wound must never reach:
 
 - **Comprehension is untouched.** Understanding, insight, the roads walked, everything on the
-  axis [`understanding.md`](understanding.md) owns. **A wounded cultivator still thinks clearly.**
+  axis [`understanding.md`](./understanding.md) owns. **A wounded cultivator still thinks clearly.**
   They cannot push qi properly; there is nothing wrong with what they can see. Somebody laid up
   for a decade with torn channels may come out of it having understood more than they went in
   with, and that is not an exception to be explained - it is the correct behaviour of two axes
@@ -123,5 +123,5 @@ great deal to cure, and it still does not kill.
 
 The grade is what the medicine ladder reads, together with the rung of the person carrying it,
 so a crippling wound at height is the corner of the matrix where the cure is genuinely hard to
-obtain. That pairing is documented once, in [`items.md`](items.md), and should not be restated
+obtain. That pairing is documented once, in [`items.md`](../things/items.md), and should not be restated
 here with different numbers.

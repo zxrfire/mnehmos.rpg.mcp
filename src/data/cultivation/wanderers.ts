@@ -2,7 +2,7 @@
  * Wandering figures: people who belong to nothing and are therefore worth
  * asking.
  *
- * `docs/world/asking.md` ends on the rule this file exists to embody: what
+ * `docs/world/houses/asking.md` ends on the rule this file exists to embody: what
  * closes a mouth is position, not power. An official has more to lose by
  * talking than he could gain. A patriarch answers for a sect. A guest elder is
  * paid by somebody. All of them are careful, and their care scales with how

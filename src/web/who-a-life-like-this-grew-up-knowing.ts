@@ -41,7 +41,7 @@
  * WHAT IT DOES NOT DO
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * It does not weaken the gate. `docs/world/discovery.md` is intact and so is
+ * It does not weaken the gate. `docs/world/houses/discovery.md` is intact and so is
  * the refusal that enforces it - a name nobody has said in front of you is
  * still a name you cannot use. What changes is only WHICH names have been said,
  * and the answer is the one the fiction already implies: the people on the road

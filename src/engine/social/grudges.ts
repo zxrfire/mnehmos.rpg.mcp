@@ -167,7 +167,7 @@ export type FavorCause =
      *
      * It is here because it is the OTHER thing that can be done with a corpse,
      * and it is usually the better trade. A house owes you for it, and a favour
-     * owed by a house is above the cash line - `docs/world/items.md` is explicit
+     * owed by a house is above the cash line - `docs/world/things/items.md` is explicit
      * that up there money is not the medium. What was taken off the body
      * instead is a tracked object whose provenance damns whoever holds it, and
      * is hard to sell for exactly the reason it is worth anything.

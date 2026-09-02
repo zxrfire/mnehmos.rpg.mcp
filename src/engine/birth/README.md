@@ -8,7 +8,7 @@ Two files:
   values. This is the one function most callers want.
 - `spending-a-word-to-place-a-child.ts` - the favour that skips an admission
   bar, which is the other half of what a name is worth and is described in
-  [`docs/world/origin.md`](../../../docs/world/origin.md). It answers two
+  [`docs/world/houses/origin.md`](../../../docs/world/houses/origin.md). It answers two
   questions: which doors a family's word would open that the applicant's own
   ordinal does not, and what it costs to spend one on your own child.
 
@@ -19,7 +19,7 @@ in:
 
 - `src/engine/cultivation/origin.ts` - the frozen tier table and what a tier is
   worth. Pure, and it puts nobody anywhere.
-- `docs/world/origin.md` - what privilege buys and what it must never buy.
+- `docs/world/houses/origin.md` - what privilege buys and what it must never buy.
 - `src/engine/world/origin-odds.ts` - the harness that measures whether the
   design's central claim still holds. Its closing line was "nothing here feeds
   back into the simulation".
@@ -65,7 +65,7 @@ without knowing an origin exists.
 
 ## The design constraint this must not break
 
-From `docs/world/origin.md`:
+From `docs/world/houses/origin.md`:
 
 > A privileged origin should be visible in the run's opening position and not
 > visible in its outcome distribution, except at the very top where it is one
@@ -139,7 +139,7 @@ rows.
   person on a house's roll who did not meet its bar and does not know whose word
   put them there - and `drawBirth` deals no such hand, so the player cannot be
   one. See "Opening as a fostered child" in
-  [`docs/world/origin.md`](../../../docs/world/origin.md), which is where that
+  [`docs/world/houses/origin.md`](../../../docs/world/houses/origin.md), which is where that
   goes when it is built.
 - **A birth house has no seat to be born at.** The catalog records a faction's
   territory in prose rather than as a place name, so the house a family belongs

@@ -1,7 +1,7 @@
 /**
  * What comes back when the player asks somebody something.
  *
- * `docs/world/asking.md` is the specification and it is emphatic that none of
+ * `docs/world/houses/asking.md` is the specification and it is emphatic that none of
  * this is a mechanic: no roll, no unlock, no phrase the world checks for, and
  * nothing that varies run to run. What it does say is the division of labour
  * this file implements - "the engine holds the facts; the judgement is

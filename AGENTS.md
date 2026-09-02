@@ -1520,3 +1520,38 @@ takes a stranger's unfinished work with it.
 **And the coordinator owns the merge.** Agents land on their own branch or hand
 back a diff; deciding whose version of a contested file wins is a judgement
 about the whole tree, and it needs somebody who can see all of it.
+
+### A flat folder is a context problem, not only a navigation one
+
+`docs/world` held twenty-eight files in one directory. The cost was not that it
+looked untidy. It was that **an agent looking for one rule had to carry the shape
+of the whole bible to find it** - and repeatedly did not find it, and wrote the
+rule again.
+
+So the material is grouped, and **each group carries its own `README.md` saying
+what it is for and what each file in it answers.** Read the one folder your
+question is in. That is the whole point of the split: the folder index is small
+enough to load, and it tells you which single file to open next.
+
+Above them sit two generated indexes, and they answer different questions:
+
+- **`INDEX.md`** - *where is this rule written down.* Every section against the
+  situation it answers, taken from the `trigger` marker each one carries. Search
+  it for what is happening at the table, not for a noun.
+- **`BY-HOUSE.md`** - *what do we know about this house.* The median house is
+  written about in fifteen separate files, so reading its entry in `sects.ts`
+  and stopping is how somebody concludes a thing is unwritten.
+
+**Three rules follow, and they apply to any folder that grows like this one did:**
+
+1. **An index points; it does not restate.** A copy is a second place for a fact
+   to drift, and the reader pays for it twice - once in context, once in doubt
+   about which copy is current.
+2. **Generate the indexes.** A hand-maintained map of a corpus this size is a map
+   that is wrong within a week, and a wrong map is worse than none. Both are
+   built by a script and pinned by a staleness test.
+3. **Check the links mechanically.** `node scripts/check-doc-links.mjs` resolves
+   every relative link in `docs/`. Reorganising a folder this cross-referenced is
+   only safe because that check exists - moving twenty-five files rewrote several
+   hundred links, and a doc pointing at a moved neighbour is worse than one
+   pointing nowhere, because it looks like it worked.

@@ -1360,7 +1360,7 @@ export const REGIONS: readonly Region[] = [
 
     // ── SOUTH: THE WATER ─────────────────────────────────────────────────
     // This is not a fifth landmass. Every fact below follows from one sentence
-    // in `docs/world/qi.md` - qi pools in veins, and veins are features of the
+    // in `docs/world/climbing/qi.md` - qi pools in veins, and veins are features of the
     // LAND - taken seriously rather than waived. There is no ground under the
     // open sea, so there is no vein, so there is nothing in the air; a
     // cultivator out here is on the same footing as a cultivator anywhere the
@@ -2001,7 +2001,7 @@ export function ambientStatesIn(regionId: string): AmbientQi[] {
 //
 // CONTRAST, NOT ADDITION
 // ----------------------
-// `docs/world/making-places-different.md` names the failure this section is
+// `docs/world/places/making-places-different.md` names the failure this section is
 // most likely to commit: a gazetteer of interchangeable places with the proper
 // nouns swapped. Two defences are built in.
 //

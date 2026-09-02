@@ -191,7 +191,7 @@ export function realmIntakeMultiplier(realmOrdinal: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 // THE GROUND: CONTESTED QI, AND GROUND THAT STOPS YOU
 //
-// Two rules from `docs/world/qi.md`, both of which the engine promised and
+// Two rules from `docs/world/climbing/qi.md`, both of which the engine promised and
 // neither of which it had. Both read the same input - what the ground holds and
 // who is standing on it - so they take one option rather than two.
 //

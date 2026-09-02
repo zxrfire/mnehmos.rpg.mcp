@@ -577,7 +577,7 @@ export const HERBS: readonly Herb[] = [
     // refiner. A formula naming one of these is a formula anybody can read,
     // cost out, and be unable to fill - and the reason it cannot be filled is
     // that the ground stopped producing an ingredient, which is exactly the
-    // kind of poverty `docs/world/the-late-age.md` is about.
+    // kind of poverty `docs/world/history/the-late-age.md` is about.
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'herb-kingfisher-lacquer-fern',

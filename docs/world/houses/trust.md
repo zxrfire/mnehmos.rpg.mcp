@@ -3,8 +3,8 @@
 # Being believed
 
 How anybody decides whether you are who you say you are. Read alongside
-[`asking.md`](asking.md), which covers what happens once they have decided, and
-[`discovery.md`](discovery.md), which covers how anybody comes to know a thing at all.
+[`asking.md`](./asking.md), which covers what happens once they have decided, and
+[`discovery.md`](./discovery.md), which covers how anybody comes to know a thing at all.
 
 <!-- tier: 3 -->
 
@@ -246,7 +246,7 @@ the risk is evenly distributed.
 **And a shattered plate is a question, not an answer.** It tells a house that one of theirs died
 and nothing else - not where, not how, not by whose hand. A house holding a shattered plate and
 no body will pay for the answer, and somebody who brings the remains back gets credit for it.
-See [`items.md`](items.md) on provenance, which is the same fact read from the other end.
+See [`items.md`](../things/items.md) on provenance, which is the same fact read from the other end.
 
 ---
 
@@ -389,7 +389,7 @@ on memory, which is why both things are true at once: arts are guarded, *and* pe
 out of every house in the world in the only container nobody can search.
 
 **Unenforceable in advance is not unpunished, and that is written down already.**
-[`items.md`](items.md#holding-is-a-signature) has the consequence in full: practising an art is
+[`items.md`](../things/items.md#holding-is-a-signature) has the consequence in full: practising an art is
 visible, so it is **evidence for as long as you keep climbing on it** - which is the rest of
 your life, because putting it down means starting again - and what happens when they catch you
 turns on whose art it is, not on the theft. **Nobody asks the Hollow Court**, because going
@@ -402,14 +402,14 @@ cannot correct, and cannot repeat anything"*; `opacity` is literally *"how much 
 to survive being written down"*. **A person transmits better than a book.** So somebody teaching
 their old house's art aloud is the good case, not a degraded copy of one.
 
-**What a manual has instead is reach.** [`manuals.md`](manuals.md) has it: a house holds so many
+**What a manual has instead is reach.** [`manuals.md`](../climbing/manuals.md) has it: a house holds so many
 copies and no more, and reproduction needs a master. **A book scales to forty people; a person
 scales to whoever they have hours for** - which is why the manual is still the thing worth
-stealing, and why it is a tracked object with provenance in [`items.md`](items.md) while the
+stealing, and why it is a tracked object with provenance in [`items.md`](../things/items.md) while the
 knowing of it is not.
 
 **And at the Court the sharing is the reason the place exists**, which
-[`past-the-ceiling.md`](past-the-ceiling.md) sets out in full: everybody shares freely, it is
+[`past-the-ceiling.md`](../climbing/past-the-ceiling.md) sets out in full: everybody shares freely, it is
 *"why the Court can go where it goes"*, and **the scarce thing there is not knowledge but
 people's hours.** Read it there rather than here.
 
@@ -425,7 +425,7 @@ knowledge above, which no house can stop leaving - and an archive: `crossings.ts
 their records are good and *"that is not incidental to their strength - it is their strength"*,
 which is why their depletion is medium rather than terminal at four thousand four hundred years.
 Every other institution's decline includes a component of simple forgetting. Theirs does not.
-See [`past-the-ceiling.md`](past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it)
+See [`past-the-ceiling.md`](../climbing/past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it)
 for its selection and its ground.
 
 **The recognition consequence is the part that belongs here:** every member arrived trained

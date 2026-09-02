@@ -5,8 +5,8 @@
 Everything in the world that can be held. Manuals, pills, artifacts, materials, the
 comprehension pieces that are gone once understood.
 
-Read alongside [`economy.md`](economy.md), which covers price, ownership and provenance, and
-[`manuals.md`](manuals.md), which covers books as a special case of everything below.
+Read alongside [`economy.md`](./economy.md), which covers price, ownership and provenance, and
+[`manuals.md`](../climbing/manuals.md), which covers books as a special case of everything below.
 
 <!-- tier: 3 -->
 
@@ -325,7 +325,7 @@ a beginner with a minor wound fixes it in an afternoon, and somebody high up wit
 is facing something genuinely hard to obtain. The second failing is not the system breaking -
 it is why sects, favours and inheritances matter.
 
-Above the line, [`economy.md`](economy.md)'s rule applies unchanged: the top-tier repair does not
+Above the line, [`economy.md`](./economy.md)'s rule applies unchanged: the top-tier repair does not
 carry a price, it moves on a favour owed or on barter or not at all.
 
 **And a cure being rare is never the same as a cure being invisible.** Whatever cannot be had
@@ -382,13 +382,13 @@ supply in the world is what has been sent - finite, shrinking, and one fewer eve
 anybody spends one.
 
 The exception is a single event and it is catastrophic for the one who performs it: an
-immortal may come down and will it. [`immortals.md`](immortals.md) is the authority on that
+immortal may come down and will it. [`immortals.md`](../climbing/immortals.md) is the authority on that
 crossing and on how long it can last, which is a matter of breaths. It costs the descending
 immortal cultivation condensed over ages, it is one of the few ways an immortal actually
 dies, and **it holds for every immortal-grade medicine without exception.** Nothing else
 produces one.
 
-**The catalog is [`../../src/data/cultivation/immortal-items.ts`](../../src/data/cultivation/immortal-items.ts),
+**The catalog is [`../../src/data/cultivation/immortal-items.ts`](../../../src/data/cultivation/immortal-items.ts),
 and it is the authority.** It is deliberately not summarised here, because two copies of a
 fact are two things to keep true - see [the almanac and the ledger](#the-almanac-and-the-ledger).
 What a reader of this file needs to know before going there:

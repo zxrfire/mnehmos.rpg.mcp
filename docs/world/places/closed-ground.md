@@ -5,7 +5,7 @@
 The category, the economy behind it, and the clock that drives both.
 
 This document is the home of the **inheritance economy**. It used to live in
-[`immortals.md`](immortals.md) under "What immortals leave behind", and it was filed there
+[`immortals.md`](../climbing/immortals.md) under "What immortals leave behind", and it was filed there
 for a reason that no longer holds: divesting before the end is something people do at
 **every rank**, and an ascension is only the largest instance. Leaving it under immortals
 made the ordinary case look like a footnote to the exceptional one, which is backwards.
@@ -41,7 +41,7 @@ Two sub-terms, for the ends of the scale, and they are what people in the world 
 | **a shut cave** | One room, one door, one person, a lifespan that ran out behind it. The smallest thing that qualifies and the commonest. |
 | **an empty seat** | A house's mountain with nobody in it. Halls, wards, a road that used to go there, and more than one person's worth of history. |
 
-Code: [`RuinCharacterSchema` and `WHY_CLOSED_GROUND`](../../src/data/cultivation/inheritance-trials.ts).
+Code: [`RuinCharacterSchema` and `WHY_CLOSED_GROUND`](../../../src/data/cultivation/inheritance-trials.ts).
 
 ---
 
@@ -196,7 +196,7 @@ the past infinite, and the past is the one thing that is not. Discovery keeps ha
 
 ## Formations weaken, and that is the clock
 
-Code: [`how-far-gone-a-formation-is.ts`](../../src/engine/world/how-far-gone-a-formation-is.ts).
+Code: [`how-far-gone-a-formation-is.ts`](../../../src/engine/world/how-far-gone-a-formation-is.ts).
 
 Two things decide how long a formation holds and no others: **who set it** and **how long
 ago**. There is no faction branch and no site-specific constant - a patriarch's seal and a
@@ -272,7 +272,7 @@ mountain becomes reachable. That is a good century for somebody.
 
 ## The reserve, and why it does not run dry
 
-Code: [`how-the-world-keeps-finding-more-ruins.ts`](../../src/engine/world/how-the-world-keeps-finding-more-ruins.ts).
+Code: [`how-the-world-keeps-finding-more-ruins.ts`](../../../src/engine/world/how-the-world-keeps-finding-more-ruins.ts).
 
 The design owner's model, exactly:
 
@@ -319,12 +319,12 @@ and has not exhausted its provinces.
 
 ## See also
 
-- [`immortals.md`](immortals.md) - what crossing the Lid is, and why an ascension divests.
-- [`sects.md`](sects.md) - how a crossing's recency drives prestige, and how a sect an
+- [`immortals.md`](../climbing/immortals.md) - what crossing the Lid is, and why an ascension divests.
+- [`sects.md`](../houses/sects.md) - how a crossing's recency drives prestige, and how a sect an
   ancestor left is holding a parting gift.
-- [`economy.md`](economy.md) - what separates an inheritance from a grave, which is a
+- [`economy.md`](../things/economy.md) - what separates an inheritance from a grave, which is a
   profession's worth of distinction.
-- [`ruins.md`](ruins.md) - the authoring guide for a single site: the four axes,
+- [`ruins.md`](./ruins.md) - the authoring guide for a single site: the four axes,
   convergence windows, and the variety test.
-- [`the-late-age.md`](the-late-age.md) - what made the deep past, and why it cannot be
+- [`the-late-age.md`](../history/the-late-age.md) - what made the deep past, and why it cannot be
   made again.

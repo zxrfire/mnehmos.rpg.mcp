@@ -41,7 +41,7 @@
  *
  * That is why {@link Harvest} is a TRACKED object and never counted stock.
  * AGENTS.md: counted stock has a price and no story. This has a provenance, and
- * **the provenance is the crime.** `docs/world/items.md`'s *holding is a
+ * **the provenance is the crime.** `docs/world/things/items.md`'s *holding is a
  * signature* says a stolen art is evidence for as long as you go on using it;
  * this is worse, because it is evidence that requires you to do nothing at all.
  *
@@ -79,7 +79,7 @@
  * ERASING IT
  * ═════════════════════════════════════════════════════════════════════════
  *
- * The raw thing is evidence. `docs/world/items.md`'s *holding is a signature*
+ * The raw thing is evidence. `docs/world/things/items.md`'s *holding is a signature*
  * applies at full strength to a core in a pouch: somebody carrying one is
  * carrying a question. **A finished object is not**, and not because anybody
  * lied - the working destroyed what identified it, and spirit beasts give the
@@ -137,7 +137,7 @@
  *
  * A row reads *"Marrow, heaven grade"*. It does not read as somebody's body.
  * The provenance is a separate fact carried alongside it, in the record and the
- * description, exactly where `docs/world/items.md` already puts a tracked
+ * description, exactly where `docs/world/things/items.md` already puts a tracked
  * object's history - and there are three states of it, of which the middle one
  * is where the game is:
  *

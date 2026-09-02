@@ -2,7 +2,7 @@
 
 # The Ancient Tier
 
-An authoring guide, in the shape of [`making-places-different.md`](making-places-different.md).
+An authoring guide, in the shape of [`making-places-different.md`](../places/making-places-different.md).
 Read it before you add anything to a ruin.
 
 **The failure mode this exists to prevent:** *ancient* collapsing into *better*. A sealed
@@ -12,7 +12,7 @@ swapped. If the reward for opening a door two ages old is a sword with a bigger 
 it, nothing about the past was different. It was just earlier.
 
 The material for all of this lives in
-[`../../src/data/cultivation/lost-ages.ts`](../../src/data/cultivation/lost-ages.ts).
+[`../../src/data/cultivation/lost-ages.ts`](../../../src/data/cultivation/lost-ages.ts).
 Every object it names is an ordinary row in an ordinary catalog.
 
 ## Sections
@@ -214,7 +214,7 @@ The knowledge survived; the inputs did not.
 This is a far better scarcity model than "old things are better", and the **recipe being
 public makes the loss sharper**. A house can read exactly what it can no longer make, and
 price it to the stone. That is a much more interesting kind of poverty than not knowing, and
-it is [`the-late-age.md`](the-late-age.md)'s *library they can no longer read* - except
+it is [`the-late-age.md`](./the-late-age.md)'s *library they can no longer read* - except
 worse, because they **can** read it.
 
 The mechanism in the catalog is one set membership and nothing else. `EXTINCT_HERB_IDS` in
@@ -449,7 +449,7 @@ the way in.
 
 **It is one object.** For a short while this catalog carried two: the existing pill and a
 separate "thousand-year medicine" added beside it. They were always the same thing, and two
-rows for one object is the parallel-catalog mistake [`../../AGENTS.md`](../../AGENTS.md)
+rows for one object is the parallel-catalog mistake [`../../AGENTS.md`](../../../AGENTS.md)
 forbids, committed where it does the most damage - nobody in play could have told them
 apart. The second row is retired.
 
@@ -588,7 +588,7 @@ does not encounter ancient arts, meets nobody practising one, and has no reason 
 the category exists. It becomes visible as they rise: first a rumour, then something an elder
 mentions without explaining, then a thing they can watch somebody do.
 
-That is [`discovery.md`](discovery.md) applied to objects rather than institutions, and its
+That is [`discovery.md`](../houses/discovery.md) applied to objects rather than institutions, and its
 ladder - `unaware → whisper → named → placed → encountered → known` - is the right shape for
 how a player should learn that any of this exists.
 
@@ -632,7 +632,7 @@ before they could use it.**
 
 <!-- tier: 3 -->
 
-Per [`../../AGENTS.md`](../../AGENTS.md): **no arithmetic in a lore file.** An object made in
+Per [`../../AGENTS.md`](../../../AGENTS.md): **no arithmetic in a lore file.** An object made in
 a richer age is an ordinary row with an ordinary `power`, ordered against everything else by
 the same resolver. What makes it remarkable is that nothing can produce another.
 
@@ -668,9 +668,9 @@ If any of them is hard, the thing is not finished.
 
 <!-- tier: 3 -->
 
-- [`the-late-age.md`](the-late-age.md) - why the world is poorer than it was, and what a sealed ruin is
-- [`making-places-different.md`](making-places-different.md) - the same argument, applied to regions
-- [`discovery.md`](discovery.md) - the awareness ladder that keeps this tier out of sight from below
-- [`escapes.md`](escapes.md) - the routes past a manual's ceiling; an abandoned road is one of them
-- [`immortals.md`](immortals.md) - what crosses the Lid, and what it turns out depended on the ground
-- [`../../src/data/cultivation/lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) - the catalog side of everything here
+- [`the-late-age.md`](./the-late-age.md) - why the world is poorer than it was, and what a sealed ruin is
+- [`making-places-different.md`](../places/making-places-different.md) - the same argument, applied to regions
+- [`discovery.md`](../houses/discovery.md) - the awareness ladder that keeps this tier out of sight from below
+- [`escapes.md`](../writing/escapes.md) - the routes past a manual's ceiling; an abandoned road is one of them
+- [`immortals.md`](../climbing/immortals.md) - what crosses the Lid, and what it turns out depended on the ground
+- [`../../src/data/cultivation/lost-ages.ts`](../../../src/data/cultivation/lost-ages.ts) - the catalog side of everything here

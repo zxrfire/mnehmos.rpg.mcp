@@ -1,7 +1,7 @@
 /**
  * Who is actually standing on the four mountains, and how the world sees them.
  *
- * The doc half of this is `docs/world/past-the-ceiling.md`, "The Hollow Court
+ * The doc half of this is `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court
  * is the exception to all of it" - the age cap as a rate test, the vein, why an
  * extra member costs every existing one. This file is who is standing there and
  * what the province believes about them; the seats above them are

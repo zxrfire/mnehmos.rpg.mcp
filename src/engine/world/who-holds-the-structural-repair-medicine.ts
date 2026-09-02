@@ -22,7 +22,7 @@
  * THIS IS NOT A SECOND INVENTORY. It is the same `ObjectRecord` table the
  * artifacts, the manuals and the barter pills live in, read through a filter.
  * A parallel possessions store for one category of object is the exact mistake
- * `docs/world/items.md` warns about, and it would mean nothing downstream ever
+ * `docs/world/things/items.md` warns about, and it would mean nothing downstream ever
  * noticed a dose moving, because nothing downstream reads a second table.
  *
  * ═══════════════════════════════════════════════════════════════════════════

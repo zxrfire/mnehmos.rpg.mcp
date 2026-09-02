@@ -1,6 +1,6 @@
 <!-- tier: 3 -->
 
-# Moved to [`past-the-ceiling.md`](past-the-ceiling.md)
+# Moved to [`past-the-ceiling.md`](../climbing/past-the-ceiling.md)
 
 "Escapes" was the wrong word and it was confusing two different things.
 
@@ -14,7 +14,7 @@ the end of a book and need the next one, and the routes are ways of *acquiring*
 it - a later volume, a teacher, a house's shelf, writing one yourself.
 
 The engine module was renamed for the same reason: `escapes.ts` is now
-[`acquisition.ts`](../../src/engine/cultivation/acquisition.ts), which is what
+[`acquisition.ts`](../../../src/engine/cultivation/acquisition.ts), which is what
 its own exports were already called.
 
 This stub exists so links in files under other agents' hands do not break. Delete

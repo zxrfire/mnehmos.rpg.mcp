@@ -12,7 +12,7 @@
  * inventing an ACTION; this stops it inventing a THING to do it to.
  *
  * ── And a third gate: knowledge ───────────────────────────────────────────
- * Existing is not enough. docs/world/discovery.md: never reference an entity
+ * Existing is not enough. docs/world/houses/discovery.md: never reference an entity
  * the player has no knowledge record for. So resolution of people, factions and
  * places is scoped to a `KnowledgeScope` - what this cultivator has heard of,
  * plus whoever is physically standing in front of them. A sect the player has
@@ -24,7 +24,7 @@
  * the note on `KnownEntityKind` for why.
  *
  * ── And a fourth: structure ───────────────────────────────────────────────
- * docs/world/tone.md: nobody tells the protagonist how anything works. Knowing
+ * docs/world/writing/tone.md: nobody tells the protagonist how anything works. Knowing
  * that a sect exists is not knowing that it admits from ordinal 3, that its
  * ranks run Barrow Hand to Company Master, or that it is neutral rather than
  * righteous - those are schema categories, and a category handed to a narrator
@@ -458,7 +458,7 @@ export function resolveCultivator(
 
     // ── what the name is worth ──
     //
-    // `docs/world/trust.md` puts names third in the hierarchy - below the arts
+    // `docs/world/houses/trust.md` puts names third in the hierarchy - below the arts
     // and below the objects - and this is the whole of what that rung buys: a
     // surname that carries a house on its own, which almost none do. Reading a
     // face gives nothing; reading a name gives corroboration at best.

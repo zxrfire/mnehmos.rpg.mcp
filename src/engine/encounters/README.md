@@ -131,7 +131,7 @@ you - and this layer does not get to sell it twice.
 
 ## Encountering something from above
 
-`docs/world/discovery.md` asks for a particular texture, and it is delivered by
+`docs/world/houses/discovery.md` asks for a particular texture, and it is delivered by
 the regard bands rather than by a rule about who is important:
 
 - band `unreachable` or `overmatched` on the **threat** gate -> stance `above`.
@@ -281,7 +281,7 @@ legible before somebody accepts it: a guest is away from their own protection
 among people who owe them nothing.
 
 **And a guest keeps their own house.** Not a transfer, not a secondment, not a
-defection - so `docs/world/past-the-ceiling.md`'s departure economy does not fire
+defection - so `docs/world/climbing/past-the-ceiling.md`'s departure economy does not fire
 at all, and the host is not poaching. What the home house has instead is a view,
 read off two columns it already carries: it `forbids` a place at somebody it is
 feuding or contending with, `sends` somebody where its own production record says

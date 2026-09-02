@@ -37,7 +37,7 @@ connection, or unfinished goals. Cultivation is one axis among many, and it is n
 layer's axis.
 
 The design reason is in
-[`../../../docs/world/people.md`](../../../docs/world/people.md) - "importance is not
+[`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md) - "importance is not
 cultivation," and characters must persist after they are surpassed. A ranking query is how
 that rule quietly stops being true.
 
@@ -118,7 +118,7 @@ year 700   it meets the rescuer's descendant, and an old favour becomes load-bea
 
 Nobody involved needs to know the original connection. **The world remembers it.** A
 house that studies karma is one of the few things that can see the whole thread - see
-[`../../../docs/world/dao-houses.md`](../../../docs/world/dao-houses.md).
+[`../../../docs/world/houses/dao-houses.md`](../../../docs/world/houses/dao-houses.md).
 
 Severance exists - concealing a connection, cutting one, transferring or redirecting
 consequence, erasing traces, breaking inheritance. It is rare, dangerous, and never free.
@@ -172,7 +172,7 @@ of that is in [`../cultivation/README.md`](../cultivation/README.md).
 ### The ladder of knowing
 
 `discovery.ts` implements the six stages
-[`docs/world/discovery.md`](../../../docs/world/discovery.md) specifies:
+[`docs/world/houses/discovery.md`](../../../docs/world/houses/discovery.md) specifies:
 
 ```text
 unaware        the name has never been spoken near you
@@ -351,5 +351,5 @@ model above.
 - [`../README.md`](../README.md) - implementation philosophy and the five pillars
 - [`../world/README.md`](../world/README.md) - ground truth, the surviving record, lineage
 - [`../../storage/README.md`](../../storage/README.md) - how these tables are migrated
-- [`../../../docs/world/people.md`](../../../docs/world/people.md) - why NPCs are protagonists of their own lives
-- [`../../../docs/world/dao-houses.md`](../../../docs/world/dao-houses.md) - the houses that study these principles directly
+- [`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md) - why NPCs are protagonists of their own lives
+- [`../../../docs/world/houses/dao-houses.md`](../../../docs/world/houses/dao-houses.md) - the houses that study these principles directly

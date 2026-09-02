@@ -2,7 +2,7 @@
  * False Immortals: what they do with the time, the office that used to exist,
  * and the two ways they leave the world.
  *
- * `docs/world/immortals.md` covers the Immortal World as a place, what crosses
+ * `docs/world/climbing/immortals.md` covers the Immortal World as a place, what crosses
  * the Lid and the two crossings nobody makes. It does NOT cover the office, the
  * vacancy, the offer, or how a seat is identified - those are here and nowhere
  * else. This is the largest single body of design rationale in the catalog that

@@ -423,7 +423,7 @@ export function recordRankGained(
 // POUCH - what a cultivator carries
 //
 // Pills and herbs are COUNTED stock: a holder and a number, and nobody cares
-// which one you took. An artifact is not. `docs/world/items.md` draws the line
+// which one you took. An artifact is not. `docs/world/things/items.md` draws the line
 // on whether this specific object moving is an event somebody should be able to
 // find out about two centuries later, and for a rated object it always is.
 //
@@ -1591,7 +1591,7 @@ export function describeCultivator(
             // NOT a mortality figure any more, and it is left in this block
             // because the panel is where a narrator looks for "what is wrong
             // with this person". A channel wound is a torn muscle: it impairs
-            // and it does not kill. See `docs/world/injuries.md`.
+            // and it does not kill. See `docs/world/climbing/injuries.md`.
             crippledInjuryThreshold: CRIPPLING_UNTREATED_INJURIES,
             atCrippledInjuryThreshold: untreated >= CRIPPLING_UNTREATED_INJURIES,
             // How long the channels have been open, replacing a countdown to a

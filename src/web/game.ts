@@ -1756,7 +1756,7 @@ export class GameService {
     /**
      * What each cultivator has heard of.
      *
-     * The enforcement behind docs/world/discovery.md: everything that reaches a
+     * The enforcement behind docs/world/houses/discovery.md: everything that reaches a
      * prompt or an entity resolver is filtered through this first, so the
      * narrator is never handed a name the player has not earned.
      */
@@ -5137,7 +5137,7 @@ ${noticed}`;
      * WHOSE ART THAT WAS.
      *
      * The trust hierarchy's strongest check, put to the character by the player.
-     * `docs/world/trust.md` says a house's arts are the closest thing it has to
+     * `docs/world/houses/trust.md` says a house's arts are the closest thing it has to
      * an identity and that watching somebody cultivate goes straight to the
      * thing in question - and the whole of it was unaskable, with both of the
      * numbers that decide the answer sitting in the database and no question

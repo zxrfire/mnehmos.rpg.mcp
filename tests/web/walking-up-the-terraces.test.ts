@@ -49,7 +49,7 @@ const WORLD_SEED = 'walking-up-the-terraces-world';
  * bar, so it is nameable to nobody at birth anywhere - including a child of
  * the Low Fall. Measured: travelling to the gorge and asking "what sects are
  * there" still returned only the two houses from the province they had left.
- * The ruling that needs making is written up in `docs/world/origin.md`.
+ * The ruling that needs making is written up in `docs/world/houses/origin.md`.
  */
 async function aNobodyInTheGorge(runSeed: string, worldSeed: string = WORLD_SEED) {
     const harness = await makeGameInWorld({
@@ -67,7 +67,7 @@ async function aNobodyInTheGorge(runSeed: string, worldSeed: string = WORLD_SEED
     // stores. You are inside and you are not drawing on what is in there."
     // Both are load-bearing prose and they cannot both be right about the
     // Pavilion's intake. Reported rather than resolved - see the note in
-    // `docs/world/origin.md`. Until it is settled the engine charges the
+    // `docs/world/houses/origin.md`. Until it is settled the engine charges the
     // probationer, so the purse is stocked here to arrange the span.
     new CultivatorRepository(harness.repos.db)
         .update(cultivator.id, { spiritStones: 500_000 });

@@ -119,7 +119,7 @@ export function resetNarratorCore(): void {
 /**
  * The discovery rule, at Tier 1 force.
  *
- * From docs/world/discovery.md. A Qi Condensation cultivator in a village does
+ * From docs/world/houses/discovery.md. A Qi Condensation cultivator in a village does
  * not know the ancient sects exist - not "has not visited", does not know the
  * names - and that is the accurate state of almost everyone in the world. A
  * model will drop an ancient faction's name into a description because the name

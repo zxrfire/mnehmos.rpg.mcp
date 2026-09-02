@@ -250,7 +250,7 @@ export interface DerivedView {
      *
      * This replaced `turnsUntilBleedOut` and `bleedOutTurns`, which were a
      * countdown to a death that no longer happens. A channel wound is a torn
-     * muscle and does not kill anybody (`docs/world/injuries.md`), so the
+     * muscle and does not kill anybody (`docs/world/climbing/injuries.md`), so the
      * honest number to give a client is how long this has been going on rather
      * than how long is left.
      */

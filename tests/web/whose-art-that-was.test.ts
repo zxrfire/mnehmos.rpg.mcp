@@ -1,7 +1,7 @@
 /**
  * WHOSE ART THAT WAS - the trust hierarchy's strongest check, played.
  *
- * `docs/world/trust.md` says a house's arts are the closest thing it has to an
+ * `docs/world/houses/trust.md` says a house's arts are the closest thing it has to an
  * identity, and that nothing in the engine could look at one being performed
  * and say whose it was. This file is the verb that closes that, measured the
  * way a player reaches it: by typing the sentence.
