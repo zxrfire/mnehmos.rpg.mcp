@@ -87,6 +87,10 @@ import {
     type WeaponExposure,
     type WeaponUnmade
 } from './whether-a-weapon-survives-being-used.js';
+import {
+    ORDINARILY_YIELDS,
+    type WhetherTheyYield
+} from './how-far-you-went-to-make-them-comply.js';
 import type { CultivationRNG } from './rng.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -1348,6 +1352,30 @@ export type ConfrontationOutcome =
     | 'body_destroyed'
     /** The finishing requirement for this person was actually met. */
     | 'lethal'
+    /**
+     * Beaten, alive, and yielding.
+     *
+     * The sixth, and the only outcome that leaves you with a PERSON rather than
+     * a corpse or an empty road. Design owner: *"I should be able to force
+     * someone to submit to me."* What makes it worth having is what it leaves
+     * standing - somebody who owes you, is under you, can be made to do
+     * something, and will remember it - and that is a live relationship where
+     * every other ending is the end of one.
+     *
+     * It is reached from `goal: 'coerce'` and ONLY when the loser actually
+     * yields. Submission is not what losing means: whether somebody kneels is a
+     * fact about who they are, read by the caller off records the world already
+     * keeps, and somebody who would rather die does, which turns a fight you
+     * opened meaning to take somebody alive into a body you did not want. See
+     * `ConfrontationIntent.yields`.
+     *
+     * What KIND of thing you are left with is not decided here and must not be.
+     * Below `BEAST_CHANGE_ORDINAL` the thing that yielded is an animal you now
+     * have; at or above it, it is a person under an obligation, which is an
+     * indenture. The act is identical and this module has no opinion about what
+     * shape was standing there - the caller holds the row and decides.
+     */
+    | 'submission'
     /** Neither could finish it. Both are worse off and nothing is settled. */
     | 'stalemate';
 
@@ -1362,10 +1390,63 @@ export interface ObligationSeed {
 }
 
 export interface ConfrontationIntent {
-    /** What the aggressor is actually trying to do. Decides which endings are reachable. */
-    goal: 'kill' | 'subdue' | 'drive_off' | 'humiliate';
+    /**
+     * What the aggressor is actually trying to do. Decides which endings are
+     * reachable.
+     *
+     * `coerce` is the fifth and it is the `done` rung of
+     * `how-far-you-went-to-make-them-comply.ts`: harm applied to get compliance
+     * rather than to end anybody. It wants them complying and still standing,
+     * where `kill` wants them stopped - which is the whole of the difference,
+     * because the blows in between are the same blows. It reaches `submission`
+     * when they yield and the ordinary killing outcomes when they will not.
+     */
+    goal: 'kill' | 'subdue' | 'drive_off' | 'humiliate' | 'coerce';
     /** Whether the loser will break off rather than be finished. Usually yes. */
     willWithdraw?: boolean;
+    /**
+     * Whether the beaten party yields rather than being finished.
+     *
+     * READ BY THE CALLER, off records the world already keeps - a person's
+     * wants and their standing toward whoever is in the room, a beast's own
+     * nature. There is deliberately no will-to-submit number anywhere in the
+     * engine and there must not be one: submission is a fact about who somebody
+     * is, and every fact about who somebody is already lives somewhere.
+     *
+     * Omitted reads as `ORDINARILY_YIELDS`, because most people beaten badly
+     * enough do. That is a default and not a rule, which is what keeps the
+     * interesting case reachable: somebody who would rather die is finished
+     * instead, and the aggressor gets a body they did not want.
+     */
+    yields?: WhetherTheyYield;
+    /**
+     * How the fight was opened.
+     *
+     * `from_concealment` is a different act from squaring up, and the
+     * difference is what it buys and what it costs socially rather than a
+     * second combat system. Two things change, both of them inside the rules
+     * that already exist:
+     *
+     *   the first exchange carries the `ambush` edge, which
+     *   `EDGE_VALUES` has priced at 1.5 since before this field existed and
+     *   whose own comment says "Once. Never twice against the same person" -
+     *   so it is applied to the opening exchange and to no other.
+     *
+     *   the target does not swing back in the opening round. They did not know
+     *   they were in a fight, which is the whole content of concealment, and it
+     *   is worth more than the multiplier.
+     *
+     * What it does NOT change is what a blow does to a body. Softening or
+     * hardening the physics on the strength of how the fight started would be
+     * two sets of rules reachable by choosing your words. What it changes
+     * besides the opening is what the deed says about you, which is the
+     * caller's business and is where an ambush actually costs something.
+     *
+     * NO NEW DRAW when this is absent or `open`: the seeded sequence of every
+     * existing caller is byte-identical, which is what makes the change
+     * measurable at all.
+     */
+    opening?: 'open' | 'from_concealment';
 }
 
 export interface ConfrontationContext extends ExchangeContext {
@@ -1503,14 +1584,32 @@ export function resolveConfrontation(
     let aggressorLive = aggressorInput;
     let defenderLive = defenderInput;
 
+    // ── OPENING FROM CONCEALMENT ─────────────────────────────────────────
+    //
+    // Applied to the first round and to no other. `EDGE_VALUES.ambush` already
+    // carries the reason in its own comment - "Once. Never twice against the
+    // same person" - so the edge is added to the opening exchange, and the
+    // target, who did not know they were in a fight, does not swing back in it.
+    //
+    // `assessEdges` de-duplicates, so an aggressor who was already carrying an
+    // ambush edge from somewhere else is not paid for it twice.
+    const fromConcealment = ctx.intent.opening === 'from_concealment';
+    const openingEdges: readonly Edge[] = fromConcealment
+        ? [...(ctx.attackerEdges ?? []), 'ambush']
+        : (ctx.attackerEdges ?? []);
+
     for (let i = 0; i < MAX_EXCHANGES; i++) {
         // The aggressor swings, then the defender swings back if still standing.
         // Held as WHO is striking rather than as the priced pair, so a weapon
         // lost on the first swing of a round is already gone on the second.
+        const opening = i === 0;
         const order: Array<[boolean, AttackVector, readonly Edge[], readonly Edge[]]> = [
-            [true, vector, ctx.attackerEdges ?? [], ctx.defenderEdges ?? []],
+            [true, vector, opening ? openingEdges : (ctx.attackerEdges ?? []), ctx.defenderEdges ?? []],
             [false, 'body', ctx.defenderEdges ?? [], ctx.attackerEdges ?? []]
         ];
+        // The target had no round. Nothing is rolled for them, which is why an
+        // open fight's seeded sequence is untouched by this field existing.
+        if (fromConcealment && opening) order.pop();
 
         for (const [aggressorStrikes, strikeVector, strikerEdges, targetEdges] of order) {
             const striker = aggressorStrikes ? aggressor : defender;
@@ -1583,7 +1682,25 @@ export function resolveConfrontation(
     const requirement = loserPower.kill;
 
     // ── RULE 5 and RULE 4. What actually happened to the loser. ──
-    if (outcome !== 'withdrawal') {
+    //
+    // COERCION IS RESOLVED HERE AND NOT IN `finishOutcome`, because it is the
+    // one goal whose ending is not decided by the goal. The aggressor wanted
+    // them complying and still standing; whether that is what they get is a
+    // fact about the person they beat.
+    //
+    // It also overrides a withdrawal, which is the point at which somebody
+    // beaten decides. Left alone, `willWithdraw` would have ended almost every
+    // coercion as somebody running away, which is the one thing a coercion is
+    // not for.
+    const yields = ctx.intent.yields ?? ORDINARILY_YIELDS;
+    const coercing = ctx.intent.goal === 'coerce' && winnerId === aggressorInput.id;
+    if (coercing) {
+        // They yield, or they do not and the fight finishes them. A body the
+        // aggressor did not want is the honest price of having gone this far
+        // against somebody who would rather die.
+        outcome = yields.willYield ? 'submission' : finishOutcome('kill', vector, requirement);
+        if (!yields.willYield) hp[loserInput.id] = 0;
+    } else if (outcome !== 'withdrawal') {
         outcome = finishOutcome(ctx.intent.goal, vector, requirement);
     }
 
@@ -1646,8 +1763,10 @@ function finishOutcome(
     if (goal === 'subdue') return 'capture';
     if (goal === 'humiliate') return 'humiliation';
     if (goal === 'drive_off') return 'withdrawal';
-
-    // goal === 'kill'
+    // A coercion that reaches here is one whose target would not yield, and the
+    // caller has already asked and been told so. What is left is a fight being
+    // finished, which is what the caller passes 'kill' for.
+    if (goal === 'coerce') return 'submission';
     if (vector === 'soul') {
         // Already checked that the art reaches; a soul that can be reached and
         // is ended is ended, whatever the body is doing.
@@ -1695,6 +1814,28 @@ function seedObligations(
                 cause: 'other',
                 severity: 'grave',
                 description: `${loserName} was taken alive.`
+            }];
+        case 'submission':
+            // Heavier than a capture, and the reason is the whole difference
+            // between the two. Being taken is something done to a body;
+            // yielding is a thing the person themselves did, in front of
+            // whoever was there, and they cannot tell themselves afterwards
+            // that they had no choice - they had one and this is the one they
+            // took. The grudge that produces is the durable kind.
+            //
+            // The compliance is NOT modelled here. What somebody now owes and
+            // for how long is the obligation layer's, and holding a person for a
+            // term is an indenture; this seeds the grievance that comes with it,
+            // which is the half that outlives the term.
+            return [{
+                kind: 'grudge',
+                holderId: loserId,
+                subjectId: winnerId,
+                cause: 'humiliation',
+                severity: 'grave',
+                description:
+                    `${loserName} was beaten and yielded rather than be finished, and is now `
+                    + 'under the person who beat them.'
             }];
         case 'withdrawal':
             return [{
@@ -1749,6 +1890,10 @@ function describeOutcome(
             return 'Taken alive. What happens next is a negotiation, and the terms are not theirs.';
         case 'humiliation':
             return 'Beaten and let go, deliberately, where it could be seen. The cheapest way to make a permanent enemy.';
+        case 'submission':
+            return 'Beaten, alive, and yielding. The only ending that leaves somebody standing who is now under ' +
+                'the person who beat them: they owe something, they can be made to do something, and they will ' +
+                'remember every part of it.';
         case 'stalemate':
             return 'Neither could finish it. Both are hurt, both are still standing, and both now know exactly ' +
                 'how the other fights.';
@@ -1834,10 +1979,13 @@ function describeOneSided(
         case 'humiliation':
             return 'Put down without effort, deliberately, where it could be seen. Nothing was risked and ' +
                 'everything was demonstrated, which is the cheapest way to make a permanent enemy.';
+        case 'submission':
+            return 'Made to kneel, without a contest. They yielded because there was nothing else on the table, ' +
+                'and they are alive, under the person who did it, and entirely clear about the arithmetic.';
         case 'crippled':
         case 'stalemate':
         case 'no_contest':
-            // Unreachable: `oneSided` only ever mints the five above, and
+            // Unreachable: `oneSided` only ever mints the six above, and
             // `no_contest` returns before it. Kept total so a new outcome
             // cannot silently fall through to a contested-fight sentence.
             return 'Settled in one action by the stronger party, at no risk to them.';
@@ -1874,13 +2022,26 @@ function oneSided(
     }
 
     const goal = ctx.intent.goal;
-    const outcome: ConfrontationOutcome = goal === 'kill'
+    // The sixth ending, reachable from here too. Somebody several realms below
+    // you being made to kneel is the case the outcome exists for, and it was
+    // the one place it could not have happened - which would have made "I can
+    // force somebody to submit" true of peers and false of everybody the
+    // sentence obviously means.
+    //
+    // And it is refusable at this distance exactly as it is at any other. A
+    // reading that says they would rather die is believed here too, and the
+    // stronger party gets the body instead: no branch anywhere makes somebody
+    // more biddable for having been outmatched.
+    const yields = ctx.intent.yields ?? ORDINARILY_YIELDS;
+    const refusedToKneel = goal === 'coerce' && !yields.willYield;
+    const outcome: ConfrontationOutcome = goal === 'kill' || refusedToKneel
         ? finishOutcome('kill', vector, requirement)
         : goal === 'subdue' ? 'capture'
             : goal === 'humiliate' ? 'humiliation'
-                : 'withdrawal';
+                : goal === 'coerce' ? 'submission'
+                    : 'withdrawal';
 
-    if (goal === 'kill') {
+    if (goal === 'kill' || refusedToKneel) {
         hp[defenderInput.id] = 0;
     } else {
         hp[defenderInput.id] = Math.max(1, Math.floor(defenderInput.maxHp * 0.2));
@@ -3030,10 +3191,15 @@ const OUTCOME_SEVERITY: Readonly<Record<ConfrontationOutcome, number>> = {
     stalemate: 1,
     withdrawal: 2,
     humiliation: 3,
-    capture: 4,
-    crippled: 5,
-    body_destroyed: 6,
-    lethal: 7
+    // Above being taken alive and below being crippled. Somebody carried off
+    // has had something done to them; somebody who knelt DID something, in
+    // front of whoever was there, and the difference is what they have to live
+    // with afterwards. It is still short of a wound that never closes.
+    submission: 4,
+    capture: 5,
+    crippled: 6,
+    body_destroyed: 7,
+    lethal: 8
 };
 
 const FATE_FOR_OUTCOME: Readonly<Record<string, CombatantFate>> = {
