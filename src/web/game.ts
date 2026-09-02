@@ -49,6 +49,7 @@ import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birth.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
+import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
  import {
     ACTIONS_PER_FULL_SATIETY,
@@ -208,6 +209,7 @@ import {
     ensureCultivationDb,
     addToPouch,
     discoveryContextFor,
+    listCarriedArtifacts,
     listPouch,
     removeFromPouch,
     type PouchEntry,
@@ -224,6 +226,7 @@ import {
     type PendingPill,
     type TollLedgerEntry
 } from '../server/consolidated/cultivation-support.js';
+import { getArtifact } from '../data/cultivation/artifacts.js';
 import { applyTimeSkip, tollLine } from './apply.js';
 import {
     DEFAULT_BURIAL_DAYS,
@@ -241,6 +244,8 @@ import {
     DEFAULT_PETITION_INTENT,
     DEFAULT_POSTURE_INTENT,
     DEFAULT_SEAL_INTENT,
+    DEFAULT_PASSAGE_INTENT,
+    DEFAULT_OATH_INTENT,
     OFFER_INTENTS,
     PETITION_INTENTS,
     POSTURE_INTENTS,
@@ -248,6 +253,7 @@ import {
     SEAL_INTENTS,
     SITE_INTENTS,
     parseCount,
+    parseIntent,
     durationAskedFor,
     type ActionName,
     type OfferIntent,
@@ -370,6 +376,10 @@ import { PILLS, getPill } from '../data/cultivation/pills.js';
 import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout } from './asked.js';
 import {
+    selfFactFromTopic,
+    whatTheySayAboutThemselves
+} from '../engine/social/what-somebody-knows-about-themselves.js';
+import {
     THE_ANSWER_IS_TO_GO,
     THE_ANSWER_IS_TO_KEEP_SITTING,
     crossroadsView,
@@ -439,7 +449,66 @@ import {
     type TheOneBeingAsked
 } from './what-asking-this-person-for-this-would-cost-them.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
-import { createObligation, settleObligation, severityRank } from '../engine/social/grudges.js';
+import {
+    createObligation,
+    settleObligation,
+    severityRank,
+    type OathCause
+} from '../engine/social/grudges.js';
+import { brokenStatusesOn } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
+import { TECHNIQUES } from '../data/cultivation/techniques.js';
+// What is WRONG with a place, as against what is still in the ground under it.
+// The area-status layer had no importer anywhere in `src/web`, so a famine, a
+// shut pass or a worked-out district changed prices and danger and said nothing.
+import { whatIsGoingOnHere } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { stageRank } from '../engine/social/discovery.js';
+// ── THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING ───────────────
+//
+// Every module below was complete, tested and had no caller in `src/`. Each of
+// them records its own gap in its own file - `FOLD_TRAVEL_ENGINE_GAP` names
+// this handler by name - and the verbs below are what read them.
+import {
+    FOLD_GRANT,
+    FOLD_FLOOR_ORDINAL,
+    couldFoldThere,
+    priceFold,
+    type FoldFix
+} from '../engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
+import {
+    boardAt,
+    quotePassageAtACounter
+} from '../engine/world/buying-passage-at-a-measured-span-counter.js';
+import {
+    SPAN_CASH_PER_WALKED_DAY,
+    THE_SPAN_HOUSE_ID,
+    SPAN_ROUTES,
+    counterPlaceNameAt,
+    routeTo,
+    thereIsACounterAt
+} from '../engine/world/where-the-measured-span-still-answers.js';
+import {
+    bestForThisRoad,
+    couldFlyOnTheirOwnBlade,
+    priceJourney,
+    type Conveyance
+} from '../engine/world/what-a-conveyance-does-to-a-journey.js';
+import {
+    CONVEYANCES,
+    kindOfCraft,
+    requireConveyance
+} from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import { grantsHeldWith } from '../engine/world/capability.js';
+// ── AND A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
+import { openOathsHeldBy } from './encounters.js';
+import { whatWalkingOutOfItCosts } from '../engine/social-leverage/what-would-settle-an-account-this-heavy.js';
+import {
+    THE_OATHWRIGHT_HOUSE,
+    THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR,
+    WHAT_RUNNING_COSTS,
+    WHAT_THE_END_OF_A_TERM_LEAVES,
+    WHERE_IT_WAS_SWORN_MAY_MATTER_AND_NOBODY_CAN_SAY,
+    theOathwrightWouldWitnessFor
+} from '../data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.js';
 // The pricing half of the deed module, without the record-opening half. It is
 // exported separately for exactly this: a caller that already knows who holds
 // what, and needs only the weight, priced from what the deed COST against what
@@ -735,7 +804,20 @@ import { PlayLog, type LogEntry } from './log.js';
 import type { FiledOutcome, Narrator } from './narrator.js';
 import { announceMode } from './which-mode-this-session-is-playing-in.js';
 import { composeStateSummary } from './prompt.js';
-import { handleAdminManage, isAdminModeEnabled, parseAdminCommand } from '../server/consolidated/admin-manage.js';
+import {
+    handleAdminManage,
+    isAdminModeEnabled,
+    parseAdminCommand,
+    readAForcedVerb,
+    type ForcedVerbLine
+} from '../server/consolidated/admin-manage.js';
+import {
+    FORCEABLE_DECISIONS,
+    theAttemptInFlight,
+    theRollLands,
+    whatWouldArrangeIt,
+    withTheAttemptLanding
+} from '../server/consolidated/forcing-an-attempt-to-land.js';
 import {
     cultivatorView,
     derivedView,
@@ -1770,10 +1852,15 @@ const ADMIN_PREFIX = /^admin(?![a-z])[:\s-]*/i;
 /** Mirrors `admin_manage`'s own action list, for the guiding error only. */
 const ADMIN_ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
-    'set_ambient', 'set_location', 'advance_days', 'set_realm', 'audit_log',
+    'set_ambient', 'set_location', 'advance_days', 'set_realm', 'set_age',
+    'grant_progress', 'grant_knowledge', 'audit_log', 'help',
     // Not an `admin_manage` action. It is handled here because runs are
     // written here and nowhere else; see `adminReset`.
-    'reset'
+    'reset',
+    // Nor this one, and for a related reason: forcing runs an ORDINARY VERB,
+    // an ordinary verb runs inside a run, and only this file has one. See the
+    // ADMIN branch of `act`, and `forcing-an-attempt-to-land.ts` for the law.
+    '<any playable verb>'
 ] as const;
 
 /**
@@ -2099,6 +2186,13 @@ export class GameService {
         const birth = drawBirth(seed);
 
         const root = rollSpiritRoot(forStream(seed, 'creation', 'spirit_root').next());
+        // Its own named stream, beside the root and the attributes rather than
+        // inside either: a draw added to one of those would have moved every
+        // talent every existing run seed produces. Dealt once and permanent,
+        // like the two above it, and it decides no number - what it decides is
+        // whether a child can be of both parents' blood, and which of two
+        // Courts would ever have opened their door.
+        const sex = rollSex(forStream(seed, 'creation', 'sex').next());
         const attributeStream = forStream(seed, 'creation', 'attributes');
         const attributes = rollAttributes([
             attributeStream.next(),
@@ -2116,6 +2210,7 @@ export class GameService {
                 name: trimmed,
                 kind: 'pc',
                 spiritRoot: root.key,
+                sex,
                 attributes,
                 realmOrdinal: 0,
                 cultivationProgress: 0,
@@ -2291,7 +2386,13 @@ export class GameService {
      * The state returned to the client is re-read from the database after
      * phase 2 and is not touched by phase 3.
      */
-    async act(input: string): Promise<ActResult> {
+    /**
+     * @param forced Set only by the ADMIN dispatcher below, never by a caller
+     *   outside this file and never by anything a model can reach. It names the
+     *   verb, which replaces phase 1, and marks the turn as arranged so the
+     *   receipt and the audit row say so.
+     */
+    async act(input: string, forced: ForcedVerbLine | null = null): Promise<ActResult> {
         this.useOwnDb();
         const trimmed = input.trim();
         if (trimmed.length === 0) throw new GameError('Say something.');
@@ -2332,7 +2433,38 @@ export class GameService {
         // gates and never the authority rule - every action below performs a
         // real audited mutation and returns what the engine actually did.
         const admin = ADMIN_PREFIX.exec(trimmed);
-        if (admin) return await this.adminAct(trimmed.slice(admin[0].length), run, cultivator);
+        if (admin) {
+            const rest = trimmed.slice(admin[0].length);
+            // ── ADMIN <VERB> IS AN ORDINARY TURN WITH ONE ANSWER PINNED ───
+            //
+            // Not a second execution path, and the recursion is the point:
+            // everything below this line - phase 2, the crossroads, the dropped
+            // clause, the world write, phase 3, the log - runs exactly as it
+            // runs for a typed sentence. The ONLY difference is that phase 1 is
+            // skipped, because the operator named the verb, and that no model
+            // has read the line.
+            //
+            // What is decided inside is one question and it is named:
+            // `withTheAttemptLanding` opens a context that the uncertain
+            // decisions consult, every gate is left standing, and the bill is
+            // whatever the verb charges. See `forcing-an-attempt-to-land.ts`.
+            //
+            // AND IT IS BEHIND THE SAME ONE GATE AS EVERYTHING ELSE HERE.
+            // `adminAct` is what refuses when the mode is off, and the forced
+            // path does not go through it - so without this line ADMIN <verb>
+            // was reachable with ADMIN_MODE unset, which is the one thing this
+            // whole surface may never be. Falling through rather than throwing
+            // here keeps a single refusal voice: `adminAct` says it, in its own
+            // words, for every admin line there is.
+            const forced = isAdminModeEnabled() ? readAForcedVerb(rest) : null;
+            if (forced !== null) {
+                const ran = await withTheAttemptLanding(
+                    forced.verb, () => this.act(forced.sentence, forced)
+                );
+                return ran.result;
+            }
+            return await this.adminAct(rest, run, cultivator);
+        }
 
         const ambient = this.ambientFor(cultivator, run);
         this.atHand = await this.loadWorld();
@@ -2384,7 +2516,22 @@ export class GameService {
                     : null;
 
         // ── phase 1 ──
-        const plan: Plan = answered !== null
+        //
+        // Skipped outright when ADMIN named the verb. The rest of the sentence
+        // still goes through the ordinary deterministic parser, so the target,
+        // the intent, the topic and the duration are read the way they are read
+        // for anybody - what the operator settled is WHICH VERB, and that is
+        // the one thing phase 1 exists to answer.
+        const plan: Plan = forced !== null
+            ? {
+                action: {
+                    ...parseIntent(forced.sentence),
+                    action: forced.verb
+                },
+                source: 'fallback',
+                note: `ADMIN named the verb: ${forced.verb}. No model read the line.`
+            }
+            : answered !== null
             ? {
                 action: { action: answered === 'stay' ? 'cultivate' : 'wait' },
                 source: 'fallback',
@@ -2490,14 +2637,28 @@ export class GameService {
         // ── phase 3 ──
         const narration = await this.narrator.narrate(execution.facts, scene);
 
+        // ── AND A FORCED TURN SAYS SO, ABOVE THE STORY ────────────────────
+        //
+        // Written here and not in `adminAct`, because a forced turn IS an
+        // ordinary turn - everything above ran for it exactly as it runs for a
+        // typed sentence, and the only thing left to do is say what was
+        // arranged. The receipt goes in as the ENGINE's own words, the way
+        // every other admin call is filed, and the narration underneath it is
+        // untouched: the world as it now stands, told by whichever narrator
+        // this process was started with.
+        const receipt = forced === null
+            ? null
+            : this.receiptForAForcedVerb(forced, execution, after.run.id);
+
         this.log.append(run.id, [
-            { role: 'player', turn: run.turn, text: trimmed },
+            { role: 'player', turn: run.turn, text: forced === null ? trimmed : `ADMIN ${trimmed}` },
+            ...(receipt ? [{ role: 'engine' as const, turn: after.run.turn, text: receipt }] : []),
             ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
         return {
-            narration: narration.text,
+            narration: receipt === null ? narration.text : `${receipt}\n\n${narration.text}`,
             events: execution.events,
             toolCalls: [
                 routingCall(plan),
@@ -2506,6 +2667,91 @@ export class GameService {
             ],
             state: this.stateView(after.run, after.cultivator)
         };
+    }
+
+    /**
+     * What ADMIN arranged, said out of world, and written to the audit trail.
+     *
+     * Two jobs and they are the same job. It TELLS the operator which of the
+     * two things happened - the roll was decided, or the world refused before
+     * any roll arose - and it RECORDS it, because the audit rows are the admin
+     * flag and a run holding an arranged success must never reach the death
+     * ledger or the balance data as though it had earned one.
+     *
+     * The refusal half is the useful half, and the design owner asked for it in
+     * these terms: *"it should say no, you can do it by setting your realm to
+     * 29 and your age."* So it names every route it has for the refusal that
+     * actually happened, keyed on that refusal's own identity - and where there
+     * is no route it says that flatly, because a helpful-sounding alternative
+     * to an impossibility is worse than a plain no.
+     */
+    private receiptForAForcedVerb(
+        forced: ForcedVerbLine,
+        execution: Execution,
+        runId: string
+    ): string {
+        const call = execution.calls[0];
+        const refused = execution.outcome === 'refused';
+        // A tool refusal files its guiding-error code as the head of the
+        // summary; an engine refusal has only the call name. Both are the
+        // refusal's own identity rather than a reading of its prose.
+        const code = refused && typeof call?.summary === 'string'
+            ? (/^([a-z0-9_]+)/.exec(call.summary)?.[1] ?? null)
+            : null;
+
+        const lines: string[] = [`ADMIN - FORCED ${forced.verb.toUpperCase()}`];
+
+        if (!refused) {
+            const landed = [...(theAttemptInFlight()?.landed ?? [])];
+            lines.push(
+                landed.length > 0
+                    ? 'Decided by ADMIN: ' + landed
+                        .map(name => FORCEABLE_DECISIONS[name].decides)
+                        .join('; ') + '.'
+                    : 'Nothing was decided by ADMIN. This verb reached no uncertain question on ' +
+                      'this turn, so it ran exactly as ordinary play runs it.'
+            );
+            lines.push(
+                'Every gate it met, it cleared on its own. Nothing was skipped and nothing was ' +
+                'made cheaper: what the verb charges, it charged.'
+            );
+        } else {
+            const arrange = whatWouldArrangeIt(call?.name ?? '', code);
+            lines.push(
+                'Nothing was decided. The world refused before any uncertain question arose, ' +
+                'which means what stopped this was a PRECONDITION and not a roll. Forcing ' +
+                'decides an uncertain outcome; it does not make an illegal action legal.'
+            );
+            if (arrange.kind === 'route') {
+                lines.push('What would arrange it:');
+                for (const line of arrange.lines) lines.push(`    ${line}`);
+            } else if (arrange.kind === 'no_route') {
+                lines.push(`There is no arrangement of ADMIN calls that produces this. ${arrange.reason}`);
+            } else {
+                lines.push(
+                    'No route is recorded for this refusal. It is either a precondition nothing ' +
+                    'on this surface arranges or a shape the world cannot hold, and ADMIN does ' +
+                    'not guess which. ADMIN help lists what it can arrange.'
+                );
+            }
+        }
+
+        writeAdminAudit(this.repos, `force.${forced.verb}`, runId, {
+            verb: forced.verb,
+            sentence: forced.sentence,
+            spelled: forced.spelled,
+            outcome: execution.outcome,
+            decidedByAdmin: refused ? [] : [...(theAttemptInFlight()?.landed ?? [])],
+            refusedBy: refused ? (call?.name ?? null) : null,
+            refusalCode: code
+        });
+
+        lines.push(
+            'ADMIN - out of world. The paragraph after this one is not: it is the world as it ' +
+            'now stands, told by whichever narrator this process was started with. This run is ' +
+            'flagged and is excluded from the death ledger and from balance data.'
+        );
+        return lines.join('\n\n');
     }
 
     /** Seclusion, requested directly by the UI rather than through free text. */
@@ -2783,15 +3029,46 @@ export class GameService {
             case 'move':
                 return this.move(run, cultivator, ambient, action.target, action.intent ?? 'travel');
 
+            case 'ride':
+                return this.ride(run, cultivator, action.target, action.topic);
+
+            case 'fold':
+                return this.fold(run, cultivator, action.target);
+
+            case 'passage':
+                return this.passage(
+                    run, cultivator, action.target,
+                    action.intent ?? DEFAULT_PASSAGE_INTENT
+                );
+
+            case 'oath':
+                return this.oath(
+                    run, cultivator, action.target, action.intent ?? DEFAULT_OATH_INTENT,
+                    action.topic, rawInput
+                );
+
             case 'investigate':
                 return this.investigate(run, cultivator, ambient, action.target);
 
             case 'attack':
                 // `terms` reaches the consequence layer and nothing else. See
                 // the header on `attack` and on `whatFollowedTheBout`.
+                // `opening` reaches the resolver and decides who gets the first
+                // round; it decides nothing about what a blow does to a body.
                 return this.attack(
                     run, cultivator, action.target, action.intent ?? 'drive_off',
-                    action.terms ?? 'open'
+                    action.terms ?? 'open', action.opening ?? 'open'
+                );
+
+            case 'coerce':
+                // The same resolver as `attack`, at a different goal. Hands
+                // rather than words, and the aggressor wants them complying and
+                // still standing rather than stopped - see the header on
+                // `coerce` in `actions.ts` for why it is its own verb and not a
+                // second door onto `threaten`.
+                return this.attack(
+                    run, cultivator, action.target, 'coerce', 'open',
+                    action.opening ?? 'open', action.intent ?? 'submit'
                 );
 
             case 'interact':
@@ -3353,8 +3630,22 @@ ${noticed}`;
             : REGIONS.find(region => bareName(region.name) === bareName(place.name));
         const arrivedAt = worldRow?.name ?? asProvince?.name ?? place.name;
 
+        // ── AND THE ROAD IS AS LONG AS THE CATALOG SAYS IT IS ────────────
+        //
+        // This spent `SHORT_ACTION_DAYS` for every journey to anywhere, while
+        // `destinations` printed the catalog's `travelDays` beside each
+        // province - so the game told a player Kettle was eleven days away and
+        // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
+        // as the reason a fold could not be shown to save anybody anything.
+        //
+        // Only where the catalog states a figure. Nothing anywhere prices a
+        // road between two settlements of one province, and inventing a number
+        // for one is the fabricated-zero mistake `whereCouldTheyGo` records
+        // having made once already - so inside a province the flat day stands.
+        const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
+
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, SHORT_ACTION_DAYS, {
+        const skip = simulateTimeSkip(cultivator, onTheRoad, {
             seed: run.seed,
             // The row id is a randomUUID; without this the run is not
             // reproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -3370,7 +3661,7 @@ ${noticed}`;
             understanding: this.understandingFor(run, cultivator),
             // What is in the pack feeds them here too. Only seclusion tops the
             // pack up from the purse; this eats what is already carried.
-            rations: this.drawFromPack(cultivator, SHORT_ACTION_DAYS),
+            rations: this.drawFromPack(cultivator, onTheRoad),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -3412,6 +3703,913 @@ ${noticed}`;
         };
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
+    //
+    // `ride`, `fold` and `passage`, and between them they add no mechanism at
+    // all. Every piece was built, argued out and left with no caller in
+    // `src/`, and two of the three modules record their own gap in their own
+    // file - `FOLD_TRAVEL_ENGINE_GAP` names this handler by name.
+    //
+    //   the conveyance ladder     `priceJourney`, `bestForThisRoad`,
+    //                             `unsuitedFor`, `whatArrivingOnThisSays`,
+    //                             `couldFlyOnTheirOwnBlade`
+    //   folding space             `priceFold`, `foldRangeInWalkingDays`,
+    //                             `whatArrivingByFoldSays`
+    //   somebody else's span      `boardAt`, `quotePassageAtACounter`,
+    //                             `whatTheBoardDoesNotSay`
+    //
+    // ── AND THE ROAD IS PAID NOW, WHICH IS WHAT MAKES ANY OF IT MEAN ─────
+    //
+    // `FOLD_TRAVEL_ENGINE_GAP` is explicit that a saving cannot be shown to a
+    // player without printing a number the engine does not charge. It was
+    // right: `move` spent a flat day for every journey while `destinations`
+    // printed the catalog's `travelDays` beside each province, so the game
+    // told a player Kettle was eleven days away and then took them there in
+    // one. {@link daysOnTheRoadTo} is the single reader of that figure and
+    // every verb here goes through it, `move` included - so a fold that saves
+    // ten days saves ten days that were being spent.
+    //
+    // What that does NOT change: a journey the catalog does not price. Nothing
+    // anywhere states a road between two settlements of one province, and a
+    // fabricated number is the mistake `whereCouldTheyGo` records having made
+    // once already. Inside a province the flat day stands.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * What the catalog says this road costs on foot, or null where it says
+     * nothing.
+     *
+     * Null means "unpriced", never "free". Two settlements of one province
+     * have no stated road between them and never have had; so does a place the
+     * gazetteer does not contain, which is most of the ground a player can
+     * legitimately stand on.
+     */
+    private daysOnTheRoadTo(cultivator: Cultivator, destination: string): number | null {
+        const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
+        const from = requireRegion(standingOf(cultivator).regionId);
+        const toRegionId = regionIdOfPlace(destination)
+            ?? REGIONS.find(region => bare(region.name) === bare(destination))?.id
+            ?? null;
+        if (toRegionId === null || toRegionId === from.id) return null;
+
+        let shortest: number | null = null;
+        for (const link of from.connections) {
+            if (link.otherRegionId !== toRegionId) continue;
+            if (shortest === null || link.travelDays < shortest) shortest = link.travelDays;
+        }
+        return shortest;
+    }
+
+    /**
+     * What this cultivator could actually put under them for a road, best last.
+     *
+     * TWO THINGS, AND THE FLOOR. Their own blade, which is not property and
+     * cannot be bought, lent or taken; and a tracked craft they own, which is
+     * an ordinary object row with a `conveyanceId` on it. Everything else in
+     * `CONVEYANCES` is a COUNTED holding - a house has four of these and could
+     * not tell you which went to Kettle last spring - and there is nowhere in
+     * this engine that counts them for a person. See
+     * {@link A_HIRED_BEAST_IS_NOT_MODELLED}.
+     */
+    private whatTheyCouldRide(
+        cultivator: Cultivator
+    ): Array<{ conveyance: Conveyance; power: number | null }> {
+        const available: Array<{ conveyance: Conveyance; power: number | null }> = [
+            { conveyance: requireConveyance('conv-on-foot'), power: null }
+        ];
+
+        const flightArt = TECHNIQUES.find(t => t.id === 'gale-riding-sword-flight');
+        if (flightArt) {
+            const known = cultivator.knownTechniques
+                .map(id => TECHNIQUES.find(t => t.id === id))
+                .filter((t): t is NonNullable<typeof t> => t !== undefined)
+                .map(t => ({ id: t.id, subject: t.subject ?? null }));
+            const gate = couldFlyOnTheirOwnBlade({
+                realmOrdinal: cultivator.realmOrdinal,
+                known,
+                flightArt: { id: flightArt.id, requiredOrdinal: flightArt.requiredOrdinal }
+            });
+            if (gate.can) {
+                available.push({ conveyance: requireConveyance('conv-sword-flight'), power: null });
+            }
+        }
+
+        for (const row of this.atHand?.objects ?? []) {
+            if (row.possessorId !== cultivator.id) continue;
+            const kind = kindOfCraft(row);
+            if (kind) available.push({ conveyance: kind, power: row.power });
+        }
+
+        return available;
+    }
+
+    /**
+     * Spend a journey and arrive, which is the half every one of these shares.
+     *
+     * Extracted rather than repeated so that the four verbs cannot drift: the
+     * food clock, the toll, the world tick and the `witnessed` record are the
+     * same for somebody who walked, rode, folded or bought a ticket. What
+     * differs between them is only what the days were and what the arrival
+     * reads as.
+     */
+    private async arriveAfterSpending(
+        run: Run,
+        cultivator: Cultivator,
+        days: number,
+        arrivedAt: string
+    ) {
+        const spent = Math.max(1, Math.ceil(days));
+        const startDay = Math.floor(run.elapsedDays);
+        const skip = simulateTimeSkip(cultivator, spent, {
+            seed: run.seed,
+            rollIdentity: PLAYER_ROLL_IDENTITY,
+            locationId: placeName(cultivator),
+            turn: run.turn,
+            startDay,
+            options: {
+                focusMultiplier: TRAVEL_FOCUS,
+                ...this.rateTermsFor(cultivator),
+                ground: this.groundFor(cultivator)
+            },
+            understanding: this.understandingFor(run, cultivator),
+            rations: this.drawFromPack(cultivator, spent),
+            grainAbstinence: false,
+            autoBreakthrough: false,
+            randomEvents: true,
+            toll: tollConditionsFor(this.repos, cultivator)
+        });
+
+        const applied = applyTimeSkip(this.repos, {
+            before: cultivator, run, skip, location: arrivedAt
+        });
+        const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+
+        // Standing somewhere is how a place stops being a rumour, and it is
+        // also the only thing that gives a later fold a `stood` fix.
+        this.noteEncounter(
+            applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
+            'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
+        );
+
+        return { skip, applied, world };
+    }
+
+    /**
+     * Where this journey is going, or the refusal that says why it is nowhere.
+     *
+     * The same three registers `move` checks, in one place, because a verb that
+     * could travel somewhere `move` refuses would be a way round the discovery
+     * gate rather than a new way of getting there.
+     */
+    private whereThisJourneyGoes(
+        cultivator: Cultivator,
+        target: string | undefined,
+        action: ActionName
+    ): { name: string } | Execution {
+        const place = resolvePlace(target);
+        if (!place) {
+            return refused('engine.resolvePlace', action, factsForRefusal(
+                'Nowhere in particular.',
+                `You get as far as the edge of ${placeName(cultivator)} before it occurs to you `
+                + 'that you have not decided where you are going, and there is nothing out there '
+                + 'obliging enough to decide it for you.',
+                'No destination named; location unchanged and no time passed.'
+            ));
+        }
+        if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
+            return refused('engine.resolvePlace', action, factsForRefusal(
+                'No road goes there.',
+                `You ask after ${place.name} and get the look people give a name that is not a `
+                + 'place. Nobody sets you right, because nobody is sure what you meant.',
+                `Unresolved destination "${place.name}": matches no world location, no `
+                + 'occupied place and nothing this cultivator has heard of. Location unchanged, '
+                + 'no time passed.'
+            ));
+        }
+        return { name: place.name };
+    }
+
+    /** The world's own name for somewhere, which is what gets stored. */
+    private theWorldsNameFor(place: string): string {
+        const bare = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
+        const worldRow = this.atHand ? worldLocationFor(this.atHand, place) : null;
+        const asProvince = regionIdOfPlace(place)
+            ? undefined
+            : REGIONS.find(region => bare(region.name) === bare(place));
+        return worldRow?.name ?? asProvince?.name ?? place;
+    }
+
+    /**
+     * Going somewhere ON something.
+     *
+     * The conveyance layer, reached. What this does that `move` does not is
+     * ask what is under the traveller, price the road against it, and say what
+     * a watcher at the far gate reads off the arrival - which
+     * `docs/world/houses/trust.md` treats as an expensive signal and which was
+     * a figure of speech for as long as nothing produced one.
+     *
+     * It never refuses for having nothing to ride. Walking is a row in the
+     * table, it is the floor, and arriving on foot tells everybody at the gate
+     * what this party can afford exactly as loudly as arriving on a hull does.
+     */
+    private async ride(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        wanted: string | undefined
+    ): Promise<Execution> {
+        const going = this.whereThisJourneyGoes(cultivator, target, 'ride');
+        if ('facts' in going) return going;
+
+        const arrivedAt = this.theWorldsNameFor(going.name);
+        const road = this.daysOnTheRoadTo(cultivator, going.name);
+        const walkingDays = road ?? SHORT_ACTION_DAYS;
+        const available = this.whatTheyCouldRide(cultivator);
+
+        // What the sentence ASKED for, where it named something, and what
+        // actually suits the road. The two are reported separately and the
+        // second is what happens: which conveyance is right for a road is an
+        // answer the engine already owns, and `bestForThisRoad`'s whole
+        // argument is that best is not fastest.
+        const asked = wanted
+            ? CONVEYANCES.find(c => c.name.toLowerCase().includes(wanted)
+                || wanted.includes(c.name.toLowerCase().replace(/^an? /, '')))
+            : undefined;
+        const chosen = (asked && available.some(a => a.conveyance.id === asked.id)
+            ? available.find(a => a.conveyance.id === asked.id)!
+            : bestForThisRoad(available, walkingDays, 1))
+            ?? available[0];
+
+        const journey = priceJourney({
+            walkingDays,
+            conveyance: chosen.conveyance,
+            power: chosen.power,
+            heads: 1
+        });
+
+        const { skip, applied, world } = await this.arriveAfterSpending(
+            run, cultivator, journey.daysOneWay, arrivedAt
+        );
+        const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+
+        const lines: string[] = [
+            `${chosen.conveyance.name}, from ${placeName(cultivator)} to ${arrivedAt}.`,
+            road === null
+                ? 'Nothing in the catalog prices a road inside one province, so this is the '
+                    + 'short journey everything else in the game is: a day, and the day is spent.'
+                : `${road} days of road, covered in ${journey.daysOneWay}.`
+                    + (journey.daysSavedAgainstWalking > 0
+                        ? ` ${journey.daysSavedAgainstWalking} saved against walking it.`
+                        : ' Nothing saved: this is what walking costs.'),
+            journey.arrivalReads
+        ];
+        if (journey.wrongToolNote) lines.push(journey.wrongToolNote);
+        if (asked && !available.some(a => a.conveyance.id === asked.id)) {
+            lines.push(
+                `There is no ${asked.name.toLowerCase()} to be had here. What the road got `
+                + `instead is ${chosen.conveyance.name.toLowerCase()}, and it is what they have.`
+            );
+        }
+        lines.push(...applied.tollLines, ...world.lines);
+
+        const facts = factsForToolResult(
+            `${arrivedAt}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
+        );
+        facts.structure.push(
+            `priceJourney: ${chosen.conveyance.id} at power ${chosen.power ?? 'none'}, `
+            + `${walkingDays} walking day(s) -> ${journey.daysOneWay}; `
+            + `saved ${journey.daysSavedAgainstWalking}; `
+            + `available ${available.map(a => a.conveyance.id).join(', ')}.`,
+            ...world.structure
+        );
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                {
+                    name: 'engine.priceJourney',
+                    action: 'ride',
+                    summary:
+                        `${chosen.conveyance.name} over ${walkingDays} walking day(s): `
+                        + `${journey.daysOneWay} day(s), ${journey.daysSavedAgainstWalking} saved. `
+                        + `Ambient qi at ${arrivedAt} is ${ambientAfter}.`,
+                    ok: true
+                },
+                ...skipCalls('ride', skip, null),
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
+        };
+    }
+
+    /**
+     * Stepping across the distance instead of covering it.
+     *
+     * Three answers rather than two, which is the whole shape of `priceFold`: a
+     * fold inside the range, a distance the folder does not have, and a rung
+     * that does not fold at all. None of them is a ban - the road is still
+     * there in every case, and the refusals say so.
+     *
+     * ── THE FIX IS THE HARD PART AND IT IS NOT NEGOTIABLE ────────────────
+     *
+     * There are exactly two, both things the folder did themselves, and there
+     * is deliberately no third for having been told. Only ONE of them is
+     * writable in this world, and the reason is worth having:
+     *
+     *   `stood`  the knowledge row for the place is at `encountered` or above,
+     *            which for a PLACE has exactly one writer - arriving in it. It
+     *            is what standing somewhere buys that hearing about it never
+     *            does, and it is the whole of the player's path to a fold.
+     *   `seen`   NOT REACHABLE, and see {@link A_SIGHTING_HAS_NO_NAME_ON_IT}.
+     *
+     * THE OBVIOUS WRONG ANSWER, AND IT WAS MEASURED. The first build read
+     * `seen` off `horizonInDays` - "you can fly and look around" - on the
+     * reasoning that a rung which can see that far has made it out. The sight
+     * horizon dwarfs the fold range at every rung on the curve: 78.7 days of
+     * sight against 6.0 days of reach at the floor, 642 against 33.5 at Grand
+     * Ascension. So EVERY destination inside a fold's range is inside the
+     * horizon, always, and the fix check becomes a no-op that hands anybody
+     * above the floor a fix on every name they have ever been told. That is the
+     * third fix the module forbids, arrived at by accident, and it would delete
+     * the Measured Span's entire business and the Late Age premise it
+     * expresses. It is written down here because it is an attractive wrong turn
+     * and somebody will otherwise take it again.
+     */
+    private async fold(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const going = this.whereThisJourneyGoes(cultivator, target, 'fold');
+        if ('facts' in going) return going;
+
+        const arrivedAt = this.theWorldsNameFor(going.name);
+        const road = this.daysOnTheRoadTo(cultivator, going.name);
+        // A road inside one province is unpriced rather than free, and a fold
+        // across one is a reach of under a day. Charged at the floor, and said
+        // out loud rather than quoted as a saving.
+        const walkingDays = road ?? 1;
+        const held = grantsHeldWith(cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries));
+
+        // The fix, before the range, because a fold with nowhere to aim is not
+        // a distance problem.
+        const stage = this.knowledge.stageOf(cultivator.id, 'place', arrivedAt);
+        const fix: FoldFix | null =
+            stageRank(stage) >= stageRank('encountered') ? 'stood' : null;
+
+        if (fix === null && held.includes(FOLD_GRANT)) {
+            return refused('engine.priceFold', 'fold', factsForRefusal(
+                'They know the name and not the place.',
+                `You have the word ${arrivedAt} and nothing else - somebody said it to you, or `
+                + 'you read it off a board. A fold is not a survey: what it needs is ground you '
+                + 'have stood on, and being told about somewhere is not the same kind of fact. '
+                + 'The road is open, as it is to everybody.',
+                `No FoldFix for "${arrivedAt}": knowing stage ${stage}, which is below `
+                + 'encountered - the rung standing somewhere writes and nothing else does. '
+                + 'No time passed.'
+            ));
+        }
+
+        const cost = priceFold({
+            ordinal: cultivator.realmOrdinal,
+            heldGrants: held,
+            walkingDays,
+            fix: fix ?? 'stood'
+        });
+
+        if (!cost.canFoldAtAll || !cost.withinRange) {
+            return refused('engine.priceFold', 'fold', factsForRefusal(
+                cost.canFoldAtAll ? 'Too far, in one step.' : 'Space does not fold for them.',
+                `${cost.reason}`,
+                `priceFold: range ${cost.rangeDays.toFixed(1)} day(s) at ordinal `
+                + `${cultivator.realmOrdinal} (floor ${FOLD_FLOOR_ORDINAL}, `
+                + `grant ${held.includes(FOLD_GRANT) ? 'held' : 'not held'}), `
+                + `road ${walkingDays} day(s). Location unchanged, no time passed.`
+            ));
+        }
+
+        const { skip, applied, world } = await this.arriveAfterSpending(
+            run, cultivator, cost.daysSpent, arrivedAt
+        );
+        const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+
+        const lines: string[] = [
+            cost.reason,
+            cost.arrivalReads,
+            road === null
+                ? 'Nothing prices a road inside one province, so nothing was saved that anybody '
+                    + 'can put a number to. What it cost is the settling, and that is real.'
+                : `${cost.daysSavedAgainstWalking} day(s) saved against the ${road} on the road.`,
+            ...applied.tollLines,
+            ...world.lines
+        ];
+
+        const facts = factsForToolResult(`${arrivedAt}, in one step.`, lines);
+        facts.structure.push(
+            `priceFold: fix ${fix}, range ${cost.rangeDays.toFixed(1)} day(s), `
+            + `road ${walkingDays}, settling ${cost.settlingDays}, short by ${cost.landsShortBy}, `
+            + `spent ${cost.daysSpent}, saved ${cost.daysSavedAgainstWalking}.`,
+            ...world.structure
+        );
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                {
+                    name: 'engine.priceFold',
+                    action: 'fold',
+                    summary:
+                        `Folded ${walkingDays} walking day(s) on a ${fix} fix, inside a reach of `
+                        + `${cost.rangeDays.toFixed(1)}. ${cost.daysSpent} day(s) spent, `
+                        + `${cost.daysSavedAgainstWalking} saved. Ambient qi at ${arrivedAt} is `
+                        + `${ambientAfter}.`,
+                    ok: true
+                },
+                ...skipCalls('fold', skip, null),
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
+        };
+    }
+
+    /**
+     * A counter, a board, and a place on somebody else's span.
+     *
+     * THE BOARD IS THE MORE IMPORTANT HALF and it is free. A board is a map
+     * somebody can read without owning a map - a list of places, a distance to
+     * each in the unit every road in this world is quoted in, and a price - and
+     * reading one writes a `read` knowledge record against every destination on
+     * it, which reaches `placed`. `placed` is `REACHABLE_FROM`: the exact rung
+     * that makes a province a legal destination and a listable one. Somebody
+     * who has never left their province learns at a board that there are
+     * others, and can then go.
+     *
+     * A place read off a board is a place HEARD ABOUT and not a place stood in,
+     * which is why the source is `read` and not `witnessed`, and why a fold
+     * still refuses to aim at it.
+     */
+    private async passage(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string
+    ): Promise<Execution> {
+        const here = standingOf(cultivator);
+        const counter = counterPlaceNameAt(placeName(cultivator));
+        const today = Math.floor(run.elapsedDays);
+        const rate = localPrice(here.regionId, SPAN_CASH_PER_WALKED_DAY);
+
+        if (counter === null) {
+            return refused('engine.boardAt', 'passage', factsForRefusal(
+                'The house keeps no counter here.',
+                'There is no board to read and nobody at a desk to read it to you. The Measured '
+                + 'Span runs from the ground it runs from, and this is not any of it - which is '
+                + 'not the house being unhelpful, it is where an inherited survey stops.',
+                `No Span counter at "${placeName(cultivator)}". The house keeps `
+                + `${SPAN_ROUTES.length} route(s), from `
+                + `${[...new Set(SPAN_ROUTES.map(r => r.fromPlace))].join(', ')}. `
+                + 'No time passed.'
+            ));
+        }
+
+        const board = boardAt(counter, SPAN_ROUTES, rate, today);
+
+        // ── THE DISCOVERABILITY HALF, AND IT RUNS BEFORE ANYTHING ELSE ───
+        //
+        // Written whichever step this is, because standing at a board and
+        // reading it is what happened either way, and somebody who buys a
+        // ticket has certainly read the line they bought.
+        const learned: string[] = [];
+        for (const line of board.lines) {
+            const isNew = this.noteEncounter(
+                cultivator, run, { kind: 'place', id: line.toPlace, name: line.toPlace },
+                'read',
+                `On the board at ${counter} on day ${today}: `
+                + `${line.walkedDaysItReplaces} days of road, ${line.fareCash} cash.`
+            );
+            if (isNew) {
+                learned.push(
+                    `${line.toPlace} was a word you did not have this morning. It is on a board `
+                    + 'with a distance and a price beside it, which is as much as anybody ever '
+                    + 'gets about somewhere they have not been.'
+                );
+            }
+        }
+
+        const wanted = (target ?? '').trim();
+        const route = wanted.length >= 2 ? routeTo(counter, wanted) : null;
+
+        if (intent !== 'buy' || route === null) {
+            const lines: string[] = [
+                `The board at ${counter}.`,
+                ...board.lines.map(line =>
+                    `${line.toPlace} - ${line.walkedDaysItReplaces} days of road, `
+                    + `${line.fareCash} cash, `
+                    + (line.openToday
+                        ? 'running today'
+                        : `next departure day ${line.nextDepartureDay ?? 'unstated'}`)
+                    + (line.inheritedTerminal
+                        ? '. One of the nine, and the house did not build it.'
+                        : '. The house folds this one itself.')),
+                board.limits
+            ];
+            if (wanted.length >= 2 && route === null && intent === 'buy') {
+                lines.push(
+                    `Nothing on this board goes to ${wanted}. That is not a refusal and it is `
+                    + 'not a price: it is the end of the survey.'
+                );
+            }
+            lines.push(...learned);
+
+            const facts = factsForToolResult(
+                `${counter}: ${board.running} route${board.running === 1 ? '' : 's'}.`, lines
+            );
+            facts.structure.push(
+                `boardAt: ${counter}, ${board.running} route(s), fare rate ${rate} cash per `
+                + `walked day replaced, on day ${today}. Every destination noted at 'read', `
+                + 'which reaches `placed` and is what makes a province legal to travel to.'
+            );
+            return this.freeAction(run, 'passage', facts);
+        }
+
+        // ── AND BUYING ONE ───────────────────────────────────────────────
+        const quote = quotePassageAtACounter(route, {
+            heads: 1,
+            worstPassengerOrdinal: cultivator.realmOrdinal,
+            cashPerWalkedDayReplaced: rate,
+            onDay: today
+        });
+        const stones = Math.max(1, Math.ceil(cashToStones(quote.fareCash)));
+
+        if (cultivator.spiritStones < stones) {
+            return refused('engine.quotePassageAtACounter', 'passage', factsForRefusal(
+                'The fare is the fare.',
+                `${route.toPlace} is ${quote.fareCash} cash, which is ${stones} spirit stones, `
+                + `and you are carrying ${cultivator.spiritStones}. The clerk does not argue `
+                + 'and does not offer a second figure. What the house sells is priced by true '
+                + 'distance off a table nobody outside it can check, and it is the same figure '
+                + 'for everybody standing at this counter.',
+                `quotePassageAtACounter: ${route.id} at ${quote.fareCash} cash (${stones} stones) `
+                + `against a purse of ${cultivator.spiritStones}. No time passed.`
+            ));
+        }
+
+        this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
+        const paid = this.repos.cultivators.getById(cultivator.id)!;
+        const arrivedAt = this.theWorldsNameFor(route.toPlace);
+
+        const { skip, applied, world } = await this.arriveAfterSpending(
+            run, paid, Math.max(1, quote.daysSpent), arrivedAt
+        );
+        const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+
+        const lines: string[] = [
+            `${counter} to ${route.toPlace}. ${quote.fareCash} cash, ${stones} spirit stones.`,
+            quote.openToday
+                ? 'It was running today, and the crossing itself is an hour.'
+                : `It was not running. You waited for day ${quote.nextDepartureDay ?? today}, `
+                    + 'because a span is held open at a cost and is not standing open all year.',
+            quote.settlingDays > 0
+                ? `${quote.settlingDays} day(s) afterwards are not much use to anybody. Being `
+                    + 'moved through space you do not understand is rough, and how rough is how '
+                    + 'little you understand it.'
+                : 'You rode it easily. At this rung the fare is the whole of what it costs.',
+            `${quote.daysSavedAgainstWalking} day(s) saved against the `
+            + `${route.walkedDaysItReplaces} on the road.`,
+            quote.notCovered,
+            ...learned,
+            ...applied.tollLines,
+            ...world.lines
+        ];
+
+        const facts = factsForToolResult(`${route.toPlace}, through the span.`, lines);
+        facts.structure.push(
+            `quotePassageAtACounter: ${route.id}, fare ${quote.fareCash} cash at ${rate} per `
+            + `walked day, ${quote.settlingDays} settling day(s) at ordinal `
+            + `${cultivator.realmOrdinal} (folding floor ${FOLD_FLOOR_ORDINAL}), `
+            + `${quote.daysSpent} day(s) spent, ${quote.daysSavedAgainstWalking} saved. `
+            + `Witnessed by ${THE_SPAN_HOUSE_ID}.`,
+            ...world.structure
+        );
+
+        return {
+            facts,
+            events: skip.events,
+            timeSkip: skip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [
+                {
+                    name: 'engine.quotePassageAtACounter',
+                    action: 'passage',
+                    summary:
+                        `${route.id}: ${stones} stones, ${quote.daysSpent} day(s), `
+                        + `${quote.daysSavedAgainstWalking} saved. Ambient qi at ${arrivedAt} `
+                        + `is ${ambientAfter}.`,
+                    ok: true
+                },
+                ...skipCalls('passage', skip, null),
+                ...tollCalls(applied.tollLines),
+                ...worldCalls(world)
+            ]
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // A WORD GIVEN, CARRIED, OR NOT KEPT
+    //
+    // The oath contract shape was complete and had no player path. A house
+    // could put one on somebody - `whatTheHouseDoesAboutIt` writes an indenture
+    // when it catches you - and nobody could swear one, be told what they were
+    // carrying, or break one.
+    //
+    // NOTHING HERE IS NEW MACHINERY. `grudges.ts` has carried `kind: 'oath'`
+    // and every cause on it since it was written; `what-an-indenture-...` says
+    // what a term is and who witnesses it; `whatWalkingOutOfItCosts` prices
+    // walking away and was written for exactly this. The one rule the whole
+    // section is built on is the design's own, from `faction-character.ts` on
+    // the House of the Bound Word: *a broken oath is structural rather than
+    // punitive - removing it removes some of the person.* So nothing below
+    // prevents anybody leaving. It says what leaving is.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * What kind of word this is, out of the causes the ledger already carries.
+     *
+     * A CLOSED SET, read off the sentence, and nothing anywhere branches on it
+     * to decide an outcome - the weight, the witness and what breaking it costs
+     * are identical whichever of these it is. It is the label the record
+     * carries so that somebody reading the ledger in eighty years can tell a
+     * brotherhood from a silence, which is exactly what `grudges.ts` keeps the
+     * causes for.
+     */
+    private whatKindOfOath(said: string): OathCause {
+        if (/\b(?:brother|brotherhood|sister|sibling|sworn kin)\b/.test(said)) {
+            return 'sworn_brotherhood';
+        }
+        if (/\b(?:silence|say nothing|never speak|keep .*secret|not to tell)\b/.test(said)) {
+            return 'silence';
+        }
+        if (/\b(?:blood pact|blood oath|in blood)\b/.test(said)) return 'blood_pact';
+        if (/\b(?:life|saved me|owe (?:him|her|them) my life)\b/.test(said)) return 'debt_of_life';
+        if (/\b(?:service|serve|years|term|indenture)\b/.test(said)) return 'service_term';
+        if (/\b(?:sect|house|school|order|clan)\b/.test(said)) return 'sect_vow';
+        return 'other';
+    }
+
+    /**
+     * Swearing one, reading what you carry, and not keeping it.
+     */
+    private oath(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        intent: string,
+        topic: string | undefined,
+        rawInput: string
+    ): Execution {
+        const today = Math.floor(run.elapsedDays);
+        const carried = openOathsHeldBy(this.repos, cultivator.id);
+        const nameOf = (id: string): string =>
+            this.repos.cultivators.getById(id)?.name
+            ?? SECTS.find(s => s.id === id)?.name
+            ?? id;
+
+        // ── WHAT THEY ARE ALREADY UNDER ──────────────────────────────────
+        if (intent === 'read' || (intent !== 'swear' && intent !== 'break')) {
+            const lines: string[] = carried.length === 0
+                ? [
+                    'Nothing. No word of yours is on anybody\'s ledger, which is a lighter thing '
+                    + 'to be than it sounds: nobody is owed your service and nobody has your '
+                    + 'name written against a penalty clause.'
+                ]
+                : carried.map(row => {
+                    const owed = nameOf(row.subjectId);
+                    const term = row.dueOnDay === null
+                        ? 'No day is written into it.'
+                        : `Due on day ${row.dueOnDay}, which is `
+                            + `${Math.max(0, Math.round((row.dueOnDay - today) / 365))} year(s) off.`;
+                    return `${row.cause.replace(/_/g, ' ')}, at ${row.severity}, owed to ${owed}. `
+                        + `${row.terms ?? row.description} ${term}`;
+                });
+
+            if (carried.length > 0) {
+                lines.push(WHAT_RUNNING_COSTS);
+                if (carried.some(row => row.cause === 'service_term')) {
+                    lines.push(
+                        WHAT_THE_END_OF_A_TERM_LEAVES.standing,
+                        WHAT_THE_END_OF_A_TERM_LEAVES.whatTheYearsDid
+                    );
+                }
+                lines.push(WHERE_IT_WAS_SWORN_MAY_MATTER_AND_NOBODY_CAN_SAY);
+            }
+
+            const facts = factsForToolResult(
+                carried.length === 0
+                    ? 'You are bound by nothing.'
+                    : `${carried.length} open oath${carried.length === 1 ? '' : 's'}.`,
+                lines
+            );
+            facts.structure.push(
+                `openOathsHeldBy: ${carried.length} row(s) - `
+                + `${carried.map(r => `${r.id}:${r.cause}:${r.severity}`).join(', ') || 'none'}.`
+            );
+            return this.freeAction(run, 'oath', facts);
+        }
+
+        // ── NOT KEEPING ONE ──────────────────────────────────────────────
+        if (intent === 'break') {
+            if (carried.length === 0) {
+                return refused('engine.openOathsHeldBy', 'oath', factsForRefusal(
+                    'There is nothing to break.',
+                    'You go looking for the word you gave and cannot find one. Nobody holds a '
+                    + 'penalty clause with your name on it, and a thing nobody is owed cannot '
+                    + 'be walked out of.',
+                    'No open oath held by this cultivator. Nothing written, no time passed.'
+                ));
+            }
+            const wanted = (target ?? '').trim().toLowerCase();
+            const binding = (wanted.length >= 2
+                ? carried.find(row => nameOf(row.subjectId).toLowerCase().includes(wanted))
+                : undefined)
+                ?? carried[0];
+
+            const cost = whatWalkingOutOfItCosts({
+                binding,
+                leaverId: cultivator.id,
+                leaverName: cultivator.name,
+                onDay: today
+            });
+
+            const written: string[] = [];
+            for (const row of [cost.reopened, cost.opened]) {
+                if (!row) continue;
+                const record = createObligation(row);
+                writeObligation(this.db as unknown as DatabaseHandle, record);
+                written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
+            }
+            writeObligation(
+                this.db as unknown as DatabaseHandle,
+                settleObligation(binding, {
+                    resolution: 'oath_released',
+                    onDay: today,
+                    byId: cultivator.id,
+                    note: 'Not by agreement. They stopped keeping it.'
+                })
+            );
+
+            const facts = factsForToolResult(
+                `The word to ${nameOf(binding.subjectId)} is not being kept.`,
+                [
+                    cost.note,
+                    cost.opened.description,
+                    WHAT_RUNNING_COSTS,
+                    'Nothing came out to stop you, and nothing was going to. What the witnessing '
+                    + 'house does about a broken word is structural rather than punitive, and it '
+                    + 'is not a thing that happens in an afternoon.'
+                ]
+            );
+            facts.structure.push(
+                `whatWalkingOutOfItCosts: broke ${binding.id} (${binding.cause} at `
+                + `${binding.severity}); wrote ${written.join('; ') || 'nothing'}; the oath is `
+                + 'closed as oath_released rather than deleted.'
+            );
+
+            return {
+                facts,
+                events: [],
+                timeSkip: null,
+                breakthrough: null,
+                outcome: 'executed',
+                calls: [{
+                    name: 'engine.whatWalkingOutOfItCosts',
+                    action: 'oath',
+                    summary:
+                        `${binding.id} released; a ${cost.opened.severity} grudge for broken_oath `
+                        + `now stands with ${cost.opened.holderId} against ${cultivator.name}`
+                        + `${cost.reopened ? ', and what it was closing is open again' : ''}.`,
+                    ok: true
+                }]
+            };
+        }
+
+        // ── GIVING ONE ───────────────────────────────────────────────────
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'oath', factsForRefusal(
+                'A word given to whom?',
+                'An oath is sworn TO somebody. An unwitnessed word binds nobody and is not a '
+                + `contract, it is a sentence said out loud. ${this.whoIsAbout(cultivator)}`,
+                'Unresolved party: oath sworn with no subject named. No time passed.'
+            ));
+        }
+        const party = this.partyPutTo(cultivator, query, scope);
+        if (!party) return this.nobodyByThatName(cultivator, query, scope, 'oath');
+
+        const said = `${topic ?? ''} ${rawInput}`.toLowerCase();
+        const cause = this.whatKindOfOath(said);
+
+        // ── WHO PUTS THEIR NAME TO IT ────────────────────────────────────
+        //
+        // The premier oathwright is not universally available and the reason is
+        // its own founding oath, which it has honoured at the cost of a fortune
+        // it can see and cannot touch. A house that cannot get the best witness
+        // uses a lesser one, and the person held under that oath is held by
+        // something correspondingly easier to argue with. Nothing here scores
+        // that; it is a fact carried on the record.
+        const witnessed = party.kind === 'sect'
+            ? theOathwrightWouldWitnessFor(party.id)
+            : true;
+        const witnessNote = witnessed
+            ? `Witnessed by ${THE_OATHWRIGHT_HOUSE}, which is what makes it a contract rather `
+                + 'than a sentence said out loud.'
+            : THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR[party.id];
+
+        const already = carried.find(row => row.subjectId === party.id && row.cause === cause);
+        if (already) {
+            return refused('engine.openOathsHeldBy', 'oath', factsForRefusal(
+                'That word is already given.',
+                `You are already bound to ${party.name} on exactly this, from day `
+                + `${already.incurredOnDay}. Saying it twice adds nothing: the ledger has one `
+                + 'row, and one row is what a witness will read out.',
+                `Open oath ${already.id} already stands. Nothing written, no time passed.`
+            ));
+        }
+
+        const terms = (topic ?? '').trim().length >= 2
+            ? (topic as string).trim()
+            : rawInput.trim().slice(0, 240);
+        const record = createObligation({
+            kind: 'oath',
+            holderId: cultivator.id,
+            subjectId: party.id,
+            cause,
+            // A witnessed word with nothing behind it. The heavier weights
+            // belong to an oath that CLOSES something - `settleItWithABinding`
+            // writes one exactly as heavy as the account it discharged, on the
+            // argument that a lighter oath would be cheaper to break than what
+            // it replaced. Nothing is being discharged here, so nothing licenses
+            // a heavier row, and `slight` is the ledger's word for an
+            // unpleasantness rather than for a promise.
+            severity: 'serious',
+            onDay: today,
+            description:
+                `${cultivator.name} swore to ${party.name}. ${witnessed
+                    ? 'It was witnessed.'
+                    : 'The premier oathwright would not put its name to it.'}`,
+            terms,
+            dueOnDay: null,
+            participants: [party.id, ...(witnessed ? [THE_OATHWRIGHT_HOUSE] : [])],
+            tags: ['sworn', `cause:${cause}`, witnessed ? 'witnessed' : 'unwitnessed']
+        });
+        writeObligation(this.db as unknown as DatabaseHandle, record);
+
+        const facts = factsForToolResult(
+            `A word given to ${party.name}.`,
+            [
+                `${cause.replace(/_/g, ' ')}, at ${record.severity}, and there is no day written `
+                + 'into it. It stands until it is discharged or until it is not kept.',
+                terms,
+                witnessNote,
+                WHAT_RUNNING_COSTS,
+                WHERE_IT_WAS_SWORN_MAY_MATTER_AND_NOBODY_CAN_SAY
+            ]
+        );
+        facts.structure.push(
+            `createObligation: oath ${record.id}, cause ${cause}, severity ${record.severity}, `
+            + `holder ${cultivator.id}, subject ${party.id}, `
+            + `witness ${witnessed ? THE_OATHWRIGHT_HOUSE : 'none'}. `
+            + 'Permanent until settled, and inheritable.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'social.createObligation',
+                action: 'oath',
+                summary:
+                    `${cultivator.name} holds an oath (${cause}) about ${party.id}, open from `
+                    + `day ${today}, ${witnessed ? 'witnessed' : 'unwitnessed'}. `
+                    + 'It does not settle on its own.',
+                ok: true
+            }]
+        };
+    }
+
     /**
      * Examining something.
      *
@@ -3446,6 +4644,23 @@ ${noticed}`;
         // resolved to nothing and the most obvious sentence about the most
         // important feature in the game did nothing at all.
         const subject = this.ruinAtHand(query, cultivator)
+            // ── AND THE GROUND SOMEBODY IS ACTUALLY STANDING ON ──────────
+            //
+            // The same defect as "the ruins", one noun over, and it hid a whole
+            // subsystem. `resolveKnownPlace` matches the current location BY
+            // NAME, so "I examine Wheatgate" resolves and "I examine the
+            // province", "what is the ground here like" and "I look over this
+            // place" resolve to nothing - and the refusal then reads as though
+            // the player had asked for an object that is not here.
+            //
+            // What that cost: `howTheGroundReads` has exactly one call site and
+            // it is behind this resolution, so a player who worked a district
+            // out could not be told. Its own comment says why that matters -
+            // the yields quietly fall and a worked-out district is
+            // indistinguishable from bad luck. Found by playing: four foraging
+            // turns in a row, all four successful, nothing anywhere saying the
+            // ground was drawing down.
+            ?? this.groundAtHand(query, cultivator)
             ?? resolveAnything(this.repos, query, cultivator, scope);
         if (!subject) {
             // Worded so that it does not confirm existence either. "You have
@@ -3500,9 +4715,41 @@ ${noticed}`;
         if (subject.kind === 'place' && this.atHand) {
             const row = worldLocationFor(this.atHand, subject.name);
             if (row) {
-                const said = howTheGroundReads(row, Math.floor(this.atHand.currentDay));
+                const day = Math.floor(this.atHand.currentDay);
+                const said = howTheGroundReads(row, day);
                 facts.lines.push(said);
                 facts.prose = `${facts.prose}\n\n${said}`;
+
+                // ── AND WHETHER ANYTHING IS WRONG WITH IT ────────────────
+                //
+                // The area-status layer, reached. A famine, a shut pass, a war
+                // or a district worked out is a fact about a PLACE that the
+                // whole of `what-is-true-of-a-place-right-now.ts` models -
+                // price multipliers, stopped passage, danger, the signs, the
+                // cause - and nothing in `src/web` imported it, so a place
+                // where something was wrong said so nowhere and simply
+                // returned different numbers.
+                //
+                // WHAT SOMEBODY MAY SAY ABOUT IT IS THEIR OWN STAGE, and the
+                // stage comes off the knowledge row they already hold for this
+                // place rather than from a second register. Capped at
+                // `encountered`: being in a thing gives you the signs, and the
+                // CAUSE is `known`, which has to be found out from somebody who
+                // has it. Walking into a famine does not tell you why.
+                const stageHere = this.knowledge.stageOf(cultivator.id, 'place', row.id);
+                const capped: KnowingStage =
+                    stageRank(stageHere) > stageRank('encountered') ? 'encountered' : stageHere;
+                const wrong = whatIsGoingOnHere(
+                    this.atHand.statuses, this.atHand.locations, row.id, day, () => capped
+                ).flatMap(reading => reading.lines);
+                if (wrong.length > 0) {
+                    facts.lines.push(...wrong);
+                    facts.prose = `${facts.prose}\n\n${wrong.join(' ')}`;
+                }
+                facts.structure.push(
+                    `whatIsGoingOnHere: ${wrong.length} line(s) at stage ${capped} over `
+                    + `${this.atHand.statuses.length} area status(es) in the world.`
+                );
             }
         }
         // ── AND WHEN WHAT WAS LOOKED AT IS A PERSON ──────────────────────
@@ -3589,12 +4836,158 @@ ${noticed}`;
      * both sides agreeing to be gentle; the agreement lives in what the outcome
      * MEANT and never in what the blows did.
      */
+    /**
+     * Priority at which a want is the whole of why somebody is standing there.
+     *
+     * A goal this high is not a preference, it is the thing they are for, and
+     * somebody whose life is one errand does not kneel to the person standing
+     * between them and it. Read off `NpcGoal.priority`, which the roster has
+     * carried since it was written - "what this person drops everything else
+     * for" is that field's own description of itself.
+     */
+    private static readonly WOULD_RATHER_DIE_PRIORITY = 0.8;
+
+    /**
+     * Standing at which somebody answers rather than yields.
+     *
+     * A tie this bad is a feud, and a feud is the state in which being made to
+     * kneel is worse than being finished. `NpcRelationship.standing` is the
+     * same axis another agent used this session for whether somebody accepts an
+     * arranged match, and it is used the same way here on purpose: one reading
+     * of "will this person go along with something they did not choose",
+     * consulted twice, rather than two scales that will drift.
+     */
+    private static readonly ANSWERS_RATHER_THAN_YIELDS = -60;
+
+    /**
+     * Whether the person being coerced yields, or would rather die.
+     *
+     * ── WHY THIS IS HERE AND NOT IN THE ENGINE ───────────────────────────
+     *
+     * Because there is no will-to-submit stat and there must not be one.
+     * Submission is a fact about who somebody is, and every fact about who
+     * somebody is already lives on the roster - so the layer that HOLDS the
+     * roster does the reading and hands the engine an answer with the record it
+     * was taken off attached. `resolveConfrontation` takes it and never
+     * computes it, which is what stops a compliance number appearing.
+     *
+     * Two clauses, and both name a row rather than a trait:
+     *
+     *   the want   an active goal at `WOULD_RATHER_DIE_PRIORITY` or above,
+     *              aimed at the person doing this. Somebody whose whole life is
+     *              getting at you does not kneel to you.
+     *   the tie    standing at or under `ANSWERS_RATHER_THAN_YIELDS` toward
+     *              them, which is a feud, and a feud is the state where being
+     *              made to kneel is worse than being finished.
+     *
+     * Everybody else yields, because most people beaten badly enough do. That
+     * is a DEFAULT and not a rule, which is what keeps the interesting case
+     * reachable rather than making submission a button.
+     *
+     * ── AND IT RUNS ONE WAY, WHICH IS THE ONE PLACE THE SYMMETRY BENDS ───
+     *
+     * The engine reads an NPC's character. It does not read the PLAYER's,
+     * because the player has one and the character has not lost it - AGENTS.md
+     * is explicit that the engine may take a choice only where the character
+     * genuinely has none, and somebody being beaten has not lost their
+     * judgement. So when the player is on the receiving end the answer is
+     * theirs to give, which is an offer rather than a reading. That half is not
+     * built here: nothing in the played game coerces the player yet, and
+     * building the reading for them instead of the offer would be exactly the
+     * softening the rule forbids.
+     */
+    /**
+     * The art this cultivator is actually fighting with.
+     *
+     * ── THE DEFECT THIS CLOSES ───────────────────────────────────────────
+     *
+     * Played, before this existed: a cultivator who had learned an art and
+     * drilled it to sixty per cent mastery walked into every fight priced by
+     * `assessPower` as *"Fighting bare, with no art at all"* - the 0.85 factor -
+     * because `attack` never told `combat_manage` which art. The technique
+     * layer bound every NPC and did not reach the played fight at all, which is
+     * AGENTS.md's commonest defect by name.
+     *
+     * It also made the whole of what a fight TEACHES unreachable. Comprehension
+     * from a fight is comprehension of the art that was swung, so a fight with
+     * no art in it teaches nothing about any art - correctly - and every played
+     * fight was one.
+     *
+     * ── WHAT IT PICKS, AND WHY IT IS NOT A CHOICE TAKEN FROM THE PLAYER ──
+     *
+     * The best-mastered art they are permitted to use, ties broken on id so the
+     * pick is total and stable. That is not the engine deciding tactics for
+     * them: a cultivator in a real fight brings what they are best at, and a
+     * player who wants a different art can say so - `train_technique` and
+     * `learn_technique` are what change this answer. What would be a decision
+     * taken from them is the opposite, which is what was happening: everybody
+     * fought bare whatever they had spent decades on.
+     */
+    private artTheyWouldFightWith(cultivator: Cultivator): string | undefined {
+        const usable = this.repos.techniques.listKnown(cultivator.id)
+            .filter(art => art.requiredOrdinal <= cultivator.realmOrdinal)
+            .sort((a, b) => b.mastery - a.mastery || (a.id < b.id ? -1 : 1));
+        return usable[0]?.id;
+    }
+
+    private static wouldTheyKneel(
+        them: NpcRecord,
+        coercerId: string
+    ): { yields: boolean; because: string } {
+        const errand = them.goals.find(
+            goal => goal.status === 'active'
+                && goal.priority >= GameService.WOULD_RATHER_DIE_PRIORITY
+                && goal.targetId === coercerId
+        );
+        if (errand) {
+            return {
+                yields: false,
+                because:
+                    `an open want at priority ${errand.priority.toFixed(2)} pointed at the person `
+                    + `doing this: ${errand.text}`
+            };
+        }
+
+        const feud = them.relationships.find(
+            tie => tie.targetId === coercerId
+                && tie.standing <= GameService.ANSWERS_RATHER_THAN_YIELDS
+        );
+        if (feud) {
+            return {
+                yields: false,
+                because:
+                    `standing ${feud.standing} toward the person doing this, which is a feud: `
+                    + feud.note
+            };
+        }
+
+        return {
+            yields: true,
+            because: 'nothing on their record says this is somebody who would rather die'
+        };
+    }
+
     private async attack(
         run: Run,
         cultivator: Cultivator,
         target: string | undefined,
         goal: string,
-        terms: BoutTerms = 'open'
+        terms: BoutTerms = 'open',
+        /**
+         * How the fight was opened. Passed straight to the resolver, which
+         * gives a concealed opening the ambush edge and takes the target's
+         * first swing away. Nothing in this layer reads it to pick an outcome.
+         */
+        opening: 'open' | 'from_concealment' = 'open',
+        /**
+         * What the compliance was FOR, when the verb was `coerce`.
+         *
+         * A LABEL. Nothing in the engine branches on it - the goal handed to
+         * the resolver is `coerce` whatever it says - and it is carried so the
+         * record and the narrator can state what was wanted rather than having
+         * to guess it from the outcome.
+         */
+        wanted?: string
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
@@ -3704,6 +5097,7 @@ ${noticed}`;
         // `goal` decides which endings the engine will reach for. It is passed
         // straight through; nothing in this layer reads it to pick a winner.
         const intent = goal === 'kill' || goal === 'subdue' || goal === 'humiliate'
+            || goal === 'coerce'
             ? goal
             : 'drive_off';
 
@@ -3758,7 +5152,29 @@ ${noticed}`;
             vector: 'body',
             edges: [],
             opponentEdges: [],
-            fightToTheEnd: false
+            fightToTheEnd: false,
+            opening,
+            // What they are actually swinging. Absent until now, so every
+            // played fight was fought bare by somebody holding a manual - see
+            // `artTheyWouldFightWith`.
+            ...(() => {
+                const art = this.artTheyWouldFightWith(cultivator);
+                return art ? { techniqueId: art } : {};
+            })(),
+            // ── WHETHER THEY WOULD RATHER DIE ────────────────────────────
+            //
+            // Design owner: "depending on some character traits some would
+            // rather die." Read HERE rather than in the engine, and read off
+            // records the world already keeps, because there is no
+            // will-to-submit number anywhere and there must not be one - see
+            // `how-far-you-went-to-make-them-comply.ts`.
+            //
+            // Only asked when it can matter. A coercion is the one goal whose
+            // ending turns on it, and passing it on every fight would put a
+            // reading in the log of a fight it decided nothing about.
+            ...(intent === 'coerce' && theirRecord
+                ? { submission: GameService.wouldTheyKneel(theirRecord, cultivator.id) }
+                : {})
         });
 
         // Seeing somebody well enough to fight them is seeing them.
@@ -3767,7 +5183,37 @@ ${noticed}`;
             `Fought at ${placeName(cultivator)}.`
         );
 
-        const execution = this.fromToolResult('combat_manage.resolve', 'attack', result, party.name);
+        const execution = this.fromToolResult(
+            'combat_manage.resolve', intent === 'coerce' ? 'coerce' : 'attack', result, party.name
+        );
+
+        // ── WHAT THE COMPLIANCE WAS FOR ──────────────────────────────────
+        //
+        // A label and only a label: no line of engine code read it, the goal
+        // handed to the resolver was `coerce` whatever it said, and the outcome
+        // was decided before this. It is said out loud because the alternative
+        // is a narrator inferring what somebody wanted out of what they got,
+        // which is the model deciding a fact about the world.
+        if (intent === 'coerce') {
+            const line =
+                `What was wanted out of ${party.name}: ${(wanted ?? 'submit').replace(/_/g, ' ')}. `
+                + 'This was force applied to get compliance rather than to end anybody, and it '
+                + 'was resolved by the confrontation engine - so it could fail the way a fight '
+                + 'fails.';
+            execution.facts.lines.push(line);
+            // Into `prose` as well, and `required`, for the reason the fallout
+            // block below gives at length: `lines` is what a model MAY know and
+            // `prose` is what the deterministic narrator actually ships, so a
+            // fact written to only the first is computed and never shown to
+            // anybody playing without a model attached. A coercion narrated as
+            // an ordinary brawl is the verb not existing.
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.required = [...(execution.facts.required ?? []), line];
+            execution.facts.structure.push(
+                `coerce: intent label "${wanted ?? 'submit'}", goal handed to the resolver `
+                + '"coerce". Nothing in the engine branches on the label.'
+            );
+        }
 
         // ── AND WHAT IT DID TO THEM ──────────────────────────────────────
         //
@@ -4644,12 +6090,32 @@ ${noticed}`;
         // through the part where they decline to help.
         const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
 
+        // Whether the question was about THEM. Read off the canonical topic
+        // the parser emits, which is a closed lookup rather than a scan of the
+        // player's prose - see `what-somebody-knows-about-themselves.ts`.
+        //
+        // It reaches `askedAbout` as an input rather than being decided there,
+        // for the same reason `compelled` is: this file knows who is standing
+        // in front of the player and that file knows what the three limits are,
+        // and neither should be doing the other's job.
+        const ownFact = selfFactFromTopic(topic);
+        const aboutThemselves = ownFact === null
+            ? null
+            : whatTheySayAboutThemselves(ownFact, {
+                name: asked.name,
+                age: asked.age,
+                sex: asked.sex,
+                houseName: asked.sectName,
+                rankName: asked.sectRank
+            });
+
         const answer = askedAbout({
             asker: cultivator,
             asked,
             speakerName: knownAlready ? asked.name : null,
             subject,
             rawTopic: topic,
+            aboutThemselves,
             holdsIt: subject !== null
                 && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
                 && this.knowledge.isAwareOf(asked.id, subject.kind, subject.id),
@@ -9309,17 +10775,33 @@ ${line}`;
             : null;
         if (emptied) lines.push(emptied);
 
-        // What is above them on this ground, said whether or not it was drawn.
-        // This is the read that keeps people alive and it is free: walking the
-        // ground tells you what has left it.
-        if (found.above.length > 0 && found.worst) {
-            const worst = found.above.reduce((a, b) => (b.ordinal > a.ordinal ? b : a));
-            lines.push(
-                `What else is out here and above you: ${found.above.length} `
-                + `${found.above.length === 1 ? 'thing' : 'things'}, the worst of them `
-                + `${worst.name} at ${rankName(worst.ordinal)}. ${found.worst.reaction}`
-            );
-        }
+        // ── WHAT IS ABOVE THEM ON THIS GROUND, AND WHERE IT GOES ─────────
+        //
+        // The read that keeps people alive, and it is free: walking the ground
+        // tells you what has left it. What it must not be is the FIRST thing
+        // said. It led, at length, about a thing the same sentence declares
+        // will not be put in front of them - so somebody who asked for a hare
+        // was answered with three lines about a Void Refinement cultivator
+        // twenty-nine rungs up before the hare was mentioned. Reported three
+        // times in one night by three different readers, which is what a lead
+        // that answers a question nobody asked looks like from outside.
+        //
+        // So the quarry goes first and this is a footnote after it. And the
+        // footnote is short where the gap is unbridgeable: `reaction` is the
+        // resolver's own account of what the ground does about the gap, and it
+        // is worth reading when the thing could actually reach you. When it is
+        // an entire realm above, the count and the name are the whole of the
+        // warning and the rest is the engine explaining itself.
+        const reachable = found.worst !== null && found.worst.band !== 'unreachable';
+        const whatElseIsOutHere = found.above.length > 0 && found.worst
+            ? (() => {
+                const worst = found.above.reduce((a, b) => (b.ordinal > a.ordinal ? b : a));
+                return `Also out here and above you: ${found.above.length} `
+                    + `${found.above.length === 1 ? 'thing' : 'things'}, the worst of them `
+                    + `${worst.name} at ${rankName(worst.ordinal)}.`
+                    + (reachable ? ` ${found.worst!.reaction}` : '');
+            })()
+            : null;
 
         if (!met) {
             lines.push(
@@ -9327,6 +10809,9 @@ ${line}`;
                 + 'came of it. What lives here has either been taken already or is not worth '
                 + 'the walk.'
             );
+            // Nothing was found, so what is standing over the ground IS the
+            // answer rather than a footnote to one.
+            if (whatElseIsOutHere) lines.push(whatElseIsOutHere);
             calls.push({
                 name: 'engine.whatIsOnThisGround',
                 action: 'hunt',
@@ -9342,6 +10827,7 @@ ${line}`;
             `${humanDays(skip.simulatedDays)} out from ${here}. `
             + readTheThing(met, me.realmOrdinal)
         );
+        if (whatElseIsOutHere) lines.push(whatElseIsOutHere);
         calls.push({
             name: 'engine.whatIsOnThisGround',
             action: 'hunt',
@@ -10815,6 +12301,12 @@ ${opened.text}` : receipt,
             rng: forStream(
                 run.seed, 'breakthrough', absDay, cultivator.realmOrdinal, run.turn
             ),
+            // ADMIN, and only ADMIN. The eligibility gate above has already
+            // run and has already refused anybody who cannot legally attempt
+            // this, so what is decided here is a crossing that was always
+            // allowed to be tried. Read here, in the impure layer, and passed
+            // in explicitly, because the resolver is pure.
+            theAttemptLands: theRollLands('a_crossing'),
             ambient,
             turn: run.turn,
             pill: pending ? {
@@ -12546,13 +14038,43 @@ ${opened.text}` : receipt,
         const herbs = body.herbs ?? [];
         const stones = body.spiritStones ?? 0;
 
+        // ── AND WHAT IS BEING CARRIED THAT IS NOT MEDICINE ────────────────
+        //
+        // Found by playing, by the design owner, and it read as the surface
+        // lying: `ADMIN grant_item ordinal=46 kind=artifact` answered GRANTED
+        // with the catalog id, and then `what am I carrying`, `what am I
+        // holding` and `inventory` all said "Nothing in the pouch at all".
+        //
+        // The grant was real. `addToPouch` wrote the row, and it is still
+        // there - what could not see it is this read, because `handleInventory`
+        // is an ALCHEMY tool and `listPouch` filters to pills and herbs by
+        // design. `listCarriedArtifacts` is the accessor for the other kind and
+        // it has had exactly one caller, `carriedArtifact`, which prices a
+        // fight nothing has ever asked it to price.
+        //
+        // So a rated object was in the database, invisible to every sentence a
+        // player can type, and worth nothing in a fight. A write nobody can
+        // read is indistinguishable from a write that did not happen, and this
+        // is the verb whose whole job is to say what you have.
+        const carried = listCarriedArtifacts(this.db, cultivator.id)
+            .map(entry => ({ entry, record: getArtifact(entry.itemId) }))
+            .filter((row): row is { entry: typeof row.entry; record: NonNullable<typeof row.record> } =>
+                row.record !== undefined);
+
         const lines: string[] = [];
-        if (pills.length === 0 && herbs.length === 0) {
+        if (pills.length === 0 && herbs.length === 0 && carried.length === 0) {
             lines.push(
                 'Nothing in the pouch at all. What is on you is what you are standing in and '
                 + `${stones} spirit stone${stones === 1 ? '' : 's'}.`
             );
         } else {
+            if (carried.length > 0) {
+                lines.push('Carrying: ' + carried.map(c =>
+                    `${c.record.name}${c.record.power !== null && c.record.power !== undefined
+                        ? ` (rated ${c.record.power}, ${rankName(c.record.power)})`
+                        : ''}`
+                ).join(', ') + '.');
+            }
             if (pills.length > 0) {
                 lines.push('Pills: ' + pills.map(p => `${p.quantity ?? 1} x ${p.name ?? 'unnamed'}`).join(', ') + '.');
             }
@@ -13339,6 +14861,43 @@ ${opened.text}` : receipt,
 
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
+
+        // ── AND THE TWO WAYS OF GETTING THERE THAT ARE NOT THE ROAD ──────
+        //
+        // Both belong on this read rather than beside their own verbs, for the
+        // same reason the sight horizon does: this is the question a player
+        // asks when they want to leave, and a capability nobody can find out
+        // about is a capability nobody has. A counter in the square is a fact
+        // about the square, and how far a rung reaches is a fact about the
+        // person - neither is a secret and neither costs anything to say.
+        if (thereIsACounterAt(placeName(cultivator))) {
+            const line = 'The Measured Span keeps a counter here. There is a board on the wall '
+                + 'with what runs from it, what each costs and when it goes, and reading it '
+                + 'costs nothing.';
+            facts.lines.push(line);
+            facts.prose = `${facts.prose}\n\n${line}`;
+        }
+        {
+            const heldGrants = grantsHeldWith(
+                cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries)
+            );
+            const inOneStep = reachable
+                .filter(place => place.travelDays !== null
+                    && couldFoldThere(cultivator.realmOrdinal, heldGrants, place.travelDays))
+                .map(place => place.name);
+            if (inOneStep.length > 0) {
+                const line = `Inside one step, for somebody who folds: ${inOneStep.join(', ')}. `
+                    + 'The reach is the rung, and the far end has to be ground you have stood on '
+                    + 'or something you have made out yourself - being told about somewhere is '
+                    + 'not a fix and never becomes one.';
+                facts.lines.push(line);
+                facts.prose = `${facts.prose}\n\n${line}`;
+                facts.structure.push(
+                    `couldFoldThere: ${inOneStep.length} of ${reachable.length} listed place(s) `
+                    + `inside the fold range at ordinal ${cultivator.realmOrdinal}.`
+                );
+            }
+        }
 
         // The two channels are kept visibly apart in the prose as well as in
         // the code. What was said to you comes first, because it is the answer
@@ -14773,6 +16332,11 @@ ${fit.line}`;
         // is written by it: `askedAbout` is pure, and the record-writing half of
         // `askAround` is not reached until the demand has actually resolved.
         const subject = resolveAnything(this.repos, topic, cultivator, scope);
+        // The same reading `askAround` takes, and it has to be the same one: a
+        // demand for somebody's own name that was refused at limit one here
+        // would be refused for a reason that does not exist, while the polite
+        // ask two lines away answered it.
+        const ownFact = selfFactFromTopic(topic);
         const unpressed = askedAbout({
             asker: cultivator,
             asked: who,
@@ -14781,6 +16345,15 @@ ${fit.line}`;
                 : null,
             subject,
             rawTopic: topic,
+            aboutThemselves: ownFact === null
+                ? null
+                : whatTheySayAboutThemselves(ownFact, {
+                    name: who.name,
+                    age: who.age,
+                    sex: who.sex,
+                    houseName: who.sectName,
+                    rankName: who.sectRank
+                }),
             holdsIt: subject !== null
                 && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
                 && this.knowledge.isAwareOf(who.id, subject.kind, subject.id),
@@ -14888,6 +16461,10 @@ ${fit.line}`;
         }
 
         const result = resolveAttempt({
+            // ADMIN, and only ADMIN. Decides whether they moved, and
+            // nothing else about what follows. See
+            // forcing-an-attempt-to-land.ts for why that line is there.
+            theAttemptLands: theRollLands('an_approach_to_somebody'),
             actor: {
                 id: cultivator.id,
                 name: cultivator.name,
@@ -15853,7 +17430,7 @@ ${unnamed}`;
             return weighing;
         }
 
-        const result = resolveAttempt(attempt);
+        const result = resolveAttempt({ ...attempt, theAttemptLands: theRollLands('an_approach_to_somebody') });
 
         if (result.stonesSpent > 0) {
             this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -result.stonesSpent });
@@ -16396,7 +17973,7 @@ ${done.lines.join(' ')}`;
             )
         };
 
-        const result = resolveAttempt(attempt);
+        const result = resolveAttempt({ ...attempt, theAttemptLands: theRollLands('an_approach_to_somebody') });
         const spent = await this.shortSkip(
             run, cultivator, ambient, TRAVEL_FOCUS, `Trading with ${party.name}`, result.days
         );
@@ -16748,6 +18325,10 @@ ${done.lines.join(' ')}`;
         const theirSect = theirFaction ? getSect(theirFaction) : null;
 
         const result = resolveAttempt({
+            // ADMIN, and only ADMIN. Decides whether they moved, and
+            // nothing else about what follows. See
+            // forcing-an-attempt-to-land.ts for why that line is there.
+            theAttemptLands: theRollLands('an_approach_to_somebody'),
             actor: {
                 id: cultivator.id,
                 name: cultivator.name,
@@ -18762,6 +20343,31 @@ ${done.lines.join(' ')}`;
      * Returns null when the world is off or there is nothing of the sort here,
      * and the refusal above then says so as a search that came up empty.
      */
+    /**
+     * The ground under their feet, when the sentence says "here" rather than a
+     * name.
+     *
+     * A CLOSED SET, and deliberately a short one. Every word in it is a way of
+     * saying "where I am standing" and none of them can ever be somebody's
+     * name - which is the same construction `THE_SCENE_ITSELF` uses in the
+     * parser, for the same reason: a name must never land in it.
+     *
+     * Narrow on purpose, and this is the rule `AGENTS.md` states as fixing the
+     * gap that was demonstrated. It does NOT accept "the ruins", "the shrine",
+     * "the market" or anything else with a subject in it - those either resolve
+     * as themselves or fail as themselves, and widening this to catch them
+     * would steal sentences from `ruinAtHand` and from ordinary place
+     * resolution, which is exactly the mistake that entry records.
+     */
+    private groundAtHand(query: string, cultivator: Cultivator): ResolvedEntity | null {
+        if (!/^(?:the |this |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings)$/i
+            .test(query.trim())) {
+            return null;
+        }
+        const here = (cultivator.location ?? '').trim();
+        return here.length >= 2 ? resolvePlace(here) : null;
+    }
+
     private ruinAtHand(query: string, cultivator: Cultivator): ResolvedEntity | null {
         if (!/^(?:the |that |these |those |a )?(?:old |broken |sealed |dead )*(?:ruins?|wreck|remains|rubble|old place)$/i
             .test(query.trim())) {

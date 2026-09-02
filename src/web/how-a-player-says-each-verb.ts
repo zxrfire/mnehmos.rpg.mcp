@@ -58,6 +58,37 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'time to move on from this town',
         'I head for the peaks'
     ],
+    ride: [
+        'I ride to the next town',
+        'I saddle a beast and go',
+        'I take a carriage to the market town',
+        'I hire a mount for the road',
+        'I go by boat rather than walk it',
+        'I fly there on my sword'
+    ],
+    fold: [
+        'I fold space to the mountain',
+        'I step across the distance in one go',
+        'I cross to the far province without walking it',
+        'I want to be there in a single step',
+        'can I fold that far'
+    ],
+    passage: [
+        'I buy passage to the far province',
+        'what does the Span board say',
+        'I want a ticket out of here',
+        'what would it cost to be sent through',
+        'is there a counter here that sells a crossing',
+        'I book a place on the next span'
+    ],
+    oath: [
+        'I swear an oath to them',
+        'I give my word on it',
+        'what oaths am I carrying',
+        'I break the vow I gave',
+        'I want out of the word I gave them',
+        'who witnessed the oath I am under'
+    ],
     attack: [
         'I strike at him',
         'I draw my blade and go for the man',
@@ -65,7 +96,28 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I start a fight with him',
         'I mean to kill the thief',
         'I put a sword through him',
-        'no more talking, I hit him'
+        'no more talking, I hit him',
+        // Concealment is not a verb of its own - it is a way of opening this
+        // one - so the exemplars carry it rather than a sixty-first member of
+        // the enum. What the sentence changes is `opening`, read off the
+        // sentence by the parser and never chosen by the model.
+        'I sneak up on him and strike',
+        'I wait until his back is turned and go for him'
+    ],
+    coerce: [
+        // Hands, not words. Every one of these is somebody being MADE to do a
+        // thing rather than being asked or warned - which is why none of them
+        // belongs among the `interact` intents where threatening lives.
+        'I force him to submit',
+        'I make him kneel',
+        'I coerce the merchant into handing it over',
+        'I beat the truth out of him',
+        'I strong-arm the steward into opening the gate',
+        'I make her yield to me',
+        // The same act with an animal on the other side, which is what taming
+        // is. There is no taming subsystem and there must not be one.
+        'I tame the beast',
+        'I break the wolf in and make it mine'
     ],
     cultivate: [
         'I sit down and cultivate',
