@@ -712,7 +712,15 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             satiety: end.satiety - mid.satiety,
             starvationTurns: end.starvationTurns - mid.starvationTurns,
             bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
-            spiritStones: end.spiritStones - mid.spiritStones,
+            // A DELTA, not an end state. The purse is the one field here that
+            // is not exclusively the skip's, and writing it absolutely reverts
+            // any spend made between the caller's snapshot and this call -
+            // which is how a bribe came to report "10 spirit stones went with
+            // it" and leave the player one stone richer. `web/apply.ts` carries
+            // the measurement and the argument; this is the same write on the
+            // tool path, and its header states that the two paths must not
+            // disagree about what a skip persists.
+            spiritStones: end.spiritStones - before.spiritStones,
             cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
             age: end.age - mid.age,
             yearsAtCurrentRealm: end.yearsAtCurrentRealm - mid.yearsAtCurrentRealm
