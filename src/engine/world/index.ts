@@ -110,6 +110,16 @@
  *                    person who needs it, and whether anybody would come for
  *                    you - which makes a relationship a survival asset.
  *
+ *   how-far-somebody-can-fold-space-and-what-it-costs.ts
+ *                    the other half of that grant, and the top of the
+ *                    conveyance ladder: how far a fold reaches at each rung, in
+ *                    the walking days every road is quoted in, what it takes
+ *                    out of somebody, and the two things that can serve as a
+ *                    fix on the far end. The binding scarcity is knowing where
+ *                    the far end is, which is the House of the Measured Span's
+ *                    whole business and the thing it inherited rather than
+ *                    derived.
+ *
  *   ruin-mechanics.ts  things a ruin does that are not damage: a map that
  *                    records rooms and never the edges, an identity worn in its
  *                    own era, qi as the only light, and a routine kept by the
@@ -188,6 +198,7 @@ export * from './catalog.js';
 export * from './seeding.js';
 export * from './provenance.js';
 export * from './convergence.js';
+export * from './how-far-somebody-can-fold-space-and-what-it-costs.js';
 export * from './ruin-mechanics.js';
 export * from './cascade.js';
 export * from './pressure.js';
