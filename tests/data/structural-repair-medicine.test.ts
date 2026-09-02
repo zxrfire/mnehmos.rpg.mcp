@@ -97,8 +97,8 @@ describe('the two ceilings, enforced rather than described', () => {
         }
         // And the refusal actually fires at the first rung above it.
         const heaven = STRUCTURAL_REPAIR_MEDICINES.find(m => m.grade === 'heaven')!;
-        expect(mendsThisBreak(heaven, 'damaged-spirit-sense', 29)).toBe(false);
-        expect(repairRefusalReason(heaven, 'damaged-spirit-sense', 29))
+        expect(mendsThisBreak(heaven, 'partial-refinement', 29)).toBe(false);
+        expect(repairRefusalReason(heaven, 'partial-refinement', 29))
             .toMatch(/refined on this side of the Lid/);
     });
 
@@ -106,9 +106,9 @@ describe('the two ceilings, enforced rather than described', () => {
         expect(NOTHING_REPAIRS_ABOVE_ORDINAL).toBe(GRAND_ASCENSION.ordinalEnd);
         for (const m of STRUCTURAL_REPAIR_MEDICINES) {
             expect(m.reachesUpToOrdinal).toBeLessThanOrEqual(GRAND_ASCENSION.ordinalEnd);
-            expect(mendsThisBreak(m, 'unformed-tribulation-body', TRIBULATION.ordinalStart)).toBe(false);
+            expect(mendsThisBreak(m, 'imperfect-tribulation-body', TRIBULATION.ordinalStart)).toBe(false);
         }
-        expect(cheapestMedicineFor('unformed-tribulation-body', TRIBULATION.ordinalStart)).toBeNull();
+        expect(cheapestMedicineFor('imperfect-tribulation-body', TRIBULATION.ordinalStart)).toBeNull();
     });
 
     it('agrees with the crossing layer about which break has no answer', () => {
@@ -137,14 +137,14 @@ describe('the two ceilings, enforced rather than described', () => {
         const after = applyStructuralRepair(injuries, earth, 'cracked-core', 17);
         expect(after.map(i => i.woundType)).toEqual(['torn-meridians']);
         // Out of reach: the dose is gone and the person is where they were.
-        expect(applyStructuralRepair(injuries, earth, 'unset-ascension', 37)).toHaveLength(2);
+        expect(applyStructuralRepair(injuries, earth, 'unfulfilled-ascension', 37)).toHaveLength(2);
     });
 
     it('covers every break the crossing layer produces, or says plainly that it does not', () => {
         const coverage = coverageOfEveryBreak();
         expect(coverage).toHaveLength(BROKEN_STATUSES.length);
         const uncovered = coverage.filter(c => c.medicineId === null);
-        expect(uncovered.map(c => c.woundKey)).toEqual(['unformed-tribulation-body']);
+        expect(uncovered.map(c => c.woundKey)).toEqual(['imperfect-tribulation-body']);
         // Everything above the ordinary ceiling is answerable only by an
         // object nobody on this side can make.
         for (const row of coverage) {

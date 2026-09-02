@@ -261,21 +261,48 @@ describe('the wound table', () => {
     it('resolves a retired key to a wound that behaves identically', () => {
         // A RENAME AND NEVER A RECLASSIFICATION. If a retirement ever changed
         // permanence, nature or whether the wound halts, loading a saved world
-        // would change what its people are carrying. In particular it must not
-        // resolve to 'cracked-core', however plainly the ruling reads as one
-        // wound: that would halt a saved population the ladder never refused.
+        // would change what its people are carrying.
+        //
+        // The halting half is the dangerous direction and it is why
+        // `blocksAdvancement` resolves at all: six broken statuses were renamed,
+        // and a bare string comparison against a saved row would answer false
+        // and quietly un-halt every cultivator the ladder had already refused.
         for (const [retired, current] of Object.entries(RETIRED_WOUND_KEYS)) {
-            const now = getWoundType(current)!;
-            expect(now).toBeDefined();
+            const now = getWoundType(current);
+            expect(now, `${retired} -> ${current} must exist`).not.toBeNull();
+            expect(getWoundType(retired)).toBe(now);
             expect(isPermanentWound(retired)).toBe(isPermanentWound(current));
             expect(woundNature(retired)).toBe(woundNature(current));
-            expect(BROKEN_STATUSES).not.toContain(current);
-            const injury = createInjury(
+
+            const asRetired = createInjury(
                 { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: retired },
                 rng()
             );
-            expect(blocksAdvancement(injury)).toBe(false);
+            const asCurrent = createInjury(
+                { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: current },
+                rng()
+            );
+            expect(blocksAdvancement(asRetired)).toBe(blocksAdvancement(asCurrent));
+            expect(isHalted({ injuries: [asRetired] })).toBe(isHalted({ injuries: [asCurrent] }));
+            expect(structuralBlockOn([asRetired])).toBe(structuralBlockOn([asCurrent]));
+            expect(isRepairableInTheCrucible(retired)).toBe(isRepairableInTheCrucible(current));
+            // And a reading never reports a name the tables no longer carry.
+            expect(brokenStatusOf([asRetired])).toBe(brokenStatusOf([asCurrent]));
         }
+    });
+
+    it('still halts a saved cultivator whose break was renamed', () => {
+        // The concrete version of the invariant above, on the wound that used to
+        // be 'unstable-joining'. A Body Integration cultivator who cracked
+        // before the rename must still be refused after it.
+        const saved = createInjury(
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unstable-joining' },
+            rng()
+        );
+        expect(isHalted({ injuries: [saved] })).toBe(true);
+        expect(structuralBlockOn([saved])).toBe('failed-integration');
+        // And the crossing that would free them still finds the row to drop.
+        expect(clearBrokenStatus([saved], 'failed-integration')).toHaveLength(0);
     });
 });
 
@@ -315,17 +342,17 @@ describe('a cultivator who crossed and can never cross again', () => {
         }
         // And the crossing INTO the last realm, which is lightning but still
         // leaves its own casualty.
-        expect(brokenStatusFor(40)).toBe('unformed-tribulation-body');
+        expect(brokenStatusFor(40)).toBe('imperfect-tribulation-body');
     });
 
     it('is a status on top of a rung and never a rung of its own', () => {
         // The ladder keeps its rungs. Somebody who cracks going into
         // Tribulation Transcendence is at 41 carrying a broken step.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unformed-tribulation-body' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'imperfect-tribulation-body' },
             rng()
         );
-        expect(brokenStatusOf([wound])).toBe('unformed-tribulation-body');
+        expect(brokenStatusOf([wound])).toBe('imperfect-tribulation-body');
         expect(isHalted({ injuries: [wound] })).toBe(true);
     });
 
@@ -377,10 +404,10 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // is your own effort, so the one thing that would answer this is
         // forbidden exactly where it is needed.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unformed-tribulation-body' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'imperfect-tribulation-body' },
             rng()
         );
-        expect(isRepairableInTheCrucible('unformed-tribulation-body')).toBe(false);
+        expect(isRepairableInTheCrucible('imperfect-tribulation-body')).toBe(false);
         expect(brokenStatusRepairedBy([wound])).toBeNull();
     });
 
@@ -394,10 +421,10 @@ describe('striking on a break is legal, suicidal, and curative if it lands', () 
         // Marking it treated would leave it counting as scar tissue against
         // SCAR_PLATEAU - charging attrition for a wound no longer carried.
         const wound = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unstable-joining' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'failed-integration' },
             rng()
         );
-        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'unstable-joining');
+        const after = clearBrokenStatus([wound, createInjury({ severity: 'minor', source: 'combat', turn: 1 }, rng())], 'failed-integration');
         expect(after).toHaveLength(1);
         expect(after[0].woundType).toBeNull();
     });
@@ -424,8 +451,8 @@ describe('what the broken statuses are called', () => {
         core_formation: ['core'],
         nascent_soul: ['nascent', 'soul'],
         deity_transformation: ['transformation'],
-        void_refinement: ['spirit', 'sense'],
-        body_integration: ['joining'],
+        void_refinement: ['refinement'],
+        body_integration: ['integration'],
         grand_ascension: ['ascension'],
         tribulation_transcendence: ['tribulation']
     };
@@ -744,7 +771,7 @@ describe('halting reads off the wound list and nowhere else', () => {
 
     it('is true for a realm break and for nothing else', () => {
         const broken = createInjury(
-            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'unstable-joining' },
+            { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: 'failed-integration' },
             rng()
         );
         expect(isHalted({ injuries: [broken] })).toBe(true);

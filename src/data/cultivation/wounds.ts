@@ -53,8 +53,8 @@
  * NOT YET BUILT. Specified here because this is the file the wounds it would
  * answer live in, and because the design point matters more than the item.
  *
- * The broken statuses below - a cracked core, an unformed nascent soul, a
- * failed body joining - each name a pill grade that would repair them. That
+ * The broken statuses below - a cracked core, a crippled nascent soul, a
+ * failed integration - each name a pill grade that would repair them. That
  * medicine is meant to be RARE TO A DEGREE WHERE MOST PEOPLE JUST LIVE WITH IT.
  * The test is not what a dose costs; it is what fraction of the cultivators
  * carrying a structural break are ever repaired, and the answer has to be
@@ -72,7 +72,7 @@
  * other consumable uses. The immortal grade is sent down from above the Lid and
  * cannot be made on this side. Repair reaches ordinal 40 and stops: getting to
  * 41 is your own effort, helpers are allowed at that crossing and medicine is
- * not, which is why `unformed-tribulation-body` is the one break with no
+ * not, which is why `imperfect-tribulation-body` is the one break with no
  * treatment behind it at all.
  *
  * WHEN IT IS BUILT, THE HIGH GRADES MUST BE TRACKED. `docs/world/items.md`'s
@@ -292,11 +292,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Core Formation, comfortable, established, and entirely without a next step. Frequently the most politically capable people in a sect, because the ones who are still climbing have somewhere else to put the effort.'
     },
     {
-        key: 'unformed-nascent-soul',
+        key: 'crippled-nascent-soul',
         nature: 'physical',
-        name: 'An unformed nascent soul',
+        name: 'A crippled nascent soul',
         description:
-            'The infant soul was born and did not take. What is in there is the shape of one - it holds the body together and it will never separate from it, which is the entire point of the realm and the one thing this one cannot do.',
+            'The infant soul was born and did not finish forming. It is not the shape of nothing - it is a real one, crippled: it holds the body together, it cannot survive very long outside it, and it will never separate cleanly, which is the entire point of the realm and the one thing this one cannot do.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -305,11 +305,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Nascent Soul in every way that a stranger could check, and mortal in the way that matters: destroy the body and they are gone. They do not advertise it and a great many of them have died of somebody finding out.'
     },
     {
-        key: 'incomplete-transformation',
+        key: 'failed-transformation',
         nature: 'physical',
-        name: 'An incomplete transformation',
+        name: 'A failed transformation',
         description:
-            'The form was taken apart and put back together with body and soul lying alongside each other rather than through each other. It works. It is two things wearing one shape, and it will not be raised as one.',
+            'The form was taken apart and put back together with body and soul lying alongside each other rather than through each other. It works, and it works partly: what the realm confers, this one confers a fraction of. It is two things wearing one shape, and it will not be raised as one.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -318,11 +318,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Deity Transformation, and a half-second of hesitation between deciding and moving that nobody below the realm can see and nobody at it can miss. It is the tell, and their peers are unfailingly polite about it.'
     },
     {
-        key: 'damaged-spirit-sense',
+        key: 'partial-refinement',
         nature: 'physical',
-        name: 'Damaged spirit sense',
+        name: 'A partial refinement',
         description:
-            'Refining the self against emptiness is what builds the spirit sense - the reach a cultivator perceives with, out past the body. This one went into the emptiness and the sense came back torn: it extends, it returns wrong, and the errors are not the kind the owner can detect from inside.',
+            'Refining the self against emptiness is what the realm is, and this one only went partway. What it built it built imperfectly - the reach a cultivator perceives with extends, returns wrong, and the errors are not the kind the owner can detect from inside. They have some of what the realm gives and not the rest.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -331,11 +331,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Void Refinement, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
     },
     {
-        key: 'unstable-joining',
+        key: 'failed-integration',
         nature: 'physical',
-        name: 'An unstable joining',
+        name: 'A failed integration',
         description:
-            'Soul and body were welded from the sinew inward and one seam did not close. Everything moving through this cultivator is enormous, and there is a place where it is not held.',
+            'Soul and body were welded from the sinew inward and one seam did not close. The body is not fully integrated and parts of it do not work right. Everything moving through this cultivator is enormous, and there is a place where it is not held.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -344,11 +344,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Body Integration, indivisible everywhere but one place, and the whole of their art is built around not being touched there. It is how people at this realm are killed, and they are the only ones who know precisely where.'
     },
     {
-        key: 'unset-ascension',
+        key: 'unfulfilled-ascension',
         nature: 'physical',
-        name: 'An unset ascension',
+        name: 'An unfulfilled ascension',
         description:
-            'Body, soul, name and dao are raised in that order and the rising stopped partway along. What was raised stays raised. What was not never will be, and the four no longer sit level with each other.',
+            'Body, soul, name and dao are raised in that order and the rising stopped partway along. They did not fully ascend. What was raised stays raised. What was not never will be, and the four no longer sit level with each other.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -357,11 +357,11 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'Grand Ascension, uneven - enormous along the axes that went up and oddly ordinary along the ones that did not. Which is which differs by person and is the single most useful thing to know about any of them.'
     },
     {
-        key: 'unformed-tribulation-body',
+        key: 'imperfect-tribulation-body',
         nature: 'physical',
-        name: 'An unformed tribulation body',
+        name: 'An imperfect tribulation body',
         description:
-            'The step into the last realm was taken and did not land clean. They are at the rung, they hold it, and the part of them that would summon a tribulation is the part that broke getting here.',
+            'The step into the last realm was taken and did not land clean. The body formed, and it formed with flaws that make it significantly worse than a true transcendent\'s. They are at the rung, they hold it, and the part of them that would summon a tribulation is the part that broke getting here.',
         severities: ['crippling'],
         permanent: true,
         treatment:
@@ -511,18 +511,31 @@ const BY_KEY = new Map<string, WoundType>(WOUND_TYPES.map(w => [w.key, w]));
  * nameless, un-permanent and priced as an ordinary wound of their severity.
  *
  * A RENAME AND NEVER A RECLASSIFICATION. Both sides of every entry here must
- * agree on nature, permanence and severity, so resolving one cannot change what
- * anybody is carrying - only what it is called. 'ruined-dantian' and
- * 'incomplete-cultivation' are both physical, both permanent, both crippling
- * and neither halts, which is why the mapping is safe to apply on load.
+ * agree on nature, permanence, severity and whether the wound halts, so
+ * resolving one cannot change what anybody is carrying - only what it is
+ * called. Pinned by test on every entry.
  *
  * Note what is NOT here: 'ruined-dantian' does not resolve to 'cracked-core',
- * however plainly the ruling reads as one wound. A cracked core is a broken
+ * however plainly that ruling reads as one wound. A cracked core is a broken
  * status and it closes the road, so that mapping would halt a saved population
- * the ladder has never refused.
+ * the ladder has never refused. It resolves to the row its mechanics went to.
+ *
+ * The six below are the broken statuses renamed on the owner's ruling that a
+ * break should say what the realm confers and this one does not: a crippled
+ * nascent soul cannot survive outside the body, a failed integration leaves
+ * parts that do not work right, an imperfect tribulation body has flaws a true
+ * one does not. These ARE halting wounds on both sides of the arrow, which is
+ * why `blocksAdvancement` and `brokenStatusOf` resolve through here - a saved
+ * cultivator who was halted must stay halted across the rename.
  */
 export const RETIRED_WOUND_KEYS: Readonly<Record<string, string>> = {
-    'ruined-dantian': 'incomplete-cultivation'
+    'ruined-dantian': 'incomplete-cultivation',
+    'unformed-nascent-soul': 'crippled-nascent-soul',
+    'incomplete-transformation': 'failed-transformation',
+    'damaged-spirit-sense': 'partial-refinement',
+    'unstable-joining': 'failed-integration',
+    'unset-ascension': 'unfulfilled-ascension',
+    'unformed-tribulation-body': 'imperfect-tribulation-body'
 };
 
 /** The current key for a wound key, following one retirement if there is one. */

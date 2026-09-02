@@ -82,7 +82,7 @@
  *
  * And nothing reaches 41. Not a shortage - a rule: getting into Tribulation
  * Transcendence is your own effort, helpers are allowed at that crossing and
- * medicine is not, so `unformed-tribulation-body` is the one break with no
+ * medicine is not, so `imperfect-tribulation-body` is the one break with no
  * treatment behind it at all. `REPAIRED_IN_THE_CRUCIBLE` states the same rule
  * from the other side, and the two must never disagree.
  *
@@ -278,7 +278,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         id: 'repair-soul-seating',
         name: 'Soul-Seating Pill',
         grade: 'heaven',
-        mends: ['unformed-nascent-soul', 'incomplete-transformation'],
+        mends: ['crippled-nascent-soul', 'failed-transformation'],
         // The end of Deity Transformation, and the end of the road for
         // everything made on this side of the Lid.
         reachesUpToOrdinal: 28,
@@ -303,7 +303,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         id: 'repair-unbroken-pattern',
         name: 'Unbroken Pattern Pill',
         grade: 'immortal',
-        mends: ['damaged-spirit-sense', 'unstable-joining', 'unset-ascension'],
+        mends: ['partial-refinement', 'failed-integration', 'unfulfilled-ascension'],
         // The end of Grand Ascension. There is nothing for the crossing above.
         reachesUpToOrdinal: 40,
         pricedAtOrdinal: 29,
@@ -364,7 +364,7 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
     {
         yearsAgo: 1_180,
         spentByFactionId: 'apex-deep-survey',
-        onWoundKey: 'unstable-joining',
+        onWoundKey: 'failed-integration',
         entry:
             'A First Mark of the Survey came back from the joining with one seam open and the Survey released one against a quorum that took eleven months to assemble. It worked. He served another four hundred years and the file on him is the reason anybody knows the medicine does anything at all.'
     },
@@ -378,7 +378,7 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
     {
         yearsAgo: 410,
         spentByFactionId: 'sect-azure-cloud-pavilion',
-        onWoundKey: 'unset-ascension',
+        onWoundKey: 'unfulfilled-ascension',
         entry:
             'The grant book names the recipient, the Master who authorised it, and the four Sword Elders who consented, in that order and on one line. It does not say what happened afterwards, and the recipient does not appear anywhere in the Pavilion record again.'
     }

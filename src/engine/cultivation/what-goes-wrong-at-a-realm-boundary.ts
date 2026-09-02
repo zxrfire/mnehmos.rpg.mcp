@@ -118,6 +118,7 @@ import type {
 import { isRealmBoundary, realmForOrdinal, triggersHeavenlyTribulation } from './realms.js';
 import { createInjury } from './injuries.js';
 import { foundationOf, rebuildFoundation } from './foundation.js';
+import { currentWoundKey } from '../../data/cultivation/wounds.js';
 import type { CultivationRNG } from './rng.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -970,14 +971,14 @@ export function resolveCrossingFailure(
 export const BROKEN_STATUS_FOR_TRIAL: Partial<Record<TrialKind, string>> = {
     the_setting_of_the_foundation: 'broken-foundation',
     the_condensation: 'cracked-core',
-    the_birthing: 'unformed-nascent-soul',
-    the_merging: 'incomplete-transformation',
-    the_emptiness: 'damaged-spirit-sense',
-    the_joining: 'unstable-joining',
-    the_ascent: 'unset-ascension',
+    the_birthing: 'crippled-nascent-soul',
+    the_merging: 'failed-transformation',
+    the_emptiness: 'partial-refinement',
+    the_joining: 'failed-integration',
+    the_ascent: 'unfulfilled-ascension',
     // The crossing INTO Tribulation Transcendence. Lightning resolves whether
     // they survive it; this is what a survival that did not land clean leaves.
-    heavenly_lightning: 'unformed-tribulation-body'
+    heavenly_lightning: 'imperfect-tribulation-body'
 };
 
 /** Every broken status, for the callers that need to recognise one. */
@@ -989,7 +990,7 @@ export const BROKEN_STATUSES: readonly string[] = Object.values(BROKEN_STATUS_FO
  * Only meaningful at the crossing INTO Tribulation Transcendence among the
  * lightning ordinals: 41, 42 and 43 are steps within the realm and 44 is the
  * last crossing, which lands on its own two rungs and has its own answer. So
- * lightning maps to 'unformed-tribulation-body' only from ordinal 40.
+ * lightning maps to 'imperfect-tribulation-body' only from ordinal 40.
  */
 export function brokenStatusFor(ordinal: number): string | null {
     const trial = trialForOrdinal(ordinal);
@@ -1001,11 +1002,32 @@ export function brokenStatusFor(ordinal: number): string | null {
     return BROKEN_STATUS_FOR_TRIAL[trial] ?? null;
 }
 
+/**
+ * The broken status a stored wound key names, under its CURRENT name, or null.
+ *
+ * Every reading of a break goes through here, and the reason is persistence.
+ * Six of these keys were renamed on the owner's ruling that a break must say
+ * what the realm confers, and worlds written before that carry the old strings
+ * in `woundType`. A bare `BROKEN_STATUSES.includes(...)` against a saved row
+ * answers false, which would quietly un-halt every cultivator the ladder had
+ * already refused - the worst possible outcome of a rename, because it looks
+ * like nothing happened.
+ *
+ * Returns the current key rather than the stored one, so a caller comparing
+ * against `BROKEN_STATUS_FOR_TRIAL` or `REPAIRED_IN_THE_CRUCIBLE` gets a hit
+ * whichever vintage the row is.
+ */
+export function brokenStatusKeyOf(woundType: string | null | undefined): string | null {
+    const key = currentWoundKey(woundType);
+    return key !== null && BROKEN_STATUSES.includes(key) ? key : null;
+}
+
 /** The broken status this cultivator carries, if any. */
 export function brokenStatusOf(injuries: readonly Injury[]): string | null {
     for (const injury of injuries) {
         if (injury.treated) continue;
-        if (injury.woundType && BROKEN_STATUSES.includes(injury.woundType)) return injury.woundType;
+        const status = brokenStatusKeyOf(injury.woundType);
+        if (status) return status;
     }
     return null;
 }
@@ -1177,17 +1199,18 @@ export const BROKEN_STATUS_STRAIN = -0.55;
 export const REPAIRED_IN_THE_CRUCIBLE: Record<string, boolean> = {
     'broken-foundation': true,
     'cracked-core': true,
-    'unformed-nascent-soul': true,
-    'incomplete-transformation': true,
-    'damaged-spirit-sense': true,
-    'unstable-joining': true,
-    'unset-ascension': true,
-    'unformed-tribulation-body': false
+    'crippled-nascent-soul': true,
+    'failed-transformation': true,
+    'partial-refinement': true,
+    'failed-integration': true,
+    'unfulfilled-ascension': true,
+    'imperfect-tribulation-body': false
 };
 
-/** Whether a successful crossing would clear this status. */
+/** Whether a successful crossing would clear this status. Accepts a retired key. */
 export function isRepairableInTheCrucible(status: string | null): boolean {
-    return status !== null && (REPAIRED_IN_THE_CRUCIBLE[status] ?? false);
+    const key = currentWoundKey(status);
+    return key !== null && (REPAIRED_IN_THE_CRUCIBLE[key] ?? false);
 }
 
 /**
@@ -1212,13 +1235,16 @@ export function isRepairableInTheCrucible(status: string | null): boolean {
  */
 export function blocksAdvancement(injury: Injury): boolean {
     if (injury.treated) return false;
-    return injury.woundType !== null && BROKEN_STATUSES.includes(injury.woundType);
+    return brokenStatusKeyOf(injury.woundType) !== null;
 }
 
 /** The structural break stopping this cultivator's next crossing, if any. */
 export function structuralBlockOn(injuries: readonly Injury[]): string | null {
     for (const injury of injuries) {
-        if (blocksAdvancement(injury)) return injury.woundType;
+        // The CURRENT key, so a saved row does not report a name the tables no
+        // longer carry - the bar and the reading have to name the same thing.
+        const status = blocksAdvancement(injury) ? brokenStatusKeyOf(injury.woundType) : null;
+        if (status) return status;
     }
     return null;
 }
@@ -1246,7 +1272,12 @@ export function brokenStatusRepairedBy(
  * wound they no longer have.
  */
 export function clearBrokenStatus(injuries: readonly Injury[], status: string): Injury[] {
-    return injuries.filter(i => i.woundType !== status);
+    // Compared under current names on BOTH sides, so a crossing repairs a saved
+    // row carrying a retired key. Matching on the raw string would leave the
+    // wound in place and the cultivator halted after the thing that was supposed
+    // to free them.
+    const wanted = currentWoundKey(status);
+    return injuries.filter(i => currentWoundKey(i.woundType) !== wanted);
 }
 
 /**

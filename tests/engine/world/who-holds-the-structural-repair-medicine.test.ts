@@ -91,7 +91,7 @@ describe('the holdings are live state', () => {
 
         const spent = spendRepairDose(
             state, 'sect-azure-cloud-pavilion', 'npc-someone', 'Somebody',
-            'unformed-nascent-soul', 21, 400
+            'crippled-nascent-soul', 21, 400
         );
         expect(spent?.medicineId).toBe('repair-soul-seating');
 
@@ -103,7 +103,7 @@ describe('the holdings are live state', () => {
         const state = world();
         const spent = spendRepairDose(
             state, 'apex-deep-survey', 'npc-first-mark', 'A First Mark',
-            'unstable-joining', 33, 900
+            'failed-integration', 33, 900
         );
         expect(spent?.doseId).not.toBeNull();
         const row = state.objects.find(o => o.id === spent!.doseId)!;
@@ -127,14 +127,14 @@ describe('the holdings are live state', () => {
         const state = world();
         // A house with only the cheap grades cannot answer a Deity
         // Transformation break at any price.
-        expect(doseAHouseWouldUse(state, 'house-held-names', 'incomplete-transformation', 25)).toBeNull();
+        expect(doseAHouseWouldUse(state, 'house-held-names', 'failed-transformation', 25)).toBeNull();
         expect(spendRepairDose(
-            state, 'house-held-names', 'x', 'X', 'incomplete-transformation', 25, 1
+            state, 'house-held-names', 'x', 'X', 'failed-transformation', 25, 1
         )).toBeNull();
         // And nobody anywhere can answer a broken step.
         for (const holding of everyRepairHolding(state)) {
             expect(doseAHouseWouldUse(
-                state, holding.factionId, 'unformed-tribulation-body', 41
+                state, holding.factionId, 'imperfect-tribulation-body', 41
             ), holding.factionId).toBeNull();
         }
     });
@@ -152,7 +152,7 @@ describe('the standard a house applies', () => {
         const outsider = willTheHouseSpendOnThem({
             id: 'nobody',
             realmOrdinal: 21,
-            woundKey: 'unformed-nascent-soul',
+            woundKey: 'crippled-nascent-soul',
             houseId: 'sect-azure-cloud-pavilion',
             onTheHouseRoll: false,
             kinOfSomebodyWhoMatters: false,
@@ -167,7 +167,7 @@ describe('the standard a house applies', () => {
         const base = {
             id: 'someone',
             realmOrdinal: 21,
-            woundKey: 'unformed-nascent-soul',
+            woundKey: 'crippled-nascent-soul',
             houseId: 'sect-azure-cloud-pavilion',
             onTheHouseRoll: true,
             kinOfSomebodyWhoMatters: false,
@@ -219,7 +219,7 @@ describe('how many of the broken are ever mended', () => {
         expect(result.mended).toBeLessThanOrEqual(result.connected);
 
         // Nobody is ever mended at the last wall, whatever the supply.
-        const brokenStep = result.byBreak.find(r => r.woundKey === 'unformed-tribulation-body');
+        const brokenStep = result.byBreak.find(r => r.woundKey === 'imperfect-tribulation-body');
         if (brokenStep) {
             expect(brokenStep.dosesAvailable).toBeNull();
             expect(brokenStep.mended).toBe(0);
