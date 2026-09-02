@@ -150,7 +150,13 @@ const HOW_IT_WENT: Readonly<Record<string, string>> = {
     taken: 'they agreed',
     turned: 'they agreed, and took hold of the fact that they were asked',
     refused: 'they said no, and it stayed between the two of them',
-    reported: 'they said no, and it reached their house'
+    reported: 'they said no, and it reached their house',
+    // The fifth, which this table did not have and which reached the player as
+    // the bare word `countered` through `resolved`'s fallback. It is the one
+    // failure state that is not a refusal - somebody with an open want the
+    // asker could move says what they would take instead - and reading it as a
+    // no is exactly backwards.
+    countered: 'they did not agree and did not close the door, and said what they want'
 };
 
 const resolved = (table: Readonly<Record<string, string>>, key: string): string =>
