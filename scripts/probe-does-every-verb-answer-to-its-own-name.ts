@@ -3,11 +3,32 @@
  *
  * The cheapest thing a player types, and usually the first: the bare word.
  * Measured while the spelling repair was being written, and it is the reason
- * the design owner's own worked example still does not work end to end -
- * `inventroy` respells to `inventory` correctly, and `inventory` typed on its
- * own reaches nothing at all. The typo was never the problem there.
+ * the design owner's own worked example did not work end to end - `inventroy`
+ * respells to `inventory` correctly, and `inventory` typed on its own reached
+ * nothing at all. The typo was never the problem there.
  *
- *     17 of 40 action names reach their own verb when typed bare.
+ *     17 of 40  before `theVerbsOwnName`
+ *     26 of 40  after, and every remaining miss is a refusal
+ *
+ * Both the numerator and the denominator move as verbs are added, and that is
+ * the rule working rather than the measurement rotting. `recognise` arrived on
+ * another branch while this was being written and answered to its own name the
+ * moment it landed, because it is on `READ_ONLY_ACTIONS` and nothing else was
+ * required of its author. A verb that needs a target or spends something will
+ * show up here as a miss instead, which is the correct answer for it.
+ *
+ * The second number is the honest ceiling of the safe fix rather than a
+ * stopping point chosen for convenience. `theVerbsOwnName` answers a bare word
+ * only when the verb it names is on `READ_ONLY_ACTIONS`, so it can never cost
+ * a day, a stone or a life - and the fourteen it declines are declined because
+ * they take something, or need a target a single word cannot supply. Two of
+ * them, `descend` and `seal`, must never be reachable this way at all.
+ *
+ * What DID change for all fourteen: none of them is swallowed any more.
+ * `seclude` used to reach `cultivate` and `market` used to reach `interact`,
+ * so a bare word silently bought a different action; now every miss is
+ * `unclear`, which costs nothing and names three things that would have
+ * worked.
  *
  * This is the sibling of `probe-does-every-verb-say-what-happened.ts`: that
  * one asks whether a verb SAYS anything, this one asks whether a player can

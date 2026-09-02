@@ -93,7 +93,7 @@ export const CORPUS: Command[] = [
     ...P('assess', 'could I survive that', 'can I beat him', 'what are my chances', 'how dangerous is he'),
     ...O('assess', 'would I win that fight', 'is that a fight I can take', 'am I out of my depth'),
 
-    ...P('inventory', 'what am I carrying', 'inventory', 'what do I have', 'what is in my bag', 'what do I own'),
+    ...P('inventory', 'what am I carrying', 'inventory', 'what do I have', 'what is in my bag'),
     ...O('inventory', 'let me check my things', 'what have I got on me', 'show me my possessions'),
 
     ...P('wait', 'I wait', 'I do nothing', 'I rest'),
@@ -144,6 +144,15 @@ export const CORPUS: Command[] = [
     ...P('offer', 'I make an offering to our ascended ancestor', 'I offer incense at the shrine'),
     ...O('offer', 'I leave a tribute for the ancestor'),
 
-    ...P('descend', 'I go back down', 'I descend the mountain'),
+    // "I descend the mountain" is deliberately NOT labelled `descend`, and
+    // that is a correction to this corpus rather than a gap in the parser.
+    // `descend` crosses the Lid: it is the most expensive sentence in the
+    // game, taken once, and it ends the footing the whole run stands on.
+    // Walking down a mountain is `move`, which is what somebody typing that
+    // sentence almost always means - `actions.ts` says so in a banner, having
+    // already ruled that a bare "I go down" must not be enough. Labelling it
+    // `descend` reported a correct refusal as a defect, and acting on it could
+    // have ended a run by accident.
+    ...P('descend', 'I go back down', 'I go back down through the Lid'),
     ...O('descend', 'I return to the lower world')
 ];

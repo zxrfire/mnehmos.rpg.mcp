@@ -835,6 +835,68 @@ chooses the verb and nothing else**: `target` and `topic` go back into the playe
 spelling before they reach the engine, because the repair cannot tell a verb word from a
 name, and `stele` is one edit from `stole`.
 
+### The phrase tables, and what the benchmark is for now
+
+`scripts/benchmark-the-local-intent-layer.ts` runs a corpus of player commands
+against `parseIntent` in two tiers - `plain`, the obvious phrasing, and
+`oblique`, the way somebody talks on turn three. It was built to answer one
+question: **does the rules layer need a model?**
+
+| | before | after |
+|---|---|---|
+| plain, as written | 85.8% | **100%** |
+| plain, one typo per sentence | 63.1% | **75.7%** |
+| oblique, as written | 40.4% | 50.0% |
+
+The answer was no. Every plain-tier miss was a near-synonym whose twin already
+worked - "weigh my chances" was answered and "what are my chances" was not,
+"why is my cultivation stalled" reached `ceiling` while "why is my progress
+stalled" returned a character sheet, "I go into seclusion" was seclusion and
+"I seclude myself" was ordinary cultivation at a twelfth of the span. Those are
+missing phrasings rather than missing intelligence, and an embedding index
+would have covered them while hiding them.
+
+**Read the plain-tier 100% as a regression suite, not as a measurement.** It
+was tuned against - those sentences were the worklist. What it is worth now is
+that it fails when somebody breaks a phrasing, and a real coverage claim would
+need a fresh held-out corpus written by somebody else. The out-of-sample number
+in that table is the typo arm: those exact strings were never inspected while
+the patterns were being written, and it moved twelve points on the same work.
+
+Two rules for adding to the tables:
+
+- **Try the three or four ways somebody would say it**, and try the sentence
+  next door to check you have not swallowed it. Every fix above came in pairs
+  for that reason, and one of them - `peace with` - reached a verb that commits
+  a house irreversibly on a sentence that named nobody. `misparse.test.ts`
+  caught it the same minute.
+- **When the benchmark and the repo disagree, the benchmark is usually wrong.**
+  Two corpus labels were corrected rather than the parser: "what do I own" is
+  the sheet and not the pouch, already ruled in `misparse.test.ts`; and
+  "I descend the mountain" is a walk - labelling it `descend` reported a
+  correct refusal as a defect and invited a fix that could end a run.
+
+`tests/web/the-plain-way-of-saying-it-reaches-the-verb.test.ts` holds the
+sentences as a contract, with the things the work must NOT have taken beside
+them.
+
+### A verb answers to its own name
+
+`theVerbsOwnName` routes a sentence that is nothing but an action's name to
+that action - but **only when the action is on `READ_ONLY_ACTIONS`**. That gate
+is the whole safety argument and it needs no exception list: those verbs pass
+no time and change no state, so a bare word reaching one cannot cost a day, a
+stone or a life. 17 of 40 names answered to themselves before; 26 do now.
+
+The fourteen still declined are declined because they take something or need a
+target one word cannot supply, and two of them - `descend`, which crosses the
+Lid once, and `seal`, which wakes a sealed ancestor - must never be reachable
+this way at all. **Do not widen this rule past the read-only gate.** What did
+change for all fourteen is that none of them is swallowed any more: `seclude`
+used to reach `cultivate` and `market` used to reach `interact`, so a bare word
+silently bought a different action. Every remaining miss is now `unclear`,
+which costs nothing and names three things that would have worked.
+
 ### The mode is named to the player
 
 `which-mode-this-session-is-playing-in.ts`, read off the narrator that was actually built
