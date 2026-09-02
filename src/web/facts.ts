@@ -307,6 +307,32 @@ function signed(n: number, digits = 0): string {
 }
 
 /**
+ * How long they have stood here, said the way a person would say it.
+ *
+ * The sheet used to open this line with `toFixed(1)`, so the first thing a
+ * sixteen-year-old read about themselves on the turn they were born into the
+ * world was "0.0 years at this realm without advancing" - a decimal point on
+ * zero, and an accusation of stalling levelled at somebody who has not had
+ * time to. Found in play on turn one of a fresh run.
+ *
+ * The number is the same number; what changes is that a figure is only printed
+ * where a figure is what the player wants, which is once the stretch is long
+ * enough to be worth counting. Under a year there is nothing to count, and at
+ * one year English wants the singular.
+ */
+function timeHeldAtThisRealm(years: number): string {
+    if (years < 1) {
+        return years < 0.05
+            ? 'Newly at this rung, with nothing yet spent standing on it.'
+            : 'Under a year at this rung so far.';
+    }
+    if (years < 2) return 'A year at this realm without advancing.';
+    // Whole years above that. The tenth of a year was never a decision anybody
+    // made on this screen, and a run measured in centuries prints it forever.
+    return `${Math.round(years)} years at this realm without advancing.`;
+}
+
+/**
  * The player's own condition, as they experience it.
  *
  * Their own sheet is not world structure and is not withheld - a person knows
@@ -365,7 +391,7 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
                   + `since the day ${untreated === 1 ? 'it was' : 'they were'} taken, and nothing `
                   + `has closed ${untreated === 1 ? 'it' : 'them'}. `
                   + `At ${CRIPPLING_UNTREATED_INJURIES} the body stops mending itself altogether.`,
-        `${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm without advancing.`,
+        timeHeldAtThisRealm(cultivator.yearsAtCurrentRealm),
         // WHOSE ROLL THEY ARE ON.
         //
         // The sheet listed root, attributes, qi, health, hunger and money and
@@ -1304,13 +1330,23 @@ export function factsForMove(
           `${describeAmbientPerceived(ambientAfter)} Nothing happened on the road, which is not the same as nothing being on it.`
         : base.prose;
 
-    return observable(
-        `${destination}.`, lines, prose,
-        // The band names itself in the sentence `describeAmbientInWorld` opens
-        // with - "Qi density thin", "Qi density sealed vein" - so the enum key
-        // in front of it was the same word twice, once as a column value.
-        [`The ground at ${destination}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
-    );
+    return {
+        ...observable(
+            `${destination}.`, lines, prose,
+            // The band names itself in the sentence `describeAmbientInWorld` opens
+            // with - "Qi density thin", "Qi density sealed vein" - so the enum key
+            // in front of it was the same word twice, once as a column value.
+            [`The ground at ${destination}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
+        ),
+        // For the same reason `factsForGather` carries it, and narrowed the
+        // same way: a road is a spent stretch, it can starve somebody or finish
+        // them, and `required` is the only channel that survives a model
+        // deciding the arrival was the interesting part. `observable` has no
+        // slot for it, so dropping it was silent - which is how it stayed
+        // dropped. Not `base.required`: a journey is not a stretch spent
+        // cultivating either, and the ceiling paragraph belongs to that one.
+        required: whatTheStretchCostTheBody(after, skip)
+    };
 }
 
 export function factsForEat(cultivator: Cultivator, satietyRestored: number, stonesSpent: number): EngineFacts {
@@ -1371,21 +1407,33 @@ export function factsForInvestigation(
     subject: string,
     subjectFacts: readonly string[]
 ): EngineFacts {
-    const lines = [
-        `${cultivator.name} examined ${subject}. Nothing was moved, spent or taken; this was looking.`,
-        ...subjectFacts,
-        `Observed from ${placeName(cultivator)}.`,
-        describeAmbientPerceived(ambient)
-    ];
+    // ── NOBODY HAS TO BE ASKED FOR YOUR OWN AGE ─────────────────────────
+    //
+    // The closing clause is what makes an examination honest about its limits:
+    // a face gives you what a face gives you, and the rest is somebody's to
+    // withhold. Pointed at the asker it becomes a contradiction, which is a
+    // floor failure at every tier - the sheet was read out in full and then
+    // followed by a sentence saying the town is under no obligation to say any
+    // of it. Found the turn "I examine myself" started resolving at all.
+    const looking = subject === cultivator.name;
     return {
         headline: `${subject}, examined.`,
         structure: standingStructure(cultivator, ambient),
-        lines,
-        prose: [
-            `${subject}. ${subjectFacts.join(' ')}`,
-            'That is what the record holds. What it means is a separate question, and nobody in ' +
-            `${placeName(cultivator)} is obliged to answer it.`
-        ].join('\n\n')
+        lines: [
+            looking
+                ? `${cultivator.name} took stock of themselves. Nothing was moved, spent or taken.`
+                : `${cultivator.name} examined ${subject}. Nothing was moved, spent or taken; this was looking.`,
+            ...subjectFacts,
+            `Observed from ${placeName(cultivator)}.`,
+            describeAmbientPerceived(ambient)
+        ],
+        prose: looking
+            ? subjectFacts.join(' ')
+            : [
+                `${subject}. ${subjectFacts.join(' ')}`,
+                'That is what the record holds. What it means is a separate question, and nobody in ' +
+                `${placeName(cultivator)} is obliged to answer it.`
+            ].join('\n\n')
     };
 }
 
@@ -2271,6 +2319,61 @@ export function factsForSiteTaken(
     };
 }
 
+/**
+ * What a spent stretch did to the body, in the words the digest uses.
+ *
+ * ── A PLAYER STARVED TO DEATH AND THE GAME SAID "POUCHED A HERB" ─────────
+ *
+ * Found by playing, deterministic reader, no model. Twenty-five spirit stones
+ * in the purse and a bowl of millet on sale for one cash, seven turns of
+ * foraging, satiety 100 -> 44 -> 30 -> 16 -> 2 -> 0 -> five turns starving ->
+ * dead. Every turn printed exactly two sentences and neither of them was about
+ * hunger. The killing turn printed:
+ *
+ *   > I gather herbs
+ *   "5 days bent over the ground around Millrun.
+ *    Found and pouched: one Nine-Node Calamus, mortal grade, worth about 6
+ *    spirit stones."
+ *
+ * and shipped `alive: false` in the very same result. The death was discovered
+ * on the NEXT input, as a 409.
+ *
+ * ── AND IT WAS WRONG AT EVERY TIER, WHICH IS THE POINT ───────────────────
+ *
+ * `factsForTimeSkip` gets both of these right: `timeSkipProse` closes with the
+ * satiety line and the death sentence, and `required` carries the death
+ * verbatim so a model cannot drop it. `factsForGather` called it, took its
+ * `structure` and its `lines`, and composed a fresh two-sentence `prose` -
+ * which is what the deterministic narrator ships - while dropping `required`
+ * entirely. So the no-model tier could not say it and the model tier was not
+ * required to. Not an embedding weakness; an omission in the composer, and it
+ * would read the same with any narrator in front of it.
+ *
+ * Returned as lines rather than folded in, because `withRequiredLines` matches
+ * on a normalised substring: composing the death here in the same words the
+ * `required` channel holds is what stops the player being told twice.
+ *
+ * ── AND WHY NOT SIMPLY `base.required` ──────────────────────────────────
+ *
+ * That was the first fix and it was worse than the defect in one direction.
+ * `REQUIRED_EVENT_KINDS` holds `method_ceiling` and `ground_ceiling`, and both
+ * are required of an account of a stretch spent CULTIVATING - "you sat for
+ * fifty years and nothing accumulated, and nothing ever will". A forage is not
+ * that stretch. Carrying them wholesale stapled the whole no-manual paragraph
+ * to the end of every seven-day foraging turn, unchanged, forever, which is the
+ * dump this module's own note warns about: "a required line stapled to the end
+ * of good prose is a cost". The body and the run are what a forage cannot leave
+ * out, because those are what a forage can actually change.
+ */
+function whatTheStretchCostTheBody(after: Cultivator, skip: TimeSkipResult): string[] {
+    const said: string[] = [];
+    if (after.satiety <= LOW_SATIETY && after.alive) {
+        said.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
+    }
+    if (skip.died) said.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
+    return said;
+}
+
 /** A stretch of foraging, and whatever the ground gave up. */
 export function factsForGather(
     before: Cultivator,
@@ -2283,18 +2386,25 @@ export function factsForGather(
     const outcome = found
         ? `Found and pouched: one ${found.name}, ${found.grade} grade, worth about ${found.value} spirit stones.`
         : 'Nothing worth carrying. The ground here has been worked over already, the way most ground has.';
+    const cost = whatTheStretchCostTheBody(after, skip);
 
     return {
-        headline: found ? `${found.name}, pouched.` : 'Nothing worth carrying.',
+        // A headline about a mushroom, over an answer that says the person
+        // holding it is dead, is the same defect one line up.
+        headline: skip.died
+            ? `${before.name} did not come back off the ground.`
+            : found ? `${found.name}, pouched.` : 'Nothing worth carrying.',
         structure: base.structure,
         lines: [
             `${before.name} spent ${humanDays(skip.simulatedDays)} working the ground around ${placeName(before)}.`,
             outcome,
             ...base.lines
         ],
+        required: cost,
         prose: [
             `${humanDays(skip.simulatedDays)} bent over the ground around ${placeName(before)}.`,
-            outcome
+            outcome,
+            ...cost
         ].join('\n\n')
     };
 }
