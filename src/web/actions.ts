@@ -1218,6 +1218,29 @@ export const SECT_THEFT_PATTERN =
  * `contribution` is on the list by itself because there is exactly one thing in
  * the game that pays in it.
  */
+/**
+ * Reading the wall for a house that is short of people.
+ *
+ * Deliberately narrow, and narrow in a specific way: it requires either a
+ * PAPER noun or an INTERROGATIVE frame. That is what keeps it off
+ * `sect_manage`'s intake verb, which owns "recruit disciples" said as an
+ * instruction by somebody who runs a house. "I recruit two disciples" is a
+ * decree; "who is recruiting" is a question about the world, and nobody with a
+ * house to run asks it.
+ *
+ * It is not in `SECT_INTENT_PATTERNS` and must not be, for the same reason
+ * `SECT_DUTY_PATTERN` is not: half the sentences that mean this carry no sect
+ * noun at all. "What's posted here" and "is anybody taking disciples" are the
+ * two most natural ways to ask and neither names an institution.
+ *
+ * `notice board` and `the board` are NOT here. They belong to
+ * {@link SECT_DUTY_PATTERN}, which had them first and which is a member-only
+ * surface - a collision worth knowing about but not worth stealing a working
+ * phrase over.
+ */
+export const RECRUITING_BILL_PATTERN =
+    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b/;
+
 export const SECT_DUTY_PATTERN =
     /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b|\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b|\b(?:volunteer for|sign up for|put my name down)\b/;
 
@@ -3846,6 +3869,19 @@ function planIntent(input: string): PlannedAction {
         && /\b(?:how much|how many|what(?:'s| is)?|do i have|have i|my|balance|standing)\b/.test(text)
         && !usedAsVerb(text, DUTY_TAKING_VERBS)) {
         return { action: 'sect', intent: 'standing' };
+    }
+
+    // ── WHAT IS NAILED TO THE WALL ───────────────────────────────────────
+    //
+    // Ahead of the duty board because the two are adjacent and the duty board
+    // is a MEMBER'S surface: somebody with no house asking what is posted in a
+    // market town wants the recruiting bills, and answering them with a list of
+    // sect chores they cannot take is the confident wrong answer rather than a
+    // refusal. `SECT_DUTY_PATTERN` still owns every phrasing that names a
+    // board, a duty, a commission or contribution, so the sentences it was
+    // written for are untouched - this only catches the ones it never had.
+    if (RECRUITING_BILL_PATTERN.test(text)) {
+        return { action: 'look', intent: 'bills' };
     }
 
     if (SECT_DUTY_PATTERN.test(text)

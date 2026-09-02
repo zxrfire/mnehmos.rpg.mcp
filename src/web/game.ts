@@ -428,6 +428,7 @@ import {
     resolveFoundGround,
     type FoundGround
 } from './ground-the-world-found.js';
+import { readTheWall } from './what-is-posted-on-the-wall-here.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -2760,6 +2761,29 @@ ${noticedWaiting}`;
                         ));
                 }
 
+                // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
+                //
+                // A house that needs bodies advertises, and a house that does
+                // not need them has no reason to. So a wall is a discovery
+                // channel that runs the opposite way to every other one in the
+                // game: instead of the player having to find a name, the houses
+                // that are short come looking. Free, because reading a wall is
+                // free everywhere; the price is at the door, where the bar on
+                // the paper is the real bar.
+                if (action.intent === 'bills') {
+                    const wall = readTheWall(this.knowledge, cultivator, run);
+                    return this.freeAction(run, 'look', wall.lines.length > 0
+                        ? factsForToolResult(
+                            `There is paper up in ${placeName(cultivator)}.`,
+                            wall.lines
+                        )
+                        : factsForRefusal(
+                            'Nothing is posted here.',
+                            'You go looking for a wall with paper on it. Either there is no '
+                            + 'wall, or nobody who needs people has been through lately.'
+                        ));
+                }
+
                 const company = this.company(cultivator);
                 const standing = this.standingHere(cultivator);
                 const looking = this.freeAction(
@@ -2768,6 +2792,19 @@ ${noticedWaiting}`;
                         ? factsForCompany(cultivator, company, standing)
                         : factsForLook(cultivator, ambient, company, standing)
                 );
+                // And the wall, but only where it has something the player has
+                // not already read. Looking round a market town every day for a
+                // season must not reprint the same two posters; a bill whose
+                // house is already held writes nothing through `learnIfNew` and
+                // is dropped here on exactly that signal, so nothing has to
+                // remember that this player has stood here before.
+                const posted = readTheWall(this.knowledge, cultivator, run);
+                for (const line of posted.newLines) {
+                    looking.facts.lines.push(line);
+                    looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                }
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
                 // player, which is exactly why it is worth anything.
