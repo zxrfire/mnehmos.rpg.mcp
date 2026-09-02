@@ -89,6 +89,7 @@ import {
 } from './cultivation.js';
 import {
     attemptBreakthrough,
+    whatACrossingTakesFrom,
     canAttemptBreakthrough,
     computeBreakthroughOdds,
     overflowBonus,
@@ -829,6 +830,31 @@ export function simulateTimeSkip(
                     ranksOnDay++;
                     daysSinceAdvance = 0;
                     realmClockBase = 0;
+
+                    // ── WHAT ARRIVING COST THE BODY ──────────────────────
+                    //
+                    // The design owner's ruling, and the second of the two
+                    // callers that has to honour it. See `bodyCost` on
+                    // `BreakthroughResultSchema`: a crossing costs, and the one
+                    // thing that separates the Unearned Step from a qi pill is
+                    // that the qi pill still makes you cross.
+                    //
+                    // Against `cultivator.maxHp` because that is the pool this
+                    // whole function is denominated in - `hp` is tracked against
+                    // it for mending, hostility and deviation alike, and
+                    // `advanceRealm` re-derives the real pool afterwards in
+                    // `applyTimeSkip`, carrying the share across.
+                    //
+                    // CLAMPED, and the clamp is `whatACrossingTakesFrom`'s
+                    // rather than this caller's: a crossing takes a share of the
+                    // pool or a share of what is standing, whichever is less, so
+                    // it can never be the reason the next event is lethal. See
+                    // `A_CROSSING_MAY_NOT_TAKE_MORE_THAN` for the played run
+                    // that made that necessary.
+                    const paidWithTheBody = whatACrossingTakesFrom(
+                        hp, cultivator.maxHp, result.bodyCost
+                    );
+                    hp -= paidWithTheBody;
                     if (result.foundationEstablished !== null) {
                         foundation = result.foundationEstablished;
                     }
@@ -853,14 +879,31 @@ export function simulateTimeSkip(
                             );
                         }
                     }
-                    push('breakthrough_success', result.narrationHint, false, {
-                        fromOrdinal: result.fromOrdinal,
-                        toOrdinal: result.toOrdinal,
-                        finalChance: result.finalChance,
-                        tribulation: result.tribulation,
-                        foundationEstablished: result.foundationEstablished,
-                        immortalStatusGained: result.immortalStatusGained
-                    });
+                    push(
+                        'breakthrough_success',
+                        // What it cost, in the same sentence as what it bought.
+                        // A digest that reports a rank gained and is silent
+                        // about a quarter of the body is the omission this
+                        // engine keeps finding: the number moved on the sheet
+                        // and no sentence said which way or why.
+                        paidWithTheBody > 0
+                            ? `${result.narrationHint} Getting through it took `
+                              + `${paidWithTheBody} of the body, which is what arriving costs and `
+                              + 'is why an accumulated rush across several rungs leaves somebody '
+                              + 'standing in nothing.'
+                            : result.narrationHint,
+                        false,
+                        {
+                            fromOrdinal: result.fromOrdinal,
+                            toOrdinal: result.toOrdinal,
+                            finalChance: result.finalChance,
+                            bodyCost: result.bodyCost,
+                            paidWithTheBody,
+                            tribulation: result.tribulation,
+                            foundationEstablished: result.foundationEstablished,
+                            immortalStatusGained: result.immortalStatusGained
+                        }
+                    );
 
                     // The price of the crossing gets its own line in the digest.
                     // A crossing that cost someone a brother must not be a

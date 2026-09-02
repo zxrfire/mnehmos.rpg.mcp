@@ -470,7 +470,28 @@ export function strikeAtTheWall(
 
     let after = npc;
 
-    // ── What the crossing did to the body, in rows. ──
+    // ── AND `result.bodyCost` IS NOT APPLIED HERE, BECAUSE IT CANNOT BE ──
+    //
+    // Stated rather than left as an absence, because the next person to read
+    // `bodyCost` on `BreakthroughResultSchema` will otherwise assume the world
+    // charges it. It does not: `NpcCultivation` has no `hp` and no `maxHp`.
+    // There is no persisted pool on an NPC at all - it is derived on demand
+    // from `maxHpForOrdinal` wherever a fight needs one - so there is nothing
+    // for a fraction of the pool to come out of, and nothing that would still
+    // be missing an hour later.
+    //
+    // This is `AGENTS.md`'s own worked example one field further along: *"
+    // `NpcCultivation.untreatedInjuries` is an integer, so no NPC can carry a
+    // typed wound the player can carry."* That one was fixed by giving the
+    // world rows; this one wants a body, which is a larger change than a
+    // crossing price and is not one to make on the way past.
+    //
+    // What it means today, said plainly so nobody measures it by accident: the
+    // crossing toll binds the PLAYER and not the world. The pyramid is
+    // therefore insensitive to it - measured, both arms in one command, and
+    // byte-identical at 2364/234/82 - and anybody tuning the toll should use
+    // `root-cliff.test.ts`, which runs real cultivators through real skips and
+    // does move.
     const sustained: Injury[] = result.injuriesSustained;
     if (sustained.length > 0) after = carryingWounds(after, sustained, day);
 

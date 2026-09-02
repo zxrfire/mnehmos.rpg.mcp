@@ -44,7 +44,11 @@ import {
     type TimeSkipResult
 } from '../schema/cultivation.js';
 import { ambientForBlock } from '../engine/cultivation/ambient.js';
-import { attemptBreakthrough, canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
+import {
+    attemptBreakthrough,
+    canAttemptBreakthrough,
+    whatACrossingTakesFrom
+} from '../engine/cultivation/breakthrough.js';
 import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birth.js';
@@ -108,6 +112,16 @@ import { round2, writeAdminAudit } from '../server/consolidated/cultivation-supp
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
+import {
+    IMMORTAL_ITEMS,
+    ImmortalGradeSchema,
+    type ImmortalGrade
+} from '../data/cultivation/immortal-items.js';
+import {
+    NOTHING_IS_GIVEN_AT_OR_ABOVE,
+    STEP_CEILING_BY_GRADE,
+    takeTheUnearnedStep
+} from '../engine/cultivation/taking-the-unearned-step.js';
 import {
     couldTheyTellItIs,
     whatTheirReferenceAffords,
@@ -968,6 +982,53 @@ const A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED =
 
 /** Who the player last put something to. The referent a pronoun stands in for. */
 const FLAG_LAST_ADDRESSED = 'last_addressed';
+
+/**
+ * That this body has already been carried across once, and will not be again.
+ *
+ * `ONCE_IN_A_LIFE` in `immortal-items.ts`: one Unearned Step per person, ever.
+ * A flag rather than a derived fact, because the thing it records is that an
+ * EVENT happened - the ordinal it produced is indistinguishable afterwards from
+ * one somebody climbed to, which is precisely what makes the object socially
+ * expensive and mechanically final.
+ */
+const FLAG_STEP_TAKEN = 'unearned_step_taken';
+
+/**
+ * An Unearned Step in the pouch, with the grade it was made at.
+ *
+ * ── WHY THE GRADE IS IN THE ID ───────────────────────────────────────────
+ *
+ * The catalog holds ONE row for the object and three grades on it, because
+ * grade is a property of the copy rather than of the kind - and the pouch
+ * stores a count against an item id and has nowhere else to put one. So a
+ * carried copy is `immortal-unearned-step:lower`, and this is the one place
+ * that convention is read.
+ *
+ * It is a stop-gap and the catalog says what the real answer is:
+ * `NOT_YET_KEPT_AS_OBJECTS` states that every one of these should be an
+ * `ObjectRecord` with a holder chain and a provenance, that a count "cannot
+ * answer which one moved, who moved it, or what was given for it", and that the
+ * worked precedent is `who-holds-the-structural-repair-medicine.ts` next door.
+ * That is a seeding job in files this does not own. What this buys in the
+ * meantime is that the EFFECT exists and a player can reach it, which is the
+ * difference between a rule and a paragraph.
+ */
+function theUnearnedStepIn(
+    itemId: string
+): { id: string; name: string; grade: ImmortalGrade } | null {
+    const [id, grade] = itemId.split(':');
+    const item = IMMORTAL_ITEMS.find(row => row.id === id);
+    if (!item || item.effect !== 'promote_realm') return null;
+    const parsed = ImmortalGradeSchema.safeParse(grade);
+    return {
+        id: item.id,
+        name: item.name,
+        // A copy with no grade written on it is the commonest one in the world.
+        // `knownByGrade` is 1 higher, 3 middle, 9 lower.
+        grade: parsed.success ? parsed.data : 'lower'
+    };
+}
 
 /**
  * A pointer that names no role at all, which is the commonest one typed.
@@ -3666,7 +3727,7 @@ ${noticedWaiting}`;
                 );
 
             case 'consume_pill':
-                return this.consumePill(cultivator, action.target, rawInput);
+                return this.consumePill(run, cultivator, action.target, rawInput);
 
             case 'list_techniques':
                 return this.listTechniques(run, cultivator, action.target);
@@ -13250,17 +13311,15 @@ ${opened.text}` : receipt,
             // failure and on a death, so this branch only ever fires on an
             // arrival.
             //
-            // CLAMPED SO IT CANNOT KILL, and this path needs the clamp most:
-            // `strikeBarrier` spends NO DAYS, so somebody with banked progress
-            // can strike four times in an afternoon and owe a whole pool. A
-            // crossing that succeeded must not end the run by arithmetic - that
-            // would collapse `success` and `death` into one answer. What it does
-            // instead is leave them on almost nothing, which is the risk the
-            // ruling is about and which the turn now says out loud.
-            const owed = result.bodyCost > 0
-                ? Math.max(1, Math.round(maxHp * result.bodyCost))
-                : 0;
-            paidWithTheBody = Math.min(owed, Math.max(0, carried - 1));
+            // CLAMPED, and this path needs it most: `strikeBarrier` spends NO
+            // DAYS, so somebody with banked progress can strike four times in an
+            // afternoon and owe a whole pool with nothing mending in between.
+            // The clamp is `whatACrossingTakesFrom`'s and not this caller's - a
+            // crossing takes a share of the pool or a share of what is standing,
+            // whichever is less - so the played verb and the auto-breakthrough
+            // inside a seclusion cannot come to different answers about the same
+            // price. See `A_CROSSING_MAY_NOT_TAKE_MORE_THAN`.
+            paidWithTheBody = whatACrossingTakesFrom(carried, maxHp, result.bodyCost);
 
             let updated = this.repos.cultivators.update(cultivator.id, {
                 realmOrdinal: result.toOrdinal,
@@ -15216,6 +15275,7 @@ ${opened.text}` : receipt,
      * person by that name.
      */
     private async consumePill(
+        run: Run,
         cultivator: Cultivator,
         target: string | undefined,
         rawInput = ''
@@ -15317,6 +15377,123 @@ ${opened.text}` : receipt,
             cultivatorId: cultivator.id
         });
         return this.fromToolResult('alchemy_manage.consume_pill', 'consume_pill', result, name);
+    }
+
+    /**
+     * Spend an Unearned Step: the one crossing that is given rather than made.
+     *
+     * `takeTheUnearnedStep` decides all of it off the catalog's own contract -
+     * one boundary, grade caps the destination, 41 is a hard stop, once per
+     * life, and a crossing taken short of Perfection leaves an `incomplete`
+     * foundation. Nothing is re-decided here; this writes.
+     *
+     * ── SPENT ON EVERY BRANCH, INCLUDING THE ONES THAT DO NOTHING ────────
+     *
+     * `ONCE_IN_A_LIFE` is explicit: *"a second one of either does nothing at
+     * all to somebody who has already taken one - it is simply consumed against
+     * a body that will not take it twice."* So the pouch row goes on a refusal
+     * as well, and the refusal says so, because a player who does not know that
+     * has been handed a trap rather than a rule. The one exception is the wall
+     * refusal: standing in the wrong place is not a decision they have taken
+     * yet, and charging for it would make the object impossible to aim.
+     */
+    private spendTheUnearnedStep(
+        run: Run,
+        cultivator: Cultivator,
+        row: { itemId: string },
+        step: { id: string; name: string; grade: ImmortalGrade }
+    ): Execution {
+        const alreadyTaken = readFlag(this.db, cultivator.id, FLAG_STEP_TAKEN) === '1';
+        const verdict = takeTheUnearnedStep({
+            fromOrdinal: cultivator.realmOrdinal,
+            grade: step.grade,
+            alreadyTaken
+        });
+
+        // Aiming it is not spending it. Everything else is.
+        const consumed = verdict.taken || verdict.refusal !== 'not_at_a_boundary';
+
+        if (!verdict.taken) {
+            if (consumed) removeFromPouch(this.db, cultivator.id, row.itemId, 1);
+            return refused('engine.takeTheUnearnedStep', 'consume_pill', factsForRefusal(
+                `${step.name}: nothing moved.`,
+                `${verdict.line}${consumed
+                    ? ' It is gone either way. There is no version of this object that can be put '
+                      + 'back in the box.'
+                    : ' It is still in the pouch: you did not take it, you only considered where '
+                      + 'you were standing.'}`,
+                `takeTheUnearnedStep refused: ${verdict.refusal}. `
+                + `${step.grade} grade at ordinal ${cultivator.realmOrdinal}; ceiling `
+                + `${STEP_CEILING_BY_GRADE[step.grade]}; nothing above `
+                + `${NOTHING_IS_GIVEN_AT_OR_ABOVE} is given to anybody by anything. `
+                + `Pouch row ${consumed ? 'consumed' : 'left'}.`
+            ));
+        }
+
+        const before = cultivator;
+        const after = this.db.transaction((): Cultivator => {
+            removeFromPouch(this.db, cultivator.id, row.itemId, 1);
+            writeFlag(this.db, cultivator.id, FLAG_STEP_TAKEN, '1');
+            // THE NEUTRAL DOOR, and it is the point. `advanceRealm` re-derives
+            // the pools and carries the share across and does nothing else - no
+            // roll, no wound, no toll, no body cost - because none of those
+            // belong to a crossing nobody made.
+            let updated = this.repos.cultivators.advanceRealm(cultivator.id, 1) ?? cultivator;
+            if (verdict.foundationQuality) {
+                persistFoundation(this.repos, cultivator.id, verdict.foundationQuality);
+                updated = this.repos.cultivators.getById(cultivator.id) ?? updated;
+            }
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const facts = factsForToolResult(
+            `${rankName(before.realmOrdinal)} to ${rankName(after.realmOrdinal)}, given.`,
+            [
+                verdict.line,
+                `The body it has to be carried in is larger than it was: ${before.maxHp} before, `
+                + `${after.maxHp} now, and ${after.hp} of that is what you are standing in. `
+                + 'Nothing was taken out of you getting here, because you did not get here.',
+                'Everybody who has watched you for a decade can do the arithmetic, and the '
+                + 'conclusion arrives in about a week.'
+            ]
+        );
+        // The one thing a player cannot play without: they have spent the only
+        // one they will ever be given.
+        (facts.required ??= []).push(
+            'That was the only crossing anybody will ever be handed you. A second one of these '
+            + 'does nothing to a body that has taken one, whatever grade it is and whoever gives '
+            + 'it to you.'
+        );
+        facts.structure.push(
+            `takeTheUnearnedStep: ordinal ${verdict.fromOrdinal} -> ${verdict.toOrdinal} through `
+            + '`advanceRealm`, which re-derives the pools and carries the share across. NOT '
+            + 'through `attemptBreakthrough`: no roll, no failure table, no tribulation, no toll '
+            + `and no bodyCost, because none of those code paths is entered. Foundation left: `
+            + `${verdict.foundationQuality ?? 'unchanged - it was taken from Perfection, so '
+                + 'nothing was skipped'}.`,
+            'What the Price of Advancement does about a boundary crossed without accumulation is '
+            + 'deliberately unanswered - see the note on the `promote_realm` row in '
+            + '`immortal-items.ts`, which states that content settled the social half and not the '
+            + 'arithmetic. This charges no toll because it never reaches one, which is the honest '
+            + 'state of it rather than a ruling.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.takeTheUnearnedStep',
+                action: 'consume_pill',
+                summary:
+                    `${step.name} (${step.grade}) spent: ${rankName(verdict.fromOrdinal)} to `
+                    + `${rankName(verdict.toOrdinal)}. One per life, and the flag is now set.`,
+                ok: true
+            }]
+        };
     }
 
     /** The word that turns the wasted-pill refusal into a deliberate act. */
@@ -18426,7 +18603,7 @@ ${unnamed}`;
             // health. The same sentence a long stretch closes with, from the
             // same function, so the two surfaces cannot drift.
             if (nearlyGone(standing)) {
-                sayThisWhateverTheNarratorDoes(facts, theBodyIsNearlyGone(standing));
+                sayThisWhateverTheNarratorDoes(facts, theBodyIsNearlyGone(standing, standing.spiritStones));
             }
         }
 
