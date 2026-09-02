@@ -979,6 +979,35 @@ export function artsKnownAt(ordinal: number): number {
  *
  * Null when the catalog has nothing they could open, which is a legitimate
  * answer: the three canons above ordinal 41 want 41 and 42 to so much as read.
+ * It is also the answer that hands somebody back their OWN house's road, since
+ * the caller falls through to the shelf when this returns null - which is why
+ * the ownership filter below can afford to be strict.
+ *
+ * ── AND IT MAY NOT HAND THEM SOMEBODY ELSE'S PRIVATE ROAD ────────────────
+ *
+ * "From the ordinary catalog" was doing more than it looked. Every road above
+ * cap 29 is taught by exactly one house, so a reconstruction ranging over the
+ * whole catalog was overwhelmingly likely to land on a road that is some
+ * house's private property - and it landed on the people least able to explain
+ * holding one.
+ *
+ * Measured across five seeded worlds before this filter: 225 of 1525 roads held
+ * by house members were another house's private road, 14.8%, and 173 of those
+ * 225 sat in the TOP TWO RANKS of their own house. The Storm Tyrant himself -
+ * patriarch of the lightning house, standing at 34 with his own shelf topping
+ * at 33 - was seeded holding `rime-heart-stillness-canon`, the Frostmirror
+ * Court's signature ice canon, taught by one house that is not his.
+ *
+ * That was cosmetic until it was not. `betrayalOfSelling` and
+ * `unauthorisedPractice` now price holding another house's road, so the seeder
+ * was minting a standing, unearned rung-1 offence for a seventh of the world's
+ * ranked cultivators, concentrated on exactly the people whose art is a
+ * signature.
+ *
+ * So: only roads nobody can call theirs. Where none reaches them the answer is
+ * null and the caller keeps the house's own top road - which leaves somebody
+ * standing a rung above their own book, and that is the honest description of a
+ * house whose shelf has been out-climbed rather than a hole to paper over.
  */
 export function roadThatCarriedThemHere(npc: NpcRecord): Manual | null {
     const ordinal = npc.cultivation.realmOrdinal;
@@ -992,6 +1021,7 @@ export function roadThatCarriedThemHere(npc: NpcRecord): Manual | null {
         .filter(t => Number(t.requiredOrdinal ?? 0) <= ordinal)
         .filter(t => suitsRoot(npc.cultivation.spiritRoot, t.element ?? null))
         .filter(t => !held.has(t.id))
+        .filter(t => noHouseCanCallItTheirs(t.id))
         .sort((a, b) => Number(a.cap) - Number(b.cap) || a.id.localeCompare(b.id));
     if (open.length === 0) return null;
     const t = open[0];
