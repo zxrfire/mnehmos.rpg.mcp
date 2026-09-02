@@ -240,44 +240,101 @@ describe('a master writes their road out for the people behind them', () => {
 describe('the upper ladder is arrived at rather than inherited', () => {
     const HORIZON_YEARS = 3_000;
 
-    // One soak, shared by the two assertions below. Three thousand simulated
-    // years is the expensive thing in this file and running it twice measures
-    // the same world twice.
-    let run: Promise<{ state: WorldState; seeded: Set<string> }> | null = null;
+    /**
+     * The seeds this claim is judged over, and why there is more than one.
+     *
+     * This guard used to pin `produces-its-own` alone, and the band it counts
+     * is about thirty people - which is far too few for a ratio on one seed.
+     * Measured when eleven rows were added to the member catalog, which touches
+     * nothing above Nascent Soul and reshuffles the seeded population anyway:
+     *
+     *     seed                without the rows      with them
+     *     produces-its-own    22 of 30   0.733      4 of 10   0.400
+     *     pool-b              14 of 23   0.609     17 of 29   0.586
+     *     pool-c              22 of 28   0.786     37 of 43   0.860
+     *     pool-d              24 of 35   0.686     15 of 27   0.556
+     *     pool-e              34 of 41   0.829     32 of 41   0.780
+     *     pool-f              27 of 37   0.730      9 of 14   0.643
+     *     POOLED             143 of 194  0.737    114 of 164  0.695
+     *
+     * One seed went from 0.733 to 0.400 and the claim did not move: 0.737
+     * against 0.695, over a sample eighteen times the size of the thing that
+     * failed. The size of the band on a single seed ranges from 10 to 43 across
+     * those twelve worlds, so a low reading is the spread rather than a signal.
+     *
+     * The bar stays at half. It was never the problem, and widening it would
+     * have turned a real guard into decoration - see "Pool the sample. Never
+     * widen the bar" in AGENTS.md. What changed is only that one seed is no
+     * longer asked to carry a claim about a population.
+     */
+    // The first three in the order they were measured, rather than a flattering
+    // subset. Picking the kindest seeds would be widening the bar wearing
+    // pooling's clothes: on the arm above, the three best pool to 0.79 and the
+    // three worst to 0.55, and neither is the claim. These three pool to 0.716
+    // without the rows and 0.707 with them, either side of the six-seed figure.
+    const SEEDS = ['produces-its-own', 'pool-b', 'pool-c'] as const;
+
+    // The soaks, shared by the assertions below. Three thousand simulated years
+    // is the expensive thing in this file and running one twice measures the
+    // same world twice.
+    let run: Promise<{ state: WorldState; seeded: Set<string> }[]> | null = null;
     function soaked() {
         run ??= (async () => {
             const catalog = await loadCultivationCatalog();
-            const { state } = seedWorld({ seed: 'produces-its-own', catalog });
-            const seeded = new Set(state.npcs.map(n => n.id));
-            advanceWorldYears(state, HORIZON_YEARS, { stopOnInterrupt: false });
-            return { state, seeded };
+            return SEEDS.map(seed => {
+                const { state } = seedWorld({ seed, catalog });
+                const seeded = new Set(state.npcs.map(n => n.id));
+                advanceWorldYears(state, HORIZON_YEARS, { stopOnInterrupt: false });
+                return { state, seeded };
+            });
         })();
         return run;
     }
 
-    it('fills the bands above Deity Transformation with people who climbed', async () => {
-        const { state, seeded } = await soaked();
-        const alive = state.npcs.filter(n => n.status === 'alive');
-        const high = alive.filter(n => n.cultivation.realmOrdinal >= 29);
-        const arrived = high.filter(n => !seeded.has(n.id));
+    /** The first world, for the assertions that are about a world rather than a rate. */
+    async function oneWorld() {
+        return (await soaked())[0];
+    }
 
-        // Before this, five thousand years produced 7 people above Void
-        // Refinement of whom 4 had arrived, and the band was routinely empty.
-        expect(high.length, 'nobody is standing above Deity Transformation')
-            .toBeGreaterThan(0);
+    it('fills the bands above Deity Transformation with people who climbed', async () => {
+        const worlds = await soaked();
+        const per: string[] = [];
+        let totalHigh = 0;
+        let totalArrived = 0;
+
+        for (let i = 0; i < worlds.length; i++) {
+            const { state, seeded } = worlds[i];
+            const alive = state.npcs.filter(n => n.status === 'alive');
+            const high = alive.filter(n => n.cultivation.realmOrdinal >= 29);
+            const arrived = high.filter(n => !seeded.has(n.id));
+
+            // Before this, five thousand years produced 7 people above Void
+            // Refinement of whom 4 had arrived, and the band was routinely
+            // empty. That every world still has somebody up there is a claim
+            // about each world and is asserted per seed.
+            expect(high.length, `${SEEDS[i]}: nobody is standing above Deity Transformation`)
+                .toBeGreaterThan(0);
+
+            totalHigh += high.length;
+            totalArrived += arrived.length;
+            per.push(`${SEEDS[i]} ${arrived.length}/${high.length}`);
+        }
+
+        // And the RATE is pooled, because it is a claim about a population and
+        // the band on any one seed is a few dozen people.
         expect(
-            arrived.length / Math.max(1, high.length),
-            `${arrived.length} of ${high.length} people above Deity Transformation `
-            + 'arrived rather than being seeded there'
+            totalArrived / Math.max(1, totalHigh),
+            `${totalArrived} of ${totalHigh} people above Deity Transformation arrived `
+            + `rather than being seeded there (${per.join(', ')})`
         ).toBeGreaterThan(0.5);
-    }, 600_000);
+    }, 900_000);
 
     it('leaves people standing at a rung they cracked at', async () => {
         // The population the setting most wanted and could not produce. A real
         // wall produces real failures, and the wounds layer is what a failure
         // leaves - so the world getting MORE broken is the feature, not a
         // regression.
-        const { state } = await soaked();
+        const { state } = await oneWorld();
         const alive = state.npcs.filter(n => n.status === 'alive');
         const wounded = alive.filter(n => n.cultivation.injuries.length > 0);
         expect(wounded.length, 'nobody in the world is carrying a wound')
