@@ -1,0 +1,68 @@
+/**
+ * A ratchet on design nothing acts on.
+ *
+ * This repository's signature defect is not a bug, it is a module nothing
+ * calls. It compiles, it typechecks, its tests pass, and it reads like settled
+ * behaviour to whoever finds it next - so somebody re-derives a system that was
+ * already written, or reasons carefully about a rule the game has never once
+ * applied.
+ *
+ * It is not hypothetical and it is not rare. A marriage system was built on
+ * four pieces that already existed with no caller anywhere: the binding that
+ * settles a heavy account, the cost of walking out of one, the bloodline tier a
+ * child inherits, and an oath cause nothing ever produced. The file naming the
+ * gap said "there is no marriage system anywhere in this repository", and it
+ * was one caller away from being wrong.
+ *
+ * So: the number may fall and it may not rise. When this fails, the fix is
+ * almost never to raise the baseline - it is to wire the thing you just added,
+ * or to be honest that it is data rather than behaviour.
+ *
+ * Run `node scripts/find-unwired-exports.mjs` to see what is unwired and where.
+ *
+ * WHAT THE TWO NUMBERS MEAN
+ * -------------------------
+ * `dead` is read by nothing at all - not the game, not a test. `testOnly` is
+ * pinned by a test and never reached by the game, which is the more insidious
+ * shape: it looks maintained. Both are ratcheted, because both have bitten.
+ *
+ * An unwired export is one of three things and only the first is a defect:
+ * behaviour somebody meant to reach and did not; design deliberately stated as
+ * data with nothing to plug into yet; or a seam held open on purpose. The
+ * script cannot tell them apart and neither can this test - which is why it
+ * ratchets rather than forbidding.
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
+
+/** Measured, not chosen. Lower these when you wire something; never raise them. */
+const DEAD = 170;
+const TEST_ONLY = 505;
+
+describe('design does not go unwired', () => {
+    const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;
+
+    it('does not add exports that nothing anywhere reads', () => {
+        const dead = rows.filter(r => r.state === 'dead');
+        const worst = [...dead]
+            .reduce((acc, r) => acc.set(r.file, (acc.get(r.file) ?? 0) + 1), new Map<string, number>());
+        const top = [...worst.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+            .map(([f, n]) => `\n  ${n}  ${f}`).join('');
+        expect(
+            dead.length,
+            `Exports nothing reads rose above ${DEAD}. Wire it, or say in the file that it is `
+            + `data rather than behaviour.${top}`
+        ).toBeLessThanOrEqual(DEAD);
+    });
+
+    it('does not add exports only a test reads', () => {
+        const testOnly = rows.filter(r => r.state === 'testOnly');
+        expect(
+            testOnly.length,
+            `Exports only a test reads rose above ${TEST_ONLY}. A rule pinned but never `
+            + 'reached by the game looks maintained and is not.'
+        ).toBeLessThanOrEqual(TEST_ONLY);
+    });
+});
