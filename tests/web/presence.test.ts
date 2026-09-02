@@ -84,7 +84,12 @@ describe('people are visible where they are standing', () => {
         expect(result.narration).toMatch(/people are about|is here|others are about/i);
         const mechanical = engineCalls(result).map(c => c.summary).join(' ') +
             result.state.log.filter(e => e.role === 'engine').map(e => e.text).join(' ');
-        expect(mechanical).toMatch(new RegExp(`present=${people.length}\\b`));
+        // The count, not the field name. The engine channel is read by the
+        // player as well as by an operator, so it states its figures in
+        // sentences - `present=10` became "10 present: 3 this cultivator can
+        // put a name to, 7 they cannot". What this test is for is that the
+        // number reaches the inspector at all, and it still does.
+        expect(mechanical).toMatch(new RegExp(`${people.length} present\\b`));
     }, 60_000);
 
     it('does not hand over a census', async () => {

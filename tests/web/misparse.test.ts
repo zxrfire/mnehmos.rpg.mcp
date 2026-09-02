@@ -1333,10 +1333,17 @@ describe('what a cultivator carrying open channels is told', () => {
 
         // The inspector panel still carries the numbers, and they are the true
         // ones: how long the channels have been open, and what they cost.
-        const line = logged.find(row => row.text.includes('untreatedInjuries='));
+        //
+        // Asserted on the figures rather than on the field names. This channel
+        // is read by the PLAYER as well as by an operator - the promise is that
+        // the engine's arithmetic is visible, not that it is dumped - so
+        // `untreatedInjuries=2 of 3 ..., daysChannelsOpen=90, rateLost=20%`
+        // became a sentence carrying the same three numbers.
+        const line = logged.find(row => /untreated injur/i.test(row.text));
         expect(line, 'no injury figures on the mechanical channel').toBeDefined();
-        expect(line!.text).toMatch(/daysChannelsOpen=\d+/);
-        expect(line!.text).toMatch(/rateLost=\d+%/);
+        expect(line!.text).toMatch(/\d+ untreated injur\w+ of the \d+/);
+        expect(line!.text).toMatch(/open \d+ days?/);
+        expect(line!.text).toMatch(/costing \d+% of the cultivation rate/);
     });
 
     it('is a clock the treatment route beats, with room to spare', async () => {
