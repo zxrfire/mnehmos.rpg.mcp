@@ -234,6 +234,55 @@ describe('ADMIN answers in the words it was addressed in', () => {
             expect(JSON.stringify(result.cannotDo)).toContain('grant_progress fill=true');
         });
 
+        // ── A CHANGE IS NOT A CREATION ────────────────────────────────────
+        //
+        // Found by playing. `ADMIN set the fox cultivator to fox bloodline`
+        // matched "cultivator" against `spawn_encounter`'s subject words, threw
+        // the operator's verb away, and put the rest of the line - the verb
+        // included - into `name=`. So a request to MODIFY somebody standing
+        // there became a request to create somebody called "set fox fox
+        // bloodline", and then refused for a missing rung.
+        //
+        // Same class as the withdrawn alignment draft: a decision taken off one
+        // token with the rest of the sentence not consulted.
+        it('does not turn a request to change somebody into a request to create one', () => {
+            const reading = readAdminSentence('set the fox cultivator to fox bloodline');
+            expect(isSentenceRefusal(reading)).toBe(true);
+            if (isSentenceRefusal(reading)) {
+                expect(reading.reason).toBe('a_change_not_a_creation');
+                expect(reading.collided).toContain('spawn_encounter');
+            }
+        });
+
+        it('and says so as an absence rather than as a misreading', async () => {
+            await newRun();
+            const result = await typed('set the fox cultivator to fox bloodline');
+            expect(result.error).toBe('no_action_for_changing_somebody_present');
+            // A refusal must name what would work, and where nothing would it
+            // must say so. There IS no action that edits somebody present, and
+            // naming the absence is worth more than creating a person nobody
+            // asked for.
+            expect(String(result.message)).toContain('no action that does that');
+            expect(JSON.stringify(result.arrangeInstead)).toContain('spawn_encounter');
+        });
+
+        it('but the verb is read at the head of the line, never scanned for', () => {
+            // Scanning would repeat the withdrawn draft's mistake from the
+            // other side: plenty of sentences that create something have one of
+            // these words further along, and a name could contain any of them.
+            const reading = readAdminSentence('spawn a cultivator who can set a formation');
+            expect(isSentenceRefusal(reading)).toBe(false);
+        });
+
+        it('and an ordinary spawn is untouched', () => {
+            const reading = readAdminSentence('spawn a Core Formation girl');
+            expect(isSentenceRefusal(reading)).toBe(false);
+            if (!isSentenceRefusal(reading)) {
+                expect(reading?.action).toBe('spawn_encounter');
+                expect(reading?.args.ordinal).toBe(17);
+            }
+        });
+
         it('leaves a single unknown word to the fuzzy matcher, which is good at typos', async () => {
             await newRun();
             const parsed = parseAdminCommand('rostr');
