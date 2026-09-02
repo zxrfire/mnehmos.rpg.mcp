@@ -113,7 +113,12 @@
  */
 
 import { z } from 'zod';
-import { RegardProfileSchema, TechniqueGradeSchema } from '../../schema/cultivation.js';
+import {
+    RegardProfileSchema,
+    SectAlignmentSchema,
+    TechniqueGradeSchema,
+    type SectAlignment
+} from '../../schema/cultivation.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import {
     narrowToOffered,
@@ -219,6 +224,70 @@ export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
 } as const;
 
 
+/**
+ * What it is inclined to do about people.
+ *
+ * ── THE SAME AXIS THE HOUSES STAND ON, AND DELIBERATELY NOT A NEW ONE ────
+ *
+ * `SectAlignment` - righteous, neutral, demonic - and it is the field a sect
+ * row already carries, read by the code that already reads it. A second enum
+ * beside it saying friendly/neutral/hostile would be a parallel catalog for the
+ * same question, which is the mistake this repo has to undo most often.
+ *
+ * The axis is the one `demonic-sects-and-what-they-are-willing-to-do.ts` states
+ * for the houses, and it is a property of the arrangement rather than of
+ * anybody's intent:
+ *
+ * > **Who pays, and did they agree.**
+ *
+ *   righteous  Takes nothing from anybody who did not agree, and generally
+ *              gives: the ground it holds is better for the people under it
+ *              than ground without it. The White Ape charges passage in salt
+ *              and in news and has kept every arrangement it made for a
+ *              hundred and forty years, which is the whole of the definition.
+ *   neutral    Takes what it needs and would take it from you if you were
+ *              between it and the thing. Most of the world. A vein drunk dry
+ *              is a property question and a real one; it is not predation.
+ *   demonic    Takes from people who did not agree and cannot appeal. The
+ *              Core-Taker waits for the second day of a seclusion and leaves
+ *              the pouch on the belt, which is the same row the Quiet Cut
+ *              occupies among the houses: a third party who is not present.
+ *
+ * ── ORTHOGONAL TO THE RUNG, AND ORTHOGONAL TO `nature` ──────────────────
+ *
+ * Three axes, and each answers a different question. `ordinal` is how bad it
+ * would be; `nature` is what shape the problem takes; this is what it is
+ * inclined to do about people. A demonic thing at ordinal 13 and a righteous
+ * thing at ordinal 31 are both in this catalog, and neither reading predicts
+ * the other.
+ *
+ * ── AND HUNTING IS NEVER GATED BY IT ────────────────────────────────────
+ *
+ * **Anything here can be hunted, the righteous ones included.** Nothing in this
+ * catalog or in `hunting-a-spirit-beast.ts` refuses a killing on the strength
+ * of this field, and adding such a refusal would be the banning AGENTS.md
+ * forbids. What the field decides is what the kill COSTS afterwards, and only
+ * where somebody found out - which is
+ * `src/engine/world/who-answers-for-a-beast-that-was-killed.ts`, and which is
+ * the ordinary deed machinery rather than anything written for beasts.
+ *
+ * ── IT IS ONLY ANSWERABLE ABOVE THE COUNTED LINE ────────────────────────
+ *
+ * Below `BEAST_CORE_ORDINAL` a hunt returns an amount rather than an
+ * individual - the same rule `items.md` applies to a bowl of millet, applied to
+ * living things - so there is no particular animal for anybody to have had a
+ * view about, and killing one is not a reputational event. The field is still
+ * authored on every row, because an inclination is a fact about a species
+ * whether or not any individual of it is tracked, and below the line it colours
+ * what the ground is like to walk through and nothing more.
+ *
+ * The tracked band is where it bites, and that is where the interesting case
+ * lives: something with a core worth more than most people earn, that has never
+ * taken anything from anybody.
+ */
+export const BeastDispositionSchema = SectAlignmentSchema;
+export type BeastDisposition = SectAlignment;
+
 /** What sort of problem this is, before anything about its strength. */
 export const BeastNatureSchema = z.enum([
     /** An animal with a little qi in it. Most of the world's beasts. */
@@ -303,6 +372,14 @@ export const BeastSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
     nature: BeastNatureSchema,
+    /**
+     * What it is inclined to do about people, on the houses' own axis.
+     *
+     * Read the block above `BeastDispositionSchema` before assigning one. It is
+     * not a threat level and it is not a rung: it is who pays and whether they
+     * agreed.
+     */
+    disposition: BeastDispositionSchema,
     /** Realm ordinal. The only measure of danger this catalog carries. */
     ordinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Same biome vocabulary the herb catalog uses, so ground resolves once. */
@@ -644,6 +721,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-stubble-hare',
         name: 'Stubble Hare',
         nature: 'ordinary',
+        disposition: 'neutral',
         ordinal: 0,
         biome: 'farmland',
         persistence: 'thin_remnant',
@@ -665,6 +743,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-ironhide-boar',
         name: 'Ironhide Boar',
         nature: 'ordinary',
+        disposition: 'neutral',
         ordinal: 5,
         biome: 'forest',
         persistence: 'open_world',
@@ -686,6 +765,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-cave-drain-bat',
         name: 'Drain Bat',
         nature: 'herd',
+        disposition: 'neutral',
         ordinal: 6,
         biome: 'cave',
         persistence: 'open_world',
@@ -711,6 +791,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-grey-wolf-pack',
         name: 'Grey Spirit Wolf',
         nature: 'herd',
+        disposition: 'demonic',
         ordinal: 3,
         biome: 'forest',
         persistence: 'open_world',
@@ -732,6 +813,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-vein-deer',
         name: 'Vein Deer',
         nature: 'herd',
+        disposition: 'neutral',
         ordinal: 8,
         biome: 'spirit_vein',
         persistence: 'vein_only',
@@ -753,6 +835,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-stone-ox',
         name: 'Stone Ox',
         nature: 'herd',
+        disposition: 'neutral',
         ordinal: 11,
         biome: 'mountain',
         persistence: 'thin_remnant',
@@ -779,6 +862,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-mist-serpent',
         name: 'Mist Serpent',
         nature: 'ambush',
+        disposition: 'demonic',
         ordinal: 10,
         biome: 'marsh',
         persistence: 'open_world',
@@ -800,6 +884,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-core-taker',
         name: 'Core-Taker',
         nature: 'ambush',
+        disposition: 'demonic',
         ordinal: 13,
         biome: 'deep_forest',
         persistence: 'open_world',
@@ -821,6 +906,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-glacier-lynx',
         name: 'Glacier Lynx',
         nature: 'ambush',
+        disposition: 'demonic',
         ordinal: 19,
         biome: 'glacier',
         persistence: 'open_world',
@@ -847,6 +933,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-thunder-hawk',
         name: 'Thunder Hawk',
         nature: 'territorial',
+        disposition: 'neutral',
         ordinal: 17,
         biome: 'high_peak',
         persistence: 'vein_only',
@@ -865,6 +952,39 @@ export const BEASTS: readonly Beast[] = [
         note: 'Nests on the one peak with a vein close to the surface, and has for longer than the sect below has held its charter.'
     },
     {
+        // THE CASE THE DISPOSITION AXIS EXISTS FOR, and the catalog had no
+        // entry that made it. Above `BEAST_CORE_ORDINAL`, so it is a tracked
+        // individual somebody can have a view about; below
+        // `BEAST_CHANGE_ORDINAL`, so killing it is killing an animal and not a
+        // person; and righteous, so the animal in question has never taken
+        // anything from anybody and is carrying a core worth more than the
+        // district earns in a year.
+        //
+        // Everything above 17 in this catalog was a problem to be solved. A
+        // hunting window in which every target deserved it is a window with no
+        // decision in it.
+        id: 'beast-cairn-hound',
+        name: 'Cairn Hound',
+        nature: 'territorial',
+        disposition: 'righteous',
+        ordinal: 18,
+        biome: 'mountain',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 14,
+        ability: {
+            name: 'Ground Memory',
+            kind: 'perception',
+            what:
+                'Knows what is under every stone in the ground it walks, and knows which of them has been lifted since the last time it passed.'
+        },
+        hard: 'It will not leave the cairns and it will not open on anybody who is not digging, so a party that wants it has to start the fight themselves and then finish it against something standing on ground it has known for ninety years.',
+        materialIds: ['mat-cairn-hound-tooth', 'mat-cairn-hound-core'],
+        note: 'Three hill districts date their grave rolls by which hound was walking, and none of the three has ever paid it anything or been asked to.'
+    },
+    {
         // The world was already teaching an art named after this animal and
         // did not contain it. `white-tiger-rend` in `techniques.ts` is an
         // earth-grade metal art at required ordinal 14, described as "the
@@ -876,6 +996,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-white-tiger',
         name: 'White Tiger',
         nature: 'territorial',
+        disposition: 'neutral',
         ordinal: 20,
         biome: 'mountain',
         persistence: 'open_world',
@@ -897,6 +1018,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-earth-dragon',
         name: 'Earth Dragon',
         nature: 'territorial',
+        disposition: 'neutral',
         ordinal: 26,
         biome: 'spirit_vein',
         persistence: 'vein_only',
@@ -923,6 +1045,11 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-millennial-tortoise',
         name: 'Millennial Tortoise',
         nature: 'territorial',
+        // Righteous, above the change, and silent. A thousand years of taking
+        // nothing from anybody, carrying a core worth thirty thousand stones,
+        // standing at a rung where killing it is killing a person. Every part
+        // of the design's sharpest case is already in this one row.
+        disposition: 'righteous',
         ordinal: 31,
         biome: 'lake_bottom',
         persistence: 'vein_only',
@@ -944,6 +1071,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-abyss-leviathan',
         name: 'Abyssal Leviathan',
         nature: 'territorial',
+        disposition: 'neutral',
         ordinal: 38,
         biome: 'abyss',
         persistence: 'sealed_only',
@@ -979,6 +1107,10 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-white-ape-of-the-gorge',
         name: 'White Ape of the Gorge',
         nature: 'intelligent',
+        // Charges passage in salt and in news, and has kept every arrangement
+        // it made for a hundred and forty years. Nobody pays it who did not
+        // agree to, which is the whole of what righteous means on this axis.
+        disposition: 'righteous',
         ordinal: 29,
         biome: 'mountain',
         persistence: 'vein_only',
@@ -1000,6 +1132,10 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-nine-tailed-reader',
         name: 'The Reader at Sweptground',
         nature: 'intelligent',
+        // It trades genuinely, has never broken terms, and has never once
+        // forgiven a breach. Both halves of that are neutral: it prices
+        // everything, including you, and it tells you the price first.
+        disposition: 'neutral',
         ordinal: 29,
         biome: 'ruins',
         persistence: 'open_world',
@@ -1037,6 +1173,10 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-thing-under-nine-peaks',
         name: 'The Thing Under Nine Peaks',
         nature: 'ancient',
+        // It is drinking a vein an order of four hundred people live on, and
+        // none of them can see the clock or appeal it. That is the Quiet Cut's
+        // own row among the houses: a third party who is not present.
+        disposition: 'demonic',
         ordinal: 33,
         biome: 'spirit_vein',
         persistence: 'sealed_only',
@@ -1064,6 +1204,7 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-sleeper-in-the-cut-face',
         name: 'The Sleeper in the Cut Face',
         nature: 'ancient',
+        disposition: 'neutral',
         ordinal: 30,
         biome: 'cave',
         persistence: 'sealed_only',
@@ -1238,6 +1379,18 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         description: 'Comes off the shell about once a generation and washes up whole. Households on the shore date them, keep them, and will not sell the oldest at any offer, which the assay houses have stopped arguing about.'
     },
     {
+        id: 'mat-cairn-hound-tooth',
+        name: 'Cairn Hound Tooth',
+        grade: 'earth',
+        sourceBeastId: 'beast-cairn-hound',
+        taking: 'scavenge',
+        core: false,
+        value: 240,
+        rarityWeight: 34,
+        harvestOrdinal: 12,
+        description: 'Shed onto the stones and left where it fell, and the hill households pick them up and keep them rather than sell them. A stall holding four of these is a stall that has been somewhere it should not have been.'
+    },
+    {
         id: 'mat-tiger-pelt',
         name: 'White Tiger Pelt',
         grade: 'earth',
@@ -1274,6 +1427,18 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         rarityWeight: 12,
         harvestOrdinal: 17,
         description: 'The first core most cultivators ever see priced. Assay houses grade it by the realm it came off and shave the price if it was cut rather than taken whole.'
+    },
+    {
+        id: 'mat-cairn-hound-core',
+        name: 'Cairn Hound Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-cairn-hound',
+        taking: 'kill',
+        core: true,
+        value: 1_700,
+        rarityWeight: 11,
+        harvestOrdinal: 18,
+        description: 'Ninety years of an animal walking the same stones, and it prices exactly as any other core at the rung does. The assay houses have never once recorded where one came from, and the hill districts have never once been asked.'
     },
     {
         id: 'mat-lynx-core',
@@ -1550,6 +1715,16 @@ const BEASTS_BY_NATURE: ReadonlyMap<BeastNature, readonly Beast[]> = (() => {
     return map;
 })();
 
+const BEASTS_BY_DISPOSITION: ReadonlyMap<BeastDisposition, readonly Beast[]> = (() => {
+    const map = new Map<BeastDisposition, Beast[]>();
+    for (const b of BEASTS) {
+        const bucket = map.get(b.disposition);
+        if (bucket) bucket.push(b);
+        else map.set(b.disposition, [b]);
+    }
+    return map;
+})();
+
 export function getBeast(id: string): Beast | undefined {
     return BEAST_BY_ID.get(id);
 }
@@ -1566,6 +1741,17 @@ export function getBeastsByBiome(biome: HerbBiome): readonly Beast[] {
 
 export function getBeastsByNature(nature: BeastNature): readonly Beast[] {
     return BEASTS_BY_NATURE.get(nature) ?? [];
+}
+
+/**
+ * Everything inclined the same way about people.
+ *
+ * The same shape as `getSectsByAlignment` and reading the same field, which is
+ * the point: a question about who takes from whom is answered the same way
+ * whether the answer is a house or an animal.
+ */
+export function getBeastsByDisposition(disposition: BeastDisposition): readonly Beast[] {
+    return BEASTS_BY_DISPOSITION.get(disposition) ?? [];
 }
 
 export function getBeastMaterial(id: string): BeastMaterial | undefined {
