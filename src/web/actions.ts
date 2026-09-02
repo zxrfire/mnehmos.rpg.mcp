@@ -4788,7 +4788,14 @@ function planIntent(input: string): PlannedAction {
     if (ownFact !== null) {
         return {
             action: 'interact',
-            intent: 'talk',
+            // The MOOD is still read off the sentence. "What is your name" is a
+            // question and "I demand to know your name" is an attempt, and
+            // flattening the second into the first would quietly remove the
+            // price of having leaned on somebody - which is the softening the
+            // agency rule forbids, reachable by choosing your words. The demand
+            // path reads the same self-fact, so limit one does not bite there
+            // either; what it adds is the resolver, the day and the marks.
+            intent: matchIntent(text, INTERACT_INTENT_PATTERNS) ?? 'talk',
             topic: A_TOPIC_ABOUT_THEMSELVES[ownFact]
         };
     }
