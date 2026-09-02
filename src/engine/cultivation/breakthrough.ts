@@ -266,6 +266,156 @@ export const REALM_BOUNDARY_STRAIN = -0.08;
  */
 export const LAST_CROSSING_STRAIN = -0.15;
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT ARRIVING COSTS THE BODY
+//
+// The design owner's ruling: *"don't forget that crossing deals damage too
+// (unless via admin panel) or the immortal pill that lets you skip a ordinal -
+// that's the diff between the immortal pill and the ones that give you qi, the
+// qi ones you still have to cross and risk it."*
+//
+// Measured before these existed: six commanded crossings, ordinal 0 to 6,
+// health 40 of 40 the whole way. The only body cost anywhere on a SUCCESSFUL
+// attempt was lightning above ordinal 40 and a boundary that arrived broken,
+// and neither is a rule about crossing.
+//
+// ── WHAT IT PRICES IS SPEED ──────────────────────────────────────────────
+//
+// The body mends at `HP_RECOVERY_FRACTION_PER_DAY`, so a climb walked at the
+// pace the ladder was built for is repaid long before the next wall and costs
+// nothing that lasts. What is priced is somebody who banks progress and strikes
+// four times in an afternoon - which the played verb allows, because
+// `strikeBarrier` spends no days at all - and arrives at the fourth rung with
+// almost nothing in the body. That is the risk the owner's sentence is about,
+// and it is what a qi pill buys into and the Unearned Step does not.
+//
+// ── THE SIZE IS SET BY WHAT IT MUST NOT BREAK ────────────────────────────
+//
+// Not by what felt weighty. The first pair was 0.08 and 0.25, and
+// `root-cliff.test.ts` went red within the hour:
+//
+//     mutated_ice: 1 of 24 were killed by the root despite treatment
+//
+// with the cause `qi_deviation` rather than a wall. Measured both arms in one
+// command, toll off and toll on against the same tree: 0 deaths against 1. It
+// was the toll, and it was not the clamp - `A_CROSSING_MAY_NOT_TAKE_MORE_THAN`
+// was already in and did not save it.
+//
+// That test guards a stated ruling - treated, a dangerous root is a difficulty
+// setting rather than a death sentence - and the ruling is upstream of the
+// toll, so the toll is what moves. A sweep put the break between 0.18 and 0.25
+// at a boundary, and TAKING THE LARGEST VALUE THAT PASSES WOULD BE FITTING THE
+// CONSTANT TO THE BAR, which is the mistake `AGENTS.md` names: *"the tell that
+// you are about to make this mistake is 'it is only just under, and my change
+// is obviously fine'."*
+//
+// So the bar is derived instead, from the one relationship that decides it:
+//
+//   A YEAR'S CLIMBING MUST COST LESS THAN A YEAR'S MENDING.
+//
+// `HP_RECOVERY_FRACTION_PER_DAY` is 0.0005, so a year returns 0.1825 of the
+// pool. Somebody advancing about a rung a year - which is what continuous
+// seclusion produces at these rungs, and what the root cohort does - must end
+// every year of it with more in the body than they started, or the climb is a
+// slow drain that eventually meets a deviation and the ladder becomes lethal
+// for reasons nobody chose. A boundary is the expensive year and therefore the
+// binding case: at 0.25 it exceeded a year's mending and the drain was real.
+//
+// 0.15 sits under 0.1825 with room rather than on the edge of it, and a whole
+// realm - three steps and a crossing above Qi Condensation - comes to 0.30,
+// which is under two years of mending against the decades a realm honestly
+// takes. Both figures follow from the recovery rate, so if that ever moves,
+// these move with it and the comment says how.
+//
+// ── AND WHY A BOUNDARY IS THREE TIMES A STEP ─────────────────────────────
+//
+// The same asymmetry the rest of this file is built on. `REALM_BOUNDARY_STRAIN`
+// taxes the odds, the failure table escalates the wound, and the toll is
+// charged at a boundary and nowhere else - because a boundary is a different
+// kind of event, not a harder version of the same one.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A rung inside a realm, as a fraction of the pool. */
+export const BODY_COST_OF_A_STEP = 0.05;
+
+/**
+ * A realm boundary, as a fraction of the pool.
+ *
+ * Also what the last crossing charges. It has heavenly lightning on top of it
+ * and does not need a fourth multiplier: the strikes are already the most
+ * expensive thing in the game, and they arrive as real wounds rather than as a
+ * number off the pool.
+ */
+export const BODY_COST_OF_A_CROSSING = 0.15;
+
+/**
+ * What arriving at `toOrdinal` costs the body, as a fraction of the pool.
+ *
+ * Keyed on the rung LEFT, which is the same argument `isRealmBoundary`,
+ * `isTolled` and `baseBreakthroughChance` are all keyed on - so what a crossing
+ * costs and what a crossing IS cannot come apart.
+ */
+export function bodyCostOfArriving(fromOrdinal: number): number {
+    return isRealmBoundary(fromOrdinal) ? BODY_COST_OF_A_CROSSING : BODY_COST_OF_A_STEP;
+}
+
+/**
+ * The most of what is STANDING that a crossing may take, whatever it is owed.
+ *
+ * ── A COST THAT REDUCES AND NEVER ZEROES ─────────────────────────────────
+ *
+ * The first version of the toll clamped at one point - a crossing that
+ * succeeded may not kill - and that was not enough, because it made the
+ * DIFFERENCE between one point and dead into somebody else's problem. Caught by
+ * `root-cliff.test.ts` within an hour of the toll landing:
+ *
+ *     mutated_ice: 1 of 24 were killed by the root despite treatment
+ *
+ * with the death cause `qi_deviation` rather than a wall. The mechanism is
+ * exact: a crossing dropped the body to almost nothing, and on a dangerous root
+ * the next deviation finished what the crossing had started. The toll never
+ * killed anybody and it was the reason they died, which is the worst shape a
+ * cost can take because nothing in the transcript points at it.
+ *
+ * That test guards a stated ruling - treatment turns a dangerous root from a
+ * death sentence into a difficulty setting - and the ruling is upstream of the
+ * toll. So the toll bends.
+ *
+ * ── AND THE FIX IS THE LAW THIS REPO ALREADY HAS ─────────────────────────
+ *
+ * `AGENTS.md`, on defences: *"A defence reduces; it never zeroes. The moment a
+ * number can reach zero"* the system acquires a case nobody designed. This is
+ * that law pointed at a cost instead of a defence. A crossing takes a share of
+ * the POOL or a share of WHAT IS THERE, whichever is less, so it is heavy on a
+ * whole body and proportionate on a broken one and can never be the thing that
+ * makes the next event lethal.
+ *
+ * A half, because that is the number that makes the sentence true rather than
+ * approximately true: whatever a cultivator walks into a wall with, they walk
+ * out with half of it at worst. Somebody who crosses on fumes still pays, still
+ * feels it, and is still alive to be told they are standing on nothing.
+ */
+export const A_CROSSING_MAY_NOT_TAKE_MORE_THAN = 0.5;
+
+/**
+ * What a crossing actually takes out of a body that is standing at `hp`.
+ *
+ * The one derivation, so the played verb and the auto-breakthrough inside a
+ * seclusion cannot clamp differently - which is exactly where two callers of
+ * one price drift, and the player who found the cheaper door would be playing a
+ * different game from the world.
+ */
+export function whatACrossingTakesFrom(
+    hp: number,
+    maxHp: number,
+    bodyCost: number
+): number {
+    if (bodyCost <= 0 || hp <= 1) return 0;
+    const owed = Math.max(1, Math.round(maxHp * bodyCost));
+    const mostItMayTake = Math.floor(hp * A_CROSSING_MAY_NOT_TAKE_MORE_THAN);
+    return Math.max(0, Math.min(owed, mostItMayTake, hp - 1));
+}
+
 /**
  * Chance that a SURVIVED last crossing actually completes, before modifiers.
  *
@@ -1873,6 +2023,10 @@ function finishSuccess(
         roll: frame.roll,
         injuriesSustained: [...frame.injuries, ...brokenInjuries],
         progressConsumed: frame.required,
+        // What arriving cost. Every ordinary crossing in the game comes through
+        // here - a sub-rank step, a realm boundary, and a survived tribulation
+        // below the last one - so this is the one place it is charged.
+        bodyCost: bodyCostOfArriving(fromOrdinal),
         tribulation: frame.tribulation,
         toll,
         foundationEstablished,
@@ -2066,6 +2220,12 @@ function resolveFailure(
         roll: frame.roll,
         injuriesSustained: injuries,
         progressConsumed,
+        // Nothing, and for the same reason the toll is nothing below: this is
+        // what ARRIVING costs, and nobody arrived. A failure has its own wound
+        // table and it is far more expensive; charging both would price one
+        // event twice, and it would put the body cost on the branch where the
+        // lethality already lives.
+        bodyCost: 0,
         tribulation: null,
         // A failed crossing is not a crossing. The price is charged for arriving,
         // not for trying, and a foundation you did not lay has no quality.
@@ -2235,6 +2395,9 @@ function resolveTribulation(
             roll: frame.roll,
             injuriesSustained: injuries,
             progressConsumed: frame.required,
+            // Nobody arrived. The lightning is what happened to them and it is
+            // in `injuriesSustained` where it belongs.
+            bodyCost: 0,
             tribulation: { strikes, survived: false },
             // Nobody arrived, so nobody is charged. Cultivators who fail
             // tribulation do not leave a body; they leave a scar on the ground.
@@ -2556,6 +2719,11 @@ function resolveLastCrossing(
             roll: frame.roll,
             injuriesSustained: injuries,
             progressConsumed: frame.required,
+            // The last crossing is a boundary like any other, priced the same.
+            // The lightning above it is not a fourth multiplier on this figure -
+            // the strikes arrive as real wounds, which is more expensive than
+            // anything a fraction of the pool could say.
+            bodyCost: bodyCostOfArriving(frame.fromOrdinal),
             tribulation: { strikes, survived: true },
             toll,
             foundationEstablished: null,
@@ -2593,6 +2761,9 @@ function resolveLastCrossing(
         roll: frame.roll,
         injuriesSustained: injuries,
         progressConsumed: frame.required,
+        // They went over the Lid and not through it, and 45 is a rung they are
+        // standing on. Something arrived, so something is charged.
+        bodyCost: bodyCostOfArriving(frame.fromOrdinal),
         tribulation: { strikes, survived: true },
         toll,
         foundationEstablished: null,

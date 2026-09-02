@@ -22,6 +22,7 @@
 
 import {
     CRIPPLING_UNTREATED_INJURIES,
+    HP_RECOVERY_FRACTION_PER_DAY,
     stagnationYearsForOrdinal,
     type AmbientQi,
     BreakthroughResult,
@@ -813,7 +814,7 @@ function timeSkipProse(
     // The edge, marked. See `nearlyGone`: an empty belly has said so on this
     // surface for a long time and an empty body never has.
     if (nearlyGone(after)) {
-        closing.push(theBodyIsNearlyGone(after));
+        closing.push(theBodyIsNearlyGone(after, after.spiritStones));
     }
     paragraphs.push(closing.join(' '));
 
@@ -868,15 +869,82 @@ export function nearlyGone(who: Pick<Cultivator, 'hp' | 'maxHp' | 'alive'>): boo
  * this has existed for a long time and does the same job for the belly: the
  * body never had one.
  *
- * Names the route, like every other refusal and warning here. Rest is a real
- * answer to being hurt and a player who cannot see that has no reason to
- * believe sitting still is worth anything.
+ * ── AND THE ROUTE IT NAMED DID NOT WORK ─────────────────────────────
+ *
+ * The first version of this sentence ended *"Sitting still mends it back, and a
+ * physician mends it faster"*, and a player at 1 of 40 with 2 spirit stones did
+ * exactly that. Played, and measured afterwards on the same numbers:
+ *
+ *     44 days sitting still at 1 of 40   ->  1 of 40.   Nothing.
+ *     50 days sitting still at 1 of 50   ->  2 of 50.   One point.
+ *
+ * The body IS mending. `HP_RECOVERY_FRACTION_PER_DAY` is 0.0005, the block in
+ * `time-skip.ts` is not gated on untreated wounds, and `wait` and `seclude`
+ * run the identical arithmetic - so none of the obvious explanations is the
+ * one. The rate is simply denominated in YEARS: a fortieth of a point a day, a
+ * whole bar from empty in about five and a half years, which is what its own
+ * ruling says it is for and why it must not be raised. A month of mortal care
+ * restores a fixed amount, and a faster calendar would hand back more than the
+ * treatment beside it and make the whole healing ladder pointless.
+ *
+ * So the rate is right and the SENTENCE was wrong. "Mends it back" in the
+ * present tense, said to somebody one hit from death, reads as an instruction
+ * for this turn, and the player spent a month and a half and their last two
+ * stones on it. `AGENTS.md`: a refusal names a route - and a route is only
+ * better than a bare no if the route is real. A real route with its span
+ * withheld is a bare no that took six weeks to arrive.
+ *
+ * What it says now is what the engine actually knows: how long, off the same
+ * constant the skip mends by; that it stops entirely on an empty belly, which
+ * is the gate that ate the played stretch; and that the fast answer costs money,
+ * which is a fact about a purse rather than about a body.
  */
-export function theBodyIsNearlyGone(who: Pick<Cultivator, 'hp' | 'maxHp'>): string {
+export function theBodyIsNearlyGone(
+    who: Pick<Cultivator, 'hp' | 'maxHp'>,
+    /**
+     * What is in the purse, when the caller knows.
+     *
+     * The difference between "a physician mends it faster" and a sentence
+     * somebody can act on: at two stones the physician is not a route, and
+     * saying so is the whole of what the played run needed to hear.
+     */
+    spiritStones?: number
+): string {
+    // Off the same constant the mending block runs on, so the figure cannot
+    // drift from the thing it describes. A fraction of the POOL per day, which
+    // is why this is computed per cultivator rather than stated once.
+    const perDay = who.maxHp * HP_RECOVERY_FRACTION_PER_DAY;
+    const backToWhole = perDay > 0
+        ? humanDays(Math.ceil((who.maxHp - who.hp) / perDay))
+        : null;
+
     return `There is almost nothing left in the body: ${who.hp} of ${who.maxHp}. Anything at all `
-        + 'that lands from here finishes it. Sitting still mends it back, and a physician mends '
-        + 'it faster.';
+        + 'that lands from here finishes it. '
+        + (backToWhole === null
+            ? 'It comes back on its own, slowly.'
+            : `It comes back on its own and it is slow: about ${backToWhole} of quiet to be whole `
+              + 'again, and none of that happens on an empty belly - a stretch that runs out of '
+              + 'food stops mending on the day it does. ')
+        + (spiritStones === undefined
+            ? 'A physician is the fast answer and costs stones.'
+            : spiritStones < PHYSICIAN_IS_ROUGHLY
+                ? `A physician would do it in a month and you are carrying ${spiritStones} `
+                  + `stone${spiritStones === 1 ? '' : 's'}, which is not enough to be asked for. `
+                  + 'Earning is the move before either of them.'
+                : `A physician does it in a month, and at ${spiritStones} stones you can afford `
+                  + 'to ask.');
 }
+
+/**
+ * About what a settlement's physician wants to close a wound.
+ *
+ * Not the price - `handleMarket` owns that, it moves with the region, and the
+ * treatment refusal prints the real figure. This is only the threshold for
+ * whether to point somebody at the door or at a day's work, and being roughly
+ * right is the whole requirement: the failure it exists to stop is telling a
+ * player with two stones that a physician is their answer.
+ */
+const PHYSICIAN_IS_ROUGHLY = 10;
 
 /**
  * That the cultivator is dead and the run will not continue, in one sentence.
@@ -909,7 +977,16 @@ export function factsForBreakthrough(
     before: Cultivator,
     after: Cultivator,
     result: BreakthroughResult,
-    ambient: AmbientQi
+    ambient: AmbientQi,
+    /**
+     * What arriving actually took out of the body, after the caller's clamp.
+     *
+     * The caller's figure rather than `result.bodyCost`, because the fraction
+     * is what the resolver decided and this is what was charged - they part
+     * company whenever somebody crossed on almost nothing, which is exactly the
+     * case worth reading about.
+     */
+    paidWithTheBody = 0
 ): EngineFacts {
     const lines: string[] = [];
     lines.push(`Breakthrough attempted from ${rankName(result.fromOrdinal)} toward ${rankName(Math.min(44, result.fromOrdinal + 1))}.`);
@@ -958,7 +1035,7 @@ export function factsForBreakthrough(
                 : 'This was a step inside a realm rather than a crossing between two.'),
             ...standingStructure(after, ambient)
         ],
-        prose: breakthroughProse(before, after, result)
+        prose: breakthroughProse(before, after, result, paidWithTheBody)
     };
 }
 
@@ -977,7 +1054,12 @@ function breakthroughHeadline(result: BreakthroughResult, before: Cultivator): s
     }
 }
 
-function breakthroughProse(before: Cultivator, after: Cultivator, result: BreakthroughResult): string {
+function breakthroughProse(
+    before: Cultivator,
+    after: Cultivator,
+    result: BreakthroughResult,
+    paidWithTheBody: number
+): string {
     const paragraphs: string[] = [];
     const odds = `${(result.finalChance * 100).toFixed(1)}%`;
     const boundary = isBoundaryCrossing(result);
@@ -1027,8 +1109,40 @@ function breakthroughProse(before: Cultivator, after: Cultivator, result: Breakt
         if (after.maxHp > before.maxHp) {
             paragraphs.push(
                 `The body it has to be carried in is larger than it was: ${before.maxHp} before, `
-                + `${after.maxHp} now, and ${after.hp} of that is what you are standing up with. `
-                + 'A rung does not fill the vessel it enlarges.'
+                + `${after.maxHp} now.`
+                // WHERE THEY ARE STANDING IN IT IS SAID ONCE. With a body cost
+                // charged, the sentence below reports the same figure after
+                // subtracting from it, and the two together read as arithmetic
+                // that does not close: "50 of that is what you are standing up
+                // with", then "took 4 out of you [...] you stand at 50 of 54".
+                // The cost sentence owns the standing whenever there is one.
+                + (paidWithTheBody > 0
+                    ? ' A rung does not fill the vessel it enlarges.'
+                    : ` ${after.hp} of that is what you are standing up with. A rung does not `
+                      + 'fill the vessel it enlarges.')
+            );
+        }
+        // ── AND WHAT GETTING THROUGH TOOK ────────────────────────────────
+        //
+        // The design owner's ruling that a crossing deals damage, said on the
+        // turn it was charged. Before this, six crossings on command left a
+        // cultivator at 40 of 40 and the only thing that ever cost the body on
+        // a successful attempt was lightning above ordinal 40.
+        //
+        // Separate from the vessel sentence above deliberately: one is the pool
+        // getting larger and one is the body paying for the trip, and the whole
+        // reason the vessel line exists is that a player could not tell those
+        // two apart from the number alone.
+        if (paidWithTheBody > 0) {
+            paragraphs.push(
+                `Getting through it took ${paidWithTheBody} out of you, which leaves `
+                + `${after.hp} of ${after.maxHp}. It is not a wound - nothing tore and there is `
+                + 'nothing to treat - and it comes back the way anything comes back, which is '
+                + 'slowly.'
+                + (after.hp <= Math.max(1, after.maxHp * NEARLY_GONE)
+                    ? ' There is very little of you left in it. Another wall struck from here is '
+                      + 'a wall struck on nothing.'
+                    : '')
             );
         }
     } else if (result.outcome !== 'death') {
@@ -2554,7 +2668,7 @@ function whatTheStretchCostTheBody(after: Cultivator, skip: TimeSkipResult): str
     if (after.satiety <= LOW_SATIETY && after.alive) {
         said.push(`Satiety is down to ${after.satiety}. Qi feeds the meridians; it does not feed the body.`);
     }
-    if (nearlyGone(after)) said.push(theBodyIsNearlyGone(after));
+    if (nearlyGone(after)) said.push(theBodyIsNearlyGone(after, after.spiritStones));
     if (skip.died) said.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
     return said;
 }

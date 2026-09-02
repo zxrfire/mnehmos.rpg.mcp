@@ -2201,6 +2201,41 @@ export const BreakthroughResultSchema = z.object({
         halted: z.boolean().default(false)
     }).nullable().default(null),
     /**
+     * What arriving cost the body, as a FRACTION of the pool.
+     *
+     * ── CROSSING DEALS DAMAGE, AND IT DID NOT ────────────────────────────
+     *
+     * The design owner's ruling, verbatim: *"don't forget that crossing deals
+     * damage too (unless via admin panel) or the immortal pill that lets you
+     * skip a ordinal - that's the diff between the immortal pill and the ones
+     * that give you qi, the qi ones you still have to cross and risk it."*
+     *
+     * Measured before this existed: six commanded crossings, ordinal 0 to 6,
+     * health 40 of 40 the whole way. `attemptBreakthrough` returned no body
+     * cost at all, and injuries came only from tribulation strikes above 40 and
+     * from a boundary that did not land clean. So a crossing was free, and the
+     * one thing that separates the Unearned Step from a qi pill - that the qi
+     * pill still makes you cross, and crossing costs - separated nothing.
+     *
+     * A FRACTION rather than a figure, for the reason every other pool-priced
+     * number in this codebase is a fraction: forty points is a whole newborn
+     * and a rounding error at Nascent Soul, so an absolute would mean four
+     * different things on one ladder. `whatTheyDoAboutBeingWronged.hpFraction`
+     * is the precedent and takes the same shape for the same reason.
+     *
+     * ZERO ON EVERY FAILURE. A failure has its own wound table, which is far
+     * more expensive and is where the lethality belongs; charging both would be
+     * pricing one event twice. This is what ARRIVING costs.
+     *
+     * THE CALLER CLAMPS, and must. Current health does not rise when the pool
+     * does, so a cultivator standing low on a large frame can owe more than
+     * they have - and a crossing that SUCCEEDED must not kill by arithmetic, or
+     * `success` and `death` stop being separate answers. Both callers leave at
+     * least one point. See `GameService.strikeBarrier` and the auto-breakthrough
+     * in `time-skip.ts`.
+     */
+    bodyCost: z.number().min(0).max(1).default(0),
+    /**
      * A broken status this crossing ARRIVED with, when it did not land clean.
      *
      * The cultivator is at `toOrdinal` carrying it. They crossed, they made it,
