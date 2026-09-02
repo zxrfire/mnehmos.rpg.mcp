@@ -396,9 +396,17 @@ turns on whose art it is, not on the theft. **Nobody asks the Hollow Court**, be
 there costs the house nothing and is an honour on it, and a house that has been honoured for a
 member's leaving is not placed to complain about what that member carried in their head.
 
-**But teaching from memory is not a manual.** A manual is complete and exact; a person is
-neither. **Which is precisely why the manual is the thing worth stealing**, and why it is a
-tracked object with provenance in [`items.md`](items.md) while the knowing of it is not.
+**And a manual is not the better half of that pair - the engine has it the other way round.**
+`techniques.ts` distinguishes an art **shown** from an art **read**, and a book *"cannot answer,
+cannot correct, and cannot repeat anything"*; `opacity` is literally *"how much of an art fails
+to survive being written down"*. **A person transmits better than a book.** So somebody teaching
+their old house's art aloud is the good case, not a degraded copy of one.
+
+**What a manual has instead is reach.** [`manuals.md`](manuals.md) has it: a house holds so many
+copies and no more, and reproduction needs a master. **A book scales to forty people; a person
+scales to whoever they have hours for** - which is why the manual is still the thing worth
+stealing, and why it is a tracked object with provenance in [`items.md`](items.md) while the
+knowing of it is not.
 
 **At the Court this resolves an apparent contradiction, and the resolution is the useful part.**
 The Court **as an institution** teaches exactly one art - the Seats' own, passed at 41 as the
