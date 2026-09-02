@@ -53,6 +53,17 @@ rules and neither is negotiable:
   asked one question - *how high does it carry the person receiving it?* - and nothing
   anywhere branches on what kind of thing it is. A tenth acceptable medium needs no code. The
   test walks ten media the module has never heard of and asserts they resolve identically.
+- **A trade that lands moves the row; it never copies one.** The completed trade goes through
+  `transferPossession` in `engine/world/possessions.ts` - the same function `immortal-world.ts`,
+  `legacy.ts` and the repair dose use - with `transfersOwnership`, because a house that sold a
+  thing does not still own it. The first version inserted a pouch row and left the shelf alone,
+  so the same house could be traded with twice and the world **manufactured** a heaven-grade
+  pill out of nothing. That is not untidiness: the legitimate supply of top-grade material is
+  empty as arithmetic (2373 deaths over six seeds and forty years, none at the heaven band or
+  above), so any duplication is the entire supply. `items.md`'s *"it is worth it exactly once"*
+  is enforced here rather than described. **The provenance link is the point, not the
+  bookkeeping** - the house it came off, the day, and the terms - because an object that arrives
+  with no history is the signature of something stolen.
 - **This directory cannot answer what somebody NEEDS.** That is
   `engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.ts`, which reads goal rows and
   derives urgency from the settling and lifespan clocks. `howTheyAreHoldingIt` takes *its*
