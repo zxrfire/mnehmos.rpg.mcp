@@ -18,7 +18,7 @@ import { describe, it, expect } from 'vitest';
 import {
     betterGround,
     catalogBirthWorld,
-    commonlyNamedHouse,
+    commonlyNamedHouses,
     densityForBand,
     describeBirth,
     drawBirth,
@@ -190,12 +190,24 @@ describe('an origin buys inputs and never rank', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('what you have heard of falls out of who your family corresponded with', () => {
-    it('leaves a farm child with the two names they have always had', () => {
+    it('leaves a farm child with their own village and the doors their county talks about', () => {
+        // This used to assert exactly two rows, and the second was
+        // `commonlyNamedHouse` - one house, chosen as the world's lowest bar
+        // and tie-broken ALPHABETICALLY ON THE FACTION ID. Seven houses are
+        // tied at zero, so six of them were unreachable in every run ever
+        // played, and a child born in one province was told the name of a
+        // house in another. The test encoded that: "the two names they have
+        // always had" is the defect, written down as an expectation.
         const birth = drawBirth('farm', { world, origin: 'thin_county' });
-        expect(birth.knowledge).toHaveLength(2);
         expect(birth.knowledge[0].kind).toBe('place');
         expect(birth.knowledge[0].name).toBe(birth.place.name);
-        expect(birth.knowledge[1].id).toBe(commonlyNamedHouse(world.houses)!.id);
+
+        const houses = birth.knowledge.filter(k => k.kind === 'sect').map(k => k.id).sort();
+        const expected = commonlyNamedHouses(world.houses, birth.place.regionId)
+            .map(h => h.id).sort();
+        expect(houses).toEqual(expected);
+        // A life with no standing still starts with something to walk towards.
+        expect(houses.length).toBeGreaterThan(0);
     });
 
     it('grows the list monotonically with what the family reaches', () => {

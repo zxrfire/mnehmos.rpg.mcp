@@ -121,6 +121,8 @@ import {
 } from '../../data/cultivation/sects.js';
 import { getTechnique, classOf, capOf } from '../../data/cultivation/techniques.js';
 import { getProductionTier } from '../../data/cultivation/faction-character.js';
+import { favourStanceOf } from '../../data/cultivation/a-favour-skips-the-admission-bar.js';
+import { doorsOf, housesWithTwoDoors } from '../birth/spending-a-word-to-place-a-child.js';
 import { WORKING_ROAD_CAP } from '../world/manuals.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -146,7 +148,15 @@ export const WHAT_A_GUEST_PLACE_IS_NOT: readonly string[] = [
     + 'as somebody else\'s disciple having a problem.',
     // True whether or not they have a house, and it is the same sentence
     // either way: a guest place moves nobody's protection and creates none.
-    'Whatever protection you have is wherever it already was, and it is not here.'
+    'Whatever protection you have is wherever it already was, and it is not here.',
+    // THE RESOURCE TAP, which is the half a guest most expects to be wrong
+    // about. You are inside the walls and you are not drawing on what is in
+    // them: not the stores, not the stones, not the ground they keep for their
+    // own. What you are given is somebody's hours, which is the one thing a
+    // house can spend on an outsider without spending anything it counts.
+    "No share of the house's stores. You are inside and you are not drawing on "
+    + "what is in there - what you are being given is somebody's hours and nothing "
+    + 'off the shelves.'
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -226,8 +236,116 @@ export function shelfTopOf(factionId: string): number | null {
  * that take no applicants and teach nobody.
  */
 export function takesGuests(factionId: string): boolean {
+    // A house that PUBLISHES a door below its membership bar has already
+    // answered this question in the catalog, and the catalog wins. The shelf
+    // comparison is an inference about what a house could afford; a second door
+    // is the house saying what it does.
+    if (publishedDoorOf(factionId) !== null) return true;
     const top = shelfTopOf(factionId);
     return top !== null && top > WORKING_ROAD_CAP;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE HOUSE THAT PUBLISHES ITS GUEST DOOR
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A door a house states, below its membership bar - and it is this same
+ * position under the catalog's older name.
+ *
+ * `SECT_ADMISSION.probationOrdinal` has been in the catalog from early on, with
+ * a comment saying it "wants lifting into the schema as a proper rank below
+ * index 0 by whoever owns that". **It does not want that, and this file is the
+ * answer to it.** A rank below index 0 would put the person on the house
+ * ladder, and the whole difficulty recorded beside that comment - that adding a
+ * rung silently moves every member down one and re-derives every band - is the
+ * shape of the world telling you the position is not a rung at all. Somebody
+ * inside a house, being taught, who is not a disciple, is off the ladder by
+ * construction: entered on a roll that is not the house roll.
+ *
+ * Which is exactly what guest studentship already is. So they are one concept
+ * with two names, and this is the merge rather than a second tier beside the
+ * first. What a published door changes is not the STATUS - a person on it holds
+ * no rung, draws nothing, owes nothing and may walk out, the same as any guest
+ * anywhere - but three things about how it is entered and left:
+ *
+ *   IT IS ADVERTISED. Everywhere else a guest place is an arrangement somebody
+ *   has to be in a position to ask for. Here it is the house's published
+ *   intake, which is why {@link housesWithAPublishedDoor} is what the world
+ *   should make nameable to somebody who has heard nothing else: a house whose
+ *   entire model is "walk up the mountain" is a house everybody's village has
+ *   heard of, or the model does not work.
+ *
+ *   IT STANDS AT A STATED RUNG rather than wherever the shelf happens to
+ *   permit, and at the one house that has one, that rung is the floor.
+ *
+ *   AND THE BAR BEHIND IT DOES NOT BEND. Elsewhere the end of a guest term is
+ *   a house deciding to take somebody its bar would have refused. Here it is
+ *   not: the house has been carrying you so that you can MEET the bar, and it
+ *   declines to move it in the same words every time. See
+ *   {@link houseWouldOfferMembership}, which is where that difference is the
+ *   only branch in this file that reads a published door.
+ *
+ * `doorsOf` in `engine/birth/spending-a-word-to-place-a-child.ts` already
+ * derives the two doors and already exists to stop them being collapsed. It is
+ * read here rather than restated, so a second house acquiring a published door
+ * needs no change anywhere.
+ */
+export interface PublishedDoor {
+    /** The rung the house takes somebody in at. Zero, at the one that has one. */
+    atOrdinal: number;
+    /**
+     * WHAT PASSING COSTS, and it is not a second door.
+     *
+     * `docs/world/origin.md` settles this and the wording matters: the house
+     * has ONE door and it stands at the floor. The figure everybody quotes as
+     * its bar is the test at the far end of the probation, and the thing that
+     * has never moved for anybody is that test rather than the doorway. Read
+     * off `SECT_ADMISSION.minOrdinal` through `doorsOf`, which is why this
+     * survived a working-tree change that moved the sect row's own
+     * `admissionOrdinal` to the floor.
+     */
+    membershipOrdinal: number;
+    /**
+     * Whether this is the only such door in the world. Counted, never asserted -
+     * `a-favour-skips-the-admission-bar.ts` says it in prose and this is the
+     * same claim read off the catalog, so the prose cannot go stale against it.
+     */
+    theOnlyOneInTheWorld: boolean;
+    /**
+     * Whether a word from somebody high enough moves anything here.
+     *
+     * `favourStanceOf`'s own answer. At a house whose door is already at the
+     * floor there is nothing to skip and nothing to buy, which is why a
+     * placement here is the one placement in the catalog where nobody ends up
+     * carrying a debt - and that property is not special to this house at all
+     * once the concepts are merged. It is what a guest place is everywhere.
+     * This house is simply where it was first written down.
+     */
+    aFavourBuysNothingHere: boolean;
+}
+
+/** The door this house publishes below its membership bar, or null. */
+export function publishedDoorOf(factionId: string): PublishedDoor | null {
+    const doors = doorsOf(factionId);
+    if (!doors || doors.probationOrdinal === null) return null;
+    return {
+        atOrdinal: doors.probationOrdinal,
+        membershipOrdinal: doors.membershipOrdinal,
+        theOnlyOneInTheWorld: housesWithTwoDoors().length === 1,
+        aFavourBuysNothingHere: favourStanceOf(factionId)?.answer === 'no bar to speak of'
+    };
+}
+
+/**
+ * Every house whose guest door is advertised rather than arranged.
+ *
+ * The set the world should make nameable to a cultivator who has heard nothing
+ * else, because an intake that works by people walking up requires that people
+ * have heard where to walk. Consumed by the origin knowledge seeding.
+ */
+export function housesWithAPublishedDoor(): string[] {
+    return housesWithTwoDoors().map(d => d.factionId).sort();
 }
 
 /**
@@ -358,6 +476,12 @@ export interface GuestPlace {
     factionName: string;
     /** How anybody gets onto the house roll here, which a guest is not doing. */
     intakeRoute: 'open' | 'adoption' | 'closed' | 'unknown';
+    /**
+     * Set where the house publishes this door rather than arranging it, which
+     * changes nothing about the status and three things about the entering.
+     * See {@link PublishedDoor}.
+     */
+    publishedDoor: PublishedDoor | null;
     /** What the house will put in front of them, already filtered by their rung. */
     opens: readonly GuestOpening[];
     /** Shown but not reachable yet: the art is open, they are too low for it. */
@@ -407,6 +531,7 @@ export function guestPlaceAt(
         factionId: house.id,
         factionName: house.name,
         intakeRoute: intakeRouteOf(house.id) ?? 'unknown',
+        publishedDoor: publishedDoorOf(house.id),
         opens,
         openedButOutOfReach: outOfReach,
         withholds: whatAHouseKeepsBack(factionId),
@@ -469,10 +594,29 @@ export function housesThatWouldTakeAGuest(
 export function houseWouldOfferMembership(
     place: GuestPlace,
     heldTechniqueIds: readonly string[],
-    yearsOnTheRoll: number
+    yearsOnTheRoll: number,
+    ordinal: number | null = null
 ): boolean {
     if (yearsOnTheRoll < place.termYears) return false;
     if (place.opens.length === 0) return false;
     const held = new Set(heldTechniqueIds);
-    return place.opens.every(o => held.has(o.techniqueId));
+    if (!place.opens.every(o => held.has(o.techniqueId))) return false;
+
+    // ── AND AT A HOUSE THAT PUBLISHES ITS DOOR, THE BAR IS STILL THE BAR ──
+    //
+    // The only branch in this file that reads a published door, and it is the
+    // difference the catalog is most emphatic about. Everywhere else the end of
+    // a term is a house deciding to take somebody its admission ordinal would
+    // have refused - that is what the watching was FOR. Where the door is
+    // published, it is not: the house has been carrying somebody for years
+    // precisely so that they can meet the bar themselves, and it declines to
+    // move that bar in the same words every time it is asked, for anybody.
+    //
+    // Wide intake, narrow conversion, and the narrow half is here. A caller
+    // that cannot supply an ordinal gets the old behaviour, which is why the
+    // parameter is nullable rather than required.
+    if (place.publishedDoor !== null && ordinal !== null) {
+        return ordinal >= place.publishedDoor.membershipOrdinal;
+    }
+    return true;
 }

@@ -437,7 +437,11 @@ export function guestWouldBeOfferedAPlace(
     const place = guestPlaceAt(roll.hostFactionId, ordinal, null);
     if (!place) return null;
     const years = Math.max(0, today - roll.sinceDay) / 365;
-    if (!houseWouldOfferMembership(place, heldTechniqueIds, years)) return null;
+    // The ordinal is passed because at a house that publishes its door the bar
+    // behind it is what PASSING costs, and it does not bend - so the offer is
+    // conditional on the guest having climbed to it themselves. Without this
+    // argument that branch would exist and never be consulted.
+    if (!houseWouldOfferMembership(place, heldTechniqueIds, years, ordinal)) return null;
     return {
         hostFactionId: place.factionId,
         hostName: place.factionName,
