@@ -4239,8 +4239,27 @@ export interface WithdrawnPower {
 // ──────────────────────────────────────────────────────────────────────
 
 export interface Fosterage {
-    /** Sects that take them. Holding one is a mark of standing, not a chore. */
-    fosteredTo: readonly string[];
+    /**
+     * The house whose children these terms are about. Terms belong to the
+     * SENDING house and travel with the child.
+     */
+    factionId: string;
+    /**
+     * WHERE A CHILD GOES IS NOT IN THIS OBJECT, AND MUST NOT BE.
+     *
+     * This carried a list of four sects. It was wrong, and it was wrong in the
+     * way the whole catalog is most often wrong: it made a general thing look
+     * like one body's arrangement, and it decided a destination from the
+     * institution rather than from the person. A cultivator fosters a child to
+     * somebody THEY have a tie to - somebody who owes them, somebody they
+     * trained beside, somebody whose house theirs is close to - and two members
+     * of the same house with different friends place their children in
+     * different places. Four names in a data file cannot say that.
+     *
+     * `src/engine/world/a-child-their-own-house-will-not-keep.ts` decides it
+     * from the fosterer's own ties, and the placement itself is `spendAWord`.
+     * Nothing may put a destination list back here.
+     */
     /** The floor they have to reach to be considered at all. */
     returnOrdinal: number;
     /**
@@ -4257,12 +4276,7 @@ export interface Fosterage {
 }
 
 export const HOLLOW_COURT_FOSTERAGE: Fosterage = {
-    fosteredTo: [
-        'sect-azure-cloud-pavilion',
-        'sect-nine-peaks-ascetic-order',
-        'sect-sweptground-temple',
-        'sect-lantern-hall'
-    ],
+    factionId: 'sect-hollow-court',
     returnOrdinal: 29,
     returnByAge: 250,
     assessment:
@@ -4270,6 +4284,29 @@ export const HOLLOW_COURT_FOSTERAGE: Fosterage = {
     otherwise:
         'They stay where they were raised, at or near the top of it. A fostered Court child who does not go back is typically an elder somewhere reputable by the middle of their life, is treated with a deference the sect cannot quite account for, and is the single most reliable source in the province on what the Court is actually like - which is worth a great deal to people who will never get closer than that.'
 };
+
+/**
+ * Every house that attaches terms to a child it placed elsewhere.
+ *
+ * One entry, and one entry is the shape of the claim: fostering is ordinary
+ * and TERMS are not. Almost every house that sends a child away sends them
+ * away, and the arrangement has no clause in it at all. A second entry here is
+ * a statement that a second body in the world runs its children on a deadline,
+ * which is a design decision rather than a content addition.
+ */
+export const FOSTERAGE_TERMS: readonly Fosterage[] = [HOLLOW_COURT_FOSTERAGE];
+
+const FOSTERAGE_BY_FACTION = new Map(FOSTERAGE_TERMS.map(f => [f.factionId, f]));
+
+/**
+ * The terms this house attaches, where it attaches any.
+ *
+ * Undefined for every house but one, which is the answer the engine wants: a
+ * fostering with no terms is the normal case and needs no branch to express.
+ */
+export function fosterageTermsOf(factionId: string | null | undefined): Fosterage | undefined {
+    return factionId ? FOSTERAGE_BY_FACTION.get(factionId) : undefined;
+}
 
 /**
  * How the four Seats are ordered, First through Fourth.

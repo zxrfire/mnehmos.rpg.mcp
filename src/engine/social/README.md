@@ -266,7 +266,22 @@ discovery.ts      the six-stage ladder of knowing, as a property of an ordinary
                   knowledge record rather than a table of its own
 travellers.ts     who came through, and which names they brought with them
 secrets.ts        per-holder secret lifecycle, extending secret.repo.ts
+shame.ts          a fact about somebody that other people hold and that lowers
+                  them - neither a grudge nor a secret
 ```
+
+`shame.ts` is the third thing this layer keeps about a person and it is worth saying why
+it is not one of the other two. A grudge is between two parties. A secret is a fact whose
+whole value is that it has not got out. A shame is a fact that IS out, among the people who
+matter, and costs its subject standing every time it is remembered. It follows the same four
+rules as the obligation ledger - nothing expires, severity is a stored word, it is held by
+PEOPLE rather than by the world, nothing is ranked by cultivation - and it is deliberately
+not a morality system: no code anywhere asks it whether somebody is good.
+
+Its `heldBy` list is the interesting field, because it is what makes a concealed fostering
+different from a public one without either of them needing a branch. Where the layer holding
+a person has no ledger to write to - `WorldState` holds NPCs, not ledgers - a shame rides on
+a prefixed tag, encoded and decoded in the module so nothing else parses one.
 
 `hearing.ts` and `stealth-perception.ts` are retained substrate from the D&D engine
 (hearing range and opposed stealth/perception rolls) and are not part of the social memory
