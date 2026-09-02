@@ -1400,3 +1400,42 @@ now there are two copies to drift apart and an agent burns its context reading t
 The same rule governs cross-references between docs: when another file already covers something,
 **link to it and say what it settles in one line.** Four times in one session a doc grew a
 paragraph that already existed elsewhere, and each had to be trimmed back to a pointer.
+
+### A test can be rewritten. A test that pins a bug must be
+
+Tests here are not the specification. **They are an attempt to write the
+specification down**, and when the specification changes the test is what has to
+move.
+
+So a test may be **modified, rewritten or deleted** when the design behind it has
+genuinely changed. What is not allowed is deleting one because it is
+inconvenient, or loosening an assertion until it stops failing without deciding
+what the new rule is.
+
+**The distinction is whether you can say what the test should assert now.** If you
+can, rewrite it to assert that. If you cannot, you do not yet understand the
+change and the red test is telling you so.
+
+Two worked examples from one night, both from the same root cause:
+
+- **A constant that encoded the bug.** `discovery.test.ts` defined the house a
+  new life knows as "the lowest admission bar, tie-broken by faction id" - which
+  was not a description of the world but a copy of the seeder's defect, where
+  `sect-azure-dew-sect` won on the letter A and the other six houses admitting
+  at rung 0 were unreachable to every player in every run. When the seeder was
+  fixed the test failed, and the fix was to assert the **principle** -
+  `discovery.md`'s "their world is the county" - instead of a headcount that
+  would need editing every time the roster moved.
+- **A fixture that hardcoded a name only a bug made universal.**
+  `paying-into-the-ledger.test.ts` said "I join the Azure Dew Sect", which
+  worked only because every cultivator everywhere had heard of that one house.
+  With knowledge region-aware, the join was correctly refused and the test then
+  measured a donation by somebody on nobody's roll. It asks the knowledge layer
+  which house this cultivator knows now, and asserts they are on a roll before
+  measuring anything.
+
+And when the design moves under a number, **say so in the test's name and its
+header**. The Azure houses' bars, the three intake layers, the population
+pyramid: these are decisions, and a decision that lives only as a number nobody
+reads twice will be silently reverted by the next person who finds it
+surprising.
