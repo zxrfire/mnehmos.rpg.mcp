@@ -359,7 +359,10 @@ request          ASK A NAMED PERSON FOR A NAMED THING, which is not the same as 
                  must not be routed there. "target" is who it is put to; "intent" is what kind
                  of thing is being asked for - teaching (be taught an art, or handed its book),
                  discipleship (be taken on), introduction (be put in front of somebody), telling
-                 (be told something they know); "topic" is what was named - the art, the person.
+                 (be told something they know), nothing (ask for NOTHING - buy them a drink, sit
+                 with them, call on them, do them a small favour; costs a day and no stones, and
+                 it is the only thing that makes a stranger somebody who will do you a favour
+                 later); "topic" is what was named - the art, the person.
                  This is the ONLY route to being taught by a person, which the engine says
                  repeatedly is one of the two ways past a manual's ceiling. It spends days and
                  can spend the purse, so choose it only when the player is actually asking

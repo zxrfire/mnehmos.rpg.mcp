@@ -91,6 +91,25 @@ export type RequestKind =
     | 'introduction'
     | 'telling'
     | 'a_thing'
+    /**
+     * THE ONE THAT ASKS FOR NOTHING, and the reason the rest of them are
+     * reachable at all.
+     *
+     * A refusal that names a route the game has not built is the defect this
+     * whole verb was written to fix, arriving one layer deeper - and the first
+     * draft of these refusals did exactly that. They said *"turn up twice, buy
+     * somebody a drink, do a small thing for nothing, and ask again"*, which is
+     * `asking.md` quoted almost verbatim and was three sentences the parser had
+     * no branch for. Typed back, all three hit a wall.
+     *
+     * So this is the sentence those refusals name, and it is a real act with a
+     * real cost: a day, and nothing else. `asking.md` is exact about why it has
+     * to be free of everything except time - *"this is the cheapest lever in
+     * the game and it is available to a cultivator with nothing"* - and about
+     * what it buys, which is not information and not a favour. It is being
+     * somebody they have met.
+     */
+    | 'nothing'
     | 'unstated';
 
 /**
@@ -109,6 +128,7 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
     switch (kind) {
         case 'telling':
         case 'introduction':
+        case 'nothing':
         case 'unstated':
             return 'a_courtesy';
         case 'teaching':
@@ -245,6 +265,105 @@ function cleanObject(raw: string): string | undefined {
 const NAMES_NOBODY =
     /^(?:around|about|it|this|that|these|those|nothing|anything|something|myself|me|someone|somebody|anyone|anybody|everyone|everybody|people|folk|locals|the locals|a stranger|a passerby|a local)$/i;
 
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE COURTESY THAT ASKS FOR NOTHING
+//
+// Its own matcher, because none of these sentences has a request verb in it.
+// "I buy him a drink" is not asking for anything and the whole point of it is
+// that it is not; putting it through `REQUEST_VERB` would be inventing an ask
+// where the player deliberately made none.
+//
+// Every one of these is a phrasing the refusals SAY, and that is the rule this
+// block exists to keep: a refusal may only name a door somebody can walk
+// through. `asking.md`'s own list is "a round, a gift, a favour, turning up
+// twice", and all four are here.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Standing somebody a round. Ditransitive on purpose - "buy X a drink" has two
+ * objects and "buy a drink" has one, so this cannot eat a trip to the market.
+ */
+const A_ROUND =
+    /\b(?:buy|buys|buying|stand|stands|standing|get|gets|getting|order|orders|ordering)\s+(.{2,60}?)\s+(?:a|an|another|one)\s+(?:drink|round|cup|meal|bowl|dinner|supper|tea|wine)\b/i;
+
+/** A gift, which is the same act with a different object. */
+const A_GIFT =
+    /\b(?:bring|brings|bringing|give|gives|giving|send|sends|sending|take|takes|taking)\s+(.{2,60}?)\s+(?:a|an|some)\s+(?:gift|present|token|something)\b/i;
+
+/**
+ * A small thing done for nothing.
+ *
+ * `help` is deliberately absent in its bare form. It is one of the commonest
+ * words in the language and it is already a member of `askWeightOf`'s real
+ * favour list, so taking every sentence with `help` in it would be the
+ * widening `AGENTS.md` files under "fix the gap that was demonstrated".
+ */
+const A_SMALL_THING =
+    /\b(?:do|does|doing)\s+(?:a\s+(?:small\s+|little\s+)?(?:thing|favour|favor|kindness)|something)\s+for\s+(.{2,60}?)\s*(?:for nothing|and ask nothing|without asking|expecting nothing)?\s*[.!?]?$/i;
+
+const A_SMALL_THING_DITRANSITIVE =
+    /\b(?:do|does|doing)\s+(.{2,60}?)\s+a\s+(?:small\s+|little\s+|quiet\s+)?(?:favour|favor|good turn|kindness)\b/i;
+
+/**
+ * Turning up, which is the cheapest of the four and the one somebody with
+ * nothing at all can still do.
+ */
+const TURNING_UP =
+    /\b(?:turn up|turns up|turning up|call|calls|calling)\s+(?:where|on|in on)\s+(.{2,60}?)\s*(?:is|are|lives|works|stands)?\s*[.!?]?$/i;
+
+const KEEPING_COMPANY =
+    /\b(?:sit|sits|sitting|drink|drinks|drinking|eat|eats|eating)\s+with\s+(.{2,60}?)\s*[.!?]?$/i;
+
+const PAYING_A_VISIT =
+    /\b(?:pay|pays|paying)\s+(.{2,60}?)\s+a\s+(?:visit|call)\b/i;
+
+const KEEPING_THEM_COMPANY =
+    /\b(?:keep|keeps|keeping)\s+(.{2,60}?)\s+company\b/i;
+
+const SPENDING_TIME =
+    /\b(?:spend|spends|spending)\s+(?:some\s+|a bit of\s+)?time\s+with\s+(.{2,60}?)\s*[.!?]?$/i;
+
+/** Saying it in the words the refusal used, which must always work. */
+const ASKING_NOTHING =
+    /\b(?:ask|asks|asking)\s+(.{2,60}?)\s+for\s+nothing\b/i;
+
+const COURTESIES: readonly RegExp[] = [
+    A_ROUND,
+    A_GIFT,
+    A_SMALL_THING,
+    A_SMALL_THING_DITRANSITIVE,
+    TURNING_UP,
+    PAYING_A_VISIT,
+    KEEPING_THEM_COMPANY,
+    KEEPING_COMPANY,
+    SPENDING_TIME,
+    ASKING_NOTHING
+];
+
+/**
+ * A courtesy paid to somebody, or null.
+ *
+ * Null for everything else, and that includes every sentence where the phrase
+ * that would be the person is not one: "buy a drink" has no second object and
+ * does not match at all, and "sit with the fire" resolves to nobody later and
+ * is refused with the room attached, the same as any other unresolvable name.
+ */
+export function courtesyPaidTo(input: string): DirectedRequest | null {
+    for (const pattern of COURTESIES) {
+        const hit = pattern.exec(input);
+        if (!hit) continue;
+        const person = cleanPerson(hit[1] ?? '');
+        if (!person || NAMES_NOBODY.test(person)) continue;
+        return {
+            person,
+            kind: 'nothing',
+            inTheirWords: input.trim().slice(0, 160)
+        };
+    }
+    return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // CLASSIFYING THE ASK
 // ─────────────────────────────────────────────────────────────────────────
@@ -354,6 +473,12 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
  * away from it.
  */
 export function requestPutToSomebody(input: string): DirectedRequest | null {
+    // The act that asks for nothing, first, because none of its phrasings has
+    // a request verb in it and several of them contain words that other
+    // branches want ("buy", "sit", "turn up").
+    const courtesy = courtesyPaidTo(input);
+    if (courtesy) return courtesy;
+
     const verb = REQUEST_VERB.exec(input);
     if (!verb) return null;
 

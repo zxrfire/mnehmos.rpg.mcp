@@ -2342,6 +2342,9 @@ function whatWasAsked(kind: string, named: string): string {
         case 'discipleship': return 'to be taken on';
         case 'introduction':
             return named.length >= 2 ? `to be introduced to ${named}` : 'for an introduction';
+        // Reads as a clause after the actor's name rather than after "asks",
+        // because nothing is being asked. See `factsForRequest`.
+        case 'nothing': return 'spends an afternoon on somebody';
         default: return named.length >= 2 ? `for ${named}` : 'for something';
     }
 }
@@ -2369,46 +2372,101 @@ export function factsForRequest(
     named: string,
     costing: { ask: AskWeight; lines: string[]; structure: string[] },
     result: AttemptResult,
-    subjectFacts: readonly string[]
+    subjectFacts: readonly string[],
+    /** How many times this has already been put to this person. */
+    priorAsks = 0,
+    /**
+     * Whether a record was actually WRITTEN, which is not the same as whether
+     * the resolver produced one.
+     *
+     * `AttemptMarks.obligation` is what the engine decided; whether the caller
+     * kept it is a separate fact, and a courtesy that asks for nothing has its
+     * refusal grudge dropped on the floor. Rendering off the mark said "it is
+     * on somebody's ledger now, and ledgers here are kept" over a ledger that
+     * had not been touched - the narrator asserting a write that never
+     * happened, which is the one thing this package exists to prevent, and it
+     * had crept back in through the field it reads.
+     */
+    wroteToTheLedger = false,
+    /**
+     * How strongly they already hold you, 0..1, from the relationships table.
+     *
+     * Here for one reason: the advice has to stop when the advice stops
+     * working. Turning up is the answer at zero and it is not the answer at
+     * one, and a refusal that keeps saying "buy them a drink" after fifty
+     * drinks is naming a route that no longer moves anything - the same defect
+     * as naming one that was never built, arriving one turn of the screw later.
+     */
+    theirTie = 0
 ): EngineFacts {
     const asked = whatWasAsked(kind, named);
+    const courtesy = kind === 'nothing';
     const lines: string[] = [
-        `${cultivator.name} asks ${subject} ${asked}.`,
+        courtesy
+            ? `${cultivator.name} spends an afternoon on ${subject}, and wants nothing out of it.`
+            : `${cultivator.name} asks ${subject} ${asked}.`,
         ...subjectFacts,
         ...costing.lines,
-        WHAT_THE_ASK_WEIGHS[costing.ask]
+        ...(courtesy ? [] : [WHAT_THE_ASK_WEIGHS[costing.ask]])
     ];
 
-    switch (result.outcome) {
-        case 'taken':
-            lines.push(
-                result.stonesSpent > 0
-                    ? `${subject} agrees, and ${result.stonesSpent} spirit stones go with it.`
-                    : `${subject} agrees.`
-            );
-            break;
-        case 'turned':
-            lines.push(
-                `${subject} agrees, and is holding the fact that they were asked. They have `
-                + 'decided something about you, and they are going to act on it.'
-            );
-            break;
-        case 'refused':
-            lines.push(
-                `${subject} says no, and it stays between the two of you. `
-                + WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
-            );
-            break;
-        case 'reported':
-            lines.push(
-                `${subject} says no, and does not keep it to themselves. Somebody who was not in `
-                + `the room now knows what you asked for. `
-                + WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
-            );
-            break;
+    // What they already know about being asked this. Before the outcome,
+    // because it is what they are hearing the outcome through.
+    const again = theyHaveHeardThisBefore(subject, priorAsks, courtesy);
+    if (again) lines.push(again);
+
+    // A COURTESY HAS ITS OWN OUTCOMES.
+    //
+    // Nothing was asked, so nobody said no. What the roll decided is whether
+    // the afternoon LANDED - whether they took the drink, sat down, noticed
+    // that you were there - and a miss is being politely ignored rather than
+    // being refused. Rendering it as a refusal, with what would have moved
+    // them attached, would be the engine telling the player that turning up
+    // did not work because they did not turn up hard enough.
+    if (courtesy) {
+        lines.push(
+            result.outcome === 'taken' || result.outcome === 'turned'
+                ? `${subject} takes it, and the afternoon goes somewhere. You are not a stranger `
+                  + 'to them any more, which is a small thing and is the thing every larger one '
+                  + 'is built on.'
+                : `${subject} is civil about it and it goes nowhere. Nothing was asked, so there `
+                  + 'is nothing to hold against you and nothing has been spent but the day. '
+                  + (priorAsks === 0
+                      ? 'This is a thing that works by being done repeatedly, and this was once.'
+                      : 'It works by being done repeatedly and it does not work every time.')
+        );
+    } else {
+        switch (result.outcome) {
+            case 'taken':
+                lines.push(
+                    result.stonesSpent > 0
+                        ? `${subject} agrees, and ${result.stonesSpent} spirit stones go with it.`
+                        : `${subject} agrees.`
+                );
+                break;
+            case 'turned':
+                lines.push(
+                    `${subject} agrees, and is holding the fact that they were asked. They have `
+                    + 'decided something about you, and they are going to act on it.'
+                );
+                break;
+            case 'refused':
+                lines.push(
+                    `${subject} says no, and it stays between the two of you. `
+                    + whatWouldMoveThem(costing.ask, theirTie)
+                );
+                break;
+            case 'reported':
+                lines.push(
+                    `${subject} says no, and does not keep it to themselves. Somebody who was `
+                    + `not in the room now knows what you asked for. `
+                    + whatWouldMoveThem(costing.ask, theirTie)
+                );
+                break;
+        }
     }
 
-    if (result.marks.obligation || result.marks.counterObligation) {
+    if (wroteToTheLedger) {
         lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
     }
     if (result.days > 1) lines.push(`${result.days} days went into it.`);
@@ -2421,7 +2479,7 @@ export function factsForRequest(
             `request(${kind}): outcome=${result.outcome}, odds=${result.odds}, `
             + `ask=${costing.ask}, days=${result.days}, stonesSpent=${result.stonesSpent}, `
             + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
-            + `reachedTheHouse=${result.marks.reachedTheHouse}.`,
+            + `reachedTheHouse=${result.marks.reachedTheHouse}, priorAsks=${priorAsks}.`,
             ...costing.structure
         ]
     );
@@ -2443,24 +2501,141 @@ export function factsForRequest(
  * and `PURSE_REACH` in the resolver is the same line as arithmetic. Neither of
  * them is restated here; these say in words what that table already does.
  */
+/**
+ * EVERY SENTENCE HERE MUST NAME A DOOR THAT EXISTS.
+ *
+ * The first draft of this table did not, and the defect it produced is the one
+ * this whole verb was written to fix, arriving one layer deeper. It said, of a
+ * courtesy: *"Turn up twice, buy somebody a drink, do a small thing for
+ * nothing, and ask again."* That is `asking.md` quoted almost verbatim, and it
+ * is good writing, and all three sentences were typed back by somebody reading
+ * it - `I buy X a drink` reached the price board, and the other two reached
+ * nothing at all. `AGENTS.md` has an entry called "the player must be able to
+ * type back what the game printed", and a refusal is the single place in this
+ * game where that rule bites hardest, because a refusal is where the player is
+ * being told what to do next.
+ *
+ * So there are two ways to keep this table honest and only two: build the verb,
+ * or narrow the sentence. Both were used. `RequestKind.nothing` is the verb -
+ * all four of `asking.md`'s courtesies parse now, and the first two rows below
+ * name them in the exact words that work. The bottom two rows were narrowed
+ * instead, because what would actually move somebody that far is not a thing a
+ * player can do standing there, and saying so plainly is worth more than
+ * offering a route nobody has built.
+ *
+ * Read this next to `PURSE_REACH`. The two tables are the same statement made
+ * twice - once as odds, once in words - and if either is edited the other is
+ * wrong.
+ */
 const WHAT_WOULD_HAVE_MOVED_THEM: Readonly<Record<AskWeight, string>> = {
     a_courtesy:
-        'What moves somebody on a thing this small is having met you before. Turn up twice, '
-        + 'buy somebody a drink, do a small thing for nothing, and ask again.',
+        'What moves somebody on a thing this small is having met you before, and there is '
+        + 'exactly one way to get that: turn up again wanting nothing. Buy them a drink, sit '
+        + 'with them, call on them, do them a small favour. Each costs a day and no stones at '
+        + 'all, and it is the only lever in this game available to somebody carrying nothing.',
     a_real_favour:
-        'What would change it is being owed something, or being somebody they have reason to '
-        + 'take seriously - a word from a person already on their roll, or a favour they have '
-        + 'not repaid. Money helps here and it is never the thing that decides it.',
+        'The largest thing on the scale is what you have already done for them, and it is worth '
+        + 'more than any purse - so buy them a drink, sit with them, come back wanting nothing, '
+        + 'and ask this again when you are somebody they have dealt with. Standing in a house '
+        + 'they have to take seriously moves it too. Money helps here and never decides it.',
     against_their_interest:
-        'Money reaches a long way down and it does not reach this far. What would move them is '
-        + 'an obligation they cannot walk away from, or something they want that only you can '
-        + 'get to.',
+        'Money reaches a long way down and it does not reach this far, and neither does turning '
+        + 'up: no number of afternoons gets somebody to a place where they end up worse off. '
+        + 'What would move them is standing they have to answer to, or something they want badly '
+        + 'enough to trade for - and neither of those is a thing you can do this afternoon.',
     a_betrayal:
-        'There is no sum for this. What you are asking them to spend is their standing in the '
-        + 'only place that would have them, and a stranger with a purse reads to them as '
-        + 'somebody who has not understood what they are looking at. An oath, a life owed, or '
-        + 'nothing.'
+        'Nothing you can do standing here reaches this, and that is not a price you have failed '
+        + 'to meet. What you are asking them to spend is their standing in the only place that '
+        + 'would have them, which is not for sale at any figure - a stranger with a purse reads '
+        + 'to them as somebody who has not understood what they are looking at.'
 };
+
+/**
+ * Where the tie stops being the answer.
+ *
+ * `TIE_WEIGHT` is the whole of what turning up can ever be worth, and a tie at
+ * full strength has spent it. Past this point another afternoon changes
+ * literally nothing, and saying so is the difference between a refusal that
+ * tells the player what to do and one that tells them to keep doing what they
+ * have already finished doing.
+ */
+const A_TIE_THAT_HAS_NOTHING_LEFT = 0.9;
+
+/**
+ * What would move them, which depends on what has already been spent.
+ *
+ * Two arms per weight and not one, because the honest answer to "what now"
+ * changes once the cheapest lever is exhausted. The saturated arm is
+ * deliberately the shorter and bleaker one: what is left above a real favour is
+ * standing and obligation, and neither is something a player can do this
+ * afternoon. A narrower true sentence beats a richer false one.
+ */
+function whatWouldMoveThem(ask: AskWeight, theirTie: number): string {
+    if (theirTie < A_TIE_THAT_HAS_NOTHING_LEFT) return WHAT_WOULD_HAVE_MOVED_THEM[ask];
+    switch (ask) {
+        case 'a_courtesy':
+            return 'You have already turned up as often as turning up is worth. They know '
+                + 'exactly who you are and today is simply not the day.';
+        case 'a_real_favour':
+            return 'You have spent what turning up can buy - they know you, and it is not '
+                + 'enough on its own. What is left is not another afternoon: it is standing '
+                + 'they have to take seriously, or a debt they cannot walk away from, and '
+                + 'both of those are earned somewhere other than in front of them.';
+        case 'against_their_interest':
+        case 'a_betrayal':
+            return WHAT_WOULD_HAVE_MOVED_THEM[ask];
+    }
+}
+
+/**
+ * That they have heard this from you before, said out loud.
+ *
+ * Six identical refusals in a row read as a broken loop rather than as a person
+ * saying no again - and the state was changing underneath all six, because a
+ * refusal writes a record and the next attempt reads it. The same defect was
+ * fixed in the wound warning earlier: the same sentence at one wound and at
+ * nine. The fix is the same one. Let the text know what the state knows.
+ *
+ * Counted asks, not days: what a person notices is being asked twice, whether
+ * that was a week apart or a season.
+ */
+function theyHaveHeardThisBefore(
+    subject: string,
+    priorAsks: number,
+    /**
+     * A courtesy repeated is the mechanic and not a nag.
+     *
+     * The whole of what turning up buys is that it was done more than once -
+     * `asking.md` says "turning up twice" in as many words - so counting it
+     * back at the player is the game working, and the wording that fits a
+     * fourth request for the same favour would be telling them off for using
+     * the verb correctly.
+     */
+    courtesy = false
+): string | null {
+    if (priorAsks <= 0) return null;
+    if (courtesy) {
+        return priorAsks === 1
+            ? `This is the second time you have come by wanting nothing, and the second time is `
+              + 'the one that counts. The first is a stranger; the second is somebody who came '
+              + 'back.'
+            : `That is ${priorAsks + 1} times you have turned up asking for nothing. It is not `
+              + `much each time and it is not nothing, and ${subject} has stopped thinking of `
+              + 'you as somebody they have not met.';
+    }
+    if (priorAsks === 1) {
+        return `${subject} has heard this from you once already, and remembers it. Asking a `
+            + 'second time is a different sentence from asking a first, and they hear it that '
+            + 'way.';
+    }
+    if (priorAsks < 5) {
+        return `That is ${priorAsks + 1} times you have put this to ${subject}. They are not `
+            + 'confused about what you want, and going back over it is not what is missing.';
+    }
+    return `${priorAsks + 1} times now. ${subject} has stopped hearing a request and started `
+        + 'hearing a habit, and what they think of you is no longer about the thing you keep '
+        + 'asking for.';
+}
 
 /**
  * What asking them would take, without asking them.
@@ -2476,15 +2651,19 @@ export function factsForWeighingARequest(
     kind: string,
     costing: { ask: AskWeight; lines: string[]; structure: string[] },
     subjectFacts: readonly string[],
-    offered: number | null
+    offered: number | null,
+    priorAsks = 0,
+    theirTie = 0
 ): EngineFacts {
     const lines: string[] = [
         `What it would take to ask ${subject} ${whatWasAsked(kind, '')}, before you ask.`,
         ...subjectFacts,
         ...costing.lines,
         WHAT_THE_ASK_WEIGHS[costing.ask],
-        WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
+        whatWouldMoveThem(costing.ask, theirTie)
     ];
+    const heard = theyHaveHeardThisBefore(subject, priorAsks, kind === 'nothing');
+    if (heard) lines.push(heard);
     if (offered !== null) {
         lines.push(
             `You would be putting ${offered} spirit stones down, and ${cultivator.name} is `

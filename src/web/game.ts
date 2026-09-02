@@ -360,7 +360,7 @@ import {
     type TheOneBeingAsked
 } from './what-asking-this-person-for-this-would-cost-them.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
-import { createObligation } from '../engine/social/grudges.js';
+import { createObligation, settleObligation } from '../engine/social/grudges.js';
 import type { AttemptResult } from '../engine/social-leverage/index.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 // The fourth, and the one a player asks first: what kinds of thing are live at
@@ -648,8 +648,19 @@ const FLAG_MASTER = 'master_who_took_them_on';
  * reading, which is the rule every other intent-carrying action here obeys.
  */
 const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
-    'teaching', 'discipleship', 'introduction', 'telling', 'a_thing'
+    'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing'
 ]);
+
+/**
+ * How many times this cultivator has already put a request to somebody.
+ *
+ * Per pair, and it is what stops six identical refusals in a row. The state was
+ * changing under all six - a refusal writes a record and the next attempt reads
+ * it - and the text did not know, which reads as a broken loop rather than as a
+ * person saying no again. The same defect was fixed in the wound warning
+ * earlier, and the fix is the same: let the text know what the state knows.
+ */
+const askedBeforeKey = (personId: string, kind: string): string => `asked:${kind}:${personId}`;
 /** Spirit stones for one meal at `eat`. */
 export const MEAL_COST_STONES = 1;
 
@@ -11403,7 +11414,7 @@ ${fit.line}`;
             run, cultivator, ambient, TRAVEL_FOCUS, `Pressing ${party.name}`, result.days
         );
 
-        const marks = this.recordWhatTheAskLeft(run, cultivator, party, result, 'interact');
+        const marks = this.recordWhatTheAskLeft(run, cultivator, party, result, 'interact').calls;
 
         const facts = factsForAttempt(cultivator, party.name, intent, result, party.facts);
         if (spoken) addHearing(facts, spoken);
@@ -11583,7 +11594,7 @@ ${unnamed}`;
         // apart either. Anything else that is merely a thing falls back to the
         // approach that already handles it, rather than inventing a way to hand
         // objects over.
-        const asArt = named.length >= 2
+        const asArt = named.length >= 2 && kind !== 'nothing'
             ? resolveTechnique(this.repos, named, cultivator.id)
             : null;
         let shape: RequestKind = kind;
@@ -11596,6 +11607,19 @@ ${unnamed}`;
                 );
             }
         }
+
+        // ── AND HOW MANY TIMES THEY HAVE HEARD IT ────────────────────────
+        //
+        // Read before anything is decided, so the outcome can be described as
+        // the second time rather than as the first again. Incremented once the
+        // attempt is actually made, which is why it is read here and written
+        // below rather than in one place.
+        // Keyed on the KIND as well as the person, because "they have heard this
+        // from you before" is a claim about the thing being asked for. Somebody
+        // who bought a stranger three drinks and then asks to be taught has
+        // asked for that once.
+        const askedKey = askedBeforeKey(party.id, kind);
+        const priorAsks = Number(readFlag(this.db, cultivator.id, askedKey) ?? '0');
 
         const holds = this.whatTheyAreCarrying(party.id);
         const asked: TheOneBeingAsked = {
@@ -11627,7 +11651,7 @@ ${unnamed}`;
             : null;
 
         const costing = whatItWouldCostThem({
-            kind: shape as 'teaching' | 'introduction' | 'discipleship',
+            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing',
             asking,
             asked,
             techniqueId: asArt?.id ?? null,
@@ -11669,14 +11693,22 @@ ${unnamed}`;
         // and can spend the purse. Same code path, stopped one line before the
         // roll, so the read cannot drift from the thing it describes.
         if (weighing) {
+            const held = tieFrom(this.repos, party.id, cultivator.id);
             return this.freeAction(run, 'request', factsForWeighingARequest(
-                cultivator, party.name, shape, costing, party.facts, offered
+                cultivator, party.name, shape, costing, party.facts, offered, priorAsks,
+                held?.active ? held.strength : 0
             ));
         }
 
         const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = asked.factionId ? getSect(asked.factionId) : null;
+
+        // Read once and used twice: the resolver prices it, and the refusal
+        // reads it to know whether telling the player to turn up again is still
+        // advice or has become a loop.
+        const heldTie = tieFrom(this.repos, party.id, cultivator.id);
+        const tieStrength = heldTie?.active ? heldTie.strength : 0;
 
         const result = resolveAttempt({
             actor: {
@@ -11712,7 +11744,7 @@ ${unnamed}`;
             // Both are read off rows and neither is invented: the ledger is the
             // obligations table, and the tie is what THIS resolver wrote the
             // last time an attempt landed.
-            theirTie: tieFrom(this.repos, party.id, cultivator.id),
+            theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
             // THE ASK IS THE THING BEING ASKED FOR, and it is derived rather
@@ -11737,11 +11769,7 @@ ${unnamed}`;
             run, cultivator, ambient, TRAVEL_FOCUS, `Asking ${party.name}`, result.days
         );
 
-        const facts = factsForRequest(
-            cultivator, party.name, shape, named, costing, result, party.facts
-        );
-        facts.lines.push(...spent.facts.lines);
-        facts.structure.push(...spent.facts.structure);
+        writeFlag(this.db, cultivator.id, askedKey, String(priorAsks + 1));
 
         const calls: ToolCallRecord[] = [
             {
@@ -11773,7 +11801,20 @@ ${unnamed}`;
         // ledger. That is the narrator asserting an outcome the database never
         // took, which is the one thing this codebase forbids outright. The
         // resolver hands back the records; this persists them.
-        calls.push(...this.recordWhatTheAskLeft(run, cultivator, party, result));
+        const left = this.recordWhatTheAskLeft(
+            run, cultivator, party, result, 'request', shape !== 'nothing'
+        );
+        calls.push(...left.calls);
+
+        // Built AFTER the records are written, because one of its lines is a
+        // claim about the ledger and the only honest source for that claim is
+        // whether anything went into it.
+        const facts = factsForRequest(
+            cultivator, party.name, shape, named, costing, result, party.facts, priorAsks,
+            left.wroteToTheLedger, tieStrength
+        );
+        facts.lines.push(...spent.facts.lines);
+        facts.structure.push(...spent.facts.structure);
 
         const execution: Execution = {
             ...spent,
@@ -11849,16 +11890,58 @@ ${done.lines.join(' ')}`;
         cultivator: Cultivator,
         party: ResolvedEntity,
         result: AttemptResult,
-        action: ActionName = 'request'
-    ): ToolCallRecord[] {
+        action: ActionName = 'request',
+        /**
+         * Whether anything was actually asked for.
+         *
+         * False for the courtesy that asks for nothing, and it is the one place
+         * this layer declines to write a record the resolver handed it. The
+         * reason is that the record does not describe the event: `refusalGrudge`
+         * writes "came to X with nothing but the asking and was turned down",
+         * and there was no asking - somebody who does not take you up on a
+         * drink has not been imposed on. Writing it would also make the cheapest
+         * lever in the game self-defeating, since a missed afternoon would cost
+         * the same -0.1 that a refused favour does.
+         *
+         * Stated rather than silent because it IS the caller second-guessing
+         * the engine, which `AGENTS.md` warns about by name. The narrow version
+         * of the same judgement belongs inside `refusalGrudge` and should move
+         * there; this is the smallest place to hold it in the meantime.
+         */
+        somethingWasAsked = true
+    ): { calls: ToolCallRecord[]; wroteToTheLedger: boolean } {
         const calls: ToolCallRecord[] = [];
+        let wroteToTheLedger = false;
         for (const [which, mark] of [
             ['obligation', result.marks.obligation],
             ['counterObligation', result.marks.counterObligation]
         ] as const) {
             if (!mark) continue;
-            const record = createObligation(mark);
+            if (!somethingWasAsked && mark.kind === 'grudge') continue;
+            // ── ONE STANDING RECORD, NOT ONE A DAY ───────────────────────
+            //
+            // `createObligation` derives its id from the pair, the cause AND
+            // THE DAY, so a second refusal a week later is a second row rather
+            // than the same fact restated. The odds do not spiral - the
+            // resolver reads the WORST open grudge and never the count - but
+            // six asks left six grudges, and anything that counts what somebody
+            // is carrying would have read that as six separate injuries.
+            //
+            // "X asked me for something and I said no" is one standing fact
+            // about two people, so it is given one id. Severity is not
+            // recomputed, which is the rule `grudges.ts` actually states; only
+            // the identity is collapsed, and the newest refusal is the one the
+            // row ends up describing.
+            const record = createObligation(
+                mark.kind === 'grudge'
+                    ? {
+                        ...mark,
+                        id: `grudge_${mark.holderId}_${mark.subjectId}_${mark.cause}`
+                    }
+                    : mark
+            );
             writeObligation(this.db as unknown as DatabaseHandle, record);
+            wroteToTheLedger = true;
             calls.push({
                 name: 'social.createObligation',
                 action,
@@ -11885,6 +11968,52 @@ ${done.lines.join(' ')}`;
                 ok: true
             });
         }
+        // ── AND WHAT TURNING UP AGAIN PUTS RIGHT ─────────────────────────
+        //
+        // Measured, and it was a soft lock wearing a mechanic. One refused
+        // request writes a slight grudge worth -0.1, and -0.1 takes the
+        // COURTESY - the thing the refusal itself tells the player to go and do
+        // - from about 29% to about 9%. So the route out of a refusal was
+        // poisoned by the refusal that named it, permanently, because nothing
+        // in the player's path had ever called `settleObligation`.
+        //
+        // `asking.md` already says what settles it, and it is the same act:
+        // *"a carter you bought a drink for last month talks more freely...
+        // because he has no position to protect and you are now someone he
+        // knows."* Somebody who keeps coming back wanting nothing is not
+        // somebody you are still annoyed with. So a courtesy that LANDS
+        // forgives the open refusal grudge between the two of them - one
+        // record, settled, by the engine's own function and with its own
+        // resolution vocabulary.
+        //
+        // It is not free and it is not automatic: the courtesy has to land, and
+        // at 9% that is eleven days of turning up. That is the price of having
+        // asked badly, and it is a price rather than a wall.
+        if (!somethingWasAsked && (result.outcome === 'taken' || result.outcome === 'turned')) {
+            for (const open of openLedgerBetween(this.repos, cultivator.id, party.id)) {
+                if (open.kind !== 'grudge') continue;
+                if (open.holderId !== party.id || open.subjectId !== cultivator.id) continue;
+                if (!open.tags.includes('refused_approach')) continue;
+                writeObligation(this.db as unknown as DatabaseHandle, settleObligation(open, {
+                    resolution: 'forgiven',
+                    onDay: Math.floor(run.elapsedDays),
+                    byId: party.id,
+                    note:
+                        `${cultivator.name} kept turning up wanting nothing, and ${party.name} `
+                        + 'stopped holding the asking against them.'
+                }));
+                calls.push({
+                    name: 'social.settleObligation',
+                    action,
+                    summary:
+                        `${open.severity} grudge ${open.id} settled as forgiven. It was worth `
+                        + '-0.1 on every later approach, including on the courtesy that settled '
+                        + 'it, and it had no other route to being closed.',
+                    ok: true
+                });
+            }
+        }
+
         if (result.marks.reachedTheHouse) {
             calls.push({
                 name: 'engine.resolveAttempt',
@@ -11895,7 +12024,7 @@ ${done.lines.join(' ')}`;
                 ok: true
             });
         }
-        return calls;
+        return { calls, wroteToTheLedger };
     }
 
     /**
