@@ -659,6 +659,23 @@ export const ENGINE_GAPS: readonly {
 ];
 
 // -------------------------------------------------------------------------
+// AND WHERE THEY ARE NOT KEPT
+// A gap in the engine rather than in the setting. Stated so it does not get
+// mistaken for a decision.
+// -------------------------------------------------------------------------
+
+export const NOT_YET_KEPT_AS_OBJECTS = {
+    whatIsMissing:
+        'Every one of these is a count and not a row. `IMMORTAL_HOLDINGS` says a body holds seven of a thing, and that is the whole of what the world stores: no id, no holder chain, no provenance, and nothing anywhere calls `makeObject` for one. Seventeen objects are held that way across six holdings.',
+    whyThatIsTheWrongShape:
+        'Which inverts the rule `docs/world/things/items.md` states. The test for a row is whether the movement of this specific object is an event somebody should be able to find out about two centuries later, and these are the objects in the setting where that is most true: the supply is finite and shrinking, every one spent is one fewer forever, and the whole of what makes a holder careful is that they can name the number. A count cannot answer which one moved, who moved it, or what was given for it, and those are the only questions anybody asks about these.',
+    theWorkedPrecedentIsNextDoor:
+        '`structural-repair-medicine.ts` had exactly this shape and does not any more. `who-holds-the-structural-repair-medicine.ts` is the fix in full: the authored holdings are the opening state, the seeder reads them and puts down precisely those doses on precisely those bodies with no random placement at all, the tracked grades become `ObjectRecord` rows and the fungible ones a count in `resources`, and every question afterwards is answered off live state rather than off the catalog line. It also solves the problem that would otherwise bite here first, which is that two of the holders are bodies nobody can join and the world never makes a faction row for them.',
+    andWhyItHasNotSimplyBeenDone:
+        'Because a live layer that nothing reads would be worse than the count. `src/web/game.ts` answers every question about these off `getHoldingsOf`, straight from this file, so seeding rows beside it makes two sources of truth with the authored one still winning. The wiring is one line in `seeding.ts` next to `seedStructuralRepairMedicine`, and it is only worth adding together with the switch in the caller.'
+} as const;
+
+// -------------------------------------------------------------------------
 // STOCK VERSUS FLOW
 // The axis the four apexes actually turn on, and it is not age.
 // -------------------------------------------------------------------------
