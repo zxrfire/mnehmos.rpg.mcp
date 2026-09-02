@@ -81,11 +81,11 @@ describe('what the repair refuses to do', () => {
         // and a target in the parser's spelling would send the engine after an
         // object that is not there.
         //
-        // The example is DERIVED rather than written down. It used to say
-        // `stele`, one edit from `stole`, and a later change added `stele` to a
-        // pattern - so the word became vocabulary, was correctly left alone,
-        // and this test failed for a reason that had nothing to do with what it
-        // asserts. The property is what matters; the word is incidental.
+        // DO NOT hardcode the example word. Whatever word is chosen is one
+        // pattern away from becoming vocabulary itself, and once it is, the
+        // repair correctly leaves it alone and this test fails for a reason
+        // with nothing to do with what it asserts. The property is what
+        // matters and the word is incidental, so it is found at run time.
         const near = [...vocabulary].filter(w => /^[a-z]{5,8}$/.test(w)).sort();
         let said = '';
         let respeltTo = '';
