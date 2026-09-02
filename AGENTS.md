@@ -751,29 +751,35 @@ one-line `export * from './new-name.js';` at the old path with a comment saying 
 went, and let the importers migrate as they come free. Twelve files imported the two
 modules renamed above and nearly every one held another agent's live work.
 
-### Agreement changes intent, not physics
+### Agency: do not ban it, and do not soften it
 
-**A spar is combat.** Two people agreeing to go gently are still two cultivators hitting each
-other, and the wounds are real. Agreement changes what they are *trying* to do to one another;
-it does not suspend the rules of the world, scale the damage, or suppress an injury.
+**Anybody may attempt anything.** The engine's job is not to decide what is allowed - it is to
+say honestly what happened and what it cost. Those are the two ways to get this wrong, and they
+look like opposites while being the same mistake:
 
-So there is no safe practice mode, and there should not be one. There is also **nothing that
-bans a spar** - it is an ordinary thing for two people to do and the engine should let them,
-at the ordinary price. A bout that leaves somebody at 12 of 30 with a torn meridian is not the
-system failing to make sparring safe. It is the system correctly declining to pretend.
+- **Banning.** Refusing an action because it seems unwise, unsafe, or not what the designer had
+  in mind. Every refusal of this kind is a decision taken away from the person playing, and it
+  is usually indistinguishable from the feature being missing.
+- **Softening.** Allowing the action but quietly removing its price, because the honest price
+  seemed harsh. This is worse, because it is invisible: the player thinks they made a choice and
+  the world silently declined to charge them for it.
 
-This came up when a "spar" verb was wired to the combat resolver and the obvious next step
-looked like adding a non-injuring mode, because a bout had produced three untreated wounds and
-those are the commonest cause of death in the game. **Refusing to fake the safety was right,
-and so was refusing to ban the verb.** The honest version is what shipped, and it says so out
-loud: *"Both parties are worse than they were, the wounds are real, and nothing is settled."*
+**The correct answer to "may I?" is always "yes, and here is what it costs."**
 
-The general form, which reaches well past combat: **when the fiction says two people have
-agreed something, model the agreement in what they intend and what follows socially - a spar
-makes no grudge, a duel settles a question, a killing starts a feud - and leave the physical
-consequences exactly where they were.** The moment a word in the player's sentence starts
-changing what the body suffers, the world has two sets of rules and the softer one is reachable
-by phrasing.
+So when a word in the player's sentence seems to call for special handling, ask which of the two
+you are about to do. Usually the answer is that **the wording changes what somebody INTENDS and
+what follows socially, and changes nothing about what the world then does.** Model the intent
+and the consequences that flow from it - who is owed something afterwards, who carries a
+grievance, what a witness would say - and leave the physical outcome exactly where it was. The
+moment a phrasing starts changing what a body suffers, there are two sets of rules and the
+softer one is reachable by choosing your words.
+
+The tell that you are softening is a sentence like *"but that would hurt them, and this is meant
+to be the safe version."* If the fiction says the safe version exists, it is safe because of
+what the participants are trying to do, not because the engine stopped keeping score.
+
+And the tell that you are banning is a refusal with no cost attached. A world that says no is
+smaller than a world that says *"yes, and it went badly, and here is who saw."*
 
 ### Commit with a pathspec, never a bare `git commit`
 
