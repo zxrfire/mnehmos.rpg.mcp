@@ -35,7 +35,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
-import type { AttemptResult } from '../engine/social-leverage/index.js';
+import type { AskWeight, AttemptResult } from '../engine/social-leverage/index.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -2232,6 +2232,189 @@ export function factsForAttempt(
             + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
             + `reachedTheHouse=${result.marks.reachedTheHouse}.`
         ]
+    );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────
+// ASKING SOMEBODY FOR SOMETHING
+// ─────────────────────────────────────────────────────────────────────────
+
+/** What the ask weighs, said as what it costs THEM rather than as a label. */
+const WHAT_THE_ASK_WEIGHS: Readonly<Record<AskWeight, string>> = {
+    a_courtesy: 'It costs them a sentence and a moment.',
+    a_real_favour: 'It costs them something real - time, or standing, or a book they '
+        + 'would rather keep.',
+    against_their_interest: 'They would end up worse off, and they can see that while you '
+        + 'are still asking.',
+    a_betrayal: 'If it is ever found out it ends them, and everybody who might find out is '
+        + 'somebody they see every day.'
+};
+
+/** What each kind of request is, in one clause, for the headline. */
+function whatWasAsked(kind: string, named: string): string {
+    switch (kind) {
+        case 'teaching':
+            return named.length >= 2 ? `to be taught ${named}` : 'to be taught';
+        case 'discipleship': return 'to be taken on';
+        case 'introduction':
+            return named.length >= 2 ? `to be introduced to ${named}` : 'for an introduction';
+        default: return named.length >= 2 ? `for ${named}` : 'for something';
+    }
+}
+
+/**
+ * A request put to a person, resolved.
+ *
+ * THE DEFECT THIS EXISTS TO FIX IS IN ONE LINE OF ITS OUTPUT. `factsForAttempt`
+ * renders the same resolver and says "It was taken." - which, measured in a
+ * live run against `I bribe Han Peiru with 60 spirit stones`, came back as
+ * *"Han Peiru agreed."* Agreed to WHAT. The resolver is right not to know: it
+ * prices the weight of an ask and must never read the player's verb. Knowing
+ * what was actually being asked for is the caller's job, and until there was a
+ * verb with an object there was no caller who knew.
+ *
+ * So every line here names the thing. The headline names it, the outcome names
+ * it, and a refusal names what would have moved them - which is the bar the
+ * Cultivate refusal already sets and the one every refusal in this package has
+ * to meet.
+ */
+export function factsForRequest(
+    cultivator: Cultivator,
+    subject: string,
+    kind: string,
+    named: string,
+    costing: { ask: AskWeight; lines: string[]; structure: string[] },
+    result: AttemptResult,
+    subjectFacts: readonly string[]
+): EngineFacts {
+    const asked = whatWasAsked(kind, named);
+    const lines: string[] = [
+        `${cultivator.name} asks ${subject} ${asked}.`,
+        ...subjectFacts,
+        ...costing.lines,
+        WHAT_THE_ASK_WEIGHS[costing.ask]
+    ];
+
+    switch (result.outcome) {
+        case 'taken':
+            lines.push(
+                result.stonesSpent > 0
+                    ? `${subject} agrees, and ${result.stonesSpent} spirit stones go with it.`
+                    : `${subject} agrees.`
+            );
+            break;
+        case 'turned':
+            lines.push(
+                `${subject} agrees, and is holding the fact that they were asked. They have `
+                + 'decided something about you, and they are going to act on it.'
+            );
+            break;
+        case 'refused':
+            lines.push(
+                `${subject} says no, and it stays between the two of you. `
+                + WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
+            );
+            break;
+        case 'reported':
+            lines.push(
+                `${subject} says no, and does not keep it to themselves. Somebody who was not in `
+                + `the room now knows what you asked for. `
+                + WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
+            );
+            break;
+    }
+
+    if (result.marks.obligation || result.marks.counterObligation) {
+        lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
+    }
+    if (result.days > 1) lines.push(`${result.days} days went into it.`);
+
+    return observable(
+        `${subject}, asked ${asked}: ${result.outcome}.`,
+        lines,
+        lines.join(' '),
+        [
+            `request(${kind}): outcome=${result.outcome}, odds=${result.odds}, `
+            + `ask=${costing.ask}, days=${result.days}, stonesSpent=${result.stonesSpent}, `
+            + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
+            + `reachedTheHouse=${result.marks.reachedTheHouse}.`,
+            ...costing.structure
+        ]
+    );
+}
+
+/**
+ * The other half of every refusal, and the reason there is a table rather than
+ * one sentence.
+ *
+ * "No" is a bug. `AGENTS.md` and the Cultivate refusal both set the bar: a
+ * refusal has to name the thing that would change the answer, and what that
+ * thing is depends entirely on what was being asked for. At the bottom of the
+ * scale it is turning up again; at the top of it there is nothing a stranger
+ * can offer, and saying so plainly is more useful than implying there is a
+ * price nobody has found yet.
+ *
+ * `docs/world/items.md` and `economy.md` hold the line these sentences are
+ * drawn along - below it things have prices, above it cash is not the medium -
+ * and `PURSE_REACH` in the resolver is the same line as arithmetic. Neither of
+ * them is restated here; these say in words what that table already does.
+ */
+const WHAT_WOULD_HAVE_MOVED_THEM: Readonly<Record<AskWeight, string>> = {
+    a_courtesy:
+        'What moves somebody on a thing this small is having met you before. Turn up twice, '
+        + 'buy somebody a drink, do a small thing for nothing, and ask again.',
+    a_real_favour:
+        'What would change it is being owed something, or being somebody they have reason to '
+        + 'take seriously - a word from a person already on their roll, or a favour they have '
+        + 'not repaid. Money helps here and it is never the thing that decides it.',
+    against_their_interest:
+        'Money reaches a long way down and it does not reach this far. What would move them is '
+        + 'an obligation they cannot walk away from, or something they want that only you can '
+        + 'get to.',
+    a_betrayal:
+        'There is no sum for this. What you are asking them to spend is their standing in the '
+        + 'only place that would have them, and a stranger with a purse reads to them as '
+        + 'somebody who has not understood what they are looking at. An oath, a life owed, or '
+        + 'nothing.'
+};
+
+/**
+ * What asking them would take, without asking them.
+ *
+ * The free read behind `could I ask her to teach me`, and it runs the same code
+ * as the request itself and stops one line before the roll - so it cannot drift
+ * away from the thing it describes, which is what a separately-written "what
+ * would happen if" always does.
+ */
+export function factsForWeighingARequest(
+    cultivator: Cultivator,
+    subject: string,
+    kind: string,
+    costing: { ask: AskWeight; lines: string[]; structure: string[] },
+    subjectFacts: readonly string[],
+    offered: number | null
+): EngineFacts {
+    const lines: string[] = [
+        `What it would take to ask ${subject} ${whatWasAsked(kind, '')}, before you ask.`,
+        ...subjectFacts,
+        ...costing.lines,
+        WHAT_THE_ASK_WEIGHS[costing.ask],
+        WHAT_WOULD_HAVE_MOVED_THEM[costing.ask]
+    ];
+    if (offered !== null) {
+        lines.push(
+            `You would be putting ${offered} spirit stones down, and ${cultivator.name} is `
+            + `carrying ${cultivator.spiritStones}.`
+        );
+    }
+    lines.push('Nothing has been said to them. No day has gone by and nothing has changed hands.');
+
+    return observable(
+        `${subject}: what the asking would cost them.`,
+        lines,
+        lines.join(' '),
+        [`request(weigh): kind=${kind}, ask=${costing.ask}.`, ...costing.structure]
     );
 }
 

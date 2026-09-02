@@ -349,6 +349,19 @@ import {
 // say. Wired here because this is where the state they restate is already read.
 import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
+import {
+    requestPutToSomebody,
+    type RequestKind
+} from './what-a-request-asks-and-of-whom.js';
+import {
+    whatItWouldCostThem,
+    type RequestCosting,
+    type TheOneAsking,
+    type TheOneBeingAsked
+} from './what-asking-this-person-for-this-would-cost-them.js';
+import { transmissionsBy } from '../data/cultivation/techniques.js';
+import { createObligation } from '../engine/social/grudges.js';
+import type { AttemptResult } from '../engine/social-leverage/index.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
 // The fourth, and the one a player asks first: what kinds of thing are live at
 // all, standing here, in this state. Prompts rather than a menu - see the
@@ -418,7 +431,12 @@ import {
 import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
-import { factsForAttempt } from './facts.js';
+import { factsForAttempt, factsForRequest, factsForWeighingARequest } from './facts.js';
+import {
+    openLedgerBetween,
+    recordTheTieAnAttemptLeft,
+    tieFrom
+} from './encounters.js';
 import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
@@ -611,6 +629,27 @@ export const PROVISION_COST_STONES = 2;
  * integer would be a migration this layer has no business writing.
  */
 const FLAG_RATIONS_HELD = 'rations_held';
+
+/**
+ * Who agreed to teach this cultivator, and where they stand.
+ *
+ * `<personId>:<ordinal>`. Read by `guideFor`, which is what turns it into a
+ * number: a house supplies a guide because somebody in it is above you, and a
+ * person who took you on supplies one for exactly the same reason and by
+ * exactly the same arithmetic. `manuals.md` calls this the third and most
+ * demanding shape a teaching takes - "a teacher and no book at all... their
+ * progress now runs through somebody's goodwill rather than an object they
+ * hold".
+ */
+const FLAG_MASTER = 'master_who_took_them_on';
+
+/**
+ * The request kinds a plan may name. Anything else falls to the cheapest
+ * reading, which is the rule every other intent-carrying action here obeys.
+ */
+const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
+    'teaching', 'discipleship', 'introduction', 'telling', 'a_thing'
+]);
 /** Spirit stones for one meal at `eat`. */
 export const MEAL_COST_STONES = 1;
 
@@ -2307,6 +2346,15 @@ ${noticedWaiting}`;
             case 'teacher':
                 return this.teacher(run, cultivator);
 
+            // Asking a named person for a named thing. The read the roster
+            // question gives is the answer to "who could teach me"; this is
+            // what happens when you walk up to one of them.
+            case 'request':
+                return this.request(
+                    run, cultivator, ambient, action.target, action.intent ?? 'a_thing',
+                    action.topic, action.leverage, rawInput
+                );
+
             case 'destinations':
                 return this.destinations(run, cultivator);
 
@@ -3243,6 +3291,93 @@ ${noticed}`;
         return { lines, calls };
     }
 
+    // ── ONE TARGET RESOLVER, FOR EVERY VERB AIMED AT A PERSON ────────────
+    //
+    // The owner flagged long ago that spar, bribe, threaten, favour and
+    // introduce should share one of these, and the symptom of not having one
+    // was measurable: three phrasings of the same request reached three
+    // different lookups, and a fourth resolved a party called
+    //
+    //   "Han Peiru with 60 spirit stones to introduce me to the elder"
+    //
+    // against a roster of two-word names and matched nobody. `interact` and
+    // `request` both come through the two methods below, so a name that
+    // resolves for one resolves for the other and a refusal reads the same
+    // whichever verb produced it.
+
+    /**
+     * The party a sentence is aimed at: a pointed-at face, a named person, or a
+     * faction. Null when it is none of those.
+     *
+     * `pointedAt` is passed in rather than recomputed because the caller has
+     * usually already needed it to decide whether a question was being asked of
+     * somebody standing there.
+     */
+    private partyPutTo(
+        cultivator: Cultivator,
+        query: string,
+        scope: KnowledgeScope,
+        pointedAt: RosterEntry | null = this.somebodyAtHand(query, cultivator)
+    ): ResolvedEntity | null {
+        return pointedAt
+            ? resolveCultivator(
+                this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal
+            )
+            : resolveParty(this.repos, query, cultivator, scope);
+    }
+
+    /**
+     * The refusal for a name that resolved to nobody, with the room attached.
+     *
+     * The blank look is right about the NAME and says nothing about the room,
+     * so every failed approach read identically whatever was attempted and
+     * whoever was standing there. Played live, "I bribe the gate guard" in a
+     * town with no gate guard came back "a sentence with a hole in it" - and a
+     * reviewer comparing it against a working seduction concluded the leverage
+     * mapping was missing. It was not: the verb parsed correctly and the person
+     * did not exist. A refusal that cannot be told apart from a broken feature
+     * is a bad refusal.
+     *
+     * Naming who is visibly present leaks nothing - `look` already lists exactly
+     * these people - and it is the difference between a dead end and a next
+     * move. `blankLook`'s own rule stands: it still never confirms whether the
+     * NAME exists, and this adds no name the player could not already see by
+     * looking up.
+     */
+    private nobodyByThatName(
+        cultivator: Cultivator,
+        query: string,
+        scope: KnowledgeScope,
+        action: ActionName
+    ): Execution {
+        const here = this.present(cultivator);
+        const nameable = here
+            .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
+            .map(row => row.name);
+
+        // Two different states, and only one of them is the player's fault.
+        // Naming people they already know leaks nothing - `look` lists exactly
+        // those - and saying "there are people here and you have no name for any
+        // of them" leaks nothing either, which is the sentence `whoWouldTeach`
+        // already uses for the same situation.
+        const nextMove = nameable.length > 0
+            ? ` Whoever you meant, the people here you could actually put it to are `
+              + `${nameable.slice(0, 4).join(', ')}.`
+            : here.length > 0
+                ? ` There are ${here.length} people about and you have a name for none of them. `
+                  + 'Somebody has to be introduced, or overheard, before they can be asked for '
+                  + 'anything.'
+                : '';
+
+        return refused('engine.resolveParty', action, factsForRefusal(
+            'Nobody by that name.',
+            this.blankLook(cultivator) + nextMove,
+            `Unresolved party "${query}": no knowledge record and nobody co-located. ` +
+            `${here.length} present, ${nameable.length} of them nameable. ` +
+            `${this.knownNamesLine(cultivator, scope)}`
+        ));
+    }
+
     /**
      * Approaching a person or a faction.
      *
@@ -3297,9 +3432,7 @@ ${noticed}`;
             return this.askAround(run, cultivator, pointedAt, topic, scope);
         }
 
-        const party = pointedAt
-            ? resolveCultivator(this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal)
-            : resolveParty(this.repos, query, cultivator, scope);
+        const party = this.partyPutTo(cultivator, query, scope, pointedAt);
         // A DESCRIPTION is not a name. "The old woman" resolves to nobody in the
         // roster and should not be fuzzy-matched into one; what it does mean is
         // that there is a person in front of the player, and a person can be
@@ -3327,51 +3460,7 @@ ${noticed}`;
                 return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
             }
         }
-        if (!party) {
-            // ── AND WHO IS ACTUALLY HERE ─────────────────────────────────
-            //
-            // The blank look is right about the NAME and says nothing about the
-            // room, so every failed approach read identically whatever was
-            // attempted and whoever was standing there. Played live, "I bribe
-            // the gate guard" in a town with no gate guard came back "a
-            // sentence with a hole in it" - and a reviewer comparing it against
-            // a working seduction concluded the leverage mapping was missing.
-            // It was not: the verb parsed correctly and the person did not
-            // exist. A refusal that cannot be told apart from a broken feature
-            // is a bad refusal.
-            //
-            // Naming who is visibly present leaks nothing - `look` already
-            // lists exactly these people - and it is the difference between a
-            // dead end and a next move. `blankLook`'s own rule stands: it still
-            // never confirms whether the NAME exists, and this adds no name the
-            // player could not already see by looking up.
-            const here = this.present(cultivator);
-            const nameable = here
-                .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
-                .map(row => row.name);
-
-            // Two different states, and only one of them is the player's fault.
-            // Naming people they already know leaks nothing - `look` lists
-            // exactly those - and saying "there are people here and you have no
-            // name for any of them" leaks nothing either, which is the sentence
-            // `whoWouldTeach` already uses for the same situation.
-            const nextMove = nameable.length > 0
-                ? ` Whoever you meant, the people here you could actually put it to are `
-                  + `${nameable.slice(0, 4).join(', ')}.`
-                : here.length > 0
-                    ? ` There are ${here.length} people about and you have a name for none of them. `
-                      + 'Somebody has to be introduced, or overheard, before they can be asked for '
-                      + 'anything.'
-                    : '';
-
-            return refused('engine.resolveParty', 'interact', factsForRefusal(
-                'Nobody by that name.',
-                this.blankLook(cultivator) + nextMove,
-                `Unresolved party "${query}": no knowledge record and nobody co-located. ` +
-                `${here.length} present, ${nameable.length} of them nameable. ` +
-                `${this.knownNamesLine(cultivator, scope)}`
-            ));
-        }
+        if (!party) return this.nobodyByThatName(cultivator, query, scope, 'interact');
 
         this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
@@ -11240,6 +11329,13 @@ ${fit.line}`;
                 ranked: them.ranked
             },
             onDay: Math.floor(run.elapsedDays),
+            // The same three terms `request` supplies, for the same reason: a
+            // bribe from somebody who has done you a favour is not the same
+            // sentence as a bribe from a stranger, and until these were passed
+            // the engine could not tell the two apart.
+            theirTie: tieFrom(this.repos, party.id, cultivator.id),
+            yourTie: tieFrom(this.repos, cultivator.id, party.id),
+            ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
             ask: askWeightOf(rawInput),
             ...(offered === null ? {} : { stonesOffered: offered }),
             approach: {
@@ -11271,8 +11367,42 @@ ${fit.line}`;
             run, cultivator, ambient, TRAVEL_FOCUS, `Pressing ${party.name}`, result.days
         );
 
+        const marks = this.recordWhatTheAskLeft(run, cultivator, party, result, 'interact');
+
         const facts = factsForAttempt(cultivator, party.name, intent, result, party.facts);
         if (spoken) addHearing(facts, spoken);
+
+        // ── AND WHAT, EXACTLY, DID THEY AGREE TO ─────────────────────────
+        //
+        // Measured: `I bribe Han Peiru with 60 spirit stones` came back "Han
+        // Peiru agreed." - agreed to WHAT, and nothing followed. The resolver
+        // is right not to know; it prices the weight of an ask and must never
+        // read the player's verb. What was missing is that the sentence never
+        // said. `request` is the verb that carries an object, so a sentence
+        // that reaches HERE is one that put something on the table and named
+        // nothing to spend it on, and the honest answer is to say so and say
+        // what the sentence with an object looks like.
+        //
+        // A line and not a refusal. `AGENTS.md` forbids the removed verb: the
+        // approach still happens, the stones still move, and what is added is
+        // the thing the player needs in order to ask for something next time.
+        if (requestPutToSomebody(rawInput) === null) {
+            const unnamed =
+                `Nothing was named to go with it, so what ${party.name} agreed to or refused was `
+                + `the approach itself. Asking for a thing is "ask ${party.name} to teach me `
+                + `<an art>", "ask ${party.name} to introduce me to <somebody>", or "ask `
+                + `${party.name} to take me as a disciple" - and those have outcomes this does `
+                + 'not.';
+            facts.lines.push(unnamed);
+            facts.prose = `${facts.prose}
+
+${unnamed}`;
+            facts.structure.push(
+                'The sentence put leverage on the table and named no object, so `ask` weighed '
+                + 'the approach rather than a request. See `request` and '
+                + '`what-a-request-asks-and-of-whom.ts`.'
+            );
+        }
         // The span's own account underneath the attempt's: what the days cost.
         facts.lines.push(...spent.facts.lines);
         facts.structure.push(...spent.facts.structure);
@@ -11299,9 +11429,552 @@ ${fit.line}`;
                 ok: result.outcome === 'taken'
             },
             ...structureCalls(party.structure),
-            ...spent.calls
+            ...spent.calls,
+            ...marks
         ];
         return execution;
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────
+    // ASKING A PERSON FOR SOMETHING
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * A request put to a person, with an object.
+     *
+     * THE VERB THE DESIGN RESTS ON, and it did not exist. The engine says,
+     * correctly and often, that there are exactly two ways past a manual's
+     * ceiling - another book, or somebody willing to teach you - and it says it
+     * well: *"You have no name to ask for, which is the whole of what is
+     * stopping you"*, *"A book or a teacher is the only thing that does."* The
+     * book half works; a common primer costs about eight spirit stones at a
+     * stall. The teacher half had no verb at all, and four phrasings of it
+     * reached four different lookups, none of which was a person.
+     *
+     * THREE THINGS THIS HAS TO GET RIGHT.
+     *
+     *   THE REQUEST HAS AN OBJECT. `resolveAttempt` has always priced the ask
+     *   and never known what the ask WAS, so a landed bribe came back as
+     *   "Han Peiru agreed." - agreed to what, and nothing followed. What is
+     *   being asked for is resolved here, said in the prose, and carried into
+     *   the mechanical channel.
+     *
+     *   A TAKE CHANGES SOMETHING. `handleLearn` has carried
+     *   `provenance: 'taught_by_a_person'` since it was written and nothing in
+     *   the codebase has ever passed it. This is that caller. A teaching that
+     *   lands puts the art on the sheet through the same gate every other route
+     *   uses, so being taught is still subject to rank, root, dao and what has
+     *   surfaced in this run - `manuals.md`'s two gates and not one: *"rank says
+     *   what the house will give you; the manual's own entry requirement says
+     *   what you can open, and being favoured does not lift it."*
+     *
+     *   A REFUSAL NAMES WHAT WOULD WORK. Every one of them, without exception.
+     *   `what-asking-this-person-for-this-would-cost-them.ts` owns those
+     *   sentences and each carries the next move: what they are actually
+     *   carrying, who teaches it, that a stall sells a copy, that an
+     *   introduction runs along a line somebody is already standing on.
+     */
+    private async request(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined,
+        intent: string,
+        topic: string | undefined,
+        leverage: ApproachLeverage | undefined,
+        rawInput: string
+    ): Promise<Execution> {
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+
+        // What was asked for. The plan carries it; the sentence is re-read only
+        // where the plan came from a model that gave a label and no shape, and
+        // for the `weigh` read, which deliberately drops the kind so that the
+        // interrogative cannot reach the attempt by carrying it along.
+        const reread = requestPutToSomebody(rawInput);
+        const weighing = intent === 'weigh';
+        const kind: RequestKind = REQUEST_KINDS.has(intent)
+            ? intent as RequestKind
+            : reread?.kind ?? 'a_thing';
+        const named = (topic ?? reread?.object ?? '').trim();
+
+        if (query.length < 2) {
+            return refused('engine.resolveParty', 'request', factsForRefusal(
+                'Asked of whom?',
+                'A request is put to somebody. You have not said who, and there is nobody the '
+                + `sentence could have meant. ${this.whoIsAbout(cultivator)}`,
+                'Unresolved party: request with no subject named. '
+                + `${this.knownNamesLine(cultivator, scope)}`
+            ));
+        }
+
+        const party = this.partyPutTo(cultivator, query, scope);
+        if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
+
+        // ── A HOUSE IS NOT A PERSON ──────────────────────────────────────
+        //
+        // Asking an institution for something is `petition`, which has its own
+        // record and its own refusal, and asking one informally is the approach
+        // that describes it. Neither is this: `resolveAttempt` prices one person
+        // against another, and a faction has no rung, no charm and no afternoon
+        // to spend.
+        if (party.kind !== 'cultivator' || !party.party) {
+            return this.interact(
+                run, cultivator, ambient, query, 'negotiate',
+                named.length >= 2 ? named : undefined, leverage, rawInput
+            );
+        }
+
+        this.noteEncounter(
+            cultivator, run, party, 'witnessed',
+            `Asked for something at ${placeName(cultivator)}.`
+        );
+
+        // ── BEING TOLD SOMETHING THEY KNOW ───────────────────────────────
+        //
+        // Already answered, and answered well: `askAround` reads what this
+        // person could know, what they are placed to say and what saying it
+        // would cost - `asking.md`'s three limits, all applied at once. Routing
+        // here rather than reimplementing it is the point.
+        if (kind === 'telling' && named.length >= 2) {
+            const who = this.present(cultivator).find(row => row.id === party.id);
+            if (who) return this.askAround(run, cultivator, who, named, scope);
+        }
+
+        // Asking somebody FOR a named art is asking to be taught it: a copy and
+        // an afternoon end in the same place, and `handleLearn` cannot tell them
+        // apart either. Anything else that is merely a thing falls back to the
+        // approach that already handles it, rather than inventing a way to hand
+        // objects over.
+        const asArt = named.length >= 2
+            ? resolveTechnique(this.repos, named, cultivator.id)
+            : null;
+        let shape: RequestKind = kind;
+        if (kind === 'a_thing' || kind === 'telling') {
+            if (asArt) shape = 'teaching';
+            else {
+                return this.interact(
+                    run, cultivator, ambient, query, 'negotiate',
+                    named.length >= 2 ? named : undefined, leverage, rawInput
+                );
+            }
+        }
+
+        const holds = this.whatTheyAreCarrying(party.id);
+        const asked: TheOneBeingAsked = {
+            id: party.id,
+            name: party.name,
+            ordinal: party.party.realmOrdinal,
+            factionId: party.party.factionId,
+            holds,
+            memberId: party.id.startsWith('npc-') ? party.id.slice(4) : null
+        };
+        const asking: TheOneAsking = {
+            name: cultivator.name,
+            ordinal: cultivator.realmOrdinal,
+            factionId: cultivator.sectId ?? null,
+            holds: cultivator.knownTechniques
+        };
+
+        // Who they would be putting you in front of, when that is the ask.
+        const toMeet = shape === 'introduction' && named.length >= 2
+            ? resolveCultivator(this.repos, named, cultivator.id, scope, cultivator.realmOrdinal)
+            : null;
+        const meeting = toMeet && toMeet.party
+            ? {
+                id: toMeet.id,
+                name: toMeet.name,
+                factionId: toMeet.party.factionId,
+                here: this.present(cultivator).some(row => row.id === toMeet.id)
+            }
+            : null;
+
+        const costing = whatItWouldCostThem({
+            kind: shape as 'teaching' | 'introduction' | 'discipleship',
+            asking,
+            asked,
+            techniqueId: asArt?.id ?? null,
+            toMeet: meeting,
+            namedButUnresolved: named
+        });
+
+        // ── A REQUEST THAT CANNOT BE PUT ─────────────────────────────────
+        //
+        // Not a ban. Every one of these is the sentence having a hole in it -
+        // no such art, nobody of that name to be introduced to, they are
+        // carrying nothing you have not got - and every one names what would
+        // work instead. Refused BEFORE the resolver, so no day is spent and no
+        // mark is written, which is the same shape the missing-sum refusal on a
+        // bribe already has.
+        if (costing.refusal) {
+            return refused('engine.priceTheAsk', 'request', factsForRefusal(
+                costing.refusal.headline,
+                costing.refusal.prose,
+                costing.refusal.structure
+            ));
+        }
+
+        const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
+        if (offered !== null && offered > cultivator.spiritStones) {
+            return refused('engine.resolveAttempt', 'request', factsForRefusal(
+                'You do not have it.',
+                `You said ${offered} and you are carrying ${cultivator.spiritStones}, which `
+                + `leaves you ${offered - cultivator.spiritStones} short of what you have just `
+                + `promised. ${party.name} waits for the rest of it and then stops waiting.`,
+                `Offered ${offered} against a purse of ${cultivator.spiritStones}. Refused before `
+                + 'the resolver, so no days were spent and no mark was written.'
+            ));
+        }
+
+        // ── WHAT IT WOULD TAKE, WITHOUT DOING IT ─────────────────────────
+        //
+        // "Could I ask her to teach me" is a question, and `request` spends days
+        // and can spend the purse. Same code path, stopped one line before the
+        // roll, so the read cannot drift from the thing it describes.
+        if (weighing) {
+            return this.freeAction(run, 'request', factsForWeighingARequest(
+                cultivator, party.name, shape, costing, party.facts, offered
+            ));
+        }
+
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
+        const theirSect = asked.factionId ? getSect(asked.factionId) : null;
+
+        const result = resolveAttempt({
+            actor: {
+                id: cultivator.id,
+                name: cultivator.name,
+                ordinal: cultivator.realmOrdinal,
+                charm: cultivator.attributes.charm,
+                factionId: membership?.sectId ?? null,
+                alignment: mySect?.alignment ?? null,
+                ranked: membership !== null
+            },
+            subject: {
+                id: party.id,
+                name: party.name,
+                ordinal: asked.ordinal,
+                ...(party.party.charm === undefined ? {} : { charm: party.party.charm }),
+                factionId: asked.factionId,
+                alignment: theirSect?.alignment ?? null,
+                ranked: party.party.ranked
+            },
+            onDay: Math.floor(run.elapsedDays),
+            // ── AND WHAT THE TWO OF THEM ALREADY ARE TO EACH OTHER ───────
+            //
+            // Three of the resolver's seven terms - their view of you, what is
+            // owed either way, and what they hold against you - are worth up to
+            // half again as much as the purse put together, and NO CALLER IN
+            // THIS LAYER HAS EVER SUPPLIED ONE. So every approach any player
+            // has ever made was made by a stranger, however many times the two
+            // of them had dealt with each other, and `asking.md`'s "cheapest
+            // lever in the game, available to a cultivator with nothing"
+            // reached nothing at all.
+            //
+            // Both are read off rows and neither is invented: the ledger is the
+            // obligations table, and the tie is what THIS resolver wrote the
+            // last time an attempt landed.
+            theirTie: tieFrom(this.repos, party.id, cultivator.id),
+            yourTie: tieFrom(this.repos, cultivator.id, party.id),
+            ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // THE ASK IS THE THING BEING ASKED FOR, and it is derived rather
+            // than read off the sentence. Whether teaching somebody an art is
+            // an afternoon or the end of their standing is a fact about the
+            // book and the house, and `betrayalOfSelling` already decides it for
+            // every NPC in the world.
+            ask: costing.ask,
+            ...(offered === null ? {} : { stonesOffered: offered }),
+            approach: {
+                intent: rawInput.slice(0, 400),
+                ...(leverage ? { leverage } : {})
+            },
+            rng: forStream(run.seed, 'social_leverage', Math.floor(run.elapsedDays), party.id)
+        });
+
+        if (result.stonesSpent > 0) {
+            this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -result.stonesSpent });
+        }
+
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, TRAVEL_FOCUS, `Asking ${party.name}`, result.days
+        );
+
+        const facts = factsForRequest(
+            cultivator, party.name, shape, named, costing, result, party.facts
+        );
+        facts.lines.push(...spent.facts.lines);
+        facts.structure.push(...spent.facts.structure);
+
+        const calls: ToolCallRecord[] = [
+            {
+                name: 'engine.resolveAttempt',
+                action: 'request',
+                summary:
+                    `${result.outcome} at ${(result.odds * 100).toFixed(1)}%, `
+                    + `kind=${shape}, ask=${costing.ask}, leverage=${leverage ?? 'none'}, `
+                    + `${result.days} day(s), ${result.stonesSpent} stone(s) spent. `
+                    + `Terms: ${Object.entries(result.terms)
+                        .map(([term, value]) => `${term}=${round2(value)}`)
+                        .join(', ')}.`,
+                ok: result.outcome === 'taken'
+            },
+            ...structureCalls(party.structure),
+            ...costing.structure.map(line => ({
+                name: 'engine.priceTheAsk',
+                action: 'request' as ActionName,
+                summary: line,
+                ok: true
+            })),
+            ...spent.calls
+        ];
+
+        // ── AND WHAT THE ATTEMPT LEFT BEHIND ─────────────────────────────
+        //
+        // `factsForAttempt` has said "it is on somebody's ledger now, and
+        // ledgers here are kept" since it was written, and nothing wrote to the
+        // ledger. That is the narrator asserting an outcome the database never
+        // took, which is the one thing this codebase forbids outright. The
+        // resolver hands back the records; this persists them.
+        calls.push(...this.recordWhatTheAskLeft(run, cultivator, party, result));
+
+        const execution: Execution = {
+            ...spent,
+            facts,
+            outcome: result.outcome === 'taken' ? 'executed' : 'refused'
+        };
+        execution.calls = calls;
+
+        // ── AND THE THING ACTUALLY HAPPENS ───────────────────────────────
+        if (result.outcome === 'taken' || result.outcome === 'turned') {
+            const done = await this.whatTheyAgreedTo(
+                run, cultivator, party, shape, costing, meeting
+            );
+            facts.lines.push(...done.lines);
+            facts.prose = `${facts.prose}
+
+${done.lines.join(' ')}`;
+            execution.calls.push(...done.calls);
+        }
+
+        return execution;
+    }
+
+    /**
+     * Every art a person could actually walk somebody down, from both of the
+     * places one is written.
+     *
+     * A cultivator row carries `knownTechniques` and a world NPC carries
+     * `cultivation.techniqueIds`, and most of the people standing in a square
+     * are the second kind - `othersPresent` unions the two, and a reader that
+     * looked at only one of them would find the roster empty in exactly the
+     * places a player actually stands.
+     */
+    private whatTheyAreCarrying(personId: string): string[] {
+        const held = new Set<string>(
+            this.repos.cultivators.getById(personId)?.knownTechniques ?? []
+        );
+        if (this.atHand) {
+            for (const npc of this.atHand.npcs) {
+                if (npc.id !== personId) continue;
+                for (const id of npc.cultivation.techniqueIds) held.add(id);
+            }
+        }
+        // The five people in the world who are worth more than the shelf they
+        // stand beside. `LIVING_TRANSMISSIONS` is read by the catalog and by the
+        // register and by nothing in `src/engine/` or `src/web/` - AGENTS.md
+        // lists it first among the modules nothing calls. This is the route a
+        // player takes to it.
+        const memberId = personId.startsWith('npc-') ? personId.slice(4) : personId;
+        for (const carried of transmissionsBy(memberId)) {
+            for (const id of carried.techniqueIds) held.add(id);
+        }
+        return [...held];
+    }
+
+    /**
+     * The records an attempt leaves, written down.
+     *
+     * `AttemptMarks` is the resolver saying what the world is now carrying that
+     * it was not before, and its own header says every field is a record the
+     * caller persists. Nothing persisted any of them, while `factsForAttempt`
+     * told the player "it is on somebody's ledger now, and ledgers here are
+     * kept" - the narrator asserting an outcome the database never took.
+     *
+     * Ties are still not written, and that is a stated gap rather than an
+     * oversight: this layer has no relationship repository, `dealingsWith`
+     * counts knowledge rows precisely because there is no relationship stat, and
+     * inventing one here would put a number on the thing the design is explicit
+     * should stay a judgement.
+     */
+    private recordWhatTheAskLeft(
+        run: Run,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        result: AttemptResult,
+        action: ActionName = 'request'
+    ): ToolCallRecord[] {
+        const calls: ToolCallRecord[] = [];
+        for (const [which, mark] of [
+            ['obligation', result.marks.obligation],
+            ['counterObligation', result.marks.counterObligation]
+        ] as const) {
+            if (!mark) continue;
+            const record = createObligation(mark);
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            calls.push({
+                name: 'social.createObligation',
+                action,
+                summary:
+                    `${which}: a ${record.severity} ${record.kind} held by ${record.holderId} `
+                    + `about ${record.subjectId}, out of asking ${party.name}. Written to `
+                    + `obligations on day ${Math.floor(run.elapsedDays)}; open until settled.`,
+                ok: true
+            });
+        }
+        if (result.marks.tie) {
+            recordTheTieAnAttemptLeft(
+                this.repos, cultivator.id, party.id, Math.floor(run.elapsedDays),
+                result.marks.tie
+            );
+            calls.push({
+                name: 'social.recordTie',
+                action,
+                summary:
+                    `Their side of it moves by ${round2(result.marks.tie.theirs.strength)} and `
+                    + `yours by ${round2(result.marks.tie.yours.strength)}. The two are allowed `
+                    + 'to disagree, and the gap is what somebody works out years later. Read '
+                    + 'back as `theirTie` on every later approach.',
+                ok: true
+            });
+        }
+        if (result.marks.reachedTheHouse) {
+            calls.push({
+                name: 'engine.resolveAttempt',
+                action,
+                summary:
+                    `The refusal reached ${party.name}'s house. ${cultivator.name} is now a name `
+                    + 'somebody there has heard in a sentence they did not like.',
+                ok: true
+            });
+        }
+        return calls;
+    }
+
+    /**
+     * What agreeing to it actually does, which is the whole difference between
+     * a verb and a paragraph.
+     *
+     * `AGENTS.md` names this failure and lists eight instances of it: a
+     * subsystem built, tested, sometimes rendered, and never reached by anybody
+     * in the running world. A request that lands and changes no row is that
+     * failure wearing a success message.
+     */
+    private async whatTheyAgreedTo(
+        run: Run,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        kind: RequestKind,
+        costing: RequestCosting,
+        meeting: { id: string; name: string; factionId: string | null; here: boolean } | null
+    ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
+        const lines: string[] = [];
+        const calls: ToolCallRecord[] = [];
+
+        if (kind === 'teaching' && costing.techniqueId) {
+            const art = getTechnique(costing.techniqueId);
+            // THE SECOND GATE. `manuals.md`: rank says what a house will give
+            // you and the manual's own entry requirement says what you can
+            // open, and being favoured does not lift it. So somebody agreeing
+            // to teach you is not the same event as the art going in, and where
+            // it does not go in the reason is `handleLearn`'s own and is stated.
+            const taught = await handleLearn({
+                action: 'learn',
+                techniqueId: costing.techniqueId,
+                cultivatorId: cultivator.id,
+                provenance: 'taught_by_a_person'
+            });
+            if (isGuidingErrorBody(taught)) {
+                lines.push(`They sit down with you, and it does not go in. ${taught.message}`);
+                calls.push({
+                    name: 'technique_manage.learn',
+                    action: 'request',
+                    summary:
+                        `${art?.name ?? costing.techniqueId} refused after the teacher agreed: `
+                        + `${taught.error}. Two gates, and this is the second - what a person will `
+                        + 'give you and what you can open are different questions.',
+                    ok: false
+                });
+            } else {
+                lines.push(
+                    `${party.name} teaches you ${art?.name ?? 'it'}, and it goes in. It is on you `
+                    + 'now, for as long as you keep climbing on it.'
+                );
+                calls.push({
+                    name: 'technique_manage.learn',
+                    action: 'request',
+                    summary:
+                        `${art?.name ?? costing.techniqueId} learned with `
+                        + 'provenance=taught_by_a_person. The art is on the sheet.',
+                    ok: true
+                });
+            }
+            return { lines, calls };
+        }
+
+        if (kind === 'introduction' && meeting) {
+            // The sentence `whoWouldTeach` ends on, answered. A name arrives
+            // through the ordinary knowledge gate, at the stance somebody holds
+            // for a face they have been walked up to, with its source on it.
+            const learned = this.noteEncounter(
+                cultivator, run,
+                { kind: 'cultivator', id: meeting.id, name: meeting.name },
+                'told',
+                `Introduced by ${party.name} at ${placeName(cultivator)}.`
+            );
+            lines.push(
+                learned
+                    ? `${party.name} walks you over and says your name to ${meeting.name}, and `
+                      + `${meeting.name}'s to you. You can ask for them now.`
+                    : `${party.name} makes the introduction and you already had the name. What `
+                      + 'you have that you did not is that they now know somebody sent you.'
+            );
+            calls.push({
+                name: 'knowledge.learn',
+                action: 'request',
+                summary:
+                    `${meeting.name} recorded for ${cultivator.name}, source told, from `
+                    + `${party.name}. ${learned ? 'New record.' : 'Already held.'}`,
+                ok: true
+            });
+            return { lines, calls };
+        }
+
+        if (kind === 'discipleship') {
+            const theirOrdinal = party.party?.realmOrdinal ?? 0;
+            writeFlag(this.db, cultivator.id, FLAG_MASTER, `${party.id}:${theirOrdinal}`);
+            lines.push(
+                theirOrdinal > cultivator.realmOrdinal
+                    ? `${party.name} takes you on. What that is worth is not a title: somebody who `
+                      + 'has stood further up than you can tell you what you are doing wrong '
+                      + 'while you are still doing it, and it shows in the rate from here.'
+                    : `${party.name} agrees, and it changes nothing about how fast you climb. `
+                      + 'Guidance is the gap between the guide and the guided, and there is none.'
+            );
+            calls.push({
+                name: 'engine.takeAMaster',
+                action: 'request',
+                summary:
+                    `${party.name} (ordinal ${theirOrdinal}) recorded as ${cultivator.name}'s `
+                    + 'master. Read by guideFor, which feeds guidanceMultiplier on every '
+                    + 'cultivation span.',
+                ok: true
+            });
+            return { lines, calls };
+        }
+
+        return { lines, calls };
     }
 
     /**
@@ -11536,9 +12209,31 @@ ${fit.line}`;
      * that is a fact about the house.
      */
     private guideFor(cultivator: Cultivator): number | null {
-        const held = this.repos.sects.getMembership(cultivator.id);
-        if (!held) return null;
         let best: number | null = null;
+
+        // ── AND SOMEBODY WHO TOOK THEM ON ────────────────────────────────
+        //
+        // A house supplies a guide because somebody in it stands above you. A
+        // person who agreed to take you on supplies one for exactly the same
+        // reason, by exactly the same arithmetic, and until `request` existed
+        // there was no way for a player to acquire one - so the whole of the
+        // guidance term was reachable only by joining something.
+        //
+        // `manuals.md` calls this the third and most demanding shape a teaching
+        // takes: a teacher and no book at all, where progress runs through
+        // somebody's goodwill rather than an object you hold. What is stored is
+        // the rung they had when they agreed, which is the honest reading -
+        // somebody who climbs after taking you on has not thereby taught you
+        // more, and somebody who agreed at or below your rung supplies a
+        // multiplier of exactly 1 by `guidanceMultiplier`'s own definition.
+        const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
+        if (took) {
+            const ordinal = Number(took.split(':').pop());
+            if (Number.isFinite(ordinal) && ordinal > cultivator.realmOrdinal) best = ordinal;
+        }
+
+        const held = this.repos.sects.getMembership(cultivator.id);
+        if (!held) return best;
         for (const member of getMembersOf(held.sectId)) {
             if (member.id === cultivator.id) continue;
             if (member.realmOrdinal <= cultivator.realmOrdinal) continue;

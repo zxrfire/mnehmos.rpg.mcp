@@ -31,6 +31,7 @@ import { SITE_PHRASES } from './trials.js';
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
+import { requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 
 /** Longest stretch of seclusion that may be requested in one call: 100 years. */
@@ -446,6 +447,35 @@ export const ACTION_NAMES = [
      */
     'news',
     /**
+     * ASKING A PERSON FOR SOMETHING, which is the verb the design rests on and
+     * which did not exist.
+     *
+     * The engine says, correctly and often, that there are exactly two ways
+     * past a manual's ceiling - another book, or somebody willing to teach you.
+     * The book half works: a common primer costs about eight spirit stones at a
+     * stall. The teacher half had no verb at all, and four phrasings of it
+     * reached four different lookups, none of which was a person:
+     *
+     *   I ask X to teach me                   the roster of everybody above me
+     *   I beg X to take me as a disciple      a description of X
+     *   ask X for the Lesser Qi-Gathering     the almanac entry for the book
+     *   I bribe X with 60 spirit stones       "X agreed." Agreed to what?
+     *
+     * `interact` is not this. It carries an intent that nothing branches on,
+     * which is right for the verb and useless for the OBJECT: what is being
+     * asked FOR has to reach the engine, because `AskWeight` prices resistance
+     * and duration off it and because a take has to end in the thing actually
+     * happening. So `target` names who, `intent` names what KIND of thing was
+     * asked - one of a closed set, from `what-a-request-asks-and-of-whom.ts` -
+     * and `topic` carries what was named, resolved against the same catalogs
+     * everything else uses.
+     *
+     * It is deliberately NOT free. It spends days, it can spend stones, and on
+     * a take it writes an art onto the sheet or a name into the knowledge
+     * table.
+     */
+    'request',
+    /**
      * The parser did not understand, and nothing happens.
      *
      * A member of the closed set rather than a special case, so the exhaustive
@@ -563,6 +593,17 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     // Burying spends a week or a season with a spade, and the food clock
     // runs through it. Conservative direction, same as `site`.
     'legacy',
+    /**
+     * Putting something to somebody costs a day for a courtesy and a season and
+     * a half for a betrayal - `ASK_DAYS` in `an-attempt-to-move-somebody.ts`
+     * owns the figure - and it can spend the whole purse on the way.
+     *
+     * On this list rather than in `READ_ONLY_ACTIONS` on purpose. `interact`
+     * carries the same leverage intents, spends the same days and stones, and
+     * IS classified free, which is the filed defect that makes "can I bribe the
+     * elder" reach the bribe. Nothing about this action repeats it.
+     */
+    'request',
 ] as const;
 
 /** What an unparseable sentence resolves to. Inert, by construction. */
@@ -625,7 +666,15 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      * rather than incidental: asking about a thing must not teach its existence,
      * and the shape of the refusal must not be the answer.
      */
-    'petition', 'posture', 'seal', 'offer'
+    'petition', 'posture', 'seal', 'offer',
+    /**
+     * The person it is being put to, by name or by the phrase that points at
+     * them. Resolved through the same knowledge-gated party lookup `interact`
+     * uses, and refused with the same guiding refusal - who is actually here,
+     * and which of them the player could put it to - when it resolves to
+     * nobody.
+     */
+    'request'
 ] as const;
 
 /**
@@ -661,7 +710,16 @@ export const TOPIC_ACTIONS: readonly ActionName[] = [
      * unreliability of acting by proxy is that people who are not you decide
      * what you meant.
      */
-    'offer'
+    'offer',
+    /**
+     * `request` uses it for WHAT WAS NAMED: the art, the person to be
+     * introduced to, the subject. Free text, resolved against the same catalogs
+     * every other target resolves against, and refused by name when it resolves
+     * to nothing - which is the point, because "no art called that" is a
+     * different answer from "they will not teach you that" and a player is
+     * entitled to know which one they got.
+     */
+    'request'
 ] as const;
 
 /**
@@ -706,6 +764,22 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * free.
      */
     'recall',
+    /**
+     * `request` carries the site rule with one difference worth stating: what
+     * the label selects is not which routine runs but WHAT IS BEING ASKED FOR,
+     * which is the one thing about an approach the engine is required to read.
+     * `asking.md` is the reason - asking a gate guard for a name and asking the
+     * same guard to leave the gate unwatched are the same sentence with the
+     * same charm behind it, and they are not remotely the same attempt.
+     *
+     * That does not weaken the rule this list exists for. Nothing branches on
+     * the VERB; the kind comes from a closed set produced by
+     * `what-a-request-asks-and-of-whom.ts`, an unrecognised label falls through
+     * to the cheapest reading, and `AskWeight` - which the resolver actually
+     * prices off - is derived from the kind and from `manuals.ts`, never from
+     * the word the player typed.
+     */
+    'request',
     /**
      * The four new ones, all carrying the same guarantee and the same extra
      * obligation `site` carries.
@@ -3141,6 +3215,24 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'legacy':
             return { action: 'legacy', intent: 'counters' };
 
+        case 'request':
+            /**
+             * What it would take to ask them: every fact the attempt is built
+             * from, and none of the days it spends.
+             *
+             * The same code path as the request itself - `GameService.request`
+             * with `weigh` runs everything up to the roll and stops - so the
+             * read cannot drift away from the thing it describes, which is the
+             * failure mode a separately-written "what would happen if" always
+             * walks into.
+             */
+            return {
+                action: 'request',
+                intent: 'weigh',
+                ...(plan.target ? { target: plan.target } : {}),
+                ...(plan.topic ? { topic: plan.topic } : {})
+            };
+
         case 'posture':
         case 'seal':
         case 'offer':
@@ -3341,6 +3433,44 @@ function planIntent(input: string): PlannedAction {
     {
         const between = institutionalAct(text, input);
         if (between) return between;
+    }
+
+    // ── ASKING A PERSON FOR SOMETHING ────────────────────────────────────
+    //
+    // Above the three stuck-player reads, and that placement IS the fix. The
+    // roster question owns `teach me`, correctly - "who can teach me" is one of
+    // the three questions this game has to answer - and it was tested before
+    // anything looked at whether a person had been named. So "I ask Jiang Anyi
+    // to teach me", typed at somebody standing in the same square, was answered
+    // with the register of everybody standing above the player. Four phrasings
+    // of the request, four different lookups, and not one of them a person.
+    //
+    // NOTHING BELOW IS WIDENED, which is the whole point. `AGENTS.md` records
+    // what happened the last time a pattern here was widened to catch a missing
+    // sentence: it stole sentences from `investigate` and from ordinary place
+    // resolution, and two tests caught it. `requestPutToSomebody` takes only
+    // sentences that name somebody AND say what is wanted of them, and returns
+    // null for everything else - so "who can teach me", "teach me", "I ask her
+    // about the ruins" and "I bribe the gate steward" all reach exactly what
+    // they reached before.
+    //
+    // Below the institutional block and the attack block for the reason those
+    // give: a sentence that files a petition or starts a fight is still doing
+    // that when somebody could also read it as asking for something.
+    {
+        const asked = requestPutToSomebody(input);
+        if (asked) {
+            const leverage = LEVERAGE_BEHIND_INTENT[
+                matchIntent(text, INTERACT_INTENT_PATTERNS) ?? ''
+            ];
+            return {
+                action: 'request',
+                target: asked.person,
+                intent: asked.kind,
+                ...(asked.object ? { topic: asked.object } : {}),
+                ...(leverage ? { leverage } : {})
+            };
+        }
     }
 
     // ── the three questions a stuck player asks ──

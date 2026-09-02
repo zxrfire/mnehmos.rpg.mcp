@@ -348,6 +348,28 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'is there a master here',
         'who stands above me'
     ],
+    /**
+     * Asking a named person for a named thing, in the words somebody would use.
+     *
+     * Every one of these reached a different lookup before the verb existed,
+     * and none of them reached a person: the roster, a description of the
+     * person, the almanac entry for the book, and a bribe that landed on
+     * nothing. The list is long on purpose - `AGENTS.md` files "if a
+     * near-synonym works, the phrasing that fails is a bug", and a request is
+     * the verb people phrase the most different ways.
+     */
+    request: [
+        'I ask Elder Fang to teach me',
+        'I beg Elder Fang to teach me the Iron Bell Manual',
+        'I ask Elder Fang to take me as a disciple',
+        'I ask Elder Fang to be my master',
+        'I ask Elder Fang to introduce me to the steward',
+        'ask Elder Fang for the Lesser Qi-Gathering Manual',
+        'I offer Elder Fang 20 spirit stones to teach me',
+        'I bribe Elder Fang with 60 spirit stones to introduce me to the steward',
+        'I implore Elder Fang to train me',
+        'I pay Elder Fang to instruct me'
+    ],
     destinations: [
         'where can I go',
         'I want to travel somewhere else',
