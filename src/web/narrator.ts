@@ -215,6 +215,34 @@ function spendsMoreThanASentence(action: ActionName): boolean {
     return (TIME_CONSUMING_ACTIONS as readonly ActionName[]).includes(action);
 }
 
+/**
+ * Somebody handing a thing over, and somebody taking one off a person.
+ *
+ * The two families the model must never confuse, read off the plan rather than
+ * off a second list of verbs: `give` is the whole of one, and the other is the
+ * `steal` intent plus the two verbs whose point is that the thing is not being
+ * handed over willingly.
+ *
+ * Deliberately NOT symmetrical with the cost rule. A model reading a THEFT as a
+ * gift is the harmless direction - it refuses the taking and hands the player
+ * back the cheaper reading - and it is already covered by the ordinary rule
+ * that a model may read a sentence any way it likes. What may not happen is the
+ * other way about.
+ */
+function readsAsGiving(plan: PlannedAction): boolean {
+    return plan.action === 'give';
+}
+
+function readsAsTaking(plan: PlannedAction): boolean {
+    if (plan.action === 'coerce') return true;
+    if (plan.action === 'attack') return true;
+    return plan.action === 'interact' && plan.intent === 'steal';
+}
+
+function labelFor(plan: PlannedAction): string {
+    return plan.intent ? `${plan.action}/${plan.intent}` : plan.action;
+}
+
 export interface ReadingCheck {
     readonly action: PlannedAction;
     /** What was declined and what ran instead. Null when nothing was declined. */
@@ -267,11 +295,55 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     fromModel: PlannedAction,
     input: string
 ): Promise<ReadingCheck> {
-    if (!spendsMoreThanASentence(fromModel.action)) {
+    const takingFromThem = readsAsTaking(fromModel);
+
+    if (!spendsMoreThanASentence(fromModel.action) && !takingFromThem) {
         return { action: fromModel, declined: null, tierFailure: null };
     }
 
     const withoutAModel = await readTheSentence(input);
+
+    // ── GIVING AND TAKING ARE NEVER EACH OTHER'S FALLBACK ────────────────
+    //
+    // Checked before the cost rule and separately from it, because it is a
+    // different axis and the cost rule cannot see it: `interact` is on neither
+    // cost list, so a gift read as a theft is two readings of identical price
+    // and the guard above waves it through.
+    //
+    // Measured in the UI against ollama, and it is the worst failure this
+    // package can produce:
+    //
+    //   > I hand Shen Liefeng my two spirit stones
+    //   The approach was labelled "steal". Shen Liefeng: countered.
+    //   Reprisal: injured. Weighed as serious robbery.
+    //
+    // A player tried to hand somebody money, was charged with robbery, took a
+    // wound for it, and now carries a grudge from the person they were trying
+    // to be generous to. The two verbs have OPPOSITE SIGNS on every consequence
+    // in this game - one opens a favour, the other opens a grudge and a
+    // reprisal that costs the body - so a near-miss between them is worse than
+    // no match at all, and it is worse in the one direction that punishes
+    // somebody for generosity.
+    //
+    // A hard boundary rather than a priority: it does not matter which reading
+    // is cheaper or which came first. If the sentence reads as a gift with no
+    // model in it, no model may turn it into a taking.
+    if (takingFromThem && readsAsGiving(withoutAModel.action)) {
+        return {
+            action: withoutAModel.action,
+            declined:
+                `the model read this as taking from them (${labelFor(fromModel)}); reading the `
+                + 'same sentence without a model reaches giving to them. Those are opposite acts - '
+                + 'one opens a favour and the other opens a grudge and a reprisal - and a model '
+                + 'may not turn one into the other. '
+                + 'Say it plainly - "I steal from him" - to mean the taking.',
+            tierFailure: withoutAModel.tierFailure
+        };
+    }
+
+    if (!spendsMoreThanASentence(fromModel.action)) {
+        return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
+    }
     if (spendsMoreThanASentence(withoutAModel.action.action)) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }

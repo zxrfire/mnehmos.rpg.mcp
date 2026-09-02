@@ -128,6 +128,11 @@ describe('an ordinary sentence that happens to contain "and"', () => {
         'tell me about the market and the prices',
         'I sit and cultivate',
         'I bow and greet him',
+        // `I bow to him and wait` was here and had to leave. It was ordinary
+        // only because `bow` reached nothing: the sentence really is two acts,
+        // and the second one spends a day. Now that "I bow to the elder" is a
+        // greeting rather than a shrug, saying that the waiting did not happen
+        // is the reporter working, not the reporter misfiring.
         'I speak to the elder and ask about a manual',
         'I stand and look around',
         'I rest and recover',
@@ -165,7 +170,6 @@ describe('an ordinary sentence that happens to contain "and"', () => {
         'I visit the physician and pay for treatment',
         'tell me about my spirit root and my talent',
         'I head north and keep going',
-        'I bow to him and wait',
         'who is here and what are they doing',
         'I work and save my stones',
         'I search the ruin and then leave'

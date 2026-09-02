@@ -1718,8 +1718,13 @@ export const A_PRICE_IS_NAMED = /\b(?:for|in exchange|in return|in trade|instead
  * I press Bai Jinglu about the Azure Dew Sect", which is a question and has to
  * stay one. `into <somebody's>` is the half that cannot be anything else.
  */
+// A NAME takes a possessive too, and leaving it off cost the owner's own
+// acceptance sentence. "press it into her hand" was vetoed and "press it into
+// Shen Liefeng's hand" was not, so the phrasing with a person in it - the one
+// anybody actually types - went to the asking branch and came back as an
+// approach to somebody called "it into Shen Liefeng's hand".
 export const PUTTING_IT_INTO_THEIR_HANDS =
-    /\b(?:press|presses|pressed|pressing|put|puts|putting|slip|slips|slipped|slipping|push|pushes|pushed)\s+.{1,40}?\s+into\s+(?:his|her|their|the|somebody's|someone's)\b/;
+    /\b(?:press|presses|pressed|pressing|put|puts|putting|slip|slips|slipped|slipping|push|pushes|pushed)\s+[^,;.!?]{1,40}?\s+into\s+(?:his|her|their|the|somebody's|someone's|[a-z]+(?:\s+[a-z]+)?(?:'s|s'))\b/;
 
 /**
  * What is being handed over and to whom, or nothing.
@@ -1744,11 +1749,21 @@ export function whatIsBeingHandedOver(
         ? parseCount(text) ?? undefined
         : undefined;
 
+    // ── EVERY CAPTURE STOPS AT A COMMA ───────────────────────────────────
+    //
+    // `.{2,40}?` against `$` is lazy and still runs to the end of the string
+    // when nothing else can close the match, so the recipient in the owner's
+    // own acceptance sentence came out as "Shen Liefeng's hand, and walk away"
+    // - and was read back to the player as "the approach to it into Shen
+    // Liefeng's hand, and walk away". A clause boundary is a clause boundary:
+    // nothing past a comma is part of who was handed what.
+    const NOT_PAST_THE_CLAUSE = '[^,;.!?]';
+
     // Put down rather than handed to anybody: "I put ten stones on the table".
     // FIRST, because it also parses as `<person> <thing>` with "ten stones on"
     // as the person, which is how it was refused on the first play.
     const putDown = new RegExp(
-        `\\b(?:${HANDING_IT_OVER}|${PUTTING_IT_DOWN})\\s+(.{1,60}?)\\s+`
+        `\\b(?:${HANDING_IT_OVER}|${PUTTING_IT_DOWN})\\s+(${NOT_PAST_THE_CLAUSE}{1,60}?)\\s+`
         + '(?:on|onto)\\s+the\\s+(?:table|counter|floor|ground)\\b',
         'i'
     ).exec(input);
@@ -1762,14 +1777,14 @@ export function whatIsBeingHandedOver(
     // <thing> to/into <person>. Before the other shape, because "I press it
     // into her hand" also parses as `<person> <thing>` with "it" as the person.
     const toSomebody = new RegExp(
-        `\\b(?:${HANDING_IT_OVER})\\s+(.{1,60}?)\\s+(?:to|into|over to)\\s+(?:the\\s+)?(.{2,40}?)\\s*[.!?]*$`,
+        `\\b(?:${HANDING_IT_OVER})\\s+(${NOT_PAST_THE_CLAUSE}{1,60}?)\\s+`
+        + `(?:to|into|over to)\\s+(?:the\\s+)?(${NOT_PAST_THE_CLAUSE}{2,40}?)`
+        + '\\s*(?:[,;.!?]|$)',
         'i'
     ).exec(input);
     if (toSomebody) {
         const thing = cleanPlace(toSomebody[1] ?? '') ?? '';
-        const who = cleanPlace(
-            (toSomebody[2] ?? '').replace(/\b(?:hand|hands|palm|keeping)\b\s*$/i, '').trim()
-        ) ?? '';
+        const who = theirName(toSomebody[2] ?? '');
         if (thing.length >= 1) {
             return {
                 thing,
@@ -1781,13 +1796,15 @@ export function whatIsBeingHandedOver(
 
     // <person> <thing>.
     const personFirst = new RegExp(
-        `\\b(?:${HANDING_IT_OVER})\\s+(.{2,40}?)\\s+`
-        + `((?:my|the|a|an|his|her|their|some|all|[0-9]+|${WORD_NUMBER_ALTERNATION})\\b.{1,60}?)\\s*[.!?]*$`,
+        `\\b(?:${HANDING_IT_OVER})\\s+(${NOT_PAST_THE_CLAUSE}{2,40}?)\\s+`
+        + `((?:my|the|a|an|his|her|their|some|all|[0-9]+|${WORD_NUMBER_ALTERNATION})`
+        + `\\b${NOT_PAST_THE_CLAUSE}{1,60}?)\\s*(?:[,;.!?]|$)`,
         'i'
     ).exec(input);
     if (personFirst) {
-        const who = cleanPlace(personFirst[1] ?? '') ?? '';
+        const who = theirName(personFirst[1] ?? '');
         const thing = cleanPlace(personFirst[2] ?? '') ?? '';
+        if (NOT_A_PERSON.has(who.toLowerCase())) return null;
         if (who.length >= 2 && thing.length >= 1) {
             return {
                 thing,
@@ -1798,6 +1815,38 @@ export function whatIsBeingHandedOver(
     }
 
     return null;
+}
+
+/**
+ * The person out of the phrase that says where the thing went.
+ *
+ * "into Shen Liefeng's hand" names a person and a body part, and the body part
+ * is not part of the name. The possessive goes with it: a target of "Shen
+ * Liefeng's" resolves to nobody, which is the shape of every bug this parser
+ * has produced - a phrase matched in the wrong role and answered confidently.
+ */
+/**
+ * A PREPOSITION IS NOT A PERSON.
+ *
+ * `pass` is a handing verb and also how anybody says movement - "I pass through
+ * the gate" - and the `<person> <thing>` shape reads that as handing "the gate"
+ * to somebody called "through". The giving branch sits above `move` so that the
+ * middle clause of the owner's own sentence is not eaten by `walk away`, which
+ * puts this collision directly in its path.
+ */
+const NOT_A_PERSON = new Set([
+    'through', 'over', 'out', 'in', 'on', 'by', 'up', 'down', 'along', 'past',
+    'around', 'back', 'across', 'off', 'into', 'onto', 'under', 'behind', 'beyond',
+    'away', 'here', 'there', 'and', 'then', 'it'
+]);
+
+function theirName(raw: string): string {
+    const withoutTheHand = raw
+        .replace(/\b(?:hand|hands|palm|palms|keeping|pocket|pouch|purse)\b\s*$/i, '')
+        .trim()
+        .replace(/(?:'s|s')\s*$/i, '')
+        .trim();
+    return cleanPlace(withoutTheHand) ?? '';
 }
 
 /**
@@ -1955,6 +2004,9 @@ export const DUTY_NOUNS = /\b(?:commissions?|assignments?|dut(?:y|ies)|missions?
  */
 export const PILL_TAKING_VERBS =
     'take|takes|taking|swallow|swallows|swallowing|eat|eats|eating|consume|consumes|'
+    // A pill in this world is as often a draught as a tablet, and `drink` was
+    // the one ordinary verb for putting one inside you that was missing.
+    + 'drink|drinks|drinking|drank|'
     + 'consuming|use|uses|using|down|downs|dose|doses|dosing';
 
 export const PILL_NOUNS = /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?)\b/;
@@ -4054,15 +4106,79 @@ const LOOKED_AT = /\blooks?(?:ing)?\s+(?:at|over|upon)\s+(.{2,80}?)\s*[.!?]?$/i;
 const THE_SCENE_ITSELF =
     /^(?:the\s+)?(?:sky|skies|stars?|moon|sun|clouds?|weather|horizon|view|scenery|landscape|surroundings|ground|earth|it all|everything|this place|the place|my surroundings)$/i;
 
+/**
+ * WHERE A NAME STOPS.
+ *
+ * ── ONE BUG, SIX SENTENCES ───────────────────────────────────────────────
+ *
+ * Every extractor in this file captures `(.{2,80}?)` against `$`. Lazy against
+ * an end anchor still runs to the end of the string when nothing else closes
+ * the match, so the "name" is everything the player said after the verb.
+ * Measured on one probe of ordinary play sentences:
+ *
+ *   "I warn him to stay away from her"  -> "stay away from her"
+ *   "I read the manual again"           -> "manual again"
+ *   "I practise <an art> for a year"    -> "<an art> for a year"
+ *   "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away"
+ *                                       -> "it into Shen Liefeng's hand, and walk away"
+ *
+ * Each one then reaches a resolver that looks the whole phrase up against a
+ * catalog, fails, and refuses in terms of the phrase - "the approach to it into
+ * Shen Liefeng's hand, and walk away". A wrong name is worse than no name,
+ * because the refusal is about something the player did not say.
+ *
+ * ── WHAT IS CUT, AND WHY EACH OF THEM IS SAFE ────────────────────────────
+ *
+ * Only the tail, and only where the tail cannot be part of a name:
+ *
+ *   a clause boundary   nothing past a comma is part of who or what.
+ *   ` to <verb>`        "warn him TO STAY AWAY" - purpose, not the person.
+ *   ` and ...`          a second act. `theClauseThisTurnDidNotRun` reports it.
+ *   a span              "for a year" is how long, and `parseDuration` has
+ *                       already read it off the whole sentence.
+ *   a bare adverb       "again", "properly", "first" - how, not what.
+ *
+ * Nothing in the CATALOGS contains a comma, and no art, place, person or item
+ * in this world is named "... for a year" or "... again". A name that genuinely
+ * contains one of these words keeps it: the cuts are anchored to the END of the
+ * phrase, so "Nine Peaks" and "The Gate Frame With No Gate In It" are untouched.
+ */
+export function theNounPhrase(raw: string): string {
+    let said = raw.trim();
+
+    // A clause boundary, and everything after it.
+    said = said.split(/[,;.!?]/)[0] ?? said;
+
+    // A tail that says what for, what next, how long, or how.
+    const TAILS: readonly RegExp[] = [
+        /\s+to\s+(?:stay|go|leave|come|keep|stop|hand|give|get|make|do|be|say|tell)\b.*$/i,
+        /\s+(?:and|then|before|after|until|while|so that|in order to)\s+.*$/i,
+        /\s+for\s+(?:a|an|one|two|three|several|the next|[0-9]+|[a-z]+)?\s*(?:while|day|days|week|weeks|month|months|season|seasons|year|years|decade|decades|lifetime)\b.*$/i,
+        /\s+(?:again|properly|carefully|quickly|slowly|first|now|too|as well|instead|anyway|for good)\s*$/i
+    ];
+    let cut = true;
+    while (cut) {
+        cut = false;
+        for (const tail of TAILS) {
+            const shorter = said.replace(tail, '').trim();
+            if (shorter.length >= 2 && shorter !== said) {
+                said = shorter;
+                cut = true;
+            }
+        }
+    }
+    return said.trim();
+}
+
 function cleanPlace(raw: string): string | undefined {
-    const cleaned = raw.replace(/^\s*the\s+/i, '').trim();
+    const cleaned = theNounPhrase(raw).replace(/^\s*the\s+/i, '').trim();
     return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
 }
 
 /** Text following a conversational verb, cleaned into a name. */
 function extractTarget(input: string): string | undefined {
     const match = /\b(?:to|with|at)\s+(.{2,80}?)\s*[.!?]?$/i.exec(input);
-    const cleaned = (match?.[1] ?? '').trim();
+    const cleaned = theNounPhrase(match?.[1] ?? '');
     return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
 }
 
@@ -4091,7 +4207,12 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // form of the most urgent verb in the game. Anchored rather than added to
     // the alternation, because "I run to the mountain" is a journey and "I run
     // a stall" is not a verb this parser owns at all.
-    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from|run for it|get out of (?:here|there)|leg it)\b|^\s*(?:i\s+)?runs?\s*[.!?]*$/],
+    // `walk away` is the third act of the owner's own acceptance sentence -
+    // "steal, then hand it to someone else before running away" - and it
+    // reached nothing. It is leaving the scene rather than naming a
+    // destination, which is what this intent is for, and `move` says honestly
+    // that it does not know where to.
+    ['flee', /\b(?:flee|escape|run away|get away|disengage|retreat|break off|withdraw|hide from|run for it|get out of (?:here|there)|leg it|walks? away|walked away|walks? off|walk out on)\b|^\s*(?:i\s+)?runs?\s*[.!?]*$/],
     // `go into` was absent while `go inside` and `step into` were present, so
     // "I go into the village" reached nothing. The site rule takes this
     // sentence first when a site noun is in it, and movement gets it otherwise,
@@ -4445,7 +4566,9 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['negotiate', /\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b/],
     ['recruit', /\b(?:recruit|hire|take on|enlist|bring (?:him|her|them) in)\b/],
     ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
-    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself)\b/]
+    // Bowing is how somebody opens with an elder in this setting, and it was
+    // the one courtesy with no line at all.
+    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|bows? to|bowing to|nods? to|pay my respects to|salutes?)\b/]
 ];
 
 /**
@@ -4479,16 +4602,29 @@ export function parseAsk(input: string): { person?: string; topic?: string } | n
     const rest = input.slice(verb.index + verb[0].length).replace(/[.!?]+$/, '').trim();
     if (rest.length === 0) return {};
 
-    const pivot = ASK_PIVOT.exec(rest);
-    const who = (pivot ? rest.slice(0, pivot.index) : rest).trim();
-    const about = pivot ? rest.slice(pivot.index + pivot[0].length).trim() : '';
+    // ── THE PIVOT CAN BE THE FIRST WORD ──────────────────────────────────
+    //
+    // `ASK_PIVOT` requires whitespace on both sides, and `rest` is trimmed - so
+    // a sentence that names no person at all and goes straight to the topic had
+    // no pivot to find. "I ask about the ruins" came out with a PERSON called
+    // "about the ruins", who then failed to resolve, and the player was told
+    // nobody by that name was here.
+    const leading = /^(?:about|after|regarding|concerning|whether|if|for)\s+/i.exec(rest);
+    const pivot = leading ? null : ASK_PIVOT.exec(rest);
+    const who = leading ? '' : (pivot ? rest.slice(0, pivot.index) : rest).trim();
+    const about = leading
+        ? rest.slice(leading[0].length).trim()
+        : pivot ? rest.slice(pivot.index + pivot[0].length).trim() : '';
 
     const person = who.length >= 2 && !ANYBODY.test(who) ? cleanPlace(who) : undefined;
     const topic = about.length >= 2 ? cleanPlace(about) : undefined;
     return { ...(person ? { person } : {}), ...(topic ? { topic } : {}) };
 }
 
-const INTERACT_SUBJECT_VERBS = /interact with|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
+// `warn` is in the threaten intent and was not here, so "I warn him to stay
+// away from her" fell through to `extractTarget`, which reads whatever follows
+// `to` - and named a person "stay away from her".
+const INTERACT_SUBJECT_VERBS = /interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
 
 function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>): string | undefined {
     for (const [label, pattern] of table) {
@@ -6097,7 +6233,7 @@ function planIntent(input: string): PlannedAction {
     //
     // Ahead of everything that could read "check" or "look" as a verb aimed at
     // the room. `alchemy_manage.inventory` answers it and nothing reached it.
-    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my |the )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my |the )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets))\b/.test(text)) {
+    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my |the )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my |the )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets)|count (?:my|the) (?:stones?|spirit stones?|coins?|money|things|belongings)|check what i (?:am|'m) carrying|see what i (?:am|'m) carrying|what have i got on me)\b/.test(text)) {
         // "take stock" is deliberately absent. `misparse.test.ts` carries
         // "I take stock of a life that has gone nowhere in forty years",
         // which is a man looking at his own life and not at his pockets.
@@ -6540,7 +6676,10 @@ function planIntent(input: string): PlannedAction {
     // thing. Adding `method` to the list above instead ALSO took "I put in real
     // practice at the method", which is `cultivate` - one exemplar traded for
     // another. So the noun is admitted only for the two words that needed it.
-    if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:art|technique|manual|stance|form|book|scripture|canon)\b/.test(text)
+    // Plurals, because a player drills "the sword forms" as often as "the sword
+    // form" and a word boundary after `form` does not fall before an `s`. The
+    // same one-letter miss that hid the whole sect listing behind `houses`.
+    if (/\b(?:practi[cs]e|drill|rehearse|work on)\b.*\b(?:arts?|techniques?|manuals?|stances?|forms?|books?|scriptures?|canons?)\b/.test(text)
         || /\bwork(?:s|ing)? at\b[^.?!]*\b(?:art|technique|method|manual|stance|form|scripture|canon)\b/.test(text)
         || /\b(?:train|practi[cs]e)\s+(?:the\s+)?[a-z-]+\s+(?:art|technique|manual|stance|method|form)\b/.test(text)
         // "I train my method" reached nothing while "I train" worked, because
@@ -6608,6 +6747,44 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // ── HANDING SOMEBODY A THING ─────────────────────────────────────────
+    //
+    // Ahead of `move` and of the INTERACT table, and it took two goes to land
+    // it there. Ahead of INTERACT because that is this parser's broadest catch
+    // for anything involving a person, and it took "I press it into her hand"
+    // as an approach to somebody called "it into her hand". Ahead of `move`
+    // because of the owner's own acceptance sentence: `walk away` had to become
+    // a flee phrasing for its third act, and the moment it did, `move` took the
+    // WHOLE sentence and the gift in the middle of it disappeared.
+    //
+    // What that ordering costs is one collision, and it is paid for in
+    // `whatIsBeingHandedOver` rather than here: `pass` is a handing verb and
+    // also how anybody says movement, so "I pass through the gate" read as
+    // handing the gate to somebody called "through". See {@link NOT_A_PERSON}.
+    //
+    // Below everything that owns one of these words, and every one of them
+    // carries its own noun: an offering up the line (`institutionalAct`),
+    // lodging goods with a house (`legacyStep`), a word given as an oath, a
+    // dowry put on the table for a match. The fifth is the sect donation, which
+    // sits BELOW this one - so the house nouns are vetoed here rather than
+    // ordered around, and "I give 100 stones to the sect" is still a donation.
+    //
+    // See {@link whatIsBeingHandedOver}: it needs the thing AND either a person
+    // or a plain putting-down, and {@link A_PRICE_IS_NAMED} vetoes every
+    // sentence that names what is wanted back - a gift with a price on it is a
+    // purchase, and "I give him ten stones for the manual" reaches `request`.
+    if (!/\b(?:sect|sects|house|houses|clan|clans|school|schools|order|orders|treasury|coffers|ancestor)\b/.test(text)) {
+        const handed = whatIsBeingHandedOver(input);
+        if (handed) {
+            return {
+                action: 'give',
+                ...(handed.to ? { target: handed.to } : {}),
+                topic: handed.thing,
+                ...(handed.stones !== undefined ? { stones: handed.stones } : {})
+            };
+        }
+    }
+
     // ── move: one action, several ways of going ──
     const moveIntent = matchIntent(text, MOVE_INTENT_PATTERNS);
     if (moveIntent) {
@@ -6620,7 +6797,14 @@ function planIntent(input: string): PlannedAction {
         // whose object is a person must not produce a place, so when no
         // destination preposition was used these go to the person instead -
         // where they cost nothing and can be refused honestly.
-        if (!destination && (moveIntent === 'follow' || moveIntent === 'approach')) {
+        // ── FOLLOWING A ROAD IS TRAVEL; FOLLOWING A PERSON IS SOCIAL ─────
+        //
+        // The intent is right for people and wrong for roads: "I follow the
+        // road east" was answered by approaching somebody called "road east".
+        // Anchored on the noun rather than on the verb, because the verb is
+        // genuinely the same word for both acts.
+        const aRoad = /\b(?:road|roads|way|path|paths|track|trail|river|coast|wall|the signs)\b/.test(text);
+        if (!destination && !aRoad && (moveIntent === 'follow' || moveIntent === 'approach')) {
             return {
                 action: 'interact',
                 target: extractSubject(input, MOVE_SUBJECT_VERBS),
@@ -6800,10 +6984,10 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── investigate: examining, reading, searching a place ──
-    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)) {
+    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)) {
         return {
             action: 'investigate',
-            target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|search|scour|comb|explore|delve|survey|read|check|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look over|look through|go through|walk|climb into|venture into|case|scavenge|loot|salvage/)
+            target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read|check|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look over|look through|go through|walk|climb into|venture into|case|scavenge|loot|salvage/)
         };
     }
 
@@ -6835,35 +7019,6 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── interact: everything done to or with a person or a faction ──
-    // ── HANDING SOMEBODY A THING ─────────────────────────────────────────
-    //
-    // Immediately ahead of the INTERACT table, which is this parser's broadest
-    // catch for anything involving a person and took "I press it into her hand"
-    // as an approach to somebody called "it into her hand".
-    //
-    // Below everything that owns one of these words, and every one of them
-    // carries its own noun: an offering up the line (`institutionalAct`),
-    // lodging goods with a house (`legacyStep`), a word given as an oath, a
-    // dowry put on the table for a match. The fifth is the sect donation, which
-    // sits BELOW this one - so the house nouns are vetoed here rather than
-    // ordered around, and "I give 100 stones to the sect" is still a donation.
-    //
-    // See {@link whatIsBeingHandedOver}: it needs the thing AND either a person
-    // or a plain putting-down, and {@link A_PRICE_IS_NAMED} vetoes every
-    // sentence that names what is wanted back - a gift with a price on it is a
-    // purchase, and "I give him ten stones for the manual" reaches `request`.
-    if (!/\b(?:sect|sects|house|houses|clan|clans|school|schools|order|orders|treasury|coffers|ancestor)\b/.test(text)) {
-        const handed = whatIsBeingHandedOver(input);
-        if (handed) {
-            return {
-                action: 'give',
-                ...(handed.to ? { target: handed.to } : {}),
-                topic: handed.thing,
-                ...(handed.stones !== undefined ? { stones: handed.stones } : {})
-            };
-        }
-    }
-
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
         const leverage = LEVERAGE_BEHIND_INTENT[interactIntent];
