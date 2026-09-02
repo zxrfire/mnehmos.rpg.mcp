@@ -278,7 +278,7 @@ export interface NpcCultivation {
      * else to expand it into.
      *
      * That made a whole authored layer unreachable from the world. A broken
-     * foundation, a cracked core, an unformed tribulation body and an
+     * foundation, a cracked core, an imperfect tribulation body and an
      * unfinished cultivation base are rows in `data/cultivation/wounds.ts`
      * with names, permanence
      * and stated treatments, and `what-goes-wrong-at-a-realm-boundary.ts`

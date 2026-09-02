@@ -246,14 +246,18 @@ export const WOUND_TYPES: readonly WoundType[] = [
     //     which borrows from nobody because a cultivation base is what every
     //     rung on the ladder has.
     //   - 'A failed body joining' named the right realm and said it in plain
-    //     English, and 'failed' is a verdict rather than a diagnosis. It is
-    //     now 'An unstable joining'. The first attempt at this said 'unsealed
-    //     seam', on the grounds that `killRequirement` has returned 'seam' as
-    //     a remnant kind since long before this table existed - but the seam
-    //     is the MECHANISM the crossing welds, not the thing it builds, and
-    //     every other row here names the thing. The joining is what Body
-    //     Integration constructs, and `the_joining` is already the trial's
-    //     name in the engine.
+    //     English. It became 'An unstable joining' on the reasoning that
+    //     'failed' is a verdict rather than a diagnosis, and it is now
+    //     'A failed integration' - the design owner's ruling, and it overturns
+    //     that reasoning rather than forgetting it: what the break has to say
+    //     is that the body is not fully integrated and parts of it do not work
+    //     right, and 'failed' says that where 'unstable' only implies it.
+    //     'Integration' is also the term Body Integration actually owns.
+    //     An earlier attempt said 'unsealed seam', on the grounds that
+    //     `killRequirement` has returned 'seam' as a remnant kind since long
+    //     before this table existed - but the seam is the MECHANISM the
+    //     crossing welds, not the thing it builds, and every other row here
+    //     names the thing.
     //
     // The same principle got 'a spoiled temper' rejected for 'damaged spirit
     // sense': name the failure of the SPECIFIC FORMATION, never a mood and
