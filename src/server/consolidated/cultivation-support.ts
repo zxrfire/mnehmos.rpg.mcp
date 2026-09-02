@@ -463,10 +463,14 @@ export interface PouchEntry {
  * is deliberately out of the sale quote as well - `items.md` is explicit that
  * above the line cash is not the medium.
  *
- * WHAT IS STILL MISSING, said here because an absence nobody wrote down gets
- * mistaken for a design decision: no player-facing listing shows a carried
- * artifact yet. `handleInventory` would need one line - an `artifacts:` field
- * beside `pills:` and `herbs:` - and its renderer in `game.ts` another.
+ * AND THE LISTING NOW EXISTS. The `inventory` verb in `game.ts` reads
+ * `listCarriedArtifacts` alongside the medicine, because for a while a granted
+ * rated object was in this table and invisible to every sentence a player could
+ * type - `what am I carrying` answered "Nothing in the pouch at all" over a
+ * row that was really there, which is indistinguishable from the write never
+ * having happened. It is read there rather than inside `handleInventory`
+ * because that handler is the ALCHEMY tool and the filter above is right: what
+ * was missing was a reader for the other kind, not a wider counted list.
  */
 export function listPouch(db: Database.Database, cultivatorId: string): PouchEntry[] {
     return allPouchRows(db, cultivatorId).filter(
