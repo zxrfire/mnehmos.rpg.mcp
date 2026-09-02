@@ -3,17 +3,39 @@
  *
  * Injuries do not heal on their own. There is no long rest, no hit dice, no
  * overnight recovery. An injury stays untreated until a pill, a healer or a
- * long seclusion clears it, and while untreated it drags on both cultivation
- * rate and breakthrough odds. That is the whole point: a run does not end
- * because one bad roll killed you, it ends because five months ago you took a
- * torn meridian, kept cultivating anyway, and every roll since has been worse
- * than the last.
+ * long seclusion clears it, and while untreated it drags on the cultivation
+ * rate, on breakthrough odds, and on what a blow actually lands in a fight.
  *
- * The lethal rule this module owns the predicate for is the blunt one: three
- * or more untreated meridian injuries. Forcing another fight in that state
- * kills you at once, and doing nothing at all kills you in BLEED_OUT_TURNS -
- * a wound nothing heals on its own does not wait for you to decide. This
- * module reports the *state*; `survival.ts` decides the *death*.
+ * ── A CHANNEL WOUND DOES NOT KILL YOU ────────────────────────────────────
+ *
+ * Design owner: "torn meridians should not kill, they don't make you bleed out.
+ * it should be the same as a torn muscle irl. very VERY annoying, but you don't
+ * die. but you probably lose combat effectiveness of some sort or maybe
+ * cultivation speed (but not comprehension)."
+ *
+ * This module used to own the predicate for a lethal rule - three or more
+ * untreated wounds, fatal if you fought and fatal in ninety days if you did
+ * not. There is no lethal rule now. `isLethalInjuryState` is retained under a
+ * name that no longer describes it (see there) and reports the state in which a
+ * body stops coping: it will not mend itself, and everything it does is worse.
+ *
+ * ── AND THE TWO FAMILIES ARE NOT ONE SCALE ───────────────────────────────
+ *
+ * The above is about CHANNEL wounds - torn meridians, scorched channels, and
+ * every untyped wound the engine mints, which is what `permanent: false` means
+ * in `data/cultivation/wounds.ts`. They impair and they do not take anything
+ * back.
+ *
+ * The other family - a broken foundation, a cracked core, a crippled nascent
+ * soul - are wounds of the CULTIVATION rather than of the
+ * body, and they cost a rung. They were never on the bleed clock
+ * (`bleedingInjuryCount` has always excluded them) and removing the lethality
+ * does not touch them: what they do is close a road, through
+ * `blocksAdvancement` and the broken statuses, and that is a separate question
+ * with a separate answer. `docs/world/injuries.md` names the split.
+ *
+ * A crippling torn meridian is still a channel wound and is still survivable.
+ * Do not let severity slide one family into the other.
  */
 
 import {
@@ -170,22 +192,23 @@ export function untreatedInjuryCount(injuries: readonly Injury[]): number {
 }
 
 /**
- * Untreated wounds that are actually still OPEN - the ones the bleed-out clock
- * is about.
+ * Untreated wounds that are actually still OPEN - the channel family.
  *
  * A permanent wound is untreated for life by definition: nothing closes a
  * severed meridian or a rooted heart demon, so `treated` stays false forever
- * and the wound goes on costing, correctly. What it must not do is push
- * somebody into the three-untreated-wounds state that kills them, because that
- * state is "you are bleeding and nobody has stopped it" and a maiming is not
- * that. Counted the old way, a cultivator who came out of the Deity
- * Transformation wall maimed, half mad and short a span would have had ninety
- * days to live - from three conditions none of which is a bleed.
+ * and the wound goes on costing, correctly. What it must not do is put somebody
+ * into the open-channels state, because that state is "you are carrying wounds
+ * nobody has closed" and a maiming is not that. Counted the old way, a
+ * cultivator who came out of the Deity Transformation wall maimed, half mad and
+ * short a span read as three open channels from three conditions none of which
+ * is one - and back when that state was lethal it gave them ninety days to
+ * live.
  *
- * So the ratchet keeps its teeth on open wounds and stops charging rent on
- * permanent ones. `aggregateInjuryPenalties` deliberately still counts them:
- * they are supposed to make everything harder forever. Only the CLOCK skips
- * them.
+ * The lethality is gone and this exclusion is not, because it was never really
+ * about the clock: `permanent: true` is the line between a wound of the body
+ * and a wound of the cultivation, and the two are not one scale.
+ * `aggregateInjuryPenalties` deliberately still counts permanent wounds - they
+ * are supposed to make everything harder forever. Only this count skips them.
  */
 export function bleedingInjuryCount(injuries: readonly Injury[]): number {
     let count = 0;
@@ -216,6 +239,36 @@ export function hasPermanentWound(injuries: readonly Injury[]): boolean {
     return injuries.some(i => isPermanentWound(i.woundType));
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT A WOUND REACHES, AND THE ONE AXIS IT MUST NOT
+//
+// A wound takes two things and there is no third:
+//
+//   the rate    `cultivationPenalty` -> `computeCultivationRate`. Qi is being
+//               pushed through something damaged and it tells.
+//   the fight   the condition line of `assessPower`, and the damage a blow
+//               actually lands in `resolveExchange`. Slower, less accurate,
+//               and therefore less reliable - which is the design owner's own
+//               phrasing and the reason it is expressed in the damage roll
+//               rather than as a lock on what may be attempted. A wounded
+//               cultivator keeps every art they know.
+//
+// AND COMPREHENSION IS UNTOUCHED. There is no injury term in
+// `understanding.ts`, in `dao.ts`, or anywhere insights are earned or priced,
+// and adding one is the mistake this comment exists to prevent. It looks like
+// an omission. It is a ruling: a wounded cultivator still thinks clearly. They
+// cannot push qi properly; there is nothing wrong with what they can see.
+//
+// Somebody laid up for a decade with torn channels may come out of it having
+// understood MORE than they went in with. That is correct behaviour, not an
+// exception to explain away - understanding comes from roads walked and things
+// survived, and being hurt is one of the things survived.
+//
+// The temptation whenever a penalty is added is to dim everything at once
+// because that feels serious. A wound is a fact about the body.
+// See `docs/world/injuries.md`.
+// ─────────────────────────────────────────────────────────────────────────
+
 export interface InjuryPenalties {
     /** Fraction of cultivation rate lost, in [0, MAX_INJURY_CULTIVATION_PENALTY]. */
     cultivationPenalty: number;
@@ -225,9 +278,11 @@ export interface InjuryPenalties {
     /** Multiplier form of `cultivationPenalty`, ready to fold into a rate. */
     cultivationMultiplier: number;
     /**
-     * True once the count of OPEN wounds reaches the lethal-if-you-fight
-     * threshold. Permanent wounds are excluded - they cost forever and they are
-     * not a bleed. See `bleedingInjuryCount`.
+     * True once the count of OPEN channel wounds reaches
+     * CRIPPLING_UNTREATED_INJURIES - the point at which the body stops mending
+     * itself. Not a death flag: it used to be the lethal-if-you-fight threshold
+     * and nothing kills anybody for it now. Permanent wounds are excluded; they
+     * cost forever and they are not open channels. See `bleedingInjuryCount`.
      */
     lethalThresholdReached: boolean;
     /** Untreated wounds nothing in the world closes. They never stop costing. */
@@ -273,18 +328,27 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
 }
 
 /**
- * Whether this cultivator is in the "one more fight and you die" state:
- * LETHAL_UNTREATED_INJURIES or more untreated meridian injuries.
+ * Whether this cultivator is carrying CRIPPLING_UNTREATED_INJURIES or more open
+ * channel wounds - the state in which a body has stopped coping.
  *
- * Note this is a STATE predicate, not a death check. Standing here is legal and
- * survivable for a while - long enough to crawl to a healer, which is the
- * window BLEED_OUT_TURNS is sized to give. It is not indefinitely survivable:
- * forcing another fight kills at once, and staying in this state kills on the
- * clock. `evaluateDeathConditions` decides both.
+ * NOTHING ABOUT THIS IS LETHAL, AND THE NAME IS A LEFTOVER. It used to mean
+ * "one more fight and you die" and it means "this body will not mend itself and
+ * everything it tries is worse". The name is kept because half a dozen modules
+ * import it and renaming exported symbols across a shared tree sweeps up other
+ * people's unfinished work; migrate to `isCrippledByInjuries` as files come
+ * free.
+ *
+ * Standing here is survivable indefinitely. It is meant to be intolerable
+ * rather than fatal: the rate is a fraction of what it was, the body no longer
+ * knits back up, and a fight goes badly. Being worth curing is the whole design
+ * of the state.
  */
 export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): boolean {
     return bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
 }
+
+/** The name `isLethalInjuryState` should have. Same predicate. */
+export const isCrippledByInjuries = isLethalInjuryState;
 
 // ─────────────────────────────────────────────────────────────────────────
 // TEMPERING - EXPERIENCE AS A FORM OF POWER
@@ -463,25 +527,26 @@ export function scarRateMultiplier(injuries: readonly Injury[]): number {
  * A PERMANENT WOUND IS NEVER TREATED, and refusing it here rather than in the
  * callers is what makes the wound table's word good. Every permanent row says
  * in its own `treatment` field that nothing in the world closes it - a parted
- * meridian, a ruined dantian, a rooted heart demon - and a treatment path that
- * quietly closed one anyway would make that text a decoration.
+ * meridian, an unfinished cultivation base, a rooted heart demon - and a
+ * treatment path that quietly closed one anyway would make that text a
+ * decoration.
  *
  * It had teeth beyond the prose, and the shape of those teeth has changed. It
- * used to be that `isHalted` read an untreated ruined dantian, so a healer
- * being handed enough money could have undone a permanent BAR by accident -
- * caught by the ceiling sweep, which heals everything it can every iteration.
- * A ruined dantian no longer halts anybody: only a realm's own break closes a
- * road, and nothing closes one of those except a crossing or the rarest
- * medicine there is. So the sweep can no longer walk somebody back onto the
- * ladder through this door.
+ * used to be that `isHalted` read the failure table's gravest wound, so a
+ * healer being handed enough money could have undone a permanent BAR by
+ * accident - caught by the ceiling sweep, which heals everything it can every
+ * iteration. Nothing the failure table mints halts anybody now: only a realm's
+ * own break closes a road, and nothing closes one of those except a crossing or
+ * the rarest medicine there is. So the sweep can no longer walk somebody back
+ * onto the ladder through this door.
  *
  * The refusal still matters, and now for the plain reason rather than the
- * mechanical one: a permanent wound is permanent. A parted meridian, a ruined
- * reservoir and a rooted heart demon each say in their own `treatment` field
- * that nothing in the world closes them, and they go on costing rate, odds and
- * combat power for the rest of the life. Being un-halting does not make a
- * ruined dantian survivable or cheap; it means the ladder is open to somebody
- * who will find the next wall far worse than it was.
+ * mechanical one: a permanent wound is permanent. A parted meridian, an
+ * unfinished cultivation base and a rooted heart demon each say in their own
+ * `treatment` field that nothing in the world closes them, and they go on
+ * costing rate, odds and combat power for the rest of the life. Being
+ * un-halting does not make an unfinished base survivable or cheap; it means the
+ * ladder is open to somebody who will find the next wall far worse than it was.
  */
 export function treatInjury(injuries: readonly Injury[], injuryId: string): Injury[] {
     return injuries.map(injury =>

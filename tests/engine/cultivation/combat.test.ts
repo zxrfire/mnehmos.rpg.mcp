@@ -12,6 +12,8 @@ import {
     HELPLESS_REALM_GAP,
     MAX_EDGE_MULTIPLIER,
     MAX_EXCHANGES,
+    MAX_NUMBERS_MULTIPLIER,
+    OVERWHELMING_ADVANTAGE,
     REAL_OPTIONS,
     SOUL_ART_MIN_ORDINAL,
     WITHIN_REALM_PEAK,
@@ -22,10 +24,18 @@ import {
     canDirectAtSoul,
     canUseTechnique,
     combatPowerForOrdinal,
+    numbersMultiplier,
+    reachOf,
     resolveConfrontation,
     resolveExchange,
+    resolveMelee,
     rollInitiative,
-    type CombatantInput
+    sideStrength,
+    strikesThisRound,
+    type Aegis,
+    type CombatantInput,
+    type MeleeResult,
+    type SideInput
 } from '../../../src/engine/cultivation/combat.js';
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 import {
@@ -34,7 +44,7 @@ import {
     powerMultiplierForOrdinal,
     realmForOrdinal
 } from '../../../src/engine/cultivation/realms.js';
-import type { Technique } from '../../../src/schema/cultivation.js';
+import type { Technique, TechniqueReach } from '../../../src/schema/cultivation.js';
 import { makeInjuries } from './fixtures.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -733,6 +743,595 @@ describe('rollInitiative', () => {
         const second = rollInitiative(participants, rng('stable')).map(e => e.id);
         expect(second).toEqual(first);
         expect(new Set(first).size).toBe(3);
+    });
+});
+
+// ═════════════════════════════════════════════════════════════════════════
+// SIDES
+// The five rules again, now with more than two people in the room. The new
+// question, and the only one, is what a second body is worth.
+// ═════════════════════════════════════════════════════════════════════════
+
+describe('sideStrength', () => {
+    const priced = (ordinal: number) => assessPower(combatant({ realmOrdinal: ordinal }), NEUTRAL);
+
+    it('prices a side of one at exactly its own power, so a duel is unchanged', () => {
+        const one = priced(18);
+        const side = sideStrength([one]);
+        expect(side.multiplier).toBe(1);
+        expect(side.weight).toBe(one.total);
+        expect(side.effectiveBodies).toBe(1);
+    });
+
+    it('prices a second equal body at exactly what the edge table already said bodies are worth', () => {
+        const side = sideStrength([priced(18), priced(18)]);
+        expect(side.effectiveBodies).toBeCloseTo(2, 10);
+        expect(side.multiplier).toBeCloseTo(EDGE_VALUES.numbers, 10);
+    });
+
+    it('weighs bodies against the best one rather than counting them', () => {
+        // Five Foundation disciples standing behind a Nascent Soul elder are not
+        // six people. They are an elder and a rounding error, and the number has
+        // to say so.
+        const elder = priced(realmStart('nascent_soul'));
+        const disciples = Array.from({ length: 5 }, () => priced(realmStart('foundation_establishment')));
+        const side = sideStrength([elder, ...disciples]);
+
+        expect(side.effectiveBodies).toBeLessThan(1.5);
+        expect(side.multiplier).toBeLessThan(1.2);
+        expect(side.strongest).toBe(elder.total);
+    });
+
+    it('never lets numbers reach what a realm is worth', () => {
+        const crowd = Array.from({ length: 500 }, () => priced(18));
+        expect(sideStrength(crowd).multiplier).toBe(MAX_NUMBERS_MULTIPLIER);
+        expect(sideStrength(crowd).capped).toBe(true);
+        // The load-bearing comparison. A realm is four; a crowd is never a realm.
+        expect(MAX_NUMBERS_MULTIPLIER).toBeLessThan(
+            combatPowerForOrdinal(realmStart('core_formation')) /
+            combatPowerForOrdinal(realmStart('foundation_establishment'))
+        );
+        // And it is exactly what climbing a whole realm's sub-ranks is worth.
+        expect(MAX_NUMBERS_MULTIPLIER).toBe(WITHIN_REALM_PEAK);
+    });
+
+    it('never weakens a side by adding somebody to it', () => {
+        let previous = 0;
+        const members = [];
+        for (const ordinal of [20, 14, 18, 3, 19, 8]) {
+            members.push(priced(ordinal));
+            const weight = sideStrength(members).weight;
+            expect(weight).toBeGreaterThanOrEqual(previous);
+            previous = weight;
+        }
+    });
+
+    it('is a compression, not an addition - a side is never its members summed', () => {
+        const many = Array.from({ length: 4 }, () => priced(18));
+        const side = sideStrength(many);
+        expect(side.weight).toBeLessThan(side.summed);
+        expect(side.weight).toBeGreaterThan(side.strongest);
+    });
+
+    it('reports 1 for a side with nobody left in it', () => {
+        expect(sideStrength([]).multiplier).toBe(1);
+        expect(sideStrength([]).weight).toBe(0);
+    });
+});
+
+describe('numbersMultiplier', () => {
+    it('grows, and grows slower than the bodies do', () => {
+        expect(numbersMultiplier(1)).toBe(1);
+        expect(numbersMultiplier(2)).toBeCloseTo(EDGE_VALUES.numbers, 10);
+        for (const n of [2, 3, 4, 5, 8, 40]) {
+            expect(numbersMultiplier(n), `${n}`).toBeLessThan(n);
+            expect(numbersMultiplier(n + 1)).toBeGreaterThanOrEqual(numbersMultiplier(n));
+        }
+    });
+
+    it('saturates, so the sixth body and the six-hundredth are both witnesses', () => {
+        expect(numbersMultiplier(6)).toBe(MAX_NUMBERS_MULTIPLIER);
+        expect(numbersMultiplier(600)).toBe(MAX_NUMBERS_MULTIPLIER);
+    });
+});
+
+describe('strikesThisRound', () => {
+    const priced = (ordinal: number) => assessPower(combatant({ realmOrdinal: ordinal }), NEUTRAL);
+
+    it('gives a side of one exactly one strike, every seed', () => {
+        const side = sideStrength([priced(18)]);
+        for (let i = 0; i < 30; i++) {
+            expect(strikesThisRound(side, 1, rng(`solo-${i}`))).toBe(1);
+        }
+    });
+
+    it('lands a pair its second strike sometimes and not always', () => {
+        const side = sideStrength([priced(18), priced(18)]);
+        const seen = new Set<number>();
+        for (let i = 0; i < 60; i++) seen.add(strikesThisRound(side, 2, rng(`pair-${i}`)));
+        expect(seen).toEqual(new Set([1, 2]));
+    });
+
+    it('never spends more strikes than there are people to make them', () => {
+        const crowd = Array.from({ length: 40 }, () => priced(18));
+        const side = sideStrength(crowd);
+        for (let i = 0; i < 20; i++) {
+            const strikes = strikesThisRound(side, 1, rng(`short-${i}`));
+            expect(strikes).toBe(1);
+        }
+    });
+});
+
+describe('resolveMelee', () => {
+    const meleeCtx = (overrides: Record<string, unknown> = {}) => ({
+        rng: rng('melee'),
+        ambient: 'normal' as const,
+        turn: 1,
+        intent: { goal: 'kill' as const },
+        ...overrides
+    });
+
+    /** A side of N cultivators at one ordinal, named side0..sideN. */
+    function band(id: string, ordinal: number, count: number, extra: Partial<SideInput> = {}): SideInput {
+        return {
+            id,
+            name: id,
+            members: Array.from({ length: count }, (_, i) =>
+                combatant({ id: `${id}-${i}`, name: `${id}-${i}`, realmOrdinal: ordinal })
+            ),
+            ...extra
+        };
+    }
+
+    /** How often the first side puts the second side down, across seeds. */
+    function downRate(
+        attackers: () => SideInput,
+        defenders: () => SideInput,
+        label: string,
+        samples = 80
+    ): number {
+        let down = 0;
+        for (let i = 0; i < samples; i++) {
+            const result = resolveMelee([attackers(), defenders()], meleeCtx({ rng: rng(`${label}-${i}`) }));
+            if (result.winningSideId === attackers().id) down++;
+        }
+        return down / samples;
+    }
+
+    it('refuses fewer than two sides rather than resolving something meaningless', () => {
+        expect(() => resolveMelee([band('a', 10, 2)], meleeCtx())).toThrow(/two sides/);
+    });
+
+    it('is deterministic for a given seed', () => {
+        const run = () => resolveMelee(
+            [band('a', 14, 2), band('b', 14, 2)],
+            meleeCtx({ rng: rng('replay') })
+        );
+        expect(JSON.stringify(run())).toBe(JSON.stringify(run()));
+    });
+
+    it('accounts for every participant and names only real people in the trail', () => {
+        const result = resolveMelee([band('a', 14, 3), band('b', 14, 2)], meleeCtx());
+        expect(result.combatants).toHaveLength(5);
+        const ids = new Set(result.combatants.map(c => c.id));
+        for (const exchange of result.exchanges) {
+            expect(ids.has(exchange.attackerId)).toBe(true);
+            expect(ids.has(exchange.defenderId)).toBe(true);
+        }
+        expect(Object.keys(result.hp).sort()).toEqual([...ids].sort());
+    });
+
+    it('never declares anyone dead - that is still the survival layer, and only it', () => {
+        const result = resolveMelee([band('a', 17, 2), band('b', 2, 1)], meleeCtx());
+        expect(Object.keys(result)).not.toContain('alive');
+        for (const c of result.combatants) expect(Object.keys(c)).not.toContain('deathCause');
+    });
+
+    // ── RULE 1 ────────────────────────────────────────────────────────────
+
+    it('does not hold a fight across two major realms, however many turned up', () => {
+        const result = resolveMelee(
+            [band('mob', 3, 12), band('elder', realmStart('nascent_soul'), 1)],
+            meleeCtx()
+        );
+        expect(result.exchanges).toEqual([]);
+        expect(result.winningSideId).toBe('elder');
+    });
+
+    it('lets somebody categorically outclassed stand there without ever landing anything', () => {
+        const result = resolveMelee(
+            [
+                {
+                    id: 'a', name: 'a', members: [
+                        combatant({ id: 'elder', realmOrdinal: realmStart('nascent_soul') }),
+                        combatant({ id: 'mook', realmOrdinal: 2 })
+                    ]
+                },
+                band('b', realmStart('nascent_soul'), 1)
+            ],
+            meleeCtx()
+        );
+        expect(result.exchanges.some(e => e.attackerId === 'mook')).toBe(false);
+    });
+
+    // ── NUMBERS ───────────────────────────────────────────────────────────
+
+    it('lets two peers put down one peer, which is how anybody on this ladder dies', () => {
+        for (const ordinal of [14, 18, realmStart('nascent_soul'), 43]) {
+            const rate = downRate(
+                () => band('two', ordinal, 2),
+                () => band('one', ordinal, 1),
+                `peers-${ordinal}`
+            );
+            expect(rate, `${ordinal}`).toBeGreaterThan(0.9);
+        }
+    });
+
+    it('does not let one peer beat two, which is the same statement from the other end', () => {
+        const rate = downRate(
+            () => band('one', 18, 1),
+            () => band('two', 18, 2),
+            'reverse'
+        );
+        expect(rate).toBeLessThan(0.1);
+    });
+
+    it('never lets bodies a full realm below win, at any headcount at all', () => {
+        // The load-bearing test in this file. Six Core Formation cultivators do
+        // not mob a Nascent Soul one, and neither do sixty.
+        for (const count of [2, 6, 20, 60]) {
+            const rate = downRate(
+                () => band('mob', realmForOrdinal(17).ordinalEnd, count),
+                () => band('elder', realmStart('nascent_soul'), 1),
+                `mob-${count}`,
+                40
+            );
+            expect(rate, `${count} bodies`).toBeLessThan(0.05);
+        }
+    });
+
+    it('overturns a realm on what was brought instead, which is rule 2 intact', () => {
+        const rate = downRate(
+            () => band('raiders', realmForOrdinal(17).ordinalEnd, 4, {
+                edges: ['formation', 'ambush', 'terrain']
+            }),
+            () => band('elder', realmStart('nascent_soul'), 1),
+            'prepared'
+        );
+        expect(rate).toBeGreaterThan(0.8);
+    });
+
+    // ── FOCUS FIRE AND ATTRITION ──────────────────────────────────────────
+
+    it('concentrates rather than spreading damage evenly and finishing nobody', () => {
+        const result = resolveMelee([band('a', 18, 4), band('b', 18, 3)], meleeCtx({ rng: rng('focus') }));
+        const targets = result.exchanges
+            .filter(e => e.attackerId.startsWith('a-'))
+            .map(e => e.defenderId);
+        // Once a side opens somebody up it stays on them, so the sequence of
+        // targets is a run of blocks and never returns to an abandoned one.
+        const blocks = targets.filter((id, i) => i === 0 || targets[i - 1] !== id);
+        expect(new Set(blocks).size).toBe(blocks.length);
+    });
+
+    it('refuses to let irrelevant bodies work as a shield wall', () => {
+        // Found by fuzzing mixed sides. A side put one real threat behind a wall
+        // of people categorically beneath the defender, and weakest-first
+        // targeting had the defender spend every exchange deleting the wall - at
+        // an advantage of 2867 - while the one person who could reach her did so
+        // unopposed each round and drove her off the field about a fifth of the
+        // time. Bodies rule 1 calls irrelevant must not decide a fight by being
+        // present, so a striker takes the people who count first.
+        const wall = (mooks: number): SideInput => ({
+            id: 'mob', name: 'mob',
+            members: [
+                combatant({ id: 'threat', realmOrdinal: realmForOrdinal(37).ordinalEnd }),
+                ...Array.from({ length: mooks }, (_, i) =>
+                    combatant({ id: `mook-${i}`, realmOrdinal: realmStart('core_formation') }))
+            ]
+        });
+        const lone = (): SideInput => ({
+            id: 'defender', name: 'defender',
+            members: [combatant({ id: 'defender-0', realmOrdinal: realmStart('tribulation_transcendence') })]
+        });
+
+        for (const mooks of [7, 13, 19]) {
+            let taken = 0;
+            for (let i = 0; i < 60; i++) {
+                const result = resolveMelee([wall(mooks), lone()], meleeCtx({ rng: rng(`wall-${mooks}-${i}`) }));
+                if (result.winningSideId === 'mob') taken++;
+            }
+            expect(taken, `${mooks} mooks`).toBe(0);
+        }
+
+        // And her attention went where it belonged: everything she spent on the
+        // wall came after the threat was already down, never before it.
+        const result = resolveMelee([wall(13), lone()], meleeCtx({ rng: rng('wall-trail') }));
+        const hers = result.exchanges.filter(e => e.attackerId === 'defender-0');
+        expect(hers.length).toBeGreaterThan(0);
+        expect(hers[0].defenderId).toBe('threat');
+
+        const lastOnThreat = hers.map(e => e.defenderId).lastIndexOf('threat');
+        const firstOnWall = hers.findIndex(e => e.defenderId.startsWith('mook-'));
+        if (firstOnWall !== -1) expect(firstOnWall).toBeGreaterThan(lastOnThreat);
+    });
+
+    it('removes attackers outright at a gap nothing brought would have closed', () => {
+        const result = resolveMelee(
+            [
+                band('mob', realmStart('core_formation'), 4),
+                band('elder', realmForOrdinal(21).ordinalEnd, 1)
+            ],
+            meleeCtx({ rng: rng('sweep') })
+        );
+        const removals = result.exchanges.filter(e =>
+            e.attackerId.startsWith('elder') &&
+            e.result.advantage >= OVERWHELMING_ADVANTAGE &&
+            e.defenderHpAfter === 0
+        );
+        expect(removals.length).toBeGreaterThan(0);
+        // Removed, not ground down: the reported damage never had to reach them.
+        expect(removals[0].result.damage).toBeLessThan(100);
+    });
+
+    // ── REACH ─────────────────────────────────────────────────────────────
+
+    /** A side of N at one ordinal, every one of them carrying `reach`. */
+    function armed(id: string, ordinal: number, count: number, reach?: TechniqueReach): SideInput {
+        return {
+            id, name: id,
+            members: Array.from({ length: count }, (_, i) => combatant({
+                id: `${id}-${i}`, name: `${id}-${i}`, realmOrdinal: ordinal,
+                technique: art({ reach }), techniqueMastery: 1
+            }))
+        };
+    }
+
+    it('treats an art with nothing recorded as reaching one person, as it always did', () => {
+        expect(reachOf(null)).toBe('single');
+        expect(reachOf(undefined)).toBe('single');
+        expect(reachOf(art())).toBe('single');
+        expect(reachOf(art({ reach: 'field' }))).toBe('field');
+
+        // And an unmarked art resolves byte-identically to an explicitly single one.
+        const run = (reach?: TechniqueReach) => JSON.stringify(resolveMelee(
+            [armed('a', 18, 2, reach), armed('b', 18, 2, 'single')],
+            meleeCtx({ rng: rng('reach-default') })
+        ));
+        expect(run(undefined)).toBe(run('single'));
+    });
+
+    it('lands one action on everybody the art reaches, in one round', () => {
+        // One realm apart, so this is a real melee rather than rule 1 settling
+        // it without a die - the sweep has to be doing the work.
+        const result = resolveMelee(
+            [armed('sweeper', realmStart('nascent_soul'), 1, 'field'),
+             armed('crowd', realmForOrdinal(17).ordinalEnd, 6)],
+            meleeCtx({ rng: rng('sweep') })
+        );
+        const hers = result.exchanges.filter(e => e.attackerId === 'sweeper-0');
+        // Six people answered by one person, so every one of them was struck.
+        expect(new Set(hers.slice(0, 6).map(e => e.defenderId)).size).toBe(6);
+        expect(result.winningSideId).toBe('sweeper');
+    });
+
+    it('reaches three with a wide swing and one without, at the same rank', () => {
+        const reached = (reach: TechniqueReach, width: number) => {
+            const result = resolveMelee(
+                [armed('a', realmStart('nascent_soul'), 1, reach),
+                 armed('b', realmForOrdinal(17).ordinalEnd, 6)],
+                meleeCtx({ rng: rng('width') })
+            );
+            // The opening action is the first `width` exchanges they make.
+            const opening = result.exchanges.filter(e => e.attackerId === 'a-0').slice(0, width);
+            return new Set(opening.map(e => e.defenderId)).size;
+        };
+        expect(reached('single', 1)).toBe(1);
+        expect(reached('several', 3)).toBe(3);
+        expect(reached('field', 6)).toBe(6);
+    });
+
+    it('never lets reach buy a side out of a realm gap, at any width or headcount', () => {
+        // The load-bearing direction. Reach scales with how many ENEMIES are
+        // present, so a numerous but outclassed side gains nothing from it -
+        // there is only ever one person in front of them.
+        for (const reach of ['single', 'several', 'field'] as const) {
+            for (const count of [2, 6, 20]) {
+                let taken = 0;
+                for (let i = 0; i < 40; i++) {
+                    const result = resolveMelee(
+                        [armed('mob', realmForOrdinal(17).ordinalEnd, count, reach),
+                         armed('elder', realmStart('nascent_soul'), 1, 'single')],
+                        meleeCtx({ rng: rng(`gap-${reach}-${count}-${i}`) })
+                    );
+                    if (result.winningSideId === 'mob') taken++;
+                }
+                expect(taken / 40, `${count} bodies with ${reach}`).toBeLessThan(0.1);
+            }
+        }
+    });
+
+    it('does let one person answer a crowd that is beneath them, which is the point', () => {
+        for (const count of [6, 20, 60]) {
+            let held = 0;
+            for (let i = 0; i < 30; i++) {
+                const result = resolveMelee(
+                    [armed('one', realmStart('nascent_soul'), 1, 'field'),
+                     armed('mob', realmForOrdinal(17).ordinalEnd, count, 'single')],
+                    meleeCtx({ rng: rng(`sweep-${count}-${i}`) })
+                );
+                if (result.winningSideId === 'one') held++;
+            }
+            expect(held / 30, `${count} bodies`).toBeGreaterThan(0.9);
+        }
+    });
+
+    it('widens a strike without granting more of them', () => {
+        // Reach must not touch the numbers budget, or it becomes a second way to
+        // buy strikes and rule 1 goes with it.
+        const measure = (reach: TechniqueReach) => {
+            const result = resolveMelee(
+                [armed('a', 18, 6, reach), armed('b', 18, 6, 'single')],
+                meleeCtx({ rng: rng('budget') })
+            );
+            const mine = result.exchanges.filter(e => e.attackerId.startsWith('a-'));
+            return { strikers: new Set(mine.map(e => e.attackerId)).size, landed: mine.length };
+        };
+
+        const single = measure('single');
+        const wide = measure('field');
+
+        // A wider art lands on more people...
+        expect(wide.landed).toBeGreaterThan(single.landed);
+        // ...without ever putting more of the side's people into the swing. That
+        // is the line that keeps reach from becoming a second way to buy strikes.
+        expect(wide.strikers).toBeLessThanOrEqual(single.strikers);
+    });
+
+    // ── WHAT SOMEBODY IS CARRYING ─────────────────────────────────────────
+
+    it('prices a ladder-rated object as a second body of its rank, with no new line', () => {
+        const bare = assessPower(combatant({ realmOrdinal: 43 }), NEUTRAL);
+        const held = assessPower(combatant({ realmOrdinal: 43, artifactOrdinal: 43 }), NEUTRAL);
+
+        // The factor list keeps its shape; the object is priced on the line that
+        // already exists for what somebody is carrying.
+        expect(held.factors.map(f => f.source)).toEqual(bare.factors.map(f => f.source));
+        expect(held.total / bare.total).toBeCloseTo(2, 6);
+
+        // And it is not capped the way graded work is, because the whole claim
+        // about such an object is that it is worth what a body is worth.
+        const above = assessPower(combatant({ realmOrdinal: 43, artifactOrdinal: 45 }), NEUTRAL);
+        expect(above.total / bare.total).toBeGreaterThan(3);
+
+        // The identity the whole shape rests on still holds.
+        let product = held.realmBase;
+        for (const f of held.factors) product *= f.factor;
+        expect(product).toBeCloseTo(held.total, 6);
+    });
+
+    it('leaves an ordinary cultivator behind when the object is taken away', () => {
+        const withIt = combatant({ id: 'head', realmOrdinal: 43, artifactOrdinal: 44 });
+        const { artifactOrdinal: _removed, ...withoutIt } = withIt;
+        expect(assessPower(withoutIt as CombatantInput, NEUTRAL).total)
+            .toBe(assessPower(combatant({ id: 'head', realmOrdinal: 43 }), NEUTRAL).total);
+    });
+
+    it('makes two peers stop being sufficient against somebody holding one', () => {
+        // Not a rule about who the defender is. The object is worth a body, and
+        // bodies are the unit numbers are counted in, so the plan that answers
+        // one person no longer answers one person and an object.
+        const bare = downRate(() => band('two', 43, 2), () => band('head', 43, 1), 'bare-two');
+        const held = downRate(
+            () => band('two', 43, 2),
+            () => ({
+                id: 'head', name: 'head',
+                members: [combatant({ id: 'head-0', realmOrdinal: 43, artifactOrdinal: 44 })]
+            }),
+            'held-two'
+        );
+        expect(bare).toBeGreaterThan(0.9);
+        expect(held).toBeLessThan(bare - 0.3);
+    });
+
+    // ── AEGIS ─────────────────────────────────────────────────────────────
+
+    const lamp: Aegis = {
+        id: 'lamp',
+        name: 'a thing that cannot be lied to about position',
+        denies: ['ambush', 'terrain', 'formation'],
+        note: 'An ambush has to be somewhere, and somewhere is not a thing that can be hidden from this.'
+    };
+
+    it('disqualifies what an attacker brought rather than reducing it', () => {
+        const bearer = (aegis: Aegis[]): SideInput => ({
+            id: 'held', name: 'held',
+            members: [{ combatant: combatant({ id: 'held-0', realmOrdinal: 21 }), aegis }]
+        });
+        const attack = () => band('raiders', realmForOrdinal(17).ordinalEnd, 4, {
+            edges: ['formation', 'ambush', 'terrain']
+        });
+
+        const open = downRate(attack, () => bearer([]), 'aegis-open');
+        const denied = downRate(attack, () => bearer([lamp]), 'aegis-denied');
+        expect(open).toBeGreaterThan(0.8);
+        expect(denied).toBeLessThan(0.1);
+    });
+
+    it('can put a vector out of reach entirely, and says so in the trail', () => {
+        const soulArt = art({ element: null, requiredOrdinal: SOUL_ART_MIN_ORDINAL });
+        const result = resolveMelee([
+            {
+                id: 'a', name: 'a', vector: 'soul',
+                members: [combatant({ id: 'a-0', realmOrdinal: 22, technique: soulArt })]
+            },
+            {
+                id: 'b', name: 'b',
+                members: [{
+                    combatant: combatant({ id: 'b-0', realmOrdinal: 22 }),
+                    aegis: [{ id: 'nail', name: 'nail', forbids: ['body', 'soul'], note: 'Nothing reaches.' }]
+                }]
+            }
+        ], meleeCtx({ rng: rng('forbid') }));
+
+        const blocked = result.exchanges.filter(e => e.result.nullifiedReason === 'aegis_forbids_vector');
+        expect(blocked.length).toBeGreaterThan(0);
+        expect(blocked[0].result.damage).toBe(0);
+    });
+
+    // ── THE STALL ─────────────────────────────────────────────────────────
+
+    it('lets a side that only has to last, last - and the attackers leave', () => {
+        const result: MeleeResult = resolveMelee([
+            band('assault', 43, 3),
+            band('house', 43, 1, {
+                reinforcement: { holdsFor: 1, note: 'Seals are already coming open behind you.' }
+            })
+        ], meleeCtx({ rng: rng('stall') }));
+
+        expect(result.heldUntilReinforced).toBe('house');
+        expect(result.winningSideId).toBe('house');
+        expect(result.narrationHint).toContain('only last');
+        // Not beaten. Out of clock, which is a different thing to narrate.
+        for (const c of result.combatants.filter(c => c.sideId === 'assault')) {
+            expect(['withdrew', 'crippled', 'finished', 'body_destroyed']).toContain(c.fate);
+        }
+    });
+
+    it('does not save a side that was already finished inside the window', () => {
+        const result = resolveMelee([
+            band('assault', 43, 4),
+            band('house', 43, 1, {
+                reinforcement: { holdsFor: MAX_EXCHANGES, note: 'Too late.' }
+            })
+        ], meleeCtx({ rng: rng('too-late') }));
+        expect(result.winningSideId).toBe('assault');
+        expect(result.heldUntilReinforced).toBeNull();
+    });
+
+    // ── WHAT COMES OUT THE OTHER SIDE ─────────────────────────────────────
+
+    it('reports the losing side by its worst fate and seeds the grudges', () => {
+        const result = resolveMelee(
+            [band('a', realmStart('core_formation'), 2), band('b', 2, 2)],
+            meleeCtx({ intent: { goal: 'humiliate' } })
+        );
+        expect(result.outcome).toBe('humiliation');
+        expect(result.obligations.length).toBeGreaterThan(0);
+        for (const seed of result.obligations) {
+            expect(result.combatants.some(c => c.id === seed.holderId)).toBe(true);
+            expect(result.combatants.some(c => c.id === seed.subjectId)).toBe(true);
+        }
+    });
+
+    it('resolves three sides at once, because a fight is not always two-cornered', () => {
+        const result = resolveMelee(
+            [band('a', 18, 2), band('b', 18, 2), band('c', 18, 2)],
+            meleeCtx({ rng: rng('threeway') })
+        );
+        expect(result.sides).toHaveLength(3);
+        expect(result.combatants).toHaveLength(6);
+        expect(result.sides.filter(s => s.defeated).length).toBeLessThanOrEqual(2);
     });
 });
 
