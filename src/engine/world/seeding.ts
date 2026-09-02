@@ -65,6 +65,7 @@ import { MEMBERS } from '../../data/cultivation/members.js';
 import { THE_LINE_AT_MILLRUN } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
+import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
@@ -1311,7 +1312,9 @@ function seedPopulation(
                 const pool = open.length > 0 ? open : regionFactions;
                 const candidate = pool[rng.int(0, pool.length - 1)];
                 const cf = catalogById.get(candidate.id);
-                if (cf && cf.recruits && ordinal >= cf.admissionOrdinal) {
+                const takes = whoAHouseWillTake(candidate.id);
+                if (cf && cf.recruits && ordinal >= cf.admissionOrdinal
+                    && (takes === null || takes === npc.identity.sex)) {
                     npc = { ...npc, factionId: candidate.id, factionRankIndex: 0 };
                 }
             }
@@ -1485,6 +1488,14 @@ function seedNamedFigures(
                 forStream(state.seed, 'seed-origin', id).next(), ordinal
             ).key,
             cultivation: { spiritRoot: root.key },
+            // A house that takes one sex has a roll of that sex, because every
+            // one of them came through its door. Supplied rather than rolled,
+            // which is the whole difference between a bar and a coincidence:
+            // rolling would have seeded half a closed house with people it
+            // could not have admitted.
+            ...(whoAHouseWillTake(faction.id) !== null
+                ? { sex: whoAHouseWillTake(faction.id)! }
+                : {}),
             tags: ['catalog:member', `faction:${faction.id}`]
         });
 

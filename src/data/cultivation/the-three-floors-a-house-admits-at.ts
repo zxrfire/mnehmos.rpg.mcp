@@ -255,10 +255,16 @@ export function discipleBarOf(factionId: string): number | undefined {
  *   > "this means we can have female only and male only sects, do IT, this
  *   >  makes playthroughs gated and interesting."
  *
- * Two, one each, and the number is the design rather than a starting point.
+ * The number stays tiny, and that is the design rather than a starting point.
  * The interesting thing about a closed door is that it is closed to YOU, and a
  * world where a third of the houses were closed to everybody would make that
- * ordinary. Two means a run either meets one of them or does not.
+ * ordinary. One or two means a run either meets one of them or does not.
+ *
+ * **And they are Courts, which is the ruling rather than a preference: a gate is
+ * only interesting if what is behind it is worth wanting.** A minor house
+ * refusing half of everybody costs those players nothing - they walk past it and
+ * the run is identical. What is behind this one is the world's only working
+ * lightning curriculum.
  *
  * ── WHY IT IS A BAR AND NOT A NEW MECHANISM ─────────────────────────────
  *
@@ -277,53 +283,45 @@ export function discipleBarOf(factionId: string): number | undefined {
  * what anybody is worth, is capable of, or may be taught. A closed house is a
  * door, and the rest of the world is on the other side of it.
  *
- * ── THE TWO, AND WHY THESE TWO ──────────────────────────────────────────
+ * ── THE COURTS THAT MUST NOT CARRY IT ───────────────────────────────────
  *
- * Both are **Courts**, and that is the ruling rather than a preference: a gate
- * is only interesting if what is behind it is worth wanting. A minor house
- * refusing half of everybody costs those players nothing - they walk past it
- * and the run is identical.
+ * The **Azure Mist Court**'s bar is zero by design with a test asserting it, and
+ * the **Hollow Court** is the catalog's exception in every direction - it admits
+ * at 29, has no children of its own and sends them out on a word - so a rule
+ * hung on it generalises wrongly to everything else. The **Tally Court** is not
+ * a house at all: it lives in `DESTROYED_DAO_HOUSES`, dissolved two thousand
+ * three hundred years ago, and admits nobody.
  *
- * Neither is one of the two Courts that must not carry this. The Azure Mist
- * Court's bar is zero by design with a test asserting it, and the Hollow Court
- * is the catalog's exception in every direction and produces rules nobody can
- * generalise. The Tally Court was destroyed two thousand three hundred years
- * ago and admits nobody at all. Of the three that were left, the Storm Tyrant
- * Court is the one this would contradict: it is known for COLLECTION and treats
- * a refusal as a scheduling matter, so a door it shuts on half the world is a
- * rule bolted onto a house whose whole character is taking people anyway.
+ * ── AND WHAT IS STILL MISSING ───────────────────────────────────────────
+ *
+ * A second Court, taking the other sex, which the design owner asked for as a
+ * NEW house built around flowers. It is not here, and the honest reason is that
+ * a house in this catalog is seven files rather than one - its own entry, a
+ * character entry, a history entry, standing with the others, a parent in the
+ * grant chain, a roll, and ground - each with its own guard. **A half-built
+ * house is worse than none**, so this table has one row until that one is
+ * written properly.
  */
 export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.freeze({
     /**
-     * The house whose reputation IS a closed door.
+     * A Court whose ladder ends in one title held by one person, and whose
+     * whole measure of standing is who it has taken and kept.
      *
-     * `faction-character.ts` has it turning away everybody, being unpleasant
-     * about it, and never considering an explanation to be part of the work -
-     * and then says the refusal is the service. A second condition at that door
-     * is not a new behaviour; it is the same one.
+     * `faction-character.ts` gives its unit of value as **collections** -
+     * "standing is measured in cultivators the Court has taken and kept, and
+     * refusal is treated as a scheduling matter rather than an answer" - and
+     * its ranks run Rod Bearer, Storm Servant, Arc Disciple, Thunder Warden,
+     * Storm Elder, Storm Tyrant. Every rung of that is named for the rod and
+     * the last one is a person. A house that collects what it intends to hand
+     * the rod to has an opinion about who stands under it, and this is that
+     * opinion: it takes what it can use and it has never wanted anybody else at
+     * the rod.
      *
-     * And the side it takes is the catalog's, not an invention: the Court's own
-     * `wrongAbout` entry says the hall was built over the Mirror afterwards,
-     * and the Mirror is a woman. A Court seated on her that admits women reads
-     * as though it was always so.
+     * It is also a Court, which is the ruling: a gate is only interesting if
+     * what is behind it is worth wanting, and what is behind this one is the
+     * world's only working lightning curriculum.
      */
-    'sect-frostmirror-court': 'female',
-    /**
-     * Nine hundred years, nine hundred nodes lit, and no outsider past the
-     * gate in any of it.
-     *
-     * The Wardens neither buy nor sell, have never been recorded making an
-     * exchange of any kind, and turn applicants around once, politely, with a
-     * figure for how far the nearest inn is. Their `fear` entry is the word
-     * "Unknown", and the catalog says the absence is what alarms the other
-     * powers.
-     *
-     * **So this is the one of the two with no stated reason, and that is where
-     * it belongs.** A house that has explained nothing in nine hundred years
-     * does not explain this either, and a player refused here is refused the
-     * way everybody is refused here: in numbers, at the gate, once.
-     */
-    'sect-kiln-wardens': 'male'
+    'sect-storm-tyrant-court': 'male'
 });
 
 /**

@@ -106,6 +106,7 @@ import {
     type AskWeight
 } from '../social-leverage/index.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { bloodlineForChild } from './hunting-a-spirit-beast.js';
 import {
     canBeTheTwoParentsOf
@@ -158,6 +159,10 @@ import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
+import {
+    recordGroundDraw,
+    whatThePeopleHereTake
+} from './what-a-place-still-has-in-the-ground.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -365,6 +370,16 @@ export function applyPressure(
         // Then the parts of a year that are arithmetic rather than incident:
         // people advance, institutions pay their bills, and children are born.
         // Births last, so a year's dead are counted before its replacements.
+        // The ground under everybody, worked for a year by the people standing
+        // on it. FIRST of the arithmetic passes, so what a place has left is
+        // true of it before anybody advances, is recruited or is born onto it.
+        //
+        // This is the writer the depletion model never had. See
+        // `whatThePeopleHereTake`: every call site in the game asks the ground
+        // for ONE unit against a band that regrows forty-four over the same
+        // span, so mortal stock could not fall by any actor and a thousand
+        // world-years produced no worked-out band anywhere.
+        applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
@@ -777,7 +792,10 @@ function applyDemography(
             f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
                 f.tags.includes('recruits') &&
                 f.seatLocationId !== null && under.has(f.seatLocationId) &&
-                ordinal >= Number(f.resources.admission_ordinal ?? 0)
+                ordinal >= Number(f.resources.admission_ordinal ?? 0) &&
+                // Same door, same rule. A house that takes one sex does not
+                // take the local children of the other one either.
+                (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex
         );
         if (admitting.length > 0 && own.chance(0.45)) {
             const joined = admitting[own.int(0, admitting.length - 1)];
@@ -1549,6 +1567,52 @@ function ambientAround(
  * somewhere desperation solves, and keeping that distinction is what stops this
  * from quietly undoing the catastrophe layer.
  */
+/**
+ * A year of the world's own people working the ground they stand on.
+ *
+ * THE WRITER THE DEPLETION MODEL DID NOT HAVE. `what-a-place-still-has-in-the
+ * -ground.ts` was reachable from three verbs and all three asked for a single
+ * unit against a band that grows back forty-four over the same span, so the
+ * `drawn` column read as a working model over an input too small to move it.
+ * The pressure is the population, and it always was - a player's herb is a
+ * rounding error against a district's year and is supposed to be.
+ *
+ * Where people ARE is `NpcRecord.locationId` and nothing else, which is the
+ * one record of presence this world keeps. So a place nobody stands on is
+ * pressed on by nobody, and that is the mechanism rather than an omission: the
+ * wilds keep what the ground around the towns has lost, and going further out
+ * is the answer to a district that has been worked out. Both halves of that
+ * sentence are now true of the same table.
+ *
+ * Nothing is drawn. One walk of the roster, one pass over the places that have
+ * anybody on them, and arithmetic on a headcount and a clock.
+ */
+function applyGroundPressure(state: WorldState, day: number): number {
+    const standing = new Map<string, number[]>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.locationId || !isBelowTheLid(npc)) continue;
+        const at = standing.get(npc.locationId);
+        if (at) at.push(npc.cultivation.realmOrdinal);
+        else standing.set(npc.locationId, [npc.cultivation.realmOrdinal]);
+    }
+    if (standing.size === 0) return 0;
+
+    let pressed = 0;
+    for (const place of state.locations) {
+        const ordinals = standing.get(place.id);
+        if (!ordinals) continue;
+        const worked = whatThePeopleHereTake(place, {
+            ordinals,
+            days: DAYS_PER_YEAR,
+            onDay: day
+        });
+        for (const draw of worked.draws) {
+            if (recordGroundDraw(place, draw)) pressed++;
+        }
+    }
+    return pressed;
+}
+
 function applyResettlement(state: WorldState, year: number, day: number): number {
     const regions = state.locations.filter(l => l.kind === 'region' && isBelowTheLid(l));
     let settled = 0;
@@ -1718,6 +1782,11 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         const home = regionOf(state, npc.locationId);
         const options = admitting.filter(f =>
             npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
+            // The one floor that is not a rung. A house that takes one sex and
+            // not the other refuses at the door, and the world's own intake has
+            // to be bound by it or the rule binds the player and nobody else -
+            // which is this repository's signature defect, inverted.
+            (whoAHouseWillTake(f.id) ?? npc.identity.sex) === npc.identity.sex &&
             (f.seatLocationId === null ||
                 (home !== null && regionOf(state, f.seatLocationId) === home))
         );

@@ -86,7 +86,11 @@ import {
     STIPEND_PERIOD_DAYS
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
-import { servantBarOf } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
+import {
+    servantBarOf,
+    theDoorIsShutTo,
+    whoAHouseWillTake
+} from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import {
     applyProbation,
     carriedProbationFacts,
@@ -418,6 +422,28 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
                 hint: 'Not a gate that can be met by standing. Being worth adopting is the whole of it.'
             }
         );
+    }
+
+    // ── THE ONE FLOOR THAT IS NOT A RUNG ─────────────────────────────────
+    //
+    // A house that takes one sex and not the other refuses here, in the same
+    // place every other condition it states is checked, and the refusal names
+    // the reason the way every refusal here does. It is deliberately ABOVE the
+    // ordinal gate: a bar somebody could climb to and a door that is shut are
+    // different answers, and reporting the first to somebody facing the second
+    // would send them off to spend a century on a rung that changes nothing.
+    //
+    // The route it names is the honest one - there is not one. That is allowed:
+    // `AGENTS.md` asks a refusal to name a route, and "no version of this exists
+    // and the other houses do" is a route in the only sense that matters.
+    const shut = theDoorIsShutTo(sect.id, cultivator.sex);
+    if (shut !== null) {
+        return guidingError('house_takes_one_sex_only', shut, {
+            sectId: sect.id,
+            takes: whoAHouseWillTake(sect.id),
+            hint: 'Not a gate that can be met by standing, by a word, or by anything else. '
+                + 'sect_manage({ action: "list", admissibleOnly: true }) shows the doors that open.'
+        });
     }
 
     // The admission gate is the sect's, and it is not negotiable through this
