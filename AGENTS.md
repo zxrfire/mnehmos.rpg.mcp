@@ -443,6 +443,40 @@ The mirror image is worth stating too: **a rule that binds NPCs and not the play
 player and not NPCs, is the same failure with one caller instead of none.** See
 [the world's rules must bind the player too](#the-worlds-rules-must-bind-the-player-too).
 
+### Nothing in this world is invincible
+
+**Whatever a capability grants, it never adds up to cannot-be-killed.** Not the strongest body
+on the ladder, not an adaptive defence, not a rung nobody else has reached. Everything that
+lives can be ended, and every defence reduces rather than forbids.
+
+This is stated as a law because it is the failure mode a capability system walks into on its
+own. Each individual step is reasonable - a tribulation body resists the elements, so lean on
+one element and it stops working; adaptation should cover more than elements, so it covers
+anything; adaptation should improve with exposure, so it approaches total - and the sum of
+three reasonable steps is somebody nothing can touch. The design owner said "not immunity",
+"they will still die eventually", "it does not make you invincible" and "even adapting to
+anything you can still die" across a single afternoon, unprompted, which is how strongly the
+gradient pulls the other way.
+
+Three shapes to check whatever you are building against:
+
+- **A defence reduces; it never zeroes.** A fully adapted, fully resistant, fully prepared
+  target still takes something from every blow. The moment a number can reach zero, a long
+  enough fight becomes a stalemate nobody can break, and the world quietly acquires a creature
+  that cannot lose.
+- **Every defence has a window, a cost or a condition.** Adaptation takes exposure and time.
+  Presence has range and burns out. A body is at home in the elements and can still be cut.
+  Name the opening when you write the capability, because somebody will otherwise have to
+  invent one later.
+- **Scale does not rescue it either.** Being unkillable by twenty ordinary attackers is a
+  legitimate and desirable outcome - *"you might not win, but you could get out"* - and is not
+  the same as being unkillable. A smaller number doing something the target has not met should
+  still finish them.
+
+The rule holds all the way up. Even at the top of the ladder, what a rung buys is enormous
+advantage, a very large margin, and a great deal of time - never exemption from the thing that
+happens to everybody.
+
 ### Realm capability is enforced, not asserted
 
 **Ruled by the design owner: what a realm grants is something the engine enforces.** Not prose
