@@ -1177,6 +1177,36 @@ what the participants are trying to do, not because the engine stopped keeping s
 And the tell that you are banning is a refusal with no cost attached. A world that says no is
 smaller than a world that says *"yes, and it went badly, and here is who saw."*
 
+#### The checkable form: if an NPC can do it, you can
+
+The rule above says anybody may attempt anything. This is the same rule written so it can be
+**audited** rather than only agreed with: **any capability the world gives a non-player is a
+capability the player has, through the same code.**
+
+It is worth stating separately because banning rarely arrives as a refusal. It arrives as an
+asymmetry nobody decided on - a thing the simulation does to people that no verb lets a player
+do, or a thing the player does that the world never does back. Both are the feature being
+missing, and neither looks like a decision when you read the file it is in.
+
+So the test is mechanical. For anything the world can do to somebody:
+
+- **Is there a verb?** If houses take people as indentured servants, a player can be taken and
+  can take. If a house answers a complaint about its member, a player's house answers for them
+  and a player heading a house answers for theirs.
+- **Is it the same code?** A second implementation for the player is where the two drift, and
+  the softer one is always the player's.
+- **Does it run in both directions?** A player who can be married off can marry somebody off. A
+  player who can be refused can refuse.
+
+**The exceptions are the ones already written down and they are principled, not convenient:**
+madness takes the choice because the character lost it, and the engine narrates what happened
+rather than offering a verb that would be a lie.
+
+When a capability genuinely should not be reachable, that is a design decision with a reason,
+and the reason goes next to it. An asymmetry with no note beside it is a defect, and the honest
+thing to do on finding one is to say so rather than to build the missing half quietly and hope
+it balances.
+
 #### The one exception: madness takes the choice, because the character lost it
 
 **A mad cultivator does not act. Things are narrated as having happened.** The player reads what
