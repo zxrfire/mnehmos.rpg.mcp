@@ -8061,9 +8061,12 @@ ${noticed}`;
             `${humanDays(days)} of sitting would produce nothing.`,
             `${wall.line} ${wouldBe} ${pointer} `
             + 'Say it again with "anyway" and the years go by regardless - they are yours to spend.',
-            `techniqueCeiling state=${wall.state}, multiplier=0 at ordinal `
-            + `${cultivator.realmOrdinal}. ${days} day(s) refused before anything was spent: `
-            + 'no provisioning, no encounter roll, no time.'
+            (wall.state === 'no_method'
+                ? 'No method is practised, so the rate multiplier at ordinal '
+                : 'The manual has ended, so the rate multiplier at ordinal ')
+            + `${cultivator.realmOrdinal} is 0 and the stretch returns exactly nothing. `
+            + `${days} day${days === 1 ? ' was' : 's were'} refused before anything was spent: `
+            + 'no provisioning, no encounter roll, no time passed.'
         ));
     }
 
@@ -8965,8 +8968,7 @@ ${noticed}`;
                 'Not something anybody here sells.',
                 'You ask for it and get the look people give somebody asking for a thing that is '
                 + `not sold. What is: ${board}, and a dozen more besides.`,
-                `Unresolved price "${query || '(nothing named)'}" against ${PRICES.length} board `
-                + 'line(s). Nothing bought, nothing spent, no time passed.'
+                'Nothing bought, nothing spent, no time passed.'
             ));
         }
 
@@ -9140,8 +9142,9 @@ ${noticed}`;
                 lines
             );
             facts.structure.push(
-                `manualsAStallCarries: ${stock.length} title(s), priced through `
-                + `localPrice(${regionId}). Read only: nothing bought, nothing spent.`
+                `${stock.length} title${stock.length === 1 ? '' : 's'} on the stall, each `
+                + `priced at this region's own rate rather than a catalog list price. `
+                + 'Reading the stall costs nothing: nothing bought, nothing spent, no time passed.'
             );
             return this.freeAction(run, 'buy', facts);
         }
@@ -9902,6 +9905,30 @@ ${noticed}`;
         const reachable: Destination[] = [];
         let unplaceable = 0;
 
+        // ── ONE ROW PER PLACE, WHATEVER TAG IT ARRIVED UNDER ─────────────
+        //
+        // A place can hold TWO knowledge records under two different ids and
+        // one display name: the catalog's own id, and the world location row
+        // the seeder wrote for the same ground. `awareness` dedupes by
+        // `claim_key`, which is correct at its own level and is not a dedupe
+        // by PLACE - so `exists:place:the-dead-verge` and
+        // `exists:place:loc-region-quiet-marches-the-dead-verge` are two rows,
+        // both resolve to the same catalog place, and both were pushed.
+        //
+        // Reproduced before fixing, on an ordinary opening turn: two of seven
+        // destinations were emitted twice, byte-identical, in the prose AND on
+        // the engine channel - "The Dead Verge" and "The Gapwater face". The
+        // quiet-ground loop below already guarded against this for its own
+        // rows; nothing guarded the two loops above it.
+        //
+        // First writer wins, which is the catalog row: it carries the authored
+        // `kind` and the region the place actually sits in.
+        const remember = (destination: Destination): void => {
+            const key = loosePlaceKey(destination.name);
+            if (reachable.some(row => loosePlaceKey(row.name) === key)) return;
+            reachable.push(destination);
+        };
+
         for (const row of this.knowledge.awareness(cultivator.id, 'place')) {
             if (!this.knowledge.canPointAt(cultivator.id, 'place', row.id)) {
                 unplaceable++;
@@ -9919,7 +9946,7 @@ ${noticed}`;
             // zero days away, and the cost map below never once returned a row.
             const province = REGIONS.find(region => loosePlaceKey(region.name) === wanted);
             if (province) {
-                reachable.push({
+                remember({
                     name: province.name,
                     kind: 'province',
                     // Deliberately null. A region's `ambientProfile` is a
@@ -9953,7 +9980,7 @@ ${noticed}`;
                 .find(candidate => loosePlaceKey(candidate.place.name) === wanted);
             if (!found) continue;
 
-            reachable.push({
+            remember({
                 name: found.place.name,
                 kind: found.place.kind,
                 ambient: found.place.ambient,
@@ -10016,12 +10043,15 @@ ${noticed}`;
         // row is one of the kinds somebody remembered to exclude.
         let unnamed = 0;
         for (const record of this.quietGroundIn(fromRegion.name)) {
+            // Named already, under its catalog id. Checked before the gate so
+            // that a place already on the list is not also counted as ground
+            // the world holds and this cultivator cannot point at.
             if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
             if (!this.canPointAtLocation(cultivator, record)) {
                 unnamed++;
                 continue;
             }
-            reachable.push({
+            remember({
                 name: record.name,
                 kind: record.kind,
                 ambient: ordinaryBandFor(record.qiDensity),
@@ -10189,11 +10219,17 @@ ${noticed}`;
             ].join('\n\n')
         );
         facts.structure.push(
-            `standing-here: ${live.length} live, `
-            + `${live.filter(a => a.urgency === 'now').length} pressing. `
-            + `satiety ${here.satiety}, stones ${here.spiritStones}, `
-            + `treatable ${here.treatableWounds}, beyond-mortal ${here.woundsPastMortalCare}, `
-            + `method ${here.practisesAMethod ? (here.methodExhausted ? 'exhausted' : 'carrying') : 'none'}.`
+            `${live.length} thing${live.length === 1 ? ' is' : 's are'} live standing here, `
+            + `${live.filter(a => a.urgency === 'now').length} of them pressing. Satiety `
+            + `${here.satiety} of 100, ${here.spiritStones} spirit stones, `
+            + `${here.treatableWounds} wound${here.treatableWounds === 1 ? '' : 's'} a `
+            + `physician could still close and ${here.woundsPastMortalCare} past what mortal `
+            + `care reaches. `
+            + (here.practisesAMethod
+                ? (here.methodExhausted
+                    ? 'The method being practised has stopped carrying them.'
+                    : 'The method being practised is still carrying them.')
+                : 'No method is being practised at all.')
         );
 
         const execution = this.freeAction(run, 'unclear', facts);

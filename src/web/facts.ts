@@ -63,6 +63,43 @@ export interface EngineFacts {
      * engine holds the structure so that people can BEHAVE according to it,
      * which is its only purpose in narration - so the narrator gets the
      * behaviour and the operator gets the structure.
+     *
+     * ── AND IT IS WRITTEN AS SENTENCES ───────────────────────────────────
+     *
+     * "Never sent to a narrator" was read for a long time as "not for people",
+     * and it is not that. These lines are rendered in the play log beside the
+     * prose, so a PLAYER reads them, and the landing page makes a promise about
+     * exactly this: every number below is the engine's, shown as it was
+     * computed. Showing the mechanics is deliberate and must not be hidden
+     * behind a flag, a fold or an admin mode.
+     *
+     * What was wrong was never the content. Measured on an ordinary opening -
+     * default configuration, no admin flag, no narrator key - 16 of 49 log
+     * entries were `Object.entries` joined with commas:
+     *
+     *     Fourhands: region=The White Stair, travelDays=unstated, ambient=thin,
+     *     occupants=3, supportedDraw=7, localCeilingOrdinal=36
+     *
+     * Every one of those figures is worth showing. `localCeilingOrdinal` is how
+     * far that province carries anybody; `occupants` against `supportedDraw` is
+     * the crowding mechanic, which a player has to understand to choose ground.
+     * The information was good and the presentation was a debug print.
+     *
+     * So the standard for this channel is the breakthrough line, which was
+     * always right: **"Breakthrough failed at Qi Condensation Layer 6 at 85.0%.
+     * The qi dispersed without damage; a quarter of the accumulated progress is
+     * gone."** Exact, checkable, unhedged, and a sentence.
+     *
+     * Two rules follow, and the first is the one that matters:
+     *
+     *   KEEP EVERY NUMBER. Losing a figure to make a nicer sentence is a
+     *   regression, not a polish. Resolve an enum key to what it names; do not
+     *   drop it.
+     *
+     *   SAY A CONSTANT ONCE. A null or an unchanging value repeated on every
+     *   row of a list is not a measurement - `travelDays=unstated` eight times
+     *   buried the two rows that carried a figure. State it once, in words,
+     *   and say why it is unstated.
      */
     structure: string[];
     /** The deterministic rendering, ready to show a player as-is. */
@@ -319,19 +356,41 @@ function sectNameFor(sectId: string): string {
     return getSect(sectId)?.name ?? sectId;
 }
 
-/** The thresholds behind those numbers. Inspector only. */
+/**
+ * The thresholds behind those numbers, as sentences.
+ *
+ * This channel reaches the play log, which means it reaches the PLAYER - the
+ * landing page's promise is that every number the engine computed is shown as
+ * it was computed, and the log is where that promise is kept or broken. It was
+ * being kept in the sense that the figures were all present and broken in the
+ * sense that they arrived as `realmOrdinal=0, spiritRoot=quad_metal_wood_earth_water,
+ * foundation=none.` - a debug print of facts worth reading.
+ *
+ * So: every figure that was in the field dump is still here, and the enum keys
+ * are resolved to what they are. Nothing was dropped to make the sentence read
+ * better; that would be the regression this rewrite exists to avoid.
+ */
 export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): string[] {
+    const untreated = untreatedInjuryCount(cultivator.injuries);
+    const daysOpen = Math.max(0, Math.round(cultivator.bleedingTurns));
+    const rateLost = Math.round(aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty * 100);
+    const settling = Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal));
     return [
-        `realmOrdinal=${cultivator.realmOrdinal} (${rankName(cultivator.realmOrdinal)}), spiritRoot=${cultivator.spiritRoot}, foundation=${cultivator.foundationQuality}.`,
+        `Standing at ordinal ${cultivator.realmOrdinal}, ${rankName(cultivator.realmOrdinal)}, `
+        + `on a ${getSpiritRoot(cultivator.spiritRoot).name}, `
+        + (cultivator.foundationQuality === 'none'
+            ? 'with no foundation laid.'
+            : `on a ${cultivator.foundationQuality} foundation.`),
         // The count and what it is costing, as numbers, so the ruling panel
         // carries them rather than only the prose does. `daysUntilBleedOut` used
         // to ride here and was a countdown to a death that no longer happens;
         // how long the channels have been open is the true version of the same
         // fact and is what replaced it.
-        `untreatedInjuries=${untreatedInjuryCount(cultivator.injuries)} of ${CRIPPLING_UNTREATED_INJURIES} before the body stops mending, ` +
-        `daysChannelsOpen=${Math.max(0, Math.round(cultivator.bleedingTurns))}, ` +
-        `rateLost=${Math.round(aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty * 100)}%; ` +
-        `yearsAtRealm=${cultivator.yearsAtCurrentRealm.toFixed(1)} of ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} before settling.`,
+        `${untreated} untreated injur${untreated === 1 ? 'y' : 'ies'} of the `
+        + `${CRIPPLING_UNTREATED_INJURIES} at which the body stops mending. The channels have `
+        + `been open ${daysOpen} day${daysOpen === 1 ? '' : 's'} and are costing ${rateLost}% `
+        + `of the cultivation rate. ${cultivator.yearsAtCurrentRealm.toFixed(1)} years held at `
+        + `this rank of the ${settling} the ladder credits before settling.`,
         describeAmbientInWorld(ambient)
     ];
 }
@@ -793,7 +852,8 @@ export function factsForLook(
 
     return observable(`${where}.`, lines, prose, [
         ...standingStructure(cultivator, ambient),
-        `present=${company.total} (named ${company.named.length}, unnamed ${company.strangers.length}).`
+        `${company.total} present: ${company.named.length} this cultivator can put a name to, `
+        + `${company.strangers.length} they cannot.`
     ]);
 }
 
@@ -822,7 +882,10 @@ export function factsForCompany(
         company.total === 0 ? `${where}, empty.` : `${company.total} about in ${where}.`,
         lines,
         lines.join('\n\n'),
-        [`present=${company.total} (named ${company.named.length}, unnamed ${company.strangers.length}).`]
+        [
+            `${company.total} present: ${company.named.length} this cultivator can put a name `
+            + `to, ${company.strangers.length} they cannot.`
+        ]
     );
 }
 
@@ -1103,7 +1166,8 @@ export function factsForStatus(
         lines,
         structure: [
             ...standingStructure(cultivator, ambient),
-            `progress=${Math.round(cultivator.cultivationProgress)}/${progressRequired}, breakthroughReady=${ready}.`
+            `${Math.round(cultivator.cultivationProgress)} qi-units of the ${progressRequired} the `
+            + `next rung is priced at${ready ? ', which is enough to attempt it' : ', which is not enough to attempt it'}.`
         ],
         prose: lines.join('\n'),
         ...(ceiling !== null ? { required: [ceiling] } : {})
