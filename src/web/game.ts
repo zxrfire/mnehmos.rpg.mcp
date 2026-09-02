@@ -3965,21 +3965,6 @@ ${noticed}`;
                 `${asked.name} said it at ${placeName(cultivator)}.`)
             : false;
 
-        // The last mile. `asked.ts` decides how far the answer got; what falls
-        // out of it is a name said flatly, which discovery.md calls the primary
-        // way names enter a player's world. Written before the prose exists.
-        const dropped = this.hear(
-            cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
-            { intent: 'asked', reach: answer.reach });
-
-        const facts = factsForToolResult(
-            `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
-            said
-        );
-        facts.structure.push(...answer.structure);
-        if (dropped) addHearing(facts, dropped);
-
-        const execution = this.freeAction(run, 'interact', facts);
         // ── ASKING IN THE REGION GIVES IT ────────────────────────────────
         //
         // `seedSectGround` states the rule about its own location in as many
@@ -4046,13 +4031,13 @@ ${noticed}`;
                 + 'province the house keeps its gate in. Ordinary local knowledge here.')
             : false;
 
-        execution.hearing = dropped;
-        execution.calls = [
-            {
-                name: 'engine.askedAbout',
-                action: 'talk',
-                summary:
-                    `Asked ${asked.name} about "${topic}"` +
+        // The last mile. `asked.ts` decides how far the answer got; what falls
+        // out of it is a name said flatly, which discovery.md calls the primary
+        // way names enter a player's world. Written before the prose exists.
+        const dropped = this.hear(
+            cultivator, run, `ask:${asked.id}:${topic}`, asked.id,
+            { intent: 'asked', reach: answer.reach });
+
         // Said out loud, and said BEFORE the facts are built rather than pushed
         // onto `lines` afterwards - `factsForToolResult` composes the prose from
         // the array it is handed, so a line appended after the call reaches the
@@ -4072,6 +4057,21 @@ ${noticed}`;
             ]
             : answer.lines;
 
+        const facts = factsForToolResult(
+            `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
+            said
+        );
+        facts.structure.push(...answer.structure);
+        if (dropped) addHearing(facts, dropped);
+
+        const execution = this.freeAction(run, 'interact', facts);
+        execution.hearing = dropped;
+        execution.calls = [
+            {
+                name: 'engine.askedAbout',
+                action: 'talk',
+                summary:
+                    `Asked ${asked.name} about "${topic}"` +
                     `${subject ? ` (resolved to ${subject.kind} ${subject.id})` : ' (unresolved)'}. ` +
                     `Reach: ${answer.reach}.`,
                 ok: answer.reach === 'answers' || answer.reach === 'partial'
@@ -4108,6 +4108,18 @@ ${noticed}`;
                 ok: true
             });
         }
+        if (showed && gate) {
+            execution.calls.push({
+                name: 'knowledge.learn',
+                action: 'gate_placed',
+                summary:
+                    `${gate.name} recorded at stage placed, source told. Asked about a house `
+                    + 'in the province its gate stands in, which is the third of the three ways '
+                    + "`seedSectGround` says its own name is given. `canPointAt` now passes, so "
+                    + 'the destinations read names it and the move verb accepts it.',
+                ok: true
+            });
+        }
         return execution;
     }
 
@@ -4123,18 +4135,6 @@ ${noticed}`;
         return this.knowledge
             .awareness(cultivator.id, 'cultivator')
             .filter(row => row.id === otherId)
-        if (showed && gate) {
-            execution.calls.push({
-                name: 'knowledge.learn',
-                action: 'gate_placed',
-                summary:
-                    `${gate.name} recorded at stage placed, source told. Asked about a house `
-                    + 'in the province its gate stands in, which is the third of the three ways '
-                    + "`seedSectGround` says its own name is given. `canPointAt` now passes, so "
-                    + 'the destinations read names it and the move verb accepts it.',
-                ok: true
-            });
-        }
             .length;
     }
 
@@ -10929,6 +10929,40 @@ ${noticed}`;
             });
         }
 
+        // ── AND THE GATES ────────────────────────────────────────────────
+        //
+        // Same gate, same shape, different half of the map. A house's ground is
+        // where the people worth asking actually stand - measured on 5 seeds,
+        // every one of the 88 cultivators at Foundation Establishment and above
+        // is on one - and until it appeared here the read that answers "where
+        // can I go" could not name a single one of the 34.
+        //
+        // Counted into `unnamed` when the gate refuses, exactly like quiet
+        // ground. That counter reaches the engine channel and never the prose,
+        // which is right: `unplaceable` is the player-facing "and two further
+        // names you cannot place", and it is about names they HOLD. A gate they
+        // have never been told about is not a name they are carrying, and
+        // saying "there are eight things here you cannot see" would advertise
+        // the discovery instead of gating it.
+        for (const record of this.housesWithGroundIn(fromRegion.name)) {
+            if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
+            if (!this.canPointAtLocation(cultivator, record)) {
+                unnamed++;
+                continue;
+            }
+            remember({
+                name: record.name,
+                kind: record.kind,
+                ambient: ordinaryBandFor(record.qiDensity),
+                regionName: fromRegion.name,
+                travelDays: null,
+                localCeilingOrdinal: fromRegion.localCeilingOrdinal,
+                hereNow: loosePlaceKey(record.name) === loosePlaceKey(cultivator.location ?? ''),
+                sameProvince: true,
+                ...this.occupancyOf(record.name)
+            });
+        }
+
         const read = whereCouldTheyGo({
             ordinal: cultivator.realmOrdinal,
             placeName: placeName(cultivator),
@@ -11012,40 +11046,6 @@ ${noticed}`;
             mealCost: MEAL_COST_STONES,
             treatableWounds: mendable.filter(injury =>
                 medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
-        // ── AND THE GATES ────────────────────────────────────────────────
-        //
-        // Same gate, same shape, different half of the map. A house's ground is
-        // where the people worth asking actually stand - measured on 5 seeds,
-        // every one of the 88 cultivators at Foundation Establishment and above
-        // is on one - and until it appeared here the read that answers "where
-        // can I go" could not name a single one of the 34.
-        //
-        // Counted into `unnamed` when the gate refuses, exactly like quiet
-        // ground. That counter reaches the engine channel and never the prose,
-        // which is right: `unplaceable` is the player-facing "and two further
-        // names you cannot place", and it is about names they HOLD. A gate they
-        // have never been told about is not a name they are carrying, and
-        // saying "there are eight things here you cannot see" would advertise
-        // the discovery instead of gating it.
-        for (const record of this.housesWithGroundIn(fromRegion.name)) {
-            if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
-            if (!this.canPointAtLocation(cultivator, record)) {
-                unnamed++;
-                continue;
-            }
-            remember({
-                name: record.name,
-                kind: record.kind,
-                ambient: ordinaryBandFor(record.qiDensity),
-                regionName: fromRegion.name,
-                travelDays: null,
-                localCeilingOrdinal: fromRegion.localCeilingOrdinal,
-                hereNow: loosePlaceKey(record.name) === loosePlaceKey(cultivator.location ?? ''),
-                sameProvince: true,
-                ...this.occupancyOf(record.name)
-            });
-        }
-
             woundsPastMortalCare: mendable.filter(injury =>
                 !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
             cure: whatWouldCloseThisWound(
@@ -11966,6 +11966,42 @@ ${fit.line}`;
     }
 
     /**
+     * The gates of the houses that hold ground in one province.
+     *
+     * WHY THIS IS A SEPARATE READ FROM `quietGroundIn`. That one lists ground
+     * nobody holds and is filtered on `discovered`, which is true of all of it
+     * on a fresh world - local geography, and a farm child knows where the
+     * caves are. A sect's ground is the opposite case in both halves. It is
+     * seeded `discovered: false` on purpose, because its own header says so:
+     * "A name you have to be given. Joining gives it; being told gives it;
+     * asking in the region gives it." So the `discovered` flag is not the gate
+     * here; the caller's `canPointAtLocation` is, and this read is deliberately
+     * permissive so that the gate is the only thing deciding.
+     *
+     * WHY IT EXISTS AT ALL. `sectGroundId` had exactly two references in `src/`
+     * - its own definition and the one line that builds the location - which is
+     * the shape `AGENTS.md` calls a module nothing calls. 34 seats, each with a
+     * generated compound inside it, road-linked to their province, and no
+     * player-facing read in the game named one. The listing said "Knowing a
+     * name is not an introduction. Somebody would have to put you in front of
+     * them, or you would have to walk up on your own" and there was nothing to
+     * walk up to.
+     *
+     * Sorted by name rather than by qi: this is a list of doors, and which door
+     * is worth knocking on is not a question about ground.
+     */
+    private housesWithGroundIn(regionName: string): LocationRecord[] {
+        if (!this.atHand) return [];
+        const region = this.atHand.locations.find(
+            row => row.kind === 'region' && loosePlaceKey(row.name) === loosePlaceKey(regionName)
+        );
+        if (!region) return [];
+        return this.atHand.locations
+            .filter(row => row.kind === 'sect_seat' && row.parentId === region.id)
+            .sort((a, b) => (a.name < b.name ? -1 : 1));
+    }
+
+    /**
      * Whether this cultivator could set out for a world location.
      *
      * The location-record form of the predicate `somewhereReal` already applies
@@ -12048,42 +12084,6 @@ ${fit.line}`;
      *
      * THE FIRST CONCRETE THING RANK HAS EVER BOUGHT IN THIS GAME. The world
      * seeds hundreds of chambers, each with a controlling house and its own
-    /**
-     * The gates of the houses that hold ground in one province.
-     *
-     * WHY THIS IS A SEPARATE READ FROM `quietGroundIn`. That one lists ground
-     * nobody holds and is filtered on `discovered`, which is true of all of it
-     * on a fresh world - local geography, and a farm child knows where the
-     * caves are. A sect's ground is the opposite case in both halves. It is
-     * seeded `discovered: false` on purpose, because its own header says so:
-     * "A name you have to be given. Joining gives it; being told gives it;
-     * asking in the region gives it." So the `discovered` flag is not the gate
-     * here; the caller's `canPointAtLocation` is, and this read is deliberately
-     * permissive so that the gate is the only thing deciding.
-     *
-     * WHY IT EXISTS AT ALL. `sectGroundId` had exactly two references in `src/`
-     * - its own definition and the one line that builds the location - which is
-     * the shape `AGENTS.md` calls a module nothing calls. 34 seats, each with a
-     * generated compound inside it, road-linked to their province, and no
-     * player-facing read in the game named one. The listing said "Knowing a
-     * name is not an introduction. Somebody would have to put you in front of
-     * them, or you would have to walk up on your own" and there was nothing to
-     * walk up to.
-     *
-     * Sorted by name rather than by qi: this is a list of doors, and which door
-     * is worth knocking on is not a question about ground.
-     */
-    private housesWithGroundIn(regionName: string): LocationRecord[] {
-        if (!this.atHand) return [];
-        const region = this.atHand.locations.find(
-            row => row.kind === 'region' && loosePlaceKey(row.name) === loosePlaceKey(regionName)
-        );
-        if (!region) return [];
-        return this.atHand.locations
-            .filter(row => row.kind === 'sect_seat' && row.parentId === region.id)
-            .sort((a, b) => (a.name < b.name ? -1 : 1));
-    }
-
      * qiDensity; houses allocate days on them by standing; and ground is the
      * largest multiplier in the model - reaching ordinal 29 costs 317 years on
      * ordinary ground against 79 on a sealed vein. Every NPC in the world was
