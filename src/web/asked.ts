@@ -29,6 +29,9 @@ import type { Cultivator } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ResolvedEntity } from './entities.js';
 import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
+import type {
+    WhatTheySayAboutThemselves
+} from '../engine/social/what-somebody-knows-about-themselves.js';
 
 /**
  * How far the answer got. Named for what the player sees, not for the rule.
@@ -95,6 +98,29 @@ export interface AskedInput {
      * worked - it is told.
      */
     compelled?: boolean;
+    /**
+     * What they were asked about THEMSELVES, when that is what was asked.
+     *
+     * The one thing in this file that reaches above limit one, and it reaches
+     * it because limit one is the wrong question about this class of fact.
+     * "Could they know" is right about a rumour, a location, a house's business
+     * or somebody else's art. **A person's own name, age, sex and who they
+     * answer to are not things they could fail to have heard of**, and running
+     * them through the knowledge gate produced a refusal saying so - which is
+     * both wrong and, being a refusal, unanswerable.
+     *
+     * `what-somebody-knows-about-themselves.ts` holds the closed set and the
+     * reasoning. Two things about it are load-bearing here:
+     *
+     *   - **It settles only that they KNOW.** Limits two and three still run
+     *     unchanged below, so somebody with a position to protect can still
+     *     decline - and declining reads as a deflection, which is what it is,
+     *     rather than as never having heard of themselves.
+     *   - **It does not assert the answer is true.** What comes back is what
+     *     they SAID; the fact carries the instrument that would check it, where
+     *     the world has one.
+     */
+    aboutThemselves?: WhatTheySayAboutThemselves | null;
 }
 
 export interface Answer {
@@ -264,14 +290,22 @@ export function askedAbout(input: AskedInput): Answer {
     ];
 
     // ── limit one: could they know ──
-    const couldKnow = holdsIt || withinStratum(asked, subject);
+    //
+    // Except when the question is about them, in which case the limit does not
+    // apply rather than being passed generously. There is no knowledge record
+    // behind a person's own name and there was never going to be one.
+    const themselves = input.aboutThemselves ?? null;
+    const couldKnow = themselves !== null || holdsIt || withinStratum(asked, subject);
     structure.push(
-        holdsIt
-            ? 'They hold a record of it themselves.'
-            : subject
-                ? `No record; subject ${couldKnow ? 'is within' : 'sits above'} their working knowledge ` +
-                  `(margin ${WORKING_KNOWLEDGE_MARGIN}).`
-                : 'The question resolved to nothing in the catalogs, so there is nothing they could be right about.'
+        themselves
+            ? `Asked about themselves (${themselves.kind}). Limit one does not apply: self-knowledge `
+              + 'is not world-knowledge and there is no record to hold. Limits two and three still run.'
+            : holdsIt
+                ? 'They hold a record of it themselves.'
+                : subject
+                    ? `No record; subject ${couldKnow ? 'is within' : 'sits above'} their working knowledge ` +
+                      `(margin ${WORKING_KNOWLEDGE_MARGIN}).`
+                    : 'The question resolved to nothing in the catalogs, so there is nothing they could be right about.'
     );
 
     // ── limit two: are they placed to say it ──
@@ -357,7 +391,14 @@ export function askedAbout(input: AskedInput): Answer {
     // has already been established that there is something here to be got out
     // of them. Somebody who does not know cannot be leaned into knowing, and
     // that is enforced by the position of this branch rather than by a rule.
-    if (holdsPosition && goodwill < 2 && !input.compelled) {
+    // A fact about themselves that costs nothing to say cannot be priced as
+    // though it cost something. `theyMayKeepIt` is false for a name, an age and
+    // a sex - saying one costs an official exactly what it costs a carter - and
+    // true for whose they are, which is the one of the four a position has an
+    // interest in. So declining is still reachable, on the fact where declining
+    // means something, and an official no longer refuses to give his own name.
+    const aFactTheyCanKeep = themselves === null || themselves.theyMayKeepIt;
+    if (aFactTheyCanKeep && holdsPosition && goodwill < 2 && !input.compelled) {
         // Warm, useless, and not a refusal - a deflection has to be survivable
         // or the player learns to stop asking rather than learning who to ask.
         return {
@@ -375,6 +416,44 @@ export function askedAbout(input: AskedInput): Answer {
             + 'Limit one was passed before this was read - nothing here can make somebody know '
             + 'a thing they do not.'
         );
+    }
+
+    // ── they know it, they are saying it, and it is about them ──
+    //
+    // Placed BELOW limits two and three on purpose. A person who does not want
+    // to tell you their name has already deflected above and never reaches
+    // this, which is the whole of how declining stays reachable: the two
+    // refusals now read differently because they ARE different, and the one
+    // this file used to give - never having heard of themselves - was neither.
+    //
+    // What is returned is a sentence somebody said. `whatWouldCheckIt` is on
+    // the inspector channel and not in the prose, because the player finding
+    // out that a claim is checkable is a thing they do by playing rather than
+    // by being told in the same breath as the claim.
+    if (themselves) {
+        return {
+            reach: 'answers',
+            couldKnow: true,
+            lines: [
+                // A name the player already has is not news, and saying it back
+                // at them in the form of an introduction reads as the engine
+                // talking to itself. Every other fact is worth hearing twice.
+                themselves.kind === 'name' && input.speakerName !== null
+                    ? `${who} gives the same name you already had for them.`
+                    : themselves.said.replace('{who}', who)
+            ],
+            structure: [
+                ...structure,
+                'Reach: answers. A fact about themselves, said.',
+                themselves.whatWouldCheckIt === null
+                    ? 'Nothing in the world checks this one. It is what they said and that is all it is.'
+                    : `This is a CLAIM and not a finding. What would settle it: ${themselves.whatWouldCheckIt}.`
+            ],
+            // Nothing was taught ABOUT anything - there is no subject and no
+            // record to write. What they did do is tell you who they are.
+            teaches: false,
+            introduces: true
+        };
     }
 
     if (!subject) {

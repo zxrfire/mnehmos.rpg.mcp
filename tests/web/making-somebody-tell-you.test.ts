@@ -181,7 +181,17 @@ describe('standing cannot reach into somebody\'s head', () => {
 describe('the refusal that is not about standing', () => {
     it('says what it is, and does not read like being turned down', () => {
         const copy = nothingToBeGotFrom('A Clerk', 'the Sill');
-        expect(copy.prose).toContain('You can make a person talk. You cannot make them know.');
+        // The PRINCIPLE, not the sentence. What the refusal has to say is
+        // that weight moves what somebody will tell you and never what they
+        // have to tell - the wording moved when the old one was found to be
+        // inventing a mechanism ("your presence does not reach into their
+        // head"), and a test pinning that wording would have pinned the defect.
+        expect(copy.prose).toContain('has not heard of');
+        expect(copy.prose).toContain('It does not change what they have to tell.');
+        // And it says nothing about reaching into anybody. The refusal reports
+        // a state of the world; it does not explain itself with a mechanism the
+        // world does not have.
+        expect(copy.prose).not.toContain('into their head');
         expect(copy.structure).toContain('before the resolver ran');
         // It names what would work, which every refusal here owes the player.
         expect(copy.prose).toContain('Somebody who does hold it');
@@ -287,7 +297,7 @@ describe('played', () => {
             'I question the nearest cultivator about the Hollow Court'
         );
 
-        expect(asked.narration).toContain('You cannot make them know');
+        expect(asked.narration).toContain('It does not change what they have to tell.');
 
         // The proof that nothing was spent is the call list itself: one read,
         // and none of the channels a span always writes. No resolver, no time
