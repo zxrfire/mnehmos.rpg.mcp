@@ -35,6 +35,12 @@ import {
     originProbability,
     type OriginTierKey
 } from '../../../src/engine/cultivation/origin.js';
+import {
+    discipleBarOf,
+    houseFloorsOf
+} from '../../../src/data/cultivation/the-three-floors-a-house-admits-at.js';
+import { seedWorld, sectGroundId } from '../../../src/engine/world/seeding.js';
+import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../../src/schema/cultivation.js';
 import { measureOriginOutcomes } from '../../../src/engine/world/origin-odds.js';
 
@@ -90,35 +96,69 @@ describe('where you are born varies', () => {
 });
 
 describe('who you are born to varies, and reaches the top of the world', () => {
-    it('can be born under the strongest house there is, and almost never is', () => {
-        // Drawn rather than asserted: the top tier's band is open at the top,
-        // so whether the Hollow Court is in it is a fact about the catalog.
-        const top = getOrigin('dao_house_bloodline');
-        const band = housesAtStanding(top, world.houses);
-        const names = band.map(h => h.name);
-        expect(names).toContain('The Hollow Court');
-
-        // And it is out of reach of every tier below, because the bands
-        // partition the catalog by standing.
-        for (const tier of ORIGIN_TIERS) {
-            if (tier.key === 'dao_house_bloodline') continue;
-            expect(housesAtStanding(tier, world.houses).map(h => h.name))
-                .not.toContain('The Hollow Court');
+    it('puts a Dao house bloodline in an actual Dao house', () => {
+        // ── THIS USED TO ASSERT THE OPPOSITE, AND IT WAS ENCODING A DEFECT ──
+        //
+        // The old version required 'The Hollow Court' to be in this tier's
+        // band, because the band was derived from `placement.reach` and the
+        // top tier reaches 38. Measured over 200 forced births: a tier named
+        // "A Dao house, by blood" drew a Dao house ZERO times, and drew the
+        // Azure Cloud Pavilion, the Hollow Court or the Severed every time.
+        // The bar this test was holding was the bug.
+        //
+        // A family's word and a family's house are different facts, and the
+        // table now carries both. The seven houses stand at 29 to 35 and their
+        // word travels to 38.
+        const band = housesAtStanding(getOrigin('dao_house_bloodline'), world.houses);
+        expect(band.length).toBeGreaterThan(0);
+        for (const house of band) {
+            expect(house.roster, `${house.name} is not a lineage`).toBe('adoption');
         }
 
-        // Which makes it a birth of roughly one run in seventy-five thousand.
+        // Still vanishingly rare: about one run in forty thousand, divided
+        // again by which of the houses it turns out to be.
         const odds = originProbability('dao_house_bloodline') / band.length;
         expect(odds).toBeGreaterThan(0);
         expect(odds).toBeLessThan(0.0001);
     });
 
+    it('leaves the Hollow Court unreachable as anybody\'s birth house', () => {
+        // Not because it is the Hollow Court. Because
+        // `NO_PLACE_FOR_THEIR_OWN` says three bodies have nowhere to put their
+        // own members' children, and that catalog's whole subject is where
+        // those children go INSTEAD - which is `fostered_on_a_word`, at the
+        // receiving house. A run cannot open as somebody who grew up in a
+        // place nobody grows up in.
+        for (const tier of ORIGIN_TIERS) {
+            expect(housesAtStanding(tier, world.houses).map(h => h.name),
+                `${tier.key} was born at a house with no place for its own`)
+                .not.toContain('The Hollow Court');
+        }
+    });
+
     it('puts a family in a house at its own standing rather than anywhere', () => {
         for (const tier of ORIGIN_TIERS) {
             const band = houseBandFor(tier);
+            if (band === null) {
+                expect(housesAtStanding(tier, world.houses)).toHaveLength(0);
+                continue;
+            }
             for (const house of housesAtStanding(tier, world.houses)) {
                 expect(house.powerOrdinal, `${tier.key} reached below its standing`)
                     .toBeGreaterThanOrEqual(band.from);
             }
+        }
+    });
+
+    it('puts an apex member\'s child in a house standing at apex height', () => {
+        // The row's reach is 29 on purpose - "an apex will not lend its name to
+        // a placement" - and reading the family's house off that number gave a
+        // sixteen-house band with no apex in it.
+        const band = housesAtStanding(getOrigin('apex_sect_members_child'), world.houses);
+        expect(band.length).toBeGreaterThan(0);
+        for (const house of band) {
+            expect(house.powerOrdinal, `${house.name} is not standing at apex height`)
+                .toBeGreaterThanOrEqual(38);
         }
     });
 
@@ -152,12 +192,67 @@ describe('an origin buys inputs and never rank', () => {
         }
     });
 
-    it('never claims membership of the house somebody was born under', () => {
-        const birth = drawBirth('membership', { world, origin: 'dao_house_bloodline' });
-        expect(birth.house).not.toBeNull();
-        const row = birth.knowledge.find(k => k.id === birth.house!.id)!;
-        expect(row.statement).toContain('their family belongs to');
-        expect(row.statement).not.toMatch(/disciple|elder|member of|admitted/i);
+    it('never claims a rung of the house somebody was born into', () => {
+        // The claim this used to make was that a birth never claims MEMBERSHIP,
+        // and that was too strong: a Dao house's roll is its own family, so
+        // being born to the line is being on it and saying otherwise was the
+        // fiction. What a birth must never claim is a RUNG, which is the thing
+        // that is climbed rather than inherited.
+        for (const tier of ORIGIN_TIERS) {
+            const birth = drawBirth('membership', { world, origin: tier.key });
+            if (!birth.house) continue;
+            const row = birth.knowledge.find(k => k.id === birth.house!.id)!;
+            expect(row.statement, `${tier.key} claimed a rank`)
+                .not.toMatch(/disciple|elder|inner|core|as a [a-z]+ of/i);
+            if (birth.raisedInside?.onTheRoll) {
+                expect(row.statement).toContain('at no rank in it');
+            } else {
+                expect(row.statement).toContain('family belongs to');
+            }
+        }
+    });
+
+    it('leaves every floor of the house standing in front of a born member', () => {
+        // THE CONSTRAINT THIS WHOLE CHANGE IS BOUND BY: being born inside must
+        // not become a way to skip a bar somebody else has to clear. Measured
+        // against the house's own floors, unmodified, at the ordinal a run
+        // opens at.
+        for (const tier of ORIGIN_TIERS) {
+            const birth = drawBirth('floors-still-there', { world, origin: tier.key });
+            const inside = birth.raisedInside;
+            if (!inside) continue;
+
+            const floors = houseFloorsOf(inside.house.id)!;
+            const expected = [
+                ...(floors.guest !== null && floors.guest > 0
+                    ? [{ door: 'guest', ordinal: floors.guest }] : []),
+                ...(floors.servant !== null && floors.servant > 0
+                    ? [{ door: 'servant', ordinal: floors.servant }] : []),
+                ...(floors.disciple > 0
+                    ? [{ door: 'disciple', ordinal: floors.disciple }] : [])
+            ];
+            expect(inside.stillToClear, `${tier.key} had a bar removed`).toEqual(expected);
+        }
+    });
+
+    it('does not move the one bar that has never moved for anybody', () => {
+        // The Azure Cloud Pavilion is reachable as a birth house now, as the
+        // house an apex member's child grew up in. `origin.md`: "Being handed
+        // the same child by somebody at the top of the world gets exactly what
+        // walking up the mountain gets." So the born child stands where the
+        // walk-up stands, and the catalog's own figure is what says so.
+        const pavilion = world.houses.find(h => h.id === 'sect-azure-cloud-pavilion')!;
+        const born = { realmOrdinal: 0 };
+        expect(born.realmOrdinal).toBeLessThan(pavilion.floors.disciple);
+        expect(pavilion.floors.disciple).toBe(discipleBarOf('sect-azure-cloud-pavilion'));
+
+        // And a member's child is on no roll there at all, because an apex is
+        // joined rather than born into.
+        const apexBirths = Array.from({ length: 40 }, (_, i) =>
+            drawBirth(`apex-${i}`, { world, origin: 'apex_sect_members_child' }));
+        for (const birth of apexBirths) {
+            expect(birth.raisedInside?.onTheRoll ?? null).toBeNull();
+        }
     });
 
     it('hands out exactly the stones the frozen table says and nothing more', () => {
@@ -181,6 +276,131 @@ describe('an origin buys inputs and never rank', () => {
                 AMBIENT_QI_RATE_MULTIPLIER[birth.ground],
                 `${birth.origin} was born below its own floor`
             ).toBeGreaterThanOrEqual(AMBIENT_QI_RATE_MULTIPLIER[floor]);
+        }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// BORN AT THE HOUSE, NOT NEAR IT
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a run can open inside a house rather than beside one', () => {
+    it('opens at the house\'s own ground when the family lives there', () => {
+        for (const tier of ORIGIN_TIERS) {
+            const birth = drawBirth('at-the-seat', { world, origin: tier.key });
+            const livesThere = tier.familyHouse?.whereTheyLive === 'inside it';
+            if (!livesThere || !birth.house?.seat) {
+                expect(birth.raisedInside, `${tier.key} was raised somewhere it does not live`)
+                    .toBeNull();
+                continue;
+            }
+            expect(birth.place.kind, `${tier.key} did not open at a seat`).toBe('sect_seat');
+            expect(birth.place.name).toBe(birth.house.seat.name);
+            expect(birth.raisedInside?.house.id).toBe(birth.house.id);
+        }
+    });
+
+    it('does not put an ordinary birth on anybody\'s ground', () => {
+        // The measurement this replaces: 400 births landed 147 city, 112 market
+        // town, 77 village, 43 SECT TOWN and 21 hamlet, and zero at a seat. A
+        // sect town is a town beside a house; that half was never the gap and
+        // must not move.
+        for (const birth of births) {
+            if (birth.raisedInside !== null) continue;
+            expect(birth.place.kind, `${birth.origin} opened on ground it does not live on`)
+                .not.toBe('sect_seat');
+        }
+        expect(share(b => b.place.kind === 'sect_town')).toBeGreaterThan(0);
+
+        // And the whole of it stays rare, because the tiers that live inside a
+        // house are rare. Measured at about one birth in six hundred, which is
+        // very nearly all the retainer families.
+        expect(share(b => b.place.kind === 'sect_seat')).toBeLessThan(0.01);
+    });
+
+    it('leaves a clan with a hall of its own in a town', () => {
+        // Two tiers hold their own vein and their own hall, and the house on
+        // their row is one they are attached to rather than one they are in.
+        // Reading the seat off membership instead put a small cultivating
+        // family inside a salvage company's sorting yard.
+        for (const key of ['minor_clan', 'established_clan'] as OriginTierKey[]) {
+            const birth = drawBirth('own-hall', { world, origin: key });
+            expect(birth.house, `${key} lost its house`).not.toBeNull();
+            expect(birth.place.kind, `${key} was born on somebody else's ground`)
+                .not.toBe('sect_seat');
+            expect(birth.raisedInside).toBeNull();
+        }
+    });
+
+    it('opens at a name the world will answer to', async () => {
+        // ONE STRING, TWO WRITERS. A run's location is matched against the
+        // world's own table by name, so a seat name composed differently here
+        // opens the run at an address nothing has ever heard of - which reads
+        // exactly like a working game until somebody looks around.
+        const { state } = seedWorld({ seed: 'seat-names', catalog: await loadCultivationCatalog() });
+        let checked = 0;
+        for (const house of world.houses) {
+            if (!house.seat) continue;
+            const built = state.locations.find(l => l.id === sectGroundId(house.id));
+            expect(built, `${house.id} has a birth seat the world never built`).toBeDefined();
+            expect(built!.name, `${house.id} seat name disagrees with the world`)
+                .toBe(house.seat.name);
+            checked++;
+        }
+        // And every house the world seats has one here, not just the ones a
+        // prefecture happens to hold.
+        expect(checked).toBe(state.locations.filter(l => l.kind === 'sect_seat').length);
+    });
+});
+
+describe('a member from birth is on a roll and not on a rung', () => {
+    it('carries somebody on the roll only where the roll can carry them', () => {
+        for (const tier of ORIGIN_TIERS) {
+            const birth = drawBirth('roll', { world, origin: tier.key });
+            const inside = birth.raisedInside;
+            if (!inside) continue;
+            if (inside.onTheRoll === 'by blood') {
+                // Nothing was skipped: a lineage has no admission for its own,
+                // and the door it keeps is adoption, which is for outsiders.
+                expect(inside.house.roster).toBe('adoption');
+            }
+            if (inside.onTheRoll === null) {
+                expect(inside.house.roster).toBe('open');
+            }
+        }
+    });
+
+    it('keeps a born member and an intake probationer visibly different', () => {
+        // Same roll, same ladder, different route - and the difference is what
+        // the house is owed. A child of the line needed nobody; a child taken
+        // in against a bar cost somebody a word, and somebody is carrying it.
+        const blood = drawBirth('blood', { world, origin: 'dao_house_bloodline' });
+        expect(blood.raisedInside?.onTheRoll).toBe('by blood');
+        expect(blood.raisedInside?.somebodyIsOwedForIt).toBe(false);
+
+        const wards = Array.from({ length: 200 }, (_, i) =>
+            drawBirth(`ward-${i}`, { world, origin: 'fostered_on_a_word' }));
+        for (const ward of wards) {
+            expect(ward.raisedInside?.onTheRoll).toBe('by taking');
+        }
+        // BOTH ARMS HAVE TO EXIST. `origin.md` turns on the asymmetry: a
+        // placement at a house whose door already stands at the floor is "the
+        // one placement in the world where nobody is carrying a debt", because
+        // there was nothing to buy. Everywhere else a fostering is a favour and
+        // somebody owes for it. A run in which every ward is owed for has
+        // quietly erased the passage.
+        const owed = wards.filter(w => w.raisedInside!.somebodyIsOwedForIt).length;
+        expect(owed).toBeGreaterThan(0);
+        expect(owed).toBeLessThan(wards.length);
+    });
+
+    it('carries no rank index anywhere on the object', () => {
+        for (const tier of ORIGIN_TIERS) {
+            const birth = drawBirth('no-rung', { world, origin: tier.key });
+            const json = JSON.stringify(birth);
+            expect(json).not.toMatch(/"rankIndex"|"sectRank"|"realmOrdinal"/);
+            expect(birth.raisedInside === null
+                || 'stillToClear' in birth.raisedInside).toBe(true);
         }
     });
 });
@@ -256,7 +476,12 @@ describe('what you have heard of falls out of who your family corresponded with'
         expect(barred.length).toBeGreaterThan(0);
         for (const row of birth.knowledge) {
             expect(row.stance).not.toBe('ignorant');
-            expect(row.statement).not.toMatch(/is a member|has been admitted|rank/i);
+            // "at no rank in it" is the state and is allowed to be said; what
+            // is refused is a claim to have been admitted somewhere.
+            expect(row.statement).not.toMatch(/has been admitted|holds the rank|ranked/i);
+            if (row.kind === 'sect' && birth.house && row.id !== birth.house.id) {
+                expect(row.statement).not.toMatch(/is a member/i);
+            }
         }
     });
 });

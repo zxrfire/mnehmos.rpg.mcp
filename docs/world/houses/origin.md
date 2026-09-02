@@ -18,6 +18,8 @@ Where you started, and what it was worth. Read with
 | [Spending one on your own child](#spending-one-on-your-own-child) | a cultivator with standing has a child to place, or a placed child asks who arranged it |
 | [The second reason, which is not a bar](#the-second-reason-which-is-not-a-bar) | a birth is irregular, somebody is carrying shame, or a placement has no institutional reason behind it |
 | [Opening as a fostered child](#opening-as-a-fostered-child) | a run opens with a placement the cultivator cannot account for |
+| [And it can come out, once they are somebody](#and-it-can-come-out-once-they-are-somebody) | a fostered cultivator becomes consequential, or somebody asks whether an origin can surface years later |
+| [Being a member from birth](#being-a-member-from-birth) | somebody is born inside a house, or claims membership by lineage |
 | [The shape of an immortal life](#the-shape-of-an-immortal-life) | somebody asks what it actually takes to reach the top of the ladder |
 | [The children of great houses mostly fail anyway](#the-children-of-great-houses-mostly-fail-anyway) | a great house's heir is failing, or the player resents somebody's birth |
 | [Rare in the world, common at the top](#rare-in-the-world-common-at-the-top-and-both-at-once) | somebody asks why the great houses are full of well-born people |
@@ -355,12 +357,81 @@ The pieces that make it a *story* rather than a background note are all already 
   their line, so they can inherit a grudge, a debt or a feud from a parent they could not
   name - and be hunted for something done by somebody they have never heard of.
 
-**What is built, and what is not.** The world does this on its own: NPCs foster children,
-the destination comes off the fosterer's own ties, the placement skips the receiving house's
-admission bar, and the shame and the concealment are written down. What does not exist yet is
-the character-creation half - no run currently *opens* as a fostered child, because nothing
-in `drawBirth` deals that hand. The engine has no answer for that yet, and this section is
-where it goes when it does.
+**What is built.** The world does this on its own: NPCs foster children, the destination
+comes off the fosterer's own ties, the placement skips the receiving house's admission bar,
+and the shame and the concealment are written down. **And a run now opens this way.**
+`drawBirth` deals the hand: the run opens on the receiving house's own ground, on its roll,
+at no rank in it, with the house's floors standing in front of the cultivator exactly where
+they stand in front of anybody. Played, at the Nine Abyss Flame Sect - *"On the roll of Nine
+Abyss Flame Sect"*, and asking for a promotion answers *"there is nothing to be promoted
+from ... the first rung opens at Qi Condensation Layer 9, and they stand at Qi Condensation
+Layer 1."*
+
+Two things it deliberately does not do. It writes **no flag saying somebody was fostered** -
+`a-child-their-own-house-will-not-keep.ts` refuses one on the grounds that a boolean throws
+away the asymmetry, and the asymmetry is the content. And it writes **no surname**, because
+a name is the thing a line is read by and a birth-line surname on a fostered child announces
+to anybody who can read a roll exactly what this whole arrangement withholds.
+
+### And it can come out, once they are somebody
+
+<!-- tier: 2 trigger="a fostered cultivator becomes consequential, or somebody asks whether an origin can surface years later" -->
+
+The consequence of writing the blood and withholding the name is that **the truth sits in the
+records from the beginning and is absent from the name the person walks around under**. That
+is the shape of a fact that surfaces later rather than one that is decided later. Nothing is
+retroactive: the record was always there.
+
+**Fame is the trigger, not time.** Nobody pulls a record on a nobody. A record that has sat
+unread for forty years becomes worth reading the moment the person it names is somebody, and
+then somebody reads it - which is [`discovery.md`](./discovery.md)'s ladder applied to a fact
+the world was already holding, on this world's ordinary principle that a thing is known when
+somebody has reason to look.
+
+It surfaces as **hearsay**, with everything that implies: it can be early, exaggerated, half
+right, or flatly denied. And it **cuts both ways**. A house may want to claim a famous son it
+gave away, and he may not want claiming. Both are ordinary positions and neither is the
+correct one.
+
+## Being a member from birth
+
+<!-- tier: 2 trigger="somebody is born inside a house, or claims membership by lineage" -->
+
+**You can be born in a sect itself rather than in a sect town, and be a member from birth by
+lineage.** Three of the birth tiers describe exactly that and none of them used to put
+anybody anywhere; they do now, and the care went into making sure it does not become a way
+to skip a bar somebody else has to clear.
+
+**Where the run opens** is decided by whether the family lives on the house's ground. A
+retainer household, a Dao house's own blood, an apex sect member's child and a ward all do,
+and open at the house's own seat. A cultivating clan holds its own vein and its own hall and
+opens in a town, as it always did.
+
+**Whether the house's roll carries them is a different question**, and the answer follows
+from what the house is rather than from which house it is:
+
+- **A Dao house's own child is on its roll from birth**, because [a house is a
+  family](./dao-houses.md) and its roster *is* the lineage. Nothing has been skipped: the
+  only door a house keeps is adoption, and adoption is the door for outsiders. Nobody is
+  adopted by being born.
+- **A ward is on the roll because the house took them in**, and somebody spent a word to
+  make that happen - which is the mechanic above doing what it is for, and it leaves an
+  obligation somebody is carrying.
+- **An apex sect member's child is on no roll at all.** An apex is joined rather than born
+  into. They grew up inside the compound, they can name everybody in it, and they stand in
+  front of the same disciple bar as somebody who walked up the mountain that morning.
+
+**And being on a roll is not being on a rung.** The roll says whose somebody is. The rung
+says what they have done, and only the second is climbed. A person born to a house's line
+holds no rank in it, draws no stipend, cannot be promoted from anything, and has every floor
+the house publishes still standing above them - which the engine states in those words when
+asked. That is the whole reason this is not privilege buying rank: **it buys being inside,
+and inside is where the bar is.**
+
+The one house where none of it bends is the one where nothing ever bends. A child born on
+the Azure Cloud Pavilion's terraces is not on its roll, and its disciple bar is quoted back
+at them unchanged - which is [the same answer it gives
+everybody](#the-one-house-where-the-word-buys-nothing), in the same words.
 
 ## The shape of an immortal life
 

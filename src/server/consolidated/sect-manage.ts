@@ -81,6 +81,7 @@ import {
     STIPEND_PERIOD_DAYS
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
+import { servantBarOf } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import {
     applyProbation,
     carriedProbationFacts,
@@ -175,6 +176,64 @@ export {
     requiredContributionForRank,
     entryRankIndexFor
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ON THE ROLL, AT NO RANK IN IT
+//
+// A person can be of a house without being on its ladder, and it is not an
+// edge case: it is what being born to a Dao house's line is, and what a house
+// that took a child in has on its books. `Cultivator.sectId` says whose they
+// are; `sectRank` and the `sect_members` row say what they have done, and only
+// the second of those is climbed.
+//
+// The verbs below all began by asking `getMembership`, so every one of them
+// told a person standing inside the house they were born in that they "serve
+// no sect". Found by playing: a run opened at The House of the Bound Word, and
+// `look` said "The House of the Bound Word has you down as a member" while
+// `promote` said "Yu Wenshan serves no sect" in the next breath.
+//
+// The answer is not to write them a rank row - that would seat somebody at
+// ordinal zero on a rung with a floor of five, which is the bar-skip the whole
+// design refuses. It is to say the true thing, which is more useful anyway:
+// you are on the roll, you are on no rung, and here is the rung's floor.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * The honest refusal for somebody the house's roll carries at no rank, or null
+ * where they genuinely serve nobody and the ordinary refusal is correct.
+ *
+ * `what` is what they were trying to do, and goes into the sentence.
+ */
+function onTheRollAtNoRank(
+    repos: ReturnType<typeof ensureCultivationDb>,
+    cultivator: { name: string; sectId: string | null; realmOrdinal: number },
+    what: string
+): object | null {
+    if (!cultivator.sectId) return null;
+    const sect = repos.sects.getById(cultivator.sectId);
+    if (!sect) return null;
+
+    // The rung a person has to clear to be taken ON, from the one file that
+    // owns those floors. Never restated here.
+    const floor = servantBarOf(sect.id) ?? sect.admissionOrdinal;
+    return guidingError(
+        'on_the_roll_at_no_rank',
+        `${cultivator.name} is on the roll of ${sect.name} and holds no rank in it, so there `
+        + `is nothing to ${what}. Being on a roll and being on a rung are different things: `
+        + `the roll is whose they are, and the rung is what they have done. The first rung of `
+        + `${sect.name} opens at ${rankName(floor)}, and they stand at `
+        + `${rankName(cultivator.realmOrdinal)}.`,
+        {
+            sectId: sect.id,
+            sectName: sect.name,
+            rankIndex: null,
+            firstRungOrdinal: floor,
+            ordinal: cultivator.realmOrdinal,
+            hint: 'Being taken on is sect_manage.join, and it checks the same floor it checks '
+                + 'for anybody who walked up.'
+        }
+    );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -669,6 +728,33 @@ export async function handleLeave(args: z.infer<typeof LeaveSchema>): Promise<ob
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
+        // WALKING OUT OF THE HOUSE YOU WERE BORN IN, which is a real act and
+        // not a refusal. There is no rank to forfeit and no contribution to
+        // lose, and that is the whole difference: somebody who climbed a
+        // ladder leaves something behind, and somebody who was simply of the
+        // house leaves with what they came with. Refusing it would be the
+        // engine deciding what a person may do with their own life.
+        if (cultivator.sectId) {
+            const born = repos.sects.getById(cultivator.sectId);
+            repos.db.transaction(() => {
+                repos.cultivators.update(cultivator.id, { sectId: null });
+                repos.runs.incrementTurn(run.id, 1);
+            })();
+            const after = repos.cultivators.getById(cultivator.id)!;
+            return {
+                left: true,
+                sect: born
+                    ? { id: born.id, name: born.name }
+                    : { id: cultivator.sectId },
+                formerRank: null,
+                contributionForfeited: 0,
+                cultivator: describeCultivator(repos, after, repos.runs.getById(run.id)!),
+                note: `${born?.name ?? 'The house'} takes ${cultivator.name} off its roll. `
+                    + 'There was no rank to give up and no contribution to forfeit, because '
+                    + 'nothing had been earned inside - what is gone is being of the house, '
+                    + 'and its ground is no longer ground they can simply stand on.'
+            };
+        }
         return guidingError('not_a_member', `${cultivator.name} serves no sect.`);
     }
 
@@ -700,7 +786,8 @@ export async function handlePromote(args: z.infer<typeof PromoteSchema>): Promis
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
-        return guidingError('not_a_member', `${cultivator.name} serves no sect.`);
+        return onTheRollAtNoRank(repos, cultivator, 'be promoted from')
+            ?? guidingError('not_a_member', `${cultivator.name} serves no sect.`);
     }
     const sect = repos.sects.getById(membership.sectId);
     if (!sect) {
@@ -776,7 +863,11 @@ export async function handleStipend(args: z.infer<typeof StipendSchema>): Promis
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
-        return guidingError('not_a_member', `${cultivator.name} serves no sect and draws no stipend.`);
+        // A stipend is paid against a rung. Somebody on the roll at no rank is
+        // fed and housed by the family they were born to, which is not a wage
+        // and is not on any ledger.
+        return onTheRollAtNoRank(repos, cultivator, 'draw a stipend against')
+            ?? guidingError('not_a_member', `${cultivator.name} serves no sect and draws no stipend.`);
     }
     const sect = repos.sects.getById(membership.sectId);
     if (!sect) {

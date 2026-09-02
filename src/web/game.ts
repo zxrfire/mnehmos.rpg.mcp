@@ -1970,6 +1970,25 @@ export class GameService {
                 origin: birth.origin,
                 spiritStones: birth.spiritStones,
                 location: birth.place.name,
+                // A MEMBER FROM BIRTH, AT NO RANK IN IT.
+                //
+                // `sectId` without `sectRank` is not a new state and needs no
+                // new column: `entities.ts` already prints "at the rank of X"
+                // against "at no rank in it", and `factionRankIndex` in
+                // `ground-that-teaches-a-road.ts` reads -1 when there is no
+                // rank title, so a born member draws no share of the house's
+                // chambers. No `sect_members` row is written either, which is
+                // what leaves the ladder in front of them: being taken ON is
+                // `join`, and `join` checks the house's own floor.
+                //
+                // Set only where the house's own roll carries them - a lineage
+                // for its own children, or a house that took somebody in. An
+                // apex sect member's child gets nothing here, because an apex
+                // is joined rather than born into and its bar has never moved
+                // for anybody.
+                ...(birth.raisedInside?.onTheRoll
+                    ? { sectId: birth.raisedInside.house.id }
+                    : {}),
                 alive: true
             });
             const run = this.repos.runs.startRun({ cultivatorId: cultivator.id, seed });
