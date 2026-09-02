@@ -1,6 +1,13 @@
 /**
  * Things that came down from above.
  *
+ * The provenance rule this rests on - counted against tracked, what money
+ * cannot buy, why a holder keeps what they cannot use - is
+ * `docs/world/items.md`. What crosses the Lid at all is
+ * `docs/world/immortals.md`. What is here and in neither of them is the stock
+ * argument: `STOCK_VERSUS_FLOW`, `THE_TWO_CLAIMS`, and what service actually
+ * buys. Indexed in `docs/world/INDEX.md`.
+ *
  * A handful of consumables exist in the world that nobody below the Lid can
  * make, refine, repair or replace. They came down from the immortal realm,
  * which is the only provenance any of them has and the only one they can have,

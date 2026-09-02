@@ -544,17 +544,27 @@ mechanic beside the first: the very defect the task existed to fix, committed ag
 
 So, before writing anything:
 
-1. **Read `docs/world/` for the subject.** The filenames say what they hold - `origin.md`,
-   `items.md`, `asking.md`, `manuals.md`, `past-the-ceiling.md`. A design doc that contradicts
-   what you are about to build is the cheapest correction you will ever get.
-2. **Grep the catalog and the engine for the concept, not the identifier.** The file that owns a
+1. **Open [`docs/world/INDEX.md`](docs/world/INDEX.md) and search it for the SITUATION, not
+   the noun.** It is every section in the bible listed against the question it answers, plus
+   every catalog in `src/data/cultivation/` and what design question that file settles. Do
+   this before browsing filenames, because filenames are the thing that has repeatedly
+   failed: the rule for what happens when a house catches you using its art is in
+   `items.md`, correctly, because a manual is an object - and nobody with that question ever
+   searches a file called `items.md`. **Three agents in one evening wrote an invented answer
+   to a question the repo had already settled**, one of them into a passage they had
+   personally read an hour earlier. The index exists because of them, and its top table is
+   the running list of what this directory is bad at. **When your own search fails and the
+   answer turns out to have existed, add a row.**
+2. **Then read the file it sends you to, in full.** A design doc that contradicts what you
+   are about to build is the cheapest correction you will ever get.
+3. **Grep the catalog and the engine for the concept, not the identifier.** The file that owns a
    thing here is usually named after what it is - `a-favour-skips-the-admission-bar.ts`,
    `what-grade-of-medicine-a-wound-needs.ts`, `who-a-life-like-this-grew-up-knowing.ts` - so
    searching for the *idea* in filenames finds what searching for a symbol will not.
-3. **Check whether it is half-wired rather than absent.** `src/engine/birth/` had one live file
+4. **Check whether it is half-wired rather than absent.** `src/engine/birth/` had one live file
    and one dead one in the same package. "No caller" and "does not exist" look identical from a
    distance and want opposite responses.
-4. **When the docs and your brief disagree, say so before building.** The docs are usually older
+5. **When the docs and your brief disagree, say so before building.** The docs are usually older
    and usually right, and a brief written from a playtest often describes a symptom rather than
    the design. Raise it; do not quietly pick one.
 
