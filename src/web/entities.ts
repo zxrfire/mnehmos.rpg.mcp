@@ -239,7 +239,17 @@ export function matchScore(query: string, candidate: string): number {
     if (q.length === 0 || c.length === 0) return 0;
     if (q === c) return 100;
     if (c.startsWith(q) || q.startsWith(c)) return 80;
-    if (c.includes(q) || q.includes(c)) return 60;
+    // Containment needs the shorter side to be distinctive, or a two-letter
+    // fragment buried in the middle of a word wins outright at 60 - above
+    // MATCH_THRESHOLD. Played: after buying the Lesser Qi-Gathering Manual,
+    // `I learn it` resolved to Bitter Frost Needle, because "it" is inside
+    // "B-it-ter", and answered about a rung-8 art the cultivator had never
+    // heard of. `I learn the manual` was correct all along.
+    //
+    // Two characters is not a guess: the word-overlap branch immediately below
+    // already discards words of two letters or fewer for exactly this reason,
+    // so this makes one rule out of two halves that disagreed.
+    if (Math.min(q.length, c.length) > 2 && (c.includes(q) || q.includes(c))) return 60;
 
     const qWords = new Set(q.split(' ').filter(w => w.length > 2));
     const cWords = c.split(' ').filter(w => w.length > 2);
@@ -264,7 +274,20 @@ export const MATCH_THRESHOLD = 55;
 export const MY_OWN_HOUSE =
     /^(?:my|our)\s+(?:own\s+)?(?:sect|house|order|school|clan|hall|pavilion|court)$/i;
 
+/**
+ * Words that stand in for a thing rather than naming one.
+ *
+ * A bare pronoun is never an entity's name, so it must never be scored against
+ * the catalog - the best it can do is find something that happens to contain
+ * its letters. Resolving what "it" refers to is a different job from matching a
+ * name, and this file does not do that job; returning null is the honest answer
+ * and lets the caller refuse in words the player can act on.
+ */
+export const STANDS_IN_FOR_A_THING = /^(?:it|them|they|him|her|he|she|that|this|those|these|one|its)$/i;
+
 function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string): T | null {
+    if (STANDS_IN_FOR_A_THING.test(query.trim())) return null;
+
     let winner: T | null = null;
     let winningScore = 0;
     for (const item of items) {
