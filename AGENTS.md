@@ -1439,3 +1439,21 @@ header**. The Azure houses' bars, the three intake layers, the population
 pyramid: these are decisions, and a decision that lives only as a number nobody
 reads twice will be silently reverted by the next person who finds it
 surprising.
+
+### `git stash` is shared across worktrees. Do not use it for before/after arms
+
+The stash is per-REPOSITORY, not per-worktree. Every agent working in a
+worktree of this repo pushes onto and pops off the same stack.
+
+One agent lost a baseline stash mid-run: it vanished from `git stash list` while
+another agent's appeared, almost certainly popped into somebody else's tree.
+They recovered it from `git fsck --unreachable`, which is not a thing anybody
+should have to do.
+
+**Use commits for arms instead.** Commit your work on a branch, check out the
+parent in a detached worktree, measure both, and compare. That is reproducible,
+it survives another agent working at the same moment, and it leaves the
+measurement attached to the hash it was taken at.
+
+If you find unexplained edits appearing in your worktree, a stray `stash pop` is
+the first thing to suspect.
