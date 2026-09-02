@@ -31,6 +31,7 @@ import {
     OFFER_INTENTS,
     PETITION_INTENTS,
     POSTURE_INTENTS,
+    PRESSING_SOMEBODY,
     SEAL_INTENTS,
     TIME_CONSUMING_ACTIONS,
     isBareDuration,
@@ -112,11 +113,48 @@ describe('the fallback is inert', () => {
         expect(TIME_CONSUMING_ACTIONS.includes(FALLBACK_ACTION)).toBe(false);
     });
 
+    /**
+     * The floor `interact` needs, asserted where its cost actually lives.
+     *
+     * List membership cannot carry this one: the action is free on `talk`,
+     * `trade` and `apologise` and spends days and stones on the other seven, so
+     * the claim worth making is that nothing the parser failed to understand
+     * arrives holding one of the seven. The default intent is `talk` and the
+     * declared fallback is `unclear`, so this should hold by construction - and
+     * it is written down because "by construction" is what the old
+     * classification also looked like.
+     */
+    it('never lands an unrecognised sentence on an intent that presses somebody', () => {
+        for (const input of UNRECOGNISED) {
+            const parsed = parseIntent(input);
+            expect(
+                parsed.action === 'interact' && PRESSING_SOMEBODY.has(parsed.intent ?? ''),
+                `"${input}" resolved to interact(${parsed.intent}), which spends days and stones`
+            ).toBe(false);
+        }
+    });
+
     it('keeps the two lists honest about every action in the enum', () => {
         // A new verb has to be classified one way or the other, or the guard
         // above silently stops covering it.
         const inert: ActionName[] = [
-            'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear',
+            'look', 'status', 'investigate', 'assess', 'market', 'unclear',
+            /**
+             * `interact` is NOT inert and is here because this list is the
+             * "classified one way or the other" register rather than a claim
+             * about days.
+             *
+             * Seven of its ten intents press somebody and spend a day for a
+             * courtesy and a season and a half for a betrayal, and one of them
+             * can empty the purse. It is off `TIME_CONSUMING_ACTIONS` because
+             * it is also this parser's broadest catch for a sentence with a
+             * person in it - "I follow the cultivator" lands here and costs
+             * nothing - so the coarse label would have turned a guard red on
+             * sentences that are inert in fact. What holds the floor instead is
+             * the test above this one, which asserts at the INTENT, where the
+             * cost actually lives.
+             */
+            'interact',
             // `sect` is a listing until a sect is named, and a life's allegiance
             // after. Neither half spends in-world time, so it is inert here.
             'sect',

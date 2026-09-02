@@ -489,9 +489,19 @@ export const ACTION_NAMES = [
 
 export type ActionName = typeof ACTION_NAMES[number];
 
-/** Actions that pass no in-world time and change no cultivator state. */
+/**
+ * Actions that pass no in-world time and change no cultivator state.
+ *
+ * `interact` was on this list and was never a read. Seven of its ten intents
+ * reach the pressure model, which spends days out of the same clock everything
+ * else spends and can empty the purse. Measured in a played run before the
+ * change - "can I bribe Bai Jinglu with 10 spirit stones", purse 30 to 20, day
+ * 16 to 17 - and the question was the whole of the sentence. The note under
+ * {@link TIME_CONSUMING_ACTIONS} carries the reasoning, and says why it went
+ * into neither list rather than into that one.
+ */
 export const READ_ONLY_ACTIONS: readonly ActionName[] = [
-    'look', 'status', 'investigate', 'interact', 'assess', 'market', 'unclear',
+    'look', 'status', 'investigate', 'assess', 'market', 'unclear',
     // Both are reads of what is already true - the pouch, and the catalog
     // filtered by rows this cultivator already owns. Neither can teach and
     // neither can kill.
@@ -521,7 +531,9 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
 ] as const;
 
 /**
- * `sect`, `posture`, `seal` and `offer` are in neither list on purpose.
+ * `sect`, `posture`, `seal` and `offer` are in neither list on purpose. So is
+ * `interact`, which is the fifth and the one that had to be found by playing -
+ * the note under {@link TIME_CONSUMING_ACTIONS} carries it.
  *
  * None of them spends days, and all three of the new ones commit the house to
  * something it cannot walk back, so classifying them as free would be as wrong
@@ -598,13 +610,56 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      * a half for a betrayal - `ASK_DAYS` in `an-attempt-to-move-somebody.ts`
      * owns the figure - and it can spend the whole purse on the way.
      *
-     * On this list rather than in `READ_ONLY_ACTIONS` on purpose. `interact`
-     * carries the same leverage intents, spends the same days and stones, and
-     * IS classified free, which is the filed defect that makes "can I bribe the
-     * elder" reach the bribe. Nothing about this action repeats it.
+     * On this list rather than in `READ_ONLY_ACTIONS` on purpose, and `interact`
+     * is the reason it says so: it carried the same leverage intents, spent the
+     * same days and the same stones, and was classified free. See the note
+     * under this list.
      */
     'request',
 ] as const;
+
+/**
+ * `interact` is in neither list, and it is the fifth member of the paragraph
+ * above rather than a fourth exception to it.
+ *
+ * It used to be in `READ_ONLY_ACTIONS` and it was never a read. Seven of its
+ * ten intents - {@link PRESSING_SOMEBODY} - reach `resolveAttempt` through
+ * `GameService.pressSomebody`, which runs the days through `shortSkip` like
+ * every other span in the game, so the food clock runs through them, and writes
+ * `-result.stonesSpent` against the purse when the attempt lands. Played cold
+ * before the change, on a fresh run carrying thirty stones:
+ *
+ *   > can I bribe Bai Jinglu with 10 spirit stones
+ *     purse 30 -> 20, day 16 -> 17
+ *
+ * A question spent ten spirit stones and a day, and the mislabel is what made
+ * it possible twice over. It kept `interact` out of the assertion
+ * `TIME_CONSUMING_ACTIONS` exists for, AND it made {@link theReadThatAnswersIt}
+ * hand the question straight back to the executor - because that guard trusts
+ * `READ_ONLY_ACTIONS` to say which verbs are already free, which is exactly
+ * what makes it complete for every verb that is labelled correctly.
+ *
+ * So classifying it free is wrong and classifying it slow is equally wrong, on
+ * the same reasoning `sect`, `posture`, `seal` and `offer` are given: WHICH ONE
+ * HAPPENED DEPENDS ON THE INTENT, and the intent is decided at the point of
+ * execution. The difference from `site`, which took the coarse label and was
+ * declared dangerous whole, is that `site` is only ever reached by a sentence
+ * about a site, and `interact` is this parser's broadest catch for anything
+ * involving a person. "I follow the cultivator", "I talk to the cultivator by
+ * the well" and "I steal from the market stall keeper" all land here, all cost
+ * nothing, and `tests/web/coverage.test.ts` asserts that they cost nothing.
+ * Declaring the whole action slow would have turned that guard red on three
+ * sentences that are inert in fact - and the fix for a guard that reports the
+ * world moving as the world breaking is never to widen the guard.
+ *
+ * The protection a misparse actually needs is supplied where the other four
+ * supply it: THE DEFAULT IS THE CHEAP BRANCH. A sentence that names none of the
+ * seven verbs falls through to `talk`, which describes somebody and settles
+ * nothing, and `FALLBACK_ACTION` is `unclear` rather than this - so nothing the
+ * parser failed to understand reaches an attempt at all. That is asserted at
+ * the intent rather than at the action in `tests/web/misparse.test.ts`, which
+ * is the sharper claim and the one that is actually true.
+ */
 
 /** What an unparseable sentence resolves to. Inert, by construction. */
 export const FALLBACK_ACTION: ActionName = 'unclear';
@@ -2201,6 +2256,32 @@ export const INTERACT_INTENTS = [
     'threaten', 'bribe', 'recruit', 'apologise', 'seduce'
 ] as const;
 
+/**
+ * Which of those ten reach the pressure model rather than describing somebody.
+ *
+ * `GameService.interact` sends exactly these to `pressSomebody`, which resolves
+ * the attempt, runs the days through `shortSkip` and takes the stones off the
+ * purse when it lands. The other three - `talk`, `trade`, `apologise` - fall to
+ * the branch that reports who this party is and settles nothing, which passes
+ * no time and moves nothing.
+ *
+ * Written here rather than imported because `game.ts` holds the executor's own
+ * copy (`ATTEMPT_INTENTS`) and this file may not depend on that one - actions
+ * is below game, not above it. Two copies of a set is a drift risk and the
+ * answer is not a comment asking people to be careful: the regression test
+ * PLAYS all ten intents in both moods and asserts the split by measuring what
+ * each one spent, so a member added on either side goes red on the next run.
+ * See `tests/web/asking-is-not-doing.test.ts`.
+ *
+ * Note what is NOT the discriminator. `LEVERAGE_BEHIND_INTENT` covers three of
+ * these and the other four press somebody just as hard with nothing on the
+ * table - measured, one day each - so leverage is what the attempt is made
+ * WITH and never whether an attempt was made.
+ */
+export const PRESSING_SOMEBODY: ReadonlySet<string> = new Set([
+    'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit'
+]);
+
 export const PlannedActionSchema = z.object({
     action: z.enum(ACTION_NAMES),
     /**
@@ -2286,6 +2367,31 @@ export const PlannedActionSchema = z.object({
 });
 
 export type PlannedAction = z.infer<typeof PlannedActionSchema>;
+
+/**
+ * Whether this PLAN takes nothing from the player.
+ *
+ * A narrower question than whether its ACTION is on {@link READ_ONLY_ACTIONS},
+ * and `interact` is the whole of the difference: it is free on `talk`, `trade`
+ * and `apologise` and spends days and stones on the other seven, so the action
+ * alone cannot answer it. Every consumer that used to ask the list should ask
+ * this instead - the list is a statement about verbs, and the cost of this one
+ * is a fact about the sentence.
+ *
+ * There are two consumers and they want the same answer for different reasons.
+ * {@link theReadThatAnswersIt} asks it to decide whether a question about an
+ * act is already answered by the act; `the-part-of-the-sentence-that-was-not-run`
+ * asks it to decide whether a dropped clause took anything, and its own measured
+ * rule - report a clause only if it would have COST something - was calibrated
+ * on a corpus in which `interact` was free. Both would have been wrong in the
+ * same direction from one stale answer, which is exactly why this is a function
+ * and not a second list.
+ */
+export function costsTheAskerNothing(plan: PlannedAction): boolean {
+    return plan.action === 'interact'
+        ? !PRESSING_SOMEBODY.has(plan.intent ?? '')
+        : READ_ONLY_ACTIONS.includes(plan.action);
+}
 
 /** Where a plan came from. Surfaced to the client so the seam is visible. */
 export type PlanSource = 'model' | 'fallback';
@@ -3135,19 +3241,85 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
 export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
     // A read is already the answer to a question about it.
     //
-    // ONE ENTRY ON THAT LIST IS NOT ACTUALLY A READ, and it is left alone
-    // deliberately rather than by oversight. `interact` carries the leverage
-    // intents - bribe, threaten, seduce - and `GameService.interact` spends
-    // both stones and a season and a half of days on those. It is classified
-    // free in `READ_ONLY_ACTIONS` and it is not, which means "can I bribe the
-    // elder" has the same shape of defect as the three this block was written
-    // for. It is not touched here because it was not the gap that was
-    // demonstrated, and because the fix is to reclassify the action rather than
-    // to paper over one phrasing of it - which is a change to a shared list
-    // that its owner should make.
-    if (READ_ONLY_ACTIONS.includes(plan.action)) return plan;
+    // The list used to carry an entry that was not a read. `interact` sat on it
+    // while seven of its ten intents spent days and stones, so this guard - the
+    // one written to stop a question performing an act - was handing "can I
+    // bribe the elder" straight back to the executor, and doing it BY DESIGN,
+    // because trusting this list is how the post-pass stays complete. The
+    // reclassification is at `READ_ONLY_ACTIONS` and `TIME_CONSUMING_ACTIONS`,
+    // and this line asks {@link costsTheAskerNothing} rather than the list,
+    // because for `interact` the two are different questions.
+    if (costsTheAskerNothing(plan)) return plan;
 
     switch (plan.action) {
+        case 'interact':
+            /**
+             * A READ OF THE PERSON, which is what the question was about.
+             *
+             * Only for the intents that press somebody. "Can I talk to the
+             * gate steward" is a question about an act that settles nothing and
+             * costs nothing, and the honest answer to it is the approach
+             * itself - narrowing to {@link PRESSING_SOMEBODY} is the rule
+             * `AGENTS.md` states as fixing the gap that was demonstrated rather
+             * than the one you imagined. Those three never reach this case at
+             * all: {@link costsTheAskerNothing} returns them above.
+             *
+             * `investigate` and not `assess`, which is this table's default for
+             * everything it does not name and would have been wrong here.
+             * Checked rather than assumed: `GameService.assess` sends every
+             * subject that is not the asker to `handleAssess` with
+             * `against: 'place'`, so a person's NAME is looked up as GROUND. It
+             * would have answered a question about somebody with the weather
+             * where they are standing, which is a good answer to a question
+             * nobody asked - the deflection failure this codebase keeps
+             * finding, and worse than a refusal because it reads like an
+             * answer. `investigate` reads the person: the
+             * rung they stand at, the years they carry, the house they answer
+             * to, and then "that is what the record holds. What it means is a
+             * separate question" - which is exactly the shape of an answer
+             * somebody weighing a bribe is owed.
+             *
+             * And not the priced weighing `request` gives its own questions,
+             * though that was the first candidate and it is the better read.
+             * `GameService.request` re-reads the sentence to find what was
+             * asked FOR; a bare "can I bribe X" names no object, falls to
+             * `a_thing` with nothing in it, and is routed by `request`'s own
+             * fallback into `interact` with intent `negotiate` - which is on
+             * the pressing list. It would have re-entered the same spend
+             * through a different door, and the purse would have come out the
+             * same. Verified by reading that path rather than by assuming it.
+             *
+             * The target rides along unparsed. It is whatever `extractSubject`
+             * took off the sentence - "Bai Jinglu with 10 spirit stones" for
+             * the phrasing that started this - and the entity resolver takes
+             * it, so nothing here has to understand the tail.
+             *
+             * AND A QUESTION THAT NAMED A SUBJECT KEEPS IT. "Could I question
+             * Bai Jinglu about the ruins" carries a topic, and a topic put to a
+             * person is already the free read - `GameService.interact` hands it
+             * to `askAround` before the pressure model is reached. Sending that
+             * one to `investigate` would have cost nothing and answered a
+             * narrower question than the one asked, which is the deflection
+             * again in the other direction. So the topic keeps its own read and
+             * only the INTENT is dropped, to `talk`, which is the same free
+             * branch it was already taking.
+             *
+             * Dropped to `talk` rather than left alone, because a topic does
+             * NOT by itself guarantee the cheap path: `askAround` needs the
+             * person to be standing here, and somebody known-of but elsewhere
+             * falls past it into the attempt. `talk` is not on the pressing
+             * list, so that door is shut whichever way the person resolves.
+             */
+            if (!PRESSING_SOMEBODY.has(plan.intent ?? '')) return plan;
+            return plan.topic
+                ? {
+                    action: 'interact',
+                    intent: 'talk',
+                    ...(plan.target ? { target: plan.target } : {}),
+                    topic: plan.topic
+                }
+                : { action: 'investigate', ...(plan.target ? { target: plan.target } : {}) };
+
         case 'sect':
             // Asking to get in is the listing; asking about the seat you hold
             // is your standing in it. Both are free and both already say the
