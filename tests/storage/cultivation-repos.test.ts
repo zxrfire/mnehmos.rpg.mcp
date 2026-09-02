@@ -676,6 +676,7 @@ describe('CultivatorRepository.roster', () => {
             name: 'Li Wei',
             kind: 'pc',
             spiritRoot: 'single_fire',
+            sex: 'female',
             realmOrdinal: 4,
             location: 'Azure Cloud Sect outer courtyard',
             sectId: sect.id,

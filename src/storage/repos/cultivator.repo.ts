@@ -211,6 +211,22 @@ export interface ListCultivatorsFilter {
 }
 
 /**
+ * Carry a pool across a change of rung, keeping the share rather than the number.
+ *
+ * A crossing is not a heal and never fills anybody, so the fraction is what
+ * survives: whole stays whole, half stays half, and somebody who was nearly
+ * finished is still nearly finished in a larger body. Rounds up off zero so a
+ * living cultivator cannot be rounded into a corpse, and returns the new
+ * maximum when the old one is missing or zero, which is the only reading
+ * available when there is no share to take.
+ */
+function carriedAcross(current: number, wasMax: number, nowMax: number): number {
+    if (!Number.isFinite(wasMax) || wasMax <= 0) return nowMax;
+    const share = Math.min(1, Math.max(0, current / wasMax));
+    return Math.min(nowMax, Math.max(current > 0 ? 1 : 0, Math.round(share * nowMax)));
+}
+
+/**
  * Persistence for cultivators and their injuries.
  *
  * Every read maps back through CultivatorSchema and every write validates
@@ -222,6 +238,7 @@ export interface ListCultivatorsFilter {
  * migrate() to have run before construction, which is true everywhere a repo
  * is built (getDb() migrates on open).
  */
+
 export class CultivatorRepository {
     private readonly insertStmt: Database.Statement;
     private readonly updateStmt: Database.Statement;
@@ -585,10 +602,21 @@ export class CultivatorRepository {
      * enforced for everybody at once rather than repeated at four call sites
      * that will disagree.
      *
-     * Current HP and qi are carried across and clamped, never refilled. A
+     * Current HP and qi are carried across AS A FRACTION, never refilled. A
      * crossing enlarges the vessel; it does not fill it, and it is emphatically
-     * not a heal. Going DOWN the ladder shrinks the vessel, which is why the
-     * clamp is not optional.
+     * not a heal - somebody who crosses at half is still at half afterwards.
+     *
+     * The fraction rather than the absolute, because the absolute made climbing
+     * an injury. A vessel that grows from 40 to 1707 around an unchanged 40
+     * leaves a whole cultivator at two per cent of themselves, which trips the
+     * pre-combat check that refuses a fight nobody could survive - so the next
+     * confrontation after any large advance was unconditional death, and an
+     * operator arranging a rung to watch a fight got a corpse and a narration
+     * of the fight that never happened. Nothing in this world says that
+     * climbing wounds you.
+     *
+     * Going DOWN the ladder shrinks the vessel, and the fraction handles that
+     * too: half of a smaller pool is still half.
      */
     advanceRealm(id: string, ranks = 1): Cultivator | null {
         const existing = this.getById(id);
@@ -604,8 +632,8 @@ export class CultivatorRepository {
             realmOrdinal: target,
             maxHp,
             maxQi,
-            hp: Math.min(existing.hp, maxHp),
-            qi: Math.min(existing.qi, maxQi),
+            hp: carriedAcross(existing.hp, existing.maxHp, maxHp),
+            qi: carriedAcross(existing.qi, existing.maxQi, maxQi),
             cultivationProgress: 0,
             yearsAtCurrentRealm: 0,
             updatedAt: new Date().toISOString()
