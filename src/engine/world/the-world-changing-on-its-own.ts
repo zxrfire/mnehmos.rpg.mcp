@@ -163,6 +163,17 @@ import {
     recordGroundDraw,
     whatThePeopleHereTake
 } from './what-a-place-still-has-in-the-ground.js';
+import {
+    statusKey,
+    whatIsWrongWithPlacesToday,
+    type GroundAsItStands
+} from './what-goes-wrong-with-a-place-and-what-ends-it.js';
+import {
+    extendStatus,
+    liftStatus,
+    makeAreaStatus,
+    type AreaStatus
+} from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
     makeFaction,
@@ -380,6 +391,15 @@ export function applyPressure(
         // span, so mortal stock could not fall by any actor and a thousand
         // world-years produced no worked-out band anywhere.
         applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
+        // Wars that reached the day they were scheduled to end. BEFORE the
+        // statuses, so a war that ended this year is a road open this year.
+        events.push(...settleWarsThatAreOver(state, withinSpan(year * 365 + 62, fromDay, toDay)));
+        // And then what is WRONG with the places that ground is under. After
+        // the pressure, so a district worked out this year is a district its
+        // holder can close this year - the count is the cause and the closing
+        // is the consequence, and they are one year apart only if the ordering
+        // says so.
+        applyAreaStatuses(state, year, withinSpan(year * 365 + 65, fromDay, toDay));
         applyResettlement(state, year, withinSpan(year * 365 + 70, fromDay, toDay));
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
@@ -1611,6 +1631,220 @@ function applyGroundPressure(state: WorldState, day: number): number {
         }
     }
     return pressed;
+}
+
+/**
+ * What is wrong with the world's places, opened, extended and lifted.
+ *
+ * THE WRITER THE STATUS LAYER NEVER HAD. `what-is-true-of-a-place-right-now.ts`
+ * is complete - the record, the clock, the join, the price multiplier, the
+ * stopped passage, the ceiling on what anybody local can tell you - and until
+ * now nothing in `src/` ever made one. Measured: a thousand world-years, zero
+ * rows, with the played `investigate` verb reading off the empty column and
+ * reporting with confidence that nothing was wrong anywhere.
+ *
+ * What opens one is in `what-goes-wrong-with-a-place-and-what-ends-it.ts` and
+ * every opener binds to something else the world already wrote. What LIFTS one
+ * is the same question asked again: a status the world would still propose
+ * today is extended, and one it would not is over. So there is no reviewer and
+ * no table keyed on `kind`, which is what keeps the eleventh kind costing a row
+ * and no branch.
+ *
+ * ── The draw ─────────────────────────────────────────────────────────────
+ *
+ * One stream, keyed `area-status`, which no other pass uses. A world in which
+ * no harvest fails draws exactly what it drew before this pass existed.
+ */
+/**
+ * Wars that have reached the day they were scheduled to end, ended.
+ *
+ * A FINDING RATHER THAN A FEATURE, and it was found by wiring the status layer
+ * on top of it. `war_opened` tags both houses `at_war` and schedules a
+ * `war_resolves` effect two to twenty-five years out. **Nothing anywhere ever
+ * removed the tag.** The effect fired, `factKindFor` turned it into a fact
+ * saying the war had come to an end, and both houses went on carrying the tag
+ * for the rest of the world's life - so by year five hundred practically every
+ * institution in the world was permanently at war with somebody, and
+ * `war_settled` was a `PressureKind` with no producer anywhere in `src/`.
+ *
+ * Nothing noticed because nothing read the tag. The moment a status was hung
+ * off it the world grew 440 live wars, which is what an unended state looks
+ * like when something finally consults it.
+ *
+ * So this is the other half of `war_opened`, on the same yearly line, and it is
+ * where `war_settled` comes from.
+ */
+function settleWarsThatAreOver(state: WorldState, day: number): PressureEvent[] {
+    const events: PressureEvent[] = [];
+    for (const effect of state.schedule) {
+        if (effect.data.kind !== 'war_resolution') continue;
+        if (effect.dueOnDay > day) continue;
+        const sideA = state.factions.find(f => f.id === String(effect.data.sideA ?? ''));
+        const sideB = state.factions.find(f => f.id === String(effect.data.sideB ?? ''));
+        const stillFighting = [sideA, sideB].filter(
+            (f): f is FactionRecord => f !== undefined && f.tags.includes('at_war')
+        );
+        if (stillFighting.length === 0) continue;
+        for (const side of stillFighting) {
+            side.tags = side.tags.filter(t => t !== 'at_war');
+        }
+        events.push(emit(state, 'war_settled', day, {
+            day,
+            kind: 'war',
+            scale: 'regional',
+            summary: effect.summary,
+            factionIds: stillFighting.map(f => f.id),
+            visibility: 'public',
+            magnitude: 0.5,
+            unattributed:
+                'The road east is being used again, and the people who were sleeping outside '
+                + 'the walls have mostly gone somewhere.',
+            consequences: {
+                immediate: 'Both sides have stopped.',
+                physical: 'The trade road is passable.',
+                tenYearsLater: 'Whichever side lost is still smaller.'
+            }
+        }, { factions: stillFighting.map(f => f.id) }));
+    }
+    return events;
+}
+
+function applyAreaStatuses(state: WorldState, year: number, day: number): AreaStatus[] {
+    const atWar = new Set(
+        state.factions.filter(f => f.dissolvedOnDay === null && f.tags.includes('at_war'))
+            .map(f => f.id)
+    );
+    const byFaction = new Map(state.factions.map(f => [f.id, f]));
+    const standing = new Map<string, number>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.locationId) continue;
+        standing.set(npc.locationId, (standing.get(npc.locationId) ?? 0) + 1);
+    }
+
+    const ground: GroundAsItStands[] = [];
+    const regions: LocationRecord[] = [];
+    for (const place of state.locations) {
+        if (!isBelowTheLid(place)) continue;
+        if (place.kind === 'region') { regions.push(place); continue; }
+        const holderRow = place.controllingFactionId
+            ? byFaction.get(place.controllingFactionId) ?? null
+            : null;
+        const holder = holderRow && holderRow.dissolvedOnDay === null
+            ? { id: holderRow.id, name: holderRow.name }
+            : null;
+        ground.push({
+            place,
+            peopleHere: standing.get(place.id) ?? 0,
+            holder,
+            holderIsAtWar: holder !== null && atWar.has(holder.id),
+            holderFightingNames: holder === null || !atWar.has(holder.id)
+                ? []
+                : [...atWar].filter(id => id !== holder.id)
+                    .map(id => byFaction.get(id)?.name ?? '')
+                    .filter(name => name.length > 0)
+                    .slice(0, 1),
+            isTheHoldersSeat: holderRow !== null && holderRow.seatLocationId === place.id
+        });
+    }
+
+    const proposed = whatIsWrongWithPlacesToday({
+        ground,
+        regions,
+        onDay: day,
+        rng: forStream(state.seed, 'area-status', year)
+    });
+
+    // ── WHAT IS ALREADY TRUE ──
+    //
+    // Extended where the world still says so, lifted where it does not, and
+    // left alone until its own review day arrives. A status is not re-examined
+    // every year: `reviewOnDay` is when the world looks again, and looking
+    // early would make the date decoration.
+    // When each key last stopped being true, so a capped status cannot simply
+    // reopen the following spring and run out its whole life in instalments.
+    const endedToday = new Map<string, number>();
+    for (const status of state.statuses) {
+        if (status.liftedOnDay === null) continue;
+        const key = statusKey(status.areaId, status.kind);
+        endedToday.set(key, Math.max(endedToday.get(key) ?? 0, status.liftedOnDay));
+    }
+
+    const opened: AreaStatus[] = [];
+    for (let i = 0; i < state.statuses.length; i++) {
+        const status = state.statuses[i];
+        // Something already ended is ended. It may be proposed again, and then
+        // it opens as a new row with its own dates, because a famine and the
+        // famine eighty years before it are two famines.
+        if (status.liftedOnDay !== null) continue;
+        const key = statusKey(status.areaId, status.kind);
+        const still = proposed.get(key);
+        // Whatever is on the books holds this key. A second row for the same
+        // thing in the same place is one thing, not two.
+        proposed.delete(key);
+        // THE REVIEW WINDOW IS THE PASS INTERVAL, AND IT HAS TO BE.
+        //
+        // `isStatusRunningOn` is deliberately false ON the review day - an
+        // unattended status expires rather than persisting, which is the right
+        // default and the reason a famine cannot outlive the world. But this
+        // pass runs once a year and most review dates are a year out, so
+        // looking only at rows that are still running meant every status fell
+        // exactly through the gap: measured, 196,914 rows opened over five
+        // centuries and NOT ONE was ever extended or lifted. Reviewing a year
+        // either side is the world actually looking.
+        if (day + DAYS_PER_YEAR < status.reviewOnDay) continue;
+        // AND A CAUSE THAT NEVER GOES AWAY DOES NOT BUY A STATUS THAT NEVER
+        // ENDS. The layer's own line is that a status is what is true of a
+        // place for a WHILE, and what a place permanently became belongs in
+        // `LocationChange`. Ground hunted out by a population that is still
+        // standing on it stays hunted out, so the tide over it was extended
+        // every year forever - measured at 182,135 days, which is not a tide.
+        const overrun = day - status.beganOnDay >= (still?.mayRunForDays ?? 0);
+        state.statuses[i] = still && !overrun
+            ? extendStatus(status, Math.max(status.reviewOnDay + 1, day + still.reviewInDays))
+            : liftStatus(status, Math.max(day, status.beganOnDay + 1));
+        if (overrun) endedToday.set(key, day);
+    }
+
+    // ── AND WHAT HAS JUST BECOME TRUE ──
+    for (const [key, candidate] of proposed) {
+        const lastEnded = endedToday.get(key);
+        if (lastEnded !== undefined && day - lastEnded < candidate.quietForDaysAfter) continue;
+        // The cause on the record BEFORE the status, so `cause.factId` points
+        // at something. A status that appeared from nowhere is the thing
+        // `BEAST_TIDES` was written to forbid.
+        const fact = appendWorldFact(state, makeFact({
+            day,
+            kind: candidate.factKind,
+            scale: 'regional',
+            summary: candidate.cause.what,
+            locationId: candidate.areaId,
+            factionIds: candidate.cause.decidedById ? [candidate.cause.decidedById] : [],
+            actors: [],
+            visibility: 'regional',
+            fidelity: candidate.causeKnownLocally ? 'full' : 'partial',
+            causeKnown: candidate.causeKnownLocally,
+            magnitude: 0.5,
+            data: { areaStatus: candidate.kind, areaId: candidate.areaId }
+        }));
+
+        const status = makeAreaStatus({
+            id: `as-${year}-${key}`,
+            areaId: candidate.areaId,
+            kind: candidate.kind,
+            statement: candidate.statement,
+            cause: { ...candidate.cause, factId: fact.id },
+            signs: candidate.signs,
+            causeKnownLocally: candidate.causeKnownLocally,
+            beganOnDay: day,
+            reviewOnDay: day + Math.max(1, Math.round(candidate.reviewInDays)),
+            stops: candidate.stops,
+            priceMultiplier: candidate.priceMultiplier,
+            dangerDelta: candidate.dangerDelta
+        });
+        state.statuses.push(status);
+        opened.push(status);
+    }
+    return opened;
 }
 
 function applyResettlement(state: WorldState, year: number, day: number): number {
