@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import {
     LEVERAGE_ATTEMPT_CONSTANTS,
+    PATIENCE_RUNS_OUT_AFTER_ASKS,
     oddsOf,
     resolveAttempt,
     severityWithHouse,
@@ -243,17 +244,77 @@ describe('a failure leaves a mark somebody can read', () => {
         const result = forceFailure();
         expect(['refused', 'reported']).toContain(result.outcome);
         expect(result.marks.theyKnowWhatYouTried).toBe(true);
-        expect(result.marks.obligation).not.toBeNull();
     });
 
-    it('opens the grudge on the AGGRIEVED side, the way the rest of the codebase does', () => {
-        const result = forceFailure();
+    // ── A REFUSAL IS NOT AUTOMATICALLY AN OFFENCE ────────────────────────
+    //
+    // Ruled by the design owner. These four tests used to assert the opposite
+    // and were measuring the defect: every refused approach wrote a -0.1
+    // grudge, which takes a COURTESY - the act the refusal advises - from
+    // about 29% to about 9%. Being told no once made the cheapest lever in the
+    // game three times harder, for good.
+
+    it('leaves nothing behind when the asking was fine and the answer was no', () => {
+        // Asked well, asked once, nothing on the table but the asking.
+        expect(forceFailure().marks.obligation).toBeNull();
+    });
+
+    it('opens the grudge on the AGGRIEVED side when the ASK was the wrong thing to do', () => {
+        // Money for a betrayal. `items.md`: above the line cash is not the
+        // medium, and offering it reads as not understanding what you are
+        // looking at.
+        const result = forceFailure({ approach: { leverage: 'coin' } });
         expect(result.marks.obligation!.holderId).toBe('subject');
         expect(result.marks.obligation!.subjectId).toBe('actor');
     });
 
+    it('reads coercion as an offence whatever was asked for', () => {
+        for (const leverage of ['force', 'secret'] as const) {
+            expect(forceFailure({ approach: { leverage } }).marks.obligation).not.toBeNull();
+        }
+        // And an attachment put down and turned away is not one.
+        expect(forceFailure({ approach: { leverage: 'attachment' } }).marks.obligation).toBeNull();
+    });
+
+    it('lets patience run out from repetition rather than from the first no', () => {
+        expect(forceFailure({ timesAskedBefore: 1 }).marks.obligation).toBeNull();
+        expect(forceFailure({ timesAskedBefore: PATIENCE_RUNS_OUT_AFTER_ASKS }).marks.obligation)
+            .not.toBeNull();
+    });
+
+    // ── AND THE OTHER WAY: THE REFUSAL CAN BE THE WRONG THING ────────────
+
+    const pressingAndBound = {
+        askersNeedIsPressing: true,
+        theirHoldOnItIsMerelyReserved: true,
+        theirTie: { active: true, strength: 0.4 }
+    } as const;
+
+    it('the asker holds the grudge when a bound refuser kept back what could not wait', () => {
+        const result = forceFailure(pressingAndBound);
+        expect(result.marks.obligation!.holderId).toBe('actor');
+        expect(result.marks.obligation!.subjectId).toBe('subject');
+        expect(result.marks.obligation!.tags).toContain('refused_a_present_need');
+    });
+
+    it('needs all of pressing, reserved and bound - any one missing is an ordinary no', () => {
+        expect(forceFailure({ ...pressingAndBound, askersNeedIsPressing: false })
+            .marks.obligation).toBeNull();
+        expect(forceFailure({ ...pressingAndBound, theirHoldOnItIsMerelyReserved: false })
+            .marks.obligation).toBeNull();
+        // Bound is read off rows: no shared house, no tie, no open ledger.
+        expect(forceFailure({ ...pressingAndBound, theirTie: null }).marks.obligation).toBeNull();
+    });
+
+    it('is no wrong at all where the answer was never theirs to give', () => {
+        // `immortal-items.ts`: arithmetic rather than a lever. A body that
+        // needs a quorum to release one has not wronged anybody.
+        expect(forceFailure({ ...pressingAndBound, theAnswerWasTheirsToGive: false })
+            .marks.obligation).toBeNull();
+    });
+
     it('writes a refusal no heavier than serious - it is an embarrassment, not an injury', () => {
-        for (const leverage of ['coin', 'force', 'secret', 'attachment'] as const) {
+        for (const leverage of ['coin', 'force', 'secret'] as const) {
             const result = forceFailure({ approach: { leverage } });
             expect(severityRank(result.marks.obligation!.severity))
                 .toBeLessThanOrEqual(severityRank('serious'));

@@ -481,6 +481,24 @@ import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+// The seventh term of the attempt resolver, and the last one no caller here
+// had ever supplied. See `what-they-want-that-you-could-reach.ts` for what it
+// may read and, more importantly, for the one thing it refuses to.
+import {
+    aWantThatCannotWait,
+    goalsHeldBy,
+    whatTheyWantThatYouCouldReach
+} from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
+import type {
+    AWantYouCouldReach,
+    SomebodyWithGoals,
+    TheClocksSomebodyIsUnder
+} from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
+import {
+    factsForSomebodyWhoWillNotSay,
+    factsForSomebodyWithNoOpenBusiness,
+    factsForWhatTheyAreAfter
+} from './what-somebody-is-after.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -11979,6 +11997,8 @@ ${fit.line}`;
             theirTie: tieFrom(this.repos, party.id, cultivator.id),
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // And the fourth, which was the last term with no caller at all.
+            theyWantSomethingFromYou: this.whatTheyWantOfYou(cultivator, party.id) !== null,
             ask: askWeightOf(rawInput),
             ...(offered === null ? {} : { stonesOffered: offered }),
             approach: {
@@ -12177,6 +12197,20 @@ ${unnamed}`;
             );
         }
 
+        // ── WHAT THEY ARE AFTER, WHICH IS A READ AND NOT A REQUEST ───────
+        //
+        // "What does Kong Kelin want" reached nothing at all before this - the
+        // parser answered `unclear` - while the resolver was already pricing a
+        // term for exactly that fact and getting `false` for it from every
+        // caller. Wiring the term without the verb would have left the odds
+        // moving for a reason no player could see, let alone play toward.
+        //
+        // Free, and above `noteEncounter` on purpose: wondering what somebody
+        // is after is not an approach and must not be recorded as one.
+        if (intent === 'wants') {
+            return this.freeAction(run, 'request', this.whatIsThisPersonAfter(cultivator, party));
+        }
+
         this.noteEncounter(
             cultivator, run, party, 'witnessed',
             `Asked for something at ${placeName(cultivator)}.`
@@ -12318,6 +12352,52 @@ ${unnamed}`;
             ? party.facts
             : [...party.facts, `${party.name} ${holdsThings}.`];
 
+        // Read once and used three times: the resolver prices it, the costing
+        // line says it, and a refusal names it as the thing that is already
+        // working for the player rather than sending them off after a lever
+        // they are holding.
+        const wanted = this.whatTheyWantOfYou(cultivator, party.id);
+
+        // ── AND WHAT A REFUSAL WOULD LEAVE BEHIND ────────────────────────
+        //
+        // Ruled by the design owner: a refusal is not automatically an
+        // offence. Three of these four are the inputs that decide whether it
+        // was one, and every one is read off a row rather than off the
+        // sentence somebody typed.
+        //
+        // THE ASKER'S NEED. A crippling wound nobody has closed is the case
+        // the ruling names - *"an injury that is blocking their own path"* -
+        // and it is the one the ladder actually stops somebody for. A wound
+        // that costs a life is survivable; one that costs a rung is not.
+        const pressing = cultivator.injuries.some(
+            wound => !wound.treated && wound.severity === 'crippling'
+        );
+        // THEIR OWN CLAIM. A want with no deadline on it is a store put by
+        // against something that may never come, and a want with a day on it
+        // is somebody's emergency. That is the whole present/reserved test and
+        // it reads `deadlineOnDay`, which has been on the row since it was
+        // written and which almost nothing has ever read.
+        const theirBusiness = this.theirOpenBusiness(party.id);
+        const theirTopWant = theirBusiness?.goals[0] ?? null;
+        // NOT `deadlineOnDay === null`, which is what this said until playing
+        // showed the column is empty in every world this game generates. The
+        // date is derived from the clocks they are actually under, so a want
+        // held by somebody four years off the end of their climb is pressing
+        // and the same want held by somebody who advanced last year is not.
+        const reserved = theirTopWant !== null && !aWantThatCannotWait(
+            theirTopWant,
+            theirBusiness?.clocks ?? null,
+            this.clocksOfWhoeverTheWantIsAbout(theirTopWant.targetId),
+            Math.floor(run.elapsedDays)
+        );
+        // AND WHETHER SAYING YES WAS EVER THEIRS TO SAY. `immortal-items.ts`
+        // has the institutional version in full - a quorum, a counted line
+        // item, *"arithmetic rather than a lever"* - and this is the same
+        // shape at a personal scale: their house's own road, asked of somebody
+        // holding no rank in it, is not a thing they could hand over however
+        // much they wanted to. A refusal from them is not a wrong.
+        const theirsToGive = !(costing.ask === 'a_betrayal' && !party.party.ranked);
+
         // ── ONE INPUT, PRICED ONCE, ROLLED AT MOST ONCE ──────────────────
         //
         // Built before the read branches off, because the read and the attempt
@@ -12364,6 +12444,21 @@ ${unnamed}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // ── AND WHAT THEY WANT THAT YOU ARE PART OF ──────────────────
+            //
+            // The last of the seven with no caller anywhere in this layer.
+            // Read off goal rows and never off an opinion about what somebody
+            // probably wants, and deliberately blind to the gap in rung: the
+            // resolver already has a standing term, and a second reading of it
+            // would turn the one lever a cultivator with nothing can carry
+            // into one more advantage for the people who have every other one.
+            theyWantSomethingFromYou: wanted !== null,
+            // The three that decide whether a refusal is an offence, and the
+            // count that decides whether patience has run out. Read above.
+            timesAskedBefore: priorAsks,
+            askersNeedIsPressing: pressing,
+            theirHoldOnItIsMerelyReserved: reserved,
+            theAnswerWasTheirsToGive: theirsToGive,
             // THE ASK IS THE THING BEING ASKED FOR, and it is derived rather
             // than read off the sentence. Whether teaching somebody an art is
             // an afternoon or the end of their standing is a fact about the
@@ -12405,7 +12500,9 @@ ${unnamed}`;
                     leverage,
                     odds: weighed.odds,
                     terms: weighed.terms,
-                    priorAsks
+                    priorAsks,
+                    // The term, said as the thing itself. See `theTermsInWords`.
+                    ...(wanted ? { theNeed: wanted.goal.text } : {})
                 }),
                 ok: true
             }, ...costing.structure.map(line => ({
@@ -12475,6 +12572,7 @@ ${unnamed}`;
             days: result.days,
             stonesSpent: result.stonesSpent,
             priorAsks,
+            ...(wanted ? { theNeed: wanted.goal.text } : {}),
             wroteToTheLedger: left.wroteToTheLedger,
             reachedTheHouse: result.marks.reachedTheHouse
         });
@@ -12486,6 +12584,91 @@ ${unnamed}`;
             cultivator, party.name, shape, named, costing, result, aboutThem, priorAsks,
             left.wroteToTheLedger, tieStrength, openHandedness
         );
+
+        // ── AND WHETHER THEY WANTED ANYTHING OF YOU ──────────────────────
+        //
+        // Said either way, because the arithmetic says it either way: the
+        // channel prints "nothing came from something they want that the asker
+        // could reach" on every attempt where this reads zero, and a player who
+        // is shown a term that never moves and is never told what moves it has
+        // been shown a field name.
+        //
+        // The refusal names a door that exists. It did not before this change -
+        // "find out what they want" was a sentence the parser answered
+        // `unclear` - and `asking.md` is exact about why that matters: a
+        // refusal is the one place the player is being told what to do next.
+        const alsoSaid: string[] = [];
+        if (wanted !== null) {
+            const carried =
+                `Something ${party.name} is already after ran through you while you asked, `
+                + 'which is why this was not the request a stranger would have made.';
+            alsoSaid.push(carried);
+            facts.structure.push(
+                `The 'wants' term was carried by goal "${wanted.goal.id}" (${wanted.because}). `
+                + 'Read off open goal rows by `whatTheyWantThatYouCouldReach`, which is blind to '
+                + 'the gap in rung by design.'
+            );
+        } else {
+            alsoSaid.push(
+                `Nothing ${party.name} is chasing runs through you, and that is a term of this `
+                + `the same as standing is. Ask what ${party.name} wants; if it turns out to be `
+                + 'money, a road they have not walked, or a word from a house, then you are '
+                + 'holding part of it and the next asking is a different asking.'
+            );
+            facts.structure.push(
+                'The \'wants\' term read zero: no open goal row of theirs is pointed at this '
+                + 'cultivator, at their house, at a purse worth a year of this person\'s '
+                + 'earnings, or at a road this person has not walked.'
+            );
+        }
+
+        // ── A REFUSAL THAT NAMES A TRADE IS NOT A REBUFF ─────────────────
+        //
+        // The design owner's correction to the grudge model, said in the
+        // prose rather than only in the record: *"someone could trade someone
+        // for something else"*. A no that comes with what they ARE after is an
+        // opening, and the sentence is emergent rather than authored - the
+        // want is `text` off their own goal row, written by whoever opened it,
+        // so a want nobody has thought of yet reads correctly here with no
+        // code.
+        //
+        // Said on a refusal only. Somebody who agreed has no counter-offer to
+        // make, and telling them what else they wanted would be noise.
+        if (result.outcome !== 'taken' && theirTopWant !== null) {
+            alsoSaid.push(
+                `It is not a door closing. ${party.name} is carrying something of their own - `
+                + `${theirTopWant.text} - and somebody who turns up holding part of that is not `
+                + 'making the same request twice.'
+            );
+        }
+        if (result.marks.obligation === null) {
+            facts.structure.push(
+                'No grudge was written. A refusal is not automatically an offence: what writes '
+                + 'one is the ask being wrong - coercion, money for what money is not the medium '
+                + `for, or asking past patience - or the refusal being wrong, which needs all of `
+                + 'a pressing need, a merely reserved hold, a binding between the two, and the '
+                + 'answer having been theirs to give.'
+            );
+        }
+        if (!theirsToGive) {
+            facts.structure.push(
+                'The answer was not theirs to give: their house\'s own road, asked of somebody '
+                + 'holding no rank in it. Arithmetic rather than a lever, so no pressure reaches '
+                + 'it and no grudge comes of it either way.'
+            );
+        }
+        // Onto the PROSE as well as onto the lines. A line pushed after
+        // `factsForRequest` has already composed its prose reaches the
+        // inspector and never reaches the player, which is the invisible half
+        // of the invisible-fallback defect. `pressSomebody` does the same
+        // thing for the same reason.
+        if (alsoSaid.length > 0) {
+            facts.lines.push(...alsoSaid);
+            facts.prose = `${facts.prose}
+
+${alsoSaid.join(' ')}`;
+        }
+
         facts.lines.push(...spent.facts.lines);
         facts.structure.push(...spent.facts.structure);
 
@@ -12541,6 +12724,133 @@ ${done.lines.join(' ')}`;
             for (const id of carried.techniqueIds) held.add(id);
         }
         return [...held];
+    }
+
+    /**
+     * What a person standing here is currently trying to do, off their rows.
+     *
+     * Null when there is nothing to read: the world is off, or this is a
+     * cultivator row rather than somebody the world holds. Both are honest
+     * absences and neither is an empty goal list, which would say "they want
+     * nothing" about somebody the record has never had an opinion on.
+     */
+    private theirOpenBusiness(personId: string): SomebodyWithGoals | null {
+        if (!this.atHand) return null;
+        const npc = this.atHand.npcs.find(row => row.id === personId);
+        if (!npc) return null;
+        return {
+            id: npc.id,
+            ordinal: npc.cultivation.realmOrdinal,
+            factionId: npc.factionId,
+            holds: this.whatTheyAreCarrying(personId),
+            goals: goalsHeldBy(npc),
+            clocks: this.clocksUnder(npc)
+        };
+    }
+
+    /**
+     * The clocks a person is under, which is where a want's date comes from.
+     *
+     * Found by playing: NOTHING IN THIS WORLD HAS EVER WRITTEN A
+     * `deadlineOnDay`. Not the seeder, not `openAmbition`, not the birth goal.
+     * So every want read as open-ended, every holder was negotiable, and the
+     * case the design owner cared about most - somebody who cannot wait -
+     * could not occur at all. Same defect as a module nothing calls, one size
+     * down: a field nothing writes.
+     *
+     * The date is DERIVED here rather than stamped on the row, because a
+     * stamped one is wrong by the second year - the settling clock resets on
+     * every advance, and a stored deadline would go on reading true. Both
+     * numbers are already on the record and are already moved by the world.
+     */
+    private clocksUnder(npc: NpcRecord): TheClocksSomebodyIsUnder {
+        return {
+            ordinal: npc.cultivation.realmOrdinal,
+            lastAdvancedOnDay: npc.cultivation.lastAdvancedOnDay,
+            lifespanEndsOnDay: npc.cultivation.lifespanEndsOnDay
+        };
+    }
+
+    /**
+     * The clocks of whoever a want points at, when it points at a person.
+     *
+     * A want about a child is dated by the child, which is the owner's own
+     * example. Null for a want pointed at a house, a place, or nobody.
+     */
+    private clocksOfWhoeverTheWantIsAbout(targetId: string | null): TheClocksSomebodyIsUnder | null {
+        if (targetId === null || !this.atHand) return null;
+        const npc = this.atHand.npcs.find(row => row.id === targetId);
+        return npc ? this.clocksUnder(npc) : null;
+    }
+
+    /**
+     * What somebody is after, said to the player, behind the gate that owns it.
+     *
+     * THE GATE IS THEIR SIDE OF THE TIE, and it is the strict one on purpose.
+     * `recordContact` writes the PLAYER's side every time the player notices
+     * anybody, so gating on that would hand the business of everybody in the
+     * square to somebody who had merely looked at them. Their side is written
+     * only by an attempt that LANDED - a drink stood, a visit paid, a favour
+     * done - which is `asking.md`'s "someone who has reason to talk to you"
+     * exactly, and it is reachable by a cultivator with nothing because every
+     * one of those costs a day and no stones.
+     *
+     * An open obligation either way counts too, for the same reason and off the
+     * same rows the resolver reads: a debtor talks to their creditor.
+     */
+    private whatIsThisPersonAfter(cultivator: Cultivator, party: ResolvedEntity): EngineFacts {
+        const theirTie = tieFrom(this.repos, party.id, cultivator.id);
+        const dealings = openLedgerBetween(this.repos, cultivator.id, party.id);
+        if (!(theirTie?.active && theirTie.strength > 0) && dealings.length === 0) {
+            return factsForSomebodyWhoWillNotSay(party.name);
+        }
+
+        const them = this.theirOpenBusiness(party.id);
+        if (!them || them.goals.length === 0) {
+            return factsForSomebodyWithNoOpenBusiness(party.name);
+        }
+
+        const today = this.atHand ? Math.floor(this.atHand.currentDay) : 0;
+        return factsForWhatTheyAreAfter(
+            party.name,
+            them,
+            them.goals[0],
+            this.whatTheyWantOfYou(cultivator, party.id),
+            today,
+            this.clocksOfWhoeverTheWantIsAbout(them.goals[0].targetId)
+        );
+    }
+
+    /**
+     * The `wants` term, supplied from rows for the first time.
+     *
+     * `resolveAttempt` has priced this since it was written and every caller in
+     * this layer left it unset, so "they have an open goal you could move" was
+     * FALSE in every social attempt any player has ever made - a whole term of
+     * a seven-term resolver, worth as much as the tie, reading zero for the
+     * life of the verb. It is the last of the three that were missing;
+     * `theirTie` and `ledger` were wired when the same audit found them.
+     *
+     * Note what is NOT gated here. Whether somebody wants something the player
+     * could reach is a fact about the world and applies whether or not the
+     * player has any idea of it - the knowledge gate belongs on the READ, which
+     * is `what-somebody-is-after.ts`, and putting it here would mean a player
+     * who had not asked was quietly resolved against different arithmetic.
+     */
+    private whatTheyWantOfYou(
+        cultivator: Cultivator,
+        personId: string
+    ): AWantYouCouldReach | null {
+        const them = this.theirOpenBusiness(personId);
+        if (!them) return null;
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        return whatTheyWantThatYouCouldReach(them, {
+            id: cultivator.id,
+            factionId: membership?.sectId ?? cultivator.sectId ?? null,
+            ranked: membership !== null,
+            spiritStones: cultivator.spiritStones,
+            holds: cultivator.knownTechniques
+        });
     }
 
     /**

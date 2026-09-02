@@ -31,7 +31,10 @@ import { SITE_PHRASES } from './trials.js';
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
-import { requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
+import {
+    askingWhatSomebodyIsAfter,
+    requestPutToSomebody
+} from './what-a-request-asks-and-of-whom.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 
 /** Longest stretch of seclusion that may be requested in one call: 100 years. */
@@ -3457,6 +3460,23 @@ function planIntent(input: string): PlannedAction {
     // Below the institutional block and the attack block for the reason those
     // give: a sentence that files a petition or starts a fight is still doing
     // that when somebody could also read it as asking for something.
+    // ── WHAT SOMEBODY IS AFTER ───────────────────────────────────────────
+    //
+    // Above the request block, because "ask her what she wants" is a question
+    // about her and not a request put to her, and below everything the request
+    // block is below for the reasons that block gives.
+    //
+    // Free, and it reaches nothing else: every one of the three patterns
+    // requires the word that names the wanting, so no sentence that used to go
+    // somewhere goes here instead. Checked against "what does she know", "who
+    // can teach me" and "what is she carrying", all unchanged.
+    {
+        const about = askingWhatSomebodyIsAfter(input);
+        if (about) {
+            return { action: 'request', intent: 'wants', target: about };
+        }
+    }
+
     {
         const asked = requestPutToSomebody(input);
         if (asked) {

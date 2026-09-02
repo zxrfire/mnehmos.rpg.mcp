@@ -424,12 +424,57 @@ export interface AttemptInput {
     /**
      * True when the subject has an open goal this actor could plausibly move.
      *
-     * Must be read off a real goal row - `openGoalsOf` in `npc-state.ts` - and
-     * never off a model's opinion about what somebody probably wants.
+     * Must be read off a real goal row - `activeGoals` in `npc-state.ts`, put
+     * to `whatTheyWantThatYouCouldReach` in
+     * `engine/world/what-they-want-that-you-could-reach.ts` - and never off a
+     * model's opinion about what somebody probably wants.
+     *
+     * This comment used to name `openGoalsOf`, which does not exist and never
+     * did, and the term read `false` in every attempt any player ever made for
+     * as long as it did. A comment naming a function nobody wrote is the same
+     * defect as a refusal naming a door nobody built.
      */
     theyWantSomethingFromYou?: boolean;
     /** Spirit stones actually put down. Only spent when the attempt lands. */
     stonesOffered?: number;
+    /**
+     * How many times this actor has already put THIS ask to THIS subject.
+     *
+     * Read by nothing except the patience test on a refusal. The first no is
+     * not an offence and the eleventh identical asking is, and the count lives
+     * with the caller because it is a fact about a pair rather than about one
+     * attempt.
+     */
+    timesAskedBefore?: number;
+    /**
+     * Whether what the actor is asking for cannot wait.
+     *
+     * Read off the actor's own state by the caller - a wound that is stopping
+     * them, a deadline on a row - and never off how the sentence was phrased.
+     * Half of the test for whether REFUSING was the wrong thing to do.
+     */
+    askersNeedIsPressing?: boolean;
+    /**
+     * Whether the subject's own claim on the thing is a maybe rather than a now.
+     *
+     * The other half. `what-an-open-need-does-to-an-ask-and-to-a-price.ts`
+     * decides it off the deadline on their goal row: a present need is a
+     * refusal nobody can hold against them, and a store put by against
+     * something that may never come is a different answer entirely.
+     */
+    theirHoldOnItIsMerelyReserved?: boolean;
+    /**
+     * Whether saying yes was ever theirs to say. Defaults to yes.
+     *
+     * THE DISCRIMINATOR THAT KEEPS A GRUDGE HONEST. `immortal-items.ts`
+     * describes the case this exists for and calls it *"arithmetic rather than
+     * a lever"*: a body that counts a finite stock to the unit and needs a
+     * quorum to touch it has not wronged anybody by saying no, because *"there
+     * is no version of the problem where the player finds the right person and
+     * applies enough pressure."* A wrong requires that the refuser could have
+     * said yes.
+     */
+    theAnswerWasTheirsToGive?: boolean;
     rng: CultivationRNG;
 }
 
@@ -867,6 +912,118 @@ function tieForTransaction(input: AttemptInput, turned: boolean): TieMove {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * ── A REFUSAL IS NOT AUTOMATICALLY AN OFFENCE ────────────────────────────
+ *
+ * Ruled by the design owner, correcting what was here: every refused approach
+ * wrote a grudge, and *"refusals immediately turning into grudges was too
+ * simplistic"*. Measured before the change: a `slight` grudge is worth -0.1,
+ * which takes a COURTESY - the very act the refusal advises - from about 29%
+ * to about 9%. Being told no once made the cheapest lever in the game three
+ * times harder, permanently.
+ *
+ * Most refusals are one of three things and only the third is grudge-worthy:
+ *
+ *   A COUNTER-OFFER   they say what they WOULD take. Not a rebuff, an opening,
+ *                     and it should leave the tie where it found it.
+ *   A PLAIN NO        a present need, or you are nobody yet, or it was never
+ *                     theirs to give. Nothing was damaged.
+ *   AN OFFENCE        somebody did something wrong. Only this one sours.
+ *
+ * ── AND THERE ARE TWO WAYS TO DO SOMETHING WRONG ─────────────────────────
+ *
+ * The asker can be wrong, and so can the refuser. Both are here because the
+ * owner ruled both, and they produce grudges pointing in opposite directions.
+ *
+ * THE ASK WAS WRONG. `items.md` supplies the discriminator: above the line
+ * cash *"is simply not the medium... offering it reads as not understanding
+ * what you are looking at."* That is the shape of an insult - not that the ask
+ * failed, but that it showed the asker did not know what they were asking for.
+ * Coercion is the same fault with a different face, and wearing somebody down
+ * over the same thing is the third: patience is allowed to run out, from
+ * REPETITION rather than from the first no.
+ *
+ * THE REFUSAL WAS WRONG. *"if we're in the same sect, my son is dying and you
+ * refuse because you want to keep it for later, this might be a grudge."*
+ * Nothing about the asking was mistaken. What makes it a wrong rather than a
+ * disappointment is the BINDING - a stranger refusing you is just the world -
+ * and the binding is read off rows this resolver already holds: a shared
+ * house, an active tie, an open ledger.
+ *
+ * That second arm is the urgency asymmetry from the motivation model seen from
+ * the other side. `what-an-open-need-does-to-an-ask-and-to-a-price.ts` says a
+ * present need is a refusal and a reserved one is a price you have not met;
+ * this says that when MY need is present and yours is merely reserved, and we
+ * are bound, refusing is something I can hold against you. One asymmetry, two
+ * consequences.
+ *
+ * There is no list of offences here and there must not be one. Each of the
+ * four tests below is a structural fact about what was put down or what was
+ * held back, and a fifth kind of wrong should arrive as a different reading of
+ * the same rows rather than as a new case.
+ */
+
+/**
+ * Below this, money is not what buys the thing.
+ *
+ * `PURSE_REACH` is already this world's statement of how far coin gets against
+ * each weight of ask - the same table `purseWeight` prices an offer with - so
+ * reading the insult off it means the two can never disagree about where the
+ * cash line falls. At or under a fifth of its reach, putting money on the table
+ * is the sentence `items.md` describes rather than a low offer.
+ */
+export const COIN_STOPS_BEING_THE_MEDIUM_AT = 0.2;
+
+/**
+ * How many times the same thing can be asked before patience is a fair cost.
+ *
+ * Counted per pair and per kind by the caller, which is where the count lives.
+ * The first no is not an offence and the eleventh identical asking is.
+ */
+export const PATIENCE_RUNS_OUT_AFTER_ASKS = 5;
+
+/** Whether these two are bound to each other at all, off rows only. */
+function boundToEachOther(input: AttemptInput): boolean {
+    const sameHouse = input.actor.factionId !== null
+        && input.actor.factionId === input.subject.factionId;
+    const tie = input.theirTie?.active === true || input.yourTie?.active === true;
+    const ledger = (input.ledger ?? []).some(record => record.status === 'open');
+    return sameHouse || tie || ledger;
+}
+
+/**
+ * Whether the asking itself was the wrong thing to do.
+ *
+ * Three readings of what was put down, and none of them is about the answer.
+ */
+function theAskWasWrong(input: AttemptInput): boolean {
+    const leverage = input.approach?.leverage ?? 'none';
+    // Threatening somebody, or holding something over them. An offence whether
+    // or not it works, which is why it does not read the outcome.
+    if (leverage === 'force' || leverage === 'secret') return true;
+    // Money for a thing money is not the medium for.
+    if (leverage === 'coin' && PURSE_REACH[input.ask] <= COIN_STOPS_BEING_THE_MEDIUM_AT) {
+        return true;
+    }
+    return (input.timesAskedBefore ?? 0) >= PATIENCE_RUNS_OUT_AFTER_ASKS;
+}
+
+/**
+ * Whether the REFUSING was the wrong thing to do.
+ *
+ * They could have said yes, they had it, the need in front of them could not
+ * wait, their own claim on it was a maybe, and the two of them are bound. All
+ * five, because dropping any one of them turns an ordinary no into an injury.
+ */
+function theRefusalWasWrong(input: AttemptInput): boolean {
+    // Somebody who could not have said yes has done nothing. Checked first
+    // because it settles the question whatever the other three say.
+    if (input.theAnswerWasTheirsToGive === false) return false;
+    return input.askersNeedIsPressing === true
+        && input.theirHoldOnItIsMerelyReserved === true
+        && boundToEachOther(input);
+}
+
+/**
  * The severity written on a refusal, decided once at creation.
  *
  * `grudges.ts` forbids recomputing severity, and this does not recompute it -
@@ -886,8 +1043,37 @@ function severityOfARefusal(leverage: ApproachLeverage, ask: AskWeight): Severit
     return 'slight';
 }
 
-function refusalGrudge(input: AttemptInput, reached: boolean): ObligationInput {
+/**
+ * What a refusal leaves behind, which is usually nothing.
+ *
+ * Null is now the common answer and that is the whole change. When it is not
+ * null, WHICH WAY IT POINTS is decided by which of the two wrongs happened -
+ * an insult is held by the person who was insulted, and a refusal that should
+ * not have been made is held by the person it was made to.
+ */
+function whatARefusalLeaves(input: AttemptInput, reached: boolean): ObligationInput | null {
     const leverage = input.approach?.leverage ?? 'none';
+
+    if (theRefusalWasWrong(input)) {
+        return {
+            kind: 'grudge',
+            // The ASKER holds this one. They were the one turned away.
+            holderId: input.actor.id,
+            subjectId: input.subject.id,
+            cause: 'betrayal',
+            // Bound to somebody, needing it now, and told to wait on a maybe.
+            severity: 'serious',
+            onDay: input.onDay,
+            description:
+                `${input.subject.name} had it, ${input.actor.name} needed it, and `
+                + `${input.subject.name} kept it back against something that may never come.`,
+            participants: input.subject.factionId ? [input.subject.factionId] : [],
+            tags: ['refused_a_present_need', `ask:${input.ask}`, 'held_in_reserve']
+        };
+    }
+
+    if (!theAskWasWrong(input)) return null;
+
     return {
         kind: 'grudge',
         // The AGGRIEVED party holds it, the way `combat-manage.ts` writes a feud.
@@ -956,7 +1142,7 @@ export function resolveAttempt(input: AttemptInput): AttemptResult {
             marks: {
                 theyKnowWhatYouTried: true,
                 reachedTheHouse: reached,
-                obligation: refusalGrudge(input, reached),
+                obligation: whatARefusalLeaves(input, reached),
                 counterObligation: null,
                 tie: null,
                 unspoken: null

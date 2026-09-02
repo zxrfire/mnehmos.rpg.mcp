@@ -211,7 +211,17 @@ export function theTermsInWords(
      * becoming 'never'". An arithmetic trail that does not reach the number it
      * is explaining is worse than none.
      */
-    odds?: number
+    odds?: number,
+    /**
+     * What the person actually wanted, when the `wants` term carried anything.
+     *
+     * A term that reads "something they want that the asker could reach" is a
+     * number; the same term with *"Avenge a father"* in it is a person. The
+     * text is the goal row's own, written by whoever opened it, so nothing
+     * here has to know what kinds of thing people want - and it goes LAST so
+     * that every existing call site keeps meaning what it meant.
+     */
+    theNeed?: string
 ): string {
     const moved: string[] = [];
     const flat: string[] = [];
@@ -223,7 +233,10 @@ export function theTermsInWords(
             flat.push(name);
             continue;
         }
-        moved.push(`${name} ${value > 0 ? 'added' : 'cost'} ${points(value)}`);
+        const said = key === 'wants' && theNeed
+            ? `${name} - ${theNeed} -`
+            : name;
+        moved.push(`${said} ${value > 0 ? 'added' : 'cost'} ${points(value)}`);
     }
 
     // Points, like every other term, so that "in a hundred" is left meaning
@@ -273,6 +286,12 @@ export interface AnAskThatWasPut {
     days?: number;
     stonesSpent?: number;
     priorAsks: number;
+    /**
+     * The want the `wants` term was carried by, in the words of its own row.
+     *
+     * Absent where the term read zero, which is the ordinary case.
+     */
+    theNeed?: string;
     /** True once the caller has actually written the records down. */
     wroteToTheLedger?: boolean;
     reachedTheHouse?: boolean;
@@ -296,7 +315,7 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
     if (put.outcome === undefined) {
         return `${put.subject}, asked ${what} with ${table}: not put, only weighed. `
             + `It is ${weight}, and it would come off ${howOftenThisLands(put.odds)}. `
-            + `${theTermsInWords(put.terms, put.odds)}${attempt} No day passed and nothing `
+            + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${attempt} No day passed and nothing `
             + 'changed hands.';
     }
 
@@ -323,7 +342,8 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
 
     return `${put.subject}, asked ${what} with ${table}: `
         + `${resolved(HOW_IT_WENT, put.outcome)}. It is ${weight}, and it comes off `
-        + `${howOftenThisLands(put.odds)}.${attempt} ${theTermsInWords(put.terms, put.odds)} `
+        + `${howOftenThisLands(put.odds)}.${attempt} `
+        + `${theTermsInWords(put.terms, put.odds, put.theNeed)} `
         + `${spent}. ${after}.`;
 }
 
