@@ -234,8 +234,15 @@ export interface StandingHere {
      * learn" and "what sects are there", and was never once told there was a
      * market. That is the first real decision in the game - a book or the food
      * - and it was unreachable except by guessing the words.
+     *
+     * OPTIONAL, and only because the caller that supplies it is held up: the
+     * sellers live on the world and `whatIsLiveHere` in `game.ts` is the one
+     * place that can count them. Absent reads as none, which loses the first of
+     * the two lines below and keeps the second. Make it required again the
+     * moment that writer lands, because a count nothing writes is a rule
+     * nothing enforces.
      */
-    peopleHereWithSomethingToSell: number;
+    peopleHereWithSomethingToSell?: number;
     /** The ground gives back less than ordinary: half rate, and a penalty. */
     thinGround: boolean;
     /**
