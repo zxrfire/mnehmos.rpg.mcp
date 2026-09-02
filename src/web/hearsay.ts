@@ -509,7 +509,10 @@ export function offerHearing(input: HearingInput): Hearing | null {
     // Both speakers' vocabularies, because they are talking to each other and
     // each assumes the other knows. A shared history neither is going to
     // summarise is exactly the thing that produces an unresolvable fragment.
-    const candidates = unknownTo(gate, cultivator.id, [...heldBy(first), ...heldBy(second)]);
+    const candidates = notStandingHere(
+        unknownTo(gate, cultivator.id, [...heldBy(first), ...heldBy(second)]),
+        present
+    );
     const one = pickWeighted(candidates, locale, OVERHEARD_BAND_WEIGHTS, rng);
     if (!one) return null;
 
@@ -637,6 +640,62 @@ function unknownTo(
         out.push(entry);
     }
     return out;
+}
+
+/**
+ * The candidates who are not standing in the square.
+ *
+ * ── WHY THE OVERHEARD CHANNEL NEEDS THIS AND THE OTHERS DO NOT ───────────
+ *
+ * `heldBy` gives a speaker their own working vocabulary, and a speaker's own
+ * vocabulary is full of the people they stand next to all day: at the Azure
+ * Cloud Pavilion grounds, Yan Shuling's mentionables include Yan Shuling and
+ * three colleagues who were in the square with her. Measured on a seeded
+ * world: 1,086 speaker/present-name pairs across the map, so this is a
+ * property of how the catalog is placed rather than an unlucky seed.
+ *
+ * Two people talking to each other about somebody eight feet away is bad
+ * writing, and discovery.md is explicit about why it is also bad design: the
+ * overheard device exists to hand the player "a fragment they cannot resolve",
+ * and "an overheard fragment that is explained a paragraph later was just
+ * exposition wearing a costume". A name the player can resolve by turning
+ * round is resolved in the same scene, which spends the device for nothing.
+ *
+ * The `told` and `passing` channels are deliberately NOT filtered. Somebody
+ * talking TO the player and nodding at a colleague across the courtyard is an
+ * introduction, which is a legitimate and wanted way for a name to arrive; the
+ * traveller channel draws places only.
+ *
+ * ── MATCHED ON NAME AS WELL AS ID, AND THE ID HALF CATCHES NOTHING ───────
+ *
+ * The two id namespaces do not meet. `lore.ts` keys a catalog person as
+ * `member-yan-shuling`; `seeding.ts` instantiates the same person into the
+ * world as `npc-member-yan-shuling`. Measured on a seeded world: 203 lore
+ * people, 428 world NPCs, and ZERO ids in common.
+ *
+ * So the id comparison is here for the `cultivators` half of the crowd, which
+ * does share ids, and the NAME comparison is the one that does the work - for
+ * the reason `personName` in `engine/world/history.ts` gives at length: the
+ * knowledge system is keyed by id and everything the player reads is keyed by
+ * name. A gate that only compared ids would pass every single one of those
+ * 1,086 pairs while looking correct.
+ *
+ * No draw is added or removed by this: `pickWeighted` spends exactly one band
+ * roll and one row roll whatever the candidate list holds, so a scene with
+ * nobody nameable present is byte-identical to what it drew before.
+ */
+function notStandingHere(
+    candidates: readonly Mentionable[],
+    present: readonly RosterEntry[]
+): Mentionable[] {
+    if (present.length === 0) return [...candidates];
+
+    const ids = new Set(present.map(row => row.id));
+    const names = new Set(present.map(row => row.name.trim().toLowerCase()));
+
+    return candidates.filter(entry =>
+        entry.kind !== 'cultivator'
+        || !(ids.has(entry.id) || names.has(entry.name.trim().toLowerCase())));
 }
 
 /**

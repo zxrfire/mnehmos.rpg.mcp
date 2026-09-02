@@ -14504,6 +14504,32 @@ ${done.lines.join(' ')}`;
      * name gets them nothing here - without being told that a rule was applied.
      * Never confirms whether the thing exists, and never lists what would have
      * worked.
+     *
+     * ── WHY THE WITNESS IS GATED ─────────────────────────────────────────
+     *
+     * This sentence used to name `here[0]` outright, and that was two defects
+     * in one line. Reproduced: at a settlement of fifteen strangers,
+     * `I negotiate with Kong Lanwu` - somebody real and somewhere else - came
+     * back "You put the words to Liang Fuhe", and the very next sentence of
+     * the same refusal said "you have a name for none of them". The paragraph
+     * contradicted itself because the first half was ungated and the second
+     * half was not.
+     *
+     * The first defect is the discovery leak: `Liang Fuhe` is a name this
+     * cultivator has no record for, handed over by the ERROR path, which is
+     * the door discovery.md is shutting. The second is worse and is the reason
+     * this is fixed ahead of the other two. The player asked for one person
+     * and read the name of another, in a sentence that describes the words
+     * being delivered - so what a refusal looks like from inside the game is a
+     * REDIRECT, and the player now believes they spoke to somebody they did
+     * not. A refusal that names a way out is this repo's pattern; a refusal
+     * that quietly picks a different target is not a refusal at all.
+     *
+     * So: name the witness only where the player could already name them,
+     * which is what makes it an earned name rather than a free one, and
+     * otherwise say plainly that nobody here answers to it. Seeing that
+     * somebody is standing there is not knowing who they are - the same rule
+     * `nobodyByThatName` applies to the list it appends after this.
      */
     private blankLook(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -14512,9 +14538,18 @@ ${done.lines.join(' ')}`;
             return `You say it aloud in ${where} and ${where} carries on as it was. ` +
                 'Whatever you meant by it, there is nothing here that answers to it.';
         }
-        const witness = here[0].name;
-        return `You put the words to ${witness}. They look at you the way people look at a ` +
-            'sentence with a hole in it, and then go back to what they were doing.';
+
+        const witness = here.find(
+            row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+        );
+        if (!witness) {
+            return `Nobody in ${where} answers to that name. The nearest person hears the ` +
+                'words out the way people hear out a sentence with a hole in it, and goes ' +
+                'back to what they were doing.';
+        }
+
+        return `You put the words to ${witness.name}. They look at you the way people look ` +
+            'at a sentence with a hole in it, and then go back to what they were doing.';
     }
 
     /**
@@ -14522,6 +14557,11 @@ ${done.lines.join(' ')}`;
      *
      * Says what is there and stops. A list of who could be approached is a
      * developer affordance wearing a sentence.
+     *
+     * The lone-person branch is gated for the same reason `blankLook` is: one
+     * stranger in an empty square is still a stranger, and printing their name
+     * because they happen to be the only one there would be the discovery leak
+     * arriving through arithmetic instead of through a lookup.
      */
     private whoIsAbout(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -14531,8 +14571,11 @@ ${done.lines.join(' ')}`;
                 'were looking for before you noticed that.';
         }
         if (here.length === 1) {
-            return `${here[0].name} is the only person in ${where}, and you have not decided ` +
-                'whether it was them you wanted.';
+            return this.knowledge.isAwareOf(cultivator.id, 'cultivator', here[0].id)
+                ? `${here[0].name} is the only person in ${where}, and you have not decided ` +
+                  'whether it was them you wanted.'
+                : `There is one other person in ${where}, and you have not decided whether it ` +
+                  'was them you wanted. You could not put a name to them if it was.';
         }
         return `There are people about in ${where}, and you get as far as opening your mouth ` +
             'before realising you had not picked one.';
