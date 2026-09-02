@@ -23,9 +23,19 @@
  *                                        the same job for a fight two people
  *                                        arranged: identical wound, different
  *                                        bill, and none of it touching the wound
+ *   what-somebody-would-take-for-a-thing-they-will-not-sell.ts
+ *                                        the price of something above the cash
+ *                                        line, and whether what is on the table
+ *                                        meets it. One scale, no list of
+ *                                        currencies, and it cannot answer what
+ *                                        somebody NEEDS - that is
+ *                                        `world/what-an-open-need-does-to-an-
+ *                                        ask-and-to-a-price.ts` and this
+ *                                        consumes it
  */
 
 export * from './an-attempt-to-move-somebody.js';
+export * from './what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 export * from './how-freely-somebody-parts-with-what-they-have.js';
 export * from './what-a-house-will-do-about-it.js';
 export * from './when-somebody-works-out-what-you-did.js';

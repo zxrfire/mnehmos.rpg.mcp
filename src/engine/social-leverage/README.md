@@ -25,6 +25,41 @@ engine/social/            what the world remembers.  No scores, no ladder.
 engine/social-leverage/   what happens when somebody tries.  Both.
 ```
 
+## Five outcomes, and the fifth is a proposal
+
+`resolveAttempt` returns `taken`, `turned`, `countered`, `refused` and `reported`.
+
+**`countered` is the one that took longest to arrive and its absence was load-bearing.**
+Above the cash line this world does not sell things, and what moves people instead is a
+favour owed, another singular thing, an oath or a name - every one of which is a
+*negotiation*. A resolver whose only failure states were *no* and *no, and they told
+somebody* had nowhere to put one, so a player who found the right holder of the right object
+and put down the wrong thing got the same sentence as somebody who had insulted them. The
+whole barter tier was unreachable in play while the refusals correctly named what would have
+worked.
+
+It fires on one condition and needs no new input: `theyWantSomethingFromYou`, a term this
+resolver has priced since it was written. Somebody with an open want the person in front of
+them could move does not close a door - they say what they would take. It leaves **nothing**
+behind: no grudge, no tie, no report. Being told a price is not being refused, and a
+counter-offer must never make asking again harder.
+
+## What it would take, and the one model of what somebody needs
+
+`what-somebody-would-take-for-a-thing-they-will-not-sell.ts` prices a barter-tier trade. Two
+rules and neither is negotiable:
+
+- **There is no list of currencies and there must never be one.** Everything on the table is
+  asked one question - *how high does it carry the person receiving it?* - and nothing
+  anywhere branches on what kind of thing it is. A tenth acceptable medium needs no code. The
+  test walks ten media the module has never heard of and asserts they resolve identically.
+- **This directory cannot answer what somebody NEEDS.** That is
+  `engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.ts`, which reads goal rows and
+  derives urgency from the settling and lifespan clocks. `howTheyAreHoldingIt` takes *its*
+  return type as an argument and is the only way to build the holder's side, so there is no
+  second reading of a goal row here and no way for the two to drift. **A present need is a
+  refusal at any figure; a reserved one is a price you have not met.**
+
 ## The rule this directory was most at risk of breaking
 
 `src/web/actions.ts` states it:

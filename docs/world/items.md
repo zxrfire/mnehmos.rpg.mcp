@@ -130,6 +130,30 @@ The line between the tiers should be the *same* line as the counted/tracked one.
 cash-priced exactly where it is fungible and barter-only exactly where it is singular. If
 those two boundaries ever drift apart, one of them is wrong.
 
+**And there is a verb for it.** For a long time there was not, and the absence was the
+sharpest illustration in the repo of a refusal naming a door nobody built: `see a physician`
+on a crippling meridian tear named the medicine, named its grade, said *"nobody sells one of
+these for stones"* and listed the three things that would move somebody - and **nothing in
+the game accepted that sentence.** Every heaven-grade and above cure was nameable, priced,
+seeded onto real houses, and unobtainable.
+
+The player asks what it would take (*"I need xyz, what's your price?"*) and puts something
+down that is not money. Two rules govern how it is priced, and both are this file's own:
+
+- **The medium is whatever answers the want, and there is no list of them.** Everything on
+  the table is asked one question - *how high does it carry the person receiving it?* - so an
+  art, an artifact, an oath, a service, a name, information and a placement for somebody's
+  child are all priced by the same line of code. Anything the engine has no row for is worth
+  what the person offering it is worth, which is this file's own sentence about an obligation
+  from somebody at a height your house cannot reach. **A tenth medium needs no code.**
+- **The bar is the object's own rung**, not a number anybody chose, which is
+  [scarcity is measured, not authored](#scarcity-is-measured-not-authored) applied to price.
+
+`what-somebody-would-take-for-a-thing-they-will-not-sell.ts` is the arithmetic and it
+deliberately cannot answer what somebody NEEDS - that is one model, in
+`what-an-open-need-does-to-an-ask-and-to-a-price.ts`, and this consumes it. A **present** need
+is a refusal at any figure; a **reserved** one is a price you have not met.
+
 ---
 
 ## Why a holder keeps what they cannot use

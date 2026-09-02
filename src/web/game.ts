@@ -489,6 +489,19 @@ import {
     goalsHeldBy,
     whatTheyWantThatYouCouldReach
 } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
+import { whatTheirNeedDoesToThePriceOf } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
+import {
+    howHeavyThisAskIs,
+    howTheyAreHoldingIt,
+    whatItWouldTake
+} from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
+import type { OnTheTable } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
+import {
+    heldByTheirHouse,
+    howHighTheirHouseReaches,
+    theThingAskedFor,
+    whatIsBeingPutDown
+} from './what-a-holder-would-take-for-it.js';
 import type {
     AWantYouCouldReach,
     SomebodyWithGoals,
@@ -712,7 +725,13 @@ const FLAG_MASTER = 'master_who_took_them_on';
  * reading, which is the rule every other intent-carrying action here obeys.
  */
 const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
-    'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing'
+    'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing',
+    // The price asked before it is paid, and the thing put down for it. Both
+    // reach `whatWouldItTake` below rather than the ordinary request path,
+    // because the ordinary path ends at `interact` for anything that is not an
+    // art - which is where every barter-tier object in the catalog used to
+    // stop.
+    'terms', 'a_trade'
 ]);
 
 /**
@@ -12227,6 +12246,22 @@ ${unnamed}`;
             if (who) return this.askAround(run, cultivator, who, named, scope);
         }
 
+        // ── WHAT WOULD IT TAKE, AND WHAT IS BEING PUT DOWN FOR IT ────────
+        //
+        // Ahead of the art read, because both of these name a thing that is
+        // not an art and the fall-through below sends anything that is not an
+        // art to `interact`. That fall-through is where every barter-tier
+        // object in the catalog stopped: the comment under it says the honest
+        // thing - it does not invent a way to hand objects over - and the
+        // consequence was that a heaven-grade cure could be NAMED by the
+        // physician, named by the wound read, and reached by nothing.
+        if (kind === 'terms' || kind === 'a_trade') {
+            return await this.whatWouldItTake(
+                run, cultivator, ambient, party, kind, named,
+                reread?.putDown ?? null, leverage, rawInput
+            );
+        }
+
         // Asking somebody FOR a named art is asking to be taught it: a copy and
         // an afternoon end in the same place, and `handleLearn` cannot tell them
         // apart either. Anything else that is merely a thing falls back to the
@@ -12819,6 +12854,298 @@ ${done.lines.join(' ')}`;
             today,
             this.clocksOfWhoeverTheWantIsAbout(them.goals[0].targetId)
         );
+    }
+
+    /**
+     * WHAT WOULD IT TAKE, AND WHAT HAPPENS WHEN SOMETHING IS PUT DOWN.
+     *
+     * ── THE GAP THIS IS THE LIVE END OF ──────────────────────────────────
+     *
+     * Played, at a crippling meridian tear. The physician's refusal is correct
+     * and complete - it names the medicine, its grade, and then says *"Nobody
+     * sells one of these for stones... a favour owed, something out of a hole
+     * nobody else has been down, or an art"* - and **nothing in the game
+     * accepted that sentence.** `request` sends anything that is not an art to
+     * `interact`, whose own comment says the honest thing: it does not invent a
+     * way to hand objects over. So every heaven-grade and above cure in the
+     * catalog was nameable, priced, seeded onto real houses, and unobtainable,
+     * with the refusal that said so as the closest the game came to admitting
+     * it.
+     *
+     * ── WHAT IT READS, AND WHOSE ANSWER EACH PIECE IS ────────────────────
+     *
+     *   the thing        `theThingAskedFor` off the pill catalog: how high it
+     *                    carries somebody, and whether money buys one at all.
+     *   who is holding   `heldByTheirHouse` off `state.objects`, which is the
+     *                    one possessions table. Barter pills are seeded onto
+     *                    HOUSES, so this asks about the shelf behind the person.
+     *   their need       `whatTheirNeedDoesToThePriceOf`, which is the ONE
+     *                    model of what somebody needs and how urgently. Nothing
+     *                    here second-guesses it and nothing here reads a goal
+     *                    row.
+     *   the price        `whatItWouldTake`, which prices both sides on one
+     *                    scale and never asks what kind of thing either is.
+     *
+     * ── AND WHY A RANK DECIDES WHETHER IT IS THEIRS TO GIVE ──────────────
+     *
+     * `party.ranked` and not their rung. Somebody standing in a house without a
+     * rank in it is not deciding what leaves its vault, and telling that apart
+     * from a refusal is the distinction `immortal-items.ts` insists on:
+     * *"arithmetic rather than a lever"*, where there is no version of the
+     * problem in which the right person is found and enough pressure applied. A
+     * player who cannot draw that line spends a run looking for a lever that
+     * does not exist.
+     */
+    private async whatWouldItTake(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        party: ResolvedEntity,
+        kind: 'terms' | 'a_trade',
+        named: string,
+        putDown: string | null,
+        leverage: ApproachLeverage | undefined,
+        rawInput: string
+    ): Promise<Execution> {
+        if (named.length < 2) {
+            return refused('engine.resolvePill', 'request', factsForRefusal(
+                'A price for what?',
+                `You ask ${party.name} what they would want and do not say what for, which is a `
+                + `question they cannot answer. Name the thing: "ask ${party.name} what they `
+                + `would take for a Meridian Rebirth Pill".`,
+                'Request of kind terms/a_trade with no object named. Nothing spent, no time '
+                + 'passed.'
+            ));
+        }
+
+        const asPill = resolvePill(named);
+        const thing = asPill ? theThingAskedFor(asPill.id) : null;
+        if (!asPill || !thing) {
+            return refused('engine.resolvePill', 'request', factsForRefusal(
+                'Nothing by that name that anybody trades.',
+                `You put the words to ${party.name} and they do not know what you are asking `
+                + `for. Nothing in the world is called "${named}" that a person would barter `
+                + 'over.',
+                `No catalog row matched "${named}". Nothing spent, no time passed.`
+            ));
+        }
+
+        // ── BELOW THE LINE THERE IS A COUNTER, AND IT IS BETTER ──────────
+        //
+        // A barter verb aimed at a sixty-stone pill would be the game making
+        // something harder than it is. `pillTradeTier` is the one place the
+        // cash line is decided and this reads it rather than restating it.
+        if (!thing.pastTheCashLine) {
+            return refused('engine.pillTradeTier', 'request', factsForRefusal(
+                'That one is simply bought.',
+                `${thing.name} is not something anybody bargains over - it is made constantly, `
+                + `it is on boards, and ${party.name} would wonder why you were asking them `
+                + `instead of a counter. "buy a ${thing.name}" is the sentence.`,
+                `${asPill.id} is commodity tier, so it has a cash price and no barter. See `
+                + 'buying-and-bartering-pills.ts.'
+            ));
+        }
+
+        const world = this.atHand;
+        const theirFaction = party.party?.factionId ?? null;
+        const onShelf = heldByTheirHouse(world, theirFaction, asPill.id);
+
+        // ── NOT HOLDING ONE, AND WHO IS ─────────────────────────────────
+        //
+        // A dead end and a next move are different answers, which is the
+        // reasoning `nobodyByThatName` already runs on. Who holds a tracked
+        // object is not a secret - the standing register prints it - so naming
+        // the houses that do leaks nothing, and it is the whole difference
+        // between a refusal that ends a run and one that starts a journey.
+        if (!onShelf) {
+            const elsewhere = (world?.objects ?? [])
+                .filter(o => o.kind === 'pill' && o.data?.pillId === asPill.id
+                    && o.data?.spent !== true && o.ownerName)
+                .map(o => String(o.ownerName))
+                .filter((name, at, all) => all.indexOf(name) === at)
+                .slice(0, 4);
+
+            return refused('engine.possessions', 'request', factsForRefusal(
+                'Not something they have.',
+                `${party.name} has no ${thing.name} to price. `
+                + (elsewhere.length > 0
+                    ? `What is holding one, on the standing register: ${elsewhere.join(', ')}. `
+                      + 'A thing like this sits in a vault rather than in a pocket, so the person '
+                      + 'to ask is somebody who speaks for one of those.'
+                    : 'Nothing on the register is holding one either, which is the honest answer '
+                      + 'and a worse one: what would move this is finding one rather than '
+                      + 'affording it.'),
+                `No unspent ${asPill.id} row against ${theirFaction ?? 'no house'}. `
+                + `${elsewhere.length} holder(s) elsewhere in state.objects.`
+            ));
+        }
+
+        // ── WHAT THEIR NEED DOES TO IT, FROM THE ONE MODEL THAT DECIDES ──
+        const today = world ? Math.floor(world.currentDay) : Math.floor(run.elapsedDays);
+        const them = this.theirOpenBusiness(party.id);
+        const theirsToGive = party.party?.ranked === true;
+        const need = them
+            ? whatTheirNeedDoesToThePriceOf(
+                them, thing.tracked, true, today, theirsToGive,
+                goal => this.clocksOfWhoeverTheWantIsAbout(goal.targetId)
+            )
+            : null;
+
+        const holding = howTheyAreHoldingIt(
+            need ?? (theirsToGive ? null : { effect: 'the_answer_is_not_theirs_to_give' }),
+            thing.carriesTo,
+            howHighTheirHouseReaches(world, theirFaction)
+        );
+
+        const table: OnTheTable[] = putDown === null
+            ? []
+            : [whatIsBeingPutDown(
+                putDown, cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id)
+            )];
+
+        const answer = whatItWouldTake(holding, table);
+        const weight = howHeavyThisAskIs(answer);
+
+        const structure = [
+            `${thing.name}: carries to rung ${thing.carriesTo}, ${thing.tracked.significance}, `
+            + `past the cash line. Held by ${onShelf.ownerName ?? theirFaction}.`,
+            `Their hold: ${need?.effect ?? 'no need bound up in it'}; claim can wait = `
+            + `${holding.theirClaimCanWait}; theirs to give = ${holding.theirsToGive}.`,
+            `On the table: ${answer.theBestPutDown ?? 'nothing singular'} at rung `
+            + `${answer.theBestOnTheTable} against a bar of ${answer.theHeightToReach}.`
+        ];
+
+        // ── ASKING THE PRICE IS A QUESTION, NOT AN ATTEMPT ───────────────
+        //
+        // It costs them a sentence, so it costs no day and rolls nothing. What
+        // it is NOT is free of consequence: they now know somebody is looking
+        // for one of these, and that is worth something to the sort of person
+        // who holds one. Filed as an encounter rather than as a mark, because
+        // nothing was asked of them.
+        if (kind === 'terms') {
+            const facts = factsForToolResult(
+                `${party.name}, on what it would take.`,
+                [
+                    `You say what you are after and ask what it would take. ${answer.line}`,
+                    ...(need?.goal
+                        ? [`What they are carrying of their own: ${need.goal.text}`]
+                        : [])
+                ]
+            );
+            facts.structure.push(...structure);
+            this.noteEncounter(
+                cultivator, run, party, 'witnessed',
+                `Asked what it would take to get a ${thing.name}.`
+            );
+            return this.freeAction(run, 'request', facts);
+        }
+
+        // ── AND PUTTING SOMETHING DOWN IS AN ATTEMPT ─────────────────────
+        //
+        // Resolved by the resolver everything else is resolved by, carrying two
+        // terms it had no caller for. Nothing is refused outright - `AGENTS.md`
+        // forbids the removed verb - so a pebble put down for the best thing in
+        // the province gets a very bad number rather than a closed door.
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
+        const theirSect = theirFaction ? getSect(theirFaction) : null;
+        const heldTie = tieFrom(this.repos, party.id, cultivator.id);
+
+        const attempt = {
+            actor: {
+                id: cultivator.id,
+                name: cultivator.name,
+                ordinal: cultivator.realmOrdinal,
+                charm: cultivator.attributes.charm,
+                factionId: membership?.sectId ?? null,
+                alignment: mySect?.alignment ?? null,
+                ranked: membership !== null
+            },
+            subject: {
+                id: party.id,
+                name: party.name,
+                ordinal: party.party?.realmOrdinal ?? 0,
+                ...(party.party?.charm === undefined ? {} : { charm: party.party.charm }),
+                factionId: theirFaction,
+                alignment: theirSect?.alignment ?? null,
+                ranked: party.party?.ranked ?? false,
+                openHandedness: openHandednessOf(party.id)
+            },
+            onDay: Math.floor(run.elapsedDays),
+            theirTie: heldTie,
+            yourTie: tieFrom(this.repos, cultivator.id, party.id),
+            ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // A trade whose price is met is an ordinary favour. One whose price
+            // is not met asks them to end up worse off and see it while
+            // agreeing, which is what `against_their_interest` means.
+            ask: (weight.thePriceWasMet
+                ? 'a_real_favour'
+                : 'against_their_interest') as AskWeight,
+            theyWantSomethingFromYou: weight.theyWantWhatIsInFrontOfThem,
+            theAnswerWasTheirsToGive: holding.theirsToGive,
+            theirHoldOnItIsMerelyReserved: holding.theirClaimCanWait,
+            approach: {
+                intent: rawInput.slice(0, 400),
+                ...(leverage ? { leverage } : {})
+            },
+            rng: forStream(
+                run.seed, 'social_leverage', Math.floor(run.elapsedDays), `${party.id}:trade`
+            )
+        };
+
+        const result = resolveAttempt(attempt);
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, TRAVEL_FOCUS, `Trading with ${party.name}`, result.days
+        );
+        const left = this.recordWhatTheAskLeft(run, cultivator, party, result, 'request', true);
+
+        const lines = [
+            `You put down ${answer.theBestPutDown ?? 'nothing anybody could hold'} for a `
+            + `${thing.name}. ${answer.line}`
+        ];
+
+        const took = result.outcome === 'taken' || result.outcome === 'turned';
+        if (took) {
+            // THE OBJECT ACTUALLY MOVES. A trade the player is told landed and
+            // that leaves the shelf untouched is the narrator asserting an
+            // outcome the database never took, which is the one thing this
+            // codebase forbids outright.
+            addToPouch(this.db, cultivator.id, asPill.id, 'pill', 1);
+            lines.push(
+                `${party.name} takes what you offered and the ${thing.name} is in your pouch.`
+            );
+        } else if (result.outcome === 'countered') {
+            lines.push(
+                `${party.name} does not close the door. They want something, they have said so, `
+                + 'and what you put down is not yet it.'
+            );
+        } else {
+            lines.push(`${party.name} does not take it.`);
+        }
+        lines.push(...spent.facts.lines);
+
+        const facts = factsForToolResult(
+            `${party.name}, on a ${thing.name}: ${result.outcome}.`, lines
+        );
+        facts.structure.push(...structure, ...spent.facts.structure);
+
+        return {
+            ...spent,
+            facts,
+            outcome: took ? 'executed' : 'refused',
+            calls: [
+                {
+                    name: 'engine.whatItWouldTake',
+                    action: 'request',
+                    summary: `${asPill.id}: bar ${answer.theHeightToReach}, offered `
+                        + `${answer.theBestOnTheTable}, ${answer.why ?? 'price met'}; `
+                        + `attempt ${result.outcome} at odds ${result.odds}.`,
+                    ok: took
+                },
+                ...left.calls,
+                ...spent.calls
+            ]
+        };
     }
 
     /**
