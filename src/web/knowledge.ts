@@ -1,7 +1,7 @@
 /**
  * What this cultivator has ever heard of.
  *
- * docs/world/discovery.md states the rule this module exists to make
+ * docs/world/houses/discovery.md states the rule this module exists to make
  * mechanical:
  *
  *   > Never reference an entity the player has no knowledge record for.

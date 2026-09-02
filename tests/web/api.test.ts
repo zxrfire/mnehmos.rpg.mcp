@@ -143,7 +143,7 @@ describe('GET /api/state', () => {
             // `daysChannelsOpen` and `injuryRatePenalty` replaced
             // `bleedOutTurns` and `turnsUntilBleedOut`, which were a countdown
             // to a death that no longer happens - a torn meridian is a torn
-            // muscle (`docs/world/injuries.md`). What the client gets instead
+            // muscle (`docs/world/climbing/injuries.md`). What the client gets instead
             // is how long the wounds have been carried and what they cost.
             'daysChannelsOpen',
             // `ground` is who else is drawing on the ground under them. It is

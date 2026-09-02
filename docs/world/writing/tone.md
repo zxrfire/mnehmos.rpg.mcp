@@ -4,7 +4,7 @@
 
 How the world should sound, what to reach for and what to avoid, how things are named, and
 what makes a run worth playing. The compressed always-loaded version of the register is in
-[`NARRATOR-CORE.md`](NARRATOR-CORE.md); this file is the full statement, for humans and for
+[`NARRATOR-CORE.md`](../NARRATOR-CORE.md); this file is the full statement, for humans and for
 agents tuning prompts.
 
 ## Sections
@@ -126,16 +126,16 @@ Outliving friends, watching generations die, losing touch with where you came fr
 growing detached, accumulating enemies, becoming isolated. A ten-year retreat must
 genuinely change the world, and the player must be able to vanish for decades and return
 to a substantially different one - see
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 ## Related
 
 <!-- tier: 3 -->
 
-- [`NARRATOR-CORE.md`](NARRATOR-CORE.md) - the always-loaded compression of the register
-- [`people.md`](people.md) - who is being written
-- [`../../src/web/README.md`](../../src/web/README.md) - where the prose is composed, and what it is allowed to know
-- [`../../context.md`](../../context.md) - the authority rule the register serves
+- [`NARRATOR-CORE.md`](../NARRATOR-CORE.md) - the always-loaded compression of the register
+- [`people.md`](../houses/people.md) - who is being written
+- [`../../src/web/README.md`](../../../src/web/README.md) - where the prose is composed, and what it is allowed to know
+- [`../../context.md`](../../../context.md) - the authority rule the register serves
 
 ## Show, never explain
 

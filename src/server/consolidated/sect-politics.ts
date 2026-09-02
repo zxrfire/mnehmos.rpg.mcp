@@ -19,7 +19,7 @@
  *
  * ── TWO RULES THAT GOVERN EVERY LINE BELOW ────────────────────────────────
  *
- * 1. THE DISCOVERY GATE APPLIES TO TOOL OUTPUT. `docs/world/discovery.md` is
+ * 1. THE DISCOVERY GATE APPLIES TO TOOL OUTPUT. `docs/world/houses/discovery.md` is
  *    not a narration guideline that stops at the prompt boundary - if these
  *    actions hand back the apex institution's name to a cultivator who has
  *    never heard of it, the careful work in `web/knowledge.ts` is undone from

@@ -3,8 +3,8 @@
  *
  * The provenance rule this rests on - counted against tracked, what money
  * cannot buy, why a holder keeps what they cannot use - is
- * `docs/world/items.md`. What crosses the Lid at all is
- * `docs/world/immortals.md`. What is here and in neither of them is the stock
+ * `docs/world/things/items.md`. What crosses the Lid at all is
+ * `docs/world/climbing/immortals.md`. What is here and in neither of them is the stock
  * argument: `STOCK_VERSUS_FLOW`, `THE_TWO_CLAIMS`, and what service actually
  * buys. Indexed in `docs/world/INDEX.md`.
  *

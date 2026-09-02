@@ -7,7 +7,7 @@ succession, what an ancestral record is worth, and the five standing powers of t
 Load this whenever a sect or faction is in play.
 
 The catalog that models all of this is
-[`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
+[`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md).
 
 ## Sections
 
@@ -54,10 +54,10 @@ several factions want to own them.
 Cultivation should also be **embedded in society**, not confined to mountaintop hermits:
 alchemists, formation masters, merchants, craftsmen, teachers, officials, military
 cultivators, researchers, administrators, healers, explorers. That is what makes an
-economy exist. See [`economy.md`](economy.md).
+economy exist. See [`economy.md`](../things/economy.md).
 
 Every sect in this world is *late*. None of them built what they live in - see
-[`the-late-age.md`](the-late-age.md).
+[`the-late-age.md`](../history/the-late-age.md).
 
 ### What a sect is for, from the disciple's side
 
@@ -68,7 +68,7 @@ decided a disciple is worth protecting spends real resources on their realm boun
 formations, elders holding them steady, pills nobody at that realm could afford. **This is
 most of why anyone tolerates a sect, and the sect will tell you exactly what it cost.**
 The mechanism it is protecting against is in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 
 ---
 
@@ -162,7 +162,7 @@ Consequences worth building on:
 - **Sects lie about this.** A claimed immortal ancestor is the cheapest prestige in the
   world if nobody can check, and verifying such a claim is exactly the sort of service a
   Dao house sells - and exactly the sort of thing worth killing to keep unverified. See
-  [`dao-houses.md`](dao-houses.md).
+  [`dao-houses.md`](./dao-houses.md).
 - **An offering is a world event.** Preparations are visible for years, rivals know the
   date, and the sect is at its most vulnerable and most valuable in the same week.
 - **The player can be present for one.** Being an outer disciple during an offering is the
@@ -178,7 +178,7 @@ Consequences worth building on:
 
 Sects and clans are also counted by how many immortals they have produced. The counting,
 and what a recognised branch of an immortal clan can expect, are in
-[`immortals.md`](immortals.md).
+[`immortals.md`](../climbing/immortals.md).
 
 ---
 
@@ -204,7 +204,7 @@ and what a recognised branch of an immortal clan can expect, are in
   go through. Nothing left to take, therefore nothing left to threaten. Functionally
   immortal, functionally inert, and the only people left who can afford to be honest.
   What a good number of the oldest of them actually are is in
-  [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+  [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 - **The Kiln Wardens** - they guard the deep vein at the world's root, which is either
   still running or has not been checked in a very long time. They do not explain
   themselves and they do not recruit.
@@ -213,11 +213,11 @@ and what a recognised branch of an immortal clan can expect, are in
 
 <!-- tier: 3 -->
 
-- [`dao-houses.md`](dao-houses.md) - the other kind of formidable faction
-- [`immortals.md`](immortals.md) - what is on the other end of an offering
-- [`economy.md`](economy.md) - what a sect's scarcity actually trades in
-- [`people.md`](people.md) - why the elders want incompatible things
-- [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md) - the sect catalog
+- [`dao-houses.md`](./dao-houses.md) - the other kind of formidable faction
+- [`immortals.md`](../climbing/immortals.md) - what is on the other end of an offering
+- [`economy.md`](../things/economy.md) - what a sect's scarcity actually trades in
+- [`people.md`](./people.md) - why the elders want incompatible things
+- [`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the sect catalog
 
 ## Sects are a pyramid, and the pyramid is the vein network
 

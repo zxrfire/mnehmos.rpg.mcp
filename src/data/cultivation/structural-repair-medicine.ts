@@ -142,7 +142,7 @@ import { TechniqueGradeSchema } from '../../schema/cultivation.js';
  * What actually moves one of these, by grade.
  *
  * Three terms, and they are three different economies rather than three price
- * points. `docs/world/items.md` draws the line: a thing is cash-priced exactly
+ * points. `docs/world/things/items.md` draws the line: a thing is cash-priced exactly
  * where it is fungible and barter-only exactly where it is singular.
  */
 export const RepairTermsSchema = z.enum([
@@ -387,7 +387,7 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
 /**
  * The one nobody can produce.
  *
- * `docs/world/items.md`: an inventory read from a list rather than from the
+ * `docs/world/things/items.md`: an inventory read from a list rather than from the
  * shelf is a house that has decided not to look. This is that, and it is the
  * best thing in the ledger.
  */
@@ -408,7 +408,7 @@ export const SENT_DOWN_UNACCOUNTED = {
 // answers "what does this house have today", after however many centuries of
 // spending, gifting and losing.
 //
-// TRACKED OR COUNTED, on the line `docs/world/items.md` draws. Heaven and
+// TRACKED OR COUNTED, on the line `docs/world/things/items.md` draws. Heaven and
 // immortal grade are ROWS: a holder, a provenance chain, and a record that
 // survives the object being swallowed, because where a specific one went is
 // exactly the sort of thing somebody should be able to find out two centuries

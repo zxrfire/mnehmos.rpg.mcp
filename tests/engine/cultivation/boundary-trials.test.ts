@@ -89,7 +89,7 @@ describe('which trial you face is decided by where you stand', () => {
 
     it('takes an ordinal and nothing else', () => {
         // The contract `triggersHeavenlyTribulation` has, for the reason
-        // `docs/world/manuals.md` gives: a manual cannot teach you the
+        // `docs/world/climbing/manuals.md` gives: a manual cannot teach you the
         // crossing. If this ever grows a parameter, that rule has been broken.
         expect(trialForOrdinal.length).toBe(1);
     });

@@ -1,7 +1,7 @@
 /**
  * Recognising whose art you just watched.
  *
- * The strongest check in `docs/world/trust.md`'s hierarchy, and until this file
+ * The strongest check in `docs/world/houses/trust.md`'s hierarchy, and until this file
  * existed nothing in `src/engine/` could look at a technique being performed and
  * say which house it belongs to. `whoseArt` in `manuals.ts` already answered the
  * catalog half - which houses teach it - and nothing anywhere asked the other

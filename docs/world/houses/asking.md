@@ -2,7 +2,7 @@
 
 # Asking
 
-Mostly guidance. [discovery.md](discovery.md) covers how names arrive unbidden; this is what
+Mostly guidance. [discovery.md](./discovery.md) covers how names arrive unbidden; this is what
 happens when the player goes looking.
 
 **One half of it is a mechanic now**, and the line between the two matters. Asking somebody
@@ -123,11 +123,11 @@ row, the other four are a door with no handle.
 in the province sells costs a teacher their afternoons. A house's own working manual costs
 them the only place that would have them, and it costs them that whether they hand over the
 book or say the words - the art being out is the loss, and it is no less out for having left
-through somebody's mouth. See [manuals.md](manuals.md).
+through somebody's mouth. See [manuals.md](../climbing/manuals.md).
 
 **So money works at the bottom and stops.** A purse buys an ordinary favour - a seat in a
 queue, a look the other way, an introduction - and reaches almost nothing at the top, which
-is [items.md](items.md)'s line held exactly. Offering somebody money for their house's canon
+is [items.md](../things/items.md)'s line held exactly. Offering somebody money for their house's canon
 does not read as a large offer. It reads as somebody who has not understood what they are
 looking at.
 

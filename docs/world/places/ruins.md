@@ -2,15 +2,15 @@
 
 # Ruins
 
-An authoring guide, in the shape of [`making-places-different.md`](making-places-different.md)
-and [`ancient.md`](ancient.md). Read it before you add a ruin, and before you narrate one.
+An authoring guide, in the shape of [`making-places-different.md`](./making-places-different.md)
+and [`ancient.md`](../history/ancient.md). Read it before you add a ruin, and before you narrate one.
 
 **The failure mode this exists to prevent:** the anonymous untouched hole. A map of
 identical sealed doors with loot behind them, differing only in the size of the number.
 That is a dungeon, not a world, and it is what ruins were before this document.
 
 The organising principle is the same one that makes
-[`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) work:
+[`inheritance-trials.ts`](../../../src/data/cultivation/inheritance-trials.ts) work:
 **variety**. No two trials test the same thing, and no two ruins should be the same kind
 of place. What follows is the set of axes that make them differ, and every one of them is
 a column the engine already reads.
@@ -68,7 +68,7 @@ without stands in front of the same wall and cannot. The read runs through
 `assessCapability`'s `understand` predicate, where **comprehension keys are absolute** -
 so a scholar with the right notes places a ruin that a cultivator four realms above them
 cannot. That is a genuinely different kind of cultivator, and it is the first mechanical
-edge that belongs to a [dao house](dao-houses.md) rather than to a fighting sect.
+edge that belongs to a [dao house](../houses/dao-houses.md) rather than to a fighting sect.
 
 Two rules that keep it honest:
 
@@ -269,7 +269,7 @@ information.
 
 The one destination in this game that asks nothing of you.
 
-Comprehension **cannot be looted**. [`understanding.md`](understanding.md) is explicit that
+Comprehension **cannot be looted**. [`understanding.md`](../climbing/understanding.md) is explicit that
 insight cannot be bought, granted by rank, or handed over - so a site that has nothing left
 to take still has everything it ever had to *understand*, and the hundredth visitor gets
 exactly what the first one did.

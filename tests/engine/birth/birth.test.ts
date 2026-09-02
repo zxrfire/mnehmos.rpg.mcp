@@ -1,7 +1,7 @@
 /**
  * Design guards for the origin axis, now that it is wired in.
  *
- * Two halves, and the second is the one that matters. `docs/world/origin.md`:
+ * Two halves, and the second is the one that matters. `docs/world/houses/origin.md`:
  *
  *   > A privileged origin should be VISIBLE IN THE RUN'S OPENING POSITION and
  *   > NOT VISIBLE IN ITS OUTCOME DISTRIBUTION, except at the very top where it

@@ -8,7 +8,7 @@
  * none of your business is the design. What was missing is the other door.
  *
  * A channel is somebody telling you. ARRIVAL is not a channel: it is the thing
- * turning up. `docs/world/discovery.md` is explicit that this is allowed and is
+ * turning up. `docs/world/houses/discovery.md` is explicit that this is allowed and is
  * in fact the preferred shape -
  *
  *   > The consequence arrives without attribution: a road is closed, a price

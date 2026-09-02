@@ -155,7 +155,7 @@ export const YEARS_A_ROAD_COSTS: Readonly<Record<HowARoadCameWithinReach, number
     material_spent: 0,
     // It is a text and you read it. What is expensive about a carving is that
     // there are three faces in the world and getting to one is the whole
-    // journey - see `docs/world/immortals.md`, which is explicit that a later
+    // journey - see `docs/world/climbing/immortals.md`, which is explicit that a later
     // reader "gets the surface an afternoon was worked out on without the
     // afternoon, and pays the whole of what reading costs".
     carving: 8,

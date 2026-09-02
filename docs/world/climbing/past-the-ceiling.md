@@ -619,13 +619,13 @@ machinery that exists.
 
 <!-- tier: 3 -->
 
-- [`understanding.md`](understanding.md) - the axis that has no ceiling, and route 7's substrate
-- [`dao-houses.md`](dao-houses.md) - route 6, and what accumulated knowledge is worth
-- [`discovery.md`](discovery.md) - why a rumour is the only way a route reaches a player
-- [`origin.md`](origin.md) - privilege buys inputs and never rank, which is why the table above has no empty column
-- [`economy.md`](economy.md) - possession, ownership and claim, which is what routes 1b and 8 argue over
-- [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - the cap itself
-- [`../../src/engine/encounters/README.md`](../../src/engine/encounters/README.md) - suitability, and the miss as a good outcome
+- [`understanding.md`](./understanding.md) - the axis that has no ceiling, and route 7's substrate
+- [`dao-houses.md`](../houses/dao-houses.md) - route 6, and what accumulated knowledge is worth
+- [`discovery.md`](../houses/discovery.md) - why a rumour is the only way a route reaches a player
+- [`origin.md`](../houses/origin.md) - privilege buys inputs and never rank, which is why the table above has no empty column
+- [`economy.md`](../things/economy.md) - possession, ownership and claim, which is what routes 1b and 8 argue over
+- [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) - the cap itself
+- [`../../src/engine/encounters/README.md`](../../../src/engine/encounters/README.md) - suitability, and the miss as a good outcome
 
 ---
 
@@ -801,7 +801,7 @@ regrets it.**
 
 **Unsworn, on hostile terms.** They walk out with the road in their head. The new house gains a
 shelf entry and pays for it; the old house gains a standing reason to move on them, which arms
-if the receiving house ever weakens (see [`sects.md`](sects.md)).
+if the receiving house ever weakens (see [`sects.md`](../houses/sects.md)).
 
 **The oath's price falls on the leaver, and that is what makes the choice real.** A defector's
 value to a new house *is* the road they bring - it is what they are paid and promoted for. To
@@ -932,12 +932,12 @@ can.
 It is also **how roads actually move through history.** A house that falls scatters its people,
 and its people are carrying its curriculum in their heads - so the fall of a house is one of
 the largest transmission events this world has, and the only one nobody negotiated. See
-[`closed-ground.md`](closed-ground.md) for the other half of the same event: the place it
+[`closed-ground.md`](../places/closed-ground.md) for the other half of the same event: the place it
 leaves behind, with whatever nobody could carry still in it.
 
 ### Money cannot buy a house, and it can buy the people in one
 
-[`items.md`](items.md) says that above a certain line cash is simply not the medium, and that
+[`items.md`](../things/items.md) says that above a certain line cash is simply not the medium, and that
 holds here: **no house sells rank.** Offering a sect stones for a seat reads as not
 understanding what you are looking at, and it is the sort of error that ends the conversation.
 
@@ -968,7 +968,7 @@ otherwise be resented.
 is owed for your years; you still may not teach its method to anybody. Being released *with the
 right to transmit* is a different purchase entirely - that is the house selling its own
 curriculum - and it should be priced ruinously, refused far more often than not, and, by the
-[`items.md`](items.md) rule, not payable in money at all above a certain height. So paying your
+[`items.md`](../things/items.md) rule, not payable in money at all above a certain height. So paying your
 way out is a way to leave cleanly while carrying much less than a defector does, not a way to
 have both.
 
@@ -1022,6 +1022,6 @@ The same rules bind everybody, and most of the interesting consequences are demo
 than personal. A road held inside one apex stays inside it. A road that crosses out does so
 through a specific person on a specific day, with or without an oath, and either way it is an
 event somebody can find out about later. Over centuries that is the whole explanation of why
-some roads are held by one house and others by a dozen - and the [items.md](items.md) rule
+some roads are held by one house and others by a dozen - and the [items.md](../things/items.md) rule
 holds: how many houses teach a thing is measured off what happened, never chosen.
 

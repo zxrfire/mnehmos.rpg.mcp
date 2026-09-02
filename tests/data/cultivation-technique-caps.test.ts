@@ -427,7 +427,7 @@ describe('the manuals a player can actually reach', () => {
 // ─────────────────────────────────────────────────────────────────────────
 // THE ADVANCEMENT RULE
 //
-// `docs/world/economy.md`: "Buying advancement always costs more than buying
+// `docs/world/things/economy.md`: "Buying advancement always costs more than buying
 // survival. Within a grade, the things that touch progression - breakthrough
 // odds, cultivation progress, lifespan, and freedom from having to eat - sit
 // at the top of both the value and the danger ranges."
@@ -499,7 +499,7 @@ describe('advancement costs more than survival, in every grade', () => {
 // ─────────────────────────────────────────────────────────────────────────
 // THE CORRIDOR
 //
-// `docs/world/escapes.md` measured the ladder above the middle and found it is
+// `docs/world/writing/escapes.md` measured the ladder above the middle and found it is
 // not a ladder at all: at most heights the world offers exactly ONE book that
 // continues, and usually wants a specific element for it.
 //

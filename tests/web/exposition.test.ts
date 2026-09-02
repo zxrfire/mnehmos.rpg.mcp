@@ -1,7 +1,7 @@
 /**
  * Show the world, never explain it.
  *
- * docs/world/tone.md: nobody tells the protagonist how anything works. There is
+ * docs/world/writing/tone.md: nobody tells the protagonist how anything works. There is
  * no character whose job is to explain the world, because in the world there is
  * no such job. The engine holds the structure so that people can BEHAVE
  * according to it, and that is its only purpose in narration.

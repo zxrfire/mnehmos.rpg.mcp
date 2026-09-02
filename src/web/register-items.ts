@@ -26,7 +26,7 @@
  *
  * ── THE ONE LINE EVERYTHING IS ORGANISED ON ──────────────────────────────
  *
- * `docs/world/items.md` states the single decision that governs every item in
+ * `docs/world/things/items.md` states the single decision that governs every item in
  * the world, and it is not value:
  *
  *     COUNTED   a holder and a number. Nobody cares which one you took.

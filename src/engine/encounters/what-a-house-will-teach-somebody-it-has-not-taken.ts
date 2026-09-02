@@ -24,7 +24,7 @@
  *   deep material is behind membership. Nobody is afraid of a guest leaving.
  *   They were never shown the thing worth stealing.
  *
- * `docs/world/dao-houses.md` is why this is coherent rather than generous:
+ * `docs/world/houses/dao-houses.md` is why this is coherent rather than generous:
  * "Specialisation is not ownership". A house does not own its principle -
  * everyone else interacts with it clumsily and without noticing - so passing on
  * part of it gives away nothing the house could have kept.
@@ -41,7 +41,7 @@
  *
  * A guest therefore KEEPS THEIR OWN HOUSE. This is not a transfer, not a
  * secondment and not a defection, which is most of the complexity gone:
- * `docs/world/past-the-ceiling.md`'s departure economy - releases, oaths, what
+ * `docs/world/climbing/past-the-ceiling.md`'s departure economy - releases, oaths, what
  * you may never teach again - does not fire at all, because nothing is being
  * left. It is also why the arrangement is tolerated: an apex has no grievance
  * against a house that borrowed its disciple for a year and gave them back.
@@ -297,7 +297,7 @@ export interface PublishedDoor {
     /**
      * WHAT PASSING COSTS, and it is not a second door.
      *
-     * `docs/world/origin.md` settles this and the wording matters: the house
+     * `docs/world/houses/origin.md` settles this and the wording matters: the house
      * has ONE door and it stands at the floor. The figure everybody quotes as
      * its bar is the test at the far end of the probation, and the thing that
      * has never moved for anybody is that test rather than the doorway. Read
@@ -586,7 +586,7 @@ export function housesThatWouldTakeAGuest(
  * them in. Nothing random, nothing hidden, and no favour required.
  *
  * What the offer costs is not this function's business and is enormous: it is
- * leaving your own house, with everything `docs/world/past-the-ceiling.md` says
+ * leaving your own house, with everything `docs/world/climbing/past-the-ceiling.md` says
  * about releases, oaths and what you may never teach again. Part of what is
  * being offered on the other side is the thing a guest never had, which is
  * somebody answering when something happens to you.

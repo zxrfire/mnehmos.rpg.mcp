@@ -32,7 +32,7 @@
  * (`bleedingInjuryCount` has always excluded them) and removing the lethality
  * does not touch them: what they do is close a road, through
  * `blocksAdvancement` and the broken statuses, and that is a separate question
- * with a separate answer. `docs/world/injuries.md` names the split.
+ * with a separate answer. `docs/world/climbing/injuries.md` names the split.
  *
  * A crippling torn meridian is still a channel wound and is still survivable.
  * Do not let severity slide one family into the other.
@@ -266,7 +266,7 @@ export function hasPermanentWound(injuries: readonly Injury[]): boolean {
 //
 // The temptation whenever a penalty is added is to dim everything at once
 // because that feels serious. A wound is a fact about the body.
-// See `docs/world/injuries.md`.
+// See `docs/world/climbing/injuries.md`.
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface InjuryPenalties {

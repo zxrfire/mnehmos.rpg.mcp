@@ -34,7 +34,7 @@ elder quietly favours their own. A talented disciple becomes politically dangero
 several factions want to own them.
 
 The ultimate scarce good is qi itself, and it is contested in the plainest possible sense:
-qi drawn by one person is not available to another. See [`qi.md`](qi.md).
+qi drawn by one person is not available to another. See [`qi.md`](../climbing/qi.md).
 
 Cultivation is **embedded in society** rather than confined to mountaintop hermits:
 alchemists, formation masters, merchants, craftsmen, teachers, officials, military
@@ -52,7 +52,7 @@ between progressing and not.**
 
 The Stonewright Consortium refines raw qi into stones and sets the exchange rate, which
 means they set the price of everything, including the price of a vein. See
-[`sects.md`](sects.md).
+[`sects.md`](../houses/sects.md).
 
 ## What things cost
 
@@ -72,7 +72,7 @@ the shape of it:
   Condensation, earth at Core Formation, heaven at Void Refinement, and above that by
   nobody living below the Lid. Price does not rise with grade because somebody decided
   higher should cost more. It rises because the population that could supply the market
-  shrinks at every rung. [`items.md`](items.md#who-is-allowed-to-make-it) carries the
+  shrinks at every rung. [`items.md`](./items.md#who-is-allowed-to-make-it) carries the
   derivation and the measured counts.
 
 That third rule is what puts the cash line where it is. Mortal and earth grade are bought
@@ -82,12 +82,12 @@ that the price exceeds what the income of the rank the thing serves could ever a
 so no cash sum is a rational trade for one. What moves one is a favour owed, another
 singular thing, or nothing at all. And **immortal grade carries no price in either
 direction**, because a price would imply the economy reaches it at all: see
-[the tier nobody here makes](items.md#the-tier-nobody-here-makes).
+[the tier nobody here makes](./items.md#the-tier-nobody-here-makes).
 
 Pills are the only reliable way to undo damage in this game, and they are the reason a
 run's economy exists at all. Higher-grade medicine is also more poisonous, so spamming it
 at a low realm is a way to die of the cure. The actual bands are in
-[`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
+[`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md).
 
 ---
 
@@ -122,12 +122,12 @@ an old sword          source: a dead cultivator     acquired: inheritance
 This is what makes stolen goods, disputed inheritances, faction claims, investigations and
 century-old karmic consequences possible without a separate system for each. A karma house
 is one of the few institutions that can read the whole chain - see
-[`dao-houses.md`](dao-houses.md). The storage model is in
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`dao-houses.md`](../houses/dao-houses.md). The storage model is in
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 Techniques and recipes carry a coarser provenance of their own - `taught`, `ruin` or
 `grave` - and it decides whether a thing can be bought at all or only dug up. See
-[`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md).
+[`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md).
 
 ---
 
@@ -183,16 +183,16 @@ It should also carry friction: compatibility requirements, hidden costs, incompl
 information, traps, guardians, time limits, and **competing claimants**.
 
 Who builds them, and why they are gated rather than merely lethal, is
-[`immortals.md`](immortals.md). When they are available, and why extraordinary
+[`immortals.md`](../climbing/immortals.md). When they are available, and why extraordinary
 opportunities must stay rare, is in
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 ## Related
 
 <!-- tier: 3 -->
 
-- [`qi.md`](qi.md) - the scarce good underneath every other price
-- [`the-late-age.md`](the-late-age.md) - why digging beats cultivating for most people
-- [`sects.md`](sects.md) - who sets the exchange rate, and who holds the veins
-- [`immortals.md`](immortals.md) - the author of the inheritance economy
-- [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md) - the value and grade bands
+- [`qi.md`](../climbing/qi.md) - the scarce good underneath every other price
+- [`the-late-age.md`](../history/the-late-age.md) - why digging beats cultivating for most people
+- [`sects.md`](../houses/sects.md) - who sets the exchange rate, and who holds the veins
+- [`immortals.md`](../climbing/immortals.md) - the author of the inheritance economy
+- [`../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the value and grade bands

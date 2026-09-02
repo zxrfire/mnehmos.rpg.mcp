@@ -3,7 +3,7 @@
  *
  * WHY THIS FILE EXISTS
  * --------------------
- * `docs/world/discovery.md` forbids the narrator from naming anything the
+ * `docs/world/houses/discovery.md` forbids the narrator from naming anything the
  * player has no knowledge record for, and puts the entire burden of the
  * player's education onto other people's mouths. That makes hearsay the only
  * road into the world, and a road that carried nothing but correct proper

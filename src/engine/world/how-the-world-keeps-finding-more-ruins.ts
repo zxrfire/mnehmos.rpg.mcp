@@ -298,7 +298,7 @@ export function prospectingEffortIn(
 // ═════════════════════════════════════════════════════════════════════════
 // WHAT THE WORLD'S OWN DEAD LEAVE, WHICH IS MOST OF THE RESERVE
 //
-// `docs/world/immortals.md` is the spec for this and states it better than any
+// `docs/world/climbing/immortals.md` is the spec for this and states it better than any
 // paraphrase: nothing goes through the Lid except the cultivator, they know it
 // well in advance, and the years before a crossing are spent DIVESTING -
 // selling, gifting, burying, sealing and arranging everything that will buy

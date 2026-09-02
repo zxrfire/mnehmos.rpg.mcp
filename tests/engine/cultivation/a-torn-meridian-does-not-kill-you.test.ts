@@ -19,7 +19,7 @@
  * was measurably broken: on the sampled strategy with the food problem bought
  * off, fifteen of fifteen runs died of `untreated_injuries` at a median age of
  * 21 and a median peak of ordinal 2 out of 47. The wound was a wall in front of
- * the content. `docs/world/injuries.md` is the spec.
+ * the content. `docs/world/climbing/injuries.md` is the spec.
  *
  * The file now holds the guard in both directions, which is what makes it worth
  * keeping rather than deleting:

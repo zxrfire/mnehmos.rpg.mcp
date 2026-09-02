@@ -2,7 +2,7 @@
 
 ## 1) Scope and Method
 
-This analysis covers repository structure, runtime entrypoints, test/build topology, domain contracts, and coupling risks for [`mnehmos.rpg.mcp`](README.md).
+This analysis covers repository structure, runtime entrypoints, test/build topology, domain contracts, and coupling risks for [`mnehmos.rpg.mcp`](./world/README.md).
 
 Primary artifacts inspected:
 

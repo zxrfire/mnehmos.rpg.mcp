@@ -222,7 +222,7 @@ export function shardPower(power: number | null): number | null {
  * that comes apart is simply ruined, and mints nothing. A piece is a TRACKED
  * object - a row with a holder and a provenance chain - and a world where every
  * broken sabre leaves two of them is a ledger that fills with rubble, which is
- * `docs/world/items.md`'s counted-or-tracked line arriving at the answer rather
+ * `docs/world/things/items.md`'s counted-or-tracked line arriving at the answer rather
  * than being set aside for convenience. The top of the ladder is the only place
  * the pieces are individually worth remembering.
  *
@@ -253,7 +253,7 @@ export function shatter(object: ObjectRecord, pieces = 2): ObjectRecord[] {
  *
  * ── SPENT IS NOT GONE ────────────────────────────────────────────────────
  *
- * What does NOT go is the record. `docs/world/items.md` states it as its own
+ * What does NOT go is the record. `docs/world/things/items.md` states it as its own
  * section and the reason is that an object which vanishes cleanly from the
  * record is an object nobody can ever be asked about, and being asked about it
  * is most of what makes it matter. A house that cannot account for something

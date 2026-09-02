@@ -4,10 +4,10 @@
 
 What qi is, why its distribution organises the entire world, and what a spirit stone
 actually is. The compressed always-loaded version of this file is in
-[`NARRATOR-CORE.md`](NARRATOR-CORE.md); everything here is the fuller account.
+[`NARRATOR-CORE.md`](../NARRATOR-CORE.md); everything here is the fuller account.
 
 Mechanically this is the ambient system - see
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 
 ## Sections
 
@@ -37,7 +37,7 @@ person rise, and past that limit is somewhere else. Ascending means going throug
 nobody does.
 
 Below the ceiling, everything runs on **qi**. What is above it is
-[`immortals.md`](immortals.md).
+[`immortals.md`](./immortals.md).
 
 ---
 
@@ -118,7 +118,7 @@ what it means, and the narrator should describe it this way:
 fuel, and they are the only way to cultivate somewhere the ambient qi will not support
 you - which is why a poor cultivator's stones are never savings. They are the difference
 between progressing and not. What they buy, and who sets their price, is
-[`economy.md`](economy.md).
+[`economy.md`](../things/economy.md).
 
 ---
 
@@ -129,7 +129,7 @@ between progressing and not. What they buy, and who sets their price, is
 A spirit root is the shape of the aperture you draw qi through - decided before you were
 born, unchangeable, and worth more than any effort you will ever make. The roots
 themselves, the four innate attributes, and what each draw actually costs are in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 
 The point that belongs to the world rather than to the engine: **talent is not earned,
 cannot be improved, and is the largest single thing you are handed - about a third of the
@@ -162,8 +162,8 @@ real experience of this world.
 
 <!-- tier: 3 -->
 
-- [`NARRATOR-CORE.md`](NARRATOR-CORE.md) - the compressed always-loaded version
-- [`the-late-age.md`](the-late-age.md) - why most of the world is thin now
-- [`economy.md`](economy.md) - what spirit stones buy
-- [`sects.md`](sects.md) - who holds the veins
-- [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - the ambient system in code
+- [`NARRATOR-CORE.md`](../NARRATOR-CORE.md) - the compressed always-loaded version
+- [`the-late-age.md`](../history/the-late-age.md) - why most of the world is thin now
+- [`economy.md`](../things/economy.md) - what spirit stones buy
+- [`sects.md`](../houses/sects.md) - who holds the veins
+- [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) - the ambient system in code

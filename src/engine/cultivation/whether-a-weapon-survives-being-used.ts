@@ -97,7 +97,7 @@
  * Almost always nothing. Ruled by the design owner: everything below the
  * immortal grade is simply ruined, because fragments are TRACKED objects with
  * holders and provenance and a world where every broken sabre mints two rows is
- * a ledger full of rubble. That is `docs/world/items.md`'s counted-or-tracked
+ * a ledger full of rubble. That is `docs/world/things/items.md`'s counted-or-tracked
  * line doing its job rather than a simplification laid on top of it - the top
  * of the ladder is the only place the pieces are individually worth
  * remembering.

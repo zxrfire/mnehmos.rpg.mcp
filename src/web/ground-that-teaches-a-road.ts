@@ -43,7 +43,7 @@
  * THE DISCOVERY GATE IS NOT TOUCHED
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `docs/world/discovery.md`: never reference an entity the player has no
+ * `docs/world/houses/discovery.md`: never reference an entity the player has no
  * knowledge record for, and each step needs a source. So nothing here lists a
  * ground the player cannot already point at. What was missing was never a
  * listing - it was that NO SOURCE IN THE WORLD COULD EVER GRANT ONE, so the
@@ -148,7 +148,7 @@ export function groundUnderfoot(
 // ─────────────────────────────────────────────────────────────────────────
 // SOMEBODY WHO COULD POINT YOU AT ONE
 //
-// The source. `docs/world/discovery.md` lists the scarce things a step of
+// The source. `docs/world/houses/discovery.md` lists the scarce things a step of
 // knowing needs - an elder who has heard things, a traveller, a rumour that
 // turns out to be half true - and this is one of them, said by the only people
 // who would ever say it: the ones for whom the place is ordinary.

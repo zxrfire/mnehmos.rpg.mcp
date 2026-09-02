@@ -439,7 +439,7 @@ export const ACTION_NAMES = [
     /**
      * What this cultivator is carrying in their head, asked in words.
      *
-     * The knowledge layer is the spine of `docs/world/discovery.md` and the
+     * The knowledge layer is the spine of `docs/world/houses/discovery.md` and the
      * sheet shows the other axis in a panel, and neither could be asked about.
      * Found by a rank-band sweep, and the dead sentences were at the TOP of
      * the ladder rather than the bottom, which is where it matters most:
@@ -462,7 +462,7 @@ export const ACTION_NAMES = [
      * WHOSE ART THAT WAS - the player putting the trust hierarchy's strongest
      * check to themselves.
      *
-     * `docs/world/trust.md` says a house's arts are the closest thing it has to
+     * `docs/world/houses/trust.md` says a house's arts are the closest thing it has to
      * an identity and that watching somebody cultivate is the one reading that
      * goes straight to the thing in question. Nothing in the game could ask it.
      * A player watching somebody move had no sentence at all, and the two
@@ -1730,7 +1730,7 @@ export const DEFAULT_SITE_INTENT: SiteIntent = 'approach';
 export const SITE_NOUNS =
     // `ruin` was missing, which is the word the setting itself uses: locations
     // carry `kind: 'ruin'`, the seeding layer talks about `ruin.opened`, and
-    // there is a `docs/world/ruins.md`. So the parser knew about tombs and
+    // there is a `docs/world/places/ruins.md`. So the parser knew about tombs and
     // crypts and inheritance grounds and not about the thing they are all
     // called. Found by playing: "what ruins are near" reached nothing, "I enter
     // the ruin" was read as travel, and "I look for a ruin" returned the room

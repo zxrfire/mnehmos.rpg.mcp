@@ -1,7 +1,7 @@
 /**
  * Design guards for the escape routes.
  *
- * These are not coverage. Each one pins a sentence from `docs/world/escapes.md`
+ * These are not coverage. Each one pins a sentence from `docs/world/writing/escapes.md`
  * that would be quietly false if somebody changed the code around it, and
  * several of them are here specifically because the property they assert is
  * invisible in play until it is already broken.

@@ -12,7 +12,7 @@
  * rarity tier. Every assertion below reads the `teaches` arrays and checks that
  * what falls out of them still has the shape the setting claims - which is how
  * "every manual above the Void Refinement line is taught by exactly one house"
- * came to be a fact in `docs/world/items.md` rather than a policy.
+ * came to be a fact in `docs/world/things/items.md` rather than a policy.
  */
 import { describe, it, expect } from 'vitest';
 
@@ -79,7 +79,7 @@ describe('the counting rule - rarity rises with reach', () => {
     });
 
     it('leaves the top of the ladder in exactly one pair of hands per road', () => {
-        // The documented fact in `docs/world/items.md`, which was found by
+        // The documented fact in `docs/world/things/items.md`, which was found by
         // counting rather than decided. It is asserted here so that a content
         // pass adding shelves cannot quietly turn a house's private road into
         // the province's standard crossing without the suite saying so.

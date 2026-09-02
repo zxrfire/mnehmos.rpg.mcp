@@ -19,7 +19,7 @@
  * of 30, and 10 are drawing on it" on turn one, which is a surveyor's figure in
  * the hands of somebody who has been cultivating for a year.
  *
- * This is `docs/world/discovery.md`'s rule applied to a MEASUREMENT rather than
+ * This is `docs/world/houses/discovery.md`'s rule applied to a MEASUREMENT rather than
  * to a name: the sheet reports what this cultivator can perceive, and not what
  * the engine knows. It is expressed as a gate over the existing figures rather
  * than as a second set of strings, so there is no second table to drift.

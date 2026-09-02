@@ -446,7 +446,7 @@ describe('the deep material actually arrives, with honest provenance', () => {
 
 describe('the overheard channel', () => {
     it('carries two names from different catalogs when it can', async () => {
-        // docs/world/discovery.md: what the player gets is a fragment they
+        // docs/world/houses/discovery.md: what the player gets is a fragment they
         // cannot resolve - two names, a relationship implied between them, an
         // event that has apparently already happened, and no way to place any
         // of it. One name is a name-drop; two is a fragment.

@@ -105,7 +105,7 @@ and a working shelf that stops where every hedge-teacher's does.
 whole term, and has taught them everything it was willing to show a guest, has
 nothing further to give them without taking them in - so it offers. That is the
 moment the arrangement becomes a decision, because accepting means leaving your
-own house, with everything [`past-the-ceiling.md`](past-the-ceiling.md) says
+own house, with everything [`past-the-ceiling.md`](../climbing/past-the-ceiling.md) says
 about releases and oaths. Part of what is on the other side is the thing a guest
 never had, which is somebody answering when something happens to you.
 
@@ -130,7 +130,7 @@ investigators. A fate house ends up advising rulers. An oath house ends up holdi
 treaties. **Their authority is civil before it is martial.**
 
 This is also why a house is who you go to in order to verify a sect's claimed immortal
-ancestor - see [`sects.md`](sects.md).
+ancestor - see [`sects.md`](./sects.md).
 
 ## Their power should be frightening in a specific way
 
@@ -176,7 +176,7 @@ anyone tracking it. A house that studies karma is one of the few things that can
 whole thread.
 
 The model itself, and the prohibition on ever surfacing it as a reputation number, is in
-[`../../src/engine/social/README.md`](../../src/engine/social/README.md).
+[`../../src/engine/social/README.md`](../../../src/engine/social/README.md).
 
 ---
 
@@ -216,7 +216,7 @@ contained.
 
 The mechanism that stores those layers separately, so each can be uncovered on its own
 timetable, is in
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 ## Discovery, not exposition
 
@@ -242,7 +242,7 @@ never one person.
 
 <!-- tier: 3 -->
 
-- [`sects.md`](sects.md) - the other kind of faction, and what houses sell them
-- [`../../src/engine/social/README.md`](../../src/engine/social/README.md) - karma as a graph, secrets, belief
-- [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - stacked territory and the surviving record
-- [`the-late-age.md`](the-late-age.md) - the wreckage the houses are standing in
+- [`sects.md`](./sects.md) - the other kind of faction, and what houses sell them
+- [`../../src/engine/social/README.md`](../../../src/engine/social/README.md) - karma as a graph, secrets, belief
+- [`../../src/engine/world/README.md`](../../../src/engine/world/README.md) - stacked territory and the surviving record
+- [`the-late-age.md`](../history/the-late-age.md) - the wreckage the houses are standing in

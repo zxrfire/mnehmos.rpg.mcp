@@ -108,7 +108,7 @@
  * ascendant in a completely different position from one whose ancestor crossed
  * nine centuries ago. Note what that does NOT license: ascending moves the
  * STATE and the DIRECTION, never the whole distance. The Pavilion's 41-against-
- * 17 gap is documented as intentional in `docs/world/manuals.md` and stays
+ * 17 gap is documented as intentional in `docs/world/climbing/manuals.md` and stays
  * exactly where it is - a house can climb from a low base and still stand
  * twenty rungs under its own strongest member.
  */

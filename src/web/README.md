@@ -214,7 +214,7 @@ Four rules it must keep, and each of them is a way this could go wrong:
 ### A refusal is finished when it names the thing that would work
 
 The medicine layer is the sharpest case, and it is the same defect
-[`../../docs/world/items.md`](../../docs/world/items.md) closes with a warning
+[`../../docs/world/things/items.md`](../../docs/world/things/items.md) closes with a warning
 about, one layer up: that build's commonest cause of death had no reachable cure
 while the formula sat in the catalog. This time **the cure is reachable and its
 name is not.** Measured, carrying a crippling tear and 194 spirit stones against
@@ -761,7 +761,7 @@ remains unknown." **That thinness is the content**, not a gap for a renderer to 
 
 `trials.ts` resolves a site the way `entities.ts` resolves everything else - against real
 catalog rows, with a near miss refused rather than guessed - and then applies the awareness
-rule from `docs/world/discovery.md` on top: **a site whose awareness is below `named` cannot
+rule from `docs/world/houses/discovery.md` on top: **a site whose awareness is below `named` cannot
 be resolved at all**, because the catalog withholds its name, so there is nothing to type.
 Thirteen of the entries start at `named` and are typeable by a villager; the rest have to
 reach the player from somebody first, exactly as a sect name does.
@@ -1148,7 +1148,7 @@ Three files, and the split between them is the contract:
 | `lore.ts` | the **speakable world**: every name anybody could say, and the terms for saying it |
 | `hearsay.ts` | whether a name gets said in this scene, which, and by whom |
 
-`docs/world/discovery.md` is the constitution: **never reference an entity the player has
+`docs/world/houses/discovery.md` is the constitution: **never reference an entity the player has
 no knowledge record for.** That rule governs the narrator's own voice and it must not gag
 the people in the world - a cultivator says a name flatly because *of course* you know it.
 So content becomes reachable by being **acquirable**, never by being printed:
@@ -1318,7 +1318,7 @@ section is for. That is the pattern to copy.
 one `ObjectKind` out of the ten in [`../engine/world/possessions.ts`](../engine/world/possessions.ts) -
 the kind with a combat rating, sorted on it, because there the ordering is the argument.
 Items is the other nine, which is most of what somebody can actually pick up, and it is
-organised on the one line `docs/world/items.md` says governs every item in the world:
+organised on the one line `docs/world/things/items.md` says governs every item in the world:
 **counted or tracked**. It also *measures* that document's second claim rather than
 repeating it - a thing is cash-priced exactly where it is fungible - by joining the two
 independent engine answers per catalog and naming any row where they part.
@@ -1463,7 +1463,7 @@ stands. The breadcrumb walks back out and every step of it is clickable.
 of them and marks the undiscovered ones, so an operator can see the fog the player is
 standing in; the *As the player sees it* control drops them, which is exactly what a
 player-facing map would do at the boundary. See
-[`../../docs/world/discovery.md`](../../docs/world/discovery.md) for why that gate exists
+[`../../docs/world/houses/discovery.md`](../../docs/world/houses/discovery.md) for why that gate exists
 at all.
 
 ### Depth is walked, never assumed

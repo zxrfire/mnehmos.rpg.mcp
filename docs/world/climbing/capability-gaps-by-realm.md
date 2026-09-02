@@ -19,9 +19,9 @@ A capability that changes what the player **chooses** beats one that changes wha
 says so and proposes the affordance instead.
 
 The companion statements live in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) (what
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) (what
 each realm makes possible, from Core Formation up) and
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md) (the five capability
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md) (the five capability
 predicates). Neither of those is an audit; both assert. This one counts.
 
 ---
@@ -774,7 +774,7 @@ working too, if you lean on it. Its value is that hardly anybody has one, so har
 made the body learn it.
 
 **Objects, for the same reason.** A weapon is another approach, held rather than learned, so it
-is a door somebody can open who has only one art of their own. [`items.md`](items.md) already
+is a door somebody can open who has only one art of their own. [`items.md`](../things/items.md) already
 says that above a certain grade an object moves on a favour owed rather than a price, and the
 register already tracks who holds which artifact at what grade. **This is why.** At the summit
 the answers are variety, and the two ways to buy variety are an art found in closed ground and
@@ -998,8 +998,8 @@ of strings would make the audit worse, not better.
 
 ## Related
 
-- [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - what each realm makes possible, asserted
-- [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - the five predicates, environmental gating
-- [`techniques.md`](techniques.md) - what an art may be ABOUT, by height
-- [`sects.md`](sects.md) - houses as institutions
-- [`understanding.md`](understanding.md) - the axis that is not accumulation
+- [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) - what each realm makes possible, asserted
+- [`../../src/engine/world/README.md`](../../../src/engine/world/README.md) - the five predicates, environmental gating
+- [`techniques.md`](./techniques.md) - what an art may be ABOUT, by height
+- [`sects.md`](../houses/sects.md) - houses as institutions
+- [`understanding.md`](./understanding.md) - the axis that is not accumulation

@@ -362,7 +362,7 @@ export function commonlyNamedHouses(
     //
     // A first draft also named every house that publishes a door at the floor,
     // wherever it was seated, on the reasoning that an intake of "people walk
-    // up the mountain" needs the name to travel. `docs/world/origin.md` says
+    // up the mountain" needs the name to travel. `docs/world/houses/origin.md` says
     // otherwise, in terms specific enough that it is clearly deliberate: the
     // Pavilion's standing "sits above what any family's name reaches, so
     // nobody is ever placed there - a child of the strongest house alive has

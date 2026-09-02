@@ -131,7 +131,7 @@ describe('what is being asked is what makes it hard', () => {
  * and bought nothing, which is the invisible kind of softening: the world's
  * answer was identical whether they put down a purse or nothing.
  *
- * The claims below are `docs/world/items.md` and `docs/world/economy.md` stated
+ * The claims below are `docs/world/things/items.md` and `docs/world/things/economy.md` stated
  * as arithmetic rather than as tuning bars.
  */
 describe('what a purse buys, and what it does not', () => {

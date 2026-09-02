@@ -172,7 +172,7 @@ cultivates faster and hits harder than anyone, and then discovers the world cont
 almost no manuals it can use. `techniques.ts` is where that scarcity is actually made
 true: every wuxing element has strictly more arts than either mutated element does. The
 lore statement of the same fact is in
-[`../../../docs/world/qi.md`](../../../docs/world/qi.md); the root definitions are in
+[`../../../docs/world/climbing/qi.md`](../../../docs/world/climbing/qi.md); the root definitions are in
 [`../../engine/cultivation/README.md`](../../engine/cultivation/README.md).
 
 ---
@@ -201,7 +201,7 @@ Consequences the catalogs enforce:
   out of a tomb?"
 
 The economic and narrative consequences of a grave versus a deliberate inheritance are in
-[`../../../docs/world/economy.md`](../../../docs/world/economy.md).
+[`../../../docs/world/things/economy.md`](../../../docs/world/things/economy.md).
 
 ### Every art has a route, and an art with none says so
 
@@ -343,7 +343,7 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 ## Related
 
 - [`../../engine/cultivation/README.md`](../../engine/cultivation/README.md) - the engine that resolves against this content
-- [`../../../docs/world/the-late-age.md`](../../../docs/world/the-late-age.md) - why nothing here is invented
-- [`../../../docs/world/sects.md`](../../../docs/world/sects.md) - what the sect catalog is a model of
-- [`../../../docs/world/economy.md`](../../../docs/world/economy.md) - what things cost and why
-- [`../../../docs/world/immortals.md`](../../../docs/world/immortals.md) - what `false-immortals.ts` is a model of
+- [`../../../docs/world/history/the-late-age.md`](../../../docs/world/history/the-late-age.md) - why nothing here is invented
+- [`../../../docs/world/houses/sects.md`](../../../docs/world/houses/sects.md) - what the sect catalog is a model of
+- [`../../../docs/world/things/economy.md`](../../../docs/world/things/economy.md) - what things cost and why
+- [`../../../docs/world/climbing/immortals.md`](../../../docs/world/climbing/immortals.md) - what `false-immortals.ts` is a model of

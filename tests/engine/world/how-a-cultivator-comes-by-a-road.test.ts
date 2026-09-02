@@ -503,7 +503,7 @@ describe('a carving is a text, and there are three of them', () => {
     const carvings = PLACES_THAT_TEACH_A_DAO.filter(p => p.access === 'carving');
 
     it('exists in the catalog, and there are exactly three', () => {
-        // `docs/world/immortals.md` is explicit: "Three faces exist, in the
+        // `docs/world/climbing/immortals.md` is explicit: "Three faces exist, in the
         // ordinary hand, cut for people who were in the room". Not a set and
         // not a supply - three.
         expect(carvings).toHaveLength(3);

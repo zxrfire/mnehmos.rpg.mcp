@@ -64,7 +64,7 @@ describe('the threat gate', () => {
 
     it('does not delete them, because they are the texture', () => {
         // Deleting the far-above entries would delete the thing
-        // docs/world/discovery.md asks for. They are re-weighted, not cut.
+        // docs/world/houses/discovery.md asks for. They are re-weighted, not cut.
         let sawUnreachable = false;
         let sawOvermatched = false;
         for (let ordinal = 0; ordinal <= 30; ordinal++) {

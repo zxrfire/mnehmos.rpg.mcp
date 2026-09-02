@@ -1,7 +1,7 @@
 /**
  * The ground: contested qi, and ground that stops you.
  *
- * Two rules `docs/world/qi.md` states plainly and the engine did not have. Both
+ * Two rules `docs/world/climbing/qi.md` states plainly and the engine did not have. Both
  * were found by a lore-versus-mechanics audit, and both are quoted where they
  * are implemented in `cultivation.ts`.
  *

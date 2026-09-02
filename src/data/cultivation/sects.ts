@@ -3204,7 +3204,7 @@ export const SEAT_ORDER = {
  * search of the bible for the Hollow Court's holdings returns nothing, which
  * has already produced one invented answer that had to be retracted. The
  * written design for what the Court is and who it admits is
- * `docs/world/past-the-ceiling.md`, "The Hollow Court is the exception to all
+ * `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court is the exception to all
  * of it"; who stands on the mountains is `hollow-court-roster.ts`; the seat
  * ordering is `SEAT_ORDER` immediately above. All four are indexed in
  * `docs/world/INDEX.md`.

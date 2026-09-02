@@ -355,7 +355,7 @@ export const IMMORTAL_MOTIVE = {
 // for why the Court's records matter. Somebody looking for exactly this
 // searched `docs/` for it, found nothing, invented an answer and relayed it to
 // another agent before it was retracted. The doc half is
-// `docs/world/past-the-ceiling.md`, "The Hollow Court is the exception to all
+// `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court is the exception to all
 // of it"; the roster half is `hollow-court-roster.ts`. Change one, read the
 // others. Indexed in `docs/world/INDEX.md`.
 // ─────────────────────────────────────────────────────────────────────────
@@ -447,7 +447,7 @@ export const PAVILION_SURPLUS = {
 //              answers have become.
 //
 // The world counts the first axis and treats it as the prestige, using the
-// tiers in `docs/world/immortals.md`: one immortal is a supreme lineage, two
+// tiers in `docs/world/climbing/immortals.md`: one immortal is a supreme lineage, two
 // extraordinary, three legendary, four or more in succession very nearly
 // mythical. That reckoning is public and undisputed. The second axis is not
 // public at all, and it is the one that decides how an institution behaves.

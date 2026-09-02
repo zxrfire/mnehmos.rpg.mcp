@@ -75,7 +75,7 @@
  * not, which is why `imperfect-tribulation-body` is the one break with no
  * treatment behind it at all.
  *
- * WHEN IT IS BUILT, THE HIGH GRADES MUST BE TRACKED. `docs/world/items.md`'s
+ * WHEN IT IS BUILT, THE HIGH GRADES MUST BE TRACKED. `docs/world/things/items.md`'s
  * term of art: a heaven- or immortal-grade repair pill is a ROW with a holder
  * and a provenance, never a fungible count, because where a specific one went
  * is exactly the sort of thing somebody should be able to find out two
@@ -211,7 +211,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
     // named a reservoir that was neither a channel nor the cultivation, which
     // is a third family this setting does not have. See the note beside
     // 'Incomplete cultivation' below, which is where its mechanics went, and
-    // `docs/world/injuries.md` for the two families it was sitting between.
+    // `docs/world/climbing/injuries.md` for the two families it was sitting between.
 
     // ─────────────────────────────────────────────────────────────────
     // THE BROKEN STATUSES - one per realm boundary

@@ -51,8 +51,24 @@ const MARKER = /<!--\s*tier:\s*(\d+)\s*(?:trigger="([^"]*)")?\s*-->/;
 /** Every tier marker in docs/world, with the heading it sits under. */
 export function readTriggers() {
     const rows = [];
-    for (const file of fs.readdirSync(DOCS).sort()) {
-        if (!file.endsWith('.md') || file === 'INDEX.md') continue;
+    // Walks subfolders. docs/world was flat and is not any more - twenty-eight
+    // files in one directory was itself a discoverability problem, so they sit
+    // in climbing/, houses/, places/, things/, history/ and writing/ now. A
+    // non-recursive read here indexed the four files left at the top and
+    // called it the world: 199 situations became 2.
+    const docFiles = [];
+    const walk = (dir, prefix) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+            .sort((a, b) => a.name.localeCompare(b.name));
+        for (const entry of entries) {
+            const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+            if (entry.isDirectory()) walk(path.join(dir, entry.name), rel);
+            else if (entry.name.endsWith('.md') && rel !== 'INDEX.md') docFiles.push(rel);
+        }
+    };
+    walk(DOCS, '');
+
+    for (const file of docFiles) {
         const lines = fs.readFileSync(path.join(DOCS, file), 'utf8').split(/\r?\n/);
         let heading = null;
         let headingLine = 0;

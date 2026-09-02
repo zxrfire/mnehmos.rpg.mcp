@@ -16,7 +16,7 @@
  *     what could THIS speaker, standing HERE, plausibly mention right now?
  *
  * ── Reachable means acquirable, never printed ─────────────────────────────
- * docs/world/discovery.md is the constitution: never reference an entity the
+ * docs/world/houses/discovery.md is the constitution: never reference an entity the
  * player has no knowledge record for. So nothing in this file makes a name
  * visible. It makes a name *sayable by somebody in the world*, which is how
  * the player acquires the record, which is what then licenses the name. The

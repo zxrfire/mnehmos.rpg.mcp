@@ -440,7 +440,7 @@ ordinal 2 of 47 - and all three stretch lengths gave identical results because t
 day clock fired inside the first stretch whatever its length. A wound that ends every life
 before it has begun is a wall in front of the content rather than a hazard.
 
-`docs/world/injuries.md` is the spec, including the split it turns on: **channel wounds**
+`docs/world/climbing/injuries.md` is the spec, including the split it turns on: **channel wounds**
 (`permanent: false` - torn meridians, scorched channels) impair and never kill, while
 **wounds of the cultivation** (a broken foundation, a cracked core, an unformed nascent
 soul) take a rung back through `blocksAdvancement` and the broken statuses. The two are not
@@ -550,7 +550,7 @@ boundaries and rolled five times. Some of them still have a family. Most do not.
 what their mother's name was and watch which kind you are talking to.
 
 The faction that decided to pay this price in advance, on purpose, is the Severed - see
-[`../../../docs/world/sects.md`](../../../docs/world/sects.md).
+[`../../../docs/world/houses/sects.md`](../../../docs/world/houses/sects.md).
 
 ## Breakthrough
 
@@ -902,7 +902,7 @@ Nobody currently alive has done this. The last confirmed crossing is centuries b
 it is remembered for the tide rather than the person.
 
 What an immortal run consists of after that point is deliberately light, and lives in
-[`../../../docs/world/immortals.md`](../../../docs/world/immortals.md).
+[`../../../docs/world/climbing/immortals.md`](../../../docs/world/climbing/immortals.md).
 
 ### False Immortal
 
@@ -948,7 +948,7 @@ stay, and they stay on the order of five centuries out of three hundred millenni
 is not the only one the world ever made. He is the one who is still here, which is the most
 interesting fact about him and the reason he is worth writing down. The arithmetic is
 `immortalStock` in [`../world/ladder-odds.ts`](../world/ladder-odds.ts), and the setting
-side of it is [`../../../docs/world/immortals.md`](../../../docs/world/immortals.md).
+side of it is [`../../../docs/world/climbing/immortals.md`](../../../docs/world/climbing/immortals.md).
 
 ### Failure, and the near-miss beside it
 
@@ -1079,5 +1079,5 @@ was met, and hands the resulting state to `survival.ts`.
 - [`../README.md`](../README.md) - engine-wide implementation philosophy and the five pillars
 - [`../world/README.md`](../world/README.md) - capability predicates, environmental gating, time
 - [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the content the engine resolves against
-- [`../../../docs/world/qi.md`](../../../docs/world/qi.md) - what qi is, and why density decides everything
-- [`../../../docs/world/the-late-age.md`](../../../docs/world/the-late-age.md) - why the ladder has a practical ceiling it did not used to have
+- [`../../../docs/world/climbing/qi.md`](../../../docs/world/climbing/qi.md) - what qi is, and why density decides everything
+- [`../../../docs/world/history/the-late-age.md`](../../../docs/world/history/the-late-age.md) - why the ladder has a practical ceiling it did not used to have

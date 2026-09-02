@@ -858,7 +858,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
  * ruined dantian or a broken foundation. Those are wounds of the cultivation
  * rather than of the body: they close roads, they are priced on the condition
  * and broken lines, and they are not a torn muscle. The two families are not
- * one scale (`docs/world/injuries.md`).
+ * one scale (`docs/world/climbing/injuries.md`).
  */
 function openChannelPenalty(injuries: readonly Injury[]): number {
     return aggregateInjuryPenalties(

@@ -1,7 +1,7 @@
 /**
  * What the player actually learns.
  *
- * `docs/world/discovery.md` states the rule this module makes mechanical:
+ * `docs/world/houses/discovery.md` states the rule this module makes mechanical:
  *
  *   > Never reference an entity the player has no knowledge record for.
  *

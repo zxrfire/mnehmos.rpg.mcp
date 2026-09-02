@@ -1,7 +1,7 @@
 /**
  * People passing through, and the names they bring with them.
  *
- * `docs/world/discovery.md` lists the scarce sources a step up the ladder can
+ * `docs/world/houses/discovery.md` lists the scarce sources a step up the ladder can
  * come from: "a sect elder who has heard things, a record in a library you
  * have access to, A TRAVELLER, a ruin's inscriptions, an auction catalogue, a
  * rumour that turns out to be half true - or the thing itself walking past."

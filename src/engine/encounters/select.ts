@@ -37,7 +37,7 @@
  *
  * The fix is not a cut. Those entries are the catalog's own statement that
  * nothing is ever fully outgrown and that the world contains things far above
- * you, and deleting them would delete the texture `docs/world/discovery.md`
+ * you, and deleting them would delete the texture `docs/world/houses/discovery.md`
  * asks for. They are re-WEIGHTED, on the same band table everything else
  * reads, so that meeting something that would kill you stays possible, stays
  * survivable by leaving, and stops being the median Tuesday.

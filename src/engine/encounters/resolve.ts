@@ -140,7 +140,7 @@ export function resolveOccurrence(input: ResolveInput): EncounterOccurrence {
 /**
  * Where the hostile half stands, straight off the regard band.
  *
- * `docs/world/discovery.md`, made mechanical: something nine or more rungs up
+ * `docs/world/houses/discovery.md`, made mechanical: something nine or more rungs up
  * is not a fight that was lost. It is a fight that was never offered. Being
  * ignored by it is the encounter, and there is no branch here on who or what
  * it is - only on the size of the number, which is the whole doctrine.

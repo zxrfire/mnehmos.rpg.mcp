@@ -5,7 +5,7 @@
  * Companion to `cultivation-content.test.ts`, which validates the catalogs
  * themselves. This file validates the things that make the catalogs a place
  * rather than a list, and it enforces the two authoring tests from
- * `docs/world/making-places-different.md`:
+ * `docs/world/places/making-places-different.md`:
  *
  *   region  - name three things true here and false one province over
  *   faction - one sentence that could not be said about any other faction
@@ -292,7 +292,7 @@ describe('regions', () => {
     it('THE WATER IS NOT A PROVINCE WITH A DIFFERENT COLOUR', () => {
         const sea = getRegion(SOUTH_REGION_ID)!;
         // No vein under it, so the standard method is not slow here, it is
-        // absent - which is what `docs/world/qi.md` already says about ground
+        // absent - which is what `docs/world/climbing/qi.md` already says about ground
         // with no vein, applied rather than waived.
         expect(disciplineWorksIn(SOUTH_REGION_ID, 'ordinary drawing')).toBe(false);
         expect(disciplineWorksIn(HOME_REGION_ID, 'ordinary drawing')).toBe(true);

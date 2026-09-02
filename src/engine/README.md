@@ -133,7 +133,7 @@ Where each currently lives:
 - **Attachment**: [`social/README.md`](social/README.md) - grudges, gratitude, inherited
   consequence.
 - **Strategy**: [`social/README.md`](social/README.md) and
-  [`../../docs/world/sects.md`](../../docs/world/sects.md) - incentive-driven betrayal,
+  [`../../docs/world/houses/sects.md`](../../docs/world/houses/sects.md) - incentive-driven betrayal,
   imperfect information, sect politics.
 - **Scale**: [`world/README.md`](world/README.md). This is the pillar a realm ladder alone
   does not deliver, and the world layer's answer to it is *depth, not size*.

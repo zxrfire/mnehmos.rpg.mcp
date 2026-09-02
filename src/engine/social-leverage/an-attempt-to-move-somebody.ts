@@ -243,7 +243,7 @@ const THEY_WANT_SOMETHING = 0.15;
 // that is already ten years of somebody's income moves the odds by under a
 // percent, because what is stopping them at that point is not the number.
 //
-// IT DOES NOT REACH THE THINGS MONEY DOES NOT REACH. `docs/world/items.md`
+// IT DOES NOT REACH THE THINGS MONEY DOES NOT REACH. `docs/world/things/items.md`
 // holds the line: below it things have prices, and above it "cash is simply not
 // the medium. Not 'expensive' - not for sale." What a sum buys is the ORDINARY
 // FAVOUR - a seat in a queue, a look the other way, an introduction, a release

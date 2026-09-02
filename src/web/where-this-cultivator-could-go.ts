@@ -289,7 +289,7 @@ function distance(place: Destination): string {
  *
  * This read is REPUTATION, not perception. A farm child can know the next
  * valley runs deep without cultivating a day - somebody mentioned it - and
- * `docs/world/discovery.md` is content with that. What nobody can know is how
+ * `docs/world/houses/discovery.md` is content with that. What nobody can know is how
  * many people are standing there this morning.
  *
  * The two are separable, and measured over 5 seeds and 90 settlements advanced

@@ -2,7 +2,7 @@
  * The ladder of knowing: how a name gets from "never spoken near you" to
  * "you have dealt with it, and it has dealt with you".
  *
- * `docs/world/discovery.md` specifies six stages and this file is the whole of
+ * `docs/world/houses/discovery.md` specifies six stages and this file is the whole of
  * the mechanism:
  *
  *     unaware        the name has never been spoken near you

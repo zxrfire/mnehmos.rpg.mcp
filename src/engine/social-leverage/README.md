@@ -131,7 +131,7 @@ The `purse` term is three constraints and no fourth:
 - **Reaching only as far as money reaches.** `PURSE_REACH` damps it by the ask:
   full weight on `a_courtesy` - the seat in a queue, the look the other way, the
   introduction, the release from a house - and one twentieth on `a_betrayal`,
-  which is a door left open rather than a price. `docs/world/items.md` holds the
+  which is a door left open rather than a price. `docs/world/things/items.md` holds the
   line this sits under: above a certain kind of thing, cash is not the medium at
   all, and no figure changes that.
 

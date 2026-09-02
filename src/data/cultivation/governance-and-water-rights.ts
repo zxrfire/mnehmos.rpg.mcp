@@ -63,7 +63,7 @@
  * The apex institutions in this file are not somewhere else on the map. They
  * are above it, and a starting cultivator DOES NOT KNOW THEY EXIST - not "has
  * not visited": the names have never been said in front of them. Every entry
- * therefore carries an `awareness` tier from `docs/world/discovery.md`:
+ * therefore carries an `awareness` tier from `docs/world/houses/discovery.md`:
  *
  *   unaware -> whisper -> named -> placed -> encountered -> known
  *
@@ -91,7 +91,7 @@ import { TraditionIdSchema } from './traditions.js';
 // SCHEMA
 // ─────────────────────────────────────────────────────────────────────────
 
-/** The ladder of knowing, from `docs/world/discovery.md`. */
+/** The ladder of knowing, from `docs/world/houses/discovery.md`. */
 export const AwarenessSchema = z.enum([
     'unaware',
     'whisper',
@@ -2868,7 +2868,7 @@ export function getGuestElders(factionId: string): GuestElder[] {
 
 /**
  * Whether a name may be spoken in narration to a cultivator with this
- * awareness record. The hard rule from `docs/world/discovery.md`: never
+ * awareness record. The hard rule from `docs/world/houses/discovery.md`: never
  * reference an entity the player has no knowledge record for.
  */
 export function mayBeNamed(awareness: Awareness): boolean {

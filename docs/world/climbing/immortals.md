@@ -10,7 +10,7 @@ top of the ladder, or actively investigating ascension, for any of it to matter.
 The three ways the last crossing resolves - True Immortal (ordinal 46), False Immortal
 (ordinal 45), and the
 ordinary failure - are mechanics, and live in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md).
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md).
 
 ## Sections
 
@@ -75,9 +75,9 @@ Not the same map with bigger numbers. A genuinely different environment:
 - environmental dangers calibrated for immortals, which is a phrase worth taking seriously
 - politics that has been running, uninterrupted, for a very long time
 
-All of it is implemented in [`../../src/engine/world/layers.ts`](../../src/engine/world/layers.ts)
+All of it is implemented in [`../../src/engine/world/layers.ts`](../../../src/engine/world/layers.ts)
 (the two layers, and what crosses the Lid in either direction) and
-[`../../src/engine/world/immortal-world.ts`](../../src/engine/world/immortal-world.ts)
+[`../../src/engine/world/immortal-world.ts`](../../../src/engine/world/immortal-world.ts)
 (the place, the transition at 46, standing, and what still kills). The far side is
 materialised on first contact and derives entirely from the world seed, so the sky a
 world has is a property of the world and not of when anybody first looked at it.
@@ -148,7 +148,7 @@ lower world and is an absolute monster there, and the player later discovers tha
 
 That gives the scaling shift without the universe having to become infinitely larger,
 which is the world layer's governing constraint - see
-[`../../src/engine/world/README.md`](../../src/engine/world/README.md).
+[`../../src/engine/world/README.md`](../../../src/engine/world/README.md).
 
 ### The lower world does not pause
 
@@ -186,7 +186,7 @@ history ever produces a reason for it, and probably never.
 <!-- tier: 2 trigger="a False Immortal is encountered, claimed, or counted; or somebody asks how many there are" -->
 
 A False Immortal survived the last crossing and did not complete it. What they are is in
-[`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md); what
+[`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md); what
 they *do* is here, because it is the fact that makes the setting's arithmetic work.
 
 ### They have three hundred thousand years and nothing to attempt
@@ -243,11 +243,11 @@ Three consequences for play, and they are all good ones:
   Seat in two centuries knows nothing at all.
 
 The arithmetic lives in `immortalStock` in
-[`../../src/engine/world/ladder-odds.ts`](../../src/engine/world/ladder-odds.ts), alongside
+[`../../src/engine/world/ladder-odds.ts`](../../../src/engine/world/ladder-odds.ts), alongside
 the record it is fitted to. What that residence figure is actually made of - where they go,
 what is known about anybody who went there, and why a departure and a death produce the same
 evidence - is `DEPARTURE` and `DEPARTURE_DESTINATIONS` in
-[`../../src/data/cultivation/false-immortals.ts`](../../src/data/cultivation/false-immortals.ts).
+[`../../src/data/cultivation/false-immortals.ts`](../../../src/data/cultivation/false-immortals.ts).
 
 ---
 
@@ -453,7 +453,7 @@ that he declined, whose entire population is three people inside the Court, trac
 second hand to that same remark, and which nobody can check because that Court does not
 announce, deny, correct or brief.
 
-The catalog is [`../../src/data/cultivation/false-immortals.ts`](../../src/data/cultivation/false-immortals.ts).
+The catalog is [`../../src/data/cultivation/false-immortals.ts`](../../../src/data/cultivation/false-immortals.ts).
 
 ---
 
@@ -477,9 +477,9 @@ Somebody put it there on purpose, on their way out, knowing they would never com
 check.
 
 It is also why the sect an ancestor left is holding a parting gift, and why the recency of
-a crossing is most of a sect's prestige - see [`sects.md`](sects.md). And it is what
+a crossing is most of a sect's prestige - see [`sects.md`](../houses/sects.md). And it is what
 separates an inheritance from a grave, which is a profession's worth of distinction:
-[`economy.md`](economy.md).
+[`economy.md`](../things/economy.md).
 
 ## What crosses the Lid
 
@@ -639,8 +639,8 @@ enough to reshape a region.
 
 <!-- tier: 3 -->
 
-- [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - the last crossing, True and False Immortal
-- [`sects.md`](sects.md) - ancestral records and the millennial offering
-- [`economy.md`](economy.md) - graves versus inheritances
-- [`the-late-age.md`](the-late-age.md) - why nobody has crossed in living memory
-- [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - why the world gains depth rather than layers
+- [`../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) - the last crossing, True and False Immortal
+- [`sects.md`](../houses/sects.md) - ancestral records and the millennial offering
+- [`economy.md`](../things/economy.md) - graves versus inheritances
+- [`the-late-age.md`](../history/the-late-age.md) - why nobody has crossed in living memory
+- [`../../src/engine/world/README.md`](../../../src/engine/world/README.md) - why the world gains depth rather than layers

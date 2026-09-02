@@ -96,7 +96,7 @@ export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
 
 /**
  * Which age an art was written in. See `era` on `TechniqueEntry` for why this
- * is independent of `class` and of `provenance`, and `docs/world/ancient.md`
+ * is independent of `class` and of `provenance`, and `docs/world/history/ancient.md`
  * for what the distinction is for.
  */
 export type TechniqueEra = 'modern' | 'ancient';
@@ -338,7 +338,7 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // elemental line instead. Ruin provenance is the whole of what places
     // them: no living teacher, copies in sealed sites and in a small number of
     // very old archives, and nothing about them that a sect could transmit
-    // even if it wanted to. See `docs/world/ancient.md` and `lost-ages.ts`.
+    // even if it wanted to. See `docs/world/history/ancient.md` and `lost-ages.ts`.
     'hundred-pace-step',
     'sealed-field-of-the-shut-hour',
     'thousand-spear-summoning',
@@ -386,7 +386,7 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 // ─────────────────────────────────────────────────────────────────────────
 // THE CORRIDOR ABOVE THE MIDDLE
 //
-// Measured in `docs/world/escapes.md`: the ladder above ordinal 17 is not a
+// Measured in `docs/world/writing/escapes.md`: the ladder above ordinal 17 is not a
 // ladder, it is a single-file corridor. At most heights the world offers
 // exactly ONE cultivation manual that continues, and usually wants a specific
 // element for it. Three of the choke points are single-source; one is a house
@@ -2975,7 +2975,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // thing to be holding
     //
     // The axis is CATEGORICAL versus ELEMENTAL, and it is the spine of
-    // `docs/world/ancient.md`. Everything above this block is elemental or is
+    // `docs/world/history/ancient.md`. Everything above this block is elemental or is
     // the elementless refinement of an elemental idea: fire, ice, wind, a
     // blade, a shield, a step. That line scales to the horizon and nothing
     // about it is modest - at the top of the ladder it is somebody throwing

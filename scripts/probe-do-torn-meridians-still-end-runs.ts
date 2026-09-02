@@ -17,7 +17,7 @@
  * This probe reproduces exactly that sample - one strategy, three stretch
  * lengths, the same seeds - and reports the death-cause histogram, median peak
  * ordinal and median age at death. It is the before-and-after instrument for
- * `docs/world/injuries.md`.
+ * `docs/world/climbing/injuries.md`.
  *
  * ── HOW TO TAKE A HONEST BEFORE-AND-AFTER ────────────────────────────────
  *

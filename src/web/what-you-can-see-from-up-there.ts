@@ -8,7 +8,7 @@
  *   "at higher ranks you should just be able to fly and look around. why should
  *    the entire thing be dependent on asking? that's a mortal's POV."
  *
- * And it is right. `docs/world/discovery.md` builds the whole of discovery on
+ * And it is right. `docs/world/houses/discovery.md` builds the whole of discovery on
  * BEING TOLD - hearsay, a record, a traveller, a name said in front of you -
  * which is the correct and load-bearing model for a farm child at Qi
  * Condensation Layer 1 and the wrong one for somebody who does not need

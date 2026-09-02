@@ -47,7 +47,7 @@ import type { KnowledgeGate } from './knowledge.js';
  *
  * `intakeRouteOf` rather than the `recruits` boolean, because the three-valued
  * read is the one that matters here: a Dao house's route in is adoption, and
- * `docs/world/dao-houses.md` states the consequence outright - "Adoption is
+ * `docs/world/houses/dao-houses.md` states the consequence outright - "Adoption is
  * the only door, so a house cannot advertise". A house that takes nobody and a
  * house that takes only who it chose are both off the wall.
  *

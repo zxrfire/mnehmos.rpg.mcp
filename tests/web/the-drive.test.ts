@@ -220,7 +220,7 @@ describe('who would teach this cultivator', () => {
     });
 
     it('never leaks a name the player has no record for', () => {
-        // The rule `docs/world/discovery.md` is emphatic about, and the one a
+        // The rule `docs/world/houses/discovery.md` is emphatic about, and the one a
         // roster read breaks by accident: walking a roster and printing it
         // hands the player a cast list they did not earn.
         const read = whoWouldTeach({
