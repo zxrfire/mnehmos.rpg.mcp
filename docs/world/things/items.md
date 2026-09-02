@@ -14,7 +14,12 @@ Read alongside [`economy.md`](./economy.md), which covers price, ownership and p
 
 | Section | The scene it answers |
 |---|---|
-| [Counted or tracked](#counted-or-tracked) | Anything changes hands, and you have to store it |
+| [Does it have a history](#does-it-have-a-history) | Anything changes hands, and you have to store it |
+| &nbsp;&nbsp;[A price and nothing else](#a-price-and-nothing-else) | Somebody buys a meal, or a province stops selling grain |
+| &nbsp;&nbsp;[An amount somewhere](#an-amount-somewhere) | Somebody forages, hunts, or buys a common book |
+| &nbsp;&nbsp;[One thing with a history](#one-thing-with-a-history) | An object is worth being asked about two centuries later |
+| &nbsp;&nbsp;[Nothing moves up](#nothing-moves-up) | Somebody proposes refining, upgrading, or promoting a thing |
+| &nbsp;&nbsp;[Provenance is testimony](#provenance-is-testimony) | Two houses disagree about where a treasure came from |
 | &nbsp;&nbsp;[Why that line falls where it does](#why-that-line-falls-where-it-does) | Somebody asks why the cheap things restock and the good ones do not |
 | [What money cannot buy](#what-money-cannot-buy) | Somebody tries to purchase something above the line |
 | [Why a holder keeps what they cannot use](#why-a-holder-keeps-what-they-cannot-use) | A house sits on something useless to it |
@@ -28,23 +33,80 @@ Read alongside [`economy.md`](./economy.md), which covers price, ownership and p
 
 ---
 
-## Counted or tracked
+## Does it have a history
 
 <!-- tier: 2 trigger="an object is created, stored, or transferred, and the question is how many there are" -->
 
-**The single decision that governs every item in this world.** Some things are a quantity;
-some are a row with a history. Getting it wrong in either direction is expensive:
+**The single decision that governs every item in this world**, and the question to ask is
+not "is this valuable". It is **whether the thing has a story anybody could be asked about.**
+Getting it wrong in either direction is expensive:
 
 > **Track the fungible and the tables become useless and the queries slow. Aggregate the
 > singular and the world forgets things it should never forget.**
 
-**Counted.** Made, bought, spent and replaced constantly, and nobody cares *which one* you
-took. A holder and a number is the whole of what needs storing. Low and middling pills are
-here - they churn enormously - and so are a house's twenty intake primers, which are one
-fact about the house rather than twenty facts.
+There are **three** answers, not two, and each line is where it is for a different reason:
 
-**Tracked.** Each one is a row with a holder, a provenance and a story about how it was got.
-Artifacts, high-tier pills, single-use comprehension materials, and any manual scarce enough
+| | What is stored | What moves it |
+|---|---|---|
+| **A price and nothing else** | no row anywhere | events in the world |
+| **An amount somewhere** | a number, per holder and per place | people taking it and people making it |
+| **One thing with a history** | a row with a holder and a provenance | somebody's decision, and it is an event |
+
+The code's terms for the last two are **counted** and **tracked**, and they are load-bearing
+in `possessions.ts` and everywhere that reads it. They are also a poor name for the
+distinction they draw, which is why the prose above does not lean on them: **both are
+recorded, and both are counted.** A counted thing is fully accounted for - a character's row
+says they hold three, a place's row says how many are still in the ground. What it does not
+have is an identity or a past. Nobody who reads this should ever conclude that counted means
+untracked and go off to give every bowl of millet an id.
+
+### A price and nothing else
+
+<!-- tier: 2 trigger="somebody buys food, board or a robe, or a province stops being able to sell something" -->
+
+**Most of what anybody buys has no row anywhere, and must not.** A bowl of millet, a night's
+board, a robe. No count on the holder, no stock in the place, no arithmetic on the purchase.
+Modelling how much grain a province holds would cost more than every question it could
+answer, and there is no story in a bowl of millet for anybody to ask after.
+
+That is not to say nothing happens to it. A place has an availability and a price, both of
+which move - and what moves them is never anybody buying one.
+[`economy.md`](./economy.md#what-restocks-a-thing) is the authority on that and on why the
+direction of causation is the whole distinction between this tier and the next.
+
+### An amount somewhere
+
+<!-- tier: 2 trigger="somebody forages, hunts, buys a common manual, or asks how much of a thing a place still has" -->
+
+**Cultivator materials are a number, per holder and per place.** Furs off a Qi Condensation
+beast, low-grade herbs, low and middling pills, and a house's twenty intake primers, which
+are one fact about the house rather than twenty facts. Fungible - any one is any other - and
+nobody asks where a particular one came from, because there is nothing to ask.
+
+The thing that makes them worth storing at all is the opposite of the tier above:
+
+> **Taking is what moves the number.**
+
+So a place holds a count as well as a person does, and the ground half of that is
+[`what-a-place-still-has-in-the-ground.ts`](../../../src/engine/world/what-a-place-still-has-in-the-ground.ts) -
+one number per place, per kind, per grade, going down when people take from it. What puts
+each kind of counted thing back, and why a district can be worked out while a stall cannot,
+is [`economy.md`](./economy.md#what-restocks-a-thing).
+
+**This tier is not about materials, and common manuals are the case that proves it.** They
+are produced in quantity by people nobody can name, because
+[a copy is not a parting](../climbing/manuals.md) - so a person holds three and a stall has
+some, and which copy it is has no meaning. **Which means the line into the next tier, for a
+book, is not grade.** It is whether the thing can be copied at all, which is the same fact as
+whether anybody would notice one leaving. `betrayalOfSelling` in `manuals.ts` is the four-rung
+scale that already decides it, and its top two rungs do not move at any price.
+
+### One thing with a history
+
+<!-- tier: 2 trigger="an object is singular, and the question is whether it deserves its own row" -->
+
+**Each one is a row with a holder, a provenance and a story about how it was got.**
+Artifacts, high-tier pills, single-use comprehension materials, any manual scarce enough
 that *which* copy it is matters. The test is not value in stones. It is **whether the
 movement of this specific object is an event somebody should be able to find out about two
 centuries later.** If yes, it is a row.
@@ -55,8 +117,67 @@ shapes: `makeResourceLot` for a quantity that came from somewhere worth remember
 not tracked at all* - and `makeObject` with a `significance` that gates whether provenance is
 kept at all. `mundane` things deliberately get none.
 
-**Use `significance` as the switch.** It exists for exactly this and adding a second field
-beside it is how two sources of truth start disagreeing.
+**Use `significance` as the switch, through `keptAs`.** The field exists for exactly this,
+adding a second one beside it is how two sources of truth start disagreeing, and comparing to
+`'mundane'` by hand is the same defect spread over more files.
+
+### Nothing moves up
+
+<!-- tier: 2 trigger="somebody proposes refining, upgrading, improving or promoting an object, or asks whether a material can be raised a grade" -->
+
+**Which side of the line a thing is on is settled when it comes into existence, and it never
+crosses.** A counted thing is counted for as long as it exists; a tracked thing was tracked
+from its first day. Nothing earns its way into having a history by being valuable or famous,
+and nothing loses one. The same is true of grade, and the rule and its one downward exception
+belong to [`economy.md`](./economy.md#what-restocks-a-thing).
+
+Two things follow that are about objects rather than about stock, and they are this file's.
+
+**Why the rule is load-bearing rather than bookkeeping.** This is a world running on
+inherited things it cannot reproduce - see
+[the tier nobody here makes](#the-tier-nobody-here-makes) - and if objects could be improved,
+the Late Age premise would not survive the first competent craftsman. The premise is not a
+statement about the past. It is a constraint on what a maker can do today.
+
+**And a newly crafted tracked object is unusual in exactly one respect: its provenance is
+clean.** Somebody made it, it is known who, and it is known when. In a world where a great
+many of the great objects arrive with no story anybody can produce, a thing with a documented
+maker is a different kind of possession - and the difference is worth more than the craft.
+
+### Provenance is testimony
+
+<!-- tier: 2 trigger="somebody asks where an object came from, two accounts of one object disagree, or a provenance has to be checked" -->
+
+**Provenance is not a ledger. It is what people remember and repeat.** Memory drifts, gets
+flattered, confuses two similar objects, and improves in the retelling. A house can be
+entirely sincere and entirely wrong about where its treasure came from, and there is no
+authority anywhere that can settle it.
+
+Four things follow, and they are the interesting half of what a tracked object is:
+
+- **A confident provenance and a true one are different things**, and nothing in the world
+  reliably separates them.
+- **It can be contested.** Two houses with incompatible accounts of the same object, both
+  honest.
+- **It degrades**, with time and with the death of witnesses, the way all old knowledge here
+  does - recognisable in fragments and partly right.
+- **It can be checked, at a cost.** That is the axis [`trust.md`](../houses/trust.md) is
+  entirely about: a signal is worth what the other party cannot check, and a provenance is
+  the same shape.
+
+The machinery for a true thing distorted in transmission already exists and must not be
+rebuilt: `rumours-and-what-they-get-wrong.ts` is the whole subject, and `KnowingStage` in
+`src/engine/social/discovery.ts` is how anything becomes known at all.
+
+**And a tracked object's story is not always a gap.** `HOW_A_FORTY_FIVE_EXISTS` in
+`artifacts.ts` names two routes and only one of them is anonymous: a sent-down piece comes
+with a founder, a year and a witness, and a shard comes with a place where something happened
+that nobody recorded. Both carry the same tag on the same kind of row, so **the object does
+not tell you which of the two you are holding.**
+
+This is also what sharpens the line one tier down: **a counted thing has no story to be
+wrong about.** Being able to be honestly mistaken about it is part of what makes a tracked
+thing tracked.
 
 ### Why that line falls where it does
 

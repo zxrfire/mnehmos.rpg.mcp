@@ -72,6 +72,14 @@ import {
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
 import { manualsAStallCarries } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
+import {
+    drawFromTheGround,
+    howTheGroundReads,
+    recordGroundDraw,
+    standingStock
+} from '../../engine/world/what-a-place-still-has-in-the-ground.js';
+import { worldForRun, saveWorldForRun } from '../state/cultivation-world.js';
+import { worldLocationFor } from '../../web/entities.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
@@ -87,7 +95,8 @@ import {
     round2,
     totalDays
 } from './cultivation-support.js';
-import type { Cultivator } from '../../schema/cultivation.js';
+import type { Cultivator, Run } from '../../schema/cultivation.js';
+import type { LocationRecord } from '../../engine/world/locations.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -546,6 +555,33 @@ function describeStanding(cultivator: Cultivator, standing: Standing): Record<st
 // off the ordinary bands - so there is no second engine here either.
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * The world's row for the ground somebody is standing on, and the day it is.
+ *
+ * Null where there is no world - the harness runs with it off by design, and a
+ * run without a world layer still forages. The stock then does not bind, which
+ * is the same shape every other world-backed guard here has and is stated
+ * rather than silent: with no world there is nothing that could say a district
+ * has been worked out.
+ *
+ * The world's own clock, never the run's. Worlds outlive runs, so a stock that
+ * ticked on `elapsedDays` would grow back to full every time somebody died.
+ */
+async function theGroundUnder(
+    run: Run,
+    cultivator: Cultivator
+): Promise<{ place: LocationRecord; onDay: number } | null> {
+    try {
+        const world = await worldForRun(run);
+        const place = worldLocationFor(world, cultivator.location);
+        return place ? { place, onDay: Math.floor(world.currentDay) } : null;
+    } catch {
+        // A run with no world is a run in a game the world layer is not part
+        // of. Not an error, and not a reason to refuse a forage.
+        return null;
+    }
+}
+
 export async function handleForage(
     args: z.infer<typeof ForageSchema>,
     cultivate: CultivateRunner
@@ -602,11 +638,38 @@ export async function handleForage(
     // Paid for the days the engine says were spent, exactly as wages are. A
     // pass cut short by a death or an interruption yields proportionally.
     const fraction = drawn.days > 0 ? Math.min(1, simulatedDays / drawn.days) : 0;
-    const taken = died ? 0 : Math.floor(drawn.quantity * fraction);
+    const wanted = died ? 0 : Math.floor(drawn.quantity * fraction);
+
+    // ── AND THE GROUND HAS A NUMBER ─────────────────────────────────────
+    //
+    // What the regard says a person of this rung would find is a statement
+    // about the SEARCHER. What is actually there is a statement about the
+    // PLACE, and until this it was infinite: forage, and material appeared,
+    // forever, in a province that could not be picked clean.
+    //
+    // The ground is the ceiling, never the floor. It can only ever reduce what
+    // the draw above already decided, and when it does the refusal is said out
+    // loud - a place that has been worked out has to say so rather than
+    // quietly hand back less.
+    const ground = await theGroundUnder(run, cultivator);
+    const draw = ground
+        ? drawFromTheGround(ground.place, {
+            kind: 'herb',
+            grade: drawn.herb.grade,
+            wanted,
+            onDay: ground.onDay
+        })
+        : null;
+    const taken = draw ? draw.taken : wanted;
+    if (draw && recordGroundDraw(ground!.place, draw)) await saveWorldForRun(run);
+
     if (taken > 0) addToPouch(repos.db, cultivator.id, drawn.herb.id, 'herb', taken);
 
     const after = repos.cultivators.getById(cultivator.id)!;
     const offered = findOfferedHerbs(asker, biome);
+    const band = ground
+        ? standingStock(ground.place, 'herb', drawn.herb.grade, ground.onDay)
+        : null;
 
     return {
         foraged: true,
@@ -624,6 +687,22 @@ export async function handleForage(
         daysAsked: drawn.days,
         daysSpent: simulatedDays,
         regard: describeRegard(drawn.regard),
+        // What this ground still holds of the grade that was drawn, and what
+        // it holds of everything else. A player must be able to ask what a
+        // place still has and get a real answer rather than inferring one from
+        // a yield that quietly fell.
+        ground: ground
+            ? {
+                place: ground.place.name,
+                grade: drawn.herb.grade,
+                remaining: Math.floor(band!.remaining),
+                capacity: band!.capacity,
+                reading: band!.reading,
+                shortfall: draw!.shortfall,
+                says: draw!.line,
+                stillHas: howTheGroundReads(ground.place, ground.onDay)
+            }
+            : null,
         // What the ground still puts in front of them, and what it has stopped
         // putting in front of them. The second half is the answer to "why did
         // I not find any qi grass" at Nascent Soul, and it is a real answer.
