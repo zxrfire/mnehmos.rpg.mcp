@@ -46,6 +46,11 @@
  * No consumable version of this may be added. An item that folds space on
  * demand is the same mechanic with its teeth pulled.
  *
+ * Folding is not only short, and outside this module it is not short at all:
+ * `how-far-somebody-can-fold-space-and-what-it-costs.ts` is what the grant is
+ * FOR, and its reach grows with the rung. {@link PIERCE_REACH_DAYS} says why
+ * this is the one place it does not.
+ *
  * ── But somebody else might come ──────────────────────────────────────────
  *
  * The rule above is about your own capability, and it holds. It says nothing
@@ -81,6 +86,10 @@ import {
     type CapabilityActor,
     type CapabilityGrant
 } from './capability.js';
+import {
+    FOLD_GRANT,
+    FOLD_RANGE_AT_THE_FLOOR
+} from './how-far-somebody-can-fold-space-and-what-it-costs.js';
 import { isBelowTheLid } from './layers.js';
 import {
     nextClosingDay,
@@ -153,7 +162,7 @@ export function convergenceOf(location: LocationRecord, day: number): Convergenc
 // ─────────────────────────────────────────────────────────────────────────
 
 /** The grant that lets somebody leave late. Void Refinement, and no lower. */
-export const PIERCE_GRANT: CapabilityGrant = 'spatial_folding';
+export const PIERCE_GRANT: CapabilityGrant = FOLD_GRANT;
 
 /**
  * Days of depth a full-strength fold covers.
@@ -161,8 +170,20 @@ export const PIERCE_GRANT: CapabilityGrant = 'spatial_folding';
  * Short, because the grant says short. It is a bound on distance and never a
  * substitute for the clock: at the widest it buys about a week of depth, which
  * is less than the deep wings of a large site.
+ *
+ * It is the fold's reach at the rung where folding starts, read from
+ * `how-far-somebody-can-fold-space-and-what-it-costs.ts` rather than restated,
+ * because the two were the same physical fact carried in two constants.
+ *
+ * AND IT DOES NOT GROW WITH THE RUNG HERE, which is the one place in the engine
+ * where that is true. Everywhere else a fold reaches further the higher the
+ * folder stands. What a waning convergence spends is the site RECEDING, and a
+ * receding far end is not a distance on anybody's table - there is nothing to
+ * take a fix on, so there is nothing for the ordinal to buy. The reach is the
+ * floor for everybody, it wanes with the window, and it is at its weakest on
+ * the day it would matter most.
  */
-export const PIERCE_REACH_DAYS = 6;
+export const PIERCE_REACH_DAYS = FOLD_RANGE_AT_THE_FLOOR;
 
 /**
  * How far somebody could fold, from here, today.

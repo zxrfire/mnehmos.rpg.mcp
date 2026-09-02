@@ -122,7 +122,15 @@ export type CapabilityGrant =
     | 'no_ambient_needed'
     /** Void Refinement: dead zones, scars and voids become survivable. */
     | 'enters_dead_zones'
-    /** Void Refinement: short-range spatial folding. */
+    /**
+     * Void Refinement: folding space rather than crossing it.
+     *
+     * The grant is a switch and the RANGE is not: it starts at one province
+     * over and grows with the rung, so what this hands over depends on how high
+     * the holder stands. `how-far-somebody-can-fold-space-and-what-it-costs.ts`
+     * owns the curve, what it costs, and the two things that can serve as a fix
+     * on the far end.
+     */
     | 'spatial_folding'
     /** Void Refinement: reads regional formation structure whole. */
     | 'reads_formations'

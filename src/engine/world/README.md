@@ -1871,6 +1871,16 @@ properties do all the work: it is too high for anybody who explores ruins, and i
 short-range, so it narrows as the window wanes and fails when it would matter most. **Do
 not add a consumable version.**
 
+**`how-far-somebody-can-fold-space-and-what-it-costs.ts` - the same grant, doing the thing
+it is actually for.** Range in walking days, growing with the rung: one province over at
+Void Refinement, the whole map by ordinal 38, and nothing at all below the floor. **The
+scarce thing is not power, it is knowing where the far end is** - a fold needs a fix, and
+there are exactly two, ground somebody has stood on and something they have seen. There is
+no third for being told or being sold one, because a bought fix is the Wide Age
+true-distance table and the House of the Measured Span has spent five thousand years
+failing to reproduce it. `convergence.ts` is the one place the reach does not grow with the
+rung, and `PIERCE_REACH_DAYS` carries the reason.
+
 **`ruin-mechanics.ts` - the test for anything added here.** *Does it change what the player
 knows, what they are, or what the rules of the place are - rather than how much damage
 they take?* If it is a number, it belongs in the encounter layer.

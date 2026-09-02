@@ -115,6 +115,14 @@ The four grants this document called **built** - `prepared_vessel`, `carries_own
 is correct. None of them fires for anybody. **A grant-gated capability is a no-op that
 reviews as a feature**, and that is the trap this correction exists to close.
 
+> **The empty set has since been closed, and the rest of the correction stands.**
+> `capabilityActorFor` now fills `heldGrants` from `grantsHeldWith(realmOrdinal,
+> brokenStatusesOn(injuries))`, so a cultivator holds what their rung confers less what their
+> breaks took back, and `ARRANGED_GRANTS` keeps the one grant a realm genuinely cannot supply.
+> Read every `built` below as "the code path exists and now fires for whoever stands high
+> enough" - which is a much smaller population than the verdict column suggests, and is why
+> the arithmetic under each row still matters more than the word.
+
 Two things are genuinely implemented and are *not* affected, because neither routes through
 grants:
 
@@ -364,7 +372,7 @@ on it. A capability layer that can only say yes or no cannot say this.
 |---|---|---|---|
 | 1 | perceive | **built** | `reads_formations` is special-cased in `judge`: up to 8 ordinals off `understand` where the subject carries the `formation` hazard. The only perception capability keyed to a realm anywhere in the engine |
 | 2 | survive | **built** | `no_ambient_needed` and `enters_dead_zones` between them neutralise `thin_qi`, `dead_zone`, `void`, `sealed_qi`, `scar` |
-| 3 | do | **built** | `spatial_folding`, consumed by `convergence.ts` as the escape from a closing window - and deliberately short-range, so it narrows as the window wanes. The one grant with a real consumer outside `capability.ts` |
+| 3 | do | **built** | `spatial_folding`, and it is now two things rather than one. `convergence.ts` still consumes it as the escape from a closing window, at the floor reach for everybody and wanting as the window does. `how-far-somebody-can-fold-space-and-what-it-costs.ts` is what the grant is FOR - a range in walking days that grows with the rung, a price, and a fix. See [what folding space actually buys](#what-folding-space-actually-buys-and-what-it-does-not) |
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | |
 | 6 | opportunity | **indirect** | The README calls `no_ambient_needed` *"the single most consequential grant on the ladder"* because it decouples a cultivator from the scarcity the world is organised around. That decoupling is real in the cultivation-rate arithmetic and has no economic expression: nothing anywhere makes such a person a different kind of trading partner |
@@ -379,7 +387,7 @@ than switching off**, and it degrades differently in each of the three:
 
 | | A full refinement | A partial refinement |
 |---|---|---|
-| **Spatial folding** | Held | **Denied outright.** The one binary of the three |
+| **Spatial folding** | Held, and its RANGE grows every rung above this one | **Denied outright.** The grant is the one binary of the three, and it is the only binary left in it |
 | **Surviving scars and voids** | Any of them | **The weak ones only.** What a full refinement walks into unbothered still kills this one |
 | **Ambient qi** | Needs none at all | **Still needs it - a great deal less.** Reduced, never removed |
 
@@ -387,6 +395,97 @@ So the road is open to thin ground and closed to the deep places, and they are c
 than anybody below them and not free. The middle row is the one worth designing carefully: it
 is not "survives voids: false", it is a lower bar in the same units the location layer already
 prices hazards in.
+
+The top row has moved and the word "binary" now covers less than it did. **Denial is still the
+owner's own ruling** - *"doesn't allow spatial folding"* - and nothing softens it. What is no
+longer binary is what the grant HANDS OVER to somebody who has it: the range is a curve on the
+rung, the price is a curve on how hard they reached, and the fix decides whether they arrive
+where they meant to. Held against denied is a switch on the door. Everything behind the door is
+continuous.
+
+<!-- trigger="how far can a high cultivator teleport, what does folding space cost, why does anybody still hire a courier" -->
+### What folding space actually buys, and what it does not
+
+`how-far-somebody-can-fold-space-and-what-it-costs.ts` owns this. The unit is a **walking day**,
+because that is what every road in the catalog is already quoted in.
+
+**The range is two anchors and one growth constant**, the same shape the sight horizon uses,
+and both anchors are figures the region catalog states rather than figures somebody picked. At
+the floor it is six days - the shortest stated road between any two provinces, so a fresh Void
+Refinement cultivator steps to the province next door and nowhere else. The growth is fitted so
+that the widest road in the world, thirty-four days, comes into reach at Grand Ascension: the
+realm that stops being gated by places is the realm in which the world stops being wide.
+
+| Ordinal | Reach, in walking days | What that opens |
+|---|---|---|
+| 29 Void Refinement | 6.0 | the province next door, on the shortest roads |
+| 31 | 9.2 | the nine-day roads |
+| 32 | 11.4 | the eleven-day roads |
+| 33 Body Integration | 14.2 | |
+| 34 | 17.6 | the seventeen-day roads |
+| 35 | 21.8 | the twenty-one-day road |
+| 37 Grand Ascension | 33.5 | everything except the widest crossing in the world, by half a day |
+| 38 | 41.6 | the whole map, in one step |
+| 44 | 151.2 | the whole map, four times over |
+
+Past 38 the curve stops distinguishing anybody, because the world runs out before the range
+does. **It has nine rungs to say anything with and it says all of it between Void Refinement
+and Grand Ascension** - which is roughly one person in twenty in a seeded world, and is why
+this changes nothing whatever for ordinary play.
+
+**What it costs.** Settling days, quadratic in how much of the range was spent - so the price
+is how hard they reached and never how far they went. Well inside the range a fold costs the
+one day everything in this engine costs. At full stretch it costs three, which over a six-day
+road is about what a mortal-grade cart does and is **slower than the best hull in the world**.
+That is deliberate: the conveyance ladder keeps its top rungs, and a strained fold is not the
+fast option. It is the option for somebody with no road, no hull, no time, and nobody they want
+to be seen by.
+
+**What is scarce is not power, it is knowing where the far end is.** A fold needs a fix, and
+there are exactly two: ground they have **stood** on, which is exact, and something they have
+**seen** from height, which lands them a tenth of the distance short and walking. There is
+deliberately no third for being told, reading a record or buying a figure - see below.
+
+**What range does not buy.** It is not a key: a seal, a shut window and a barrier are physical
+`attempt` blockers and somewhere that will not open does not open because you arrived by a
+different road. It carries nobody and nothing but the folder. It is not consulted by combat and
+must not be. And it does not make somebody an explorer - `places/ruins.md`'s line still holds,
+and now holds for a stated reason: a fold needs a fix, and the far rooms of a ruin are precisely
+the ground nobody has stood on and nobody can see.
+
+The sharpest cost is the one no number carries. **A road is where encounters, hearsay and
+everything AGENTS.md means by having been places and survived things come from.** Somebody who
+folds everywhere has been nowhere, and arrives at a crossing that asks what they understood with
+nothing to bring. That is the greenhouse rule applied to transport and it needs no penalty,
+because it is not one: the experiences simply did not happen.
+
+**And arriving without having travelled is the loudest thing anybody does in this world.**
+Nobody passed them on the road, no station wrote them down, and nothing was paid at true
+distance for a journey that was not made. It is the top of the same ladder a spirit boat sits
+on - on foot, mount or drawn carriage, boat, flight on a blade, fold - and it is the end of it,
+because there is no quiet version.
+
+#### Why this does not make the House of the Measured Span pointless
+
+The Span already does this as a trade, and reading `history.ts` before designing the personal
+version is what kept the two from colliding. It **folds a courier down a route it has surveyed**
+and prices the work per li of *true* distance, off a Wide Age table it maintains and has never
+extended in five thousand years. Its own estimate of what working one of the nine inherited
+terminals would take is *a realm nobody in the world currently occupies*.
+
+So the house sells **the fix, not the fold** - and the two are different shapes. The Span moves
+other people and cargo between fixed points, for a price, for anybody, to places the buyer has
+never been. A cultivator moves themselves, from wherever they are standing, to somewhere they
+have stood or can see. Neither substitutes for the other, and the reason a Void Refinement
+cultivator still hires a courier is that a courier can be sent somewhere the cultivator has no
+fix on.
+
+Note where the ladders sit, because it settles the question on its own: the Span's reliable rung
+is 25 and its Elder Surveyors stall in the mid-twenties, which is **below the folding floor**.
+The house that understands space better than anybody alive mostly cannot fold at all, and works
+off the table instead. **Nothing may hand a cultivator that table.** A third kind of fix - one
+that could be bought, read or told - would delete the house's whole business and the Late Age
+premise it expresses, which is why there are two and not three.
 
 ---
 
