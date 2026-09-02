@@ -365,6 +365,70 @@ export function courtesyPaidTo(input: string): DirectedRequest | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHAT SOMEBODY IS AFTER, WHICH IS A QUESTION AND NOT A REQUEST
+//
+// Its own matcher for the same reason the courtesy has one: none of these
+// sentences has a request verb in the place the split expects, and the two
+// that do - "ask her what she wants" - put a clause where an object should be,
+// so `WHERE_THE_ASK_STARTS` never fires and every phrasing fell through to
+// `unclear` or to a `talk` with the topic "she wants".
+//
+// Measured before this existed, at the real parser: "what does Jiang Anyi
+// want", "what is Jiang Anyi after" and "what is Jiang Anyi looking for" all
+// came back `{"action":"unclear"}`, while `resolveAttempt` was pricing a term
+// for precisely that fact and reading `false` for it in every attempt ever
+// made. A term the engine reads and the player has no sentence for is a term
+// nobody can play toward.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The three ways somebody asks what another person is chasing.
+ *
+ * Every one requires the WORD that names the wanting - want, after, chasing,
+ * looking for - so nothing here can take a sentence off `assess`, off
+ * `askAround` or off the roster questions. "What does she know" and "who is
+ * she" are untouched, which was checked rather than assumed.
+ */
+const WHAT_ARE_THEY_AFTER: readonly RegExp[] = [
+    // FIRST, because it is the only one that names the person BEFORE the word
+    // "what". Left below the others it lost "ask Jiang Anyi what she wants" to
+    // the bare pattern, which read the pronoun as the person and resolved a
+    // party called "she" - the addressee silently replaced, which is the exact
+    // defect the request parser was written to fix one layer up.
+    /\b(?:ask|asks|asking|find out(?: from)?)\s+(.{2,60}?)\s+what\s+(?:he|she|they|it)\s+(?:wants?|is after|are after|is chasing)\b/i,
+    /\bwhat\s+(?:does|do|is|are)\s+(.{2,60}?)\s+(?:want|wants|after|chasing|looking for|trying to (?:do|get))\b/i,
+    /\bwhat\s+(.{2,60}?)\s+(?:wants|is after|is chasing|is looking for)\b/i
+];
+
+/**
+ * The first person, who is not somebody you can ask this about.
+ *
+ * "What do I want" is a question for the person playing and "what does it
+ * want" names no person at all. Both fall through untouched.
+ */
+const NOT_A_PERSON_TO_ASK_ABOUT =
+    /^(?:i|me|my|we|us|you|your|it|this|that|everyone|everybody|anyone|anybody|people|folk|they|them)$/i;
+
+/**
+ * The person somebody is asking about, or null.
+ *
+ * Returns the phrase and never resolves it: the caller puts it through the same
+ * party resolver every other social verb uses, so a name that reaches nobody
+ * gets the same guiding refusal here as it does anywhere else.
+ */
+export function askingWhatSomebodyIsAfter(input: string): string | null {
+    for (const pattern of WHAT_ARE_THEY_AFTER) {
+        const hit = pattern.exec(input);
+        if (!hit) continue;
+        const person = cleanPerson(hit[1] ?? '');
+        if (!person) continue;
+        if (NAMES_NOBODY.test(person) || NOT_A_PERSON_TO_ASK_ABOUT.test(person)) continue;
+        return person;
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // CLASSIFYING THE ASK
 // ─────────────────────────────────────────────────────────────────────────
 
