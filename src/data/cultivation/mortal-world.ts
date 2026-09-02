@@ -234,6 +234,21 @@ export const PRICES: readonly Price[] = [
     { id: 'price-minor-healing-pill', name: 'Minor Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.' },
     { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.' },
     { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Quiet Marches at any price because alchemy will not hold there.' },
+    // THE EARTH-GRADE RUNG OF THE SAME LADDER, and it was missing.
+    //
+    // The Clear Meridian Pill above is mortal grade and stops reaching once the
+    // body carrying the tear is past Foundation Establishment - which is
+    // `medicineNeededFor`'s realm axis, not a new rule. So the board quoted the
+    // cure for a novice, nothing for anybody above one, and a Core Formation
+    // cultivator with an ordinary torn meridian could be told by name what would
+    // mend them and then find that no counter in the world sold it.
+    //
+    // 42,000 cash is 420 stones, which is the catalog's own value at the
+    // hundred-to-one the whole board uses. It is the largest single row here,
+    // and that is the correct shape: the same tear costs seven times more to
+    // close on a bigger body, which is the second axis doing its work in a
+    // number a player can read.
+    { id: 'price-marrow-washing-pill', name: 'Marrow-Washing Pill', category: 'medicine', cash: 42_000, unit: 'each', note: 'Four hundred and twenty stones, quoted at the two or three counters in a province that keep one. What a torn meridian costs once the body carrying it is past Foundation Establishment, and the reason a Core Formation cultivator with an ordinary injury still goes to their sect about it.' },
 
     // ── land and access: the real cost of advancing ───────────────────
     { id: 'price-cave-ordinary', name: 'Cave rent, ordinary ground', category: 'land', cash: 800, unit: 'month', note: 'Eight stones a month for somewhere with a door and nothing in the air worth breathing.' },

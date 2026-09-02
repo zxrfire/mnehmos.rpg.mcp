@@ -25,6 +25,7 @@ import { closeDb, getDb } from '../../src/storage/index.js';
 import { addToPouch, ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
 import { RECIPES } from '../../src/data/cultivation/recipes.js';
 import { getHerb } from '../../src/data/cultivation/herbs.js';
+import { getPill } from '../../src/data/cultivation/pills.js';
 
 const ctx = { sessionId: 'test' };
 
@@ -146,5 +147,39 @@ describe('refusing to refine', () => {
         const refused = await alchemy({ action: 'refine', cultivatorId, recipeId: high.id });
         expect(refused.error).toBe('realm_too_low');
         expect(refused.message).toMatch(/requires .+; Torn stands at /);
+    });
+
+    /**
+     * Two walls, and a player told the wrong one goes and does the wrong thing.
+     *
+     * The design owner's ruling is that a cultivator cannot work with materials
+     * above their realm. That is a wall practice does not move: the answer is
+     * rungs, and the refusal says which REALM rather than only which rank,
+     * because the requirement is the realm and any rung of it will serve.
+     */
+    it('says which realm a grade wants when the grade is the wall', async () => {
+        const cultivatorId = await anAlchemist();
+        const heaven = RECIPES.find(r => getPill(r.producesPillId)!.grade === 'heaven')!;
+        const refused = await alchemy({ action: 'refine', cultivatorId, recipeId: heaven.id });
+        expect(refused.error).toBe('realm_too_low');
+        expect(refused.blockedByGrade).toBe(true);
+        expect(refused.grade).toBe('heaven');
+        expect(refused.message).toContain('Void Refinement');
+    });
+
+    /**
+     * And the wall that is not a rung at all. Immortal grade is refined below
+     * the Lid by nobody, so a refusal quoting a rank somebody could climb to
+     * would be a lie about a road - and one that removed the verb without
+     * naming the roads still open would be the other failure AGENTS.md forbids.
+     */
+    it('names the other roads for a grade nobody here can refine', async () => {
+        const cultivatorId = await anAlchemist();
+        const immortal = RECIPES.find(r => getPill(r.producesPillId)!.grade === 'immortal')!;
+        const refused = await alchemy({ action: 'refine', cultivatorId, recipeId: immortal.id });
+        expect(refused.error).toBe('realm_too_low');
+        expect(refused.blockedByGrade).toBe(true);
+        expect(refused.message).toMatch(/sent down/i);
+        expect(refused.message).toMatch(/found|bought|inherited|dug/i);
     });
 });

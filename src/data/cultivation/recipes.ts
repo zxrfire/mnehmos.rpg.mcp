@@ -20,10 +20,15 @@
  * 5. The combined market value of the ingredients is strictly less than the
  *    pill's market value. Refinement adds value; if it did not, no alchemist
  *    would exist and the ingredient market would be the whole economy.
+ * 6. `requiredOrdinal` is at least the rung the grade's MATERIALS answer to.
+ *    That is a different ladder from every one above it and it is not written
+ *    in this file - see `THE GRADE FLOOR` below.
  */
 
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import { getPill } from './pills.js';
 import type { Band } from './techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -635,13 +640,64 @@ const RECIPE_DATA: readonly Recipe[] = [
     }
 ] as const;
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE GRADE FLOOR - who may work the materials at all
+//
+// The literals above say how hard a PARTICULAR formula is. What they do not
+// say, and cannot, is the floor under the whole grade.
+//
+// Where the floor is higher than the literal it swallows it, and for the three
+// top grades it swallows all of them - every heaven recipe now reads 29. That
+// is not a loss of texture, because `requiredOrdinal` was never where a
+// formula's difficulty lived: `baseSuccessRate` carries it, in disjoint bands
+// per grade, and `refineChance` pays margin for every rung STANDING ABOVE the
+// requirement. A Void Refinement alchemist still finds the Meridian Rebirth
+// Pill harder than the Boundless Source Pill by the difference in their rates.
+//
+// The design owner's ruling is that a cultivator cannot work with materials
+// above their realm, and that this - rather than price or authorial scarcity -
+// is what makes the higher grades rare. `refiningOrdinalFor` owns that ladder
+// and is the only place it is written down.
+//
+// Applied HERE rather than typed into the literals, for the reason AGENTS.md
+// gives about scarcity being measured rather than authored: forty-odd hand-
+// entered numbers cannot be checked against a ruling, and the first time the
+// ladder moved they would go stale one at a time and silently. Raised through
+// the floor, `requiredOrdinal` stays one number that one gate reads, so
+// everything already asking it inherits the ruling with no second branch
+// existing anywhere. Measured rather than assumed - `grep -rn recipes.js src/`
+// gives the whole list, and it is short: `alchemy-manage.ts` (`refine` and
+// `list_recipes`), `getCultivationOptions` and `getRuinLootTable` in
+// `index.ts`, `lost-ages.ts`, and the register sheet.
+//
+// AND NOTHING IN `src/engine/world/` READS RECIPES AT ALL. NPC alchemists do
+// not exist as refiners: the world places medicine through `seedPillStock` and
+// nobody in it ever works a cauldron. So this gate binds the player and the
+// two catalog readers, and the world side of the same ruling is currently
+// unbuilt. That is worth knowing before anybody quotes this file as evidence
+// that the world's supply is gated - it is not, yet.
+//
+// The visible consequence is at the top: the immortal and chaos recipes now
+// require a rung the lower realm expels, which is the engine saying in its own
+// currency that those medicines are not made on this side. The formulas stay
+// in the catalog, readable and costable, exactly as
+// `recipe-immortal-longevity` stays readable with an ingredient that no longer
+// grows. A recipe nobody can fill is a better object than a recipe nobody can
+// find.
+// ─────────────────────────────────────────────────────────────────────────
+
 /**
  * The catalog proper. Provenance is resolved from the id set above rather than
- * repeated on every literal, so the Late Age rule stays legible as one block.
+ * repeated on every literal, so the Late Age rule stays legible as one block,
+ * and the grade floor is applied in the same pass.
  */
 export const RECIPES: readonly RecipeEntry[] = RECIPE_DATA.map(r => {
     const provenance: RecipeProvenance = RECOVERED_RECIPE_IDS.has(r.id) ? 'recovered' : 'known';
-    return { ...r, provenance, sourceNote: RECIPE_SOURCE_NOTES[provenance] };
+    const grade = getPill(r.producesPillId)?.grade;
+    const requiredOrdinal = grade === undefined
+        ? r.requiredOrdinal
+        : Math.max(r.requiredOrdinal, refiningOrdinalFor(grade));
+    return { ...r, requiredOrdinal, provenance, sourceNote: RECIPE_SOURCE_NOTES[provenance] };
 });
 
 // ─────────────────────────────────────────────────────────────────────────

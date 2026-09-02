@@ -15,6 +15,7 @@ Read alongside [`economy.md`](economy.md), which covers price, ownership and pro
 | Section | The scene it answers |
 |---|---|
 | [Counted or tracked](#counted-or-tracked) | Anything changes hands, and you have to store it |
+| &nbsp;&nbsp;[Why that line falls where it does](#why-that-line-falls-where-it-does) | Somebody asks why the cheap things restock and the good ones do not |
 | [What money cannot buy](#what-money-cannot-buy) | Somebody tries to purchase something above the line |
 | [Why a holder keeps what they cannot use](#why-a-holder-keeps-what-they-cannot-use) | A house sits on something useless to it |
 | [Spent is not gone](#spent-is-not-gone) | An object is consumed, and somebody asks about it later |
@@ -22,6 +23,8 @@ Read alongside [`economy.md`](economy.md), which covers price, ownership and pro
 | [Scarcity is measured, not authored](#scarcity-is-measured-not-authored) | Deciding how many of something exist |
 | [The almanac and the ledger](#the-almanac-and-the-ledger) | Deciding which surface a fact about an object belongs on |
 | [How rare a medicine should be](#how-rare-a-medicine-should-be) | Pricing or placing anything that repairs a cultivator |
+| &nbsp;&nbsp;[Who is allowed to make it](#who-is-allowed-to-make-it) | A medicine is refined, or somebody asks why a grade is rare |
+| &nbsp;&nbsp;[The tier nobody here makes](#the-tier-nobody-here-makes) | An immortal-grade object is held, wanted, asked for, or refused |
 
 ---
 
@@ -54,6 +57,49 @@ kept at all. `mundane` things deliberately get none.
 
 **Use `significance` as the switch.** It exists for exactly this and adding a second field
 beside it is how two sources of truth start disagreeing.
+
+### Why that line falls where it does
+
+<!-- tier: 2 trigger="somebody asks why cheap goods restock forever and good ones do not, or a grade's supply is being decided" -->
+
+The rule above says which shape to store a thing in. This says **why the boundary sits
+where it does**, and it is not an authoring convention. It is what one production rule
+produces.
+
+The rule is that **a cultivator cannot work with materials above their realm.** Mortal
+grade is worked at Qi Condensation, earth at Core Formation, heaven at Void Refinement, and
+above that by nobody who lives here. So the supply of a grade is not a decision. It is the
+size of the population standing at its rung, and that population is the pyramid seen from
+the production side:
+
+> **Only the bottom of the ladder has enough hands to produce indefinitely.**
+
+That single sentence gives the whole of the counted/tracked boundary:
+
+- **Cheap things are counted** because everybody who cultivates at all can make one. A
+  house's shelf of them is a number that goes back up. Nobody cares which one you took,
+  because another is being made somewhere this afternoon.
+- **Good things are rows** because the hands that could have made one are few enough to
+  name. Where a dose could only have come from a few dozen people in the world, *which*
+  dose it is and how it got here is exactly the thing somebody should be able to ask about
+  two centuries later.
+
+And it lands the claim two sections down - that a thing is cash-priced exactly where it is
+fungible and barter-only exactly where it is singular, and that if those two boundaries
+ever drift apart one of them is wrong. **They cannot drift now**, because both follow from
+the same gate: a grade nobody can restock is a grade no market can quote.
+
+Read the number rather than trusting this paragraph.
+`tests/engine/world/how-many-people-can-make-a-grade-of-medicine.test.ts` counts the makers
+of each grade off a seeded world. Measured, on a world of 587 living cultivators: 587 can
+work mortal-grade materials, 89 can work earth, 30 can work heaven, and nobody at all can
+work what is above it. Retake the figure rather than quoting this one - it moves with the
+catalog - but the shape is what the ruling predicts.
+
+The engine's own three answers - `who-can-refine-a-grade-of-medicine.ts` on who may make
+it, `buying-and-bartering-pills.ts` on what may be priced, and `possessions.ts` on how
+it is stored - are written independently and agree, which is the sign they are all reading
+one fact rather than three conventions.
 
 ---
 
@@ -263,3 +309,81 @@ must still be *nameable*: somebody who cannot afford the medicine should be told
 them and why it is out of reach. A refusal that does not name its cause is indistinguishable
 from a missing feature - which is how the commonest cause of death in a playtested build turned
 out to have no reachable cure at all, while the formula for it sat in the catalog the whole time.
+
+**Both halves of the rule are enforced in the same place now, which they were not.** The
+severity and the patient's height decide the grade, and until recently only the mortal
+physician asked - so a sixty-stone mortal pill closed a crippling tear one turn after a
+physician had refused the same wound by name. `what-grade-of-medicine-a-wound-needs.ts` is
+the ladder and both the physician and the pill read it.
+
+### Who is allowed to make it
+
+<!-- tier: 2 trigger="a medicine is refined or attempted, or somebody asks why a grade of medicine is rare" -->
+
+Everything above is the DEMAND side: what a wound needs. This is the supply side, and it is
+the reason the good grades are hard to come by at all.
+
+> **A cultivator cannot work with materials above their realm. That is what makes the
+> higher grades rare** - not their price, and not anybody choosing to write down a small
+> number.
+
+| grade | realm required to make it |
+|---|---|
+| mortal | Qi Condensation |
+| earth | Core Formation |
+| heaven | Void Refinement |
+| immortal | nobody in this world |
+
+Three things follow, and the third is the one that keeps getting lost:
+
+- **The maker stands above the patient.** Mortal grade is *pitched at* Foundation
+  Establishment and *made at* Qi Condensation; heaven grade is pitched at Nascent Soul and
+  made at Void Refinement. So a house that can treat its own elders is a rarer thing than a
+  house that can pay for treatment, and that gap is most of what an alchemist is worth.
+- **The count is readable.** How rare heaven grade is equals how many people stand at Void
+  Refinement, which is a number on the register rather than a decision. See
+  [why that line falls where it does](#why-that-line-falls-where-it-does).
+- **This is a different ladder from the one above it, and they must not be collapsed.** Who
+  may MAKE a grade is answered by the refiner's realm. What grade a WOUND needs is answered
+  by the severity and the patient's realm. A Core Formation alchemist refines earth-grade
+  medicine and may be carrying a crippling tear that only heaven grade closes; both
+  sentences are true of the same person in the same hour.
+
+### The tier nobody here makes
+
+<!-- tier: 2 trigger="an immortal-grade object is held, wanted, asked for, or refused" -->
+
+**Immortal grade is not made on this side of the Lid at all.** It is sent down, and the
+supply in the world is what has been sent - finite, shrinking, and one fewer every time
+anybody spends one.
+
+The exception is a single event and it is catastrophic for the one who performs it: an
+immortal may come down and will it. [`immortals.md`](immortals.md) is the authority on that
+crossing and on how long it can last, which is a matter of breaths. It costs the descending
+immortal cultivation condensed over ages, it is one of the few ways an immortal actually
+dies, and **it holds for every immortal-grade medicine without exception.** Nothing else
+produces one.
+
+**The catalog is [`../../src/data/cultivation/immortal-items.ts`](../../src/data/cultivation/immortal-items.ts),
+and it is the authority.** It is deliberately not summarised here, because two copies of a
+fact are two things to keep true - see [the almanac and the ledger](#the-almanac-and-the-ledger).
+What a reader of this file needs to know before going there:
+
+- **These are not priced and must never be.** A price would imply the economy reaches them
+  and it does not. The great auction house has never listed one; the Consortium declines to
+  assay them, on the stated grounds that an assay implies a rate.
+- **Their own higher/middle/lower grading is not the grading in this section.** Up there,
+  grade is what an ancestor can afford to send, which tracks how long they have been
+  across - a fact about the sender, not about a maker's realm. It is the one place the rule
+  above does not apply, and it does not apply because nothing below makes them at all.
+- **Getting one is two entirely different problems depending on who holds it**, and that is
+  the interesting part. One holder has a living person who could decide to say yes, so it
+  is a social and political problem. The others are bodies that count an unreplenishable
+  line item to the unit and require a quorum, where any one voice refuses and rank does not
+  help - *there is a form; it has been submitted; the answer was no.* That is arithmetic
+  rather than a lever, and there is no version of it where the right person is found and
+  enough pressure applied.
+
+`structural-repair-medicine.ts` carries the same rule for the medicine that gives back a
+ceiling, in the same words: cannot be made here, sent down, and the number in the world is
+what has been sent.

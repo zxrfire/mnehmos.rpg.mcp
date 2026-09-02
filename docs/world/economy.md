@@ -58,7 +58,7 @@ means they set the price of everything, including the price of a vein. See
 
 <!-- tier: 2 trigger="a price is quoted, or the player asks what something is worth" -->
 
-Price follows grade, and grade is one legible axis across every catalog. Two rules govern
+Price follows grade, and grade is one legible axis across every catalog. Three rules govern
 the shape of it:
 
 - **Buying advancement always costs more than buying survival.** Within a grade, the
@@ -67,6 +67,22 @@ the shape of it:
 - **Refinement adds value.** The combined market value of a recipe's ingredients is
   strictly less than the pill's, otherwise no alchemist would exist and the ingredient
   market would be the whole economy.
+- **Grade is a statement about who can MAKE the thing, and that is where the price comes
+  from.** A cultivator cannot work with materials above their realm - mortal grade at Qi
+  Condensation, earth at Core Formation, heaven at Void Refinement, and above that by
+  nobody living below the Lid. Price does not rise with grade because somebody decided
+  higher should cost more. It rises because the population that could supply the market
+  shrinks at every rung. [`items.md`](items.md#who-is-allowed-to-make-it) carries the
+  derivation and the measured counts.
+
+That third rule is what puts the cash line where it is. Mortal and earth grade are bought
+and sold openly, because enough hands make them for a market to restock. Heaven grade and
+above are not for sale at any figure - and the reason is not that stock is short, it is
+that the price exceeds what the income of the rank the thing serves could ever accumulate,
+so no cash sum is a rational trade for one. What moves one is a favour owed, another
+singular thing, or nothing at all. And **immortal grade carries no price in either
+direction**, because a price would imply the economy reaches it at all: see
+[the tier nobody here makes](items.md#the-tier-nobody-here-makes).
 
 Pills are the only reliable way to undo damage in this game, and they are the reason a
 run's economy exists at all. Higher-grade medicine is also more poisonous, so spamming it
