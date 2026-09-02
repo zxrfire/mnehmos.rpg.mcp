@@ -29,6 +29,7 @@ import {
     BEAST_TIDES,
     BEAST_CHANGE_ORDINAL,
     BEAST_CORE_ORDINAL,
+    WHAT_GIVES_A_CHANGED_BEAST_AWAY,
     THE_BEAST_ROAD,
     ESTIMATING_A_BEAST,
     THE_CONTRACT,
@@ -526,5 +527,61 @@ describe('wired into the encounter table', () => {
         // Some of them are not fights, which is the point of the whole file.
         expect(beasts.some(e => e.threatOrdinal === null)).toBe(true);
         expect(beasts.some(e => e.tags.includes('negotiable'))).toBe(true);
+    });
+});
+
+describe('what gives a changed beast away', () => {
+    it('is the missing upbringing and never the body', () => {
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.notTheBody).toMatch(/shape is correct|looking harder/i);
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.theGap).toMatch(/childhood|reference/i);
+        // Surfaces in conversation, over time - not in a glance.
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/conversation|talk/i);
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/never in a look|not in a look/i);
+    });
+
+    it('carries no anatomical tell anywhere in the catalog', () => {
+        // A changed beast cultivated into its body rather than being fitted
+        // into one, so there is nothing wrong with the hands, and a fox with
+        // wrong hands is a fox that is bad at being a fox. This guard exists
+        // because that image was written once, on the fox, and it is a good
+        // enough image to come back.
+        const anatomical = [
+            /hands are wrong/i, /wrong hands/i, /wears? .{0,20}shape badly/i,
+            /shape badly/i, /does not blink/i, /too long between blinks/i
+        ];
+        const corpus = BEASTS.map(b => ({ label: b.id, text: `${b.name} ${b.hard} ${b.note}` }));
+        for (const { label, text } of corpus) {
+            for (const pattern of anatomical) {
+                expect(pattern.test(text), `${label} has an anatomical tell: ${pattern}`).toBe(false);
+            }
+        }
+    });
+
+    it('applies to every changed beast rather than to one species', () => {
+        // No species branching, and no field to branch on. If a `seeming` or
+        // `wearsTheShape` column ever appears on a beast, this is the rule it
+        // broke: the tell is absence of reference, which every one of them has.
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.everyOne).toMatch(/all of them|every/i);
+        for (const b of BEASTS) {
+            expect(Object.keys(b)).not.toContain('seeming');
+            expect(Object.keys(b)).not.toContain('wearsTheShape');
+            expect(Object.keys(b.ability)).not.toContain('seeming');
+        }
+    });
+
+    it('is the third instance of a rule nobody designed for it', () => {
+        // realm is capability, worldview is reference. The recluse, the sealed
+        // ancestor and the changed beast are one mechanic with three fictions.
+        const cases = WHAT_GIVES_A_CHANGED_BEAST_AWAY.theSameRuleElsewhere;
+        expect(cases.length).toBeGreaterThanOrEqual(3);
+        expect(cases.join(' ')).toMatch(/recluse/i);
+        expect(cases.join(' ')).toMatch(/sealed ancestor/i);
+    });
+
+    it('leaves the fox wearing the shape perfectly, because seeming is its gift', () => {
+        const fox = requireBeast('beast-nine-tailed-reader');
+        expect(fox.speaks).toBe(true);
+        expect(fox.note).toMatch(/fox/i);
+        expect(fox.note).toMatch(/perfectly|seeming/i);
     });
 });
