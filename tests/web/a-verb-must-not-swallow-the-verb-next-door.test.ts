@@ -11,7 +11,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseIntent, parseDuration, durationAskedFor, MAX_CULTIVATION_DAYS } from '../../src/web/actions';
+import {
+    parseIntent,
+    parseDuration,
+    durationAskedFor,
+    MAX_CULTIVATION_DAYS,
+    TIME_CONSUMING_ACTIONS
+} from '../../src/web/actions';
 
 describe('a pocket is not a plant', () => {
     /**
@@ -33,13 +39,37 @@ describe('a pocket is not a plant', () => {
     });
 
     /**
-     * There is no theft-from-a-person action in the closed set, so the honest
+     * ── WHAT THIS USED TO ASSERT, AND WHY IT CHANGED ─────────────────────
+     *
+     * "There is no theft-from-a-person action in the closed set, so the honest
      * answer is that the thought does not resolve - which costs no time, no
      * food and no roll. That is the whole point of the fix: the cost, not the
-     * verb.
+     * verb."
+     *
+     * The first clause stopped being true. `interact` carries a `steal` intent
+     * that resolves through the same pressure model as any other attempt, and
+     * its own note in `actions.ts` records that the engine has resolved a theft
+     * off a person since that model was wired - only a MODEL could reach it,
+     * because the table answered every phrasing with `unclear`.
+     *
+     * So the honest answer is no longer the refusal. The design owner's ruling
+     * is that theft is an ordinary move and **the engine has to be the one that
+     * refuses it**; a reader that declines to route it softens the act by
+     * omission, which `AGENTS.md` names as the worse of the two failures
+     * because it is invisible.
+     *
+     * The clause that still holds is the second one, and it is what this now
+     * asserts: **the cost, not the verb.** Whatever this sentence reaches, it
+     * must not be a verb that can spend the player's days. `interact` is in
+     * neither `READ_ONLY_ACTIONS` nor `TIME_CONSUMING_ACTIONS` for exactly this
+     * reason, and the seven pressing intents are priced by the resolver rather
+     * than by the parse.
      */
-    it('answers it with the cheapest action in the set', () => {
-        expect(parseIntent("I pick Xiao Suiya's pocket").action).toBe('unclear');
+    it('does not answer it with anything that spends the player\'s life', () => {
+        const plan = parseIntent("I pick Xiao Suiya's pocket");
+        expect(plan.action).toBe('interact');
+        expect(plan.intent).toBe('steal');
+        expect(TIME_CONSUMING_ACTIONS).not.toContain(plan.action);
     });
 
     it('still forages for everything a player would actually forage for', () => {
