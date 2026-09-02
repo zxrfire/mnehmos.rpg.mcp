@@ -18,7 +18,7 @@ Counts are mentions, so they rank rather than measure. The first file listed is 
 always the one to read first.
 
 **The median house is written about in 15 files**, and the most-written-about,
-the Azure Cloud Pavilion, in 35. That is the number this file exists for:
+the Azure Cloud Pavilion, in 36. That is the number this file exists for:
 nobody was going to find all of that by grepping, and nobody did - six times in one
 session somebody wrote down design that was already in the catalog.
 
@@ -29,7 +29,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-azure-cloud-pavilion` · its entry: [`sects.ts:430`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 11 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 9 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6
-  …and 27 more files.
+  …and 28 more files.
 
 **Constants most about it:** `IMMORTAL_HOLDINGS`, `FACTION_HISTORY`, `STOCK_VERSUS_FLOW`, `THE_TRADE`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, and 29 more
 
@@ -73,7 +73,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-azure-mist-court` · its entry: [`sects.ts:763`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
   …and 2 more files.
 
 **Constants most about it:** `FACTION_PARENTAGE`, `HIGH_REALM_PROVENANCE`
@@ -198,7 +198,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-storm-tyrant-court` · its entry: [`sects.ts:1399`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 10 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
-  …and 12 more files.
+  …and 13 more files.
 
 **Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, `SHARED_EVENTS`
 
