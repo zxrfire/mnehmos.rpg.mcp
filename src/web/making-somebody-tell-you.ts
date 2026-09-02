@@ -220,11 +220,27 @@ export interface RefusalCopy {
 export function nothingToBeGotFrom(who: string, about: string): RefusalCopy {
     return {
         headline: 'They do not have it to give.',
+        // ── THE SENTENCE THIS REPLACED, AND WHY IT WAS THE FINDING ──────
+        //
+        // It said the asker's presence "does not reach into their head and put
+        // <the topic> in it", which is the composition site inventing a
+        // MECHANISM to explain a refusal it did not understand - and then
+        // stating it as though the world worked that way. Even for a genuinely
+        // unknowable thing that is not a sentence this world should produce:
+        // nothing here reaches into anybody, and saying so implies that
+        // something might.
+        //
+        // What is left is what actually happened. They have not heard of it,
+        // leaning on somebody is a thing that moves what they will SAY, and
+        // there is nothing here to be said. The topic is named plainly rather
+        // than built into a clause, because the clause is where the invention
+        // got in - `${about}` is whatever the player typed, and a sentence
+        // shaped around it will read as nonsense the moment they type something
+        // the shape did not anticipate.
         prose:
-            `You put weight behind it, and ${who} looks at you with the particular blankness of `
-            + `somebody being leaned on about a thing they have never heard of. Whatever you are `
-            + `to them, it does not reach into their head and put ${about} in it. You can make a `
-            + 'person talk. You cannot make them know.\n\n'
+            `${who} has not heard of ${about}, and says so in the way people do when a `
+            + 'question lands on nothing at all. Weight behind it changes what somebody is '
+            + 'willing to tell you. It does not change what they have to tell.\n\n'
             + 'Somebody who does hold it is what you want, and finding out who that is comes off '
             + 'a name said in front of you or off your own eyes.',
         structure:

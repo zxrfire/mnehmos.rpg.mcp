@@ -441,8 +441,8 @@ describe('GET /api/admin/roster', () => {
             'age', 'alive', 'deathCause', 'existenceState', 'feuds', 'id',
             'identityContinuity', 'isPlayer', 'kind', 'lifespanYears', 'location',
             'name', 'rankName', 'realmName', 'realmOrdinal', 'sectId', 'sectName',
-            'sectRank', 'soulState', 'spiritRoot', 'spiritRootName', 'spiritStones',
-            'untreatedInjuries'
+            'sectRank', 'sex', 'soulState', 'spiritRoot', 'spiritRootName',
+            'spiritStones', 'untreatedInjuries'
         ]);
         expect(res.body.roster[0]).toMatchObject({
             name: 'Xu Ling',
