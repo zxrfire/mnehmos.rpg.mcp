@@ -378,16 +378,19 @@ has nothing to do with being able to fight.
 **That is general, and the Court is only its extreme case.** Anybody who has changed houses
 carries the same ambiguity; the Court is an entire institution made of it.
 
-**What the Court does *not* hold is everybody else's arts.** A member arriving from a great
-house does not bring that house's art into a common pool. **Houses do not let their arts leak,
-and that rule does not bend for the Court** — if it did, joining would be an act of betrayal
-rather than a career, and every house in the world would forbid it. **A transfer keeps what
-they were taught and does not teach it onward.**
+**The Court is not an exception to the leak rule, and nothing here needs it to be.** A member
+arriving from a great house does not bring that house's art into a common pool — houses do not
+let their arts leak, and **that rule does not bend.** It does not have to: going to the Court
+*costs nothing and is an honour on the house you leave*, so nobody is betraying anybody, and
+what the Court actually rests on has nothing to do with taking arts. See
+[`past-the-ceiling.md`](past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it) for
+its selection and its ground, and `crossings.ts` for the thing that actually keeps it standing:
+**its records are good, and that is not incidental to its strength — it is its strength.**
 
-So the Court's people each carry an art that is genuinely theirs, genuinely their old house's,
-and not available to the person standing next to them. **Whatever the Court shares among its
-members, it is not that** — and what it does share is not settled here. The Seats' own art,
-passed at 41 for the last stretch to 44, is the one piece that is.
+**The only part that belongs in this document is the recognition consequence:** every member
+arrived trained somewhere else and still performs that art, which is genuinely theirs and
+genuinely their old house's. **So the check reads them correctly and places them wrongly.** The
+Seats' own art, passed at 41 for the last stretch to 44, is the one thing the Court teaches.
 
 **Their own top art is a different matter, and it is not a secret kept for secrecy's sake.** The
 Seats pass it on when somebody reaches 41, as the vehicle for the last climb to 44 — so the
