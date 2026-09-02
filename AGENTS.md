@@ -246,6 +246,33 @@ npm run build:binaries                # standalone executables -> dist-bundle/
 **Shell:** use **PowerShell** for npm and git on Windows. Prefer running a single test
 area over the full suite while iterating - the full run is slow.
 
+### What to run, and when
+
+**While working: your own area, plus any integration tests your change could touch.**
+`tests/web` and `tests/server` are where integration lives; `tests/engine` and `tests/data`
+are mostly unit. There is no reason to run five thousand unit tests for modules you have
+never opened - a unit test for something you did not touch cannot tell you anything, and a
+dozen agents each doing it saturates the machine for everybody.
+
+**Before landing: the full suite, once, in a clean detached worktree.** Not because the
+unit tests might have changed their minds, but because nothing should land on a tree
+nobody has run.
+
+**The failure this replaces is worth naming, because the fix is not "run more".** Several
+agents once reported a green tree having each run only the files they had edited, while
+the pooled suite was red with 45 failures. **None of those failures were in unit tests for
+untouched modules.** They were integration tests, and ladder and catalog tests, that their
+changes had broken and they had not thought to run. Running everything would have caught
+it; so would running the right things. Prefer knowing which are the right things.
+
+**And a full-suite number off the shared tree is not a measurement.** Other agents'
+uncommitted work is in it - three consecutive runs once gave 1, 2 and 3 failures on
+different files. See
+[a single measurement off a shared tree](#a-single-measurement-off-a-shared-tree-is-already-somebody-elses-unfinished-work).
+
+The fork pool is capped so concurrent runs do not fight (`VITEST_MAX_FORKS`, default 4).
+Raise it only when the machine is yours alone.
+
 ---
 
 ## Conventions
