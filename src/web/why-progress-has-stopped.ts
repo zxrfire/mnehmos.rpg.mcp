@@ -58,6 +58,7 @@
  */
 
 import { rankName } from '../engine/cultivation/realms.js';
+import { rungAndOrdinal } from './facts.js';
 import type { TechniqueCeiling } from '../engine/cultivation/cultivation.js';
 import type { AmbientQi } from '../schema/cultivation.js';
 
@@ -192,8 +193,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `for the qi to take, so nothing accumulates at ${standing} and nothing will. `
                 + `What is missing is a book, or somebody willing to teach you one.`,
             structure:
-                'No method is practised, so the manual carries to ordinal 0 and the rate '
-                + 'multiplier is 0. A stretch of any length returns exactly nothing.'
+                `No method is practised, so the manual carries no further than `
+                + `${rungAndOrdinal(0)} and the rate multiplier is 0. A stretch of any length `
+                + 'returns exactly nothing.'
         });
     } else if (input.manual.state === 'exhausted') {
         const cap = input.manualCap ?? input.ordinal;
@@ -205,9 +207,9 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `It is not slower here, it is stopped, and no amount of sitting with it `
                 + `changes that. What is missing is the next volume.`,
             structure:
-                `The manual carries to ordinal ${cap} and this cultivator stands at ordinal `
-                + `${input.ordinal}, so the rate multiplier past it is 0. A stretch of any `
-                + `length returns exactly nothing.`
+                `The manual carries to ${rungAndOrdinal(cap)} and this cultivator stands at `
+                + `${rungAndOrdinal(input.ordinal)}, so the rate multiplier past it is 0. A `
+                + 'stretch of any length returns exactly nothing.'
         });
     }
 
@@ -222,9 +224,10 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `You are standing at ${standing}. The ground here has nothing further to give `
                 + `you unaided: buy access, buy stones, or leave.`,
             structure:
-                `${input.regionName} carries nobody past ordinal `
-                + `${input.localCeilingOrdinal} and this cultivator stands at ordinal `
-                + `${input.ordinal}, so the ground here cannot take them further unaided.`
+                `${input.regionName} carries nobody past `
+                + `${rungAndOrdinal(input.localCeilingOrdinal)} and this cultivator stands at `
+                + `${rungAndOrdinal(input.ordinal)}, so the ground here cannot take them `
+                + 'further unaided.'
         });
     }
 
@@ -268,9 +271,10 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     `${seat.sectName} has you at ${seat.rankTitle}. To raise you to `
                     + `${seat.nextRankTitle}, ${unmet.join('; and ')}.`,
                 structure:
-                    `${seat.nextRankTitle} wants ordinal ${seat.requiredOrdinal} against `
-                    + `ordinal ${input.ordinal} held, and ${seat.requiredContribution} `
-                    + `contribution against ${seat.contribution} held.`
+                    `${seat.nextRankTitle} wants ${rungAndOrdinal(seat.requiredOrdinal)} `
+                    + `against ${rungAndOrdinal(input.ordinal)} held, and `
+                    + `${seat.requiredContribution} contribution against ${seat.contribution} `
+                    + 'held.'
             });
         }
     } else if (input.seat) {
@@ -296,7 +300,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     + `qi-units. You hold ${round(input.progressAvailable)}, which is `
                     + `${round(short)} short.`,
                 structure:
-                    `The rung above ordinal ${input.ordinal} is priced at `
+                    `The rung above ${rungAndOrdinal(input.ordinal)} is priced at `
                     + `${round(input.progressRequired)} qi-units and `
                     + `${round(input.progressAvailable)} are held, which is `
                     + `${round(short)} short.`
@@ -320,12 +324,13 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                   + `the ${round(input.stagnationYears)} the ladder credits. `
                   + `${round(-past)} still counted.`,
             structure: past >= 0
-                ? `${round(input.yearsAtCurrentRealm)} years held at ordinal `
-                  + `${input.ordinal} against the ${round(input.stagnationYears)} the ladder `
-                  + `credits before settling: ${round(past)} years past it.`
-                : `${round(input.yearsAtCurrentRealm)} years held at ordinal `
-                  + `${input.ordinal} of the ${round(input.stagnationYears)} the ladder `
-                  + `credits before settling, with ${round(-past)} still counted.`
+                ? `${round(input.yearsAtCurrentRealm)} years held at `
+                  + `${rungAndOrdinal(input.ordinal)} against the `
+                  + `${round(input.stagnationYears)} the ladder credits before settling: `
+                  + `${round(past)} years past it.`
+                : `${round(input.yearsAtCurrentRealm)} years held at `
+                  + `${rungAndOrdinal(input.ordinal)} of the ${round(input.stagnationYears)} `
+                  + `the ladder credits before settling, with ${round(-past)} still counted.`
         });
     }
 

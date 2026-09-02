@@ -46,6 +46,7 @@
  */
 
 import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
+import { rungAndOrdinal } from './facts.js';
 import type { AmbientQi } from '../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -287,9 +288,9 @@ function mechanicalRow(place: Destination, standingCeiling: number): string {
     const ceiling = place.localCeilingOrdinal === standingCeiling
         ? ''
         : place.localCeilingOrdinal >= MAX_ORDINAL
-            ? ` No ceiling: ordinal ${MAX_ORDINAL} is the top of the ladder and that province `
-              + 'stops nobody.'
-            : ` Carries nobody past ordinal ${place.localCeilingOrdinal}.`;
+            ? ` No ceiling: ${rungAndOrdinal(MAX_ORDINAL)} is the top of the ladder and that `
+              + 'province stops nobody.'
+            : ` Carries nobody past ${rungAndOrdinal(place.localCeilingOrdinal)}.`;
 
     return `${where}: ${clauses.join('. ')}.${ceiling}`;
 }
@@ -335,8 +336,8 @@ function theNamesHeldAndUnplaceable(
     input: DestinationsInput
 ): string {
     const held = input.unplaceable;
-    const where = `${input.placeName}, in ${input.regionName}, standing at ordinal `
-        + `${input.ordinal}`;
+    const where = `${input.placeName}, in ${input.regionName}, standing at `
+        + rungAndOrdinal(input.ordinal);
     return (pointable === 0
         ? `Nothing at all can be pointed at from ${where}.`
         : `${pointable} place${pointable === 1 ? '' : 's'} can be pointed at from ${where}; `
@@ -344,12 +345,12 @@ function theNamesHeldAndUnplaceable(
           + `${leavable === 1 ? 'is' : 'are'} somewhere other than the ground underfoot and `
           + `so can be set out for.`)
         + (input.localCeilingOrdinal >= MAX_ORDINAL
-            ? ` ${input.regionName} has no ceiling: ordinal ${MAX_ORDINAL} is the top of the `
-              + 'ladder and this province stops nobody. Every row below shares that unless it '
-              + 'says otherwise.'
-            : ` ${input.regionName} carries nobody past ordinal `
-              + `${input.localCeilingOrdinal}, and every row below shares that ceiling unless `
-              + 'it says otherwise.')
+            ? ` ${input.regionName} has no ceiling: ${rungAndOrdinal(MAX_ORDINAL)} is the top `
+              + 'of the ladder and this province stops nobody. Every row below shares that '
+              + 'unless it says otherwise.'
+            : ` ${input.regionName} carries nobody past `
+              + `${rungAndOrdinal(input.localCeilingOrdinal)}, and every row below shares that `
+              + 'ceiling unless it says otherwise.')
         + (held > 0
             ? ` ${held} further name${held === 1 ? ' is' : 's are'} held at a stage below `
               + `placed - the word without a direction - so ${held === 1 ? 'it' : 'they'} `
