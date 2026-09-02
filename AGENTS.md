@@ -367,17 +367,26 @@ hundreds of runs, so **a bad narration after an admin call is a finding about ph
 narrator answers is settled at process start, which is what makes engine-only testing "start
 it without a model" rather than a mode. Do not add a flag for it.
 
-**No model reads an ADMIN line**, by dispatch order: it is handled before phase 1. Every
-phrasing it accepts is read deterministically, so a line naming a creature the reader has no
-noun for is refused rather than improvised. If you widen the reader, widen it with a lookup
-keyed on the action - `BARE_NUMBER_ARG` and `PRIMARY_ARG` are the shape - never with an
-inference about the words. Which field an operator meant is a property of the action.
+**An ADMIN line travels the same road as anything else the player types**, and that is
+deliberate: **the reading layer needs testing too.** An operator's sentence is a harder input
+than ordinary play ever produces - a description instead of a catalog name, a grade word, a
+missing argument, a pronoun that is not an argument at all - so an admin line exercises the
+tier that is running as well as the engine behind it. Which tier answers is settled at process
+start; with none configured, the deterministic reader answers, and it must keep working
+because that is a shipping mode.
 
-**The world it leaves is narrated like any other**, which is the paragraph above and is not a
-contradiction of this one: the *command* is never parsed by a model, and the *situation it
-arranged* is described by whichever narrator is configured. That is the whole point of
-arranging being followed by looking, and it is why a bad narration after an admin call is a
-finding about phase 3.
+**The deterministic reader stays, and it is a lookup rather than an inference.**
+`BARE_NUMBER_ARG` and `PRIMARY_ARG` are the shape: which field an operator meant is a property
+of the action. Resolving an argument's VALUE against a closed catalog - a grade, a kind, an
+item name - is the same kind of lookup and is fine. Scanning loose prose for a word that might
+be a leaning is not; there is a withdrawn draft recorded in `admin-manage.ts` that did exactly
+that and got it wrong because the word was in a name.
+
+**What is closed to a model is the OUTCOME, and only that.** A model may read the line and may
+phrase the answer. It may never decide what happened - refusals like *"there is no such rung"*
+or *"the Court admits at Void Refinement"* are facts about the world and are produced by code.
+Admin lifting a gate is arranging; a model reporting a success nobody resolved is inventing a
+world, and that stays impossible by construction rather than by instruction.
 
 `reset` is the exception to where admin lives: it ends the run and opens a new birth in the
 same world, and it is in `game.ts` because runs are written there and nowhere else.
