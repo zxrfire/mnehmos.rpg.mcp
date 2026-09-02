@@ -42,17 +42,24 @@ export interface OllamaProviderConfig {
     /**
      * Whether the model should reason before answering.
      *
-     * Undefined means the flag is not sent at all, which is the only safe
-     * default: Ollama rejects `think` outright on a model that was not tuned
-     * for it, so a value is passed on only when somebody has said one.
+     * **Defaults to false**, because a thinking-tuned model reasons whether or
+     * not anybody asked and the reasoning comes out of the same budget as the
+     * answer. Measured on gemma4:26b, asked for one sentence about a mountain:
+     * 722 characters of reasoning to produce 37 of answer. A narration prompt
+     * is far larger, so the whole budget went to reasoning, the content came
+     * back EMPTY, and every narration fell through to the deterministic
+     * account - silently, because falling back is what the narrator is
+     * supposed to do when a provider fails. The game reported itself as
+     * model-narrated throughout.
      *
-     * Set it to false on a thinking-tuned local model. Measured on gemma4:26b,
-     * asked for one sentence about a mountain: 722 characters of reasoning to
-     * produce 37 of answer. A narration prompt is far larger, so the whole
-     * completion budget went to reasoning, the content came back EMPTY, and
-     * every narration fell through to the deterministic account - silently,
-     * because falling back is what the narrator is supposed to do when a
-     * provider fails. The game reported itself as model-narrated throughout.
+     * The flag cannot simply be sent to everything: Ollama rejects `think`
+     * outright on a model that was not tuned for it. So the provider sends
+     * `false`, and if a model refuses the flag it is remembered as one that
+     * does not take it and the call is retried without it. The default is
+     * therefore "off where that means anything, absent where it does not",
+     * which needs no capability list to maintain.
+     *
+     * Set it to true to get reasoning back on a model that supports it.
      */
     think?: boolean;
     /** Allow tests to inject a custom fetch implementation. */
@@ -78,19 +85,41 @@ function isModelMissing(status: number, body: string): boolean {
     return status === 404 && /not found|no such model|try pulling/i.test(body);
 }
 
+/**
+ * "This model does not take a `think` flag."
+ *
+ * Ollama refuses the flag on a model that was not tuned for it, as a 400 whose
+ * error names thinking. Deliberately loose about the rest of the wording,
+ * because the phrasing has changed across versions and the only thing that has
+ * to be true is that the complaint is about `think` - anything else is a real
+ * failure and must be reported as one rather than retried into.
+ */
+function isThinkUnsupported(status: number, body: string): boolean {
+    return status === 400 && /think|thinking/i.test(body);
+}
+
 export class OllamaProvider implements LLMProvider {
     readonly name = 'ollama' as const;
     private readonly baseUrl: string;
     private readonly defaultModel: string;
-    private readonly think: boolean | undefined;
+    private readonly think: boolean;
     private readonly fetchImpl: typeof fetch;
+    /**
+     * Models that answered "I do not take a `think` flag".
+     *
+     * Learned rather than listed, because a list of which local models are
+     * thinking-tuned is a thing somebody has to maintain forever and would be
+     * wrong the week a new one is pulled. One refused call per model per
+     * process is the whole cost.
+     */
+    private readonly refusesThink = new Set<string>();
 
     constructor(config: OllamaProviderConfig = {}) {
         // No apiKey guard on purpose - a local server needs no credential, and
         // requiring one would make the self-hosted path impossible to configure.
         this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
         this.defaultModel = config.defaultModel ?? PROVIDER_DEFAULT_MODEL.ollama;
-        this.think = config.think;
+        this.think = config.think ?? false;
         this.fetchImpl = config.fetchImpl ?? fetch;
     }
 
@@ -118,19 +147,35 @@ export class OllamaProvider implements LLMProvider {
         // a `think` flag that only thinking-tuned models accept - sending it to an
         // ordinary local model is a hard error, so effort stays a no-op here.
         //
-        // `think` itself is sent ONLY when configured, for that same reason: an
-        // unset flag is absent from the body rather than false. See the field's
-        // doc comment for what leaving it unset costs on a thinking model.
-        if (this.think !== undefined) body.think = this.think;
+        // `think` is sent unless this model has already refused it. See the
+        // field's doc comment for why the default is false and what leaving it
+        // on costs.
+        const sentThink = !this.refusesThink.has(model);
+        if (sentThink) body.think = this.think;
+
+        const post = (payload: Record<string, unknown>): Promise<Response> =>
+            this.fetchImpl(`${this.baseUrl}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: opts.signal
+            });
 
         let response: Response;
         try {
-            response = await this.fetchImpl(`${this.baseUrl}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: opts.signal
-            });
+            response = await post(body);
+            // A model that does not take the flag says so, and says it the same
+            // way every time. Remember it and ask again without - one refused
+            // call per model per process, and no list of thinking-tuned models
+            // for anybody to keep up to date.
+            if (!response.ok && sentThink) {
+                const refusal = await response.clone().text();
+                if (isThinkUnsupported(response.status, refusal)) {
+                    this.refusesThink.add(model);
+                    delete body.think;
+                    response = await post(body);
+                }
+            }
         } catch (err) {
             const classified = classifyFetchError(err);
             if (classified.kind === 'network') {
