@@ -1289,9 +1289,9 @@ function daoSection(d) {
       </div>
       <div class="dao__list">${raw(rows)}</div>
       <div class="dao__effects">
-        ${rate > 1 ? html`<span>×${fmtNum(rate, 2)} cultivation rate</span>` : ''}
-        ${bt > 0 ? html`<span>+${fmtNum(bt * 100, 1)}% on a breakthrough</span>` : ''}
-        ${rate <= 1 && bt <= 0 ? html`<span class="muted">None of it bears on what is being done right now.</span>` : ''}
+        ${rate > 1 ? raw(html`<span>×${fmtNum(rate, 2)} cultivation rate</span>`) : ''}
+        ${bt > 0 ? raw(html`<span>+${fmtNum(bt * 100, 1)}% on a breakthrough</span>`) : ''}
+        ${rate <= 1 && bt <= 0 ? raw(html`<span class="muted">None of it bears on what is being done right now.</span>`) : ''}
       </div>
       ${only ? raw(html`<p class="dao__note">
         The ladder is shut against this name and will not open again. This is not.
