@@ -1304,14 +1304,39 @@ export function simulateTimeSkip(
                     withdrawal < CLEAN_WITHDRAWAL_BASE + fortune * CLEAN_WITHDRAWAL_PER_FORTUNE;
                 interrupted = true;
                 interruptReason = 'major_encounter';
+                // ── AN INTERRUPT IS A QUESTION, NOT A BULLETIN ───────────
+                //
+                // Measured across about 350 in-world years: interrupted this
+                // way roughly thirty times, met somebody once. Nobody arrives
+                // because nothing here materialises anybody - the engine
+                // computes that a decision point exists and then the sentence
+                // announced an arrival, so the player waited for a person who
+                // was never going to come and read the whole channel as broken.
+                //
+                // And the withdrawable variant was self-defeating: "another
+                // cultivator is nearby and has not seen this place yet" is not
+                // a reason to stop sitting, which is exactly what it did.
+                //
+                // What is actually true is what these say now. The stretch has
+                // stopped, the reason it stopped is somebody's proximity, and
+                // the cultivator is standing up with a choice in front of them
+                // - go now and stay unseen, or stay and be found sitting. The
+                // engine does not resolve that choice and must not pretend to:
+                // the next thing the player types is the resolution.
                 push(
                     'encounter',
                     canWithdraw
-                        ? 'Seclusion broken: another cultivator is nearby and has not seen this place yet. ' +
-                          `There is a way out that does not cross them. ${rankName(ordinal)} standing, ` +
-                          `${untreatedInjuryCount(injuries)} untreated injuries.`
-                        : 'Seclusion broken: another cultivator has found this place and is approaching. ' +
-                          `${rankName(ordinal)} standing, ${untreatedInjuryCount(injuries)} untreated injuries.`,
+                        ? 'Seclusion broken: somebody is close enough to matter and has not seen '
+                          + 'this place yet. There is a road out that does not cross them, and it '
+                          + 'is open for as long as you are not sitting down. Going costs the '
+                          + 'stretch; staying means being found here, by whoever that is. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : 'Seclusion broken: somebody has found this place and there is no road '
+                          + 'out that does not cross them. Whether you are sitting or standing '
+                          + 'when they arrive is the only part of it still yours. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`,
                     true,
                     { severity: 'major', canWithdraw }
                 );

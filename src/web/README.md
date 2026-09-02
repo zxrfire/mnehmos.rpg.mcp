@@ -143,6 +143,7 @@ engine has always had, that no typed English sentence could reach.**
 | `posture` | `DISASTER_RESPONSES`, `OPENLY_OR_IN_SECRET`, nineteen symmetric `contestedWith` claims, two courts in the catalog's own history that changed patrons | no verb at all |
 | `seal` | six houses holding a sealed ancestor with a written `wakeCondition` and `wakeCost`, the strongest at forty-four | no verb at all |
 | `offer` | `IMMORTAL_CHANNELS`, `MillennialOffering`, `IMMORTAL_MOTIVE` on why an offering buys two words | no verb at all |
+| `news` | the whole world ledger - every ranking, refusal, duel and house opening closed ground the simulation has ever written | four phrasings of "what news is there" deflecting into the `recall` listing, which is an inventory of what the player already held |
 
 The `recall` case is the one that says most about how to look for these. It was found by a
 **rank-band sweep** - standing a character at each rung and typing what somebody at that
@@ -308,6 +309,24 @@ already carries a place's change log - and none of it belongs in this package.
 
 ---
 
+### A run does not open with nobody in it
+
+`seedStartingAwareness` has always given a new cultivator the county. It gave them
+no PEOPLE, and measured on three seeds that meant nine to fourteen places known
+and zero faces, with thirteen, five and seventeen bodies standing in the square.
+`company()` reports anybody with no record as an ordinal and nothing else, so
+every person in the world was a permanent stranger and the four verbs that have to
+be pointed at somebody could not find one.
+
+> "you aren't dropped as a nobody, you have presumably grown up in the area you
+> are in. you at least know SOMETHING to start."
+
+[`who-a-life-like-this-grew-up-knowing.ts`](who-a-life-like-this-grew-up-knowing.ts)
+draws from live world rows standing at the birthplace, nearest in standing first,
+so every name it writes resolves the moment the player types it. A better birth
+knows more people and knows people who stand higher - `origin.md`'s own rule, that
+an origin buys inputs and never rank - and nothing but acquaintance is granted.
+
 ## Target resolution
 
 `interact`, `investigate`, `move`, `refine`, `gather` and `train_technique` all take a
@@ -325,6 +344,59 @@ lists what is on record nearby.
 The one deliberate exception is a place name, documented at `resolvePlace`.
 `Cultivator.location` is explicitly a name the engine stores and lists but never computes
 with, which is what makes accepting an unrecognised destination safe.
+
+### `news` is `recall`'s opposite, and it is the only verb that asks other people
+
+`recall` reads the holder's own rows and is structurally incapable of teaching
+anybody anything. `news` is the other direction: it asks whoever is standing here
+what is happening somewhere else, and what comes back may be wrong.
+
+The engine is [`../engine/world/what-people-are-saying.ts`](../engine/world/what-people-are-saying.ts)
+and the web side is [`asking-what-people-are-saying.ts`](asking-what-people-are-saying.ts).
+Three properties, and none of them is optional:
+
+- **Scale.** A fact is weighted UP for the standing of the people in it. A market
+  talks about the top of the world rather than about itself, because a disciple
+  hearing that two of the world's tallest fought is being told how big the world
+  is.
+- **Truth is a spectrum.** No boolean anywhere. A count of hands it passed through
+  and a distortion naming WHICH part came off - the who, the where, the when, the
+  size, or, at the bottom, the event. The distortion reaches the operator and
+  never the narrator, for the same reason a schema category never reaches a
+  prompt.
+- **Attributable, therefore checkable.** The draw is seeded on (world seed, fact
+  id, teller id) and carries no day, so one person always tells you the same
+  version. A rumour arrives as an ordinary `Hearing` whose per-name `statement` is
+  the RUMOUR'S sentence rather than the ledger's - so two tellings of one night
+  land as two records on one name and `recall` hands back both, unreconciled.
+  Checking a rumour is not a mechanic anybody had to build.
+
+The refusal where nobody is present is content rather than a gap: a cultivator
+forty years into a cave asking what is happening in the world is asking a wall.
+
+### The sheet reports what the cultivator can perceive, not what the engine knows
+
+`discovery.md`'s rule applied to a measurement rather than to a name.
+[`what-you-can-tell-about-the-ground.ts`](what-you-can-tell-about-the-ground.ts)
+is a gate over `how-crowded-this-ground-is.ts` and not a second set of strings.
+
+| | |
+|---|---|
+| below `FOUNDATION_ORDINAL` | a feeling, banded over `density x share`, no figures |
+| from Foundation Establishment | and that more are drawing on it than it likes |
+| from Core Formation's start | the figures, which is the sentence that already existed |
+
+Two things this must keep getting right. **The low end stays actionable** - the
+feeling is banded over the same product the rate is computed from, so thin ground
+nobody is on and rich ground with a crowd on it land in different bands and a
+beginner can still choose between two places. And **somebody who can read it will
+read it for you**: where the reader is short of the figures and holds a master,
+the figures arrive attributed, which is a different sentence from perceiving them
+and the difference is kept.
+
+The masking is three nulls on `CrowdingRead` rather than a parallel type, because
+the client already renders a headcount where `share` is not a number. The null
+*is* the gate, and there is no second rendering path to keep in step.
 
 ### `recall` resolves against the holder, never against the world
 
