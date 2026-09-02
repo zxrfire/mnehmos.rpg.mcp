@@ -494,6 +494,7 @@ import { DEATH_IN_WORLD,
     factsForToolResult,
     humanDays,
     placeName,
+    rungAndOrdinal,
     type EngineFacts
 } from './facts.js';
 import {
@@ -6178,12 +6179,20 @@ ${noticed}`;
         }
 
         const facts = factsForToolResult(`${ground.name}, from outside.`, lines);
+        const floor = ground.access?.floorOrdinal;
         facts.structure.push(
-            `foundGround ${ground.id}: character=${ground.character}, `
-            + `origin=${ground.origin ?? 'unrecorded'}, scale=${ground.scale ?? 'unrecorded'}, `
-            + `admits=${ground.access?.admits ?? 'unread'}, `
-            + `floorOrdinal=${ground.access?.floorOrdinal ?? 'unread'}, `
-            + `discoveredOnDay=${ground.discoveredOnDay ?? 'unrecorded'}.`
+            `Ground of ${ground.character} character`
+            + `${ground.origin ? `, ${ground.origin} in origin` : ', of no origin the record states'}`
+            + `${ground.scale ? `, at ${ground.scale} scale` : ', at no scale the record states'}. `
+            + (ground.access
+                ? `It admits ${ground.access.admits}`
+                  + `${floor === undefined || floor === null
+                      ? ' and states no floor'
+                      : ` from no lower than ${rungAndOrdinal(floor)}`}. `
+                : 'Nothing about who it admits is recorded on the find. ')
+            + (ground.discoveredOnDay === undefined || ground.discoveredOnDay === null
+                ? 'The day the world found it is unrecorded.'
+                : `The world found it on day ${ground.discoveredOnDay}.`)
         );
 
         const execution = this.freeAction(run, 'site', facts);
@@ -8162,9 +8171,10 @@ ${noticed}`;
             `${wall.line} ${wouldBe} ${pointer} `
             + 'Say it again with "anyway" and the years go by regardless - they are yours to spend.',
             (wall.state === 'no_method'
-                ? 'No method is practised, so the rate multiplier at ordinal '
-                : 'The manual has ended, so the rate multiplier at ordinal ')
-            + `${cultivator.realmOrdinal} is 0 and the stretch returns exactly nothing. `
+                ? 'No method is practised, so the rate multiplier at '
+                : 'The manual has ended, so the rate multiplier at ')
+            + `${rungAndOrdinal(cultivator.realmOrdinal)} is 0 and the stretch returns exactly `
+            + 'nothing. '
             + `${days} day${days === 1 ? ' was' : 's were'} refused before anything was spent: `
             + 'no provisioning, no encounter roll, no time passed.'
         ));
@@ -9304,8 +9314,10 @@ ${noticed}`;
             + 'down with it is a separate thing you have not done yet.'
         ]);
         facts.structure.push(
-            `${named.id} bought for ${stones} stone(s) at the ${regionId} multiplier. Recorded `
-            + 'in cultivator_flags under manual_copies_held; technique_manage.learn reads it.'
+            `${named.name} bought for ${stones} spirit stone${stones === 1 ? '' : 's'}, at this `
+            + 'region\'s own multiplier rather than a catalog list price. The copy is now held '
+            + 'and the art is not: owning it and having sat down with it are separate facts, and '
+            + 'only the second one teaches anybody anything.'
         );
 
         return {
@@ -10453,10 +10465,15 @@ ${noticed}`;
 
         const facts = factsForToolResult(`${catalog.name}, and what stands in the way.`, lines);
         facts.structure.push(
-            `Read only on ${art.id}: requiredOrdinal ${catalog.requiredOrdinal}, cap ${cap ?? 'none'}, `
-            + `soldAtAStall=${isSoldAtAStall(art.id)}, `
-            + `copyHeld=${holdsACopyOf(this.db, cultivator.id, art.id)}. `
-            + 'No time passed, nothing spent, nothing learned.'
+            `${catalog.name} opens at ${rungAndOrdinal(catalog.requiredOrdinal)} and `
+            + `${cap === null || cap === undefined
+                ? 'nothing caps how far this cultivator may be taught'
+                : `this cultivator may be taught no further than ${rungAndOrdinal(cap)}`}. `
+            + `${isSoldAtAStall(art.id) ? 'A stall sells it' : 'No stall sells it'}, and `
+            + `${holdsACopyOf(this.db, cultivator.id, art.id)
+                ? 'they already hold a copy'
+                : 'they hold no copy'}. `
+            + 'Reading this cost nothing: no time passed, nothing spent, nothing learned.'
         );
         return this.freeAction(run, 'list_techniques', facts);
     }
@@ -10669,8 +10686,10 @@ ${noticed}`;
 
 ${fit.line}`;
             execution.facts.structure.push(
-                `encounters.assessFit: ${fit.fit} at grade ordinal ${fit.gradeOrdinal}; `
-                + fit.axes.map(a => `${a.axis}=${a.verdict}`).join(', ') + '.'
+                `It reads as ${fit.fit} for this body at `
+                + `${rungAndOrdinal(fit.gradeOrdinal)}, judged on `
+                + `${fit.axes.length} axis${fit.axes.length === 1 ? '' : 'es'}: `
+                + fit.axes.map(a => `${a.axis} ${a.verdict}`).join(', ') + '.'
             );
             execution.calls.push({
                 name: 'encounters.assessFit',
@@ -14229,8 +14248,9 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
             `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +
             `${digest.unheard} event(s) reached them by no channel at all.`,
             ...digest.lines.map(line =>
-                `  ${line.kind} via ${line.channel}, form=${line.form}, ` +
-                `magnitude=${line.magnitude}, occurrences=${line.occurrences}.`)
+                `  A ${line.kind.replace(/_/g, ' ')} reached them via ${line.channel}, in `
+                + `${line.form} form, at magnitude ${line.magnitude}`
+                + `${line.occurrences === 1 ? '.' : `, ${line.occurrences} times over the span.`}`)
         ]
     };
 }

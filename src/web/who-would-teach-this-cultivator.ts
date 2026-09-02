@@ -56,6 +56,7 @@
  */
 
 import { rankName } from '../engine/cultivation/realms.js';
+import { rungAndOrdinal } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT THE CALLER HAS TO HAVE READ ALREADY
@@ -147,8 +148,8 @@ const WHY_A_TEACHER_MATTERS: Record<TeacherInput['manualState'], string> = {
  */
 function mechanicalPerson(person: SomebodyAbove, playerOrdinal: number): string {
     const gap = person.realmOrdinal - playerOrdinal;
-    return `${person.name} stands at ordinal ${person.realmOrdinal}, ${rungs(gap)} above `
-        + `ordinal ${playerOrdinal}. `
+    return `${person.name} stands at ${rungAndOrdinal(person.realmOrdinal)}, ${rungs(gap)} `
+        + `above ${rungAndOrdinal(playerOrdinal)}. `
         + (person.willTeach
             ? 'Marked a master on the roll: they teach, inside stated limits. '
             : 'Nothing on the roll marks them a teacher. ')
@@ -176,8 +177,8 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
     const others = named.filter(p => !p.willTeach);
 
     structure.push(
-        `${input.above.length} stand above ordinal ${input.ordinal} on the roll and in the `
-        + `room. ${named.length} can be named, ${masters.length} of those teach, and `
+        `${input.above.length} stand above ${rungAndOrdinal(input.ordinal)} on the roll and `
+        + `in the room. ${named.length} can be named, ${masters.length} of those teach, and `
         + `${unnamed.length} are counted without a name because this cultivator has never `
         + `met them. ${WHY_A_TEACHER_MATTERS[input.manualState]}`
     );
