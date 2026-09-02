@@ -490,67 +490,192 @@ Refinement and Body Integration and then stops mattering, and `gates_places` at 
 zeroes location requirements outright - which now looks like it was put one realm too low and
 one degree too absolute.
 
-#### And in a fight: the elemental is the thing that stops working
+#### And in a fight: the body ADAPTS to whatever you lean on most
 
-The mechanical face of being at home in every element, and it is one rule:
+The tribulation body is not a fixed resistance profile. **It adapts, during the fight, to
+whatever is being used against it most.** Hit it with fire long enough and fire stops working.
+That is a mechanic rather than a stat, and everything else about the realm falls out of it.
 
-> **A tribulation body resists the elemental. Everything else goes through it.**
+> **Repetition stops working. Variety is the counter.**
 
-Two terms, and both matter:
+**Two layers, and both are needed.** They do different jobs and neither substitutes for the
+other:
 
-- **Less damage from every element**, uniformly. That is being at home in all of them.
-- **Extra less from the element of their own cultivation**, on top. A fire cultivator's
-  tribulation body is hardest of all to burn.
+| Layer | What it is | When it applies |
+|---|---|---|
+| **The elemental floor** | Broad, shallow, inherent. The tribulation body itself: they have started *being* the elements, because a tribulation is a natural law | Always on, before anybody has thrown anything |
+| **The adaptation** | Narrow, deep, learned. One close against one specific thing | Grows during the fight, moves when what you lean on moves |
+
+The floor is why the ordinary weapon barely works at the summit - almost everybody arrives
+carrying an element. The adaptation is why leaning on *anything* stops working.
+
+**And it can only adapt to ONE thing at a time.** This is the constraint that makes the whole
+capability precise, bounded and playable, and it should be the first thing anybody implementing
+it reads. The body closes one door - whichever it is being hit with most - and while that door
+is shut, every other one is open.
+
+**The grain is SPECIFIC, and this is the part most easily got wrong.** It adapts to **fire**,
+not to elements. To **a particular sword road**, not to weapons. To **one karma working**, not
+to karma. Hitting it with an ancient art teaches it *that art*, not ancient arts as a class.
+Adapting at the level of a category would shut a great many doors with one close, which is the
+one-slot rule defeated by a naming choice.
+
+**So the counter is a near-even split: 51% of one thing and 49% of another.** The body adapts to
+the majority; the minority keeps landing at full effect for the entire fight. That is a real
+piece of play, discoverable at the table, and it is worth stating in exactly those terms because
+it teaches the mechanic faster than any description of it.
+
+**And because the grain is specific, the split works between ANY two things.** Fire and water is
+a working answer. You do not need a weapon, an ancient art or an exotic dao - you need **two
+things**. A cultivator with two elements has a way through; one with a single magnificent art
+does not.
+
+That is the fight-sized version of a rule the setting already holds about whole lives: a narrow
+life makes a narrower cultivator. Here it takes an afternoon rather than three centuries, and it
+is the same lesson - **the person who only ever learned to do one thing is the one it stops
+working for first.**
+
+**Switching moves the adaptation, and that is the whole texture of the fight.** Lead with fire,
+get adapted to, switch to the sword - and the body must give up its fire adaptation to close
+against the sword, at which point fire opens back up again. A fight against a tribulation body is
+a running argument about what you are *mostly* doing.
+
+**This is also why it never becomes invulnerability, and the guarantee is structural rather than
+numerical.** The defence is bounded by construction: it can only ever hold one door shut. That is
+a far stronger guarantee than a floor on damage, because a floor has to be maintained by whoever
+touches the numbers next and a one-slot defence cannot be tuned into invincibility by accident.
+Nothing in this world is invincible, and here that follows from the shape of the mechanism
+instead of from anybody remembering it.
+
+**It adapts to ANYTHING, not only to elements. Settling that explicitly, because whichever this
+file says is what somebody will build.**
+
+The narrower reading - that it adapts to elements and non-elemental arts bypass it - was the
+earlier one, and it is wrong for three reasons:
+
+1. **It needs three rules where one will do**: an elemental resistance, a non-elemental
+   exemption, and a list of what counts as exempt.
+2. **It makes the exemption permanent**, so a weapon art would keep working for ever, which
+   makes "bring the right key" the answer and removes the interesting demand.
+3. **It contradicts why the resistance exists at all.** A tribulation body is at home in the
+   elements *because a tribulation is a natural law*, not because elements are a category it was
+   issued a defence against. Nothing in that reasoning stops at the elemental.
+
+Under the general reading everything the setting has said stays true, and stops being three
+facts:
+
+- **Elements are what nearly everybody has**, so elements are what a tribulation body has
+  usually already adapted to. *That* is why the ordinary weapon is the one that barely works at
+  the summit - a consequence now, not a separate rule.
+- **An ancient art, a weapon, a strike out of karma work because they are unexpected and
+  unrepeated**, not because they are exempt. Lean on one and it dies too.
+- **The deep roads gating on `weapon`, `formation`, `body` and `void` are still exactly the
+  right things to hold up there** - not because they bypass anything, but because they give you
+  **somewhere else to go when your first approach stops working.**
+
+**Their own element is where they start.** A fire cultivator's tribulation body is hardest of
+all to burn, and under this model that is an initial condition rather than a fourth term: they
+have been living inside that element for centuries, so the adaptation to it is already made when
+the fight begins. That keeps the owner's earlier "extra less from the element of their own
+cultivation" intact without a special case.
+
+**Adaptation is per fight and resets.** Deliberate, and worth stating because the alternative is
+tempting and wrong: a body that kept every adaptation for ever would end up immune to
+everything, which breaks the rule below. What it learns, it learns about this fight.
 
 **It is resistance and never immunity.** Two of them fighting still ends with somebody dead,
-given enough time. The days-and-nights duel is the *result* of a large reduction applied to real
-damage, not of a fight that cannot be won - so if the numbers ever make two of them unable to
-hurt each other at all, the numbers are wrong. **State them in this document when they are
-chosen**, because the duel length is the point and somebody who does not know that will tune
-them on some other basis.
+given enough time. If the numbers ever make two of them unable to hurt each other at all, the
+numbers are wrong.
 
-**Why the duel is long:** everybody who gets that high got there on some road, and at the summit
-the ordinary weapon is the one that barely works. Nobody writes that scene. It falls out of the
-reduction.
+**And this is what actually explains the days-and-nights duel** - better than a multiplier did.
+Two transcendents do not fight for days because each blow is small. They fight for days because
+**every approach stops working once either of them has leaned on it**, and both keep having to
+find another thing to do. The length comes out of the exchange rather than out of a constant.
 
-**And the counter is anything that is not elemental.** Not a list of exceptions - a rule with
-examples. An ancient art, a weapon art, a strike out of the dao of karma: all three go through
-for the same reason, which is that none of them is made of an element. Stating it as a rule
-rather than a list matters, because a list goes stale the moment somebody adds a domain and the
-rule will not.
+**Note what it rhymes with.** AGENTS.md already carries the owner's principle that a repetitive
+strategy should cost you, stated about a whole life. The tribulation body is that same idea
+compressed into a single fight: repetition stops working, and the cultivator with one narrow art
+is the one it stops working for first.
 
-##### The field to read, which is NOT the one the rule is phrased in
+##### It is still killable, and this is the part to design against
 
-The rule is naturally stated as *"resists the element domain"*, and `InsightDomain` really does
-carry `element` alongside `weapon`, `body`, `formation`, `alchemy`, `karma`, `life_death`, `time`
-and `void`. **But `domain` is the wrong field to implement against, and the catalog says so:**
+The owner has said *"resistance, not immunity"*, *"a transcendent fighting another one will
+still die, eventually"*, and *"it still doesn't make you invincible"* - three times, unprompted.
+That is a very good indicator of where an implementation goes wrong, so it is written here as
+constraints rather than as tone:
+
+- **One slot, always.** The structural guarantee above, and the one that does the real work: a
+  body that can only shut one door can never shut them all, however the numbers move.
+- **Adaptation costs exposure and time.** The window before a door closes is real, and something
+  big and fast can land inside it. A body does not learn an art it has been hit with once.
+- **It reduces and never eliminates.** Even a fully adapted approach still does something.
+  Otherwise a long enough fight converges on a stalemate nobody can break, which is precisely
+  the failure being warned about.
+- **The calibration matchup stands** (see below): twenty elemental Grand Ascension cultivators
+  against one early Tribulation Transcendent is survivable and not winnable. Twenty is not
+  enough to kill. A much smaller number with genuine variety is.
+
+##### The two numbers, and the window "most" is measured over
+
+The mechanic is one slot holding **what it is adapted to** and **how far that adaptation has
+closed**. Three things have to be decided, and they are the whole of the tuning:
+
+| Decision | The proposal, and why |
+|---|---|
+| **What "most" means** | **Recent exchanges, not the whole fight.** A whole-fight tally lets the opening minute decide the rest of it and makes switching pointless, because early history outweighs what is happening now. A short trailing window keeps the fight dynamic and makes a mid-fight switch actually move the defence, which is the texture the mechanic is for |
+| **How long to close** | **Several exchanges of sustained majority**, not one. Long enough that a burst can land inside the window, short enough that leaning on one art is punished within a single fight rather than across a campaign |
+| **How long to let go** | **Re-targeting is what releases it.** Rather than a second independent timer, the slot decays while something else dominates and re-aims once it has emptied. That gives switching a real cost - you spend the decay before the new door starts closing - and it keeps one slot genuinely one slot |
+
+Decay-then-re-aim is the choice worth defending: two independent timers would let a body hold a
+closing adaptation *and* an old one at once, which is two doors by the back way and exactly the
+thing the one-slot rule exists to prevent.
+
+The actual figures are not chosen here, because they are not choosable without measurement: they
+have to be fitted to the calibration matchup below, together with the HP pool.
+
+##### What the body adapts TO, which is the one thing to get right
+
+Adaptation needs a key: the thing an incoming attack is counted against. Get it wrong in either
+direction and the mechanic breaks. Too coarse and one close shuts many doors, which defeats the
+one-slot rule by a naming choice. Too fine and every art is its own key, so nothing is ever
+repeated and the defence never engages.
+
+**The key the setting asks for is asymmetric, and both halves are the owner's own words:**
 
 ```text
-arts by dao domain (138 arts)
-  none 113 | body 5 | element 5 | void 4 | life_death 4
-  formation 3 | time 2 | karma 1 | weapon 1
+an art WITH an element     ->  the element        'fire', not 'elements'
+an art WITHOUT one         ->  the art's family   that sword road, not 'weapons'
 ```
 
-Only 25 arts carry a dao domain at all and only **5** carry `element`, so a resistance keyed on
-`domain` would resist five arts in the world. The field that says what an attack is *made of* is
-`element`, which is populated and splits the catalog nearly in half:
+That asymmetry is not untidy, it is the setting being specific about two different things. Fire
+arts really are all fire; sword roads really are not all one road.
+
+**"Family" beyond the individual art is NOT expressible today, and this was measured rather than
+assumed.** There is no lineage, parent or variant field on a technique. The nearest candidate is
+`subject`, and it fails in both directions at once:
 
 ```text
-elemental 69 | elementless 69
-  ancient  15 arts, 15 elementless (100%)
-  modern  123 arts, 54 elementless (44%)
+elementless arts: 69
+  subject: alchemy 17 | (none) 17 | weapon 11 | movement 10 | life_death 8 | body 6
 ```
 
-The two axes are genuinely different rather than redundant, and one row proves it: **Clear
-Terrace Ascension Canon gates on `weapon:3` and is `element: metal`.** A non-elemental dao can
-produce an elemental art. **So read `element`.** The domain framing is the correct description
-of the rule and `element` is the column that carries it.
+Too coarse - one close on `weapon` would shut eleven arts at once, and the owner has said
+explicitly that it learns a particular sword road and not weapons. And too sparse - 17 of the 69
+carry no subject at all, so they would all collapse into one bucket together.
 
-**Read `element`, never `era`.** The guard in `schema/cultivation.ts` is explicit that an ancient
-art must never simply be stronger, or the era axis collapses into "old wins". It does not
-collapse here: elementless arts exist in both eras, and at ordinal 37+ there are 20 modern arts
-of which 15 are already elementless. An ancient art is *always* an answer and never the *only*
-one, which is the correct shape. Do not oversell it.
+**So the smallest honest key is `element ?? id`:** the element where there is one, and otherwise
+the art itself. That is correct today, because every art is its own family until somebody says
+two of them are the same one.
+
+**And the smallest thing that would express families later** is an optional `familyId` on a
+technique, defaulting to its own id, so that two variants of one road can be declared to share a
+family without anybody maintaining a taxonomy of the whole catalog. Proposed, not built - it
+should be added when there is a pair of arts that actually need it, not in advance.
+
+**Never key adaptation on `era`, and never on `domain`.** `era` is guarded in
+`schema/cultivation.ts` - an ancient art must never simply be stronger, or the axis collapses
+into "old wins". `domain` is far too coarse and too sparse for this job: only 25 of 138 arts
+carry one at all. Both are the category mistake above, wearing a field name.
 
 ##### What this buys the rest of the setting
 
@@ -559,23 +684,28 @@ The seven roads that reach cap 45 gate on `void:2`, `weapon:3`, `formation:3`, `
 `void:3`, `life_death:3` and `time:3`. **Not one gates on element.** The roads that carry you to
 the summit are the roads whose understanding still works there.
 
-It also explains why the top of the ladder cares about dao at all. Below it an elemental road is
-simply a road; above it, it is the one thing that stops working on the people you are now
-fighting. That is a far better reason to seek understanding than "the gate asks for it".
+It also explains why the top of the ladder cares about dao at all. Below it a road is simply a
+road. Above it, **a second road is a second thing to do when the first one stops working** - and
+that is a far better reason to seek understanding than "the gate asks for it". What the summit
+rewards is not the right road; it is having more than one.
 
 **Ancient arts: unteachable by design, not by omission.** Measured across all 34 houses, which
 between them shelve 87 distinct arts: **not one of the 15 ancient arts is on any shelf.** That
-has been read as a content gap. It is not - it is the point. An art that reliably answers a
-tribulation body cannot be enrolled for and has to be **found**, which is what the deep ruins and
-the closed ground are for, and which joins that whole body of work to the summit for the first
-time.
+has been read as a content gap. It is not - it is the point. An art that answers a tribulation
+body cannot be enrolled for and has to be **found**, which is what the deep ruins and the closed
+ground are for, and which joins that whole body of work to the summit for the first time.
 
-**Objects, for the same reason.** A weapon is not elemental either, so a body that shrugs off
-fire and lightning can still be *cut* - and the thing that cuts it is an object somebody has to
-be given. [`items.md`](items.md) already says that above a certain grade an object moves on a
-favour owed rather than a price, and the register already tracks who holds which artifact at
-what grade. **This is why.** At the summit the answers are an ancient art, found in closed
-ground, or an object, which is not for sale.
+Note what an ancient art is worth under adaptation, because it is easy to overstate: it is not a
+key that opens the body. **It is one more thing nobody there has leaned on yet** - and it stops
+working too, if you lean on it. Its value is that hardly anybody has one, so hardly anybody has
+made the body learn it.
+
+**Objects, for the same reason.** A weapon is another approach, held rather than learned, so it
+is a door somebody can open who has only one art of their own. [`items.md`](items.md) already
+says that above a certain grade an object moves on a favour owed rather than a price, and the
+register already tracks who holds which artifact at what grade. **This is why.** At the summit
+the answers are variety, and the two ways to buy variety are an art found in closed ground and
+an object that is not for sale.
 
 ##### Why they cannot be mobbed, which is the discontinuity at the top
 
@@ -620,31 +750,59 @@ target from the code, and without it they will be tuned against something else.
 
 ##### The imperfect version
 
-Both terms are diminished, and the second one is where the setting's word *weakness* lives. A
-whole tribulation body is at home in everything **equally**; an incomplete one is not, so its
-resistance should be **gapped rather than merely lower**. A uniformly smaller number says
-"slightly worse" where the setting says "has a hole in it", and the hole is the whole point: it
-is what somebody hunting them would go looking for, and what they would spend a life hiding.
+**Same structure, degraded** - which is a much better expression of the wound than a flat damage
+penalty, because it leaves the shape of the capability intact and makes it fail in a way somebody
+can exploit on purpose.
+
+An imperfect tribulation body **adapts worse**, in any of three ways that can be combined:
+
+- **Slower to close.** The window before a door shuts stays open longer.
+- **Quicker to lose it.** The adaptation decays faster once you stop leaning on that thing.
+- **Never fully closes**, or never closes against some things at all.
+
+The third is where the setting's word *weakness* lives, and it is the one that makes hunting one
+of them a real activity. A whole tribulation body closes every door eventually; **this one leaves
+some open permanently.** So the fight against an imperfect one is winnable by finding **the thing
+it never learns** - which is a thing to discover, worth knowing, worth paying for, and worth a
+lifetime of hiding by the person who has it.
 
 ##### The hook, specified but NOT built
 
-`combat.ts` is contended, so this is written down rather than implemented. It belongs in damage
-resolution, where the incoming art is already known:
+`combat.ts` is contended, so this is written down rather than implemented.
 
-- **Read** the incoming technique's `element` (null means elementless), and the defender's realm
-  ordinal, own element, and untreated wound list.
-- **Apply**, when the defender is at Tribulation Transcendence or above and the incoming art has
-  a non-null `element`: a uniform reduction, plus a further reduction where the incoming element
-  matches the defender's own. Elementless arts are unreduced at any rung.
-- **Never** reduce to zero. The fight has to be able to end.
-- **Calibrate against the matchup above**, not against a feel for the number: twenty elemental
-  Grand Ascension against one early Tribulation Transcendence must come out survivable and
-  unwinnable. The HP pool at the realm is the other half of that and has to be read together
-  with the reduction, since either one alone can be made to pass and fail it.
-- **Differ** for `imperfect-tribulation-body`: both terms shrink, and the resistance gains a gap
-  rather than staying flat. Deriving which element leaks from something already on the
-  cultivator - their root or their road - keeps it deterministic and adds no catalog field.
-- **Do not** key any of this on `era` or on `domain`. See above for both.
+**State.** One slot per combatant, living for the duration of the fight and discarded with it -
+deliberately not persisted, since a body that kept every adaptation for ever would end up immune
+to everything. The slot holds an **adaptation key** and **how far it has closed**, plus a short
+trailing record of what the defender has been hit with.
+
+**Per incoming attack, in damage resolution, where the art is already known:**
+
+- **Key it.** `element ?? id` on the incoming technique. See the grain section above.
+- **Apply the elemental floor** whenever the defender is at Tribulation Transcendence or above
+  and the incoming art has an element. Always on, independent of the slot.
+- **Apply the adaptation** on top, when the incoming key matches the slot's key, scaled by how
+  far it has closed.
+- **Then update the slot** from the trailing window: grow if the dominant key still matches,
+  decay if it does not, and re-aim once it has emptied.
+
+**Invariants, and each of these is a way the mechanic has already been observed to want to go
+wrong:**
+
+- **One slot. Never two.** The whole guarantee against invulnerability is structural, and it
+  lives in this line.
+- **Never reduce to zero**, floor and adaptation combined. The fight has to be able to end.
+- **A single hit teaches nothing.** Adaptation costs exposure and time, or a burst can never land.
+- **Decay-then-re-aim, not two timers.** Two independent timers would let a body hold an old
+  adaptation while closing a new one, which is two doors by the back way.
+- **Calibrate against the matchup**, not against a feel for the number: twenty elemental Grand
+  Ascension against one early Tribulation Transcendence must come out survivable and unwinnable.
+  The HP pool is the other half and must be fitted together with the reduction, since either
+  alone can be made to pass and fail it. **Record the chosen figures in this document.**
+- **`imperfect-tribulation-body` changes the slot's behaviour, not the damage.** Slower growth,
+  faster decay, a cap below full, or a key it can never take. Deriving which key it cannot learn
+  from something already on the cultivator - their root or their road - keeps it deterministic
+  and adds no catalog field.
+- **Do not** key any of this on `era` or on `domain`.
 
 ---
 
