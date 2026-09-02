@@ -148,6 +148,15 @@ caller - `addressIsLegal`, against a technique row's `requiredOrdinal`. It is a 
 invariant**, checked when content is validated. It gates what a technique row may declare,
 not what a person may do, and no runtime path consults it about a cultivator.
 
+**One row of this audit has since been answered, and it is worth reading as the model for
+the rest.** `perceive` was `absent` at every rung from Qi Condensation to Body Integration
+when this was written. It is now `built` from ordinal 15 up, and the thing worth copying is
+not the feature - it is that it needed **no grant, no new predicate and no capability
+class.** It is one number keyed on the ordinal, consumed by a verb that already ran, at the
+point where the answer changes what the player does next. The three capabilities this
+document already calls genuinely enforced have exactly that shape, and the fifteen inert
+grants do not.
+
 **That question has now been answered: realm capability is something the engine ENFORCES.**
 
 It was a real design question rather than an implementation detail - it decided whether a realm
@@ -242,7 +251,7 @@ what the setting claims for it.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **absent** | Nothing |
+| 1 | perceive | **built** | `what-you-can-see-from-up-there.ts`. Ordinal 15 - `gale-riding-sword-flight`'s own requirement - is where a cultivator gets off the ground, and the discovery layer stops being entirely a matter of being told. The horizon at first flight is two travel days: your own province and nothing past it, since the shortest stated road is six. Consumed by `destinations` in `game.ts`. **The first perception capability keyed to a realm that a living player actually reaches** - `reads_formations` at Void Refinement is grant-gated and therefore off |
 | 2 | survive | **built** | `SATIETY_BURN_BY_REALM.foundation_establishment = 1/24` - a full belly goes from fifty days to **something over three years**. This is the single most concrete thing 13 buys and it is a genuine decision change: a multi-year seclusion stops needing a supply chain. Lifespan 100 -> 200. And you are past `BARREN_GROUND_CEILING`, which is a precondition rather than a new place opened |
 | 3 | do | **absent** | `CLASS_GRANTS.mortal = []`. Technique address band unchanged. 18 techniques and 5 recipes newly in reach - a supply increase, not a new kind of act. No residence, no formation-laying, no artifact-making, no realm-keyed disciple-taking |
 | 4 | asked of | **absent** | 1 of 8 summons entries pitched in band, 0 commissions. Membership is still the gate, and 29 of 32 houses still seat you at the bottom |
@@ -272,7 +281,7 @@ The realm the setting says the most about and the engine says the least.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **absent** | Nothing |
+| 1 | perceive | **built, twice** | `READS_A_VEIN = 17` in `what-you-can-tell-about-the-ground.ts`: the surveyor's figures for a vein, where Foundation gets the crowding and Qi Condensation gets a feeling. And the sight horizon keeps growing - about four days of road here, still short of anywhere else |
 | 2 | survive | **indirect** | `SATIETY_BURN_BY_REALM.core_formation = 1/120` - roughly sixteen years of belly. Lifespan 500. No environment opens |
 | 3 | do | **absent** | `CLASS_GRANTS.core = []`. Address band still `body`. `realmClassForOrdinal` returns `'core'` and the class carries nothing |
 | 4 | asked of | **was absent, and was the largest single gap in the audit** | `summonsPool` returns `[]` when `membership` is null. `petition`, `posture`, `seal` and `offer` are gated on `rankIndex` inside a house and never on realm - `src/web/standing.ts` says so in as many words: *"Every gate in this file is on the RANK"*. So a Core Formation cultivator with no house could be asked for nothing by anybody, and could ask nothing of anybody. Now answered by `what-a-house-asks-of-somebody-it-cannot-order.ts` |
@@ -308,7 +317,7 @@ like.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **absent** | |
+| 1 | perceive | **built** | Ordinal 22 is `thousand-li-cloud-tread` - "sustained flight at the height where the air thins and the birds stop" - and the horizon reaches about twelve travel days, which is the near provinces and not the far ones. The first rung at which a cultivator sees ground outside the province they are standing in |
 | 2 | survive | **built** | `soul_persists` and `prepared_vessel` in `CLASS_GRANTS`; `tradition.ts`'s `SOUL_PERSISTS_FROM_ORDINAL`; the whole `existence.ts` state set; `prepared_vessel` neutralises `body_lethal`, `crushing`, `pressure`. Note that `soul_persists` as a *grant* is inert - the work is done by the ordinal check in `tradition.ts` |
 | 3 | do | **built** | `ADDRESS_ORDINAL_FLOORS.place = 21`. An art stops needing somebody to aim at. This is the only place on the ladder where "what you can do" changes in kind and the change is enforced |
 | 4 | asked of | **absent** | Zero summons entries pitched at or above 21. `duties.ts` has nothing to offer anybody above Core Formation |
@@ -321,7 +330,7 @@ like.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **absent** | *"Spiritual perception extends across a region rather than a field"* is stated in the cultivation README and implemented nowhere. There is no regional perception call |
+| 1 | perceive | **built, and it arrived on its own** | *"Spiritual perception extends across a region rather than a field"* is the cultivation README's claim, and ordinal 26 is where the sight horizon first covers the widest road in the world (34 days). **Nothing was tuned to make that land here.** The curve is two anchors off the flight arts and one growth constant; the realm it saturates at is where it saturates. What is still absent is anything that perceives a PERSON at range - this channel gives geography and deliberately gives nothing else |
 | 2 | survive | **built** | `carries_own_ambient` neutralises `thin_qi`. `SATIETY_BURN_BY_REALM.deity_transformation = 0` - **starvation stops being reachable**, which is the removal of one of the five deaths and is a genuine categorical change |
 | 3 | do | **declared and inert** | `suppresses_lesser` is in `CLASS_GRANTS` and is read by nothing. Presence-as-suppression does not exist |
 | 4 | asked of | **absent** | |
