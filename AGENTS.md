@@ -607,6 +607,48 @@ the Hollow Court who do nothing else. Two bodies with identical shelves can prod
 utterly different numbers of high cultivators, and that difference is usually the
 interesting part.
 
+### What NPCs do is emergent. Never enumerate it
+
+**Model what somebody wants. Let the behaviour fall out.** The moment a list of NPC
+behaviours exists, the world has as many behaviours as somebody remembered to write, and
+adding one means editing the list. That is the test: **if a new case requires a new branch,
+the shape is wrong.**
+
+The rulings that produced this entry are about who will part with a tracked thing, and they
+are illustrations of a model rather than cases to implement:
+
+- Somebody pays **above the going rate** because the need is theirs - an injured son, a
+  chosen disciple, a weapon that would help them cross the tribulation.
+- Somebody **will not part with it at any price**, because they need it themselves: for a
+  child, for a chosen, or to clear an injury that is blocking their own path.
+- Somebody holds **a store reserved against a need they do not have yet** - a chosen son who
+  has not been born - and *"given the right trade might be willing to part with it"*.
+
+**These are non-exhaustive and must not become an enum.** A tenth reason should require no
+code, only a person with a different want.
+
+The third case carries a distinction worth keeping, because it is what stops "will not sell"
+from being a wall:
+
+> **A present need is a refusal. A reserved future need is a price you have not met.**
+
+Somebody whose son is dying tonight is not a seller at any figure. Somebody holding medicine
+against a disciple they may one day take is holding an *asset*, and the right trade moves it -
+where "right" means something that serves the reserved need better than the thing does.
+That is [`docs/world/items.md`](docs/world/items.md)'s barter tier made personal: above the
+line cash is not the medium, and what moves people instead is a favour owed or another
+singular thing.
+
+**Scope: tracked objects only.** Counted stock has a price and no story. A bowl of millet does
+not have anybody's dying son behind it, and if it did the market would stop working. See
+[rarity is a population statement, not a price](#rarity-is-a-population-statement-not-a-price)
+for why that boundary is not an authoring convention.
+
+This is the same law as [nothing in this world is
+invincible](#nothing-in-this-world-is-invincible), pointed at motivation instead of defence:
+the interesting behaviour is what the model produces, and a hand-written list of outcomes is
+always both smaller than the world and impossible to keep true.
+
 ### "Typically does not" is not "never"
 
 Court members are famous, unapproachable and usually silent. They are also "people and
