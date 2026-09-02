@@ -474,19 +474,30 @@ const STRONGER_OF: Record<AbilityTier, Record<AbilityTier, AbilityTier>> =
  * general rule visible instead of needing one of its own.
  *
  * AND IT IS CAUGHT BY TALKING, NEVER BY LOOKING. A changed beast wears the
- * human shape perfectly - it cultivated into that body - so there is no
- * anatomical tell and nothing here may invent one. What is missing is the
- * upbringing: it never had a childhood among people, so it can perceive
- * anything in a room and has no reference for what any of it is for.
- * `WHAT_GIVES_A_CHANGED_BEAST_AWAY` in the catalog carries the statement.
+ * human shape perfectly - it cultivated into that body - and the species
+ * shows only as ordinary human variation, a burly man or a thin one. There is
+ * no anatomical tell, nothing uncanny, and nothing here may invent either.
  *
- * That needs no field. It is `trust.md`'s second axis - realm is capability,
- * worldview is reference - and `KnowingStage` in
- * `src/engine/social/discovery.ts` already holds reference per subject, with
- * `perceivedButCouldNotPlaceIt` already meaning the rung was enough and the
- * reference was not. A changed beast is that model handed an unusual reader,
- * exactly as the sealed ancestor is, and both should walk the same ladder
- * rather than getting checks of their own.
+ * What is missing is the upbringing, and the correct implementation of that
+ * is ONE STATE rather than any behaviour:
+ *
+ * > **A changed beast begins with no records for ordinary life.**
+ *
+ * `KnowingStage` in `src/engine/social/discovery.ts` already holds what
+ * somebody has a reference for, per subject, with `unaware` at the bottom.
+ * Asking what a thing is, using it wrong, and lying badly about where you
+ * grew up are three faces of that one absence, and the narrator writes them.
+ * **Do not enumerate them.** A stored list of gaffes repeats inside three
+ * meals and is the engine writing prose. If the answer needs a field, a list
+ * or a branch on species, it has gone wrong -
+ * `WHAT_GIVES_A_CHANGED_BEAST_AWAY` in the catalog says so at length.
+ *
+ * None of which is a rule about beasts. Anyone with no record for a thing
+ * behaves this way - the sealed ancestor, somebody sect-raised who has never
+ * bought anything, somebody from four provinces over. The changed beast is
+ * only the most complete case, having the fewest records of anybody. It is
+ * `trust.md`'s second axis again: realm is capability, worldview is
+ * reference, and reference is acquired by living rather than by climbing.
  *
  * Every piece that needs is already written and unwired, which is why this is
  * a wiring job rather than a design one:
