@@ -1138,6 +1138,24 @@ Two corollaries:
   every case above the right name was already sitting in the first line of the comment.
 - **A file with two subjects has the wrong name whatever you call it.** Split it.
 
+**Descriptive is not the same as verbose, and a sentence is too far.** The name is a short
+noun phrase - two or three words - saying what the subject is. Not a question, not a clause,
+not a line of prose with hyphens in it:
+
+| Too far | Right |
+|---|---|
+| `what-a-house-does-when-it-catches-you.ts` | `house-criminal-punishments.ts` |
+| `whether-a-weapon-survives-being-used.ts` | `weapon-shattering.ts` |
+| `who-here-is-offering-something.ts` | `local-sellers.ts` |
+
+The rule above still holds - a one-word abstraction fails and a plain description wins - and
+this is where the plain description stops. **A name you can say in two words is usually a
+thing you have actually separated; a name that needs a full clause is usually two files.** So
+the length is a test of the cut as much as of the label.
+
+Older files here are named as sentences and are not wrong to leave alone: **renaming them is
+its own sweep, not something to do in passing.** New files take the short form.
+
 **Renaming in a busy tree: rename by re-export, never by rewriting importers.** Every
 import line you touch in somebody else's file is a line you will sweep into your own
 commit, along with whatever else they have unstaged there. Move the module, leave a
