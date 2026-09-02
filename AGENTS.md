@@ -774,6 +774,17 @@ grievance, what a witness would say - and leave the physical outcome exactly whe
 moment a phrasing starts changing what a body suffers, there are two sets of rules and the
 softer one is reachable by choosing your words.
 
+**Kill somebody during an agreed bout and you will obviously face consequences.** That is the
+whole principle in one line. Nothing stops you - the engine does not reach in and prevent it,
+and it does not quietly make the bout unable to kill. What happens instead is that the world
+answers: you agreed to go gently and you killed them, there were witnesses, they had people, and
+everyone who hears about it now knows something about you that they did not know before.
+
+Note where the agreement lives in that sentence. It is not in the damage - the blows landed as
+blows land. It is in **what the killing MEANT**, and that is where the entire consequence comes
+from. The same wound in a duel neither party pretended was friendly is a different event with a
+different bill.
+
 The tell that you are softening is a sentence like *"but that would hurt them, and this is meant
 to be the safe version."* If the fiction says the safe version exists, it is safe because of
 what the participants are trying to do, not because the engine stopped keeping score.
