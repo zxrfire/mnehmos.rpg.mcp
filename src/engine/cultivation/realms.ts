@@ -385,6 +385,121 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHAT A RUNG BUYS IN BODY
+//
+// The third curve on the ladder, beside power and lifespan, and the one that
+// says how much a cultivator can HOLD: hit points and the qi in the aperture.
+//
+// ── WHY THE POOL HAS TO GROW AT ALL ──────────────────────────────────────
+//
+// Not because a bigger pool wins fights. It does not, and that is worth
+// stating plainly because it is the intuition everybody arrives with:
+// `resolveExchange` charges damage as a fraction of the DEFENDER'S OWN
+// maximum, so two combatants with identical power settle in the same number of
+// exchanges whether they hold fifty points or fifty thousand. Scaling both
+// pools changes no confrontation anywhere.
+//
+// What the pool decides is everything the world prices in ABSOLUTE numbers,
+// and the qi half of it is a hard contract rather than a matter of taste.
+// `GRADE_QI_BANDS` in the technique catalog bands `qiCost` by grade - mortal
+// 2-14, earth 15-49, heaven 50-129, immortal 130-349, chaos 350-1500 - and
+// `GRADE_ORDINAL_BANDS` says which rung each grade opens at: 0, 13, 21, 29, 37.
+// `canUseTechnique` refuses an art the cultivator cannot pay for. So the pool
+// curve is not free: at the rung a grade opens, the aperture must hold that
+// grade's costs, or the catalog above that line is unreachable by anybody.
+//
+// ── THE CALIBRATION, AND WHERE THE NUMBER COMES FROM ─────────────────────
+//
+// A grade band opens every eight rungs and its ceiling rises about x3.5 each
+// time (14, 49, 129, 349, 1500). x3.5 over eight rungs is x1.165 a rung, which
+// over the four rungs of a major realm is x1.84 - so the pool has to roughly
+// DOUBLE every realm to keep pace with what that realm lets you learn. Hence
+// the one number below. It is derived from the catalog's own banding, not
+// chosen: measured before this existed, 86 of the 138 arts in the catalog cost
+// more qi than any player could ever hold, and 38 of them more than any NPC.
+//
+// ── AND WHY IT IS TWO AND NOT FOUR ───────────────────────────────────────
+//
+// Power is x4 a realm. The body is x2. The gap between them is deliberate and
+// it is the whole reason a cultivation world stays lethal as it climbs: force
+// outruns the vessel by a factor of two every realm, so a fight between peers
+// is settled in the same handful of exchanges at the top of the ladder as at
+// the bottom, and nobody anywhere accumulates enough body to stop dying. See
+// AGENTS.md, "nothing in this world is invincible" - this is that law
+// expressed as a curve rather than as a branch.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a major realm multiplies the body and the aperture by.
+ *
+ * Against `powerMultiplier`'s x4. Changing this without re-reading
+ * `GRADE_QI_BANDS` will silently put part of the technique catalog out of
+ * reach of everybody in the world, which is the state this constant was added
+ * to end.
+ */
+export const BODY_REALM_MULTIPLIER = 2;
+
+/**
+ * What the sub-ranks of one realm are worth to the body.
+ *
+ * The same shape as `WITHIN_REALM_PEAK` in `combat.ts`, and set to the same
+ * value for a reason that is arithmetic rather than aesthetic: at 2 against a
+ * realm multiplier of 2, a realm's Perfection lands exactly on the next
+ * realm's Early, so the pool curve is CONTINUOUS across every boundary. A
+ * crossing enlarges nothing on its own; the rungs did it. Power is
+ * deliberately not continuous - there the step is the point.
+ */
+export const WITHIN_REALM_BODY_PEAK = 2;
+
+/**
+ * How much body a cultivator at this ordinal holds, as a multiple of a
+ * newborn's.
+ *
+ * Interpolated across the sub-ranks rather than stepped at the realm, so that
+ * every rung buys something. `combatPowerForOrdinal` is the model.
+ */
+export function bodyMultiplierForOrdinal(ordinal: number): number {
+    const clamped = clampOrdinal(ordinal);
+    const tier = realmForOrdinal(clamped);
+    const index = REALM_TIERS.findIndex(t => t.key === tier.key);
+    const base = Math.pow(BODY_REALM_MULTIPLIER, index);
+    const span = tier.ordinalEnd - tier.ordinalStart;
+    if (span <= 0) return base;
+    const position = (clamped - tier.ordinalStart) / span;
+    return base * (1 + position * (WITHIN_REALM_BODY_PEAK - 1));
+}
+
+/**
+ * A newborn's body, before the ladder multiplies it.
+ *
+ * These four are the values a run opens on at ordinal 0, and
+ * `maxHpForOrdinal(might, 0)` must equal what the birth path writes.
+ * `tests/engine/cultivation/what-a-rung-buys-in-body.test.ts` pins that
+ * equality against the played layer's own constants.
+ */
+export const BASE_BODY_HP = 20;
+export const HP_PER_MIGHT = 10;
+export const BASE_APERTURE_QI = 10;
+export const QI_PER_INSIGHT = 5;
+
+/**
+ * The one derivation of a cultivator's HP pool. Nobody may write another.
+ *
+ * Derived, not chosen: a body holds what Might and the rung it stands on let
+ * it hold. Everything that mints or advances a cultivator - the player's birth,
+ * an NPC spawn, a rank change - goes through this, which is what stops the
+ * world running one formula and the player another.
+ */
+export function maxHpForOrdinal(might: number, ordinal: number): number {
+    return Math.round((BASE_BODY_HP + might * HP_PER_MIGHT) * bodyMultiplierForOrdinal(ordinal));
+}
+
+/** The one derivation of a cultivator's qi pool. An aperture's throughput follows Insight. */
+export function maxQiForOrdinal(insight: number, ordinal: number): number {
+    return Math.round((BASE_APERTURE_QI + insight * QI_PER_INSIGHT) * bodyMultiplierForOrdinal(ordinal));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE FALSE IMMORTAL
 //
 // The half-failure of the last crossing, and deliberately NOT an ordinal. The

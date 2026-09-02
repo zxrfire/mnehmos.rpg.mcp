@@ -728,6 +728,36 @@ people on a continent, most of whom the player will only ever hear about.
 
 ---
 
+## What a rung buys in body
+
+The third curve `realms.ts` owns, beside power and lifespan, and the one contract nobody
+else may implement: `maxHpForOrdinal` and `maxQiForOrdinal` are **the only derivation of a
+cultivator's pools anywhere in the codebase.** Everything that mints or advances somebody
+goes through them, because the alternative has already happened - the world's NPCs were
+built with the ordinal in the formula, the played cultivator was not, and a run reached
+False Immortal holding a newborn's 50 HP and 30 qi.
+
+**A major realm doubles the body, against power's fourfold.** That gap is the point: force
+outruns the vessel by two every realm, so climbing never accumulates enough body to stop
+dying. It is [nothing is invincible](../../../AGENTS.md) written as a curve.
+
+Three things follow, and each is pinned by
+`tests/engine/cultivation/what-a-rung-buys-in-body.test.ts`:
+
+- **The doubling is calibrated, not chosen.** `GRADE_QI_BANDS` prices arts by grade and
+  `GRADE_ORDINAL_BANDS` says which rung each grade opens at. The qi ceiling rises about
+  x3.5 every eight rungs, which is a doubling every realm. Get this wrong downward and
+  part of the technique catalog is unreachable by everybody alive - which is what it was.
+- **The curve is continuous.** A realm's Perfection lands exactly on the next realm's
+  Early, so a rung buys body and a crossing buys none on its own. Power is deliberately the
+  other way round; there the step *is* the hierarchy.
+- **The pool decides no fight.** `resolveExchange` charges damage as a share of the
+  defender's own maximum, so a rung-matched pair settles in the same number of exchanges at
+  either end of the ladder. That invariant is what makes the pool safe to grow at all, and
+  it is the thing that breaks if damage is ever made an absolute number.
+
+---
+
 ## Existence is multi-valued once cultivation is profound
 
 At low realms, `body destroyed = dead`. High cultivation breaks that equivalence, and the
@@ -1000,6 +1030,7 @@ that way because the seam closes, not because those people were worse.
 
 ```text
 realms.ts        the ladder every other system is a function of; owns MAX_ORDINAL
+                 and the three curves a rung moves: power, lifespan, and the body
 spirit-roots.ts  the talent you are dealt once and never redraw
 origin.ts        the third dealt thing: where you were born, and what it supplies,
                  and the income curve every price in the game is quoted against
