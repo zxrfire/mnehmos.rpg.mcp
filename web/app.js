@@ -717,10 +717,24 @@ function renderStatus() {
   const h = S.health;
   if (h) {
     const p = h.provider || {};
-    const cfg = p.configured === false ? ' (not configured)' : '';
-    right.textContent = `engine ${h.version || '?'} · narrator ${p.name || 'unknown'}${p.model ? `/${p.model}` : ''}${cfg}`;
+    // With no key, say what IS true rather than what is absent.
+    //
+    // This used to read "narrator anthropic/claude-opus-5 (not configured)",
+    // which names a model that is not being used and then calls it broken. A
+    // player with no key has a game that is entirely playable: the engine
+    // writes its own account, every verb works, and what a model adds is the
+    // prose rather than the game. The server already decides this and hands
+    // over `mode`, `modeLabel` and a full `modeLine`, so the wording is its
+    // own and the two surfaces cannot drift apart.
+    if (p.mode === 'local') {
+      right.textContent = `engine ${h.version || '?'} · ${p.modeLabel || 'Local Mode'} - the engine narrates itself`;
+    } else {
+      right.textContent = `engine ${h.version || '?'} · narrator ${p.name || 'unknown'}${p.model ? `/${p.model}` : ''}`;
+    }
+    right.title = p.modeLine || '';
   } else {
     right.textContent = 'engine unreachable';
+    right.title = '';
   }
 }
 
