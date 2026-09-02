@@ -142,6 +142,11 @@ import {
     type ResolvedRelationship
 } from '../data/cultivation/faction-relationships.js';
 import {
+    contentionBetween,
+    contendersWith,
+    type Contention
+} from '../data/cultivation/what-two-houses-both-have-a-hand-on.js';
+import {
     deepRoadOf,
     whoHoldsDeepRoad,
     type DeepRoadHolding
@@ -890,6 +895,20 @@ export interface RegisterHoldsFrom {
 export interface RegisterRelationship extends ResolvedRelationship {
     /** The other body's entry on this sheet, where it has one. */
     anchor: string | null;
+    /**
+     * What the two of them both have a hand on. Usually empty.
+     *
+     * The second axis of a relationship and the one the sheet had no way to
+     * show. A tie's warmth says how two bodies get on; this says what there is
+     * between them to get on about, and the interesting pairs are the ones
+     * where those disagree - two houses contesting a founding while remaining
+     * scrupulously civil is the commonest shape in the catalog, and it is what
+     * the design owner meant by semi-enemies.
+     *
+     * Derived, never authored. See
+     * `what-two-houses-both-have-a-hand-on.ts` for why it must be.
+     */
+    contestedOver: readonly Contention[];
 }
 
 /**
@@ -2294,8 +2313,56 @@ function buildHoldsFrom(factionId: string): RegisterHoldsFrom | null {
  * had in front of them, and a single-id lookup silently drops half of them.
  */
 function buildRelationships(factionId: string): RegisterRelationship[] {
-    return relationshipsOf(factionId, idsForFaction(factionId))
-        .map(r => ({ ...r, anchor: null as string | null }));
+    const tied = relationshipsOf(factionId, idsForFaction(factionId))
+        .map(r => ({
+            ...r,
+            anchor: null as string | null,
+            // What the two of them both have a hand on, read out of the tables
+            // that already held it. A tie says how they get on; this says what
+            // there is between them to get on ABOUT, and they are different
+            // facts - the commonest contention in the world sits under a tie
+            // whose warmth is `civil`.
+            contestedOver: contentionBetween(factionId, r.otherId)
+        }));
+
+    // A CONTENTION IS NOT ALWAYS A TIE, and the two halves of the Kiln are the
+    // case that proves it. Neither carries the other in `rivals`; neither has
+    // an ambition; they have not corresponded in nine hundred years. They do
+    // have an authored tie, so they would have survived this. Other pairs do
+    // not: two houses drawing on one patron or teaching one road are contending
+    // whether or not anybody ever wrote a relationship between them, and
+    // dropping those would put the register back to reporting only what
+    // somebody remembered to author.
+    const already = new Set<string>();
+    for (const r of tied) for (const id of idsForFaction(r.otherId)) already.add(id);
+
+    const untied: RegisterRelationship[] = contendersWith(factionId)
+        .filter(c => !already.has(c.otherId) && !idsForFaction(c.otherId).some(id => already.has(id)))
+        .map(c => ({
+            id: `contention-${factionId}-and-${c.otherId}`,
+            otherId: c.otherId,
+            otherName: c.otherName,
+            // Level, because a contention on its own says nothing about the
+            // ladder. Where the ladder is known, the tie above carries it.
+            stance: 'alongside' as const,
+            kind: 'contested_claim' as const,
+            source: 'the contested claims' as const,
+            what: c.over.map(o => o.what).join(' '),
+            since: 'Undated. It is read off what both of them hold rather than off anything either of them wrote.',
+            // No warmth is recorded because nothing recorded a relationship.
+            // `distant` is the scale's word for exactly that - no ill will and
+            // no contact, nobody maintains this one - and it is the honest
+            // answer rather than a neutral placeholder.
+            warmth: 'distant' as const,
+            theirWarmth: 'distant' as const,
+            howTheyPutIt: 'Neither body has said anything about the other that the catalog records.',
+            andSoTheyDo: 'Nothing either of them has written down. What they have is the object below, and both of them have a hand on it.',
+            grievance: null,
+            anchor: null as string | null,
+            contestedOver: c.over
+        }));
+
+    return [...tied, ...untied];
 }
 
 /**
@@ -4915,7 +4982,24 @@ font:11.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--quiet);back
 .relchip--alongside .relchip__mark{color:var(--rel-level)}
 .relchip__mark{font-size:9px;line-height:1}
 .relchip__who{color:var(--ink)}
-.relchip__warm{font-size:10px;letter-spacing:.06em;color:var(--faint)}
+/* The warmth word takes the warmth colours the Ties tab already uses for these
+   six words - no new palette, and the same word is the same colour on both
+   tabs. Direction keeps plum/moss/grey on the left rule and its glyph. */
+.relchip__warm{font-size:10px;letter-spacing:.06em}
+.relchip__arrow{font-size:10px;color:var(--faint)}
+/* Contesting is a THIRD fact and gets neither of the two hues already spoken
+   for. A dotted underrule and the word itself: the word is what carries it,
+   and the rule is only there to let a reader find the marked chips in a strip
+   of twelve without reading any of them. */
+.relchip--contesting{border-bottom:2px dotted var(--signal)}
+.relchip__over{font-size:10px;letter-spacing:.06em;color:var(--signal)}
+/* One direction per entry, so one column rather than the two-column grid this
+   replaced. Full measure, because it is now the only account on the card. */
+.tieside--mine{border-left:2px solid var(--rule);padding-left:12px;margin:10px 0 0;max-width:72ch}
+.tiecontend{border-left:2px solid var(--signal);padding:2px 0 2px 12px;margin:12px 0 0;max-width:72ch}
+.tiecontend h5{margin:0 0 6px;font:600 12.5px Archivo,"Helvetica Neue",Arial,sans-serif;color:var(--ink)}
+/* The pointer to the other side. Quiet: it is a signpost, not an account. */
+.tieother{margin:12px 0 0;color:var(--quiet);font-size:14px;max-width:72ch}
 /* ── THE TIES PAGE ───────────────────────────────────────────────────────
    Both ends of a tie side by side, which is the only arrangement in which the
    disagreement between them is visible. Two columns where there is room and
@@ -6105,22 +6189,59 @@ const STANCE_WORD: Record<RelStance, string> = {
 };
 
 /**
+ * The two ends of the warmth scale, found by position rather than by name.
+ *
+ * `Warmth` is an ordered list from `warm` to `hostile` and the ordering is the
+ * whole of its meaning, so the ends are read off the length rather than written
+ * out as two lists of words. A seventh word added to the scale shifts these on
+ * its own; a seventh word added to a hardcoded list would be silently absent
+ * from both bands, which is the failure this shape exists to prevent.
+ *
+ * The middle - civil, distant, wary - is not a band and gets no summary line.
+ * That is most of the world, it is where a body sits with everybody it has no
+ * particular feeling about, and counting it would drown the two ends that
+ * actually say something.
+ */
+const WARMTH_SCALE: readonly Warmth[] = ['warm', 'civil', 'distant', 'wary', 'cold', 'hostile'];
+const warmthRank = (w: Warmth): number => Math.max(0, WARMTH_SCALE.indexOf(w));
+/** Glad of them, and will spend on them unasked. The warm end, which is narrow. */
+const isClose = (w: Warmth): boolean => warmthRank(w) === 0;
+/** Warmth deliberately withheld, or acted against. The cold end, which is two words. */
+const isAtOdds = (w: Warmth): boolean => warmthRank(w) >= WARMTH_SCALE.length - 2;
+
+/**
  * How a house's position in the world looks at a glance, and nothing else.
  *
- * One chip per tie: the direction as a mark and a colour, the other body's
- * name, and the two warmths with an arrow between them - `cold &rarr; civil`
- * meaning this house is cold to them and they are civil back. That asymmetry
- * is the thing the section's prose kept asserting ("a house can be warm to a
- * patron that is only civil back") and it is a fact a reader can now see
- * instead of being told.
+ * TWO QUESTIONS, NOT ONE, and this is the correction that produced this pass.
+ * The block answered only where a body sits on the ladder - so many above it,
+ * so many under it - and the design owner's verdict was that a house "also has
+ * enemies, competitors, friends, which are outside the rung". Every one of
+ * those was already in the catalog and none of it reached the page: warmth was
+ * printed as two bare words at the tail of a chip, and what two bodies are both
+ * reaching for was not printed at all.
  *
- * The chip opens the pair's full account on the Ties tab. Nothing here is a
- * summary OF that account - it is the index to it, which is the difference
- * between a cross-reference and a copy.
+ * So the summary line now answers both. Where it stands is the ladder. How it
+ * stands is the warm end of the warmth scale, the cold end of it, and whether
+ * there is an object the two of them both have a hand on - which is a separate
+ * fact from either, and is the one that makes the Kiln pair legible: they are
+ * scrupulously civil and they are contending over the founding they both
+ * descend from.
+ *
+ * NOT A TAXONOMY, and this is the constraint the shape had to meet. Nothing
+ * here branches on what KIND of tie it is. There are two derived facts - a
+ * position on an ordered scale, and whether an intersection is empty - and a
+ * tenth kind of relationship needs no new code in this function at all.
+ *
+ * One chip per tie: the direction as a mark and a colour, the other body's
+ * name, the two warmths with an arrow between them - `cold &rarr; civil`
+ * meaning this house is cold to them and they are civil back - and a mark where
+ * the two are contending. The chip opens the pair's full account on the Ties
+ * tab. Nothing here is a summary OF that account; it is the index to it, and
+ * the reasons, the histories and the claims themselves live there.
  */
 function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor: string): string {
     if (!rels.length) {
-        return foldablePart('How it stands', 'nothing recorded, which is a hole in the data',
+        return foldablePart('Who it knows', 'nothing recorded, which is a hole in the data',
             `<p class="none">Nothing in the catalog puts ${esc(name)} in relation to any other body. `
             + 'That is a hole in the data rather than a house that stands alone: every faction holds from '
             + 'somebody, is held from, is contested, or was in a room when something happened.</p>');
@@ -6129,11 +6250,25 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
     const above = rels.filter(r => r.stance === 'above').length;
     const below = rels.filter(r => r.stance === 'below').length;
     const level = rels.filter(r => r.stance === 'alongside').length;
-    const counts = [
-        above ? `${above} above it` : '',
-        level ? `${level} level with it` : '',
+    const close = rels.filter(r => isClose(r.warmth)).length;
+    const odds = rels.filter(r => isAtOdds(r.warmth)).length;
+    const contesting = rels.filter(r => r.contestedOver.length > 0).length;
+
+    // THE LADDER FIRST, THEN THE THREE THE OWNER ASKED FOR. Separated by a
+    // dash rather than a comma, because they are answers to two different
+    // questions and a single comma list read as one undifferentiated heap -
+    // which is how the ladder counts came to be the only thing anybody saw.
+    const ladder = [
+        above ? `${above} over it` : '',
+        level ? `${level} level` : '',
         below ? `${below} under it` : ''
     ].filter(Boolean).join(', ');
+    const feeling = [
+        close ? `close to ${close}` : '',
+        odds ? `at odds with ${odds}` : '',
+        contesting ? `contesting with ${contesting}` : ''
+    ].filter(Boolean).join(', ');
+    const counts = [ladder, feeling].filter(Boolean).join(' - ');
 
     // Sorted the way the counts are read, so the strip and the sentence above
     // it are in the same order and one confirms the other.
@@ -6146,13 +6281,42 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
         // separation that lives only in a gap or a border does not survive
         // that. Flattened, a strip of styled spans came out as
         // "The Deep Surveycold civilNine Abyss Flame Sect...".
-        .map(r => `<li class="relchip relchip--${esc(r.stance)}" data-goto="${esc(tieAnchor(selfAnchor, r.anchor, r.otherName))}"`
-            + ` title="${esc(`${r.otherName} ${STANCE_WORD[r.stance]}. ${name} is ${r.warmth} to them; they are ${r.theirWarmth} back.`)}">`
-            + `<span class="relchip__mark" aria-hidden="true">${STANCE_MARK[r.stance]}</span>`
-            + `<span class="relchip__who">${esc(r.otherName)}</span>`
-            + `<span class="nsep"> &middot; </span>`
-            + `<span class="relchip__warm">${esc(r.warmth)} &rarr; ${esc(r.theirWarmth)}</span>`
-            + '</li>')
+        .map(r => {
+            // WARMTH IN THE WARMTH COLOURS, WHICH ALREADY EXIST. `.warm-*` is
+            // the vocabulary the Ties tab has always used for these six words,
+            // built out of the sheet's own tokens - so this introduces no
+            // palette and a reader who has met the words on one tab meets the
+            // same colours here. Direction keeps plum/moss/grey and its glyph,
+            // untouched: those two hues mean direction on this page and nothing
+            // else, and that separation was itself a correction.
+            const contesting = r.contestedOver.length > 0;
+            const over = contesting
+                ? ` They both have a hand on ${r.contestedOver.length === 1 ? 'one thing' : `${r.contestedOver.length} things`}: ${r.contestedOver.map(c => c.from).join(', ')}.`
+                : '';
+            return `<li class="relchip relchip--${esc(r.stance)}${contesting ? ' relchip--contesting' : ''}"`
+                + ` data-goto="${esc(tieAnchor(selfAnchor, r.anchor, r.otherName))}"`
+                + ` title="${esc(`${r.otherName} ${STANCE_WORD[r.stance]}. ${name} is ${r.warmth} toward them: ${WARMTH_GLOSS[r.warmth]}.${over} What they make of ${name} is on their own entry.`)}">`
+                + `<span class="relchip__mark" aria-hidden="true">${STANCE_MARK[r.stance]}</span>`
+                + `<span class="relchip__who">${esc(r.otherName)}</span>`
+                + '<span class="nsep"> &middot; </span>'
+                // ONE DIRECTION. This printed `cold &rarr; civil` - this
+                // house's warmth and the other's, side by side - and the design
+                // owner's ruling is that the reciprocal belongs on the other
+                // house's own entry and nowhere else. The reader of THIS entry
+                // has one subject and one question, and every row answers it
+                // the same way: what does this house think of that one. The
+                // other half is one click away and is that house's business.
+                + `<span class="relchip__warm warm-${esc(r.warmth)}">${esc(r.warmth)}</span>`
+                // The contention mark carries a word beside it rather than
+                // standing alone. A bare glyph on a strip that already has one
+                // is a second thing to look up, and this block has been
+                // reported once already for exactly that.
+                + (contesting
+                    ? '<span class="nsep"> &middot; </span>'
+                        + `<span class="relchip__over">contesting ${r.contestedOver.length === 1 ? 'a claim' : `${r.contestedOver.length} claims`}</span>`
+                    : '')
+                + '</li>';
+        })
         .join('');
 
     // THE KEY GOES WHERE THE CHIPS ARE, and this reverses an earlier ruling.
@@ -6173,9 +6337,9 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
         + '<span class="relchip__who">level with it</span></span>'
         + `<span class="relchip relchip--below"><span class="relchip__mark">${STANCE_MARK.below}</span>`
         + '<span class="relchip__who">answers to it</span></span>'
-        + `<span class="dirkey__arrow">warmth reads ${esc(name)} &rarr; them</span></p>`;
+        + `<span class="dirkey__arrow">the warmth word is ${esc(name)}'s own view outward; what they make of it is on their entries</span></p>`;
 
-    return foldablePart('How it stands', counts,
+    return foldablePart('Who it knows', counts,
         key + `<ul class="relstrip">${chips}</ul>`);
 }
 
@@ -6403,14 +6567,24 @@ function tieFacts(
     const above = at('above');
     const level = at('alongside');
     const below = at('below');
-    const worst = list.map(x => x.pair.aAnchor === anchor ? x.pair.bWarmth : x.pair.aWarmth);
-    const hostile = worst.filter(w => w === 'hostile').length;
+    // THIS HOUSE'S OWN WARMTH, NOT THE OTHER END'S. This read the far side and
+    // reported "hostile to it" - how many bodies are hostile TOWARD this house
+    // - on a card that is otherwise entirely this house's view outward. Two
+    // directions on one line is the confusion the whole pass exists to remove,
+    // and it is the reciprocal that has to go: it is on those bodies' own
+    // cards, counted there, from their side.
+    const mine = list.map(x => x.pair.aAnchor === anchor ? x.pair.aWarmth : x.pair.bWarmth);
+    const close = mine.filter(isClose).length;
+    const odds = mine.filter(isAtOdds).length;
+    const contesting = list.filter(x => x.pair.rel.contestedOver.length > 0).length;
     return [
-        nfact('ties', String(list.length)),
-        above ? nfact('above it', String(above)) : '',
-        level ? nfact('level', String(level)) : '',
+        nfact('knows', String(list.length)),
+        above ? nfact('over it', String(above)) : '',
+        level ? nfact('level with it', String(level)) : '',
         below ? nfact('under it', String(below)) : '',
-        hostile ? nfact('hostile to it', String(hostile), 'ex') : ''
+        close ? nfact('close to', String(close)) : '',
+        odds ? nfact('at odds with', String(odds), 'ex') : '',
+        contesting ? nfact('contesting with', String(contesting), 'ex') : ''
     ];
 }
 
@@ -6422,12 +6596,27 @@ function warmthLegend(): string {
 }
 
 /**
- * One pair's whole record, written once, with both partisan accounts on it.
+ * What ONE house makes of another, on that house's own entry.
  *
- * This is the material that used to sit inside every faction entry, twice per
- * tie. Nothing has been cut from it; what changed is that a reader arrives here
- * having asked for it, rather than meeting four screens of it while trying to
- * find out what a house is.
+ * ONE SUBJECT PER ENTRY, ONE DIRECTION PER ROW. This card used to print the
+ * pair: both names, both warmth words, and both partisan accounts side by side
+ * in a two-column grid. The design owner's ruling is that a house's entry
+ * carries that house's own view outward and nothing else - what the other body
+ * makes of it belongs on the other body's entry, and is one click away.
+ *
+ * The argument is not layout, it is that a symmetric row cannot say the most
+ * characterful thing this data holds. "A is cold to B; B has not thought about
+ * A in two hundred years" is a real and common shape - the Deep Survey is
+ * `distant` to a court it reposted, which is `cold` back - and printed as one
+ * shared row it reads as a single mutual temperature that belongs to neither of
+ * them. Read one direction at a time, each is a statement somebody is making.
+ *
+ * WHAT STAYS SHARED, AND WHY THAT IS NOT A CONTRADICTION. `what` and `since`
+ * are the tie's facts, and the catalog defines them as the part neither party
+ * disputes - a fact about the world rather than about how anybody feels. So
+ * does the contention: two bodies have a hand on one object or they do not, and
+ * that is not a matter of opinion either. It is the DISPOSITION that is
+ * directed, and only the disposition is shown one-way.
  */
 function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = {}): string {
     const emitId = opts.emitId ?? true;
@@ -6449,50 +6638,71 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
         ? (p.stance === 'above' ? 'below' : p.stance === 'below' ? 'above' : 'alongside')
         : p.stance;
 
-    const side = (who: string, anchor: string | null, warmth: Warmth,
-        putsIt: string | null, does: string | null, grievance: string | null): string =>
-        `<div class="tieside"><h5>${jumpTo(anchor, who)} <span class="warmtag warm-${esc(warmth)}">${esc(warmth)}</span></h5>`
-        + (putsIt
-            ? `<dl class="relsides"><dt>How they put it</dt>${chunkedDd(putsIt)}`
-                + (does ? `<dt>And so they do</dt>${chunkedDd(does)}` : '')
-                + (grievance ? `<dt>The grievance</dt>${chunkedDd(grievance)}` : '')
-                + '</dl>'
-            : '<p class="none">The catalog carries this tie from the other end only.</p>')
-        + '</div>';
+    // Whose entry this is, and whose it is about. `mirrored` already worked out
+    // that the reader is standing on B; these two names it.
+    const mineName = firstName;
+    const theirName = secondName;
+    const theirAnchor = mirrored ? p.aAnchor : p.bAnchor;
+    const myWarmth = firstWarmth;
+    const myPutsIt = mirrored ? p.bPutsIt : p.aPutsIt;
+    const myDoes = mirrored ? p.bDoes : p.aDoes;
+    const myGrievance = mirrored ? p.bGrievance : p.aGrievance;
+    // Their word for it, named but NOT printed. A reader who has just been told
+    // that the other side is allowed to disagree will want to know whether it
+    // does, and sending them there with no idea whether it is worth the trip is
+    // its own small failure. So the line says that a second account exists and
+    // where it is; it does not say what it contains.
+    const theirWarmth = secondWarmth;
+
+    const contested = p.rel.contestedOver;
+    const contentionBlock = contested.length
+        ? '<div class="tiecontend"><h5>What they both have a hand on</h5>'
+            + `<dl class="relsides">${contested
+                .map(cl => `<dt>${esc(cl.from)}</dt>${chunkedDd(cl.what)}`)
+                .join('')}</dl></div>`
+        : '';
 
     return `<details class="ncard tie rel--${esc(stance)}"${emitId ? ` id="${esc(p.anchor)}"` : ''}>
     <summary>
-      <span class="nhead"><span class="nname">${esc(firstName)}</span>`
-        // Clipped rather than printed on this line only. The two names and the
-        // two warmth marks are their own boxes and separate on sight; at a
-        // narrow width each falls on its own line, and a visible middot then
-        // dangles at the end of one. The mark stays in the text for the copy.
+      <span class="nhead"><span class="nname">${esc(theirName)}</span>`
         + '<span class="rsep"> &middot; </span>'
-        + `<span class="nname">${esc(secondName)}</span>`
-        + '<span class="rsep"> &middot; </span>'
-        // The whole of the asymmetry, on the closed line. The first word is the
-        // first-named body's regard for the second and the second word is the
-        // answer back; which is which is said once in the section header rather
-        // than on every row, because it is the same fact on all of them.
-        + `<span class="warmpair"><span class="warmtag warm-${esc(firstWarmth)}">${esc(firstWarmth)}</span>`
-        + '<span class="warmslash">/</span>'
-        + `<span class="warmtag warm-${esc(secondWarmth)}">${esc(secondWarmth)}</span></span></span>`
+        // ONE WORD, AND IT IS THIS HOUSE'S. The line used to carry both
+        // warmths as `cold / civil` and a reader had to work out per row which
+        // direction they were looking at. There is only one direction on this
+        // entry now, so the word needs no side to be read against.
+        + `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span></span>`
         + nfacts([
-            nfact('standing', STANCE_WORD[stance]),
-            nfact('tie', p.kind.replace(/_/g, ' '))
+            // The value already contains the verb - "stands over it" - so the
+            // label must not repeat it. Labelled `stands` this read
+            // "stands stands over it".
+            nfact('on the ladder', STANCE_WORD[stance]),
+            nfact('the tie', p.kind.replace(/_/g, ' ')),
+            contested.length
+                ? nfact('contesting', contested.length === 1 ? 'a claim' : `${contested.length} claims`, 'ex')
+                : ''
         ])
         + `<span class="ngo">open</span>
     </summary>
     <div class="nbody">
-      ${relCard(p.stance, jumpTo(p.bAnchor, p.bName),
+      ${relCard(p.stance, jumpTo(theirAnchor, theirName),
             `<p class="relsay">${esc(standingSentence(p.rel, p.aName))}${p.stance === 'alongside'
                 ? `. Between them: ${esc(tiePhrase(p.rel))}. `
                 : `, as ${esc(tiePhrase(p.rel))}. `}`
             + `${warmthSentence(p.rel, p.aName)}</p>`
             + chunked(p.what, 'the rest of what the tie is', 'relwhat')
             + `<dl class="relsides"><dt>Since</dt>${chunkedDd(p.since)}</dl>`
-            + `<div class="tiesides">${side(p.aName, p.aAnchor, p.aWarmth, p.aPutsIt, p.aDoes, p.aGrievance)}`
-            + `${side(p.bName, p.bAnchor, p.bWarmth, p.bPutsIt, p.bDoes, p.bGrievance)}</div>`)}
+            + contentionBlock
+            + `<div class="tieside tieside--mine"><h5>${esc(mineName)} on ${esc(theirName)} `
+            + `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span></h5>`
+            + (myPutsIt
+                ? `<dl class="relsides"><dt>How they put it</dt>${chunkedDd(myPutsIt)}`
+                    + (myDoes ? `<dt>And so they do</dt>${chunkedDd(myDoes)}` : '')
+                    + (myGrievance ? `<dt>The grievance</dt>${chunkedDd(myGrievance)}` : '')
+                    + '</dl>'
+                : `<p class="none">The catalog carries this tie from ${esc(theirName)}'s end only.</p>`)
+            + '</div>'
+            + `<p class="tieother">${esc(theirName)} answers <span class="warmtag warm-${esc(theirWarmth)}">${esc(theirWarmth)}</span>, `
+            + `and says why on ${jumpTo(theirAnchor, 'its own entry')}.</p>`)}
       <p class="prov">read from ${esc(p.source)}</p>
     </div>
   </details>`;
@@ -7478,7 +7688,9 @@ function dossier(d: SectDossier): string {
       ['sent down', d.apex?.giftName ?? ''],
       ['heritage', d.apex?.heritage ?? ''],
       ['stock', d.apex ? d.apex.stock.replace(/_/g, ' ') : ''],
-      ['second', d.apex ? String(d.apex.secondSeat) : ''],
+      // WHAT THE FIGURE MEASURES. `second 39` was the rung of the house's
+      // second-strongest seat and read as an index into something.
+      ['second seat at rung', d.apex ? String(d.apex.secondSeat) : ''],
       ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
   ])}
 
@@ -7501,7 +7713,7 @@ function dossier(d: SectDossier): string {
           : ''
   ].filter(Boolean).join('<span class="nsep"> &middot; </span>')}</p>
 
-  ${foldablePart('What they are', 'the fuller version, and then the catalog in its own words',
+  ${foldablePart('What it is', 'the fuller version, and then the catalog in its own words',
       // From the SECOND line down. The first is the identity line and it is
       // now printed unfolded in the header above, so repeating it here would
       // be the same sentence twice inside one entry.
@@ -7514,7 +7726,7 @@ function dossier(d: SectDossier): string {
           ? `<details class="context"><summary>In the catalog's own words</summary>${chunkParagraphs(d.description).map(piece => `<p class="desc">${esc(piece)}</p>`).join('')}</details>`
           : ''))}
 
-  ${foldablePart('Who is in it', 'the people and their ranks, how you get in, and who it answers to',
+  ${foldablePart('Could I get in', 'what it admits from, what it would give somebody, and who it answers to',
       fieldedBlock(d.fielded)
       + (d.posting
           // In place of the gate rather than beside it, and `wayIn` is null on
@@ -7530,12 +7742,12 @@ function dossier(d: SectDossier): string {
       + (d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''))}
 
   ${roll.length
-      ? foldablePart('The roll',
+      ? foldablePart('Who is actually in it',
           `${d.people.active.length} named, from ${series(sources)}`,
           `<div class="grps">${roll.join('')}</div>`)
       : ''}
 
-  ${foldablePart('What they want', 'and what they are wrong about, and what is in the way',
+  ${foldablePart('What it is after, and what it is like', 'what is in the way, what it fears, and what it has wrong',
       (d.ambition
           ? ambitionBlock(d.ambition)
           // Only on a faction that could have one. An apex reaching for
@@ -7669,7 +7881,7 @@ function houseCard(d: SectDossier, view: HouseView): string {
     const want = view.want ? view.want(d) : '';
     return `<details class="ncard" id="${esc(view.entryAnchor(d.id))}">
       <summary>
-        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${d.ordinal}</span><span class="rsep"> &middot; </span></span>
+        <span class="nhead"><span class="nname"><span class="dot ${esc(d.alignment)}"></span>${esc(d.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">rung</span> ${d.ordinal}</span><span class="rsep"> &middot; </span></span>
         ${nfacts(view.facts(d))}
         ${want ? '<span class="rsep"> &middot; </span>' : ''}${want}
         <span class="ngo">open</span>
@@ -7687,15 +7899,24 @@ function resumeFacts(d: SectDossier): string[] {
         d.apex ? nfact('standing', 'apex', 'pin') : '',
         nfact('holds from', d.parentName ?? 'nobody'),
         d.standing === 'strained' || d.standing === 'probationary'
-            ? nfact('terms', d.standing, 'ex')
+            ? nfact('grant terms', d.standing, 'ex')
             : '',
-        d.ceiling ? nfact('ceiling', String(d.ceiling), 'sl') : '',
+        d.ceiling ? nfact('could field', String(d.ceiling), 'sl') : '',
+        // WHAT THE NUMBER IS, NOT WHAT THE FIELD IS CALLED. This read `gate 13`
+        // for a long time and the design owner's verdict was that it should say
+        // what it is. It is the rung a house will admit somebody from, so it
+        // says that. `gate` was the worse of the two available words as well as
+        // the shorter one: the played game uses it 163 times to mean a gate
+        // somebody walks through, so the register was quietly teaching a second
+        // sense of a word the player already knew.
         d.intake === 'closed'
-            ? nfact('gate', 'closed')
+            ? nfact('admits', 'nobody')
             : d.intake === 'adoption'
-                ? nfact('gate', 'adoption only')
-                : nfact('gate', String(d.admissionOrdinal)),
-        d.flags.length ? nfact('flagged', String(d.flags.length), 'ex') : ''
+                ? nfact('admits', 'by adoption only')
+                : nfact('admits from rung', String(d.admissionOrdinal)),
+        d.flags.length
+            ? nfact('worth checking', `${d.flags.length} thing${d.flags.length === 1 ? '' : 's'}`, 'ex')
+            : ''
     ];
 }
 
@@ -7742,7 +7963,7 @@ function treeNode(
         // catalog says has never been settled.
         ? `<details class="ncard" id="${esc(view.entryAnchor(entry.id))}">
         <summary>
-          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${entry.ordinal}</span><span class="rsep"> &middot; </span></span>
+          <span class="nhead"><span class="nname"><span class="dot ${esc(entry.alignment)}"></span>${esc(entry.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">rung</span> ${entry.ordinal}</span><span class="rsep"> &middot; </span></span>
           ${nfacts(view.courtFacts
               ? view.courtFacts(court).concat(view.facts(entry))
               : view.facts(entry))}
@@ -7760,10 +7981,10 @@ function treeNode(
                 // here its own account was unreachable from the other side.
                 ? `<details class="ncard" id="${esc(view.courtAnchor(court.id))}">
         <summary>
-          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${court.ordinal}</span><span class="rsep"> &middot; </span></span>
+          <span class="nhead"><span class="nname">${esc(court.name)}</span><span class="nsep"> &middot; </span><span class="nord"><span class="nfl">rung</span> ${court.ordinal}</span><span class="rsep"> &middot; </span></span>
           ${nfacts([
               nfact('standing', 'court', 'pin'),
-              nfact('offices', String(court.officers.length)),
+              nfact('officers', String(court.officers.length)),
               nfact('posted by', court.apexName)
           ])}
           <span class="ngo">open</span>
@@ -7771,7 +7992,7 @@ function treeNode(
         ${view.courtBody(court, view.courtAnchor(court.id))}
       </details>`
                 : `<div class="ncard ncard--flat">
-        <span class="nhead"><span class="nname">${esc(court ? court.name : node.name)}</span>${node.ordinal ? `<span class="nsep"> &middot; </span><span class="nord"><span class="nfl">ord</span> ${node.ordinal}</span>` : ''}<span class="rsep"> &middot; </span></span>
+        <span class="nhead"><span class="nname">${esc(court ? court.name : node.name)}</span>${node.ordinal ? `<span class="nsep"> &middot; </span><span class="nord"><span class="nfl">rung</span> ${node.ordinal}</span>` : ''}<span class="rsep"> &middot; </span></span>
         ${nfacts([nfact('standing', kind), nfact('entry', 'none of its own')])}
       </div>`;
 
@@ -8196,7 +8417,7 @@ export function renderRegisterHtml(
         courtFacts: court => [
             nfact('court of', court.apexName),
             nfact('as the', court.name.replace(/^The\s+/i, '')),
-            nfact('offices', String(court.officers.length)),
+            nfact('officers', String(court.officers.length)),
             nfact('and', 'a faction in its own right')
         ],
         // Labelled like every other fact, and on its own line. It used to begin
@@ -8443,9 +8664,10 @@ export function renderRegisterHtml(
      a hand on the same thing - and that is what leads this page. -->
 <div class="pane" data-pane="ties" hidden>
 <section>
-  <div class="sh"><h2>How every body stands with every other</h2><span class="r">${tieCount} ties</span></div>
-  <p class="note"><strong>Read a line as: the two bodies, then how the first regards the second, then how the second regards the first.</strong> Those two words are allowed to differ and frequently do - a house can be warm to a patron that is only civil back, or dutiful upward and cold to everything under it - and the difference is the whole reason this page exists, because no org chart shows it.</p>
-  <p class="note"><em>Nobody wrote a date on it</em> means the year is not recorded and the tie is remembered by both houses rather than by a document. <em>The same, from the other side</em> means the second party's account was written independently and says what the first one says - which is not agreement so much as two entries that were never written to answer each other.</p>
+  <div class="sh"><h2>What each house makes of the others</h2><span class="r">${tieCount} ties</span></div>
+  <p class="note"><strong>Open a house, and every line under it is that house's own view outward: the other body, and the one word this house would use about it.</strong> What that other body makes of this one is on its entry and not on this one. Those two words are allowed to differ and frequently do, and reading them one direction at a time is the point - printed as a pair they read as a mutual temperature belonging to neither party, when what the catalog actually holds is two separate statements, each made by somebody.</p>
+  <p class="note"><strong>Standing and warmth are different questions.</strong> <em>Stands</em> is the ladder - over it, level with it, under it - and says nothing about how anybody feels. <em>Contesting</em> is a third fact again: it means the two of them have a hand on the same object, which is true or false regardless of the warmth, and two houses can contest a claim while remaining perfectly civil about it.</p>
+  <p class="note"><em>Nobody wrote a date on it</em> means the year is not recorded and the tie is remembered by both houses rather than by a document.</p>
   ${warmthLegend()}
   ${structure(tiesView)}
 </section>
