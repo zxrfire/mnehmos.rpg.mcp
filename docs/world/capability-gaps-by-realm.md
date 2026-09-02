@@ -577,6 +577,47 @@ favour owed rather than a price, and the register already tracks who holds which
 what grade. **This is why.** At the summit the answers are an ancient art, found in closed
 ground, or an object, which is not for sale.
 
+##### Why they cannot be mobbed, which is the discontinuity at the top
+
+The resistance does not act alone. **A tribulation body also comes with an enormous HP pool**,
+and the two together produce the one place on the ladder where **numbers stop winning.**
+
+Everywhere below it, numbers win, and should:
+
+> Twenty cultivators at a realm's Perfection against one at its Early is a loss for the one,
+> at every realm up to and including Grand Ascension.
+
+**At Tribulation Transcendence that stops being true, against elemental attackers.** Twenty
+Grand Ascension cultivators throwing elements at one early Tribulation Transcendent do not
+reliably kill them: every blow is reduced, and the pool it is chipping at is very large.
+
+And the outcome is specific, and is the practical face of *resistance rather than immunity*:
+
+> **You might not win, but you could get out.**
+
+Not victory. Twenty of them can drive somebody off, deny them the ground, and make the fight
+unwinnable. What they cannot reliably do is **finish** them. That is a better result than either
+"the transcendent wins" or "numbers still win", and it is what the tribulation body is *for*: it
+is the reason a body at that height cannot be mobbed.
+
+**The counter is unchanged and gets sharper here.** Twenty elemental cultivators fail; a far
+smaller number carrying anything non-elemental do not. An ancient art, a weapon, a strike out of
+karma. **So somebody at the summit has more to fear from one well-equipped enemy than from an
+army of ordinary ones** - which is exactly the shape the setting wants at the top, and it now
+falls out of the arithmetic instead of being asserted.
+
+**This is the calibration target.** When the numbers are chosen, they must land that matchup:
+
+| Setup | Required outcome |
+|---|---|
+| 20 Grand Ascension, elemental, vs 1 early Tribulation Transcendence | Survivable, not winnable. They get out |
+| Same, but the numbers make the transcendent win | **Too strong.** Reduction or pool is too high |
+| Same, but twenty reliably kill them | **Too weak** |
+| 2 whole transcendents, elemental, given long enough | Somebody dies. It has to end |
+
+Record the chosen figures here when they are picked. Nobody tuning them later can recover this
+target from the code, and without it they will be tuned against something else.
+
 ##### The imperfect version
 
 Both terms are diminished, and the second one is where the setting's word *weakness* lives. A
@@ -596,6 +637,10 @@ resolution, where the incoming art is already known:
   a non-null `element`: a uniform reduction, plus a further reduction where the incoming element
   matches the defender's own. Elementless arts are unreduced at any rung.
 - **Never** reduce to zero. The fight has to be able to end.
+- **Calibrate against the matchup above**, not against a feel for the number: twenty elemental
+  Grand Ascension against one early Tribulation Transcendence must come out survivable and
+  unwinnable. The HP pool at the realm is the other half of that and has to be read together
+  with the reduction, since either one alone can be made to pass and fail it.
 - **Differ** for `imperfect-tribulation-body`: both terms shrink, and the resistance gains a gap
   rather than staying flat. Deriving which element leaks from something already on the
   cultivator - their root or their road - keeps it deterministic and adds no catalog field.
