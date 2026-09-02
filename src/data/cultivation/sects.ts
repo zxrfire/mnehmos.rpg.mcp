@@ -651,7 +651,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // none of them; `SECT_ADMISSION.probationOrdinal` carries that floor,
         // because `rankRealmBand` derives every band here from this number and
         // moving it to 0 would demote the entire ladder. See AZURE_CLOUD_INTAKE.
-        admissionOrdinal: 0,
+        admissionOrdinal: 3,
         stipend: [4, 12, 35, 110, 380, 1_100],
         teaches: [
             'iron-thread-finger',
@@ -978,7 +978,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         alignment: 'righteous',
         powerOrdinal: 37,
         ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Court Warden'],
-        admissionOrdinal: 0,
+        admissionOrdinal: 1,
         stipend: [3, 10, 30, 95, 300],
         teaches: ['lesser-qi-gathering-manual', 'foundation-tempering-scripture', 'iron-thread-finger', 'hundred-cut-flying-blade'],
         signatureTechniqueId: 'hundred-cut-flying-blade',
