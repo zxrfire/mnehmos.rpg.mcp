@@ -70,6 +70,13 @@ import {
     type GroundForBeasts
 } from '../engine/world/hunting-a-spirit-beast.js';
 import {
+    drawFromTheGround,
+    howTheGroundReads,
+    recordGroundDraw,
+    whatIsLeftOutThere,
+    type StockKind
+} from '../engine/world/what-a-place-still-has-in-the-ground.js';
+import {
     PRICES,
     cashToStones,
     findWorkForOrdinal,
@@ -87,7 +94,7 @@ import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { FOUNDATION_ORDINAL } from '../engine/cultivation/realms.js';
 import { InjurySchema, type Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
-import { round2 } from '../server/consolidated/cultivation-support.js';
+import { round2, writeAdminAudit } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
@@ -164,6 +171,7 @@ import {
 } from '../server/consolidated/sect-politics.js';
 import { handleResolve } from '../server/consolidated/combat-manage.js';
 import {
+    copiesHeldBy,
     handleLearn,
     handleListAvailable,
     handlePractise,
@@ -337,7 +345,7 @@ import {
     resolveExchange
 } from '../engine/cultivation/combat.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
-import { getHerb } from '../data/cultivation/herbs.js';
+import { getHerb, type Herb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
@@ -480,6 +488,15 @@ import {
     type ThingThatTeaches
 } from './ground-that-teaches-a-road.js';
 import { readTheWall } from './what-is-posted-on-the-wall-here.js';
+import {
+    whatIsBeingOfferedHere,
+    readWhatIsOnOfferHere,
+    linesForWhatWillNotMove
+} from './who-here-is-offering-something.js';
+import {
+    WHY_THEY_ARE_SELLING,
+    type AnOfferStandingHere
+} from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { assessAcquisition, sealedDoorFraction, concealmentScale, type AcquisitionRoute } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
@@ -1622,8 +1639,20 @@ const ADMIN_PREFIX = /^admin(?![a-z])[:\s-]*/i;
 /** Mirrors `admin_manage`'s own action list, for the guiding error only. */
 const ADMIN_ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
-    'set_ambient', 'set_location', 'advance_days', 'set_realm', 'audit_log'
+    'set_ambient', 'set_location', 'advance_days', 'set_realm', 'audit_log',
+    // Not an `admin_manage` action. It is handled here because runs are
+    // written here and nowhere else; see `adminReset`.
+    'reset'
 ] as const;
+
+/**
+ * ADMIN's one run-lifecycle verb, spelled the several ways people spell it.
+ *
+ * Separate from `parseAdminCommand` because `admin_manage` arranges the world
+ * and does not own runs - `game.ts` does, and a tool handler reaching in to
+ * end one would be the second writer this file exists to prevent.
+ */
+const ADMIN_RESET = /^(?:reset|restart|regenerate|reroll|new_run|newrun)(?![a-z_])[:\s-]*/i;
 
 export interface ActResult {
     narration: string;
@@ -2723,7 +2752,7 @@ ${noticedWaiting}`;
                 return this.work(cultivator, action.days ?? DEFAULT_WORK_DAYS, action.target);
 
             case 'market':
-                return this.market(cultivator, action.target);
+                return this.market(run, cultivator, action.target);
 
             case 'sect':
                 return this.sect(run, cultivator, ambient, action.target, action.intent, action.topic, action.days);
@@ -2988,6 +3017,50 @@ ${noticedWaiting}`;
 
 ${line}`;
                 }
+                // ── AND WHO IN THE SQUARE IS TRADING ─────────────────────
+                //
+                // The owner's complaint in one sentence: *being somewhere is so
+                // limiting if you know nothing.* A look named three people and
+                // said nothing about the fact that one of them was carrying a
+                // book they would sell, so the whole of the ordinary business
+                // of a settlement was invisible to somebody with no vocabulary.
+                //
+                // Gated on the same signal as the wall above, and for the same
+                // reason: `whatIsBeingOfferedHere` grants the seller's name
+                // through `learnIfNew`, so a seller already known writes
+                // nothing and is dropped here without anything having to
+                // remember that this player has stood here before. Standing in
+                // one market town for a season does not reprint the offer.
+                //
+                // ONE LINE, not the block. A look is a look; the board is where
+                // the asks are read out, and the sentence that gets there is
+                // named rather than left to be guessed.
+                //
+                // NO NAMES, AND NOTHING LEARNED. Seeing somebody is not knowing
+                // them, and a LOOK is not a source a name may arrive through -
+                // `presence.test.ts` guards exactly that, and the first version
+                // of this line broke it by handing over four. What a look can
+                // honestly report is the SHAPE: somebody in this square is
+                // hawking something, and the cheapest of it is going for this
+                // much. Who they are is what walking over to them buys, and the
+                // board is where the name is granted, through the ordinary gate.
+                const trading = readWhatIsOnOfferHere(
+                    cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+                );
+                const cheapest = trading.offers[0];
+                if (cheapest) {
+                    const sellers = new Set(trading.offers.map(o => o.sellerId)).size;
+                    const line =
+                        `${sellers === 1 ? 'Somebody here is' : `${sellers} people here are`} `
+                        + 'carrying something they would rather have the stones for, and not '
+                        + `hiding it. A copy of ${cheapest.name} is going for `
+                        + `${cheapest.askStones}. "what is for sale" is the whole of what is `
+                        + 'being asked here, stalls and people both.';
+                    looking.facts.lines.push(line);
+                    looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                }
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
                 // player, which is exactly why it is worth anything.
@@ -3230,6 +3303,21 @@ ${noticed}`;
         // narrator becomes a briefing, and there is no briefing in this world.
         const facts = factsForInvestigation(cultivator, ambient, subject.name, subject.facts);
         facts.structure.push(...subject.structure);
+
+        // ── WHAT IS STILL IN THE GROUND HERE ─────────────────────────────
+        //
+        // A player has to be able to ask what a place still has and get a real
+        // answer. Without this the stock is a simulation nobody can see: the
+        // yields quietly fall and there is no sentence anywhere saying why, so
+        // a worked-out district is indistinguishable from bad luck.
+        if (subject.kind === 'place' && this.atHand) {
+            const row = worldLocationFor(this.atHand, subject.name);
+            if (row) {
+                const said = howTheGroundReads(row, Math.floor(this.atHand.currentDay));
+                facts.lines.push(said);
+                facts.prose = `${facts.prose}\n\n${said}`;
+            }
+        }
         if (learned) {
             facts.lines.push(
                 `${subject.name} is now a name this cultivator holds, learned by looking at it.`
@@ -8485,15 +8573,77 @@ ${noticed}`;
      * A read. Nothing is bought by looking at a board, no time passes, and a
      * place with no market says so - which is most places, and is the reason
      * getting out of a poor region is the first real goal anybody has.
+     *
+     * ── AND WHO IS SELLING, WHICH IS NOT THE SAME QUESTION ───────────────
+     *
+     * `handleMarket` knows the region and the purse and nothing about the
+     * people, because it is an MCP handler with no world in front of it. So the
+     * board it returns is a price list with no seller attached - millet, a
+     * ferry, an inn, a copyist's stall - and standing in a square full of
+     * cultivators told a player nothing about any of them.
+     *
+     * The design owner's word for what was missing: *random cultivators selling
+     * stuff they found or do not need any more.* That is the block appended
+     * here, and it is composed in this layer because this is the only layer
+     * that holds all three of the world, the knowledge gate and the square.
      */
-    private async market(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+    private async market(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
         const category = MARKET_CATEGORIES.find(c => (target ?? '').toLowerCase().includes(c));
         const result = await handleMarket({
             action: 'market',
             cultivatorId: cultivator.id,
             ...(category ? { category } : {})
         });
-        return this.fromToolResult('cultivation_mortal.market', 'market', result, 'The market');
+        const board = this.fromToolResult(
+            'cultivation_mortal.market', 'market', result, 'The market'
+        );
+        if (board.outcome !== 'executed') return board;
+
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const offered = whatIsBeingOfferedHere(
+            this.knowledge, cultivator, run, this.atHand, this.alreadyHasACopyOf(cultivator)
+        );
+        // ── AND WHEN NOBODY IS SELLING, WHY NOT ──────────────────────────
+        //
+        // `AGENTS.md`: prefer a refusal that names a way out. A square where
+        // everybody is holding their own house's manual is not an empty square,
+        // and "nobody here is trading" would be a true sentence that teaches
+        // nothing. What is actually true - *that one is his own house's, and no
+        // figure you can name moves it; the road to it is the house* - is a
+        // door, and it is the door the whole recruitment half of the game is
+        // about. Only when there is nothing on offer, because a player who can
+        // buy something does not need the lecture.
+        const shownLines = offered.offers.length > 0
+            ? offered.lines
+            : linesForWhatWillNotMove(offered.read);
+        for (const line of shownLines) {
+            board.facts.lines.push(line);
+            board.facts.prose = `${board.facts.prose}
+
+${line}`;
+        }
+        board.facts.structure.push(
+            `${offered.peopleHere} person(s) standing here; ${offered.offers.length} offer(s) `
+            + 'after the cut, priced between what a counter would give the holder and what the '
+            + 'copy is worth. Reading them costs nothing: nothing bought, no time passed.'
+        );
+        if (offered.offers.length > 0) {
+            board.calls.push({
+                name: 'engine.whatThisPersonWouldPartWith',
+                action: 'market',
+                summary: offered.offers
+                    .map(o => `${o.sellerName} -> ${o.name} at ${o.askStones} (list `
+                        + `${o.listStones}, counter ${o.counterStones}, why ${o.why}, `
+                        + `awkward ${o.awkwardToHold})`)
+                    .join('; '),
+                ok: true
+            });
+        }
+        return board;
     }
 
     /**
@@ -8784,7 +8934,18 @@ ${noticed}`;
             ? named
             : rolled;
 
-        const pouched = found && found.harvestOrdinal <= applied.cultivator.realmOrdinal ? found : null;
+        const withinReach = found && found.harvestOrdinal <= applied.cultivator.realmOrdinal
+            ? found
+            : null;
+
+        // ── AND THE GROUND HAS A NUMBER ──────────────────────────────────
+        //
+        // What the catalog offers is a statement about the searcher. What is
+        // still here is a statement about the place, and it goes down.
+        const ground = withinReach
+            ? this.takeFromTheGround(applied.cultivator, 'herb', withinReach.grade, 1)
+            : { taken: 1, line: null };
+        const pouched = withinReach && ground.taken > 0 ? withinReach : null;
         if (pouched) {
             addToPouch(this.db, cultivator.id, pouched.id, 'herb', 1);
         }
@@ -8798,18 +8959,27 @@ ${noticed}`;
                 action: 'gather',
                 summary: pouched
                     ? `One ${pouched.name} (${pouched.grade}) added to the pouch.`
-                    : found
-                        ? `${found.name} grows here but wants ${found.harvestOrdinal} ordinal to take safely. Left where it was.`
-                        : 'The catalog offered nothing within reach at this realm.',
+                    : withinReach
+                        ? `${withinReach.name} (${withinReach.grade}) is what grows here and the `
+                          + 'ground has none of that grade left. Nothing taken.'
+                        : found
+                            ? `${found.name} grows here but wants ${found.harvestOrdinal} ordinal to take safely. Left where it was.`
+                            : 'The catalog offered nothing within reach at this realm.',
                 ok: true
             }
         ];
 
+        const facts = factsForGather(
+            cultivator, applied.cultivator, skip, ambient,
+            pouched ? { name: pouched.name, grade: pouched.grade, value: pouched.value } : null
+        );
+        if (ground.line) {
+            facts.lines.push(ground.line);
+            facts.prose = `${facts.prose}\n\n${ground.line}`;
+        }
+
         return {
-            facts: factsForGather(
-                cultivator, applied.cultivator, skip, ambient,
-                pouched ? { name: pouched.name, grade: pouched.grade, value: pouched.value } : null
-            ),
+            facts,
             events: skip.events,
             timeSkip: skip,
             breakthrough: null,
@@ -8829,7 +8999,7 @@ ${noticed}`;
      * from - `beasts.ts` carries the only supply of heaven-grade and above
      * that the world actually produces.
      *
-     * â”€â”€ WHAT THIS DOES NOT DO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────
      *
      * It does not resolve a fight. `combat_manage.resolve` does, and a beast
      * reaches it as a described opponent - a name and a realm ordinal, the
@@ -8839,7 +9009,7 @@ ${noticed}`;
      * there must not be: a beast fight that did not replay from its seed
      * would break a stated law of this engine.
      *
-     * â”€â”€ THE RUNG DECIDES WHICH SCENE THIS IS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     * ── THE RUNG DECIDES WHICH SCENE THIS IS ─────────────────────────────
      *
      * Anything that speaks stands at `BEAST_CHANGE_ORDINAL` or above and is a
      * party rather than a problem. Setting out to hunt is not setting out to
@@ -8902,6 +9072,21 @@ ${noticed}`;
         ];
         const lines: string[] = [];
 
+        // ── WHAT THE HUNTING HAS DONE TO THIS GROUND ─────────────────────
+        //
+        // Depletion as a cause rather than a chore, and the sentence a player
+        // needs before they understand why the encounters got worse. Hunt a
+        // district out and what has been removed is the bottom of its food
+        // chain; what is left is what was eating it, and it is still here.
+        //
+        // Nothing has changed grade and nothing has crossed the counted line -
+        // a hare is still a hare. What changed is the PLACE.
+        const worked = this.atHand ? worldLocationFor(this.atHand, here) : null;
+        const emptied = worked
+            ? whatIsLeftOutThere(worked, Math.floor(this.atHand!.currentDay))
+            : null;
+        if (emptied) lines.push(emptied);
+
         // What is above them on this ground, said whether or not it was drawn.
         // This is the read that keeps people alive and it is free: walking the
         // ground tells you what has left it.
@@ -8945,7 +9130,7 @@ ${noticed}`;
             ok: true
         });
 
-        // â”€â”€ SOMETHING THAT COULD HAVE ANSWERED YOU â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── SOMETHING THAT COULD HAVE ANSWERED YOU ───────────────────────
         //
         // Not a refusal of the killing - see the header. A refusal to do it on
         // the player's behalf when they did not ask for it by name.
@@ -8981,7 +9166,7 @@ ${noticed}`;
 
         const body = isGuidingErrorBody(result) ? null : result as Record<string, unknown>;
 
-        // â”€â”€ FOR A BEAST, `finished` IS THE DEATH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── FOR A BEAST, `finished` IS THE DEATH ─────────────────────────
         //
         // `opponentDied` is the survival layer's answer and it is only ever
         // written for an opponent with a row in the `cultivators` table. A
@@ -9045,6 +9230,33 @@ ${noticed}`;
         const lines: string[] = [];
 
         for (const { material, shape } of harvest.taken) {
+            // ── WHAT THE DISTRICT STILL HAS ──────────────────────────────
+            //
+            // Both shapes draw the band down, because both came off a body
+            // that was standing on this ground. What differs is what is
+            // STORED - a number against the place for the counted half, a row
+            // with a history for the tracked one - and not whether the world
+            // is one animal poorer for it.
+            const ground = this.takeFromTheGround(
+                cultivator, 'beast_material', material.grade, 1
+            );
+            if (ground.line) lines.push(ground.line);
+            if (ground.taken <= 0) {
+                lines.push(
+                    `The ${material.name} is what this ground used to give up, and it has none `
+                    + 'left to give.'
+                );
+                calls.push({
+                    name: 'engine.drawFromTheGround',
+                    action: 'hunt',
+                    summary:
+                        `${material.id} (${material.grade}) refused: the beast_material band is `
+                        + 'worked out here.',
+                    ok: true
+                });
+                continue;
+            }
+
             if (shape === 'counted') {
                 addToPouch(this.db, cultivator.id, material.id, 'herb', 1);
                 lines.push(
@@ -9107,6 +9319,37 @@ ${noticed}`;
             lines.push('Nothing on it you can take at your realm.');
         }
         return lines;
+    }
+
+    /**
+     * Take counted stock out of the ground under somebody.
+     *
+     * The world's own row is the ceiling and never the floor: the draw upstream
+     * has already decided what a person of this rung would find, and this can
+     * only ever reduce it. When it does, the reason is said out loud - a place
+     * that has been worked out has to say so rather than quietly hand back
+     * less. See `what-a-place-still-has-in-the-ground.ts`.
+     *
+     * With the world off there is no row and nothing binds, which is the same
+     * shape every other world-backed guard here has.
+     */
+    private takeFromTheGround(
+        cultivator: Cultivator,
+        kind: StockKind,
+        grade: Herb['grade'],
+        wanted: number
+    ): { taken: number; line: string | null } {
+        const place = this.atHand ? worldLocationFor(this.atHand, cultivator.location) : null;
+        if (!place || !this.atHand) return { taken: wanted, line: null };
+
+        // The WORLD's clock, never the run's. Worlds outlive runs, so a stock
+        // ticking on `elapsedDays` would grow back to full every time somebody
+        // died and a new life opened.
+        const draw = drawFromTheGround(place, {
+            kind, grade, wanted, onDay: Math.floor(this.atHand.currentDay)
+        });
+        if (recordGroundDraw(place, draw)) this.worldDirty = true;
+        return { taken: draw.taken, line: draw.line };
     }
 
     /** The ground under them, in the facts the beast catalog reads. */
@@ -9209,6 +9452,19 @@ ${noticed}`;
             );
         }
 
+        // ── RESET, BEFORE THE WORLD PARSER SEES IT ────────────────────────
+        //
+        // `admin_manage` has no action for this and should not grow one: it
+        // arranges the world, and starting a life is a run-lifecycle write.
+        const wantsReset = ADMIN_RESET.exec(request.trim());
+        if (wantsReset) {
+            return await this.adminReset(
+                request.trim().slice(wantsReset[0].length).trim(),
+                run,
+                cultivator
+            );
+        }
+
         const parsed = parseAdminCommand(request);
         if (!parsed.action) {
             throw new GameError(
@@ -9230,17 +9486,146 @@ ${noticed}`;
         const text = response.content?.[0]?.text ?? 'The admin surface returned nothing.';
         const after = this.currentRun();
 
+        // ── AND THEN THE WORLD IS LOOKED AT ───────────────────────────────
+        //
+        // ADMIN exists to stand the world in a state ordinary play would take
+        // four hundred years to reach. Arranging it and then saying nothing
+        // left the operator holding a receipt: the encounter existed, and there
+        // was no way to see it exist. So a call that CHANGED something is
+        // followed by a look at what it changed into - phase 3 over the
+        // post-state, the same call `newRun` opens a life with.
+        //
+        // This is NOT the admin output being narrated. The receipt is untouched
+        // and still verbatim; what follows it is the world as it now stands,
+        // and the newly-stood-up person is in it because `company` reads the
+        // world rather than the command. The engine decided, the narrator
+        // describes, and the narrator is not told what to say about it. The
+        // authority rule is exactly as it was.
+        //
+        // It is also the only place the engine -> narrator seam is exercised
+        // against arbitrary state. Ordinary play reaches Core Formation in one
+        // run in a hundred and eighty, so phase 3 has barely run above
+        // Foundation at all; from here it is one line.
+        //
+        // No flag guards it. Which narrator answers is settled at startup and
+        // ADMIN gets whatever the process was started with, so testing the
+        // engine alone is "start it without a model" rather than a mode.
+        //
+        // A read - `roster`, `audit_log`, `help` - changed nothing and gets
+        // nothing, because describing an unchanged room after printing a list
+        // is noise.
+        const told = response.changed
+            ? await this.lookAfterAdmin(after.cultivator, after.run)
+            : null;
+
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: `ADMIN ${request.trim()}` },
-            { role: 'narrator', turn: after.run.turn, text }
+            // The engine's own words, filed AS the engine. This used to go in
+            // as `narrator`, which put a field report in the slot the story is
+            // told from and left the transcript claiming a narrator had said
+            // "Action performed: spawned".
+            { role: 'engine', turn: after.run.turn, text },
+            ...(told ? [{ role: 'narrator' as const, turn: after.run.turn, text: told.text }] : [])
         ]);
 
         return {
-            narration: text,
+            narration: told ? `${text}\n\n${told.text}` : text,
+            events: [],
+            toolCalls: told ? [narrationCall(told)] : [],
+            state: this.stateView(after.run, after.cultivator)
+        };
+    }
+
+    /**
+     * The world as it now stands, told by whatever narrator this process has.
+     *
+     * Deliberately `factsForLook` and not a fact list assembled from the admin
+     * result: what an operator wants to see after arranging something is the
+     * arrangement, from inside, and `look` is the engine's existing answer to
+     * that question. It reads the post-state, so a spawned opponent is present
+     * because they are present rather than because the command mentioned them.
+     */
+    /**
+     * End this run and begin another, from the top.
+     *
+     * "Runs end when the cultivator dies; there is no abandoning one" is a rule
+     * about PLAY, and it is still enforced for players in `newRun`. It is not a
+     * rule about the operator surface: testing a game whose interesting states
+     * are four hundred years apart means starting over constantly, and the only
+     * way to do that was to stop the process and delete the database.
+     *
+     * The dead run is flagged admin FIRST and closed with no death cause,
+     * because it did not die - a reset is not evidence about how cultivators
+     * end, and `writeAdminAudit` is what keeps it out of the ledger. It stays
+     * in `latestFinishedRun`, deliberately: the next life begins in the world
+     * this one left behind, which is what makes reset "start this world over
+     * from a new birth" rather than "throw the world away".
+     *
+     * The name carries over unless one is given, so `ADMIN reset` is the whole
+     * command and `ADMIN reset Shen Yuan` is the whole command with a name.
+     */
+    private async adminReset(name: string, run: Run, cultivator: Cultivator): Promise<ActResult> {
+        const wanted = name.length > 0 ? name : cultivator.name;
+
+        writeAdminAudit(this.repos, 'reset', run.id, {
+            endedCultivator: cultivator.name,
+            atOrdinal: cultivator.realmOrdinal,
+            onTurn: run.turn,
+            rebornAs: wanted
+        });
+        this.repos.runs.endRun(
+            run.id,
+            null,
+            `Reset by the operator on turn ${run.turn}. Not a death.`,
+            'dead'
+        );
+
+        // `newRun` writes the birth, seeds the world around it and narrates the
+        // opening into the NEW run's log. Nothing here re-narrates: a second
+        // call would be a second opening for the same life, and they would not
+        // agree with each other.
+        const created = await this.newRun(wanted);
+        const opened = this.log.list(created.run.id)
+            .filter(entry => entry.role === 'narrator')
+            .pop();
+
+        const receipt = [
+            `reset - ${cultivator.name} closed, ${created.cultivator.name} born`,
+            `Ended: run ${run.id} on turn ${run.turn}, at ordinal ${cultivator.realmOrdinal}. `
+                + 'No death cause was filed, because there was no death. That run is flagged '
+                + 'admin and is not in the ledger.',
+            `Begun: run ${created.run.id}, in the same world.`,
+            'ADMIN - out of world. Everything ABOVE this line is the engine reporting, and '
+                + 'no part of it is a claim about what a character perceives. What follows it is '
+                + 'the new life opening, and that is narration.'
+        ].join('\n\n');
+
+        this.log.append(run.id, [
+            { role: 'player', turn: run.turn, text: `ADMIN reset${name.length > 0 ? ` ${name}` : ''}` },
+            { role: 'engine', turn: run.turn, text: receipt }
+        ]);
+
+        const after = this.currentRun();
+        return {
+            narration: opened ? `${receipt}
+
+${opened.text}` : receipt,
             events: [],
             toolCalls: [],
             state: this.stateView(after.run, after.cultivator)
         };
+    }
+
+    private async lookAfterAdmin(cultivator: Cultivator, run: Run) {
+        const ambient = this.ambientFor(cultivator, run);
+        return await this.narrator.narrate(
+            factsForLook(cultivator, ambient, this.company(cultivator)),
+            {
+                place: placeName(cultivator),
+                ambient,
+                awareness: this.awarenessOf(cultivator)
+            }
+        );
     }
 
     private fromToolResult(
@@ -11109,6 +11494,35 @@ ${noticed}`;
         }
 
         if (query.length < 3) return null;
+
+        // ── BUYING IT OFF THE PERSON HOLDING IT ──────────────────────────
+        //
+        // Ahead of the stall, so somebody standing in front of you asking less
+        // than the counter is who you deal with. A listing nobody can act on is
+        // the defect this repo calls a refusal that names no door, and the
+        // whole point of a market of people is that the price has a person
+        // behind it.
+        //
+        // WHAT MOVES IS A COPY, AND THAT IS WHY IT IS ALLOWED TO. Every offer
+        // reachable this way is `isCommonlyHeld` or awkwardness rung 1, and
+        // `manuals.md` says a common book may be written out by anybody holding
+        // one. Nothing is duplicated that the world is short of: rungs 2 and 3
+        // never appear as an offer at all, so no house's inner shelf leaves
+        // through here at any price.
+        //
+        // AND THE PROVENANCE TRAVELS. `recordACopyHeld` is the same write the
+        // stall makes, and the seller's name goes onto the knowledge row beside
+        // it - so *where did you get that* has an answer two centuries later,
+        // which is half of what `items.md` means by holding being a signature.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const fromAPerson = whatIsBeingOfferedHere(
+            this.knowledge, cultivator, run, this.atHand, this.alreadyHasACopyOf(cultivator)
+        ).offers.find(offer => matchScore(query, offer.name) > MATCH_THRESHOLD);
+        if (fromAPerson) {
+            const bought = await this.buyOffSomebodyStandingHere(run, cultivator, fromAPerson);
+            if (bought) return bought;
+        }
+
         const named = stock.find(book => matchScore(query, book.name) > MATCH_THRESHOLD);
         if (!named) {
             // A real art, and not one anybody sells. The refusal `items.md`
@@ -11182,6 +11596,119 @@ ${noticed}`;
                     `One copy of ${named.name} for ${stones} spirit stone(s), priced through `
                     + `localPrice(${regionId}) - the same call the market board prices with. `
                     + 'The art is NOT learned by this; the book is held.',
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * Whether a copy of this is already on them, one way or another.
+     *
+     * Both ways count. A held copy is the obvious one; an art already PRACTISED
+     * is the one that was nearly missed, and buying a second copy of something
+     * you have known for a century is the sort of sale a market should not
+     * offer and a player should not be charged for.
+     */
+    private alreadyHasACopyOf(cultivator: Cultivator): (thingId: string) => boolean {
+        const held = new Set(copiesHeldBy(this.db, cultivator.id));
+        const known = new Set(cultivator.knownTechniques);
+        return (thingId: string) => held.has(thingId) || known.has(thingId);
+    }
+
+    /**
+     * Buying a copy off the cultivator standing in front of you.
+     *
+     * The other half of the stall, and the half with a person on it. What
+     * separates the two is not the price - it is that this one comes with a
+     * reason attached, and the reason is a fact about the seller the buyer can
+     * act on: somebody who needs stones is a cheaper afternoon than a counter,
+     * and somebody who should not be seen holding a thing is a cheaper
+     * afternoon still and a worse decade.
+     *
+     * ── WHAT IS AND IS NOT DUPLICATED ────────────────────────────────────
+     *
+     * A copy. `manuals.md` is explicit that a common book may be written out
+     * again by anybody who has read it to its end, which is what makes them
+     * plentiful, and every offer that reaches here is either common or the
+     * awkwardness rung `betrayalOfSelling` calls "somebody will want to know
+     * where you got it". Rungs 2 and 3 - a house's own working manual, and the
+     * top of any shelf - are withheld upstream and never appear as an offer, so
+     * nothing scarce is manufactured here.
+     *
+     * ── AND THE SELLER IS ON THE RECORD ──────────────────────────────────
+     *
+     * The knowledge row written when the offer was heard says who this came
+     * off, which is what makes *where did you get that* answerable later. The
+     * art itself is the other half of that record and always was:
+     * `unauthorisedPractice` names the houses who would want a word with
+     * anybody practising something that is not theirs.
+     *
+     * Returns null rather than a refusal when the purse will not cover it, so
+     * the caller falls through to the stall - a player who cannot afford the
+     * person may still be able to afford the counter, and being told "no" by
+     * the first of two sellers is not an answer to the question they asked.
+     */
+    private async buyOffSomebodyStandingHere(
+        run: Run,
+        cultivator: Cultivator,
+        offer: AnOfferStandingHere
+    ): Promise<Execution | null> {
+        if (cultivator.spiritStones < offer.askStones) return null;
+        if (this.alreadyHasACopyOf(cultivator)(offer.thingId)) return null;
+
+        const after = this.db.transaction((): Cultivator => {
+            const updated = this.repos.cultivators.applyDeltas(
+                cultivator.id, { spiritStones: -offer.askStones }
+            );
+            if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
+            recordACopyHeld(this.db, cultivator.id, offer.thingId);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const house = offer.whoWouldWantAWord ? getSect(offer.whoWouldWantAWord) : null;
+        const facts = factsForToolResult(`${offer.name}, off ${offer.sellerName}.`, [
+            `${offer.askStones} spirit stone${offer.askStones === 1 ? '' : 's'} of the `
+            + `${cultivator.spiritStones} you had, and the copy is yours. `
+            + `${after.spiritStones} left.`,
+            WHY_THEY_ARE_SELLING[offer.why],
+            offer.usefulUntil > offer.usableFrom
+                ? `It opens at ${rankName(offer.usableFrom)} and carries as far as `
+                  + `${rankName(offer.usefulUntil)}. Owning it and having read it are different `
+                  + 'facts.'
+                : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it. Owning `
+                  + 'it and having read it are different facts.',
+            ...(offer.awkwardToHold === 1 && house
+                ? [
+                    `The art is the ${house.name}'s, and you are not one of theirs. Practising it `
+                    + 'is a visible thing that people who know it recognise on sight, and it stays '
+                    + 'recognisable for as long as you keep climbing on it. Nothing here stops '
+                    + `you; what changes is that ${house.name} now has a question about you that `
+                    + 'they have not asked yet.'
+                ]
+                : [])
+        ]);
+        facts.structure.push(
+            `${offer.name} bought off ${offer.sellerName} for ${offer.askStones} stone(s): `
+            + `list ${offer.listStones}, what a counter would have given them `
+            + `${offer.counterStones}, reason ${offer.why}, betrayalOfSelling rung `
+            + `${offer.awkwardToHold}. A copy was written out; the seller keeps theirs where the `
+            + 'book is commonly held. The art is NOT learned by this - the book is held.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.whatThisPersonWouldPartWith',
+                action: 'buy',
+                summary:
+                    `${offer.sellerName} -> ${offer.name} at ${offer.askStones} stone(s), between `
+                    + `a counter's ${offer.counterStones} and a list of ${offer.listStones}, `
+                    + `because ${offer.why.replace(/_/g, ' ')}.`,
                 ok: true
             }]
         };
@@ -12367,6 +12894,11 @@ ${noticed}`;
             sellableGoods: listPouch(this.db, cultivator.id).length,
             peopleAboveHere: this.present(cultivator)
                 .filter(row => row.realmOrdinal > cultivator.realmOrdinal).length,
+            // The read half only. `readWhatIsOnOfferHere` writes nothing; the
+            // granting variant is reached by a player who actually looked.
+            peopleHereWithSomethingToSell: new Set(
+                readWhatIsOnOfferHere(cultivator, this.atHand).offers.map(o => o.sellerId)
+            ).size,
             thinGround: ambient === 'thin',
             aboveTheLid: canExistBeyondTheLid(cultivator),
             // The one entry here that is gone next turn whatever happens. See
@@ -14822,15 +15354,24 @@ ${done.lines.join(' ')}`;
         if (took) {
             // ── THE ROW MOVES. IT IS NOT COPIED ──────────────────────────
             //
-            // The first version of this inserted a pouch row and left the
-            // shelf alone, which meant the same house could be traded with
-            // twice and the world gained a second one of the scarcest class of
-            // object it has. That is not untidiness - it is manufacturing,
-            // from nothing, the exact thing this economy is built around not
-            // having. Measured elsewhere the same night: 2373 deaths over six
-            // seeds and forty years, none at the heaven band or above, so the
-            // legitimate supply of top-grade material is empty as arithmetic
-            // and any duplication is the whole supply.
+            // A pouch row inserted while the shelf keeps its own lets the same
+            // house be traded with twice, and the world gains a second one of
+            // the scarcest class of object it has. That is not untidiness - it
+            // is manufacturing, from nothing, the exact thing this economy is
+            // built around not having.
+            //
+            // HOW SCARCE, AND WHERE IT NOW COMES FROM. Cultivator deaths supply
+            // none of it: 2373 deaths over six seeds and forty years, not one at
+            // the heaven band or above. That was once the whole argument and it
+            // is only half of one now - `hunting-a-spirit-beast.ts` made beasts
+            // a live supply, and a played run brought a heaven-grade core worth
+            // about 2900 stones out of one. So the material exists, it is hunted
+            // rather than inherited, and every unit of it was paid for by
+            // somebody going out and killing something.
+            //
+            // Which sharpens this rule rather than relaxing it. A supply that
+            // has to be earned is exactly the supply a duplication bug destroys
+            // the meaning of.
             //
             // `transferPossession` is what the rest of the world already uses -
             // `immortal-world.ts` in four places, `legacy.ts`, and the repair
@@ -15700,7 +16241,7 @@ ${done.lines.join(' ')}`;
      */
     private lotFor(entry: PouchEntry): (SaleLot & { kind: PouchItemKind }) | null {
         if (entry.kind === 'herb') {
-            // â”€â”€ A BEAST MATERIAL IS A REAGENT AND SELLS AS ONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── A BEAST MATERIAL IS A REAGENT AND SELLS AS ONE ───────────
             //
             // Counted beast materials go into the pouch under `herb`, which
             // is the reagent kind - `PouchItemKind` is 'pill' | 'herb' |
