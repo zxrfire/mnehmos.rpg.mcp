@@ -88,7 +88,19 @@
  *   through Fourth Seat, its three lower rungs have never been occupied, and
  *   the Seats are unnamed across the entire catalog on purpose. They are
  *   enumerated with their ordinals in `WITHDRAWN_POWERS` instead, which is
- *   where the register reads them from.
+ *   where the register reads them from. It is not an omission and it is not a
+ *   gap: `hollow-court-roster.ts` holds its people in their own shape, and
+ *   `faction-roll.ts` unions the two so that asking who is in the Court gets an
+ *   answer. A member row here would in fact BREAK that - the catalog test
+ *   requires the Court's count in this file to be undefined.
+ *
+ * - AND AN UNBACKED BODY IS NOT AN UNSTAFFED ONE. The last two rosters written
+ *   were the Halfwater Rail's and the Sink Carriers', which had between them
+ *   nine ranks, two published figures, a rate book with ninety-one years in it,
+ *   a wall of tally boards, and nobody. Both recruit, both take anybody, and a
+ *   player could join either and meet not one person - which is the same defect
+ *   as the closed-gate one above, arriving from the other direction. Governance
+ *   describes what holds a body up. It says nothing about who is standing in it.
  */
 
 import { z } from 'zod';
@@ -2679,6 +2691,189 @@ export const MEMBERS: readonly Member[] = [
         }
     },
 
+    // --- The Halfwater Rail ---------------------------------------------------
+    //
+    // The port had a rate book, a watch, a seam nobody has solved and nobody
+    // standing at the rail. Names follow the Drowned Reach's own custom - a
+    // person at sea is named for where they came aboard and nobody asks past
+    // that - which at a port everybody passes through produces a roll of
+    // landfalls rather than a roll of clans, and says something true: there is
+    // no such thing as a Halfwater family.
+    {
+        id: 'member-dryrun-ping',
+        name: 'Dryrun Ping',
+        factionId: 'sect-halfwater-rail',
+        rankIndex: 0,
+        rank: 'Rail Hand',
+        realmOrdinal: 2,
+        role: 'peer',
+        wants: 'the bell rope on a morning he hears a hull before the watch does',
+        fears: 'the water, entirely and without embarrassment, and has not been off the forty acres in six years',
+        detail: 'Named for the one stretch of the passage nobody comes aboard at, because that is where the hull that fished him out found him, and he gets the story in before anybody can ask for it.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-sui-out-of-bellhead',
+        name: 'Sui out of Bellhead',
+        factionId: 'sect-halfwater-rail',
+        rankIndex: 1,
+        rank: 'Watch',
+        realmOrdinal: 10,
+        role: 'rival',
+        wants: 'the Pavilion\'s buyers off the quay, or paying for the watch that keeps them upright on it',
+        fears: 'the seam, which is the word the port uses to avoid saying it cannot help her above her own rung',
+        detail: 'Checks the Watering Floor\'s papers line by line at the rail, which is legal, slow, and the only thing she has.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: {
+            grievance: 'The Pavilion posts its auction terms on the port\'s own boards and pays nothing toward the watch, and she has decided to make that arithmetic visible one buyer at a time.',
+            beatableBecause: 'She fights the way the watch is trained to fight, which is to stop a thing without ending anybody. The guard art has no finish in it, she has never had to learn one, and anybody who declines to stop when stopped is somebody she has no answer for. The port will not back her past the rail either - it does not police above the watch, and it says so at the gate.'
+        },
+        teaching: null
+    },
+    {
+        id: 'member-farside-wen',
+        name: 'Farside Wen',
+        factionId: 'sect-halfwater-rail',
+        rankIndex: 2,
+        rank: 'Weigher',
+        realmOrdinal: 14,
+        role: 'master',
+        wants: 'the book handed to somebody who will keep it the same way, and has not found them in eleven years',
+        fears: 'the year the rate breaks, and her own name being on the page it breaks under',
+        detail: 'Writes the price into the book in the same minute she says it aloud, standing, in front of whoever is at the rail, and has never gone back to a line.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: {
+            knows: 'The book: ninety-one years of published rates, what each season did to them, and how to price a thing off a hull she has never seen from what four like it fetched.',
+            mayNotSay: 'What any named party paid, ever. Discretion is priced into the margin rather than offered as a courtesy, and a Weigher who says one figure aloud has sold the whole book at once.',
+            costsThem: 'An hour teaching at the rail is an hour the book is being kept by somebody else, and she has kept it herself every tide for eleven years for exactly that reason.'
+        }
+    },
+    {
+        id: 'member-nie-out-of-salt-reach',
+        name: 'Nie out of Salt Reach',
+        factionId: 'sect-halfwater-rail',
+        rankIndex: 3,
+        rank: 'Rail Factor',
+        realmOrdinal: 18,
+        role: 'senior',
+        wants: 'the northern anchorage carried before the Rail Master can put the question a third time',
+        fears: 'being asked at the table, in front of the other three, whose name the salt flats are in',
+        detail: 'Bought two salt flats a day north of the port over four seasons in his own name rather than the port\'s, and has an answer ready for a question nobody has yet put to him.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+
+    // --- The Sink Carriers ----------------------------------------------------
+    //
+    // Marches naming throughout - tool-names and face-numbers, no clan names -
+    // and at the shed the tool is a water skin, so the roll reads like a kit
+    // list. Every one of them is priced by the same four-day figure, which is
+    // the shed's real gate and not the three questions at the door.
+    {
+        id: 'member-stopper-xi',
+        name: 'Stopper Xi',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 0,
+        rank: 'Skin',
+        realmOrdinal: 1,
+        role: 'peer',
+        wants: 'to be counted back in nine times running, which is what the shed calls a season',
+        fears: 'the boards, and reads all nine of them at the door every time he goes out',
+        detail: 'Mends other people\'s skins for nothing and turns the thanks down every time, on the stated grounds that a skin leaking four days out is his problem as well, which nobody has yet talked him out of.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-half-cup-lian',
+        name: 'Half Cup Lian',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 1,
+        rank: 'Carrier',
+        realmOrdinal: 3,
+        role: 'peer',
+        wants: 'a route that ends somewhere with a roof on it, having been promised one four times',
+        fears: 'the sound the sand makes at night nine days out, which he will admit to out there and not at the shed door',
+        detail: 'Named for the ration and has never let it go: prices everything in cups, and once gave a Weir Office clerk his own age in cups and made him work it out.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-short-rope-yi',
+        name: 'Short Rope Yi',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 1,
+        rank: 'Carrier',
+        realmOrdinal: 6,
+        role: 'rival',
+        wants: 'the top name off the fourth board, which means finding who was standing over him',
+        fears: 'being carried in upright through an eastern gate for the posted rate',
+        detail: 'Unregistered at every gate in three provinces, and keeps the rate she is worth written inside her own water tally where only she will read it.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: {
+            grievance: 'The Cult worked the ground behind her string two seasons running, and the second time they were standing over a man she had counted out of the shed door herself.',
+            beatableBecause: 'She cannot leave the sand - nine eastern gates hold a standing rate on her and she knows the figure - so every fight she picks has to be finished inside the water she is carrying, and she carries four days of it. Anybody who declines to be finished can walk her back toward the well and let the arithmetic do it for them.'
+        },
+        teaching: null
+    },
+    {
+        id: 'member-tally-board-mu',
+        name: 'Tally Board Mu',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 2,
+        rank: 'String Head',
+        realmOrdinal: 8,
+        role: 'peer',
+        wants: 'forty-one skins on the next string instead of forty, and has asked four times',
+        fears: 'a show that has shut with her string six days out and the water already spent reaching it',
+        detail: 'Counts her string out by name at the door and back in in the same order, and has never let anybody answer for somebody who is not standing there.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-sounding-wei',
+        name: 'Sounding Wei',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 3,
+        rank: 'Route Elder',
+        realmOrdinal: 11,
+        role: 'master',
+        wants: 'water at the nine-day point, and has four dry soundings and a carver he is still paying',
+        fears: 'that the Waterman is right, and a fixed point on that ground is a debt that outlives the thing it buys',
+        detail: 'Pays a Marches carver out of his own share to sound nine days out, has four holes and no water, and has not told the shed - nor has the other Route Elder paying.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: {
+            knows: 'The route in the only form it exists in: what the sand did last season, where the cover stood, and which points on it a string can still find in a blow.',
+            mayNotSay: 'Where the sounding party has been working, because the Waterman has not been told and telling one carrier is telling the shed by the end of the week.',
+            costsThem: 'Every hour teaching is an hour off the walk, and a Route Elder who is not walking is fifty skins going out under somebody who has not seen this season\'s sand.'
+        }
+    },
+
     // ══════════════════════════════════════════════════════════════════
     // THE STRONGEST MEMBER OF EACH FACTION
     //
@@ -3064,6 +3259,51 @@ export const MEMBERS: readonly Member[] = [
         wants: 'a season without a death on the yard',
         fears: 'the sealed part of the sorting yard, and his brother, who went in on a wager thirty years ago',
         detail: 'Rinses with vinegar on the schedule and spits before speaking, including to his own people, including indoors.',
+        outlier: true,
+        outlierReason: 'last_of_age',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    // The port's number, which `faction-history.ts` has always described as a
+    // person rather than a capability: the watch tops out five rungs under her,
+    // she does not work it, and what the wage buys is somebody a disappointed
+    // buyer cannot quietly make disappear. `arrived` rather than `last_of_age`
+    // because the Rail has no age to be the last of - it inherited nothing, and
+    // its production line is a straight function of its wage bill.
+    {
+        id: 'member-halfwater-yue',
+        name: 'Halfwater Yue',
+        factionId: 'sect-halfwater-rail',
+        rankIndex: 4,
+        rank: 'Rail Master',
+        realmOrdinal: 21,
+        role: 'senior',
+        wants: 'the second anchorage voted down a third time, and to stop being the only argument against it',
+        fears: 'that the port is one clean killing above the watch away from being a place people price rather than a place people trust',
+        detail: 'Bought in at a wage nobody on the quay is told, stands no watch and weighs nothing, and is at the rail at the same hour every tide where anybody who has been robbed can find her.',
+        outlier: true,
+        outlierReason: 'arrived',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    // Two past Core Formation in ninety years and both stayed, which
+    // `faction-character.ts` calls the only endorsement the shed has. She is the
+    // second of the two, so `last_of_age` is literal: the age was the seasons
+    // the cover shut the routes early and gave carriers hours they otherwise
+    // spend walking, and the other name from it is on the fourth board.
+    {
+        id: 'member-nine-boards-qiu',
+        name: 'Nine Boards Qiu',
+        factionId: 'sect-sink-carriers',
+        rankIndex: 4,
+        rank: 'Waterman',
+        realmOrdinal: 19,
+        role: 'senior',
+        wants: 'the loss figure up at the door every season in the same hand, whatever the figure is',
+        fears: 'a second well, which is a fixed point, which is a thing the cover reaches in a decade and a debt that outlives it',
+        detail: 'The second the shed has made past Core Formation in ninety years, and the first is the top name on the fourth board. Had the shed rebuilt around the boards rather than the boards moved.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
