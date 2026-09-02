@@ -483,6 +483,10 @@ import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
+    catalogPersonBehind,
+    theOneIdAPersonIsKnownBy
+} from '../engine/world/a-catalog-person-and-their-world-row.js';
+import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 // The owner's two axes: severity of the wound, realm of the wounded.
@@ -12581,7 +12585,10 @@ ${unnamed}`;
             ordinal: party.party.realmOrdinal,
             factionId: party.party.factionId,
             holds,
-            memberId: party.id.startsWith('npc-') ? party.id.slice(4) : null
+            // The catalog person this world row stands for, when it stands for
+            // one. Asked of the catalog rather than of the prefix: `npc-95` is
+            // a procedural NPC and stripping it invents a person called `95`.
+            memberId: catalogPersonBehind(party.id)
         };
         const asking: TheOneAsking = {
             name: cultivator.name,
@@ -12885,8 +12892,7 @@ ${done.lines.join(' ')}`;
         // register and by nothing in `src/engine/` or `src/web/` - AGENTS.md
         // lists it first among the modules nothing calls. This is the route a
         // player takes to it.
-        const memberId = personId.startsWith('npc-') ? personId.slice(4) : personId;
-        for (const carried of transmissionsBy(memberId)) {
+        for (const carried of transmissionsBy(theOneIdAPersonIsKnownBy(personId))) {
             for (const id of carried.techniqueIds) held.add(id);
         }
         return [...held];
