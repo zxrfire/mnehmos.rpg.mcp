@@ -116,6 +116,16 @@ export interface StatusCandidate {
     factKind: HistoricalEventKind;
     statement: string;
     cause: StatusCause;
+    /**
+     * What anybody standing here observes, understanding nothing.
+     *
+     * WHOLE SENTENCES, capitalised and stopped. `readStatusAtStage` pushes
+     * each sign as its own line and a caller joining them with a space gets a
+     * paragraph with no punctuation in it - which is what a played
+     * `investigate` produced: "It has been like this for 1455 days. the
+     * caravans have stopped and the road east is not being used there are more
+     * people sleeping outside the walls than there were".
+     */
     signs: readonly string[];
     causeKnownLocally: boolean;
     stops: readonly string[];
@@ -235,10 +245,10 @@ export function districtsTheirHolderHasShut(
                 factId: null
             },
             signs: [
-                'there are people on the paths who are not from here, and they are turning '
-                + 'other people around',
-                'the stalls that used to buy raw material are buying it from further away, '
-                + 'and paying for the distance'
+                'There are people on the paths who are not from here, and they are turning '
+                + 'other people around.',
+                'The stalls that used to buy raw material are buying it from further away, '
+                + 'and paying for the distance.'
             ],
             // A house that closes ground says so out loud. That is the point of
             // closing it, and it is why this is the one opener whose cause is
@@ -300,12 +310,12 @@ export function tidesWhereTheGameWent(
                 factId: null
             },
             signs: [
-                'the ordinary animals went first and went far, which is the tell every gatherer '
-                + 'knows and no house records',
-                'herds that do not share ground have been seen sharing it, moving one way, '
-                + 'unbothered by people',
-                'two culling contracts in adjacent districts were filled in a week and then '
-                + 'could not be filled at all'
+                'The ordinary animals went first and went far, which is the tell every gatherer '
+                + 'knows and no house records.',
+                'Herds that do not share ground have been seen sharing it, moving one way, '
+                + 'unbothered by people.',
+                'Two culling contracts in adjacent districts were filled in a week and then '
+                + 'could not be filled at all.'
             ],
             causeKnownLocally: false,
             stops: [],
@@ -359,10 +369,10 @@ export function groundUnderAWar(ground: readonly GroundAsItStands[]): StatusCand
                 factId: null
             },
             signs: [
-                'the caravans have stopped and the road east is not being used',
-                'there are more people sleeping outside the walls than there were',
-                'everybody who can fight has been recalled, and everybody who can heal is being '
-                + 'paid too much'
+                'The caravans have stopped and the road east is not being used.',
+                'There are more people sleeping outside the walls than there were.',
+                'Everybody who can fight has been recalled, and everybody who can heal is being '
+                + 'paid too much.'
             ],
             causeKnownLocally: true,
             stops: [STOPS_PASSAGE],
@@ -428,10 +438,10 @@ export function harvestsThatFailed(
                 factId: null
             },
             signs: [
-                'the stalls that sell cooked food have shut, and the ones that have not are '
-                + 'selling something else',
-                'there are more people on the road than there is reason for, all going one way',
-                'the granaries are being guarded by people who did not use to guard them'
+                'The stalls that sell cooked food have shut, and the ones that have not are '
+                + 'selling something else.',
+                'There are more people on the road than there is reason for, all going one way.',
+                'The granaries are being guarded by people who did not use to guard them.'
             ],
             // Everybody local knows the harvest failed. Standing in a famine is
             // not a mystery; what is going to be done about it is.
