@@ -41,9 +41,18 @@ const ROOTS = ['src', 'tests', 'web', 'docs'];
 /** Individual files at the repository root that are part of the corpus. */
 const ROOT_FILES = ['context.md', 'AGENTS.md', 'README.md'];
 
-/** Never descended into. */
+/**
+ * Never descended into.
+ *
+ * `tier` holds the sentence models the no-model rungs run on, and a model
+ * carries a WordPiece vocabulary: thirty thousand English word pieces, which
+ * is a list of the language rather than a passage anybody wrote. It contains
+ * every retired word and both dashes because English does, and rewriting it
+ * would break the tokenizer. See `models/README.md`.
+ */
 const SKIP_DIRS = new Set([
-    'node_modules', 'dist', 'dist-bundle', '.git', 'coverage', '.vitest', 'build'
+    'node_modules', 'dist', 'dist-bundle', '.git', 'coverage', '.vitest', 'build',
+    'tier'
 ]);
 
 /** Text formats worth reading. Anything else is skipped as binary or noise. */
