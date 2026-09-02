@@ -595,6 +595,25 @@ function timeSkipProse(
             + 'and nothing closes them on its own. A month under a physician does, in any '
             + 'settlement; a healing pill does it faster.'
         );
+        // Past the threshold the sentence above stops being a warning and
+        // becomes a countdown, and until now it read exactly the same at nine
+        // wounds as at one. A playtested run went 1 to 3 to 9 across three
+        // stretches, gained no ranks in any of them, and died of qi deviation
+        // at Qi Condensation Layer 3 - having been told the identical sentence
+        // each time. The engine already knows this threshold and already says
+        // it on two other surfaces; it was silent on the one the player is
+        // actually reading.
+        //
+        // This changes nothing about the odds. It is the same trap, and it is
+        // still lethal to somebody who keeps sitting down. What it stops being
+        // is a cliff with no edge marked on it.
+        if (untreated >= CRIPPLING_UNTREATED_INJURIES) {
+            closing.push(
+                `That is past ${CRIPPLING_UNTREATED_INJURIES}, so the body has stopped mending `
+                + 'itself: what is open stays open, and every stretch from here adds to it '
+                + 'rather than working it off.'
+            );
+        }
     }
     // HP that came back, said out loud. Rest is a real answer to being hurt -
     // the design owner's ruling, after a cultivator with zero injuries and
