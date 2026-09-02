@@ -189,7 +189,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1344`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2
-  …and 5 more files.
+  …and 6 more files.
 
 **Constants most about it:** `HELD_INSTRUMENTS`, `SEALED_FIGURE_NAMES`
 
