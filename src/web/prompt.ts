@@ -24,6 +24,22 @@
  * setting detail that only the web deployment needs, the phase-1 classifier
  * contract, and the composers.
  *
+ * ── Where the shape of the interaction lives ─────────────────────────────
+ * The same rule, applied to the other half of what a narrator has to know.
+ * `what-each-verb-is-for-in-the-players-words.ts` is the one account of what a
+ * player may be pointed at, and both the phase-1 glossary here and
+ * `docs/verbs.md` are composed from it, so neither is a second wording of the
+ * verb list. A narrator that does not know the verb list invents affordances -
+ * it offers the player a wall to climb when there is no climb verb - and the
+ * closed enum is the only honest answer to what somebody can actually do.
+ *
+ * The direction is reversed from Tier 1 above and deliberately: that file is
+ * prose a person wrote, so the file is the source and this module loads it;
+ * the verb surface is a projection of an enum, so the TypeScript is the source
+ * and the document is the projection. It also keeps the classifier off a disk
+ * read - see NARRATOR_CORE_PATH on why `docs/` reaching the runtime is not
+ * something this deployment can promise.
+ *
  * The discovery rule below is the one addition that is Tier 1 in force. It is
  * as load-bearing as "never soften an engine outcome", and unlike the others it
  * is enforced upstream as well: see knowledge.ts. Telling a model not to name
@@ -43,7 +59,11 @@ import {
 } from '../engine/cultivation/realms.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
-import { ACTION_NAMES, MAX_CULTIVATION_DAYS } from './actions.js';
+import { ACTION_NAMES } from './actions.js';
+import {
+    composeActionGlossary,
+    composePlanSchemaFields
+} from './what-each-verb-is-for-in-the-players-words.js';
 import { describeAmbientPerceived, placeName, type EngineFacts } from './facts.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing, SpeakableName } from './hearsay.js';
@@ -347,138 +367,21 @@ invent an omen to fill the space.`;
 // PHASE 1 - INTENT CLASSIFICATION
 // ─────────────────────────────────────────────────────────────────────────
 
-const ACTION_GLOSSARY = `interact         anything done to or with a PERSON or a FACTION. "target" names them; "intent"
-                 says what was being attempted - negotiate, trade, deceive, interrogate,
-                 threaten, bribe, recruit, apologise, talk, or any other short label
-                 that fits. Use this rather than asking for a verb that is not on this list.
-                 NOT for a request made OF an institution - see petition, posture, seal and
-                 offer below. This action walks the player over and describes the party, and
-                 answering "I file a Requisition" or "I offer an alliance" with that is worse
-                 than answering nothing, because it looks like an answer.
-request          ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and
-                 must not be routed there. "target" is who it is put to; "intent" is what kind
-                 of thing is being asked for - teaching (be taught an art, or handed its book),
-                 discipleship (be taken on), introduction (be put in front of somebody), telling
-                 (be told something they know), nothing (ask for NOTHING - buy them a drink, sit
-                 with them, call on them, do them a small favour; costs a day and no stones, and
-                 it is the only thing that makes a stranger somebody who will do you a favour
-                 later); "topic" is what was named - the art, the person.
-                 This is the ONLY route to being taught by a person, which the engine says
-                 repeatedly is one of the two ways past a manual's ceiling. It spends days and
-                 can spend the purse, so choose it only when the player is actually asking
-                 somebody for something rather than asking about them.
-investigate      examine a place, a person, a record, an inscription, an object; search a ruin.
-                 "target" names what is being examined.
-move             go somewhere. "target" is the destination; "intent" is how - travel, flee,
-                 approach, enter, follow.
-cultivate        sit and gather qi. "days" (1-${MAX_CULTIVATION_DAYS}); "ten years" is 3650, default 30.
-seclude          deliberate closed-door seclusion: safe from encounters, and from every
-                 opportunity that would have found you. "days", default 365.
-breakthrough     attempt to advance one rank right now.
-train_technique  practise a specific art the cultivator already knows. "target" names it.
-refine           work the cauldron. "target" names the formula or the pill wanted.
-gather           forage for herbs and materials. "target" may name what is wanted.
-eat              buy and eat a meal.
-treat            get a wound seen to. Untreated meridian injuries never heal on their own,
-                 they raise the odds of the next one, and this is the only route out of
-                 that. Choose it whenever the player says they are hurt and wants it dealt
-                 with, whether or not they name a physician. Costs stones and a month.
-buy              buy one line off the mortal price board by name. "target" is the thing:
-                 a pill, a physician's visit, a course of care, a ferry crossing. Use this
-                 rather than "interact" for anything with a price on it - a purchase is
-                 not an approach to a person.
-sell             put something on the counter. "target" names one thing in the pouch; omit
-                 it (or say "everything") to price the whole pouch at once. This is the
-                 ONLY way a gathered herb becomes spirit stones, so it is the right answer
-                 whenever the player wants money and is carrying something. A buyer pays
-                 less than list, and how much less depends on the ladder. Passes no time.
-work             take an occupation for a span, for wages. "days" (default 90); "target" may
-                 name the kind of work. This is how somebody with no stones eats, and it is
-                 the right answer far more often than a model expects.
-market           what is for sale where they are standing, and at what price. Passes no time.
-inventory        what is in the pouch: pills, herbs, stones, accumulated pill toxicity.
-                 Passes no time.
-list_techniques  the arts this cultivator could actually be taught, filtered by realm,
-                 spirit root, dao standing and what has surfaced in this life at all.
-                 Passes no time. Use it for "what can I learn".
-learn_technique  take up an art for the first time. "target" names it. NOT the same as
-                 train_technique, which practises one already held. An art that fights the
-                 spirit root is learnable and can tear meridians on the spot, so choose
-                 this only when the player plainly asked to learn something.
-assess           what would happen if they tried something: the odds, not the attempt.
-                 "target" names the place or the opponent.
-site             an inheritance ground: a trial somebody built to be inherited from, or a
-                 grave that was arranged for nobody. "target" names it; "intent" is one of
-                 approach (get to it, or ask what there is), outside (read it from the
-                 threshold without going in), enter (go in - this SPENDS DAYS and can kill),
-                 take (carry out what is behind the door). Choose "outside" when the player
-                 is looking rather than going, and "enter" only when they plainly said so.
-ceiling          why nothing is accumulating, with the binding gate named: the manual, the
-                 province, the seat, the qi, or the settling clock. Passes no time. This is
-                 the right answer to "why am I not making progress", "am I stuck", "what is
-                 my ceiling" and "what is stopping me" - NOT status, which is the sheet, and
-                 NOT assess, which is somebody else's opinion of them.
-teacher          who stands above this cultivator and would teach, with what each one will
-                 not say. Passes no time. Names only people they already hold a record for;
-                 "nobody you know of" is a real answer. Use it for "who can teach me", "I
-                 look for a master" and "is there anyone here stronger than me" - NOT status
-                 and NOT look, both of which answer a different question entirely.
-destinations     where they could go, with what the journey costs, what the qi is like there
-                 and how far that province carries anybody. Passes no time. Use it for "where
-                 can I go", "what is nearby" and "where is there better spiritual energy".
-                 Distinct from recall, which reads their own head; distinct from move, which
-                 goes somewhere they have already named.
-wait             let a day go by doing nothing in particular.
-look             observe the surroundings. Passes no time.
-status           report the cultivator's own condition. Passes no time.
-recall           what this cultivator is carrying in their own head. "target" names a person,
-                 a faction or a subject they may have heard of; omit it for everything they
-                 hold. "intent" is "dao" for what they have comprehended, "knowledge"
-                 otherwise. Passes no time, and it CANNOT teach them anything - it reads
-                 their own records and never the world, so a name they have not been told
-                 comes back as nothing. Use it for "what do I know of X".
-news             what the people standing HERE say is happening somewhere else. No target
-                 and no intent. Passes no time. Use it for "what news is there", "what is
-                 happening in the world", "I listen for rumours", "what is the word" and
-                 "what have you heard". The opposite verb to recall: that one reads their
-                 own head, this one asks other people, and what comes back may be wrong.
-                 NOT for "what do people say about this place", which is the ground's own
-                 history and belongs to look.
-petition         ask an INSTITUTION for something: a grant, an object off its standing stock,
-                 recognition of a line. "target" names the body; "topic" is what is being
-                 asked for, in the player's own words, and is carried verbatim onto the form.
-                 "intent" is "stock" for an application against something a body is holding
-                 and cannot reorder (a Requisition, a schedule amendment, a request for one
-                 of its pills), "descent" for a claim of an ancestral line, "grant" for
-                 everything else that goes upward. Nearly always refused, and the refusal is
-                 the answer - it comes back in the instrument's own terms. Passes no time.
-posture          what one HOUSE is to another. Only the head of a house can do three of
-                 these, and the refusal for everybody else names the rung it opens at.
-                 "target" names the other party; "intent" is "war", "alliance", "defect"
-                 (change who the house holds from), "tribute" (call in a payment), or
-                 "stance" to READ where the two already stand. Default to "stance" unless the
-                 player plainly declared something - the other four cannot be unsaid.
-seal             the sealed ancestor a house keeps under its mountain. "target" names the
-                 house, or omit it for the player's own. "intent" is "read" for the condition
-                 and the cost, "wake" to actually do it. Waking your own house's is the
-                 head's decision and changes the house permanently, once; waking somebody
-                 else's is not a decision at all, it is a theft. Default to "read".
-offer            the channel through the Lid, from whichever end the player is standing at.
-                 Below it: an offering sent up to an ancestor who crossed - "target" names
-                 the house, or omit it for the player's own, and "intent" is "channel" to
-                 read what the line is or "offering" to make one, which costs a decade of the
-                 house's principal and is the head's decision. Above it: "send", which puts
-                 an object or a word DOWN a line somebody below is holding, with "topic" as
-                 what is said with it. Which end they are at is decided by the engine, not by
-                 the label. Default to "channel".
-descend          a True Immortal going back down through the Lid, in person. "target" names
-                 where they are forcing it open. This is the most expensive action in the
-                 game: nine strikes of the heaviest tribulation there is, then ten to fifteen
-                 breaths on the ground, then the pressure puts them back. Choose it only when
-                 the player has plainly said they are going themselves - "send" is the other
-                 answer to the same intention and costs nothing.
-unclear          DO NOT CHOOSE THIS. It is the deterministic parser's fallback for a sentence
-                 it could not read. If you are unsure, choose "look" or "investigate".`;
+/**
+ * The verb list the classifier is choosing from, laid out for a prompt.
+ *
+ * Composed from `WHAT_EACH_VERB_IS_FOR`, which is a `Record<ActionName, …>`,
+ * so this glossary describes every member of the closed set and cannot fall
+ * behind it: a verb added to `ACTION_NAMES` fails to compile until somebody has
+ * written down what a player is asking for when they say it.
+ *
+ * It used to be a hand-maintained string, and the drift the header of this
+ * module warns about had already happened - twelve verbs were in the enum and
+ * absent from the glossary, so the model was choosing from a list of names it
+ * had been given only part of the meaning of. `docs/verbs.md` is the long form
+ * of the same source, for people rather than for a prompt.
+ */
+const ACTION_GLOSSARY = composeActionGlossary();
 
 /**
  * Phase 1 system prompt.
@@ -497,11 +400,7 @@ outside the object.
 
 Schema:
   {"action": <one of: ${ACTION_NAMES.join(' | ')}>,
-   "days":   <integer, only for cultivate | seclude>,
-   "target": <short string naming a real person, faction, place, art, formula or herb>,
-   "intent": <short label, only for interact | move | sect | look | site | recall |
-              petition | posture | seal | offer | request>,
-   "topic":  <short string, only for interact | sect | petition | request>,
+${composePlanSchemaFields()}
    "reason": <one short sentence>}
 
 Actions:

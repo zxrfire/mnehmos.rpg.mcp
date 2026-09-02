@@ -89,6 +89,12 @@ prose is a cost, and it is only worth paying where silence would be a lie by omi
 `ACTION_NAMES` in `actions.ts` is the complete set of actions the engine can execute. Two
 properties make it the authority boundary rather than a suggestion.
 
+**The enumerated form of it is [`docs/verbs.md`](../../docs/verbs.md)** - every verb, what a
+player is asking for when they say it, what it takes, its intents, and where it resolves -
+generated from `what-each-verb-is-for-in-the-players-words.ts`, which is also what the
+phase-1 glossary is composed from. This section is the argument for the shape; that document
+is the shape. Neither restates the other.
+
 **1. The enum is closed.** `action` is a Zod enum over `ACTION_NAMES`. A model that
 answers `"ascend"`, `"gain_spirit_stones"` or `"set_realm"` fails validation, and a failed
 validation is not an error path the player notices: it falls back to the keyword parser
