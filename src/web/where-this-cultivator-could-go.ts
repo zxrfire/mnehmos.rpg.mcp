@@ -554,19 +554,62 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
             : `${input.regionName} carries nobody past ${rankName(input.localCeilingOrdinal)}.`)
     );
 
+    // The crowding clause, said once where it is the same everywhere.
+    //
+    // Same reasoning the ceiling gets below and `travelDays` got above: a
+    // clause repeated on every row is not information, it is a wall. Six
+    // settlements each ending "It comfortably carries a draw of 7, and nobody
+    // speaks of it as crowded" reads as one sentence stuttered six times, and
+    // the reader learns to skip the tail of every line - including the two
+    // lines where the tail is the whole point.
+    //
+    // So the commonest verdict is stated once and dropped from the rows that
+    // share it. A place that is over its draw, or that nobody draws on at all,
+    // still says so on its own line, which is now the only place such a clause
+    // appears and therefore reads as the exception it is.
+    const tally = new Map<string, number>();
+    for (const place of sorted) {
+        const said = crowd(place);
+        if (said) tally.set(said, (tally.get(said) ?? 0) + 1);
+    }
+    let shared = '';
+    for (const [said, count] of tally) {
+        if (count >= 3 && count > (tally.get(shared) ?? 0)) shared = said;
+    }
+    if (shared) {
+        const example = sorted.find(place => crowd(place) === shared);
+        lines.push(
+            example && example.supportedDraw !== null
+                ? `Unless said otherwise below, each of these comfortably carries a draw of `
+                  + `${example.supportedDraw} and none is spoken of as crowded.`
+                : `Unless said otherwise below, none of these is spoken of as crowded.`
+        );
+    }
+
     for (const place of sorted) {
         // The ceiling is only worth saying where it DIFFERS from the one just
         // stated. Repeating it against five settlements in the player's own
         // province is noise that buries the two lines that are not.
+        //
+        // And a province with no ceiling must not be described as if it had
+        // one, here as well as in the line above. "Carries nobody past True
+        // Immortal" is true, absurd and exactly backwards - it is the one
+        // province in the world that stops nobody, which is the most important
+        // thing about it. The header already said so and the rows did not, so
+        // standing in a capped province and looking at an uncapped one printed
+        // the absurd sentence on every row.
         const ceiling = place.localCeilingOrdinal === input.localCeilingOrdinal
             ? ''
-            : ` Carries nobody past ${rankName(place.localCeilingOrdinal)}.`;
+            : place.localCeilingOrdinal >= MAX_ORDINAL
+                ? ' No ceiling: it carries anybody as far as they can go.'
+                : ` Carries nobody past ${rankName(place.localCeilingOrdinal)}.`;
+        const said = crowd(place);
         lines.push(
             `${place.name}${place.hereNow ? ' (where you are)' : ''}: ${kindLabel(place.kind)}`
             + `${place.sameProvince ? '' : `, ${place.regionName}`}, `
             + `${distance(place)}.`
             + `${place.ambient ? ` ${QI[place.ambient]}.` : ''}`
-            + crowd(place)
+            + (said === shared ? '' : said)
             + ceiling
         );
         structure.push(mechanicalRow(place, input.localCeilingOrdinal));
