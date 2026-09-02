@@ -242,8 +242,31 @@ export class DeterministicNarrator implements Narrator {
         return { action: parseIntent(input), source: 'fallback', note: this.note };
     }
 
+    /**
+     * The engine's own account, plus anything a caller marked required.
+     *
+     * `prose` is composed once, from the lines `facts.ts` was given. Callers
+     * that learn something AFTERWARDS - the ceiling before a decade, what the
+     * cave mouth charged for rations, an event that ended the stretch - push it
+     * onto `lines` and onto `required`, and `lines` is a licence rather than a
+     * script. So on this path those sentences reached nobody at all: the same
+     * omission `required` was written to stop, one door over.
+     *
+     * Measured, and it killed runs. A purse went 24 -> 6 -> 0 across two
+     * seclusions with no mention of a purchase either time, and a serious qi
+     * deviation that halted a stretch was never narrated.
+     *
+     * `withRequiredLines` only appends what is genuinely absent, so where the
+     * composed prose already carries the fact this costs nothing - and the two
+     * front doors now mean the same thing by `required`, which the package
+     * README has claimed for some time.
+     */
     async narrate(facts: EngineFacts): Promise<Narration> {
-        return { text: facts.prose, source: 'fallback', note: this.note };
+        return {
+            text: withRequiredLines(facts.prose, facts.required),
+            source: 'fallback',
+            note: this.note
+        };
     }
 }
 

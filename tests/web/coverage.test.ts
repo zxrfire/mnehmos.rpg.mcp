@@ -192,6 +192,23 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'what have I heard of the Ninth Stone',
         'what do I know'
     ],
+    /**
+     * Asking the square, which four separate phrasings reached by deflecting
+     * into the `recall` listing - a confident, well-composed inventory of what
+     * the player already held, in answer to a question about the world.
+     *
+     * Every one of these was measured against a live server. The one they must
+     * not take with them is "what do people say about this place", which is the
+     * ground's own history and belongs to `look` - see `ABOUT_THE_GROUND_HERE`.
+     */
+    news: [
+        'what news is there',
+        'I listen for rumours',
+        'what are people saying',
+        'what is happening in the world',
+        'I ask around for gossip',
+        'what is the word'
+    ],
     site: [
         'I go to the eighth stone',
         'I look for the audit bench',

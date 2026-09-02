@@ -425,6 +425,13 @@ recall           what this cultivator is carrying in their own head. "target" na
                  otherwise. Passes no time, and it CANNOT teach them anything - it reads
                  their own records and never the world, so a name they have not been told
                  comes back as nothing. Use it for "what do I know of X".
+news             what the people standing HERE say is happening somewhere else. No target
+                 and no intent. Passes no time. Use it for "what news is there", "what is
+                 happening in the world", "I listen for rumours", "what is the word" and
+                 "what have you heard". The opposite verb to recall: that one reads their
+                 own head, this one asks other people, and what comes back may be wrong.
+                 NOT for "what do people say about this place", which is the ground's own
+                 history and belongs to look.
 petition         ask an INSTITUTION for something: a grant, an object off its standing stock,
                  recognition of a line. "target" names the body; "topic" is what is being
                  asked for, in the player's own words, and is carried verbatim onto the form.

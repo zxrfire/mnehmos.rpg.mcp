@@ -79,30 +79,51 @@ describe('somewhere quiet to sit', () => {
 });
 
 describe('the ground under the cultivator, on the wire', () => {
-    it('reports who is drawing on it and what it carries', async () => {
+    /**
+     * ── Re-derived under the perception ruling, not weakened ─────────────
+     *
+     * This assertion used to read `supported > 0` and `share > 0` on a fresh
+     * run, and it was right when it was written: the lever was invisible and
+     * putting the figures on the sheet was the fix. The design owner has since
+     * ruled that reading a vein is a skill that arrives with the ladder - "you
+     * can't tell at qi condensation, you can just say the qi feels light or
+     * heavy" - so at ordinal 0 those two fields are deliberately null and the
+     * sheet falls back to a headcount and a feeling.
+     *
+     * What the original test was defending has NOT moved and is asserted below:
+     * the sheet still carries occupancy, and it still says something a player
+     * can act on. The figures themselves are covered at every band in
+     * `what-you-can-tell-about-the-ground.test.ts`.
+     */
+    it('reports who is drawing on it, at the resolution the reader has', async () => {
         const { game } = makeGame({ worldEnabled: true });
         await game.newRun('Wei Zhaoxun');
         await game.act('I look around');
 
         const ground = game.state().derived.ground;
         expect(ground, 'the sheet carries no occupancy at all').not.toBeNull();
-        expect(ground!.supported).toBeGreaterThan(0);
+        // Counting the people in a square is not a skill, so this survives at
+        // every height and is what the sheet shows instead of a percentage.
         expect(ground!.heads).toBeGreaterThanOrEqual(1);
-        // The share IS `crowdingMultiplier`, which is what multiplies the rate.
-        // Any second opinion about it here would be the defect this read exists
-        // to prevent.
-        expect(ground!.share).toBeGreaterThan(0);
-        expect(ground!.share).toBeLessThanOrEqual(1);
-        expect(ground!.line).toContain(ground!.placeName);
+        expect(ground!.line.length).toBeGreaterThan(0);
+
+        // A first-year disciple is not handed a surveyor's figures.
+        expect(ground!.supported).toBeNull();
+        expect(ground!.share).toBeNull();
+        expect(ground!.line).not.toMatch(/\d/);
     }, 60_000);
 
-    it('answers the question off the same numbers', async () => {
+    it('answers the question with something the reader could actually tell', async () => {
         const { game } = makeGame({ worldEnabled: true });
         await game.newRun('Wei Zhaoxun');
         const asked = await game.act('how crowded is it here');
 
         expect(planned(asked).action).toBe('look');
-        expect(asked.narration).toContain('comfortably carries');
+        // The low end has to stay ACTIONABLE, which is the constraint that
+        // makes the gate a design and not a nerf: no arithmetic, and still a
+        // statement about this ground that can be compared against another.
+        expect(asked.narration).toContain('What gets to you here');
+        expect(asked.narration).not.toContain('comfortably carries');
     }, 60_000);
 
     /**
