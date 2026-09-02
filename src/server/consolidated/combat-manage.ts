@@ -302,6 +302,31 @@ function combatantFromCultivator(
     techniqueId?: string
 ): CombatantInput {
     const known = techniqueId ? repos.techniques.getKnown(cultivator.id, techniqueId) : null;
+
+    // ── WHAT THE ART IS ABOUT, WHICH THE STORED ROW DOES NOT CARRY ───────
+    //
+    // `techniques` has no `subject` column and `rowToTechnique` does not read
+    // one, so an art loaded out of the database comes back with `subject:
+    // null` however the catalog authored it. That is not cosmetic. Two systems
+    // key on it:
+    //
+    //   `techniqueEffectiveness` matches `insight.subject === technique.subject`,
+    //   which is the whole of how comprehension of the sword makes a sword art
+    //   land harder. Against a null it never matches, so understanding bore on
+    //   NO stored art for anybody.
+    //
+    //   `whatAFightTaught` asks what a fight taught about the art it was fought
+    //   with, and a fight with no subject in it teaches nothing about any art.
+    //
+    // The catalog is where a subject is authored and the row is a copy that
+    // lost the field, so the catalog is read for it here. That closes it for
+    // this handler; the column itself is a storage change on a shared registry
+    // and is reported rather than made in passing.
+    const catalog = techniqueId ? getTechnique(techniqueId) ?? null : null;
+    const art = known === null
+        ? catalog
+        : { ...known, subject: known.subject ?? catalog?.subject ?? null };
+
     return {
         id: cultivator.id,
         name: cultivator.name,
@@ -319,7 +344,7 @@ function combatantFromCultivator(
         qi: cultivator.qi,
         maxQi: cultivator.maxQi,
         battlesSurvived: cultivator.battlesSurvived,
-        technique: known ?? (techniqueId ? getTechnique(techniqueId) ?? null : null),
+        technique: art,
         techniqueMastery: known?.mastery ?? 0
     };
 }
@@ -715,8 +740,13 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         outcome: result.outcome,
         // The art actually swung. Somebody who fought bare learned nothing
         // about the sword they left at home.
-        subject: technique?.subject ?? null,
-        element: technique?.element ?? null,
+        //
+        // Read off `self`, which is the priced combatant, rather than off the
+        // stored row: the row has no `subject` column and comes back null - see
+        // the note in `combatantFromCultivator`, which is the one place that
+        // repair is made so the two readings cannot disagree.
+        subject: self.technique?.subject ?? null,
+        element: self.technique?.element ?? null,
         cultivationProgress: cultivator.cultivationProgress
     });
     const teachingRng = forStream(
