@@ -15,7 +15,7 @@
  *
  * 3. AND NO NPC COULD CARRY A WOUND. `untreatedInjuries` was an integer, so the
  *    whole authored tribulation-and-wounds layer - broken foundation, cracked
- *    core, ruined dantian - was unreachable from the world.
+ *    core, a base left unfinished - was unreachable from the world.
  *
  * These are cheap unit assertions on the pieces plus one soak, deliberately in
  * that order: the soak is the thing that would tell you the world is wrong and
@@ -33,6 +33,7 @@ import {
 } from '../../../src/engine/world/an-npc-striking-at-the-next-wall.js';
 import { applyManualCopying, manualIdOf, copyCount } from '../../../src/engine/world/manuals.js';
 import { createNpc, carryingWounds, woundsCarriedBy } from '../../../src/engine/world/npc-state.js';
+import { repairRetiredWoundKeys } from '../../../src/engine/world/recording-the-day-a-wound-was-taken.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { LAST_CROSSING_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { BROKEN_STATUSES } from '../../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
@@ -85,6 +86,28 @@ describe('an NPC can carry a wound that has a name', () => {
         const real = carryingWounds(npc, [wound], 400);
         expect(woundsCarriedBy(real)).toHaveLength(1);
         expect(woundsCarriedBy(real)[0].woundType).toBe('cracked-core');
+    });
+
+    it('heals a world still carrying a retired wound key', () => {
+        // 'ruined-dantian' shipped in b3498c3 and worlds were written with it,
+        // so retiring the key in the catalog does not retire the rows. The key
+        // is copied out of the row into `HistoricalFact.data` and into
+        // narration, so translating it only at the point of reading would leave
+        // those copies carrying the old word forever. Idempotent, and it runs at
+        // the top of the yearly pass so a world in flight heals on its own.
+        const npc = createNpc('wounds', { id: 'n3', bornOnDay: 0, onDay: 0 });
+        const old = { ...wound, woundType: 'ruined-dantian' };
+        const state = {
+            npcs: [carryingWounds(npc, [old], 400)]
+        } as unknown as WorldState;
+
+        expect(repairRetiredWoundKeys(state)).toBe(1);
+        expect(state.npcs[0].cultivation.injuries[0].woundType).toBe('incomplete-cultivation');
+        // Nothing else about the row moved - a rename, never a downgrade.
+        expect(state.npcs[0].cultivation.injuries[0].severity).toBe('crippling');
+        expect(state.npcs[0].cultivation.untreatedInjuries).toBe(1);
+        // And a second pass has nothing left to do.
+        expect(repairRetiredWoundKeys(state)).toBe(0);
     });
 });
 

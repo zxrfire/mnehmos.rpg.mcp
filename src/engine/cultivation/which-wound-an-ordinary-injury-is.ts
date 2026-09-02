@@ -17,9 +17,18 @@
  * null` and a description composed out of two enums - "A serious meridian
  * injury, taken in combat." The authored table in `data/cultivation/wounds.ts`
  * was reachable only from the crossing-failure path, which names the wound it
- * inflicts because the whole point of that table is that a cracked core and a
- * ruined dantian are different diagnoses. Everything else in the engine minted
- * wounds anonymously.
+ * inflicts because the whole point of that table is that a wound has a
+ * DIAGNOSIS - a parted channel, a burnt span, a base left unfinished are each a
+ * different thing a physician would say and a different answer to "can this be
+ * treated". Everything else in the engine minted wounds anonymously.
+ *
+ * That sentence used to read "a cracked core and a ruined dantian are different
+ * diagnoses", and it is worth saying why it does not any more, because the
+ * reasoning survived the example. This setting says CORE and has exactly one
+ * core wound, so those two were never two diagnoses - they were one wound
+ * carrying a borrowed word on the second row. The point the sentence was making
+ * is unaffected: a named wound and an anonymous one are different, and the
+ * catalog exists so the engine can say WHICH thing happened.
  *
  * That is not the fabrication defect it was reported as. These are real minted
  * injuries from real events, not `Injury` objects expanded out of an integer

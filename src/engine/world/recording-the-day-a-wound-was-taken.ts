@@ -1,7 +1,7 @@
 /**
  * Recording the day a wound was taken.
  *
- * A permanent ruined dantian is a day in somebody's life. It was a field on
+ * A permanent wound is a day in somebody's life. It was a field on
  * their record: `injuries` carried the row, the catalog gave it a name, a
  * treatment and a presentation, and nothing anywhere said WHEN it happened or
  * what did it. So a cultivator could be met carrying a severed meridian that the
@@ -22,7 +22,7 @@
  * would be that event twice with the back-links split between them.
  */
 
-import { isPermanentWound, getWoundType } from '../../data/cultivation/wounds.js';
+import { isPermanentWound, getWoundType, currentWoundKey } from '../../data/cultivation/wounds.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { rankName } from '../cultivation/realms.js';
 import { makeFact, type HistoricalFact } from './history.js';
@@ -88,4 +88,42 @@ export function recordPermanentWounds(
         }), { recur: false }));
     }
     return written;
+}
+
+/**
+ * Rewrite retired wound keys on everything a world has already persisted.
+ *
+ * `woundType` is a nullable string on the injury row and worlds are in flight,
+ * so retiring a key in the catalog does not retire the rows already carrying it.
+ * 'ruined-dantian' was retired when the setting's one word for the organ was
+ * settled - see `RETIRED_WOUND_KEYS` in `data/cultivation/wounds.ts` for why it
+ * became 'incomplete-cultivation' and not 'cracked-core'.
+ *
+ * `getWoundType` already follows a retirement, so a loaded world reads correctly
+ * before this ever runs and nothing depends on it having run. What this does is
+ * stop the old string propagating: it is copied into `HistoricalFact.data` by
+ * the writer above and into narration by the web layer, and a key that is only
+ * translated at the point of reading leaves those copies behind forever.
+ *
+ * Idempotent and cheap - one pass over the roster, touching only rows that are
+ * actually carrying a retired key - so it runs at the top of the yearly pass and
+ * an affected world heals itself on its next tick rather than needing anybody to
+ * migrate it by hand. Same shape, and for the same reason, as
+ * `repairCompoundedNames` in `how-the-world-keeps-finding-more-ruins.ts`.
+ *
+ * Returns the number of rows rewritten, which is zero in any world created after
+ * the retirement.
+ */
+export function repairRetiredWoundKeys(state: WorldState): number {
+    let repaired = 0;
+    for (const npc of state.npcs) {
+        const rows = npc.cultivation.injuries;
+        for (let i = 0; i < rows.length; i++) {
+            const current = currentWoundKey(rows[i].woundType);
+            if (current === null || current === rows[i].woundType) continue;
+            rows[i] = { ...rows[i], woundType: current };
+            repaired++;
+        }
+    }
+    return repaired;
 }

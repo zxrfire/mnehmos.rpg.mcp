@@ -206,19 +206,12 @@ export const WOUND_TYPES: readonly WoundType[] = [
         presentation:
             'Somebody strong who cannot do one specific thing any more, is entirely matter-of-fact about which thing, and has rebuilt their whole art around the absence. Frequently more dangerous than they were before, in a narrower way.'
     },
-    {
-        key: 'ruined-dantian',
-        nature: 'physical',
-        name: 'A ruined dantian',
-        description:
-            'The reservoir itself is cracked rather than the channels feeding it. It holds, badly, and everything drawn into it leaks back out over the following days.',
-        severities: ['crippling'],
-        permanent: true,
-        treatment:
-            'Nothing that exists. The two recorded repairs were both performed by somebody above the Lid on somebody they had a reason to keep.',
-        presentation:
-            'A cultivator at a rung they can no longer supply, living off what they can gather each morning, who is exactly as strong as they say they are for about a quarter of an hour.'
-    },
+    // 'A ruined dantian' stood here and has been retired. THIS SETTING SAYS
+    // CORE, and once the borrowed word goes the row had no subject left: it
+    // named a reservoir that was neither a channel nor the cultivation, which
+    // is a third family this setting does not have. See the note beside
+    // 'Incomplete cultivation' below, which is where its mechanics went, and
+    // `docs/world/injuries.md` for the two families it was sitting between.
 
     // ─────────────────────────────────────────────────────────────────
     // THE BROKEN STATUSES - one per realm boundary
@@ -402,6 +395,37 @@ export const WOUND_TYPES: readonly WoundType[] = [
         presentation:
             'A cultivator whose progress does not match their history at all: decades of work behind them and a rate that reads like somebody half their standing. They know precisely why and it is not a story they tell.'
     },
+    // Its sibling, and the row that replaced 'a ruined dantian'.
+    //
+    // WHY IT IS NOT NAMED FOR THE CORE, which is the whole point of the
+    // rename. The old row said the reservoir cracked rather than the channels,
+    // and this setting has exactly one word for that organ and exactly one
+    // wound to it: 'A cracked core'. That row is a BROKEN STATUS - the thing
+    // `the_condensation` was for, failing to take, on somebody who crossed and
+    // arrived - and it closes the road. This one is minted on the FAILURE side
+    // at six walls, five of which form no core at all, and it must not close
+    // anything. Two wounds could not share the name, and the failure-side one
+    // could not keep the borrowed word, so it names what every rung on the
+    // ladder actually has: a cultivation base. Same move as 'A shattered
+    // foundation' -> 'Scattered cultivation', for the same reason, one row up.
+    //
+    // Scattered against incomplete is the whole difference: that base came
+    // apart and was laid again out of the wreckage, this one was never
+    // finished. `foundationQuality` carries the two apart - 'rebuilt' there,
+    // 'incomplete' here.
+    {
+        key: 'incomplete-cultivation',
+        nature: 'physical',
+        name: 'Incomplete cultivation',
+        description:
+            'Part of the structure was never formed. What is there holds, badly, and everything drawn into it leaks back out over the following days.',
+        severities: ['crippling'],
+        permanent: true,
+        treatment:
+            'Nothing that exists. The two recorded repairs were both performed by somebody above the Lid on somebody they had a reason to keep.',
+        presentation:
+            'A cultivator at a rung they can no longer supply, living off what they can gather each morning, who is exactly as strong as they say they are for about a quarter of an hour.'
+    },
 
     // ── Mental. Heart demons, and what they become when nothing answers them. ──
     {
@@ -479,16 +503,49 @@ export const WOUND_TYPES: readonly WoundType[] = [
 const BY_KEY = new Map<string, WoundType>(WOUND_TYPES.map(w => [w.key, w]));
 
 /**
+ * Keys that have been retired, and the row that carries their meaning now.
+ *
+ * `woundType` is a nullable string on a persisted injury row, so retiring a key
+ * does not retire the rows already carrying it - there are worlds in flight with
+ * 'ruined-dantian' written into them, and without this they would come back
+ * nameless, un-permanent and priced as an ordinary wound of their severity.
+ *
+ * A RENAME AND NEVER A RECLASSIFICATION. Both sides of every entry here must
+ * agree on nature, permanence and severity, so resolving one cannot change what
+ * anybody is carrying - only what it is called. 'ruined-dantian' and
+ * 'incomplete-cultivation' are both physical, both permanent, both crippling
+ * and neither halts, which is why the mapping is safe to apply on load.
+ *
+ * Note what is NOT here: 'ruined-dantian' does not resolve to 'cracked-core',
+ * however plainly the ruling reads as one wound. A cracked core is a broken
+ * status and it closes the road, so that mapping would halt a saved population
+ * the ladder has never refused.
+ */
+export const RETIRED_WOUND_KEYS: Readonly<Record<string, string>> = {
+    'ruined-dantian': 'incomplete-cultivation'
+};
+
+/** The current key for a wound key, following one retirement if there is one. */
+export function currentWoundKey(key: string | null | undefined): string | null {
+    if (!key) return null;
+    return RETIRED_WOUND_KEYS[key] ?? key;
+}
+
+/**
  * The authored row for a wound key, or null.
  *
  * Null is a legitimate answer and every caller must handle it: a wound row
  * written before this table existed carries no key at all, and it is an
  * ordinary wound of its severity. Never throw here - a save file older than
  * this file is not a bug.
+ *
+ * Retired keys resolve here rather than at the call sites, so every reader of a
+ * saved row - name, permanence, nature, treatment, the narrator - is correct
+ * from the moment the world loads and without waiting for the repair pass.
  */
 export function getWoundType(key: string | null | undefined): WoundType | null {
     if (!key) return null;
-    return BY_KEY.get(key) ?? null;
+    return BY_KEY.get(key) ?? BY_KEY.get(RETIRED_WOUND_KEYS[key] ?? '') ?? null;
 }
 
 /** Whether this wound key names something nothing in the world closes. */

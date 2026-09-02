@@ -37,7 +37,13 @@ import {
     structuralBlockOn,
     trialForOrdinal
 } from '../../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
-import { getWoundType, isPermanentWound, woundNature, WOUND_TYPES } from '../../../src/data/cultivation/wounds.js';
+import {
+    getWoundType,
+    isPermanentWound,
+    RETIRED_WOUND_KEYS,
+    woundNature,
+    WOUND_TYPES
+} from '../../../src/data/cultivation/wounds.js';
 import {
     bleedingInjuryCount,
     createInjury,
@@ -118,7 +124,7 @@ describe('the outcome registry carries new outcomes without touching boundaries'
             const rows = outcomesForTrial(trial);
             const total = rows.reduce((s, r) => s + r.weight, 0);
             const ruinous = rows
-                .filter(r => ['maimed', 'mad', 'half_mad', 'span_burnt', 'reservoir_ruined'].includes(r.outcome.key))
+                .filter(r => ['maimed', 'mad', 'half_mad', 'span_burnt', 'cultivation_left_incomplete'].includes(r.outcome.key))
                 .reduce((s, r) => s + r.weight, 0);
             return ruinous / total;
         };
@@ -217,6 +223,58 @@ describe('the wound table', () => {
         for (const wound of WOUND_TYPES) {
             expect(wound.treatment.length).toBeGreaterThan(39);
             expect(wound.presentation.length).toBeGreaterThan(79);
+        }
+    });
+
+    it('says CORE, and never the borrowed word', () => {
+        // The design owner's ruling. It is pinned here rather than left to
+        // review because the word crept into ten files once already, and a
+        // vocabulary rule nothing checks is a vocabulary rule that comes back.
+        for (const wound of WOUND_TYPES) {
+            const text = `${wound.key} ${wound.name} ${wound.description} ${wound.treatment} ${wound.presentation}`;
+            expect(text.toLowerCase()).not.toContain('dantian');
+        }
+    });
+
+    it('keeps exactly one core wound, and it is the broken status', () => {
+        // 'A ruined dantian' sat beside 'A cracked core' as a second wound to
+        // the same organ, and the borrowed word was the only thing telling them
+        // apart. One organ, one wound. See RETIRED_WOUND_KEYS.
+        const core = WOUND_TYPES.filter(w => w.key.includes('core'));
+        expect(core.map(w => w.key)).toEqual(['cracked-core']);
+        expect(BROKEN_STATUSES).toContain('cracked-core');
+    });
+
+    it('still reads a saved row carrying a retired key', () => {
+        // `woundType` is a nullable string on a persisted row and worlds are in
+        // flight, so a key that shipped does not stop existing when the catalog
+        // drops it. Without this, those rows come back nameless and are priced
+        // as an ordinary wound of their severity - which is a silent downgrade
+        // of a permanent one.
+        const row = getWoundType('ruined-dantian');
+        expect(row).not.toBeNull();
+        expect(row!.key).toBe('incomplete-cultivation');
+        expect(isPermanentWound('ruined-dantian')).toBe(true);
+        expect(woundNature('ruined-dantian')).toBe('physical');
+    });
+
+    it('resolves a retired key to a wound that behaves identically', () => {
+        // A RENAME AND NEVER A RECLASSIFICATION. If a retirement ever changed
+        // permanence, nature or whether the wound halts, loading a saved world
+        // would change what its people are carrying. In particular it must not
+        // resolve to 'cracked-core', however plainly the ruling reads as one
+        // wound: that would halt a saved population the ladder never refused.
+        for (const [retired, current] of Object.entries(RETIRED_WOUND_KEYS)) {
+            const now = getWoundType(current)!;
+            expect(now).toBeDefined();
+            expect(isPermanentWound(retired)).toBe(isPermanentWound(current));
+            expect(woundNature(retired)).toBe(woundNature(current));
+            expect(BROKEN_STATUSES).not.toContain(current);
+            const injury = createInjury(
+                { severity: 'crippling', source: 'failed_breakthrough', turn: 1, woundType: retired },
+                rng()
+            );
+            expect(blocksAdvancement(injury)).toBe(false);
         }
     });
 });
@@ -451,10 +509,10 @@ describe('the five ways a crossing ends', () => {
         // The one route in: a realm's own break, from a broken SUCCESS.
         expect(isHalted({ injuries: [wound('cracked-core')] })).toBe(true);
 
-        // The worst wound the FAILURE table can produce. It cracks the
-        // reservoir itself and it still does not close the road - this row set
-        // `halted: true` until the rule was stated.
-        const reservoir = CROSSING_OUTCOMES.find(o => o.key === 'reservoir_ruined')!;
+        // The worst wound the FAILURE table can produce. It leaves the
+        // cultivation base permanently unfinished and it still does not close
+        // the road - this row set `halted: true` until the rule was stated.
+        const reservoir = CROSSING_OUTCOMES.find(o => o.key === 'cultivation_left_incomplete')!;
         const consequence = reservoir.apply({ realmOrdinal: 16, injuries: [] }, rng(), { turn: 1 });
         expect(consequence.halted).toBeUndefined();
         expect(isHalted({ injuries: consequence.injuries })).toBe(false);
@@ -487,7 +545,7 @@ describe('the five ways a crossing ends', () => {
             'ascendant-heart-demon',  // mental, permanent, the worst there is
             'rooted-heart-demon',
             'severed-meridian',       // physical and permanent - the lost arm
-            'ruined-dantian',         // the reservoir itself
+            'incomplete-cultivation', // the base itself, never finished
             'burnt-span',             // lifespan
             'scattered-cultivation'   // the whole base came apart
         ];

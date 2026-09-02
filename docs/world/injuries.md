@@ -41,6 +41,15 @@ beside a torn channel, because what it costs is a rung and not a season.
 Note the vocabulary: **this setting says CORE.** It does not use `dantian` anywhere, and a
 wound to the core is `cracked-core` and nothing else.
 
+There used to be a second one. `ruined-dantian` sat in the maiming band describing a
+cracked reservoir, which is the same organ under a borrowed word, and the two rows were
+told apart only by the vocabulary - one halted, the other did not. The borrowed word is
+gone and so is the second diagnosis. What it named lives on as `incomplete-cultivation`,
+which is a wound to the cultivation base rather than to the core: it is minted at six
+walls, five of which form no core at all, so it could not take the core's name, and it is
+minted on the FAILURE side, so it must not close a road. A saved row carrying the old key
+still reads correctly - see `RETIRED_WOUND_KEYS` in `data/cultivation/wounds.ts`.
+
 The useful shorthand is **body against cultivation**. A channel wound is damage to the flesh
 qi moves through. A foundation or a core is damage to the cultivation itself. Both are injuries;
 only the second one takes something the ladder already gave you.

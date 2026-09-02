@@ -58,7 +58,7 @@
  *
  * THE WEIGHTS LIVE ON THE OUTCOME, NOT ON THE TRIAL, and that is the whole
  * reason for the shape. The named set - foundation destroyed, mad, half mad,
- * maimed, reservoir ruined, span burnt - is explicitly illustrative rather than
+ * maimed, base left incomplete, span burnt - is explicitly illustrative rather than
  * exhaustive, so a per-boundary table of hard-coded outcomes would mean a tenth
  * outcome touched nine boundaries. Written this way, a tenth outcome is one
  * object appended to the registry with weights wherever it applies, and every
@@ -86,7 +86,7 @@
  *                          the person who left it.
  *   span burnt             `age`. Read by `lifespanPressure`, by the lifespan
  *                          death check, and by `stagnationYearsForOrdinal`.
- *   reservoir ruined       `foundationQuality` -> 'incomplete', which
+ *   base left incomplete   `foundationQuality` -> 'incomplete', which
  *                          `assessFoundation` already produces and the whole
  *                          engine already prices at -0.08 on every subsequent
  *                          crossing. It does NOT halt - see the rule in THE
@@ -169,8 +169,8 @@ import type { CultivationRNG } from './rng.js';
 //
 //   4  FAILURE WITH SEQUELAE. The same failure, and something is carried away
 //      from it: a heart demon, a parted meridian, a stretch of the life the
-//      crossing took with it, years burned to survive the attempt, a reservoir
-//      that cracked rather than the channels. The registry below is the table
+//      crossing took with it, years burned to survive the attempt, a part of the
+//      base that never formed. The registry below is the table
 //      of these.
 //
 //      IT DOES NOT CRACK THE RUNG ABOVE, and this is the distinction that is
@@ -181,7 +181,7 @@ import type { CultivationRNG } from './rng.js';
 //      Nothing in `CROSSING_OUTCOMES` mints a row from `BROKEN_STATUSES`, and
 //      nothing should be added that does.
 //
-//      AND IT NEVER CLOSES THE ROAD, however grave it is. A ruined reservoir
+//      AND IT NEVER CLOSES THE ROAD, however grave it is. An unfinished base
 //      is the worst thing in the failure table and the ladder still lets them
 //      walk up to the next wall. See the rule below the fifth outcome.
 //
@@ -196,9 +196,10 @@ import type { CultivationRNG } from './rng.js';
 //
 // Anything not named for a realm's construction does not block further
 // cultivation. A heart demon does not. A severed meridian does not. A lost arm
-// does not. A ruined reservoir does not - and that one is worth naming because
-// this file used to claim it did, on `reservoir_ruined`, which is the largest
-// thing this section had wrong.
+// does not. An unfinished cultivation base does not - and that one is worth
+// naming because this file used to claim it did, on the row now called
+// `cultivation_left_incomplete`, which is the largest thing this section had
+// wrong.
 //
 // ── WHY THE REALM KEYWORDS ARE DIFFERENT, SO NOBODY RE-ADDS A BLOCKER ────
 //
@@ -477,7 +478,8 @@ export interface CrossingConsequence {
      * A FAILURE NEVER CLOSES THE ROAD. Only a realm's own break does, only a
      * broken SUCCESS produces one, and `structuralBlockOn` is the bar. This
      * flag was the one thing in the failure table that claimed otherwise, on
-     * `reservoir_ruined`, and it never even worked - the bar has never read it.
+     * `cultivation_left_incomplete`, and it never even worked - the bar has
+     * never read it.
      *
      * Left in place rather than deleted because `breakthrough.ts` and
      * `schema/cultivation.ts` still read it and neither is this module's to
@@ -670,21 +672,32 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         })
     },
 
-    // ── The reservoir goes. Ruinous, and NOT a bar. ──
+    // ── Part of the base never forms. Ruinous, and NOT a bar. ──
     //
     // This row used to set `halted: true`, and that was the single largest
-    // violation of the rule stated at the top of this file: a ruined reservoir
-    // is not a realm's construction, so it may not close the road. It is one of
+    // violation of the rule stated at the top of this file: what fails here is
+    // not a realm's construction, so it may not close the road. It is one of
     // the worst things a cultivator can carry and it is still only damage.
     //
     // Note it never actually barred anybody. `canAttemptBreakthrough` gates on
     // `structuralBlockOn`, which reads `BROKEN_STATUSES` and has never included
     // this wound, so the flag fed a narration line and a disagreeing predicate
     // and nothing else. Removing it makes the prose agree with the ladder.
+    //
+    // AND IT IS NOT NAMED FOR THE CORE, which is the second thing this row had
+    // wrong and the reason it reads differently now. It used to say a reservoir
+    // cracked and mint 'a ruined dantian'. This setting says CORE, and once the
+    // borrowed word goes there is exactly one core wound - 'cracked-core', which
+    // is `the_condensation`'s BROKEN STATUS and closes the road. This row is
+    // minted on the failure side at six walls, five of which form no core at
+    // all, so it could neither keep the borrowed word nor take the core's. It
+    // names the cultivation base instead, which every rung on the ladder has.
+    // Exactly the rename `cultivation_scattered` above went through, for
+    // exactly the same reason. See the naming rule in `wounds.ts`.
     {
-        key: 'reservoir_ruined',
+        key: 'cultivation_left_incomplete',
         summary:
-            'The reservoir cracked rather than the channels. The cultivator is alive, at the rung they were on, and everything they do from here is done through a vessel that leaks.',
+            'Part of the base never formed. The cultivator is alive, at the rung they were on, and everything they do from here is done through a structure that leaks.',
         weights: {
             // NOT AT THE FIRST WALL, and this is a deliberate exclusion rather
             // than an oversight. Qi Condensation to Foundation Establishment is
@@ -705,7 +718,7 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
             the_ascent: 9
         },
         apply: (_s, rng, ctx) => ({
-            injuries: [wound(ctx, rng, 'ruined-dantian', 'crippling')],
+            injuries: [wound(ctx, rng, 'incomplete-cultivation', 'crippling')],
             // 'incomplete' is a quality `assessFoundation` already produces and
             // the whole engine already prices, on every subsequent crossing,
             // forever. That is what this costs: the next wall is much worse,
@@ -1003,12 +1016,14 @@ export function brokenStatusOf(injuries: readonly Injury[]): string | null {
  * ONE ROUTE, AND IT IS THE REALM KEYWORDS. A broken status means they CROSSED,
  * arrived, and the structure that crossing was for did not take. Nothing else
  * a cultivator can carry closes the road - not a heart demon, not a severed
- * meridian, not a ruined reservoir, not a fragmented soul, not a burnt span,
- * however grave any of them is.
+ * meridian, not an unfinished cultivation base, not a fragmented soul, not a
+ * burnt span, however grave any of them is.
  *
- * This used to read a ruined dantian as a second halting wound, and it was
- * wrong twice over. It was wrong by the rule, because a reservoir is not a
- * realm's construction. And it was wrong against the ENGINE: the actual bar is
+ * This used to read the failure table's gravest wound as a second halting
+ * wound, and it was wrong twice over. It was wrong by the rule, because a
+ * cultivation base is not a realm's construction - every rung already has one
+ * and no crossing builds it, which is the same reason `scattered-cultivation`
+ * does not halt either. And it was wrong against the ENGINE: the actual bar is
  * `structuralBlockOn` in `canAttemptBreakthrough`, which has only ever read
  * `BROKEN_STATUSES`, so this predicate was reporting a population the ladder
  * did not refuse. Exactly the second opinion the wound list exists to prevent.

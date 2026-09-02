@@ -393,9 +393,11 @@ export interface Strike {
  * who strikes again next review.
  *
  * Returns null when the attempt is not legal - which is a real and common
- * answer rather than an error. A cultivator carrying a ruined dantian is
+ * answer rather than an error. A cultivator carrying a cracked core is
  * refused by `canAttemptBreakthrough` for the rest of their life, and that
- * refusal IS the halted population.
+ * refusal IS the halted population. It has to be a BROKEN STATUS in that
+ * sentence and not merely a grave wound: the bar reads `BROKEN_STATUSES` and
+ * nothing else, so the failure table's worst row is refused by nothing.
  */
 export function strikeAtTheWall(
     npc: NpcRecord,
