@@ -36,6 +36,7 @@ import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AskWeight, AttemptResult } from '../engine/social-leverage/index.js';
+import { howItHasBeenGoing } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -2341,6 +2342,9 @@ export function factsForAttempt(
             break;
     }
 
+    lines.push(howItHasBeenGoing(
+        result.odds, 0, result.outcome === 'taken' || result.outcome === 'turned'
+    ));
     if (result.marks.obligation) {
         lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
     }
@@ -2353,10 +2357,18 @@ export function factsForAttempt(
         lines,
         lines.join(' '),
         [
-            `resolveAttempt(${intent}): outcome=${result.outcome}, odds=${result.odds}, `
-            + `days=${result.days}, stonesSpent=${result.stonesSpent}, `
-            + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
-            + `reachedTheHouse=${result.marks.reachedTheHouse}.`
+            `${subject} `
+            + `${result.marks.theyKnowWhatYouTried
+                ? 'can say exactly what was tried'
+                : 'knows something happened and not what it was'}`
+            + `${result.marks.reachedTheHouse ? ', and so can their house' : ''}. `
+            // The label the parser put on the verb, said as what it is: a note
+            // for the narrator that no conditional anywhere reads. Printing it
+            // as `intent=bribe` invited exactly the misreading the rule exists
+            // to prevent, which is that it selected something.
+            + `The approach was labelled "${intent}", which is carried for the `
+            + 'narrator and read by no conditional - what the engine priced was '
+            + 'the weight of the thing asked for, never the word.'
         ]
     );
 }
@@ -2443,6 +2455,10 @@ export function factsForRequest(
     theirTie = 0
 ): EngineFacts {
     const asked = whatWasAsked(kind, named);
+    // The odds the engine actually used, which is the one thing the player was
+    // never told and the one thing that would have stopped eighteen identical
+    // replies reading as a broken verb. See `howItHasBeenGoing`.
+    const landed = result.outcome === 'taken' || result.outcome === 'turned';
     const courtesy = kind === 'nothing';
     const lines: string[] = [
         courtesy
@@ -2509,6 +2525,18 @@ export function factsForRequest(
         }
     }
 
+    // ── HOW OFTEN A THING LIKE THIS COMES OFF, AND HOW OFTEN IT HAS BEEN
+    //    TRIED ─────────────────────────────────────────────────────────────
+    //
+    // Measured: somebody bought the same person a drink eighteen times, got
+    // "civil about it and it goes nowhere" every time, and nearly filed the
+    // verb as broken. It was landing at 13% - they were Charm 1, Fortune 1, on
+    // a muddled root, which is the worst social character the game rolls, and
+    // eighteen misses at 13% is an 8% run. The engine knew all of it and said
+    // none of it, so the player with the worst numbers got the least
+    // information about why.
+    lines.push(howItHasBeenGoing(result.odds, priorAsks, landed));
+
     if (wroteToTheLedger) {
         lines.push('It is on somebody\'s ledger now, and ledgers here are kept.');
     }
@@ -2519,10 +2547,19 @@ export function factsForRequest(
         lines,
         lines.join(' '),
         [
-            `request(${kind}): outcome=${result.outcome}, odds=${result.odds}, `
-            + `ask=${costing.ask}, days=${result.days}, stonesSpent=${result.stonesSpent}, `
-            + `theyKnowWhatYouTried=${result.marks.theyKnowWhatYouTried}, `
-            + `reachedTheHouse=${result.marks.reachedTheHouse}, priorAsks=${priorAsks}.`,
+            // The whole attempt is said once, by `whatTheAskCameTo`, on the
+            // call the engine files beside this. What belongs here is the part
+            // that is about the two people rather than about the roll: what
+            // they now know, and how many times this has happened.
+            `${subject} `
+            + `${result.marks.theyKnowWhatYouTried
+                ? 'can say exactly what was tried'
+                : 'knows something happened and not what it was'}`
+            + `${result.marks.reachedTheHouse ? ', and so can their house' : ''}. `
+            + `${priorAsks === 0
+                ? 'It had not been put to them before.'
+                : `It had been put to them ${priorAsks} time`
+                  + `${priorAsks === 1 ? '' : 's'} before.`}`,
             ...costing.structure
         ]
     );
@@ -2696,7 +2733,13 @@ export function factsForWeighingARequest(
     subjectFacts: readonly string[],
     offered: number | null,
     priorAsks = 0,
-    theirTie = 0
+    theirTie = 0,
+    /**
+     * The odds the attempt WOULD run at, from `oddsOf` rather than from a
+     * description of it. The whole value of weighing something is being told
+     * the number before spending the afternoon.
+     */
+    odds: number | null = null
 ): EngineFacts {
     const lines: string[] = [
         `What it would take to ask ${subject} ${whatWasAsked(kind, '')}, before you ask.`,
@@ -2705,6 +2748,7 @@ export function factsForWeighingARequest(
         WHAT_THE_ASK_WEIGHS[costing.ask],
         whatWouldMoveThem(costing.ask, theirTie)
     ];
+    if (odds !== null) lines.push(howItHasBeenGoing(odds, priorAsks, false));
     const heard = theyHaveHeardThisBefore(subject, priorAsks, kind === 'nothing');
     if (heard) lines.push(heard);
     if (offered !== null) {
@@ -2719,7 +2763,7 @@ export function factsForWeighingARequest(
         `${subject}: what the asking would cost them.`,
         lines,
         lines.join(' '),
-        [`request(weigh): kind=${kind}, ask=${costing.ask}.`, ...costing.structure]
+        [...costing.structure]
     );
 }
 

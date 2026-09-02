@@ -414,6 +414,8 @@ phrasings of it reached four different lookups, none of which was a person:
 what-a-request-asks-and-of-whom.ts        the split: who, and what of them
 what-asking-this-person-for-this-        what saying yes would cost them, off
   would-cost-them.ts                       the catalogs the world already uses
+saying-what-an-ask-cost-and-how-         the arithmetic in words, for the player
+  likely-it-was.ts                         and for the channel at once
 GameService.request                       the wiring, and the consequence
 ```
 
@@ -449,6 +451,27 @@ Four rules it keeps.
 verbs each finding their target their own way, one of them resolving a party called
 `"Han Peiru with 60 spirit stones to introduce me to the elder"` against a roster of two-word
 names.
+
+**The odds are said out loud, on both channels, by one module.** They turned out
+to be the same sentence written twice, and finding that out cost a played run:
+somebody bought the same person a drink eighteen times, got a byte-identical reply
+every time, and nearly filed the verb as broken. It was landing at 13% - Charm 1,
+Fortune 1, a muddled root, the worst social character the game rolls - so eighteen
+misses is an 8% run, correctly modelled and never mentioned. The player with the
+worst numbers was getting the least information about why.
+
+So the prose now says how often a thing like this comes off and how many times it
+has been tried, and where an attempt count has passed twice the expected wait it
+says that too, because that is arithmetic rather than sympathy. The mechanical
+channel says all of it: every term named, every enum resolved, and the CLAMP
+stated - a reader who adds the terms up gets -1 in a hundred against stated odds of
+2, and an arithmetic trail that does not reach the number it is explaining is worse
+than none. `ODDS_FLOOR` is doing the one job it exists for and now says so.
+
+The read is the same arithmetic. `oddsOf` runs every term the attempt would run and
+stops at the roll, so "could I ask her to teach me" answers with the real number
+rather than a description of it, and the two cannot drift because there is nothing
+to drift from.
 
 **And the marks are persisted now.** `AttemptMarks` is the resolver saying what the world is
 carrying that it was not before, and its own header says every field is a record the caller
