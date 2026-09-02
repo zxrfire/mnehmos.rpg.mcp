@@ -54,6 +54,11 @@ import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
 import { worldLocationFor } from './entities.js';
+import {
+    whatSomebodyWouldSayAbout,
+    whatTheyNowHold,
+    whoCouldPointAtAGround
+} from './ground-that-teaches-a-road.js';
 import { worldRosterRow } from './view.js';
 import type { KnowledgeGate, KnownEntityKind } from './knowledge.js';
 import type { SourceKind } from '../engine/social/knowledge.js';
@@ -449,6 +454,20 @@ export function offerHearing(input: HearingInput): Hearing | null {
     const addressed = input.addressing ?? null;
     const intent = input.intent ?? 'ambient';
 
+    // ── Where the ground is that teaches a road ──
+    //
+    // First, and deliberately: this draw is over a set that EMPTIES, and it
+    // competes with a lore table of several hundred rows that never does. Put
+    // behind the weighted draw it would have been picked about never, which is
+    // how a channel becomes decoration.
+    //
+    // It stays gated the way everything is gated. Nothing here is listed to the
+    // player, nobody is handed a map, and the record is written because a
+    // person who goes there said where it was - which is `discovery.md`'s own
+    // account of how a name is supposed to arrive.
+    const ground = offerGroundSomebodyGoesTo(input, addressed);
+    if (ground) return ground;
+
     // ── Somebody talking to the player ──
     if (addressed) {
         // A deliberate question is not the same event as a name landing in a
@@ -578,6 +597,130 @@ function offerTraveller(
     if (!traveller) return null;
 
     return travellerHearing(traveller);
+}
+
+/**
+ * How often somebody here mentions ground that teaches a road.
+ *
+ * Two rates, because being talked to and standing near a conversation are
+ * different events - the same split every other channel in this file makes.
+ *
+ * Higher than the ambient name draw, and it is not generosity. THE CANDIDATE
+ * SET EMPTIES: a province holds one to four of these, a local can point at all
+ * of them, and once the player holds the records the channel returns null for
+ * the rest of that life. What the rate decides is how long the first year
+ * takes, and the fiction is unambiguous about that - the Grinding Ford is the
+ * crossing every cart out of the western workings uses, and somebody would have
+ * said so.
+ *
+ * What it is NOT is a way to learn about ground somewhere else. The speaker has
+ * to be able to point at it out of their own life, which for open ground means
+ * standing in the same province the player is standing in. Provinces stay hands
+ * dealt at birth.
+ */
+export const GROUND_MENTIONED_CHANCE = 0.15;
+export const GROUND_MENTIONED_WHEN_ADDRESSED = 0.35;
+
+/**
+ * Somebody here says where a road-teaching ground is.
+ *
+ * THE CHANNEL THAT WAS MISSING. Twenty-three of these are seeded into every
+ * world and no source in the game could put one into a player's knowledge, so
+ * the discovery gate over them was default-deny across an empty set: correct,
+ * and indistinguishable from the places not existing.
+ *
+ * The speaker is anybody standing here whose own life puts the ground in front
+ * of them - `knowsWhereItIs`, never `inReach`. That distinction is the content.
+ * A cart driver at the bottom of the ladder has crossed the ford ten thousand
+ * times and will never take anything off it, and he is exactly the person who
+ * can tell you where it is. Requiring the speaker to be able to READ it would
+ * have made a landmark a secret and, measured on a seeded world, would have
+ * left every settlement outside one province with nobody who could say a word.
+ *
+ * `placed`, because they said where it is. That licenses setting out, which is
+ * the whole point - and it licenses nothing else. What the ground is for, and
+ * whether it will teach this cultivator anything, is not conveyed by having
+ * been told where a ford is.
+ */
+function offerGroundSomebodyGoesTo(
+    input: HearingInput,
+    addressed: RosterEntry | null
+): Hearing | null {
+    const world = input.world;
+    if (!world) return null;
+    const here = worldLocationFor(world, input.cultivator.location);
+    if (!here) return null;
+
+    // Whoever is standing here and could point at one, narrowed to the person
+    // the player is dealing with when they are dealing with somebody. A name
+    // that arrives out of a conversation should have come from the person in
+    // the conversation.
+    const offers = whoCouldPointAtAGround(world, here.id)
+        .filter(offer => !addressed || offer.speaker.id === addressed.id)
+        .filter(offer => !input.gate.isAwareOf(input.cultivator.id, 'place', offer.ground.id));
+    if (offers.length === 0) return null;
+
+    // ── ITS OWN STREAM, WHICH IS NOT TIDINESS ────────────────────────────
+    //
+    // A new channel drawing off `web_hearsay` shifts every draw after it, so
+    // adding one silently changes what every OTHER channel says in every
+    // already-seeded world. Caught by `tests/web/presence.test.ts`, which went
+    // red on a shifted overheard draw that had nothing to do with this: the
+    // fragment behind the wall picked a different name and the new one belonged
+    // to somebody standing in the square. Nothing about this channel was in
+    // that sentence.
+    //
+    // So it gets its own name, and the existing streams are byte-identical to
+    // what they were. Same seed, same day, same occasion - a world that never
+    // meets a dao ground plays exactly as it did.
+    const rng = forStream(
+        input.run.seed,
+        'web_hearsay_ground',
+        Math.floor(input.run.elapsedDays),
+        input.occasion,
+        input.cultivator.id
+    );
+    if (!rng.chance(addressed ? GROUND_MENTIONED_WHEN_ADDRESSED : GROUND_MENTIONED_CHANCE)) {
+        return null;
+    }
+
+    const chosen = offers[rng.int(0, offers.length - 1)];
+    // ── AND THE SPEAKER IS ONLY NAMED WHEN THE NAME WAS EARNED ───────────
+    //
+    // The first build of this channel wrote the speaker's name into the ambient
+    // prose, so somebody walking through a square of a hundred strangers got
+    // one of them named for free - a second discovery riding along on the
+    // first, and a straight leak of the gate `docs/world/discovery.md` sets.
+    // Being addressed is a different case: the player resolved that person in
+    // order to deal with them, and the `told` branch has always used their
+    // name. Ambient talk is a voice, and a voice is not an introduction.
+    //
+    // Found by reading, not by a test. `tests/web/presence.test.ts` guards
+    // exactly this invariant and did not catch it - it went red for an
+    // unrelated reason, the stream shift above, and stayed red after this was
+    // fixed. Worth saying because the two looked like one bug for a while.
+    //
+    // Nothing is lost by it. The place is still granted at `placed`, from a
+    // real source, recorded honestly.
+    const speaker = addressed?.name ?? null;
+    return {
+        mode: addressed ? 'told' : 'passing',
+        speaker,
+        names: [{
+            kind: 'place',
+            id: chosen.ground.id,
+            name: chosen.ground.name,
+            stage: 'placed',
+            statement: whatTheyNowHold(chosen.ground)
+        }],
+        note:
+            `${speaker ?? 'Somebody here'} can point at ${chosen.ground.name} because it is `
+            + 'ordinary to them. Whether it is worth anything to the listener did not come up.',
+        confidence: 0.7,
+        sourceKind: 'told',
+        stage: 'placed',
+        prose: whatSomebodyWouldSayAbout(chosen.ground, speaker ?? 'Somebody here')
+    };
 }
 
 /** The traveller, as the hearing the rest of the layer already understands. */

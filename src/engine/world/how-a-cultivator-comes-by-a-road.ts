@@ -270,10 +270,99 @@ export function regionCatalogIdOf(state: WorldState, locationId: string | null):
 export type RoadInReach = RoadWithinReach;
 
 /**
- * Every dao ground this person can actually get at, and why.
+ * The first thing somebody is short of at a ground that will not teach them.
  *
- * Three different sentences about being unable to get in, and each is a real
- * constraint somewhere else in the engine rather than a number invented here:
+ * ORDERED THE WAY A PERSON MEETS THEM, which is what makes it a refusal a
+ * player can act on rather than a boolean: you have to be able to find it, then
+ * be let in, then be able to read it. Reporting the last of those to somebody
+ * who is four provinces away would be true and useless.
+ */
+export type ShortOfAGround =
+    /** Buried, and the world has not dug it out. Nobody alive can point at it. */
+    | 'nobody_has_found_it'
+    /** It is in another province and they are not in it. */
+    | 'somewhere_else'
+    /** A house holds it and they are not of that house. */
+    | 'not_of_the_house'
+    /** Of the house, and not far enough up its own ladder to be let near it. */
+    | 'standing'
+    /** They can stand on it. It is not legible to them at this rung. */
+    | 'below_the_floor';
+
+/**
+ * One ground, as this rule needs to read it.
+ *
+ * Deliberately not a `LocationRecord` and not a catalog row. Both of those
+ * exist - the world seeds the catalog into locations - and a rule that took
+ * either would be reachable from one of them and not the other. That is the
+ * split this whole file exists to close, one level down: the world reads
+ * locations, the played game reads the catalog, and they must not be able to
+ * answer differently.
+ */
+export interface GroundAsTheRuleReadsIt {
+    domain: InsightDomain;
+    subject: string;
+    /** `held` | `open` | `buried` | `carving`. Widened so a caller may pass a `data` value. */
+    access: string;
+    fromOrdinal: number;
+    standingRequired: number;
+    heldByFactionId: string | null;
+    regionCatalogId: string | null;
+    /**
+     * Whether anybody knows it is there.
+     *
+     * True for everything standing open. False for a buried ground the world
+     * has not dug out yet, which is the one state that hides a place from
+     * everybody alive at once.
+     */
+    found: boolean;
+}
+
+/**
+ * Somebody standing somewhere, as this rule needs to read them.
+ *
+ * Four scalars, and none of them is an `NpcRecord`, because THE PLAYER IS NOT
+ * ONE. A rule that took an `NpcRecord` binds the simulation and not the played
+ * game, which is the defect this repository finds most often - and it is the
+ * defect that was live here: the world reached these places through
+ * `daoGroundsInReachOf` and the player's half of the same rule was written out
+ * a second time, in `server/consolidated/cultivation-support.ts`, against the
+ * catalog instead of the world.
+ */
+export interface SomebodyStanding {
+    ordinal: number;
+    /** Province they are standing in, as a catalog region id. */
+    regionCatalogId: string | null;
+    factionId: string | null;
+    /** Index into their own house's ladder. Negative for anybody in no house. */
+    factionRankIndex: number;
+}
+
+export interface HowSomebodyStandsToAGround {
+    /**
+     * They know where it is, off their own life, and could set out for it.
+     *
+     * NOT a knowledge record and not the player's discovery gate - this says
+     * what somebody in this position would know about their own province and
+     * their own house, which is what makes them able to TELL somebody else. A
+     * player's own awareness is a separate row in a separate table and is
+     * checked separately; nothing here licenses naming a place to them.
+     */
+    knowsWhereItIs: boolean;
+    /** Standing there long enough would teach them the road. */
+    inReach: boolean;
+    /** The first thing they are short by. Null when it is in reach. */
+    shortBy: ShortOfAGround | null;
+}
+
+/**
+ * How one person stands to one ground.
+ *
+ * THE ONE RULE, and everything about dao ground now asks it: the world's own
+ * reach list, the player's exposure context, and the refusal a player reads
+ * when a place will not teach them. Three different sentences about being
+ * unable to get in, and each is a real constraint somewhere else in the engine
+ * rather than a number invented here:
  *
  *   HELD    membership AND standing. `factionRankIndex` is the same instrument
  *           `manuals.ts` rations a shelf with, and it is what forty years of
@@ -283,59 +372,151 @@ export type RoadInReach = RoadWithinReach;
  *           and most people in this world die in the province they were born
  *           in, so an open ground is a hand dealt at birth - which is why every
  *           province has at least one and no province has all eight.
- *   BURIED  somebody found it. `discovered` is world state moved by
- *           `discoverBuriedGrounds`, on the world's clock and not on merit.
+ *   CARVING reached exactly the way open ground is - a face on a rock in a
+ *           province with nobody standing on the door. What is different is the
+ *           PRICE, which is years and lives in
+ *           `cultivation/what-a-road-in-reach-costs-to-walk.ts`, and the floor,
+ *           which is the highest in the catalog.
+ *   BURIED  somebody found it. `discovered` is world state moved on the
+ *           world's clock and not on merit.
  *
- * And in all three cases the rung: below `fromOrdinal` a visitor takes nothing,
+ * And in every case the rung: below `fromOrdinal` a visitor takes nothing,
  * which is the same floor that makes standing there survivable.
+ *
+ * KNOWING WHERE A THING IS AND BEING ABLE TO READ IT ARE DIFFERENT FACTS, and
+ * separating them is the point of this shape. The cart drivers of the Quiet
+ * Marches have crossed the Grinding Ford for six hundred years and nobody there
+ * thinks of it as cultivation; the catalog says so in the row itself. They can
+ * all tell you where it is. Almost none of them will ever take anything from
+ * it. Collapsing the two would have made a landmark a secret.
  */
-export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
-    const ordinal = npc.cultivation.realmOrdinal;
-    const theirRegion = regionCatalogIdOf(state, npc.locationId);
-    const out: RoadInReach[] = [];
+export function howSomebodyStandsToAGround(
+    ground: GroundAsTheRuleReadsIt,
+    who: SomebodyStanding
+): HowSomebodyStandsToAGround {
+    const away = { knowsWhereItIs: false, inReach: false } as const;
 
+    // Nobody has dug it out. This one hides the place itself rather than
+    // hiding the reader from it, so it comes first.
+    if (!ground.found) return { ...away, shortBy: 'nobody_has_found_it' };
+
+    if (ground.access === 'held') {
+        if (!who.factionId || who.factionId !== ground.heldByFactionId) {
+            return { ...away, shortBy: 'not_of_the_house' };
+        }
+        // Of the house. They know the terrace is up there; they are not let on
+        // it. This is what membership is worth and what standing costs.
+        if (who.factionRankIndex < ground.standingRequired) {
+            return { knowsWhereItIs: true, inReach: false, shortBy: 'standing' };
+        }
+    } else if (!who.regionCatalogId || who.regionCatalogId !== ground.regionCatalogId) {
+        return { ...away, shortBy: 'somewhere_else' };
+    }
+
+    if (who.ordinal < ground.fromOrdinal) {
+        return { knowsWhereItIs: true, inReach: false, shortBy: 'below_the_floor' };
+    }
+    return { knowsWhereItIs: true, inReach: true, shortBy: null };
+}
+
+/** The `how` a reachable ground supplies, which is what it costs in years. */
+export function howARoadCameFrom(access: string): RoadInReach['how'] {
+    return access === 'held' ? 'ground_held'
+        : access === 'carving' ? 'carving'
+        : access === 'buried' ? 'ground_buried'
+        : 'ground_open';
+}
+
+/** One dao ground as the world holds it, read back into the rule's shape. */
+export function groundAtLocation(location: LocationRecord): GroundAsTheRuleReadsIt | null {
+    const domain = location.data.daoDomain;
+    if (typeof domain !== 'string') return null;
+    const access = String(location.data.daoAccess ?? '');
+    return {
+        domain: domain as InsightDomain,
+        subject: String(location.data.daoSubject ?? location.name),
+        access,
+        fromOrdinal: Number(location.data.daoFromOrdinal ?? 0),
+        standingRequired: Number(location.data.daoStandingRequired ?? 0),
+        heldByFactionId: location.controllingFactionId,
+        regionCatalogId: typeof location.data.catalogRegionId === 'string'
+            ? location.data.catalogRegionId
+            : null,
+        // Only a buried ground can be unfound. Everything else is standing in
+        // the open and has been for as long as the province has had a name.
+        found: access !== 'buried' || location.discovered
+    };
+}
+
+/**
+ * The same read where there is no `WorldState` - the catalog's own row.
+ *
+ * `discoveryContextFor` runs on the MCP surface with no world in hand, and the
+ * exposure a player gets from a province has to be the same either way. A
+ * buried ground reads as unfound here, which is the honest answer for a caller
+ * that cannot see whether the world has dug it out.
+ */
+export function groundFromCatalogRow(row: PlaceThatTeachesADao): GroundAsTheRuleReadsIt {
+    return {
+        domain: row.domain,
+        subject: row.subject,
+        access: row.access,
+        fromOrdinal: row.fromOrdinal,
+        standingRequired: row.standingRequired,
+        heldByFactionId: row.heldBy,
+        regionCatalogId: row.regionId,
+        found: row.access !== 'buried'
+    };
+}
+
+/** Every dao ground the world holds, with how this person stands to each. */
+export function daoGroundsAround(
+    state: WorldState,
+    who: SomebodyStanding
+): (RoadInReach & { ground: GroundAsTheRuleReadsIt; standing: HowSomebodyStandsToAGround })[] {
+    const out: (RoadInReach & {
+        ground: GroundAsTheRuleReadsIt;
+        standing: HowSomebodyStandsToAGround;
+    })[] = [];
     for (const location of state.locations) {
         if (!location.tags.includes(DAO_GROUND_TAG)) continue;
-        const domain = location.data.daoDomain;
-        const from = Number(location.data.daoFromOrdinal ?? 0);
-        if (typeof domain !== 'string' || ordinal < from) continue;
-
-        const access = String(location.data.daoAccess ?? '');
-        let how: RoadInReach['how'];
-        if (access === 'held') {
-            if (!npc.factionId || npc.factionId !== location.controllingFactionId) continue;
-            if (npc.factionRankIndex < Number(location.data.daoStandingRequired ?? 0)) continue;
-            how = 'ground_held';
-        } else if (access === 'open') {
-            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
-            how = 'ground_open';
-        } else if (access === 'carving') {
-            // Reached exactly the way open ground is - it is a face on a rock
-            // in a province and nobody is standing on the door. What is
-            // different is the PRICE: a carving costs a handful of years
-            // because it is a text, where a cliff costs forty because nothing
-            // on it is addressed to you. The one-time and the passive source
-            // the design owner asked for are the same mechanism with different
-            // numbers, which is the only way to have both without a second
-            // system. The floors do the rest: these are the three highest in
-            // the catalog.
-            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
-            how = 'carving';
-        } else {
-            if (!location.discovered) continue;
-            if (!theirRegion || theirRegion !== location.data.catalogRegionId) continue;
-            how = 'ground_buried';
-        }
-
+        const ground = groundAtLocation(location);
+        if (!ground) continue;
         out.push({
-            domain: domain as InsightDomain,
-            subject: String(location.data.daoSubject ?? location.name),
+            domain: ground.domain,
+            subject: ground.subject,
             sourceId: location.id,
             sourceName: location.name,
-            how
+            how: howARoadCameFrom(ground.access),
+            ground,
+            standing: howSomebodyStandsToAGround(ground, who)
         });
     }
     return out;
+}
+
+/** How an NPC stands, off the row the world keeps for them. */
+export function standingOfNpc(state: WorldState, npc: NpcRecord): SomebodyStanding {
+    return {
+        ordinal: npc.cultivation.realmOrdinal,
+        regionCatalogId: regionCatalogIdOf(state, npc.locationId),
+        factionId: npc.factionId,
+        factionRankIndex: npc.factionRankIndex
+    };
+}
+
+/**
+ * Every dao ground this person can actually get at.
+ *
+ * A filter over `daoGroundsAround` rather than a rule of its own, so that what
+ * the world lets an NPC walk and what a played cultivator is told they are
+ * short by cannot disagree.
+ */
+export function daoGroundsInReachOf(state: WorldState, npc: NpcRecord): RoadInReach[] {
+    return daoGroundsAround(state, standingOfNpc(state, npc))
+        .filter(row => row.standing.inReach)
+        .map(({ domain, subject, sourceId, sourceName, how }) =>
+            ({ domain, subject, sourceId, sourceName, how }));
 }
 
 /**
@@ -382,6 +563,37 @@ export function roadsBoughtWithMaterialsBy(state: WorldState, npcId: string): Ro
 //   YOU CAN READ IT      A rung floor, derived from `power` rather than stored,
 //                        so it follows the ladder. Somebody twelve rungs under
 //                        an object is holding a heavy thing.
+//
+// AND A BODY AT A GREAT HEIGHT IS THIS, NOT A SECOND SYSTEM.
+//
+// Ruled by the design owner: remains impart a dao at a high enough rung, and
+// are objects of respect for that reason. That is a DAO GROUND YOU CAN CARRY -
+// exposure rather than accumulation, the same sentence
+// `places-that-teach-a-dao.ts` opens with - and the only difference from a
+// cliff is that this locus has a name and once had opinions. So it belongs
+// HERE, as an ordinary object with a `power` and a `daoDomain`, read by the
+// function below, and NOT beside it:
+//
+//   ONLY HIGH ENOUGH IMPARTS ANYTHING   `power`. An ordinary death leaves an
+//                        ordinary body and no `daoDomain`, which is what stops
+//                        the world flooding with teachers.
+//   ONLY CLOSE ENOUGH RECEIVES IT       `ARTIFACT_LEGIBLE_WITHIN`, the same
+//                        window a cliff uses. A nobody sitting with a 44 takes
+//                        less than an elder does, for the same reason four
+//                        hundred spans of somebody's argument is a wall with
+//                        scratches on it.
+//
+// Both gates already existed. Nothing had to be added for the container, and
+// nothing should be: the moment remains get their own reach rule there are two
+// exposure systems and they will disagree.
+//
+// What this makes legible, and the reason it is worth stating in the engine
+// rather than in prose: A HOUSE KEEPING ITS ANCESTORS IS NOT BEING PIOUS - ITS
+// ANCESTORS ARE HOW IT TEACHES. `STANDING_TO_STUDY_A_HOUSE_OBJECT` is why they
+// sit in a hall a junior is brought to rather than in a vault. And it is why
+// working one into a weapon is not grave-robbing but burning down a school:
+// the object is `power` OR `daoDomain` to whoever gets it, never both, because
+// there is one row and refining it is a different row.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -411,37 +623,87 @@ export const ARTIFACT_LEGIBLE_WITHIN = 12;
  */
 export const STANDING_TO_STUDY_A_HOUSE_OBJECT = 3;
 
+/** Somebody who might be holding something. The player is not an `NpcRecord`. */
+export interface SomebodyHolding extends SomebodyStanding {
+    /** Their own id, because an object is possessed by a person or by a house. */
+    id: string;
+}
+
+/** Somebody standing, off the row the world keeps for them, with their id. */
+export function holdingOfNpc(state: WorldState, npc: NpcRecord): SomebodyHolding {
+    return { ...standingOfNpc(state, npc), id: npc.id };
+}
+
+/**
+ * How one person stands to one object that carries a road.
+ *
+ * The same three-part answer `howSomebodyStandsToAGround` gives, and for the
+ * same reason: the refusal has to say which of the two things is missing.
+ * `knowsWhereItIs` is whether it is in front of them at all - carried, or in
+ * their own house - and the rung is a separate question asked afterwards.
+ */
+export function howSomebodyStandsToAnObject(
+    object: Pick<ObjectRecord, 'possessorId' | 'power'>,
+    who: SomebodyHolding
+): HowSomebodyStandsToAGround {
+    const inHand = object.possessorId === who.id;
+    const ofTheHouse = who.factionId !== null && object.possessorId === who.factionId;
+    if (!inHand && !ofTheHouse) {
+        return { knowsWhereItIs: false, inReach: false, shortBy: 'not_of_the_house' };
+    }
+    // A house's own people can study what the house holds, rationed by exactly
+    // the instrument every other house asset is rationed by. An outer disciple
+    // does not get shown the vault, and is not shown the ancestor either.
+    if (!inHand && who.factionRankIndex < STANDING_TO_STUDY_A_HOUSE_OBJECT) {
+        return { knowsWhereItIs: true, inReach: false, shortBy: 'standing' };
+    }
+    if (who.ordinal < Number(object.power ?? 0) - ARTIFACT_LEGIBLE_WITHIN) {
+        return { knowsWhereItIs: true, inReach: false, shortBy: 'below_the_floor' };
+    }
+    return { knowsWhereItIs: true, inReach: true, shortBy: null };
+}
+
+/** Every object in the world that carries a road, with how this person stands. */
+export function objectsThatCarryARoad(
+    state: WorldState,
+    who: SomebodyHolding
+): (RoadInReach & { power: number; standing: HowSomebodyStandsToAGround })[] {
+    const out: (RoadInReach & { power: number; standing: HowSomebodyStandsToAGround })[] = [];
+    for (const object of state.objects) {
+        const domain = object.data?.daoDomain;
+        if (typeof domain !== 'string') continue;
+        out.push({
+            domain: domain as InsightDomain,
+            subject: object.name,
+            sourceId: object.id,
+            sourceName: object.name,
+            how: 'artifact',
+            power: Number(object.power ?? 0),
+            standing: howSomebodyStandsToAnObject(object, who)
+        });
+    }
+    return out;
+}
+
 /**
  * Roads legible off an object this cultivator can actually get at.
  *
  * Carried by them, or held by their house with standing enough to be let near
  * it, and in either case only if they are close enough to the object's own rung
  * to read anything in it at all.
+ *
+ * A filter over `objectsThatCarryARoad`, for the same reason
+ * `daoGroundsInReachOf` is a filter: the reach the world grants and the refusal
+ * a player reads have to come off one rule.
  */
 export function roadsCarriedByObjectsInReachOf(
     state: WorldState,
     npc: NpcRecord
 ): RoadInReach[] {
-    const ordinal = npc.cultivation.realmOrdinal;
-    const out: RoadInReach[] = [];
-    for (const object of state.objects) {
-        const domain = object.data?.daoDomain;
-        if (typeof domain !== 'string') continue;
-        const inHand = object.possessorId === npc.id;
-        const inTheHouse = npc.factionId !== null
-            && object.possessorId === npc.factionId
-            && npc.factionRankIndex >= STANDING_TO_STUDY_A_HOUSE_OBJECT;
-        if (!inHand && !inTheHouse) continue;
-        if (ordinal < Number(object.power ?? 0) - ARTIFACT_LEGIBLE_WITHIN) continue;
-        out.push({
-            domain: domain as InsightDomain,
-            subject: object.name,
-            sourceId: object.id,
-            sourceName: object.name,
-            how: 'artifact'
-        });
-    }
-    return out;
+    return objectsThatCarryARoad(state, holdingOfNpc(state, npc))
+        .filter(row => row.standing.inReach)
+        .map(({ domain, subject, sourceId, sourceName, how }) =>
+            ({ domain, subject, sourceId, sourceName, how }));
 }
 
 /**

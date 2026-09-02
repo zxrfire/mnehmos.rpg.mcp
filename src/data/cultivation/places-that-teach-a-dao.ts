@@ -608,3 +608,21 @@ export function daoGroundsHeldBy(factionId: string): PlaceThatTeachesADao[] {
 export function daoGroundsIn(regionId: string): PlaceThatTeachesADao[] {
     return PLACES_THAT_TEACH_A_DAO.filter(p => p.regionId === regionId);
 }
+
+/**
+ * The ground a free-text place name refers to, if it refers to one.
+ *
+ * Loose on both sides, and it has to be: a player's `location` is free text,
+ * the parser strips a leading article off what they typed, and every name in
+ * this file begins with one. A strict compare answers "not a dao ground" for
+ * every dao ground in the world the moment somebody actually stands on one.
+ */
+export function daoGroundNamed(name: string | null | undefined): PlaceThatTeachesADao | undefined {
+    const wanted = loosely(name ?? '');
+    if (wanted.length === 0) return undefined;
+    return PLACES_THAT_TEACH_A_DAO.find(p => loosely(p.name) === wanted);
+}
+
+function loosely(name: string): string {
+    return name.toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}

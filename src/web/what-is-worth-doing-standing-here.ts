@@ -220,6 +220,18 @@ export interface StandingHere {
     /** The ground gives back less than ordinary: half rate, and a penalty. */
     thinGround: boolean;
     /**
+     * Ground this cultivator can point at where a road can be walked, plus the
+     * things bound to them that carry one.
+     *
+     * A COUNT AND NEVER A NAME, and the count is over their own knowledge rows
+     * rather than over the world's. Twenty-three of these are seeded per world
+     * and nothing a player could type reached one; the line this number decides
+     * is what makes the read findable at all. Somebody who has been told about
+     * none of them is offered nothing, which is how the discovery gate stays
+     * shut: the affordance cannot leak what the read would refuse to say.
+     */
+    groundThatTeachesARoad: number;
+    /**
      * Past the Lid, where none of the mortal-world lines apply at all.
      *
      * Not a difficulty branch - a correctness one. Offering a True Immortal a
@@ -294,6 +306,7 @@ const SAY = {
     ceiling: { id: 'ceiling', say: 'what is stopping me', routesTo: 'ceiling' },
     further: { id: 'further', say: 'how can I go further', routesTo: 'acquisition' },
     destinations: { id: 'destinations', say: 'where can I go', routesTo: 'destinations' },
+    roads: { id: 'roads', say: 'what can I learn here', routesTo: 'roads' },
     breakthrough: { id: 'breakthrough', say: 'I attempt a breakthrough', routesTo: 'breakthrough' },
     cultivate: { id: 'cultivate', say: 'I cultivate for a year', routesTo: 'cultivate' },
     room: { id: 'room', say: 'who is here', routesTo: 'look' },
@@ -525,6 +538,19 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // there is, who is standing here, and what the world is doing.
     add(at(SAY.ceiling, 'open', 'Every gate on your progress, named, in the order they bind.'));
     add(at(SAY.destinations, 'open', 'Where you could go from here, and what the ground is like there.'));
+    // Only once somebody has actually been told about one. Understanding is
+    // drawn from what a cultivator is exposed to rather than from what they
+    // accumulate, and this is the one line that points at the exposure - but
+    // offering it to somebody holding no records would tell them such places
+    // exist, which is a discovery the world is supposed to hand over.
+    if (here.groundThatTeachesARoad > 0) {
+        add(at(SAY.roads, 'open',
+            `${here.groundThatTeachesARoad === 1 ? 'One thing' : here.groundThatTeachesARoad + ' things'} `
+            + 'within your reach '
+            + `${here.groundThatTeachesARoad === 1 ? 'is' : 'are'} ground a road can be walked on `
+            + 'or something that carries one. Whether any of it will say anything to you is a '
+            + 'different question.'));
+    }
     if (!here.aboveTheLid) {
         add(at(SAY.room, 'open', 'Who is standing here, and how far above you they are.'));
         add(at(SAY.news, 'open',

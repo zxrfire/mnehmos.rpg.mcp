@@ -282,6 +282,21 @@ export const ACTION_NAMES = [
      * reason next to it, and the catalog holds both.
      */
     'destinations',
+    /**
+     * What ground this cultivator can point at teaches, and what it wants.
+     *
+     * The other half of `destinations`, and the half that was missing outright.
+     * Twenty-three dao grounds are seeded into every world;
+     * `daoGroundsInReachOf` had no caller anywhere in `src/web` or
+     * `src/server`, so nothing a player could type reached one, and the only
+     * place a player ever saw the name of one was a discovery leak in the
+     * travel list that has since been closed.
+     *
+     * Reads their own knowledge rows and nothing else, exactly like `recall`,
+     * so it cannot teach a name - and every ground it does name comes with
+     * either what it teaches or precisely what they are short by.
+     */
+    'roads',
     'wait',
     // The mortal economy. Half the deaths in this world are logistical, and
     // these are the two verbs that answer that - so they must be reachable
@@ -522,6 +537,10 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     // none of them can teach, spend, move or kill - and a player at a wall
     // must be able to ask what it is a hundred times for nothing.
     'ceiling', 'teacher', 'destinations',
+    // And what the ground within reach would teach, which is a read over the
+    // player's own knowledge rows joined to the catalog. It names no place they
+    // could not already name, spends nothing and moves nobody.
+    'roads',
     /**
      * Asking is free. Getting is not, and nobody has ever got.
      *
@@ -1393,6 +1412,34 @@ export const DESTINATIONS_QUESTION = new RegExp([
     /\b(?:quiet|uninhabited|unoccupied|empty|deserted|secluded|isolated|remote|uncrowded|undisturbed|lonely)\b[^.?!]*\b(?:place|places|spot|spots|cave|caves|ground|valley|mountain|mountains|wilds|wilderness|corner|somewhere)\b/,
     /\b(?:place|spot|cave|ground|somewhere)\b[^.?!]*\b(?:nobody|no one|no-one|nothing)\b[^.?!]*\b(?:else|around|there|nearby)\b/,
     /\b(?:away from|out of) (?:the )?(?:crowd|crowds|people|town|towns|everyone|everybody)\b/
+].map(r => r.source).join('|'));
+
+/**
+ * Asking what there is to understand where you are standing.
+ *
+ * Sat AHEAD of the destinations question and behind the ceiling one, because
+ * these sentences are about COMPREHENSION and the two neighbours are about
+ * geography and about the ladder. Tried in the ways somebody actually says it,
+ * per the repo's own rule that a near-synonym reaching nothing is a bug: "what
+ * can I learn here", "is there anything here that teaches", "what roads are
+ * there", "what is there to understand around here".
+ *
+ * Deliberately narrow on the two nouns that mean this and no others.
+ * `learn` alone belongs to the manual verbs - "what arts can I learn" is
+ * `list_techniques` and must stay there - so every branch below pins `learn` to
+ * a PLACE word, and the ones that do not name a place pin on `understand`,
+ * `comprehend`, `insight`, `dao` or `road`.
+ */
+export const ROADS_QUESTION = new RegExp([
+    /\bwhat (?:can|could|might) i (?:learn|understand|comprehend|study)\b[^.?!]*\b(?:here|there|nearby|near here|around here|hereabouts|in this (?:place|province|region)|from this (?:place|ground))\b/,
+    /\bwhat (?:is|'s) (?:there )?to (?:learn|understand|comprehend)\b/,
+    /\bwhat (?:can|could) (?:this|the) (?:place|ground|land)\b[^.?!]*\b(?:teach|teaches)\b/,
+    /\b(?:is|are) there (?:any ?)?(?:thing|where|place|places|ground)\b[^.?!]*\b(?:teach|teaches|teaching)\b/,
+    /\bwhat (?:ground|places?|sites?)\b[^.?!]*\b(?:teach|teaches|teaching)\b/,
+    /\bwhat (?:roads?|daos?|ways?) (?:are|is) (?:there|near|nearby|around|here)\b/,
+    /\bwhere (?:can|could) i (?:learn|comprehend|understand) (?:a |an |the )?(?:road|dao|way|principle)\b/,
+    /\bwhat (?:insights?|comprehensions?|understandings?)\b[^.?!]*\b(?:can|could) i\b/,
+    /\bground that teaches\b/
 ].map(r => r.source).join('|'));
 
 /** The verbs a line is taken off the board with. */
@@ -3681,6 +3728,14 @@ function planIntent(input: string): PlannedAction {
     // is still doing that when it also contains the word "teacher".
     if (CEILING_QUESTION.test(text)) {
         return { action: 'ceiling' };
+    }
+
+    // Ahead of the teacher question, which owns "teach me" and would otherwise
+    // answer "what can this place teach me" with a list of people. A place is
+    // not a person, and the two reads are the two halves of where anything is
+    // comprehended from.
+    if (ROADS_QUESTION.test(text)) {
+        return { action: 'roads' };
     }
 
     if (TEACHER_QUESTION.test(text)) {

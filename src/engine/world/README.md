@@ -1520,6 +1520,26 @@ Four channels, and every one of them costs something:
 | Buried ground | Four inside ruins | Nobody has dug it out yet. `BURIED_GROUND_FOUND_PER_YEAR` is 0.0015, so a world at year 300 is genuinely poorer than the same world at 1500 |
 | A material | Single-use, spent once on one person and gone | There are 39 in the world and no house makes more |
 
+**One rule answers for the world and for the player, and it used to be two.**
+`howSomebodyStandsToAGround(ground, who)` is the whole of who a ground teaches. It takes
+four scalars and never an `NpcRecord`, because the player is not one, and
+`daoGroundsInReachOf` is now a filter over it rather than a rule of its own. The second
+copy lived in `server/consolidated/cultivation-support.ts`: it wrote the floor, the
+membership check and the standing check out again against the CATALOG while this file ran
+the same three against the LOCATION table, and it calls the same function now.
+
+What the rule returns is three things rather than one, because knowing where a thing is and
+being able to read it are different facts. `knowsWhereItIs` is what makes somebody able to
+TELL you - the cart drivers of the Quiet Marches have crossed the Grinding Ford for six
+hundred years and the row says nobody there thinks of it as cultivation - and `shortBy` is
+the first thing a visitor is missing, in the order they meet them: found, then in the
+province or of the house, then let in, then able to read it. That ordering is what makes it
+a refusal somebody can act on rather than a boolean, and
+[`../../web/ground-that-teaches-a-road.ts`](../../web/ground-that-teaches-a-road.ts) turns
+each reason into a sentence naming what would change it. Measured before it existed:
+`daoGroundsInReachOf` had **no caller anywhere in `src/web` or `src/server`**, so every one
+of these places bound the simulation and nobody holding the controller.
+
 The material channel is the one exception to "in reach", and it has to be: the object is
 consumed, so the road has to survive it. It does, because `spend` marks the row rather than
 deleting it, and this module reads the road back off the spent row. **The record of who
