@@ -341,6 +341,31 @@ somebody worth keeping, the capability from somebody who had one worth removing 
 use kept, and nothing at all from somebody who is neither. Both answers are available to
 every house in the world.
 
+### The first live caller, and what it demonstrates
+
+`selling-a-copy-of-somebody-elses-art.ts` turns a leaked art into an ordinary `Deed` and
+`game.ts` hands it straight to the resolver. It is worth reading as the worked example,
+because the three axes produce four different scenes from one call and no branch:
+
+| the seller | what the house does |
+|---|---|
+| nobody could place it | *nobody can put a name to it*, and no account opens |
+| one of their own, seen | the capability. They hold nothing the house has not got |
+| an outsider, seen | the years. They hold the copy and the account of who gave it to them |
+| standing above the house | *there is a record and there is no reprisal* |
+
+The last row is the one the design owner cares about, and nothing produces it deliberately.
+Writing an art out takes having mastered it (`couldWriteOutACopy` in `world/manuals.ts`), so
+**the only people who can leak a house's signature are the people it cannot touch** - axis 2
+meeting a gate in another directory. The account still opens either way, which is what a
+house has against somebody beyond its reach and is not nothing.
+
+**Calibration found while wiring it, and left alone.** `beyond_them` needs a gap of four
+rungs, so a former peer of a house's own summit - the owner's *"2 people at 44, one is
+pissed, leaves"* - reads `stretch` and is still worth mounting against. Whether a house
+should be able to answer a peer is `REGARD_BANDS`' question rather than this file's, and it
+is reported rather than retuned from here.
+
 ## Kindness and harm are the same machinery pointed two ways
 
 `what-a-deed-leaves.ts` is the general case the two files above it are instances of, and

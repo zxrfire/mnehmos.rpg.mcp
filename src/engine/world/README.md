@@ -1795,7 +1795,13 @@ memory.ts        durable memories, search, and the LLM-driven compression write 
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
 manuals.ts       who holds a book, what shelf a house actually has, and who it
-                 has decided is worth the top of it
+                 has decided is worth the top of it. Two predicates that read
+                 alike and answer different questions: `isCommonlyHeld` is
+                 whether a stall stocks a thing, `noHouseCanCallItTheirs` is
+                 whether anybody owns it, and only the second one can be asked
+                 about a sword form. Whether a given person could WRITE ONE OUT
+                 is a third question again - `couldWriteOutACopy`, which takes
+                 the holder, because copying takes having mastered it.
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
 what-people-are-saying.ts
                  the ledger in the mouths of people who were not there: one fact
