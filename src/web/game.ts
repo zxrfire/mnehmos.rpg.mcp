@@ -592,12 +592,19 @@ import {
     whatAMatchChanges,
     whatDecliningSomebodyLeaves,
     whatLeavingAMatchCosts,
+    whatRefusingAMatchTheyAlreadyMadeLeaves,
     whatTheChildIs,
+    whatTheHousesNoIsWorth,
+    whetherTheyGoAlongWithIt,
     whoAgreesAndWhoDoesNot,
     YEARS_BEFORE_A_CHILD_CAN_BE_PLACED,
     type APartyToAMatch,
-    type TheHouseBeingAsked
+    type TheHouseBeingAsked,
+    type TheRoute
 } from '../engine/household/index.js';
+// The world's own bar for a tie that decides what somebody does. Read, never
+// restated - see `whetherTheyGoAlongWithIt`.
+import { DEFINING_STANDING } from '../engine/world/when-somebody-does-not-come-back.js';
 // The favour that skips an admission bar, and the catalog that says which
 // houses will take one. Both have been complete since they were written and
 // neither has ever been reachable by the person playing.
@@ -16170,6 +16177,48 @@ ${done.lines.join(' ')}`;
         const answer = whatAHouseWouldTakeForAMatch({ house, theirs, theOther: mine, table });
         const says = whoAgreesAndWhoDoesNot(answer);
 
+        // ── WHICH ROUTE THIS IS, AND IT IS READ OFF THE TIE ──────────────
+        //
+        // The order of consent is the whole difference between the two routes,
+        // and in a played game the order is visible in the ledger rather than
+        // in the sentence: two people with a tie the world already calls
+        // defining have something between them, and a house answering now is
+        // answering about a thing that exists. Everybody else is asking first.
+        const heldTie = tieFrom(this.repos, cultivator.id, party.id);
+        const route: TheRoute =
+            heldTie !== null
+            && (heldTie.type === 'spouse' || heldTie.type === 'lover'
+                || heldTie.strength >= DEFINING_STANDING)
+                ? 'person first'
+                : 'family first';
+
+        // ── AND WHETHER THE FAMILY'S ANSWER EVEN MATTERS ─────────────────
+        //
+        // The reprisal layer's own question with the parties in the seats a
+        // match puts them in. No rung is read here: what decides it is whether
+        // anything of the family's would be cost by acting, and whether the
+        // suitor is simply past what they could reach.
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const stick = whatTheHousesNoIsWorth({
+            theFamily: { houseId: theirFaction },
+            theSuitorsBacking: membership !== null ? 'backed' : 'none',
+            theSuitorIsOutOfTheirReach: answer.howFarApart === 'dismissed'
+        });
+
+        // ── AND WHETHER THE PERSON GOES ALONG WITH IT ────────────────────
+        //
+        // Off what they want and who they already have a tie to, both of which
+        // are rows the world keeps for other reasons. There is no compliance
+        // field anywhere and there must not be one.
+        const wanted = this.whatTheyWantOfYou(cultivator, party.id);
+        const theirOwnAnswer = whetherTheyGoAlongWithIt({
+            wantsItServes: wanted ? 1 : 0,
+            // A want a match forecloses needs a reading this layer does not yet
+            // have. Zero is honest: nothing is being asserted about them.
+            wantsItForecloses: 0,
+            standingTowardSomebodyElse: this.strongestTieAwayFrom(party.id, cultivator.id)
+        });
+
         const structure = [
             `Match: ${cultivator.name} (rung ${mine.reachesTo}, `
             + `${mine.houseId ?? 'no house'}) with ${party.name} (rung ${theirs.reachesTo}, `
@@ -16182,7 +16231,9 @@ ${done.lines.join(' ')}`;
             + `${answer.price.theBestOnTheTable}; ${answer.price.why ?? 'price met'}.`,
             ...says.says.map(s =>
                 `${s.party}: ${s.inFavour === null ? 'not this layer to answer' : s.inFavour}. `
-                + s.because)
+                + s.because),
+            `Route: ${route}. What the house's no is worth: ${stick.is} (their reach `
+            + `${stick.theirReach}). The person themselves: ${theirOwnAnswer.answer}.`
         ];
 
         // ── ASKING WHAT IT WOULD TAKE IS A QUESTION ──────────────────────
@@ -16201,7 +16252,14 @@ ${done.lines.join(' ')}`;
                     says.onlyThePersonIsLeftToAsk
                         ? 'Nobody who speaks for them objects. What is left is whether they want '
                           + 'it, and that is theirs to say.'
-                        : 'They do not all say the same thing, which is where these come apart.'
+                        : 'They do not all say the same thing, which is where these come apart.',
+                    // What the family's answer is actually worth. A player who
+                    // cannot tell a refusal that binds from one that follows
+                    // from nothing is negotiating in the dark.
+                    stick.line,
+                    // And the person themselves, in terms somebody who had
+                    // asked about them would recognise.
+                    `${party.name}: ${theirOwnAnswer.because}`
                 ]
             );
             facts.structure.push(...structure);
@@ -16212,7 +16270,6 @@ ${done.lines.join(' ')}`;
         }
 
         // ── AND PUTTING SOMETHING DOWN IS AN ATTEMPT ─────────────────────
-        const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = theirFaction ? getSect(theirFaction) : null;
 
@@ -16342,6 +16399,59 @@ ${done.lines.join(' ')}`;
             );
         } else {
             lines.push(`${party.name} says no.`);
+
+            // ── AND WHAT THAT NO COSTS THEM, WHICH IS USUALLY NOTHING ────
+            //
+            // The gate is categorical and it is the route: declining a
+            // proposal is declining a proposal, and houses have to be able to
+            // do that constantly without accumulating enemies. What opens an
+            // account is a no said to a thing the two of them already made.
+            const refused = whatRefusingAMatchTheyAlreadyMadeLeaves({
+                route,
+                theHouse: {
+                    id: party.id,
+                    name: party.name,
+                    houseId: theirFaction,
+                    houseName: theirSect?.name ?? null,
+                    alignment: theirSect?.alignment ?? null,
+                    ranked: party.party.ranked === true
+                },
+                theSuitor: {
+                    id: cultivator.id,
+                    name: cultivator.name,
+                    houseId: membership?.sectId ?? null,
+                    houseName: mySect?.name ?? null,
+                    alignment: mySect?.alignment ?? null,
+                    ranked: membership !== null
+                },
+                ofWhatTheyHad: answer.price.theHeightToReach <= 0
+                    ? 0
+                    : Math.min(1, answer.price.theBestOnTheTable
+                        / Math.max(1, cultivator.realmOrdinal)),
+                onDay: Math.floor(run.elapsedDays),
+                reach: stick.theirReach
+            });
+            for (const row of refused?.opens ?? []) {
+                const record = createObligation(row);
+                writeObligation(this.db as unknown as DatabaseHandle, record);
+                calls.push({
+                    name: 'engine.whatRefusingAMatchTheyAlreadyMadeLeaves',
+                    action: 'propose',
+                    summary: `${record.holderId} holds a ${record.severity} ${record.kind} about `
+                        + `${record.subjectId}. The two of them had already agreed it, and it was `
+                        + 'refused anyway.',
+                    ok: true
+                });
+            }
+            if (refused !== null) {
+                lines.push(
+                    'And it was not a proposal they were turning down. The two of you had it '
+                    + 'already, and it was taken away in front of whoever was there.'
+                );
+            }
+            if (stick.is !== 'a negotiation') {
+                lines.push(stick.line);
+            }
         }
         lines.push(...spent.facts.lines);
 
@@ -16368,6 +16478,27 @@ ${done.lines.join(' ')}`;
                 ...spent.calls
             ]
         };
+    }
+
+    /**
+     * How strongly somebody already stands toward anybody who is not the asker.
+     *
+     * Read off the world's own relationship standings, which are kept for a
+     * dozen other reasons, and compared by the caller against the world's own
+     * defining bar. Zero where there is no world or no row - honest rather than
+     * assumed, and it means the answer falls through to what they want.
+     */
+    private strongestTieAwayFrom(personId: string, notTowardId: string): number {
+        const world = this.atHand;
+        if (!world) return 0;
+        const npc = world.npcs.find(n => n.id === personId);
+        if (!npc) return 0;
+        let strongest = 0;
+        for (const tie of npc.relationships) {
+            if (tie.targetId === notTowardId) continue;
+            if (tie.standing > strongest) strongest = tie.standing;
+        }
+        return strongest;
     }
 
     /**
@@ -16500,6 +16631,11 @@ ${done.lines.join(' ')}`;
                 alignment: theirSect?.alignment ?? null,
                 ranked: party.party?.ranked === true
             },
+            // THE GATE, and it is the route rather than a threshold. A player
+            // refusing somebody who had only asked has declined a proposal;
+            // one refusing after the two of them agreed has taken away a thing
+            // that existed, and the ledger only hears about the second.
+            route: hadBeenToldYes ? 'person first' : 'family first',
             staked,
             onDay: today,
             // A house behind somebody is who the account goes to when they
