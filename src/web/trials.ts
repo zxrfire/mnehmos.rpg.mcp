@@ -257,6 +257,27 @@ export interface GateVerdict {
     structure: string;
 }
 
+/**
+ * "a" or "an", by what the next word actually starts with.
+ *
+ * These lists are joined from catalog values, so the first word is whatever
+ * the content author wrote rather than anything this file chose. A hardcoded
+ * "a" produced "Short by: a exceptional or stable foundation" in the middle of
+ * the best-written refusal in the game - the trial that turns somebody away for
+ * having rank without foundation, which then tells them precisely what it
+ * wanted. One wrong article in that paragraph is louder than it would be
+ * anywhere else.
+ *
+ * Deliberately naive: it reads the letter, not the sound. Every quality and
+ * grade in the catalog is a plain English adjective, so the exceptions that
+ * would need a pronunciation table - a "unified" something, an "hour" - do not
+ * arise here, and inventing one for them would be guessing at content that
+ * does not exist.
+ */
+function anArticleFor(phrase: string): string {
+    return /^[aeiou]/i.test(phrase) ? 'an' : 'a';
+}
+
 /** Whether one age-and-talent requirement is satisfied, and what it asked. */
 function talentMeasure(
     requirement: Extract<Gate, { kind: 'age_and_talent' }>['requires'][number],
@@ -272,7 +293,7 @@ function talentMeasure(
         case 'spirit_root_grade':
             return {
                 met: requirement.oneOf.includes(claimant.spiritRootGrade as never),
-                asked: `a ${requirement.oneOf.join(' or ')} root`,
+                asked: `${anArticleFor(requirement.oneOf[0])} ${requirement.oneOf.join(' or ')} root`,
                 held: claimant.spiritRootGrade
             };
         case 'spirit_root':
@@ -284,7 +305,7 @@ function talentMeasure(
         case 'foundation_quality':
             return {
                 met: requirement.oneOf.includes(claimant.foundationQuality),
-                asked: `a ${requirement.oneOf.join(' or ')} foundation`,
+                asked: `${anArticleFor(requirement.oneOf[0])} ${requirement.oneOf.join(' or ')} foundation`,
                 held: claimant.foundationQuality
             };
         case 'attribute':
