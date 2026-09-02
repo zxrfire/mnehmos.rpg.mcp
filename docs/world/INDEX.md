@@ -371,7 +371,7 @@ it describes.
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. Pills are the only reliable way to undo damage in this game, and the reason a run's economy exists. Every entry satisfies `PillSchema`. | 831 | - |
 | [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) | Places that teach a dao: named ground where a road besides your own can be walked, and who is standing on the door. | 611 | [`immortals.md`](immortals.md) |
 | [`recipes.ts`](../../src/data/cultivation/recipes.ts) | Alchemy recipes. One recipe per pill in `pills.ts`, keyed to ingredient ids in `herbs.ts`. | 760 | - |
-| [`regions.ts`](../../src/data/cultivation/regions.ts) | Regions - five of them, and the contrast between them is the content. | 3188 | [`making-places-different.md`](making-places-different.md) [`qi.md`](qi.md) |
+| [`regions.ts`](../../src/data/cultivation/regions.ts) | Regions - five of them, and the contrast between them is the content. | 3205 | [`making-places-different.md`](making-places-different.md) [`qi.md`](qi.md) |
 | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | The four roads that reach the top of the ladder, and what it actually takes to be walked up one. | 262 | - |
 | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | Rogue cultivators: the unaffiliated, who are most of the player's peers and who barely existed in this catalog until now. | 965 | - |
 | [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) | What ordinary people say about the powers above them, and where it is wrong. | 1058 | [`discovery.md`](discovery.md) |
@@ -655,12 +655,12 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 18 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 17 | 33 |
-| `REGIONS` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 22 | 72 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 23 | 87 |
+| `REGIONS` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 24 | 72 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 116 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 25 | 106 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 27 | 41 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 244 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 245 |
 
 <!-- END GENERATED: design-constants -->
 
