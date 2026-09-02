@@ -32,6 +32,7 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques';
+import { heldByTheirHouse } from '../../src/web/what-a-holder-would-take-for-it';
 
 const WORLD = 'a-cure-that-is-not-for-sale';
 const THE_CURE = 'pill-meridian-rebirth';
@@ -151,6 +152,12 @@ describe('reaching a cure that is not for sale', () => {
         expect(willing!.answer).toMatch(/rung \d+/);
         expect(willing!.answer).toContain('Name what you have, not what you can pay.');
 
+        // The exact row that is about to change hands, so the once-only guard
+        // below can name it rather than counting.
+        const theirHouse = world!.npcs.find(n => n.name === willing!.name)?.factionId ?? null;
+        const traded = holders.find(h => h.ownerId === theirHouse);
+        expect(traded, 'the willing speaker speaks for no house holding one').toBeDefined();
+
         // The sentence the design owner actually wrote, which names nobody and
         // is said to whoever you are dealing with.
         // The sentence the design owner actually wrote. It names nobody, so it
@@ -189,6 +196,69 @@ describe('reaching a cure that is not for sale', () => {
             'select quantity from cultivator_pouch where cultivator_id = ? and item_id = ?'
         ).get(cultivator.id, THE_CURE) as { quantity: number } | undefined;
         expect(pouch?.quantity ?? 0).toBeGreaterThan(0);
+
+        // ── AND IT IS WORTH IT EXACTLY ONCE ─────────────────────────────
+        //
+        // The defect this guards is an infinite-duplication exploit on the
+        // scarcest class of object in the world. The first version of the trade
+        // inserted a pouch row and left the shelf alone, so the same house
+        // could be traded with again and again and the world gained a
+        // heaven-grade pill each time - out of nothing, in an economy whose
+        // whole shape rests on there being almost none. Measured elsewhere:
+        // 2373 deaths over six seeds and forty years, none at the heaven band
+        // or above, so the legitimate supply is empty as arithmetic and any
+        // duplication IS the supply.
+        //
+        // Asserted from the world state and from what the verb says, because
+        // those are two different claims and both have to hold: the row moved,
+        // and the game knows it moved.
+        const worldAfter = await game.loadWorld();
+        const stillOnTheirShelf = worldAfter!.objects.filter(o =>
+            o.kind === 'pill' && o.data?.pillId === THE_CURE && o.data?.spent !== true
+            && (o.possessorId === traded!.ownerId || o.ownerId === traded!.ownerId));
+        expect(stillOnTheirShelf, 'the house is still holding one after selling it')
+            .toHaveLength(0);
+
+        // The world holds exactly as many as it did. Possession moved; nothing
+        // was created.
+        const worldTotalAfter = worldAfter!.objects.filter(o =>
+            o.kind === 'pill' && o.data?.pillId === THE_CURE && o.data?.spent !== true).length;
+        expect(worldTotalAfter).toBe(holders.length);
+
+        // And the record says whose it was, on what day, for what. An object
+        // arriving with no history is the signature of something stolen.
+        const mine = worldAfter!.objects.find(o => o.id === traded!.id);
+        expect(mine?.possessorId).toBe(cultivator.id);
+        expect(mine?.ownerId).toBe(cultivator.id);
+        const link = mine!.provenance[mine!.provenance.length - 1];
+        expect(link.previousHolderId).toBe(traded!.ownerId);
+        expect(link.note).toContain('Not sold for stones');
+
+        // ── AND THE VERB SAYS SO WHEN ASKED AGAIN ───────────────────────
+        //
+        // `heldByTheirHouse` is the function the verb itself reads to decide
+        // whether there is anything to price, so this is the verb's own answer
+        // rather than a paraphrase of it.
+        expect(heldByTheirHouse(worldAfter, theirHouse, THE_CURE)).toBeNull();
+
+        // ── WHY THIS LEG IS NOT ASSERTED THROUGH A TYPED SENTENCE ───────
+        //
+        // It was, and it was flaky for a reason that has nothing to do with
+        // this verb. By the time the trade has landed, forty-odd days have gone
+        // by - the helper spends one per speaker it tries and each attempt
+        // spends three - and the person has walked off, so the re-ask comes
+        // back as the roster refusal: *"you have a name for none of them.
+        // Somebody has to be introduced, or overheard, before they can be asked
+        // for anything."* That is `interact` being exactly right about a room
+        // this test did not mean to change, and pinning around it would mean
+        // either asserting a sentence that is not about scarcity or accepting
+        // two possible answers, which is a guard that cannot fail.
+        //
+        // `heldByTheirHouse` above IS the verb's answer rather than a
+        // paraphrase of it: it is the function `whatWouldItTake` calls to
+        // decide whether there is anything to price, and null is precisely what
+        // makes it say "has no Meridian Rebirth Pill to price". The claim is
+        // asserted where it is decided.
     }, 300_000);
 
     /**

@@ -516,6 +516,7 @@ import {
     whatItWouldTake
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import type { OnTheTable } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
+import { transferPossession } from '../engine/world/possessions.js';
 import {
     heldByTheirHouse,
     howHighTheirHouseReaches,
@@ -13395,13 +13396,63 @@ ${done.lines.join(' ')}`;
 
         const took = result.outcome === 'taken' || result.outcome === 'turned';
         if (took) {
-            // THE OBJECT ACTUALLY MOVES. A trade the player is told landed and
-            // that leaves the shelf untouched is the narrator asserting an
-            // outcome the database never took, which is the one thing this
-            // codebase forbids outright.
+            // ── THE ROW MOVES. IT IS NOT COPIED ──────────────────────────
+            //
+            // The first version of this inserted a pouch row and left the
+            // shelf alone, which meant the same house could be traded with
+            // twice and the world gained a second one of the scarcest class of
+            // object it has. That is not untidiness - it is manufacturing,
+            // from nothing, the exact thing this economy is built around not
+            // having. Measured elsewhere the same night: 2373 deaths over six
+            // seeds and forty years, none at the heaven band or above, so the
+            // legitimate supply of top-grade material is empty as arithmetic
+            // and any duplication is the whole supply.
+            //
+            // `transferPossession` is what the rest of the world already uses -
+            // `immortal-world.ts` in four places, `legacy.ts`, and the repair
+            // dose next door. It reassigns the possessor on the SINGLE record
+            // rather than making another, and `transfersOwnership` moves the
+            // legal half too, which a trade should and a loan should not: the
+            // house sold it, so it is not theirs any more in either sense.
+            //
+            // AND THE PROVENANCE IS THE POINT RATHER THAN BOOKKEEPING. What
+            // `items.md` cares about is that somebody can ask, two centuries
+            // on, whose this was and how it moved - so the entry carries the
+            // house it came off, the day, and the terms. An object that arrives
+            // in a pouch with no history is the signature of something stolen,
+            // and this one was not.
+            const index = (world?.objects ?? []).findIndex(o => o.id === onShelf.id);
+            if (world && index >= 0) {
+                world.objects[index] = transferPossession(world.objects[index], {
+                    onDay: today,
+                    toHolderId: cultivator.id,
+                    toHolderName: cultivator.name,
+                    // The catalog's own word for a thing that changed hands for
+                    // a consideration. That the consideration was not money is
+                    // what the note carries; `AcquisitionMode` is deliberately
+                    // a small closed set and does not need a barter member.
+                    how: 'bought',
+                    transfersOwnership: true,
+                    source: `Traded by ${onShelf.ownerName ?? party.name}`,
+                    note: `Given for ${answer.theBestPutDown ?? 'something offered'}, which `
+                        + `carried them to rung ${answer.theBestOnTheTable} against a thing that `
+                        + `carries to rung ${answer.theHeightToReach}. Not sold for stones.`
+                });
+                // The turn wrapper writes the world when this is set, so a
+                // restart cannot lose the fact that the shelf is now empty.
+                this.worldDirty = true;
+            }
+
+            // The pouch is the PLAYER-FACING half and not a second copy: the
+            // object row is the world's record of which one this is and where
+            // it has been, and the pouch entry is the thing `consume_pill`
+            // actually spends. A barter pill has both because it has a story; a
+            // bought one has only the pouch, because a commodity has none.
             addToPouch(this.db, cultivator.id, asPill.id, 'pill', 1);
             lines.push(
-                `${party.name} takes what you offered and the ${thing.name} is in your pouch.`
+                `${party.name} takes what you offered and the ${thing.name} is in your pouch. `
+                + 'It came off a shelf that is now short of one, and the record says whose it '
+                + 'was.'
             );
         } else if (result.outcome === 'countered') {
             lines.push(
