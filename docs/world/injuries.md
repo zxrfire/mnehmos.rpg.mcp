@@ -31,12 +31,18 @@ medicine: **does this wound threaten your life, or does it take a rung from you?
 forced through faster than the channel could pass it, or the walls were torn rather than burned.
 They hurt, they last, they are a genuine impairment, and **they do not stop you climbing.**
 
-**The wounds of the cultivation** - a cracked core, a shattered foundation, an unformed
+**The wounds of the cultivation** - a cracked core, a broken foundation, a crippled
 nascent soul - are the rare family, and they are a different kind of problem
 entirely. **These take something back.** A cracked core is not an inconvenience on the road; it
-is the road closing. A shattered foundation is an injury in every ordinary sense - it is done to
+is the road closing. A broken foundation is an injury in every ordinary sense - it is done to
 you, it can be inflicted, and it can in principle be mended - and it belongs here rather than
 beside a torn channel, because what it costs is a rung and not a season.
+
+Each of them is named for **what that realm confers and this one does not**, which is a rule
+rather than a style: a crippled nascent soul cannot survive long outside the body, a failed
+integration leaves parts that do not work right, an imperfect tribulation body has flaws a true
+one does not. Ask what the realm forms, then name that not forming - never a mood, never a
+metaphor. The catalog states the rule and a test pins it.
 
 Note the vocabulary: **this setting says CORE.** It does not use `dantian` anywhere, and a
 wound to the core is `cracked-core` and nothing else.
