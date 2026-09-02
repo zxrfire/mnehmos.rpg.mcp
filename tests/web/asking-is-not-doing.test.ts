@@ -671,16 +671,35 @@ describe('a manual costs what a manual costs', () => {
         for (const id of stock) expect(stallPriceStones(id)).toBeGreaterThan(0);
     });
 
-    /** And the thing above the line keeps its refusal, now naming a route. */
+    /**
+     * And the thing above the line keeps its refusal, now naming a route.
+     *
+     * THE SUBJECT HAS TO BE UNBUYABLE FROM EVERYBODY, not only from a stall.
+     * This asked for the Azure Dew canon, which is `soldAtStall: false` and
+     * `isCommonlyHeld: true` - a house's recruitment pitch that no stall
+     * stocks and that any of its disciples may write out again. Once people
+     * standing here could sell a copy, whether this spent stones depended on
+     * whether somebody carrying one happened to be in the square, and the
+     * world here is not pinned. It passed alone and failed in company for a
+     * year of session time.
+     *
+     * `single-road-treatise` is false on both counts: no stall carries it and
+     * nobody may copy it. There is no seller in any world.
+     */
     it('still refuses to sell what nobody sells, and says what would work', async () => {
         const { db, game } = makeGame({ seed: 'not-for-sale', worldEnabled: true });
         const { cultivator } = await game.newRun('Lin Baoqing');
         const before = cultivatorRow(db, cultivator.id);
 
-        const result = await game.act('I buy the Azure Dew Gathering Canon');
+        const result = await game.act('I buy the Single Road Treatise');
 
         expect(cultivatorRow(db, cultivator.id).spirit_stones).toBe(before.spirit_stones);
-        expect(result.narration).toMatch(/teach|house|stall/i);
+        // Says it is not sold, and then says what is - which is the whole of
+        // "names a route" for a thing whose route is not a house at all. The
+        // old subject was a house's canon and the old wording named the house;
+        // this one is a ruin treasure and there is no house to name.
+        expect(result.narration).toMatch(/not sold|nobody sells|does not sell/i);
+        expect(result.narration).toMatch(/What is:/);
     }, 120_000);
 });
 
