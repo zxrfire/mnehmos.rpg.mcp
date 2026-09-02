@@ -8,6 +8,12 @@
  *
  *   an-attempt-to-move-somebody.ts       one attempt: the odds, the four
  *                                        outcomes, and the marks it leaves
+ *   how-freely-somebody-parts-with-what-they-have.ts
+ *                                        one number per person, drawn from
+ *                                        their id and never from their house,
+ *                                        so that a kind elder and a grasping
+ *                                        one answer the same request
+ *                                        differently
  *   what-a-house-will-do-about-it.ts     the alignment split, entirely
  *                                        downstream of the roll
  *   when-somebody-works-out-what-you-did.ts
@@ -20,6 +26,7 @@
  */
 
 export * from './an-attempt-to-move-somebody.js';
+export * from './how-freely-somebody-parts-with-what-they-have.js';
 export * from './what-a-house-will-do-about-it.js';
 export * from './when-somebody-works-out-what-you-did.js';
 export * from './going-further-than-an-agreed-bout-allowed.js';

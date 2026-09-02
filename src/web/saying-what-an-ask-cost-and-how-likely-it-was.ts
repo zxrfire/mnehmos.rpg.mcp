@@ -179,7 +179,11 @@ const WHAT_EACH_TERM_IS: Readonly<Record<string, string>> = {
     grudge: 'an open grudge they hold',
     ask: 'the weight of the thing asked for',
     purse: 'the money put down',
-    room: 'who else was in the room'
+    room: 'who else was in the room',
+    // Named as a fact about the PERSON and never about their house, because the
+    // ruling behind the term is that the two do not predict each other: kind
+    // elders exist exactly as grasping demonic cultivators do.
+    disposition: 'how freely this particular person parts with things'
 };
 
 const points = (value: number): string => {

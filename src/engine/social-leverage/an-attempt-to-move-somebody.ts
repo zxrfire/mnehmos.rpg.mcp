@@ -47,6 +47,8 @@
  *                THEIR life earns. Saturating, and reaching only as far into
  *                the ask as money reaches in this world. See THE PURSE.
  *     the room   discreet leverage does not survive an audience.
+ *     who they   how freely THIS PARTICULAR PERSON parts with things, which is
+ *      are       a fact about them and not about their house. See DISPOSITION.
  *
  * FOUR OUTCOMES, BECAUSE TWO IS NOT PLAY
  * --------------------------------------
@@ -89,6 +91,7 @@ import type {
     Significance
 } from '../social/relationships.js';
 import type { DayIndex } from '../social/common.js';
+import { openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IS BEING ASKED
@@ -256,6 +259,79 @@ const PURSE_REACH: Record<AskWeight, number> = {
     a_betrayal: 0.05
 } as const;
 
+// ─────────────────────────────────────────────────────────────────────────
+// DISPOSITION
+//
+// The design owner's ruling: *"some people are greedy some generous, this
+// should be part of their character - kind elders exist just as greedy demonic
+// cultivators exist."*
+//
+// Every other term above is about the two of you, the room, or what is on the
+// table. None of them is about WHO THE PERSON ASKED HAPPENS TO BE, so before
+// this term two people at the same rung of the same house, equally owed and
+// equally fond of you, answered the same request identically forever. That is
+// the world as a set of doors with the same lock.
+//
+// THE SCALAR IS THE WHOLE MECHANISM, AND IT IS NOT A PERSONALITY.
+// `openHandednessOf` in `how-freely-somebody-parts-with-what-they-have.ts`
+// hands back one number on -1..+1 and this multiplies by it. There is nothing
+// to switch on: a tenth kind of person is a different number with a different
+// sentence beside it, and no branch anywhere reads a name. See that file for
+// why it is drawn from the person's own id and cannot see an alignment.
+//
+// IT DISCOUNTS COST, NOT DANGER, and that distinction is why there is a reach
+// table here at all rather than a flat multiplier on `ask`. `AskWeight` runs
+// two different quantities up one scale - what a thing COSTS them at the bottom
+// and what it RISKS them at the top - and generosity is about the first only.
+// A generous person hands over the book. A generous person is not one rung
+// likelier to end their own standing, because that was never a question about
+// how tightly they hold things. So the table is shaped like `PURSE_REACH` and
+// for the same reason: both are statements about how far a thing reaches into
+// an ask, and both go to almost nothing at the far end.
+//
+// AND IT IS SMALL WHERE NOTHING IS BEING GIVEN UP. A courtesy costs them a
+// sentence, so everybody is generous with it and the term is nearly flat there.
+// That falls out of the table rather than being a rule about courtesies.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The most a disposition can ever be worth, at either end.
+ *
+ * Under `PURSE_MAX` would be wrong - who somebody is should outweigh what is in
+ * a stranger's purse - and over a tie at full strength or a realm of standing
+ * would be worse, because then the world would be decided by a coin the player
+ * cannot see. Sat between the two: a hair under the purse's ceiling doubled,
+ * and well under `TIE_WEIGHT`. The distance between the two extremes of the
+ * axis is therefore about a third of the whole scale on a real favour, which is
+ * enough to be the difference between a yes and a no and never enough to be the
+ * only thing that was.
+ */
+const DISPOSITION_MAX = 0.18;
+
+/**
+ * How far being open-handed reaches into what is being asked.
+ *
+ * Read this next to `PURSE_REACH`. They are the same kind of table making
+ * opposite-shaped statements: money reaches furthest at the bottom of the scale
+ * and generosity reaches furthest where somebody is being asked to GIVE
+ * something up, which is one row in.
+ *
+ *   a_courtesy             nothing is leaving their hands, so there is almost
+ *                          nothing to be generous or grudging with
+ *   a_real_favour          the whole of where this lives: time, standing, a
+ *                          book they would rather keep
+ *   against_their_interest they end up worse off, and how tightly they hold
+ *                          things is now only part of what they are weighing
+ *   a_betrayal             not a question about holding on to anything. Never
+ *                          zero, because "typically does not" is not "never"
+ */
+const DISPOSITION_REACH: Record<AskWeight, number> = {
+    a_courtesy: 0.15,
+    a_real_favour: 1,
+    against_their_interest: 0.35,
+    a_betrayal: 0.1
+} as const;
+
 /**
  * Nothing is certain and nothing is impossible.
  *
@@ -286,6 +362,21 @@ export interface Party {
      * somewhere to take a refusal; a hired hand does not.
      */
     ranked?: boolean;
+    /**
+     * How freely this person parts with what they have, on -1..+1.
+     *
+     * Absent means DRAWN FROM THEIR ID, not neutral. See `dispositionWeight`
+     * for why the default is where the answer comes from rather than a
+     * fallback: a field two callers could each forget is a field one of them
+     * will forget, and this world has been burned by that repeatedly.
+     *
+     * READ OFF THE PERSON, NEVER OFF THEIR HOUSE. `openHandednessOf` is the one
+     * function that answers this and it takes an id and nothing else. Anything
+     * that computes this field from an alignment, a faction or a rung has
+     * broken the ruling it exists to serve, and would do it invisibly, because
+     * the result would read plausibly every time.
+     */
+    openHandedness?: number;
 }
 
 /**
@@ -514,6 +605,37 @@ export function purseWeight(input: AttemptInput): number {
 }
 
 /**
+ * What kind of person the subject is about parting with things, as odds.
+ *
+ * DERIVED FROM THE SUBJECT WHEN THE CALLER DOES NOT SUPPLY IT, and that is the
+ * whole reason this term is a feature rather than a module with tests. AGENTS.md
+ * names "a module nothing calls" as the most-repeated defect in this project and
+ * names its mirror image too: *"a rule that binds NPCs and not the player, or
+ * the player and not NPCs, is the same failure with one caller instead of
+ * none."* There are two callers of `resolveAttempt` - the played game in
+ * `web/game.ts` and the world simulation in
+ * `world/the-world-changing-on-its-own.ts` - and a field either of them could
+ * forget to fill is a field that will be filled in one of them.
+ *
+ * So the default is not a fallback. It is where the answer comes from, and
+ * `Party.openHandedness` is an override for a caller that already knows better.
+ * This is the same shape as `purseWeight` reaching for `earningsPerYear` off the
+ * subject's rung rather than being handed a figure: a fact about a person, asked
+ * once and answered in one place.
+ *
+ * Exported for the same reason `purseWeight` is: the two are the terms most
+ * likely to be mistuned, and a probe that cannot price one without resolving an
+ * attempt cannot tell tuning from a bug.
+ */
+export function dispositionWeight(input: AttemptInput): number {
+    const supplied = input.subject.openHandedness;
+    const leaning = supplied === undefined || !Number.isFinite(supplied)
+        ? openHandednessOf(input.subject.id)
+        : supplied;
+    return clamp(leaning, -1, 1) * DISPOSITION_MAX * DISPOSITION_REACH[input.ask];
+}
+
+/**
  * Every term, computed and named.
  *
  * Exported because a probe that cannot see the breakdown cannot tell a tuning
@@ -559,7 +681,8 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         grudge: round4(grudge),
         ask: round4(ask),
         purse: round4(purseWeight(input)),
-        room: round4(room)
+        room: round4(room),
+        disposition: round4(dispositionWeight(input))
     };
 
     const raw = Object.values(terms).reduce((sum, n) => sum + n, 0);
@@ -942,6 +1065,8 @@ export const LEVERAGE_ATTEMPT_CONSTANTS = Object.freeze({
     PURSE_MAX,
     PURSE_HALF_AT_YEARS,
     PURSE_REACH,
+    DISPOSITION_MAX,
+    DISPOSITION_REACH,
     DISCREET_LEVERAGE,
     AUDIENCE_RESISTANCE,
     BASE_ODDS,

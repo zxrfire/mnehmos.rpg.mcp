@@ -136,6 +136,18 @@ and, most cheaply and most often, having dealt with them before. That last one i
 of the advice above made mechanical: a request from somebody they have taken something from
 before is not the same request.
 
+**And who you are asking is not only their rank.** Two people at the same rung of
+the same house, equally owed and equally fond of you, do not answer the same
+request the same way, because some people part with things easily and some do not.
+That is a fact about the person and never about their house: **kind elders exist
+just as grasping demonic cultivators do**, and the righteous/demonic axis in this
+world is about method and permission rather than about being nice. It shows in the
+odds - measured, four times the chance between two neighbours of identical
+standing on the same afternoon - and it shows in the wording, because a generous
+person saying no is doing something a tight-fisted one is not. Nothing about it is
+a personality the player can look up; it is one leaning, and the only way to learn
+it is to have dealt with somebody.
+
 **And a refusal may only name a door that exists.** This is the rule that governs how these
 are written, and it is not a stylistic one: the first draft of the refusals here quoted the
 paragraph above almost word for word - *"turn up twice, buy somebody a drink, do a small thing

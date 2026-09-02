@@ -36,6 +36,7 @@ import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AskWeight, AttemptResult } from '../engine/social-leverage/index.js';
+import { whatTheirRefusalIsLike } from '../engine/social-leverage/index.js';
 import { howItHasBeenGoing } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
@@ -2494,7 +2495,22 @@ export function factsForRequest(
      * drinks is naming a route that no longer moves anything - the same defect
      * as naming one that was never built, arriving one turn of the screw later.
      */
-    theirTie = 0
+    theirTie = 0,
+    /**
+     * How freely this person parts with things, on -1..+1.
+     *
+     * The design owner's ruling is that greed and generosity are part of
+     * somebody's character, and the test for whether it landed is not the
+     * arithmetic - it is that *"a generous elder should read as generous"*. The
+     * odds breakdown carries the term; this carries the sentence, and a no is
+     * where it belongs, because a no is the commonest thing a player hears and
+     * because a generous person saying one is doing something a tight-fisted
+     * one is not.
+     *
+     * Nought means ordinary, and an ordinary person's refusal is left exactly
+     * as it was.
+     */
+    openHandedness = 0
 ): EngineFacts {
     const asked = whatWasAsked(kind, named);
     // The odds the engine actually used, which is the one thing the player was
@@ -2554,6 +2570,7 @@ export function factsForRequest(
             case 'refused':
                 lines.push(
                     `${subject} says no, and it stays between the two of you. `
+                    + `${inTheirOwnGrain(openHandedness)}`
                     + whatWouldMoveThem(costing.ask, theirTie)
                 );
                 break;
@@ -2561,6 +2578,7 @@ export function factsForRequest(
                 lines.push(
                     `${subject} says no, and does not keep it to themselves. Somebody who was `
                     + `not in the room now knows what you asked for. `
+                    + `${inTheirOwnGrain(openHandedness)}`
                     + whatWouldMoveThem(costing.ask, theirTie)
                 );
                 break;
@@ -2605,6 +2623,23 @@ export function factsForRequest(
             ...costing.structure
         ]
     );
+}
+
+/**
+ * A refusal in the voice of the person it came from, or nothing.
+ *
+ * `whatWouldMoveThem` says what would change the answer, which is a fact about
+ * the ASK. This says what kind of no it was, which is a fact about the PERSON,
+ * and the two are deliberately separate sentences: the advice must not change
+ * because somebody is generous, and the character must not disappear because
+ * the advice is fixed.
+ *
+ * The trailing space is here rather than at the call sites so that an ordinary
+ * person's refusal is byte-identical to what it was before this existed.
+ */
+function inTheirOwnGrain(openHandedness: number): string {
+    const grain = whatTheirRefusalIsLike(openHandedness);
+    return grain === null ? '' : `${grain} `;
 }
 
 /**
@@ -2783,6 +2818,11 @@ export function factsForWeighingARequest(
      */
     odds: number | null = null
 ): EngineFacts {
+    // Nothing has been refused here, so `inTheirOwnGrain` deliberately does not
+    // appear: its sentences are about a no that was actually said. What this
+    // surface carries about the person is `howTheyHoldWhatTheyHave`, which the
+    // caller has already put into `subjectFacts` - the same reading, in the
+    // tense that fits a thing which has not happened yet.
     const lines: string[] = [
         `What it would take to ask ${subject} ${whatWasAsked(kind, '')}, before you ask.`,
         ...subjectFacts,
