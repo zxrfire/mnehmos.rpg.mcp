@@ -21,6 +21,7 @@ import {
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
+import type { Affordance } from './what-is-worth-doing-standing-here.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
     MAX_ORDINAL,
@@ -301,12 +302,34 @@ export interface DerivedView {
      * is the strongest environmental lever in the game and was invisible.
      */
     ground: CrowdingRead | null;
+    /**
+     * What is live standing here, most pressing first.
+     *
+     * Sent because the interface offered three buttons - Cultivate, Status,
+     * Attempt Breakthrough - and a rich verb space with no discovery path
+     * behind them. Measured by playing a full run: a cultivator who is broke,
+     * starving and carrying three untreated wounds has a way out through work,
+     * gathering and food, and a player who reads only what the screen shows
+     * them presses Cultivate and dies without ever seeing it.
+     *
+     * These are PROMPTS, not the interface. The client offers two or three
+     * beside the standing controls; free text is still the whole game, and a
+     * player must always be able to type something nobody listed. Each entry
+     * carries the sentence to insert verbatim (`say`), the engine action it
+     * routes to, and the state fact that made it live.
+     *
+     * Nothing here changes an outcome, a price or a probability. Empty is a
+     * legitimate value: a state read taken with no world loaded cannot see who
+     * is standing here, and an empty list is a smaller lie than a guessed one.
+     */
+    standingHere: Affordance[];
 }
 
 export interface DerivedContext {
     sectName?: string | null;
     nameTaken?: boolean;
     ground?: CrowdingRead | null;
+    standingHere?: Affordance[];
 }
 
 /** Everything the sheet needs that is a function of the cultivator, not a field of it. */
@@ -354,7 +377,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         sectName: context.sectName ?? null,
         foundationQuality: cultivator.foundationQuality,
         nameTaken: context.nameTaken ?? false,
-        ground: context.ground ?? null
+        ground: context.ground ?? null,
+        standingHere: context.standingHere ?? []
     };
 }
 

@@ -223,7 +223,13 @@ export const PRICES: readonly Price[] = [
     { id: 'price-port-rate', name: 'Port rate on a cargo', category: 'service', cash: 25, unit: 'per stone of value per 40', note: 'A fortieth of what crosses the rail, published, unchanged in ninety years and refused upward four times in writing. It is light because the traffic is where the profit is and squeezing the traffic moves it.' },
 
     // ── medicine: where the two currencies meet ───────────────────────
-    { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, cannot touch a meridian.' },
+    // The note used to end "cannot touch a meridian", and the engine disagreed
+    // with it in play: mortal care closed two torn meridians and two scorched
+    // channels in one run while this line was on the board beside it. What is
+    // actually out of reach is set by `medicineNeededFor` - crippling damage,
+    // or an ordinary tear on a body far enough up the ladder - and the prose
+    // yields to the measurement.
+    { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, and puts a body that has been battered back on its feet. An ordinary torn meridian closes under the month of care on the line below; crippling damage does not, and neither does anything on a body the village has no medicine for.' },
     { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and it leaves you out of the fight for a season.' },
     { id: 'price-minor-healing-pill', name: 'Minor Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.' },
     { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.' },

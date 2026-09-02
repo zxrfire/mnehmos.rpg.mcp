@@ -22,7 +22,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { LOW_SATIETY, stagnationRemaining } from '../engine/cultivation/survival.js';
+import { LOW_SATIETY, stagnationRemaining, turnsUntilStarvation } from '../engine/cultivation/survival.js';
 import type { ManualQuality } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
@@ -342,6 +342,25 @@ import {
 import { whyProgressHasStopped, type SeatStanding } from './why-progress-has-stopped.js';
 import { whoWouldTeach, type SomebodyAbove } from './who-would-teach-this-cultivator.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
+// The fourth, and the one a player asks first: what kinds of thing are live at
+// all, standing here, in this state. Prompts rather than a menu - see the
+// banner in the module for why that distinction is the whole design.
+import {
+    whatIsWorthDoingStandingHere,
+    theMostPressing,
+    linesFor,
+    ASKING_WHAT_IS_POSSIBLE,
+    ABOUT_A_MANUAL,
+    type StandingHere,
+    type Affordance
+} from './what-is-worth-doing-standing-here.js';
+// A refusal is finished when it names the thing that would work. This is that,
+// for wounds - the one axis where the engine was right at every step and silent
+// at the step that mattered.
+import {
+    whatWouldCloseThisWound,
+    whatToSayAboutTheCure
+} from './what-would-close-this-wound.js';
 // The strongest environmental lever in the game, stated in the one place the
 // rate itself reads. See the file header for the measurement that forced it.
 import { howCrowdedThisGroundIs, type CrowdingRead } from './how-crowded-this-ground-is.js';
@@ -2257,6 +2276,16 @@ ${noticedWaiting}`;
                 return this.listTechniques(run, cultivator);
 
             case 'acquisition':
+                // "what are my options" is understood as a question about how
+                // the manual in your hands could go further. That is a good
+                // read and it is the wrong one for somebody who has just
+                // started and is asking what the game is - measured in a real
+                // run, where the sentence answered about the manual only. The
+                // two are told apart by whether the sentence is about a book;
+                // anything that mentions one keeps the answer it had.
+                if (ASKING_WHAT_IS_POSSIBLE.test(rawInput) && !ABOUT_A_MANUAL.test(rawInput)) {
+                    return this.guidance(run, cultivator, ambient);
+                }
                 return this.acquisition(run, cultivator, action.target);
 
             // ── the three questions a stuck player asks ──
@@ -2288,14 +2317,46 @@ ${noticedWaiting}`;
                 return this.assess(cultivator, action.target);
 
             case 'unclear': {
+                // `help` and `what can I do` land here, and until now they got
+                // the refusal. Those are the two most universal inputs in the
+                // history of text games; a game that refuses both has hidden
+                // its own verb space behind a guess. Answered before the
+                // refusal is composed, because they are not a failure to parse
+                // - they are the one question the parser was never asked.
+                if (ASKING_WHAT_IS_POSSIBLE.test(rawInput)) {
+                    return this.guidance(run, cultivator, ambient);
+                }
+
                 // The cheapest action available, and the whole reason it is in
                 // the closed set: no time, no food, no roll, no death. A player
                 // may type something ambiguous a hundred times and lose nothing
                 // but a moment.
+                //
+                // AND IT TEACHES. A refusal that names its cause is the rule
+                // this project already holds; a refusal with nothing after it
+                // is a dead end, and this is the single most common thing a new
+                // player sees. So the engine says what KINDS of thing work
+                // standing here - the two or three that are live in this state,
+                // from the same source `help` reads - rather than leaving them
+                // to guess again. Nothing is unlocked and nothing is cheapened:
+                // the sentence they typed still did nothing at all.
+                const pressing = theMostPressing(
+                    whatIsWorthDoingStandingHere(this.whatIsLiveHere(cultivator, ambient)),
+                    3
+                );
                 const unread = this.freeAction(run, 'unclear', factsForRefusal(
                     'The thought does not resolve.',
                     'You turn the thought over and it does not resolve into anything you could ' +
-                    'actually do standing here.'
+                    'actually do standing here.\n\n' +
+                    'Things that would, at this moment:\n' +
+                    linesFor(pressing).map(line => `  ${line}`).join('\n') + '\n\n' +
+                    // World voice, and `voice.test.ts` is why: naming the
+                    // software here would put a sentence about the program in
+                    // front of somebody who is meant to be standing in a
+                    // village. Say what is true instead - the list is not a
+                    // list of permitted words.
+                    'Those are not the only words that work. Say what you mean to do, '
+                    + 'and find out what it costs.'
                 ));
                 // The sentence itself goes to the inspector, where somebody
                 // tuning the parser can read exactly what it failed on.
@@ -8476,16 +8537,41 @@ ${noticed}`;
             const needed = outOfReach
                 .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
                 .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+            // AND IT NAMES THE THING THAT WOULD WORK.
+            //
+            // This refusal was correct, well written, and a dead end. Measured
+            // in play: a cultivator carrying a crippling tear, holding 194
+            // spirit stones against a 54-stone cure, was told what grade of
+            // medicine it wanted and never told that the medicine has a name,
+            // is on a board, and was inside their purse. They found it by
+            // reading `pills.ts`, which is not a thing a player can do.
+            //
+            // The shape copied here is the one this project already got right
+            // on the Cultivate control, which names the Lesser Qi-Gathering
+            // Manual when there is no method. A refusal is finished when it
+            // names the alternative.
+            const cure = whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones);
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
                 'Past what a physician can do.',
                 `They look at what you are carrying and put their hands in their sleeves. `
                 + `${cultivator.realmOrdinal >= FOUNDATION_ORDINAL
                     ? 'A body at this height does not mend on splints and boiled roots'
                     : 'Damage this deep does not close under ordinary care'}`
-                + `: it wants ${needed}-grade medicine, and nothing below it will reach. `
-                + 'They will not take money for a month that would change nothing.',
+                // "nothing below it will reach" was the old clause, and with the
+                // cure named underneath it the page then contradicted itself:
+                // a heaven-grade requirement stated, and a mortal-grade pill
+                // offered in the next breath. The requirement is the
+                // PHYSICIAN'S - `medicineReaches` is consulted here and nowhere
+                // on the pill path - so the sentence says whose it is.
+                + `: it wants ${needed}-grade medicine, and there is none of it in a `
+                + 'village surgery. They will not take money for a month that would '
+                + 'change nothing.'
+                + (cure ? `\n\n${whatToSayAboutTheCure(cure)}` : ''),
                 `${outOfReach.length} untreated wound(s) beyond mortal grade at ordinal `
                 + `${cultivator.realmOrdinal}; highest requirement ${needed}. `
+                + (cure
+                    ? `Cure named: ${cure.name}, ${cure.stones ?? 'not sold for stones'}. `
+                    : '')
                 + 'Nothing bought, nothing spent, no time passed.'
             ));
         }
@@ -9257,8 +9343,10 @@ ${noticed}`;
         ];
 
         const calls: ToolCallRecord[] = [];
-        for (const { route, how } of routes) {
-            const report = assessAcquisition({
+        const assessed = routes.map(({ route, how }) => ({
+            how,
+            route,
+            report: assessAcquisition({
                 manual: {
                     id: manual.id,
                     name: manual.name,
@@ -9279,13 +9367,42 @@ ${noticed}`;
                 realmOrdinal: cultivator.realmOrdinal,
                 heldVolumeIds: wholeWorkVolumes(manual),
                 dao
-            });
+            })
+        }));
 
+        // ── SAY EACH SENTENCE ONCE ───────────────────────────────────────
+        //
+        // Found by playing: "what are my options" printed one sentence SIX
+        // times. Two multiplications on top of each other, and neither is a
+        // fault in the assessment.
+        //
+        // `AcquisitionReport.headline` is `lines[0]` by construction, so
+        // rendering the headline and then the whole of `lines` says the first
+        // sentence twice per route. And most of what the assessment returns is
+        // a fact about the MANUAL rather than about the route - whether it
+        // suits this cultivator, where it ends, what its opening costs - so the
+        // same sentence comes back from all three.
+        //
+        // The fix is to render on that split rather than to trim a duplicate:
+        // what every route says is said once, above them, and each route then
+        // carries only what is true of that route. Three bare "open."s under a
+        // shared reason is the honest shape of the answer - the routes really
+        // are equivalent here - and it is one screen rather than six lines of
+        // the same clause.
+        const shared = assessed[0].report.lines
+            .filter(line => assessed.every(({ report }) => report.lines.includes(line)));
+        for (const line of shared) if (!lines.includes(line)) lines.push(line);
+
+        for (const { how, report } of assessed) {
+            const own = report.lines.filter(line => !shared.includes(line));
             lines.push(
-                `${how}: ${report.usable ? 'open.' : 'not open.'} ${report.headline}`
+                `${how}: ${report.usable ? 'open.' : 'not open.'}`
+                + (own.length > 0 ? ` ${own[0]}` : '')
             );
-            for (const line of report.lines) lines.push(`  ${line}`);
+            for (const line of own.slice(1)) lines.push(`  ${line}`);
+        }
 
+        for (const { route, report } of assessed) {
             calls.push({
                 name: 'encounters.assessAcquisition',
                 action: 'acquisition',
@@ -9697,6 +9814,150 @@ ${noticed}`;
                 + `not by them. Gated on canPointAt, the same predicate the move verb `
                 + `enforces. Travel days off region connections; qi bands off the region `
                 + `catalog.`,
+            ok: true
+        }];
+        return execution;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // WHAT IS LIVE STANDING HERE
+    //
+    // The fourth question, and it turned out to be the one a new player asks
+    // first: not "why am I stuck" but "what are the kinds of thing I can do
+    // at all". Found by playing a full run in the browser, where `help` and
+    // `what can I do` - the two most universal inputs in the history of text
+    // games - both landed on the unclear refusal while a dozen good verbs sat
+    // one guess away.
+    //
+    // Nothing below computes an outcome. It is a GATHERING, in the same shape
+    // as `ceiling`, `teacher` and `destinations` above it: six facts this
+    // class already reads for other purposes, handed to a pure function that
+    // holds no thresholds of its own beyond the schema's. See
+    // `what-is-worth-doing-standing-here.ts` for what it may and may not say.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * The state that decides what is worth offering, as scalars.
+     *
+     * Every field is read through the function that already owns it -
+     * `techniqueCeiling` for the road, `medicineReaches` for what a physician
+     * can close, `canAttemptBreakthrough` for the crossing - so this cannot
+     * disagree with the verb it points at. A second opinion about whether a
+     * wound is treatable would be a second medicine system.
+     *
+     * Cheap enough to run on every state read: one pouch query, one roster
+     * read that is already in hand, and arithmetic.
+     */
+    private whatIsLiveHere(cultivator: Cultivator, ambient: AmbientQi): StandingHere {
+        const terms = this.rateTermsFor(cultivator);
+        const road = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+
+        const hurt = untreatedInjuries(cultivator.injuries);
+        const mendable = hurt.filter(injury => !isPermanentWound(injury.woundType));
+
+        return {
+            satiety: cultivator.satiety,
+            starvationTurns: cultivator.starvationTurns,
+            // The engine's own clock, which folds in the realm's burn
+            // multiplier and the grace after the belly empties. Dividing
+            // satiety by the per-action cost here would be a second, wrong
+            // hunger model living beside the real one.
+            turnsUntilStarvation: turnsUntilStarvation(
+                { satiety: cultivator.satiety, starvationTurns: cultivator.starvationTurns },
+                cultivator.realmOrdinal
+            ),
+            spiritStones: cultivator.spiritStones,
+            mealCost: MEAL_COST_STONES,
+            treatableWounds: mendable.filter(injury =>
+                medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
+            woundsPastMortalCare: mendable.filter(injury =>
+                !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
+            cure: whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones),
+            battered: cultivator.hp < cultivator.maxHp,
+            practisesAMethod: road.state !== 'no_method',
+            methodExhausted: road.state === 'exhausted',
+            breakthroughReady: canAttemptBreakthrough(cultivator).eligible,
+            inASect: this.repos.sects.getMembership(cultivator.id) !== null,
+            sellableGoods: listPouch(this.db, cultivator.id).length,
+            peopleAboveHere: this.present(cultivator)
+                .filter(row => row.realmOrdinal > cultivator.realmOrdinal).length,
+            thinGround: ambient === 'thin',
+            aboveTheLid: canExistBeyondTheLid(cultivator)
+        };
+    }
+
+    /**
+     * The same list, for the sheet.
+     *
+     * On the state payload rather than only in narration because the player
+     * who most needs it is the one who has not thought to ask: the run that
+     * found this pressed Cultivate, because it was the only obvious control on
+     * the screen, and died. Two or three of these beside it are the difference
+     * between a trap and a decision.
+     *
+     * Never throws and never blocks a state read. A sheet that fails to render
+     * because the suggestion list could not be built would be a far worse bug
+     * than the one this fixes, and `present()` in particular depends on a world
+     * that a bare state read may not have loaded.
+     */
+    private affordancesFor(cultivator: Cultivator, run: Run): Affordance[] {
+        try {
+            return whatIsWorthDoingStandingHere(
+                this.whatIsLiveHere(cultivator, this.ambientFor(cultivator, run))
+            );
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * `help`, `what can I do`, and everything that means them.
+     *
+     * Free, and that is load-bearing for the same reason `ceiling` is free: a
+     * player who is charged a turn to ask what their options are will stop
+     * asking, and this is the one read a player in trouble asks repeatedly.
+     *
+     * It is deliberately situated rather than a catalog. A fixed command list
+     * would flatten the whole character of the game, which is that you say
+     * what you do in your own words; what comes back is the handful of things
+     * that are live in THIS state, so the player learns the shape of the space
+     * and then phrases it themselves.
+     */
+    private guidance(run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
+        const here = this.whatIsLiveHere(cultivator, ambient);
+        const live = whatIsWorthDoingStandingHere(here);
+
+        const standing =
+            `${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}. `
+            + 'What is live for you here:';
+        const facts = factsForToolResult(
+            `${placeName(cultivator)} at ${rankName(cultivator.realmOrdinal)}: `
+            + `${live.length} thing(s) live.`,
+            [standing, ...linesFor(live)],
+            // The closing line is not decoration. It is the difference between
+            // a prompt and a menu, and a player who reads this as the list of
+            // accepted commands has learned the wrong game.
+            [
+                standing,
+                linesFor(live).map(line => `  ${line}`).join('\n'),
+                'That is not a list of what you may say. It is what is live standing here. '
+                + 'Say what you actually mean to do, in your own words, and find out what '
+                + 'it costs.'
+            ].join('\n\n')
+        );
+        facts.structure.push(
+            `standing-here: ${live.length} live, `
+            + `${live.filter(a => a.urgency === 'now').length} pressing. `
+            + `satiety ${here.satiety}, stones ${here.spiritStones}, `
+            + `treatable ${here.treatableWounds}, beyond-mortal ${here.woundsPastMortalCare}, `
+            + `method ${here.practisesAMethod ? (here.methodExhausted ? 'exhausted' : 'carrying') : 'none'}.`
+        );
+
+        const execution = this.freeAction(run, 'unclear', facts);
+        execution.calls = [{
+            name: 'engine.whatIsWorthDoingStandingHere',
+            action: 'help',
+            summary: live.map(a => `${a.urgency}:${a.id}`).join(', '),
             ok: true
         }];
         return execution;
@@ -11849,7 +12110,14 @@ ${fit.line}`;
                 // no screen anywhere. Null rather than zeroes when no world is
                 // loaded: "nobody is here" and "nobody has looked" are
                 // different facts and only one of them is measured.
-                ground: this.crowdingHere(cultivator)
+                ground: this.crowdingHere(cultivator),
+                // What is live standing here, so the situation panel can offer
+                // two or three of them beside Cultivate and Status. The same
+                // list `help` prints and the same list a refusal teaches from,
+                // computed once here - three copies of this would drift, and
+                // the player would be shown one set of options by the panel and
+                // a different set by the game a moment later.
+                standingHere: this.affordancesFor(cultivator, run)
             }),
             // "You can look at the ledger and see the shape of who you used to
             // be" is a design requirement, so the ledger is on the wire.
