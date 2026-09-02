@@ -17,7 +17,7 @@ import { findDuplicates } from '../../scripts/find-duplicated-prose.mjs';
  * Run `node scripts/find-duplicated-prose.mjs` to see what is duplicated and
  * where.
  */
-const BASELINE = 27;
+const BASELINE = 24;
 
 /*
  * Raised from 25 when the ancestral roll was lifted out of `sects.ts`, and the
@@ -33,6 +33,12 @@ const BASELINE = 27;
  * largest pair in the list. They are two files about the same people, which is
  * exactly what the split was meant to make legible, and they are the next thing
  * to reconcile.
+ *
+ * The scan reads whole lines, so it used to count two files importing the same
+ * names from the same module, and two files dividing themselves with the same
+ * section banner. Neither is a passage anybody wrote twice - the first is what
+ * a shared dependency looks like, and the language requires it. Every pair left
+ * in the count is now real prose.
  */
 
 describe('duplicated prose', () => {
