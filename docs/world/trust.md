@@ -21,6 +21,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | [Checking costs time](#checking-costs-time-and-time-is-what-nobody-has) | somebody doubts a claim and has to decide whether to go and find out |
 | [The art is the strongest check](#the-art-is-the-strongest-check) | deciding whether a house is still the house, or a person still of it |
 | [The woken ancestor](#the-woken-ancestor) | checking whether any of this is bespoke |
+| [What of this the engine actually holds](#what-of-this-the-engine-actually-holds) | before building any of it |
 
 ---
 
@@ -311,11 +312,24 @@ Which means the rule from earlier holds with no exceptions anywhere:
 
 > **Every check, including the strongest one, is worth what this particular reader cannot verify.**
 
-**And it puts a real cost on secrecy.** A house that guards its arts closely is harder to
-impersonate *and* harder to confirm — **nobody outside can vouch for its own disciples**, so its
-people fall back on tokens and names like everybody else, which are the weak checks. A house
-whose art is widely recognised has traded some security for a verification its members can carry
-anywhere. **Neither is straightforwardly better**, and it is a choice a house has made.
+**But guarding an art means refusing to *teach* it, not refusing to be seen doing it**, and
+those are independent. Houses compete. Even the apex ones run martial tournaments, and the
+reason is developmental rather than ceremonial: **that is how a house's youngest and best grow,
+by being challenged.** A house that stopped competing to protect its secrets would be trading
+its next generation for the privacy of the current one.
+
+**So the normal case is the strongest possible position: an art nobody can acquire and everybody
+can recognise.** Secret in transmission, public in performance. That is why the top of the
+hierarchy is not the rare check you would expect — **plenty of ordinary people have watched an
+apex house's art at a tournament**, so the reference needed to run the check is widely held, and
+a member of a great house carries verification anywhere they go without holding anything.
+
+**The Hollow Court is the exception, and it is what makes them what they are.** They do not
+compete and are not seen, so **nobody holds the reference** — which cuts exactly both ways.
+Nobody can impersonate a Court member, and **nobody can confirm one either**, including the
+Court itself when it would be convenient. That suits a body which does not answer, does not
+report its dead, and does not wish to be approached; it is the same posture as the rest of their
+silence, paid for in the same coin.
 
 **It is also the precise reason a woken ancestor is the authority she is.** She is the rare
 reader holding *both* axes for her own era: the realm to read a demonstration exactly, and a
@@ -510,3 +524,28 @@ half of this is wiring rather than new ground: `src/engine/world/lineage.ts` exi
 already use clan surnames, and `named-figures.ts` carries a member who shares a surname with the
 sealed ancestor beneath his stone. This model
 is the first thing that gives them something to do, and it does it without a special case.
+
+---
+
+## What of this the engine actually holds
+
+<!-- tier: 3 -->
+
+**Read this before building on the above.** Most of this document is design, and a reader who
+mistakes it for a description of the running world will build on sand.
+
+| Piece | State |
+|---|---|
+| **Realm as the perceptual axis** | **exists**, everywhere |
+| **`KnowingStage`** — the reference axis, per subject | **exists**, `src/engine/social/discovery.ts` |
+| **`RESERVED_SURNAMES`** — lineage names never rolled | **exists**, `src/engine/world/history.ts`; **no consumer yet** |
+| **`surnameOf`** — reading a family off a name | **exists and has zero callers.** Nothing in the engine reads a surname as a lineage |
+| **Recognising whose art you just watched** | **does not exist.** The strongest check in the hierarchy is entirely unimplemented |
+| **Life plates, and tokens that shatter** | **do not exist** anywhere in the repo |
+| **A jade tag carrying a house's name** | **does not exist** as an identity object |
+| **Sealed ancestors** | **in the catalogs** — `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` — and **nothing in `src/engine/` reads them** |
+
+**The encouraging half:** both axes already exist, so this model is a *reading* of state the
+world keeps rather than new state it would have to grow. **The discouraging half:** every check
+above the weakest rung is unbuilt, and the lineage half has a function with no callers — which
+is this project's signature defect, written down here so the next person does not rediscover it.
