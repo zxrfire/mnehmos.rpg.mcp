@@ -135,8 +135,80 @@ export type ObjectKind =
  * `mundane` things do not get provenance at all, which is the point of the
  * field: the world does not track where every spirit stone came from, and
  * pretending otherwise makes the table useless and the queries slow.
+ *
+ * ── THIS IS THE TIER AXIS. THERE IS NOT A SECOND ONE ─────────────────────
+ *
+ * The world models things in three tiers and this field carries the only one of
+ * the three boundaries that a record has to store:
+ *
+ *   1  NOT MODELLED.  Ordinary mundane goods - a bowl of millet, a robe, board
+ *      for the night, a mortal sword. A PRICE AND AN AVAILABILITY, NEVER A
+ *      COUNT. Nobody works out how much grain a province holds, and a thousand
+ *      travellers buying meals does not cause a famine; a famine causes the
+ *      meals to stop. What moves this tier is EVENTS, NOT CONSUMPTION. It has
+ *      no representation here on purpose: its home is `PRICES` in
+ *      `data/cultivation/mortal-world.ts`, which is a board of prices and units
+ *      with no quantity anywhere on it.
+ *
+ *   2  COUNTED.  A number per holder and per place, no id and no history. This
+ *      is `mundane`. It falls when people take or buy, and it COMES BACK - and
+ *      what brings it back splits the tier in two, which is the half worth
+ *      knowing before modelling any of it:
+ *
+ *        FROM THE GROUND   herbs, beast materials, ore. Regrowth restocks them,
+ *                          so a district can be worked out and a place can be
+ *                          picked clean.
+ *        FROM LABOUR       common manuals, cheap pills, anything made in
+ *                          quantity by people nobody can name. Copying and
+ *                          refining restock them, so they cannot be exhausted
+ *                          the way a hillside can - the constraint is
+ *                          somebody's months, not the hillside.
+ *                          `monthsToCopy` and `copyistMonthlyCash` already
+ *                          price that labour.
+ *
+ *   3  TRACKED.  `notable` and above. One object, one id, and a PROVENANCE:
+ *      a history of how it got here that somebody can be asked about. The
+ *      chain below is testimony rather than a ledger - it can be messy,
+ *      contested and honestly wrong, because people have memories.
+ *
+ * Two rules cut across all three and neither is stored anywhere:
+ *
+ *   GRADE IS FIXED WHEN A THING IS MADE AND NEVER MOVES. Nothing is upgraded
+ *   and nothing earns its way from counted into tracked. An earth-grade
+ *   carriage is an earth-grade carriage for its whole existence. The only
+ *   movement is downward and it already exists: {@link shardPower}, a piece is
+ *   worth one rung less than the whole.
+ *
+ *   CRAFTING CREATES, IT DOES NOT PROMOTE. A recipe consumes counted stock and
+ *   produces a NEW thing whose grade is whatever that thing is. You can make
+ *   more tracked objects; each is a new individual whose provenance starts at
+ *   its making.
+ *
+ * `docs/world/things/items.md` is the ruling and `docs/world/things/economy.md`
+ * carries what restocks each tier. Use {@link keptAs} rather than comparing to
+ * `'mundane'` by hand: five modules were doing that separately when this was
+ * written.
  */
 export type ObjectSignificance = 'mundane' | 'notable' | 'significant' | 'legendary';
+
+/** A holder and a number, or a row with a history. The one line in `items.md`. */
+export type KeptAs = 'counted' | 'tracked';
+
+/**
+ * Which of the two stored tiers a thing is in.
+ *
+ * One function so there is one answer. Adding a field beside `significance` is
+ * how two sources of truth start disagreeing, and open-coding the comparison is
+ * the same defect spread over more files.
+ */
+export function keptAs(significance: ObjectSignificance): KeptAs {
+    return significance === 'mundane' ? 'counted' : 'tracked';
+}
+
+/** Whether this row carries a provenance anybody can be asked about. */
+export function isTracked(object: Pick<ObjectRecord, 'significance'>): boolean {
+    return keptAs(object.significance) === 'tracked';
+}
 
 export interface ObjectRecord {
     id: string;
@@ -328,6 +400,17 @@ export function makeObject(
  * came from somewhere worth remembering. The 108 stones out of an abandoned
  * mine are one row; the stones somebody was paid last week are not tracked at
  * all.
+ *
+ * THE ONE PLACE THE TWO STORED TIERS MEET. A lot is a tracked row whose payload
+ * is a count, which is what a currency needs and what nothing else does: which
+ * 108 stones these are matters, and which stone within them does not.
+ *
+ * NOTHING IN `src/` CALLS THIS. Currency reaches the world as a number in
+ * `resources` and on the player's purse, and no code path anywhere mints a lot,
+ * so no world contains one and the abandoned-mine example describes a shape
+ * rather than anything that happens. Recorded here rather than left to be
+ * rediscovered: what is missing is a caller at the point stones are found,
+ * looted or dug, not a function.
  */
 export function makeResourceLot(init: {
     id: string;

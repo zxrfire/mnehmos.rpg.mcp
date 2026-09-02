@@ -8,6 +8,21 @@
  * rests on existed in a catalog nothing read.
  *
  * This file does one thing: it takes those rows and seats them.
+ *
+ * -- EXCEPT THE ROWS THAT ARE KINDS ---------------------------------------
+ *
+ * Three rows at the bottom of the catalog are not one object. A notched sabre,
+ * a wanderer's bell and the Severed's cutting knife each stand in for several
+ * hundred of the thing, which their own descriptions say and which
+ * `significance: 'mundane'` records - `possessions.ts` documents that value as
+ * the marker for a thing that gets no provenance at all.
+ *
+ * Seating one of those minted a row with no owner, no holder and no location,
+ * which every filter in `queryObjects` misses and which nothing in the world
+ * has ever read. That is `docs/world/things/items.md`'s counted thing wearing
+ * an id: ledger rubble that costs storage and answers no question. The catalog
+ * keeps all of them, because the ordering top to bottom is the argument; the
+ * world seats the individuals.
  */
 
 import type { WorldState } from './world-state.js';
@@ -31,6 +46,8 @@ export function seedArtifacts(state: WorldState): ObjectRecord[] {
     const out: ObjectRecord[] = [];
 
     for (const row of ARTIFACTS) {
+        // A kind, not an object. See the banner.
+        if (row.significance === 'mundane') continue;
         // Seat it where its owner sits, when the owner is a house this world
         // has. Everything else keeps whatever the catalog said.
         const locationId = row.ownerId && factions.has(row.ownerId)

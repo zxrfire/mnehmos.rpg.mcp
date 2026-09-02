@@ -396,11 +396,28 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
             'One of four, issued with the office rather than to the person, and returned when the office is. A good blade with a century of the Pavilion\'s own sword intent worked into it, which is the ordinary way a sect makes something strong: slowly, by using it.',
         tags: ['forged', 'office-issued', 'four-exist']
     }),
+    // -- FROM HERE DOWN, A ROW IS A KIND AND NOT AN OBJECT ----------------
+    //
+    // Everything above is one thing: it has a maker or a giver, a house that
+    // can name the year, and a movement somebody should be able to ask about
+    // two centuries later. These three are not. Their own descriptions say so -
+    // several hundred exist, it is issued to everybody, losing one is a fine -
+    // and a catalog row for a thing several hundred of which exist is a KIND
+    // standing in for all of them, which is `docs/world/things/items.md`'s
+    // almanac rather than its ledger.
+    //
+    // They stay in this table, because there is exactly one table and the
+    // ordering top to bottom is the whole argument - a person holding a four
+    // beats a person holding nothing, read by the same resolver that reads the
+    // forty-six. What changes is the switch: `mundane` is what `possessions.ts`
+    // documents as the marker for a thing that gets no provenance at all, so a
+    // reader and a seeder can both tell a kind from an individual without a
+    // second field and without a rule that names these three rows.
     makeObject({
         id: 'artifact-severed-name-knife',
         name: 'A Cutting Knife',
         kind: 'artifact',
-        significance: 'notable',
+        significance: 'mundane',
         power: 14,
         ownerId: 'sect-the-severed',
         ownerName: 'The Severed',
@@ -414,7 +431,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         id: 'artifact-hollow-bell',
         name: 'A Hollow Bell',
         kind: 'artifact',
-        significance: 'notable',
+        significance: 'mundane',
         power: 9,
         ownerId: null,
         ownerName: '',
