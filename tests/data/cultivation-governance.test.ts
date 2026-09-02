@@ -821,8 +821,18 @@ describe('a seal cuts both ways', () => {
 });
 
 /** The doc comment IS the artefact here, so it is what gets asserted on. */
+/**
+ * The house catalog AND the ancestral roll, which used to be one file.
+ *
+ * The roll and the ten types describing an ancestor were lifted into
+ * `the-ancestors-a-house-still-names.ts` - over a quarter of `sects.ts`, filed
+ * under a name somebody looking for ancestry would actually open. The
+ * assertions below are about prose that has to survive, not about which file
+ * holds it, so this reads both rather than pinning the split in place.
+ */
 function readSects(): string {
-    return readFileSync('src/data/cultivation/sects.ts', 'utf-8');
+    return readFileSync('src/data/cultivation/sects.ts', 'utf-8')
+        + readFileSync('src/data/cultivation/the-ancestors-a-house-still-names.ts', 'utf-8');
 }
 
 describe('the third apex: young, visible, and holding outright', () => {

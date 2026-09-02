@@ -17,7 +17,23 @@ import { findDuplicates } from '../../scripts/find-duplicated-prose.mjs';
  * Run `node scripts/find-duplicated-prose.mjs` to see what is duplicated and
  * where.
  */
-const BASELINE = 25;
+const BASELINE = 27;
+
+/*
+ * Raised from 25 when the ancestral roll was lifted out of `sects.ts`, and the
+ * two extra pairs are a GAIN in information rather than new duplication.
+ *
+ * A passage repeated twice inside one file is invisible to this scan, which
+ * only counts a passage appearing in more than one file. Splitting a file turns
+ * that invisible repetition into a visible pair. Nothing was copied; the same
+ * words are in the same repository in the same number of places.
+ *
+ * What it exposed is worth acting on: `sealed-ancestors.ts` and
+ * `the-ancestors-a-house-still-names.ts` now share FOUR passages and are the
+ * largest pair in the list. They are two files about the same people, which is
+ * exactly what the split was meant to make legible, and they are the next thing
+ * to reconcile.
+ */
 
 describe('duplicated prose', () => {
     it('does not increase', () => {
