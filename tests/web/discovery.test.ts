@@ -399,8 +399,8 @@ describe('the prompt never carries the answer key', () => {
             plans: ['{"action":"look"}'],
             narrations: ['A road, and nobody on it.']
         });
-        const { game } = makeGame({ provider });
-        await game.newRun('Villager');
+        const { db, game } = makeGame({ provider });
+        const { cultivator } = await game.newRun('Villager');
         await game.act('I look around.');
 
         const narrationCall = provider.calls.at(-1)!;
@@ -409,9 +409,29 @@ describe('the prompt never carries the answer key', () => {
 
         expect(user).toContain('NAMES YOU MAY USE');
         expect(user).toContain(HOME_PLACE);
+
+        // Against what this cultivator ACTUALLY holds, not against a proxy for
+        // it. "Houses of the home county" was close enough while the county was
+        // the only way to hear of one, and stopped being so the moment looking
+        // round a town could show you a recruiting bill: a house with no seat
+        // advertises on roads across the map, the bill grants the name through
+        // `learnIfNew` like any other source, and the prompt then carries a
+        // name the player has genuinely been told. Reading the knowledge table
+        // is the real invariant and it catches a leak the proxy would miss - a
+        // name in the prompt with no record behind it.
+        const heard = new Set((db
+            .prepare(
+                `SELECT claim_key FROM knowledge_records
+                 WHERE holder_id = ? AND superseded = 0
+                   AND stance IN ('knows','believes','suspects')
+                   AND claim_key LIKE 'exists:sect:%'`
+            )
+            .all(cultivator.id) as { claim_key: string }[])
+            .map(row => row.claim_key.replace('exists:sect:', '')));
         for (const sect of SECTS) {
-            if (isLocal(sect.id)) continue;
-            expect(user).not.toContain(sect.name);
+            if (heard.has(sect.id)) continue;
+            expect(user, `${sect.name} is in the prompt and was never heard of`)
+                .not.toContain(sect.name);
         }
 
         expect(system).toContain('WHAT MAY BE NAMED');

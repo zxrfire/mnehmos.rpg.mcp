@@ -333,7 +333,7 @@ other.
 
 <!-- BEGIN GENERATED: catalog -->
 
-**47 catalog files, 16 of which name a doc.**
+**48 catalog files, 16 of which name a doc.**
 These are `.ts` files and no search of `docs/` reaches them. Where the
 "Also in" column is empty, this file is the only written record of what
 it describes.
@@ -362,11 +362,11 @@ it describes.
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1853 | - |
 | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 509 | [`past-the-ceiling.md`](past-the-ceiling.md) |
 | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. The provenance rule this rests on - counted against tracked, what money cannot buy, why a holder keeps what they cannot use - is `docs/world/items.md`. What crosses the Lid at all is `docs/world/immortals.md`. What is here and in neither of them is the stock argument: `STOCK_VERSUS_FLOW`, `THE_TWO_CLAIMS`, and what service actually buys. Indexed in `docs/world/INDEX.md`. | 957 | [`immortals.md`](immortals.md) [`items.md`](items.md) |
-| [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 625 | - |
+| [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 626 | - |
 | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3382 | - |
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 378 | - |
 | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 1122 | [`ancient.md`](ancient.md) [`discovery.md`](discovery.md) |
-| [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 3892 | - |
+| [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 3895 | - |
 | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 801 | - |
 | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1236 | - |
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. Pills are the only reliable way to undo damage in this game, and the reason a run's economy exists. Every entry satisfies `PillSchema`. | 831 | - |
@@ -381,6 +381,7 @@ it describes.
 | [`standoff.ts`](../../src/data/cultivation/standoff.ts) | Moved to `the-top-of-the-world.ts`. Its own first line already said it: the top of the world, and whether it can be moved. | 11 | - |
 | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | The medicine that mends a cracked cultivator, and the fixed set of it that exists. | 647 | [`items.md`](items.md) |
 | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | Technique (art) library. Content, not engine. Every entry here is inert data that the cultivation engine resolves against; nothing in this file decides anything. | 4035 | [`ancient.md`](ancient.md) [`escapes.md`](escapes.md) |
+| [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) | The three floors a house admits at - guest, servant, disciple. | 255 | - |
 | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 523 | - |
 | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | Two traditions, one ladder. The world holds two genuinely different ways of cultivating, and the difference between them is the oldest quarrel in it. Both climb the SAME rungs: a fourth-realm practitioner of either is Core Formation, ordinal 17 to 20, and `realmOrdinal` means exactly what it means everywhere else. There is no second scale in this file and there must never be one. | 312 | - |
 | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | Wandering figures: people who belong to nothing and are therefore worth asking. | 906 | [`asking.md`](asking.md) |
@@ -398,7 +399,7 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**254 design constants in the catalog. 16 are read by nothing at all,
+**254 design constants in the catalog. 15 are read by nothing at all,
 and 152 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
@@ -413,7 +414,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ARCHIVE_AS_CLAIM` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | **nothing** | - |
 | `AZURE_INTAKE` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | - |
 | `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | **nothing** | - |
-| `DEMONIC_STANDINGS` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | **nothing** | - |
 | `FRAGMENT_TECHNIQUE_ORIGINS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | **nothing** | - |
 | `HOW_AN_UPKEEP_IS_READ` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
 | `MEASUREMENT_STATUS` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | - |
@@ -610,6 +610,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `HOW_A_FORTY_FIVE_EXISTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 3 | - |
 | `NO_PLACE_FOR_THEIR_OWN` | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | 3 | - |
 | `CROSSING_PRACTICE` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 3 | 1 |
+| `DEMONIC_STANDINGS` | [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) | 3 | 1 |
 | `MODERN_REFINEMENT` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 3 | 3 |
 | `AGE_FIDELITY` | [`history.ts`](../../src/data/cultivation/history.ts) | 3 | 4 |
 | `REGION_GOVERNANCE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 3 | 8 |
@@ -649,19 +650,19 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 10 | 18 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 10 | 29 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 11 | 40 |
-| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 12 | 44 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 13 | 21 |
-| `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 15 | 7 |
+| `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 15 | 9 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 16 | 17 |
+| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 16 | 54 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 18 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 17 | 33 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 23 | 87 |
-| `REGIONS` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 24 | 72 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 116 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 25 | 106 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 27 | 41 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 245 |
+| `REGIONS` | [`regions.ts`](../../src/data/cultivation/regions.ts) | 27 | 78 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 54 | 251 |
 
 <!-- END GENERATED: design-constants -->
 
