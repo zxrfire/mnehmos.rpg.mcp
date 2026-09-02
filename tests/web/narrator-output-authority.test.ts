@@ -165,6 +165,7 @@ describe('the ceiling is answerable without spending the decade', () => {
     it('goes quiet the moment they hold a book', async () => {
         const { game } = makeGame({ seed: 'ceil-quiet' });
         await game.newRun('Wen Shu');
+        await game.act('I buy the Lesser Qi-Gathering Manual');
         await game.act('I learn the Lesser Qi-Gathering Manual');
         const status = await game.act('how am I doing');
         expect(status.narration).not.toMatch(/no road for the qi/i);

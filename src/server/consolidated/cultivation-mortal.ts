@@ -74,6 +74,7 @@ import {
     type HerbBiome
 } from '../../data/cultivation/herbs.js';
 import { forStream } from '../../engine/cultivation/rng.js';
+import { manualsAStallCarries } from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
@@ -111,7 +112,20 @@ export const MarketSchema = z.object({
     action: z.literal('market'),
     cultivatorId: z.string().optional(),
     category: z
-        .enum(['food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information'])
+        .enum(['food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information',
+            /**
+             * The books, which were priced nowhere and sold nowhere.
+             *
+             * `items.md` says common manuals sell at a market stall next to the
+             * cooking pots and that a poor cultivator's first real decision is
+             * whether the money goes on a book or on food - and asking to buy
+             * one got the look people give somebody asking for a thing that is
+             * not sold, while naming one was free. A category rather than a
+             * `PRICES` row because the stock is derived from the technique
+             * catalog, so a manual added to the content files is on the board
+             * the day it lands.
+             */
+            'manual'])
         .optional()
         .describe('Narrow to one category. Omit for the whole board.'),
     approach: ApproachSchema.optional()
@@ -701,11 +715,52 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         })
         .sort((a, b) => a.cash - b.cash);
 
+    // ── THE STALL NEXT TO THE COOKING POTS ───────────────────────────────
+    //
+    // Priced through the same two multipliers everything else on the board
+    // goes through - the region's, and how this counter is meeting this
+    // person - so a book and a bowl of millet cannot end up on two different
+    // scales. What the copy costs before those is `stallPriceCash`, which
+    // derives it from the copyist's months rather than picking a figure.
+    const manuals = manualsAStallCarries().map(m => {
+        const list = localPrice(standing.regionId, m.cash);
+        const cash = Math.max(1, Math.round(list * boardRegard.priceMultiplier));
+        return {
+            id: `manual-${m.id}`,
+            techniqueId: m.id,
+            name: m.name,
+            category: 'manual' as const,
+            unit: 'copy',
+            cash,
+            listCash: list,
+            // THE BOARD QUOTES WHAT THE COUNTER TAKES.
+            //
+            // Every other line rounds to two places, which is right for a
+            // quote nobody can act on from here. A book can be bought in the
+            // next sentence, and `buyAManual` charges the whole stone -
+            // reading 7.02 and paying 8 is a shop window with a different
+            // price behind it.
+            spiritStones: Math.max(1, Math.ceil(cashToStones(cash))),
+            affordable: cultivator.spiritStones >= Math.max(1, Math.ceil(cashToStones(cash))),
+            // What it is FOR, said on the board rather than after the purchase.
+            // A ceiling nobody can see before committing to it is a trap.
+            openAtThisRung: m.requiredOrdinal <= cultivator.realmOrdinal,
+            note:
+                `Opens at ${rankName(m.requiredOrdinal)} and carries a cultivator as far as `
+                + `${rankName(m.cap)}.`
+        };
+    });
+
     return {
         standing: describeStanding(cultivator, standing),
         purse: describePurse(cultivator),
         regard: describeRegard(boardRegard),
         prices,
+        // Separate from `prices` because a manual is the one line on the board
+        // whose usefulness depends on who is reading it: everything else is
+        // worth what it costs to anybody, and a road you cannot open yet is
+        // worth nothing today whatever you pay for it.
+        manuals: args.category === undefined || args.category === 'manual' ? manuals : [],
         cashPerStone: CASH_PER_STONE,
         priceMultiplier: region.priceMultiplier,
         // Observable consequence, not a category: what this ground has left to
