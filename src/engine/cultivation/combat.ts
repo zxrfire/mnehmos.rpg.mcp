@@ -81,6 +81,12 @@ import {
     type KillRequirement,
     type TraditionId
 } from './tradition.js';
+import {
+    resolveWeaponAgainstBody,
+    weaponExposure,
+    type WeaponExposure,
+    type WeaponUnmade
+} from './whether-a-weapon-survives-being-used.js';
 import type { CultivationRNG } from './rng.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -298,6 +304,40 @@ export interface CombatantPower {
      * `resolveExchange` and nowhere else. See the ACCURACY banner there.
      */
     channelWoundPenalty: number;
+    /**
+     * The rung and the body line ALONE, with nothing this person brought and
+     * nothing they did.
+     *
+     * `realmBase` times the `body` factor and no other line. It exists for one
+     * consumer - `whether-a-weapon-survives-being-used.ts`, which needs to ask
+     * what would have happened with nobody acting - and it is computed here
+     * rather than reconstructed from `factors` by a caller, because a caller
+     * picking one line out of a list by its string name is a second opinion
+     * about which line the body is.
+     */
+    bodyAlone: number;
+    /**
+     * The single rated object this combatant is actually swinging, or null.
+     *
+     * Identity, not price: `assessPower` already prices it through the artifact
+     * line. What this is for is that an object is a specific thing with a
+     * history, and a fight can end it - see `resolveExchange`.
+     */
+    weapon: CarriedObject | null;
+}
+
+/**
+ * A rated object, as the engine needs to see one.
+ *
+ * The same shape `carriedArtifact` in `cultivation-support.ts` already returns,
+ * which is the catalog's own row narrowed to what a fight needs to know: what
+ * it is, so the caller can find the row again, and what it is worth, which is
+ * the ladder rung the artifact catalog stores in `power`.
+ */
+export interface CarriedObject {
+    id: string;
+    name: string;
+    power: number;
 }
 
 /**
@@ -348,6 +388,25 @@ export interface CombatantInput {
      * prices out as an ordinary cultivator at their ordinal, with no residue.
      */
     artifactOrdinal?: number;
+    /**
+     * The rated object they are actually swinging, when the caller knows which
+     * one it is.
+     *
+     * The same scale as `artifactOrdinal` above and NOT a second opinion about
+     * it: `weapon.power` IS the rated ordinal when no explicit `artifactOrdinal`
+     * is given, so a caller states the object once and it is both priced and at
+     * risk. `artifactOrdinal` stays for the caller who wants to price an object
+     * without naming one, and wins if both are supplied - in which case the two
+     * must describe the SAME object, because a fight that ends the named one
+     * ends the price with it.
+     *
+     * Passing this is what puts the object in danger. A weapon far under the
+     * rung it is swung into comes apart -
+     * `whether-a-weapon-survives-being-used.ts` - and a caller that names no
+     * weapon has nothing to lose, which is why every existing caller's seeded
+     * sequence is unchanged by this field existing.
+     */
+    weapon?: CarriedObject | null;
     /** Confrontations survived. Experience is a form of power and it is tracked. */
     battlesSurvived?: number;
     /** The art they are actually fighting with, if any. */
@@ -644,9 +703,17 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         1 + Math.max(0, combatant.artifactGrade ?? 0) * 0.12,
         MAX_ARTIFACT_FACTOR
     );
-    const ratedShare = combatant.artifactOrdinal === undefined
+    //
+    // The rated ordinal is stated ONCE. `artifactOrdinal` prices an object the
+    // caller is not naming; `weapon` names one, and naming it is what puts it
+    // at risk in `resolveExchange`. They are the same number on the same scale
+    // and there is deliberately no way to give two different answers for one
+    // object.
+    const weapon = combatant.weapon ?? null;
+    const ratedOrdinal = combatant.artifactOrdinal ?? weapon?.power;
+    const ratedShare = ratedOrdinal === undefined
         ? 0
-        : combatPowerForOrdinal(combatant.artifactOrdinal) / realmBase;
+        : combatPowerForOrdinal(ratedOrdinal) / realmBase;
     factors.push({
         source: 'artifacts',
         factor: gradeFactor * (1 + ratedShare),
@@ -654,10 +721,10 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             ((combatant.artifactGrade ?? 0) > 0
                 ? `Carrying work of grade ${combatant.artifactGrade}`
                 : 'Carrying nothing graded') +
-            (combatant.artifactOrdinal === undefined
+            (ratedOrdinal === undefined
                 ? ''
-                : `, and an object rated ${rankName(combatant.artifactOrdinal)} - worth a second body ` +
-                  `of that rank, standing beside them, that nothing can be done about`)
+                : `, and ${weapon ? weapon.name : 'an object'} rated ${rankName(ratedOrdinal)} - worth a ` +
+                  `second body of that rank, standing beside them, that nothing can be done about`)
     });
 
     // ── BATTLE EXPERIENCE ─────────────────────────────────────────────────
@@ -775,7 +842,11 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         // body IS the ending for somebody the ladder says it is not - which is
         // decided in `tradition.ts` and read here at the moment it is asked.
         kill: killRequirement(tradition, ordinal, combatant.injuries),
-        channelWoundPenalty: openChannelPenalty(combatant.injuries)
+        channelWoundPenalty: openChannelPenalty(combatant.injuries),
+        // The rung and the body, and nothing else. What a weapon meets when
+        // nobody does anything to it.
+        bodyAlone: realmBase * bodyFactor,
+        weapon
     };
 }
 
@@ -1005,7 +1076,28 @@ export interface ExchangeResult {
     roll: number;
     /** Itemised and multiplicative, reproducing `advantage` in order. */
     modifiers: Array<{ source: string; factor: number }>;
+    /**
+     * What the ATTACKER's rated object did against the body it was swung into.
+     *
+     * Null when the attacker named no weapon, which is every caller that does
+     * not pass one. Reported even when the weapon held, so a player who is
+     * about to lose a blade can be told how close it came - the odds are the
+     * point of the mechanic and hiding them until the object is gone would make
+     * it read as arbitrary.
+     *
+     * The object itself is NOT modified here. This module is pure with respect
+     * to both combatants and it is pure with respect to their equipment for the
+     * same reason: the row lives in the world layer, and the caller applies
+     * `ruin` or `shatter` to it. See `WeaponUnmade.leavesFragments` for which.
+     */
+    weapon: WeaponAtRisk | null;
     narrationHint: string;
+}
+
+/** A named object, and what this exchange did to it. */
+export interface WeaponAtRisk extends WeaponUnmade {
+    objectId: string;
+    objectName: string;
 }
 
 /**
@@ -1035,6 +1127,8 @@ export function resolveExchange(
             advantage: 0,
             roll: 0,
             modifiers: [],
+            // A blow that never arrived cannot have broken anything on the way.
+            weapon: null,
             narrationHint:
                 'The art passes through and finds no purchase. A carver has no detachable soul at any rank, ' +
                 'and soul-directed work does nothing to them whatsoever. This is the single most dangerous ' +
@@ -1120,6 +1214,25 @@ export function resolveExchange(
         );
     }
 
+    // ── WHAT THE BLOW DID TO THE THING THAT THREW IT ──────────────────────
+    //
+    // Last, and only when there is a weapon to lose, so the seeded sequence of
+    // every caller that names no object is byte-identical to what it was.
+    //
+    // The attacker's object against the defender's body, because that is the
+    // direction the setting states it in: you swing at somebody far above you
+    // and what comes back is a broken sword. It is symmetric across a fight
+    // without being symmetric in one exchange - the defender swings on their own
+    // turn and their own object is at risk then, resolved by this same call with
+    // the roles the other way round.
+    //
+    // Nothing here is gated on who anybody is. The reason a Core Formation
+    // cultivator is not walking around with an object rated forty-five is not a
+    // rule; it is that somebody stronger wants it. This module has no opinion.
+    const weaponAtRisk = attacker.weapon === null
+        ? null
+        : atRisk(attacker.weapon, defender, ctx.rng);
+
     return {
         damage,
         injury,
@@ -1129,11 +1242,61 @@ export function resolveExchange(
         advantage,
         roll,
         modifiers,
+        weapon: weaponAtRisk,
         narrationHint:
             `${attacker.rank} strikes at ${defender.rank}${vector === 'soul' ? ', at the soul' : ''}. ` +
             `Advantage ${advantage.toFixed(2)}; ${damage} damage` +
-            (injury ? `, and a ${injury.severity} meridian injury that will not close on its own.` : '.')
+            (injury ? `, and a ${injury.severity} meridian injury that will not close on its own.` : '.') +
+            (weaponAtRisk?.broke ? ` ${weaponAtRisk.objectName} did not survive it. ${weaponAtRisk.narrationHint}` : '')
     };
+}
+
+/**
+ * Put one named object through the body it was swung into.
+ *
+ * The whole of the arithmetic is in
+ * `whether-a-weapon-survives-being-used.ts`; what lives here is the translation
+ * from a priced combatant into the four numbers that module asks for, which is
+ * the only thing this file knows that it does not.
+ */
+function atRisk(
+    object: CarriedObject,
+    metBy: CombatantPower,
+    rng: CultivationRNG
+): WeaponAtRisk {
+    const unmade = resolveWeaponAgainstBody(
+        {
+            weaponPower: object.power,
+            weaponStanding: combatPowerForOrdinal(object.power),
+            metBy: metBy.total,
+            metByBodyAlone: metBy.bodyAlone,
+            metByOrdinal: metBy.ordinal,
+            factors: metBy.factors,
+            standingOf: combatPowerForOrdinal
+        },
+        rng
+    );
+    return { ...unmade, objectId: object.id, objectName: object.name };
+}
+
+/**
+ * What a fight would do to an object, without fighting one.
+ *
+ * The odds a player is owed BEFORE they swing. Every other gated-then-rolled
+ * system in this engine shows its number first - a breakthrough, a crossing, a
+ * refinement - and equipment should not be the one place the engine keeps the
+ * arithmetic to itself until after it has taken something.
+ */
+export function weaponAgainst(object: CarriedObject, metBy: CombatantPower): WeaponExposure {
+    return weaponExposure({
+        weaponPower: object.power,
+        weaponStanding: combatPowerForOrdinal(object.power),
+        metBy: metBy.total,
+        metByBodyAlone: metBy.bodyAlone,
+        metByOrdinal: metBy.ordinal,
+        factors: metBy.factors,
+        standingOf: combatPowerForOrdinal
+    });
 }
 
 /** Lopsided exchanges tear things. Even exchanges mostly bruise. */
@@ -1244,6 +1407,16 @@ export interface ConfrontationResult {
     killRequirement: KillRequirement;
     /** Set when the body went and the person did not: 'soul' or 'seam'. */
     remnant: 'soul' | 'seam' | null;
+    /**
+     * Objects that did not survive the fight, in the order they went.
+     *
+     * The rows are NOT modified - this module owns no object table. What the
+     * caller does with these is apply `ruin` or, above `FRAGMENTS_AT_OR_ABOVE`,
+     * `shatter`, and either way the provenance chain keeps the entry, because a
+     * thing that vanishes cleanly from the record is a thing nobody can ever be
+     * asked about.
+     */
+    brokenObjects: Array<{ carrierId: string; breakerId: string; broke: WeaponAtRisk }>;
     obligations: ObligationSeed[];
     narrationHint: string;
 }
@@ -1266,9 +1439,14 @@ export function resolveConfrontation(
     ctx: ConfrontationContext
 ): ConfrontationResult {
     const powerCtx: PowerContext = { ambient: ctx.ambient };
-    const aggressor = assessPower(aggressorInput, powerCtx);
-    const defender = assessPower(defenderInput, powerCtx);
+    // Re-priced, not constant. A cultivator who loses their weapon mid-fight is
+    // a weaker cultivator for the rest of it - which is the whole content of
+    // "bring a bad weapon and you brought nothing", and it would be a claim the
+    // engine made and did not honour if the price were taken once at the top.
+    let aggressor = assessPower(aggressorInput, powerCtx);
+    let defender = assessPower(defenderInput, powerCtx);
     const gap = assessGap(aggressor, defender);
+    const brokenObjects: ConfrontationResult['brokenObjects'] = [];
 
     const hp: Record<string, number> = {
         [aggressorInput.id]: aggressorInput.hp,
@@ -1285,8 +1463,26 @@ export function resolveConfrontation(
     // not have a fight either - they have a decision.
     const reverseGap = assessGap(defender, aggressor);
     if (gap.verdict === 'helpless') {
+        // NOT NOTHING. The fight does not happen and the swing does.
+        //
+        // "Swing a sword at someone two realms above and they shatter it" is the
+        // design owner's own example, and two realms is exactly where
+        // `HELPLESS_REALM_GAP` stops the fight - so if the object were only put
+        // at risk inside the exchange loop, the one case everybody quotes would
+        // be the one case the engine had nothing to say about.
+        //
+        // The gap being categorical is a statement about what the aggressor can
+        // do to the DEFENDER. It is not a statement about what the defender's
+        // body does to a piece of metal swung into it, and at this distance
+        // `weaponExposure` reaches certainty on the body alone, so nothing is
+        // rolled here either: it is not luck, it is what happens.
+        const swung = aggressor.weapon === null ? null : atRisk(aggressor.weapon, defender, ctx.rng);
         return noContest(aggressor, defender, gap, hp, injuries, aggressorInput.id, defenderInput.id,
-            `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}`);
+            `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}` +
+            (swung?.broke ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}` : ''),
+            swung?.broke
+                ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
+                : []);
     }
     if (reverseGap.verdict === 'helpless') {
         return oneSided(aggressor, defender, gap, ctx, aggressorInput, defenderInput, hp, injuries);
@@ -1301,14 +1497,26 @@ export function resolveConfrontation(
     const vector: AttackVector = ctx.vector ?? 'body';
     const willWithdraw = ctx.intent.willWithdraw ?? true;
 
+    // The inputs are re-read rather than captured, because a broken weapon
+    // changes them. `aggressorLive` and `defenderLive` are the same rows with
+    // whatever they have lost taken off.
+    let aggressorLive = aggressorInput;
+    let defenderLive = defenderInput;
+
     for (let i = 0; i < MAX_EXCHANGES; i++) {
         // The aggressor swings, then the defender swings back if still standing.
-        const order: Array<[CombatantPower, CombatantPower, CombatantInput, CombatantInput, AttackVector, readonly Edge[], readonly Edge[]]> = [
-            [aggressor, defender, aggressorInput, defenderInput, vector, ctx.attackerEdges ?? [], ctx.defenderEdges ?? []],
-            [defender, aggressor, defenderInput, aggressorInput, 'body', ctx.defenderEdges ?? [], ctx.attackerEdges ?? []]
+        // Held as WHO is striking rather than as the priced pair, so a weapon
+        // lost on the first swing of a round is already gone on the second.
+        const order: Array<[boolean, AttackVector, readonly Edge[], readonly Edge[]]> = [
+            [true, vector, ctx.attackerEdges ?? [], ctx.defenderEdges ?? []],
+            [false, 'body', ctx.defenderEdges ?? [], ctx.attackerEdges ?? []]
         ];
 
-        for (const [striker, target, strikerIn, targetIn, strikeVector, strikerEdges, targetEdges] of order) {
+        for (const [aggressorStrikes, strikeVector, strikerEdges, targetEdges] of order) {
+            const striker = aggressorStrikes ? aggressor : defender;
+            const target = aggressorStrikes ? defender : aggressor;
+            const strikerIn = aggressorStrikes ? aggressorLive : defenderLive;
+            const targetIn = aggressorStrikes ? defenderLive : aggressorLive;
             if (hp[strikerIn.id] <= 0) continue;
 
             const result = resolveExchange(striker, target, targetIn.maxHp, {
@@ -1321,6 +1529,23 @@ export function resolveConfrontation(
 
             hp[targetIn.id] = Math.max(0, hp[targetIn.id] - result.damage);
             if (result.injury) injuries[targetIn.id].push(result.injury);
+
+            // The object went. Take it off the person who was swinging it and
+            // price them again, so the rest of the fight is fought without it.
+            if (result.weapon?.broke) {
+                brokenObjects.push({
+                    carrierId: strikerIn.id,
+                    breakerId: targetIn.id,
+                    broke: result.weapon
+                });
+                if (aggressorStrikes) {
+                    aggressorLive = { ...aggressorLive, weapon: null, artifactOrdinal: undefined };
+                    aggressor = assessPower(aggressorLive, powerCtx);
+                } else {
+                    defenderLive = { ...defenderLive, weapon: null, artifactOrdinal: undefined };
+                    defender = assessPower(defenderLive, powerCtx);
+                }
+            }
 
             exchanges.push({
                 index: exchanges.length,
@@ -1350,7 +1575,7 @@ export function resolveConfrontation(
     }
 
     if (winnerId === null) {
-        return stalemate(aggressor, defender, gap, exchanges, hp, injuries, aggressorInput, defenderInput);
+        return stalemate(aggressor, defender, gap, exchanges, hp, injuries, aggressorInput, defenderInput, brokenObjects);
     }
 
     const loserInput = loserId === aggressorInput.id ? aggressorInput : defenderInput;
@@ -1387,6 +1612,7 @@ export function resolveConfrontation(
         finished,
         killRequirement: requirement,
         remnant,
+        brokenObjects,
         obligations: seedObligations(outcome, winnerId, loserId, loserInput.name, loserInjuries),
         narrationHint: describeOutcome(outcome, requirement, remnant)
     };
@@ -1524,7 +1750,8 @@ function noContest(
     injuries: Record<string, Injury[]>,
     _aggressorId: string,
     _defenderId: string,
-    hint: string
+    hint: string,
+    brokenObjects: ConfrontationResult['brokenObjects'] = []
 ): ConfrontationResult {
     return {
         outcome: 'no_contest',
@@ -1533,6 +1760,7 @@ function noContest(
         aggressor,
         defender,
         gap,
+        brokenObjects,
         exchanges: [],
         hp,
         injuries,
@@ -1591,6 +1819,10 @@ function oneSided(
 
     return {
         outcome,
+        // Nobody's object is at risk here. The stronger party's weapon is not
+        // outclassed by anything in the room, and the weaker party never got to
+        // swing - which is what one-sided means.
+        brokenObjects: [],
         winnerId: aggressorInput.id,
         loserId: defenderInput.id,
         aggressor,
@@ -1617,12 +1849,14 @@ function stalemate(
     hp: Record<string, number>,
     injuries: Record<string, Injury[]>,
     aggressorInput: CombatantInput,
-    defenderInput: CombatantInput
+    defenderInput: CombatantInput,
+    brokenObjects: ConfrontationResult['brokenObjects'] = []
 ): ConfrontationResult {
     return {
         outcome: 'stalemate',
         winnerId: null,
         loserId: null,
+        brokenObjects,
         aggressor,
         defender,
         gap,
@@ -2273,6 +2507,19 @@ export interface MeleeResult {
     sides: MeleeSideOutcome[];
     /** Every participant, in input order. */
     combatants: MeleeCombatantOutcome[];
+    /**
+     * Every strike. `result.weapon` on each carries what that strike did to the
+     * striker's rated object, so a caller reads breakages off this list rather
+     * than off a second field.
+     *
+     * KNOWN GAP, stated rather than left to be found: unlike
+     * `resolveConfrontation`, a melee does NOT re-price a combatant after their
+     * weapon breaks, so somebody who loses a blade in round one goes on being
+     * priced as though they were holding it. The two-party path re-assesses;
+     * this one carries its members' `CombatantPower` through the round loop and
+     * would need the same treatment. It costs nothing today because nothing that
+     * builds a melee passes a weapon.
+     */
     exchanges: ExchangeRecord[];
     /** Final HP, keyed by combatant id. The caller writes these. */
     hp: Record<string, number>;
@@ -2525,7 +2772,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
                         result: {
                             damage: 0, injury: null, nullified: true,
                             nullifiedReason: 'aegis_forbids_vector',
-                            vector, advantage: 0, roll: 0, modifiers: [],
+                            vector, advantage: 0, roll: 0, modifiers: [], weapon: null,
                             narrationHint:
                                 `The approach does not resolve against ${target.input.name}. ` +
                                 target.aegis.map(a => a.note).join(' ')

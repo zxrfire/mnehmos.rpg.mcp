@@ -152,6 +152,7 @@ import {
     type RelationshipKind
 } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
+import { isRuined, ruin } from './possessions.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -867,8 +868,8 @@ function runChallenge(
     for (let i = 0; i < pairs.length; i++) {
         const [a, b] = pairs[i];
         const result = resolveConfrontation(
-            combatantOf(a),
-            combatantOf(b),
+            combatantOf(a, state),
+            combatantOf(b, state),
             {
                 rng: forStream(state.seed, 'gathering-bout', factId, i),
                 ambient: 'normal',
@@ -901,6 +902,12 @@ function runChallenge(
         for (const person of [a, b]) {
             applyWounds(state, person, result.injuries[person.id] ?? [], day);
         }
+
+        // And what it did to what they were holding. A bout is a real swing:
+        // somebody who stood up against a peer a realm and a half above them
+        // with a blade that could not take it goes home without the blade, and
+        // the house's shelf is one row poorer in a way somebody can look up.
+        lines.push(...applyBoutBreakages(state, result.brokenObjects, day));
 
         if (winner && loser) {
             const ugly = result.outcome === 'crippled' || result.outcome === 'humiliation'
@@ -1014,7 +1021,7 @@ function runCompetition(
     placings: GatheringPlacing[]
 ): { summary: string; selectedUpwardId: string | null } {
     const scored = attendees.map(npc => {
-        const power = assessPower(combatantOf(npc), { ambient: 'normal' }).total;
+        const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
         const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
         return { npc, score: power * showing };
     }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));
@@ -1494,10 +1501,11 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
  * stored. NPCs now carry rows, so the rows are what a bout prices; the only
  * synthesis left is in `woundsCarriedBy`, for a save written before they did.
  */
-function combatantOf(npc: NpcRecord): CombatantInput {
+function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
     const wounds: Injury[] = woundsCarriedBy(npc);
 
     return {
+        weapon: bestObjectHeldBy(npc, state),
         id: npc.id,
         name: npc.name,
         realmOrdinal: npc.cultivation.realmOrdinal,
@@ -1510,6 +1518,72 @@ function combatantOf(npc: NpcRecord): CombatantInput {
         maxQi: BOUT_BODY,
         technique: bestArt(npc)
     };
+}
+
+/**
+ * The rated object this person is actually holding, or null.
+ *
+ * Read off `state.objects`, which is where `seedArtifacts` put the whole
+ * catalog - so a bout is fought with what somebody has rather than with what
+ * their rung says they should have, and an object in a hand is worth what the
+ * catalog says it is worth in ANY hand.
+ *
+ * Naming it here is also what puts it in danger. A weapon far under the rung it
+ * is swung into comes apart
+ * (`engine/cultivation/whether-a-weapon-survives-being-used.ts`), which is why
+ * this returns the object rather than only its number: the confrontation
+ * reports `brokenObjects` by id, and `applyBoutBreakages` below writes the loss
+ * to the row without deleting it.
+ *
+ * Best is highest `power`, which is the catalog's own and only ordering, and
+ * two objects do not stack - `CombatantInput.weapon` is a single object priced
+ * as a second body of its rank, and summing two would invent a rule.
+ */
+function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['weapon'] {
+    let best: CombatantInput['weapon'] = null;
+    for (const object of state.objects) {
+        if (object.possessorId !== npc.id) continue;
+        if (object.power === null || isRuined(object)) continue;
+        if (best === null || object.power > best.power) {
+            best = { id: object.id, name: object.name, power: object.power };
+        }
+    }
+    return best;
+}
+
+/**
+ * Write what the bout did to the objects in it.
+ *
+ * `docs/world/items.md`'s "spent is not gone": a ruined object keeps its row,
+ * its owner, its claims and every link of its provenance, and gains one more
+ * saying where it ended. A house that cannot account for something should have
+ * a record that says so, and a sect artifact broken by an outsider is a
+ * situation rather than a missing entry.
+ *
+ * `shatter` is deliberately not reachable from here. Everything below
+ * `FRAGMENTS_AT_OR_ABOVE` is ruined outright and mints nothing - a world where
+ * every bout leaves two tracked shards is a ledger full of rubble - and nothing
+ * at or above it can be unmade by anybody at a gathering, because the gate is
+ * the holder's own rung.
+ */
+function applyBoutBreakages(
+    state: WorldState,
+    broken: ConfrontationResult['brokenObjects'],
+    day: number
+): string[] {
+    const lines: string[] = [];
+    for (const loss of broken) {
+        const object = state.objects.find(o => o.id === loss.broke.objectId);
+        if (!object) continue;
+        const at = state.objects.indexOf(object);
+        state.objects[at] = ruin(object, {
+            onDay: day,
+            source: `swung at somebody it was not fit for, and did not survive it`,
+            note: loss.broke.exposure.cause
+        });
+        lines.push(`${object.name} did not survive the bout`);
+    }
+    return lines;
 }
 
 /**

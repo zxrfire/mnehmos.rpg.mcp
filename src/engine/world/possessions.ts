@@ -215,6 +215,21 @@ export function shardPower(power: number | null): number | null {
  * The pieces are objects. They inherit the provenance and lose a rung, and the
  * original is not returned - a thing that has been broken is not in the world
  * any more, which is the only part of this anybody argues about.
+ *
+ * ── WHEN THIS APPLIES, AND WHEN `ruin` DOES INSTEAD ──────────────────────
+ *
+ * Almost never. Ruled by the design owner: everything below the immortal grade
+ * that comes apart is simply ruined, and mints nothing. A piece is a TRACKED
+ * object - a row with a holder and a provenance chain - and a world where every
+ * broken sabre leaves two of them is a ledger that fills with rubble, which is
+ * `docs/world/items.md`'s counted-or-tracked line arriving at the answer rather
+ * than being set aside for convenience. The top of the ladder is the only place
+ * the pieces are individually worth remembering.
+ *
+ * `FRAGMENTS_AT_OR_ABOVE` in
+ * `engine/cultivation/whether-a-weapon-survives-being-used.ts` is the rung, and
+ * that module is where the argument for the number lives. Use `ruin` for
+ * everything under it.
  */
 export function shatter(object: ObjectRecord, pieces = 2): ObjectRecord[] {
     return Array.from({ length: Math.max(2, pieces) }, (_, i) => makeObject({
@@ -227,6 +242,62 @@ export function shatter(object: ObjectRecord, pieces = 2): ObjectRecord[] {
         claims: [],
         tags: [...object.tags.filter(t => t !== 'never-carried'), 'shard', `from:${object.id}`]
     }));
+}
+
+/**
+ * End an object without leaving anything to pick up.
+ *
+ * The ordinary case, and the sibling of `shatter` above: a blade that comes
+ * apart against something far past it is gone, and there is nothing on the
+ * ground worth a row. No new objects are minted here, deliberately.
+ *
+ * ── SPENT IS NOT GONE ────────────────────────────────────────────────────
+ *
+ * What does NOT go is the record. `docs/world/items.md` states it as its own
+ * section and the reason is that an object which vanishes cleanly from the
+ * record is an object nobody can ever be asked about, and being asked about it
+ * is most of what makes it matter. A house that cannot account for something
+ * should have a record that says so.
+ *
+ * So the row stays, keeps its name, its owner, its claims and every link of its
+ * provenance, and gains one more link saying where it ended and who was
+ * standing there. What changes is that nobody is holding it, it is nowhere, it
+ * is worth nothing in a fight, and it carries a `ruined` tag anything reading
+ * the shelf can see. An inheritance two centuries later still finds the entry
+ * and can still ask what happened to it.
+ *
+ * Ownership is deliberately NOT cleared. Whose it was is a fact about the past
+ * and clearing it would delete the only party with standing to be aggrieved -
+ * which for a sect artifact broken by an outsider is the entire situation.
+ */
+export function ruin(
+    object: ObjectRecord,
+    input: { onDay: number; source: string; note?: string; factId?: string | null }
+): ObjectRecord {
+    const entry: ProvenanceEntry = {
+        onDay: input.onDay,
+        holderId: null,
+        holderName: 'nobody',
+        how: 'lost',
+        source: input.source,
+        previousHolderId: object.possessorId,
+        previousHolderName: object.possessorId ? currentHolderName(object) : null,
+        factId: input.factId ?? null,
+        note: input.note ?? ''
+    };
+    return {
+        ...object,
+        possessorId: null,
+        locationId: null,
+        power: null,
+        tags: object.tags.includes('ruined') ? object.tags : object.tags.concat('ruined'),
+        provenance: object.provenance.concat(entry)
+    };
+}
+
+/** Whether this row is a thing that used to exist. Stored, never inferred. */
+export function isRuined(object: ObjectRecord): boolean {
+    return object.tags.includes('ruined');
 }
 
 export function makeObject(

@@ -236,6 +236,41 @@ A veteran and a novice at identical cultivation must not fight identically. Trac
 experience, tactical knowledge, familiarity with specific techniques and opponents, and
 the ability to exploit a weakness.
 
+### A weapon's grade decides whether it survives being used
+
+`whether-a-weapon-survives-being-used.ts`, consumed by `resolveExchange`.
+
+The contract, in the order it binds:
+
+1. **Realm is an absolute gate on unmaking.** Your rung must reach the object's rung.
+   Nothing carried, rolled, prepared or brought gets past it. This is the *same* law that
+   gates making - `PILL_GRADE_REALM` and `pillBandOrdinal` are it in the pill grades' own
+   units - because breaking a thing is working with it, and there must not be two rules.
+   It is also what makes the immortal band unmakeable by anybody below the Lid without
+   anybody writing that down.
+2. **Inside the gate, ability decides**, and ability is the composite power `assessPower`
+   already produces. **Do not add a stat for this.** A superior opponent who is hurt,
+   exhausted, fighting bare or standing on empty ground breaks fewer blades, and that is
+   the point: a stronger opponent is not a machine that deletes your equipment.
+3. **One quantity, no table.** `realmsBetween(what it was swung into, what the weapon is
+   worth)`. Within a realm the weapon is fit; past two it is not a chance. A tenth case is
+   a tenth pair of numbers and must need no branch.
+4. **Passive and active are readings, not kinds.** The same subtraction against the body
+   alone and against the whole person. `chance - passiveChance` is what they did. There is
+   deliberately no flavour enum and a third flavour must arrive with no code.
+5. **Everything below the immortal grade is ruined, not shattered.** `ruin` in
+   `world/possessions.ts`, never `shatter`. Fragments are tracked rows, and a world where
+   every broken sabre mints two of them is a ledger full of rubble.
+6. **The record survives the object.** A ruined thing keeps its row, its owner, its claims
+   and every link of its provenance, and gains one more saying where it ended.
+
+**Nothing here decides who may hold what, and nothing may be added that does.** The reason
+a Core Formation cultivator is not walking around with an object rated forty-five is not a
+rule - it is that somebody stronger wants it, and a forty-five cannot be broken by anybody
+below the Lid, so the only way it leaves a weak holder is that somebody comes for it. The
+distribution is a consequence. Enforcing it directly is the mistake this design exists to
+avoid.
+
 ---
 
 ## Fortune's rule
