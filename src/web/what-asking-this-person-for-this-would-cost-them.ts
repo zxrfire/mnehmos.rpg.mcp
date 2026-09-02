@@ -21,8 +21,11 @@
  * binding NPCs and not the player is the commonest defect in this repo, and
  * teaching is one of the systems it names:
  *
- *   isCommonlyHeld       whether an art is anybody's property at all. Not a
- *                        fact about height - a fact about how many hold it.
+ *   noHouseCanCallItTheirs  whether an art is anybody's property at all. Not a
+ *                        fact about height, and not `isCommonlyHeld`, which
+ *                        answers whether a stall stocks one - a fact about how
+ *                        many houses hold it, and the only one of the two that
+ *                        can be asked about a sword form.
  *   betrayalOfSelling    the four-rung scale the world already prices a leaked
  *                        book on, from "an ordinary way for a poor cultivator
  *                        to eat" to "unforgivable and permanent".
@@ -55,6 +58,7 @@ import type { AskWeight } from '../engine/social-leverage/index.js';
 import {
     betrayalOfSelling,
     isCommonlyHeld,
+    noHouseCanCallItTheirs,
     manualsOf,
     whoseArt
 } from '../engine/world/manuals.js';
@@ -406,7 +410,12 @@ function costOfTeaching(
         structure: [
             `${art.name} would leave ${asked.name}'s hands at rung ${rung} of the four the world `
             + `prices a leaked book on: `
-            + `${isCommonlyHeld(art.id)
+            // `noHouseCanCallItTheirs` and NOT `isCommonlyHeld`, which answers
+            // whether a stall stocks a thing. Reading the market predicate here
+            // made the line contradict the rung beside it: rung 1 was being
+            // explained as *no house can call it theirs*, on a sword form one
+            // house teaches.
+            + `${noHouseCanCallItTheirs(art.id)
                 ? 'it is held widely enough that no house can call it theirs'
                 : ownerName === null
                     ? 'it is not commonly held and no house on record owns it'
