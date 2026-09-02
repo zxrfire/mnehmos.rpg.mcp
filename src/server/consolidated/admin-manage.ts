@@ -73,6 +73,7 @@ import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import {
     AmbientQiSchema,
+    SectAlignmentSchema,
     STARTING_SPIRIT_STONES,
     type AmbientQi
 } from '../../schema/cultivation.js';
@@ -482,6 +483,37 @@ function bareFieldPairs(
     return { pairs, proseLeft: prose.slice(0, found[0].at).trim() };
 }
 
+/**
+ * Where a bare number goes, when the action is named and a number is all that
+ * follows it.
+ *
+ * `ADMIN spawn_encounter 41` and `ADMIN encounter 41` are the two shortest
+ * ways to ask for the thing this surface is used for most, and both were
+ * refused with "ordinal: Required" - because `PRIMARY_ARG` below is a
+ * free-TEXT rule, it put "41" in `name`, and the rung the operator actually
+ * typed was left unset. AN INTEGER IS NOT A NAME.
+ *
+ * Spelled out per action rather than read off the schema, for the same reason
+ * `PRIMARY_ARG` is: which field the operator meant is a property of the
+ * action, not of the digits, and an action with two numeric fields must not be
+ * guessed at. An action absent from this table leaves its number to the
+ * free-text rule, unchanged.
+ *
+ * This is not inference. The action is already known, the remainder is one
+ * token, and that token is a number - there is no second reading of it for
+ * this to get wrong. A NAMED rung ("Core Formation") is deliberately NOT read
+ * here: that string is ambiguous with a site or item name, and it already has
+ * two paths that are not - `ordinal=Core Formation` and `ordinal Core
+ * Formation` both resolve through `ordinalNamed`.
+ */
+const BARE_NUMBER_ARG: Partial<Record<AdminAction, string>> = {
+    spawn_encounter: 'ordinal',
+    spawn_site: 'ordinal',
+    grant_item: 'ordinal',
+    set_realm: 'ordinal',
+    advance_days: 'days'
+};
+
 const PRIMARY_ARG: Partial<Record<AdminAction, string>> = {
     help: 'about',
     set_location: 'location',
@@ -640,7 +672,12 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         if (known !== null && hasProse && bare.pairs.length === 0) {
             const field = PRIMARY_ARG[known as AdminAction];
             const rest = prose.slice(prose.indexOf(action) + action.length).trim();
-            if (field !== undefined && rest.length > 0 && args[field] === undefined) {
+            // A bare number is that action's number, not its name. See
+            // `BARE_NUMBER_ARG` for why this is a lookup and not a guess.
+            const numeric = BARE_NUMBER_ARG[known as AdminAction];
+            if (numeric !== undefined && /^\d+$/.test(rest) && args[numeric] === undefined) {
+                args[numeric] = Number(rest);
+            } else if (field !== undefined && rest.length > 0 && args[field] === undefined) {
                 args[field] = rest;
             }
         }
@@ -678,6 +715,22 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         const named = ordinalNamed(args.ordinal);
         if (named) args.ordinal = named.ordinal;
     }
+
+    // ── AND NO LEANING IS READ OUT OF LOOSE PROSE ─────────────────────────
+    //
+    // A draft of this scanned the line for "demonic", "orthodox" and the rest,
+    // so that `spawn a demonic elder at 29` would set the argument. It was
+    // withdrawn on its own test output: `spawn_encounter name=Devil Tortoise
+    // ordinal=29` came back demonically aligned, because the word was in the
+    // NAME. This world is full of names like that, and a scan of the whole
+    // line cannot tell a leaning from a noun somebody was christened with.
+    //
+    // The two spellings that are not ambiguous both work already - the field
+    // named, `alignment=demonic`, and the field named without the equals sign,
+    // `alignment demonic` - and both are read above by the machinery that
+    // reads every other argument. AGENTS.md: ambiguity refuses rather than
+    // picks, and the reading has to be printed back. A word lifted out of a
+    // name satisfies neither.
 
     return { action, args };
 }
@@ -736,8 +789,20 @@ const SpawnEncounterSchema = z.object({
         .describe('What to call them. Defaults to "A <realm> cultivator".'),
     location: z.string().optional()
         .describe('Where they are standing. DEFAULTS TO WHERE THE PLAYER IS - "in front of me" needs no argument.'),
-    disposition: z.enum(['hostile', 'wary', 'indifferent']).optional().default('hostile')
-        .describe('How they are disposed toward the player. Defaults to hostile.')
+    // `friendly` is here because the surface could not arrange a kind
+    // encounter at all: every person ADMIN could stand in front of the player
+    // was hostile, wary or indifferent, so "spawn somebody who will help me"
+    // had no spelling and the whole cooperative half of the game was
+    // unreachable from the operator side. It reaches exactly what the other
+    // three reach - the knowledge record, and nothing else. See
+    // `dispositionReaches`: there is still no store for how somebody is
+    // disposed toward the player right now, and this does not invent one.
+    disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional().default('hostile')
+        .describe('How they are disposed toward the player. Defaults to hostile.'),
+    // Which house answers for them, and so how far they go when wronged. See
+    // the comment beside `sectId` in the handler.
+    alignment: SectAlignmentSchema.optional()
+        .describe('Puts them in a real house of that leaning, which decides what they do about being threatened or robbed. Omitted leaves them on no roll at all.')
 });
 
 const SpawnSiteSchema = z.object({
@@ -1184,6 +1249,18 @@ export async function handleSpawnEncounter(
     const location = args.location ?? cultivator.location ?? 'the open road';
     const name = args.name ?? `A ${realmForOrdinal(args.ordinal).name} cultivator`;
     const disposition = args.disposition ?? 'hostile';
+    // The house that answers for them, found by the alignment asked for and
+    // pitched as near this person's rung as the catalog allows - a Void
+    // Refinement elder belongs to a house that has Void Refinement people in
+    // it. Deterministic: same alignment and same rung, same house, every time.
+    const house = args.alignment === undefined
+        ? null
+        : SECTS
+            .filter(s => s.alignment === args.alignment)
+            .slice()
+            .sort((a, b) =>
+                Math.abs(a.powerOrdinal - args.ordinal) - Math.abs(b.powerOrdinal - args.ordinal)
+                || a.id.localeCompare(b.id))[0] ?? null;
     const knowledge = new KnowledgeGate(repos.db);
 
     repos.db.transaction(() => {
@@ -1201,6 +1278,21 @@ export async function handleSpawnEncounter(
             maxQi,
             age: 20 + args.ordinal * 4,
             location,
+            // ── AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU ────
+            //
+            // A house is not decoration on this row. Alignment is the axis
+            // `what-somebody-does-about-being-wronged.ts` turns on, and every
+            // person this surface could stand in front of the player was on
+            // nobody's roll - so the whole righteous/demonic half of the
+            // reprisal model was unreachable from the operator side, and a
+            // robbed stranger could never do more than drive somebody off.
+            //
+            // The house is a REAL one out of the catalog, found by the
+            // alignment asked for rather than minted to order. Nothing is
+            // invented: the person genuinely belongs to a house that genuinely
+            // holds that line, which is what makes what follows a fact about
+            // the world rather than a flag on a row.
+            ...(house ? { sectId: house.id } : {}),
             spiritStones: STARTING_SPIRIT_STONES * (1 + args.ordinal)
         });
         // The rank change takes the same road every rank change takes.
@@ -2431,7 +2523,8 @@ Actions: ${ACTIONS.join(', ')}`,
         kind: z.enum(['grave', 'trial', 'pill', 'herb', 'artifact', 'place', 'sect', 'any']).optional(),
         name: z.string().optional(),
         location: z.string().optional(),
-        disposition: z.enum(['hostile', 'wary', 'indifferent']).optional(),
+        disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional(),
+        alignment: SectAlignmentSchema.optional(),
         itemId: z.string().optional(),
         about: z.string().optional(),
         quantity: z.number().int().optional(),
@@ -2523,14 +2616,28 @@ function recipeBlock(want: string, line: string): string {
     return `${want}\n\n    ${line}`;
 }
 
+/**
+ * What an ADMIN call did, beside the prose describing it.
+ *
+ * `changed` is the difference between arranging the world and asking about
+ * it, and it exists because the surface that calls this has to decide whether
+ * to run a narrator afterwards. Widened here rather than in
+ * `action-router.ts` because no other tool needs the distinction, and every
+ * existing caller keeps typechecking against `McpResponse`.
+ */
+export interface AdminOutcome extends McpResponse {
+    /** Whether this call altered anything, as opposed to reporting on it. */
+    changed: boolean;
+}
+
 export async function handleAdminManage(
     args: unknown,
     _ctx?: SessionContext
-): Promise<McpResponse> {
+): Promise<AdminOutcome> {
     const response = await router(args as Record<string, unknown>);
     try {
         const jsonText = response.content[0]?.text;
-        if (!jsonText) return response;
+        if (!jsonText) return { ...response, changed: false };
         const data = JSON.parse(jsonText);
 
         const out: string[] = [];
@@ -2776,9 +2883,23 @@ export async function handleAdminManage(
             `what a character perceives. Run flagged: ${data.runFlagged === true ? 'yes' : 'no'}.`
         );
 
-        return { content: [{ type: 'text', text: blocks(...out) }] };
+        // ── DID THE WORLD MOVE, OR WAS IT ONLY ASKED ABOUT ────────────────
+        //
+        // `runFlagged` is the engine's own answer: it is set by exactly the
+        // calls that alter a run, and it is what keeps such a run out of the
+        // death ledger. The key list beside it covers the calls that change the
+        // world AROUND the cultivator without touching the run row - a person
+        // stood in front of them, a site made nameable - which the flag alone
+        // does not see. A refusal changed nothing whatever it names.
+        const changed = !data.error && (
+            data.runFlagged === true ||
+            ['granted', 'moved', 'set', 'advanced', 'spawned', 'encounterId', 'site']
+                .some(k => data[k] !== undefined && data[k] !== false)
+        );
+
+        return { content: [{ type: 'text', text: blocks(...out) }], changed };
     } catch {
-        return response;
+        return { ...response, changed: false };
     }
 }
 
