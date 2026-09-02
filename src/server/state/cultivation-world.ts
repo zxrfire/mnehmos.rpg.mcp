@@ -48,6 +48,37 @@
  * Replay can only ever reconstruct the base. It is a cold-start fallback and
  * never a substitute for the repository.
  *
+ * ── WHAT A SEED REPRODUCES, AND WHAT IT DOES NOT ─────────────────────────
+ *
+ * AGENTS.md: runs must be reproducible from their seed. That is true and it is
+ * narrower than it sounds, and the limit belongs here because this file is
+ * where it comes from.
+ *
+ * A run seed fixes what the RUN draws: talent, birth, every stream
+ * `forStream(run.seed, ...)` opens. It does not fix the world the run is lived
+ * in. `createWorld` mints `randomUUID()` when no seed is given and `activeWorld`
+ * calls it with none, so an installation with no world yet gets one nobody
+ * chose - and the people in it are most of what a played run actually meets.
+ *
+ *   reproducible  =  same run seed  AND  same world.
+ *
+ * Measured, two fresh databases in one process on one run seed: `npc-0` was
+ * "Duan Fuyan" at ordinal 10 in one and "Han Fulu" at ordinal 9 in the other,
+ * and "I attack someone of my own rank" fought a different person each time.
+ * Nothing was wrong; both halves of the input were not the same.
+ *
+ * This is the design and not a defect to be fixed. Seeding the world from the
+ * run instead is one of the two rejected designs above - it gives every run its
+ * own world and deletes cross-run persistence outright. Within one
+ * installation the promise holds in full, because the world is created once and
+ * persisted and every later run derives from it through `runSeedFor`.
+ *
+ * So: to replay a run somewhere else, carry the WORLD seed with it and
+ * `createWorld({ seed })` before the run opens. That is what
+ * `makeGameInWorld` in `tests/web/harness.ts` does, and why any played test
+ * that wants one seed pinned to one outcome has to use it - a test that pins a
+ * seed without pinning the world is pinning a coincidence.
+ *
  * ── THE AUTHORITY BOUNDARY ───────────────────────────────────────────────
  *
  * Nothing here accepts an outcome. Callers pass a span in days and who is
@@ -153,6 +184,10 @@ export interface CreateWorldOptions {
      * The world's seed. Omit and one is minted and then PERSISTED, which is
      * what makes it the world's own rather than a default every installation
      * shares. Supplying one reproduces a known world exactly.
+     *
+     * It is also the half of "reproducible from the seed" that a run seed does
+     * not carry - see the header. Supply it whenever a run has to replay the
+     * same life on another installation.
      */
     seed?: string;
     population?: number;
@@ -194,6 +229,11 @@ export async function createWorld(options: CreateWorldOptions = {}): Promise<Wor
  * installation causes one to be made. The seed for that first world is minted
  * once and written to `world_runtime`, so it is the world's own from then on
  * and a restart does not produce a different one.
+ *
+ * That minting is the ONLY randomness in this module, and it is why a run seed
+ * reproduces a run only against the world it was played in. A caller who needs
+ * a known world must `createWorld({ seed })` before the first run opens;
+ * arriving here means the choice has already been left to chance.
  */
 export async function activeWorld(): Promise<WorldHandle> {
     if (activeId !== null) {
