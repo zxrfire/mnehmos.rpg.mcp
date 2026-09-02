@@ -83,6 +83,8 @@ import type { AskWeight } from '../engine/social-leverage/index.js';
  *   introduction   be put in front of somebody they can reach and you cannot
  *   telling        be told something they know
  *   a_thing        be given, lent or sold an object
+ *   terms          what would it take - the price asked before it is paid
+ *   a_trade        something put down for it that is not money
  *   unstated       somebody was named and nothing was asked of them
  */
 export type RequestKind =
@@ -91,6 +93,45 @@ export type RequestKind =
     | 'introduction'
     | 'telling'
     | 'a_thing'
+    /**
+     * ASKING WHAT IT WOULD TAKE, WHICH IS NOT ASKING FOR IT.
+     *
+     * The design owner's sentence, verbatim: *"just be like: I need xyz, what's
+     * your price?"* Nothing in the game accepted it.
+     *
+     * The gap it closes was demonstrated in play. `see a physician` on a
+     * crippling meridian tear names the medicine, names its grade, and then
+     * says *"Nobody sells one of these for stones... a favour owed, something
+     * out of a hole nobody else has been down, or an art."* That refusal is
+     * correct and it meets the standard `asking.md` sets - and there was no
+     * verb anywhere that took what it advised. Every heaven-grade and above
+     * cure in the catalog was unobtainable, and the game said so in a sentence
+     * a player could not act on.
+     *
+     * It is a courtesy in weight and that is not a convenience: asking somebody
+     * what they want for a thing costs them a sentence, which is exactly what
+     * `AskWeight.a_courtesy` means. What it is NOT is free of consequence -
+     * they now know you are looking for it, and knowing that about somebody is
+     * worth something to the sort of person who holds one.
+     */
+    | 'terms'
+    /**
+     * PUTTING SOMETHING DOWN THAT IS NOT MONEY.
+     *
+     * The other half, and the one that makes the first half worth having.
+     * `items.md`: above the line cash *"is simply not the medium"*, and what
+     * moves people is *"a favour owed"* or *"another singular thing"*. The
+     * existing shapes all assume the thing being asked for is the whole of the
+     * sentence; this is the shape with two objects in it - what you want and
+     * what you are putting down for it - and it is the only one of the seven
+     * where the player names something of their own.
+     *
+     * Nothing here decides whether the trade is a good one. That is
+     * `what-somebody-would-take-for-a-thing-they-will-not-sell.ts`, which
+     * prices both sides on one scale and never asks what kind of thing either
+     * of them is.
+     */
+    | 'a_trade'
     /**
      * THE ONE THAT ASKS FOR NOTHING, and the reason the rest of them are
      * reachable at all.
@@ -131,9 +172,16 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         case 'nothing':
         case 'unstated':
             return 'a_courtesy';
+        // Asking what somebody wants for a thing costs them a sentence, which
+        // is what `a_courtesy` is. It is not free of CONSEQUENCE - they now
+        // know you are looking - and consequence is the resolver's business
+        // rather than the weight's.
+        case 'terms':
+            return 'a_courtesy';
         case 'teaching':
         case 'discipleship':
         case 'a_thing':
+        case 'a_trade':
             return 'a_real_favour';
     }
 }
@@ -155,6 +203,16 @@ export interface DirectedRequest {
      * everything else uses, and absent when the sentence named none.
      */
     object?: string;
+    /**
+     * What the player is putting down for it, as they wrote it.
+     *
+     * Only ever set on `a_trade`, which is the one shape in this module with
+     * two objects in it. Resolved by the caller against everything the player
+     * actually holds - arts, objects, what they could undertake - and priced by
+     * one question rather than by what kind of thing it turns out to be. See
+     * `what-somebody-would-take-for-a-thing-they-will-not-sell.ts`.
+     */
+    putDown?: string;
     /**
      * The ask in the player's own words, verbatim and capped.
      *
@@ -417,6 +475,20 @@ const NOT_A_PERSON_TO_ASK_ABOUT =
  * gets the same guiding refusal here as it does anywhere else.
  */
 export function askingWhatSomebodyIsAfter(input: string): string | null {
+    // ── A PRICE QUESTION IS NOT A WANT QUESTION ──────────────────────────
+    //
+    // "ask Elder Xu what she wants" asks what she is chasing. "ask Elder Xu
+    // what she wants FOR a Meridian Rebirth Pill" asks her price for a named
+    // thing, and the first pattern below matches both - so without this the
+    // price question is answered with her open goals and the thing she was
+    // asked about is dropped on the floor.
+    //
+    // PRECEDENCE AND NOT A NARROWER PATTERN, which is the repair `AGENTS.md`
+    // requires: the want patterns are unchanged, every sentence they used to
+    // take they still take, and the only ones they lose are the ones that name
+    // a thing to be priced - which is a sentence they were answering wrongly.
+    if (askingWhatItWouldTake(input) !== null) return null;
+
     for (const pattern of WHAT_ARE_THEY_AFTER) {
         const hit = pattern.exec(input);
         if (!hit) continue;
@@ -426,6 +498,262 @@ export function askingWhatSomebodyIsAfter(input: string): string | null {
         return person;
     }
     return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT WOULD IT TAKE
+//
+// Its own matchers, ahead of the generic split, for the reason the courtesy
+// block above has its own: the split takes the FIRST of `to|for|with|...` and
+// every sentence here has one of those words inside the part that names the
+// person or inside the part that names the price. "ask Elder Xu what she wants
+// for a Meridian Rebirth Pill" split on the first `for` resolves a party called
+// "Elder Xu what she wants", which is the same defect the module header records
+// for "bribe Han Peiru with 60 stones to introduce me".
+//
+// ── WHY THESE SENTENCES AND NOT A WIDER PATTERN ──────────────────────────
+//
+// `AGENTS.md`: fix the gap that was demonstrated, not the one you imagined.
+// The demonstrated gap is one sentence the design owner wrote down - *"I need
+// xyz, what's your price?"* - and the refusal that produced it names three
+// media and no verb. Every pattern below requires a word that NAMES A PRICE
+// (`price`, `want`, `take`, `accept`, `what it would take`) or a word that
+// NAMES A SWAP (`for`, `in exchange for`, `in return for`) with two objects
+// around it. None of them can take a sentence that reached something before:
+// "what does she want" with no object is the want read and is left alone,
+// "ask her for the manual" has no price word, and "I offer him 60 stones" has
+// no second object.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How the price is named, in the ways somebody actually asks for it. */
+const A_PRICE_WORD =
+    '(?:what (?:it|that) would take|what (?:they|she|he|you) would (?:take|want|accept)'
+    + '|what (?:they|she|he|you) wants?|what (?:their|her|his|your) price is'
+    + '|(?:their|her|his|your|the) price|how much (?:they|she|he|you) wants?'
+    + '|what (?:it|one) would cost|what (?:they|she|he|you) would need)';
+
+/**
+ * The verb-led form: a person is named, then the price is asked after.
+ *
+ * "ask Elder Xu what she wants for a Meridian Rebirth Pill", and the same
+ * sentence with `her price`, `how much she wants`, `what it would take`.
+ *
+ * THE NAMED THING IS REQUIRED AND THAT IS THE WHOLE OF WHAT KEEPS THIS OFF
+ * THE WANT READ. "ask Elder Xu what she wants" is a question about what she is
+ * chasing and `askingWhatSomebodyIsAfter` answers it well; the same words plus
+ * `for <a thing>` are a question about her price. Without the `for` clause this
+ * pattern would take both, and the one it would take wrongly is the one that
+ * already worked - which is precisely the swallowing `AGENTS.md` records this
+ * file causing once already, from the other direction.
+ */
+const ASKING_SOMEBODY_THEIR_PRICE = new RegExp(
+    '\\b(?:ask|asks|asking|put it to|sound out|sounds out)\\s+(.{2,60}?)\\s+'
+    + A_PRICE_WORD
+    + '\\s+(?:for|to part with|to give up|to let go of)\\s+(.{2,100})$',
+    'i'
+);
+
+/**
+ * The interrogative form, which is how most people write it.
+ *
+ * "what would Elder Xu take for a Meridian Rebirth Pill", "what is Elder Xu's
+ * price for one".
+ */
+const WHAT_WOULD_THEY_TAKE = new RegExp(
+    '\\bwhat\\s+(?:would|will|does|do)\\s+(.{2,60}?)\\s+'
+    + '(?:take|want|accept|ask)\\s+(?:for|in exchange for|in return for)\\s+(.{2,100})$',
+    'i'
+);
+
+const WHAT_IS_THEIR_PRICE_FOR = new RegExp(
+    '\\bwhat(?:\'s|s| is)\\s+(.{2,60}?)(?:\'s|s\')?\\s+price\\s+for\\s+(.{2,100})$',
+    'i'
+);
+
+/**
+ * The form that names the thing first and the person last, which is the one
+ * somebody types straight after being told what would mend them.
+ *
+ * "what would it take to get a Meridian Rebirth Pill from Elder Xu".
+ */
+const WHAT_WOULD_IT_TAKE_TO_GET = new RegExp(
+    '\\bwhat\\s+would\\s+it\\s+take\\s+to\\s+(?:get|obtain|have|acquire|be given|buy)\\s+'
+    + '(.{2,100}?)\\s+(?:from|off|out of)\\s+(.{2,60})$',
+    'i'
+);
+
+/**
+ * THE OWNER'S OWN SENTENCE, WHICH NAMES NOBODY.
+ *
+ * *"I need xyz, what's your price?"* is said to whoever you are dealing with,
+ * so it carries no name, and the module's contract already allows a POINTING
+ * phrase in place of one - *"which the caller resolves the same way every other
+ * approach resolves one"*. `someone` is a member of `POINTING` in `game.ts`, so
+ * it lands on a face the player could actually walk up to rather than on
+ * nobody, which is what every other nameless approach in the game already does.
+ *
+ * A refusal that names a door has to be typeable in the words it used, and this
+ * is those words.
+ */
+const I_NEED_THIS_WHAT_IS_YOUR_PRICE = new RegExp(
+    '\\bi\\s+(?:need|want|am after|am looking for)\\s+(.{2,100}?)\\s*[,.;:-]*\\s*'
+    + '(?:so\\s+)?what(?:\'s|s| is| would be)?\\s+(?:your|their|his|her|the)\\s+price'
+    + '(?:\\s+for\\s+(?:it|one|that))?\\s*[?.!]*$',
+    'i'
+);
+
+/** The pointing phrase the nameless form is put to. See the pattern above. */
+const WHOEVER_IS_HERE = 'someone';
+
+/**
+ * Somebody named, and what they would take for a named thing, or null.
+ *
+ * Exported so a test can pin the phrasings without going through the whole
+ * parser, and so that the "is this sentence a price question" answer is asked
+ * once and in one place.
+ */
+export function askingWhatItWouldTake(input: string): DirectedRequest | null {
+    const straight: readonly (readonly [RegExp, 0 | 1])[] = [
+        // [pattern, which capture is the PERSON]
+        [ASKING_SOMEBODY_THEIR_PRICE, 0],
+        [WHAT_WOULD_THEY_TAKE, 0],
+        [WHAT_IS_THEIR_PRICE_FOR, 0],
+        [WHAT_WOULD_IT_TAKE_TO_GET, 1]
+    ];
+
+    for (const [pattern, personAt] of straight) {
+        const hit = pattern.exec(input);
+        if (!hit) continue;
+        const person = cleanPerson(hit[1 + personAt] ?? '');
+        const thing = cleanObject(hit[1 + (personAt === 0 ? 1 : 0)] ?? '');
+        if (!person || NAMES_NOBODY.test(person)) continue;
+        return {
+            person,
+            kind: 'terms',
+            ...(thing ? { object: thing } : {}),
+            inTheirWords: input.trim().slice(0, 160)
+        };
+    }
+
+    const nameless = I_NEED_THIS_WHAT_IS_YOUR_PRICE.exec(input);
+    if (nameless) {
+        const thing = cleanObject(nameless[1] ?? '');
+        if (thing) {
+            return {
+                person: WHOEVER_IS_HERE,
+                kind: 'terms',
+                object: thing,
+                inTheirWords: input.trim().slice(0, 160)
+            };
+        }
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PUTTING SOMETHING DOWN THAT IS NOT MONEY
+//
+// The shape with two objects in it. Everything else in this module asks for
+// one thing; this names a thing wanted and a thing offered, and the swap word
+// between them is what tells them apart.
+//
+// `THE_MONEY` is deliberately NOT stripped out of the offered half here, unlike
+// everywhere else in the file. A player who offers stones for something above
+// the cash line has made a real move and is owed the real answer - `items.md`
+// says offering money up there *"reads as not understanding what you are
+// looking at"*, and that is a sentence somebody should get back rather than a
+// sentence the parser quietly prevents them from making.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The words that can only mean a swap, tried before the bare one.
+ *
+ * `for` is the word everybody actually types and it is also the commonest
+ * preposition in the language, so a sentence like *"offer Elder Xu a place for
+ * her daughter in return for the pill"* has two of them and only the second is
+ * the swap. These are unambiguous, so they win outright; where none is present
+ * the LAST `for` is taken, which gets the same sentence right for the same
+ * reason and gets the ordinary one-`for` sentence right trivially.
+ */
+const AN_UNAMBIGUOUS_SWAP = /\s+(?:in exchange for|in return for|in trade for|in place of)\s+/i;
+
+/** The bare one. Read last-first, per the note above. */
+const A_BARE_SWAP = /\s+(?:for|against)\s+/gi;
+
+/**
+ * Where the offered half stops and the wanted half starts, or null.
+ *
+ * Returns the index and length of the swap phrase in the input.
+ */
+function whereTheSwapIs(input: string): { index: number; length: number } | null {
+    const clear = AN_UNAMBIGUOUS_SWAP.exec(input);
+    if (clear) return { index: clear.index, length: clear[0].length };
+
+    let last: { index: number; length: number } | null = null;
+    for (const hit of input.matchAll(A_BARE_SWAP)) {
+        last = { index: hit.index, length: hit[0].length };
+    }
+    return last;
+}
+
+/**
+ * Where the person stops and the thing being put down starts.
+ *
+ * "offer Elder Xu the Iron Bell Manual" is a verb and three phrases with no
+ * punctuation between them, and a non-greedy person phrase takes "Elder" and
+ * leaves "Xu the Iron Bell Manual". The boundary that actually works is the
+ * determiner: what somebody puts down is almost always introduced by one, and
+ * a name almost never contains one.
+ *
+ * KNOWN LIMIT, WRITTEN DOWN RATHER THAN GUESSED AROUND: an offered thing that
+ * opens on a bare noun - "offer Elder Xu passage through the pass for one" -
+ * has no determiner to find, and the sentence falls through to the ordinary
+ * request path rather than resolving a person wrongly. Falling through is the
+ * safe direction: the player gets the answer they got before instead of an
+ * attempt made on somebody the sentence was not about, which is the failure
+ * `POINTING_AT_A_RANK` in `game.ts` exists because of.
+ */
+const WHERE_WHAT_IS_PUT_DOWN_STARTS = new RegExp(
+    '\\b(?:offer|offers|offering|trade|trades|trading|swap|swaps|swapping'
+    + '|exchange|exchanges|exchanging|give|gives|giving)\\s+(.{2,60}?)\\s+'
+    + '(?=(?:the|a|an|my|his|her|their|your|our|its|one|some|any|this|that|these|those'
+    + '|\\d+)\\b)(.{2,120})$',
+    'i'
+);
+
+/**
+ * A trade put to somebody, or null.
+ *
+ * Returns null unless BOTH halves are there, because a sentence with one object
+ * is one of the shapes that already worked and taking it would be the widening
+ * `AGENTS.md` files under "fix the gap that was demonstrated".
+ */
+export function puttingSomethingDownFor(input: string): DirectedRequest | null {
+    // The swap is found on the whole sentence first, so that a `for` inside
+    // what is being put down cannot be mistaken for the swap itself.
+    const swap = whereTheSwapIs(input);
+    if (!swap) return null;
+
+    const left = input.slice(0, swap.index);
+    const right = input.slice(swap.index + swap.length);
+
+    const hit = WHERE_WHAT_IS_PUT_DOWN_STARTS.exec(left);
+    if (!hit) return null;
+
+    const person = cleanPerson(hit[1] ?? '');
+    if (!person || NAMES_NOBODY.test(person)) return null;
+
+    const putDown = cleanObject(hit[2] ?? '');
+    const wanted = cleanObject(right);
+    if (!putDown || !wanted) return null;
+
+    return {
+        person,
+        kind: 'a_trade',
+        object: wanted,
+        putDown,
+        inTheirWords: input.trim().slice(0, 160)
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -542,6 +870,22 @@ export function requestPutToSomebody(input: string): DirectedRequest | null {
     // branches want ("buy", "sit", "turn up").
     const courtesy = courtesyPaidTo(input);
     if (courtesy) return courtesy;
+
+    // ── THE PRICE, AND THE THING PUT DOWN FOR IT ─────────────────────────
+    //
+    // Both ahead of the generic split for the reason their own banner gives:
+    // the split takes the first `to|for|with`, and both of these shapes have
+    // one of those words in the middle of what they are naming.
+    //
+    // The price question first. A sentence that asks what somebody would take
+    // FOR a thing and a sentence that offers a thing for another are told apart
+    // by whether a price word is in it, and "what would you take for the manual"
+    // has one where "trade you the manual for the pill" does not.
+    const price = askingWhatItWouldTake(input);
+    if (price) return price;
+
+    const trade = puttingSomethingDownFor(input);
+    if (trade) return trade;
 
     const verb = REQUEST_VERB.exec(input);
     if (!verb) return null;
