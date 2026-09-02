@@ -118,6 +118,7 @@ import { handleCultivate } from '../server/consolidated/cultivation-manage.js';
 import { handleMarket, handleWork, standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { SECT_BONUS_PER_RANK } from '../server/consolidated/cultivation-manage.js';
 import { handleAssess } from '../server/consolidated/cultivation-perception.js';
+import { handleGuest } from '../server/consolidated/sect-guest.js';
 import {
     handleJoin,
     handleLeave,
@@ -1369,6 +1370,20 @@ const GENERIC_PILL_PHRASE =
 
 const GENERIC_HOUSE_PHRASE =
     /^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*(?:sects?|orders?|schools?|clans?|houses?|cults?|somewhere|somebody|someone|anyone|anybody)\b/i;
+
+/**
+ * The same words, but only where they are the WHOLE of what was said.
+ *
+ * `GENERIC_HOUSE_PHRASE` is unanchored at its end and has to stay that way for
+ * the joining path it was written for. Six of the seven dao houses are called
+ * "The House of ...", so once the leading article comes off the subject the
+ * remainder begins with `house` and the unanchored test reads a specific name
+ * as the whole category. Anchored at both ends it cannot: "a sect" is a
+ * category, "House of the Narrow Hour" is a name, and no house in the catalog
+ * is called any of these words on its own.
+ */
+const GENERIC_HOUSE_CATEGORY_ONLY =
+    /^(?:any |some |a |an |one |another |new |good |strong |nearby |local |the )*(?:guest (?:student|studentship|place|pupil)|sects?|orders?|schools?|clans?|houses?|cults?|somewhere|anywhere|somebody|someone|anyone|anybody)(?:\s+(?:somewhere|anywhere|near(?:by)?|around(?: here)?|here|about|else))?$/i;
 
 /**
  * How many things done to a place are read out at once.
@@ -4292,6 +4307,74 @@ ${noticed}`;
                     await handleStipend({ action: 'stipend', cultivatorId: cultivator.id }),
                     'The stipend'
                 );
+            // ── SITTING IN SOMEWHERE THAT HAS NOT TAKEN YOU ──────────────
+            //
+            // The one institutional verb here that is not gated on holding a
+            // rung, and the reason it exists: the game tells a player
+            // constantly that a teacher is one of the two ways past a manual's
+            // ceiling, and then gives a nobody nobody to ask. A guest place is
+            // a route somebody with no house and no name can actually walk.
+            //
+            // Free, and correctly so - `fromToolResult` advances no clock, and
+            // being entered on a roll is a conversation rather than a span. The
+            // years are spent afterwards, cultivating on what you were shown.
+            case 'guest': {
+                if (topic === 'depart') {
+                    return this.fromToolResult(
+                        'sect_manage.guest', 'sect',
+                        await handleGuest({
+                            action: 'guest', cultivatorId: cultivator.id,
+                            accept: false, depart: true
+                        }),
+                        'The guest roll'
+                    );
+                }
+                const asked = (target ?? '').trim();
+                // ── A HOUSE WHOSE NAME BEGINS "House of" IS NOT A CATEGORY ──
+                //
+                // `GENERIC_HOUSE_PHRASE` is unanchored at its end, so once the
+                // leading article is stripped off "the House of the Narrow
+                // Hour" the remainder starts with `house` and reads as the
+                // whole category. Played: "can I study at the House of the
+                // Narrow Hour" was answered with the listing of every house
+                // that takes guests, which is the deflection failure - it looks
+                // like an answer and is a reply to a question nobody asked.
+                //
+                // Fixed here rather than in the shared constant, because the
+                // constant is doing its job elsewhere and six of the seven dao
+                // houses are named this way. The category words only mean the
+                // category when they are the WHOLE of what was said.
+                const generic = GENERIC_HOUSE_CATEGORY_ONLY.test(asked);
+                const house = asked.length >= 3 && !generic
+                    ? resolveSect(this.repos, asked, this.scopeFor(cultivator), cultivator.sectId)
+                    : null;
+                // The same rule the join path already follows: a specific name
+                // that resolves to nothing must not fall through to the
+                // listing, because being shown a house you did not ask about
+                // reads exactly like an answer.
+                if (!house && asked.length >= 3 && !generic) {
+                    return refused('engine.resolveSect', 'sect', factsForRefusal(
+                        'Not a name you hold.',
+                        'You have said a name and it is not one anybody has said to you. A guest '
+                        + 'place starts where every other door starts, which is somebody saying '
+                        + 'the name in front of you.',
+                        `Unresolved sect "${asked.slice(0, 60)}": no knowledge record. The guest `
+                        + 'listing is deliberately NOT offered as a substitute.'
+                    ));
+                }
+                return this.fromToolResult(
+                    'sect_manage.guest', 'sect',
+                    await handleGuest({
+                        action: 'guest',
+                        cultivatorId: cultivator.id,
+                        ...(house ? { sectId: house.id } : {}),
+                        accept: house !== null && topic === 'accept',
+                        depart: false
+                    }),
+                    house ? house.name : 'The guest roll'
+                );
+            }
+
             case 'donate':
                 return this.donate(run, cultivator, days);
 
@@ -14542,6 +14625,55 @@ export function withoutTheOverride(target: string): string {
 
 function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
+
+    // ── THE TERMS OF A GUEST PLACE ───────────────────────────────────────
+    //
+    // The sixth verb to land on the shrug, caught on its first played run:
+    // "can I study at the House of the Narrow Hour" came back as one sentence
+    // saying the house would let you sit in, and said nothing whatever about
+    // what it would show you, what it would keep, how long it would watch you,
+    // or the five things the place is not. All of that was in the body.
+    //
+    // The order below is the order somebody deciding actually wants it: what is
+    // on the table, then what is not, then what the position does not carry -
+    // because that last is the part that has to be read BEFORE accepting rather
+    // than discovered afterwards.
+    if (typeof body.hostName === 'string' && Array.isArray(body.opens)) {
+        const opens = body.opens as Array<{ name?: string; carriesTo?: string | null; requiredRank?: string }>;
+        const kept = (body.keepsBack ?? []) as Array<{ name?: string; why?: string }>;
+        const notYet = (body.openedButOutOfReach ?? []) as Array<{ name?: string; requiredRank?: string }>;
+
+        lines.push(
+            opens.length === 0
+                ? `${body.hostName} would put nothing in front of you that you can open as you stand.`
+                : `What they would show you: ${opens.map(o =>
+                    `${o.name}${o.carriesTo ? `, which carries to ${o.carriesTo}` : ''}`
+                ).join('; ')}.`
+        );
+        if (notYet.length > 0) {
+            lines.push(
+                `On the same shelf and out of your reach for now: ${notYet.map(o =>
+                    `${o.name} (${o.requiredRank})`
+                ).join('; ')}.`
+            );
+        }
+        if (kept.length > 0) {
+            lines.push(
+                `They keep ${kept.length} thing${kept.length === 1 ? '' : 's'} back, `
+                + `starting with ${kept[0].name}. ${kept[0].why ?? ''}`
+            );
+        }
+        if (typeof body.watchesForYears === 'number') {
+            lines.push(
+                `They would watch you for ${body.watchesForYears} years before saying anything `
+                + 'about what you are. That is not a price for the shelf - it is how long a '
+                + 'house looks at somebody before it is willing to have an opinion.'
+            );
+        }
+        for (const line of (body.notOffered ?? []) as string[]) lines.push(line);
+        if (typeof body.yourOwnHouse === 'string') lines.push(body.yourOwnHouse);
+        if (typeof body.stillOf === 'string') lines.push(`Still of: ${body.stillOf}`);
+    }
 
     // ── WHERE SOMEBODY STANDS IN THEIR OWN HOUSE ─────────────────────────
     //

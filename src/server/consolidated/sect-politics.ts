@@ -335,7 +335,9 @@ export async function handlePatronage(args: z.infer<typeof PatronageSchema>): Pr
                     currentOrdinal: cultivator.realmOrdinal,
                     hint:
                         'A guest elder is not a senior member. It is a arrangement a house makes ' +
-                        'because the guest is stronger than the house.'
+                        'because the guest is stronger than the house. The arrangement for ' +
+                        'somebody weaker than it is sect_manage({ action: "guest" }): a guest ' +
+                        'STUDENT sells nothing and buys access to the shallow end of the shelf.'
                 }
             );
         }

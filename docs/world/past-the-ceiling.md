@@ -373,8 +373,25 @@ branches and incomplete knowledge. And the principle may not be your road, in wh
 being adopted into the House of Oaths gets you a lifetime of very well-informed access to
 something `daoMatches` will keep refusing.
 
+**And there is a shallow version of this door that does not require being let in.** Most
+houses take **guest students** - somebody entered on the house's guest roll and never on its
+house roll, keeping their own membership, holding no rung, and shown the part of the shelf
+the house keeps in quantity. It is rational for the house for two reasons that are both its
+own interest: it is the only way an adoption-only body can look at an outsider before
+deciding about them, and it costs nothing, because the deep material is behind kinship.
+
+What it buys the player is the thing this whole file is about: a route past a ceiling that
+does not need a favour from an apex or a decade of contribution. What it does not buy is
+protection - a guest is away from their own house among people who owe them nothing, and the
+host will not act. And the arrangement has an end: a house that has watched somebody its
+whole term and taught them everything it was willing to show a guest offers them membership,
+at which point every paragraph in [Leaving, and what it costs](#leaving-and-what-it-costs)
+applies to the house they would have to leave.
+
 **Implemented by.** `DiscoveryContext.tradition`, `discoverableInsights`, `assessAccess`,
-`NARROWING_PENALTY`, `daoDistance`, the faction catalog's house entries.
+`NARROWING_PENALTY`, `daoDistance`, the faction catalog's house entries; and for the guest
+half, `src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.ts` with
+`sect_manage({ action: 'guest' })`.
 
 ---
 
@@ -492,7 +509,7 @@ were nearly identical to each other, and the reason is that they all had the sam
 | The scholar | 6 (adoption), 7 (deduction), 2's talent gates | 3 and 8 need a fight they will lose |
 | The soldier | 3 (bodies), 8 (war and spoils), 2's strength gates | 7 needs a depth the years went elsewhere |
 | The politician | 9 (the curriculum), 5, 8 (the treasury) | 7, for the same reason as the soldier |
-| The nobody | 2 (`age_and_talent` and `fate`), 3, 1b | 5, 6, 8 and 9 all require being let in somewhere |
+| The nobody | 2 (`age_and_talent` and `fate`), 3, 1b, and **6's guest roll** | 5, 8 and 9 require being let in somewhere; 6's adoption still does |
 
 The table is illustrative, not a schema. What it has to be true of is that no column is
 empty and no row is the same as another, and that the nobody's column is not the shortest -
