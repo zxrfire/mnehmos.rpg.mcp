@@ -141,10 +141,29 @@ export const ImmortalChannelSchema = z.object({
     gradeCeiling: z.enum(['higher', 'middle', 'lower', 'none']),
     gradeNote: z.string().min(150),
     /**
-     * Present only on a personal channel: the reason it answers so often, and
-     * the reason it will stop. Never resolved - the shape is the point.
+     * Present only on a personal channel: WHO it answers for, why that makes it
+     * answer so often, and what being that person exposes the house to.
+     *
+     * THIS USED TO BE CALLED `theClock` AND HELD A COUNTDOWN. The field named
+     * the sister as a Core Formation cultivator with about fifty years left and
+     * built the Pavilion's whole tension on her dying. The design owner has
+     * retired that: the sister stands at ordinal 41, and the tension is not
+     * that she runs out - *"at core formation someone is gonna come and grab
+     * the 45 sword"*. Somebody at Core Formation holding the one channel in the
+     * world whose stock RISES is a kidnapping that has not happened yet, and
+     * the setting cannot support that, so the person a channel answers for
+     * stands at the last realm. Even there she is weak RELATIVE TO WHAT SHE
+     * GUARDS, which is a live problem somebody can act on rather than a
+     * countdown that only elapses.
+     *
+     * Note what this is NOT. There are four channel holders in this file and she
+     * is not a single point of failure for the world - only for the Pavilion,
+     * whose distinction is a rising supply rather than a lone one.
+     *
+     * Renamed rather than repurposed, because a field called `theClock` holding
+     * something that is not a clock is how the next reader gets it wrong.
      */
-    theClock: z.object({
+    thePersonItAnswersFor: z.object({
         who: z.string().min(60),
         why: z.string().min(150),
         note: z.string().min(200)
@@ -171,7 +190,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         gradeCeiling: 'higher',
         gradeNote:
             'An ancestor three thousand years across sends rarely and sends well. What arrives is graded across the range and includes the only higher-grade golden pill anybody in the world can point to, which is the whole of the Survey advantage: not volume, which it has never had, but the top of the range, which nobody else can reach at all.',
-        theClock: null,
+        thePersonItAnswersFor: null,
         usability:
             'Entirely usable, which is the point and also the problem. An object is a line item: it can be counted, minuted, stored, and released by quorum, and every instinct a bureaucracy has applies to it correctly. What cannot be done is reorder it, and that single fact is what turns careful administration into the arithmetic that no petitioner can move.',
         whatItExplains: [
@@ -197,7 +216,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         gradeCeiling: 'higher',
         gradeNote:
             'Two thousand six hundred years across, answering at intervals measured in ages, sending well when it sends. The Long Cut holds the only higher-grade talisman in existence and two middle pills against it, which is a thinner stock than the Pavilion by any count and a better one by the only measure that decides what can actually be done with it.',
-        theClock: null,
+        thePersonItAnswersFor: null,
         usability:
             'Fully usable and fully governed. The Long Cut owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: there is no vassal to attribute the decision to and no authority above it to authorise the loss. The result is a body that can act on anything except this.',
         whatItExplains: [
@@ -223,7 +242,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         gradeCeiling: 'none',
         gradeNote:
             'Nothing material comes down this channel at all, at any grade. The Court receives accounts and no objects, which is why it is the only holder in this file with nothing on the standing stock of anybody and the only one that does not care.',
-        theClock: null,
+        thePersonItAnswersFor: null,
         usability:
             'Very little of it. Answers from the far side of a boundary that strips everything arrive incomplete, oddly weighted, and sometimes plainly wrong in ways nobody below can check - a step described in detail that nobody can locate, an ordering that contradicts the previous account, an emphasis on something no cultivator here can identify. The Court does not know whether the discrepancies are transmission, translation, or the thing itself being different for each person. That the four of them are still at it after four thousand years tells you exactly how good the information is.',
         whatItExplains: [
@@ -253,10 +272,10 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         gradeCeiling: 'lower',
         gradeNote:
             'All of it lower, without exception, and the reason is not stinginess: she is three hundred and eighty years across, which is nothing. A fresh immortal has neither the standing to ask for better nor the power to send it, and she sends anyway - as much as she can, as often as she can manage it, at the only grade available to her. Everybody senior at the Pavilion understands this and nobody has ever described it as a limitation of hers.',
-        theClock: {
-            who: 'Ru Anxi, her younger sister, still in the Pavilion at Core Formation Perfection and four hundred and forty-seven years old.',
-            why: 'The channel is a person. It answers this often because there is somebody specific down here that Ru Anjing has a reason to answer for, and everybody at the Pavilion knows exactly whose channel it is - the objects arrive, and within the month Ru Anxi is asked politely about her health by people who have no other reason to ask.',
-            note: 'She is mortal in the way that matters. Core Formation carries five hundred years and she is four hundred and forty-seven, so the arithmetic is available to anybody who wants to do it and everybody senior has done it. What happens to the flow when she dies is the single largest open question about the strongest institution in the world, it is discussed by nobody, and it is not resolved here. The Pavilion is strong now, on an income, with a clock running underneath it that has perhaps fifty years on it.'
+        thePersonItAnswersFor: {
+            who: 'Ru Anwei, her sister, Pavilion Master of Azure Cloud, standing at the first rung of the last realm and not moving from it.',
+            why: 'The channel is a person. It answers this often because there is somebody specific down here that Ru Anjing has a reason to answer for, and everybody at the Pavilion knows exactly whose channel it is - the objects arrive, and within the month Ru Anwei is asked politely about her health by people who have no other reason to ask. Ru Anxi, a younger relative the Pavilion also raised, is asked the same questions by people who have got the wrong one.',
+            note: 'What that exposes is not a countdown. It is a position. The only holding in the world that goes UP rather than down runs on an income arriving because of one named living person, and the whole of the flow is attached to her rather than to the mountain, the seat or the sect - so anybody who wants the income does not have to take the Pavilion, they have to reach her. She is at the last realm and that is not nothing; it is also not the same order of thing as what she is standing in front of, and everybody senior on both sides of every border has done that arithmetic and said nothing. What happens to the flow if somebody ever moves on her is the single largest open question about the Pavilion, it is discussed by nobody, and it is not resolved here.'
         },
         whatItExplains: [
             'why the Pavilion can give a pill away at all, and why it now gives them away more freely than any institution in history',
@@ -291,8 +310,34 @@ export const IMMORTAL_MOTIVE = {
         'Which produces the baseline behaviour of every apex ancestor. Sending is cheap - a medicine dispatched costs them nothing they will miss and carries no risk at all. Coming down is the expensive, dangerous thing. So they send occasionally, appear almost never, and answer an offering once a millennium with a few words.',
     whatTheOfferingActuallyIs:
         'Not a great honour a sect has earned. The cheapest possible acknowledgement, costing the giver nothing whatsoever, and the sects have built entire ceremonies around it because it is all they were ever going to get. A body that spends its principal for a decade to receive two words is not being rewarded; it is being answered at the minimum rate.',
+    // THE SUPERLATIVE CAME OFF, AND THE MEASUREMENT IS WHY.
+    //
+    // This field used to end by calling the Azure Cloud Pavilion the strongest
+    // institution in the world. The catalog does not support it. By declared
+    // `powerOrdinal` the Hollow Court stands at 44 and Azure Cloud at 41, with
+    // the Severed at 38 and three courts at 36 to 37 - so it is ONE OF the
+    // strongest, with three houses inside four rungs of it and a body above it
+    // that is not the same kind of body at all. The Court takes no beginners:
+    // its floor is Void Refinement and evidence of a plausible crossing, so it
+    // admits the nearly-arrived, and ranking a house that raises nobody against
+    // houses that raise everybody is what makes that comparison feel wrong.
+    //
+    // Note what that does NOT settle, because the temptation is to over-read
+    // it. Admissions explain the Court's VOLUME. They do not establish that the
+    // Court contributes nothing to the crossings it counts, and nothing in the
+    // world could: the counterfactual - that same cultivator without the Court -
+    // is not observable by anybody. The causal claim is unproven and so is the
+    // null one, the province credits them, and that credit is not obviously
+    // wrong. Leave it a live dispute. Never build a statistic that subtracts a
+    // selection effect: count who was admitted and who crossed, and stop, or
+    // the engine is asserting a counterfactual it cannot see.
+    //
+    // What replaces it is smaller, truer and specific: the Pavilion is the one
+    // holder of the four whose stock GOES UP. `immortal-items.ts` says the four
+    // cannot be put in a single order at all and that this is the point, and a
+    // superlative fights that.
     theExceptionAndWhy:
-        'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the strongest institution in the world because of sisterly love rather than because of anything the sect did.',
+        'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the one holder in the world whose stock rises - because of sisterly love rather than because of anything the sect did.',
     readTheApexesThisWay: [
         'Deep Survey: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
         'Long Cut: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
