@@ -1947,3 +1947,38 @@ The ones that go stale fastest, in order:
 its header, and `docs/`- and the copy that goes stale is the one in the directory you were not
 working in. If your change makes a sentence false, the sentence is part of your change, and it
 lands in the same commit.
+
+### The parser names the act. The engine is the one that says no
+
+**Three jobs, and each one is ruined by taking on either of the others.** The reader turns a
+sentence into acts. The engine resolves them against the world. The narrator renders what
+came back. `prompt.ts` is built this way and says so; the failures worth hunting are the
+ones where a phase quietly took on the next phase's job.
+
+**The reader must never refuse on grounds of what the act is.** Theft, violence, deceit,
+betrayal, devouring somebody's core - all ordinary moves here, all with rules behind them.
+A model asked to route a hostile sentence will soften it if nothing stops it: measured in
+play, *"I take Cao Antao's purse"* came back as `interact(Cao Antao)` rather than `steal`.
+That is the worst failure in the pipeline, because it is silent. The engine never learns
+what was tried, so no stealth check runs, nothing is taken, nobody is wronged, no grudge
+opens, and the consequences that make the world worth playing never fire. **A softened verb
+looks like a turn that happened. A refusal at least tells the player where the wall is** -
+and the engine's refusals are the good kind, because they know why.
+
+Say it in the prompt rather than hoping: route it, and let the engine be the one to say no.
+
+**The reader emits what the sentence contains, not one thing.** A sentence is a plan. Which
+of its acts run, and in what order, is the engine's ruling and not the reader's - the reader
+that answers a three-act sentence with one act has thrown away the other two before anything
+with rules ever saw them.
+
+**A target is a description, not an id.** The reader hands over the words the player used -
+*the manual*, *the jade at the elder's waist* - and resolution is the engine's, against what
+is actually here: what the player holds first, then what is standing in front of them, and
+only then the catalog. A reader that picks the entry itself will pick a plausible one, and
+plausible is how *the manual* became a book the player had never seen while their own copy
+sat in their pouch.
+
+**And the narrator is shown the result, never the question.** Not *what happens if they try
+this* but *this is what happened*. It has no authority and needs none; everything it could
+have decided has already been decided.
