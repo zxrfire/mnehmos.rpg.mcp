@@ -3803,11 +3803,15 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
  * while the verb around it did not.
  */
 export function inTheCharactersThePatternsUse(input: string): string {
+    // Written as escapes rather than as the characters themselves. AGENTS.md
+    // forbids an em-dash in this repo's source and the terminology test
+    // enforces it - a rule this very function exists to serve, so it must not
+    // be the one place that breaks it.
     return input
-        .replace(/[‘’‛]/g, "'")
-        .replace(/[“”]/g, '"')
-        .replace(/[–—]/g, '-')
-        .replace(/…/g, '...');
+        .replace(/[\u2018\u2019\u201B]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\u2026/g, '...');
 }
 
 export function parseIntent(rawInput: string): PlannedAction {
