@@ -470,7 +470,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
                 heldByFactionId: 'sect-azure-cloud-pavilion',
                 nodes: { total: 41, lit: 9 },
                 whyItCannotBeReplaced:
-                    'The strongest institution in the world, holding an ancestral channel and an income of consumables from above, lights nine nodes out of forty-one and has never lit a tenth. Wealth is not the constraint and never was.'
+                    'A house holding an ancestral channel and the only income of consumables in the world that goes up rather than down lights nine nodes out of forty-one and has never lit a tenth. Wealth is not the constraint and never was.'
             },
             {
                 what: 'The Nine Peaks Ascetic Order\'s compound, including a doorway on the fourth peak with handprints burned into the jamb at a height nobody in the Order can reach flat-footed.',

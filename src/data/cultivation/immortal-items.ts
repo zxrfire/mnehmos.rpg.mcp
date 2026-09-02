@@ -76,10 +76,29 @@
  * That is arithmetic rather than a lever, and there is no version of the
  * problem where the player finds the right person and applies enough pressure.
  *
- * The contrast is deliberate: Azure Cloud is a sect holding a dead woman's
- * gift and trying to honour what she meant by it, and the apexes are
- * bureaucracies holding an unreplenishable line item. Same objects, entirely
- * different obstacle.
+ * The contrast is deliberate: Azure Cloud is a sect where a LIVING woman
+ * exercises judgement against guidance her sister gave before leaving, and the
+ * apexes are bureaucracies holding an unreplenishable line item. Same objects,
+ * entirely different obstacle - and the difference is not that one has written
+ * terms. It is that the Pavilion has somebody who COULD say yes, and an apex
+ * has a quorum where any one voice can refuse. Getting one from the Pavilion is
+ * a social and political problem. Getting one from an apex is arithmetic.
+ *
+ * SHE LEFT. SHE DID NOT DIE, and this comment said otherwise for a while: it
+ * called the Pavilion's holding "a dead woman's gift". That contradicts its own
+ * line four paragraphs above - a dead benefactor's stock cannot go UP - and it
+ * contradicts `sects.ts` and `crossings.ts`, which carry the fact in full: she
+ * still answers, on a channel that is a living person rather than a bequest,
+ * and the arrivals are why the stock rises rather than falls. Those two files
+ * hold the names, the ages and the interval; they are not restated here,
+ * because a second copy of a fact is a second thing to keep true.
+ *
+ * The rivals' line stays exactly as it is. The Ashen Forge Clan calls the
+ * deference "renting a dead woman" and resents an authority owed to a dead
+ * woman rather than earned, and that is what the province BELIEVES. They are
+ * wrong, their wrongness is the point, and `sects.ts` says outright that what
+ * none of them has worked out is that she still answers. An in-world opinion is
+ * not an error. A narrator asserting it as fact was.
  */
 
 import { z } from 'zod';
