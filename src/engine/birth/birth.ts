@@ -69,8 +69,9 @@ import {
     type OriginTierKey
 } from '../cultivation/origin.js';
 import type { SourceKind, Stance } from '../social/knowledge.js';
-import { REGIONS } from '../../data/cultivation/regions.js';
+import { REGIONS, provinceForFaction } from '../../data/cultivation/regions.js';
 import { SECTS } from '../../data/cultivation/sects.js';
+import { housesWithTwoDoors } from './spending-a-word-to-place-a-child.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE WORLD A BIRTH IS DRAWN FROM
@@ -104,6 +105,25 @@ export interface BirthHouse {
     /** Its own floor, which being somebody's child does not move. */
     admissionOrdinal: number;
     recruits: boolean;
+    /**
+     * The `REGIONS` row this house is seated in, or null where the catalog
+     * places it nowhere.
+     *
+     * Here because what an ordinary person has heard of is overwhelmingly a
+     * question of where they were standing when they heard it, and until this
+     * existed nothing in the birth path could ask it. See
+     * {@link commonlyNamedHouses}.
+     */
+    regionId: string | null;
+    /**
+     * Whether the house advertises a door below its own membership bar.
+     *
+     * A house whose intake model is people walking up the mountain needs its
+     * name to travel further than its province, or the model does not work -
+     * which is why this is read at all. Derived through `housesWithTwoDoors`
+     * so there is one authority on which houses have two doors.
+     */
+    publishesADoorAtTheFloor: boolean;
 }
 
 export interface BirthWorld {
@@ -127,12 +147,20 @@ export function catalogBirthWorld(): BirthWorld {
         }
     }
 
+    const publishesADoor = new Set(housesWithTwoDoors().map(d => d.factionId));
     const houses: BirthHouse[] = SECTS.map(sect => ({
         id: sect.id,
         name: sect.name,
         powerOrdinal: sect.powerOrdinal,
         admissionOrdinal: sect.admissionOrdinal,
-        recruits: sect.recruits
+        recruits: sect.recruits,
+        // The `REGIONS` row, reached through the province the catalog seats the
+        // house in. `Province.regionId` is the existing link between the two id
+        // spaces and is read rather than restated - `region-low-fall` and
+        // `province-low-fall` are different ids for related things and pairing
+        // them by hand is how that goes wrong.
+        regionId: provinceForFaction(sect.id)?.regionId ?? null,
+        publishesADoorAtTheFloor: publishesADoor.has(sect.id)
     }));
 
     return { places, houses };
@@ -277,20 +305,100 @@ export function housesWithinEarshot(
 }
 
 /**
- * The one house a person with no standing at all would have heard mentioned.
+ * The houses a person with no standing at all would have heard mentioned.
  *
- * The lowest bar that takes applicants, tie-broken by id so the answer is
- * stable. This is the rule the web layer already used for its single seeded
- * sect name, lifted here so the whole opening list comes from one place.
+ * ── WHAT THIS USED TO BE, AND WHY IT WAS THE WHOLE OPENING PROBLEM ───────
+ *
+ * `commonlyNamedHouse`, singular: the lowest bar among recruiters, tie-broken
+ * by id. Measured, that is a much worse rule than it reads as:
+ *
+ *   - Thirteen houses in the catalog admit at rung 2 or below and SEVEN OF
+ *     THEM ARE TIED AT ZERO. The tie-break is alphabetical on the faction id,
+ *     so `sect-azure-dew-sect` won on the letter A and the other six were
+ *     unreachable to every player in every run, permanently.
+ *   - It scanned the whole world and returned a global minimum, so a child
+ *     born in the Quiet Marches was told the name of a house in the Low Fall
+ *     and none of the three standing around them.
+ *   - The three lowest origin tiers have `placement.reach` of 0 or 12 and
+ *     `housesWithinEarshot` returns nothing for any of them, so for nine
+ *     births in ten this single name was the ENTIRE roll of houses a life
+ *     began with.
+ *
+ * Played, that is a new cultivator who can name one door, in a world with
+ * thirteen open ones. The doors were never the problem; being able to see
+ * them was.
+ *
+ * ── THE RULE NOW, AND IT IS STILL ONE SENTENCE ───────────────────────────
+ *
+ * What everybody in the county says is the name of the houses that would take
+ * anybody, HERE. Two clauses:
+ *
+ *   IN YOUR OWN REGION, at a bar somebody with no cultivation already meets.
+ *   This is ordinary local knowledge and it is the same claim the county layer
+ *   already makes about settlements - you can point at the next town, and you
+ *   can name the order that takes people from it.
+ *
+ *   PLUS ANY HOUSE THAT PUBLISHES A DOOR AT THE FLOOR, wherever it is seated,
+ *   because a house whose entire intake is people walking up the mountain
+ *   needs its name to travel further than its province or the intake does not
+ *   work. That is not a favour to the player; it is the only way that house's
+ *   own model is coherent.
+ *
+ * Nothing is invented and nothing is enumerated: a house that wants to be on
+ * this list lowers its bar or publishes a door, and a region with neither
+ * produces the fallback below.
+ *
+ * Still at the lowest stance the knowledge layer has - what everyone says and
+ * nobody has checked - so this is a set of names to walk towards rather than
+ * an introduction to anybody.
  */
-export function commonlyNamedHouse(houses: readonly BirthHouse[]): BirthHouse | null {
-    const candidates = houses.filter(h => h.recruits);
-    if (candidates.length === 0) return null;
-    return candidates.reduce((best, h) =>
-        h.admissionOrdinal < best.admissionOrdinal ||
-        (h.admissionOrdinal === best.admissionOrdinal && h.id < best.id)
-            ? h
-            : best);
+export function commonlyNamedHouses(
+    houses: readonly BirthHouse[],
+    regionId: string | null
+): BirthHouse[] {
+    const recruiting = houses.filter(h => h.recruits);
+
+    // ── LOCAL ONLY, AND THAT IS A RULING RATHER THAN A SIMPLIFICATION ────
+    //
+    // A first draft also named every house that publishes a door at the floor,
+    // wherever it was seated, on the reasoning that an intake of "people walk
+    // up the mountain" needs the name to travel. `docs/world/origin.md` says
+    // otherwise, in terms specific enough that it is clearly deliberate: the
+    // Pavilion's standing "sits above what any family's name reaches, so
+    // nobody is ever placed there - a child of the strongest house alive has
+    // not heard it named at home." A test asserts it.
+    //
+    // So the cross-region clause is gone and the rule is one clause. Where such
+    // a house is seated in your own region it still appears, on the same
+    // footing as any other open door - which is the case the owner's ruling is
+    // about, and it arrives without a special case.
+    const nearby = regionId === null
+        ? []
+        : recruiting.filter(h => h.regionId === regionId && h.admissionOrdinal <= 0);
+
+    if (nearby.length > 0) return dedupeById(nearby);
+
+    // A region with no open door of its own. Rather than leaving somebody with
+    // nothing, fall back to the world's floor - which is what the old rule
+    // always did, for everybody, and is correct as a floor and wrong as the
+    // whole answer.
+    const lowest = recruiting.reduce<number | null>(
+        (best, h) => best === null || h.admissionOrdinal < best ? h.admissionOrdinal : best,
+        null
+    );
+    if (lowest === null) return [];
+    return dedupeById(recruiting.filter(h => h.admissionOrdinal === lowest));
+}
+
+function dedupeById(houses: readonly BirthHouse[]): BirthHouse[] {
+    const seen = new Set<string>();
+    const out: BirthHouse[] = [];
+    for (const h of houses) {
+        if (seen.has(h.id)) continue;
+        seen.add(h.id);
+        out.push(h);
+    }
+    return out.sort((a, b) => a.admissionOrdinal - b.admissionOrdinal || a.id.localeCompare(b.id));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -488,8 +596,7 @@ function seedKnowledge(
     // And the one name everybody in the county says, whoever they are. Last,
     // so it is a duplicate rather than a demotion for anyone who already holds
     // it at a firmer stance.
-    const common = commonlyNamedHouse(world.houses);
-    if (common) {
+    for (const common of commonlyNamedHouses(world.houses, place.regionId)) {
         add({
             kind: 'sect',
             id: common.id,
@@ -497,7 +604,10 @@ function seedKnowledge(
             stance: 'believes',
             sourceKind: 'told',
             sourceNote: 'What everyone in the county says. Nobody has checked.',
-            statement: `${common.name} exists somewhere out there and takes disciples.`,
+            statement: common.publishesADoorAtTheFloor
+                ? `${common.name} takes anybody who walks up, tests them, and spends years `
+                  + 'finding out what they are. Everyone has heard that and nobody local has done it.'
+                : `${common.name} exists somewhere out there and takes disciples.`,
             confidence: 0.5
         });
     }
