@@ -258,15 +258,44 @@ So the split is sharper than *object versus everything else*:
 
 > **She reads the thing correctly and the institution behind it wrongly.**
 
-**And there is a third state, worse than having no reference: having one that is out of date.**
-Somebody with no reference asks. Somebody with a stale one does not think to — **she will
-recognise a house confidently and be wrong about what recognising it means.**
+**And she does not know nothing.** Her reference is **partial, not absent** — mostly stale, and
+some of it still holds. Names that still mean roughly what they meant, a hall that is still
+where it was, a family that kept its habits. **That is a worse state than an empty one, not a
+better one:** somebody with no reference asks about everything, while somebody with a
+*partly* correct one **cannot tell which parts are the correct ones**, and stops asking exactly
+where she should not have.
 
-**Which is exactly where the previous section bites.** She, of all people, can simply go and
-find out — the seats have not moved, and the journey is nothing to her. **Her deficit is
-repairable in an afternoon, and only while she has the afternoon.** Woken into a siege, or into
-a plan already running, she has to act on a reference class centuries out of date, and that is
-when being enormously powerful stops protecting her.
+**But she has a way of checking that is available to nobody else, and it runs through objects.**
+
+> **She cannot ask the people — they are all new. She can ask the things.**
+
+**Material outlasts membership.** A house's relics, its foundations, the instruments its
+ancestors held, the pieces she herself saw made: those survive every disciple who has died since
+she was sealed. **So she tests institutional continuity by testing material continuity** — does
+this house still hold what it held? — and she can authenticate the answer perceptually, on the
+axis where she is strongest. **Her strong axis repairs her weak one, and objects are the only
+channel through which it can.**
+
+Two failure modes fall out of that, and both are worth playing:
+
+- **A house that sold or lost its old things reads as discontinuous when it is not.** Poverty,
+  a bad century, a debt paid with an ancestor's blade — and the house fails her test while being
+  exactly the house she remembers. She may be the only person alive who would hold that against
+  them, and she would be wrong to.
+- **A house holding somebody *else's* old things can pass a check it has not earned.** Relics
+  change hands. Continuity of material is not continuity of line, and **conflating the two is a
+  forgery she is uniquely vulnerable to** precisely because the objects themselves are genuine.
+
+**And it makes her valuable rather than only lost.** She is the one person who can say *that is
+not your ancestor's blade, I watched it made* — **a living authority on everything from her era,
+and a catastrophe for anybody whose claim rests on a piece from it.** Waking her is a thing a
+house might want, and a thing a forger would pay to prevent.
+
+**Which is exactly where the price of checking bites.** She, of all people, can go and find
+out — the seats have not moved, and the journey is nothing to her. **Her deficit is repairable
+in an afternoon, and only while she has the afternoon.** Woken into a siege, or into a plan
+already running, she has to act on a reference class centuries out of date, and that is when
+being enormously powerful stops protecting her.
 
 The sealed ancestors are in the catalogs — `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`,
 `UNOWNED_ANCESTORS` — and at the time of writing nothing in `src/engine/` reads them. This model
