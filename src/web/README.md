@@ -233,12 +233,28 @@ in the `help` read and in the panel. It authors nothing: the pill is the
 catalog's, the price is the board's, the grade rule is
 `what-grade-of-medicine-a-wound-needs.ts`.
 
-**One thing it found and did not settle.** The grade ladder is enforced in
-exactly one place, `GameService.treat`. The pill path has none - `treat_injury`
-in `alchemy-manage.ts` calls `treatWorstInjury` and nothing else - so a mortal
-Clear Meridian Pill closes a crippling tear a physician will refuse. Whether
-that is right is a design question. Closing it would make the game harder, which
-is not a thing to do in passing, so it is written down rather than patched.
+**One thing it found and did not settle, now settled.** The grade ladder used to
+be enforced in exactly one place, `GameService.treat`. The pill path had none -
+`treat_injury` in `alchemy-manage.ts` called `treatWorstInjury` and nothing else
+- so a mortal Clear Meridian Pill closed a crippling tear a physician would
+refuse. That was written down rather than patched because it is a design
+question and closing it makes the game harder. It has since been put to the
+design owner and answered: `treat_injury` passes `medicineReaches` into
+`treatWorstInjury`, and the physician and the pill now give the same answer
+about the same wound.
+
+Two consequences for this directory. `whatSomebodyWouldGoAndGet` filters by
+`medicineReaches` rather than naming the cheapest treat-injury pill in the
+catalog, because a name the resolver will refuse is worse than no name. And the
+price board carries every commodity-tier cure, which it did not: the earth-grade
+answer an ordinary tear needs on a Core Formation body was quoted nowhere in the
+world. `tests/data/every-purchasable-cure-is-on-the-board.test.ts` holds that
+shut.
+
+**What a wound needs is not what a maker needs.** The severity-and-height ladder
+above is `what-grade-of-medicine-a-wound-needs.ts`. Who may *refine* a grade is
+`who-can-refine-a-grade-of-medicine.ts`, answered by the alchemist's own realm,
+and nothing in this directory should ever read one as the other.
 
 ### A clause the turn did not run is named, never dropped
 

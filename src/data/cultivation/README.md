@@ -27,7 +27,7 @@ contract and the tests are the validator.
 |---|---|---|
 | `techniques.ts` | The art library | Grade maps onto disjoint, ordered ordinal bands; qi costs are banded the same way |
 | `pills.ts` | Alchemy output | Grade drives value and toxicity together, in disjoint ascending bands |
-| `recipes.ts` | One recipe per pill | Ingredients resolve to real herbs; success rate falls as grade rises; refinement adds value |
+| `recipes.ts` | One recipe per pill | Ingredients resolve to real herbs; success rate falls as grade rises; refinement adds value; `requiredOrdinal` is raised to the grade's own refining floor and never typed in below it |
 | `herbs.ts` | The ingredient layer under alchemy | Value rises with grade, availability falls, and the realm needed to survive where it grows rises |
 | `beasts.ts` | The population that is not human, its materials and its tides | One ladder: danger is a realm ordinal, never a stat block. Anything that speaks is at least Core Formation |
 | `sects.ts` | Sects, Dao houses, destroyed houses | Every sect is *late*: none of them built what they live in |
@@ -102,6 +102,20 @@ mortal-grade one is never as risky.
 The bands are expressed **as data**, so the tests assert against the same table the
 content was authored from. Change the band, and the tests tell you which entries no longer
 fit.
+
+**A recipe's `requiredOrdinal` is not authored alone.** The literal in `RECIPE_DATA` says
+how hard that particular formula is; the exported `RECIPES` raises it to the floor under
+the whole grade, which is `refiningOrdinalFor` in
+[`../../engine/cultivation/who-can-refine-a-grade-of-medicine.ts`](../../engine/cultivation/who-can-refine-a-grade-of-medicine.ts).
+That floor is the design owner's ruling that a cultivator cannot work with materials above
+their realm - mortal at Qi Condensation, earth at Core Formation, heaven at Void
+Refinement, immortal and chaos by nobody who can live below the Lid. So do not type a grade
+floor into a literal and do not write a second table of them: raise the number in the
+formula only where THAT formula is harder than its grade, and let the floor do the rest.
+
+It is not the same ladder as `PILL_GRADE_REALM` (who a pill is *for*) and not the same
+ladder as `what-grade-of-medicine-a-wound-needs.ts` (what a *wound* needs). Three grade
+questions, three answers, and none of them may be read as another.
 
 ### Regard: the one generic column that answers by height
 

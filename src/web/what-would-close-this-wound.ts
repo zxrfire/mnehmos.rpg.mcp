@@ -26,28 +26,33 @@
  *
  * ── It names WHAT WORKS, not what a table says should ─────────────────────
  *
- * The grade ladder in `what-grade-of-medicine-a-wound-needs.ts` is enforced in
- * exactly one place: `GameService.treat`, the mortal physician. The PILL path
- * has no grade gate at all - `alchemy-manage.ts`'s `treat_injury` branch calls
- * `treatWorstInjury` and nothing else - so a 60-stone mortal Clear Meridian
- * Pill demonstrably closes a crippling tear that a physician will not touch.
- * That was measured in play, twice: the refusal and the pill disagreed, and the
- * pill won.
+ * This file used to carry a warning here and the warning has been answered, so
+ * what it found is kept and what it concluded is corrected.
  *
- * Whether that is right is a design question and it is NOT settled here.
- * Closing it would make the game harder, which is not this change's business,
- * and a quiet retune of a scarcity ladder is exactly the softening-in-reverse
- * that `AGENTS.md` says to put to a person rather than settle in passing. It is
- * written down in this file's own words so whoever answers it can find it.
+ * WHAT IT FOUND. The grade ladder in `what-grade-of-medicine-a-wound-needs.ts`
+ * was enforced in exactly one place, `GameService.treat`, the mortal physician.
+ * The PILL path had no grade gate at all - `alchemy-manage.ts`'s `treat_injury`
+ * branch called `treatWorstInjury` and nothing else - so a 60-stone mortal
+ * Clear Meridian Pill demonstrably closed a crippling tear that a physician
+ * would not touch. Measured in play, twice: the refusal and the pill disagreed,
+ * and the pill won.
  *
- * What follows from it is what this file must do: **name the medicine that
- * would actually close the wound, which is the cheapest one somebody will sell
- * you.** Naming the Meridian Rebirth Pill - heaven grade, bought with favours
- * rather than money - to a novice whose wound a village counter would close for
- * 60 stones would be sending them at a wall that is not there. Where the
- * catalog genuinely holds nothing purchasable, the honest answer is the name
- * plus `cashRefusalReason`: told what would mend you and why you cannot have it
- * yet, which is the sentence `buy` already gives and nothing else did.
+ * WHAT IT CONCLUDED, AND WHAT CHANGED. It said the question was a design one to
+ * be put to a person rather than settled in passing, which was right, and it
+ * has now been put and answered: the design owner asked for the grade system to
+ * have teeth, and `treat_injury` passes `medicineReaches` into
+ * `treatWorstInjury`. The pill and the physician now agree.
+ *
+ * SO THE JOB OF THIS FILE IS UNCHANGED AND ITS ANSWER IS NOT. It names the
+ * cheapest medicine somebody will sell you **that actually reaches the wound**,
+ * where it used to name the cheapest one on the treat-injury line full stop.
+ * Those were the same pill while nothing was enforced. They are not any more,
+ * and naming the cheap one now would be the worst sentence in the game: a
+ * player sent to a counter, charged sixty stones, and handed something the
+ * resolver will refuse to spend. Where the medicine that reaches is above the
+ * cash line, the honest answer is its name plus `cashRefusalReason` - told what
+ * would mend you and why you cannot have it yet, which is the sentence `buy`
+ * already gives.
  */
 
 import { PILLS } from '../data/cultivation/pills.js';
@@ -92,18 +97,27 @@ export interface TheCure {
 }
 
 /**
- * The medicine somebody would actually go and get, cheapest first.
+ * The medicine somebody would actually go and get for THIS wound on THIS body.
  *
  * `treat_injury` is a five-rung ladder - 60, 380, 4,000, 36,000, 400,000 - and
- * the pill resolver applies no grade requirement to any of it (see the banner),
- * so the one that closes the wound is simply the cheapest one a counter will
- * quote. The barter tiers are kept in the list and sorted last so that a world
- * whose only treat-injury medicine is past money still produces a NAME and a
- * reason rather than silence.
+ * the cheapest rung of it no longer answers every wound, so the filter is
+ * `medicineReaches` and not merely the effect. Everything below the wound's
+ * requirement is dropped before anything is sorted, because a cheaper name is
+ * worse than no name when the cheaper thing will be refused at the point of
+ * use.
+ *
+ * Among what reaches, cash before barter and then cheapest first: a player who
+ * can walk to a counter should be sent to the counter. The barter tiers stay in
+ * the list and sort last so that a wound whose only answer is past money still
+ * produces a NAME and a reason rather than silence.
  */
-function whatSomebodyWouldGoAndGet(): Pill | null {
+function whatSomebodyWouldGoAndGet(
+    severity: Injury['severity'],
+    realmOrdinal: number
+): Pill | null {
     const candidates = [...PILLS]
         .filter(pill => pill.effect === 'treat_injury')
+        .filter(pill => medicineReaches(pill.grade, severity, realmOrdinal))
         .sort((a, b) =>
             Number(cashRefusalReason(a) !== null) - Number(cashRefusalReason(b) !== null)
             || medicineRank(a.grade) - medicineRank(b.grade)
@@ -111,9 +125,25 @@ function whatSomebodyWouldGoAndGet(): Pill | null {
     return candidates[0] ?? null;
 }
 
-/** The board's asking price in stones for a named medicine, or null if it lists none. */
-function boardPrice(name: string): number | null {
-    const row = PRICES.find(price => price.name === name);
+/**
+ * The board's asking price in stones for a named medicine, or null if it lists
+ * none.
+ *
+ * DELIBERATELY THE BOARD AND NOT THE CATALOG, and the temptation to fall
+ * through to `pillCashPrice` was tried and rejected. `buy` sells what is on the
+ * board; a figure quoted for anything else sends a player to a counter that
+ * will tell them the thing is not sold here, which is the same contradiction
+ * this file exists to end, wearing a helpful face.
+ *
+ * So the invariant is on the board rather than on this function: every
+ * commodity-tier treat-injury medicine has a row, and
+ * `tests/data/every-purchasable-cure-is-on-the-board.test.ts` fails if one is
+ * added to the catalog and not to the board. That is what caught the
+ * Marrow-Washing Pill, which is the earth-grade answer an ordinary tear on a
+ * Core Formation body needs and had never been quoted anywhere.
+ */
+function boardPrice(pill: Pill): number | null {
+    const row = PRICES.find(price => price.name === pill.name);
     if (!row) return null;
     // The board is in cash and the purse is in stones, at the rate the whole
     // economy uses. 100 cash to the stone is stated on the board's own rows
@@ -143,11 +173,11 @@ export function whatWouldCloseThisWound(
         medicineRank(medicineNeededFor(b.severity, realmOrdinal))
         - medicineRank(medicineNeededFor(a.severity, realmOrdinal)))[0];
 
-    const pill = whatSomebodyWouldGoAndGet();
+    const pill = whatSomebodyWouldGoAndGet(worst.severity, realmOrdinal);
     if (!pill) return null;
 
     const notForSale = cashRefusalReason(pill);
-    const stones = notForSale === null ? boardPrice(pill.name) : null;
+    const stones = notForSale === null ? boardPrice(pill) : null;
 
     return {
         name: pill.name,
@@ -156,10 +186,11 @@ export function whatWouldCloseThisWound(
         notForSale,
         affordable: stones !== null && spiritStones >= stones,
         forSeverity: worst.severity,
-        // What the physician path requires, which is the OTHER half of the
-        // sentence: it is why the counter says no while the pill says yes, and
-        // a player who is told only one of the two learns the game is
-        // contradicting itself.
+        // What the physician path requires. It used to be the OTHER half of the
+        // sentence, in the sense of an apology - the counter says no while the
+        // pill says yes - and now it is the same half said twice, because the
+        // pill path enforces the identical rule. Kept because a refusal still
+        // has to state what it is refusing on.
         physicianNeeds: medicineNeededFor(worst.severity, realmOrdinal),
         physicianReaches: medicineReaches('mortal', worst.severity, realmOrdinal)
     };

@@ -32,21 +32,34 @@ import {
     whatWouldCloseThisWound,
     whatToSayAboutTheCure
 } from '../../src/web/what-would-close-this-wound.js';
+import { medicineReaches } from '../../src/engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
 
 /**
- * The cure a novice's torn meridian actually has, read off the catalogs rather
- * than typed in here. If the catalog moves, these tests move with it.
+ * The cure a torn meridian actually has, read off the catalogs rather than
+ * typed in here. If the catalog moves, these tests move with it.
+ *
+ * ── THESE FIXTURES USED TO BE A CRIPPLING TEAR AT ORDINAL 8 ──────────────
+ *
+ * And they were measuring a defect. The pill path applied no grade gate, so a
+ * crippling tear on a novice came back answered by a 60-stone mortal Clear
+ * Meridian Pill - purchasable, affordable, and refused by the physician in the
+ * same breath. `treat_injury` now passes `medicineReaches`, the two paths
+ * agree, and that wound's honest answer is a heaven-grade pill nobody sells.
+ * Asserting the old answer would be asserting the bug, so the case moved rather
+ * than the bar: it has its own test below, under the name it deserves.
+ *
+ * The pair here is now the case the tests were always ABOUT - a wound a
+ * physician cannot reach whose medicine is still on a board - and it is the
+ * REALM axis rather than the severity one that produces it. An ordinary serious
+ * tear on a Core Formation body wants earth grade; mortal care does not touch
+ * it; the Marrow-Washing Pill does, at 420 stones.
  */
-const CURE_IN_REACH = whatWouldCloseThisWound(
-    [{ id: 'i1', severity: 'crippling', source: 'qi_deviation', treated: false } as never],
-    8,
-    194
-)!;
-const CURE_OUT_OF_REACH = whatWouldCloseThisWound(
-    [{ id: 'i1', severity: 'crippling', source: 'qi_deviation', treated: false } as never],
-    8,
-    0
-)!;
+const HURT_AT_CORE_FORMATION = [
+    { id: 'i1', severity: 'serious', source: 'qi_deviation', treated: false } as never
+];
+const CORE_FORMATION_ORDINAL = 17;
+const CURE_IN_REACH = whatWouldCloseThisWound(HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 500)!;
+const CURE_OUT_OF_REACH = whatWouldCloseThisWound(HURT_AT_CORE_FORMATION, CORE_FORMATION_ORDINAL, 0)!;
 
 /**
  * A cultivator with nothing wrong. Every test below moves one field off this,
@@ -230,7 +243,7 @@ describe('the read is situated', () => {
     // have to.
     it('names the medicine, at its price, to somebody who can afford it', () => {
         const crippled = {
-            ...WELL, spiritStones: 194, treatableWounds: 0,
+            ...WELL, spiritStones: 500, treatableWounds: 0,
             woundsPastMortalCare: 1, cure: CURE_IN_REACH
         };
         const medicine = byId(crippled, 'medicine');
@@ -305,12 +318,57 @@ describe('the cure is read off the catalog, never invented', () => {
     });
 
     it('reports what a physician needs separately from what a pill costs', () => {
-        // The two disagree in the live engine - the pill path applies no grade
-        // gate and the physician does - and a player told only one of them
-        // learns the game is contradicting itself. Both are carried.
+        // These two used to DISAGREE in the live engine - the pill path applied
+        // no grade gate and the physician did - and both were carried so that a
+        // player told only one of them did not learn the game contradicts
+        // itself. They now agree, and both are still carried, because the
+        // refusal has to state what it is refusing on.
         expect(CURE_IN_REACH.physicianReaches).toBe(false);
-        expect(CURE_IN_REACH.physicianNeeds).toBe('heaven');
-        expect(CURE_IN_REACH.stones).toBeLessThan(200);
+        expect(CURE_IN_REACH.physicianNeeds).toBe('earth');
+        expect(CURE_IN_REACH.stones).toBe(420);
+    });
+
+    it('never names a medicine that would be refused at the point of use', () => {
+        // The whole of what the grade gate changed about this file. For every
+        // wound on every body, the pill named has to be one `medicineReaches`
+        // accepts - otherwise the sentence sends somebody to a counter, takes
+        // their stones, and hands them something the resolver will not spend.
+        for (const severity of ['minor', 'serious', 'crippling'] as const) {
+            for (const ordinal of [0, 8, 13, 17, 21, 26, 29, 33, 41]) {
+                const cure = whatWouldCloseThisWound(
+                    [{ id: 'i1', severity, source: 'qi_deviation', treated: false } as never],
+                    ordinal,
+                    1_000_000
+                );
+                expect(cure, `${severity} at ${ordinal} has no named cure`).toBeTruthy();
+                expect(
+                    medicineReaches(cure!.grade, severity, ordinal),
+                    `${cure!.name} (${cure!.grade}) does not reach a ${severity} tear at ${ordinal}`
+                ).toBe(true);
+            }
+        }
+    });
+
+    it('names a heaven-grade pill nobody sells for a crippling tear, and says so', () => {
+        // The case the fixtures above used to occupy, kept because it is the
+        // honest high corner and it is now the answer rather than a bug: the
+        // catalog says the Meridian Rebirth Pill is the only medicine below
+        // immortal grade that touches crippling damage, and heaven grade is
+        // past the cash line. So the player is told the name, told it is not
+        // bought with money, and told what IS listened to instead.
+        const cure = whatWouldCloseThisWound(
+            [{ id: 'i1', severity: 'crippling', source: 'qi_deviation', treated: false } as never],
+            8,
+            194
+        )!;
+        expect(cure.grade).toBe('heaven');
+        expect(cure.stones).toBeNull();
+        expect(cure.affordable).toBe(false);
+        expect(cure.notForSale).toBeTruthy();
+        // A refusal is finished when it names the alternative, and the
+        // alternative here is a medium rather than a price.
+        expect(whatToSayAboutTheCure(cure)).toContain(cure.name);
+        expect(whatToSayAboutTheCure(cure)).toMatch(/favour owed/i);
     });
 });
 

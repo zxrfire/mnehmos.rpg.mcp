@@ -23,7 +23,7 @@ import { z } from 'zod';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
-import { SATIETY_MAX, type Pill } from '../../schema/cultivation.js';
+import { SATIETY_MAX, type InjurySeverity, type Pill } from '../../schema/cultivation.js';
 import {
     createInjury,
     describeDeath,
@@ -34,6 +34,24 @@ import {
     rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
+import { isPermanentWound } from '../../data/cultivation/wounds.js';
+import {
+    medicineNeededFor,
+    medicineRank,
+    medicineReaches
+} from '../../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
+import {
+    canRefineGrade,
+    whyTheCauldronRefuses
+} from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+// The physician's refusal already names the cure, at its board price, with
+// whether the purse covers it. The pill path refusing on the SAME ladder must
+// say the SAME sentence, or the game contradicts itself on the surface where
+// it used to contradict itself in the resolver.
+import {
+    whatWouldCloseThisWound,
+    whatToSayAboutTheCure
+} from '../../web/what-would-close-this-wound.js';
 import {
     getPill,
     lifespanRefusalReason,
@@ -238,10 +256,35 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
         });
     }
     if (recipe.requiredOrdinal > cultivator.realmOrdinal) {
+        // ── WHICH OF THE TWO WALLS IT IS ──────────────────────────────────
+        //
+        // A formula can be out of reach for two different reasons and a player
+        // told the wrong one goes and does the wrong thing about it. If the
+        // GRADE's materials are past them, no amount of practice at this recipe
+        // helps and the answer is rungs. If only this particular formula is
+        // hard, they are working the right materials and merely need a few more
+        // rungs of the realm they are already climbing.
+        //
+        // The grade wall is the design owner's ruling and it is the one that
+        // ends at "nobody": immortal grade is not refined below the Lid at all,
+        // so the refusal there names the OTHER roads to a dose rather than a
+        // rung nobody can reach. AGENTS.md - a refusal names what would work,
+        // and never removes the verb.
+        const gradeOfPill = getPill(recipe.producesPillId)?.grade;
+        const gradeWall = gradeOfPill !== undefined
+            && !canRefineGrade(gradeOfPill, cultivator.realmOrdinal)
+            ? whyTheCauldronRefuses(gradeOfPill, cultivator.realmOrdinal)
+            : null;
         return guidingError(
             'realm_too_low',
-            `${recipe.name} requires ${rankName(recipe.requiredOrdinal)}; ${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}. The cauldron would take the difference out of the alchemist.`,
-            { requiredOrdinal: recipe.requiredOrdinal, currentOrdinal: cultivator.realmOrdinal }
+            `${recipe.name} requires ${rankName(recipe.requiredOrdinal)}; ${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}. `
+            + (gradeWall ?? 'The cauldron would take the difference out of the alchemist.'),
+            {
+                requiredOrdinal: recipe.requiredOrdinal,
+                currentOrdinal: cultivator.realmOrdinal,
+                grade: gradeOfPill ?? null,
+                blockedByGrade: gradeWall !== null
+            }
         );
     }
 
@@ -575,24 +618,81 @@ function resolvePillEffect(
             };
         }
         case 'treat_injury': {
-            // Worst first: one scarce pill spent on the wound doing the most
-            // damage, ties broken toward the oldest.
+            // ── THE GRADE HAS TO REACH THE WOUND, AND IT USED NOT TO ──────
+            //
+            // Found by playing, and it is why that run survived: a 60-stone
+            // MORTAL Clear Meridian Pill closed a CRIPPLING tear one turn after
+            // a physician had refused the same wound in as many words. The
+            // ladder in `what-grade-of-medicine-a-wound-needs.ts` was consulted
+            // by `GameService.treat` and by nothing on this path, so the game
+            // held two positions on the same question and the cheaper one won.
+            //
+            // `treatWorstInjury` has taken a `reaches` predicate since the two
+            // axes were built; this branch simply never passed one. Both axes
+            // are the wound's: how bad it is, and how large the body carrying
+            // it is. Neither has anything to do with who REFINED the pill -
+            // that is `who-can-refine-a-grade-of-medicine.ts`, a different
+            // ladder answering a different question, and the two must not be
+            // read into each other.
             const count = Math.max(1, Math.round(pill.potency));
+            const reaches = (severity: InjurySeverity): boolean =>
+                medicineReaches(pill.grade, severity, cultivator.realmOrdinal);
             let injuries = cultivator.injuries;
             const treated: typeof cultivator.injuries = [];
             for (let i = 0; i < count; i++) {
-                const step = treatWorstInjury(injuries);
+                const step = treatWorstInjury(injuries, reaches);
                 if (!step.treated) break;
                 injuries = step.injuries;
                 treated.push(step.treated);
             }
+
+            // ── AND WHEN IT DOES NOT REACH, IT SAYS WHAT WOULD ───────────
+            //
+            // "Nothing to treat. The pill was wasted." is true and useless: it
+            // reads as "you had no wounds" to somebody who is visibly carrying
+            // several. A refusal is only finished when it names the thing that
+            // would work at its price, which is the shape the physician's
+            // refusal already has, so it uses the physician's own sentence.
+            // Permanent wounds are excluded on purpose. `treatWorstInjury`
+            // skips them whatever grade is applied, and no medicine below the
+            // structural-repair catalog closes one - so counting them here
+            // would have the engine promise a cure that does not exist, which
+            // is the mirror of the defect being fixed.
+            const outOfReach = injuries.filter(injury =>
+                !injury.treated
+                && !isPermanentWound(injury.woundType)
+                && !reaches(injury.severity));
+            const cure = outOfReach.length > 0
+                ? whatWouldCloseThisWound(
+                    outOfReach, cultivator.realmOrdinal, cultivator.spiritStones)
+                : null;
+
+            let summary: string;
+            if (treated.length > 0) {
+                summary = `${treated.length} meridian injur${treated.length === 1 ? 'y' : 'ies'} `
+                    + `knitted: ${treated.map(t => t.severity).join(', ')}.`;
+                if (outOfReach.length > 0) {
+                    summary += ` ${outOfReach.length} left open: `
+                        + `${pill.grade}-grade medicine does not reach them.`
+                        + (cure ? ` ${whatToSayAboutTheCure(cure)}` : '');
+                }
+            } else if (outOfReach.length > 0) {
+                const needed = outOfReach
+                    .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
+                    .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
+                summary = `Past what a ${pill.grade}-grade medicine reaches. The pill is gone `
+                    + `and it did nothing: ${outOfReach.length} untreated wound(s) on a body at `
+                    + `${rankName(cultivator.realmOrdinal)}, wanting ${needed}-grade medicine.`
+                    + (cure ? ` ${whatToSayAboutTheCure(cure)}` : '');
+            } else {
+                summary = 'Nothing to treat. The pill was wasted.';
+            }
+
             return {
                 ...base,
                 treatedInjuryIds: treated.map(t => t.id),
                 treatedInjuries: treated,
-                summary: treated.length
-                    ? `${treated.length} meridian injur${treated.length === 1 ? 'y' : 'ies'} knitted: ${treated.map(t => t.severity).join(', ')}.`
-                    : 'Nothing to treat. The pill was wasted.'
+                summary
             };
         }
         case 'cleanse_deviation': {
