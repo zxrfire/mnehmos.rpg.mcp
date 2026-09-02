@@ -100,13 +100,31 @@ import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import {
     couldTheyTellItIs,
+    whatTheirReferenceAffords,
     whereThisArtWasLearned,
     type ArtObserver,
     type ClaimVerdict
 } from '../engine/world/recognising-whose-art-you-just-watched.js';
-import { manualsOf } from '../engine/world/manuals.js';
+import {
+    betrayalOfSelling,
+    couldWriteOutACopy,
+    manualsOf,
+    masteryBarFor,
+    unauthorisedPractice,
+    whoseArt,
+    FULLY_MASTERED
+} from '../engine/world/manuals.js';
+import {
+    theLeakAsADeed,
+    theStageAWitnessReaches
+} from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
+import { whatTheHouseDoesAboutIt } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
+import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
+import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
+import { quoteSale } from '../engine/cultivation/market.js';
+import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
-import { NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
+import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
@@ -11873,7 +11891,6 @@ ${opened.text}` : receipt,
             return updated;
         })();
 
-        const house = offer.whoWouldWantAWord ? getSect(offer.whoWouldWantAWord) : null;
         const facts = factsForToolResult(`${offer.name}, off ${offer.sellerName}.`, [
             `${offer.askStones} spirit stone${offer.askStones === 1 ? '' : 's'} of the `
             + `${cultivator.spiritStones} you had, and the copy is yours. `
@@ -11885,22 +11902,42 @@ ${opened.text}` : receipt,
                   + 'facts.'
                 : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it. Owning `
                   + 'it and having read it are different facts.',
-            ...(offer.awkwardToHold === 1 && house
-                ? [
-                    `The art is the ${house.name}'s, and you are not one of theirs. Practising it `
-                    + 'is a visible thing that people who know it recognise on sight, and it stays '
-                    + 'recognisable for as long as you keep climbing on it. Nothing here stops '
-                    + `you; what changes is that ${house.name} now has a question about you that `
-                    + 'they have not asked yet.'
-                ]
-                : [])
+            // ── WHO WILL WANT A WORD WITH YOU, WHICH IS NOT WHOSE IT IS ──
+            //
+            // `unauthorisedPractice` is the join, and this is the site it is
+            // right for. It answers who will want a word with the person SEEN
+            // PRACTISING a thing that is not theirs, and it drops your own
+            // house from the list because being one of theirs is the answer to
+            // the question. That filter makes it the wrong join for a leak -
+            // selling your own house's art is the case it would have gone
+            // silent on - and exactly the right one here, where the buyer is
+            // acquiring somebody else's signature and will be wearing it for
+            // the rest of their climb.
+            ...(() => {
+                const answerable = unauthorisedPractice(
+                    { factionId: cultivator.sectId ?? null }, offer.thingId
+                );
+                if (answerable === null) return [];
+                const named = answerable
+                    .map(id => (getSect(id) as { name?: string } | undefined)?.name ?? id);
+                return [
+                    `The art is the ${named.join(' and the ')}'s, and you are not one of theirs. `
+                    + 'Practising it is a visible thing that people who know it recognise on '
+                    + 'sight, and it stays recognisable for as long as you keep climbing on it. '
+                    + `Nothing here stops you; what changes is that ${named[0]} now `
+                    + 'has a question about you that they have not asked yet.'
+                ];
+            })()
         ]);
         facts.structure.push(
             `${offer.name} bought off ${offer.sellerName} for ${offer.askStones} stone(s): `
             + `list ${offer.listStones}, what a counter would have given them `
             + `${offer.counterStones}, reason ${offer.why}, betrayalOfSelling rung `
             + `${offer.awkwardToHold}. A copy was written out; the seller keeps theirs where the `
-            + 'book is commonly held. The art is NOT learned by this - the book is held.'
+            + 'book is commonly held. The art is NOT learned by this - the book is held. '
+            + `unauthorisedPractice against ${cultivator.sectId ?? 'no house'}: `
+            + `${(unauthorisedPractice({ factionId: cultivator.sectId ?? null }, offer.thingId)
+                ?? ['nobody']).join(', ')}.`
         );
 
         return {
@@ -11945,6 +11982,22 @@ ${opened.text}` : receipt,
         cultivator: Cultivator,
         target: string | undefined
     ): Promise<Execution> {
+        // ── AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT ───────────
+        //
+        // "I sell a copy of the Void-Piercing Sword Domain" is a sale and it
+        // reached `Nothing on you worth a counter` - the pouch holds herbs and
+        // pills, an art is a row on `cultivator_techniques`, and nothing
+        // anywhere converted the second into stones. So the world's NPCs sold
+        // copies to each other through `whatIsInTheirHands` while the player
+        // had no path to the act at all: the rule bound everybody except the
+        // person playing, which is this repo's commonest defect with the halves
+        // swapped.
+        //
+        // Returns null when the sentence is not about an art, so a name that is
+        // a herb falls through to the pouch exactly as before.
+        const asACopy = await this.sellACopyOfAnArt(run, cultivator, (target ?? '').trim());
+        if (asACopy) return asACopy;
+
         const held = listPouch(this.db, cultivator.id);
         if (held.length === 0) {
             return refused('storage.listPouch', 'sell', factsForRefusal(
@@ -12040,6 +12093,427 @@ ${opened.text}` : receipt,
                 ok: true
             }]
         };
+    }
+
+    /**
+     * Writing out a copy of an art and selling it.
+     *
+     * ═════════════════════════════════════════════════════════════════════
+     * THE ACT IS NEVER REFUSED FOR BEING WRONG. IT IS PRICED
+     * ═════════════════════════════════════════════════════════════════════
+     *
+     * `AGENTS.md`, on agency: do not ban it and do not soften it, and the
+     * answer to *may I* is *yes, and here is what it costs*. The design owner
+     * said the same thing about this exact act - *"if a disciple had the gall
+     * to write it out without approval the sect would easily punish them"* -
+     * and the operative word is punish rather than prevent. So nothing below
+     * checks permission. There are two refusals and both are about CAPABILITY:
+     * you have never been taught it, or you have not taken it to the end.
+     *
+     * ═════════════════════════════════════════════════════════════════════
+     * WHICH MAKES IT SELF-LIMITING WITHOUT A PROHIBITION ANYWHERE
+     * ═════════════════════════════════════════════════════════════════════
+     *
+     * `couldWriteOutACopy` is the whole gate, and it is the owner's second
+     * ruling: *"you'd have to master it, which would mean you are at sect
+     * leader or higher"*. An ordinary disciple is not turned away from this
+     * verb - they simply have nothing to write out, by the same fact that makes
+     * them an ordinary disciple.
+     *
+     * And the consequence falls out of the reprisal resolver with nothing added
+     * to it. The people who CAN leak a house's signature art are the people at
+     * its own summit, and `whetherYouAreWorthTheTrouble` answers `beyond_them`
+     * for exactly those people: *"stands where nothing they could do about it
+     * would reach. There is a record and there is no reprisal."* A house that
+     * knows precisely who did it and can do nothing is the scene, and no branch
+     * anywhere produces it.
+     *
+     * ═════════════════════════════════════════════════════════════════════
+     * AND WHETHER ANYBODY WORKED IT OUT IS NOT A NEW SYSTEM
+     * ═════════════════════════════════════════════════════════════════════
+     *
+     * `couldTheyTellItIs` already answers whether one person watching could
+     * place one art to one house, on the two axes it was written for - a rung
+     * to follow what is happening, and a reference for what that house's work
+     * looks like. Every person standing in the square is asked, the best answer
+     * becomes the house's `KnowingStage`, and `whatTheHouseDoesAboutIt` reads
+     * `canPointAt` off it. Nothing was written here to make a deed nobody
+     * worked out come back as *"nobody can put a name to it"*; that is what the
+     * resolver says on its own when the stage map is empty.
+     *
+     * Returns null when the sentence is not about an art this cultivator could
+     * be selling, so the pouch sale below is reached unchanged.
+     */
+    private async sellACopyOfAnArt(
+        run: Run,
+        cultivator: Cultivator,
+        query: string
+    ): Promise<Execution | null> {
+        if (query.length < 3 || GameService.SELL_EVERYTHING.test(query)) return null;
+        const art = resolveTechnique(this.repos, query, cultivator.id);
+        if (!art) return null;
+        // A name that is also in the pouch is the pouch's. The fuzzy matcher
+        // works over the whole technique catalog and a herb whose name happens
+        // to score above the threshold against some art must not have its sale
+        // stolen; the pouch is the more specific reading of the sentence.
+        if (this.pouchEntryFor(listPouch(this.db, cultivator.id), query)) return null;
+
+        const row = getTechnique(art.id) as
+            { name?: string; cap?: number | null; requiredOrdinal?: number } | undefined;
+        const opens = Number(row?.requiredOrdinal ?? 0);
+        const carriesTo = row?.cap == null ? opens : Number(row.cap);
+        const known = this.repos.techniques.getKnown(cultivator.id, art.id);
+
+        if (!known) {
+            return refused('technique.getKnown', 'sell', factsForRefusal(
+                `You have never been taught ${art.name}.`,
+                'Writing a method out is not copying a shape off a page. It is putting down what '
+                + 'you understood of it, in an order somebody else can walk, and you understood '
+                + 'none of it. There is nothing in your hand to sell.',
+                `No cultivator_techniques row for ${cultivator.id} x ${art.id}. Nothing written, `
+                + 'nothing paid, no time passed.'
+            ));
+        }
+
+        // ── THE ONE GATE, AND IT IS ABILITY RATHER THAN PERMISSION ───────
+        if (!couldWriteOutACopy(
+            { realmOrdinal: cultivator.realmOrdinal, masteryOfIt: known.mastery }, art.id
+        )) {
+            const bar = masteryBarFor(art.id);
+            return refused('world.couldWriteOutACopy', 'sell', factsForRefusal(
+                `You do not hold ${art.name} well enough to write it out.`,
+                `You have ${(known.mastery * 100).toFixed(0)} parts in a hundred of it, and what `
+                + 'you would put on paper is the parts. Somebody reading it would learn your gaps '
+                + 'along with everything else, which is worse than learning nothing. Take it to '
+                + 'the end first - nobody writes out a thing they have not finished.',
+                `couldWriteOutACopy refused ${art.id}: mastery ${known.mastery.toFixed(2)} against `
+                + `${FULLY_MASTERED}${bar === null ? '' : `, or the ordinal bar of ${bar}`}. `
+                + 'Nothing written, nothing paid, no time passed.'
+            ));
+        }
+
+        const list = whatOneCopyIsWorth(art.id);
+        if (list === null) {
+            return refused('world.whatOneCopyIsWorth', 'sell', factsForRefusal(
+                'Nobody around here copies at that height.',
+                `There is no going rate for a copy of ${art.name}, because at the rung it opens `
+                + 'at there is nobody doing that kind of work for a living and nothing to price '
+                + 'the months against.',
+                `copyistMonthlyCash returned null at requiredOrdinal ${opens}. Nothing written, `
+                + 'nothing paid, no time passed.'
+            ));
+        }
+
+        // ── WHOSE IT IS, AND HOW BADLY THIS IS TAKEN ─────────────────────
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        const mine = membership?.sectId ?? cultivator.sectId ?? null;
+        const owners = whoseArt(art.id);
+        // The holder's own house wins when it is on the list, which is the
+        // reading that matters: selling your own house's is the betrayal
+        // proper and must not be softened into somebody else's.
+        const ownerFactionId = mine && owners.includes(mine) ? mine : owners[0] ?? null;
+        const rung = betrayalOfSelling({ factionId: mine }, art.id, ownerFactionId);
+        const ownerSect = ownerFactionId ? getSect(ownerFactionId) : null;
+
+        // ── WHAT A COUNTER GIVES, THROUGH THE ONE SALE AUTHORITY ─────────
+        const regionId = standingOf(cultivator).regionId;
+        const local = localPrice(regionId, 100) / 100;
+        const quote = quoteSale({
+            item: { requiredOrdinal: opens },
+            listStones: list,
+            quantity: 1,
+            seller: { ordinal: cultivator.realmOrdinal },
+            localMultiplier: local
+        });
+        const paid = Math.max(1, quote.offeredStones);
+        const months = monthsToCopy(opens, carriesTo);
+        const days = Math.max(1, Math.round(months * (DAYS_PER_YEAR / 12)));
+
+        // ── AND WHO, STANDING HERE, COULD SAY WHOSE IT WAS ───────────────
+        //
+        // No witness table. `couldTheyTellItIs` is asked of everybody in the
+        // square, and their reference for the house is read off the roster
+        // rather than invented: one of theirs knows it whole, somebody who
+        // practises the art has watched it done, and everybody else has never
+        // been in the room.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const place = this.atHand ? worldLocationFor(this.atHand, cultivator.location) : null;
+        const here = this.atHand && place
+            ? npcsAt(this.atHand, place.id).filter(npc => npc.id !== cultivator.id)
+            : [];
+        let houseStage: KnowingStage = 'unaware';
+        let sawIt = 0;
+        if (ownerFactionId) {
+            for (const npc of here) {
+                // Their reference for the house that owns it, off the roster
+                // and nothing else: one of theirs was taught out of this book,
+                // somebody who practises the art has held a copy, and everybody
+                // else has never been in the room. `whatTheirReferenceAffords`
+                // is the calibration and it is not restated here.
+                const reference: KnowingStage =
+                    npc.factionId === ownerFactionId ? 'known'
+                        : (npc.cultivation.techniqueIds ?? []).includes(art.id)
+                            ? 'encountered'
+                            : 'unaware';
+                const reached = theStageAWitnessReaches(whatTheirReferenceAffords(reference));
+                if (reached !== 'unaware') sawIt++;
+                houseStage = highestStage(houseStage, reached);
+            }
+        }
+
+        // ── THE MONTHS, THE STONES, AND THE ROW ──────────────────────────
+        const ambient = this.ambientFor(cultivator, run);
+        const spent = await this.shortSkip(
+            run, cultivator, ambient, TRAVEL_FOCUS, `Copying out ${art.name}`, days
+        );
+        const after = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paid })
+            ?? cultivator;
+        this.repos.runs.incrementTurn(run.id, 1);
+
+        const facts = factsForToolResult(`A copy of ${art.name}, written out and sold.`, [
+            `${months} month${months === 1 ? '' : 's'} at the desk, and ${paid} spirit `
+            + `stone${paid === 1 ? '' : 's'} for the finished thing. ${after.spiritStones} in the `
+            + 'purse now. What you sold is a copy; you still hold the art.',
+            ...(rung === 0
+                ? [
+                    'Nobody owns it. Enough houses hand it out that no one of them can call it '
+                    + 'theirs, and copying it for money is a living rather than a wrong.'
+                ]
+                : [
+                    `It is the ${ownerSect?.name ?? ownerFactionId}'s`
+                    + (rung >= 2 ? ', and you are one of theirs.' : ' and you are not one of theirs.')
+                    + ' Once it is out it is out, and there is no version of this that they undo.'
+                ])
+        ]);
+        facts.structure.push(
+            `${art.id}: mastery ${known.mastery.toFixed(2)}, copied in ${months} month(s) `
+            + `(monthsToCopy ${opens} -> ${carriesTo}). quoteSale against a list of ${list} at the `
+            + `${regionId} multiplier (x${local}) offered ${quote.offeredStones}; paid ${paid}. `
+            + `betrayalOfSelling rung ${rung}`
+            + (ownerFactionId ? ` against ${ownerFactionId}.` : ', nobody\'s property.')
+        );
+
+        const calls: ToolCallRecord[] = [
+            {
+                name: 'engine.quoteSale',
+                action: 'sell',
+                summary:
+                    `One copy of ${art.name} for ${paid} spirit stone(s) against a list of `
+                    + `${list}, priced by regard at ordinal ${cultivator.realmOrdinal}. `
+                    + `${months} month(s) of copying. The art stays where it was: what moved is `
+                    + 'a copy.',
+                ok: true
+            },
+            ...spent.calls
+        ];
+
+        const answered = ownerFactionId
+            ? this.whatTheHouseDidAboutTheLeak({
+                run, cultivator, art, rung, ownerFactionId, mine, paid,
+                houseStage, witnesses: sawIt, facts
+            })
+            : [];
+
+        return {
+            facts,
+            events: spent.events,
+            timeSkip: spent.timeSkip,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [...calls, ...answered]
+        };
+    }
+
+    /**
+     * What the house whose art it was does about it.
+     *
+     * Three existing things joined and nothing invented: the leak as an
+     * ordinary `Deed`, the reprisal resolver, and the ledger. The resolver is
+     * handed the two parties and the stage map and its answer is written down
+     * whatever it is - including *nothing*, which is the commonest answer and
+     * the one this exists to be able to produce honestly.
+     *
+     * WHAT IS AND IS NOT PERSISTED. A record is always written where somebody
+     * can point at the deed, because a house that knows is a house that holds
+     * it in eighty years and that is the half that lasts. A crippling or a term
+     * of years is written ONLY where the resolver actually landed one - the
+     * design owner's *"maybe cripple their cultivation"* and *"or a dao oath"* -
+     * and where the offender stands beyond what the house could reach, the
+     * answer is standing and rumour, which is what the record IS.
+     */
+    private whatTheHouseDidAboutTheLeak(input: {
+        run: Run;
+        cultivator: Cultivator;
+        art: ResolvedEntity;
+        rung: 0 | 1 | 2 | 3;
+        ownerFactionId: string;
+        mine: string | null;
+        paid: number;
+        houseStage: KnowingStage;
+        witnesses: number;
+        facts: EngineFacts;
+    }): ToolCallRecord[] {
+        const { run, cultivator, art, rung, ownerFactionId, mine, facts } = input;
+        const onDay = Math.floor(run.elapsedDays);
+        const sellerIsOfTheHouse = mine === ownerFactionId;
+        const sect = getSect(ownerFactionId) as
+            { name?: string; alignment?: SectAlignment; powerOrdinal?: number } | undefined;
+        const houseName = sect?.name ?? ownerFactionId;
+
+        const deed = theLeakAsADeed({
+            rung,
+            ownerFactionId,
+            sellerIsOfTheHouse,
+            sellerName: cultivator.name,
+            artName: art.name,
+            stones: input.paid,
+            onDay,
+            knownTo: canPointAt(input.houseStage) ? [ownerFactionId] : [],
+            witnesses: input.witnesses
+        });
+        if (deed === null) return [];
+
+        const mySect = mine ? getSect(mine) as { name?: string; alignment?: SectAlignment } | undefined : null;
+        const answer = whatTheHouseDoesAboutIt({
+            deed,
+            offender: {
+                id: cultivator.id,
+                name: cultivator.name,
+                houseId: mine,
+                houseName: mySect?.name ?? mine,
+                alignment: mySect?.alignment ?? null,
+                ranked: mine !== null
+            },
+            answering: {
+                id: ownerFactionId,
+                name: houseName,
+                houseId: ownerFactionId,
+                houseName,
+                alignment: sect?.alignment ?? null,
+                ranked: true
+            },
+            // A house is never deterred by the house standing in front of it
+            // when that house is ITSELF - there is nothing between it and you,
+            // which is why a complaint is worse than a beating. Anybody else's
+            // house is a body it would have to deal with first.
+            backing: mine !== null && mine !== ownerFactionId ? 'backed' : 'none',
+            stages: new Map([[ownerFactionId, input.houseStage]]),
+            theirOrdinal: Number(sect?.powerOrdinal ?? 0),
+            yourOrdinal: cultivator.realmOrdinal,
+            // ── DERIVED, AND IT IS WHAT DECIDES WHICH OF THE TWO LANDS ───
+            //
+            // `whatTheHouseTakes` reads this as an investment question - is
+            // there something in them the house can still use - and the answer
+            // is genuinely different for the two kinds of leaker, which is why
+            // both of the owner's answers are reachable from one call.
+            //
+            //   AN OUTSIDER holds a thing the house wants back: the copy, and
+            //   the account of who put it in their hands. Keeping them is worth
+            //   something, so it takes the years.
+            //   ONE OF THEIR OWN holds nothing the house has not got. There is
+            //   no question about where they got it and nothing to be gained by
+            //   feeding them for sixty years, so it takes the capability -
+            //   *"maybe cripple their cultivation so they couldn't do it
+            //   again"*, which is the sentence this whole task began with.
+            //
+            // `wouldBeMissed` is whether anybody would write about them, which
+            // is what wearing colours means, and it only steps the band that
+            // decides whether they are worth noticing at all.
+            worth: {
+                holdsSomethingWanted: mine !== ownerFactionId,
+                wouldBeMissed: mine !== null
+            },
+            onDay
+        });
+
+        facts.lines.push(answer.line);
+        facts.prose = `${facts.prose}\n\n${answer.line}`;
+        facts.structure.push(
+            `whatTheHouseDoesAboutIt: knowing stage ${input.houseStage} `
+            + `(canPointAt ${canPointAt(input.houseStage)}), acting ${answer.acting}, `
+            + `bother ${answer.bother}, weight ${answer.weight}, takes ${answer.takes}.`
+        );
+
+        const calls: ToolCallRecord[] = [{
+            name: 'social.whatTheHouseDoesAboutIt',
+            action: 'sell',
+            summary: answer.line,
+            ok: true
+        }];
+
+        // Nobody worked it out. No name, no account, and the resolver has
+        // already said so in the line above - so nothing is written, which is
+        // the point of `Deed.knownTo` rather than a shortfall in it.
+        if (answer.knownTo.length === 0) return calls;
+
+        const held = createObligation({
+            kind: 'grudge',
+            id: `grudge_${ownerFactionId}_${cultivator.id}_leaked_${art.id}`,
+            holderId: ownerFactionId,
+            subjectId: cultivator.id,
+            cause: deed.cause,
+            severity: answer.weight,
+            onDay,
+            description: `${deed.description} ${answer.line}`,
+            participants: [ownerFactionId],
+            tags: [
+                'leaked_an_art',
+                `art:${art.id}`,
+                `rung:${rung}`,
+                `takes:${answer.takes.replace(/\s+/g, '_')}`,
+                ...(sellerIsOfTheHouse ? ['their_own_house'] : [])
+            ]
+        });
+        writeObligation(this.db as unknown as DatabaseHandle, held);
+        calls.push({
+            name: 'social.createObligation',
+            action: 'sell',
+            summary:
+                `${houseName} now holds a ${held.severity} grudge about ${cultivator.name} for `
+                + `${held.cause}, open from day ${onDay}. It is what the house has whatever else `
+                + 'it can or cannot reach, and it does not settle on its own.',
+            ok: true
+        });
+
+        if (answer.cripples) {
+            this.repos.cultivators.addInjury(cultivator.id, {
+                severity: answer.cripples.severity,
+                source: 'combat',
+                description: answer.cripples.line,
+                sustainedOnTurn: run.turn,
+                woundType: answer.cripples.woundKey
+            });
+            calls.push({
+                name: 'cultivator.addInjury',
+                action: 'sell',
+                summary:
+                    `${answer.cripples.woundKey}, ${answer.cripples.severity}. The exact capability `
+                    + 'that was misused, taken off them, and it does not come back on its own.',
+                ok: true
+            });
+        }
+
+        if (answer.indenture) {
+            writeObligation(
+                this.db as unknown as DatabaseHandle,
+                createObligation(answer.indenture.oath)
+            );
+            calls.push({
+                name: 'social.createObligation',
+                action: 'sell',
+                summary:
+                    `A term of service, held by ${houseName}. `
+                    + `${answer.indenture.termYears === null
+                        ? 'No day is written into it.'
+                        : `${answer.indenture.termYears} years, due on day ${answer.indenture.dueOnDay}.`}`
+                    + `${answer.indenture.witnessFactionId === null
+                        ? ' The premier oathwright would not witness it.'
+                        : ' Witnessed, with a penalty clause.'}`,
+                ok: true
+            });
+        }
+
+        return calls;
     }
 
     /**
