@@ -2200,7 +2200,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: trimmed },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -2263,7 +2263,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: `Seclusion - ${humanDays(requested)}.` },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -2300,7 +2300,7 @@ export class GameService {
 
         this.log.append(run.id, [
             { role: 'player', turn: run.turn, text: 'Strike the barrier.' },
-            ...this.engineEntries(execution, after.run.turn),
+            ...this.engineEntries(execution, after.run.turn, narration.text),
             { role: 'narrator', turn: after.run.turn, text: narration.text }
         ]);
 
@@ -15083,8 +15083,24 @@ ${done.lines.join(' ')}`;
      * category are exactly the right words; the prose is where they would
      * become a briefing the world does not contain.
      */
-    private engineEntries(execution: Execution, turn: number): LogEntry[] {
-        const entries: LogEntry[] = [{ role: 'engine', turn, text: execution.facts.headline }];
+    private engineEntries(execution: Execution, turn: number, narration?: string): LogEntry[] {
+        // The headline goes in UNLESS the narration already opens with it.
+        //
+        // With no model configured the narrator is this engine, so the prose
+        // begins with the very sentence the ruling row states - and the player
+        // read the same line twice, in two styles, on every single turn. The
+        // ruling row exists so prose and engine can be compared and "the two
+        // should never disagree"; where they are the same string there is
+        // nothing to compare and the row is only noise.
+        //
+        // Self-correcting on purpose: a model's narration will not open with
+        // the headline verbatim, so configuring one brings the row straight
+        // back with no flag to set and nothing to remember.
+        const opensWithIt = typeof narration === 'string'
+            && narration.trimStart().startsWith(execution.facts.headline.trim());
+        const entries: LogEntry[] = opensWithIt
+            ? []
+            : [{ role: 'engine', turn, text: execution.facts.headline }];
         for (const line of execution.facts.structure) {
             entries.push({ role: 'engine', turn, text: withoutTheHandlerName(line) });
         }
