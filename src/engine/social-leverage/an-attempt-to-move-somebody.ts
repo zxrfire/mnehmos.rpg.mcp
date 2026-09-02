@@ -504,6 +504,27 @@ export interface AttemptInput {
      * said yes.
      */
     theAnswerWasTheirsToGive?: boolean;
+    /**
+     * Whether the first roll below is decided rather than sampled.
+     *
+     * ADMIN's forced verb, and nothing else, sets this - the law is in
+     * `server/consolidated/forcing-an-attempt-to-land.ts`. An explicit input
+     * rather than an ambient one, because this resolver is pure and a hidden
+     * reading would make its answer depend on something its seed does not
+     * carry; the impure caller reads the context and fills it.
+     *
+     * It decides ONE question - did they move - and the design owner's own
+     * example is why it exists: a Qi Condensation cultivator taking something
+     * off a Nascent Soul is a legal attempt with a terrible chance, and *"if it
+     * works you can then see what happens next"*. What happens next is the
+     * point. Everything after the landing is untouched: the days, the stones,
+     * whether they turned while doing it, the tie, the obligation, the record
+     * of what was tried.
+     *
+     * It does not make an illegal ask legal. Whatever refuses before the roll -
+     * a present need, an answer that was never theirs to give - still refuses.
+     */
+    theAttemptLands?: boolean;
     rng: CultivationRNG;
 }
 
@@ -1157,7 +1178,11 @@ export function resolveAttempt(input: AttemptInput): AttemptResult {
     const days = Math.max(1, Math.round(ASK_DAYS[input.ask] * patience.duration));
     const audience = input.approach?.audience ?? 'alone';
 
-    const landed = input.rng.next() < odds;
+    // Drawn first and asked about second, so a decided attempt leaves this
+    // stream exactly where a sampled one leaves it and nothing downstream -
+    // the report draw, the turn draw - shifts because an operator arranged the
+    // answer. See `theAttemptLands`.
+    const landed = input.rng.next() < odds || input.theAttemptLands === true;
 
     if (!landed) {
         // ── THE FIFTH OUTCOME ────────────────────────────────────────────
