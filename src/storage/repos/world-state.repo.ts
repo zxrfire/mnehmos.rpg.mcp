@@ -13,6 +13,7 @@ import type { NpcGoal, NpcRecord, NpcRelationship } from '../../engine/world/npc
 import type { MemoryRecord, MemoryStore } from '../../engine/world/memory.js';
 import type { LineageEdge, LineageRecord } from '../../engine/world/lineage.js';
 import type { OpportunityWindow } from '../../engine/world/opportunities.js';
+import type { AreaStatus } from '../../engine/world/what-is-true-of-a-place-right-now.js';
 import type { ObjectRecord, OwnershipClaim, ProvenanceEntry } from '../../engine/world/possessions.js';
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
@@ -85,6 +86,7 @@ export class WorldStateRepository {
     private readonly insertRunStmt: Database.Statement;
     private readonly insertAscensionStmt: Database.Statement;
     private readonly insertOpportunityStmt: Database.Statement;
+    private readonly insertAreaStatusStmt: Database.Statement;
     private readonly insertObjectStmt: Database.Statement;
     private readonly insertClaimStmt: Database.Statement;
     private readonly insertProvenanceStmt: Database.Statement;
@@ -107,6 +109,7 @@ export class WorldStateRepository {
     private readonly selectRunsStmt: Database.Statement;
     private readonly selectAscensionsStmt: Database.Statement;
     private readonly selectOpportunitiesStmt: Database.Statement;
+    private readonly selectAreaStatusesStmt: Database.Statement;
     private readonly selectObjectsStmt: Database.Statement;
     private readonly selectClaimsStmt: Database.Statement;
     private readonly selectProvenanceStmt: Database.Statement;
@@ -381,6 +384,20 @@ export class WorldStateRepository {
             )
         `);
 
+        this.insertAreaStatusStmt = db.prepare(`
+            INSERT OR REPLACE INTO world_area_statuses (
+                id, world_id, area_id, kind, statement, cause_what,
+                cause_decided_by_id, cause_fact_id, signs, cause_known_locally,
+                began_on_day, review_on_day, lifted_on_day, stops,
+                price_multiplier, danger_delta
+            ) VALUES (
+                @id, @worldId, @areaId, @kind, @statement, @causeWhat,
+                @causeDecidedById, @causeFactId, @signs, @causeKnownLocally,
+                @beganOnDay, @reviewOnDay, @liftedOnDay, @stops,
+                @priceMultiplier, @dangerDelta
+            )
+        `);
+
         this.insertObjectStmt = db.prepare(`
             INSERT OR REPLACE INTO world_objects (
                 id, world_id, name, kind, significance, description, power,
@@ -438,6 +455,9 @@ export class WorldStateRepository {
             'SELECT * FROM world_ascensions WHERE world_id = ? ORDER BY ascended_on_day ASC, id ASC'
         );
         this.selectOpportunitiesStmt = db.prepare('SELECT * FROM world_opportunities WHERE world_id = ? ORDER BY rowid ASC');
+        this.selectAreaStatusesStmt = db.prepare(
+            'SELECT * FROM world_area_statuses WHERE world_id = ? ORDER BY rowid ASC'
+        );
         this.selectObjectsStmt = db.prepare('SELECT * FROM world_objects WHERE world_id = ? ORDER BY rowid ASC');
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
         this.selectProvenanceStmt = db.prepare(
@@ -524,6 +544,7 @@ export class WorldStateRepository {
             this.writeLineages(s);
             this.writeRuns(s);
             this.writeOpportunities(s);
+            this.writeAreaStatuses(s);
             this.writeObjects(s);
         });
         write(state);
@@ -598,6 +619,7 @@ export class WorldStateRepository {
                 rowToLineage(row, (edgesByLineage.get(row.id) ?? []).map(rowToLineageEdge))
             ),
             opportunities: (this.selectOpportunitiesStmt.all(worldId) as OpportunityRow[]).map(rowToOpportunity),
+            statuses: (this.selectAreaStatusesStmt.all(worldId) as AreaStatusRow[]).map(rowToAreaStatus),
             objects: (this.selectObjectsStmt.all(worldId) as ObjectRow[]).map(row =>
                 rowToObject(
                     row,
@@ -681,7 +703,7 @@ export class WorldStateRepository {
             'world_memory_actors', 'world_memories',
             'world_scheduled_effects', 'world_processes',
             'world_lineage_edges', 'world_lineages',
-            'world_opportunities',
+            'world_opportunities', 'world_area_statuses',
             'world_object_claims', 'world_object_provenance', 'world_objects',
             'world_factions', 'world_runs', 'world_ascensions'
         ]) {
@@ -703,6 +725,7 @@ export class WorldStateRepository {
         this.writeRuns(s);
         this.writeAscensions(s);
         this.writeOpportunities(s);
+        this.writeAreaStatuses(s);
         this.writeObjects(s);
     }
 
@@ -1089,6 +1112,29 @@ export class WorldStateRepository {
                 knownToIds: JSON.stringify(opportunity.knownToIds),
                 tags: JSON.stringify(opportunity.tags),
                 data: JSON.stringify(opportunity.data)
+            });
+        }
+    }
+
+    private writeAreaStatuses(s: WorldState): void {
+        for (const status of s.statuses) {
+            this.insertAreaStatusStmt.run({
+                id: status.id,
+                worldId: s.id,
+                areaId: status.areaId,
+                kind: status.kind,
+                statement: status.statement,
+                causeWhat: status.cause.what,
+                causeDecidedById: status.cause.decidedById,
+                causeFactId: status.cause.factId,
+                signs: JSON.stringify(status.signs),
+                causeKnownLocally: status.causeKnownLocally ? 1 : 0,
+                beganOnDay: status.beganOnDay,
+                reviewOnDay: status.reviewOnDay,
+                liftedOnDay: status.liftedOnDay,
+                stops: JSON.stringify(status.stops),
+                priceMultiplier: status.priceMultiplier,
+                dangerDelta: status.dangerDelta
             });
         }
     }
@@ -1710,6 +1756,28 @@ function rowToOpportunity(row: OpportunityRow): OpportunityWindow {
     };
 }
 
+function rowToAreaStatus(row: AreaStatusRow): AreaStatus {
+    return {
+        id: row.id,
+        areaId: row.area_id,
+        kind: row.kind,
+        statement: row.statement,
+        cause: {
+            what: row.cause_what,
+            decidedById: row.cause_decided_by_id,
+            factId: row.cause_fact_id
+        },
+        signs: parseArray(row.signs),
+        causeKnownLocally: row.cause_known_locally === 1,
+        beganOnDay: row.began_on_day,
+        reviewOnDay: row.review_on_day,
+        liftedOnDay: row.lifted_on_day,
+        stops: parseArray(row.stops),
+        priceMultiplier: row.price_multiplier,
+        dangerDelta: row.danger_delta
+    };
+}
+
 function rowToObject(
     row: ObjectRow,
     claims: OwnershipClaim[],
@@ -2156,6 +2224,24 @@ interface OpportunityRow {
     known_to_ids: string;
     tags: string;
     data: string;
+}
+
+interface AreaStatusRow {
+    id: string;
+    area_id: string;
+    kind: string;
+    statement: string;
+    cause_what: string;
+    cause_decided_by_id: string | null;
+    cause_fact_id: string | null;
+    signs: string;
+    cause_known_locally: number;
+    began_on_day: number;
+    review_on_day: number;
+    lifted_on_day: number | null;
+    stops: string;
+    price_multiplier: number;
+    danger_delta: number;
 }
 
 interface ObjectRow {

@@ -767,6 +767,48 @@ export function migrateWorld(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_world_opportunities_live
       ON world_opportunities(world_id) WHERE claimed = 0;
 
+    -- ── WHAT IS TRUE OF AN AREA RIGHT NOW ────────────────────────────────
+    -- A famine, a pass held, a beast tide running, a district worked out, a
+    -- war. The counterpart to world_location_changes, which records what a
+    -- place BECAME and is permanent: this is what is true of it for a while.
+    --
+    -- The availability of mundane goods is read off here and counted nowhere.
+    -- A thousand travellers buying meals never caused a famine; a famine causes
+    -- the meals to stop, and 'stops' is that list. One row per area per thing
+    -- true of it - a handful per world, never a row per object.
+    --
+    -- review_on_day is NOT NULL on purpose. A status with no date the world
+    -- looks at it again never lifts, and a famine that never lifts is a worse
+    -- bug than no famine.
+    CREATE TABLE IF NOT EXISTS world_area_statuses (
+      id TEXT NOT NULL,
+      world_id TEXT NOT NULL,
+      area_id TEXT NOT NULL,                         -- any location: province, town, district
+      kind TEXT NOT NULL,                            -- free-form content, never branched on
+      statement TEXT NOT NULL,
+      cause_what TEXT NOT NULL,                      -- stated whether or not anybody knows it
+      -- Whoever chose it. NULL when nothing chose: weather, a vein moving. A
+      -- war has a value here and a drought does not, and that is the only
+      -- difference between them anywhere in this engine.
+      cause_decided_by_id TEXT,
+      cause_fact_id TEXT,
+      signs TEXT NOT NULL DEFAULT '[]',              -- JSON: observable, understanding nothing
+      cause_known_locally INTEGER NOT NULL DEFAULT 0,
+      began_on_day INTEGER NOT NULL,
+      review_on_day INTEGER NOT NULL,
+      lifted_on_day INTEGER,                         -- NULL while it is still true
+      stops TEXT NOT NULL DEFAULT '[]',              -- JSON: what is not to be had here
+      price_multiplier REAL NOT NULL DEFAULT 1,
+      danger_delta REAL NOT NULL DEFAULT 0,
+      PRIMARY KEY (world_id, id),
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_world_area_statuses_area
+      ON world_area_statuses(world_id, area_id);
+    CREATE INDEX IF NOT EXISTS idx_world_area_statuses_live
+      ON world_area_statuses(world_id, review_on_day) WHERE lifted_on_day IS NULL;
+
     -- ── OBJECTS: POSSESSION IS NOT OWNERSHIP ─────────────────────────────
     -- Four separable things: who holds it, whose it is, who claims it, and who
     -- knows any of that. A player possessing an ancient artifact and an extinct
