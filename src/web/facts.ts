@@ -41,6 +41,7 @@ import { howItHasBeenGoing } from './saying-what-an-ask-cost-and-how-likely-it-w
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
+import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-just-watched.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 
 export interface EngineFacts {
@@ -2933,4 +2934,164 @@ export function factsForGroundSurvived(
             + `${cultivator.realmOrdinal}. The floor is not what stops them.`
         ]
     );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHOSE ART THAT WAS
+//
+// The player putting the trust hierarchy's strongest check to themselves. The
+// rule these lines are written to, and the reason they are longer at the
+// bottom of the ladder than at the top:
+//
+//   NEVER LIE, AND NEVER FAKE CONFIDENCE. A reader short on either axis gets a
+//   genuinely uncertain answer because their character is genuinely uncertain -
+//   not a wrong answer, and not a coin flip dressed as knowledge. The player
+//   must be able to trust that hedging means hedging.
+//
+//   CERTAINTY IS THE REWARD. At the top the answer is one flat sentence with no
+//   hedging in it at all, and the difference in TONE is the progression: a
+//   player who has climbed sees their own answers get shorter.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ArtRecognitionInput {
+    /** The art, as the catalog names it. */
+    artName: string;
+    /** The house the player named, as the catalog names it. Null when they named none. */
+    claimedHouseName: string | null;
+    verdict: ClaimVerdict;
+    /** Houses this reader could place the art to, by display name. */
+    placedTo: readonly string[];
+    /** They followed what was done and it attached to no house they can name. */
+    perceivedButCouldNotPlaceIt: boolean;
+    /** Taught in enough places that no house can call it theirs. */
+    nobodysArt: boolean;
+    /** Knowing whose it is announces which rooms they have been in. */
+    revealsTheReader: boolean;
+    /** Inspector channel: the two axes, unrounded. */
+    structure: readonly string[];
+}
+
+/**
+ * What the character can honestly say about what they just watched.
+ *
+ * Notice what is NOT here: who the performer serves. An art is evidence about
+ * where a body was trained and the two are different questions - the Hollow
+ * Court is an entire institution built on the gap, since it takes nobody below
+ * a Void Refinement floor and its people therefore perform, honestly, the arts
+ * of the houses that raised them. A correct identification can leave a wrong
+ * conclusion available, and that is the design rather than a gap to fill in.
+ */
+export function factsForRecognisingAnArt(input: ArtRecognitionInput): EngineFacts {
+    const {
+        artName, claimedHouseName, verdict, placedTo,
+        perceivedButCouldNotPlaceIt, nobodysArt, revealsTheReader
+    } = input;
+    const house = claimedHouseName ?? 'that house';
+    const lines: string[] = [];
+    let headline: string;
+
+    if (nobodysArt) {
+        headline = 'Everybody\'s, and therefore nobody\'s.';
+        lines.push(
+            `${artName} is on half the shelves in the province. Watching somebody use it tells `
+            + 'you nothing about where they were raised, because it tells you nothing about anybody.'
+        );
+    } else switch (verdict) {
+        case 'would_not_know_it':
+            // The honest answer to a question the character cannot hold, and
+            // conspicuously NOT a "no". A false negative here would be the
+            // engine lying to the player about their own head.
+            headline = 'You would not know it.';
+            lines.push(
+                `You have never seen ${house}'s art, and nobody has ever described it to you in `
+                + 'enough detail to be worth anything. Whatever that was, it could have been theirs '
+                + 'and it could have been anybody\'s, and you are not the person to say which.'
+            );
+            lines.push(
+                'It is not modesty. There is nothing in your head to hold it up against.'
+            );
+            break;
+
+        case 'could_not_follow':
+            headline = 'It went past you.';
+            lines.push(
+                'You saw a person move. What they actually did with the movement did not arrive - '
+                + 'not as something you disagreed with, as something that was simply not there when '
+                + 'you looked at it.'
+            );
+            lines.push(
+                `Whether it was ${house}'s is a question for somebody who could see what happened.`
+            );
+            break;
+
+        case 'consistent':
+            headline = `It matches what you have heard of ${house}.`;
+            lines.push(
+                `Everything you have been told about how ${house} moves fits what you just watched. `
+                + 'None of it contradicts.'
+            );
+            // The hedge, said plainly, because the uncertainty IS the answer.
+            lines.push(
+                'And you would not be able to tell a good imitation from the real thing. Somebody '
+                + 'who had studied the same descriptions you have could produce exactly this, and '
+                + 'you would nod along.'
+            );
+            break;
+
+        case 'inconsistent':
+            headline = `It does not sit right against ${house}.`;
+            lines.push(
+                `Something in it does not match what you have been told about ${house} - not `
+                + 'obviously, and not in a way you could put into words for somebody else.'
+            );
+            lines.push(
+                'Which is worth exactly as much as your telling is worth, and you have never '
+                + 'watched them do it.'
+            );
+            break;
+
+        case 'it_is':
+            // Terse. This is the reward, and padding it would spend it.
+            headline = `That is ${house}'s.`;
+            lines.push(`That is ${house}'s art. You have watched it performed and there is no doubt in it.`);
+            break;
+
+        case 'it_is_not':
+            headline = `That is not ${house}'s.`;
+            lines.push(`That is not ${house}'s art. You have watched theirs, and this is not it.`);
+            break;
+    }
+
+    if (placedTo.length > 0 && verdict !== 'would_not_know_it' && verdict !== 'could_not_follow') {
+        // Where it was LEARNED. Said in those words on purpose: an art cannot
+        // say whom anybody now serves, and a sentence that implied otherwise
+        // would be the engine making the conflation the API refuses to.
+        lines.push(
+            placedTo.length === 1
+                ? `It is ${placedTo[0]} who teach that. Where somebody learned a thing and whose `
+                  + 'they are now are not the same question, and this only answers the first.'
+                : `${placedTo.join(' and ')} both teach it, so it says where somebody trained and `
+                  + 'not much about which of them.'
+        );
+    }
+
+    if (perceivedButCouldNotPlaceIt) {
+        lines.push(
+            'You followed it cleanly enough. It simply does not attach to any house you could name.'
+        );
+    }
+
+    // Only where there is something to say out loud. A reader who has just
+    // been told the movement went past them has nothing to announce, and the
+    // line read as a non-sequitur there in the first played turn of this verb.
+    if (revealsTheReader && verdict !== 'could_not_follow' && verdict !== 'would_not_know_it') {
+        // A social fact, not a perceptual one. Being able to say this out loud
+        // announces that you have been in rooms most people cannot enter.
+        lines.push(
+            'And saying so out loud would tell anybody listening where you have been standing, '
+            + 'which is not a room most people can get into.'
+        );
+    }
+
+    return { headline, lines, structure: [...input.structure], prose: lines.join('\n\n') };
 }
