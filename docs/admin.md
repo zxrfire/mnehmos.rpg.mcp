@@ -414,6 +414,16 @@ The mapping, for whoever is choosing. **The left column is what somebody says; t
 what runs.** Nothing here is a new capability - every row is an existing action with existing
 arguments, which is the property that makes reading prose safe at all.
 
+**Every line on the left is typed AFTER the word `ADMIN`, and none of them works without it.**
+That is not a formatting note. `ADMIN` is the dispatch: it is what routes a sentence to this
+surface at all, before anything here reads a word of it. Typed bare, every row below reaches
+the ordinary game instead - measured, and the results are not refusals but wrong answers.
+*"spawn_encounter 41"* comes back `unclear`, *"put a Tribulation Transcender in front of me"*
+comes back `unclear`, and *"I am ordinal 44"* prints a status dump about somebody who is still
+at Qi Condensation. So read the left column as `ADMIN put a Tribulation Transcender in front
+of me`, and the two rows below that spell `ADMIN` out are not doing anything the others are
+not.
+
 | What was said | What runs |
 |---|---|
 | spawn an NPC / a cultivator / a person at *rung* | `spawn_encounter ordinal=<rung>` |
