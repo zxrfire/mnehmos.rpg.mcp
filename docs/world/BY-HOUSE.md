@@ -18,7 +18,7 @@ Counts are mentions, so they rank rather than measure. The first file listed is 
 always the one to read first.
 
 **The median house is written about in 15 files**, and the most-written-about,
-the Azure Cloud Pavilion, in 34. That is the number this file exists for:
+the Azure Cloud Pavilion, in 35. That is the number this file exists for:
 nobody was going to find all of that by grepping, and nobody did - six times in one
 session somebody wrote down design that was already in the catalog.
 
@@ -29,9 +29,9 @@ session somebody wrote down design that was already in the catalog.
 `sect-azure-cloud-pavilion` · its entry: [`sects.ts:430`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 11 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 9 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6
-  …and 26 more files.
+  …and 27 more files.
 
-**Constants most about it:** `IMMORTAL_HOLDINGS`, `FACTION_HISTORY`, `STOCK_VERSUS_FLOW`, `THE_TRADE`, `ARCHIVE_AS_CLAIM`, `ARTIFACTS`, and 28 more
+**Constants most about it:** `IMMORTAL_HOLDINGS`, `FACTION_HISTORY`, `STOCK_VERSUS_FLOW`, `THE_TRADE`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, and 29 more
 
 ### Verdant Spring Hall
 
@@ -92,18 +92,18 @@ session somebody wrote down design that was already in the catalog.
 `sect-stonewright-consortium` · its entry: [`sects.ts:838`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2
-  …and 12 more files.
+  …and 13 more files.
 
-**Constants most about it:** `PAVILION_SURPLUS`, `BOUNTIES`, `CALENDARS`, `DEAD_SCRIPTS`, `GUEST_ELDERS`, `IMMORTAL_ITEMS`, and 3 more
+**Constants most about it:** `PAVILION_SURPLUS`, `TRACKED_CRAFT`, `BOUNTIES`, `CALENDARS`, `DEAD_SCRIPTS`, `GUEST_ELDERS`, and 4 more
 
 ### Thousand Treasure Pavilion
 
 `sect-thousand-treasure-pavilion` · its entry: [`sects.ts:889`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 4 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3
-  …and 11 more files.
+  …and 12 more files.
 
-**Constants most about it:** `AUCTION_VENUES`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `FEEDER`, `OTHERS_WHO_NOTICED`, `PAVILION_SURPLUS`, and 3 more
+**Constants most about it:** `AUCTION_VENUES`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `FEEDER`, `OTHERS_WHO_NOTICED`, and 4 more
 
 ### Cinnabar Crucible Guild
 
@@ -119,7 +119,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-ashen-forge-clan` · its entry: [`sects.ts:969`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
-  …and 6 more files.
+  …and 7 more files.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `HOUSE_ARTISANS`
 
@@ -164,7 +164,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-the-severed` · its entry: [`sects.ts:1198`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 5 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
-  …and 10 more files.
+  …and 11 more files.
 
 **Constants most about it:** `LID_NON_POSITIONS`, `DEMONIC_STANDINGS`, `LIVING_TRANSMISSIONS`
 
@@ -270,7 +270,7 @@ session somebody wrote down design that was already in the catalog.
 `house-bound-word` · its entry: [`sects.ts:2003`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
-  …and 4 more files.
+  …and 5 more files.
 
 **Constants most about it:** `CALENDARS`, `CUSTODY_TAKERS`, `DORMANT_ARTS`
 
@@ -306,7 +306,7 @@ session somebody wrote down design that was already in the catalog.
 `house-anchorhold` · its entry: [`sects.ts:2444`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 23 · [`sects.ts`](../../src/data/cultivation/sects.ts) 18 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 10 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4
-  …and 10 more files.
+  …and 12 more files.
 
 **Constants most about it:** `ANCHORING_A_CACHE`, `CALENDARS`, `DESTROYED_DAO_HOUSES`, `DRIVEN_GROUND_AND_THE_NODE`, `SECTS`, `THE_CALENDAR_OFFSET`, and 9 more
 
