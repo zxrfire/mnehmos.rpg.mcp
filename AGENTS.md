@@ -751,6 +751,41 @@ one-line `export * from './new-name.js';` at the old path with a comment saying 
 went, and let the importers migrate as they come free. Twelve files imported the two
 modules renamed above and nearly every one held another agent's live work.
 
+### Repetition should cost. A narrow life makes a narrower cultivator
+
+**Doing the same thing over and over must be worse than living a varied life** - and not only
+in efficiency. Somebody who spends three hundred years doing one thing has *experienced* less,
+and should be less of a cultivator for it. That is a statement about what they became, not a
+penalty bolted onto a verb.
+
+This is the counterweight to agency. Because anybody may attempt anything and the engine only
+prices it, a player who finds one profitable action can otherwise run it forever - and a world
+in which the optimal life is a single loop is a world with one decision in it, taken once.
+
+Two ways to get this wrong:
+
+- **Not charging for it**, so the loop is optimal and every run converges on the same
+  featureless strategy.
+- **Charging for it mechanically and calling it a day** - a stacking malus on a repeated verb.
+  That reads as the engine slapping the player's hand, and it invites the player to launder the
+  repetition through synonyms.
+
+The honest version follows from what the setting already believes: **understanding comes from
+having been places and survived things.** The comprehension machinery is already built this way
+- an insight comes from a tribulation survived, a deviation come back from, a road walked, a
+carving read, a place stood in. Somebody who only ever sat in one cave has none of those to
+draw on and it is not because a counter was decremented; it is because they were not there.
+
+So express it where experience already lives, not as a rule about verbs. If a life shows no
+variety, the things that variety would have produced are simply absent - fewer roads walked,
+thinner understanding, nothing to bring to a crossing that asks what you have understood. The
+loop stops being optimal on its own, and the reason it stops is legible in the fiction.
+
+Measured, for scale: six played runs using one action on repeat all died at ordinal 0-1 by age
+twenty, against a varied strategy on the same build reaching a median of 13 with most runs
+surviving. The gap is already large. The point is that it should be a fact about the lives, not
+a tax on the verb.
+
 ### Agency: do not ban it, and do not soften it
 
 **Anybody may attempt anything.** The engine's job is not to decide what is allowed - it is to
