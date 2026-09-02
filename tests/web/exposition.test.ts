@@ -20,6 +20,7 @@ import {
     describeAmbientPerceived,
     describeStanding
 } from '../../src/web/facts';
+import { rankName } from '../../src/engine/cultivation/realms';
 import { resolveCultivator, resolveSect } from '../../src/web/entities';
 import { composeNarrationUser, narrationSystemPrompt } from '../../src/web/prompt';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support';
@@ -104,9 +105,18 @@ describe('resolved entities describe behaviour, not schema', () => {
         expect(sect.facts.join(' ')).toMatch(/nobody explains what they mean/i);
 
         // Structural: alignment and the ladder, on the inspector channel.
+        //
+        // Asserted on the FACTS, not on the field names. This channel reaches
+        // the play log as well as the inspector, so it states its figures in
+        // sentences - `alignment=righteous, admissionOrdinal=3` became
+        // "Righteous on the schema's alignment axis. It admits from Qi
+        // Condensation Layer 4 (ordinal 3)". What this test is for is that the
+        // alignment, the admission rung and the rank ladder are filed where the
+        // prose is not, and all three still are.
         const structure = sect.structure.join(' ');
-        expect(structure).toContain('alignment=');
-        expect(structure).toContain('admissionOrdinal=');
+        expect(structure.toLowerCase()).toContain(LOCAL_SECT.alignment);
+        expect(structure).toContain(`ordinal ${LOCAL_SECT.admissionOrdinal}`);
+        expect(structure).toContain(rankName(LOCAL_SECT.admissionOrdinal));
         expect(structure).toContain(LOCAL_SECT.ranks[0]);
     });
 
@@ -153,8 +163,11 @@ describe('resolved entities describe behaviour, not schema', () => {
         expect(perceived).toMatch(/does not invite comparison|does not arise/i);
         expect(offences(perceived)).toEqual([]);
 
-        // The ordinal is not lost, it is filed where an operator can read it.
-        expect(seen.structure.join(' ')).toContain('realmOrdinal=30');
+        // The ordinal is not lost, it is filed where an operator can read it -
+        // and it now arrives with the rung it names, because `ordinal` is a
+        // field name and every other surface in the game says the rank.
+        expect(seen.structure.join(' ')).toContain('ordinal 30');
+        expect(seen.structure.join(' ')).toContain(rankName(30));
     });
 
     it('describes an art by what it is for, not by its grade band', async () => {
@@ -167,7 +180,10 @@ describe('resolved entities describe behaviour, not schema', () => {
         const inspector = JSON.stringify(result.toolCalls);
 
         expect(offences(narratable)).toEqual([]);
-        expect(inspector).toContain('grade=');
+        // The grade band reaches the operator and not the prose. Said as a
+        // band rather than as `grade=<band>`: "A mortal-grade attack art of no
+        // element."
+        expect(inspector).toContain(`${art.grade}-grade`);
     });
 });
 
@@ -215,7 +231,8 @@ describe('nothing structural reaches the model', () => {
         const structural = engineCalls(result).filter(c => c.name === 'engine.structure');
 
         expect(structural.length).toBeGreaterThan(0);
-        expect(structural.map(c => c.summary).join(' ')).toContain('alignment=');
+        expect(structural.map(c => c.summary).join(' ').toLowerCase())
+            .toContain(LOCAL_SECT.alignment);
         expect(structural.every(c => c.action === 'not_narrated')).toBe(true);
 
         // And none of it leaked into the prose.

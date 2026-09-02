@@ -128,6 +128,25 @@ export interface EngineFacts {
     required?: string[];
 }
 
+/**
+ * A rung, named, with its ordinal kept beside it.
+ *
+ * The engine channel talks in ordinals because that is what the ladder is
+ * indexed by, and for a while it printed only the index: "standing at ordinal
+ * 0", "carries nobody past ordinal 36". `ordinal` is a FIELD NAME, not a rung.
+ * Every other surface in the game says "Qi Condensation Layer 1" and
+ * "Grand Ascension Rising Soul", and a player reading the log beside the prose
+ * was being handed two vocabularies for one fact.
+ *
+ * Keeping the number is still right - an operator sorts and compares on it, and
+ * the promise is that the arithmetic is visible - so this keeps both. It is the
+ * one formatting decision in this channel that is worth centralising, because
+ * five modules make it and they had already drifted.
+ */
+export function rungAndOrdinal(ordinal: number): string {
+    return `${rankName(ordinal)} (ordinal ${ordinal})`;
+}
+
 /** Build facts with an empty structure channel. Most outcomes have none. */
 function observable(headline: string, lines: string[], prose: string, structure: string[] = []): EngineFacts {
     return { headline, lines, structure, prose };
@@ -376,7 +395,7 @@ export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): s
     const rateLost = Math.round(aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty * 100);
     const settling = Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal));
     return [
-        `Standing at ordinal ${cultivator.realmOrdinal}, ${rankName(cultivator.realmOrdinal)}, `
+        `Standing at ${rungAndOrdinal(cultivator.realmOrdinal)}, `
         + `on a ${getSpiritRoot(cultivator.spiritRoot).name}, `
         + (cultivator.foundationQuality === 'none'
             ? 'with no foundation laid.'
@@ -751,10 +770,24 @@ export function factsForBreakthrough(
     return {
         headline: breakthroughHeadline(result, before),
         lines,
+        // The prose half of a breakthrough was always right - "Breakthrough
+        // failed at Qi Condensation Layer 6 at 85.0%. The qi dispersed without
+        // damage; a quarter of the accumulated progress is gone." - and it is
+        // the standard the rest of this channel was rewritten to match. The
+        // ROLL is the thing only this line carries: it is what makes the odds
+        // checkable rather than merely stated, which is the whole promise.
+        //
+        // What is still not said is that a boundary is PRICED. That rule is
+        // one the player works out by crossing one; the line reports that this
+        // attempt was a boundary crossing and stops there.
         structure: [
-            `outcome=${result.outcome}, from=${result.fromOrdinal}, to=${result.toOrdinal}, ` +
-            `finalChance=${result.finalChance.toFixed(4)}, roll=${result.roll.toFixed(4)}, ` +
-            `boundary=${isBoundaryCrossing(result)}.`,
+            `Outcome: ${result.outcome}. `
+            + `${rungAndOrdinal(result.fromOrdinal)} to ${rungAndOrdinal(result.toOrdinal)}, `
+            + `on a final chance of ${result.finalChance.toFixed(4)} against a roll of `
+            + `${result.roll.toFixed(4)}. `
+            + (isBoundaryCrossing(result)
+                ? 'This was a crossing between realms rather than a step inside one.'
+                : 'This was a step inside a realm rather than a crossing between two.'),
             ...standingStructure(after, ambient)
         ],
         prose: breakthroughProse(before, after, result)
@@ -1735,9 +1768,15 @@ export function factsForDao(
             ? `${dao.name}.`
             : panel.insights.length === 0 ? 'Nothing comprehended.' : `${panel.insights.length} things understood.`,
         structure: [
-            `dao standing=${dao.standing}, subject=${dao.subject ?? 'none'}, depth=${dao.depth}, `
-            + `breadth=${dao.breadth}, totalDegrees=${panel.totalDegrees}. `
-            + `theOnlyAxisLeft=${panel.theOnlyAxisLeft}, read off the same predicate that gates a re-attempt.`
+            `Standing on the comprehension axis: ${dao.standing}`
+            + `${dao.subject ? `, on ${dao.subject}` : ', on no subject'}. Depth ${dao.depth} `
+            + `and breadth ${dao.breadth}, over ${panel.totalDegrees} degree`
+            + `${panel.totalDegrees === 1 ? '' : 's'} of insight in total. `
+            + (panel.theOnlyAxisLeft
+                ? 'Comprehension is the only axis left to them, read off the same predicate '
+                  + 'that gates a re-attempt.'
+                : 'Comprehension is not the only axis left to them, read off the same '
+                  + 'predicate that gates a re-attempt.')
         ],
         lines,
         prose: lines.join('\n\n')
@@ -1923,9 +1962,13 @@ export function factsForSiteFace(
     return {
         headline: arriving ? `${head}, reached.` : `${head}, from outside.`,
         structure: [
-            `site ${face.kind}: awareness permits naming = ${face.name !== null}. `
-            + `Advertised ordinal ${face.advertisedOrdinal ?? 'none'}, which is the rumour's number and `
-            + 'not the room\'s - three entries in the catalog disagree with their own interior on purpose.',
+            `A ${face.kind}, which this cultivator\'s awareness `
+            + `${face.name !== null ? 'does permit naming' : 'does not permit naming'}. `
+            + (face.advertisedOrdinal === null || face.advertisedOrdinal === undefined
+                ? 'Nothing advertises what rung it was built for.'
+                : `It is advertised as built for ${rungAndOrdinal(face.advertisedOrdinal)}, `
+                  + 'which is the rumour\'s number and not the room\'s - three entries in the '
+                  + 'catalog disagree with their own interior on purpose.'),
             'Pre-entry view only. The interior was not read: this renderer has no field that could hold it.'
         ],
         lines,

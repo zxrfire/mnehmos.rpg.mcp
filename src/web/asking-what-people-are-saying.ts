@@ -49,7 +49,7 @@ import {
     type TellerStanding
 } from '../engine/world/what-people-are-saying.js';
 import { worldLocationFor } from './entities.js';
-import type { EngineFacts } from './facts.js';
+import { rungAndOrdinal, type EngineFacts } from './facts.js';
 import type { Hearing, SpeakableName } from './hearsay.js';
 import type { KnownEntityKind } from './knowledge.js';
 
@@ -231,6 +231,23 @@ function nothingInTheAir(): AskedAround {
  * misattributed will write a sentence that hints at it, and the player will
  * have been handed the answer for the price of a question.
  */
+/**
+ * What a distortion band actually did to the story, in words.
+ *
+ * The band names are the engine's and they are exact; printed bare they read as
+ * a field value, and three of the five do not say what they mean to somebody
+ * who has not read the enum. Saying what happened to the story keeps the band's
+ * precision and stops the line being a lookup key.
+ */
+const DISTORTION: Record<string, string> = {
+    intact: 'intact - the right people, the right place, the right size',
+    stale: 'stale - it happened, and it is being told as though it still were',
+    inflated: 'inflated - it happened, and it has grown in the telling',
+    misattributed: 'misattributed - it happened, and the wrong person is being named for it',
+    misplaced: 'misplaced - it happened, somewhere else',
+    invented: 'invented - it did not happen at all'
+};
+
 export function factsForNews(asked: AskedAround): EngineFacts {
     const headline = asked.heard.length === 0
         ? 'Nothing anybody here can tell you.'
@@ -239,9 +256,21 @@ export function factsForNews(asked: AskedAround): EngineFacts {
         headline,
         lines: asked.lines,
         prose: asked.prose,
+        // The speaker's row id is dropped and the FACT id is kept, and the
+        // difference is what a reader can do with each. The speaker is already
+        // named in the sentence, so `npc-105` beside their name is the same
+        // internals leak as a price-board row id. The fact id is the opposite:
+        // it is how anybody tells two people repeating ONE story from two
+        // people telling two, which is the entire point of a mechanic that
+        // counts hands and fidelity.
         structure: asked.heard.map(told =>
-            `${told.speaker} (${told.speakerId}) on fact ${told.rumour.factId ?? 'none'}: `
-            + `${told.rumour.distortion}, fidelity ${told.rumour.fidelity.toFixed(2)}, `
-            + `${told.rumour.hands} hand(s), subject at ordinal ${told.rumour.subjectOrdinal}.`)
+            `${told.speaker} is passing on `
+            + `${told.rumour.factId ? `fact ${told.rumour.factId}` : 'something with no fact behind it'}`
+            + `, which has been through ${told.rumour.hands} `
+            + `hand${told.rumour.hands === 1 ? '' : 's'} and arrives `
+            + `${DISTORTION[told.rumour.distortion] ?? told.rumour.distortion}. It reaches `
+            + `this cultivator at fidelity ${told.rumour.fidelity.toFixed(2)}, where 1.00 is `
+            + `the event as it happened. `
+            + `Whoever it is about stands at ${rungAndOrdinal(told.rumour.subjectOrdinal)}.`)
     };
 }
