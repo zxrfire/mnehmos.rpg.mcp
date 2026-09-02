@@ -224,11 +224,29 @@ function costOfTeaching(
           + `${couldTeach.slice(0, 4).map(a => a.name).join(', ')}.`
         : '';
 
+    // ── AND IT GOES ON `lines`, OR ONLY THE FALLBACK EVER SAYS IT ────────
+    //
+    // Every refusal below names the shelf in `refusal.prose` and nowhere else,
+    // and `composeNarrationUser` sends `lines` alone - so a model narrator
+    // replaces the one sentence that tells the player what to do next. Played,
+    // against ollama, asking somebody for a method by a description rather than
+    // a name:
+    //
+    //   engine   1 art they are carrying could have been asked for.
+    //   prose    "The name goes nowhere. She does not correct you, nor does she
+    //            offer a technique..."
+    //
+    // The player is told there is exactly one thing they could have asked for
+    // and not told what it is. AGENTS.md: a refusal names a route - and a count
+    // is not a name. Empty when they hold nothing new, which is the branch
+    // where there is genuinely no route to name.
+    const shelfLines = theirShelf.length > 0 ? [theirShelf] : [];
+
     // ── THEY ARE CARRYING NOTHING YOU HAVE NOT GOT ───────────────────────
     if (couldTeach.length === 0 && !techniqueId) {
         return {
             ask: 'a_real_favour',
-            lines: [],
+            lines: shelfLines,
             structure: [
                 `${asked.name} holds ${asked.holds.length} art`
                 + `${asked.holds.length === 1 ? '' : 's'} and the asker already carries every one `
@@ -256,7 +274,7 @@ function costOfTeaching(
     if (!techniqueId && namedButUnresolved.length >= 2) {
         return {
             ask: 'a_real_favour',
-            lines: [],
+            lines: shelfLines,
             structure: [
                 `"${namedButUnresolved}" matched nothing in the technique catalog, so there is `
                 + `no art for the request to be about. ${couldTeach.length} art`
@@ -289,7 +307,7 @@ function costOfTeaching(
         } else {
             return {
                 ask: 'a_real_favour',
-                lines: [],
+                lines: shelfLines,
                 structure: [
                     `${couldTeach.length} arts they hold are new to the asker and the sentence `
                     + `named none of them, so which road is being asked for is undecided.`
@@ -315,7 +333,7 @@ function costOfTeaching(
     if (!art) {
         return {
             ask: 'a_real_favour',
-            lines: [],
+            lines: shelfLines,
             structure: [
                 `The art settled on, ${chosen}, is not in the technique catalog at all, so `
                 + `nothing can be priced against it.`
@@ -344,7 +362,7 @@ function costOfTeaching(
                 : 'Nobody teaches it off a shelf anywhere. Whoever has it, dug it up.';
         return {
             ask: 'a_real_favour',
-            lines: [],
+            lines: shelfLines,
             structure: [
                 `${asked.name} does not hold ${art.name}, so there is nobody here to walk the `
                 + `asker down it. ${houses.length} house`
