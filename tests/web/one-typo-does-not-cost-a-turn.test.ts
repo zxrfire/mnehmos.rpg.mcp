@@ -77,12 +77,36 @@ describe('what the repair refuses to do', () => {
 
     it('puts a respelt NAME back before it reaches the engine', () => {
         // The repair cannot tell a verb word from a noun and is only looking
-        // for verb words. `stele` is one edit from `stole`, which really is in
-        // the vocabulary, so the respelt sentence says "stole" - and a target
-        // of "stole" would send the engine after an object that is not there.
-        const respelt = respellForTheVerbTable('I examine the stele', vocabulary);
-        expect(respelt.text).toBe('I examine the stole');
-        expect(inThePlayersOwnSpelling('the stole', respelt.restored)).toBe('the stele');
+        // for verb words, so a noun one edit from a verb word gets respelt -
+        // and a target in the parser's spelling would send the engine after an
+        // object that is not there.
+        //
+        // The example is DERIVED rather than written down. It used to say
+        // `stele`, one edit from `stole`, and a later change added `stele` to a
+        // pattern - so the word became vocabulary, was correctly left alone,
+        // and this test failed for a reason that had nothing to do with what it
+        // asserts. The property is what matters; the word is incidental.
+        const near = [...vocabulary].filter(w => /^[a-z]{5,8}$/.test(w)).sort();
+        let said = '';
+        let respeltTo = '';
+        outer: for (const word of near) {
+            for (let i = 0; i < word.length; i++) {
+                for (const letter of 'abcdefghijklmnopqrstuvwxyz') {
+                    const candidate = word.slice(0, i) + letter + word.slice(i + 1);
+                    if (candidate === word || vocabulary.has(candidate)) continue;
+                    if (nearestVocabularyWord(candidate, vocabulary) !== word) continue;
+                    said = candidate;
+                    respeltTo = word;
+                    break outer;
+                }
+            }
+        }
+        expect(said, 'no noun one edit from a single vocabulary word exists').not.toBe('');
+
+        const respelt = respellForTheVerbTable(`I examine the ${said}`, vocabulary);
+        expect(respelt.text).toBe(`I examine the ${respeltTo}`);
+        expect(inThePlayersOwnSpelling(`the ${respeltTo}`, respelt.restored))
+            .toBe(`the ${said}`);
     });
 
     it('does not truncate a correctly spelt word onto a stem the patterns carry', () => {
