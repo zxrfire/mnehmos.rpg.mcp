@@ -4729,8 +4729,8 @@ function planIntent(input: string): PlannedAction {
     // culling contract" are all the same intent, and a verb that only answers
     // to one phrasing is reachable only by guessing - which is how the whole
     // alchemy subsystem was once locked behind the word "refine".
-    if ((/\b(?:hunt|hunting|cull|culling|track|tracking|stalk|stalking|trap|trapping|poach\w*)\b/.test(text)
-            || (/\b(?:look|looking|search|searching|go|going) for\b/.test(text)
+    if ((/\b(?:hunt|hunting|cull|culling|track|tracking|stalk|stalking|traps?|trapping|snares?|snaring|poach\w*)\b/.test(text)
+            || (/\b(?:look|looking|search|searching|go|going) (?:for|out after|after)\b/.test(text)
                 && /\b(?:spirit beasts?|beasts?|game|quarry)\b/.test(text)))
         // An animal, or nothing named. A sentence naming work, a herb, a pill
         // or a person is somebody else's verb and it keeps it.
@@ -4740,7 +4740,7 @@ function planIntent(input: string): PlannedAction {
         && !/\b(?:manual|book|scripture|technique|art|teacher|master|sect|house)\b/.test(text)) {
         return {
             action: 'hunt',
-            target: extractSubject(input, /hunt|hunting|cull|culling|track|tracking|stalk|stalking|trap|trapping|look for|search for|go for/)
+            target: extractSubject(input, /hunt|hunting|cull|culling|track|tracking|stalk|stalking|traps?|trapping|snares?|snaring|look for|search for|go for|go out after|go after/)
         };
     }
 

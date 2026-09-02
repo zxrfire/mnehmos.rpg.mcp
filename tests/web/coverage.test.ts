@@ -86,6 +86,16 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I brew the elixir',
         'I concoct a healing pill'
     ],
+    // Spirit beasts are where a material comes from, so the verb that goes
+    // out after one has to answer to more than the single word it was
+    // written under. A bare 'I go hunting' is the plainest way anybody says
+    // it and names nothing at all.
+    hunt: [
+        'I go hunting',
+        'I hunt a spirit beast',
+        'I track the beast through the hills',
+        'I set traps for beasts'
+    ],
     gather: [
         'I gather herbs',
         'I forage for spirit herbs',
