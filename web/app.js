@@ -2249,6 +2249,110 @@ function pickerDays() {
   return Math.max(1, Math.round(PICKER.amount * UNIT_DAYS[PICKER.unit]));
 }
 
+/* ── what the food for the stretch will cost, quoted before it is spent ──
+
+   Found by playing: a player entered seclusion holding 54 spirit stones and
+   came out holding none, and read the bill afterwards - "1 ration came out of
+   the pack, and 27 more was bought for 54 spirit stones". The purchase is
+   correct and the mechanic is right, since you cannot cultivate longer than
+   you can eat. What was wrong was that the whole purse went without the player
+   ever being shown the figure, and the rest of this game asks first.
+
+   So the picker quotes it. NOT computed here: the numbers come from
+   /api/seclusion/provisions, which runs the same function that spends the
+   stones at the cave mouth. A client that did its own arithmetic would be a
+   second economy, and it would drift from the real one the first time either
+   was touched. */
+
+const FOOD = {
+  /** The stretch the held plan is for, so a stale answer is never shown. */
+  days: null,
+  /** The engine's answer, or null while it is being asked for. */
+  plan: null,
+  /** Why there is no answer, when there is none. */
+  error: null,
+  /** Rising on every request; a reply from an older one is discarded. */
+  seq: 0,
+  timer: null
+};
+
+function resetFoodQuote() {
+  FOOD.days = null;
+  FOOD.plan = null;
+  FOOD.error = null;
+  FOOD.seq += 1;
+  if (FOOD.timer) { clearTimeout(FOOD.timer); FOOD.timer = null; }
+}
+
+/** Ask the engine what this stretch eats, then repaint the summary. */
+async function quoteTheFood(days, repaint) {
+  if (FOOD.days === days && (FOOD.plan || FOOD.error)) return;
+  const mine = ++FOOD.seq;
+  const res = await getJSON(`/api/seclusion/provisions?days=${encodeURIComponent(days)}`);
+  if (mine !== FOOD.seq) return;
+  FOOD.days = days;
+  FOOD.plan = res.ok ? res.data : null;
+  FOOD.error = res.ok ? null : res.error;
+  if (typeof repaint === 'function') repaint();
+}
+
+/** Debounced, so holding a key down in the custom field is one question. */
+function quoteTheFoodSoon(days, repaint) {
+  if (FOOD.timer) clearTimeout(FOOD.timer);
+  FOOD.timer = setTimeout(() => { FOOD.timer = null; quoteTheFood(days, repaint); }, 180);
+}
+
+/**
+ * The bill for the stretch, in sentences, or the reason there is not one.
+ *
+ * Every figure on it is the engine's. The client decides where they sit on the
+ * page and nothing else.
+ */
+function pickerFoodHtml(days) {
+  if (FOOD.error) {
+    return raw(html`<div class="pick__food pick__food--unknown">The cost of the food could not be
+      read: ${FOOD.error}</div>`);
+  }
+  if (!FOOD.plan || FOOD.days !== days) {
+    return raw(html`<div class="pick__food pick__food--unknown">Working out what the food costs…</div>`);
+  }
+
+  const p = FOOD.plan;
+  const rations = (n) => `${fmtInt(n)} ration${n === 1 ? '' : 's'}`;
+
+  // Nothing to buy: either the stretch is short enough that the belly covers
+  // it, or the pack already holds the whole of it.
+  if (p.cost === 0) {
+    const line = p.wanted === 0
+      ? 'Short enough that you can eat before you sit. Nothing to buy.'
+      : `${rations(p.wanted)} for the stretch, and ${p.carried === p.wanted ? 'all of them' : `${fmtInt(p.carried)} of them`} `
+        + `already in your pack. Nothing to buy; your ${fmtInt(p.stonesBefore)} spirit stones stay where they are.`;
+    return raw(html`<div class="pick__food">${line}</div>`);
+  }
+
+  // Three separate counts, and conflating any two of them misreports the bill:
+  // what the stretch WANTS, what the pack already holds, and what the purse
+  // will actually stretch to. On a long seclusion the last is much smaller than
+  // the first, and saying "the other 14" of 73 reads as though 73 were covered.
+  const head = `Food for this stretch: ${rations(p.wanted)}.`
+    + (p.carried > 0 ? ` ${fmtInt(p.carried)} already in your pack.` : '')
+    + ` ${fmtInt(p.toBuy)} more bought at the door for ${fmtInt(p.cost)} spirit stones, `
+    + `leaving ${fmtInt(p.stonesAfter)} of your ${fmtInt(p.stonesBefore)}.`
+    + (p.short > 0 ? ` The remaining ${fmtInt(p.short)} the purse will not stretch to.` : '');
+
+  const rest = [];
+  if (!p.coversTheWholeStretch) {
+    rest.push(html`<div class="pick__warn">⚠ Even so, that is food for about ${fmtDays(p.covered)}
+      of the ${fmtDays(days)} asked for. After that the belly is empty and five turns later it is fatal.</div>`);
+  }
+  if (p.worthAsking) {
+    rest.push(html`<div class="pick__warn">⚠ That is ${fmtInt(Math.round(p.shareOfThePurse * 100))}%
+      of everything you have. You will be asked to confirm it.</div>`);
+  }
+
+  return raw(html`<div class="pick__food pick__food--cost">${head}</div>${raw(rest.join(''))}`);
+}
+
 /**
  * Everything wrong with committing this many days, as plain sentences.
  *
@@ -2335,15 +2439,32 @@ function pickerBody() {
       <div class="pick__total">
         Entering seclusion for <b>${fmtDays(days)}</b>
         <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>
+        ${pickerFoodHtml(days)}
         ${pickerWarningHtml(days)}
       </div>
     </div>`;
 }
 
 function openCultivatePicker() {
+  resetFoodQuote();
+
+  // Repaint only the summary block, which is where the day count, the food
+  // bill and the warnings all live. Doing it this way is what lets the quote
+  // arrive late without stealing the caret out of the custom-duration field.
+  const repaintTotal = () => {
+    const total = $('.pick__total');
+    if (!total) return;
+    const days = pickerDays();
+    total.innerHTML = html`Entering seclusion for <b>${fmtDays(days)}</b>
+      <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>
+      ${pickerFoodHtml(days)}
+      ${pickerWarningHtml(days)}`;
+  };
+
   const refresh = () => {
     $('#overlay-body').innerHTML = pickerBody();
     wirePicker();
+    quoteTheFood(pickerDays(), repaintTotal);
   };
 
   const wirePicker = () => {
@@ -2361,14 +2482,9 @@ function openCultivatePicker() {
       custom.addEventListener('input', () => {
         const v = Math.max(1, Math.min(100000, Math.round(Number(custom.value) || 1)));
         PICKER.amount = v;
-        const total = $('.pick__total');
-        if (total) {
-          // Re-render only the summary so the number field keeps focus/caret.
-          const days = pickerDays();
-          total.innerHTML = html`Entering seclusion for <b>${fmtDays(days)}</b>
-            <span class="muted" style="font-family:var(--font-mono);font-size:12.5px"> (${fmtInt(days)} days sent to the engine)</span>
-            ${pickerWarningHtml(days)}`;
-        }
+        // Re-render only the summary so the number field keeps focus/caret.
+        repaintTotal();
+        quoteTheFoodSoon(pickerDays(), repaintTotal);
         $$('#pick-amounts .pick__amount').forEach((b) => {
           b.setAttribute('aria-pressed', Number(b.dataset.amount) === v ? 'true' : 'false');
         });
@@ -2381,6 +2497,16 @@ function openCultivatePicker() {
 
   const confirmPick = () => {
     const days = pickerDays();
+    // A purchase that takes most or all of the purse gets the shape this game
+    // already uses for a costly irreversible choice - the same one `Cultivate`
+    // with no manual gets. The ordinary case gets no extra click: the figure is
+    // printed above the button and pressing it is an informed decision.
+    const plan = FOOD.days === days ? FOOD.plan : null;
+    if (plan && plan.worthAsking) {
+      closeOverlay();
+      openFoodBillConfirm(days, plan);
+      return;
+    }
     closeOverlay();
     doCultivate(days);
   };
@@ -2396,6 +2522,47 @@ function openCultivatePicker() {
 
   wirePicker();
   $('#pick-go').addEventListener('click', confirmPick);
+  quoteTheFood(pickerDays(), repaintTotal);
+}
+
+/**
+ * The purse is about to go on food. Say so before it does.
+ *
+ * Deliberately NOT on every seclusion - that would be tedious on the common
+ * case, where the bill is a few stones out of a healthy purse and the figure
+ * printed in the picker is enough. This is the case the defect was filed
+ * against: nearly everything the cultivator owns, spent in one pass, on a
+ * decision that cannot be walked back once the years are gone.
+ *
+ * Shape borrowed whole from `openSitAnywayConfirm`: name the cost, name the
+ * way around it, and let the player take it anyway.
+ */
+function openFoodBillConfirm(days, plan) {
+  const share = Math.round((Number(plan.shareOfThePurse) || 0) * 100);
+  openOverlay({
+    title: `${fmtInt(plan.cost)} spirit stones of food`,
+    body: html`
+      <div class="confirm">
+        <p>${fmtDays(days)} of seclusion needs ${fmtInt(plan.wanted)} rations. ${fmtInt(plan.carried)}
+           ${plan.carried === 1 ? 'is' : 'are'} in your pack; ${fmtInt(plan.toBuy)} more would be
+           bought at the door for <b>${fmtInt(plan.cost)} spirit stones</b> - ${fmtInt(share)}% of the
+           ${fmtInt(plan.stonesBefore)} you hold. You would come out with ${fmtInt(plan.stonesAfter)}.</p>
+        ${plan.short > 0 ? raw(html`<p>Even then the purse will not stretch to the other
+           ${fmtInt(plan.short)}. The food runs out after about ${fmtDays(plan.covered)} of the
+           ${fmtDays(days)}, and five turns after that it is fatal.</p>`) : ''}
+        <p class="muted">Nothing about the food is optional: you cannot cultivate for longer than you
+           can eat, and a stretch this long on an empty stomach is how runs end. What you can change
+           is how long you sit. A shorter stretch buys fewer rations and leaves the rest of the purse
+           for a manual, a pill, or the road.</p>
+      </div>`,
+    foot: html`
+      <button class="btn" type="button" id="food-shorter" data-autofocus>Choose a shorter stretch</button>
+      <button class="btn btn--danger" type="button" id="food-buy">Buy the food and sit</button>`,
+    onClose: () => focusCommand()
+  });
+
+  $('#food-shorter').addEventListener('click', () => { closeOverlay(); openCultivatePicker(); });
+  $('#food-buy').addEventListener('click', () => { closeOverlay(); doCultivate(days); });
 }
 
 /* ── breakthrough confirmation ── */

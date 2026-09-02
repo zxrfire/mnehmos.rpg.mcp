@@ -1298,6 +1298,36 @@ function handleBreakthrough() {
   };
 }
 
+/* ─────────────────────── provisions for a stretch ─────────────────────── */
+
+/** Mirrors ACTIONS_PER_FULL_SATIETY and PROVISION_COST_STONES in the engine. */
+const MOCK_DAYS_PER_RATION = 50;
+const MOCK_STONES_PER_RATION = 2;
+const MOCK_ASKS_ABOVE = 0.75;
+
+function provisionsFor(days) {
+  const stonesBefore = Math.max(0, Math.floor(W.cultivator.spiritStones));
+  const satiety = Math.max(0, Math.floor(W.cultivator.satiety));
+  const wanted = Math.ceil(days / MOCK_DAYS_PER_RATION);
+  const carried = 0;
+  const affordable = Math.floor(stonesBefore / MOCK_STONES_PER_RATION);
+  const toBuy = Math.max(0, Math.min(wanted - carried, affordable));
+  const cost = toBuy * MOCK_STONES_PER_RATION;
+  const covered = (carried + toBuy) * MOCK_DAYS_PER_RATION + Math.floor(satiety / 2);
+  const shareOfThePurse = stonesBefore > 0 ? cost / stonesBefore : 0;
+  return {
+    days, wanted, carried, toBuy,
+    short: wanted - carried - toBuy,
+    cost,
+    stonesBefore,
+    stonesAfter: stonesBefore - cost,
+    covered,
+    coversTheWholeStretch: covered >= days,
+    shareOfThePurse,
+    worthAsking: cost > 0 && shareOfThePurse >= MOCK_ASKS_ABOVE
+  };
+}
+
 /* ───────────────────────────── router ───────────────────────────── */
 
 async function route(url, init) {
@@ -1349,6 +1379,19 @@ async function route(url, init) {
     if (shouldFail('state')) return fail('Mock: state forced to fail.', 500);
     if (!W.run) return fail('No active run.', 404);
     return json(statePayload());
+  }
+
+  // What a stretch of seclusion eats, quoted before it is entered. Mirrors
+  // `what-feeding-a-stretch-of-seclusion-costs.ts` - the mock exists so the
+  // screen can be exercised without a backend, and a mock that disagrees about
+  // the SHAPE of the answer tests the client against a world that does not
+  // exist. The mock cultivator carries no pack, so `carried` is always nought.
+  if (path === '/api/seclusion/provisions') {
+    if (shouldFail('provisions')) return fail('Mock: provisions forced to fail.', 500);
+    if (!W.run) return fail('No active run.', 404);
+    const days = Math.floor(Number(url.searchParams.get('days')));
+    if (!Number.isFinite(days) || days < 1) return fail('A stretch is a whole number of days, at least one.', 400);
+    return json(provisionsFor(days));
   }
 
   if (path === '/api/run/new' && method === 'POST') {
