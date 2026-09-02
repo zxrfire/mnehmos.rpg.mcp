@@ -194,6 +194,126 @@ export function isGrantAvailableAt(ordinal: number, grant: CapabilityGrant): boo
     return grantsAvailableAt(ordinal).includes(grant);
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT REACHING A REALM ACTUALLY HANDS SOMEBODY
+//
+// REALM CAPABILITY IS ENFORCED, NOT ASSERTED. That is the ruling this block
+// exists to serve, and it was in question: `heldGrants` was empty for every
+// cultivator in the game, so all fifteen grants were unreachable and every
+// consumer downstream of them was off. A capability with no consumer is not
+// finished, and a capability nobody can hold is not a capability.
+//
+// The distinction the original design was built on is kept, because it is
+// right: a realm confers POTENTIAL, and a few capabilities still have to be
+// ARRANGED rather than simply given. Being at home in ice is conferred. A
+// prepared vessel is not - it is an actual vessel, somewhere, that somebody
+// went and readied.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Grants that reaching the realm does NOT hand over.
+ *
+ * Deliberately tiny, and each entry needs a reason of this kind: the grant
+ * names a thing that exists in the world rather than a property of the body.
+ * `prepared_vessel` is the whole list - a Nascent Soul cultivator who never
+ * arranged a vessel does not have one, and the realm cannot supply it.
+ *
+ * Everything else is what the body IS at that rung, and withholding it would
+ * be the empty-set defect again, wearing a policy.
+ */
+export const ARRANGED_GRANTS: readonly CapabilityGrant[] = ['prepared_vessel'];
+
+/**
+ * Grants a cultivator holds by having reached this rung.
+ *
+ * What `capabilityActorFor` should hand the capability layer, as against
+ * `grantsAvailableAt`, which is the wider "what is possible here at all".
+ */
+export function grantsConferredAt(ordinal: number): CapabilityGrant[] {
+    return grantsAvailableAt(ordinal).filter(g => !ARRANGED_GRANTS.includes(g));
+}
+
+/**
+ * What each structural break takes back, by wound key.
+ *
+ * THE POINT OF A BROKEN STATUS, mechanically. A crossing that lands badly
+ * leaves somebody AT the rung with the thing that rung was for not working,
+ * and until this existed that was prose: a crippled nascent soul and a whole
+ * one were the same person with different flavour text, which is the softening
+ * the agency rule forbids.
+ *
+ * Each entry is the design owner's own statement of what the failed version
+ * lacks, reduced to the grants that carry it. See `docs/world/capability-gaps-
+ * by-realm.md`, which states each capability and each failure mode in full -
+ * including the parts this boolean layer CANNOT express, which are recorded
+ * there rather than approximated here.
+ *
+ * Keyed on current wound keys. Callers resolve retired keys first.
+ */
+export const GRANTS_DENIED_BY_BREAK: Readonly<Record<string, readonly CapabilityGrant[]>> = {
+    // "it cannot survive very long outside the body." The soul is real and
+    // crippled, so what the realm was for - persisting without the body - is
+    // what it cannot do. `prepared_vessel` goes with it: a soul in this state
+    // has nothing to send.
+    'crippled-nascent-soul': ['soul_persists', 'prepared_vessel'],
+
+    // "perhaps it doesn't carry its own conditions everywhere like other
+    // deities do, but it has to channel it for a limited time before it burns
+    // out." So the one thing a Deity is - a body that brings its conditions
+    // with it, continuously and in every direction - is exactly what this one
+    // does not have. The range, duration and coverage it keeps instead are not
+    // expressible as a boolean and are documented rather than faked.
+    'failed-transformation': ['carries_own_ambient', 'suppresses_lesser'],
+
+    // "doesn't allow spatial folding ... also they still need ambient qi, but
+    // A LOT less." Two denials and one deliberate keep: `enters_dead_zones`
+    // stays, because they do survive the weak scars and voids - just not the
+    // ones a whole refinement walks into. That degradation is real and this
+    // layer cannot say it.
+    'partial-refinement': ['spatial_folding', 'no_ambient_needed'],
+
+    // "there is still a seam and a soul to attack. but a lot of it IS
+    // stitched." So `no_seam` goes and `immune_contamination` stays, and the
+    // second half matters as much as the first: this is an impairment among
+    // the great, not a demotion to the realm below.
+    'failed-integration': ['no_seam'],
+
+    // "they can still do it, but their abilities burn out a lot sooner."
+    // `gates_places` is a continuous, permanent property - not being gated by
+    // places, ever - and that is precisely what somebody who burns out cannot
+    // hold.
+    'unfulfilled-ascension': ['gates_places']
+
+    // NOT LISTED, and each absence is deliberate:
+    //
+    // 'imperfect-tribulation-body' - what it loses is the adaptive elemental
+    //   defence, which lives in damage resolution and not in a grant. There is
+    //   no grant here to take, and inventing one to have something to remove
+    //   would be the declared-and-inert defect all over again.
+    // 'broken-foundation', 'cracked-core' - both sit below Nascent Soul, where
+    //   no grants exist to deny. The road closing IS their whole cost.
+};
+
+/**
+ * The grants this cultivator actually holds: what the rung confers, less what
+ * their breaks have taken back.
+ *
+ * Takes wound keys rather than `Injury` rows so this module stays free of the
+ * injury schema, and so a caller can ask the question about somebody it only
+ * has a summary of.
+ */
+export function grantsHeldWith(
+    ordinal: number,
+    brokenStatusKeys: readonly string[] = []
+): CapabilityGrant[] {
+    if (brokenStatusKeys.length === 0) return grantsConferredAt(ordinal);
+    const denied = new Set<CapabilityGrant>();
+    for (const key of brokenStatusKeys) {
+        for (const g of GRANTS_DENIED_BY_BREAK[key] ?? []) denied.add(g);
+    }
+    return grantsConferredAt(ordinal).filter(g => !denied.has(g));
+}
+
 /**
  * Hazards each grant makes irrelevant.
  *
