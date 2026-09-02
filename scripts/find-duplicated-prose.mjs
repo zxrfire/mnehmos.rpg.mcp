@@ -35,6 +35,17 @@ const MAX = 400;
 const BENIGN = [
     /^\[?\s*\.\.\/\.\.\/src/,          // a link to the same file from two docs
     /^see \[/,                          // a shared cross-reference line
+    // Two files importing the same names from the same module is what a shared
+    // dependency LOOKS like, not a passage somebody wrote out twice. The
+    // detector reads whole lines, so a long import list trips the ratchet on
+    // the one kind of repetition the language requires you to have.
+    /^import[ {]/,
+    /^\}? *from ['"]/,
+    /^export (\{|type |\* from)/,
+    // A section banner is punctuation with a word in it. Two files dividing
+    // themselves the same way is house style, not a passage said twice.
+    /^\/\/ *[─-╿]/,
+    /[─-╿]{8}/,
 ];
 
 function sourceFiles() {
