@@ -218,7 +218,11 @@ const KINDS: Record<ObjectKind, KindFacts> = {
         what: 'A thing that changes what you can survive. The only kind rated on the ladder people stand on.',
         source: 'data/cultivation/artifacts.ts, and the two objects in immortal-items.ts',
         catalogued: () => ARTIFACTS.length + IMMORTAL_ITEMS.length,
-        keptAs: ['tracked'],
+        // Both, and the exceptions are the three rows at the bottom of the
+        // table whose own descriptions say several hundred exist. Those are
+        // KINDS rather than objects, they carry `mundane`, and the seeder does
+        // not seat one - see the banner in `engine/world/artifact-placement.ts`.
+        keptAs: ['counted', 'tracked'],
         gradeAxis: 'power, 0 to the ceiling',
         ratedInPower: true,
         provenance: 'Forged below the Lid, sent down by somebody who crossed, or left as pieces of something that failed down here.',
