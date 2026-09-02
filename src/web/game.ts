@@ -2854,6 +2854,24 @@ ${noticed}`;
             ));
         }
 
+        // ── THE NAME WE STORE IS THE WORLD'S, NOT THE PLAYER'S ───────────
+        //
+        // `extractSubject` consumes an optional leading article after the verb,
+        // so "I travel to The Quiet Marches" arrives here as "Quiet Marches" -
+        // and every province in the world is named "The" something. Matching
+        // survives that, because `somewhereReal` compares on `loosePlaceKey`
+        // and the comment there says exactly why. STORING did not: the run then
+        // sat at a location string matching no world row at all, so the
+        // province could not be resolved from it, `where can I go` answered for
+        // the wrong province, and a house's gate the player had just been told
+        // about was never listed.
+        //
+        // So canonicalise to the row the world actually holds. The refusals
+        // above deliberately keep the player's own words; this is the arrival,
+        // and the arrival is a fact about the world.
+        const worldRow = this.atHand ? worldLocationFor(this.atHand, place.name) : null;
+        const arrivedAt = worldRow?.name ?? place.name;
+
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, SHORT_ACTION_DAYS, {
             seed: run.seed,
@@ -2879,7 +2897,7 @@ ${noticed}`;
         });
 
         const applied = applyTimeSkip(this.repos, {
-            before: cultivator, run, skip, location: place.name
+            before: cultivator, run, skip, location: arrivedAt
         });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
@@ -2887,7 +2905,7 @@ ${noticed}`;
         // its source so a place walked to and a place read about stay different
         // facts.
         this.noteEncounter(
-            applied.cultivator, run, { kind: 'place', id: place.name, name: place.name },
+            applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
 

@@ -21,6 +21,7 @@ import {
     contributionPerStoneOverDays,
     CONTRIBUTION_BASE
 } from '../../src/engine/encounters/duties';
+import { KnowledgeGate } from '../../src/web/knowledge';
 import { makeGame } from './harness';
 
 function ledger(db: ReturnType<typeof makeGame>['db'], id: string): number {
@@ -58,11 +59,33 @@ describe('the rate comes off the board', () => {
 });
 
 describe('paying into a house', () => {
+    /**
+     * Somebody on a house's roll, whichever house this seed let them hear of.
+     *
+     * The house is asked of the knowledge layer rather than named here. It used
+     * to say "I join the Azure Dew Sect", which worked because a bug made every
+     * cultivator in every run know that one house: the seeder took a GLOBAL
+     * minimum admission bar tie-broken alphabetically on the faction id, so
+     * `sect-azure-dew-sect` won on the letter A everywhere. With the seeding
+     * region-aware, a cultivator born elsewhere has never heard of it, the join
+     * is correctly refused, and the test then measured a donation by somebody
+     * on nobody's roll.
+     */
     async function member(seed: string, purse = 500) {
         const { db, game } = makeGame({ seed, worldEnabled: true });
         const { cultivator } = await game.newRun('Giver');
         db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?').run(purse, cultivator.id);
-        await game.act('I join the Azure Dew Sect');
+
+        const known = new KnowledgeGate(db).awareness(cultivator.id, 'sect');
+        expect(known.length, `seed ${seed} left the cultivator knowing no house to join`)
+            .toBeGreaterThan(0);
+        await game.act(`I join the ${known[0].name}`);
+
+        const roll = db
+            .prepare('SELECT sect_id FROM cultivators WHERE id = ?')
+            .get(cultivator.id) as { sect_id: string | null };
+        expect(roll.sect_id, `joining ${known[0].name} left them on nobody's roll`).toBeTruthy();
+
         return { db, game, cultivator };
     }
 

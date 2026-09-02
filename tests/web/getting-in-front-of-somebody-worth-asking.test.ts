@@ -86,11 +86,25 @@ describe('getting in front of somebody worth asking', () => {
 
         // The gate of one of them, and the province that gate stands in. Both
         // are world rows; neither is invented here.
-        const gate = state.locations.find(row =>
+        //
+        // ACROSS the houses this cultivator can name, not the first row that
+        // happens to match. A fresh life now knows several local houses rather
+        // than one global one, and taking whichever `locations` listed first
+        // picked the Sixmile Wardens (six people, deepest at 14) while the
+        // Gleaners' gate next door held somebody at exactly the rung this test
+        // is about. The claim is that SOME house they can name is worth walking
+        // to; asserting it of an arbitrary one is a different, weaker claim
+        // that fails on the ordering of a list.
+        const reachableGates = state.locations.filter(row =>
             row.kind === 'sect_seat'
             && row.controllingFactionId !== null
             && knownHouseIds.includes(row.controllingFactionId));
-        expect(gate, 'a house the player can name keeps ground somewhere').toBeDefined();
+        expect(reachableGates.length, 'a house the player can name keeps ground somewhere')
+            .toBeGreaterThan(0);
+
+        const gate = reachableGates.find(row =>
+            npcsAt(state, row.id).some(npc => npc.cultivation.realmOrdinal >= WORTH_ASKING))
+            ?? reachableGates[0];
 
         const houseName = state.factions.find(f => f.id === gate!.controllingFactionId)?.name;
         expect(houseName, 'the house has a name').toBeTruthy();
