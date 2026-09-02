@@ -706,6 +706,65 @@ account; with one configured they read the same account in better sentences. Nei
 version can contain a fact the engine did not produce, because neither version is composed
 anywhere else.
 
+### Which surface an emitter reaches, and how to tell
+
+Three passes have converted the mechanical channel from `key=value` telemetry into
+sentences, and the thing that makes the work possible to do wrongly is that **`src/web`
+writes to two surfaces that look identical in the source and are read by different
+people.** The split is decided by exactly one question, and it is answered by tracing
+where the string is assigned, never by the name of the function that built it:
+
+| Where the string is assigned | Where it is read | Format |
+|---|---|---|
+| `EngineFacts.structure` (including `factsForRefusal`'s third argument) | `engineEntries` renders every entry into the **play log**, beside the prose | sentences, every figure kept |
+| `EngineFacts.headline`, `lines`, `prose` | the play log and the narrator | sentences |
+| `SimEvent.summary` | the play log, as `Day N: ...` | sentences |
+| `ToolCallRecord.summary` and `.note` | the **inspector** only - nothing reads a call into the log | a compact field dump is correct here |
+
+The asymmetry is one-directional and worth knowing: `refused()` sources its call summary
+from `facts.structure[0]`, and `structureCalls` builds rows out of structure lines - so
+structure reaches both surfaces and `calls[]` reaches only one. **Where an emitter reaches
+both, the player's surface decides the format.**
+
+The inspector's rows carry `name` and `action` as separate fields with the routine's own
+identifier in a `<code>`, which is why a field dump reads correctly there and does not read
+correctly in a log entry rendered as a line of the transcript.
+
+### A handler name is a second shape of the same defect, and it has three escapes
+
+`withoutTheHandlerName` strips a `module.function:` prefix off every structure line before
+it reaches the log. It is narrow on purpose - lowercase, dotted, no spaces, a colon - and
+three shapes get past it and were found in play: a head with parentheses
+(`getHoldingsOf(sect-x): ...`), a head in capitals (`SECT_ANCESTRY[sect-x].dormant is
+null`), and a handler named **mid-sentence** rather than at the head. The narrowness is
+right, so those were fixed at the string rather than by widening the regex. The six
+surviving `handler.name:` heads are left as they are: the helper is what defends them, and
+rewriting them would leave it with nothing to do and no guard for the next one.
+
+The worst case was general rather than local. `fromToolResult`'s guiding-error branch had
+a comment saying `hint` "is a tool invocation for a developer, and never goes to a player"
+sitting directly above the line that put it on the mechanical channel - written when that
+channel was believed not to reach anybody. Every action-routed tool refusal in the game
+came through it, so an ordinary member asking for a stipend early read
+
+```text
+nothing_accrued. Time is advanced by cultivation_manage.cultivate. Calling stipend
+twice does not pay twice.
+```
+
+The hint now goes to the inspector, where a tool name is the right word, and the log gets
+the ruling said as a ruling.
+
+### Two formatting decisions are centralised, because they had already drifted
+
+- `rungAndOrdinal` in `facts.ts` renders `Qi Condensation Layer 1 (ordinal 0)`. Five
+  modules were deciding it separately.
+- `rankAndIndex` in `standing.ts` renders
+  `Dew Servant of Azure Dew Sect, rank 1 of 5 counting from the bottom (rank index 0)`.
+  Six call sites in `game.ts` were deciding it separately, and each kept only the index -
+  which counts from zero, against a house whose members count from the bottom, so a reader
+  handed `rank_index=4 of 5` could not tell which end it started at.
+
 ---
 
 ## `apply.ts` is the only writer of a time-skip

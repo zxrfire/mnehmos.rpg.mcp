@@ -1263,7 +1263,10 @@ export function factsForMove(
 
     return observable(
         `${destination}.`, lines, prose,
-        [`ambientAfter=${ambientAfter}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
+        // The band names itself in the sentence `describeAmbientInWorld` opens
+        // with - "Qi density thin", "Qi density sealed vein" - so the enum key
+        // in front of it was the same word twice, once as a column value.
+        [`The ground at ${destination}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
     );
 }
 
@@ -1468,8 +1471,11 @@ export function factsForPlaceHistory(
         // the world has not surrendered is the leak this whole path is built
         // to avoid.
         structure: changes.map((c, i) =>
-            `location change ${i}: year ${c.year}, causeKnown=${c.causeKnown}, `
-            + `explanations held locally=${c.attributed.length}.`),
+            `Change ${i + 1} of ${changes.length}, in the year ${c.year.toLocaleString()}: `
+            + (c.causeKnown
+                ? 'the cause is settled and the record here carries it'
+                : 'the cause is not settled here')
+            + `, and ${c.attributed.length} explanation(s) are held locally.`),
         prose: lines.join('\n\n')
     };
 }
@@ -1592,6 +1598,28 @@ function sourcePhrase(sourceKind: string): string {
 }
 
 /**
+ * The same two columns for the structure channel, which wants the distinction
+ * exactly and does not want it in the second person.
+ *
+ * `stance=believes` is a database key; "held as believed" is the thing it
+ * names, and it is not the less precise of the two.
+ */
+function heldFirmness(stance: string): string {
+    if (stance === 'knows') return 'held as known';
+    if (stance === 'believes') return 'held as believed';
+    if (stance === 'suspects') return 'held as suspected';
+    return `held as ${stance.replace(/_/g, ' ')}`;
+}
+
+function heldRoute(sourceKind: string): string {
+    if (sourceKind === 'witnessed') return 'witnessed first-hand';
+    if (sourceKind === 'told') return 'told to them directly';
+    if (sourceKind === 'overheard') return 'overheard';
+    if (sourceKind === 'inferred') return 'inferred, and told to them by nobody';
+    return `arrived by ${sourceKind.replace(/_/g, ' ')}`;
+}
+
+/**
  * What the holder has on one name.
  *
  * Several rows for one query is the ordinary case and is never collapsed. A
@@ -1649,8 +1677,11 @@ export function factsForRecall(
     return {
         headline: held.length === 1 ? `${held[0].name}, and not much of it.` : `${held.length} fragments.`,
         structure: held.map(fact =>
-            `held: "${fact.name}" stance=${fact.stance}, source=${fact.sourceKind}, `
-            + `day=${fact.acquiredOnDay}, earned lines=${fact.earned.length}.`),
+            `"${fact.name}", ${heldFirmness(fact.stance)}, ${heldRoute(fact.sourceKind)}, `
+            + `on day ${fact.acquiredOnDay}. `
+            + (fact.earned.length === 0
+                ? 'Nothing further is earned on it.'
+                : `${fact.earned.length} further line(s) earned on it.`)),
         lines,
         prose: lines.join('\n\n')
     };
@@ -2232,7 +2263,7 @@ export function factsForGroundTime(
         );
     }
 
-    const { room, daysPerYear, chamberRate, fallbackRate, effectiveRate, atNextRank } = entitlement;
+    const { room, share, daysPerYear, chamberRate, fallbackRate, effectiveRate, atNextRank } = entitlement;
     const lines: string[] = [];
 
     // The whole year on ground worth nothing is not a gift, and must not read
@@ -2279,12 +2310,23 @@ export function factsForGroundTime(
         lines,
         lines.join(' '),
         [
-            `groundEntitlementFor: room=${room.id} density=${room.density} band=${room.band}, `
-            + `daysPerYear=${daysPerYear}, chamberRate=${chamberRate ?? 'none'}, `
-            + `fallbackRate=${fallbackRate}, effectiveRate=${effectiveRate}`
-            + (atNextRank
-                ? `, atNextRank[${atNextRank.rankIndex}]=${atNextRank.daysPerYear}d/${atNextRank.effectiveRate}`
-                : ', atTop')
+            `The ground being allotted is ${room.name} (${room.id}), measured at ${room.density}, `
+            + `which is ${room.band} ground. Their share of it is ${share}, taken as a fraction of `
+            + `the whole year, which is the ${daysPerYear} days above rounded to whole days.`,
+            chamberRate === null
+                ? `The house prices no rate for that room, so the whole year runs at the rate off `
+                  + `it, ${fallbackRate} a day, and the allotment buys nothing.`
+                : `${daysPerYear} days in the room at ${chamberRate} a day and the other `
+                  + `${DAYS_PER_YEAR - daysPerYear} at ${fallbackRate} a day come to ${effectiveRate} `
+                  + `a day over the year. The average is taken on the exact share rather than on the `
+                  + `rounded day count, so the two can part company in the last place.`,
+            atNextRank
+                ? `One rung up, at rank index ${atNextRank.rankIndex}, the same arithmetic over the `
+                  + `same house gives ${atNextRank.daysPerYear} days a year and ${atNextRank.effectiveRate} `
+                  + `a day. Everybody else is held still to compute it, so it is what a promotion is `
+                  + `worth and not what the person above is holding.`
+                : 'There is no rung above this one in this house, so there is no further allotment to '
+                  + 'be had by rising.'
         ]
     );
     return facts;

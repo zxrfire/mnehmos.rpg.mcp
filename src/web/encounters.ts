@@ -61,8 +61,11 @@ import {
     type EncounterName,
     type EncounterPerson,
     type EncounterPlace,
-    type EncounterRoll
+    type EncounterRoll,
+    type EncounterStance,
+    type EncounterValence
 } from '../engine/encounters/index.js';
+import { rungAndOrdinal } from './facts.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
@@ -499,6 +502,29 @@ export function consumeArrivals(
     return pending.filter(fact => !arrived.has(fact.factId));
 }
 
+/**
+ * The two encounter enums, resolved to what they name.
+ *
+ * `valence=bad` and `stance=above` are column values. The structure channel is
+ * read by a player as well as by an operator, and `above` in particular is the
+ * single most consequential thing this layer can say - it is the difference
+ * between a fight that was lost and a fight that was never offered - so it says
+ * it rather than filing the key.
+ */
+const VALENCE_IN_WORDS: Record<EncounterValence, string> = {
+    good: 'and it went in this cultivator\'s favour',
+    bad: 'and it went against them',
+    neutral: 'and it went neither way'
+};
+
+const STANCE_IN_WORDS: Record<Exclude<EncounterStance, 'none'>, string> = {
+    engaged: 'It was a real fight, and the combat resolver was handed it.',
+    above: 'Whatever it was stands far enough above that engagement was never on the table. '
+        + 'It did not look up.',
+    beneath: 'Whatever it was stands far enough below that it cost nothing. The room '
+        + 'rearranged itself around them.'
+};
+
 export interface RecordedEncounters {
     /** Merge into `skip.events` and sort by `dayOffset`. */
     events: SimEvent[];
@@ -565,10 +591,17 @@ export function recordEncounters(
         events: roll.occurrences.map(o => o.event),
         lines: roll.occurrences.map(o => o.event.summary),
         structure: roll.occurrences.map(o =>
-            `${o.id} [${o.kind}/${o.valence}] day ${o.dayOffset}` +
-            (o.stance === 'none' ? '' : ` stance=${o.stance}`) +
-            (o.confrontation ? ` threat=${o.confrontation.threatOrdinal} x${o.confrontation.damageMultiplier}` : '') +
-            (o.interrupts ? ' INTERRUPTS' : '')),
+            `Day ${o.dayOffset}: ${o.kind.replace(/_/g, ' ')}, ${VALENCE_IN_WORDS[o.valence]} `
+            + `(catalog row ${o.id}).`
+            + (o.stance === 'none' ? '' : ` ${STANCE_IN_WORDS[o.stance]}`)
+            + (o.confrontation
+                ? ` ${o.confrontation.count} of them, standing at `
+                  + `${rungAndOrdinal(o.confrontation.threatOrdinal)}, and what they land on this `
+                  + `cultivator counts ${o.confrontation.damageMultiplier} times over.`
+                : '')
+            + (o.interrupts
+                ? ' It stopped the span where it stood; nothing dated after it was lived.'
+                : '')),
         learned,
         met
     };
