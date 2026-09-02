@@ -18,6 +18,13 @@ This file is the other half: **what each action is for, what it takes, and which
 reach it**, so that whoever is choosing - a person typing, or a model calling the tool - has
 something to be right against.
 
+**"Bypasses gates" is about AWARENESS and about reach**, and it is worth saying which gates,
+because there is one place it does not apply. `spawn_site` and `grant_knowledge` lift the gate
+that is *you have to have happened to hear of it*; `set_location` lifts the road. **A
+precondition on the actor is a different animal and stays exactly where it is** - see
+[ADMIN &lt;verb&gt;](#admin-verb---forcing-an-attempt-to-land), which decides an uncertain
+outcome and never makes an illegal action legal.
+
 ---
 
 ## The acceptance test for any new action
@@ -160,9 +167,167 @@ by losing a fight they should have won.
 
 ---
 
+## It sets up preconditions, and preconditions must be possible
+
+> - the design owner
+
+That sentence governs everything below it, and it is the whole answer to *what may ADMIN
+arrange*. Three cases from the same conversation, and the middle one is the interesting one:
+
+- **A Qi Condensation patriarch: allowed.** Absurd, unstable, and the point is watching him be
+  replaced. **Improbable is not impossible.**
+- **A 46 weapon: allowed, and it is a scene rather than an edge case.** `MAX_ORDINAL` is 46 so
+  46 is a real rung, while `OBJECT_CEILING_BELOW_THE_LID` is 45 - because an object rated at a
+  rung lets its holder strike at that rung, and a 46 in a mortal hand is a way for somebody at
+  44 to injure a True Immortal. The catalog already says what happens: it does not stay, it goes
+  up, immediately, **with whoever is holding it**, and `artifacts.ts` calls that *"not a route,
+  it is a method of dying"*. Arranging it is arranging a precondition the world has a violent
+  opinion about, and the opinion is the content.
+- **A 47 weapon: refused, and the refusal says "there is no such rung".** Not "too high", which
+  would imply a limit somebody could raise. The ladder ends at 46 and nothing in this world has
+  a meaning for a thing rated above it, so every observation downstream of one would be about a
+  world that does not exist.
+
+The test that separates them is **possible against impossible, never typical against atypical**:
+a precondition must be a state the world has a meaning for. A generator produces the ordinary
+case by construction, so validating against what a generator would have produced would refuse
+every scenario worth arranging - which is the feature.
+
+---
+
+## ADMIN &lt;verb&gt; - forcing an attempt to land
+
+> **Forcing decides an uncertain outcome. It does not make an illegal action legal.**
+
+`ADMIN sect join the Azure Dew Sect` runs the *ordinary* `sect` verb - the same `handleJoin` the
+played game runs, spending what it spends and writing what it writes - and decides the one thing
+the engine was uncertain about, which here is whether the house took them. Phase 1 is skipped
+because the operator named the verb. Nothing else about the turn is different.
+
+The design owner's own case, and the last clause is the purpose:
+
+> *"What admin can do is make success work - like a Qi Condensation stealing from a Nascent
+> Soul. It's very hard, but if it works you can then see what happens next (what that Nascent
+> Soul does), right?"*
+
+The feature is not the theft. It is that the reprisal, standing and rumour systems then have to
+answer a state ordinary play would take thousands of runs to reach, and those are the systems
+least tested and likeliest to be wrong. The law and the mechanism are in
+[`src/server/consolidated/forcing-an-attempt-to-land.ts`](../src/server/consolidated/forcing-an-attempt-to-land.ts),
+and are not restated here.
+
+### A gate stays a gate, and the refusal is directions
+
+The split is **per failure, not per verb**, so there is no table of forty-six. Every refusal in
+this game is already one of two things:
+
+| | | |
+|---|---|---|
+| **A roll** | an uncertain outcome the engine sampled | force lands it |
+| **A gate** | a precondition. Nothing was decided; the world stopped before any uncertainty arose | force leaves it standing and **names the actions that arrange it** |
+
+The worked example, from the design owner, and both halves are about the same house:
+
+> *"Admin can put you in the middle of the Hollow Court and have you successfully
+> charm/seduce the seats. It can't admit you to the Hollow Court below 29, because there simply
+> isn't a way."*
+
+Seducing a seat is a legal attempt with terrible odds - nothing forbids trying, you would simply
+never land it - so force decides it, and what the operator gets is **what the Court does next**.
+Admission below 29 is not a bad chance, it is no chance: the Court takes people at Void
+Refinement and no branch anywhere admits somebody under it. Forcing that would not be arranging
+an unlikely outcome, it would be inventing a state the world cannot reach.
+
+**Why the gate is not lifted, since it is the obvious thing to want.** Two reasons and both are
+load-bearing. Admin can already do it properly - `set_realm`, `set_age`, `grant_progress`,
+`grant_item`, `grant_knowledge`, `set_location` arrange the common preconditions - and a verb
+forced past one would be a *second* way to do a thing this surface already does, which is how
+the forced path and the real path drift until admin stops testing anything. And a state reached
+by removing a precondition is a state the world cannot produce, so an operator looking at it is
+looking at a lie.
+
+So `ADMIN breakthrough` on an empty accumulator answers:
+
+```
+ADMIN - FORCED BREAKTHROUGH
+
+Nothing was decided. The world refused before any uncertain question arose, which means what
+stopped this was a PRECONDITION and not a roll.
+
+What would arrange it:
+
+    ADMIN grant_progress fill=true - fills the accumulator the engine already reads, which is
+    what makes the attempt legal. Then the crossing can be forced.
+
+    ADMIN set_realm ordinal=<rung> - if what is wanted is somebody STANDING at a rung rather
+    than crossing to it, this is the action, and it claims no crossing.
+```
+
+**Every route it has, not the first.** The owner's requirement, in his words: *"it should say
+no, you can do it by setting your realm to 29 and your age."* An operator handed both does the
+thing in two calls; one handed "refused" goes and reads a catalog. **And the two compose**, which
+is the real workflow: arrange the gate with the action that arranges it, then force only what was
+ever uncertain.
+
+### A refusal with no route says so, and offers nothing
+
+An **invariant** is not a gate. One house has one patriarch; innate attributes are rolled once
+and never rise. There is no route, and the honest answer is a flat no - inventing a
+helpful-sounding alternative would be worse, because the operator would go and try it.
+
+**ADMIN keeps no register of what is impossible, and must not grow one.** "One patriarch" is a
+fact about how a roster is built rather than a constant somebody declared, and a hand-kept list
+of such facts goes stale. What enforces an invariant is the ordinary write path, which refuses
+because it cannot express the thing; admin inherits that for free and stays correct as the write
+paths change. The two tables in `forcing-an-attempt-to-land.ts` only decide **what to say after**
+a refusal that has already happened; neither performs a check, and a refusal in neither is
+reported as being in neither rather than guessed at.
+
+### What it never skips
+
+The bill. **Force decides the answer; the verb writes the price**, and it writes it because it is
+the same verb - there is no second implementation. A forced crossing spends the accumulator, takes
+the Price of Advancement and meets the tribulation. A forced approach spends its days and its
+stones and writes the tie, the obligation, and whatever the other party now holds. A forced
+admission writes the membership row at the seat the house's own ladder gives.
+
+**There is deliberately no argument that makes it free.** Not charging is not something this layer
+can do without re-implementing the verb; an operator who wants a success to be affordable arranges
+affordability first. That is `AGENTS.md` on softening, from the other side.
+
+### And it is always marked
+
+Every forced call writes an audit row - `force.<verb>`, with the sentence, the outcome, and which
+decisions were actually reached - and those rows **are** the admin flag, so the run never reaches
+the death ledger or the balance data as though it had earned the success. A played test that
+cannot tell an arranged success from an earned one is testing nothing.
+
+### The grammar
+
+`ADMIN <verb> <the sentence>`, where `<verb>` is a member of the closed playable set in
+`ACTION_NAMES`. The rest of the line goes through the ordinary deterministic parser, so the
+target, intent, topic and duration are read exactly as they are for anybody - what the operator
+settled is **which verb**.
+
+Three playable verbs are also admin words - `move`, `site` and `wait`, aliases of `set_location`,
+`spawn_site` and `advance_days` - and **the admin meaning still wins**, because the action list
+is a contract. `ADMIN force move Nine Peaks` is the unambiguous spelling, and `force` is also
+accepted as `succeed`, `land`, `do` and `play`.
+
+The word is a **lookup against the enum**, never a reading of prose: same discipline as
+`PRIMARY_ARG` and `BARE_NUMBER_ARG`, and for the reason recorded beside the withdrawn alignment
+draft in `admin-manage.ts` - a word lifted out of a sentence cannot be told from a word that is
+part of a name.
+
+`force` appears in the action list and **refuses on the MCP tool path**, naming where the door is.
+A playable verb runs inside a run, through `GameService`; the tool holds repositories and has no
+run, and building a second way to execute a verb is the duplication the whole design forbids.
+
+---
+
 ## The actions
 
-Eleven, and the two `READ` ones write nothing. Every other one performs a real deterministic
+Fourteen, and the three `READ` ones - `help`, `roster`, `audit_log` - write nothing. Every other one performs a real deterministic
 mutation and returns what the engine actually did.
 
 **Arguments are `key=value`**, and a value runs to the **next key**, not to the next space,
@@ -198,6 +363,8 @@ action with none leaves the prose alone and refuses in its own words.
 | `advance_days` | Real time through `simulateTimeSkip` at idle focus: real aging, hunger, stagnation, death. Says how much ran and what stopped it. | `days`, `months`, `years`, `rations` |
 | `grant_progress` | Fills the qi-unit accumulator so a crossing can be **attempted**. Rolls nothing. | `amount`, `fill` |
 | `set_realm` | Moves the player on the ladder through `advanceRealm`: peak stamped, progress cleared, stagnation clock restarted. | `ordinal` |
+| `set_age` | Moves the age through the repository's own delta path, up or down. **No life was lived** - the clock does not move and nothing happened in between; `advance_days` is the action that spends a life. Refuses an age past the rung's lifespan, because that is a death the survival check has not been asked about yet, and names the two routes. | `age` |
+| `force` | **Runs an ORDINARY VERB with the attempt landing.** Typed at the game as `ADMIN <verb> <sentence>`. Decides an uncertain outcome; never makes an illegal action legal. Refuses on this tool's own path, because a playable verb needs a run. | `verb` |
 | `grant_knowledge` | **Lifts the awareness gate wide.** Makes every place, every house, or one named either, nameable by this cultivator. They already exist; what changes is whether their names can be said. | `kind`, `name` |
 | `reset` | **Ends this run and begins another.** Closes the current run with no death cause - it did not die - flags it admin so it never reaches the ledger, and opens a fresh birth in the SAME world. Handled in `game.ts` rather than here: runs are written there and nowhere else, and a tool handler ending one would be a second writer. | a name, optional |
 
@@ -237,6 +404,11 @@ arguments, which is the property that makes reading prose safe at all.
 | reset / restart / reroll / regenerate | `reset`, keeping the current name |
 | reset Shen Yuan | `reset`, with that name |
 | what can you do / how do I ... | `help` |
+| I join the Azure Dew Sect, and it must land | `ADMIN sect join the Azure Dew Sect` |
+| I steal from that Nascent Soul, and it must land | `ADMIN interact I steal from <them>` |
+| make the crossing succeed | `ADMIN breakthrough` - refused while the accumulator is empty, and it says so |
+| I am 250 years old | `set_age age=250` |
+| set_age 250 (a bare number, nothing else) | `set_age age=250` |
 
 **An alias is not a named action.** `give` is an alias of `grant_item`, so *"give me knowledge
 of every sect"* used to be refused with "nothing in the pill, herb or artifact catalogs answers
@@ -255,7 +427,10 @@ Two rules keep this honest, and they are the entire licence for accepting prose:
 
 A sentence can only ever *address* the surface. It can never assert an outcome:
 `ADMIN make my breakthrough succeed` names no capability and is refused, and there is no
-phrasing of it that is not.
+phrasing of it that is not. What is reachable is
+[`ADMIN breakthrough`](#admin-verb---forcing-an-attempt-to-land), which is not the same thing:
+it runs the crossing, it decides the roll and not the eligibility, and it is refused outright
+while the accumulator is empty.
 
 ### What a person is described as
 
@@ -334,21 +509,83 @@ Ordinary play reaches Core Formation in about one run in a hundred and eighty, s
 barely run above Foundation at all. From here it is one line. **A bad narration after an admin
 call is a finding about phase 3**, not about admin.
 
-## What the model does not see
+## What the model may decide, and what it may never
 
-**No model reads an ADMIN line.** It is dispatched at the top of `act`, before phase 1, so no
-model parses it and no model can be steered through it. Every phrasing on this page is read
-deterministically, in `admin-said-as-a-sentence.ts`.
+> *"'No model reads an ADMIN line' - this can be broken. Admin messages go the same way as
+> regular messages."*
+> - the design owner
 
-**The situation it arranges is narrated like any other**, by whichever narrator is
-configured. Those are two different things and only the first is closed to a model: the
-command is never read by one, and the world it leaves is described by one whenever one is
-running. That is what makes an admin call useful for looking at states ordinary play almost
-never reaches - and it is why a bad narration after one is a finding about phase 3.
+**An admin line travels the same road as anything else somebody types**, through whichever
+tier is configured. The old rule said no model ever read one, and it was retired deliberately
+rather than eroded, for the reason the owner gave: *"that's how we test with admin - because
+the LLM layer needs testing too."* A surface built for arranging hard-to-reach situations that
+could never exercise the layer reading them was testing half of what it should.
 
-That is a real limit and not only a safety property. *"spawn a void tempering tortoise in
-human form in front of me"* is refused - "tortoise" is not a subject noun, and nothing infers
-a rung from "void tempering". The same thing is reachable spelled the surface own way:
+So an admin line is now a test of **two** things at once:
+
+1. **The engine.** You arrange a precondition and watch a law produce a result nobody
+   stipulated. Unchanged, and still the main event.
+2. **The reading layer.** Can the tier that is running turn an operator's sentence into the
+   right call? That is a genuinely hard input - `give myself chaos healing pill` has no catalog
+   spelling in it, a grade word, a kind word, a name fragment and a pronoun that is not an
+   argument at all - and **ordinary play never produces sentences shaped like that**, so the
+   reading layer has never been tested on them.
+
+**The four tiers will not agree, and the disagreement is the measurement rather than a defect
+list.** Expect the ordering to be monotonic - Claude at least as good as Ollama, Ollama at
+least as good as the in-process embedding, that at least as good as the browser tier. **An
+inversion is the finding to chase**, not a difference.
+
+And the deterministic tiers are not trying to be a model. Their bar is **playable**: reading
+the grade and the kind off closed sets and then asking which of seven chaos-grade pills you
+meant is a *good* answer at that rung. Their failures should be useful rather than silent -
+which is why `grant_item` refuses with the rows it weighed, spelled the way this surface takes
+them, instead of three unrelated examples.
+
+### The invariant that did not move
+
+**The model may read the line and phrase the answer. It may never decide the outcome.**
+
+The old rule was never really about determinism - it was about admin being unable to *invent* a
+world. A model reading "chaos healing pill" and resolving it to a catalog row invents nothing:
+it is a lookup against a closed catalog, the same operation `ordinalNamed` performs when it
+turns "Core Formation" into a rung. A model deciding that the grant *succeeded* would invent
+one, and that stays impossible **by construction rather than by instruction** - there is no
+argument anywhere on this surface that takes an outcome, and
+[forcing](#admin-verb---forcing-an-attempt-to-land) decides only questions the engine was
+already going to ask.
+
+**Refusals stay facts produced by code.** *"There is no such rung"*, *"the Court admits at Void
+Refinement"*, *"admin does not invent items"* - a model may phrase those; it may not decide
+them.
+
+### Which is why the READ AS echo matters more, not less
+
+With four readers of differing quality, **a silent wrong resolution is the failure mode this
+change introduces**, and the echo is the only defence. So every call prints what it ran and
+what was read as what - and a resolved item prints **the catalog id it landed on**, not just
+the argument that was parsed:
+
+```
+ADMIN · READ AS
+You typed:  give myself a chaos grade tribulation pill
+ADMIN ran:  ADMIN grant_item kind=pill name=chaos tribulation
+...
+Chosen because: described as "chaos tribulation", read as grade chaos, name word(s)
+"tribulation", and resolved to the one row that answers all of it: pill-tribulation-guiding
+```
+
+That last line is what an operator checks. It was added after a measured near-miss: *"a heaven
+grade herb"* resolved to the **Heavenly Tribulation Cinder Fruit** at 80/100 on the letters of
+"heaven", and that fruit is chaos grade. Confident, plausible and wrong. A grade word in the
+line is now a **fact about which rows can answer** and beats letter similarity outright.
+
+### And a name the reader has no noun for is still refused
+
+*"spawn a void tempering tortoise in human form in front of me"* is refused by the
+deterministic reader - "tortoise" is not a subject noun, and nothing infers a rung from "void
+tempering". That is a limit of that tier rather than a law, and the same thing is always
+reachable spelled the surface's own way:
 
 ```
 ADMIN spawn_encounter name=Void-Tempering Tortoise in Human Form ordinal=29
@@ -449,5 +686,8 @@ And the banner under every admin response stays exactly as it is:
 | The law, the actions, the handlers | [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
 | Reading a typed sentence | [`src/server/consolidated/admin-said-as-a-sentence.ts`](../src/server/consolidated/admin-said-as-a-sentence.ts) |
 | The suggestion floor | `SUGGESTION_NOISE_FLOOR` in [`src/utils/fuzzy-enum.ts`](../src/utils/fuzzy-enum.ts) |
-| Where `ADMIN` is intercepted in play | `adminAct` in `src/web/game.ts` - **before the narrator ever sees the input**, so no model is in the loop on that path |
+| Where `ADMIN` is intercepted in play | the ADMIN branch of `act` in `src/web/game.ts`, which routes a named playable verb to the forced path and everything else to `adminAct` |
+| Forcing an attempt to land: the law, the decisions, the routes | [`src/server/consolidated/forcing-an-attempt-to-land.ts`](../src/server/consolidated/forcing-an-attempt-to-land.ts) |
+| Reading `ADMIN <verb>` | `readAForcedVerb` in [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
+| Where a forced verb is dispatched, and its receipt written | `act` and `receiptForAForcedVerb` in `src/web/game.ts` |
 | The ladder, the ceiling, the breaths | [`src/engine/cultivation/realms.ts`](../src/engine/cultivation/realms.ts) |
