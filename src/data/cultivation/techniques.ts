@@ -1271,6 +1271,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hundred-cut-flying-blade',
+        // `subject` is what an art is ABOUT, and the sword arts are the only
+        // rows in this catalog that carry one. See the note beside
+        // `SWORD_SUBJECT` below for why these five and nothing else.
+        subject: 'sword',
         name: 'Hundred-Cut Flying Blade',
         category: 'attack',
         grade: 'mortal',
@@ -1336,6 +1340,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'nine-rivers-sword-chant',
+        subject: 'sword',
         name: 'Nine Rivers Sword Chant',
         category: 'attack',
         grade: 'earth',
@@ -1448,6 +1453,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'void-piercing-sword-domain',
+        subject: 'sword',
         name: 'Void-Piercing Sword Domain',
         category: 'attack',
         grade: 'heaven',
@@ -1538,6 +1544,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'star-quenching-blade-domain',
         // A domain that comes down as a lattice of falling edges. It is named for the volume it occupies.
         reach: 'field',
+        subject: 'sword',
         name: 'Star-Quenching Blade Domain',
         category: 'attack',
         grade: 'immortal',
@@ -1866,6 +1873,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'gale-riding-sword-flight',
+        subject: 'sword',
         name: 'Gale-Riding Sword Flight',
         category: 'movement',
         grade: 'earth',
@@ -3751,6 +3759,61 @@ const TECHNIQUES_BY_REQUIRED_ORDINAL: readonly (readonly TechniqueEntry[])[] = (
 
 export function getTechnique(id: string): TechniqueEntry | undefined {
     return TECHNIQUE_BY_ID.get(id);
+}
+
+/**
+ * The sword is a school, and flight on a blade belongs to it.
+ *
+ * Ruled by the design owner: flight on one's own sword is not a rung anybody
+ * with a metal root reaches at Foundation. It belongs to sword cultivators - to
+ * sword schools with sword arts - and `gale-riding-sword-flight` gated on
+ * `requiredOrdinal` and an element and on nothing else, which let anybody with
+ * a metal root at 15 simply have it.
+ *
+ * The gate is built out of `subject`, which `TechniqueSchema` has always
+ * carried and which `daoMatches` in `engine/cultivation/dao.ts` has always
+ * read. It was populated on nothing until this ruling. Five rows carry it now
+ * and they are exactly the arts whose whole subject is the blade - the flying
+ * blade, the river chant, the two domains, and the flight itself.
+ *
+ * WHY NOT ELEMENT. `element: 'metal'` is what an art is made OF, and the
+ * Pavilion's shelf is metal end to end including a golden bell and a thread
+ * flicked off a fingertip, neither of which is a sword. Element and subject are
+ * different questions and reading one for the other is what produced the hole.
+ *
+ * WHY NOT THE DAO GATE. `daoGate` fires at immortal and chaos grade only, and
+ * the flight is earth grade. Demanding Dao standing of a Foundation cultivator
+ * would close the art to everybody including the house that teaches it.
+ *
+ * AND `'sword'` IS THE WORD THE REST OF THE ENGINE ALREADY USES, which is the
+ * reason these rows are worth having beyond the gate.
+ * `engine/cultivation/understanding.ts` mints insights as
+ * `{ domain: 'weapon', subject: 'sword' }` - from a sword tomb, and from the
+ * outer library an origin can grow up in - and `SUBJECT_DOMAINS` maps `sword`,
+ * `spear` and `blade` to the weapon domain. `SUBJECT_BY_CATEGORY` below
+ * defaults every attack art to the subject `'weapon'`, which is a DOMAIN name
+ * and matches no insight anywhere in the world, so a cultivator who understood
+ * the sword got no bonus on the sword arts and could not have. Naming these
+ * five for what they are about closes that, and `daoName('sword', 'weapon')`
+ * reads out as "the Dao of the Sword" without anything else being touched.
+ *
+ * The consumer is `couldFlyOnTheirOwnBlade` in
+ * `engine/world/what-a-conveyance-does-to-a-journey.ts`, which is what makes
+ * this a live rule rather than a field: flight is one row of the conveyance
+ * ladder, so a sword house's parties move differently from a richer
+ * neighbour's, and that is the whole of what the exclusivity buys.
+ */
+export const SWORD_SUBJECT = 'sword';
+
+/** Every art whose subject is the blade, strongest requirement last. */
+export const SWORD_ARTS: readonly TechniqueEntry[] = TECHNIQUES
+    .filter(t => t.subject === SWORD_SUBJECT)
+    .slice()
+    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
+
+/** Whether this art is one of the school's. Read off the row, never a list. */
+export function isSwordArt(techniqueId: string): boolean {
+    return getTechnique(techniqueId)?.subject === SWORD_SUBJECT;
 }
 
 /** Throwing variant, for engine paths where a missing id is a bug, not input. */
