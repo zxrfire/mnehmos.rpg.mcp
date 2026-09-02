@@ -146,7 +146,18 @@ describe('the ground under the cultivator, on the wire', () => {
 
         // Occupancy on every row the world holds a record for, and at least one
         // destination that is not a settlement.
-        expect(where.narration).toMatch(/drawing on it|Nobody is drawing on it/);
+        //
+        // This matched "drawing on it" until the read stopped printing a
+        // headcount. It was asserting the phrasing of a defect: `occupants` is
+        // a LIVE count off the world and every row here is a place the player
+        // has never been, so the sentence it matched was a sensor reading on
+        // somewhere unseen. Re-derived to what the assertion was actually for -
+        // that occupancy is reported on these rows at all - rather than
+        // reverted. See `where-this-cultivator-could-go.ts` and
+        // `a-place-you-have-never-been-is-hearsay.test.ts`.
+        expect(where.narration).toMatch(
+            /comfortably carries a draw of \d+|over the draw of \d+|[Nn]obody is said to draw on it/
+        );
         expect(where.narration).toMatch(/a cave|the wilds|a spirit vein/);
     }, 60_000);
 });

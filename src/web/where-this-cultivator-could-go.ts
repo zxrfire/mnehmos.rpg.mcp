@@ -43,6 +43,44 @@
  *
  * The count is the honest middle: "and four names you cannot place" tells a
  * player their map has holes in it without filling one of them in.
+ *
+ * ── THIS READ IS REPUTATION, NOT PERCEPTION ──────────────────────────────
+ *
+ * Ruled after the ground panel on the sheet was found reporting a masked
+ * measurement as `0% RATE`, which put the question the other way round: the
+ * SHEET masks the surveyor's figures for anybody who cannot read a vein, and
+ * this read was handing the same cultivator exact figures for places they had
+ * never been to.
+ *
+ * The two are not the same kind of knowing, and the answer is not to mask this
+ * one to match:
+ *
+ *   THE SHEET is perception. You are standing on this ground and reading it
+ *             with your own senses. Below Core Formation you cannot, and
+ *             `what-you-can-tell-about-the-ground.ts` is right to mask it.
+ *   THIS READ is reputation. You have never been to Mudsummer and are not
+ *             perceiving anything - you have HEARD what it is like. That a
+ *             valley runs deep is knowable to a farm child, and needs somebody
+ *             to have mentioned it rather than a rung on the ladder.
+ *
+ * So the register here is what is SAID about a place. Everything this read
+ * prints is a standing property that survives being passed along - the kind,
+ * the band, the road, the ceiling, the draw the ground carries. See `crowd` for
+ * the one field that was not, and the measurement that separated them.
+ *
+ * ── WHAT THE ENGINE DOES NOT MODEL YET ───────────────────────────────────
+ *
+ * Places have no reputation record. The shape reported here is derived from the
+ * world's current state at the moment of asking, so it is a reputation that is
+ * never stale, never wrong, and no better for somewhere nearby than for
+ * somewhere a month's walk away - and a real one would be all three. The
+ * knowledge layer carries stances and sources for NAMES (`hearsay.ts`,
+ * `travellers.ts`) and carries no figure alongside them, so there is nowhere to
+ * put a remembered occupancy without building one.
+ *
+ * That is a design question rather than a tuning constant and it has not been
+ * put to anybody. What is fixed here is only the part that was plainly wrong:
+ * a live headcount presented as a measurement of somewhere unseen.
  */
 
 import { MAX_ORDINAL, rankName } from '../engine/cultivation/realms.js';
@@ -103,6 +141,14 @@ export interface Destination {
      * nobody on it beat `normal` ground with a crowd by 2.7x. A player choosing
      * where to spend forty years off the band alone is choosing on the wrong
      * number.
+     *
+     * **Read for its SHAPE and never printed.** The caller fills this from
+     * `npcsAt(world, id).length`, which is a live headcount of a place this
+     * cultivator has never seen, and every row in this read is such a place.
+     * `crowd` uses it only to decide empty / comfortable / over, which is the
+     * part a reputation can carry. If you find yourself interpolating it into a
+     * sentence, read `crowd`'s header first - that is the defect this comment
+     * exists to stop coming back.
      */
     occupants: number | null;
     /** Mortal-equivalent draw the ground carries comfortably. */
@@ -231,15 +277,48 @@ function distance(place: Destination): string {
  * looked like a rate here would be a second opinion about one the sheet already
  * states. What it says is empty, comfortable, or over - which is the shape of
  * the decision.
+ *
+ * ── AND IT SAYS THE SHAPE RATHER THAN THE COUNT ──────────────────────────
+ *
+ * That last sentence was already true of the design and false of the code: the
+ * clause named the shape and then printed `occupants`, which is
+ * `npcsAt(world, id).length` - THIS INSTANT'S headcount, read live off the
+ * world, for a place the player has never been to. Every row in this read is
+ * somewhere they are not: `whereCouldTheyGo` filters `hereNow` out, so there
+ * was no case where the count was something they could have seen.
+ *
+ * This read is REPUTATION, not perception. A farm child can know the next
+ * valley runs deep without cultivating a day - somebody mentioned it - and
+ * `docs/world/discovery.md` is content with that. What nobody can know is how
+ * many people are standing there this morning.
+ *
+ * The two are separable, and measured over 5 seeds and 90 settlements advanced
+ * 40 years in 5-year steps:
+ *
+ *   the COUNT changed at 60% of steps.
+ *   the SHAPE - empty, comfortable, over - changed at 5%.
+ *
+ * A twelvefold difference, and the shape's changes are near enough all single
+ * monotonic transitions: a place fills up over decades and its reputation
+ * catches up, which is a reputation behaving correctly. So the shape is a
+ * standing characterisation and can honestly be said about somewhere unseen;
+ * the count is a sensor reading and cannot.
+ *
+ * `supportedDraw` stays, and is not the same kind of fact: it is
+ * `carryingCapacityFor(density)`, a property of the ground that held constant
+ * across every one of those 40-year runs. It is also the anchor the mechanic is
+ * taught on, and losing it would cost the player the comparison this read
+ * exists to support.
  */
 function crowd(place: Destination): string {
     if (place.occupants === null || place.supportedDraw === null) return '';
-    if (place.occupants === 0) return ' Nobody is drawing on it.';
+    if (place.occupants === 0) return ' Nobody is said to draw on it at all.';
     const over = place.occupants > place.supportedDraw;
     return over
-        ? ` ${place.occupants} are drawing on ground that comfortably carries `
-          + `${place.supportedDraw}, and every one of them is slowing the rest.`
-        : ` ${place.occupants} drawing on it, which it carries comfortably.`;
+        ? ` It is spoken of as over the draw of ${place.supportedDraw} it comfortably `
+          + `carries, with everybody on it slowing the rest.`
+        : ` It comfortably carries a draw of ${place.supportedDraw}, and nobody speaks of `
+          + `it as crowded.`;
 }
 
 /**
@@ -273,12 +352,33 @@ function mechanicalRow(place: Destination, standingCeiling: number): string {
     clauses.push(place.ambient
         ? QI[place.ambient]
         : 'no band stated, a province being a distribution rather than one ground');
+    // The count is deliberately absent. See `crowd` above: `occupants` is a
+    // live headcount of somewhere this cultivator has never been, and this
+    // channel is read by the player. What the engine acted on is the shape and
+    // the capacity, and that is what is shown - the channel's promise is that
+    // the arithmetic behind what you were told is visible, not that every field
+    // the world holds is.
+    //
+    // Why the absence is explained ONCE, by `occupancyIsReported`, and not on
+    // every row: this file already learned that lesson from `travelDays`. A
+    // true clause repeated against eight rows buries the rows it is not true
+    // of.
     clauses.push(occupants === null || supported === null
         ? 'no occupancy on record'
+        // Empty is its own band in `crowd`, so it has to be its own band here.
+        // Without this the prose said "Nobody is said to draw on it at all" and
+        // this channel said "occupancy said to sit inside the draw of 47" about
+        // the same spirit vein in the same answer - two surfaces disagreeing
+        // about one fact, which is the drift the engine channel exists to make
+        // impossible rather than to demonstrate.
+        : occupants === 0
+        ? 'nothing said to be drawing on it'
         : occupants > supported
-            ? `${occupants} drawing on ground that comfortably carries ${supported}, `
+            // Capitalised because the clauses are joined with '. ' and this one
+            // is never first - the band clause is always pushed ahead of it.
+            ? `Occupancy said to run over the draw of ${supported} it comfortably carries, `
               + 'which is over it'
-            : `${occupants} drawing on ground that comfortably carries ${supported}`);
+            : `Occupancy said to sit inside the draw of ${supported} it comfortably carries`);
 
     // The ceiling only earns a clause where it DIFFERS from the one the header
     // just stated for the ground they are standing on. Repeating "no ceiling -
@@ -312,6 +412,32 @@ function unpricedRoads(sorted: readonly Destination[]): string | null {
         + 'The catalog prices roads between provinces and prices nothing between two '
         + 'settlements of one, so those are unpriced rather than near: no distance was '
         + 'assumed for them.';
+}
+
+/**
+ * Why no row states a headcount, said once for the whole read.
+ *
+ * The engine channel's standard is exact and checkable, so a figure that is
+ * deliberately not there has to say so - otherwise the honest reading of its
+ * absence is that nobody thought of it. Stated once rather than per row for the
+ * reason `unpricedRoads` exists: a true clause repeated against every line
+ * buries the lines it is not true of, which is exactly how `travelDays=unstated`
+ * went wrong here before.
+ */
+function occupancyIsReported(sorted: readonly Destination[]): string | null {
+    const measured = sorted.filter(
+        place => place.occupants !== null && place.supportedDraw !== null
+    ).length;
+    if (measured === 0) return null;
+    const which = measured === sorted.length
+        ? (measured === 1 ? 'The one row' : 'Every row')
+        : `${measured} of these ${sorted.length} rows`;
+    const verb = measured === 1 || measured === sorted.length ? 'gives' : 'give';
+    return `${which} ${verb} occupancy as its shape - empty, inside what the ground `
+        + 'carries, or over it - and never as a count. These are places this cultivator '
+        + 'has not been to, so a count would be a headcount of somewhere unseen. The shape '
+        + 'is what survives being passed along: measured over 5 seeds and 90 settlements '
+        + 'across 40 years, the count moved at 60% of five-year steps and the shape at 5%.';
 }
 
 /**
@@ -448,6 +574,9 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
 
     const unpriced = unpricedRoads(sorted);
     if (unpriced) structure.push(unpriced);
+
+    const occupancyNote = occupancyIsReported(sorted);
+    if (occupancyNote) structure.push(occupancyNote);
 
     if (input.unplaceable > 0) {
         lines.push(
