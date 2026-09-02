@@ -81,6 +81,7 @@ import {
     WHY_THEY_ARE_SELLING,
     WHY_IT_STAYS_WHERE_IT_IS,
     type AThingInSomebodysHands,
+    type WhyTheyWouldPartWithIt,
     type AnOfferStandingHere,
     type SomebodyStandingHere,
     type WhatThisPersonWouldDo
@@ -349,7 +350,51 @@ export function linesForOffers(
     purseStones: number
 ): string[] {
     if (offers.length === 0) return [];
-    const lines = ['Not everything here is on a stall. People are carrying things too:'];
+
+    // ── THE REASON IS A HEADING, NOT A REFRAIN ───────────────────────────
+    //
+    // The why is the part a stall cannot have and it is worth its length, and
+    // it was appended to every single row. Measured in a played run: four
+    // people in one market town, all four selling because they were short, and
+    // the answer carried "They need the stones more than they need it, and they
+    // are not pretending otherwise. The price is what somebody who has to sell
+    // today asks." four times in nine lines. A player skims a block like that
+    // and stops reading the rows as well, which costs them the one fact per
+    // line that WAS different.
+    //
+    // So the offers are grouped by the situation that produced them: the
+    // situation once, the people under it. Nothing is dropped - every offer
+    // still carries its reason, it is simply stated where it applies to all of
+    // them at once. The grouping is also the more useful shape, because "who
+    // here is desperate" is the question a buyer is actually asking.
+    const byReason = new Map<WhyTheyWouldPartWithIt, AnOfferStandingHere[]>();
+    for (const offer of offers) {
+        const group = byReason.get(offer.why);
+        if (group) group.push(offer);
+        else byReason.set(offer.why, [offer]);
+    }
+
+    const lines = ['Not everything here is on a stall. People are carrying things too.'];
+    for (const [why, group] of byReason) {
+        lines.push(WHY_THEY_ARE_SELLING[why]);
+        lines.push(...rowsForOffers(group));
+    }
+
+    const within = offers.filter(o => o.askStones <= purseStones).length;
+    lines.push(
+        within === 0
+            ? `The purse holds ${purseStones}, which is short of every one of those.`
+            : within === offers.length
+                ? `The purse holds ${purseStones}, which covers any of them.`
+                : `The purse holds ${purseStones}: ${within} of those ${offers.length} `
+                  + 'are within it.'
+    );
+    return lines;
+}
+
+/** One line each: who, what, what it costs, where it opens and stops. */
+function rowsForOffers(offers: readonly AnOfferStandingHere[]): string[] {
+    const lines: string[] = [];
     for (const offer of offers) {
         // ── WHOSE IT IS, SAID ONLY WHEN IT IS SOMEBODY'S ─────────────────
         //
@@ -373,23 +418,13 @@ export function linesForOffers(
         lines.push(
             `  ${offer.sellerName} would let a copy of ${offer.name} go for `
             + `${offer.askStones} spirit stone${offer.askStones === 1 ? '' : 's'}. `
-            + reach
-            + WHY_THEY_ARE_SELLING[offer.why]
+            + reach.trimEnd()
             + (house
                 ? ` It is the ${house.name}'s, and they are not one of theirs - somebody will `
                   + 'want to know where you got it.'
                 : '')
         );
     }
-    const within = offers.filter(o => o.askStones <= purseStones).length;
-    lines.push(
-        within === 0
-            ? `The purse holds ${purseStones}, which is short of every one of those.`
-            : within === offers.length
-                ? `The purse holds ${purseStones}, which covers any of them.`
-                : `The purse holds ${purseStones}: ${within} of those ${offers.length} `
-                  + 'are within it.'
-    );
     return lines;
 }
 

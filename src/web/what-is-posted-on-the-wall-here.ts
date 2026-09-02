@@ -36,6 +36,7 @@ import {
     billsOnTheWall,
     whatABillGrants,
     WHAT_THE_PAPER_GIVES_AWAY,
+    THE_SAME_TELL_AGAIN,
     type DoorInTheField,
     type PostingGround,
     type RecruitingBill
@@ -171,6 +172,20 @@ export function readTheWall(
     const learned: string[] = [];
     const lines: string[] = [];
     const newLines: string[] = [];
+    // The reading is said in full the first time its kind appears on this wall
+    // and shortened after that. Tracked separately for the two lists, because
+    // a caller may render either one on its own and neither may be missing the
+    // full reading for a kind it contains.
+    const saidInFull = new Set<string>();
+    const saidInFullAmongTheNew = new Set<string>();
+    const readingFor = (why: string, said: Set<string>): string => {
+        const full = !said.has(why);
+        said.add(why);
+        return full
+            ? WHAT_THE_PAPER_GIVES_AWAY[why as keyof typeof WHAT_THE_PAPER_GIVES_AWAY]
+            : THE_SAME_TELL_AGAIN[why as keyof typeof THE_SAME_TELL_AGAIN];
+    };
+
     for (const bill of bills) {
         const grant = whatABillGrants(bill);
         const isNew = knowledge.learnIfNew({
@@ -178,11 +193,10 @@ export function readTheWall(
             onDay,
             ...grant
         });
-        const line = `${bill.saying} ${WHAT_THE_PAPER_GIVES_AWAY[bill.why]}`;
-        lines.push(line);
+        lines.push(`${bill.saying} ${readingFor(bill.why, saidInFull)}`);
         if (!isNew) continue;
         learned.push(bill.houseName);
-        newLines.push(line);
+        newLines.push(`${bill.saying} ${readingFor(bill.why, saidInFullAmongTheNew)}`);
     }
 
     return { bills, lines, newLines, learned };
