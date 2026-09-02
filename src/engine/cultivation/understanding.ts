@@ -868,7 +868,16 @@ const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
     debt: 'karma'
 };
 
-function domainForSubject(subject: string): InsightDomain {
+/**
+ * Which domain a free-form subject belongs to.
+ *
+ * Exported because a fight is another way of coming near something - see
+ * `what-a-fight-teaches.ts` - and the alternative was a second copy of this
+ * table beside the first. Two tables that answer "is the sword a weapon" would
+ * drift, and the one that drifted would be whichever was not in front of the
+ * next person to add a subject.
+ */
+export function domainForSubject(subject: string): InsightDomain {
     return SUBJECT_DOMAINS[subject] ?? 'weapon';
 }
 
