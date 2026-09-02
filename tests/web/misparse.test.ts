@@ -213,7 +213,26 @@ describe('the fallback is inert', () => {
             // Looking at what is in front of you and thinking about it. It
             // reads the holder's own knowledge rows and the one art the
             // sentence already named, so it can neither teach nor spend.
-            'recognise'
+            'recognise',
+            /**
+             * A match, and saying no to one. Both are in the position
+             * `interact` is in and are here for its reason rather than
+             * because they are free.
+             *
+             * `propose` costs nothing while it is a question - asking what a
+             * house would take is a sentence - and spends the resolver's own
+             * days the moment something is put on the table, which is the same
+             * shape every attempt in this game has. `decline` spends no day at
+             * all and is emphatically not inert: refusing somebody who staked
+             * something opens an account, and running out of a match reopens
+             * whatever the match was closing. What protects a misparse landing
+             * on either is that neither can reach a record without a party
+             * resolving and something having been staked.
+             *
+             * `child` is deliberately absent from this list and present in the
+             * timed one, because the whole of what it costs is years.
+             */
+            'propose', 'decline'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -298,7 +317,13 @@ describe('through the front door', () => {
         ).run(cultivator.id);
 
         const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
-        const result = await game.act('I ponder the nature of the Lid for a while');
+        // A sentence whose every word is a function word or a placeholder.
+        // It has to be one the meaning tier also refuses, and that tier
+        // refuses this one for a reason rather than by a score: a sentence
+        // that names nothing cannot mean something, whatever it resembles.
+        // The sentence this used to use - pondering the nature of the Lid -
+        // now reaches `investigate`, correctly, which is the tier working.
+        const result = await game.act('I get on with it');
 
         // Not one day, not one point of satiety, not one row.
         expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
@@ -420,7 +445,10 @@ describe('every verb is reachable from plain English', () => {
         // The trust hierarchy's strongest check, asked the way somebody
         // would ask it. It sits one word from `recall`'s "do I know" and
         // the art noun is what keeps the two apart.
-        recognise: 'do I recognise this style'
+        recognise: 'do I recognise this style',
+        propose: 'I propose a match to Bai Jinglu',
+        decline: 'I refuse the match',
+        child: 'I have a child with Bai Jinglu'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {
