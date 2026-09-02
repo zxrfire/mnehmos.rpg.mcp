@@ -71,6 +71,7 @@ import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
 import type { ObjectRecord } from './possessions.js';
+import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTIONS
@@ -315,6 +316,17 @@ export interface WorldState {
     /** Things worth arguing about: possession, ownership, claim, provenance. */
     objects: ObjectRecord[];
     /**
+     * What is true of an area now, and stops being true later.
+     *
+     * A famine, a pass held, a beast tide running, a district worked out, a
+     * war. The counterpart to `LocationChange`, which is what a place BECAME
+     * and is permanent: this is what is true of it for a while. Availability of
+     * mundane goods is read off here rather than counted anywhere, which is the
+     * whole of the design - a famine stops the millet; travellers buying meals
+     * never caused one. See `what-is-true-of-a-place-right-now.ts`.
+     */
+    statuses: AreaStatus[];
+    /**
      * Lives that have been played in this world, oldest first.
      *
      * The world outlives its runs. Permadeath is enforced on the cultivator -
@@ -428,6 +440,7 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         lineages: [],
         opportunities: [],
         objects: [],
+        statuses: [],
         runs: [],
         ascensions: [],
         populationTarget: 0,
@@ -514,6 +527,18 @@ export function upsertObject(state: WorldState, object: ObjectRecord): WorldStat
 
 export function upsertOpportunity(state: WorldState, opp: OpportunityWindow): WorldState {
     return { ...state, opportunities: replace(state.opportunities, o => o.id === opp.id, opp) };
+}
+
+export function getAreaStatus(state: WorldState, id: string): AreaStatus | null {
+    return state.statuses.find(s => s.id === id) ?? null;
+}
+
+/**
+ * Write a status. The only path, so beginning one, lifting one and extending
+ * one are the same call with a different record.
+ */
+export function upsertAreaStatus(state: WorldState, status: AreaStatus): WorldState {
+    return { ...state, statuses: replace(state.statuses, s => s.id === status.id, status) };
 }
 
 export function npcsAt(state: WorldState, locationId: string): NpcRecord[] {
@@ -1076,6 +1101,12 @@ export function cloneWorld(state: WorldState): WorldState {
             knownToIds: o.knownToIds.slice(),
             tags: o.tags.slice(),
             data: { ...o.data }
+        })),
+        statuses: state.statuses.map(s => ({
+            ...s,
+            cause: { ...s.cause },
+            signs: s.signs.slice(),
+            stops: s.stops.slice()
         })),
         runs: state.runs.map(r => ({ ...r })),
         ascensions: state.ascensions.map(a => ({ ...a })),

@@ -188,6 +188,7 @@ export * from './locations.js';
 export * from './architecture.js';
 export * from './capability.js';
 export * from './opportunities.js';
+export * from './what-is-true-of-a-place-right-now.js';
 export * from './possessions.js';
 export * from './lineage.js';
 export * from './npc-state.js';
