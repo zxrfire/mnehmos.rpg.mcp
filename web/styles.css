@@ -564,8 +564,23 @@ kbd {
   gap: 20px;
 }
 
-.entry { animation: rise var(--dur) ease-out both; }
-@keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+/*
+  Movement only, and no fill. Every row of the narrative log is one of these,
+  which makes it the surface a player looks at more than any other in the game,
+  and it was declared `rise ... both` over a keyframe set that only defined
+  `from { opacity: 0 }` - so a row's VISIBILITY came out of the animation's fill
+  phase. A frame where the animation has not advanced is then a blank log.
+
+  A stuck transform here is harmless in the way the modal's was not: `.entry` is
+  content INSIDE the scroller rather than an ancestor of it, so it cannot put
+  the scroll node and the hit test into different coordinate spaces. Five pixels
+  of offset on a paragraph is a real cost of nothing.
+*/
+.entry { animation: rise var(--dur) ease-out; }
+@keyframes rise {
+  from { transform: translateY(5px); }
+  to   { transform: none; }
+}
 
 .entry__turn {
   font-family: var(--font-mono);
@@ -961,9 +976,15 @@ kbd {
   padding: 64px 26px 90px;
   display: grid;
   gap: 26px;
-  animation: fade 500ms ease-out both;
+  /*
+    No entrance animation, and this one is not a close call. It was `fade 500ms
+    ease-out both` over a pure-opacity keyframe, so the death screen's existence
+    was the fill phase of a compositor-driven animation - and a frame where that
+    has not advanced is a blank page where the end of a permadeath run should
+    be. There is no transform-only version of a fade to retreat to, and of every
+    screen in the game this is the one that must not be missable.
+  */
 }
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
 .death__mark {
   font-family: var(--font-mono);
@@ -1388,11 +1409,28 @@ kbd {
  * block made it worse again by putting the opaque RESTING state inside the
  * animation's fill phase too.
  *
- * So the surfaces are plain CSS and nothing else touches them. What is left of
- * the entrance is the panel's transform, which can be stuck at its first frame
- * all day and cost nothing worse than ten pixels of offset on a dialog you can
- * still read. `isolation` gives the overlay a stacking context of its own so
- * nothing inside the app can interleave with it.
+ * So the surfaces are plain CSS and nothing else touches them. `isolation`
+ * gives the overlay a stacking context of its own so nothing inside the app can
+ * interleave with it.
+ *
+ * THE ENTRANCE ANIMATION IS GONE TOO, and the reason corrects this comment.
+ *
+ * When the opacity went, a transform was kept on the panel on the reasoning
+ * that a stuck transform "costs nothing worse than ten pixels of offset on a
+ * dialog you can still read". That was wrong, and the owner found it: while the
+ * compositor holds a transform on the panel, THE MODAL CANNOT BE SCROLLED WITH
+ * THE WHEEL. Measured at 598x990 on the seclusion report, and again on the
+ * ladder, so it is the container and not the content: the wheel event is
+ * delivered to `.overlay__body` and is not defaultPrevented, and `scrollTop`
+ * stays at 0 with 634px of overflow underneath it. Clearing the panel's
+ * transform and repeating the identical wheel scrolled it immediately. The
+ * panel is the scroller's ancestor, so a transform on it puts the scroll node
+ * and the hit test in different coordinate spaces.
+ *
+ * A dialog whose net-change table cannot be reached is not "still readable", so
+ * the trade was never worth making. The general rule this file has now learned
+ * twice, stated once: NOTHING A MODAL NEEDS IN ORDER TO WORK - being opaque,
+ * being positioned, being scrollable - MAY BE LEFT TO THE COMPOSITOR.
  */
 .overlay {
   position: fixed;
@@ -1428,14 +1466,6 @@ kbd {
   box-shadow: var(--shadow-2);
   overflow: hidden;
   isolation: isolate;
-  animation: pop var(--dur) cubic-bezier(0.22, 1, 0.36, 1);
-}
-/* Movement only, and both ends written out. An entrance keyframe set with no
-   `to` block leaves the resting appearance implied, and implied is what went
-   wrong above. */
-@keyframes pop {
-  from { transform: translateY(10px) scale(0.985); }
-  to   { transform: none; }
 }
 
 .overlay__panel[data-tone="tribulation"] { border-color: var(--violet-400); box-shadow: 0 0 60px rgba(165, 138, 232, 0.16), var(--shadow-2); }
@@ -1601,9 +1631,32 @@ kbd {
   border-radius: 2px;
   background: linear-gradient(to bottom, var(--violet-300), var(--violet-400));
   box-shadow: 0 0 12px rgba(165, 138, 232, 0.55);
-  animation: strike 900ms ease-out both;
+  transform-origin: top;
+  /*
+    The one animation on this page that keeps a fill mode, and the reasoning is
+    worth stating because the rule everywhere else is the opposite.
+
+    Each strike carries its own `animation-delay` (set inline, in app.js) so the
+    bolts land in sequence. A delay needs `backwards` or every strike would show
+    in full for the length of its own delay and then jump back to start, which
+    is not a stagger at all. So the fill stays.
+
+    What goes is the opacity. With `opacity: 0` in the keyframe, a strike whose
+    animation had not advanced was INVISIBLE, and the number of bolts is the
+    whole content of this element - it is how a player counts what the heavens
+    sent. Now the stuck state is scaleY(0.2): a short bar rather than no bar, so
+    the count survives however the animation fares.
+
+    A stuck transform here is also contained in a way the modal panel's was not.
+    `.strike` is a leaf inside the dialog, not an ancestor of its scroller, so it
+    cannot put the scroll node and the hit test into different coordinate spaces.
+  */
+  animation: strike 900ms ease-out backwards;
 }
-@keyframes strike { from { opacity: 0; transform: scaleY(0.2); transform-origin: top; } }
+@keyframes strike {
+  from { transform: scaleY(0.2); }
+  to   { transform: none; }
+}
 .tribulation__verdict { font-family: var(--font-read); font-size: 17px; }
 .tribulation__verdict.is-bad { color: var(--blood-300); }
 .tribulation__verdict.is-good { color: var(--violet-300); }
