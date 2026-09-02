@@ -34,6 +34,18 @@ import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 
+// A namespace import of THIS module, read lazily and only to take the phrase
+// patterns below back out as a spelling vocabulary. It is a live binding, so
+// by the time anybody has typed a sentence every constant here is
+// initialised. See the header of the spelling module for why the vocabulary
+// is harvested from the patterns rather than written down beside them.
+import * as thePatternsInThisFile from './actions.js';
+import {
+    harvestVocabulary,
+    inThePlayersOwnSpelling,
+    respellForTheVerbTable
+} from './repairing-a-misspelt-word-before-the-verb-table-sees-it.js';
+
 /** Longest stretch of seclusion that may be requested in one call: 100 years. */
 export const MAX_CULTIVATION_DAYS = 36_500;
 
@@ -3635,6 +3647,49 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
 }
 
 export function parseIntent(input: string): PlannedAction {
+    const plan = readTheSentence(input);
+    if (plan.action !== FALLBACK_ACTION) return plan;
+
+    // ── AND ONLY NOW, THE SPELLING ───────────────────────────────────────
+    //
+    // A second attempt, on a sentence whose misspelt words have been put
+    // back. It runs HERE - after a full pass has reached nothing - and
+    // nowhere else, which is the whole of what makes it safe: a sentence
+    // that already found a verb keeps that verb, so no repair can move a
+    // parse that works, and `misparse.test.ts` and the verb-swallowing guard
+    // cannot be shifted by anything in the spelling module.
+    //
+    // The cost of not doing it, measured over the worked phrasings with one
+    // typo each: 107 of 224 reached nothing at all. Half the sentences a
+    // player fat-fingers cost them a turn, in a build whose whole claim is
+    // that it is playable with no model at all.
+    const respelt = respellForTheVerbTable(input, spellingVocabulary());
+    if (respelt.text === input) return plan;
+
+    const second = readTheSentence(respelt.text);
+    // Still nothing is still nothing: the ORIGINAL refusal is returned, not
+    // the respelt one, so the sentence the player is answered about is the
+    // sentence they typed.
+    if (second.action === FALLBACK_ACTION) return plan;
+
+    // The respelling chose the VERB, and that is all it is allowed to choose.
+    // Every string carrying on to the engine goes back into the player's own
+    // spelling first, because the repair cannot tell a verb word from a name
+    // and is only ever looking for verb words: `stele` is one edit from
+    // `stole`, which IS in the vocabulary, and a target of "stole" sends the
+    // engine looking for an object that does not exist. That is a wrong
+    // guess, where avoiding one is the entire point of this path.
+    if (second.target !== undefined) {
+        second.target = inThePlayersOwnSpelling(second.target, respelt.restored);
+    }
+    if (second.topic !== undefined) {
+        second.topic = inThePlayersOwnSpelling(second.topic, respelt.restored);
+    }
+    return second;
+}
+
+/** One full pass of the table, mood included. Run twice: as typed, then respelt. */
+function readTheSentence(input: string): PlannedAction {
     const plan = planIntent(input);
     // The mood is decided last, on the whole sentence, rather than by a hundred
     // vetoes scattered through the table below. Doing it as a post-pass is what
@@ -3643,6 +3698,21 @@ export function parseIntent(input: string): PlannedAction {
     return ASKING_RATHER_THAN_DOING.test(input.toLowerCase())
         ? theReadThatAnswersIt(plan)
         : plan;
+}
+
+let vocabulary: ReadonlySet<string> | null = null;
+
+/**
+ * The parser's own words, taken off the patterns above on first use.
+ *
+ * Lazy rather than computed at module load, because the self-import it reads
+ * is only fully populated once this module has finished evaluating.
+ */
+function spellingVocabulary(): ReadonlySet<string> {
+    if (vocabulary === null) {
+        vocabulary = harvestVocabulary(thePatternsInThisFile as unknown as Record<string, unknown>);
+    }
+    return vocabulary;
 }
 
 function planIntent(input: string): PlannedAction {
@@ -4837,4 +4907,87 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     if (reason) action.reason = reason;
 
     return { ok: true, action };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE TWO PATHS MUST HAND THE ENGINE THE SAME OBJECT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Put back the facts about the SENTENCE that a model's answer cannot carry.
+ *
+ * ── THE DEFECT THIS FIXES ────────────────────────────────────────────────
+ *
+ * There are two ways a sentence becomes a `PlannedAction`: {@link parseIntent}
+ * reads it here, or a model answers phase 1 and {@link validatePlan} checks
+ * the answer. The whole architecture rests on those two producing the same
+ * thing, because otherwise a configured provider and an unconfigured one are
+ * two different games.
+ *
+ * They did not. Measured over twenty sentences, four reached the engine as a
+ * different action object depending on which path ran:
+ *
+ *     "I threaten the steward into handing over the ledger"
+ *          parser  {action:'interact', intent:'threaten', leverage:'force'}
+ *          model   {action:'interact', intent:'threaten'}
+ *
+ *     "I buy 200 rations"
+ *          parser  {action:'provision', rations:200}
+ *          model   {action:'provision', days:30}
+ *
+ * `leverage` and `rations` are not in the phase-1 schema the model is shown,
+ * and `validatePlan` drops both. The first case matters because the social
+ * resolver reads `leverage` and never `intent` - that is the whole design of
+ * it - so with a provider configured a threat was priced as a bare ask. The
+ * second is worse than a dropped field: `provision` is a timed action, so the
+ * stripped `rations` was replaced by a defaulted thirty days. A player who
+ * asked for two hundred rations got a month, silently, and only with a
+ * narrator running.
+ *
+ * ── WHY THE FIX IS HERE AND NOT IN THE PROMPT ────────────────────────────
+ *
+ * The tempting fix is to teach the model to emit `leverage`. That is the
+ * wrong direction and it breaks a rule this package is built on: leverage is
+ * a fact about what the player put on the table, decided by the parser
+ * precisely so that nothing downstream translates a word into a mechanic. A
+ * model choosing it would be a model deciding how an approach is priced.
+ *
+ * So the model keeps the job it is good at - reading which VERB a sentence
+ * meant - and the sentence keeps the job it has always had. This never
+ * overrides the model: it only fills fields the model left empty, and only
+ * when both paths already agree on the verb. Where they disagree the model's
+ * verb stands untouched and nothing is carried, because a leverage read off a
+ * sentence the parser understood as a different action is a fact about a
+ * different action.
+ */
+export function carryWhatOnlyTheSentenceKnows(action: PlannedAction, input: string): PlannedAction {
+    const fromSentence = parseIntent(input);
+    if (fromSentence.action !== action.action) return action;
+
+    const merged: PlannedAction = { ...action };
+
+    // What the player put on the table. Read by `resolveAttempt`, and by
+    // nothing that a model is allowed to influence.
+    if (merged.leverage === undefined && fromSentence.leverage !== undefined) {
+        merged.leverage = fromSentence.leverage;
+    }
+
+    // Whether both parties agreed to the fight. In the schema but absent from
+    // the phase-1 prompt, so a model never says it and the consequence layer
+    // could not tell a spar from an ambush unless the parser had run.
+    if (merged.terms === undefined && fromSentence.terms !== undefined) {
+        merged.terms = fromSentence.terms;
+    }
+
+    // A count of rations is a different ask from a span of days, and the
+    // conversion between them is not the parser's to make - how long a ration
+    // lasts depends on the body carrying it. So where the sentence named a
+    // count, the count wins and the DEFAULTED span goes: leaving both on would
+    // hand `provision` two contradictory instructions.
+    if (merged.rations === undefined && fromSentence.rations !== undefined) {
+        merged.rations = fromSentence.rations;
+        if (fromSentence.days === undefined) delete merged.days;
+    }
+
+    return merged;
 }
