@@ -641,14 +641,66 @@ mistakes it for a description of the running world will build on sand.
 |---|---|
 | **Realm as the perceptual axis** | **exists**, everywhere |
 | **`KnowingStage`** - the reference axis, per subject | **exists**, `src/engine/social/discovery.ts` |
-| **`RESERVED_SURNAMES`** - lineage names never rolled | **exists**, `src/engine/world/history.ts`; **no consumer yet** |
-| **`surnameOf`** - reading a family off a name | **exists and has zero callers.** Nothing in the engine reads a surname as a lineage |
-| **Recognising whose art you just watched** | **does not exist.** The strongest check in the hierarchy is entirely unimplemented |
+| **`RESERVED_SURNAMES`** - lineage names never rolled | **wired**, `src/engine/world/reading-a-lineage-off-a-name.ts` |
+| **`surnameOf`** - reading a family off a name | **wired**, through `lineageNameOf` in the same file, and reached by `resolveCultivator` |
+| **Recognising whose art you just watched** | **built**, `src/engine/world/recognising-whose-art-you-just-watched.ts`, and reachable by typing *"is this the Azure Cloud's art"* |
 | **Life plates, and tokens that shatter** | **do not exist** anywhere in the repo |
 | **A jade tag carrying a house's name** | **does not exist** as an identity object |
 | **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and **nothing in `src/engine/` reads them** |
 
-**The encouraging half:** both axes already exist, so this model is a *reading* of state the
-world keeps rather than new state it would have to grow. **The discouraging half:** every check
-above the weakest rung is unbuilt, and the lineage half has a function with no callers - which
-is this project's signature defect, written down here so the next person does not rediscover it.
+**The encouraging half:** both axes already existed, so the two checks now built are a *reading*
+of state the world keeps rather than new state it had to grow. **The discouraging half:** the
+object half of the hierarchy is still entirely unbuilt, and so are the sealed ancestors the
+model was supposed to give something to do.
+
+### Four things measured while building it, where the data and the prose disagreed
+
+**Believe the data.** All four are the roster and the catalog answering differently from this
+document, and in every case the document is the thing that changed.
+
+**`isCommonlyHeld` calls every fighting art in the game nobody's.** It opens
+`if (t.class !== 'cultivation' || t.cap == null) return true`, so it answers "common" for
+anything that is not a road with a cap - and a house's SIGNATURE is usually a fighting art.
+Measured: `void-piercing-sword-domain` is taught by exactly one house in the world and
+`isCommonlyHeld` calls it unowned. The recognition check therefore counts holders directly
+(`housesTeaching` against `COMMON_HOUSE_COUNT`) rather than using it. **Not fixed in place:**
+`unauthorisedPractice` and the asking layer read it, so whether a fighting art can be somebody's
+property is a design question rather than a bug to patch from underneath them.
+
+**The Meng line stands on nobody's roll.** `RESERVED_SURNAMES` reserves Meng to the Nine Peaks
+Ascetic Order on the strength of Patriarch Meng Da, and Meng Da is a *dormant* entry in
+`SECT_ANCESTRY` - not a member. No living Meng exists anywhere in `members.ts`. That is not a
+defect: it is [an absent name is a question](#the-woken-ancestor) occurring for real in the data,
+and the two checks disagreeing about it is the model working. The name settles the claim; the
+roll cannot confirm it.
+
+**Xu is at two houses, not three.** This document said "there are Xu at the Measured Span and at
+Held Names as well". The roster has four Xu at the Anchorhold and one at Held Names, and **none
+at the Measured Span.** The argument is unchanged - a name carried by more than one house
+identifies none of them - and the third house was not there.
+
+**`surnameOf` returns a title for 41 of 186 roster rows.** It splits at the first space, which is
+exact for what `personName` generates and wrong for "The Abbot", "First Seat", "The Storm Tyrant",
+"Clan Chief Duan Wu" and "Nine Boards Qiu". Left alone it invents lineages: *The* read as a
+five-house family, *Second* and *Third* as lines standing on the Hollow Court's roll. The lineage
+reader accepts only two-token `Surname Given` names and **declines the other 41 rather than
+guessing** - which loses about a dozen real surnames sitting behind titles, and is the correct
+direction to be wrong in when a name is worth corroboration at best. Recovering those wants a
+surname field on the catalog row: a heuristic that scanned for a known surname anywhere in the
+string read "Grand Steward Lei Fu" as a Fu.
+
+### And one thing the awareness ladder cannot hold
+
+`KnowingStage` runs `unaware → whisper → named → placed → encountered → known`, and **every rung
+above the first presumes a name arrived first.** Recognising an art frequently inverts that: you
+have watched the thing and you hold no name for it. Four states, and the ladder holds three -
+never seen and never heard of; heard of and never seen; **seen and cannot name whose**; seen and
+can name whose. The third is what a widely travelled nobody is in every time, and there is no
+rung for it.
+
+The recognition check does not pretend to model it, because storing "would know it again" is new
+state. What it does is refuse to collapse that state into ignorance:
+`perceivedButCouldNotPlaceIt` says the rung was enough and the reference was not. The world
+already contains the shape and has no machinery for it - a Blown Ground finder sells a direction
+and a distance and does not lead the buyer there. **Whether that wants a rung of its own or a
+second axis belongs to whoever owns `discovery.ts`.**

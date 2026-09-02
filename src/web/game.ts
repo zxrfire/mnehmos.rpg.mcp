@@ -81,6 +81,13 @@ import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
+import {
+    couldTheyTellItIs,
+    whereThisArtWasLearned,
+    type ArtObserver,
+    type ClaimVerdict
+} from '../engine/world/recognising-whose-art-you-just-watched.js';
+import { manualsOf } from '../engine/world/manuals.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
 import { NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
@@ -520,6 +527,7 @@ import { DEATH_IN_WORLD,
     factsForDao,
     factsForHolding,
     factsForRecall,
+    factsForRecognisingAnArt,
     factsForSiteTaken,
     factsForTreatment,
     factsForUnsupported,
@@ -2553,6 +2561,9 @@ ${noticedWaiting}`;
 
             case 'recall':
                 return this.recall(run, cultivator, action.target, action.intent);
+
+            case 'recognise':
+                return this.recognise(run, cultivator, action.target, action.topic);
 
             case 'news':
                 return this.news(run, cultivator);
@@ -4760,6 +4771,199 @@ ${noticed}`;
         }];
         return execution;
     }
+
+    /**
+     * WHOSE ART THAT WAS.
+     *
+     * The trust hierarchy's strongest check, put to the character by the player.
+     * `docs/world/trust.md` says a house's arts are the closest thing it has to
+     * an identity and that watching somebody cultivate goes straight to the
+     * thing in question - and the whole of it was unaskable, with both of the
+     * numbers that decide the answer sitting in the database and no question
+     * pointed at them.
+     *
+     * Free, and never refused. Looking at what is in front of you and thinking
+     * about it is always a legitimate thing to do, so this spends no day and
+     * takes nothing. Like `recall` it reads the holder's own rows and the
+     * catalog they can already name, so it cannot teach anybody anything they
+     * had no route to.
+     *
+     * THE ANSWER IS GRADED BY THE TWO AXES AND NEVER FAKES CONFIDENCE. Somebody
+     * with no reference is told they would not know it rather than handed a
+     * "no" they have not earned; somebody with a reference and too low a rung
+     * is told what it matches AND that they could not tell a good imitation.
+     * At the top it is one flat sentence, and that terseness is the reward.
+     *
+     * "is this the Azure Cloud's art" names a house and no art, which is the
+     * ordinary phrasing rather than a shortfall in it: the art the sentence
+     * means is that house's signature, so the house's own catalog row supplies
+     * it.
+     */
+    private recognise(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        topic: string | undefined
+    ): Execution {
+        const scope = this.scopeFor(cultivator);
+        const askedHouse = (target ?? '').trim();
+        const askedArt = (topic ?? '').trim();
+
+        // Gated, like every other name read: a house this cultivator has never
+        // heard of does not resolve, and that is itself one of the answers.
+        const house = askedHouse.length >= 2
+            ? resolveSect(this.repos, askedHouse, scope, cultivator.sectId)
+            : null;
+        const art = askedArt.length >= 2
+            ? resolveTechnique(this.repos, askedArt, cultivator.id)
+            : null;
+
+        // The art the sentence is about. Named outright, or the signature of
+        // the house that was named - and where a house carries no signature,
+        // the top of its own shelf, which is the same thing said by the shelf.
+        const houseSignature = house
+            ? (getSect(house.id) as { signatureTechniqueId?: string | null } | undefined)?.signatureTechniqueId
+                ?? manualsOf(house.id).at(-1)?.id
+                ?? null
+            : null;
+        const artId = art?.id ?? houseSignature;
+
+        if (!artId && askedHouse.length > 0) {
+            // A house they cannot name is a house they hold no reference for,
+            // and that IS the answer rather than a failure to compute one. It
+            // goes down the graded path with the rest so the player gets the
+            // same honest sentence they would get if the name had resolved:
+            // never a "no" they have not earned, and never a refusal, because
+            // asking yourself whether you recognise something is always a
+            // legitimate thing to do.
+            const facts = factsForRecognisingAnArt({
+                artName: 'whatever that was',
+                claimedHouseName: askedHouse,
+                verdict: 'would_not_know_it',
+                placedTo: [],
+                perceivedButCouldNotPlaceIt: false,
+                nobodysArt: false,
+                revealsTheReader: false,
+                structure: [
+                    `"${askedHouse}" is not a name this cultivator holds, so there is no reference `
+                    + 'to read the demonstration against and no rung that would supply one. The '
+                    + 'reader stands at '
+                    + `${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal}), `
+                    + 'which is the whole of the point: the perceptual axis does not buy reference.'
+                ]
+            });
+            const execution = this.freeAction(run, 'recognise', facts);
+            execution.calls = [{
+                name: 'world.whereThisArtWasLearned',
+                action: 'recognise',
+                summary:
+                    `No house resolved from "${askedHouse}" for a reader at ordinal `
+                    + `${cultivator.realmOrdinal}. Verdict would_not_know_it: reference afforded `
+                    + 'nothing, and realm cannot substitute for it. Read only; nothing was spent '
+                    + 'and no row was written.',
+                ok: true
+            }];
+            return execution;
+        }
+
+        if (!artId) {
+            // Nothing named at all. Not a refusal of an action and not a parse
+            // error: a character who has not said what they mean. Said in the
+            // world's voice, because an error message reaching the player is a
+            // scene that failed to get written.
+            const facts = factsForRefusal(
+                'Nothing to hold it up against.',
+                'You would have to know which art you meant. Watching somebody move is not '
+                + 'the same as having a name for what they did.',
+                'No technique resolved from the sentence, and no house whose signature could stand '
+                + 'in for one. Read only; nothing was spent and no row was written.'
+            );
+            const listing = this.freeAction(run, 'recognise', facts);
+            listing.outcome = 'refused';
+            return listing;
+        }
+
+        const technique = getTechnique(artId) as
+            { name?: string; requiredOrdinal?: number } | undefined;
+        const artName = art?.name ?? technique?.name ?? artId;
+        // The rung the demonstration is priced at: the art's own floor, which
+        // is the LOWEST anybody could be performing it at. So the perceptual
+        // half of the answer is if anything generous to the reader, and that is
+        // stated here rather than left for whoever reads the number to assume.
+        const performedAtOrdinal = Number(technique?.requiredOrdinal ?? 0);
+
+        const observer: ArtObserver = {
+            realmOrdinal: cultivator.realmOrdinal,
+            referenceFor: (factionId: string) => this.knowledge.stageOf(cultivator.id, 'sect', factionId)
+        };
+        const demonstration = { techniqueId: artId, performedAtOrdinal };
+
+        const learned = whereThisArtWasLearned(demonstration, observer);
+        const claim = house ? couldTheyTellItIs(demonstration, observer, house.id) : null;
+
+        // With no house named, the strongest house they could place it to
+        // stands in as the subject, which is what "whose art is that" asks.
+        const standIn = learned.houses[0] ?? null;
+        const verdict: ClaimVerdict = claim
+            ? claim.verdict
+            : !learned.perceived ? 'could_not_follow'
+                : standIn === null || standIn.reading === 'nothing' ? 'would_not_know_it'
+                    : standIn.reading === 'certain' ? 'it_is' : 'consistent';
+
+        const nameOf = (factionId: string): string =>
+            (getSect(factionId) as { name?: string } | undefined)?.name ?? factionId;
+        const claimedHouseName = house?.name
+            ?? (claim === null && standIn !== null ? nameOf(standIn.factionId) : null)
+            ?? (askedHouse.length > 0 ? askedHouse : null);
+
+        // Only houses this reader can actually place it to. Listing the rest
+        // would hand over the catalog, which is the one thing a read of the
+        // holder's own head must never do.
+        const placedTo = learned.houses
+            .filter(h => h.reading !== 'nothing')
+            .map(h => nameOf(h.factionId));
+
+        const fromRealm = claim?.fromRealm ?? standIn?.fromRealm ?? 'nothing';
+        const fromReference = claim?.fromReference ?? standIn?.fromReference ?? 'nothing';
+        const atStage = claim?.reference ?? standIn?.reference ?? 'unaware';
+
+        const facts = factsForRecognisingAnArt({
+            artName,
+            claimedHouseName,
+            verdict,
+            placedTo,
+            perceivedButCouldNotPlaceIt: learned.perceivedButCouldNotPlaceIt,
+            nobodysArt: learned.nobodysArt,
+            revealsTheReader: learned.revealsTheReader,
+            structure: [
+                `${artName} is priced as performed at ${rankName(performedAtOrdinal)} `
+                + `(ordinal ${performedAtOrdinal}), which is the lowest rung anybody could be doing `
+                + `it at rather than this performer's own. The reader stands at `
+                + `${rankName(cultivator.realmOrdinal)} (ordinal ${cultivator.realmOrdinal}).`,
+                `Realm afforded ${fromRealm}; reference afforded ${fromReference}, at stage `
+                + `${atStage}. The reading is the lower of the two, because neither axis rescues `
+                + 'the other - which is why a confident answer needs both a rung and a life.',
+                `${learned.houses.length} house(s) teach it and this reader could place it to `
+                + `${placedTo.length} of them. Verdict ${verdict}.`
+            ]
+        });
+
+        const execution = this.freeAction(run, 'recognise', facts);
+        execution.outcome = 'executed';
+        execution.calls = [{
+            name: 'world.whereThisArtWasLearned',
+            action: 'recognise',
+            summary:
+                `${artId} at ordinal ${performedAtOrdinal}, read by a cultivator at ordinal `
+                + `${cultivator.realmOrdinal}. Verdict ${verdict}. Realm and reference are read `
+                + 'separately and the answer is the lower of them. Read only: no time passed, '
+                + 'nothing was written, and the technique catalog was consulted only for the art '
+                + 'already named in the sentence.',
+            ok: true
+        }];
+        return execution;
+    }
+
 
     // ── institutions acting on each other, and on the dead ────────────────
     //

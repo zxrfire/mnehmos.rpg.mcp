@@ -429,6 +429,37 @@ export const ACTION_NAMES = [
      */
     'recall',
     /**
+     * WHOSE ART THAT WAS - the player putting the trust hierarchy's strongest
+     * check to themselves.
+     *
+     * `docs/world/trust.md` says a house's arts are the closest thing it has to
+     * an identity and that watching somebody cultivate is the one reading that
+     * goes straight to the thing in question. Nothing in the game could ask it.
+     * A player watching somebody move had no sentence at all, and the two
+     * things that decide the answer - their rung and what they have a reference
+     * for - were both sitting in the database with no question pointed at them.
+     *
+     * Introspective, like `status` and `recall`: the character looking at
+     * something and drawing on what they already hold. It costs no time, it is
+     * never refused, and it consults no catalog the holder has no record for.
+     *
+     * THE ANSWER IS GRADED AND IT NEVER FAKES CONFIDENCE. Somebody with no
+     * reference is told they would not know it, rather than handed a "no" they
+     * did not earn. Somebody with a reference and too low a rung is told it
+     * matches what they have heard and that they could not tell a good
+     * imitation - the uncertainty IS the answer. Somebody with both gets it
+     * flat, at a glance, and that terseness is the reward for the climb: it is
+     * progression a player can feel that is not combat power.
+     *
+     * And it answers WHERE AN ART WAS LEARNED and never whom anybody serves.
+     * The Hollow Court takes nobody below Void Refinement, so its people arrive
+     * trained elsewhere and honestly perform their origin house's art - a
+     * correct identification that leaves a wrong conclusion available. That is
+     * the design, not a gap to paper over, so this verb volunteers no
+     * allegiance it cannot know.
+     */
+    'recognise',
+    /**
      * What the people here are saying is happening elsewhere.
      *
      * `recall` reads the holder's own head and structurally cannot teach them
@@ -510,6 +541,11 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
     // strictest sense in the package: it touches no catalog the holder has no
     // record for, so it cannot even accidentally become a way to learn.
     'recall',
+    // The same, one subject over. Looking at what is in front of you and
+    // thinking about it is always a legitimate thing to do, so this is never
+    // refused and never spends a day - and what it can tell the holder is
+    // bounded by the two things they already are.
+    'recognise',
     // Asking a square what it has heard writes knowledge records and nothing
     // else. It cannot spend, move or kill, and what it teaches is a name at
     // `whisper` - the same thing standing near a conversation already does.
@@ -1779,6 +1815,101 @@ export const RECALL_PATTERNS: readonly RegExp[] = [
     /\bhave i (?:ever )?heard (?:of|about)\b/,
     /\bdo i know (?:of|about|who|what)\b/
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHOSE ART THAT WAS
+//
+// Deliberately narrow. Every pattern here names an ART - "art", "style",
+// "technique", "method", "form" - because "do I recognise her" is a question
+// about a face and belongs to `recall`, and the whole point of this verb is
+// that faces tell nobody anything and arts do.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A noun that means somebody's way of moving rather than a person or a place. */
+const AN_ART_NOUN = '(?:art|arts|style|technique|method|form|movement|footwork)';
+
+/** "whose art is that", the question with no claim in it. */
+export const WHOSE_ART_IS_THAT = new RegExp(
+    `\\bwhose\\s+${AN_ART_NOUN}\\b|\\bwhat\\s+(?:house|sect|school)(?:'s|s')?\\s+${AN_ART_NOUN}\\b`,
+    'i'
+);
+
+/**
+ * "do I recognise this style", "have I seen this form before".
+ *
+ * The first person is required for the same reason `RECALL_PATTERNS` requires
+ * it: "would anyone recognise this" is a question about the world.
+ */
+export const DO_I_RECOGNISE_IT = new RegExp(
+    `\\b(?:do|can|could|would)\\s+i\\s+(?:recognis|recogniz)e\\b`
+    + `|\\bi\\s+(?:recognis|recogniz)e\\b`
+    + `|\\bhave\\s+i\\s+seen\\s+(?:this|that|it)\\b`
+    + `|\\bdo\\s+i\\s+know\\s+(?:this|that)\\s+${AN_ART_NOUN}\\b`,
+    'i'
+);
+
+/**
+ * Words that can stand between the start of the sentence and the house's name.
+ *
+ * Stripped one at a time from the left rather than matched around, because a
+ * lazy capture anchored at the start of the string takes the WHOLE clause:
+ * `is this the Azure Cloud Pavilion's art` came out as
+ * "is this the Azure Cloud Pavilion", which resolves to nobody. Measured on the
+ * first played turn of this verb, which is exactly the failure the party
+ * matchers elsewhere in this file carry their own notes about.
+ */
+const NOT_PART_OF_A_HOUSE_NAME = new Set([
+    'is', 'are', 'was', 'were', 'be', 'whose', 'do', 'does', 'did', 'can', 'could',
+    'would', 'should', 'i', 'this', 'that', 'it', 'he', 'she', 'they', 'them',
+    'the', 'a', 'an', 'tell', 'me', 'if', 'whether', 'look', 'looks', 'like',
+    'really', 'actually', 'even', 'some', 'any', 'one', 'of'
+]);
+
+/**
+ * The house named in a possessive: "the Azure Cloud's art".
+ *
+ * Run against the original input rather than the lowercased text, because what
+ * comes out is handed straight to a name matcher, and a matcher scores an exact
+ * name higher than a lowercased one.
+ */
+export function houseClaimedIn(input: string): string | undefined {
+    const found = new RegExp(`([A-Za-z][A-Za-z' -]{2,80}?)(?:'s|s')\\s+${AN_ART_NOUN}\\b`)
+        .exec(input);
+    if (!found) return undefined;
+    const words = found[1].trim().split(/\s+/);
+    while (words.length > 0 && NOT_PART_OF_A_HOUSE_NAME.has(words[0].toLowerCase())) words.shift();
+    const name = words.join(' ').trim();
+    return name.length >= 3 ? name.slice(0, 80) : undefined;
+}
+
+/**
+ * A claim put to the check: "is this the Azure Cloud's art".
+ *
+ * The subject may be a pronoun, which is the ordinary case - somebody has just
+ * moved and the player is asking about what they saw.
+ */
+export const IS_THIS_THEIR_ART = new RegExp(
+    `\\bis\\s+(?:this|that|it|he|she|they|the\\s+\\w+)\\b[^.?!]*?(?:'s|s')\\s+${AN_ART_NOUN}\\b`,
+    'i'
+);
+
+/**
+ * Which art the sentence is about, when it names one.
+ *
+ * Undefined is the common answer and is not a failure: "is this the Azure
+ * Cloud's art" names a house and no art, and the handler reads that as a
+ * question about the house's signature - which is what the sentence means.
+ */
+export function artNamedIn(input: string): string | undefined {
+    const named = /\b(?:recognis|recogniz)e\s+(?:the\s+)?([A-Za-z][\w' -]{2,60}?)\s*[.?!]?$/i.exec(input);
+    const cleaned = (named?.[1] ?? '').trim();
+    if (cleaned.length < 3) return undefined;
+    // A pronoun is not a name, and neither is the bare noun. Both mean "the
+    // thing I just watched", which this parser cannot resolve and must not
+    // pretend to.
+    if (new RegExp(`^(?:this|that|it|them|${AN_ART_NOUN})$`, 'i').test(cleaned)) return undefined;
+    return cleaned.slice(0, 80);
+}
 
 /** The whole holding, asked for at once. Names nobody on purpose. */
 export const RECALL_EVERYTHING =
@@ -3757,6 +3888,29 @@ function planIntent(input: string): PlannedAction {
         && !ABOUT_THE_GROUND_HERE.test(text)) {
         return { action: 'news' };
     }
+    // ── whose art that was ──
+    //
+    // Ahead of `recall`, and it has to be: "do I know this style" sits one word
+    // from `do i know (of|about)`, and "have I seen this before" is a hair from
+    // "have i heard of". Both of those recall patterns would answer with the
+    // knowledge table, which is a true statement about what the holder is
+    // carrying and not an answer to what they just watched.
+    //
+    // Narrow enough not to steal from it: every branch requires an art noun or
+    // a possessive over one, so "what do I know of the Azure Cloud" is
+    // untouched and still reaches `recall`.
+    if (WHOSE_ART_IS_THAT.test(text)
+        || IS_THIS_THEIR_ART.test(text)
+        || (DO_I_RECOGNISE_IT.test(text) && new RegExp(AN_ART_NOUN, 'i').test(text))) {
+        const owner = houseClaimedIn(input);
+        const art = artNamedIn(input);
+        return {
+            action: 'recognise',
+            ...(owner && owner.length >= 3 ? { target: owner } : {}),
+            ...(art ? { topic: art } : {})
+        };
+    }
+
     if (RECALL_PATTERNS.some(pattern => pattern.test(text))) {
         const named = namedAfter(input, RECALL_SUBJECT);
         return { action: 'recall', intent: 'knowledge', ...(named ? { target: named } : {}) };
