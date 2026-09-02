@@ -22,9 +22,15 @@ import {
 } from '../../../src/engine/cultivation/time-skip.js';
 import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation.js';
 import {
+    MAX_ORDINAL,
     lifespanForOrdinal,
     progressRequiredForOrdinal
 } from '../../../src/engine/cultivation/realms.js';
+import {
+    evaluateDeathConditions,
+    satietyBurnMultiplier,
+    stillNeedsToEat
+} from '../../../src/engine/cultivation/survival.js';
 import { makeCultivator } from './fixtures.js';
 
 const TEN_YEARS = 10 * DAYS_PER_YEAR;
@@ -58,6 +64,19 @@ function sealed(overrides: Partial<TimeSkipContext> = {}): TimeSkipContext {
  */
 function secluded(overrides: Partial<Cultivator> = {}): Cultivator {
     return makeCultivator({ spiritRoot: 'single_fire', realmOrdinal: 20, ...overrides });
+}
+
+/**
+ * Somebody who still eats like a mortal.
+ *
+ * Hunger tapers by realm and stops at Deity Transformation, so a Core Formation
+ * cultivator's belly lasts 1500 days and provisions are no longer a pressure on
+ * them. The food tests below are about the warning and the hand-back, so they
+ * are run at the top of Qi Condensation where the pressure is real - which is
+ * also the only place a player actually meets it.
+ */
+function hungry(overrides: Partial<Cultivator> = {}): Cultivator {
+    return makeCultivator({ spiritRoot: 'single_fire', realmOrdinal: 12, ...overrides });
 }
 
 /**
@@ -220,7 +239,7 @@ describe('survival during a skip', () => {
         // player gets control back with five days still in hand.
         const belly = SATIETY_MAX / SATIETY_COST_PER_ACTION;
         const asked = simulateTimeSkip(
-            secluded(),
+            hungry(),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 0 })
         );
@@ -232,7 +251,7 @@ describe('survival during a skip', () => {
 
         // Told, and continuing anyway. NOW it kills, exactly on schedule.
         const declined = simulateTimeSkip(
-            secluded({ satiety: 0, starvationTurns: 0 }),
+            hungry({ satiety: 0, starvationTurns: 0 }),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 0 })
         );
@@ -256,7 +275,7 @@ describe('survival during a skip', () => {
 
     it('hands control back when the belly empties, well before it kills', () => {
         const result = simulateTimeSkip(
-            secluded(),
+            hungry(),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 0 })
         );
@@ -290,7 +309,7 @@ describe('survival during a skip', () => {
         // has stones, there is a settlement, and buying food is solved. They
         // were simply never asked.
         const result = simulateTimeSkip(
-            secluded(),
+            hungry(),
             TEN_YEARS,
             sealed({ grainAbstinence: false, rations: 3 })
         );
@@ -441,7 +460,17 @@ describe('interruption', () => {
         }
         expect(found).not.toBeNull();
         expect(found!.deltas.injuriesGained).toBeGreaterThanOrEqual(3);
-        expect(found!.events.at(-1)!.kind).toBe('injury_sustained');
+        // A 'bleeding_warning' rather than an 'injury_sustained': crossing the
+        // threshold is not a wound being taken, it is the body stopping coping.
+        //
+        // It used to carry `daysUntilBleedOut` and this line asserted it was
+        // BLEED_OUT_TURNS. There is no countdown any more - a torn channel does
+        // not kill anybody - so what the payload carries instead is what the
+        // wounds are costing, which is the true and still alarming thing.
+        const last = found!.events.at(-1)!;
+        expect(last.kind).toBe('bleeding_warning');
+        expect(last.data.daysUntilBleedOut).toBeUndefined();
+        expect(last.data.cultivationPenalty).toBeGreaterThan(0);
     });
 });
 
@@ -840,5 +869,58 @@ describe('deltas', () => {
         }
         expect(found).not.toBeNull();
         expect(found!.deltas.spiritStones).toBeGreaterThan(0);
+    });
+});
+
+describe('hunger tapers with the realm, and stops', () => {
+    it('costs a mortal-scale belly only in Qi Condensation', () => {
+        expect(satietyBurnMultiplier(0)).toBe(1);
+        expect(satietyBurnMultiplier(12)).toBe(1);
+    });
+
+    it('falls at every realm boundary up to Deity Transformation', () => {
+        const rungs = [12, 16, 20, 24];
+        for (let i = 1; i < rungs.length; i++) {
+            expect(satietyBurnMultiplier(rungs[i]))
+                .toBeLessThan(satietyBurnMultiplier(rungs[i - 1]));
+        }
+        // Foundation Establishment is where starving stops being a thing that
+        // happens to somebody who lost track of the time: a full belly runs to
+        // years, so it takes years of finding nothing to kill them.
+        const belly = (o: number) => SATIETY_MAX / (SATIETY_COST_PER_ACTION * satietyBurnMultiplier(o));
+        expect(belly(16) / 365).toBeGreaterThan(3);
+        expect(belly(20) / 365).toBeGreaterThan(belly(16) / 365);
+    });
+
+    it('stops entirely at Deity Transformation and stays stopped', () => {
+        for (let ordinal = 25; ordinal <= MAX_ORDINAL; ordinal++) {
+            expect(satietyBurnMultiplier(ordinal), `ordinal ${ordinal} still eats`).toBe(0);
+            expect(stillNeedsToEat(ordinal)).toBe(false);
+        }
+        expect(stillNeedsToEat(24)).toBe(true);
+    });
+
+    it('runs a forty-year seclusion with no food at all above the line', () => {
+        // The finding that produced this rule: below it, a long seclusion is a
+        // shopping trip. At Deity Transformation the pantry stops being the
+        // thing that ends runs.
+        const result = simulateTimeSkip(
+            makeCultivator({ spiritRoot: 'single_fire', realmOrdinal: 25, satiety: 0 }),
+            365 * 40,
+            sealed({ grainAbstinence: false, rations: 0 })
+        );
+        expect(result.died).toBe(false);
+        expect(result.interruptReason).not.toBe('starvation_begun');
+        expect(result.endState.starvationTurns).toBe(0);
+        expect(result.events.filter(e => e.kind === 'starvation_warning')).toHaveLength(0);
+    });
+
+    it('will not let a stale starvation counter kill somebody who stopped eating', () => {
+        const dying = makeCultivator({
+            realmOrdinal: 25,
+            satiety: 0,
+            starvationTurns: STARVATION_TURNS + 5
+        });
+        expect(evaluateDeathConditions(dying)).not.toBe('starvation');
     });
 });

@@ -42,9 +42,8 @@ import {
     lifespanPressure,
     lifespanPressureOnsetAge
 } from '../engine/cultivation/breakthrough.js';
-import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
-import { bleedStateOf, turnsUntilBleedOut } from '../engine/cultivation/survival.js';
-import { BLEED_OUT_TURNS, stagnationYearsForOrdinal } from '../schema/cultivation.js';
+import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import { stagnationYearsForOrdinal } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 
@@ -206,8 +205,8 @@ export interface DerivedView {
     lifespanRemaining: number;
     /**
      * The whole span this cultivator is measured against, so a client can show
-     * "16 of 100" without knowing 100 - the same reason `bleedOutTurns` is
-     * here beside `turnsUntilBleedOut`.
+     * "16 of 100" without knowing 100. A denominator the browser invents is a
+     * bug; this is the engine's.
      *
      * `effectiveLifespanYears`, not `lifespanForOrdinal`, for the False
      * Immortal reason given on `lifespanRemaining`: the two have to be the same
@@ -245,19 +244,27 @@ export interface DerivedView {
     lifespanPressureFromAge: number;
     untreatedInjuries: number;
     /**
-     * Turns left before the open meridians give out on their own, or null when
-     * the untreated count is under the lethal threshold and no clock is
-     * running.
+     * How long the open channels have been carried, in days. Zero when there
+     * are none, and it resets the moment the count drops below the threshold.
      *
-     * Null rather than Infinity because this crosses a JSON boundary and
-     * `JSON.stringify(Infinity)` is the literal `null` regardless; saying so in
-     * the type beats shipping a value that silently changes shape on the wire.
-     * A client that renders this as a countdown is rendering the engine's own
-     * number - `turnsUntilBleedOut` - not one it worked out for itself.
+     * This replaced `turnsUntilBleedOut` and `bleedOutTurns`, which were a
+     * countdown to a death that no longer happens. A channel wound is a torn
+     * muscle and does not kill anybody (`docs/world/injuries.md`), so the
+     * honest number to give a client is how long this has been going on rather
+     * than how long is left.
      */
-    turnsUntilBleedOut: number | null;
-    /** The full window, so a client can show "62 of 90" without knowing 90. */
-    bleedOutTurns: number;
+    daysChannelsOpen: number;
+    /**
+     * The fraction of the cultivation rate the open wounds are currently
+     * taking, in [0, 1].
+     *
+     * Sent because the panel needs something true and alarming to say now that
+     * it cannot say "this will kill you". This is the number that makes a
+     * player want the wounds gone, and it is the engine's own - the same figure
+     * `computeCultivationRate` folds into the rate - rather than one the
+     * browser works out from a severity count.
+     */
+    injuryRatePenalty: number;
     /** What is still moving, whether or not the rank is. */
     dao: DaoView;
     /**
@@ -341,8 +348,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         lifespanPressure: lifespanPressure(ordinal, cultivator.age),
         lifespanPressureFromAge: lifespanPressureOnsetAge(ordinal),
         untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
-        turnsUntilBleedOut: finiteOrNull(turnsUntilBleedOut(bleedStateOf(cultivator))),
-        bleedOutTurns: BLEED_OUT_TURNS,
+        daysChannelsOpen: Math.max(0, Math.round(cultivator.bleedingTurns)),
+        injuryRatePenalty: aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty,
         dao: daoView(cultivator),
         sectName: context.sectName ?? null,
         foundationQuality: cultivator.foundationQuality,
@@ -391,15 +398,6 @@ export function daoView(cultivator: Cultivator): DaoView {
  * the same sentence. Two wordings for one engine verdict is how a UI starts
  * disagreeing with the rules it is displaying.
  */
-/**
- * `Infinity` means "no clock is running", and JSON cannot say that - it
- * serialises to `null` and arrives as one anyway. Doing the conversion here
- * keeps the wire type honest instead of leaving the client to discover it.
- */
-function finiteOrNull(n: number): number | null {
-    return Number.isFinite(n) ? n : null;
-}
-
 export function refusalText(
     reason: string | null,
     available: number,

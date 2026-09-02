@@ -9,7 +9,7 @@ import {
     InjurySeverity,
     InjurySource,
     INJURY_WEIGHTS,
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     SATIETY_MAX
 } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
@@ -306,9 +306,9 @@ export class CultivatorRepository {
             WHERE id = @id AND treated = 0
         `);
         this.selectInjuryByIdStmt = db.prepare('SELECT * FROM cultivator_injuries WHERE id = ?');
-        // Treatment stops the bleed. Written as its own statement rather than
-        // through update(), because it must run inside treatInjury's own
-        // transaction and must not touch any other column.
+        // Treatment clears the open-channel counter. Written as its own
+        // statement rather than through update(), because it must run inside
+        // treatInjury's own transaction and must not touch any other column.
         this.clearBleedClockStmt = db.prepare(
             'UPDATE cultivators SET bleeding_turns = 0 WHERE id = @id'
         );
@@ -664,11 +664,12 @@ export class CultivatorRepository {
      * needs to know the difference between "healed" and "wasted".
      *
      * Closing a wound that drops the untreated count back under
-     * LETHAL_UNTREATED_INJURIES also stops the bleed clock, in the same
-     * transaction. That reset lives here rather than in each caller because
-     * this is the only place in the codebase where an injury becomes treated,
-     * and a clock that kept running after the wound was closed would be the
-     * database disagreeing with the engine about whether somebody is dying.
+     * CRIPPLING_UNTREATED_INJURIES also clears `bleeding_turns` - how long the
+     * channels have been open - in the same transaction. Nothing dies of that
+     * counter any more, but it is still a claim about the body's current state
+     * rather than its history, and a counter that kept running after the wound
+     * was closed would be the database disagreeing with the engine about
+     * whether somebody is still carrying anything.
      */
     treatInjury(injuryId: string, treatedOnTurn?: number): Injury | null {
         const treat = this.db.transaction((): InjuryRow | undefined => {
@@ -679,7 +680,7 @@ export class CultivatorRepository {
             if (result.changes === 0) return undefined;
 
             const row = this.selectInjuryByIdStmt.get(injuryId) as InjuryRow | undefined;
-            if (row && this.countUntreatedInjuries(row.cultivator_id) < LETHAL_UNTREATED_INJURIES) {
+            if (row && this.countUntreatedInjuries(row.cultivator_id) < CRIPPLING_UNTREATED_INJURIES) {
                 this.clearBleedClockStmt.run({ id: row.cultivator_id });
             }
             return row;
@@ -697,7 +698,7 @@ export class CultivatorRepository {
         return rows.map(rowToInjury);
     }
 
-    /** Untreated injury count - the number LETHAL_UNTREATED_INJURIES is compared against. */
+    /** Untreated injury count - what CRIPPLING_UNTREATED_INJURIES is compared against. */
     countUntreatedInjuries(cultivatorId: string): number {
         const row = this.countUntreatedStmt.get(cultivatorId) as { n: number };
         return row.n;

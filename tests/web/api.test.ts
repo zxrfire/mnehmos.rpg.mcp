@@ -131,14 +131,21 @@ describe('GET /api/state', () => {
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
-            'bleedOutTurns', 'breakthroughBlockedReason', 'breakthroughReady', 'dao',
+            'breakthroughBlockedReason', 'breakthroughReady', 'dao',
+            // `daysChannelsOpen` and `injuryRatePenalty` replaced
+            // `bleedOutTurns` and `turnsUntilBleedOut`, which were a countdown
+            // to a death that no longer happens - a torn meridian is a torn
+            // muscle (`docs/world/injuries.md`). What the client gets instead
+            // is how long the wounds have been carried and what they cost.
+            'daysChannelsOpen',
             // `ground` is who else is drawing on the ground under them. It is
             // on the sheet because occupancy moves the rate more than the
             // ambient band does and was on no screen anywhere.
-            'foundationQuality', 'ground', 'lifespanPressure', 'lifespanPressureFromAge',
+            'foundationQuality', 'ground', 'injuryRatePenalty', 'lifespanPressure',
+            'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextRankName',
             'progressRequired', 'rankName', 'realmName', 'sectName', 'stagnationYears',
-            'turnsUntilBleedOut', 'untreatedInjuries'
+            'untreatedInjuries'
         ]);
         // The four that were added together, and the reason: the client had 50
         // written into it as the settling clock and said "fifty years without
@@ -153,9 +160,12 @@ describe('GET /api/state', () => {
         expect(res.body.derived.lifespanPressure).toBeLessThanOrEqual(0);
         expect(res.body.derived.lifespanPressureFromAge)
             .toBeLessThan(res.body.derived.lifespanYears);
-        // No wounds open, so no clock. Null rather than Infinity, because JSON
-        // has no Infinity and the wire type has to be the one the client tests.
-        expect(res.body.derived.turnsUntilBleedOut).toBeNull();
+        // No wounds open, so nothing has been carried and nothing is being
+        // taken. Plain zeroes rather than the null the old countdown needed,
+        // because neither of these is ever absent - one is an elapsed count and
+        // the other a fraction, and both are defined for a whole body.
+        expect(res.body.derived.daysChannelsOpen).toBe(0);
+        expect(res.body.derived.injuryRatePenalty).toBe(0);
         // Rank and dao are separate axes, and only one of them can be shut. The
         // sheet gets both, so a cultivator whose ladder is finished is not shown
         // a page made entirely of things they cannot do.

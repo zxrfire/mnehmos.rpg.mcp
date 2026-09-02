@@ -56,8 +56,7 @@
  */
 
 import {
-    BLEED_OUT_TURNS,
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
     STARVATION_TURNS,
@@ -121,7 +120,7 @@ import {
     pickNarrowed
 } from './dao.js';
 import { resolveDeviation, rollDeviation } from './deviation.js';
-import { createInjury, untreatedInjuryCount } from './injuries.js';
+import { aggregateInjuryPenalties, createInjury, untreatedInjuryCount } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import {
     bleedOut,
@@ -130,7 +129,6 @@ import {
     evaluateDeathConditions,
     satietyBurnMultiplier,
     stillNeedsToEat,
-    turnsUntilBleedOut,
     turnsUntilStarvation
 } from './survival.js';
 import { forStream } from './rng.js';
@@ -537,7 +535,7 @@ export function simulateTimeSkip(
      * it - which would turn a real consequence into a nag.
      */
     let starvationAnnounced =
-        !stillNeedsToEat(cultivator.realmOrdinal) ||
+        !stillNeedsToEat(cultivator.realmOrdinal, cultivator.injuries) ||
         (cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0);
     /**
      * Seeded from the entry state, exactly as starvation is.
@@ -547,7 +545,7 @@ export function simulateTimeSkip(
      * down anyway; stopping them every chunk would mean they could never
      * actually bleed out, which is the trap this whole clock exists to open.
      */
-    let bleedAnnounced = untreatedInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
+    let bleedAnnounced = untreatedInjuryCount(cultivator.injuries) >= CRIPPLING_UNTREATED_INJURIES;
 
     const push = (
         kind: SimEventKind,
@@ -974,10 +972,6 @@ export function simulateTimeSkip(
                 grainAbstinence || rations > 0
                     ? Infinity
                     : Math.floor(satiety / SATIETY_COST_PER_ACTION),
-            bleedOutDays: turnsUntilBleedOut({
-                untreatedInjuries: untreatedInjuryCount(injuries),
-                bleedingTurns
-            }),
             randomEvents
         });
 
@@ -1012,10 +1006,14 @@ export function simulateTimeSkip(
             if (hp <= 0) break;
         }
 
-        // The bleed clock runs on the same days everything else does, and it
-        // runs unconditionally - before the food block, which can break out of
-        // the loop, and with no grain-abstinence escape, because a pill that
-        // means you need not eat does not close a torn meridian.
+        // How long the channels have been open advances on the same days
+        // everything else does. NOTHING DIES AT THE END OF IT any more - it is
+        // an odometer rather than a clock, and it is kept because how long
+        // somebody has been carrying an open wound is a true fact about them
+        // and is what the player is shown in place of the countdown that used
+        // to be here. Still unconditional, and still with no grain-abstinence
+        // escape, because a pill that means you need not eat does not close a
+        // torn meridian.
         //
         // One call for the whole stretch is exact: the untreated count cannot
         // change inside a chunk, since injuries are only minted by the grid
@@ -1033,26 +1031,54 @@ export function simulateTimeSkip(
         // followed - because the running total from every prior seclusion had
         // never come back up. See HP_RECOVERY_FRACTION_PER_DAY for the ruling.
         //
-        // Three gates, and each is a system that already existed:
+        // Two gates, and each is a system that already existed:
         //
-        //   at the lethal untreated count - the meridians are open and the
-        //     bleed clock is running. "Unless you are so injured you are slowly
-        //     dying" is the owner's own exception, and this is it. Nothing
-        //     closes a torn channel on its own and nothing here pretends to.
         //   at zero satiety - a body with nothing to eat does not mend. It is
         //     already spending itself.
         //   at zero HP - the death gate below owns that, and a body cannot mend
         //     its way back across it inside the chunk that emptied it.
         //
+        // ── AND A THIRD GATE THAT WAS HERE AND HAD TO GO ─────────────────
+        //
+        // Open channels at the crippling count used to block mending outright,
+        // which was defensible while such a cultivator was dead in ninety days
+        // anyway. With the bleed-out death retired it became the amplifier on a
+        // runaway loop, and the loop is the whole reason this had to be
+        // measured rather than reasoned about:
+        //
+        //   a wound raises deviation risk (RISK_PER_UNTREATED_INJURY)
+        //     -> a deviation costs HP and leaves another wound
+        //       -> which raises the risk again and blocked the repair
+        //
+        // Measured: with the death clause removed and this gate still standing,
+        // `untreated_injuries` fell to 0 of 15 runs and `qi_deviation` rose to
+        // 15 of 15, at a median age of 26 against 21. The wall moved five years
+        // and changed its name. Softening the gate to a quarter speed was not
+        // enough either - the loop still outran the repair.
+        //
+        // So the gate is GONE rather than reduced, and the reason is in its own
+        // original justification: it cited the owner's exception "unless you
+        // are so injured you are slowly dying". Nobody is slowly dying of a
+        // channel wound any more, so the exception has nothing left to stand
+        // on. A torn muscle does not stop a bruise closing. What a channel
+        // wound takes is the cultivation rate, the quality of a blow and the
+        // odds at a crossing; it does not take the flesh's ordinary ability to
+        // knit, and giving it that was the extra penalty that turned an
+        // impairment back into a death.
+        //
+        // Note what this does NOT do: nothing here closes the channel wounds
+        // themselves. They still never heal without a physician or a pill, they
+        // still raise deviation risk every check, and the deviations still
+        // hurt. The body simply recovers from the bruising in between.
+        //
         // The carry is a float so the arithmetic is exact across chunk
         // boundaries: half a point a day over a 30-day grid must be fifteen
-        // points, not thirty roundings of zero. It is dropped whenever
-        // recovery is blocked, because a body that stopped mending has not been
-        // quietly banking it.
+        // points, not thirty roundings of zero. It is dropped whenever recovery
+        // is blocked, because a body that stopped mending has not been quietly
+        // banking it.
         const mendingBlocked =
             hp <= 0
-            || untreatedInjuryCount(injuries) >= LETHAL_UNTREATED_INJURIES
-            || (stillNeedsToEat(ordinal) && satiety <= 0);
+            || (stillNeedsToEat(ordinal, injuries) && satiety <= 0);
         if (mendingBlocked) {
             mending = 0;
         } else if (hp < cultivator.maxHp) {
@@ -1065,7 +1091,14 @@ export function simulateTimeSkip(
         }
 
         if (!grainAbstinence) {
-            const fed = consumeFood(chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal);
+            // The wound list goes with the rung, because a failed
+            // transformation takes the meals back - see
+            // `satietyBurnMultiplier`. It has to be the CURRENT list rather
+            // than the entry one, since a crossing inside this skip is exactly
+            // where such a wound is minted.
+            const fed = consumeFood(
+                chunk, { satiety, starvationTurns, rations }, cultivator.realmOrdinal, injuries
+            );
             satiety = fed.satiety;
             starvationTurns = fed.starvationTurns;
             rations = fed.rations;
@@ -1176,44 +1209,55 @@ export function simulateTimeSkip(
                     }
                 }
 
-                // Reaching the lethal untreated-injury threshold is not itself
-                // death, but it starts the clock that is, and it is the last
-                // moment at which the player can still do something about it.
-                // Hand control back - once. A cultivator who was already at
-                // the threshold when the skip began has been told, and being
-                // stopped every chunk would mean they could never bleed out.
-                if (untreatedInjuryCount(injuries) >= LETHAL_UNTREATED_INJURIES && !bleedAnnounced) {
+                // Crossing the open-channel threshold is not a death and no
+                // longer starts a clock towards one - see the ruling in
+                // `injuries.ts`. What it IS is the moment the body stops coping:
+                // it will not mend itself from here, the rate is a fraction of
+                // what it was, and a fight goes badly. That is worth handing
+                // control back for exactly once, because it is the point at
+                // which somebody would want to go and do something about it.
+                //
+                // Once, and not every chunk. A player who has been told and
+                // chose to press on has chosen; stopping them again every
+                // fortnight is the engine arguing with them.
+                if (untreatedInjuryCount(injuries) >= CRIPPLING_UNTREATED_INJURIES && !bleedAnnounced) {
                     bleedAnnounced = true;
                     interrupted = true;
                     interruptReason = 'lethal_injury_threshold';
+                    const rateLoss = Math.round(
+                        aggregateInjuryPenalties(injuries).cultivationPenalty * 100
+                    );
                     push(
                         'bleeding_warning',
-                        // NAMES THE CURE, because the cure exists and is cheap.
+                        // SAYS WHAT IT COSTS AND NAMES THE CURE.
                         //
-                        // Statistical playtesting: `untreated_injuries` is the
-                        // leading cause of death in this game - eleven of
-                        // eighteen sampled runs, median age at death 22. It is
-                        // not because nothing answers a torn meridian. A month
-                        // under a physician closes them, worst first, for about
-                        // five spirit stones a wound out of a starting purse of
-                        // thirty; the pill ladder does it faster.
+                        // It used to say the wound was fatal and count down to
+                        // it. It is not fatal - a torn channel is a torn muscle
+                        // - and a warning that threatens a death the engine no
+                        // longer delivers teaches the player to ignore warnings.
                         //
-                        // The warning said the wound was fatal and stopped
-                        // there, so the one sentence that reaches a player at
-                        // the moment they can still act named the blocker and
-                        // not the fix - the same defect as the technique
-                        // ceiling, and this is the condition that is actually
-                        // killing everybody.
-                        `${untreatedInjuryCount(injuries)} untreated meridian injuries. Any further combat is fatal, ` +
-                        `and nothing closes them on its own: ${BLEED_OUT_TURNS - bleedingTurns} days of this ` +
-                        'and the meridians give out. What does close them is a physician - a month ' +
-                        'of care in any settlement, worst wound first - or a healing pill, which is ' +
-                        'faster and dearer. Both have to be gone to.',
+                        // What it says instead is the true and genuinely
+                        // alarming thing: this is costing you most of your
+                        // progress, indefinitely, and it will not get better on
+                        // its own. The cure is named because it exists and is
+                        // cheap at this end of the ladder - a month under a
+                        // physician, worst wound first, for a handful of stones
+                        // - and a sentence that names the blocker without the
+                        // fix is the defect that made this the leading cause of
+                        // death in the first place.
+                        `${untreatedInjuryCount(injuries)} untreated meridian injuries. They will not close on ` +
+                        `their own and they are taking ${rateLoss}% of the cultivation rate, blunting every ` +
+                        'blow struck with them, and stopping the body mending at all. It is not fatal and it ' +
+                        'does not improve. What closes them is a physician - a month of care in any ' +
+                        'settlement, worst wound first - or a healing pill, which is faster and dearer. ' +
+                        'Both have to be gone to.',
                         true,
                         {
                             untreated: untreatedInjuryCount(injuries),
+                            // How long they have been carried, not how long is
+                            // left. There is no longer anything to be left of.
                             bleedingTurns,
-                            daysUntilBleedOut: BLEED_OUT_TURNS - bleedingTurns
+                            cultivationPenalty: rateLoss / 100
                         }
                     );
                 }
@@ -1505,7 +1549,12 @@ interface ChunkInputs {
     stagnationDays: number;
     starvationDays: number;
     emptyBellyDays: number;
-    bleedOutDays: number;
+    // `bleedOutDays` used to be a candidate here, so the loop always stopped on
+    // the ninetieth day of open channels to kill somebody. Nothing happens on
+    // that day any more and a boundary that resolves nothing is only a slower
+    // skip. Removing it cannot perturb a roll: every check fires on an absolute
+    // day grid rather than on a chunk edge, which is the whole determinism
+    // argument of this block.
     randomEvents: boolean;
 }
 
@@ -1536,8 +1585,7 @@ function nextChunk(input: ChunkInputs): number {
         input.lifespanDays,
         input.stagnationDays,
         input.starvationDays,
-        input.emptyBellyDays,
-        input.bleedOutDays
+        input.emptyBellyDays
     ]) {
         if (Number.isFinite(candidate) && candidate > 0) candidates.push(candidate);
     }
@@ -1578,7 +1626,8 @@ interface FoodState {
 function consumeFood(
     days: number,
     state: FoodState,
-    realmOrdinal = 0
+    realmOrdinal = 0,
+    injuries?: readonly Injury[]
 ): FoodState & { rationsUsed: number } {
     let { satiety, starvationTurns, rations } = state;
     let remaining = days;
@@ -1586,14 +1635,14 @@ function consumeFood(
 
     // Above the point where hunger stops, a seclusion of any length costs
     // nothing to eat through and no rations are opened.
-    const perDay = SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal);
+    const perDay = SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal, injuries);
     if (perDay <= 0) return { satiety, starvationTurns: 0, rations, rationsUsed: 0 };
 
     while (remaining > 0) {
         const fedActions = Math.floor(satiety / perDay);
         const step = Math.min(remaining, fedActions);
         if (step > 0) {
-            const burned = burnSatiety({ satiety, starvationTurns }, step, realmOrdinal);
+            const burned = burnSatiety({ satiety, starvationTurns }, step, realmOrdinal, injuries);
             satiety = burned.satiety;
             starvationTurns = burned.starvationTurns;
             remaining -= step;

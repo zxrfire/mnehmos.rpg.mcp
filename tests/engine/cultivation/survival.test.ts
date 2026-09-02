@@ -8,7 +8,7 @@
  */
 
 import {
-    LETHAL_UNTREATED_INJURIES,
+    CRIPPLING_UNTREATED_INJURIES,
     SATIETY_COST_PER_ACTION,
     SATIETY_MAX,
     STAGNATION_YEARS,
@@ -17,16 +17,19 @@ import {
 } from '../../../src/schema/cultivation.js';
 import {
     ACTIONS_PER_FULL_SATIETY,
+    SATIETY_BURN_BY_REALM,
     assessSuicidalCombat,
     burnSatiety,
     describeDeath,
     eat,
     evaluateDeathConditions,
     lifespanRemaining,
+    satietyBurnMultiplier,
     stagnationRemaining,
+    stillNeedsToEat,
     turnsUntilStarvation
 } from '../../../src/engine/cultivation/survival.js';
-import { lifespanForOrdinal } from '../../../src/engine/cultivation/realms.js';
+import { REALM_TIERS, lifespanForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { treatInjury } from '../../../src/engine/cultivation/injuries.js';
 import { makeCultivator, makeInjuries } from './fixtures.js';
 
@@ -63,6 +66,65 @@ describe('satiety', () => {
         );
         expect(turnsUntilStarvation({ satiety: 0, starvationTurns: STARVATION_TURNS - 1 })).toBe(1);
         expect(turnsUntilStarvation({ satiety: 0, starvationTurns: STARVATION_TURNS })).toBe(0);
+    });
+});
+
+// A crossing that only partly took. `failed-transformation` is a permanent
+// wound, so `treated` stays false for life and the lock never lifts.
+const partialTransformation = makeInjuries(1, 'crippling')
+    .map(i => ({ ...i, woundType: 'failed-transformation' }));
+
+describe('a failed transformation takes the meals back', () => {
+    // Each realm-boundary wound locks the ability its realm exists to grant,
+    // and for Deity Transformation the one the engine genuinely enforces is
+    // that hunger stops. "It's only partial, they don't have the full abilities
+    // of a DT" - so the meals come back.
+    const DT = REALM_TIERS.find(t => t.key === 'deity_transformation')!.ordinalStart;
+
+    it('leaves a whole Deity Transformation cultivator free of food', () => {
+        expect(satietyBurnMultiplier(DT)).toBe(0);
+        expect(stillNeedsToEat(DT)).toBe(false);
+        expect(satietyBurnMultiplier(DT, [])).toBe(0);
+    });
+
+    it('puts one who only partly transformed back on the Nascent Soul rate', () => {
+        // The realm they actually completed, not a mortal's. What failed was
+        // the last crossing rather than everything under it.
+        expect(satietyBurnMultiplier(DT, partialTransformation))
+            .toBe(SATIETY_BURN_BY_REALM.nascent_soul);
+        expect(stillNeedsToEat(DT, partialTransformation)).toBe(true);
+    });
+
+    it('never makes anybody hungrier than the realm below them already is', () => {
+        // The lock only ever denies a grant. Below Deity Transformation the
+        // burn is already non-zero and the wound must not touch it.
+        for (const ordinal of [0, 12, 20]) {
+            expect(satietyBurnMultiplier(ordinal, partialTransformation))
+                .toBe(satietyBurnMultiplier(ordinal));
+        }
+    });
+
+    it('lets them starve, which is a fair death with a clock and a cure', () => {
+        // Deliberately NOT the thing being retired alongside it. Channel wounds
+        // stopped killing anybody; starvation is a live cause with a visible
+        // countdown and a meal you can buy in any settlement.
+        const starved = makeCultivator({
+            realmOrdinal: DT,
+            injuries: partialTransformation,
+            satiety: 0,
+            starvationTurns: STARVATION_TURNS
+        });
+        expect(evaluateDeathConditions(starved)).toBe('starvation');
+        // And a whole one at the same rung and the same empty belly does not,
+        // because nothing about them is spending itself on food.
+        expect(evaluateDeathConditions({ ...starved, injuries: [] })).toBeNull();
+    });
+
+    it('burns satiety for them where a whole one burns none', () => {
+        const full = { satiety: SATIETY_MAX, starvationTurns: 0 };
+        expect(burnSatiety(full, 10_000, DT).satiety).toBe(SATIETY_MAX);
+        expect(burnSatiety(full, 10_000, DT, partialTransformation).satiety)
+            .toBeLessThan(SATIETY_MAX);
     });
 });
 
@@ -134,28 +196,29 @@ describe('evaluateDeathConditions', () => {
         ).toBe('stagnation_aging');
     });
 
-    it('kills for untreated injuries only when a fight is forced', () => {
-        const injuries = makeInjuries(LETHAL_UNTREATED_INJURIES);
+    it('does not kill for untreated injuries, even with a fight forced', () => {
+        // INVERTED. This asserted that forcing a fight at the threshold was an
+        // immediate death, which was true and is not any more. Design owner:
+        // "torn meridians should not kill... it should be the same as a torn
+        // muscle irl. very VERY annoying, but you don't die."
+        //
+        // The full guard, in both directions, is
+        // `a-torn-meridian-does-not-kill-you.test.ts` - which is this file's
+        // old `bleeding.test.ts` with every death assertion turned over.
+        const injuries = makeInjuries(CRIPPLING_UNTREATED_INJURIES);
         const atThreshold = makeCultivator({ injuries });
 
-        // Standing here is survivable. You can crawl to a healer.
         expect(evaluateDeathConditions(atThreshold)).toBeNull();
-        // Forcing another fight is not.
-        expect(evaluateDeathConditions(atThreshold, { forcingCombat: true })).toBe(
-            'untreated_injuries'
-        );
+        expect(evaluateDeathConditions(atThreshold, { forcingCombat: true })).toBeNull();
     });
 
-    it('does not kill one injury below the threshold', () => {
-        const injuries = makeInjuries(LETHAL_UNTREATED_INJURIES - 1);
+    it('does not kill below the threshold either, treated or not', () => {
+        const injuries = makeInjuries(CRIPPLING_UNTREATED_INJURIES - 1);
         expect(
             evaluateDeathConditions(makeCultivator({ injuries }), { forcingCombat: true })
         ).toBeNull();
-    });
 
-    it('counts only untreated injuries toward the threshold', () => {
-        const injuries = makeInjuries(LETHAL_UNTREATED_INJURIES);
-        const healed = treatInjury(injuries, injuries[0].id);
+        const healed = treatInjury(makeInjuries(CRIPPLING_UNTREATED_INJURIES), injuries[0].id);
         expect(
             evaluateDeathConditions(makeCultivator({ injuries: healed }), { forcingCombat: true })
         ).toBeNull();
@@ -180,7 +243,7 @@ describe('evaluateDeathConditions', () => {
             starvationTurns: STARVATION_TURNS,
             age: 999,
             yearsAtCurrentRealm: STAGNATION_YEARS + 10,
-            injuries: makeInjuries(LETHAL_UNTREATED_INJURIES)
+            injuries: makeInjuries(CRIPPLING_UNTREATED_INJURIES)
         });
         expect(evaluateDeathConditions(doomed, { forcingCombat: true })).toBe('combat_defeat');
 
@@ -202,12 +265,26 @@ describe('assessSuicidalCombat', () => {
         expect(assessSuicidalCombat(makeCultivator())).toEqual({ suicidal: false, reasons: [] });
     });
 
-    it('names each reason it is suicidal', () => {
+    it('names the HP line, and no longer counts wounds among the reasons', () => {
+        // There were two reasons and there is one. Untreated wounds were the
+        // other, back when forcing a fight at the threshold was an immediate
+        // death; it is not, and a function reporting "suicidal" for a state
+        // nothing kills anybody for is a warning with nothing behind it.
+        //
+        // Fighting wounded is still a bad idea and is still priced - in the
+        // condition line of `assessPower` and in the damage a wounded attacker
+        // lands. It makes losing likelier, and losing has always been fatal.
         const assessment = assessSuicidalCombat(
-            makeCultivator({ hp: 1, maxHp: 100, injuries: makeInjuries(LETHAL_UNTREATED_INJURIES) })
+            makeCultivator({ hp: 1, maxHp: 100, injuries: makeInjuries(CRIPPLING_UNTREATED_INJURIES) })
         );
         expect(assessment.suicidal).toBe(true);
-        expect(assessment.reasons).toHaveLength(2);
+        expect(assessment.reasons).toHaveLength(1);
+        expect(assessment.reasons[0]).toMatch(/HP/);
+
+        // And wounds alone, on a body that can stand, are not suicide at all.
+        expect(assessSuicidalCombat(
+            makeCultivator({ hp: 100, maxHp: 100, injuries: makeInjuries(CRIPPLING_UNTREATED_INJURIES) })
+        ).suicidal).toBe(false);
     });
 });
 

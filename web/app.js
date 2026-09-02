@@ -867,28 +867,32 @@ function renderWarnings() {
     ? d.untreatedInjuries
     : (c.injuries || []).filter((i) => !i.treated).length) || 0;
   if (untreated >= 3) {
-    // The countdown is the engine's own number - derived.turnsUntilBleedOut -
-    // never one worked out here. Null means no clock is running, which at this
-    // count should not happen, so the line falls back to the standing warning
-    // rather than printing a number the engine did not send.
-    const bleed = d.turnsUntilBleedOut;
-    const fullWindow = Number(d.bleedOutTurns) || 0;
+    // NO COUNTDOWN. This panel used to print "N days before they kill you" off
+    // derived.turnsUntilBleedOut, and torn meridians do not kill anybody - they
+    // are a torn muscle, very annoying and survivable (docs/world/injuries.md).
+    // Both fields it read are gone from the wire.
+    //
+    // It is still the worst thing on the sheet and still marked as such,
+    // because at this count the body stops repairing itself and the rate is a
+    // fraction of what it was. The numbers are the engine's own -
+    // daysChannelsOpen and injuryRatePenalty - never worked out here.
+    const openDays = Number(d.daysChannelsOpen) || 0;
+    const rateLost = Number(d.injuryRatePenalty) || 0;
     items.push({
       level: 'critical',
       mark: '✕',
-      title: bleed == null
-        ? `${untreated} untreated injuries`
-        : `${untreated} untreated injuries - ${fmtInt(bleed)} days before they kill you`,
-      body: bleed == null
-        ? 'Meridian damage does not heal on its own. Any further combat is fatal.'
-        : `Meridian damage does not heal on its own. Any further combat is fatal, and doing nothing is too: ${fullWindow} days at this many open wounds and the meridians give out. Find a healer or a pill.`
+      title: `${untreated} untreated injuries - the body has stopped mending`,
+      body: 'Meridian damage does not heal on its own, and at this many open wounds nothing else does either.'
+        + (rateLost > 0 ? ` Cultivation is running at ${fmtInt(Math.round((1 - rateLost) * 100))}% of its rate.` : '')
+        + (openDays > 0 ? ` Open for ${fmtInt(openDays)} days.` : '')
+        + ' Find a healer or a pill.'
     });
   } else if (untreated === 2) {
     items.push({
       level: 'severe',
       mark: '!',
       title: '2 untreated injuries',
-      body: 'One more and the run is on a fatal track. Cultivation speed and breakthrough odds are already penalised.'
+      body: 'One more and the body stops mending itself entirely. Cultivation speed and breakthrough odds are already penalised.'
     });
   }
 
@@ -2121,14 +2125,18 @@ function pickerWarnings(days) {
   if (satiety <= 30 && days > 30) {
     warnings.push(`Satiety is ${fmtInt(satiety)}. Long seclusion on an empty stomach is how runs end.`);
   }
-  // Open meridians kill on a clock, and time is exactly what is being spent
-  // here. This is the last thing read before committing it, so it is where the
-  // player has to be told. The number is the engine's (derived.turnsUntilBleedOut).
-  const bleed = (S.derived || {}).turnsUntilBleedOut;
-  if (bleed != null) {
-    warnings.push(days >= bleed
-      ? `You will not survive this. ${fmtInt(untreatedCount())} untreated meridian injuries give out in ${fmtInt(bleed)} days, and you are asking for ${fmtInt(days)}. Treat them first.`
-      : `${fmtInt(untreatedCount())} untreated meridian injuries. They give out in ${fmtInt(bleed)} days whatever you do; this leaves ${fmtInt(bleed - days)} to reach a healer afterwards.`);
+  // Open meridians do not kill on a clock, and this warning used to say they
+  // did - "you will not survive this" against a seclusion longer than the bleed
+  // window. That death is retired (docs/world/injuries.md) and the warning is
+  // not, because what open channels take is the very thing being spent here:
+  // years, at a fraction of the rate they would otherwise buy. Going into a
+  // long seclusion wounded is how a decade produces almost nothing.
+  const rateLost = Number((S.derived || {}).injuryRatePenalty) || 0;
+  if (rateLost > 0 && days > 30) {
+    warnings.push(`${fmtInt(untreatedCount())} untreated meridian injuries are taking `
+      + `${fmtInt(Math.round(rateLost * 100))}% of the cultivation rate, and nothing closes them `
+      + `while you sit. These ${fmtInt(days)} days will buy roughly `
+      + `${fmtInt(Math.round((1 - rateLost) * 100))}% of what they should. Treat them first.`);
   }
 
   return warnings;
@@ -2823,7 +2831,7 @@ const MAP_KIND_LABEL = {
   vein: 'Spirit vein', cave: 'Cave', ruin: 'Ruin', grave: 'Grave', scar: 'Scar',
   forbidden_zone: 'Forbidden zone', secret_realm: 'Secret realm',
   sealed_domain: 'Sealed domain', portal: 'Portal', precinct: 'Precinct',
-  hall: 'Hall', chamber: 'Chamber', vault: 'Vault'
+  hall: 'Hall', chamber: 'Chamber', vault: 'Strongroom'
 };
 
 const MAP_LINK_LABEL = {

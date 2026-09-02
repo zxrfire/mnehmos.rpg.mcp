@@ -56,8 +56,10 @@ const REALMS = [
 ];
 const MAX_ORDINAL = 46;
 /** Mirrors src/schema/cultivation.ts. The mock states the same numbers the engine does. */
+// Open channel wounds at which a body stops mending itself. NOT a death
+// threshold - the engine's name for it is CRIPPLING_UNTREATED_INJURIES and the
+// old one is kept here only to match the identifiers already used below.
 const LETHAL_UNTREATED_INJURIES = 3;
-const BLEED_OUT_TURNS = 90;
 /** The rung the crossing lands on when it does not complete. */
 const FALSE_IMMORTAL_ORDINAL = 45;
 const FALSE_IMMORTAL_LIFESPAN_YEARS = 300000;
@@ -199,7 +201,7 @@ const LOCATIONS = ['Greenwater Town', 'Stonefall Market', 'Azure Cloud Peak', 'B
 const DEATH_CAUSES = ['combat_defeat', 'lifespan_exhausted', 'untreated_injuries', 'starvation', 'failed_breakthrough', 'qi_deviation', 'heavenly_tribulation', 'stagnation_aging', 'obviously_fatal_choice'];
 const INJURY_DESCS = [
   'Third meridian of the left arm torn end to end.',
-  'Hairline fracture through the dantian wall.',
+  'Hairline fracture through the wall of the core.',
   'Qi scarring across the heart meridian.',
   'Frostbite in the lower meridians that never fully thawed.',
   'A sword wound that closed badly and pulls at every circulation.',
@@ -319,12 +321,11 @@ function derived() {
     lifespanPressure: lifespanPressureFor(o, c.age),
     lifespanPressureFromAge: lifespanFor(o) * LIFESPAN_PRESSURE_ONSET,
     untreatedInjuries: untreated,
-    // Mirrors the real derivedView: null when no bleed clock is running,
-    // because JSON has no Infinity and the client tests for null.
-    turnsUntilBleedOut: untreated >= LETHAL_UNTREATED_INJURIES
-      ? Math.max(0, BLEED_OUT_TURNS - (c.bleedingTurns || 0))
-      : null,
-    bleedOutTurns: BLEED_OUT_TURNS,
+    // Mirrors the real derivedView. `turnsUntilBleedOut` and `bleedOutTurns`
+    // stood here and were a countdown to a death that no longer happens - a
+    // torn channel is a torn muscle. See docs/world/injuries.md.
+    daysChannelsOpen: Math.max(0, Math.round(c.bleedingTurns || 0)),
+    injuryRatePenalty: Math.min(0.9, Number((0.25 * untreated).toFixed(4))),
     sectName: (SECTS.find(x => x.id === c.sectId) || {}).name || null,
     foundationQuality: c.foundationQuality || 'none',
     nameTaken: !!c.nameTaken,
@@ -942,7 +943,8 @@ function handleAct(input) {
   const c = W.cultivator;
   c.satiety = Math.max(0, c.satiety - between(2, 6));
   if (c.satiety === 0) c.starvationTurns += 1; else c.starvationTurns = 0;
-  // Sibling of the line above: open meridians run their own clock, and it
+  // Sibling of the line above: how long the channels have been open. An
+  // odometer rather than a clock - nothing dies at the end of it - and it
   // resets the moment the count drops back under the threshold.
   if (c.injuries.filter((i) => !i.treated).length >= LETHAL_UNTREATED_INJURIES) {
     c.bleedingTurns = (c.bleedingTurns || 0) + 1;
@@ -1114,8 +1116,9 @@ function handleCultivate(days) {
   c.satiety = Math.max(0, c.satiety - Math.min(95, Math.round(requested / 26)));
   if (c.satiety === 0) c.starvationTurns += 1;
 
-  // The bleed clock over the same stretch. Open meridians do not pause for a
-  // seclusion; this is the mock's version of the engine's own accrual.
+  // How long the channels have been open, over the same stretch. Open meridians
+  // do not close during a seclusion; this is the mock's version of the engine's
+  // own accrual, and nothing kills anybody at the end of it.
   const openWounds = c.injuries.filter((i) => !i.treated).length;
   c.bleedingTurns = openWounds >= LETHAL_UNTREATED_INJURIES
     ? (c.bleedingTurns || 0) + simulated
@@ -1134,11 +1137,10 @@ function handleCultivate(days) {
   } else if (c.starvationTurns >= 5) {
     died = true; deathCause = 'starvation';
     events.push({ kind: 'death', dayOffset: simulated, summary: 'Seclusion outlasted the food by a considerable margin.', interrupts: true, data: {} });
-  } else if (c.bleedingTurns >= BLEED_OUT_TURNS) {
-    died = true; deathCause = 'untreated_injuries';
-    events.push({ kind: 'death', dayOffset: simulated, summary: `${openWounds} meridians left open for ${BLEED_OUT_TURNS} days. They gave out.`, interrupts: true, data: {} });
+  // The `untreated_injuries` death used to sit here, between starvation and the
+  // lifespan warning. It is gone: a channel wound impairs and does not kill.
   } else if (openWounds >= LETHAL_UNTREATED_INJURIES) {
-    events.push({ kind: 'bleeding_warning', dayOffset: simulated, summary: `${openWounds} untreated meridian injuries. ${BLEED_OUT_TURNS - c.bleedingTurns} days before they give out on their own.`, interrupts: true, data: {} });
+    events.push({ kind: 'bleeding_warning', dayOffset: simulated, summary: `${openWounds} untreated meridian injuries. Not fatal, and they do not improve: the body has stopped mending itself and the cultivation rate is a fraction of what it was until they are treated.`, interrupts: true, data: {} });
   } else if (c.age > lifespan * 0.85) {
     events.push({ kind: 'lifespan_warning', dayOffset: simulated, summary: `${Math.round(lifespan - c.age)} years of lifespan remain at this realm.`, interrupts: false, data: {} });
   }

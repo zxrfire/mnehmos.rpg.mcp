@@ -133,6 +133,10 @@ describe('the fallback is inert', () => {
             // rows and nothing else, so it spends no days, changes no value
             // and cannot even accidentally teach anybody anything.
             'recall',
+            // Asking the square what it has heard. Writes knowledge records at
+            // `whisper` and nothing else - the same write standing near a
+            // conversation already makes - so it spends no day and no stone.
+            'news',
             /**
              * The four institutional verbs, inert on this axis and NOT inert in
              * general, which is exactly the position `sect` is in.
@@ -330,6 +334,9 @@ describe('every verb is reachable from plain English', () => {
         legacy: 'I bury my things here',
         // Dead at ordinals 37-46, where it matters most. See the recall block.
         recall: 'what do I know of Lu Sheng',
+        // Four phrasings of this deflected into the recall listing, which is
+        // the "looks exactly like an answer" failure one layer over.
+        news: 'what news is there',
         // The four institutional verbs, all four found at the top of a house
         // rather than the bottom of the ladder. See the block at the end of
         // this file.
@@ -1266,15 +1273,24 @@ describe('the inheritance grounds, through the whole service', () => {
 });
 
 /**
- * The other half of the spiral, and the reason the treatment route is the way
- * out of it rather than a convenience.
+ * What a cultivator carrying open channels is told.
  *
- * Untreated injuries at the lethal threshold now give out on their own after
- * `BLEED_OUT_TURNS` days, so the run ends instead of looping forever. What the
- * player is told about that has to be true in both directions: standing up is
- * a decision, and so is not standing up.
+ * REWRITTEN, AND SAY WHY. This block asserted that the sheet told a player
+ * their meridians would give out in `BLEED_OUT_TURNS` days and printed the
+ * countdown as a number on the mechanical channel. Both were true and neither
+ * is any more: the design owner ruled that a torn meridian is a torn muscle -
+ * very annoying, and not something you die of (`docs/world/injuries.md`).
+ *
+ * A warning that threatens a death the engine never delivers is worse than no
+ * warning, because it teaches a player to discount the next one. So the
+ * assertions are turned over: no countdown anywhere, and in its place the two
+ * things that ARE true and are what a player needs in order to decide to go and
+ * be treated - nothing is knitting, and it is costing this much of the rate.
+ *
+ * The treatment case at the bottom is untouched in intent and is now the whole
+ * point of the block: the cure is reachable, affordable and sufficient.
  */
-describe('what a cultivator at the lethal threshold is told', () => {
+describe('what a cultivator carrying open channels is told', () => {
     async function bleeding(seed: string) {
         const harness = makeGame({ seed });
         const { cultivator } = await harness.game.newRun('Shi Wanjun');
@@ -1289,42 +1305,38 @@ describe('what a cultivator at the lethal threshold is told', () => {
         return { ...harness, cultivator };
     }
 
-    it('says that sitting still kills too, and counts the days off the engine clock', async () => {
+    it('says nothing is knitting, and never that it will kill them', async () => {
         const { game } = await bleeding('bleeding-prose');
         const result = await game.act('I look around');
 
         expect(result.narration).toMatch(/standing up is a decision now/i);
-        // The half that was missing while a fight was the only way to die of
-        // this. The number is read off `turnsUntilBleedOut`, not restated.
-        expect(result.narration).toMatch(/so is not standing up/i);
-        expect(result.narration).toContain(`${BLEED_OUT_TURNS} days`);
+        // What replaced "and so is not standing up: N days of this and they
+        // give out on their own". The state is permanent-until-treated rather
+        // than terminal, and that is what the sentence has to convey.
+        expect(result.narration).toMatch(/nothing is knitting/i);
+        expect(result.narration).not.toMatch(/give out|days before/i);
+        expect(result.narration).not.toContain(`${BLEED_OUT_TURNS} days`);
     });
 
-    it('carries the countdown as a number on the mechanical channel', async () => {
+    it('carries no countdown on the mechanical channel, and the cost instead', async () => {
         const { db, game } = await bleeding('bleeding-structure');
         await game.act('I look around');
 
         const logged = db
             .prepare("SELECT text FROM web_play_log WHERE role = 'engine' ORDER BY id DESC LIMIT 20")
             .all() as Array<{ text: string }>;
-        const line = logged.find(row => row.text.includes('daysUntilBleedOut'));
 
-        expect(line, 'no bleed countdown on the mechanical channel').toBeDefined();
-        expect(line!.text).toContain(`daysUntilBleedOut=${BLEED_OUT_TURNS}`);
-    });
+        expect(
+            logged.find(row => row.text.includes('daysUntilBleedOut')),
+            'a countdown to a death that no longer happens'
+        ).toBeUndefined();
 
-    it('prints a dash rather than a number for somebody who is not on the clock', async () => {
-        const { db, game } = makeGame({ seed: 'bleeding-none' });
-        await game.newRun('Shi Wanjun');
-        await game.act('I look around');
-
-        const logged = db
-            .prepare("SELECT text FROM web_play_log WHERE role = 'engine' ORDER BY id DESC LIMIT 20")
-            .all() as Array<{ text: string }>;
-        const line = logged.find(row => row.text.includes('daysUntilBleedOut'));
-
-        expect(line!.text).toContain('daysUntilBleedOut=-');
-        expect(line!.text).not.toContain('Infinity');
+        // The inspector panel still carries the numbers, and they are the true
+        // ones: how long the channels have been open, and what they cost.
+        const line = logged.find(row => row.text.includes('untreatedInjuries='));
+        expect(line, 'no injury figures on the mechanical channel').toBeDefined();
+        expect(line!.text).toMatch(/daysChannelsOpen=\d+/);
+        expect(line!.text).toMatch(/rateLost=\d+%/);
     });
 
     it('is a clock the treatment route beats, with room to spare', async () => {
