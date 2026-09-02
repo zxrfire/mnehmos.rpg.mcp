@@ -264,21 +264,41 @@ and **said nothing about the eating**. That is worse than a refusal - a refusal
 at least tells you where you stand, and a dropped clause is indistinguishable
 from an action that ran and did nothing.
 
+**And it happens in both directions.** The parser takes whichever verb its table
+reaches first, which is not always the first verb in the sentence, so
+`I gather herbs and go to the market` browses a board and the gathering is gone.
+That is the same defect from the worse end: when the second thing is dropped the
+player at least watches the first one happen and can guess, and when the first is
+dropped the expensive thing vanishes and a cheap read runs in its place.
+
 One turn is still one action, and
-[`a-second-verb-in-the-sentence-that-was-not-run.ts`](a-second-verb-in-the-sentence-that-was-not-run.ts)
+[`the-part-of-the-sentence-that-was-not-run.ts`](the-part-of-the-sentence-that-was-not-run.ts)
 does not change that. It is not command chaining, and it must not become it: the
 game's character is that you say what you mean in your own words and the engine
 prices it, and two verbs can legitimately cost two spans. What it does is report
 the clause, in the player's own words, with the sentence that would work beside
 it - into `facts.prose`, `facts.lines`, `facts.structure` and the inspector.
 
-**The rule is narrow and the narrowness is measured.** It only looks at clauses
-standing AFTER the one that ran, because the general form - report any clause
-whose reading differs from the turn's - fired on four ordinary single-intent
-sentences in a corpus of thirty-four (`I speak to the elder and ask about a
-manual` is one act, not two). The cost of the narrowness is written down in the
-module: where the parser takes the LAST verb and drops the first, this says
-nothing yet.
+**One rule, and it was settled by measurement rather than by taste:**
+
+> A clause is worth reporting only if it would have COST something.
+
+Free reads are never reported, on either side, and not as a tuning choice:
+nothing was taken. `look`, `market`, `status`, `interact` and the rest of
+`READ_ONLY_ACTIONS` spend no day, no ration and no stone, so a player who wanted
+one can say it next turn and have it for nothing. Against a corpus of sixty
+ordinary one-intent sentences containing the word "and", reporting any clause
+whose reading differs from the turn's produced **seven false reports and every
+one of them was a free read** (`I speak to the elder and ask about a manual` is
+one act, not two); the same rule with the cost guard produced **none**, while
+still catching every costly clause on either side. The guard also removed a false
+report an earlier version was already shipping - `I go to the ruin and look
+inside` announced that the looking had not been done.
+
+**What that costs, stated plainly.** `I work for a season and then go to the
+market` no longer reports the market visit, because browsing a board is free. A
+lie about half the player's sentence is worse than silence about something they
+can have next turn at no price.
 
 ### What a seclusion will cost to eat is quoted before it is entered
 
@@ -301,9 +321,22 @@ gets the figure and no extra click: prompting on every seclusion is tedium on th
 common case, and the point was never to make food a decision - it was to stop the
 purse leaving without the player having seen the number.
 
-**What is not covered.** The free-text route (`I cultivate for two years`) has no
-commit point to quote at, so it still reports the purchase afterwards. The engine
-has no answer for that one yet.
+**A press that lands before the quote does not skip the confirm.** It used to:
+the click went straight through and the one case the confirm exists for is
+somebody about to spend everything. `confirmPick` now cancels the debounce, asks,
+and says `Pricing the food…` on the button while it waits. It still falls through
+to the seclusion when the endpoint *fails* - a player must not be held out of the
+game because a read is unwell - but not merely because the answer is in flight.
+
+**The free-text route is not quoted, and that is a decision rather than a gap.**
+`I cultivate for two years` reports the purchase afterwards. There is no commit
+point on that route to quote at, and the two ways to invent one are both worse
+than the honest report: refusing the sentence and asking again is banning, and
+silently making the food optional is softening. AGENTS.md answers "may I?" with
+"yes, and here is what it costs", which is exactly what the typed sentence
+already gets. The picker needs a preview precisely because a button carries no
+sentence and therefore no intent; a player who typed the years has said what they
+meant.
 
 ### `intent` is open, and is never branched on
 

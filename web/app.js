@@ -2495,12 +2495,48 @@ function openCultivatePicker() {
     }
   };
 
-  const confirmPick = () => {
+  // Set while the quote is being waited on, so a second press does not start a
+  // second wait and then a second seclusion behind the first.
+  let waitingOnTheQuote = false;
+
+  const confirmPick = async () => {
+    if (waitingOnTheQuote || S.busy) return;
     const days = pickerDays();
+
+    // ── THE CONFIRM MUST NOT BE SKIPPABLE BY BEING FAST ────────────────
+    //
+    // The quote is the only thing that knows whether this empties the purse,
+    // so a click that lands before it arrives used to go straight through -
+    // and the one case the confirm exists for is somebody about to spend
+    // everything. Failing open is the right direction when the engine cannot
+    // answer at all; it is not the right direction when the answer is simply
+    // still in flight. So the debounce is cancelled, the question is asked
+    // now, and the button says what it is doing.
+    if (FOOD.days !== days || (!FOOD.plan && !FOOD.error)) {
+      waitingOnTheQuote = true;
+      const go = $('#pick-go');
+      const wasSaying = go ? go.textContent : '';
+      if (go) { go.disabled = true; go.textContent = 'Pricing the food…'; }
+      if (FOOD.timer) { clearTimeout(FOOD.timer); FOOD.timer = null; }
+      await quoteTheFood(days, repaintTotal);
+      waitingOnTheQuote = false;
+      // They may have closed the panel or changed their mind while we asked.
+      // Either way this press is spent; it must not carry them into a
+      // seclusion they are no longer looking at.
+      const stillOpen = $('#pick-go');
+      if (!stillOpen || pickerDays() !== days) return;
+      stillOpen.disabled = false;
+      stillOpen.textContent = wasSaying;
+    }
+
     // A purchase that takes most or all of the purse gets the shape this game
     // already uses for a costly irreversible choice - the same one `Cultivate`
     // with no manual gets. The ordinary case gets no extra click: the figure is
     // printed above the button and pressing it is an informed decision.
+    //
+    // `FOOD.error` still falls through to the seclusion. A player must not be
+    // held out of the game because a read-only endpoint is unwell, and the
+    // panel has already told them the cost could not be read.
     const plan = FOOD.days === days ? FOOD.plan : null;
     if (plan && plan.worthAsking) {
       closeOverlay();
