@@ -868,8 +868,8 @@ export function gradeRank(grade: TechniqueGrade): number {
 // while sitting at power ordinal 40. Its own note says why: "Produces nobody,
 // by construction: it takes no disciples." Zero is a statement about INTAKE,
 // not about the quality of anything it could teach, and a cap derived from the
-// house would have handed the strongest institution in the world a ceiling of
-// zero. Deriving from the manual instead means the question never arises.
+// house would have handed the Hollow Court a ceiling of zero. Deriving from the
+// manual instead means the question never arises.
 //
 // ── One realm per book ───────────────────────────────────────────────────
 //

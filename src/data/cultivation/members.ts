@@ -452,10 +452,10 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // THE PERSON THE PAVILION'S WHOLE POSITION RESTS ON, WHO HAS NO POSITION.
     //
     // `crossings.ts` carries her inside a prose field on somebody else's
-    // channel - `theClock.who` - which made her the clearest instance of the
-    // gap this row exists to close: the strongest institution in the world is
-    // strong because a specific living person is alive, and that person was
-    // nowhere a player could stand next to her.
+    // channel - `thePersonItAnswersFor.who` - which made her the clearest
+    // instance of the gap this row exists to close: the Pavilion's whole
+    // position rests on a specific living person being alive, and that person
+    // was nowhere a player could stand next to her.
     //
     // WHAT IS TAKEN FROM THE CATALOG AND WHAT IS DELIBERATELY OMITTED. Her
     // rung, her age and her house are stated identically in `crossings.ts` and
