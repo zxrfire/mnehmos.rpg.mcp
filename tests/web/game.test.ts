@@ -374,7 +374,9 @@ describe('interact', () => {
         expect(planned(result).action).toBe('interact');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/Unresolved party/);  // inspector, not prose
+        // Inspector, not prose - and a sentence rather than a field dump, which
+        // is the standard the whole channel now holds.
+        expect(refusal.summary).toMatch(/matched nobody/);
     });
 
     it('reports real facts about a real party, and refuses to resolve the outcome', async () => {

@@ -148,8 +148,19 @@ describe('the sum on the table reaches the odds', () => {
         const call = engineCalls(said).find(row => row.name === 'engine.resolveAttempt');
         expect(call, 'the attempt never reached the resolver').toBeDefined();
 
-        const odds = Number(/at ([\d.]+)%/.exec(call!.summary)?.[1] ?? NaN);
-        const purse = Number(/purse=(-?[\d.]+)/.exec(call!.summary)?.[1] ?? NaN);
+        // The channel speaks in sentences now, and every figure the field dump
+        // carried is still in it - "comes off about one time in 8 (13 in a
+        // hundred)", "the money put down added 15 points". Anchored on `comes
+        // off` because "in a hundred" is deliberately the odds and nothing
+        // else, and on the term's own name because the terms are named rather
+        // than keyed.
+        const odds = Number(
+            /comes off (?:about one time in \d+ \()?(\d+) in a hundred/
+                .exec(call!.summary)?.[1] ?? NaN
+        );
+        const purse = /Nothing came from[^.]*the money put down/.test(call!.summary)
+            ? 0
+            : Number(/the money put down added (\d+) points?/.exec(call!.summary)?.[1] ?? NaN);
         expect(Number.isFinite(odds), `no odds in: ${call!.summary}`).toBe(true);
         expect(Number.isFinite(purse), `no purse term in: ${call!.summary}`).toBe(true);
         return { odds, purse };
@@ -211,7 +222,11 @@ describe('what the narration says left the purse, left the purse', () => {
 
             // The engine's own number, which is what the prose is quoting.
             const call = engineCalls(said).find(row => row.name === 'engine.resolveAttempt');
-            const spent = Number(/(\d+) stone\(s\) spent/.exec(call?.summary ?? '')?.[1] ?? NaN);
+            const spent = /no spirit stones went with it/.test(call?.summary ?? '')
+                ? 0
+                : Number(
+                    /(\d+) spirit stones? went with it/.exec(call?.summary ?? '')?.[1] ?? NaN
+                );
             expect(Number.isFinite(spent), `no spend in: ${call?.summary}`).toBe(true);
 
             if (spent > 0) {

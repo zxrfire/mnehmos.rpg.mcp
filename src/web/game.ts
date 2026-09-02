@@ -423,6 +423,7 @@ import { createBloodFeud, createGrudge, type Severity } from '../engine/social/g
 // the wound is the resolver's and is untouched, and what an agreement changes
 // is who holds an account about it afterwards.
 import {
+    oddsOf,
     resolveAttempt,
     whatFollowsFromTheBout,
     type AskWeight,
@@ -432,6 +433,7 @@ import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
 import { factsForAttempt, factsForRequest, factsForWeighingARequest } from './facts.js';
+import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import {
     openLedgerBetween,
     recordTheTieAnAttemptLeft,
@@ -3384,9 +3386,11 @@ ${noticed}`;
         return refused('engine.resolveParty', action, factsForRefusal(
             'Nobody by that name.',
             this.blankLook(cultivator) + nextMove,
-            `Unresolved party "${query}": no knowledge record and nobody co-located. ` +
-            `${here.length} present, ${nameable.length} of them nameable. ` +
-            `${this.knownNamesLine(cultivator, scope)}`
+            `"${query}" matched nobody: no knowledge record for that name and nobody `
+            + `standing here it could have meant. ${here.length} `
+            + `${here.length === 1 ? 'person is' : 'people are'} present and `
+            + `${nameable.length} of them can be named. `
+            + `${this.knownNamesLine(cultivator, scope)}`
         ));
     }
 
@@ -11483,15 +11487,23 @@ ${unnamed}`;
             {
                 name: 'engine.resolveAttempt',
                 action: 'interact',
-                summary:
-                    `${result.outcome} at ${(result.odds * 100).toFixed(1)}%, `
-                    + `ask=${askWeightOf(rawInput)}, leverage=${leverage ?? 'none'}, `
-                    + `${result.days} day(s), ${result.stonesSpent} stone(s) spent. `
-                    // Every term, named. The only thing that will ever reveal
-                    // that one of them has gone wrong.
-                    + `Terms: ${Object.entries(result.terms)
-                        .map(([name, value]) => `${name}=${round2(value)}`)
-                        .join(', ')}.`,
+                // Every term, named, and named in words. The only thing that
+                // will ever reveal that one of them has gone wrong, and it is
+                // worth nothing if the person reading it has to know the field
+                // names to see it.
+                summary: whatTheAskCameTo({
+                    subject: party.name,
+                    kind: intent,
+                    ask: askWeightOf(rawInput),
+                    leverage,
+                    odds: result.odds,
+                    terms: result.terms,
+                    outcome: result.outcome,
+                    days: result.days,
+                    stonesSpent: result.stonesSpent,
+                    priorAsks: 0,
+                    reachedTheHouse: result.marks.reachedTheHouse
+                }),
                 ok: result.outcome === 'taken'
             },
             ...structureCalls(party.structure),
@@ -11706,19 +11718,6 @@ ${unnamed}`;
             ));
         }
 
-        // ── WHAT IT WOULD TAKE, WITHOUT DOING IT ─────────────────────────
-        //
-        // "Could I ask her to teach me" is a question, and `request` spends days
-        // and can spend the purse. Same code path, stopped one line before the
-        // roll, so the read cannot drift from the thing it describes.
-        if (weighing) {
-            const held = tieFrom(this.repos, party.id, cultivator.id);
-            return this.freeAction(run, 'request', factsForWeighingARequest(
-                cultivator, party.name, shape, costing, party.facts, offered, priorAsks,
-                held?.active ? held.strength : 0
-            ));
-        }
-
         const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = asked.factionId ? getSect(asked.factionId) : null;
@@ -11729,7 +11728,15 @@ ${unnamed}`;
         const heldTie = tieFrom(this.repos, party.id, cultivator.id);
         const tieStrength = heldTie?.active ? heldTie.strength : 0;
 
-        const result = resolveAttempt({
+        // ── ONE INPUT, PRICED ONCE, ROLLED AT MOST ONCE ──────────────────
+        //
+        // Built before the read branches off, because the read and the attempt
+        // have to be the same arithmetic or the read is a second opinion. The
+        // resolver exports `oddsOf` for exactly this - "a probe that cannot see
+        // the breakdown cannot tell a tuning problem from a bug" - so weighing
+        // an approach runs every term the attempt would run and stops at the
+        // roll. Nothing can drift, because there is nothing to drift from.
+        const attempt = {
             actor: {
                 id: cultivator.id,
                 name: cultivator.name,
@@ -11778,7 +11785,48 @@ ${unnamed}`;
                 ...(leverage ? { leverage } : {})
             },
             rng: forStream(run.seed, 'social_leverage', Math.floor(run.elapsedDays), party.id)
-        });
+        };
+
+        // ── WHAT IT WOULD TAKE, WITHOUT DOING IT ─────────────────────────
+        //
+        // "Could I ask her to teach me" is a question, and `request` spends days
+        // and can spend the purse. The read now carries the REAL odds and the
+        // real breakdown rather than a description of them, which is the whole
+        // reason it is worth having: a player who is told a thing comes off one
+        // time in eight can decide whether to spend the afternoon.
+        if (weighing) {
+            const weighed = oddsOf(attempt);
+            const weighing = this.freeAction(run, 'request', factsForWeighingARequest(
+                cultivator, party.name, shape, costing, party.facts, offered, priorAsks,
+                tieStrength, weighed.odds
+            ));
+            // Filed as a call rather than only onto `structure`, so the read
+            // shows its arithmetic in the same place the attempt shows its own.
+            // A read whose breakdown is harder to find than the attempt's is a
+            // read nobody checks.
+            weighing.calls.push({
+                name: 'engine.priceTheAsk',
+                action: 'request',
+                summary: whatTheAskCameTo({
+                    subject: party.name,
+                    kind: shape,
+                    ask: costing.ask,
+                    leverage,
+                    odds: weighed.odds,
+                    terms: weighed.terms,
+                    priorAsks
+                }),
+                ok: true
+            }, ...costing.structure.map(line => ({
+                name: 'engine.priceTheAsk',
+                action: 'request' as ActionName,
+                summary: line,
+                ok: true
+            })));
+            return weighing;
+        }
+
+        const result = resolveAttempt(attempt);
 
         if (result.stonesSpent > 0) {
             this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -result.stonesSpent });
@@ -11794,13 +11842,9 @@ ${unnamed}`;
             {
                 name: 'engine.resolveAttempt',
                 action: 'request',
-                summary:
-                    `${result.outcome} at ${(result.odds * 100).toFixed(1)}%, `
-                    + `kind=${shape}, ask=${costing.ask}, leverage=${leverage ?? 'none'}, `
-                    + `${result.days} day(s), ${result.stonesSpent} stone(s) spent. `
-                    + `Terms: ${Object.entries(result.terms)
-                        .map(([term, value]) => `${term}=${round2(value)}`)
-                        .join(', ')}.`,
+                // Composed after the records are written, below, because one
+                // clause of it is a claim about the ledger.
+                summary: '',
                 ok: result.outcome === 'taken'
             },
             ...structureCalls(party.structure),
@@ -11824,6 +11868,25 @@ ${unnamed}`;
             run, cultivator, party, result, 'request', shape !== 'nothing'
         );
         calls.push(...left.calls);
+
+        // The engine's own account of the whole attempt, every figure kept and
+        // every enum resolved. Filled in here rather than above because it says
+        // whether anything reached the ledger, and the only honest source for
+        // that is whether anything did.
+        calls[0].summary = whatTheAskCameTo({
+            subject: party.name,
+            kind: shape,
+            ask: costing.ask,
+            leverage,
+            odds: result.odds,
+            terms: result.terms,
+            outcome: result.outcome,
+            days: result.days,
+            stonesSpent: result.stonesSpent,
+            priorAsks,
+            wroteToTheLedger: left.wroteToTheLedger,
+            reachedTheHouse: result.marks.reachedTheHouse
+        });
 
         // Built AFTER the records are written, because one of its lines is a
         // claim about the ledger and the only honest source for that claim is
@@ -11965,9 +12028,14 @@ ${done.lines.join(' ')}`;
                 name: 'social.createObligation',
                 action,
                 summary:
-                    `${which}: a ${record.severity} ${record.kind} held by ${record.holderId} `
-                    + `about ${record.subjectId}, out of asking ${party.name}. Written to `
-                    + `obligations on day ${Math.floor(run.elapsedDays)}; open until settled.`,
+                    `${party.name} now holds a ${record.severity} ${record.kind} about `
+                    + `${cultivator.name} for the asking`
+                    + `${which === 'counterObligation'
+                        ? ', pointing the other way: they did it and are keeping what it cost to '
+                          + 'ask'
+                        : ''}. `
+                    + `Written down on day ${Math.floor(run.elapsedDays)} and open until it is `
+                    + 'settled.',
                 ok: true
             });
         }
@@ -11980,10 +12048,12 @@ ${done.lines.join(' ')}`;
                 name: 'social.recordTie',
                 action,
                 summary:
-                    `Their side of it moves by ${round2(result.marks.tie.theirs.strength)} and `
-                    + `yours by ${round2(result.marks.tie.yours.strength)}. The two are allowed `
-                    + 'to disagree, and the gap is what somebody works out years later. Read '
-                    + 'back as `theirTie` on every later approach.',
+                    `${party.name}'s side of the tie now stands at `
+                    + `${round2(result.marks.tie.theirs.strength)} out of 1 and `
+                    + `${cultivator.name}'s at ${round2(result.marks.tie.yours.strength)}. The `
+                    + 'two are allowed to disagree, and the gap between them is what somebody '
+                    + 'works out years later. Read back on every later approach, where it is '
+                    + 'worth up to 30 points of the odds.',
                 ok: true
             });
         }
@@ -12025,9 +12095,10 @@ ${done.lines.join(' ')}`;
                     name: 'social.settleObligation',
                     action,
                     summary:
-                        `${open.severity} grudge ${open.id} settled as forgiven. It was worth `
-                        + '-0.1 on every later approach, including on the courtesy that settled '
-                        + 'it, and it had no other route to being closed.',
+                        `The ${open.severity} grudge ${party.name} was holding is settled as `
+                        + 'forgiven. It was costing 10 points on every later approach, including '
+                        + 'on the courtesy that has just settled it, and it had no other route '
+                        + 'to being closed.',
                     ok: true
                 });
             }
@@ -12038,8 +12109,9 @@ ${done.lines.join(' ')}`;
                 name: 'engine.resolveAttempt',
                 action,
                 summary:
-                    `The refusal reached ${party.name}'s house. ${cultivator.name} is now a name `
-                    + 'somebody there has heard in a sentence they did not like.',
+                    `The refusal did not stay in the room: it reached ${party.name}'s house, and `
+                    + `${cultivator.name} is now a name somebody there has heard in a sentence `
+                    + 'they did not like.',
                 ok: true
             });
         }
@@ -12085,9 +12157,11 @@ ${done.lines.join(' ')}`;
                     name: 'technique_manage.learn',
                     action: 'request',
                     summary:
-                        `${art?.name ?? costing.techniqueId} refused after the teacher agreed: `
-                        + `${taught.error}. Two gates, and this is the second - what a person will `
-                        + 'give you and what you can open are different questions.',
+                        `${party.name} agreed and `
+                        + `${art?.name ?? costing.techniqueId} still did not go in: `
+                        + `${taught.message} Two gates, and this is the second one - what a `
+                        + 'person will give you and what you can open are different questions, '
+                        + 'and being favoured does not lift the book\'s own bar.',
                     ok: false
                 });
             } else {
@@ -12099,8 +12173,9 @@ ${done.lines.join(' ')}`;
                     name: 'technique_manage.learn',
                     action: 'request',
                     summary:
-                        `${art?.name ?? costing.techniqueId} learned with `
-                        + 'provenance=taught_by_a_person. The art is on the sheet.',
+                        `${art?.name ?? costing.techniqueId} is on `
+                        + `${cultivator.name}'s sheet, recorded as having been taught by a `
+                        + 'person rather than bought, found or inherited.',
                     ok: true
                 });
             }
@@ -12128,8 +12203,9 @@ ${done.lines.join(' ')}`;
                 name: 'knowledge.learn',
                 action: 'request',
                 summary:
-                    `${meeting.name} recorded for ${cultivator.name}, source told, from `
-                    + `${party.name}. ${learned ? 'New record.' : 'Already held.'}`,
+                    `${cultivator.name} can name ${meeting.name} now, on the strength of being `
+                    + `told by ${party.name} in person. `
+                    + `${learned ? 'A record they did not have before.' : 'They already had it.'}`,
                 ok: true
             });
             return { lines, calls };
@@ -12150,9 +12226,12 @@ ${done.lines.join(' ')}`;
                 name: 'engine.takeAMaster',
                 action: 'request',
                 summary:
-                    `${party.name} (ordinal ${theirOrdinal}) recorded as ${cultivator.name}'s `
-                    + 'master. Read by guideFor, which feeds guidanceMultiplier on every '
-                    + 'cultivation span.',
+                    `${party.name}, standing at ${rungAndOrdinal(theirOrdinal)}, is recorded as `
+                    + `${cultivator.name}'s master. It is read on every cultivation span from `
+                    + `here, and is worth `
+                    + `${theirOrdinal > cultivator.realmOrdinal
+                        ? 'up to half again on the rate'
+                        : 'nothing at all, the guide standing no higher than the guided'}.`,
                 ok: true
             });
             return { lines, calls };

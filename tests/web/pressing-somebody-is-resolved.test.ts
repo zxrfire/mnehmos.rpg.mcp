@@ -76,13 +76,23 @@ describe('an attempt actually resolves', () => {
 
         const call = engineCalls(acted).find(c => c.name === 'engine.resolveAttempt');
         expect(call, 'the resolver was never called').toBeDefined();
+        // Every claim this used to make, made against the sentence form the
+        // channel now speaks. The rewrite kept every figure and resolved every
+        // enum, so what changed is the shape and not the content.
+        //
         // Four outcomes, one of them.
-        expect(call!.summary).toMatch(/^(taken|refused|reported|turned) at/);
+        expect(call!.summary).toMatch(
+            /they agreed|they said no, and it stayed|they said no, and it reached their house/
+        );
         // The days reach the clock: an attempt that costs nothing is not play.
-        expect(call!.summary).toMatch(/\d+ day\(s\)/);
+        expect(call!.summary).toMatch(/\d+ days? went into it/);
         // Every term named. The only thing that will ever reveal one has gone
         // wrong, and the reason it is on the mechanical channel.
-        expect(call!.summary).toMatch(/Terms: .*base=/);
-        expect(call!.summary).toMatch(/leverage=attachment/);
+        expect(call!.summary).toMatch(/Starting from \d+ points/);
+        expect(call!.summary).toMatch(/the gap in standing between them|Nothing came from/);
+        // The leverage, resolved. `attachment` is the asker themselves.
+        expect(call!.summary).toContain('with themselves');
+        // And no field names anywhere in it.
+        expect(call!.summary).not.toMatch(/[A-Za-z_][A-Za-z0-9_.]*=/);
     }, 120_000);
 });

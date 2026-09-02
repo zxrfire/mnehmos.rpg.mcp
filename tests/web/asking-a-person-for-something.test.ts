@@ -34,6 +34,11 @@ import { TECHNIQUES } from '../../src/data/cultivation/techniques.js';
 import { LEVERAGE_ATTEMPT_CONSTANTS } from '../../src/engine/social-leverage/index.js';
 import { makeGameInWorld, type Harness } from './harness.js';
 import { factsForRequest } from '../../src/web/facts.js';
+import {
+    howItHasBeenGoing,
+    howOftenThisLands,
+    theTermsInWords
+} from '../../src/web/saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { Cultivator } from '../../src/schema/cultivation.js';
 import type { AttemptResult } from '../../src/engine/social-leverage/index.js';
 
@@ -286,7 +291,11 @@ describe('a request reaches the person, played', () => {
         ) as { narration?: string; toolCalls: { name: string; summary: string }[] };
         expect(said.narration ?? '').toMatch(/to be taken on/);
         const priced = said.toolCalls.find(c => c.name === 'engine.resolveAttempt');
-        expect(priced?.summary ?? '').toContain('kind=discipleship');
+        // Said as a sentence, not as a field: the channel promises the
+        // engine's numbers shown as they were computed, and a key=value dump
+        // shows the value while hiding what it is.
+        expect(priced?.summary ?? '').toContain('to be taken on as a disciple');
+        expect(priced?.summary ?? '').not.toMatch(/[A-Za-z_][A-Za-z0-9_.]*=/);
     });
 
     /**
@@ -613,4 +622,169 @@ describe('the courtesy that asks for nothing', () => {
         expect(spent.prose).not.toMatch(/buy them a drink/i);
         expect(spent.prose).toMatch(/spent what turning up can buy/i);
     });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE NUMBERS, SAID IN WORDS
+//
+// Two defects in one line, found by playing. Somebody bought the same person a
+// drink eighteen times, got a byte-identical reply every time, and nearly filed
+// the verb as broken. It was landing at 13% - Charm 1, Fortune 1, muddled root,
+// the worst social character the game rolls - so eighteen misses is an 8% run.
+// Correctly modelled and never said.
+//
+// The engine knew all of it, on the mechanical channel, as this:
+//
+//     request(nothing): outcome=refused, odds=0.13, ask=a_courtesy, days=1,
+//                       theyKnowWhatYouTried=true, priorAsks=17
+//
+// So the prose never said the odds or the count, and the channel that had them
+// said them as a field dump - which the landing page's own promise forbids.
+// One fix for both: say the arithmetic in words, hand it to both surfaces.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a request says its own arithmetic', () => {
+    it('divides the odds for the reader as well as printing them', () => {
+        expect(howOftenThisLands(0.13)).toBe('about one time in 8 (13 in a hundred)');
+        expect(howOftenThisLands(0.02)).toBe('about one time in 50 (2 in a hundred)');
+        // Past a half, "one time in one" is nonsense and the percentage is not.
+        expect(howOftenThisLands(0.9)).toBe('90 times in a hundred');
+    });
+
+    /** The count is the half that turns a bad run into a legible one. */
+    it('says how many times it has been tried', () => {
+        expect(howItHasBeenGoing(0.13, 0, false)).toContain('the first try');
+        expect(howItHasBeenGoing(0.13, 17, false)).toContain('attempt 18');
+        expect(howItHasBeenGoing(0.13, 17, false)).toContain('bad run rather than a wall');
+        // Within the expected wait, no verdict - the arithmetic does not
+        // support one and the engine does not offer sympathy.
+        expect(howItHasBeenGoing(0.13, 3, false)).not.toContain('bad run');
+        expect(howItHasBeenGoing(0.13, 3, true)).toContain('attempt 4');
+    });
+
+    /**
+     * Every term, named. `resolveAttempt` hands back its whole breakdown so a
+     * probe can see why it went the way it did, and printing the keys showed
+     * the probe's vocabulary rather than the engine's reasoning.
+     */
+    it('names every term of the odds, moved and unmoved', () => {
+        const said = theTermsInWords({
+            base: 0.35, standing: -0.25, charm: -0.06, tie: 0,
+            owed: 0, wants: 0, grudge: 0, ask: -0.05, purse: 0, room: 0
+        });
+        expect(said).toContain('Starting from 35 points');
+        expect(said).toContain('the gap in standing between them cost 25 points');
+        expect(said).toContain('charm cost 6 points');
+        expect(said).toContain('the weight of the thing asked for cost 5 points');
+        // The zero terms are named rather than dropped: "nothing was owed" is a
+        // fact about the approach and an absent line reads as an omission.
+        expect(said).toContain('Nothing came from');
+        expect(said).toContain('an open grudge they hold');
+        // And no field names survive anywhere in it.
+        expect(said).not.toMatch(/\w+=/);
+    });
+
+    /**
+     * And where the sum and the answer disagree, which one moved.
+     *
+     * A reader who adds the terms up gets -1 in a hundred against stated odds
+     * of 2, which looks like the breakdown lying and is `ODDS_FLOOR` doing the
+     * one job it exists for. An arithmetic trail that does not reach the number
+     * it is explaining is worse than no trail.
+     */
+    it('says when the floor or the ceiling moved the answer', () => {
+        const floored = theTermsInWords(
+            { base: 0.35, standing: -0.25, charm: -0.06, ask: -0.05 }, 0.02
+        );
+        expect(floored).toContain('The terms come to -1, and the floor lifts the answer to 2 in a hundred');
+        expect(floored).toContain('nothing in this world is impossible');
+
+        const capped = theTermsInWords({ base: 0.35, tie: 0.3, owed: 0.5 }, 0.95);
+        expect(capped).toContain('the ceiling holds the answer at 95 in a hundred');
+
+        // No clamp, no sentence about one.
+        const plain = theTermsInWords({ base: 0.35, ask: -0.05 }, 0.3);
+        expect(plain).not.toContain('floor');
+        expect(plain).not.toContain('ceiling');
+    });
+
+    /**
+     * THE GUARD. The whole point of the rewrite, asserted over what the engine
+     * actually emits rather than over a sample: play a request, take every call
+     * this verb files, and require that none of them speaks a field name.
+     *
+     * The two passes over the rest of this channel went 142 emitters to 78 and
+     * `entities.ts` to zero, and left the directed-social path for whoever built
+     * it. This is that path holding the same line.
+     */
+    it('files no field names on any surface it owns', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-9', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+
+        const mine = /^(engine\.resolveAttempt|engine\.priceTheAsk|social\.|knowledge\.learn|technique_manage\.learn|engine\.takeAMaster)/;
+        const offenders: string[] = [];
+        for (const input of [
+            `could I ask ${who} to teach me`,
+            `I buy ${who} a drink`,
+            `I ask ${who} to teach me`,
+            `I ask ${who} to take me as a disciple`,
+            `I ask ${who} to introduce me to nobody at all`
+        ]) {
+            const live = harness.game.currentRun();
+            if (live.run.status !== 'active' || !live.cultivator.alive) break;
+            const out = await harness.game.act(input) as {
+                toolCalls: { name: string; summary: string }[];
+            };
+            for (const call of out.toolCalls) {
+                if (!mine.test(call.name)) continue;
+                // `key=value`, which is the shape being banned. A bare `=` in a
+                // sentence is fine; an identifier welded to one is not.
+                if (/[A-Za-z_][A-Za-z0-9_.]*=/.test(call.summary)) {
+                    offenders.push(`${call.name}: ${call.summary.slice(0, 120)}`);
+                }
+            }
+        }
+        expect(offenders, offenders.join(' | ')).toEqual([]);
+    }, 60_000);
+
+    /**
+     * And the player-facing half of the same fix: the prose says the odds and
+     * the count, because the player with the worst numbers was getting the
+     * least information about why.
+     */
+    it('tells the player how often a thing like this comes off', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-10', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+
+        const first = await harness.game.act(`I buy ${who} a drink`) as { narration?: string };
+        expect(first.narration ?? '').toMatch(/comes off .*in a hundred/);
+        expect(first.narration ?? '').toContain('first try');
+
+        await harness.game.act(`I buy ${who} a drink`);
+        const third = await harness.game.act(`I buy ${who} a drink`) as { narration?: string };
+        expect(third.narration ?? '').toContain('attempt 3');
+    }, 60_000);
+
+    /**
+     * The read runs the attempt's own arithmetic and stops at the roll, so it
+     * cannot be a second opinion about it. `oddsOf` exists for exactly this.
+     */
+    it('weighs a request at the odds the attempt would use', async () => {
+        const harness = await makeGameInWorld({ seed: 'ask-11', worldSeed: 'ask-world-1' });
+        await harness.game.newRun('Asker');
+        const who = (await anybodyNameable(harness))!;
+        const before = harness.game.currentRun().run.elapsedDays;
+
+        const weighed = await harness.game.act(`could I ask ${who} to teach me`) as {
+            narration?: string;
+            toolCalls: { name: string; summary: string }[];
+        };
+        expect(weighed.narration ?? '').toMatch(/comes off .*in a hundred/);
+        expect(weighed.narration ?? '').toContain('No day has gone by');
+        expect(harness.game.currentRun().run.elapsedDays, 'the read spent a day')
+            .toBe(before);
+        expect(weighed.toolCalls.some(c => c.name === 'engine.priceTheAsk')).toBe(true);
+    }, 60_000);
 });

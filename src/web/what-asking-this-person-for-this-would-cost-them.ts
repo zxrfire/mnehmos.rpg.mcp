@@ -61,6 +61,11 @@ import {
 import { carriesTo, getTechnique, teachersOf } from '../data/cultivation/techniques.js';
 import { getSect, getSectsTeaching } from '../data/cultivation/sects.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { rungAndOrdinal } from './facts.js';
+import {
+    theAskInWords,
+    theGapInWords
+} from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -220,7 +225,11 @@ function costOfTeaching(
         return {
             ask: 'a_real_favour',
             lines: [],
-            structure: [`teaching: ${asked.name} holds ${asked.holds.length} art(s), none new.`],
+            structure: [
+                `${asked.name} holds ${asked.holds.length} art`
+                + `${asked.holds.length === 1 ? '' : 's'} and the asker already carries every one `
+                + `of them, so there is no road here to be handed on.`
+            ],
             techniqueId: null,
             refusal: {
                 headline: `${asked.name} has nothing to teach you.`,
@@ -230,8 +239,11 @@ function costOfTeaching(
                     + `carrying it. Being taught needs somebody holding a road they can hand on, `
                     + `and standing above you is not the same fact as holding one.`,
                 structure:
-                    `teaching refused: no candidate arts. asked.holds=${asked.holds.length}, `
-                    + `asking.holds=${asking.holds.length}.`
+                    `Refused before the resolver, so no day was spent: ${asked.name} is `
+                    + `carrying ${asked.holds.length} art`
+                    + `${asked.holds.length === 1 ? '' : 's'} and the asker already has `
+                    + `${asking.holds.length} of their own, leaving no road here that could be `
+                    + `handed over.`
             }
         };
     }
@@ -241,7 +253,11 @@ function costOfTeaching(
         return {
             ask: 'a_real_favour',
             lines: [],
-            structure: [`teaching: "${namedButUnresolved}" resolved to no art.`],
+            structure: [
+                `"${namedButUnresolved}" matched nothing in the technique catalog, so there is `
+                + `no art for the request to be about. ${couldTeach.length} art`
+                + `${couldTeach.length === 1 ? '' : 's'} they hold could have been named instead.`
+            ],
             techniqueId: null,
             refusal: {
                 headline: `No art called ${namedButUnresolved}.`,
@@ -249,8 +265,10 @@ function costOfTeaching(
                     `You say the name and it goes nowhere. It is not a method anybody was ever `
                     + `taught, or not by that name. ${theirShelf}`,
                 structure:
-                    `teaching refused: unresolved art "${namedButUnresolved}". `
-                    + `${couldTeach.length} candidate(s) they hold.`
+                    `Refused before the resolver, so no day was spent: "${namedButUnresolved}" `
+                    + `is not an art anybody was ever taught. ${couldTeach.length} art`
+                    + `${couldTeach.length === 1 ? '' : 's'} they are carrying could have been `
+                    + `asked for.`
             }
         };
     }
@@ -268,7 +286,10 @@ function costOfTeaching(
             return {
                 ask: 'a_real_favour',
                 lines: [],
-                structure: [`teaching: ${couldTeach.length} candidates, none named.`],
+                structure: [
+                    `${couldTeach.length} arts they hold are new to the asker and the sentence `
+                    + `named none of them, so which road is being asked for is undecided.`
+                ],
                 techniqueId: null,
                 refusal: {
                     headline: 'Taught what?',
@@ -277,8 +298,10 @@ function costOfTeaching(
                         + `for - what somebody is carrying is not one road. ${theirShelf} Name `
                         + `one.`,
                     structure:
-                        `teaching refused: ${couldTeach.length} candidates and no art named. `
-                        + `Candidates: ${couldTeach.map(a => a.id).join(', ')}.`
+                        `Refused before the resolver, so no day was spent: `
+                        + `${couldTeach.length} arts were available to ask for and the sentence `
+                        + `named none. They are `
+                        + `${couldTeach.map(a => a.name).join(', ')}.`
                 }
             };
         }
@@ -289,12 +312,17 @@ function costOfTeaching(
         return {
             ask: 'a_real_favour',
             lines: [],
-            structure: [`teaching: id ${chosen} is not in the catalog.`],
+            structure: [
+                `The art settled on, ${chosen}, is not in the technique catalog at all, so `
+                + `nothing can be priced against it.`
+            ],
             techniqueId: null,
             refusal: {
                 headline: 'No art by that name.',
                 prose: `The name goes nowhere. ${theirShelf}`,
-                structure: `teaching refused: catalog miss on ${chosen}.`
+                structure:
+                    `Refused before the resolver, so no day was spent: ${chosen} is not a row `
+                    + `in the technique catalog.`
             }
         };
     }
@@ -314,8 +342,13 @@ function costOfTeaching(
             ask: 'a_real_favour',
             lines: [],
             structure: [
-                `teaching: ${asked.name} does not hold ${art.id}; `
-                + `${houses.length} house(s) teach it; living transmissions=${living.length}.`
+                `${asked.name} does not hold ${art.name}, so there is nobody here to walk the `
+                + `asker down it. ${houses.length} house`
+                + `${houses.length === 1 ? '' : 's'} in the world teach it, and `
+                + `${living.length === 0
+                    ? 'nobody carries it as a living transmission'
+                    : `${living.length} person${living.length === 1 ? '' : 's'} carries it as a `
+                      + 'living transmission the shelves do not'}.`
             ],
             techniqueId: null,
             refusal: {
@@ -325,8 +358,9 @@ function costOfTeaching(
                     + `of what they have of it. Nobody can walk you down a road they have not `
                     + `walked. ${whoDoes} ${theirShelf}`,
                 structure:
-                    `teaching refused: not held. ${asked.name} holds `
-                    + `[${asked.holds.join(', ')}].`
+                    `Refused before the resolver, so no day was spent: the art is not one of the `
+                    + `${asked.holds.length} ${asked.holds.length === 1 ? 'road' : 'roads'} `
+                    + `${asked.name} is carrying.`
             }
         };
     }
@@ -370,10 +404,24 @@ function costOfTeaching(
         ask: WHAT_THE_LEAK_COSTS[rung],
         lines,
         structure: [
-            `teaching ${art.id}: leak rung ${rung} (owner=${ownerId ?? 'nobody'}, `
-            + `commonlyHeld=${isCommonlyHeld(art.id)}, shelfTop=`
-            + `${ownerId ? manualsOf(ownerId).at(-1)?.id === art.id : false}), `
-            + `ask=${WHAT_THE_LEAK_COSTS[rung]}, carriesTo=${reach ?? 'n/a'}.`
+            `${art.name} would leave ${asked.name}'s hands at rung ${rung} of the four the world `
+            + `prices a leaked book on: `
+            + `${isCommonlyHeld(art.id)
+                ? 'it is held widely enough that no house can call it theirs'
+                : ownerName === null
+                    ? 'it is not commonly held and no house on record owns it'
+                    : ownerId === asked.factionId
+                        ? `it is ${ownerName}'s and they are one of ${ownerName}'s`
+                        : `it is ${ownerName}'s and they are not`}`
+            + `${ownerId && manualsOf(ownerId).at(-1)?.id === art.id
+                ? ', and it sits at the top of that shelf'
+                : ''}. `
+            + `That makes the request ${theAskInWords(WHAT_THE_LEAK_COSTS[rung])}. `
+            + `${reach === null
+                ? 'The book states no teachable end.'
+                : `Teaching could carry the asker as far as ${rungAndOrdinal(reach)}, being the `
+                  + `lower of the book's teachable end and ${rungAndOrdinal(asked.ordinal)}, `
+                  + 'which is where the teacher has stood.'}`
         ],
         techniqueId: art.id,
         refusal: null
@@ -406,7 +454,10 @@ function costOfIntroduction(
         return {
             ask: 'a_courtesy',
             lines: [],
-            structure: [`introduction: "${namedButUnresolved}" resolved to nobody.`],
+            structure: [
+                `"${namedButUnresolved}" resolved to nobody the asker holds a record for, so `
+                + `there is no third party for an introduction to be to.`
+            ],
             techniqueId: null,
             refusal: {
                 headline: namedButUnresolved.length >= 2
@@ -421,7 +472,8 @@ function costOfIntroduction(
                     : `${asked.name} waits for a name. An introduction is to somebody, and you `
                       + `have not said who.`,
                 structure:
-                    `introduction refused: unresolved third party "${namedButUnresolved}".`
+                    `Refused before the resolver, so no day was spent: the person to be `
+                    + `introduced to resolved to nobody.`
             }
         };
     }
@@ -432,8 +484,9 @@ function costOfIntroduction(
             ask: 'a_courtesy',
             lines: [],
             structure: [
-                `introduction: ${asked.name} (${asked.factionId ?? 'no house'}) has no reach to `
-                + `${toMeet.id} (${toMeet.factionId ?? 'no house'}), not co-located.`
+                `${asked.name} serves ${asked.factionId ?? 'nobody'} and ${toMeet.name} serves `
+                + `${toMeet.factionId ?? 'nobody'}, and the two are not standing in the same `
+                + `place, so there is no line along which an introduction could run.`
             ],
             techniqueId: null,
             refusal: {
@@ -444,7 +497,9 @@ function costOfIntroduction(
                     + `stranger is worth less than no word at all. An introduction runs along a `
                     + `line somebody is already standing on: their own house, or somebody `
                     + `standing in the same square.`,
-                structure: 'introduction refused: no plausible reach.'
+                structure:
+                    'Refused before the resolver, so no day was spent: the person being asked '
+                    + 'has no reach to the person being asked about.'
             }
         };
     }
@@ -459,7 +514,13 @@ function costOfIntroduction(
                 : `${toMeet.name} is standing here too, and ${asked.name} can put a name to them, `
                   + `which is the whole of what an introduction is.`
         ],
-        structure: [`introduction: ${asked.id} -> ${toMeet.id}, sameHouse=${sameHouse}.`],
+        structure: [
+            `${asked.name} could put ${toMeet.name} in front of the asker `
+            + `${sameHouse
+                ? 'because the two of them are on the same roll'
+                : 'because the two of them are standing in the same place'}, which costs them `
+            + 'a sentence and their own standing if the asker turns out badly.'
+        ],
         techniqueId: null,
         refusal: null
     };
@@ -502,7 +563,11 @@ function costOfACourtesy(asking: TheOneAsking, asked: TheOneBeingAsked): Request
                   + `anything. It costs you a day and no stones at all - and it is the only `
                   + `thing that moves somebody who does not know you.`
         ],
-        structure: [`courtesy: gap=${gap}, ask=a_courtesy, cost=one day, no stones.`],
+        structure: [
+            `Asking for nothing is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is `
+            + `priced as ${theAskInWords('a_courtesy')}. It costs one day and no spirit stones, `
+            + `which is what keeps it available to somebody carrying nothing.`
+        ],
         techniqueId: null,
         refusal: null
     };
@@ -534,7 +599,11 @@ function costOfDiscipleship(asking: TheOneAsking, asked: TheOneBeingAsked): Requ
                   + `nothing at all: guidance is priced on the gap between the guide and the `
                   + `guided, and there is no gap.`
         ],
-        structure: [`discipleship: gap=${gap}, ask=a_real_favour.`],
+        structure: [
+            `Being taken on is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is priced `
+            + `as ${theAskInWords('a_real_favour')} - decades of somebody's attention and their `
+            + `name on whatever the student turns out to be.`
+        ],
         techniqueId: null,
         refusal: null
     };
