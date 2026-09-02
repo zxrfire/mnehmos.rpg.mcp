@@ -1170,6 +1170,38 @@ And note what this does NOT license. A repetitive life failing *early* is not th
 working; it is something else killing them, and it should be investigated rather than credited.
 This effect is about who somebody has become over a long life, so it can only show up over one.
 
+### The same act means different things in different situations
+
+**What somebody did does not determine what they were doing.** Drawing a sword is a threat in
+a negotiation, an opening in a duel, a courtesy at a weapon-house gate, and nothing at all in
+a training yard. The words are identical and the act is identical; the situation is what
+decides which verb it was.
+
+This has three consequences and they pull in different directions, so hold all of them.
+
+**The pattern table cannot do this and must not pretend to.** A table maps words to verbs, and
+the situation is not in the words. Its job is the unambiguous floor - the sentences that mean
+one thing wherever they are said - and a table entry that guesses at context is worse than no
+entry, because it is confidently wrong in the cases it was reaching for. When a phrasing is
+ambiguous by nature, the table should leave it alone.
+
+**This is one of the concrete things a higher reading tier buys**, and it is worth being
+specific about, because "the model is better" is not a design. A model sees the state summary
+alongside the sentence. It can tell that the person in front of you is mid-bargain rather than
+mid-duel, and route the same five words differently. That is not prettier prose - it is the
+game understanding what was meant, which is the difference between playing and typing
+commands.
+
+**And the engine still decides what follows.** Reading the situation is how the intent is
+chosen; it is never a licence to change the outcome. A threat that was read as a threat is
+resolved by the same code as any other threat, and if the reading was wrong the player should
+be able to see what it was taken for and say otherwise. An ambiguous act read confidently and
+silently is the failure mode here, so where a reading is a judgement call, show it.
+
+**The test for a new verb, then, is not "can the table reach it" alone.** It is: does the table
+reach the phrasings that are unambiguous, does a higher tier reach the ones that depend on the
+situation, and can the player tell which reading they got.
+
 ### Agency: do not ban it, and do not soften it
 
 **Anybody may attempt anything.** The engine's job is not to decide what is allowed - it is to
