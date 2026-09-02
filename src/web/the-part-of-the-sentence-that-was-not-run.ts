@@ -42,11 +42,22 @@
  * > **A clause is worth reporting only if it would have COST something.**
  *
  * Free reads are never reported, on either side, and the reason is not
- * tuning: nothing was taken from the player. `look`, `market`, `status`,
- * `interact` and the rest of {@link READ_ONLY_ACTIONS} spend no day, no ration
- * and no stone, so a player who wanted one can simply say it next turn and
- * have it for nothing. Telling them it "was not done" would be true and
- * useless.
+ * tuning: nothing was taken from the player. `look`, `market`, `status` and
+ * the rest spend no day, no ration and no stone, so a player who wanted one
+ * can simply say it next turn and have it for nothing. Telling them it "was
+ * not done" would be true and useless.
+ *
+ * The question is asked of the CLAUSE'S PLAN and not of its action, through
+ * {@link costsTheAskerNothing}, and `interact` is why. This file was written
+ * while `interact` was on `READ_ONLY_ACTIONS`, and it was never a read: it is
+ * free on `talk`, `trade` and `apologise` and spends a day and can spend the
+ * purse on the other seven. The corpus below was measured against the stale
+ * answer, and when the classification was corrected the guard reported
+ * *"tell me about the market and the prices"* - one of the sentences it names
+ * as a false report - because the dropped half reads as `interact` and the
+ * action alone no longer said it was free. Reading the intent restores the
+ * measurement and now also does the right thing in the other direction: a
+ * dropped `I bribe the elder` DOES cost something and is worth saying.
  *
  * That single guard is what makes the rule safe in both directions, and it was
  * arrived at by measurement rather than by taste. Against a corpus of 60
@@ -71,7 +82,12 @@
  * silence about something they can have next turn at no price.
  */
 
-import { parseIntent, READ_ONLY_ACTIONS, type ActionName } from './actions.js';
+import {
+    costsTheAskerNothing,
+    parseIntent,
+    type ActionName,
+    type PlannedAction
+} from './actions.js';
 
 /**
  * Where one instruction ends and the next begins.
@@ -84,14 +100,16 @@ import { parseIntent, READ_ONLY_ACTIONS, type ActionName } from './actions.js';
 const A_SECOND_INSTRUCTION_STARTS = /\s+(?:and then|and also|then also|and|then)\s+|\s*;\s*/;
 
 /**
- * The verbs that take nothing from anybody.
+ * What takes nothing from anybody, asked of `actions.ts` rather than restated
+ * here - a second list of free verbs would go stale the first time somebody
+ * reclassified one, and the failure would be silent in both directions.
  *
- * A `Set` rather than a repeated `includes`, and read off the register in
- * `actions.ts` rather than restated here - a second list of free verbs would go
- * stale the first time somebody reclassified one, and the failure would be
- * silent in both directions.
+ * That is not hypothetical: it happened, one commit after this file was
+ * written, when `interact` was moved off `READ_ONLY_ACTIONS` for spending days
+ * and stones on seven of its ten intents. A copied list would have gone on
+ * saying "free"; a copied `includes` against the corrected list said "costly"
+ * for all ten. Only the plan knows.
  */
-const COSTS_NOTHING: ReadonlySet<ActionName> = new Set(READ_ONLY_ACTIONS);
 
 /** What a clause is once the punctuation somebody typed after it is off. */
 function tidy(clause: string): string {
@@ -133,18 +151,25 @@ export function theClauseThisTurnDidNotRun(input: string, ran: ActionName): Clau
     const clauses = input.split(A_SECOND_INSTRUCTION_STARTS).map(tidy).filter(Boolean);
     if (clauses.length < 2) return null;
 
-    const read = clauses.map(clause => ({ clause, action: parseIntent(clause).action }));
-    const itsIndex = read.findIndex(entry => entry.action === ran);
+    // The whole PLAN is kept, not just its action, because what a clause would
+    // have cost is not always answerable from the verb. See the note above.
+    const read = clauses.map(clause => ({ clause, plan: parseIntent(clause) }));
+    const itsIndex = read.findIndex(entry => entry.plan.action === ran);
     if (itsIndex === -1) return null;
 
-    const worthSaying = (entry: { action: ActionName }): boolean =>
-        entry.action !== 'unclear' && entry.action !== ran && !COSTS_NOTHING.has(entry.action);
+    const worthSaying = (entry: { plan: PlannedAction }): boolean =>
+        entry.plan.action !== 'unclear'
+        && entry.plan.action !== ran
+        && !costsTheAskerNothing(entry.plan);
+
+    const said = (entry: { clause: string; plan: PlannedAction }, side: 'before' | 'after') =>
+        ({ clause: entry.clause, action: entry.plan.action, side });
 
     const after = read.slice(itsIndex + 1).find(worthSaying);
-    if (after) return { ...after, side: 'after' };
+    if (after) return said(after, 'after');
 
     const before = read.slice(0, itsIndex).find(worthSaying);
-    if (before) return { ...before, side: 'before' };
+    if (before) return said(before, 'before');
 
     return null;
 }
