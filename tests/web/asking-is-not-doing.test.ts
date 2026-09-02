@@ -52,13 +52,22 @@
 
 import { describe, it, expect } from 'vitest';
 import type Database from 'better-sqlite3';
-import { makeGame, cultivatorRow } from './harness';
-import { parseIntent } from '../../src/web/actions';
+import { makeGame, makeGameInWorld, cultivatorRow, type Harness } from './harness';
+import {
+    ACTION_NAMES,
+    INTERACT_INTENTS,
+    PRESSING_SOMEBODY,
+    READ_ONLY_ACTIONS,
+    costsTheAskerNothing,
+    parseIntent
+} from '../../src/web/actions';
 import {
     isSoldAtAStall,
     manualsAStallCarries,
     stallPriceStones
 } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
+import { npcsAt } from '../../src/engine/world/world-state';
+import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
 const PRIMER = 'lesser-qi-gathering-manual';
 
@@ -229,6 +238,307 @@ describe('a question never changes state', () => {
         ];
         for (const [sentence, action] of unchanged) {
             expect(parseIntent(sentence).action, sentence).toBe(action);
+        }
+    });
+});
+
+/**
+ * INSTANCE 5, AND THE LAST OF THEM: the one the guard was built beside and did
+ * not cover.
+ *
+ * `interact` sat in `READ_ONLY_ACTIONS` while seven of its ten intents pressed
+ * somebody through `resolveAttempt` - days out of the same clock every other
+ * span spends, and the purse when the attempt lands. So the post-pass that
+ * exists to stop a question performing an act handed this one straight back to
+ * the executor, and did it BY DESIGN: `theReadThatAnswersIt` returns early for
+ * anything the list says is already free, which is exactly what makes it
+ * complete for every verb labelled correctly and useless for one that is not.
+ *
+ * Played cold on a fresh run carrying thirty spirit stones, before the change:
+ *
+ *   > can I bribe Bai Jinglu with 10 spirit stones
+ *     purse 30 -> 20, day 16 -> 17
+ *
+ * Measured on the row and the clock rather than on the narration, for the
+ * reason instance 4 gives: the prose was a perfectly good description of a
+ * bribe, and the bribe had happened.
+ */
+describe('asking whether somebody could be moved does not move them', () => {
+    /**
+     * A run in a PINNED world, standing in the busiest square in it, with the
+     * names of the people who are actually there.
+     *
+     * `makeGameInWorld` and not `makeGame`, on the rule `AGENTS.md` states
+     * outright: a played test that pins a seed to an outcome without pinning
+     * the world is pinning a coincidence. This one names a specific person and
+     * asserts what pressing them costs, so who that person turns out to be has
+     * to be fixed - and the first draft of it, unpinned, drew a different
+     * square on every ordering and went red on one intent out of ten.
+     *
+     * Being co-located is enough to be addressed - `somebodyAtHand` matches the
+     * name against who is present, ahead of the knowledge gate - which is what
+     * makes the fixture honest rather than a refusal in disguise. The
+     * commanding halves below are the proof that it is: if nobody resolved,
+     * nothing would spend and those tests would go red rather than green.
+     */
+    async function inTheBusiestSquare(seed: string): Promise<{
+        db: Database.Database;
+        game: Harness['game'];
+        people: string[];
+    }> {
+        resetCultivationWorlds();
+        const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
+        const { cultivator } = await game.newRun('Lin Baoqing');
+
+        const world = (await game.loadWorld())!;
+        const square = world.locations
+            .map(l => ({ location: l, people: npcsAt(world, l.id) }))
+            .filter(x => x.people.length >= 12)
+            .sort((a, b) => b.people.length - a.people.length)[0];
+        expect(square, 'the pinned world has no square with people in it').toBeDefined();
+
+        db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
+            .run(square.location.name, cultivator.id);
+        return { db, game, people: square.people.map(p => p.name) };
+    }
+
+    /** The question forms, one per intent that presses somebody. */
+    const asking = (who: string) => [
+        `can I bribe ${who} with 10 spirit stones`,
+        `could I threaten ${who}`,
+        `should I seduce ${who}`,
+        `is it possible to deceive ${who}`,
+        `what would it cost to bribe ${who} with 5 spirit stones`,
+        `how do I bribe ${who} with 5 spirit stones`,
+        `can I interrogate ${who}`,
+        `could I recruit ${who}`,
+        `can I negotiate with ${who}`,
+        // Not an interrogative and not an `interact` either - it reaches
+        // `unclear`, which is inert. Kept because it was reported alongside the
+        // others and a sentence asserted to cost nothing should be asserted to
+        // cost nothing wherever it lands.
+        `how do I get ${who} to help me`
+    ];
+
+    it('spends no stones and no days when asked whether one could', async () => {
+        const { db, game, people } = await inTheBusiestSquare('asked-to-bribe');
+        const cultivator = game.state().cultivator;
+        const who = people[0];
+
+        const purse = Number(cultivatorRow(db, cultivator.id).spirit_stones);
+        const day = game.state().run.elapsedDays;
+        expect(purse, 'a bribe nobody could afford proves nothing').toBeGreaterThan(10);
+
+        for (const question of asking(who)) {
+            await game.act(question);
+            expect(Number(cultivatorRow(db, cultivator.id).spirit_stones), `"${question}" spent stones`)
+                .toBe(purse);
+            expect(game.state().run.elapsedDays, `"${question}" spent days`).toBe(day);
+        }
+    }, 180_000);
+
+    /**
+     * And the sentence that DECIDES still decides, at the honest price. Never a
+     * ban: `AGENTS.md` is explicit that removing the cost is the worse of the
+     * two failures, because the player cannot see it happen.
+     *
+     * This is also what stops the test above being vacuous. Both halves name
+     * the same person in the same square on the same seed, so a fixture where
+     * nobody resolved would fail here instead of passing there.
+     *
+     * The DAY is asserted and the purse is not, because the two are different
+     * kinds of fact. `ASK_DAYS` floors at one, so an attempt that reached the
+     * resolver always spent a day; the stones are spent only when the attempt
+     * LANDS, which is the resolver's own odds and pinning it here would be
+     * pinning those. That half was measured by playing instead: twelve
+     * commanded bribes of ten stones against one person, two of which landed,
+     * purse 20 to 10 to 0.
+     */
+    it('still spends a day on the person when told to', async () => {
+        const { game, people } = await inTheBusiestSquare('told-to-bribe');
+
+        const day = game.state().run.elapsedDays;
+        await game.act(`I bribe ${people[0]} with 10 spirit stones`);
+        expect(game.state().run.elapsedDays, 'pressing somebody cost nothing').toBeGreaterThan(day);
+    }, 180_000);
+
+    /**
+     * THE SPLIT, MEASURED RATHER THAN DECLARED.
+     *
+     * `PRESSING_SOMEBODY` in `actions.ts` and `ATTEMPT_INTENTS` in `game.ts` are
+     * two copies of one set - actions is below game and cannot import from it -
+     * and a comment asking the next person to keep them together is not a
+     * mechanism. So each of the ten intents is PLAYED in its commanding form
+     * and classified by what it actually spent, and the measurement is compared
+     * against the declaration. A member added on either side alone goes red.
+     *
+     * One sentence per intent and A DIFFERENT PERSON FOR EACH, all in one run,
+     * judged on the DELTA either side so the accumulating clock does not
+     * matter. The separate people are not tidiness: pressing the same person
+     * ten times in a row is a different measurement - the resolver reads what
+     * they already make of the asker and how many times they have heard it -
+     * and what is being measured here is the intent, cold.
+     *
+     * The bribe names a sum inside the purse deliberately: a coin approach with
+     * no figure in it is refused before the resolver and would read as free for
+     * entirely the wrong reason.
+     */
+    it('spends on exactly the intents it says press somebody', async () => {
+        const { game, people } = await inTheBusiestSquare('which-ones-cost');
+        const w = (i: number) => people[i];
+
+        const commanding: ReadonlyArray<readonly [string, string]> = [
+            ['talk', `I talk to ${w(0)}`],
+            ['trade', `I trade with ${w(1)}`],
+            ['apologise', `I apologise to ${w(2)}`],
+            ['bribe', `I bribe ${w(3)} with 1 spirit stone`],
+            ['threaten', `I threaten ${w(4)}`],
+            ['seduce', `I seduce ${w(5)}`],
+            ['deceive', `I deceive ${w(6)}`],
+            ['interrogate', `I interrogate ${w(7)}`],
+            ['recruit', `I recruit ${w(8)}`],
+            ['negotiate', `I negotiate with ${w(9)}`]
+        ];
+        expect(commanding.map(([intent]) => intent).sort(), 'an intent was added and not played here')
+            .toEqual([...INTERACT_INTENTS].sort());
+
+        for (const [intent, sentence] of commanding) {
+            expect(parseIntent(sentence).intent, `"${sentence}" does not reach ${intent}`)
+                .toBe(intent);
+
+            const before = game.state().run.elapsedDays;
+            await game.act(sentence);
+            const spent = game.state().run.elapsedDays > before;
+
+            expect(spent, spent
+                ? `"${sentence}" spent days and ${intent} is not on PRESSING_SOMEBODY`
+                : `"${sentence}" spent nothing and ${intent} is on PRESSING_SOMEBODY`)
+                .toBe(PRESSING_SOMEBODY.has(intent));
+        }
+    }, 300_000);
+
+    /**
+     * The routing, asserted directly, because the played tests can only cover
+     * the phrasings they happen to use.
+     *
+     * `investigate` and not `assess`, which is the table's own default for
+     * anything it does not name. `GameService.assess` sends every subject that
+     * is not the asker to `handleAssess` with `against: 'place'`, so a person's
+     * name would have been looked up as GROUND and the question about somebody
+     * answered with the weather where they stand - the deflection failure this
+     * project keeps finding, and worse than a refusal because it reads like an
+     * answer. `investigate` reads the person: their rung, their years, the
+     * house they answer to. It is in `READ_ONLY_ACTIONS`, so it cannot spend,
+     * move or kill however the question was phrased, and that membership is
+     * asserted here rather than assumed.
+     */
+    it('routes a question about pressing somebody to a read of the person', () => {
+        for (const question of [
+            'can I bribe Bai Jinglu with 10 spirit stones',
+            'could I threaten Bai Jinglu',
+            'should I seduce Bai Jinglu',
+            'is it possible to deceive Bai Jinglu',
+            'can I interrogate Bai Jinglu',
+            'could I recruit Bai Jinglu',
+            'can I negotiate with Bai Jinglu'
+        ]) {
+            const plan = parseIntent(question);
+            expect(plan.action, question).toBe('investigate');
+            expect(READ_ONLY_ACTIONS, question).toContain(plan.action);
+            // The person survives the downgrade, tail and all - the entity
+            // resolver takes "Bai Jinglu with 10 spirit stones" and nothing
+            // here has to understand the rest of the sentence.
+            expect(plan.target, question).toContain('Bai Jinglu');
+        }
+    });
+
+    /**
+     * And a question that named a SUBJECT keeps it.
+     *
+     * A topic put to a person is already the free read - `askAround`, which
+     * `GameService.interact` reaches before the pressure model - so downgrading
+     * this one to a bare read of the person would have cost nothing and
+     * answered a narrower question than the one asked. Only the intent is
+     * dropped, and it is dropped rather than left alone because `askAround`
+     * needs the person to be standing here: somebody known of but elsewhere
+     * falls past it into the attempt.
+     */
+    it('keeps the subject when the question named one, and still cannot press', () => {
+        for (const question of [
+            'could I question Bai Jinglu about the ruins',
+            'can I press Bai Jinglu about the Azure Dew Sect'
+        ]) {
+            const plan = parseIntent(question);
+            expect(plan.action, question).toBe('interact');
+            expect(PRESSING_SOMEBODY.has(plan.intent ?? ''), question).toBe(false);
+            expect(plan.topic, question).toBeTruthy();
+        }
+    });
+
+    /**
+     * And the three that were always free stay exactly where they were.
+     *
+     * Narrowing to the intents that press is the rule `AGENTS.md` states as
+     * fixing the gap that was demonstrated: "can I talk to the gate steward" is
+     * a question about an act that settles nothing and costs nothing, and the
+     * honest answer to it is the approach itself.
+     */
+    it('leaves the approaches that settle nothing where they were', () => {
+        for (const question of [
+            'can I talk to Bai Jinglu',
+            'should I apologise to Bai Jinglu',
+            'could I trade with Bai Jinglu'
+        ]) {
+            const plan = parseIntent(question);
+            expect(plan.action, question).toBe('interact');
+            expect(PRESSING_SOMEBODY.has(plan.intent ?? ''), question).toBe(false);
+        }
+    });
+
+    /**
+     * The classification asked of the PLAN, which is the question every
+     * consumer actually has.
+     *
+     * `READ_ONLY_ACTIONS` is a statement about verbs and the cost of this one
+     * is a fact about the sentence, so `costsTheAskerNothing` is the authority
+     * and the list is not. That distinction is not decoration: it was found by
+     * the reclassification breaking a guard in a different file.
+     * `the-part-of-the-sentence-that-was-not-run.ts` reports a dropped clause
+     * only when the clause would have COST something, was written while
+     * `interact` was on the free list, and began falsely reporting "tell me
+     * about the market and the prices" - a sentence its own header names as a
+     * false report it must not make - the moment the list told the truth. It
+     * asks this function now, and its corpus test is green again.
+     */
+    it('answers what a plan costs off the intent, not off the verb', () => {
+        for (const intent of INTERACT_INTENTS) {
+            expect(
+                costsTheAskerNothing({ action: 'interact', intent, target: 'Bai Jinglu' }),
+                `interact(${intent})`
+            ).toBe(!PRESSING_SOMEBODY.has(intent));
+        }
+        // Every other verb keeps answering exactly as the list does.
+        for (const action of ACTION_NAMES) {
+            if (action === 'interact') continue;
+            expect(costsTheAskerNothing({ action }), action)
+                .toBe(READ_ONLY_ACTIONS.includes(action));
+        }
+    });
+
+    /** And commanding still commands, for every one of the seven. */
+    it('still reaches the attempt when the player has decided', () => {
+        for (const [sentence, intent] of [
+            ['I bribe Bai Jinglu with 10 spirit stones', 'bribe'],
+            ['I threaten Bai Jinglu', 'threaten'],
+            ['I seduce Bai Jinglu', 'seduce'],
+            ['I deceive Bai Jinglu', 'deceive'],
+            ['I interrogate Bai Jinglu', 'interrogate'],
+            ['I recruit Bai Jinglu', 'recruit'],
+            ['I negotiate with Bai Jinglu', 'negotiate']
+        ] as ReadonlyArray<readonly [string, string]>) {
+            const plan = parseIntent(sentence);
+            expect(plan.action, sentence).toBe('interact');
+            expect(plan.intent, sentence).toBe(intent);
         }
     });
 });
