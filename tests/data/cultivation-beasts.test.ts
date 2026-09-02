@@ -533,28 +533,48 @@ describe('wired into the encounter table', () => {
 describe('what gives a changed beast away', () => {
     it('is the missing upbringing and never the body', () => {
         expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.notTheBody).toMatch(/shape is correct|looking harder/i);
-        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.theGap).toMatch(/childhood|reference/i);
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.theState).toMatch(/records for ordinary life/i);
         // Surfaces in conversation, over time - not in a glance.
         expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/conversation|talk/i);
         expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/never in a look|not in a look/i);
     });
 
-    it('carries no anatomical tell anywhere in the catalog', () => {
-        // A changed beast cultivated into its body rather than being fitted
-        // into one, so there is nothing wrong with the hands, and a fox with
-        // wrong hands is a fox that is bad at being a fox. This guard exists
-        // because that image was written once, on the fox, and it is a good
-        // enough image to come back.
-        const anatomical = [
+    it('carries nothing uncanny anywhere in the catalog', () => {
+        // Grotesquery is out by ruling, not only anatomy. A changed beast is
+        // human-shaped completely - there is no register in which one is
+        // ALMOST human - so the guard covers the whole uncanny vocabulary
+        // rather than the one image that prompted it. That image was written
+        // once, on the fox, and it is good enough to come back in another
+        // costume.
+        const uncanny = [
             /hands are wrong/i, /wrong hands/i, /wears? .{0,20}shape badly/i,
-            /shape badly/i, /does not blink/i, /too long between blinks/i
+            /shape badly/i, /blinks?/i, /unnatural/i, /uncann/i, /grotesq/i,
+            /not quite (?:human|right|a person)/i, /inhuman/i, /too still/i,
+            /unnervin/i, /something is off/i,
+            // `wrong` only where it is about a body. The Sleeper's carvers
+            // report the dust hanging wrong, which is a qi effect around a
+            // thing walled into rock and has nothing to do with wearing a
+            // human shape - a blanket ban on the word would delete it.
+            /(?:hand|eye|face|skin|shape|body|smile|voice)s?\s+(?:\w+\s+)?(?:is|are|look\w*|sit\w*)?\s*wrong/i
         ];
         const corpus = BEASTS.map(b => ({ label: b.id, text: `${b.name} ${b.hard} ${b.note}` }));
         for (const { label, text } of corpus) {
-            for (const pattern of anatomical) {
-                expect(pattern.test(text), `${label} has an anatomical tell: ${pattern}`).toBe(false);
+            for (const pattern of uncanny) {
+                expect(pattern.test(text), `${label} is uncanny: ${pattern}`).toBe(false);
             }
         }
+    });
+
+    it('states the positive rule, because a prohibition alone reads as licence', () => {
+        // A test can only refuse things. Without the rule said plainly, the
+        // next person writes "unnaturally still" believing it is permitted
+        // because nothing told them what IS permitted.
+        const rule = WHAT_GIVES_A_CHANGED_BEAST_AWAY;
+        expect(rule.ordinaryVariation).toMatch(/ordinary human variation/i);
+        expect(rule.ordinaryVariation).toMatch(/burly|thin/i);
+        expect(rule.ordinaryVariation).toMatch(/no grotesquery|nothing more/i);
+        // And the consequence: you cannot read the species off the build.
+        expect(rule.flavourNotEvidence).toMatch(/flavour|clue|evidence/i);
     });
 
     it('applies to every changed beast rather than to one species', () => {
@@ -583,5 +603,50 @@ describe('what gives a changed beast away', () => {
         expect(fox.speaks).toBe(true);
         expect(fox.note).toMatch(/fox/i);
         expect(fox.note).toMatch(/perfectly|seeming/i);
+    });
+});
+
+describe('the missing reference is a state, not a list of behaviours', () => {
+    it('names the one fact and the layer that already holds it', () => {
+        const rule = WHAT_GIVES_A_CHANGED_BEAST_AWAY;
+        expect(rule.theState).toMatch(/no records for ordinary life/i);
+        expect(rule.whereItLives).toMatch(/KnowingStage/);
+        expect(rule.whereItLives).toMatch(/unaware/);
+        expect(rule.andTheNarratorDoesTheRest).toMatch(/narrator/i);
+    });
+
+    it('refuses to enumerate the mistakes, in the file that would grow the list', () => {
+        // A list repeats inside three meals and is the engine writing prose.
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.neverAList).toMatch(/do not enumerate/i);
+        // Nothing in here may become an array of gaffes. `theSameRuleElsewhere`
+        // is the one array and it lists INSTANCES OF THE RULE - other people
+        // with the same hole - never kinds of mistake.
+        const arrays = Object.entries(WHAT_GIVES_A_CHANGED_BEAST_AWAY)
+            .filter(([, v]) => Array.isArray(v));
+        expect(arrays.map(([k]) => k)).toEqual(['theSameRuleElsewhere']);
+        for (const entry of WHAT_GIVES_A_CHANGED_BEAST_AWAY.theSameRuleElsewhere) {
+            // Each row is a person, not a blunder.
+            expect(entry).toMatch(/who|somebody|the .*(recluse|ancestor|beast)/i);
+        }
+    });
+
+    it('is not a rule about beasts, and fades with living rather than with rung', () => {
+        const rule = WHAT_GIVES_A_CHANGED_BEAST_AWAY;
+        expect(rule.notAboutBeastsAtAll).toMatch(/anyone|anybody/i);
+        expect(rule.notAboutBeastsAtAll).toMatch(/most complete case/i);
+        expect(rule.itFadesWithExposureNotRung).toMatch(/living/i);
+        expect(rule.itFadesWithExposureNotRung).toMatch(/no amount of cultivation|not.*rung/i);
+        // The people who share the hole are on the list, so nobody reads this
+        // as bespoke to the catalog it happens to be written in.
+        const others = rule.theSameRuleElsewhere.join(' ');
+        expect(others).toMatch(/sect/i);
+        expect(others).toMatch(/provinces over/i);
+    });
+
+    it('keeps effort as the thing that exposes it', () => {
+        // The inversion worth having: a changed beast trying to pass is more
+        // catchable, not less, because a convincing lie needs a reference class.
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/effort/i);
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.howItSurfaces).toMatch(/aim the lie|reference class/i);
     });
 });

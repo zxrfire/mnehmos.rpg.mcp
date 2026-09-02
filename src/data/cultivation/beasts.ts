@@ -421,7 +421,84 @@ export const ESTIMATING_A_BEAST = {
  * a beat too long, no failure to blink. Looking harder does not help, and any
  * entry in this catalog that hints otherwise is wrong.
  *
+ * ── AND THE POSITIVE HALF, WHICH IS THE PART THAT GETS FORGOTTEN ─────────
+ *
+ * Refusing the uncanny is not enough, because a rule stated only as a
+ * prohibition gets read as licence for whatever it did not list. So, stated
+ * plainly:
+ *
+ * > **The species shows as ordinary human variation, and nothing more.**
+ *
+ * A changed tortoise is a burly man. A changed serpent is a thin one. Build,
+ * height, colouring, bearing - all of it inside the range a person walks past
+ * in a market without thinking about twice. There is no grotesquery anywhere
+ * in this catalog and no register in which a changed beast is *almost* human:
+ * they are human-shaped, completely, and the variation between them is the
+ * ordinary variation between people.
+ *
+ * **Which makes the species flavour and never evidence.** A heavy frame is a
+ * heavy frame and the province is full of them. You can no more read a
+ * tortoise off a broad back than off a pair of hands, and an entry that
+ * invites somebody to try has turned a description into a clue - which is the
+ * uncanny tell again, wearing a build instead of a face.
+ *
  * > **The body is perfect. The upbringing is missing.**
+ *
+ * ── ONE STATE. DO NOT ENUMERATE WHAT IT LOOKS LIKE ──────────────────────
+ *
+ * **A changed beast begins with no records for ordinary life.** That is the
+ * whole mechanism. It is not a behaviour, a trait or a disposition - it is an
+ * absence of records, in the layer that already holds what somebody has a
+ * reference for: `KnowingStage` in `src/engine/social/discovery.ts`, held per
+ * subject, with `unaware` at the bottom.
+ *
+ * Every behaviour anybody would list falls out of that one fact:
+ *
+ *   asked what it is        no record, so they ask
+ *   trying to use it        no record of what it is FOR, so they use it wrong
+ *   accounting for itself   no reference class to build a plausible answer
+ *                           out of, so the lie is wrong in a way a local
+ *                           catches
+ *
+ * **Those are illustrations of one state, and they must never become data.**
+ * No table of gaffes, no `awkwardMoments` array, nothing storing that a
+ * chopstick gets held like a fork. A list repeats inside three meals and it
+ * is the engine writing prose, which is the one thing this repo exists not to
+ * do. The engine's job is to know this person has no record for this object;
+ * what that looks like at the table is the narrator's, and it is different
+ * every time.
+ *
+ * ── AND THE SECOND FACE OF IT IS THE BETTER SCENE ───────────────────────
+ *
+ * **A convincing lie needs a reference class.** To make something up you have
+ * to know what a plausible answer looks like - which village names sound like
+ * village names, what a cooper does all day, how long that road takes. A
+ * changed beast has none of that, so the cover story fails for the same
+ * reason the question did.
+ *
+ * Which produces the inversion worth having:
+ *
+ * > **A changed beast that knows it needs to pass is MORE catchable, not
+ * > less. Effort is what exposes it.**
+ *
+ * That is a far better scene than obliviousness. Somebody sitting quietly
+ * being baffled by chopsticks is a curiosity; somebody working hard at a
+ * biography and getting the distance wrong is a person who has just told you
+ * what they are.
+ *
+ * And it is `trust.md`'s own rule about fraud rather than a new one: a signal
+ * is worth what the particular reader cannot check, and **a fabricator who
+ * does not know what the listener knows cannot aim the lie.** So it fails on
+ * exactly the person it most needed to convince - the local, the carter, the
+ * one who has actually been there. Fraud is always downmarket.
+ *
+ * ── AND IT FADES WITH EXPOSURE, NEVER WITH RUNG ─────────────────────────
+ *
+ * A changed beast that has lived a century among people lies perfectly well,
+ * and no amount of cultivation shortens that. **Reference is acquired by
+ * living**, which is the whole difference between the two axes - and it is
+ * also why the recluse at the top of the ladder cannot catch one. They have
+ * the same hole.
  *
  * It did not have a childhood in a village. So it looks entirely right and
  * does not know what the chopsticks are - and that holds for every one of
@@ -458,18 +535,46 @@ export const ESTIMATING_A_BEAST = {
 export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
     notTheBody:
         'The shape is correct and looking harder does not help. It cultivated into that body rather than being fitted into one, and nothing about it is a costume that slips.',
-    theGap:
-        'It never had a childhood among people. It can perceive anything in the room and has no reference for what any of it is for, so it asks what the chopsticks are.',
-    everyOne:
-        'True of all of them, the fox included. Seeming makes a body right; it does not supply twenty years of sitting at a table with people.',
+    ordinaryVariation:
+        'The species shows as ordinary human variation and nothing more. A changed tortoise is a burly man; a changed serpent is a thin one. Build, height, colouring and bearing all sit inside the range a person walks past in a market without thinking about twice, and there is no grotesquery anywhere in the catalog.',
+    flavourNotEvidence:
+        'Which makes the species flavour rather than a clue. A heavy frame is a heavy frame and the province is full of them, so nobody reads a tortoise off a broad back any more than off a pair of hands. An entry inviting somebody to try has turned a description into evidence, which is the uncanny tell again wearing a build instead of a face.',
+
+    // ── THE WHOLE OF THE MECHANISM, AND IT IS ONE FACT ────────────────
+    theState:
+        'A changed beast begins with no records for ordinary life. That is the entire mechanism and there is nothing else to it: not a behaviour, not a trait, not a disposition - an absence of records, in the layer that already holds what somebody has a reference for.',
+    whereItLives:
+        'KnowingStage in src/engine/social/discovery.ts, held per subject, with unaware at the bottom. A changed beast is an ordinary reader whose records happen to be empty about chopsticks, villages, trades and roads. Nothing about it is special-cased and nothing should be.',
+    andTheNarratorDoesTheRest:
+        'The engine knows this person has no record for this object. What that looks like at the table belongs to the narrator, and it will be different every time - which is exactly what a list of gaffes can never be.',
+
+    // ── WHAT MUST NOT BE BUILT ────────────────────────────────────────
+    neverAList:
+        'Do not enumerate the mistakes. No table of gaffes, no awkward-moments array, nothing that stores asking what the chopsticks are or holding one like a fork or naming a village that does not exist. A list repeats inside three meals, and it is the engine writing prose, which is the one thing this repo exists not to do. If an answer here needs a field, a list, or a branch on species, it has gone wrong.',
+
+    // ── AND IT IS NOT A RULE ABOUT BEASTS ─────────────────────────────
+    notAboutBeastsAtAll:
+        'Anyone with no record for a thing behaves this way. The changed beast is only the most complete case, because it has the fewest records of anybody - not because it is a beast.',
+    itFadesWithExposureNotRung:
+        'Reference is acquired by living, so a changed beast that has spent a century among people passes perfectly well, and no amount of cultivation shortens that. It is why the recluse at the top of the ladder cannot catch one: they have the same hole.',
     howItSurfaces:
-        'In conversation about ordinary things, over time, and never in a look. A meal is the classic circumstance because a meal is long, ordinary, and full of objects nobody explains.',
+        'In conversation about ordinary things, over time, and never in a look. It shows twice from the one absence - not knowing when at ease, and inventing badly when trying - and the second is the sharper scene, because effort is what exposes it. A convincing lie needs a reference class to build a plausible answer out of, so a fabricator who does not know what the listener knows cannot aim the lie, and fails on exactly the person it most needed to convince.',
     whoNoticesFirst:
         'Whoever sat next to them, at whatever rung. This is the one reading in the world that gets harder rather than easier as the reader climbs, because a recluse at the top of the ladder has the same hole in their own reference and nothing to compare against.',
+    everyOne:
+        'True of all of them, the fox included. Seeming makes a body right; it does not supply twenty years of sitting at a table with people.',
+
+    /**
+     * Instances of the one rule, NOT a list of behaviours. Extending this is
+     * how you record another fiction the same mechanic already covers; it is
+     * never where a new kind of mistake gets written down.
+     */
     theSameRuleElsewhere: [
         'the high-realm recluse, who reads a token perfectly and cannot say whose retinue that is',
-        'the sealed ancestor, waking after centuries to ask whether that house still stands',
-        'the changed beast, asking what the chopsticks are'
+        'the sealed ancestor, waking after centuries with a modern object in her hand',
+        'somebody raised inside a sect who has never in their life bought anything',
+        'somebody from four provinces over, who is not lying and still gets it wrong',
+        'the changed beast, which is the same state with the fewest records of all'
     ]
 } as const;
 
