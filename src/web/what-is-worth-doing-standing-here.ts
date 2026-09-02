@@ -294,6 +294,7 @@ const MOST_A_PLAYER_SHOULD_READ = 8;
 const SAY = {
     work: { id: 'work', say: 'I look for work', routesTo: 'work' },
     gather: { id: 'gather', say: 'I gather herbs', routesTo: 'gather' },
+    hunt: { id: 'hunt', say: 'I hunt a spirit beast', routesTo: 'hunt' },
     sell: { id: 'sell', say: 'I sell my herbs', routesTo: 'sell' },
     eat: { id: 'eat', say: 'I buy food', routesTo: 'eat' },
     treat: { id: 'treat', say: 'I see a physician', routesTo: 'treat' },
@@ -551,6 +552,18 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             + 'or something that carries one. Whether any of it will say anything to you is a '
             + 'different question.'));
     }
+    // The other half of the ground, and the one nobody finds on their own.
+    //
+    // Foraging is offered above whenever somebody is hungry or broke, and it
+    // was the only sentence in the game that pointed at the world outside a
+    // settlement. So a player learnt that herbs exist and never learnt that
+    // beasts do - which was literally true rather than a discovery problem,
+    // because until the hunt verb existed the catalog had no reader. It is on
+    // the floor rather than gated on hunger because it is the answer to "what
+    // is there to DO", not to "how do I eat this month".
+    add(at(SAY.hunt, 'open',
+        'What is out on the ground here that is worth killing, what is out there that would '
+        + 'kill you, and what either of them is carrying.'));
     if (!here.aboveTheLid) {
         add(at(SAY.room, 'open', 'Who is standing here, and how far above you they are.'));
         add(at(SAY.news, 'open',

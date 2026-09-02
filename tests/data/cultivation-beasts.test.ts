@@ -5,7 +5,8 @@
  * bestiary bolted onto the setting:
  *
  *   - one ladder, so danger is a realm ordinal and nothing else
- *   - the change at Core Formation is a hard floor under anything that speaks
+ *   - a core at Core Formation and a voice at Void Refinement are twelve rungs
+ *     apart, and the window between them is where hunting happens at all
  *   - they live where the qi is, so the good ground is contested before any
  *     sect arrives
  *   - the Late Age applies to them: thin ground has thin populations and the
@@ -17,7 +18,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { MAX_ORDINAL, rankName } from '../../src/engine/cultivation/realms.js';
+import { MAX_ORDINAL, rankName, realmForOrdinal } from '../../src/engine/cultivation/realms.js';
 import { HERB_VALUE_BANDS, HERB_RARITY_CEILING, HerbBiomeSchema } from '../../src/data/cultivation/herbs.js';
 import { getEncounter, ENCOUNTERS, ruinWeightShare } from '../../src/data/cultivation/encounters.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
@@ -27,6 +28,7 @@ import {
     BEAST_MATERIALS,
     BEAST_TIDES,
     BEAST_CHANGE_ORDINAL,
+    BEAST_CORE_ORDINAL,
     THE_BEAST_ROAD,
     ESTIMATING_A_BEAST,
     THE_CONTRACT,
@@ -54,6 +56,9 @@ import {
 } from '../../src/data/cultivation/beasts.js';
 
 const BEAST_IDS = new Set(BEASTS.map(b => b.id));
+
+/** The realm the change sits in, read off the constant rather than spelled. */
+const rankNameOfChange = (): string => realmForOrdinal(BEAST_CHANGE_ORDINAL).name;
 
 describe('spirit beasts: the catalog', () => {
     it('parses, and there is enough of it to populate a province', () => {
@@ -144,15 +149,52 @@ describe('one ladder: danger is an ordinal, not a stat block', () => {
 });
 
 describe('the change, and why a talking beast is never the easy option', () => {
-    it('puts a Core Formation floor under anything that speaks', () => {
-        expect(BEAST_CHANGE_ORDINAL).toBe(17);
-        expect(rankName(BEAST_CHANGE_ORDINAL)).toMatch(/Core Formation/);
+    it('puts a Void Refinement floor under anything that speaks', () => {
+        expect(BEAST_CHANGE_ORDINAL).toBe(29);
+        expect(rankName(BEAST_CHANGE_ORDINAL)).toMatch(/Void Refinement/);
         for (const b of BEASTS) {
             if (b.speaks) {
                 expect(b.ordinal, `${b.id} speaks below the change`).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
             }
         }
         expect(negotiableBeasts().length, 'nothing can be negotiated with').toBeGreaterThanOrEqual(1);
+    });
+
+    it('keeps a beast becoming somebody a rare event rather than a tier', () => {
+        // The ruling is that this is MEGA RARE. The guard is on the share of
+        // the catalog and on the draw weight, not on a count - a count goes
+        // stale the moment anybody adds a row, and the claim was never about
+        // how many entries there are. It is about how often anybody meets one.
+        const speakers = BEASTS.filter(b => b.speaks);
+        expect(speakers.length / BEASTS.length, 'talking beasts are a tier, not an event')
+            .toBeLessThan(0.25);
+        // Every one of them is a named individual rather than a population.
+        for (const b of speakers) {
+            expect(b.groupSize, `${b.id} speaks and comes in numbers`).toBe(1);
+            expect(b.frequency, `${b.id} speaks and is a common draw`).toBeLessThanOrEqual(6);
+        }
+        const totalWeight = BEASTS.reduce((s, b) => s + b.frequency, 0);
+        const talkingWeight = speakers.reduce((s, b) => s + b.frequency, 0);
+        expect(talkingWeight / totalWeight, 'the draw meets one too often')
+            .toBeLessThan(0.02);
+    });
+
+    it('separates condensing a core from taking a shape, twelve rungs apart', () => {
+        // The two used to be one constant and the ruling split them. The gap
+        // between is the entire hunting economy: something worth killing for
+        // a core, that cannot ask you not to.
+        expect(BEAST_CORE_ORDINAL).toBeLessThan(BEAST_CHANGE_ORDINAL);
+        expect(rankName(BEAST_CORE_ORDINAL)).toMatch(/Core Formation/);
+        const inTheGap = BEASTS.filter(b =>
+            b.ordinal >= BEAST_CORE_ORDINAL && b.ordinal < BEAST_CHANGE_ORDINAL);
+        expect(inTheGap.length, 'nothing lives in the window the economy runs on')
+            .toBeGreaterThanOrEqual(3);
+        // And everything in it is an animal. That is what the window IS.
+        for (const b of inTheGap) {
+            expect(b.speaks, `${b.id} talks inside the hunting window`).toBe(false);
+        }
+        expect(inTheGap.some(b => coreOf(b.id) !== undefined),
+            'nothing in the window carries a core to take').toBe(true);
     });
 
     it('has things above the change that do not speak, which is worse', () => {
@@ -181,7 +223,13 @@ describe('the change, and why a talking beast is never the easy option', () => {
 
     it('says how a cultivator estimates one, and how the reading fails', () => {
         expect(ESTIMATING_A_BEAST.tells.length).toBeGreaterThanOrEqual(3);
-        expect(ESTIMATING_A_BEAST.tells.join(' ')).toMatch(/Core Formation/);
+        // The tell that admits of no argument is a shape or a voice, and what
+        // makes it useful is that it names the floor it implies. Asserted
+        // against the constant rather than against a spelling, because this
+        // test previously pinned "Core Formation" and had to be re-derived
+        // when the change moved - a bar written as a literal cannot follow a
+        // ruling, and the thing being claimed was never the words.
+        expect(ESTIMATING_A_BEAST.tells.join(' ')).toContain(rankNameOfChange());
         expect(ESTIMATING_A_BEAST.standardError).toMatch(/rank low|survey/i);
     });
 });
@@ -296,7 +344,7 @@ describe('beast materials feed the existing economy', () => {
         for (const b of BEASTS) {
             const cores = materialsOf(b.id).filter(m => m.core);
             expect(cores.length, `${b.id} has ${cores.length} cores`).toBeLessThanOrEqual(1);
-            if (b.ordinal < BEAST_CHANGE_ORDINAL) {
+            if (b.ordinal < BEAST_CORE_ORDINAL) {
                 expect(cores.length, `${b.id} has a core below the change`).toBe(0);
             }
             expect(coreOf(b.id)?.id).toBe(cores[0]?.id);
