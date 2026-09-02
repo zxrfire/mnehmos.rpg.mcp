@@ -356,7 +356,7 @@ it describes.
 |---|---|---|---|
 | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | What a favour is for: it skips the admission ordinal. | 319 | - |
 | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. One table for every artifact in the world, ordered by `power` descending, because the ordering is the argument: an object an ascended founder sent back down and a notched sabre off a dead bandit are the same kind of row with different numbers in one column. Read top to bottom and the whole hierarchy of force in the setting is legible without a single sentence of explanation. | 555 | - |
-| [`beasts.ts`](../../src/data/cultivation/beasts.ts) | Spirit beasts - the part of the world that is dangerous and is not a person. | 1668 | - |
+| [`beasts.ts`](../../src/data/cultivation/beasts.ts) | Spirit beasts - the part of the world that is dangerous and is not a person. | 1720 | - |
 | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | Three institutions with no place for their own members' children. | 211 | - |
 | [`catastrophe.ts`](../../src/data/cultivation/catastrophe.ts) | What a disaster can end, and who pays for it. | 170 | - |
 | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | Recorded contingencies: plans held by parties, waiting on events that have not happened. | 333 | - |
@@ -414,7 +414,7 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**255 design constants in the catalog. 14 are read by nothing at all,
+**256 design constants in the catalog. 15 are read by nothing at all,
 and 147 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
@@ -437,6 +437,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `SEAT_ORDER` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | - |
 | `THE_ARTS_A_NEW_HOUSE_HAS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | - |
 | `THE_OLD_ARE_THE_PRACTITIONERS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
+| `WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | - |
 | `WHY_A_PHRASE_AND_NOT_A_NAME` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | **nothing** | - |
 | `ARTIFACT_MARGIN` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 2 |
 | `FOSTERAGE_TERMS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 2 |
