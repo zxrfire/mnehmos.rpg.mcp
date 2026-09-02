@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>The fourth rung, measured in a tab</title>
+<style>
+  body { background:#0b0f0e; color:#d7e3de; font:14px/1.55 ui-monospace,Menlo,Consolas,monospace; margin:0; padding:24px 28px; }
+  h1 { font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:#7fd1b9; margin:0 0 4px; }
+  p.lede { color:#8fa39c; margin:0 0 18px; max-width:70ch; }
+  pre { white-space:pre-wrap; margin:0; }
+  .bad { color:#f19a9a; } .ok { color:#7fd1b9; }
+</style>
+</head>
+<body>
+<h1>The fourth rung, measured in a tab</h1>
+<p class="lede">
+  The same probe set, the same held-out split and the same two corpora nobody here
+  wrote, run against the browser tier under WASM. The pattern table's verdict for
+  each sentence is precomputed in Node and shipped alongside, so both rungs are
+  judged on exactly the same decision.
+</p>
+<pre id="out">starting…</pre>
+<script type="module">
+import { openTheTier, embed, verbForASentenceThePatternsMissed } from './reading-a-sentence-in-the-tab.js';
+
+const out = document.getElementById('out');
+const lines = [];
+const say = (s = '') => { lines.push(s); out.textContent = lines.join('\n'); };
+
+const SPENDS_TIME = new Set(['cultivate','seclude','breakthrough','train_technique','move','gather','hunt','wait','work','refine','eat','treat','attack','learn_technique','consume_pill','descend','site','legacy','request']);
+
+try {
+  const data = await (await fetch('./bench-data.json')).json();
+
+  const t0 = performance.now();
+  await openTheTier();
+  const loadMs = performance.now() - t0;
+  say(`model open + vectors: ${loadMs.toFixed(0)} ms  (once per tab)`);
+
+  const cold0 = performance.now();
+  await embed('I need money and somewhere better to be');
+  say(`first sentence after load: ${(performance.now() - cold0).toFixed(1)} ms`);
+
+  const warm = [];
+  for (let i = 0; i < 60; i++) {
+    const s = performance.now();
+    await embed(data.probe[i % data.probe.length][1]);
+    warm.push(performance.now() - s);
+  }
+  warm.sort((a, b) => a - b);
+  say(`warm: median ${warm[30].toFixed(1)} ms, p95 ${warm[57].toFixed(1)} ms, max ${warm[59].toFixed(1)} ms`);
+  say();
+
+  // The composed decision: the table first, the model only on `unclear`.
+  const decide = async ([, text, tableAction]) =>
+    tableAction !== 'unclear' ? tableAction : ((await verbForASentenceThePatternsMissed(text)) ?? 'unclear');
+
+  async function arm(name, rows) {
+    let right = 0, unclear = 0, moved = 0;
+    for (const row of rows) {
+      const got = await decide(row);
+      if (got === row[0]) right++;
+      if (got === 'unclear') unclear++;
+      if (row[2] !== 'unclear' && row[2] !== got) moved++;
+    }
+    say(`${name.padEnd(26)} n=${String(rows.length).padStart(3)}  right ${String(right).padStart(3)} (${(100*right/rows.length).toFixed(1)}%)  unclear ${String(unclear).padStart(3)}  moved ${moved}`);
+    return { right, moved };
+  }
+
+  await arm('probe, all', data.probe);
+  await arm('probe, tuning half', data.probe.filter((_, i) => i % 2 === 0));
+  await arm('probe, held out half', data.probe.filter((_, i) => i % 2 === 1));
+  const cov = await arm('coverage.test.ts', data.coverage);
+  say();
+
+  let leaks = 0, claimed = 0;
+  for (const row of data.negatives) {
+    const got = await decide(row);
+    if (got !== 'unclear') claimed++;
+    if (SPENDS_TIME.has(got)) { leaks++; say(`  SPENDS TIME ${got.padEnd(16)} ${row[1]}`); }
+  }
+  say(`17 unrecognised: ${claimed} claimed by a verb, ${leaks} spend in-world time (must be 0).`);
+  say();
+  say(cov.moved === 0 && leaks === 0 ? 'BOTH HARD BARS HELD.' : 'A HARD BAR FAILED.');
+
+  // Determinism, in the tab: the same sentence asked twenty times over.
+  const probe = 'is there anybody around here who would take me on';
+  const first = JSON.stringify(await verbForASentenceThePatternsMissed(probe));
+  let stable = true;
+  for (let i = 0; i < 20; i++) {
+    if (JSON.stringify(await verbForASentenceThePatternsMissed(probe)) !== first) stable = false;
+  }
+  say(`same sentence, twenty times: ${stable ? 'identical' : 'MOVED'}`);
+  document.title = 'done';
+} catch (err) {
+  say(`FAILED: ${err && err.message ? err.message : err}`);
+  document.title = 'failed';
+}
+</script>
+</body>
+</html>
