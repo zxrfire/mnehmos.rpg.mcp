@@ -1232,19 +1232,51 @@ function meter(opts) {
  *
  * Absent rather than zeroed when the engine sends null: "nobody is here" and
  * "nobody has looked" are different facts and only one of them is measured.
+ *
+ * ── TWO WAYS THIS PANEL LIED, BOTH FOUND BY PLAYING ──────────────────────
+ *
+ * `Number(null)` is 0, and `Number.isFinite(0)` is true, so the one field the
+ * engine deliberately sends as null - `share`, masked by
+ * `what-you-can-tell-about-the-ground.ts` for anybody who cannot yet read a
+ * vein - arrived here as a measured zero and rendered "0% rate". Played on a
+ * served build: a Qi Condensation cultivator sat on ground this same panel was
+ * calling plentiful, came out of one seclusion two rungs higher with progress
+ * moved from 0/100 to 277/100, and the panel read "7 - 0% RATE" on both sides
+ * of it.
+ *
+ * Worse, the field unmasks when somebody who CAN read a vein reads it for you,
+ * so losing that person reads as the rate collapsing: 52 - 22% before a stretch
+ * and 49 - 0% after it, on ground whose real share had gone UP, from 0.2241 to
+ * 0.2364, because three of the people drawing on it had left. Fewer people, and
+ * an apparently vanished rate. Nothing about the ground had changed - the
+ * reader had.
+ *
+ * And the label was wrong even where the number was right. This figure is
+ * `crowdingMultiplier`: the fraction of the ground's qi still going spare once
+ * everybody standing here has taken their draw. It is one term among several in
+ * the rate and it is not the cultivator's rate - untreated meridian injuries
+ * take their own documented percentage, which arrives in `injuryRatePenalty`,
+ * a different field entirely, and the two were being read as one number. So the
+ * figure stays exactly as the engine computed it and the words around it now
+ * say what it measures, which is what the engine's own sentence one line below
+ * has always said.
  */
 function groundBlock(d) {
   const g = d && d.ground;
   if (!g) return '';
-  const share = Number(g.share);
-  const crowded = Number.isFinite(share) && share < 1;
+  // Not `Number(g.share)`: null must stay absent, not become a measured zero.
+  const share = typeof g.share === 'number' && Number.isFinite(g.share) ? g.share : null;
+  const shared = share !== null && share < 1;
   return html`
     <div class="ambient">
       <span class="muted">Drawing on this ground</span>
-      <span class="ambient__val ${raw(crowded ? 'amb-thin' : '')}">${
-        crowded ? `${fmtInt(g.heads)} · ${Math.round(share * 100)}% rate` : fmtInt(g.heads)
-      }</span>
+      <span class="ambient__val">${fmtInt(g.heads)}</span>
     </div>
+    ${shared ? raw(html`
+    <div class="ambient">
+      <span class="muted">Qi reaching you, against sitting alone</span>
+      <span class="ambient__val amb-thin">${Math.round(share * 100)}%</span>
+    </div>`) : ''}
     <div class="meter__note">${g.line}</div>`;
 }
 
