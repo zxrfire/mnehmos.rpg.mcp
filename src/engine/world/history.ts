@@ -890,7 +890,10 @@ export const SURNAMES = [
  * Surnames that belong to somebody, and so must never be handed to a stranger.
  *
  * A prestigious house's name is not decoration - it is the thing a lineage is read
- * by. Somebody checking whether a sect is still the sect they knew looks for its
+ * by, and in a roguelike it is also the handle the PLAYER's knowledge attaches to.
+ * Runs end; what survives is what the person at the keyboard learned, and a name is
+ * how they hold it. A randomly generated Ru farmhand would not merely muddle a
+ * lineage in the fiction - it would poison recognition the player earned by dying. Somebody checking whether a sect is still the sect they knew looks for its
  * founding families on the roll, because names outlive every person who carries
  * them and faces do not. That check only means something if the name cannot also
  * arrive on a farmhand by a dice roll.
@@ -899,10 +902,18 @@ export const SURNAMES = [
  * generator physically cannot produce one. The test that asserts the two sets stay
  * disjoint is the guard - without it this holds by accident, and the next person to
  * widen the pool breaks a lineage silently.
+ *
+ * ONLY EXCLUSIVE NAMES BELONG HERE. Xu is deliberately absent despite Xu Ci lying
+ * under the Anchorhold's datum stone, because there are Xu at the Measured Span and
+ * Held Names too - a name carried by three houses identifies none of them, and
+ * reserving it would assert a lineage the roster does not support. Gu and Cao are
+ * the live problem: both are house lines in members.ts AND in the pool above, so a
+ * stranger can be generated into a house's name. Fixing that means either cutting
+ * them from the pool, which moves every seeded world, or accepting that those two
+ * names prove nothing.
  */
 export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
     ['Ru', 'Azure Cloud Pavilion'],
-    ['Xu', 'the Anchorhold'],
     ['Meng', 'Nine Peaks Ascetic Order'],
 ]);
 
