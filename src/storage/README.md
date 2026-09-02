@@ -92,6 +92,31 @@ unknown rather than "not filled in yet".
 Write the reasoning as a comment above the guard. Future readers need to know which of the
 two cases they are in.
 
+### A data migration, when a key changes meaning
+
+There is exactly one, and the shape is worth copying rather than reinventing:
+[`folding-a-persons-two-knowledge-keys-into-one.ts`](folding-a-persons-two-knowledge-keys-into-one.ts),
+called from `migrateSocial` in one line.
+
+A catalog person has two ids - the catalog's and the world row's - and `knowledge_records`
+was filed under both for the same human being. Folding them at the gate is the fix, and it
+would have made every row already written under the losing key stop resolving: **a live
+save whose records silently stop resolving is a worse outcome than the bug.** So the rows
+are rewritten.
+
+Four properties, and they are what makes a data migration safe here:
+
+- **It rewrites the key and touches nothing else** - not the stance, not the source, not
+  the day, not the stage tag. Nothing is deleted and nothing is merged; two rows under one
+  claim key is already the intended case, and collapsing them would throw away the
+  provenance the table exists to keep.
+- **It is idempotent by construction.** After one pass no key matches the pattern, so a
+  second run rewrites nothing. There is still no version table.
+- **It costs one indexed read on the common path**, because `migrate(db)` runs in full on
+  every process start and almost every database has nothing to do.
+- **It asks the catalog which keys qualify, never a prefix.** The pattern narrows the scan;
+  the catalog decides the rewrite. See the module header for why the prefix rule is wrong.
+
 ---
 
 ## Shape decisions worth knowing before you add a table
