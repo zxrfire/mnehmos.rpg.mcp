@@ -416,6 +416,8 @@ The roll of them, all found in a single session:
 | 261 cultivation chambers with their own qi | seeded into every world | nobody stood in one; the largest multiplier in the model reached no one |
 | Prospected ruins | a working discovery engine | `nameableSites` read only the static catalog |
 | Gossip | a 700-line module with 309 lines of tests | no verb. Zero player-facing wiring, one commit old |
+| The realm capability layer - fifteen grants | `capability-gaps-by-realm.md`, audited | `capabilityActorFor` hardcodes `heldGrants: []`. All fifteen off for every living cultivator |
+| Surviving the loss of your own body | `existence.ts` - profound states, survival roll, `identityContinuity` | `canEnterExistenceState` and `resolveBodilyDestruction` have no caller in `src/` at all |
 
 **So the definition of done is not "the module exists and its tests pass". It is that somebody
 in the running world - a player or an NPC - reaches it by doing something.** Until then it is
@@ -427,7 +429,12 @@ Three habits that catch it:
    register" or "a test", stop: those are readers, not callers.
 2. **After building, reach it the way a person would.** Type the sentence a player would type,
    or run the world and check the thing happened. `grep -rn "yourExport" src/` and looking at
-   who imports it takes ten seconds and has caught six of the seven above.
+   who imports it takes ten seconds and has caught seven of the eight above.
+
+   Note how the last two were found: **somebody went looking for a live consumer to hang a
+   change on, and discovered there wasn't one.** That is the reliable way to find these, and it
+   is worth doing deliberately rather than waiting to stumble into it - pick any subsystem you
+   believe in and try to name the line in `src/` that calls it.
 3. **Suspect it hardest when the module is good.** Every one of these was well written. Quality
    is not evidence of reachability, and a beautiful module is if anything likelier to have been
    built in isolation.
