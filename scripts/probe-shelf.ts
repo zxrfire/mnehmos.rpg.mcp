@@ -36,3 +36,31 @@ for (const r of rows) console.log(r);
 console.log(`\nshelves a disciple can walk end to end: ${walkable}`);
 console.log(`shelves with an unreachable step:       ${gapped}`);
 console.log(`houses with no cultivation manual:      ${empty}`);
+
+// What each gapped house actually needs: the reachable ceiling, the step it
+// cannot take, and what element the bridge would have to be to suit its intake.
+console.log('\nTHE BRIDGES THAT ARE MISSING');
+const { SECTS: S2 } = await import('../src/data/cultivation/sects.js');
+const need = new Map<string, string[]>();
+for (const s of S2 as any[]) {
+    const shelf = ((s.teaches ?? []) as string[])
+        .map(id => getTechnique(id) as any)
+        .filter(t => t && t.class === 'cultivation' && t.cap != null)
+        .map(t => ({ cap: Number(t.cap), need: Number(t.requiredOrdinal ?? 0), el: t.element ?? 'none' }))
+        .sort((a, b) => a.cap - b.cap);
+    if (shelf.length === 0) continue;
+    let reach = 6;
+    for (const b of shelf) {
+        if (b.need > reach) {
+            const key = `from ${reach} to ${b.need}, element ${b.el}`;
+            const list = need.get(key) ?? [];
+            list.push(s.name);
+            need.set(key, list);
+            break;
+        }
+        reach = Math.max(reach, b.cap);
+    }
+}
+for (const [k, houses] of [...need].sort()) {
+    console.log(`  ${k.padEnd(38)} ${houses.length} house(s): ${houses.slice(0, 3).join(', ')}${houses.length > 3 ? ', ...' : ''}`);
+}
