@@ -59,7 +59,13 @@ import {
 } from '../engine/cultivation/realms.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { untreatedInjuryCount } from '../engine/cultivation/injuries.js';
-import { ACTION_NAMES } from './actions.js';
+import {
+    ACTION_NAMES,
+    PRESSING_SOMEBODY,
+    costsTheAskerNothing,
+    type ActionName
+} from './actions.js';
+import { MOST_CALLS_IN_ONE_TURN } from './a-sentence-can-be-more-than-one-call.js';
 import {
     composeActionGlossary,
     composePlanSchemaFields
@@ -99,6 +105,13 @@ inventory, currency, health, lifespan, death, world-state mutations, or event re
 **Do not invent state.** Never assert a fact about the world that a tool did not return.
 If the engine has not said it, it has not happened, and "the record does not say" is a
 legitimate thing to narrate.
+
+**Only the acts the turn ran happened.** A turn spends at most one costly act, so a player's
+sentence often holds clauses that did not run. The turn names them: not run, declined,
+refused. Do not narrate one as having happened. Say what did run and say what did not.
+
+**Every figure comes from a ruling.** A cost, a balance, a span of days, an amount gathered:
+if no ruling this turn carries that number, do not put one in the prose.
 
 **Never soften an engine outcome.** If the tool returned a torn meridian, narrate a torn
 meridian. Do not cushion it, do not add a consolation, do not imply a second chance.
@@ -384,6 +397,85 @@ invent an omen to fill the space.`;
 const ACTION_GLOSSARY = composeActionGlossary();
 
 /**
+ * Which verbs cost the player something, composed rather than written down.
+ *
+ * `costsTheAskerNothing` is the repository's own answer and it is a fact about
+ * a PLAN rather than about a verb, which is exactly why this cannot be a hand-
+ * kept list: `interact` is free on `talk` and spends days on the eight of
+ * `PRESSING_SOMEBODY`, so a list would be wrong for one verb in the set and
+ * wrong for whichever verb somebody adds next. Composed here, a verb reclassified
+ * in `actions.ts` reclassifies itself in the prompt on the next process start.
+ */
+function whichVerbsSpendSomething(): string {
+    const free: ActionName[] = [];
+    const spends: ActionName[] = [];
+    for (const name of ACTION_NAMES) {
+        if (name === 'interact') continue;
+        (costsTheAskerNothing({ action: name }) ? free : spends).push(name);
+    }
+    const pressing = [...PRESSING_SOMEBODY].sort().join(', ');
+    return [
+        `FREE - these take no day, no stone and no risk, and you may chain as many as the`,
+        `sentence needs: ${free.join(', ')}.`,
+        `SPENDS - these take days, the purse or the body, and a turn does at most ONE:`,
+        `${spends.join(', ')}.`,
+        `"interact" is on both sides and the intent decides: free on talk, trade, apologise and`,
+        `the like, and it SPENDS on ${pressing}.`
+    ].join('\n');
+}
+
+/**
+ * What a model is told about answering with a plan rather than a verb.
+ *
+ * ── AND WHAT THIS IS NOT ─────────────────────────────────────────────────
+ *
+ * It is not the guard. Measured on this build before sequences existed, a model
+ * given the sentence *"I take Cao Antao's purse, press it into Shen Liefeng's
+ * hand, and walk away"* narrated all three acts in confident prose while the
+ * engine ran one press-somebody attempt, spent three days on it and had it
+ * refused. It knew the verbs; it wrote past them. No amount of prompt would
+ * have stopped that.
+ *
+ * So the division of labour is deliberate and the order matters: **the prompt
+ * makes good behaviour likely, and the executor makes bad behaviour
+ * impossible.** Everything load-bearing here is enforced in
+ * `a-sentence-can-be-more-than-one-call.ts` and in `GameService.carryOutThePlan`
+ * whatever this text says - the budget, the ordering, where a stopped plan
+ * stops, and the fact that phase 3 is shown only what actually ran.
+ */
+export const A_SENTENCE_MAY_CONTAIN_A_PLAN = `A SENTENCE MAY CONTAIN A PLAN, AND YOU MAY ANSWER WITH ONE.
+
+People in this world do several things in the time an incense takes to burn. "I take his
+purse, hand it to the man beside him, and walk away" is three acts, not one, and the
+interesting thing is none of the three - it is what they compose into. Somebody else is
+holding stolen property and the player is elsewhere. Nothing frames anybody; the framing
+falls out of the ORDER.
+
+To answer with a plan, reply with {"steps": [ ... ]} where each entry is an action object
+of the shape above, plus "said": the fragment of the player's own sentence that step is
+for. One object with no "steps" is still a perfectly good answer and is what most
+sentences deserve.
+
+Rules, and they are enforced whatever you write:
+- IN THE ORDER THEY SAID IT. The steps are resolved one at a time, each against the world
+  the one before it left. Take-then-pass-then-leave is a frame-up; pass-then-take is
+  nonsense. Never sort, never optimise, never move the cheap ones to the front.
+- A STEP CAN FAIL BECAUSE THE ONE BEFORE IT DID. If the theft is seen, there is no purse
+  to hand over and the plan stops there. That is a real outcome, not an error, and it is
+  why you must not compose a plan whose later steps assume the earlier ones worked.
+- CARRY OUT WHAT WAS SAID. Never add a step the player did not say. A theft does not imply
+  fleeing, an approach does not imply an offer, and a fourth act you inferred is you
+  deciding what somebody did with their life.
+- PREFER THE SMALLER ACT. Where a sentence could be one big verb or two small ones the
+  list already has, take the two. Small acts compose and big ones do not.
+- AT MOST ONE THAT SPENDS. Free reads chain; a turn does one costly act. If the sentence
+  genuinely contains two, still list both - the engine will stop and ask the player which
+  comes first, which is the right answer and is not your call to make.
+- AT MOST ${MOST_CALLS_IN_ONE_TURN} STEPS.
+
+${whichVerbsSpendSomething()}`;
+
+/**
  * Phase 1 system prompt.
  *
  * Written as a routing task rather than a roleplay task on purpose. A model
@@ -424,7 +516,9 @@ Rules:
   decided by the engine and any such field you emit is discarded.
 - Never answer with an outcome. You are choosing what is ATTEMPTED, not what happens. "I sneak
   into the sect" is an attempt to enter, not an infiltration; "I cultivate for ten years" is a
-  request for ten years to pass, not a report that they have.`;
+  request for ten years to pass, not a report that they have.
+
+${A_SENTENCE_MAY_CONTAIN_A_PLAN}`;
 
 // ─────────────────────────────────────────────────────────────────────────
 // PHASE 3 - NARRATION
