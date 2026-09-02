@@ -168,6 +168,86 @@ function renderCatalog(rows) {
     return out.join('\n');
 }
 
+
+// ─── design constants, and whether anything reads them ───────────────────
+//
+// A catalog file can hold a fully argued design as an exported constant that
+// nothing in the engine ever looks at. That is this repo's signature defect -
+// AGENTS.md calls it "a module nothing calls is not a feature" - and it is
+// invisible, because a dead constant compiles, tests clean, and reads like
+// settled design to the next person who finds it.
+//
+// AZURE_INTAKE is the case that prompted this: the complete three-way Azure
+// sort, written out with its placements and its recall roll, consumed by
+// nothing at all. The owner re-explained that design from memory because
+// nobody could see it was already there.
+
+const DESIGN_EXPORT = /^export const ([A-Z][A-Z0-9_]{3,}) *(?::[^=]+)?= *[{[]/gm;
+
+function allSources() {
+    const out = [];
+    for (const dir of ['src', 'tests']) {
+        const walk = d => {
+            for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+                const full = path.join(d, e.name);
+                if (e.isDirectory()) walk(full);
+                else if (e.name.endsWith('.ts')) out.push(full);
+            }
+        };
+        walk(path.join(ROOT, dir));
+    }
+    return out.map(f => ({
+        file: path.relative(ROOT, f).split(path.sep).join('/'),
+        text: fs.readFileSync(f, 'utf8')
+    }));
+}
+
+function readDesignExports() {
+    const sources = allSources();
+    const rows = [];
+    for (const file of fs.readdirSync(CATALOG).filter(f => f.endsWith('.ts'))) {
+        const text = fs.readFileSync(path.join(CATALOG, file), 'utf8');
+        const here = `src/data/cultivation/${file}`;
+        for (const m of text.matchAll(DESIGN_EXPORT)) {
+            const name = m[1];
+            let live = 0, tests = 0;
+            for (const s of sources) {
+                if (s.file === here) continue;
+                const n = (s.text.match(new RegExp(`\\b${name}\\b`, 'g')) || []).length;
+                if (!n) continue;
+                if (s.file.startsWith('tests/')) tests += n;
+                else if (/^src\/data\//.test(s.file)) continue; // a barrel re-export is not a reader
+                else live += n;
+            }
+            rows.push({ name, file, live, tests });
+        }
+    }
+    // Dead first: that is the actionable half.
+    return rows.sort((a, b) => (a.live - b.live) || (a.tests - b.tests) || a.name.localeCompare(b.name));
+}
+
+function renderDesignExports(rows) {
+    const dead = rows.filter(r => !r.live && !r.tests);
+    const testOnly = rows.filter(r => !r.live && r.tests);
+    const out = [
+        `**${rows.length} design constants in the catalog. ${dead.length} are read by nothing at all,`,
+        `and ${testOnly.length} more are read only by a test.**`,
+        '',
+        'A constant nothing reads is still design - it is often the best statement of a rule',
+        'anywhere in the repo - but the game does not act on it, and nobody looking at the',
+        'running behaviour will find it. **Read this table before designing something: the rule',
+        'you are about to write may already be here, fully argued, and simply unplugged.**',
+        '',
+        '| Constant | In | Read by the game | By tests |',
+        '|---|---|---|---|',
+    ];
+    for (const r of rows) {
+        const link = `[\`${r.file}\`](../../src/data/cultivation/${r.file})`;
+        out.push(`| \`${r.name}\` | ${link} | ${r.live ? r.live : '**nothing**'} | ${r.tests || '-'} |`);
+    }
+    return out.join('\n');
+}
+
 // ─── splicing ────────────────────────────────────────────────────────────
 
 function splice(text, name, body) {
@@ -183,6 +263,7 @@ export function build() {
     let text = fs.readFileSync(INDEX, 'utf8');
     text = splice(text, 'triggers', renderTriggers(readTriggers()));
     text = splice(text, 'catalog', renderCatalog(readCatalogHeaders()));
+    text = splice(text, 'design-constants', renderDesignExports(readDesignExports()));
     return text;
 }
 
