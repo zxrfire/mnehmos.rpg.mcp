@@ -55,6 +55,12 @@ Two things to know before you conclude something is unwritten:
 - **If you find two places that disagree, report it. Do not resolve it.** Two
   contradictions were found in one evening and both needed the owner's ruling.
 
+**And if your question is about a HOUSE rather than about a rule, start from
+[`BY-HOUSE.md`](BY-HOUSE.md) instead.** This file is organised by situation; that one is
+organised by subject, and a house is the subject most questions here turn out to be about.
+The median house is written about in fourteen separate files and the Azure Cloud Pavilion in
+thirty-three, so "read its entry in `sects.ts`" is nowhere near enough and never was.
+
 ---
 
 ## The questions that have cost us work
@@ -89,7 +95,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**222 situations, from 22 files.**
+**223 situations, from 23 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -230,6 +236,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | somebody is trapped by a closing window, or claims they can leave anyway | [`ruins.md`](ruins.md#the-escape-hatch-is-real-and-self-cancelling) | The escape hatch is real, and self-cancelling (tier 2) |
 | somebody is wounded, asks about a wound, seeks treatment, or fights while carrying one | [`injuries.md`](injuries.md#top-of-file) | (top of file) (tier 2) |
 | somebody near the top of the ladder changes what may be taught | [`past-the-ceiling.md`](past-the-ceiling.md#9-decreeing-the-curriculum) | 9. Decreeing the curriculum (tier 2) |
+| somebody needs everything the repo holds about one house | [`BY-HOUSE.md`](BY-HOUSE.md#top-of-file) | (top of file) (tier 2) |
 | somebody needs to know whether a house is still that house, or a person really of it | [`trust.md`](trust.md#the-art-is-the-strongest-check) | The art is the strongest check (tier 2) |
 | somebody on an intake roll runs out of provisions, or the question is what a probationer is actually given | [`origin.md`](origin.md#open-two-catalogs-disagree-about-who-feeds-a-probationer) | OPEN: two catalogs disagree about who feeds a probationer (tier 2) |
 | somebody outranks a person plainly stronger than they are | [`sects.md`](sects.md#at-the-top-rank-stops-tracking-realm) | At the top, rank stops tracking realm (tier 2) |

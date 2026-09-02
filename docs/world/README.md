@@ -16,6 +16,11 @@ Start from [`../../context.md`](../../context.md).
 > rationale that lives in `src/data/cultivation/*.ts` where no search of `docs/` reaches
 > it. Three agents in one evening failed to find material that already existed and wrote
 > an invented answer instead; `INDEX.md` records what they were looking for.
+>
+> **And if the question is about one HOUSE, go to [`BY-HOUSE.md`](BY-HOUSE.md).** It is a
+> generated reading list per house, because the median house is written about in fourteen
+> separate files and the most-written-about in thirty-three - so reading its entry in
+> `sects.ts` and stopping is how somebody concludes a thing is unwritten.
 
 ---
 

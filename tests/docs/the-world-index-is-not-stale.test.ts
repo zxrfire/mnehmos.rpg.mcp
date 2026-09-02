@@ -51,3 +51,19 @@ describe('the world index', () => {
         expect(offenders, 'a tier-2 marker without a trigger is a bug - see docs/world/README.md').toEqual([]);
     });
 });
+
+/**
+ * The house reading lists, held to the same standard as the index.
+ *
+ * `BY-HOUSE.md` answers a different question from `INDEX.md` - not "where is
+ * this rule written down" but "what do we know about the house in front of
+ * us" - and it is generated for the same reason: a hand-maintained map of a
+ * corpus this size is a map that is wrong within a week.
+ */
+describe('the house reading lists', () => {
+    it('are current with the catalog and the docs they point at', async () => {
+        const { build } = await import('../../scripts/build-house-dossiers.mjs');
+        const onDisk = fs.readFileSync(path.join(ROOT, 'docs', 'world', 'BY-HOUSE.md'), 'utf8');
+        expect(build(), 'BY-HOUSE.md is stale. Run: npm run docs:houses').toBe(onDisk);
+    });
+});
