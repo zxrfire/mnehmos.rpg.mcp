@@ -62,10 +62,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
-import { planTheHollowCourt } from './who-sits-in-the-hollow-court.js';
-
-/** The one faction whose roster lives outside `MEMBERS`. */
-const COURT_FACTION_ID = 'sect-hollow-court';
+import { rollOf } from '../../data/cultivation/faction-roll.js';
 import {
     BREAKTHROUGH_PILL_STONES,
     STONES_PER_YEAR_OF_SECLUSION,
@@ -1320,13 +1317,7 @@ function seedPopulation(
     // Instantiate them before roles are handed out, so a faction's curated
     // seniors are in the room when the pyramid is built.
     created.push(...seedNamedFigures(state, catalog, presentDay));
-    created.push(...seedFactionApex(state, catalog, presentDay, taken));
-    // And the one body whose roster is not in `MEMBERS` at all. Its Seats are
-    // enumerated in `WITHDRAWN_POWERS` because the register reads them from
-    // there, which left the strongest house in the world holding whatever
-    // incidental person the apex pass happened to place - one, measured, on
-    // every seed - and then dissolving. See `who-sits-in-the-hollow-court.ts`.
-    created.push(...seedTheHollowCourt(state, catalog, presentDay, taken));
+    created.push(...seedWhatAHouseActuallyHolds(state, catalog, presentDay, taken));
 
     assignFactionRoles(state, catalogById, presentDay);
     return created;
@@ -1433,20 +1424,6 @@ function seedNamedFigures(
 }
 
 /**
- * Give every faction somebody who is actually as strong as it claims to be.
- *
- * A faction's `powerOrdinal` is a statement about the world - it is what lets
- * the thing bully, hold a vein, and be feared - and until now nothing stood
- * behind it. A house that says its strongest member is Grand Ascension while
- * its strongest instance is a Foundation Establishment disciple is a claim the
- * simulation cannot back, and the whole apex tier was in that state.
- *
- * One figure per faction, at the seat, and only where the derived and named
- * membership fell short of what the catalog declares. They are not placed
- * anywhere a beginner goes and they are not marked important: they are simply
- * the person the faction has always said it had.
- */
-/**
  * Nobody was born before the world had a history to be born into.
  *
  * A lifespan at the top of the ladder is tens of thousands of years, so an age
@@ -1481,82 +1458,44 @@ export function ageInsideRecordedHistory(
 
 
 /**
- * Stand the Hollow Court up, because its roster is not in `MEMBERS`.
+ * Stand up whatever a house's own contents say is there and the world has not
+ * produced.
  *
- * Mirrors `seedFactionApex` deliberately: same draw, same conditioning helpers,
- * same age bounding against recorded history. The only differences are that the
- * plan comes from `WITHDRAWN_POWERS` rather than from a `powerOrdinal`, and that
- * the lower rungs carry `chosen` - the engine's existing prodigy tag, already
- * read by `shelfReach`, `assessPromotions` and `refreshChosen`.
+ * ── WHY THIS NO LONGER READS `powerOrdinal` ──────────────────────────────
  *
- * Nothing about these people is authored beyond their rung and that tag. Names,
- * roots, origins and attributes are drawn exactly as anybody else's.
+ * It used to, and there was a second nearly identical function beside it for
+ * the one faction whose roster the seeder could not see. Two code paths for one
+ * question - who is standing in this house - and it cost what that shape always
+ * costs here: the world held eleven anonymous bodies at the Hollow Court while
+ * the register printed eleven named ones, and they were different people.
+ *
+ * The fix is not to generalise the second plan. It is that a house's strength
+ * should be READ OFF WHAT IT HOLDS rather than off an adjective, for the same
+ * reason `items.md` says scarcity is measured rather than authored. So the
+ * figure comes from the house's own roll.
+ *
+ * ── AND THE MEASUREMENT SAYS THE TWO ALREADY AGREE ───────────────────────
+ *
+ * Measured across all 34 houses in the catalog:
+ * `powerOrdinal === max(realmOrdinal on rollOf(id))` for every one of them,
+ * with a single exception that is not a disagreement - the Hollow Court's roll
+ * reaches 45 because the Guest of the Court is on it, and he stands off the
+ * ladder entirely. Nothing declared is above everything the house holds; no
+ * house holds somebody above what it declares.
+ *
+ * So this is not a retune and it changes no world. It is the same number taken
+ * from the thing that determines it instead of from a copy of it, which means
+ * it cannot go stale when somebody edits a roster and forgets the header.
+ *
+ * The other two things a house holds are deliberately NOT read here, and the
+ * reason is a law rather than an omission. Its shelf says what it can TEACH,
+ * and holding a thing and being able to pass it on are different facts - 28 of
+ * 34 houses teach below their own strongest member, which is the Late Age
+ * working rather than an error. Its objects say what it can SPEND. Neither is
+ * a claim that a person of that height is standing in the compound, and reading
+ * either as one would put people in the world nothing in the catalog names.
  */
-function seedTheHollowCourt(
-    state: WorldState,
-    catalog: WorldCatalog,
-    presentDay: number,
-    taken: Set<string>
-): NpcRecord[] {
-    const created: NpcRecord[] = [];
-    const faction = catalog.factions.find(f => f.id === COURT_FACTION_ID);
-    if (!faction) return created;
-
-    const plan = planTheHollowCourt(faction.ranks.length);
-    plan.forEach((seat, i) => {
-        const id = `npc-court-${i}`;
-        if (state.npcs.some(n => n.id === id)) return;
-
-        const rng = forStream(state.seed, 'seed-court', id);
-        // A Seat is as old as the climb it finished; somebody on a lower rung
-        // cleared the Court's own admission bar and cannot be older than it.
-        const wanted = seat.prodigy
-            ? rng.int(MIN_AGE + 40, seat.maxAgeYears)
-            : Math.max(MIN_AGE + 1, seat.maxAgeYears) + rng.int(0, 400);
-        const age = ageInsideRecordedHistory(state, presentDay, wanted);
-
-        let npc = createNpc(state.seed, {
-            id,
-            bornOnDay: presentDay - years(age),
-            onDay: presentDay,
-            locationId: seatLocationId(catalog, faction),
-            occupation: 'unknown',
-            takenNames: taken,
-            origin: drawOriginForSomebodyAlreadyAtOrdinal(
-                forStream(state.seed, 'seed-court-origin', id).next(), seat.realmOrdinal
-            ).key,
-            cultivation: {
-                spiritRoot: drawRootForSomebodyAlreadyInAHouse(
-                    forStream(state.seed, 'seed-court-root', id).next(),
-                    houseRoadOf(faction), seat.realmOrdinal, seat.rankIndex
-                ).key
-            },
-            tags: seat.prodigy
-                ? ['catalog:court', `faction:${faction.id}`, 'chosen']
-                : ['catalog:court', `faction:${faction.id}`, 'sealed']
-        });
-        taken.add(npc.name);
-
-        npc = setRealm(npc, seat.realmOrdinal, presentDay - years(rng.int(20, 400)));
-        npc = {
-            ...npc,
-            factionId: faction.id,
-            factionRankIndex: seat.rankIndex,
-            spiritStones: holdingsFor(seat.realmOrdinal, seat.rankIndex, rng),
-            cultivation: {
-                ...npc.cultivation,
-                foundation: 'stable',
-                specialties: getSpiritRoot(npc.cultivation.spiritRoot).elements.slice()
-            }
-        };
-
-        state.npcs.push(npc);
-        created.push(npc);
-    });
-
-    return created;
-}
-function seedFactionApex(
+function seedWhatAHouseActuallyHolds(
     state: WorldState,
     catalog: WorldCatalog,
     presentDay: number,
@@ -1566,7 +1505,22 @@ function seedFactionApex(
     const created: NpcRecord[] = [];
 
     for (const faction of catalog.factions) {
-        const declared = clampOrdinal(faction.powerOrdinal);
+        // What the house's own roll says its strongest person stands at. Not
+        // what its row claims - the roll IS the claim, and everything else is
+        // a restatement of it.
+        //
+        // ON THE LADDER ONLY, and that is not a filter of convenience. A roll
+        // also carries people standing OUTSIDE a house's ranks - a court's
+        // parallel offices, and the honorary title the Hollow Court gave
+        // somebody at the rung above the ladder - and none of them answers for
+        // the house. Counting the Guest would have the seeder stand a False
+        // Immortal up on those mountains as the Court's own strength, which is
+        // the opposite of what his whole record says he is.
+        const onTheRoll = rollOf(faction.id)
+            .filter(r => r.rankIndex !== null)
+            .reduce((best, r) => Math.max(best, r.realmOrdinal), -1);
+        if (onTheRoll < 0) continue;
+        const declared = clampOrdinal(onTheRoll);
         if (declared < APEX_SEED_FLOOR) continue;
 
         const strongest = state.npcs

@@ -25,10 +25,18 @@
  *   court officers     `COURTS[].roster` - three to six people doing a job on
  *                      somebody else's vein. Not a ladder and not sorted like
  *                      one; a court's offices are parallel jobs.
- *   the Hollow Court   `hollow-court-roster.ts` - the one house whose people
- *                      could not live in `members.ts`, because that catalog is
- *                      calibrated for the bottom of the ladder and everybody
- *                      here is at Void Refinement or above.
+ *   off-ladder titles  the one thing a `Member` row cannot express: somebody
+ *                      holding a position that is not a rung. A court's
+ *                      offices are parallel jobs; the Hollow Court's Guest
+ *                      stands above the ladder rather than on it.
+ *
+ * THE HOLLOW COURT USED TO BE A WHOLE THIRD SOURCE HERE AND IS NOT ANY MORE.
+ * Everybody on its ladder is on `MEMBERS` with the rest of the world, projected
+ * out of `hollow-court-roster.ts` where they are still authored - that file
+ * kept its own shape because it carries things no other house needs, like the
+ * alias somebody works under outside. A second ROLL was a second answer to one
+ * question, and the seeder reading only the first one is what left the apex of
+ * the setting populated by strangers who did not match the register.
  *
  * WHAT IS DELIBERATELY NOT ON A ROLL. The dead, the sealed and the ascended.
  * They are on the ANCESTRAL record, which is a different question with a
@@ -47,7 +55,7 @@ import { COURTS, idsForFaction } from './governance-and-water-rights.js';
 import { HOLLOW_COURT_ROSTER } from './hollow-court-roster.js';
 
 /** Which catalog a row came out of, so a reader can go and check it. */
-export type RollSource = 'members' | 'court officers' | 'the Hollow Court roster';
+export type RollSource = 'members' | 'court officers' | 'an honorary title';
 
 /**
  * One person on a roll, in the shape every source can answer in.
@@ -95,14 +103,28 @@ const ALL: readonly RollEntry[] = [
         source: 'court officers' as const,
         doing: o.office
     }))),
-    ...HOLLOW_COURT_ROSTER.map(m => ({
+    // ── And the people a `Member` row cannot express: those off the ladder. ──
+    //
+    // `Member.rankIndex` is an index into a house's `ranks` and is not
+    // nullable, because on every other house it always has one. A title that
+    // sits OUTSIDE the ladder rather than beneath it has no index by
+    // definition, and the two entries here that carry one - a court's parallel
+    // offices, and the Hollow Court's Guest - are the same shape rather than
+    // two exceptions.
+    //
+    // Everybody at the Court who IS on the ladder reaches this roll through
+    // `MEMBERS` with everybody else in the world. Only the off-ladder title
+    // comes through here, which is why the filter is on `rankIndex` rather
+    // than on a faction id: a second house granting an honorary seat would
+    // need no change.
+    ...HOLLOW_COURT_ROSTER.filter(m => m.rankIndex === null).map(m => ({
         id: m.id,
         name: m.name,
         factionId: 'sect-hollow-court',
         rank: m.tier,
-        rankIndex: m.rankIndex,
+        rankIndex: null,
         realmOrdinal: m.realmOrdinal,
-        source: 'the Hollow Court roster' as const,
+        source: 'an honorary title' as const,
         doing: m.howFarAlong
     }))
 ];
