@@ -109,6 +109,44 @@ describe('what the repair refuses to do', () => {
             .toBe(`the ${said}`);
     });
 
+    it('leaves ordinary English alone, whatever it happens to sit one edit from', () => {
+        // ── THE SWEEP THAT PRODUCED THE STOP-LIST, AS A GUARD ────────────
+        //
+        // The vocabulary is harvested from the parser's own patterns, so it
+        // holds the words a player types AT the game and nothing else in
+        // English - and a great deal of ordinary English sits one edit from
+        // something in it. Measured over every word in the exemplar corpus plus
+        // a list of common English: 27 of 590 were rewritten, and the ones that
+        // changed meaning are now refused by name.
+        //
+        // The worst of them cost real time. "I stay put rather than act" - a
+        // sentence that says outright that nothing is to be done - spent seven
+        // days foraging, because `rather` is one letter from `gather`. That is
+        // the failure `misparse.test.ts` exists for, arriving through a door it
+        // does not watch.
+        const NEVER_REPAIRED = [
+            'rather', 'father', 'mother', 'great', 'spear', 'worse', 'tired',
+            'killing', 'telling', 'woods', 'least', 'yield', 'spend', 'sitting',
+            'alone', 'route', 'matters', 'these', 'those', 'never', 'small',
+            'large', 'table'
+        ];
+        for (const word of NEVER_REPAIRED) {
+            expect(
+                nearestVocabularyWord(word, vocabulary),
+                `"${word}" is ordinary English and must not be treated as a typo`
+            ).toBeNull();
+        }
+    });
+
+    it('does not rewrite ordinary English into a verb that spends the player\'s life', () => {
+        // The property behind the list above, asserted where it bites: the
+        // whole sentence, through the whole parser. A guard on the word alone
+        // would go green the moment somebody moved the check.
+        const said = 'I stay put rather than act';
+        expect(respellForTheVerbTable(said, vocabulary).text).toBe(said);
+        expect(parseIntent(said).action).not.toBe('gather');
+    });
+
     it('does not truncate a correctly spelt word onto a stem the patterns carry', () => {
         // The table matches inflections through stems - `injur`, `centur` -
         // so a real word sits one edit from one. Repairing it would break a

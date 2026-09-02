@@ -1055,7 +1055,14 @@ export const LEGACY_NOUNS =
     // additionally requires a question word. An inheritance GROUND - a ruin
     // somebody digs - is a different noun and belongs to `site`, which owns
     // "inheritance ground" explicitly and is checked ahead of this.
-    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|what i(?:'m| am)? carrying|for (?:the next life|whoever comes after|whoever comes next))\b/;
+    //
+    // `what i am carrying` had to go, and it is the same caution one size
+    // smaller. It is `inventory`'s own first exemplar, word for word, and it is
+    // how somebody names the pouch when they are selling out of it: "I want
+    // stones for what I am carrying" - `sell`'s own phrasing - was answered
+    // with a list of custody counters. `everything i am carrying` stays,
+    // because putting all of it somewhere IS this verb.
+    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|pouch|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
 export const LEGACY_BURY_VERBS_ALONE = 'bury|buries|burying|cache|caches|caching|inter|inters';
