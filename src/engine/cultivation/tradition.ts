@@ -37,6 +37,8 @@
 
 import { z } from 'zod';
 import { MAX_ORDINAL, realmForOrdinal } from './realms.js';
+import { currentWoundKey } from '../../data/cultivation/wounds.js';
+import type { Injury } from '../../schema/cultivation.js';
 
 export const TraditionIdSchema = z.enum(['tradition-drawn', 'tradition-cut']);
 export type TraditionId = z.infer<typeof TraditionIdSchema>;
@@ -99,14 +101,53 @@ export interface KillRequirement {
 }
 
 /**
- * What ending this cultivator actually requires, given their tradition and
- * rank.
+ * Whether this body is holding a nascent soul that cannot leave it.
+ *
+ * A realm-boundary wound locks the thing its realm exists to grant, and what
+ * Nascent Soul grants is surviving the loss of your own body. `wounds.ts` says
+ * so in the row itself - "mortal in the way that matters: destroy the body and
+ * they are gone" - and this is the one live door that sentence can arrive
+ * through.
+ *
+ * Untreated only, and through `currentWoundKey`, so a cultivator saved under
+ * the old name for this wound is still carrying it after the rename.
+ */
+function nascentSoulCannotLeave(injuries: readonly Injury[] | undefined): boolean {
+    return (injuries ?? []).some(injury =>
+        !injury.treated && currentWoundKey(injury.woundType) === 'crippled-nascent-soul');
+}
+
+/**
+ * What ending this cultivator actually requires, given their tradition, rank,
+ * and what they are carrying.
  *
  * Two people standing at the same ordinal can need entirely different things
  * done to them, which is why knowing which tradition you are facing is worth
  * more than knowing their rank, and why everyone competent knows this.
+ *
+ * ── AND WHY THE THIRD ARGUMENT ───────────────────────────────────────────
+ *
+ * Because a rung is a claim about what somebody can do, and a realm-boundary
+ * wound is the claim failing. The Drawn rule above reads the LADDER: at or
+ * above Nascent Soul the soul persists and destroying the body is an expense.
+ * A crippled nascent soul is precisely the case where that is false about a
+ * person the ladder says it is true of, and the difference is the whole of
+ * what the wound is for.
+ *
+ * `injuries` is optional and its absence is not a claim of health - it means
+ * the caller did not know, and an unknown carries the ordinary rule. The only
+ * caller that does know is `assessPower` in `combat.ts`, which is the moment
+ * the question is actually asked.
+ *
+ * Nothing changes for the Cut: their answer was never about a soul leaving a
+ * body, and no wound to a nascent soul reaches a person who has not got one
+ * to detach.
  */
-export function killRequirement(traditionId: TraditionId, ordinal: number): KillRequirement {
+export function killRequirement(
+    traditionId: TraditionId,
+    ordinal: number,
+    injuries?: readonly Injury[]
+): KillRequirement {
     const rule = TRADITION_DEATH_RULES[traditionId];
     if (!rule) throw new Error(`Unknown tradition: ${traditionId}`);
 
@@ -122,7 +163,10 @@ export function killRequirement(traditionId: TraditionId, ordinal: number): Kill
 
     const persists =
         rule.persistsFromOrdinal !== null &&
-        clampToLadder(ordinal) >= rule.persistsFromOrdinal;
+        clampToLadder(ordinal) >= rule.persistsFromOrdinal &&
+        !nascentSoulCannotLeave(injuries);
+
+    const crippled = !persists && nascentSoulCannotLeave(injuries);
 
     return {
         bodyIsEnough: !persists,
@@ -130,7 +174,12 @@ export function killRequirement(traditionId: TraditionId, ordinal: number): Kill
         remnant: persists ? 'soul' : null,
         note: persists
             ? 'Above Nascent Soul the body is an expense rather than a life. Finishing one means ending the soul, and there are perhaps four arts in the catalog that do it.'
-            : 'Below Nascent Soul the body is the whole of the person, and an ordinary killing is an ordinary killing.'
+            : crippled
+                // Said plainly, because the winner's belief is the thing that
+                // matters here and it will usually be wrong in the other
+                // direction: they will expect to have to end a soul.
+                ? 'The nascent soul is there and it is crippled - it cannot survive outside the body it is holding together. They read as Nascent Soul to anybody who checks, and an ordinary killing finishes them anyway.'
+                : 'Below Nascent Soul the body is the whole of the person, and an ordinary killing is an ordinary killing.'
     };
 }
 
