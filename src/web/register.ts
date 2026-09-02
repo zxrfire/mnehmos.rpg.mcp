@@ -7691,7 +7691,29 @@ function dossier(d: SectDossier): string {
       // WHAT THE FIGURE MEASURES. `second 39` was the rung of the house's
       // second-strongest seat and read as an index into something.
       ['second seat at rung', d.apex ? String(d.apex.secondSeat) : ''],
-      ['channel', d.channel ? `${d.channel.kind.replace(/_/g, ' ')} · ${d.channel.crossings} crossing${d.channel.crossings === 1 ? '' : 's'} · ${d.channel.depletion ?? '-'}` : '']
+      // WHAT THE ROW MEANS, NOT WHAT THE COLUMN IS CALLED. This printed
+      // `channel  answering channel - 6 crossings - medium`, where the label
+      // and the first value were the same words twice and none of the three
+      // said what was being counted. What it is actually reporting is how many
+      // of a house's own people got over the Lid and whether any of them still
+      // answer, which is the fact the crossing catalog calls a house's whole
+      // defence against simple forgetting - `theCounterExample` in
+      // `crossings.ts` says a good record IS an institution's strength rather
+      // than incidental to it. So the label names the people and the value says
+      // whether the line is still open and how thin it has worn.
+      //
+      // No branch on the house. Every value here is read off the channel row,
+      // and the one institution this fact is most dramatic about gets no
+      // special case - it simply has the best numbers in the column.
+      ['crossed from here', d.channel
+          ? `${d.channel.crossings}`
+              + (d.channel.kind === 'parting_gift'
+                  ? ', none still answering'
+                  : d.channel.kind === 'personal_channel'
+                      ? ', one answering constantly'
+                      : ', still answering at intervals')
+              + (d.channel.depletion ? ` · the line has worn ${d.channel.depletion}` : '')
+          : '']
   ])}
 
   ${holdsNotation(d)}
