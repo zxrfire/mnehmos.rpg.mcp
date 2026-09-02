@@ -602,6 +602,15 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // `handleLearn`, which owns every gate - so naming one out of reach is
     // refused with the measured reason rather than dropped here.
     'learn_technique',
+    /**
+     * The art being ASKED about, by name, which is where a question about
+     * learning one lands. Free and it must be: a player is entitled to ask
+     * what a book would take a hundred times and lose nothing, and the whole
+     * reason this target exists is that "can I learn the Lesser Qi-Gathering
+     * Manual" used to LEARN IT. An unresolvable name falls through to the
+     * listing rather than being refused.
+     */
+    'list_techniques',
     // The pill, by name. Resolved against the POUCH, so a pill nobody is
     // carrying is refused with what they are carrying attached.
     'consume_pill',
@@ -2564,7 +2573,23 @@ export function usedAsVerb(text: string, verbs: string): boolean {
         // places an English verb actually goes
         '(?:^|[.;,]\\s*|\\b(?:i|we|you|they|lets|let me|then|and|so|now|will|shall|must|'
         + 'want to|wish to|need to|try to|going to|about to|decide to|intend to|hope to|'
-        + 'would like to|had better|am going to|set out to|mean to)\\s+)'
+        + 'would like to|had better|am going to|set out to|mean to|'
+        /**
+         * The infinitive markers a QUESTION puts in front of a verb.
+         *
+         * "is it possible to learn the Lesser Qi-Gathering Manual" and "what
+         * would it cost to learn it" both reached `unclear` - the parser knew
+         * "I learn X" and "could I learn X" and not the two phrasings somebody
+         * uses when they are being careful, which is exactly the shape
+         * `AGENTS.md` files under "if a near-synonym works, the phrasing that
+         * fails is a bug". The failing half was the more natural one.
+         *
+         * Safe to widen here because these are all subordinate infinitives,
+         * which is a verb position in English and nothing else; and because
+         * every sentence that reaches the parser through one of them also
+         * matches `ASKING_RATHER_THAN_DOING`, so what it reaches is the read.
+         */
+        + 'able to|possible to|allowed to|permitted to|supposed to|cost to|take to)\\s+)'
         + '(?:just |now |quietly |carefully |instead )?'
         + '(?:' + verbs + ')' + '\\b',
         'i'
@@ -2940,7 +2965,208 @@ function leadershipIntent(text: string, input: string): PlannedAction | null {
 export const MALFORMED_QUANTITY =
     /(?:^|[\s(([])-\s*\d|(?:^|\s)(?:0+|zero|none|no)\s+(?:year|month|week|day|season|decade|centur|ration|stone|disciple|time|of)/i;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ASKING IS NOT DOING
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// THE SINGLE WORST DEFECT FOUND IN A PLAYED RUN, and it is one defect wearing
+// three faces. A question about an act was routed to the act's executor, so:
+//
+//   "can I leave my sect"        LEFT THE SECT, permanently, and reported that
+//                                contribution does not travel. A player asking
+//                                what their options were was punished for it.
+//   "can I cultivate here"       spent a month.
+//   "I want to join a sect"      joined one, with no introduction and no
+//                                journey, one line after the game had said
+//                                "knowing a name is not an introduction".
+//
+// The unifying rule this block exists to state:
+//
+//   > A QUESTION ABOUT AN ACTION IS NOT THE ACTION.
+//
+// Note what this is NOT. It is not a ban - `AGENTS.md` is explicit that the
+// answer to "may I" is always "yes, and here is what it costs", and every verb
+// below is still reachable by the sentence that commands it. "I leave my sect"
+// still leaves. What changes is that the sentence with a question mark in its
+// grammar reaches the READ instead of the write, and the read is where this
+// engine is already at its best.
+//
+// It is also not a rule about desire. "I want to cultivate for ten years" is a
+// command in this genre and `usedAsVerb` is right to take `want to` as a verb
+// position. The reason "I want to learn X" used to be a defect was never the
+// wanting - it was that learning X cost nothing. That half is fixed where it
+// belongs, in `handleLearn` and at the stall, not here.
+
+/**
+ * Sentences that are asking about an act rather than performing one.
+ *
+ * Every branch requires the FIRST PERSON next to the modal, which is what keeps
+ * it off the sentences that merely contain the words: "I can feel the qi
+ * settling" is not a question, and neither is "the elder said I should leave".
+ * The subject has to be the asker and the mood has to be interrogative.
+ *
+ * Deliberately does not include a bare question mark. Half the questions a
+ * player types have no punctuation at all, and half the sentences that end in
+ * one - "what now?" - are not about any particular act.
+ */
+export const ASKING_RATHER_THAN_DOING = new RegExp([
+    // The modals. "can I", "could I", "may I", "should I", "would I", "might I".
+    /\b(?:can|could|may|might|should|would|shall)\s+i\b/,
+    /\bam\s+i\s+(?:able|allowed|permitted|supposed)\s+to\b/,
+    /\bdo\s+i\s+(?:have\s+to|need\s+to|get\s+to)\b/,
+    // The impersonal forms of the same question.
+    /\bis\s+it\s+(?:possible|allowed|permitted|worth\s+it|wise|any\s+use|a\s+good\s+idea)\b/,
+    /\b(?:is|would)\s+(?:it|there)\s+(?:be\s+)?(?:any\s+)?(?:way|point|use)\s+(?:to|in|for)\b/,
+    /\bwould\s+it\s+be\s+possible\b/,
+    // What follows from an act nobody has taken yet.
+    /\bwhat\s+(?:would|will|does|do)\s+(?:it\s+)?(?:cost|take)\b/,
+    /\bhow\s+much\s+(?:would|will|does)\s+it\s+cost\b/,
+    /\bwhat\s+happens?\s+(?:if|when)\s+i\b/,
+    /\bwhat\s+would\s+happen\s+(?:if|when)\s+i\b/,
+    // The plainest form, and the one a player reaches for first.
+    /\bwhat\s+(?:are|is)\s+the\s+(?:terms|price|cost)\s+(?:of|for)\b/,
+    // ── AND THE METHOD QUESTIONS, WHICH ARE NOT INTERROGATIVE AT ALL ─────
+    //
+    // Found by continued play and it is the worse half, because a method
+    // question reads like a plan. "how do I treat my injuries" - an
+    // unambiguous question about HOW - bought four courses of care, spent
+    // twenty spirit stones and lay still for thirty days. The player asked
+    // what their options were and was charged for them.
+    //
+    // So the test is not the word at the front of the sentence. It is whether
+    // the player has DECIDED. "How do I X", "what would it take to X" and
+    // "where can I X" are all somebody working out what X involves, and none
+    // of them is somebody doing it.
+    /\bhow\s+(?:do|would|can|could|should|might)\s+i\b/,
+    /\bhow\s+(?:does|do)\s+(?:one|somebody|someone|a\s+person)\b/,
+    /\bwhat\s+would\s+it\s+take\s+to\b/,
+    /\bwhere\s+(?:can|could|do|would|should)\s+i\b/,
+    /\bwhat\s+(?:are|is)\s+my\s+options\b/
+].map(r => r.source).join('|'), 'i');
+
+/**
+ * The free read that answers a question about each committing verb.
+ *
+ * A table rather than a single downgrade, because the useful answer differs:
+ * somebody asking whether they could leave a house wants their own standing in
+ * it, and somebody asking whether they could join one wants the listing that
+ * already says knowing a name is not an introduction.
+ *
+ * Anything not named here falls to `assess`, which is this parser's existing
+ * "what happens if I try" verb, is in `READ_ONLY_ACTIONS`, and cannot spend a
+ * day, a stone or a life. That default is what makes the guard safe for verbs
+ * added after it: a new committing action is answered inertly by construction
+ * rather than by somebody remembering to come back here.
+ */
+export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
+    // A read is already the answer to a question about it.
+    //
+    // ONE ENTRY ON THAT LIST IS NOT ACTUALLY A READ, and it is left alone
+    // deliberately rather than by oversight. `interact` carries the leverage
+    // intents - bribe, threaten, seduce - and `GameService.interact` spends
+    // both stones and a season and a half of days on those. It is classified
+    // free in `READ_ONLY_ACTIONS` and it is not, which means "can I bribe the
+    // elder" has the same shape of defect as the three this block was written
+    // for. It is not touched here because it was not the gap that was
+    // demonstrated, and because the fix is to reclassify the action rather than
+    // to paper over one phrasing of it - which is a change to a shared list
+    // that its owner should make.
+    if (READ_ONLY_ACTIONS.includes(plan.action)) return plan;
+
+    switch (plan.action) {
+        case 'sect':
+            // Asking to get in is the listing; asking about the seat you hold
+            // is your standing in it. Both are free and both already say the
+            // right thing - the listing's own line is the one the played run
+            // quoted approvingly one input before the parser broke it.
+            return plan.intent === undefined || plan.intent === 'join'
+                ? { action: 'sect' }
+                : plan.intent === 'duty' || plan.intent === 'siphon'
+                    // Both of these have a READ mode reached by naming nothing
+                    // further: the wall, and the position of the reserves.
+                    ? { action: 'sect', intent: plan.intent }
+                    // The standing read carries the two numbers a departure
+                    // forfeits - the seat and the contribution - so it is the
+                    // right answer to "could I leave". The topic rides along so
+                    // it can also say what walking out would take, which is the
+                    // half a bare standing read does not cover.
+                    : plan.intent === 'leave'
+                        ? { action: 'sect', intent: 'standing', topic: 'leaving' }
+                        : { action: 'sect', intent: 'standing' };
+
+        case 'learn_technique':
+            // What the book would take, which is a read of the same facts the
+            // refusal is built from. See `GameService.whatItWouldTake`.
+            return { action: 'list_techniques', ...(plan.target ? { target: plan.target } : {}) };
+
+        case 'train_technique':
+            return { action: 'list_techniques', ...(plan.target ? { target: plan.target } : {}) };
+
+        case 'buy':
+        case 'sell':
+            return { action: 'market', ...(plan.target ? { target: plan.target } : {}) };
+
+        case 'provision':
+        case 'eat':
+            return { action: 'market', target: 'food' };
+
+        case 'treat':
+            return { action: 'market', target: 'medicine' };
+
+        case 'consume_pill':
+            return { action: 'inventory' };
+
+        case 'refine':
+            // The cauldron's own listing, which is what `refine` does when it
+            // is handed no formula: forty-two recipes filtered by rank, with
+            // what each wants and what the pouch is short of. "What can I
+            // refine" was already answered that way and must keep being.
+            return { action: 'refine' };
+
+        case 'move':
+            return { action: 'destinations' };
+
+        case 'breakthrough':
+        case 'cultivate':
+        case 'seclude':
+            // Where they stand and what is stopping them, which is the honest
+            // answer to "can I" asked of the ladder.
+            return { action: 'ceiling' };
+
+        case 'site':
+            // Reading it from outside is the free step of the four, and it is
+            // exactly what somebody weighing an attempt is asking for.
+            return { action: 'site', intent: 'outside', ...(plan.target ? { target: plan.target } : {}) };
+
+        case 'legacy':
+            return { action: 'legacy', intent: 'counters' };
+
+        case 'posture':
+        case 'seal':
+        case 'offer':
+            // Each of these has a read as its DEFAULT intent, by the rule
+            // stated at INTENT_ACTIONS. Dropping the intent reaches it.
+            // `petition` is the fourth of that family and is absent because it
+            // is already in READ_ONLY_ACTIONS and returned above.
+            return { action: plan.action, ...(plan.target ? { target: plan.target } : {}) };
+
+        default:
+            return { action: 'assess', ...(plan.target ? { target: plan.target } : {}) };
+    }
+}
+
 export function parseIntent(input: string): PlannedAction {
+    const plan = planIntent(input);
+    // The mood is decided last, on the whole sentence, rather than by a hundred
+    // vetoes scattered through the table below. Doing it as a post-pass is what
+    // makes it complete: a verb added tomorrow is covered without its author
+    // having to know this rule exists.
+    return ASKING_RATHER_THAN_DOING.test(input.toLowerCase())
+        ? theReadThatAnswersIt(plan)
+        : plan;
+}
+
+function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
     // Before everything, because every branch below that reads a number reads

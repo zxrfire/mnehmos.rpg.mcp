@@ -52,23 +52,51 @@ describe('no manual is a ceiling of zero, not an absent ceiling', () => {
         expect(after.cultivationProgress).toBe(0);
     });
 
-    it('and the first book is genuinely reachable, so the gate costs a sentence', async () => {
-        // Measured 30 out of 30 fresh lives. If this ever stops being true the
-        // hard ceiling above becomes a soft lock on turn one.
+    /**
+     * THE GATE COSTS STONES NOW, AND IT STILL HAS TO BE PAYABLE.
+     *
+     * This test used to spend one sentence and it now spends two and a
+     * purchase, because naming a book was the whole of acquiring one -
+     * measured in a live run, "I want to learn the Lesser Qi-Gathering Manual"
+     * left the purse untouched at thirty stones and the technique held. What
+     * the test is FOR has not changed by a word: if the first book ever stops
+     * being reachable in a fresh life, the hard ceiling at BOOKLESS_CEILING
+     * becomes a soft lock on turn one, and a price nobody can pay is that same
+     * wall wearing an economy.
+     */
+    it('and the first book is genuinely reachable, for stones, in every fresh life', async () => {
         let learned = 0;
         for (let i = 0; i < 8; i++) {
             const { game } = makeGame({ seed: `reach-${i}` });
             await game.newRun('Wen Shu');
+            await game.act('I buy the Lesser Qi-Gathering Manual');
             await game.act('I learn the Lesser Qi-Gathering Manual');
             if (game.state().cultivator.knownTechniques.length > 0) learned++;
         }
         expect(learned).toBe(8);
     });
 
+    /** And naming it without paying for it does not hand it over. */
+    it('and naming it is not acquiring it', async () => {
+        const { game } = makeGame({ seed: 'named-not-held' });
+        const { cultivator } = await game.newRun('Wen Shu');
+        const before = game.state().cultivator.spiritStones;
+
+        const result = await game.act('I want to learn the Lesser Qi-Gathering Manual');
+
+        expect(game.state().cultivator.knownTechniques, 'the book was free for the asking')
+            .toEqual([]);
+        expect(game.state().cultivator.spiritStones).toBe(before);
+        // And the refusal names what would work, in stones.
+        expect(result.narration).toMatch(/stall|spirit stone/i);
+        expect(cultivator.id).toBeTruthy();
+    });
+
     it('and with the book the same decade buys something', async () => {
         const { db, game } = makeGame({ seed: 'cap-guard-b' });
         const { cultivator } = await game.newRun('Wen Shu');
         db.prepare('UPDATE cultivators SET spirit_stones = 200000 WHERE id = ?').run(cultivator.id);
+        await game.act('I buy the Lesser Qi-Gathering Manual');
         await game.act('I learn the Lesser Qi-Gathering Manual');
         await game.cultivate(1800).catch(() => undefined);
         const after = game.state().cultivator;
@@ -115,6 +143,7 @@ describe('whether a thing is for you, said out loud', () => {
     it('reaches a player in the same breath as the learning', async () => {
         const { game } = makeGame({ seed: 'fit-inline' });
         await game.newRun('Wen Shu');
+        await game.act('I buy the Lesser Qi-Gathering Manual');
         const result = await game.act('I learn the Lesser Qi-Gathering Manual');
         expect(result.toolCalls.some(c => c.name === 'encounters.assessFit')).toBe(true);
         expect(result.narration).toMatch(/pitched at rung/);

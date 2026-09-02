@@ -19,6 +19,7 @@
  */
 
 import { z } from 'zod';
+import type Database from 'better-sqlite3';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -51,14 +52,21 @@ import {
     ensureCultivationDb,
     guidingError,
     isGuidingErrorBody,
+    readFlag,
     resolveActiveRun,
     round2,
     round4,
     summariseInjury,
+    writeFlag,
     type CultivationRepos
 } from './cultivation-support.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
-import { isCommonlyHeld } from '../../engine/world/manuals.js';
+import { COMMON_MANUAL_CAP, isCommonlyHeld } from '../../engine/world/manuals.js';
+import {
+    isSoldAtAStall,
+    manualsAStallCarries,
+    stallPriceStones
+} from '../../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { getSect, getSectsTeaching } from '../../data/cultivation/sects.js';
 import {
     UNPROVISIONED,
@@ -125,6 +133,60 @@ function gradeFactor(grade: Technique['grade']): number {
 
 /** Practising the wrong element is not merely dangerous, it is slow. */
 const CONFLICT_MASTERY_FACTOR = 0.5;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE COPIES SOMEBODY ACTUALLY HOLDS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Which manuals this cultivator owns a physical copy of.
+ *
+ * `manuals.ts` has modelled this for the whole world from the beginning - a
+ * house holds so many copies and no more, an NPC is capped at the best book
+ * they actually hold - and the player was not in it. Naming a book was the
+ * whole of acquiring one: measured in a live run, "I want to learn the Lesser
+ * Qi-Gathering Manual" left the purse untouched at thirty stones and the
+ * technique held. That is the oldest defect in this repo, stated in `AGENTS.md`
+ * under "the world's rules must bind the player too", and books are the worked
+ * example it opens with.
+ *
+ * Kept as a flag rather than as a table on purpose, and it is the one decision
+ * here worth arguing with. `cultivator_flags` is the generic per-cultivator
+ * store and needs no migration, which matters while several agents are in
+ * `migrations.cultivation.ts` at once; the honest cost is that a copy recorded
+ * this way has no provenance, no condition and no count, so it cannot answer
+ * "which copy is it" - and `items.md` says a manual scarce enough for that
+ * question to matter is a tracked row rather than a counted quantity. Every
+ * book this reaches is below that line by construction (see the gate in
+ * `handleLearn`), so the shortcut is correct for exactly the range it covers
+ * and would be wrong the moment it were widened.
+ */
+export const FLAG_MANUAL_COPIES_HELD = 'manual_copies_held';
+
+export function copiesHeldBy(db: Database.Database, cultivatorId: string): string[] {
+    const raw = readFlag(db, cultivatorId, FLAG_MANUAL_COPIES_HELD);
+    if (!raw) return [];
+    return raw.split(',').map(id => id.trim()).filter(id => id.length > 0);
+}
+
+export function holdsACopyOf(
+    db: Database.Database,
+    cultivatorId: string,
+    techniqueId: string
+): boolean {
+    return copiesHeldBy(db, cultivatorId).includes(techniqueId);
+}
+
+/** Idempotent: buying a second copy of a book you already own is not an event. */
+export function recordACopyHeld(
+    db: Database.Database,
+    cultivatorId: string,
+    techniqueId: string
+): void {
+    const held = copiesHeldBy(db, cultivatorId);
+    if (held.includes(techniqueId)) return;
+    writeFlag(db, cultivatorId, FLAG_MANUAL_COPIES_HELD, [...held, techniqueId].join(','));
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -453,6 +515,80 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
             );
         }
     }
+
+    // ── AND BELOW IT, A BOOK IS STILL AN OBJECT SOMEBODY SOLD YOU ──
+    //
+    // The gate above closed the top of the shelf and left the bottom of it
+    // open, on the reasoning that a hard ceiling at `BOOKLESS_CEILING` with no
+    // way past it is a soft lock on turn one. That reasoning is right and the
+    // conclusion drawn from it was wrong: what stops the soft lock is a PRICE,
+    // not an absence of one, and `items.md` has always said what the price is -
+    // common manuals sell at a market stall next to the cooking pots, and a
+    // poor cultivator's first real decision is whether the money goes on a book
+    // or on food.
+    //
+    // Found by playing the opening. The Cultivate refusal is one of the best
+    // things in the game - "what is missing is not years and not discipline, it
+    // is a book, or somebody willing to teach them one" - and typing the book's
+    // name resolved the whole of it: technique held, thirty stones untouched,
+    // no teacher, no time, no house. Every obstacle the game had just described
+    // evaporated the moment it was named.
+    //
+    // Three ways to have got it, and they are the three the setting already
+    // names. You bought a copy, your house teaches it, or you say where it came
+    // from - a grave, a body, somebody's afternoon. Nothing here refuses the
+    // attempt on grounds of taste: `AGENTS.md` forbids fixing this by removing
+    // a verb, so the answer to "may I" is still yes, and this is the cost.
+    const writtenTo = technique.cap ?? capOf(technique);
+    const belowTheStallLine =
+        classOf(technique) === 'cultivation'
+        && writtenTo !== null
+        && writtenTo <= COMMON_MANUAL_CAP;
+    if (belowTheStallLine
+        && args.provenance === undefined
+        && !holdsACopyOf(repos.db, cultivator.id, technique.id)) {
+        const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
+        if (!house?.teaches.includes(technique.id)) {
+            const asking = stallPriceStones(technique.id);
+            const carried = manualsAStallCarries()
+                .filter(m => m.requiredOrdinal <= cultivator.realmOrdinal);
+            return guidingError(
+                'no_copy_of_this_book',
+                asking !== null
+                    ? `${technique.name} is sold rather than given. A stall asks about `
+                      + `${asking} spirit stone${asking === 1 ? '' : 's'} for a copy, and `
+                      + `${cultivator.name} is carrying ${cultivator.spiritStones}.`
+                    : `${technique.name} is not on any stall. It is `
+                      + (house
+                          ? `not what ${house.name} teaches, `
+                          : 'somebody\'s house book, ')
+                      + 'and the people who have it hand it to their own.',
+                {
+                    techniqueId: technique.id,
+                    soldAtAStall: isSoldAtAStall(technique.id),
+                    ...(asking !== null ? { stallPriceStones: asking } : {}),
+                    spiritStones: cultivator.spiritStones,
+                    // What WOULD work, always, and never a bare no. The stall's
+                    // stock is named because the board prints it and any name
+                    // the game prints is a name the game must accept.
+                    ...(carried.length > 0
+                        ? {
+                            onTheStall: carried.map(m =>
+                                `${m.name}, ${stallPriceStones(m.id)} stones, carries to `
+                                + `${rankName(m.cap)}`)
+                        }
+                        : {}),
+                    housesTeachingIt: getSectsTeaching(technique.id).length,
+                    hint: asking !== null
+                        ? 'Buy the copy and then read it. Serving a house that teaches it does '
+                          + 'the same thing without the stones.'
+                        : 'Serve a house that teaches it, be taught it by somebody who knows it, '
+                          + 'or find a copy. `provenance` records which of those it was.'
+                }
+            );
+        }
+    }
+
     if (!isAvailableInRun(run.seed, cultivator.spiritRoot, technique)) {
         return guidingError(
             'no_copy_in_this_run',

@@ -44,7 +44,7 @@ import {
     resolveDiscovery,
     siphonPeriod
 } from '../../engine/cultivation/embezzlement.js';
-import { CultivationRNG } from '../../engine/cultivation/rng.js';
+import { CultivationRNG, forStream } from '../../engine/cultivation/rng.js';
 import {
     FLAG_STIPEND_PAID_DAY,
     describeCultivator,
@@ -106,6 +106,42 @@ type SectAction = typeof ACTIONS[number];
 // The engine's, not the caller's. Stated here because sects are content and
 // the promotion curve is mechanics.
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WHAT A HOUSE MAKES OF SOMEBODY WHO WALKED UP
+// See the block in `handleJoin`. Named rather than inlined so that anybody
+// re-tuning them can see all four at once and see which is a judgement.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Chosen, not measured. The one number here without a catalog behind it.
+ *
+ * High rather than even, and the reasoning is the reason it is not lower: a
+ * house that publishes an `admissionOrdinal` and takes applicants is
+ * ADVERTISING, and the bar is the filter. Somebody who clears a published bar
+ * and walks up is usually taken - what the walk-up costs them is the bottom
+ * seat and the absence of anybody vouching, both of which the engine already
+ * charges elsewhere. The minority of refusals here are the ordinary ones: the
+ * intake is closed this season, the elder who does it is away, they did not
+ * take to you.
+ *
+ * A flat coin flip was tried first at 0.6 and is wrong for a different reason
+ * than being harsh: it makes admission a thing that happens TO a player rather
+ * than something they did, which is the same softening from the other side.
+ */
+const WALKING_UP_UNANNOUNCED = 0.8;
+
+/** The margin above the bar, which is the only thing a house can see. */
+const PER_RUNG_PAST_THE_BAR = 0.06;
+
+/** Past this a house pitched low stops being any more impressed. */
+const RUNGS_A_HOUSE_STILL_NOTICES = 4;
+
+/** `charm` is "social first impression" in the schema. This is the moment. */
+const PER_POINT_OF_CHARM = 0.08;
+
+/** A house that watched somebody leave remembers which door they used. */
+const WATCHED_YOU_WALK_OUT = -0.3;
 
 /** Realm ordinals a disciple must gain per rank step above admission. */
 export const ORDINALS_PER_SECT_RANK = 4;
@@ -325,6 +361,104 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
                 }
             );
         }
+    }
+
+    // ── AND THEN SOMEBODY HAS TO SAY YES ─────────────────────────────────
+    //
+    // Every gate above is a threshold, and clearing all of them used to mean
+    // being admitted, on the spot, with no journey and nobody's opinion in it.
+    // Played, that read exactly as badly as it sounds: "which sects would
+    // accept me" answered, correctly, "knowing a name is not an introduction -
+    // somebody would have to put you in front of them, or you would have to
+    // walk up on your own", and the very next input joined a house.
+    //
+    // Walking up on your own is not removed, and must not be: `AGENTS.md` is
+    // explicit that anybody may attempt anything and that the engine's job is
+    // to price the attempt rather than forbid it. What is added is that it is
+    // an ATTEMPT. A house looking at a stranger with nobody speaking for them
+    // is making a judgement, and judgements go both ways.
+    //
+    // Three things move it and all three are already on the row:
+    //
+    //   HOW FAR PAST THE BAR   The margin above `admissionOrdinal`, which is
+    //                          the only thing about a stranger a house can
+    //                          actually see. Capped, because a house pitched at
+    //                          Qi Condensation is not more impressed by the
+    //                          twentieth rung than by the fifth.
+    //   HOW THEY COME ACROSS   `charm` is described in the schema as social
+    //                          first impression and is locked at creation. This
+    //                          is the moment it is for, and it had no consumer.
+    //   WHETHER THEY WALKED    A house that watched somebody leave remembers.
+    //   OUT OF HERE BEFORE     The seat cap below already says a returning
+    //                          member is not a stranger; this says the same
+    //                          thing about the door itself.
+    //
+    // THE BASE FIGURE IS THE ONE JUDGEMENT IN HERE and it is worth saying so
+    // rather than dressing it up. Nothing in the catalogs says how often an
+    // ordinary house takes a stranger who clears its bar, so 0.6 is chosen and
+    // not measured. What would replace it is a count off the world: the share
+    // of a house's roster that arrived unaffiliated rather than being placed.
+    // Until somebody measures that, this is an honest guess with its own
+    // provenance attached.
+    //
+    // Keyed on the DAY, which is the anti-retry and the whole reason this is
+    // not a slot machine. A refusal passes no time, so asking the same house
+    // again on the same day returns the same answer, word for word; going away
+    // and doing something - a season of work, a stretch of cultivation, a rung
+    // - is what buys another look. The player is never blocked and never
+    // rerolls for free.
+    const beforeHere = repos.sects.formerMembership(sect.id, cultivator.id);
+    const chance = Math.min(0.92, Math.max(0.15,
+        WALKING_UP_UNANNOUNCED
+        + PER_RUNG_PAST_THE_BAR * Math.min(
+            RUNGS_A_HOUSE_STILL_NOTICES,
+            cultivator.realmOrdinal - sect.admissionOrdinal
+        )
+        + PER_POINT_OF_CHARM * (cultivator.attributes.charm - 1)
+        + (beforeHere !== null ? WATCHED_YOU_WALK_OUT : 0)
+    ));
+    // THE CULTIVATOR'S ID IS DELIBERATELY NOT A STREAM PART.
+    //
+    // It is a `randomUUID`, so keying on it makes the roll irreproducible from
+    // the run seed - which `AGENTS.md` forbids outright, and which showed up
+    // immediately: the same seed accepted an applicant one run and refused
+    // them the next. The run seed, the day and the house are the whole of what
+    // decides it, and a run has one player.
+    const look = forStream(
+        run.seed, 'sect_admission', Math.floor(run.elapsedDays), sect.id
+    ).next();
+    if (look >= chance) {
+        // The whole of what a player is told goes in `message`. `hint` is the
+        // developer channel - `fromToolResult` routes it to `structure` and
+        // never to prose - so a refusal whose reason lives only in the hint
+        // reaches the player as a bare no, which is the one thing `AGENTS.md`
+        // says a refusal may never be.
+        return guidingError(
+            'not_taken_on',
+            `${sect.name} looked at ${cultivator.name} and did not take them. `
+            + (beforeHere !== null
+                ? 'They have watched this one leave once already, and a house remembers which '
+                  + 'door somebody used. '
+                : 'Nobody said why, which is how it usually goes when nobody is speaking for you. ')
+            + 'Standing higher when you come back moves it, and somebody putting you in front of '
+            + 'them moves it more. Asking again the same afternoon gets the same answer word for '
+            + 'word; it is time that buys another look.',
+            {
+                sectId: sect.id,
+                chance: round2(chance),
+                roll: round2(look),
+                walkedUpUnannounced: true,
+                returningAfterLeaving: beforeHere !== null,
+                rungsPastTheBar: cultivator.realmOrdinal - sect.admissionOrdinal,
+                charm: cultivator.attributes.charm,
+                // What would work, always, and never a bare no. All three are
+                // things the applicant can actually go and do.
+                hint: 'Nothing about the refusal is permanent. Standing higher when you come '
+                    + 'back moves it, somebody putting you in front of them moves it more, and '
+                    + 'the same day gets the same answer - so it is time that buys another look, '
+                    + 'not asking twice.'
+            }
+        );
     }
 
     // ── The rung they come in at ─────────────────────────────────────────

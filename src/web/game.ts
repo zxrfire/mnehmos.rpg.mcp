@@ -88,6 +88,7 @@ import { getMembersOf } from '../data/cultivation/members.js';
 import {
     auditAncestralClaim,
     getSectAncestry,
+    getSectsTeaching,
     sectThreat
 } from '../data/cultivation/sects.js';
 import {
@@ -146,8 +147,15 @@ import { handleResolve } from '../server/consolidated/combat-manage.js';
 import {
     handleLearn,
     handleListAvailable,
-    handlePractise
+    handlePractise,
+    holdsACopyOf,
+    recordACopyHeld
 } from '../server/consolidated/technique-manage.js';
+import {
+    isSoldAtAStall,
+    manualsAStallCarries,
+    stallPriceStones
+} from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import {
     FLAG_NAME_TAKEN,
     FLAG_PENDING_PILL,
@@ -2273,7 +2281,7 @@ ${noticedWaiting}`;
                 return this.consumePill(cultivator, action.target, rawInput);
 
             case 'list_techniques':
-                return this.listTechniques(run, cultivator);
+                return this.listTechniques(run, cultivator, action.target);
 
             case 'acquisition':
                 // "what are my options" is understood as a question about how
@@ -3829,12 +3837,41 @@ ${noticed}`;
             case 'donate':
                 return this.donate(run, cultivator, days);
 
-            case 'standing':
-                return this.fromToolResult(
+            case 'standing': {
+                const read = this.fromToolResult(
                     'sect_manage.standing', 'sect',
                     await handleStanding({ action: 'standing', cultivatorId: cultivator.id }),
                     'The standing'
                 );
+                // ── ANSWERING "COULD I LEAVE" WITHOUT LEAVING ────────────
+                //
+                // The question used to be routed to the executor and it
+                // RESIGNED THE MEMBERSHIP - permanently, forfeiting the
+                // contribution, to somebody who had asked what their options
+                // were. It is answered here instead, and the answer has to be
+                // an answer: a standing read alone says where they stand and
+                // never says what the door costs.
+                //
+                // Every figure is `handleStanding`'s own. Nothing below
+                // recomputes a forfeiture; it names the number the read
+                // already returned and says what happens to it.
+                const held = positionIn(this.repos, cultivator.id);
+                if (topic === 'leaving') {
+                    const line = held
+                        ? `Walking out is a thing you say out loud and it is done the day you say `
+                          + `it. What it costs is the seat and the ${held.contribution} `
+                          + `contribution: neither travels, and coming back later does not come `
+                          + `back above ${held.rankTitle}.`
+                        : 'You belong to nothing, so there is nothing to walk out of.';
+                    read.facts.lines.push(line);
+                    read.facts.prose = `${read.facts.prose}\n\n${line}`;
+                    read.facts.structure.push(
+                        'Asked whether they could leave rather than told to. Read only: '
+                        + 'sect_members untouched, no turn spent.'
+                    );
+                }
+                return read;
+            }
             case 'leave':
                 return this.fromToolResult(
                     'sect_manage.leave', 'sect',
@@ -3847,7 +3884,25 @@ ${noticed}`;
 
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
-        const named = query.length >= 3 ? resolveSect(this.repos, query, scope, cultivator.sectId) : null;
+
+        // ── A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE ─────────
+        //
+        // Found in a played run and it is the sharpest half of the join defect.
+        // "I want to join a sect" carried the word `sect` as its subject, the
+        // fuzzy matcher scored it against the register, and the player was
+        // enrolled in the Azure Dew Sect - one input after the game had told
+        // them, correctly, that knowing a name is not an introduction and
+        // somebody would have to put them in front of the house.
+        //
+        // The generic phrase was already recognised twenty lines below, where
+        // it decides whether an unresolved name deserves a refusal. It was
+        // simply asked too late, so a word that means "the whole category"
+        // never reached it. Asked here, "a sect" reaches the listing, which is
+        // the answer to a question about the whole set - the same rule
+        // `GENERIC_PILL_PHRASE` and `GENERIC_LIBRARY_PHRASE` already follow.
+        const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)
+            ? resolveSect(this.repos, query, scope, cultivator.sectId)
+            : null;
 
         if (named) {
             // ── Joining a second house is leaving the first, and it must say so ──
@@ -8851,6 +8906,21 @@ ${noticed}`;
         target: string | undefined
     ): Promise<Execution> {
         const query = (target ?? '').trim();
+
+        // ── A BOOK, WHICH IS THE ONE THING ON THE BOARD THAT WAS NOT ─────
+        //
+        // Ahead of `resolvePrice`, because `PRICES` has no manual row and never
+        // will: what a stall carries is derived from the technique catalog, so
+        // a book added to the content files is buyable the day it lands.
+        //
+        // Found by playing. "buy a manual" was refused with the look people
+        // give somebody asking for a thing that is not sold - and then "I want
+        // to learn the Lesser Qi-Gathering Manual" handed the road over for
+        // nothing. The correct verb was blocked and the free one worked, which
+        // is exactly backwards, and this is the half that fixes the blocking.
+        const bought = await this.buyAManual(run, cultivator, query);
+        if (bought) return bought;
+
         const resolved = query.length >= 3 ? resolvePrice(query) : null;
         const price = resolved ? getPrice(resolved.id) : undefined;
 
@@ -8952,10 +9022,28 @@ ${noticed}`;
             return updated;
         })();
 
+        // ── THE ALMANAC IS NOT THE LEDGER ────────────────────────────────
+        //
+        // `price.note` used to be spliced in here and it is almanac copy: it
+        // says what a KIND of thing is, in the third person, to a reader who is
+        // browsing. Dropped into a transaction it produced this, verbatim, on
+        // buying one pill:
+        //
+        //   "18 spirit stones of the 65 you had. Twenty stones. Every run
+        //    starts with exactly one, and it is worth a mule and a half.
+        //    47 left in the purse."
+        //
+        // - a second price contradicting the one just charged, and a sentence
+        // about what every run starts with, in the middle of a receipt.
+        //
+        // `items.md` names the rule: the almanac says what a thing IS and the
+        // ledger says WHO HAS IT, they are different questions, and a surface
+        // that answers both answers neither. The note belongs on the board,
+        // where it already is, and the receipt says what was bought, what it
+        // cost, and what is left.
         const facts = factsForToolResult(`${pill.name}, bought.`, [
             `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
             + `stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} you had.`,
-            price.note,
             `${after.spiritStones} left in the purse, and the pill is in the pouch.`
         ]);
         facts.structure.push(
@@ -8975,6 +9063,161 @@ ${noticed}`;
                 summary:
                     `One ${pill.name} for ${stones} spirit stone(s), priced through `
                     + `localPrice(${regionId}) - the same call the market board prices with.`,
+                ok: true
+            }]
+        };
+    }
+
+    /** "a manual", "a book", "a cultivation technique" - a category, not a name. */
+    private static readonly BOOK_IN_GENERAL =
+        /^(?:a |an |one |the |some |any |my )?\s*(?:cultivation |gathering |qi )?(?:manual|manuals|book|books|scripture|scriptures|canon|canons|primer|primers|art|arts|technique|techniques|method|methods)\s*$/i;
+
+    /**
+     * Buying a copy of a manual, which is the first real decision in the game.
+     *
+     * ── WHAT THIS CLOSES ─────────────────────────────────────────────────
+     *
+     * Two defects that were each other's mirror image, both found by playing
+     * the opening. "buy a manual" was refused - the look people give somebody
+     * asking for a thing that is not sold, followed by a list of millet, inns
+     * and ferry crossings - while "I want to learn the Lesser Qi-Gathering
+     * Manual" simply handed the road over: technique held, thirty stones
+     * untouched, no teacher, no time, no house. The correct verb was blocked
+     * and the free one worked.
+     *
+     * `items.md` has always said what should happen instead: below the line,
+     * common manuals sell at a market stall next to the cooking pots, and a
+     * poor cultivator's first real decision is whether the money goes on a book
+     * or on food. That decision did not exist anywhere in the game.
+     *
+     * ── THREE ANSWERS, AND THE MIDDLE ONE IS THE GOOD WRITING ────────────
+     *
+     * A name that is not a book at all falls through to the ordinary price
+     * board, which is why this returns null rather than refusing.
+     *
+     * A book the stall does not carry keeps the refusal it already had, and
+     * that refusal is CORRECT for it - `items.md`: above the line, cash is
+     * simply not the medium, not "expensive" but not for sale. What is added is
+     * that it now names what would work instead, which the old one did not.
+     *
+     * A book the stall does carry is sold, for stones, priced through the same
+     * `localPrice` the market board quotes with.
+     */
+    private async buyAManual(
+        run: Run,
+        cultivator: Cultivator,
+        query: string
+    ): Promise<Execution | null> {
+        const stock = manualsAStallCarries();
+        const regionId = standingOf(cultivator).regionId;
+        const askingFor = (book: { id: string; cash: number }): number =>
+            Math.max(1, Math.ceil(cashToStones(localPrice(regionId, book.cash))));
+
+        // ── the stall, read ──
+        //
+        // A category is a question about the whole set and must reach the
+        // listing rather than be handed to a fuzzy matcher, which is the rule
+        // `GENERIC_PILL_PHRASE` and `GENERIC_HOUSE_PHRASE` already follow. This
+        // is the sentence a player types first and it is the one the old
+        // refusal answered worst.
+        if (query.length === 0 || GameService.BOOK_IN_GENERAL.test(query)) {
+            const lines = stock.length === 0
+                ? ['Nobody within a day of here copies books for a living.']
+                : [
+                    'Beside the cooking pots, block-printed and much copied:',
+                    ...stock.map(book =>
+                        `  ${book.name}, ${askingFor(book)} spirit stones. Opens at `
+                        + `${rankName(book.requiredOrdinal)} and carries as far as `
+                        + `${rankName(book.cap)}`
+                        + (book.requiredOrdinal > cultivator.realmOrdinal
+                            ? ', which is above where you stand.'
+                            : '.')),
+                    `You are carrying ${cultivator.spiritStones} spirit stones. Name one and it `
+                    + 'is yours; the stones will not then be.'
+                ];
+            const facts = factsForToolResult(
+                stock.length === 0 ? 'No stall, and no books on it.' : 'What the stall has.',
+                lines
+            );
+            facts.structure.push(
+                `manualsAStallCarries: ${stock.length} title(s), priced through `
+                + `localPrice(${regionId}). Read only: nothing bought, nothing spent.`
+            );
+            return this.freeAction(run, 'buy', facts);
+        }
+
+        if (query.length < 3) return null;
+        const named = stock.find(book => matchScore(query, book.name) > MATCH_THRESHOLD);
+        if (!named) {
+            // A real art, and not one anybody sells. The refusal `items.md`
+            // asks for, plus the thing the old one never said: what would work.
+            const art = resolveTechnique(this.repos, query, cultivator.id);
+            if (!art) return null;
+            const taughtBy = getSectsTeaching(art.id).length;
+            return refused('engine.stallPriceCash', 'buy', factsForRefusal(
+                `${art.name} is not bought with money.`,
+                'You ask for it at a counter and get the look people give somebody who has not '
+                + 'understood what they are looking at. Books like this move between people who '
+                + 'know each other. '
+                + (taughtBy > 0
+                    ? `${taughtBy} house${taughtBy === 1 ? '' : 's'} teach${taughtBy === 1 ? 'es' : ''} `
+                      + 'it, and each of them teaches it to its own.'
+                    : 'Nobody alive is known to teach it, which is a different problem and a worse '
+                      + 'one.')
+                + (stock.length > 0
+                    ? ` What IS on the stall: ${stock.map(b => `${b.name}, ${askingFor(b)} stones`).join('; ')}.`
+                    : ''),
+                `${art.id} is not stall stock: cap above COMMON_MANUAL_CAP, or fewer than `
+                + 'COMMON_HOUSE_COUNT houses teach it. Nothing bought, nothing spent, no time passed.'
+            ));
+        }
+
+        const stones = askingFor(named);
+        if (cultivator.spiritStones < stones) {
+            return refused('engine.stallPriceCash', 'buy', factsForRefusal(
+                'Not for what you are carrying.',
+                `${named.name} is ${stones} spirit stone${stones === 1 ? '' : 's'} here. You are `
+                + `carrying ${cultivator.spiritStones}, which is ${stones - cultivator.spiritStones} `
+                + 'short. The stallholder has copied it out by hand and is not moved by how badly '
+                + 'you want it.',
+                `${named.id} at ${stones} stone(s) through localPrice(${regionId}); purse holds `
+                + `${cultivator.spiritStones}. Nothing bought, nothing spent.`
+            ));
+        }
+
+        const after = this.db.transaction((): Cultivator => {
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
+            if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
+            recordACopyHeld(this.db, cultivator.id, named.id);
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const facts = factsForToolResult(`${named.name}, bought.`, [
+            `${stones} spirit stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} `
+            + `you had, and the copy is yours. ${after.spiritStones} left.`,
+            `It opens at ${rankName(named.requiredOrdinal)} and carries as far as `
+            + `${rankName(named.cap)}. Owning it and having read it are different facts: sitting `
+            + 'down with it is a separate thing you have not done yet.'
+        ]);
+        facts.structure.push(
+            `${named.id} bought for ${stones} stone(s) at the ${regionId} multiplier. Recorded `
+            + 'in cultivator_flags under manual_copies_held; technique_manage.learn reads it.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'technique_manage.recordACopyHeld',
+                action: 'buy',
+                summary:
+                    `One copy of ${named.name} for ${stones} spirit stone(s), priced through `
+                    + `localPrice(${regionId}) - the same call the market board prices with. `
+                    + 'The art is NOT learned by this; the book is held.',
                 ok: true
             }]
         };
@@ -10001,6 +10244,88 @@ ${noticed}`;
     }
 
     /**
+     * What standing between this cultivator and one named book actually is.
+     *
+     * The answer to a QUESTION about learning, and it changes nothing. Returns
+     * null when the name is not an art at all, so the caller falls through to
+     * the listing rather than refusing a sentence it merely failed to resolve.
+     *
+     * Every line is a restatement of something the engine already computed:
+     * the rung the book opens at, what a stall asks for a copy, whether one is
+     * already held, and how many houses teach it. Nothing here decides
+     * anything - that is `handleLearn`'s - which is what keeps the answer to
+     * "may I" and the answer to "I do" from drifting apart.
+     */
+    private whatItWouldTake(
+        run: Run,
+        cultivator: Cultivator,
+        query: string
+    ): Execution | null {
+        const art = resolveTechnique(this.repos, query, cultivator.id);
+        if (!art) return null;
+        const catalog = getTechnique(art.id);
+        if (!catalog) return null;
+
+        const lines: string[] = [];
+        const cap = catalog.cap ?? capOf(catalog as never);
+        lines.push(
+            `${catalog.name} opens at ${rankName(catalog.requiredOrdinal)}`
+            + (classOf(catalog) === 'cultivation'
+                ? cap === null
+                    ? ' and carries a cultivator the whole way.'
+                    : ` and carries a cultivator as far as ${rankName(cap)}.`
+                : '. It carries nobody anywhere; it is an art, not a road.')
+        );
+        if (catalog.requiredOrdinal > cultivator.realmOrdinal) {
+            lines.push(
+                `You stand at ${rankName(cultivator.realmOrdinal)}, which is `
+                + `${catalog.requiredOrdinal - cultivator.realmOrdinal} rung(s) under it. `
+                + 'Nothing about the book changes that; you do.'
+            );
+        }
+
+        if (this.repos.techniques.knows(cultivator.id, art.id)) {
+            lines.push('You already practise it. What is left is mastery, and that is sitting with it.');
+        } else if (holdsACopyOf(this.db, cultivator.id, art.id)) {
+            lines.push('The copy is already yours. Nothing stands between you and it but the work.');
+        } else {
+            const stall = stallPriceStones(art.id);
+            const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
+            if (house?.teaches.includes(art.id)) {
+                lines.push(`${house.name} teaches it, which is what wearing their colours buys.`);
+            } else if (stall !== null) {
+                lines.push(
+                    `A stall sells a copy for about ${stall} spirit stone`
+                    + `${stall === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}`
+                    + (cultivator.spiritStones >= stall
+                        ? ', so it is a decision rather than a wish. What the stones do not then '
+                          + 'buy is the food.'
+                        : `, which is ${stall - cultivator.spiritStones} short.`)
+                );
+            } else {
+                const taughtBy = getSectsTeaching(art.id).length;
+                lines.push(
+                    'Nobody sells it. '
+                    + (taughtBy > 0
+                        ? `${taughtBy} house${taughtBy === 1 ? '' : 's'} teach${taughtBy === 1 ? 'es' : ''} `
+                          + 'it, to their own, and being one of their own is the whole of the price.'
+                        : 'No house is known to teach it either, so what is left is finding a copy '
+                          + 'somewhere nobody has been.')
+                );
+            }
+        }
+
+        const facts = factsForToolResult(`${catalog.name}, and what stands in the way.`, lines);
+        facts.structure.push(
+            `Read only on ${art.id}: requiredOrdinal ${catalog.requiredOrdinal}, cap ${cap ?? 'none'}, `
+            + `soldAtAStall=${isSoldAtAStall(art.id)}, `
+            + `copyHeld=${holdsACopyOf(this.db, cultivator.id, art.id)}. `
+            + 'No time passed, nothing spent, nothing learned.'
+        );
+        return this.freeAction(run, 'list_techniques', facts);
+    }
+
+    /**
      * The arts that could be learned, filtered by everything that decides it.
      *
      * Realm, spirit root, dao standing and the run's own scarcity are all the
@@ -10008,7 +10333,29 @@ ${noticed}`;
      * shown WITH its warning rather than hidden: an art that fights the root is
      * learnable, and it is the trade the genre is actually about.
      */
-    private async listTechniques(run: Run, cultivator: Cultivator): Promise<Execution> {
+    private async listTechniques(
+        run: Run,
+        cultivator: Cultivator,
+        target?: string
+    ): Promise<Execution> {
+        // ── ASKING ABOUT ONE BOOK, WHICH IS NOT ASKING FOR IT ────────────
+        //
+        // "can I learn the Lesser Qi-Gathering Manual" and "what would it cost
+        // to learn it" are questions, and until this existed the first of them
+        // LEARNED IT and the second reached nothing at all. See
+        // `ASKING_RATHER_THAN_DOING` in `actions.ts` for the routing; this is
+        // where the question gets its answer.
+        //
+        // Free by construction. It is a read of the same three facts the
+        // refusal in `handleLearn` is built from - what the stall asks, what
+        // this cultivator is carrying, and who teaches it - so the answer to
+        // "may I" and the answer to "I do" can never disagree.
+        const asked = (target ?? '').trim();
+        if (asked.length >= 3 && !GameService.BOOK_IN_GENERAL.test(asked)) {
+            const named = this.whatItWouldTake(run, cultivator, asked);
+            if (named) return named;
+        }
+
         const listed = await handleListAvailable({
             action: 'list_available',
             cultivatorId: cultivator.id,
@@ -10156,7 +10503,26 @@ ${noticed}`;
         // stopped from taking, because the thing you took on is the one you are
         // about to spend a decade with.
         const catalog = getTechnique(technique.id);
-        if (catalog) {
+        // ── AND A SUITABILITY LINE MUST NOT ARGUE WITH A REFUSAL ─────────
+        //
+        // `suitability.ts` writes, for a book that suits somebody, "there is
+        // nothing standing between them and it except the work" - which is
+        // true about FIT and false about acquisition, and appending it under a
+        // refusal produced this, in play:
+        //
+        //   "A stall asks about 8 spirit stones for a copy, and Lin Baoqing is
+        //    carrying 30. ... There is nothing standing between them and it
+        //    except the work."
+        //
+        // Two sentences of the same paragraph disagreeing about whether the
+        // player can have the book. The miss cases still say their piece under
+        // a refusal, because a miss is exactly what the layer exists to make
+        // legible in the moment and it never contradicts one; the SUITED line
+        // is the only one that claims the road is open, so it is the only one
+        // withheld when the road is not.
+        const suitedButRefused = (fit: ReturnType<typeof fitOf>): boolean =>
+            fit.fit === 'suited' && execution.outcome === 'refused';
+        if (catalog && !suitedButRefused(fitOf(cultivator, catalog))) {
             const fit = fitOf(cultivator, catalog);
             execution.facts.lines.push(fit.line);
             // Into the prose as well as the lines. `factsForToolResult` builds
@@ -12872,6 +13238,38 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
                 );
             }
         }
+        // ── THE STALL NEXT TO THE COOKING POTS ───────────────────────────
+        //
+        // Rendered on its own rather than folded into the board above, because
+        // the first question a player has about a book is not what it costs. It
+        // is where the book stops and whether they can open it today, and
+        // neither of those is a fact about any other line on a market board.
+        //
+        // Written from the defect: the game refused "buy a manual" with the
+        // look people give somebody asking for a thing that is not sold, and
+        // then listed millet, inns and ferry crossings - so the correct verb
+        // was blocked, the free one worked, and the board never once mentioned
+        // the only object in the world a beginner actually needs.
+        const books = body.manuals as Array<MarketPrice & {
+            openAtThisRung?: boolean; note?: string;
+        }> | undefined;
+        if (Array.isArray(books) && books.length > 0) {
+            lines.push('On the stall beside the cooking pots, block-printed and much copied:');
+            for (const book of books) {
+                lines.push(
+                    `  ${book.name ?? 'unnamed'}, ${priceOf({ ...book, category: 'tool' })}`
+                    + `${book.openAtThisRung === false ? ', which opens above where you stand' : ''}`
+                    + `. ${book.note ?? ''}`.trimEnd()
+                );
+            }
+            lines.push(
+                'Block-printed and plainly set down. What a house\'s own canon has that these do '
+                + 'not is four hundred years of its teachers writing into it, which is a large '
+                + 'part of what anybody sweeps a courtyard for.',
+                'A book or the food. Whichever the stones go on, they do not go on the other.'
+            );
+        }
+
         // Whether this ground can still take them anywhere is the one thing a
         // price board actually decides, and it is why leaving is a goal.
         if (body.groundHereStillGives === false) {

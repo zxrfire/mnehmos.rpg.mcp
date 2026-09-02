@@ -42,7 +42,13 @@ describe('the revolving door', () => {
         db.prepare('UPDATE cultivators SET realm_ordinal = 16 WHERE id = ?').run(cultivator.id);
 
         await game.act('I leave the sect');
-        const back = await game.act('I ask about joining a sect');
+        // NAMED, not "a sect". A category is a question about the whole set
+        // and must reach the listing rather than enrol anybody - that was its
+        // own defect, found in a played run, where "I want to join a sect"
+        // scored the word `sect` against the register and joined the Azure Dew
+        // Sect one line after the game had said knowing a name is not an
+        // introduction. See GENERIC_HOUSE_PHRASE in `GameService.sect`.
+        const back = await game.act('I join the Azure Dew Sect');
 
         expect(seatOf(db, cultivator.id)!.rank_index, 'the door handed out free ranks')
             .toBe(joined.rank_index);
