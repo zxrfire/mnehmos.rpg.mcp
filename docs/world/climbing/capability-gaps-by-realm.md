@@ -372,7 +372,7 @@ on it. A capability layer that can only say yes or no cannot say this.
 |---|---|---|---|
 | 1 | perceive | **built** | `reads_formations` is special-cased in `judge`: up to 8 ordinals off `understand` where the subject carries the `formation` hazard. The only perception capability keyed to a realm anywhere in the engine |
 | 2 | survive | **built** | `no_ambient_needed` and `enters_dead_zones` between them neutralise `thin_qi`, `dead_zone`, `void`, `sealed_qi`, `scar` |
-| 3 | do | **built** | `spatial_folding`, and it is now two things rather than one. `convergence.ts` still consumes it as the escape from a closing window, at the floor reach for everybody and wanting as the window does. `how-far-somebody-can-fold-space-and-what-it-costs.ts` is what the grant is FOR - a range in walking days that grows with the rung, a price, and a fix. See [what folding space actually buys](#what-folding-space-actually-buys-and-what-it-does-not) |
+| 3 | do | **built** | `spatial_folding`, and it is now two things rather than one. `how-far-somebody-can-fold-space-and-what-it-costs.ts` is what the grant is FOR - a range in walking days that grows with the rung, a price, and a fix. `convergence.ts` still consumes it as the escape from a closing window, off that same curve, so a rescuer's reach is their own and the tie that saves you has to be a tie to somebody high enough. See [what folding space actually buys](#what-folding-space-actually-buys-and-what-it-does-not) |
 | 4 | asked of | **absent** | |
 | 5 | risk | **absent** | |
 | 6 | opportunity | **indirect** | The README calls `no_ambient_needed` *"the single most consequential grant on the ladder"* because it decouples a cultivator from the scarcity the world is organised around. That decoupling is real in the cultivation-rate arithmetic and has no economic expression: nothing anywhere makes such a person a different kind of trading partner |
@@ -465,25 +465,67 @@ distance for a journey that was not made. It is the top of the same ladder a spi
 on - on foot, mount or drawn carriage, boat, flight on a blade, fold - and it is the end of it,
 because there is no quiet version.
 
-#### Why this does not make the House of the Measured Span pointless
+<!-- trigger="somebody wants to cross the map and cannot fold, or asks what a Measured Span counter sells, or the player does not know the world has other provinces in it" -->
+#### The Span sends other people through, and that is why it is a Dao house
 
-The Span already does this as a trade, and reading `history.ts` before designing the personal
-version is what kept the two from colliding. It **folds a courier down a route it has surveyed**
-and prices the work per li of *true* distance, off a Wide Age table it maintains and has never
-extended in five thousand years. Its own estimate of what working one of the nine inherited
-terminals would take is *a realm nobody in the world currently occupies*.
+`buying-passage-at-a-measured-span-counter.ts` owns this, and it is not the same capability as
+the section above. **Everybody else who folds space does it only for themselves**, because a
+personal fold is your own refinement doing the work and it needs your own rung. The Span's
+**understanding** does the work instead, so a courier at ordinal 10 can be sent, and so can
+somebody who will never fold in their life.
 
-So the house sells **the fix, not the fold** - and the two are different shapes. The Span moves
-other people and cargo between fixed points, for a price, for anybody, to places the buyer has
-never been. A cultivator moves themselves, from wherever they are standing, to somewhere they
-have stood or can see. Neither substitutes for the other, and the reason a Void Refinement
-cultivator still hires a courier is that a courier can be sent somewhere the cultivator has no
-fix on.
+That is not an exception written for one faction. It is [`dao-houses.md`](../houses/dao-houses.md)
+operating exactly as it says a house of space operates - authority that is civil before it is
+martial, reaching into travel, portals, territory, formations, storage and barriers - resting on
+the axis [`understanding.md`](./understanding.md) already keeps separate from rank. Which is also
+why the counter is not an automatic win: that document requires a counter to every principle and
+names this one as **spatial anchoring**, and the counter is already standing in the catalog
+rather than needing to be invented. The Anchorhold nails ground shut, and the Span's own stated
+grievance is that the world calls it public safety. Anywhere anchored is anywhere no fare reaches.
 
-Note where the ladders sit, because it settles the question on its own: the Span's reliable rung
-is 25 and its Elder Surveyors stall in the mid-twenties, which is **below the folding floor**.
-The house that understands space better than anybody alive mostly cannot fold at all, and works
-off the table instead. **Nothing may hand a cultivator that table.** A third kind of fix - one
+**So the passenger's rung is not what carries them.** Stated explicitly, because leaving it
+implied lets it be read three ways:
+
+| | |
+|---|---|
+| **It does not carry them** | the house's understanding does. This is the ruling, and it is why a mortal can be sent at all |
+| **It does not gate them** | nobody is refused for being low. The only honest noes at a counter are the schedule and the survey, and neither is about the person |
+| **It sets what it costs them** | being moved through space you do not understand is rough, and how rough is how little you understand |
+
+Note the direction, because it is the **exact inverse** of a personal fold. There, standing high
+buys you further. Here, standing low costs you more - and the people it costs most are the people
+it is worth most to. Somebody at or above the folding floor rides it easily and pays only the
+fare, which is why a Void Refinement cultivator buys a ticket for somewhere they have no fix on
+and walks the rest. The cost is bounded so it never eats the saving: three days at the very
+bottom against the seventeen-day span the catalog describes still leaves fourteen days saved,
+and that margin is the feasibility of the whole feature rather than a tuning constant.
+
+**Which makes the Span cut across the transport ladder rather than sit on top of it.** On foot, a
+mount or drawn carriage, a boat, flight on a blade, a personal fold - those are rungs, and each
+one costs cultivation. A ticket costs money, and is available to anybody standing at a counter.
+It is the only door somebody below the folding floor has to the far half of the map.
+
+**And the counter is where the map is.** A branch is somewhere a person walks up to and reads
+what the house runs: places, the distance to each in the walking days every road is quoted in,
+and a price. Somebody who has never left their province learns from a board that there are other
+provinces. Discovery is otherwise entirely a matter of being told by whoever happens to be near -
+correct for a farm child and useless as the only channel.
+
+**What is on the board is what the house has surveyed, and the absence is the information.** A
+route that is not listed is not being withheld and is not available at a better price; it is
+where the inherited table runs out. That is the Late Age in front of the player as a price list.
+
+Read the Span's own numbers as a trough rather than a ceiling. `reliableOrdinal` 25 sitting below
+the folding floor is **not** a house failing at its trade - its trade was never "our members
+fold", it is moving other people, which is work a member below the floor does all day. The house
+is thinner than its own past and is working its way back up, and `faction-character.ts` carries
+that as a live internal split rather than a mood: the Long Measure wants the closed gates
+reopened whatever it costs, the Freight faction wants the house solvent instead. What it
+genuinely cannot do is **reopen a terminal** - a permanent two-way span, Wide Age work, and a
+different capability from a person folding. Do not write them as clerks maintaining a table they
+cannot use.
+
+**And nothing may hand a cultivator that table.** A third kind of fix for a personal fold - one
 that could be bought, read or told - would delete the house's whole business and the Late Age
 premise it expresses, which is why there are two and not three.
 

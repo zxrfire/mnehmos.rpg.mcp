@@ -29,27 +29,30 @@
  * ═════════════════════════════════════════════════════════════════════════
  *
  * There is a way to leave late. `spatial_folding` is a `CapabilityGrant` on the
- * Void Refinement class - "short-range spatial folding" - written long before
- * this module and not touched by it. Two properties of it do all the work here
- * and neither is new:
+ * Void Refinement class, written long before this module. Two properties of it
+ * do all the work here:
  *
  *   IT IS HIGH        Void Refinement is ordinal 29. Somebody who can fold
  *                     space is not a person who explores ruins for a living, so
  *                     the way out exists, is real, and is never available to the
  *                     person who needs it.
- *   IT IS SHORT       "short-range" is a bound on distance, and distance is
- *                     what a waning convergence spends. {@link pierceReach}
- *                     scales the reach by how much of the window is left, so it
- *                     narrows exactly as the situation gets worse and is at its
- *                     weakest on the last day.
+ *   IT WANES          distance is what a waning convergence spends.
+ *                     {@link pierceReach} scales the reach by how much of the
+ *                     window is left, so it narrows exactly as the situation
+ *                     gets worse and is at its weakest on the last day. That is
+ *                     true at every rung, and it is the property that does the
+ *                     work here - not shortness.
+ *
+ * The reach itself is the folder's own, off the one curve every fold in the
+ * world is priced on - `how-far-somebody-can-fold-space-and-what-it-costs.ts`,
+ * where it starts at one province and grows with the rung. So somebody very
+ * high reaches deeper into a closing site than somebody who has just refined
+ * themselves, and neither of them beats the clock: the waning multiplies
+ * whatever they brought, and a call that goes out late fails on geometry
+ * however grand the person answering it is.
  *
  * No consumable version of this may be added. An item that folds space on
  * demand is the same mechanic with its teeth pulled.
- *
- * Folding is not only short, and outside this module it is not short at all:
- * `how-far-somebody-can-fold-space-and-what-it-costs.ts` is what the grant is
- * FOR, and its reach grows with the rung. {@link PIERCE_REACH_DAYS} says why
- * this is the one place it does not.
  *
  * ── But somebody else might come ──────────────────────────────────────────
  *
@@ -66,9 +69,16 @@
  *                              much tighter game and should feel it.
  *   THEY MAY NOT COME          the precondition qualifies them; it does not
  *                              commit them. They can be elsewhere, they can
- *                              decline, and they can be too late - because the
- *                              reach they are crossing is the same waning
- *                              distance, so a late call fails on geometry.
+ *                              decline, and they can be too late - the reach
+ *                              they are crossing is the same waning distance,
+ *                              so a late call fails on geometry however high
+ *                              the person answering stands.
+ *   WHO COMES IS THE ANSWER    a rescuer's reach is their own, so the tie that
+ *                              matters is not merely a tie - it is a tie to
+ *                              somebody far enough up. Two people with the same
+ *                              master and different masters are in different
+ *                              amounts of trouble, and that is legible before
+ *                              anybody goes anywhere.
  *   IT COSTS                   a rescue OPENS an obligation rather than closing
  *                              one. Being fetched out of a closing site is not
  *                              a thing that happens to nobodies, and afterwards
@@ -88,7 +98,8 @@ import {
 } from './capability.js';
 import {
     FOLD_GRANT,
-    FOLD_RANGE_AT_THE_FLOOR
+    FOLD_RANGE_AT_THE_FLOOR,
+    foldRangeInWalkingDays
 } from './how-far-somebody-can-fold-space-and-what-it-costs.js';
 import { isBelowTheLid } from './layers.js';
 import {
@@ -175,23 +186,33 @@ export const PIERCE_GRANT: CapabilityGrant = FOLD_GRANT;
  * `how-far-somebody-can-fold-space-and-what-it-costs.ts` rather than restated,
  * because the two were the same physical fact carried in two constants.
  *
- * AND IT DOES NOT GROW WITH THE RUNG HERE, which is the one place in the engine
- * where that is true. Everywhere else a fold reaches further the higher the
- * folder stands. What a waning convergence spends is the site RECEDING, and a
- * receding far end is not a distance on anybody's table - there is nothing to
- * take a fix on, so there is nothing for the ordinal to buy. The reach is the
- * floor for everybody, it wanes with the window, and it is at its weakest on
- * the day it would matter most.
+ * It is the FLOOR of the curve and not a ceiling on it. {@link pierceReach} and
+ * {@link rescuersFor} both price a fold on the folder's own rung, so somebody
+ * high enough reaches further in - which is the ruling everywhere else in the
+ * world and has no reason to stop being true at a ruin door. What that never
+ * touches is the waning: the reach is scaled by what is left of the window in
+ * both, so it is at its weakest on the day it would matter most and no amount
+ * of rank fixes having been asked too late.
+ *
+ * Where the constant is still the right number on its own is
+ * {@link expeditionBudget}'s `bestEver`, which asks a question about the SITE
+ * rather than about a person.
  */
 export const PIERCE_REACH_DAYS = FOLD_RANGE_AT_THE_FLOOR;
 
 /**
  * How far somebody could fold, from here, today.
  *
- * Scaled by what is left of the window, because the site is receding: as
- * convergence wanes the distance grows, so the same fold covers less of it.
- * The consequence is the design point - the escape is at its weakest on the
- * day it would matter most, and it reaches zero at the close.
+ * Their own reach off the world's one fold curve, then scaled by what is left
+ * of the window, because the site is receding: as convergence wanes the
+ * distance grows, so the same fold covers less of it. The consequence is the
+ * design point - the escape is at its weakest on the day it would matter most,
+ * and it reaches zero at the close, at every rung.
+ *
+ * The rung buying more reach does not soften this module. The self-cancelling
+ * property was never that the fold is short; it is that anybody who can fold at
+ * all is not a person who explores ruins for a living, and that is a statement
+ * about who is standing in here rather than about how far they could go.
  *
  * Returns zero for anybody who cannot fold at all, which is nearly everybody
  * and certainly everybody who would be in here.
@@ -202,7 +223,7 @@ export function pierceReach(
 ): number {
     if (!isGrantAvailableAt(actor.realmOrdinal, PIERCE_GRANT)) return 0;
     if (!(actor.heldGrants ?? []).includes(PIERCE_GRANT)) return 0;
-    return Number((PIERCE_REACH_DAYS * convergence.remaining).toFixed(2));
+    return Number((foldRangeInWalkingDays(actor.realmOrdinal) * convergence.remaining).toFixed(2));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -217,7 +238,11 @@ export interface ReachableWing {
     reachable: boolean;
     /** Reachable only because a fold covers the return leg. */
     needsPierce: boolean;
-    /** In and out is longer than the window however it is done. */
+    /**
+     * In and out is longer than the window however THIS person does it - their
+     * own fold included, counted from the day it opened rather than from today.
+     * An actor fact, because reach is an actor fact.
+     */
     beyondTheWindow: boolean;
 }
 
@@ -228,7 +253,13 @@ export interface ExpeditionBudget {
     /** Days of depth a fold would also cover. Zero for almost everybody. */
     piercedDepth: number;
     wings: ReachableWing[];
-    /** Wings nobody can reach in one window at all, however strong. */
+    /**
+     * Wings this person cannot reach in one window at all, even standing at the
+     * door on the day it opened and folding the whole way back.
+     *
+     * Somebody higher has a shorter list, which is what being higher is for.
+     * What nobody gets is a longer window.
+     */
     unreachableWings: RuinWing[];
     /** The honest sentence for a narrator that wants one. */
     reason: string;
@@ -270,8 +301,14 @@ export function expeditionBudget(
     const pierce = pierceReach(convergence, actor);
     const safeDepth = convergence.open ? convergence.daysLeft / 2 : 0;
     const piercedDepth = convergence.open ? (convergence.daysLeft + pierce) / 2 : 0;
-    // The most anybody could ever do here, from the moment the window opened.
-    const bestEver = convergence.windowDays / 2 + PIERCE_REACH_DAYS / 2;
+    // The most THIS PERSON could ever do here, standing at the door on the day
+    // it opened. Their own fold at full window, not a universal allowance: the
+    // figure used to credit everybody with a pierce, including the mortals who
+    // are the only people actually in here, and it has to be theirs now that
+    // reach is theirs - otherwise a wing can come back both foldable and
+    // beyond the window at once.
+    const bestEver = convergence.windowDays / 2
+        + foldRangeInWalkingDays(actor.realmOrdinal) / 2;
 
     const mapped: ReachableWing[] = wings.map(w => ({
         wing: w,
@@ -418,7 +455,11 @@ export interface RescuePledge {
     precondition: string;
     why: string;
     standing: number;
-    /** Days of depth they could cover today. Wanes with the window. */
+    /**
+     * Days of depth THIS rescuer could cover today. Their own reach off the
+     * fold curve, waning with the window - so who comes matters, and when they
+     * were asked matters more.
+     */
     reach: number;
     /** Deep enough for where you are. False is a real and common answer. */
     reachesYou: boolean;
@@ -475,7 +516,16 @@ export function rescuersFor(
         // place in the engine where "could hold it" is the right question -
         // a rescuer is not present to be assessed, and the world does not store
         // acquired grants for NPCs.
-        const reach = Number((PIERCE_REACH_DAYS * convergence.remaining).toFixed(2));
+        //
+        // AND HOW FAR THEY REACH IS THEIR OWN, off the same curve every other
+        // fold in the world is priced on. A master four realms above the one
+        // who came last time comes further in, which is what being that high
+        // is for. What it does not change is the waning: the reach is still
+        // scaled by what is left of the window, so a late call still fails on
+        // geometry and no amount of rank fixes having been asked too late.
+        const reach = Number((
+            foldRangeInWalkingDays(candidate.cultivation.realmOrdinal) * convergence.remaining
+        ).toFixed(2));
         const chance = Math.max(0, Math.min(
             0.85,
             RESCUE_BASE_CHANCE + tie.standing * RESCUE_STANDING_WEIGHT
