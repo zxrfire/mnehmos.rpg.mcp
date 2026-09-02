@@ -224,7 +224,23 @@ describe('the whole path, through act', () => {
     it('puts an overheard name into the world and into the inspector', async () => {
         // Sweep seeds: the check is deliberately rare, and the property under
         // test is what happens when it fires.
-        for (let attempt = 0; attempt < 25; attempt++) {
+        //
+        // ── WHY THE SWEEP IS 60 AND NOT 25 ───────────────────────────────
+        //
+        // Measured on this tree, once the stream stopped moving between
+        // processes: the fragment lands on 7 of 60 seeds, and the first of
+        // them is `path-11`. At 25 the guard was carrying its whole claim on
+        // two hits with nine misses in front of them - close enough to the
+        // edge that an unrelated catalog or weight change could empty the
+        // window and report a working channel as a broken one.
+        //
+        // AGENTS.md, "Pool the sample. Never widen the bar": the answer to a
+        // rare outcome is more seeds, never a softer assertion. Nothing below
+        // is relaxed - it still demands a genuinely overheard fragment and
+        // still refuses to accept a passing traveller's name in its place.
+        // The extra seeds are free in the passing case, because the loop
+        // returns on the first hit.
+        for (let attempt = 0; attempt < 60; attempt++) {
             const { db, game } = makeGame({ seed: `path-${attempt}` });
             const { cultivator } = await game.newRun('Villager');
             placePerson(db, 'npc-one', 'The First', 5);
@@ -251,11 +267,13 @@ describe('the whole path, through act', () => {
             expect(facts).toMatch(/no idea what (?:either of those was|that was)|do not know what that is/i);
             return;
         }
-        throw new Error('no seed produced an overheard fragment in 25 attempts');
+        throw new Error('no seed produced an overheard fragment in 60 attempts');
     });
 
     it('licenses the name for dialogue only, in a separate block from narration', async () => {
-        for (let attempt = 0; attempt < 25; attempt++) {
+        // Same sweep width and the same reason as above. Measured: the
+        // OVERHEARD licence block appears on 10 of 60 seeds, first at `lic-6`.
+        for (let attempt = 0; attempt < 60; attempt++) {
             const provider = new ScriptedProvider({
                 plans: ['{"action":"look"}'],
                 narrations: ['A courtyard, and voices past the wall.']
@@ -282,7 +300,7 @@ describe('the whole path, through act', () => {
             expect(nameableIndex).toBeGreaterThan(spokenIndex);
             return;
         }
-        throw new Error('no seed produced a spoken-name licence in 25 attempts');
+        throw new Error('no seed produced a spoken-name licence in 60 attempts');
     });
 
     it('sends no licence block when nobody said anything', () => {
