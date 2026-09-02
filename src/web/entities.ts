@@ -40,6 +40,7 @@ import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import { describeStanding, rungAndOrdinal } from './facts.js';
 import {
     HERBS,
@@ -67,7 +68,17 @@ export type EntityKind =
     | 'recipe'
     | 'place'
     /** A line on the mortal price board. Not gated: the player was shown it. */
-    | 'price';
+    | 'price'
+    /**
+     * The asker, looking at themselves. Deliberately NOT `cultivator`.
+     *
+     * A caller that sees `cultivator` writes a knowledge record for the subject
+     * and reads the trust ladder against it, and both are nonsense pointed at
+     * the person doing the looking: it would put the player in their own list
+     * of people they have heard of. A kind nothing switches on gets the facts
+     * narrated and none of that.
+     */
+    | 'self';
 
 /**
  * Who is asking, and what they have heard of.
@@ -242,7 +253,37 @@ export function matchScore(query: string, candidate: string): number {
     const c = normalise(candidate);
     if (q.length === 0 || c.length === 0) return 0;
     if (q === c) return 100;
-    if (c.startsWith(q) || q.startsWith(c)) return 80;
+
+    // ── ONE WORD IS NOT A NAME ───────────────────────────────────────────
+    //
+    // FOUND BY PLAYING, and it is the same defect the two-letter rule below
+    // was written for, one size up. Reproduced against a live world:
+    //
+    //   "origin"     -> Chaos Origin Scripture              60, matched
+    //   "name"       -> Nameless Witness Stance             80, matched
+    //   "manual"     -> Lesser Qi-Gathering Manual          60, matched
+    //   "court"      -> Storm Tyrant Court                  60, matched
+    //   "scripture"  -> Five-Breath Circulation Scripture   60, matched
+    //
+    // What that cost in play: `I ask the tortoise where it came from` had its
+    // topic reduced to the word "origin", which resolved to an art nobody had
+    // mentioned, and the asking gate then correctly refused - so the player was
+    // told that this person had never heard of the Chaos Origin Scripture. Two
+    // turns spent, nothing learned, and a beautifully written wrong answer,
+    // because the model in front of it made the nonsense convincing.
+    //
+    // A single common word carried in a long catalog name is not evidence the
+    // player meant that row; it is evidence the catalog is large. So a one-word
+    // query wins on a longer name only when it supplies HALF that name's own
+    // significant words - which is what makes "wheatgate" reach Wheatgate
+    // Market and "lanshi" reach Ning Lanshi, while leaving "storm" and
+    // "manual" unresolved, as they should be. A multi-word query is unchanged.
+    //
+    // Below the bar it does not score zero; it falls through to the word
+    // overlap, which is the honest reading of one word in common.
+    const oneWordAgainstAName = !q.includes(' ') && c.includes(' ');
+    if (!oneWordAgainstAName || carriesHalfTheName(q, c)) {
+        if (c.startsWith(q) || q.startsWith(c)) return 80;
     // Containment needs the shorter side to be distinctive, or a two-letter
     // fragment buried in the middle of a word wins outright at 60 - above
     // MATCH_THRESHOLD. Played: after buying the Lesser Qi-Gathering Manual,
@@ -253,13 +294,29 @@ export function matchScore(query: string, candidate: string): number {
     // Two characters is not a guess: the word-overlap branch immediately below
     // already discards words of two letters or fewer for exactly this reason,
     // so this makes one rule out of two halves that disagreed.
-    if (Math.min(q.length, c.length) > 2 && (c.includes(q) || q.includes(c))) return 60;
+        if (Math.min(q.length, c.length) > 2 && (c.includes(q) || q.includes(c))) return 60;
+    }
 
     const qWords = new Set(q.split(' ').filter(w => w.length > 2));
     const cWords = c.split(' ').filter(w => w.length > 2);
     const shared = cWords.filter(w => qWords.has(w)).length;
     if (shared === 0) return 0;
     return 20 + shared * 10;
+}
+
+/**
+ * Whether one word accounts for half of what a name is made of.
+ *
+ * The name's own significant words are the denominator, not its characters: a
+ * character ratio reads "nine peaks" against the Nine Peaks Ascetic Order as
+ * 42% and refuses a fragment the game itself prints, while reading "origin"
+ * against the Chaos Origin Scripture as 30% and refusing it for the right
+ * reason. Words are what a person types and words are what a name is.
+ */
+function carriesHalfTheName(q: string, c: string): boolean {
+    const words = c.split(' ').filter(w => w.length > 2);
+    if (words.length === 0) return true;
+    return words.filter(w => w === q).length * 2 >= words.length;
 }
 
 /** Lowest score that counts as a match. Below this the target is unresolved. */
@@ -453,7 +510,15 @@ export function resolveCultivator(
     ];
 
     if (match.untreatedInjuries > 0) {
-        facts.push(`Something is wrong with the way they hold themselves. ${match.untreatedInjuries} injuries are open.`);
+        // "1 injuries are open", found in play. A count printed against a fixed
+        // plural is the engine reading its own column out loud, and this is a
+        // line about how somebody is standing.
+        facts.push(
+            'Something is wrong with the way they hold themselves. '
+            + (match.untreatedInjuries === 1
+                ? 'One wound is open.'
+                : `${match.untreatedInjuries} wounds are open.`)
+        );
     }
 
     // ── what the name is worth ──
@@ -868,6 +933,119 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
  * wrongly is worse than resolving a herb wrongly, so people are checked first
  * and the first entity to clear the threshold wins.
  */
+/**
+ * The one subject in the world that never needed resolving, and did not resolve.
+ *
+ * ── WHAT IT COST ────────────────────────────────────────────────────────
+ *
+ * Fifteen examine sentences typed on a fresh run, deterministic reader, no
+ * model. Ten of them came back with the same sentence:
+ *
+ *   > I examine myself
+ *   > I examine my injuries
+ *   > I examine my meridians
+ *   > I examine my body
+ *   > I examine my spirit root
+ *   > I examine my foundation
+ *   > I examine my cultivation
+ *       "You go over Millrun looking for it and it is not the kind of place
+ *        that has one. Either it is somewhere else, or it is nowhere, and
+ *        standing here turning it over is not going to settle which."
+ *
+ * The engine held every one of those facts and printed them, in full and
+ * well, one sentence earlier for "who am I". What it could not do was find
+ * the person asking, because `resolveAnything` searches the roster with the
+ * asker excluded by id, then the houses, then the map, then three catalogs,
+ * and the asker is in none of them.
+ *
+ * Two rules broken at once, and the second is the worse. The refusal names no
+ * route - it does not even repeat the words that failed - and it says the
+ * place does not have one, about a body that is standing in it. A player
+ * reading that learns that the game cannot see them.
+ *
+ * ── WHY THE WHOLE STANDING RATHER THAN THE PART ASKED FOR ────────────────
+ *
+ * "my injuries", "my spirit root" and "my foundation" are three questions and
+ * this returns one answer to all three, which is deliberate: slicing the sheet
+ * by which noun was typed means a player who says "my qi" and gets a line
+ * about qi cannot tell whether the rest exists. The sheet is short, it is
+ * theirs, and a person taking stock of themselves takes stock of all of it.
+ * What is withheld here is what is withheld everywhere - the rule behind each
+ * number - and that is `structure`'s business, not this function's.
+ */
+function resolveTheAskerThemselves(
+    query: string,
+    self: Cultivator
+): ResolvedEntity | null {
+    const text = query.trim().toLowerCase().replace(/^(?:at|on|over)\s+/, '');
+    if (!SELF_AS_A_SUBJECT.test(text)) return null;
+
+    const untreated = self.injuries.filter(injury => !injury.treated).length;
+    const facts = [
+        `${rankName(self.realmOrdinal)}, ${Math.floor(self.age)} years old, standing in `
+        + `${self.location ?? 'nowhere anybody has a name for'}.`,
+        `The root is ${rootName(self.spiritRoot)}. Might ${self.attributes.might}, `
+        + `Insight ${self.attributes.insight}, Fortune ${self.attributes.fortune}, `
+        + `Charm ${self.attributes.charm}.`,
+        self.hp >= self.maxHp
+            ? `Unmarked, ${self.maxHp} of ${self.maxHp} in the body.`
+            : `${self.hp} of ${self.maxHp} left in the body.`,
+        untreated === 0
+            ? 'The meridians are whole.'
+            : untreated === 1
+                ? 'One channel is open and has not closed. It does not close on its own.'
+                : `${untreated} channels are open and none of them has closed. They do not `
+                  + 'close on their own.',
+        `${self.spiritStones} spirit stone${self.spiritStones === 1 ? '' : 's'} in the purse`
+        + `${self.satiety >= 100 ? ', and no hunger to speak of' : `, and the belly at ${self.satiety} of 100`}.`,
+        // The two facts a player is most often looking for when they look at
+        // themselves at all, and the two the sheet is quietest about.
+        self.knownTechniques.length === 0
+            ? 'No method is being practised, which is why nothing has been accumulating.'
+            : `Practising ${self.knownTechniques.length} `
+              + `method${self.knownTechniques.length === 1 ? '' : 's'}.`,
+        self.sectId === null
+            ? 'On no house\'s roll. Nothing is owed and nothing is asked.'
+            : `On a roll${self.sectRank ? `, addressed as ${self.sectRank}` : ', at no rank in it'}.`
+    ];
+
+    return {
+        kind: 'self',
+        id: self.id,
+        name: self.name,
+        facts,
+        structure: [
+            `The asker's own sheet: ${rungAndOrdinal(self.realmOrdinal)}, `
+            + `${self.cultivationProgress} qi-units accumulated, foundation `
+            + `${self.foundationQuality}, ${untreated} untreated of ${self.injuries.length} `
+            + `injur${self.injuries.length === 1 ? 'y' : 'ies'} on record.`
+        ]
+    };
+}
+
+/**
+ * Ways of saying "me".
+ *
+ * A possessive plus almost any noun off the sheet is the asker talking about
+ * themselves, and the list of nouns is short because the sheet is short. Bare
+ * "my sword" and "my pack" are deliberately absent: those are objects, they may
+ * one day resolve to objects, and answering them with a standing read would be
+ * the deflection this codebase keeps finding - a good answer to a question
+ * nobody asked, which is worse than a refusal because it reads like an answer.
+ */
+const SELF_AS_A_SUBJECT = new RegExp(
+    '^(?:the\\s+)?(?:'
+    + 'me|myself|my\\s*self|self'
+    + '|my\\s+(?:'
+        + 'body|condition|state|health|standing|situation|sheet'
+        + '|injur(?:y|ies)|wound|wounds|meridian|meridians|channels?'
+        + '|cultivation|progress|realm|rank|rung|level'
+        + '|spirit\\s*root|root|foundation|dantian'
+        + '|qi|attributes|stats'
+    + ')'
+    + ')$'
+);
+
 export function resolveAnything(
     repos: CultivationRepos,
     query: string,
@@ -875,6 +1053,13 @@ export function resolveAnything(
     scope?: KnowledgeScope
 ): ResolvedEntity | null {
     return (
+        // First, and it can only ever win on a sentence that is about the
+        // asker: `SELF_AS_A_SUBJECT` is anchored at both ends and every branch
+        // is a possessive or a reflexive, so no name in any catalog reaches it.
+        // Ahead of the roster rather than behind it because a cultivator called
+        // "Self" is not a reason for a player to be unable to look at their own
+        // hands.
+        resolveTheAskerThemselves(query, self) ??
         resolveCultivator(repos, query, self.id, scope, self.realmOrdinal) ??
         resolveSect(repos, query, scope, self.sectId) ??
         resolveKnownPlace(query, self, scope) ??

@@ -67,14 +67,17 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import {
+    ASKING_RATHER_THAN_DOING,
     FALLBACK_ACTION,
     TIMED_ACTIONS,
     TIME_CONSUMING_ACTIONS,
     durationAskedFor,
+    theReadThatAnswersIt,
     type ActionName,
     type PlannedAction
 } from './actions.js';
 import { HOW_A_PLAYER_SAYS_EACH_VERB } from './how-a-player-says-each-verb.js';
+import { ASKING_WHAT_IS_POSSIBLE } from './what-is-worth-doing-standing-here.js';
 import {
     MODEL_DIRECTORY,
     embed,
@@ -310,6 +313,38 @@ export async function nearestVerbByMeaning(input: string): Promise<NearestVerb |
 }
 
 /**
+ * SOME OF WHAT REACHES `unclear` GOT THERE ON PURPOSE.
+ *
+ * The safety property above - "it only ever runs on a sentence that reached
+ * `unclear`" - rests on `unclear` meaning THE TABLE DECLINED. For one family of
+ * sentences it does not: `ASKING_WHAT_IS_POSSIBLE` is somebody stepping outside
+ * the fiction to ask what there is to do, `game.ts` answers it at
+ * `case 'unclear'` with the live-affordances read, and the table returning
+ * `unclear` is how that answer is reached rather than a failure to reach one.
+ *
+ * Found by playing, and the shape of it is the whole argument. Nine ways of
+ * asking the single most universal question in text games, all nine matched by
+ * `ASKING_WHAT_IS_POSSIBLE`, and the tier sent six of them somewhere else:
+ *
+ *   "what can I do here"     -> market       43 lines of millet and ferry fares
+ *   "what can be done here"  -> market       the same
+ *   "what can I do"          -> work
+ *   "what now"               -> look
+ *   "what next"              -> destinations
+ *   "what is there to do"    -> look
+ *   "help"                       "what is live for you here", and the reasons
+ *   "what is there to do here"   the same
+ *   "I don't know what to do"    the same
+ *
+ * Three phrasings got the surface written for the question and six got a
+ * plausible-looking answer to a different one, on a difference of two words. A
+ * new player cannot tell those apart from a game that has no such surface.
+ */
+function theTableMeantIt(input: string): boolean {
+    return ASKING_WHAT_IS_POSSIBLE.test(input);
+}
+
+/**
  * The plan for a sentence the table could not read, or the refusal unchanged.
  *
  * `fromTable` is passed in rather than recomputed so this can never disagree
@@ -321,6 +356,8 @@ export async function verbForASentenceThePatternsMissed(
     fromTable: PlannedAction
 ): Promise<PlannedAction> {
     if (fromTable.action !== FALLBACK_ACTION) return fromTable;
+
+    if (theTableMeantIt(input)) return fromTable;
 
     if (!saysSomething(input)) return fromTable;
 
@@ -343,5 +380,34 @@ export async function verbForASentenceThePatternsMissed(
         if (days !== null) plan.days = Math.max(1, Math.round(days));
     }
 
-    return plan;
+    // ── AND THE MOOD IS DECIDED ON THE SENTENCE, NOT ON THE TABLE ────────
+    //
+    // A QUESTION ABOUT AN ACTION IS NOT THE ACTION. `readTheSentence` in
+    // `actions.ts` states that as a post-pass over the whole sentence and says
+    // why it is a post-pass: "a verb added tomorrow is covered without its
+    // author having to know this rule exists". This tier chooses a verb AFTER
+    // that pass has run, so it was the one verb in the game the rule did not
+    // cover - and it reopened, one door over, exactly the defect
+    // `asking-is-not-doing.test.ts` was written about.
+    //
+    // Measured on a fresh nobody, deterministic reader, no model:
+    //
+    //   "check my injuries"           -> treat         days and stones, spent
+    //   "is there work here"          -> work          days, spent
+    //   "how do I leave"              -> move          a journey, begun
+    //   "can I leave"                 -> move          the same
+    //   "should I leave"              -> move          the same
+    //   "what happens if I leave"     -> move          the same
+    //   "what would a breakthrough take" -> breakthrough   a roll that cripples
+    //   "what would it take to heal"  -> sect
+    //
+    // The last two are the sharpest. A breakthrough can end a run, and the
+    // player asked what one would take; the table refuses that phrasing by
+    // name and the tier performed it. Running the tier's guess through the same
+    // post-pass makes the rule complete again, and costs the phrasings that
+    // command a verb nothing at all - `ASKING_RATHER_THAN_DOING` requires the
+    // first person beside a modal, or an explicit "how do I".
+    return ASKING_RATHER_THAN_DOING.test(input.toLowerCase())
+        ? theReadThatAnswersIt(plan)
+        : plan;
 }

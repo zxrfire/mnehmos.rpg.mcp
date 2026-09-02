@@ -321,8 +321,28 @@ export function regardFor(
  * the asker.
  */
 function fillReaction(template: string, gap: number, apparent: number): string {
+    const magnitude = Math.abs(gap);
     return template
-        .replace(/\{gap\}/g, String(Math.abs(gap)))
+        // ── THE NOUN GOES WITH THE NUMBER ───────────────────────────────
+        //
+        // "Pitched 1 rungs from where they stand" - found in play, on a hunt.
+        // `{gap} rungs` is one phrase and filling the number without the noun
+        // reads as the engine's arithmetic showing through the prose, which is
+        // the one thing a template like this exists to prevent.
+        //
+        // Fixed at the fill rather than by splitting every catalog line into a
+        // singular and a plural form: the templates say what the band means and
+        // English disagreeing with them in exactly one case is not a fact about
+        // the bands. `ranks` is taken as well because the encounter catalog
+        // words the same slot that way.
+        .replace(
+            /\{gap\}(\s+)(rungs|ranks)\b/g,
+            (_whole, space: string, noun: string) =>
+                magnitude === 1
+                    ? `one${space}${noun.slice(0, -1)}`
+                    : `${magnitude}${space}${noun}`
+        )
+        .replace(/\{gap\}/g, String(magnitude))
         .replace(/\{rank\}/g, rankName(clampOrdinal(apparent)));
 }
 
