@@ -1228,6 +1228,42 @@ discarding, `git diff` the file and confirm every hunk you are about to lose is 
 it is not, revert your hunks specifically or edit them back out by hand, and commit
 whatever you rescued immediately so it cannot be lost a second time.
 
+### `--ff-only` refusing is usually a question about the branch, not about your commit
+
+**Check what the tree is standing on before you believe a merge error.** This cost two hours and
+nearly lost 670 finished lines.
+
+An agent committed its work, ran `git merge --ff-only` in the main worktree, and was refused. It
+concluded that a dirty `src/web/actions.ts` was blocking it, reported the work as blocked, and
+stopped. Meanwhile I told two other agents the work had landed, and one of them built against a
+file that was not in the tree.
+
+**Every part of that was wrong:**
+
+- **`feat/xianxia-cultivation` was checked out in no worktree at all**, and the main tree was
+  sitting on a different branch that was *ahead* of it. The merge was resolving against that
+  branch and correctly refusing, because the commit did not contain it. **The error was about
+  the wrong branch, and it was accurate.**
+- **The dirty file never mattered.** A dirty file blocks a merge that has to *update a working
+  tree*. Nothing about this one did.
+- **The commit was reachable the whole time.** `git log <hash>` showed it; `git branch --contains`
+  showed nothing. It was not lost, it was unreferenced.
+
+What to do instead:
+
+1. **`git rev-parse --abbrev-ref HEAD` before you trust any merge error.** The tree may not be on
+   the branch you think, especially in a repo where several agents create branches.
+2. **Rebase onto the branch you mean by name**, not onto whatever the tree happens to be on.
+   `git rebase feat/xianxia-cultivation`, not `git rebase HEAD`.
+3. **If the target branch is checked out nowhere, `git branch -f` is safe** and touches no working
+   tree, so nobody's dirty files are at risk. That is the whole reason to check.
+4. **Verify a landing with `git branch --contains <hash>`, and never on report.** Two pieces of
+   work were reported as landed tonight and were not. One of them I then repeated to the owner.
+
+**The general shape, which is the same failure as the entry below in a different coat: a commit
+that exists and is on no branch is invisible to everyone, including the agent that wrote it.**
+`git log` will show it happily. Reachability is the thing to check, not existence.
+
 ### A file you never committed is invisible to everyone else
 
 Untracked files in your working tree are not in the branch. An agent found
