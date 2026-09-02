@@ -165,6 +165,32 @@ the engine's price for a carried rated object, and **nothing in `src/` passes it
 anybody.** `grant_item` says so in its own response rather than letting an operator find out
 by losing a fight they should have won.
 
+### And a fifth, found by the design owner, which read exactly like the surface lying
+
+`ADMIN grant_item ordinal=46 kind=artifact` answered **GRANTED**, with the catalog id, and then
+`what am I carrying`, `what am I holding` and `inventory` all answered *"Nothing in the pouch
+at all."*
+
+**The grant was real.** `addToPouch` wrote the row and it is still there. What could not see it
+is the READ: the `inventory` verb goes to `alchemy_manage.inventory`, an alchemy tool, and
+`listPouch` filters to pills and herbs **by design** - a rated object is a different kind of
+thing and `listCarriedArtifacts` is its accessor. That accessor had exactly one caller,
+`carriedArtifact`, which prices a fight nothing has ever asked it to price.
+
+So the object was in the database, invisible to every sentence a player can type, and worth
+nothing in a fight. **A write nobody can read is indistinguishable from a write that did not
+happen**, which is why this belongs on this page rather than in a changelog: it is the failure
+`docs/admin.md` opens by forbidding, arrived at from the other side. The surface was telling the
+truth and there was no way to check it.
+
+Two things follow, and the second is the useful one:
+
+- **The read is what needed fixing, not the grant** - `inventory` lists what is carried
+  alongside the medicine, out of `listCarriedArtifacts`.
+- **The 46 departure measurement above has to be re-taken.** "What actually happens: it stays"
+  was recorded against a grant nobody could observe. Whether the object stays, and whether it
+  takes its holder with it, is an open question again.
+
 ---
 
 ## It sets up preconditions, and preconditions must be possible
