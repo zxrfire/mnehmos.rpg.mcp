@@ -22,6 +22,21 @@ import {
 // of ProviderName keep working.
 export type { ProviderName } from './config.js';
 
+/**
+ * An env var read as a boolean, or undefined when it was never set.
+ *
+ * Undefined is meaningful here rather than falsy: an absent `OLLAMA_THINK`
+ * must leave the flag off the request body entirely, and only an explicit
+ * value is passed on.
+ */
+function envFlag(raw: string | undefined): boolean | undefined {
+    if (raw === undefined) return undefined;
+    const v = raw.trim().toLowerCase();
+    if (v === 'true' || v === '1' || v === 'yes') return true;
+    if (v === 'false' || v === '0' || v === 'no') return false;
+    return undefined;
+}
+
 export interface ProviderFactoryConfig {
     /** Anthropic API key. Read from ANTHROPIC_API_KEY if omitted. */
     anthropicApiKey?: string;
@@ -32,6 +47,13 @@ export interface ProviderFactoryConfig {
     ollamaBaseUrl?: string;
     /** Default local model. Read from OLLAMA_MODEL if omitted. */
     ollamaModel?: string;
+    /**
+     * Whether the local model reasons before answering. Read from OLLAMA_THINK
+     * if omitted; unset means the flag is not sent at all. Set OLLAMA_THINK to
+     * "false" on a thinking-tuned model, or its reasoning eats the completion
+     * budget and the narration comes back empty. See `OllamaProviderConfig`.
+     */
+    ollamaThink?: boolean;
     /**
      * Force Ollama on/off. Ollama has no API key to gate on, so absent an
      * explicit value it is enabled whenever the operator has configured it -
@@ -85,6 +107,7 @@ export class ProviderFactory {
             this.providers.set('ollama', new OllamaProvider({
                 baseUrl: this.config.ollamaBaseUrl ?? process.env.OLLAMA_BASE_URL,
                 defaultModel: this.config.ollamaModel ?? process.env.OLLAMA_MODEL,
+                think: this.config.ollamaThink ?? envFlag(process.env.OLLAMA_THINK),
                 fetchImpl: this.config.fetchImpl
             }));
         }
