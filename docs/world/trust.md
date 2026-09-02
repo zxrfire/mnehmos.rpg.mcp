@@ -244,6 +244,11 @@ on the eve of an assault, which is exactly the kind of thing this world should b
 
 **Names are not the definitive check and probably not even the main one. The techniques are.**
 
+This is [the spectrum's](#the-spectrum-of-signals) last row read at a larger scale. There,
+*demonstration* is what settles a **person's** standing because cultivation cannot be faked;
+here the same principle settles a **house's**, because a house's arts are a thing bodies do
+rather than a thing anybody holds. **One rule, asked of an individual and of an institution.**
+
 A house's arts are the closest thing it has to an identity, and **a technique cannot be worn,
 bought, inherited by accident or carried off a corpse — it is something a body does.** Watching
 somebody cultivate is therefore the one reading that goes straight to the thing in question,
