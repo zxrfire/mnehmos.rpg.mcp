@@ -68,6 +68,7 @@ import {
     stanceForStage,
     type KnowingStage
 } from '../engine/social/discovery.js';
+import { theOneIdAPersonIsKnownBy } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { localGeographyFor } from './lore.js';
 
 /**
@@ -143,9 +144,28 @@ export function loosePlaceKey(name: string): string {
  *
  * One convention, so a query for "has this holder heard of the Lantern Hall"
  * is a single indexed lookup on `(holder_id, claim_key)` rather than a scan.
+ *
+ * ── Two of the four kinds are not simply their own id ─────────────────────
+ * A PLACE has no row to point at, so it is keyed off its name by `placeKey`.
+ *
+ * And a PERSON out of the content catalogs has two ids - the catalog's, which
+ * is what `lore.ts` and the hearsay layer speak of them by, and the world
+ * row's, which is what every presence read asks about - so both are folded
+ * onto the one the catalog holds.
+ * [`a-catalog-person-and-their-world-row.ts`](../engine/world/a-catalog-person-and-their-world-row.ts)
+ * carries that argument in full, including why the fold is a catalog lookup
+ * and never a prefix strip.
+ *
+ * The fold is applied HERE rather than at the callers deliberately. This table
+ * has a dozen readers and half a dozen writers across three packages, they
+ * disagreed about which of a person's two ids to use, and the two call sites
+ * that had noticed were each patching it locally. One place to be right is the
+ * whole point of the module.
  */
 export function existenceClaimKey(kind: KnownEntityKind, id: string): string {
-    return `exists:${kind}:${kind === 'place' ? placeKey(id) : id}`;
+    if (kind === 'place') return `exists:place:${placeKey(id)}`;
+    if (kind === 'cultivator') return `exists:cultivator:${theOneIdAPersonIsKnownBy(id)}`;
+    return `exists:${kind}:${id}`;
 }
 
 export interface AwarenessInput {

@@ -1,5 +1,7 @@
 import type Database from 'better-sqlite3';
 
+import { foldPersonKnowledgeKeys } from './folding-a-persons-two-knowledge-keys-into-one.js';
+
 /**
  * Social memory persistence: relationships, obligations, knowledge, secrets.
  *
@@ -377,4 +379,9 @@ export function migrateSocial(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_secret_events_secret ON secret_events(secret_id, on_day);
     CREATE INDEX IF NOT EXISTS idx_secret_events_holder ON secret_events(holder_id, on_day);
   `);
+
+  // A data migration rather than a shape one, and the only one in this file.
+  // A catalog person has two ids and this table was filed under both; the
+  // module says why the rows have to be rewritten rather than left to rot.
+  foldPersonKnowledgeKeys(db);
 }

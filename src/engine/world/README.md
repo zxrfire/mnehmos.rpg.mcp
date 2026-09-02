@@ -1775,6 +1775,13 @@ recognising-whose-art-you-just-watched.ts
                  KnowingStage for whether the reader has a reference for it.
                  Answers where an art was LEARNED and never whom anybody serves
 npc-state.ts     NPCs as small durable records; goals outlive their holder
+a-catalog-person-and-their-world-row.ts
+                 the one id a catalog person is known by. `seedNamedFigures`
+                 mints their world row as `npc-` plus their catalog id, and
+                 the knowledge layer was keying the same human being under
+                 both; this owns the mapping in both directions so the two
+                 cannot drift. The reverse is a catalog LOOKUP and never a
+                 prefix strip - `npc-95` is a procedural NPC
 memory.ts        durable memories, search, and the LLM-driven compression write path
 world-state.ts   the authoritative store; plain serialisable data, pure mutations
 time.ts          advanceTime: what fell due, what was running, what was missed
