@@ -2567,6 +2567,22 @@ export function factsForRequest(
                     + 'decided something about you, and they are going to act on it.'
                 );
                 break;
+            // ── THEY NAMED TERMS ─────────────────────────────────────────
+            //
+            // Not a no. `an-attempt-to-move-somebody.ts`'s fifth outcome fires
+            // only where the person being asked has an open want the asker is
+            // in a position to reach, and somebody in that position does not
+            // close a door - they say what they would take. So this deliberately
+            // does NOT run `whatWouldMoveThem`, which is the advice given to
+            // somebody who was refused: the advice here is the terms, and the
+            // terms come from the caller that knows what was being traded.
+            case 'countered':
+                lines.push(
+                    `${subject} does not agree and does not say no. There is something they `
+                    + 'want, and what you get back is what it would take rather than a door '
+                    + `closing. ${inTheirOwnGrain(openHandedness)}`.trimEnd()
+                );
+                break;
             case 'refused':
                 lines.push(
                     `${subject} says no, and it stays between the two of you. `
