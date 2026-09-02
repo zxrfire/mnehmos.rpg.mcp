@@ -160,6 +160,22 @@ import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
 import {
+    postingFor,
+    reasonsOpenTo,
+    resolveSending,
+    newsOfASending,
+    isImpossibleTier,
+    tierFor,
+    whoTheHouseCanSend,
+    type Candidate,
+    type HouseAsItStands
+} from './who-goes-out-for-a-house-and-what-comes-back.js';
+import {
+    adjustCountedHolding,
+    countedHolding,
+    requireConveyance
+} from '../../data/cultivation/what-a-house-moves-its-people-on.js';
+import {
     recordGroundDraw,
     whatThePeopleHereTake
 } from './what-a-place-still-has-in-the-ground.js';
@@ -456,6 +472,11 @@ export function applyPressure(
         // every one writes a row the world already had the state for.
         applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
+        // And then the house spends some of what it just counted on putting
+        // people on the road. AFTER the economy, so a house buys the carriage
+        // out of the purse this year filled, and after recruitment, so
+        // somebody admitted this year can be on the party.
+        applySendings(state, year, withinSpan(year * 365 + 175, fromDay, toDay));
         born += applyDemography(state, year, withinSpan(year * 365 + 180, fromDay, toDay), rng).length;
         // The longest project in the world, on its own clock. It will almost
         // never fire in five hundred years, and that is the point of it.
@@ -2044,6 +2065,228 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
  * `faction_fell` template then binds to whoever the arithmetic has already
  * ruined, rather than picking a victim.
  */
+/**
+ * How often a house puts a party on the road, per year.
+ *
+ * A rate on the INSTITUTION rather than on the event budget: a sending is
+ * ordinary business, and putting it on the fifty-five-events-a-century table
+ * would have made it rare for the wrong reason. What this counts is a sending
+ * the world RESOLVES - a party assembled, sent, and either back or not - and
+ * not every errand anybody runs, which is why it is one every five years for a
+ * house rather than several a year.
+ *
+ * MEASURED AGAINST THE PYRAMID, WHICH IS WHAT SETS IT. Sendings cost people,
+ * and `whoTheHouseCanSend` sends the strongest a house can spare, so the rate
+ * is the term that decides how hard this pass leans on the top of the ladder.
+ * Pooled over five seeds at five centuries:
+ *
+ *   without this pass    2363 / 248 /  88
+ *   0.55 a house-year    2427 / 165 /  53
+ *   0.35                 2389 / 203 /  72
+ *   0.2                  2366 / 231 /  84
+ *
+ * A wiring change is not allowed to restructure the population. At 0.2 the
+ * world loses people on the road - which it could not before - and the shape
+ * survives it.
+ */
+const SENDINGS_PER_HOUSE_YEAR = 0.2;
+
+/**
+ * What a house pays for a carriage, and the rung at which one is worth having.
+ *
+ * A cheap decision deliberately: the interesting conveyance is the tracked one
+ * a house BUILDS, and a drawn carriage is a line on the ledger that a solvent
+ * institution simply has. What it buys is the only thing a conveyance ever
+ * buys - the term of a posting, through `daysByConveyance` - so a house with
+ * one gets its people back sooner and can send again.
+ */
+const A_CARRIAGE_COSTS = 8_000;
+
+/**
+ * How heavy a finished sending has to be before anybody repeats it.
+ *
+ * `magnitudeOf` reads 0.2 for a posting at or below the party's own rung and
+ * climbs with the gap, so this keeps the errands a house does every year off
+ * the chronicle and lets the hard ones on. Nothing that went WRONG is filtered
+ * by it: a party that did not come back is news whatever it was sent at.
+ */
+const WORTH_REPEATING = 0.35;
+
+/**
+ * Houses put people on the road, and what comes back is news.
+ *
+ * THE WHOLE OF `who-goes-out-for-a-house-and-what-comes-back.ts` HAD NO
+ * CALLER. `resolveSending`, `newsOfASending`, `tierFor`, `tierNameFor`,
+ * `whoTheHouseCanSend`, `magnitudeOf` and `postingFor` were zero-reference
+ * exports, so a module that decides who a house can spare, what the gap costs,
+ * who does not come back and what the ledger says about it never ran - and
+ * nothing a house did ever became a fact anybody could repeat.
+ *
+ * Every decision belongs to that module. What happens here is reading a
+ * `FactionRecord` into the shape it asks for, handing over the roster, and
+ * writing down what it says: the fact through `appendWorldFact`, which is what
+ * `circulating`, `retell`, the digest and `whatIsSaidAbout` all already read,
+ * and the people who did not come back through `markMissing`.
+ *
+ * ── Missing, not dead ────────────────────────────────────────────────────
+ *
+ * A party that did not come back is a party nobody has heard from. `absence`
+ * already owns what happens next - how long before anybody says it out loud,
+ * who inherits, whether they turn up - and declaring them dead here would take
+ * that decision away from the layer that has it.
+ *
+ * ── The draw ─────────────────────────────────────────────────────────────
+ *
+ * One stream, keyed `sendings`, which no other pass uses. A world in which no
+ * house sends anybody draws exactly what it drew before this pass existed.
+ */
+function applySendings(state: WorldState, year: number, day: number): number {
+    const rng = forStream(state.seed, 'sendings', year);
+    const roster = new Map<string, Candidate[]>();
+    const at = new Map<string, number>();
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        at.set(npc.id, i);
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        // The player's mirror row is never spent by the world. Sending the
+        // character on an errand they did not take is the engine taking a
+        // decision that is theirs.
+        if (!isTheWorldsToMove(npc)) continue;
+        const bucket = roster.get(npc.factionId);
+        const row = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
+        if (bucket) bucket.push(row); else roster.set(npc.factionId, [row]);
+    }
+
+    let sent = 0;
+    for (const faction of state.factions) {
+        if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
+        const party0 = roster.get(faction.id);
+        if (!party0 || party0.length === 0) continue;
+
+        // A solvent house keeps something in the yard. The writer
+        // `adjustCountedHolding` never had, and the only thing it changes is
+        // how long a posting takes.
+        const carriage = requireConveyance('conv-carriage-earth');
+        if (
+            countedHolding(faction.resources, carriage.id) === 0
+            && (faction.resources.spirit_stones ?? 0) >= A_CARRIAGE_COSTS
+        ) {
+            faction.resources = adjustCountedHolding(faction.resources, carriage.id, 1);
+            faction.resources.spirit_stones =
+                (faction.resources.spirit_stones ?? 0) - A_CARRIAGE_COSTS;
+        }
+
+        if (!rng.chance(SENDINGS_PER_HOUSE_YEAR)) continue;
+
+        const house: HouseAsItStands = {
+            id: faction.id,
+            name: faction.name,
+            holdsGround: faction.controlledLocationIds.length > 0,
+            standing: faction.standing,
+            // Read off what the world already holds rather than a new store:
+            // an unopened site anybody could go and dig.
+            hasAFind: state.locations.some(
+                l => l.kind === 'ruin' && !l.sealed && l.controllingFactionId === faction.id
+            )
+        };
+        const reasons = reasonsOpenTo(house);
+        if (reasons.length === 0) continue;
+        const reason = weighted(rng, reasons, r => r.weight);
+        if (!reason) continue;
+
+        // What the errand is pitched at. AT OR BELOW THE HOUSE'S OWN BEST,
+        // mostly, and that skew is the whole of `summonable`'s ruling applied
+        // to a pitch instead of to an offer: a house sends people at work it
+        // expects them to come back from. The draw still reaches a rung above
+        // them now and again, which is where a sending becomes a story.
+        //
+        // Measured with the draw centred instead - `best + rng.int(-3, 6)`,
+        // then `-3, 3` - the pyramid's top third fell from 92 to 53 over five
+        // pooled seeds, because half of every house's errands were pitched
+        // above its own people and `whoTheHouseCanSend` sends the strongest.
+        // A wiring change is not allowed to restructure the population, and
+        // this is the term that decides whether it does.
+        const best = party0.reduce((n, c) => Math.max(n, c.ordinal), 0);
+        const posting = postingFor({
+            reason,
+            house,
+            pitchOrdinal: best + rng.int(-5, 1),
+            locationId: faction.seatLocationId,
+            // What they went on. Null is walking, and walking is what the
+            // reason's own term already assumes.
+            conveyance: countedHolding(faction.resources, carriage.id) > 0 ? carriage : null
+        });
+        const party = whoTheHouseCanSend(posting, party0);
+        if (party.length === 0) continue;
+
+        // A HOUSE DOES NOT SEND PEOPLE AT SOMETHING IT EXPECTS TO LOSE THEM
+        // TO. `duties.ts` has said so since it was written and the sending
+        // module names the same two bands - the difference between the two
+        // files is the whole ruling: the house declines to send, and a board
+        // may still carry one, and the world declines to stop somebody taking
+        // it off the wall. This is the house's half, and it is the module's
+        // own predicate rather than a threshold invented here.
+        //
+        // Measured without it, at a pitch drawn up to six rungs above the
+        // party's best: 3,396 people went missing over five centuries against
+        // a standing population under six hundred. That is not a world with
+        // dangerous errands in it, it is a world whose institutions feed
+        // themselves to their own noticeboards.
+        if (isImpossibleTier(tierFor(posting, party).band)) continue;
+
+        const sending = resolveSending({
+            posting,
+            party,
+            departsOnDay: day,
+            rng,
+            location: faction.seatLocationId
+                ? state.locations.find(l => l.id === faction.seatLocationId) ?? null
+                : null
+        });
+        sent++;
+
+        for (const missing of sending.lost) {
+            const index = at.get(missing.id);
+            if (index === undefined) continue;
+            state.npcs[index] = markMissing(
+                state.npcs[index],
+                sending.returnsOnDay,
+                `Went out for ${faction.name} on ${reason.name.toLowerCase()} and did not come back.`
+            );
+        }
+
+        // ── AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS ────────────
+        //
+        // `magnitudeOf`'s own sentence: an errand three rungs below the party
+        // is one nobody mentions twice. A house has somebody out most of the
+        // time and the ledger is not a newsfeed - measured with every routine
+        // errand written, sendings were 7,275 of 15,519 facts in the world,
+        // which is a chronicle that is half other people's paperwork.
+        //
+        // What is kept is what the module already decides is heavy, plus
+        // anything that did not go as stated, because a party that did not
+        // come back is news at any tier.
+        const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
+            appendWorldFact(state, news);
+        }
+    }
+    return sent;
+}
+
+/** A weighted draw over a small list. Seeded, so a world replays identically. */
+function weighted<T>(rng: CultivationRNG, rows: readonly T[], weightOf: (row: T) => number): T | null {
+    if (rows.length === 0) return null;
+    const total = rows.reduce((sum, row) => sum + Math.max(0, weightOf(row)), 0);
+    if (total <= 0) return rows[rng.int(0, rows.length - 1)];
+    let cursor = rng.next() * total;
+    for (const row of rows) {
+        cursor -= Math.max(0, weightOf(row));
+        if (cursor < 0) return row;
+    }
+    return rows[rows.length - 1];
+}
+
 function applyFactionEconomy(state: WorldState): void {
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;

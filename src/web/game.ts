@@ -662,6 +662,13 @@ import {
 import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
+// The board's own word for a tier. `who-goes-out-for-a-house-and-what-comes-back.ts`
+// had zero references anywhere in `src/`, so a board printed no tier at all -
+// and the tier is the first thing a person reads off a notice.
+import {
+    isImpossibleTier,
+    tierNameFor
+} from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { factsForAttempt, factsForRequest, factsForWeighingARequest } from './facts.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import {
@@ -3165,20 +3172,33 @@ export class GameService {
             }
         }
 
-        // Nothing ran at all - every step was held for the question. The turn
-        // still has to be a turn, so it is a free read that asks.
-        if (done.length === 0) {
-            done.push(this.freeAction(run, plan.action.action, factsForRefusal(
-                'Both of those take time.',
-                whatTheQuestionAsks({
-                    runId: run.id, cultivatorId: cultivator.id,
-                    raisedOnTurn: run.turn, acts: budget.askAbout
-                }),
-                whatTheQuestionAsksStructurally({
-                    runId: run.id, cultivatorId: cultivator.id,
-                    raisedOnTurn: run.turn, acts: budget.askAbout
-                })
-            )));
+        // ── TWO COSTLY ACTS: ASK, AND SAY IT EXACTLY ONCE ────────────
+        //
+        // Raised AFTER the free reads have run, so the question can name
+        // whoever they resolved. The turn still has to BE a turn, so where
+        // nothing ran at all the question is itself the free read - and in that
+        // case the wording is already the whole of `facts.prose`, so appending
+        // it again is what printed the same ruling twice on a played turn.
+        const fork: WhichComesFirst | null = budget.askAbout.length > 0
+            ? {
+                runId: run.id,
+                cultivatorId: cultivator.id,
+                raisedOnTurn: this.currentRun().run.turn,
+                acts: budget.askAbout
+            }
+            : null;
+
+        let alreadySaid = false;
+        if (fork !== null) {
+            this.whichComesFirst = fork;
+            if (done.length === 0) {
+                done.push(this.freeAction(run, plan.action.action, factsForRefusal(
+                    'Both of those take time.',
+                    whatTheQuestionAsks(fork),
+                    whatTheQuestionAsksStructurally(fork)
+                )));
+                alreadySaid = true;
+            }
         }
 
         const folded: Execution = foldTheCallsIntoOneTurn(done);
@@ -3188,23 +3208,25 @@ export class GameService {
             folded.calls.push(
                 theRowThatSaysWhereItStopped(stoppedOn, notReached)
             );
-        } else if (budget.askAbout.length > 0) {
-            // Two costly acts, and the turn asks rather than choosing for the
-            // player. Raised AFTER the free reads have run, so the question can
-            // name whoever they resolved.
-            const after = this.currentRun();
-            const fork: WhichComesFirst = {
-                runId: after.run.id,
-                cultivatorId: after.cultivator.id,
-                raisedOnTurn: after.run.turn,
-                acts: budget.askAbout
-            };
-            this.whichComesFirst = fork;
-            if (done.length > 0 && done[done.length - 1]!.outcome !== 'refused') {
+        } else if (fork !== null) {
+            if (!alreadySaid) {
                 sayThisWhateverTheNarratorDoes(folded.facts, whatTheQuestionAsks(fork));
+                folded.facts.structure.push(whatTheQuestionAsksStructurally(fork));
             }
-            folded.facts.structure.push(whatTheQuestionAsksStructurally(fork));
             folded.calls.push(theRowThatAsksWhichFirst(fork));
+        }
+
+        // One clause the reader read two ways. The losing reading is shown
+        // rather than swallowed - AGENTS.md asks for a judgement call to be
+        // visible - and it goes to the engine channel only, because it is a
+        // fact about the reading rather than about the world.
+        for (const { taken, alsoRead } of budget.secondReadings) {
+            const line = `One clause, two readings: it was taken as ${taken.action.action}`
+                + `${taken.action.target ? `(${taken.action.target})` : '()'}`
+                + ` and could also have been read as ${alsoRead.action.action}. `
+                + 'One clause is one act, so this was not counted as a second thing to do.';
+            folded.facts.structure.push(line);
+            folded.calls.push({ name: 'engine.step', action: taken.action.action, summary: line, ok: true });
         }
 
         for (const over of budget.overTheBound) {
@@ -16474,8 +16496,17 @@ ${fit.line}`;
         const board = sectBoardFor(deps, cultivator);
         const wanted = (target ?? '').trim();
 
+        // ── WHAT THE BOARD CALLS IT ──────────────────────────────────────
+        //
+        // The tier, first, because it is the first thing a person reads off a
+        // notice and the board had never printed one. `tierNameFor` is the
+        // house's own word for the band, and the band is `dutyTermsFor`'s -
+        // already computed, already carried on `terms.regard`, and rendered
+        // here rather than paraphrased. There is no second difficulty scale
+        // and there must not be: the tier IS the regard band.
         const describe = (offer: DutyCandidate): string =>
-            `${offer.entry.name}: ${humanDays(offer.terms.days)}, `
+            `${offer.entry.name} - ${tierNameFor(offer.terms.regard.band).toLowerCase()} at `
+            + `${rankName(offer.terms.pitchOrdinal)}: ${humanDays(offer.terms.days)}, `
             + `${offer.terms.contribution} contribution and ${offer.terms.stones} spirit stone`
             + `${offer.terms.stones === 1 ? '' : 's'} on completion`
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
@@ -16607,6 +16638,68 @@ ${fit.line}`;
                     + `and ${settled.stones} spirit stone(s) paid, both off the duty's own terms.`,
                 ok: true
             });
+
+            // ── AND IT BECOMES SOMETHING PEOPLE REPEAT ───────────────────
+            //
+            // Played and reported: two untreated wounds given to somebody in
+            // the square, then `what news is there` and `what are people
+            // saying about me` returned the identical unrelated line, before
+            // and after. Nothing a player did ever reached the ledger the
+            // whole propagation layer reads - `circulating`, `retell`, the
+            // digest and `whatIsSaidAbout` all read `state.history.facts` -
+            // so the board was a wage and never a reputation.
+            //
+            // The weight is the TIER's and is not decided twice. A commission
+            // pitched where the cultivator already stands is work; one pitched
+            // past what a house would send anybody at is what somebody in a
+            // courtyard is still repeating. That is `Regard`'s own band read
+            // into the ledger's own vocabulary, joined rather than invented,
+            // and it is the same band the board printed at the top of the
+            // notice.
+            const band = chosen.terms.regard.band;
+            const said = this.atHand
+                ? aDeedEntersTheWorld(this.atHand, {
+                    kind: 'opportunity',
+                    weight: isImpossibleTier(band) ? 'grave'
+                        : band === 'stretch' ? 'serious' : 'slight',
+                    day: Math.floor(this.atHand.currentDay),
+                    locationId: this.worldPlaceOf(cultivator),
+                    place: placeName(cultivator),
+                    actors: [{ id: cultivator.id, name: cultivator.name, role: 'finished it' }],
+                    factionIds: board.membership ? [board.membership.factionId] : [],
+                    summary:
+                        `${cultivator.name} took ${chosen.entry.name} off the board at `
+                        + `${placeName(cultivator)} - ${tierNameFor(band).toLowerCase()} at `
+                        + `${rankName(chosen.terms.pitchOrdinal)} - and finished it in `
+                        + `${humanDays(duty.days)}.`,
+                    unattributed:
+                        'Something that had been on the wall a while is not on the wall any '
+                        + 'more, and whoever took it down is not saying much about it.',
+                    data: {
+                        duty: chosen.entry.id,
+                        tier: band,
+                        pitchOrdinal: chosen.terms.pitchOrdinal,
+                        days: duty.days
+                    }
+                })
+                : null;
+            if (said) {
+                this.worldDirty = true;
+                execution.facts.structure.push(
+                    `world.aDeedEntersTheWorld: ${said.fact.id} (opportunity, ${said.weight}, `
+                    + `magnitude ${said.fact.magnitude.toFixed(2)}, ${said.fact.visibility}) at `
+                    + `the ${band} tier, written where circulating, retell and the digest read it.`
+                );
+                execution.calls.push({
+                    name: 'world.aDeedEntersTheWorld',
+                    action: 'sect',
+                    summary:
+                        `${said.fact.id} written on day ${said.fact.day}. `
+                        + `${said.fact.witnessIds.length} witness id(s). What a player does off `
+                        + 'the board is now a thing the world contains.',
+                    ok: true
+                });
+            }
         } else {
             const walked = refuseDuty({ ...settlement, outcome: 'failed' });
             // The other half of the same fact, and the one that lasts: a duty
@@ -19715,22 +19808,56 @@ ${done.lines.join(' ')}`;
         // travel, on the most expensive verb in the game: a default child is
         // sixteen years, which is longer than any other single turn a player
         // can take.
+        //
+        // ── AND THE SAME PARAGRAPH WAS A DUMP IN TWO OTHER WAYS ──────────
+        //
+        // Both found in the same played turn, and both are this composer
+        // shipping a channel that was never meant for a reader:
+        //
+        //   "12 years, which is about 12 in a hundred of a whole life at
+        //    6fd9935f-ee10-4184-ad6b-2dc0d0f320d4's rung and about 12 in a
+        //    hundred at npc-100's."
+        //
+        // `whatAChildCosts` is a pure engine function with no names in front
+        // of it, so its `note` says the two ids because ids are all it has.
+        // That note belongs on the structure channel, where an id is exactly
+        // the right word, and the player gets the same arithmetic said with
+        // the two people's names in it - which this layer holds and the
+        // engine does not.
+        //
+        //   "1.1 years was asked for; 30 days passed before something returned
+        //    control. The engine stopped the skip: starvation begun. Net
+        //    change: 0 progress, 0 ranks, 0 HP, 0 spirit stones..."
+        //
+        // That is `spent.facts.LINES` - the engine channel - joined into the
+        // player's prose, because `factsForToolResult` composes its prose out
+        // of whatever it is handed. The span already has a written account of
+        // itself in `spent.facts.prose`, and that is what a reader gets;
+        // `lines` still carries the same facts for a narrator that wants them.
         const theSpan =
             `${years} year${years === 1 ? '' : 's'} of your own life went into it, and they are `
             + 'years nobody was cultivating.';
-        const lines = [
-            `${theSpan} ${cost.note}`,
+        const shares =
+            `That is ${GameService.shareOfALife(cost.toEachOfThem[0].ofAWholeLifeAtTheirRung)} of a `
+            + `whole life at ${cultivator.name}'s rung, and `
+            + `${GameService.shareOfALife(cost.toEachOfThem[1].ofAWholeLifeAtTheirRung)} at `
+            + `${party.name}'s.`;
+
+        const said = [
+            `${theSpan} ${shares}`,
             child.note,
             'Nothing about them is settled by it. They stand at no rung, on nobody\'s ladder, '
-            + 'and what they become is what somebody spends on them.',
-            ...spent.facts.lines
+            + 'and what they become is what somebody spends on them.'
         ];
 
         const facts = factsForToolResult(
-            `A child, with ${party.name}.`, lines
+            `A child, with ${party.name}.`,
+            [...said, ...spent.facts.lines],
+            [...said, spent.facts.prose].join('\n\n')
         );
         facts.required = [theSpan, ...(spent.facts.required ?? [])];
         facts.structure.push(
+            cost.note,
             `Years: ${years}. To ${cultivator.name}: `
             + `${cost.toEachOfThem[0].ofAWholeLifeAtTheirRung.toFixed(4)} of a whole life at `
             + `rung ${mine.reachesTo}. To ${party.name}: `
@@ -19756,6 +19883,21 @@ ${done.lines.join(' ')}`;
                 ...spent.calls
             ]
         };
+    }
+
+    /**
+     * A fraction of a lifespan, as somebody would say it out loud.
+     *
+     * The same bands `whatAChildCosts` renders its own note with, said here so
+     * the player's sentence can carry the two people's NAMES - which this layer
+     * holds and the pure engine function does not, which is why its note reads
+     * "at 6fd9935f-ee10-4184-ad6b-2dc0d0f320d4's rung".
+     */
+    private static shareOfALife(fraction: number): string {
+        if (fraction <= 0) return 'none';
+        if (fraction >= 1) return 'more than the whole';
+        const pct = fraction * 100;
+        return pct < 1 ? 'under a hundredth' : `about ${Math.round(pct)} in a hundred`;
     }
 
     /**

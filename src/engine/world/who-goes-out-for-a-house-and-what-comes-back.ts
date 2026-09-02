@@ -90,9 +90,13 @@
  * finished is a heavy fact that travels far; that is the entire mechanism, and
  * a second scoreboard beside it would immediately disagree with it.
  *
- * **It does not move anybody.** No conveyance, no travel time beyond the days
- * the reason states, no boats. Those are physical objects and they are
- * somebody else's.
+ * **It does not move anybody.** No party is placed anywhere and no boat is
+ * built here. What it DOES read is how long the road took: `postingFor` prices
+ * the reason's term through `daysByConveyance`, which is the one function in
+ * the repo that knows how far anything covers in a day. A house with a hull
+ * gets its people back sooner and there was previously nowhere for that fact
+ * to land - see `postingFor` for why that is what makes a craft pay for
+ * itself without a rule being written.
  *
  * **It does not decide the outcome of a place being open.** `locations.ts`
  * owns opening cycles and this module only asks it when the ground next
@@ -116,6 +120,7 @@ import type { CultivationRNG } from '../cultivation/rng.js';
 import type { RegardBand } from '../../schema/cultivation.js';
 import { makeFact, type PendingFact } from './history.js';
 import { nextOpeningDay, type LocationRecord } from './locations.js';
+import { daysByConveyance, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE HOUSE, AS THE BINDING PASS NEEDS IT
@@ -214,8 +219,24 @@ export interface Posting {
     houseName: string;
     /** The rung the posting is pitched at. */
     pitchOrdinal: number;
-    /** Days the party is gone if it goes as stated. */
+    /**
+     * Days the party is gone if it goes as stated.
+     *
+     * The reason's own term, priced through whatever the house put them on.
+     * See {@link postingFor}: this is the ONE number on a posting that a
+     * conveyance moves, and everything downstream - the return date, the
+     * sighting's opening day, how long the roster is short - reads it.
+     */
     days: number;
+    /**
+     * What they went on, or null where they walked.
+     *
+     * Carried rather than re-derived so a caller can say what a shorter term
+     * was bought with. Nothing in this module branches on it.
+     */
+    conveyanceId: string | null;
+    /** The reason's term before the conveyance was applied. */
+    walkingDays: number;
     /** How many the house means to put on it. */
     hands: number;
     /** Above this nobody is sent. Null where the errand has no ceiling. */
@@ -233,19 +254,50 @@ export interface Posting {
  * neighbour and a tribute round to one that has stopped answering are the same
  * reason at two different rungs. What the reason contributes is the ceiling,
  * the term, the hands and what is at stake.
+ *
+ * ── AND WHAT THE HOUSE PUT THEM ON ───────────────────────────────────────
+ *
+ * The header used to say this module moves nobody, that travel time beyond the
+ * days the reason states is somebody else's, and that those are physical
+ * objects. Two of those three are still true and the middle one was the gap:
+ * `days` IS travel time, a house with a hull gets its people back sooner than
+ * a house without one, and there was nowhere for that fact to land.
+ *
+ * So the term is the reason's, priced through `daysByConveyance` - which is
+ * the only function in the repo that knows how far anything covers in a day,
+ * and it is not restated here. No conveyance is walking, and walking is what
+ * the reason already stated, so a caller that passes nothing gets exactly the
+ * number it got before.
+ *
+ * This is what makes the craft economy pay for itself without a rule. A house
+ * that has one gets its parties home in a fraction of the term, which means
+ * more sendings a century off the same roster, which means the material for
+ * the next one - and a house with none builds slowly and does not catch up.
+ * `building-a-conveyance-out-of-what-a-hunt-brings-back.ts` argues exactly
+ * that and had nowhere to say it.
  */
 export function postingFor(input: {
     reason: SendingReason;
     house: HouseAsItStands;
     pitchOrdinal: number;
     locationId?: string | null;
+    /** What they went on. Null or absent is walking, which changes nothing. */
+    conveyance?: Conveyance | null;
+    /** The craft's rung, for a tracked one. Ignored below heaven grade. */
+    conveyancePower?: number | null;
 }): Posting {
+    const walkingDays = input.reason.days;
+    const conveyance = input.conveyance ?? null;
     return {
         reason: input.reason,
         houseId: input.house.id,
         houseName: input.house.name,
         pitchOrdinal: clampOrdinal(input.pitchOrdinal),
-        days: input.reason.days,
+        days: conveyance
+            ? daysByConveyance(walkingDays, conveyance, input.conveyancePower ?? null)
+            : walkingDays,
+        walkingDays,
+        conveyanceId: conveyance?.id ?? null,
         hands: input.reason.hands,
         ceilingOrdinal: input.reason.ceilingOrdinal,
         atStake: input.reason.atStake,
@@ -511,8 +563,15 @@ export function newsOfASending(sending: Sending, opts: {
 
     // The board's own word for the tier, then the rung, then what happened.
     // Factual throughout: every clause is something the engine decided.
+    const called = tierNameFor(tier.band).toLowerCase();
     const sent = `${posting.houseName} sent ${sending.party.length} on `
-        + `${posting.reason.name.toLowerCase()}, a ${tierNameFor(tier.band).toLowerCase()} `
+        + `${posting.reason.name.toLowerCase()}, `
+        // "a open posting" was printing for two of the six band names, which is
+        // the sort of thing a chronicle read in two centuries should not have
+        // in it. The article is derived rather than authored, because the names
+        // are catalog content and the next one added must not need this line
+        // edited.
+        + `${/^[aeiou]/.test(called) ? 'an' : 'a'} ${called} `
         + `at ordinal ${posting.pitchOrdinal}`;
 
     const what = outcome === 'finished'

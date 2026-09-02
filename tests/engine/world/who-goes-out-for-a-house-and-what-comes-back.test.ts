@@ -19,6 +19,16 @@
 
 import { describe, it, expect } from 'vitest';
 
+import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { daysByConveyance } from '../../../src/engine/world/what-a-conveyance-does-to-a-journey.js';
+import {
+    countedHolding,
+    requireConveyance
+} from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
+import { getSendingReason } from '../../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {
     ALLIED_STANDING,
     IMPOSSIBLE_TIERS,
@@ -410,4 +420,82 @@ describe('and then people talk about it', () => {
         expect(fact.summary.toLowerCase())
             .toContain(TIER_NAMES[regardFor(19, 12).band].toLowerCase());
     });
+});
+
+describe('what the house put them on', () => {
+    // THE ROUTED HUNK. The header used to say this module takes no view of
+    // travel time, and `days` IS travel time: a house with a hull gets its
+    // people back sooner and there was nowhere for that fact to land. Nothing
+    // about how far anything covers in a day is decided here - it is
+    // `daysByConveyance`, which is the one function in the repo that knows.
+    const house: HouseAsItStands = {
+        id: 'sect-somewhere', name: 'Somewhere', holdsGround: true, standing: {}, hasAFind: false
+    };
+    const reason = getSendingReason('sending-an-escort')!;
+
+    it('walks by default, which is exactly the term the reason already stated', () => {
+        const on = postingFor({ reason, house, pitchOrdinal: 12 });
+        expect(on.days).toBe(reason.days);
+        expect(on.walkingDays).toBe(reason.days);
+        expect(on.conveyanceId).toBeNull();
+    });
+
+    it('shortens the term when the house has something in the yard', () => {
+        const carriage = requireConveyance('conv-carriage-earth');
+        const rode = postingFor({ reason, house, pitchOrdinal: 12, conveyance: carriage });
+        expect(rode.days).toBe(daysByConveyance(reason.days, carriage, null));
+        expect(rode.days).toBeLessThan(rode.walkingDays);
+        expect(rode.conveyanceId).toBe(carriage.id);
+    });
+
+    it('carries the shorter term all the way to the day they are due back', () => {
+        // The one number a conveyance moves, and everything downstream reads
+        // it: the return date, the sighting's opening day, how long the roster
+        // is short.
+        const carriage = requireConveyance('conv-carriage-earth');
+        const party: Candidate[] = [{ id: 'a', name: 'A', ordinal: 12 }];
+        const walked = resolveSending({
+            posting: postingFor({ reason, house, pitchOrdinal: 12 }),
+            party, departsOnDay: 1000, rng: forStream('s', 'sending', 1)
+        });
+        const rode = resolveSending({
+            posting: postingFor({ reason, house, pitchOrdinal: 12, conveyance: carriage }),
+            party, departsOnDay: 1000, rng: forStream('s', 'sending', 1)
+        });
+        expect(rode.returnsOnDay).toBeLessThan(walked.returnsOnDay);
+    });
+});
+
+describe('the world actually sends people', () => {
+    it('writes news of its houses over five centuries, and loses some of them', async () => {
+        // THE TEST THAT COULD NOT HAVE PASSED BEFORE. Every export in this
+        // module was zero-reference, so none of the above ever ran in a world:
+        // no house ever put a party on the road, nobody was ever lost on one,
+        // and nothing a house did became a fact anybody could repeat.
+        const catalog = await loadCultivationCatalog();
+        let { state } = seedWorld({ seed: 'sendings-are-wired', catalog });
+        state = advanceWorldYears(state, 500).state;
+
+        const news = state.history.facts.filter(f => / sent \d+ on /.test(f.summary));
+        expect(news.length).toBeGreaterThan(20);
+        // The board's own word for the tier is on the row, so a chronicle read
+        // in two centuries says how hard it was and not only where it was.
+        for (const fact of news.slice(0, 20)) {
+            expect(fact.summary).toMatch(/at ordinal \d+/);
+            // "a open posting" printed for two of the six band names before
+            // the article was derived. A chronicle read in two centuries
+            // should not have that in it.
+            expect(fact.summary).toMatch(/, an? [a-z ]+ at ordinal \d+/);
+        }
+
+        // Some of them did not come back. `markMissing` and not `markDead`:
+        // the absence layer owns how long before anybody says it out loud and
+        // who inherits, and settling it here would take that decision away.
+        expect(state.npcs.some(n => n.status === 'missing')).toBe(true);
+
+        // And a solvent house keeps something in the yard, which is the writer
+        // `adjustCountedHolding` never had.
+        const live = state.factions.filter(f => f.dissolvedOnDay === null);
+        expect(live.some(f => countedHolding(f.resources, 'conv-carriage-earth') > 0)).toBe(true);
+    }, 900_000);
 });
