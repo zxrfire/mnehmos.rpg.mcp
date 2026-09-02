@@ -7705,13 +7705,23 @@ function dossier(d: SectDossier): string {
       // No branch on the house. Every value here is read off the channel row,
       // and the one institution this fact is most dramatic about gets no
       // special case - it simply has the best numbers in the column.
+      // THE COUNT IS OF CROSSINGS, NEVER OF THE LIVING, and the two must not be
+      // fused into one phrase. This read "6, still answering at intervals",
+      // which a reader takes as six who are still up there answering. The
+      // catalog is careful about exactly this and the register was not: the
+      // channel row's own `resilience` field says "Six channels, of which
+      // nobody knows how many are still live, and that uncertainty is
+      // survivable precisely because there are six", and the roster behind it
+      // carries one seat marked `died_above`. So the number is how many went
+      // over the Lid from here, and whether anybody is still answering is a
+      // separate clause that is never quantified.
       ['crossed from here', d.channel
-          ? `${d.channel.crossings}`
+          ? `${d.channel.crossings} over the Lid`
               + (d.channel.kind === 'parting_gift'
-                  ? ', none still answering'
+                  ? ' · nothing further is coming'
                   : d.channel.kind === 'personal_channel'
-                      ? ', one answering constantly'
-                      : ', still answering at intervals')
+                      ? ' · one answers constantly, for somebody down here'
+                      : ' · somebody up there still answers, at intervals')
               + (d.channel.depletion ? ` · the line has worn ${d.channel.depletion}` : '')
           : '']
   ])}
