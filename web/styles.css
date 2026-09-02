@@ -926,7 +926,7 @@ kbd {
   gap: 26px;
   animation: fade 500ms ease-out both;
 }
-@keyframes fade { from { opacity: 0; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
 .death__mark {
   font-family: var(--font-mono);
@@ -1332,10 +1332,36 @@ kbd {
 
 /* ────────────────────────────── OVERLAY ────────────────────────────── */
 
+/*
+ * A MODAL'S SURFACE IS NEVER ANIMATED. NOT ITS OPACITY, NOT ITS BACKDROP.
+ *
+ * Found by playing: the seclusion picker and the refusal panel both rendered
+ * with no surface at all. The narrative read straight through the panel, the
+ * dialog title landed on top of the engine-ruling box behind it, and the
+ * refusal - the moment a stopped player is told what would unstop them - was
+ * genuinely hard to read.
+ *
+ * The cause, pinned by playing it again with `--dur` forced to `0ms`, at which
+ * point every capture came out clean: it was the entrance animation, every
+ * time. `pop` and `fade` animated OPACITY, opacity is a property the compositor
+ * owns, and a compositor-driven animation that has not advanced leaves the
+ * whole dialog sitting at its opening frame - see-through - while script still
+ * reads `opacity: 1` off the main thread, which is why inspecting it makes the
+ * bug look impossible. `animation-fill-mode: both` on keyframes with no `to`
+ * block made it worse again by putting the opaque RESTING state inside the
+ * animation's fill phase too.
+ *
+ * So the surfaces are plain CSS and nothing else touches them. What is left of
+ * the entrance is the panel's transform, which can be stuck at its first frame
+ * all day and cost nothing worse than ten pixels of offset on a dialog you can
+ * still read. `isolation` gives the overlay a stacking context of its own so
+ * nothing inside the app can interleave with it.
+ */
 .overlay {
   position: fixed;
   inset: var(--topbar-h) 0 0 0;
   z-index: 50;
+  isolation: isolate;
   display: grid;
   place-items: center;
   padding: 22px;
@@ -1343,9 +1369,15 @@ kbd {
 .overlay__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(3, 6, 5, 0.76);
-  backdrop-filter: blur(3px);
-  animation: fade var(--dur) ease-out both;
+  /*
+   * Dark enough to read against on its own, and no backdrop filter.
+   *
+   * The blur that used to be here bought a few pixels of softness and cost the
+   * dialog its own render surface: `backdrop-filter` makes this element a
+   * backdrop root, which is the machinery that samples the page behind it every
+   * frame. It is decoration. It does not get to be load-bearing.
+   */
+  background: rgba(3, 6, 5, 0.88);
 }
 .overlay__panel {
   position: relative;
@@ -1358,9 +1390,16 @@ kbd {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-2);
   overflow: hidden;
-  animation: pop var(--dur) cubic-bezier(0.22, 1, 0.36, 1) both;
+  isolation: isolate;
+  animation: pop var(--dur) cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+/* Movement only, and both ends written out. An entrance keyframe set with no
+   `to` block leaves the resting appearance implied, and implied is what went
+   wrong above. */
+@keyframes pop {
+  from { transform: translateY(10px) scale(0.985); }
+  to   { transform: none; }
+}
 
 .overlay__panel[data-tone="tribulation"] { border-color: var(--violet-400); box-shadow: 0 0 60px rgba(165, 138, 232, 0.16), var(--shadow-2); }
 .overlay__panel[data-tone="danger"]      { border-color: var(--blood-500); }
@@ -1980,6 +2019,7 @@ kbd {
   right: 16px;
   bottom: calc(var(--status-h) + 14px);
   z-index: 80;
+  isolation: isolate;
   display: grid;
   gap: 8px;
   max-width: min(400px, calc(100vw - 32px));
@@ -1994,7 +2034,18 @@ kbd {
   font-size: 13.5px;
   color: var(--paper);
   box-shadow: var(--shadow-2);
-  animation: slidein var(--dur) ease-out both;
+  /*
+   * Movement only, for the reason written out over the overlay - the talent
+   * toast at the start of a run was landing half-transparent on top of the
+   * sheet, so the roll it exists to announce was printed over the panels
+   * behind it and neither could be read.
+   *
+   * Dropping the fill also unbreaks the dismissal. An animation's forwards fill
+   * outranks an inline style, so `el.style.opacity = 0` in `toast()` was being
+   * overruled by this line and the toast never faded - it vanished when the
+   * removal timer fired.
+   */
+  animation: slidein var(--dur) ease-out;
   pointer-events: auto;
 }
 .toast b {
@@ -2008,7 +2059,10 @@ kbd {
 }
 .toast--info { border-color: var(--jade-600); }
 .toast--info b { color: var(--jade-400); }
-@keyframes slidein { from { opacity: 0; transform: translateX(14px); } }
+@keyframes slidein {
+  from { transform: translateX(14px); }
+  to   { transform: none; }
+}
 
 /* ─────────────────────────── RESPONSIVE ─────────────────────────── */
 

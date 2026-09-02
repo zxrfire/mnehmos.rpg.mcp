@@ -881,16 +881,41 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
         const standsOut = deepest.ordinal - observerOrdinal >= NOTABLE_GAP;
         const others = standsOut ? strangers.length - 1 : strangers.length;
 
-        if (others > 0) {
+        // The crowd clause and the standout clause are both written for a
+        // plural, and a square with one or two people in it is common - a thin
+        // county at dawn is most of the early game. Found by playing: the
+        // second paragraph of a new run read "One other person ARE about, none
+        // of whom are looking at you", and then sent THE OTHERS moving around
+        // somebody who was the only other person there.
+        //
+        // So each count gets the sentence that is true of it. The plural
+        // wording is kept exactly where it was for the case it was written
+        // for; what is added is the two counts underneath it.
+        if (others === 1) {
+            sentences.push('one other person is about, and they are not looking at you.');
+        } else if (others > 1) {
             sentences.push(
                 `${roughly(others)} are about, none of whom are looking at you.`
             );
         }
         if (standsOut) {
-            sentences.push(
-                `One of them is ${describeStanding(observerOrdinal, deepest.ordinal)}, ` +
-                'and the way the others move around them is the part worth noticing.'
-            );
+            const standing = describeStanding(observerOrdinal, deepest.ordinal);
+            if (others === 0) {
+                // Nobody else is here, so the sentence cannot borrow its weight
+                // from how a crowd behaves around them. What is left is the one
+                // observable thing, which is enough on its own.
+                sentences.push(`the only other person here is ${standing}.`);
+            } else if (others === 1) {
+                sentences.push(
+                    `a second is ${standing}, and the room the first leaves them ` +
+                    'is the part worth noticing.'
+                );
+            } else {
+                sentences.push(
+                    `one of them is ${standing}, ` +
+                    'and the way the others move around them is the part worth noticing.'
+                );
+            }
         }
     }
 
