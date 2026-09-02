@@ -39,8 +39,8 @@
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
-import { rankName } from '../engine/cultivation/realms.js';
-import { describeStanding } from './facts.js';
+import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
+import { describeStanding, rungAndOrdinal } from './facts.js';
 import {
     HERBS,
     PILLS,
@@ -165,6 +165,56 @@ export interface ResolvedEntity {
         ranked: boolean;
         charm?: number;
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE STRUCTURE CHANNEL, IN WORDS
+//
+// This channel goes to the inspector AND to the play log, so a player reads
+// it - see the `structure` field comment in facts.ts for the standard it is
+// written to. Every resolver below states its catalog row as sentences with
+// the figures intact rather than as `Object.entries` joined with commas.
+//
+// What resolving the enum keys buys: `spiritRoot=single_metal` is a database
+// key and "Single Metal Root" is the thing it names, and the second is not
+// less precise than the first. Where there is no name to resolve to, the raw
+// key is passed through rather than guessed at.
+//
+// And an ordinal always arrives with its rung. `ordinal` is a field name, not
+// a rank, and every other surface in the game says "Qi Condensation Layer 1".
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The display name for a spirit-root key, falling back to the key.
+ *
+ * `getSpiritRoot` throws on an unknown key, and an inspector read must never be
+ * the thing that takes a turn down. A root the catalog has never heard of reads
+ * oddly instead of reading wrongly.
+ */
+function rootName(key: string): string {
+    return SPIRIT_ROOTS.find(root => root.key === key)?.name ?? key;
+}
+
+/** `a` or `an`, so a grade band reads as English rather than as a field. */
+function article(word: string): string {
+    return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
+/** The same, at the head of a sentence. */
+function articleCapitalised(word: string): string {
+    return article(word) === 'a' ? 'A' : 'An';
+}
+
+/** A schema band at the head of a sentence, which is where several of them sit. */
+function capitalised(word: string): string {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+/** A list, rendered the way somebody would say it. */
+function andList(items: readonly string[]): string {
+    if (items.length === 0) return 'nothing';
+    if (items.length === 1) return items[0];
+    return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -377,11 +427,19 @@ export function resolveCultivator(
         name: match.name,
         facts,
         structure: [
-            `kind=${match.kind}, realmOrdinal=${match.realmOrdinal} (${rankName(match.realmOrdinal)}), ` +
-            `age=${match.age}, alive=${match.alive}${match.deathCause ? `, deathCause=${match.deathCause}` : ''}.`,
-            `sectId=${match.sectId ?? 'none'}, sectRank=${match.sectRank ?? 'none'}, ` +
-            `spiritRoot=${match.spiritRoot}, spiritStones=${match.spiritStones}, ` +
-            `untreatedInjuries=${match.untreatedInjuries}, location=${match.location ?? 'unrecorded'}.`
+            `Stands at ${rungAndOrdinal(match.realmOrdinal)}, carrying ${match.age} years, on `
+            + `the roster as ${match.kind}. `
+            + (match.alive
+                ? 'Alive.'
+                : `Dead${match.deathCause ? `, of ${match.deathCause}` : ', of nothing the row names'}.`),
+            (match.sectId
+                ? `On the roll of ${match.sectId}`
+                  + `${match.sectRank ? `, at the rank of ${match.sectRank}` : ', at no rank in it'}`
+                : 'On no house\'s roll, and so at no rank in one')
+            + `. ${rootName(match.spiritRoot)}. ${match.spiritStones} spirit stones and `
+            + `${match.untreatedInjuries} untreated `
+            + `injur${match.untreatedInjuries === 1 ? 'y' : 'ies'}. Last recorded at `
+            + `${match.location ?? 'nowhere the row states'}.`
         ],
         // The same three values the line above prints, as numbers. See the
         // field's own comment on `ResolvedEntity`.
@@ -427,9 +485,9 @@ export function resolveSect(
                 name: own.name,
                 facts: sectFacts(own.name, own.admissionOrdinal, true, own.ranks),
                 structure: [
-                    `Resolved the possessive "${query.trim()}" to sect_members.sect_id=${own.id}. `
-                    + 'Not gated on awareness: a member holds their own house\'s name by standing '
-                    + 'in it.'
+                    `"${query.trim()}" was resolved through this cultivator\'s own membership `
+                    + `row rather than by name, and it named ${own.name}. Not gated on `
+                    + 'awareness: a member holds their own house\'s name by standing in it.'
                 ]
             };
         }
@@ -443,9 +501,11 @@ export function resolveSect(
             name: stored.name,
             facts: sectFacts(stored.name, stored.admissionOrdinal, memberOf === stored.id, stored.ranks),
             structure: [
-                `alignment=${stored.alignment}, admissionOrdinal=${stored.admissionOrdinal}, ` +
-                `powerOrdinal=${stored.powerOrdinal} (${rankName(stored.powerOrdinal)}).`,
-                `ranks=[${stored.ranks.join(', ')}]`
+                `${capitalised(stored.alignment)} on the schema\'s alignment axis. It admits from `
+                + `${rungAndOrdinal(stored.admissionOrdinal)}, and the house itself is weighed `
+                + `at ${rungAndOrdinal(stored.powerOrdinal)}.`,
+                `${stored.ranks.length} rank${stored.ranks.length === 1 ? '' : 's'}, lowest `
+                + `first: ${andList(stored.ranks)}.`
             ]
         };
     }
@@ -484,10 +544,15 @@ export function resolveSect(
         name: catalogued.name,
         facts,
         structure: [
-            `alignment=${catalogued.alignment}, admissionOrdinal=${catalogued.admissionOrdinal}, ` +
-            `powerOrdinal=${catalogued.powerOrdinal} (${rankName(catalogued.powerOrdinal)}), recruits=${catalogued.recruits}.`,
-            `territory=${catalogued.territory}, ranks=[${catalogued.ranks.join(', ')}], ` +
-            `rivals=[${catalogued.rivals.join(', ')}], specialities=[${catalogued.specialities.join(', ')}].`
+            `${capitalised(catalogued.alignment)} on the schema\'s alignment axis. It admits from `
+            + `${rungAndOrdinal(catalogued.admissionOrdinal)}, the house itself is weighed at `
+            + `${rungAndOrdinal(catalogued.powerOrdinal)}, and it `
+            + `${catalogued.recruits ? 'does take people on' : 'does not take people on'}.`,
+            `Seated at ${catalogued.territory.replace(/\.\s*$/, '')}. ${catalogued.ranks.length} `
+            + `rank${catalogued.ranks.length === 1 ? '' : 's'}, lowest first: `
+            + `${andList(catalogued.ranks)}. ${catalogued.rivals.length} `
+            + `house${catalogued.rivals.length === 1 ? '' : 's'} it will not deal with. What it `
+            + `is known for: ${andList(catalogued.specialities)}.`
         ]
     };
 }
@@ -544,9 +609,13 @@ export function resolveTechnique(
         name: match.name,
         facts,
         structure: [
-            `grade=${match.grade}, category=${match.category}, element=${match.element ?? 'none'}, ` +
-            `requiredOrdinal=${match.requiredOrdinal} (${rankName(match.requiredOrdinal)}), ` +
-            `mastery=${known ? known.mastery.toFixed(2) : 'not known'}.`
+            `${articleCapitalised(match.grade)} ${match.grade}-grade ${match.category} art`
+            + `${match.element ? ` of ${match.element}` : ' of no element'}. It opens at `
+            + `${rungAndOrdinal(match.requiredOrdinal)}. `
+            + (known
+                ? `This cultivator holds it at ${known.mastery.toFixed(2)} mastery, where 1.00 `
+                  + 'is whole.'
+                : 'This cultivator has never been taught it, so no mastery is recorded.')
         ]
     };
 }
@@ -579,8 +648,10 @@ export function resolveRecipe(query: string): ResolvedEntity | null {
                 : 'People who work this formula mostly get slag out of it.'
         ],
         structure: [
-            `baseSuccessRate=${match.baseSuccessRate}, requiredOrdinal=${match.requiredOrdinal} ` +
-            `(${rankName(match.requiredOrdinal)}), producesPillId=${match.producesPillId}.`
+            `It works ${Math.round(match.baseSuccessRate * 100)}% of the time before anything `
+            + `about the alchemist is counted, and it cannot be attempted below `
+            + `${rungAndOrdinal(match.requiredOrdinal)}. What comes out of it is `
+            + `${pill?.name ?? match.producesPillId}.`
         ]
     };
 }
@@ -598,8 +669,11 @@ export function resolveHerb(query: string): ResolvedEntity | null {
             `It grows where the ${match.biome} is, and it goes for about ${match.value} spirit stones to anyone buying.`
         ],
         structure: [
-            `grade=${match.grade}, biome=${match.biome}, rarityWeight=${match.rarityWeight}, ` +
-            `harvestOrdinal=${match.harvestOrdinal}, value=${match.value}.`
+            `${articleCapitalised(match.grade)} ${match.grade}-grade herb of the ${match.biome}, `
+            + `drawn at `
+            + `weight ${match.rarityWeight} against everything else that grows there. It can be `
+            + `taken from ${rungAndOrdinal(match.harvestOrdinal)} and is valued at `
+            + `${match.value} spirit stones.`
         ]
     };
 }
@@ -617,8 +691,10 @@ export function resolvePill(query: string): ResolvedEntity | null {
             `It goes for about ${match.value} spirit stones, when anyone has one to sell.`
         ],
         structure: [
-            `grade=${match.grade}, effect=${match.effect}, potency=${match.potency}, ` +
-            `toxicity=${match.toxicity}, value=${match.value}.`
+            `${articleCapitalised(match.grade)} ${match.grade}-grade pill. What it does is `
+            + `${match.effect.replace(/_/g, ' ')}, `
+            + `at potency ${match.potency} against toxicity ${match.toxicity}. Valued at `
+            + `${match.value} spirit stones.`
         ]
     };
 }
@@ -661,8 +737,10 @@ export function resolvePrice(query: string): ResolvedEntity | null {
         name: winner.name,
         facts: [`${winner.name}, ${winner.cash} cash the ${winner.unit}. ${winner.note}`],
         structure: [
-            `price ${winner.id}: category=${winner.category}, base cash=${winner.cash}, unit=${winner.unit}. `
-            + 'Base figure; the region multiplier is applied where it is charged.'
+            `${articleCapitalised(winner.category)} ${winner.category} line on the board at `
+            + `${winner.cash} `
+            + `cash the ${winner.unit}. That is the base figure; the region multiplier is `
+            + 'applied where it is charged.'
         ]
     };
 }
