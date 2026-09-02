@@ -157,14 +157,16 @@ export function whatIsInTheirHands(
      *
      * `copyable` is a fact about WHO IS HOLDING IT - writing an art out takes
      * having mastered it - so this cannot be answered off a faction id and a
-     * list of ids. `masteryOfIt` is optional because an `NpcRecord` carries no
-     * such column and a played cultivator does; see `couldWriteOutACopy`.
+     * list of ids.
+     *
+     * No mastery figure, deliberately. Everybody read through here is an
+     * `NpcRecord` and the world stores none, so `couldWriteOutACopy` falls back
+     * to the ordinal proxy - which is the honest answer for a row that carries
+     * no such column, and the same shape as `manualCeilingOf` against
+     * `reachableCeilingFor`. The played cultivator's own figure is read where
+     * the player acts, in `game.ts`, straight off `cultivator_techniques`.
      */
-    holder: {
-        factionId: string | null;
-        ordinal: number;
-        masteryOfIt?: (techniqueId: string) => number | null;
-    },
+    holder: { factionId: string | null; ordinal: number },
     techniqueIds: readonly string[]
 ): AThingInSomebodysHands[] {
     const npcFactionId = holder.factionId;
@@ -212,15 +214,7 @@ export function whatIsInTheirHands(
             // ownership question is `betrayalOfSelling`'s alone. A gathering
             // primer stays copyable by everybody and a house's sword by four
             // people in the world, out of one rule with no exceptions list.
-            copyable: couldWriteOutACopy(
-                {
-                    realmOrdinal: holder.ordinal,
-                    ...(holder.masteryOfIt
-                        ? { masteryOfIt: holder.masteryOfIt(id) }
-                        : {})
-                },
-                id
-            ),
+            copyable: couldWriteOutACopy({ realmOrdinal: holder.ordinal }, id),
             // A book and an art are both held rather than carried. Nothing
             // leaves the seller, which is why `copyable` is the gate on the
             // sale and the present-need rule is not.
