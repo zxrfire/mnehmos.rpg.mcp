@@ -1614,7 +1614,19 @@ export function resolveConfrontation(
         remnant,
         brokenObjects,
         obligations: seedObligations(outcome, winnerId, loserId, loserInput.name, loserInjuries),
-        narrationHint: describeOutcome(outcome, requirement, remnant)
+        // WHETHER THE WINNER WAS TOUCHED IS PART OF WHAT HAPPENED.
+        //
+        // The same defect as the one-sided path, one size smaller and reachable
+        // in ordinary play: the aggressor strikes first, and a single blow that
+        // puts the defender under `WITHDRAW_HP_FRACTION` breaks the loop before
+        // the defender ever swings. The winner is then on full HP and the
+        // withdrawal line still said "both parties are worse than they were".
+        // It is read off the running total rather than assumed, because the
+        // resolution already knows.
+        narrationHint: describeOutcome(
+            outcome, requirement, remnant,
+            hp[winnerId] < (winnerId === aggressorInput.id ? aggressorInput.hp : defenderInput.hp)
+        )
     };
 }
 
@@ -1711,7 +1723,9 @@ function seedObligations(
 function describeOutcome(
     outcome: ConfrontationOutcome,
     requirement: KillRequirement,
-    remnant: 'soul' | 'seam' | null
+    remnant: 'soul' | 'seam' | null,
+    /** Whether the party still standing actually took anything. */
+    winnerWasHurt = true
 ): string {
     switch (outcome) {
         case 'lethal':
@@ -1724,7 +1738,10 @@ function describeOutcome(
                 : 'The body is gone and the seam is not. A large enough seam-bearing piece regrows over years into ' +
                   'somebody who remembers the argument, which is why the Marches distinguishes a funeral from a scattering.';
         case 'withdrawal':
-            return 'Broken off. Both parties are worse than they were, the wounds are real, and nothing is settled.';
+            return winnerWasHurt
+                ? 'Broken off. Both parties are worse than they were, the wounds are real, and nothing is settled.'
+                : 'Broken off, and only one way. They went before they could answer, the wounds are real and ' +
+                  'all on one side, and the party still standing has not been touched.';
         case 'crippled':
             return 'They walked away carrying something that will not close. That is the ratchet, and it is what ' +
                 'eventually kills most cultivators who survive their fights.';
@@ -1770,6 +1787,61 @@ function noContest(
         obligations: [],
         narrationHint: hint
     };
+}
+
+/**
+ * What a one-sided resolution actually was, said in one voice.
+ *
+ * `describeOutcome` is written for a CONTESTED fight and every line of it
+ * assumes two people traded blows - "both parties are worse than they were",
+ * "nothing is settled", "neither could finish it". None of that is true when
+ * the aggressor stood realms above and the defender never got to swing, so
+ * pasting the two together produced the flat contradiction this function
+ * exists to make impossible:
+ *
+ *   "There was no exchange to resolve. Broken off. Both parties are worse
+ *    than they were, the wounds are real, and nothing is settled."
+ *
+ * Composed from two fragments that did not know about each other, against a
+ * result where the aggressor was untouched at full HP, the defender was at a
+ * fifth of theirs and carrying a wound that does not close, and the matter was
+ * entirely settled. The rule this restates: the outcome decides the sentence,
+ * and one function writes the whole sentence.
+ */
+function describeOneSided(
+    outcome: ConfrontationOutcome,
+    requirement: KillRequirement,
+    remnant: 'soul' | 'seam' | null
+): string {
+    switch (outcome) {
+        case 'lethal':
+            return `They were finished where they stood, and nothing about it was uncertain. ${requirement.note}`;
+        case 'body_destroyed':
+            return remnant === 'soul'
+                ? 'The body was taken apart without a contest, and the person was not. The soul left intact and ' +
+                  'can persist for months, shortening every day it stays out - so the party who walked away ' +
+                  'certain of what they had done is the one who will be surprised.'
+                : 'The body was taken apart without a contest, and the seam was not. A large enough seam-bearing ' +
+                  'piece regrows over years into somebody who remembers exactly who did this and how easy they ' +
+                  'found it.';
+        case 'withdrawal':
+            return 'Driven off, one-sidedly and settled. They are hurt, they are carrying something that will ' +
+                'not close on its own, and the party who did it is untouched. What they take away is not a ' +
+                'grievance about a fight - it is the measurement.';
+        case 'capture':
+            return 'Taken, not beaten - there was nothing to beat. What happens next is a negotiation, and no ' +
+                'part of the terms is theirs.';
+        case 'humiliation':
+            return 'Put down without effort, deliberately, where it could be seen. Nothing was risked and ' +
+                'everything was demonstrated, which is the cheapest way to make a permanent enemy.';
+        case 'crippled':
+        case 'stalemate':
+        case 'no_contest':
+            // Unreachable: `oneSided` only ever mints the five above, and
+            // `no_contest` returns before it. Kept total so a new outcome
+            // cannot silently fall through to a contested-fight sentence.
+            return 'Settled in one action by the stronger party, at no risk to them.';
+    }
 }
 
 /**
@@ -1835,9 +1907,25 @@ function oneSided(
         killRequirement: requirement,
         remnant: outcome === 'body_destroyed' ? requirement.remnant : null,
         obligations: seedObligations(outcome, aggressorInput.id, defenderInput.id, defenderInput.name, injuries[defenderInput.id]),
+        // ── WHAT WAS DONE, NOT WHAT WAS NOT ──────────────────────────────
+        //
+        // The old hint led with "there was no exchange to resolve" and then
+        // handed the rest of the sentence to the contested-fight vocabulary,
+        // which read as nothing having happened while the row underneath said
+        // a fifth of a body and an untreated wound. So the count of exchanges
+        // is stated as a fact ABOUT the resolution rather than as a substitute
+        // for it, and every consequence this function actually applied is
+        // named - because a narrator that is told the number cannot write that
+        // nothing happened.
         narrationHint:
-            `${aggressorInput.name} stands ${-gap.realmGap} major realms above ${defenderInput.name}. ` +
-            'There was no exchange to resolve. ' + describeOutcome(outcome, requirement, outcome === 'body_destroyed' ? requirement.remnant : null)
+            `${aggressorInput.name} stands ${-gap.realmGap} major realms above ${defenderInput.name}, ` +
+            'so this resolved in one action with nothing contested and no exchange rolled. ' +
+            describeOneSided(outcome, requirement, outcome === 'body_destroyed' ? requirement.remnant : null) +
+            ` ${defenderInput.name} is left at ${hp[defenderInput.id]}/${defenderInput.maxHp}` +
+            (injuries[defenderInput.id].length > 0
+                ? ` and carrying a ${injuries[defenderInput.id][0].severity} wound that will not close on its own.`
+                : '.') +
+            ` ${aggressorInput.name} took nothing.`
     };
 }
 
