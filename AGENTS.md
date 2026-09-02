@@ -367,11 +367,17 @@ hundreds of runs, so **a bad narration after an admin call is a finding about ph
 narrator answers is settled at process start, which is what makes engine-only testing "start
 it without a model" rather than a mode. Do not add a flag for it.
 
-**ADMIN never reaches the LLM**, by dispatch order: it is handled before phase 1. Every
+**No model reads an ADMIN line**, by dispatch order: it is handled before phase 1. Every
 phrasing it accepts is read deterministically, so a line naming a creature the reader has no
 noun for is refused rather than improvised. If you widen the reader, widen it with a lookup
 keyed on the action - `BARE_NUMBER_ARG` and `PRIMARY_ARG` are the shape - never with an
 inference about the words. Which field an operator meant is a property of the action.
+
+**The world it leaves is narrated like any other**, which is the paragraph above and is not a
+contradiction of this one: the *command* is never parsed by a model, and the *situation it
+arranged* is described by whichever narrator is configured. That is the whole point of
+arranging being followed by looking, and it is why a bad narration after an admin call is a
+finding about phase 3.
 
 `reset` is the exception to where admin lives: it ends the run and opens a new birth in the
 same world, and it is in `game.ts` because runs are written there and nowhere else.
@@ -1676,3 +1682,36 @@ not
 
 **Same dead end, and only one of them saves anybody anything.** Name the approach,
 say what defeats it, and leave yourself out.
+
+### A comment near what you changed is part of what you changed
+
+**Before you finish, re-read the prose around every line you touched, and fix what your change
+made false.** Not the file's history - that is git's - but the standing claims: a header
+saying what the module does, a comment naming the one consumer of a function, a doc paragraph
+describing a dispatch order, a number quoted in prose beside the constant it came from.
+
+This is not tidiness. **A stale comment is worse than no comment**, because it is believed. It
+reads as settled, somebody reasons from it, and the reasoning is wrong in a way the code will
+not contradict until much later. Several times here a confident sentence has outlived the
+behaviour it described - a claim that admin never reaches a model, written when it did not and
+kept after it did; a file header stating there was no marriage system anywhere, one caller away
+from being wrong; a function whose comment described the odds of nobody coming back while the
+code used the value as the fraction of a party that was lost.
+
+The ones that go stale fastest, in order:
+
+- **"The only caller is X."** True until somebody adds the second, and nothing fails when they
+  do.
+- **"This is not wired to anything yet."** The most valuable sentence in the repository while
+  it is true and the most misleading when it is not. `node scripts/find-unwired-exports.mjs`
+  answers it mechanically - prefer that to a sentence.
+- **A number in prose.** If a comment says four hundred seeds produced a figure, and the figure
+  moves, the comment is now evidence for something that did not happen.
+- **A dispatch or ordering claim.** "Handled before phase 1", "runs first", "never sees" - all
+  of them are true of an arrangement rather than of an intention, and arrangements get changed
+  by people who never read the sentence.
+
+**Grep for the claim, not just the file.** A rule is usually stated in three places - the code,
+its header, and `docs/`- and the copy that goes stale is the one in the directory you were not
+working in. If your change makes a sentence false, the sentence is part of your change, and it
+lands in the same commit.

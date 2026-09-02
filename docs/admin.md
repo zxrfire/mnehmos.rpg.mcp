@@ -336,9 +336,15 @@ call is a finding about phase 3**, not about admin.
 
 ## What the model does not see
 
-**ADMIN never reaches the LLM.** It is dispatched at the top of `act`, before phase 1, so no
+**No model reads an ADMIN line.** It is dispatched at the top of `act`, before phase 1, so no
 model parses it and no model can be steered through it. Every phrasing on this page is read
 deterministically, in `admin-said-as-a-sentence.ts`.
+
+**The situation it arranges is narrated like any other**, by whichever narrator is
+configured. Those are two different things and only the first is closed to a model: the
+command is never read by one, and the world it leaves is described by one whenever one is
+running. That is what makes an admin call useful for looking at states ordinary play almost
+never reaches - and it is why a bad narration after one is a finding about phase 3.
 
 That is a real limit and not only a safety property. *"spawn a void tempering tortoise in
 human form in front of me"* is refused - "tortoise" is not a subject noun, and nothing infers
