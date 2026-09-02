@@ -70,9 +70,25 @@
  *   reasons from. Nothing here is a live agent, nothing here has state, and the
  *   engine owns every decision as usual.
  *
- * The two factions that take no applicants at all - the Kiln Wardens and the
- * Hollow Court - have no members here on purpose. They are facts about the
- * world rather than doors, and a starting cultivator does not meet one.
+ * - A CLOSED GATE IS NOT AN EMPTY COMPOUND. This file used to hold nobody from
+ *   the two factions that take no applicants, on the reasoning that they were
+ *   facts about the world rather than doors. That conflated two different
+ *   statements. `recruits` says whether a player can join; it says nothing
+ *   about whether anybody is standing there, and a `powerOrdinal` is by
+ *   definition a claim that a specific person exists and will answer. The Kiln
+ *   Wardens hold nine hundred formation nodes with nine hundred lit, which is
+ *   staffed work, and the zero in their production count is stated in
+ *   `faction-character.ts` to be a failure of the outside record rather than a
+ *   census. They have a roster here now. They are met at a gate and turned
+ *   around; they are not joined, and nobody in them is a peer, a rival or a
+ *   master.
+ *
+ *   The Hollow Court is the one faction that genuinely has nobody here, and
+ *   the reason is specific rather than structural: it is four people, First
+ *   through Fourth Seat, its three lower rungs have never been occupied, and
+ *   the Seats are unnamed across the entire catalog on purpose. They are
+ *   enumerated with their ordinals in `WITHDRAWN_POWERS` instead, which is
+ *   where the register reads them from.
  */
 
 import { z } from 'zod';
@@ -1410,6 +1426,128 @@ export const MEMBERS: readonly Member[] = [
             costsThem: 'Explaining why he cannot teach you requires describing what the arts do to an ordinary root, and he has watched that happen once, to a friend.'
         }
     },
+    // The Rime Disciples have a stated position in `faction-character.ts` and
+    // until now nobody to hold it. A disagreement with no one on one side of it
+    // is a fact about a document rather than about a court.
+    {
+        id: 'member-xiao-hanning',
+        name: 'Xiao Hanning',
+        factionId: 'sect-frostmirror-court',
+        rankIndex: 2,
+        rank: 'Rime Disciple',
+        realmOrdinal: 18,
+        role: 'peer',
+        wants: 'the supervised intake tried once, on five volunteers, with the figure published whichever way it comes out',
+        fears: 'that she is arguing for the five because the hall is quiet, and not for the curriculum at all',
+        detail: 'Carries the Court Sovereign\'s own arithmetic folded in her sleeve - four in five - and has checked it three times looking for the error she is now fairly sure is not in it.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-lang-yuxi',
+        name: 'Lang Yuxi',
+        factionId: 'sect-frostmirror-court',
+        rankIndex: 3,
+        rank: 'Court Warden',
+        realmOrdinal: 20,
+        role: 'senior',
+        wants: 'a reply of any wording at all from an office that has not answered eleven letters',
+        fears: 'that the silence is not contempt but a filing decision, and that the Court is not in the file',
+        detail: 'Drafts the correspondence to the Third Sill and rewrites every sentence that could be quoted back, which is why the Court\'s claim on the arterial has never once been stated in a form anybody can hold it to.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+
+    // --- Kiln Wardens ------------------------------------------------------
+    // A closed gate is not an empty compound. The Wardens take no applicants,
+    // and the header of this file used to read that as nobody being here at
+    // all - but nine hundred nodes held and nine hundred lit is staffed work,
+    // the zero in their `production.currentCount` is stated to be a failure of
+    // the outside record rather than a census, and the single most-described
+    // thing about them in nine hundred years is a Warden standing at that gate.
+    //
+    // So they are met, and they are not joined: every person here is `senior`,
+    // there is nobody to fight and nobody who will teach, and none of them
+    // carries a personal name. `named-figures.ts` is explicit that no Warden
+    // name has ever been recorded and that the Wardens do not appear to be
+    // withholding one, so these people are known the way the province actually
+    // knows them - by post, by number, and by the one thing each was seen to
+    // do. `regions.ts` allows exactly this: sect titles in place of names once
+    // somebody holds rank.
+    {
+        id: 'member-kiln-warden-water',
+        name: 'The Warden who gave him the water',
+        factionId: 'sect-kiln-wardens',
+        rankIndex: 0,
+        rank: 'Warden',
+        realmOrdinal: 21,
+        role: 'senior',
+        wants: 'the gate log to record what a visitor was given as well as what they were told',
+        fears: 'that the figure she gave him for the nearest inn was four li short',
+        detail: 'The only disagreement outsiders have ever recorded at the gate was hers, conducted entirely in numbers, over half a measure of water; she won it, the man drank, and three separate surveyors have since asked her about it and been given the same four figures.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-kiln-warden-against',
+        name: 'The Warden who was against it',
+        factionId: 'sect-kiln-wardens',
+        rankIndex: 0,
+        rank: 'Warden',
+        realmOrdinal: 22,
+        role: 'senior',
+        wants: 'the standing count taken twice a day rather than once, which he has now requested in writing eleven times',
+        fears: 'nothing he will state, and the Anchorhold has filed the absence itself as a finding',
+        detail: 'Holds that water handed out at the gate is an exchange and that the Wardens have never made one; he lost, wrote down the date and the quantity anyway, and that entry is one of the eleven Warden documents anybody outside the perimeter has seen.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-kiln-second-warden-instalments',
+        name: 'The Second Warden who keeps the instalments',
+        factionId: 'sect-kiln-wardens',
+        rankIndex: 1,
+        rank: 'Second Warden',
+        realmOrdinal: 25,
+        role: 'senior',
+        wants: 'a form of words for a debt discharged, which nine hundred years of Warden record does not contain',
+        fears: 'outliving the line she is paying and having nobody left to hand the account to',
+        detail: 'Keeps the running account of what the Wardens owe the formation master who relit their one dark node a hundred and forty years ago: passage, water, shelter and warning, never refused to anybody descended from her, totalled to the day.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-kiln-gate-warden',
+        name: 'The Gate Warden who gives the distance',
+        factionId: 'sect-kiln-wardens',
+        rankIndex: 2,
+        rank: 'Gate Warden',
+        realmOrdinal: 26,
+        role: 'senior',
+        wants: 'the perimeter walked a second time, because the nine days in every direction have been measured once and he is the one quoting them',
+        fears: 'giving a figure at the gate that turns out to be wrong',
+        detail: 'Turns applicants around once, politely, with the distance to the nearest inn in li and the daylight left to reach it; has done it four hundred and six times, keeps the count, and gives the count to anybody who asks for it.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
 
     // ═══════════════════════════════════════════════════════════════════
     // LOW FALL - DEMONIC
@@ -1821,12 +1959,29 @@ export const MEMBERS: readonly Member[] = [
     // DAO HOUSES
     // Smaller rosters, because a house is a profession before it is a
     // faction and the bottom of one is a clerk rather than a disciple.
+    //
+    // AND BECAUSE A HOUSE IS A FAMILY. It does not recruit; it adopts, and
+    // adoption here means the name. Everybody in a house carries the house
+    // family's name, which is why the surnames in this block repeat and why
+    // they are the founders' own: Yan Duo of the Ninefold Ledger, Cao Xun of
+    // the Narrow Hour, Lin Zhao of the Bound Word, Gu Yao of Held Names, Fu
+    // Chang of the Measured Span, Xu Ping of the Anchorhold. The trade names
+    // the house; the family names the people. The Quiet Cut's founder is
+    // unrecorded and the Chu are known by nothing except that they are all
+    // Chu, which for that house is the trade working correctly.
+    //
+    // A man adopted in becomes a Yan or a Fu and there is no second option.
+    // The one exception is a woman who married in and declined to change, and
+    // there are exactly two of them here on purpose: Cao Duan, who holds the
+    // Ninefold Book without carrying the Yan, and Xu Zhengsu, an Anchorhold
+    // Xu inside the House of Held Names. Both are small, visible refusals to
+    // be absorbed, and they only read as that while they stay rare.
     // ═══════════════════════════════════════════════════════════════════
 
     // --- The Ninefold Ledger -----------------------------------------------
     {
-        id: 'member-shen-zhenyi',
-        name: 'Shen Zhenyi',
+        id: 'member-yan-zhenyi',
+        name: 'Yan Zhenyi',
         factionId: 'house-ninefold-ledger',
         rankIndex: 0,
         rank: 'Tallyhand',
@@ -1842,8 +1997,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-guan-boting',
-        name: 'Guan Boting',
+        id: 'member-yan-boting',
+        name: 'Yan Boting',
         factionId: 'house-ninefold-ledger',
         rankIndex: 1,
         rank: 'Reader of Threads',
@@ -1859,8 +2014,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-tan-changshi',
-        name: 'Tan Changshi',
+        id: 'member-yan-changshi',
+        name: 'Yan Changshi',
         factionId: 'house-ninefold-ledger',
         rankIndex: 3,
         rank: 'Circuit Arbiter',
@@ -1882,8 +2037,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The House of the Narrow Hour ---------------------------------------
     {
-        id: 'member-shu-chanming',
-        name: 'Shu Chanming',
+        id: 'member-cao-chanming',
+        name: 'Cao Chanming',
         factionId: 'house-narrow-hour',
         rankIndex: 0,
         rank: 'Watcher',
@@ -1899,8 +2054,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-luo-hengzhi',
-        name: 'Luo Hengzhi',
+        id: 'member-cao-hengzhi',
+        name: 'Cao Hengzhi',
         factionId: 'house-narrow-hour',
         rankIndex: 1,
         rank: 'Sighting Disciple',
@@ -1916,8 +2071,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-mei-shuangqing',
-        name: 'Mei Shuangqing',
+        id: 'member-cao-shuangqing',
+        name: 'Cao Shuangqing',
         factionId: 'house-narrow-hour',
         rankIndex: 2,
         rank: 'Reader of Hours',
@@ -1939,8 +2094,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The House of the Bound Word ----------------------------------------
     {
-        id: 'member-lian-shouzhen',
-        name: 'Lian Shouzhen',
+        id: 'member-lin-shouzhen',
+        name: 'Lin Shouzhen',
         factionId: 'house-bound-word',
         rankIndex: 0,
         rank: 'Witness',
@@ -1956,8 +2111,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-he-muyan',
-        name: 'He Muyan',
+        id: 'member-lin-muyan',
+        name: 'Lin Muyan',
         factionId: 'house-bound-word',
         rankIndex: 1,
         rank: 'Sworn Clerk',
@@ -1973,8 +2128,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-gong-liangfu',
-        name: 'Gong Liangfu',
+        id: 'member-lin-liangfu',
+        name: 'Lin Liangfu',
         factionId: 'house-bound-word',
         rankIndex: 2,
         rank: 'Oathwright',
@@ -1996,8 +2151,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The House of the Quiet Cut ------------------------------------------
     {
-        id: 'member-jia-changting',
-        name: 'Jia Changting',
+        id: 'member-chu-changting',
+        name: 'Chu Changting',
         factionId: 'house-quiet-cut',
         rankIndex: 0,
         rank: 'Holder of the Blade',
@@ -2013,8 +2168,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-shan-wuji',
-        name: 'Shan Wuji',
+        id: 'member-chu-wuji',
+        name: 'Chu Wuji',
         factionId: 'house-quiet-cut',
         rankIndex: 1,
         rank: 'Cutter',
@@ -2030,8 +2185,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-liu-hengan',
-        name: 'Liu Hengan',
+        id: 'member-chu-hengan',
+        name: 'Chu Hengan',
         factionId: 'house-quiet-cut',
         rankIndex: 3,
         rank: 'Master of Removal',
@@ -2053,8 +2208,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The House of Held Names ---------------------------------------------
     {
-        id: 'member-qi-anding',
-        name: 'Qi Anding',
+        id: 'member-gu-anding',
+        name: 'Gu Anding',
         factionId: 'house-held-names',
         rankIndex: 0,
         rank: 'Register Hand',
@@ -2070,8 +2225,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-bian-changle',
-        name: 'Bian Changle',
+        id: 'member-gu-changle',
+        name: 'Gu Changle',
         factionId: 'house-held-names',
         rankIndex: 1,
         rank: 'Namekeeper',
@@ -2096,7 +2251,7 @@ export const MEMBERS: readonly Member[] = [
         role: 'master',
         wants: 'one clean handover of a name, done properly, in her career',
         fears: 'Lantern Hall publishing what the house holds',
-        detail: 'Is an administrator rather than a cultivator, cannot fight at all, and says so within the first minute of meeting anyone.',
+        detail: 'Married in from the Anchorhold and kept the Xu, which in a house whose whole trade is holding names is either a joke or a position and she has never said which; is an administrator rather than a cultivator, cannot fight at all, and says so within the first minute of meeting anyone.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2110,8 +2265,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The House of the Measured Span ---------------------------------------
     {
-        id: 'member-cheng-tuoyi',
-        name: 'Cheng Tuoyi',
+        id: 'member-fu-tuoyi',
+        name: 'Fu Tuoyi',
         factionId: 'house-measured-span',
         rankIndex: 0,
         rank: 'Chain Bearer',
@@ -2127,8 +2282,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-fan-jingsheng',
-        name: 'Fan Jingsheng',
+        id: 'member-fu-jingsheng',
+        name: 'Fu Jingsheng',
         factionId: 'house-measured-span',
         rankIndex: 1,
         rank: 'Surveyor',
@@ -2144,8 +2299,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-hao-lingchuan',
-        name: 'Hao Lingchuan',
+        id: 'member-fu-lingchuan',
+        name: 'Fu Lingchuan',
         factionId: 'house-measured-span',
         rankIndex: 2,
         rank: 'Span Master',
@@ -2167,8 +2322,8 @@ export const MEMBERS: readonly Member[] = [
 
     // --- The Anchorhold --------------------------------------------------------
     {
-        id: 'member-di-shizhen',
-        name: 'Di Shizhen',
+        id: 'member-xu-shizhen',
+        name: 'Xu Shizhen',
         factionId: 'house-anchorhold',
         rankIndex: 0,
         rank: 'Peg',
@@ -2184,8 +2339,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-yong-heshan',
-        name: 'Yong Heshan',
+        id: 'member-xu-heshan',
+        name: 'Xu Heshan',
         factionId: 'house-anchorhold',
         rankIndex: 1,
         rank: 'Holder',
@@ -2201,8 +2356,25 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-gan-suzhi',
-        name: 'Gan Suzhi',
+        id: 'member-xu-kanping',
+        name: 'Xu Kanping',
+        factionId: 'house-anchorhold',
+        rankIndex: 2,
+        rank: 'Nail Warden',
+        realmOrdinal: 19,
+        role: 'peer',
+        wants: 'the ninth perimeter re-pegged before the thaw, which is a two-man job he has done alone for three years',
+        fears: 'the count reaching two in one season, which he can recite the consequence of and has never said out loud',
+        detail: 'Holds two of the eleven containment perimeters on a fourteen-day circuit between them, and carries the standard weights in his pack rather than leaving them at the station, because a perimeter is only fixed while the weight that fixed it is present.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-xu-suzhi',
+        name: 'Xu Suzhi',
         factionId: 'house-anchorhold',
         rankIndex: 3,
         rank: 'Warden of the Survey',
@@ -2723,6 +2895,28 @@ export const MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: null
     },
+    // The one outlier here who is not the last of a richer age. The Wardens are
+    // staff on a posting rather than a lineage - `hierarchy.ts` files them under
+    // the Deep Survey - and the top rung was filled from outside the perimeter,
+    // which is what `arrived` means and what nobody in the province has ever
+    // been able to price.
+    {
+        id: 'member-kiln-keeper',
+        name: 'The Keeper who holds the count',
+        factionId: 'sect-kiln-wardens',
+        rankIndex: 3,
+        rank: 'Keeper of the Kiln',
+        realmOrdinal: 36,
+        role: 'senior',
+        wants: 'nine hundred lit at the next reckoning, which is the only sentence anybody outside has heard her say twice',
+        fears: 'a twelfth document leaving the gate',
+        detail: 'Was not made here: the post was filled from outside the perimeter, and she dates everything she signs in a five-figure year whose epoch she has never stated and which two separate attempts to convert have placed four thousand years apart.',
+        outlier: true,
+        outlierReason: 'arrived',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
     {
         id: 'member-the-one-who-introduces-herself-as-four-bonds-and-a-name',
         name: 'The one who introduces herself as four bonds and a name',
@@ -2877,8 +3071,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-keeper-cao-duan',
-        name: 'Keeper Cao Duan',
+        id: 'member-cao-duan',
+        name: 'Cao Duan',
         factionId: 'house-ninefold-ledger',
         rankIndex: 5,
         rank: 'Keeper of the Ninefold Book',
@@ -2886,7 +3080,7 @@ export const MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'the nine sealed volumes to stay sealed for one more Keeper',
         fears: 'that the Tally Court was not corrupt, and that the Ledger wrote the account that says otherwise',
-        detail: 'Writes in front of whoever is speaking and reads the entry back before leaving, and has never left an entry unread in fifty years.',
+        detail: 'Married in from the Narrow Hour and did not take the Yan, which makes her the one Keeper in the book who does not carry the house name; writes in front of whoever is speaking and reads the entry back before leaving.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -2894,8 +3088,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-first-sighting-yu-lian',
-        name: 'First Sighting Yu Lian',
+        id: 'member-cao-yulian',
+        name: 'Cao Yulian',
         factionId: 'house-narrow-hour',
         rankIndex: 5,
         rank: 'First Sighting',
@@ -2911,8 +3105,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-keeper-shi-anren',
-        name: 'Keeper Shi Anren',
+        id: 'member-lin-anren',
+        name: 'Lin Anren',
         factionId: 'house-bound-word',
         rankIndex: 5,
         rank: 'Keeper of the Standing Word',
@@ -2928,8 +3122,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-the-last-cut',
-        name: 'The Last Cut',
+        id: 'member-chu-jueyi',
+        name: 'Chu Jueyi',
         factionId: 'house-quiet-cut',
         rankIndex: 5,
         rank: 'The Last Cut',
@@ -2937,7 +3131,7 @@ export const MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'the commissions to keep coming from the people who condemn them',
         fears: 'the register of absences, which cannot say what was removed and can say that something was',
-        detail: 'Gives no name, is never seen twice with the same face, and takes work only through third parties, including from the houses that want the Cut destroyed.',
+        detail: 'Carries the house name inside the compound and gives none outside it, is never seen twice with the same face, and takes work only through third parties, including from the houses that want the Cut destroyed.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -2945,8 +3139,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-first-register-bai-yun',
-        name: 'First Register Bai Yun',
+        id: 'member-gu-baiyun',
+        name: 'Gu Baiyun',
         factionId: 'house-held-names',
         rankIndex: 5,
         rank: 'First Register',
@@ -2962,8 +3156,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-keeper-fu-nianzhi',
-        name: 'Keeper Fu Nianzhi',
+        id: 'member-fu-nianzhi',
+        name: 'Fu Nianzhi',
         factionId: 'house-measured-span',
         rankIndex: 5,
         rank: 'Keeper of the Long Measure',
@@ -2979,8 +3173,8 @@ export const MEMBERS: readonly Member[] = [
         teaching: null
     },
     {
-        id: 'member-the-standing-anchor',
-        name: 'The Standing Anchor',
+        id: 'member-xu-zhenshan',
+        name: 'Xu Zhenshan',
         factionId: 'house-anchorhold',
         rankIndex: 5,
         rank: 'The Standing Anchor',
@@ -3065,11 +3259,11 @@ export const MEMBERS: readonly Member[] = [
         factionId: 'sect-azure-mist-court',
         rankIndex: 4,
         rank: 'Court Warden',
-        realmOrdinal: 27,
+        realmOrdinal: 37,
         role: 'senior',
         wants: 'the recall rate put in front of somebody at the terraces who can read it',
         fears: 'the day the Mist becomes interesting enough to be worth taking back',
-        detail: 'Came down on probation at nineteen, was recalled, went back up, and asked to return - which the terraces recorded as a placement because there is no other word on the form.',
+        detail: 'Came down on probation at nineteen, was recalled, went back up, and asked to return - which the terraces recorded as a placement because there is no other word on the form. Three hundred and forty years later she is one rung under Grand Ascension and the form has never been corrected, so the Pavilion\'s own register still lists the strongest person in the Azure family below the Master as a placement out of the terraces. She has not raised it. It is the single most useful thing about her position and she worked out why some time in the second century.',
         outlier: true,
         outlierReason: 'inherited',
         goodCompany: false,
@@ -3183,6 +3377,25 @@ export const MEMBERS: readonly Member[] = [
         outlier: false,
         outlierReason: null,
         goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    // The Dew was the one faction in the catalog with nobody on its bottom rung,
+    // which is the rung a player starts on and the whole reason this file exists.
+    {
+        id: 'member-weng-er',
+        name: 'Weng Er',
+        factionId: 'sect-azure-dew-sect',
+        rankIndex: 0,
+        rank: 'Dew Servant',
+        realmOrdinal: 3,
+        role: 'peer',
+        wants: 'to be in the square on a morning the elder teaches something new, which is about twice a year',
+        fears: 'the Mist year, which she has heard described by everybody except somebody who went',
+        detail: 'Carries the water for the village class and has learned the whole gathering manual standing behind the back row, out of order, from the wrong side.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
         rivalry: null,
         teaching: null
     }

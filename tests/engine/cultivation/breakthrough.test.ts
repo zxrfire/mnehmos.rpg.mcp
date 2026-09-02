@@ -8,6 +8,7 @@
  */
 
 import {
+    LAST_CROSSING_ORDINAL,
     MAX_ORDINAL,
     TOTAL_RANKS,
     isRealmBoundary,
@@ -16,6 +17,8 @@ import {
 import {
     MAX_BREAKTHROUGH_CHANCE,
     MAX_PILL_BONUS,
+    MAX_PILL_MULTIPLIER,
+    maxChanceFor,
     MIN_BREAKTHROUGH_CHANCE,
     attemptBreakthrough,
     canAttemptBreakthrough,
@@ -37,6 +40,9 @@ import { makeCultivator, makeInjuries } from './fixtures.js';
 type AmbientBand = AmbientQi;
 
 const ALL_ORDINALS = Array.from({ length: TOTAL_RANKS }, (_, i) => i);
+
+/** The rungs an attempt can actually be made from. Above the Lid, none can. */
+const CLIMBABLE_ORDINALS = ALL_ORDINALS.slice(0, LAST_CROSSING_ORDINAL + 1);
 const AMBIENT_BANDS: AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
 const ROOTS: SpiritRootKey[] = [
     'single_fire', 'dual_water_fire', 'muddled_five_element', 'mutated_lightning'
@@ -99,7 +105,7 @@ describe('eligibility', () => {
 
 describe('odds', () => {
     it('sums its itemised modifiers to the final chance, everywhere on the ladder', () => {
-        for (const ordinal of ALL_ORDINALS.slice(0, MAX_ORDINAL)) {
+        for (const ordinal of CLIMBABLE_ORDINALS) {
             for (const ambient of AMBIENT_BANDS) {
                 for (const root of ROOTS) {
                     const odds = computeBreakthroughOdds(
@@ -114,7 +120,7 @@ describe('odds', () => {
     });
 
     it('keeps the probability strictly inside (0, 1) for every build and rank', () => {
-        for (const ordinal of ALL_ORDINALS.slice(0, MAX_ORDINAL)) {
+        for (const ordinal of CLIMBABLE_ORDINALS) {
             for (const ambient of AMBIENT_BANDS) {
                 const best = computeBreakthroughOdds(
                     ready(ordinal, {
@@ -150,19 +156,49 @@ describe('odds', () => {
         expect(odds.modifiers.some(m => m.source === 'clamp:ceiling')).toBe(true);
     });
 
-    it('caps how much a single pill can contribute', () => {
-        const modest = computeBreakthroughOdds(ready(20), {
+    it('multiplies the odds rather than adding percentage points to them', () => {
+        // The correction. Read additively, a 0.35 pill took the 2% last
+        // crossing to 37% and handed a player the ascension the whole setting
+        // is built on being out of reach. It is a multiplier: 0.35 means x1.35.
+        const bare = computeBreakthroughOdds(ready(20), { ambient: 'thin' });
+        const dosed = computeBreakthroughOdds(ready(20), {
             ambient: 'thin',
             pill: { name: 'A', potency: 0.1 }
         });
+        expect(dosed.finalChance).toBeCloseTo(bare.finalChance * 1.1, 10);
+    });
+
+    it('caps how much a single pill can contribute', () => {
+        const bare = computeBreakthroughOdds(ready(20), { ambient: 'thin' });
         const absurd = computeBreakthroughOdds(ready(20), {
             ambient: 'thin',
             pill: { name: 'B', potency: 99 }
         });
-        const pillDelta = (odds: typeof absurd) =>
-            odds.modifiers.find(m => m.source.startsWith('pill:'))!.delta;
-        expect(pillDelta(modest)).toBeCloseTo(0.1, 10);
-        expect(pillDelta(absurd)).toBe(MAX_PILL_BONUS);
+        // Clamped to the multiplier ceiling, not to a flat addition.
+        expect(absurd.finalChance).toBeCloseTo(bare.finalChance * MAX_PILL_MULTIPLIER, 10);
+    });
+
+    it('keeps sum(modifiers) === finalChance even though the pill is multiplicative', () => {
+        // The invariant that makes a breakthrough ruling auditable. The pill is
+        // booked as a DERIVED additive line so the ledger still adds up.
+        for (const potency of [0, 0.1, 0.35, 99]) {
+            const odds = computeBreakthroughOdds(ready(20), {
+                ambient: 'thin',
+                pill: { name: 'ledger', potency }
+            });
+            const summed = odds.modifiers.reduce((total, m) => total + m.delta, 0);
+            expect(summed, `potency ${potency}`).toBeCloseTo(odds.finalChance, 10);
+        }
+    });
+
+    it('never carries anyone past the ceiling the rung sets', () => {
+        // A purchasable exception to `maxChanceFor` would be the same defect
+        // the additive reading had, in a different place.
+        const odds = computeBreakthroughOdds(ready(16), {
+            ambient: 'spirit_tide',
+            pill: { name: 'best there is', grade: 'mortal' }
+        });
+        expect(odds.finalChance).toBeLessThanOrEqual(maxChanceFor(16));
     });
 
     it('itemises each source exactly once', () => {

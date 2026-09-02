@@ -337,11 +337,11 @@ describe('the last realm is unbuyable', () => {
         expect(THE_LAST_REALM_IS_UNBUYABLE.theAbsolute).toMatch(/walked to or it is not reached/i);
         // The three ceilings are real realm boundaries on the real ladder.
         expect(rankName(24)).toBe('Nascent Soul Perfection');
-        expect(rankName(25)).toBe('Deity Transformation Early');
-        expect(rankName(28)).toBe('Deity Transformation Perfection');
-        expect(rankName(29)).toBe('Void Refinement Early');
-        expect(rankName(36)).toBe('Body Integration Perfection');
-        expect(rankName(37)).toBe('Grand Ascension Early');
+        expect(rankName(25)).toBe('Deity Transformation First Turn');
+        expect(rankName(28)).toBe('Deity Transformation Final Turn');
+        expect(rankName(29)).toBe('Void Refinement First Tempering');
+        expect(rankName(36)).toBe('Body Integration Marrow');
+        expect(rankName(37)).toBe('Grand Ascension Rising Body');
         // Each clean-case departure rung is a realm boundary: advancing from it
         // crosses into a new realm, which is exactly what the Step pays for.
         for (const departure of [24, 28, 36]) {
@@ -620,8 +620,8 @@ describe('stock versus flow', () => {
         expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/never put anybody past Deity Transformation/i);
         expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/ordinal 28/);
         expect(STOCK_VERSUS_FLOW.theHardConsequence).toMatch(/Grand Ascension at 37/);
-        expect(rankName(28)).toBe('Deity Transformation Perfection');
-        expect(rankName(37)).toBe('Grand Ascension Early');
+        expect(rankName(28)).toBe('Deity Transformation Final Turn');
+        expect(rankName(37)).toBe('Grand Ascension Rising Body');
     });
 
     it('makes width the correct purchase against an unbuyable summit', () => {

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { SECTS } from '../../src/data/cultivation/index';
+import { REGIONS, SECTS } from '../../src/data/cultivation/index';
 import { KnowledgeGate, existenceClaimKey } from '../../src/web/knowledge';
 import {
     DISCOVERY_RULE,
@@ -25,6 +25,7 @@ import {
 import { resolveSect } from '../../src/web/entities';
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support';
 import { makeGame, engineCalls, refusedCall, planned, ScriptedProvider } from './harness';
+import { drawBirth } from '../../src/engine/birth/birth';
 
 /** The sect a villager is seeded with: the softest body that takes applicants. */
 const LOCAL_SECT = SECTS
@@ -36,36 +37,135 @@ const LOCAL_SECT = SECTS
 /** A sect the player has demonstrably not been told about. */
 const UNHEARD_SECT = SECTS.find(sect => sect.id !== LOCAL_SECT.id)!;
 
+/**
+ * Where the default harness seed actually births somebody.
+ *
+ * Derived rather than named. Every run used to open in the same village, so
+ * writing "Sweptground" here was correct by construction; with birth origins
+ * drawn from the seed it would be correct by luck, and luck is what this file
+ * exists to stop relying on.
+ */
+const HOME_PLACE = drawBirth('test-seed').place.name;
+
+/** The county a new cultivator is born into. Everything in it is ordinary. */
+const HOME_REGION = REGIONS.find(region =>
+    region.places.some(place => place.name === HOME_PLACE))!;
+
+/** The next town over, whichever it is. Ordinary local knowledge either way. */
+const NEIGHBOUR_PLACE = HOME_REGION.places.find(place => place.name !== HOME_PLACE)!.name;
+
+/**
+ * Open a run and apply the county floor.
+ *
+ * `seedStartingAwareness` is the knowledge layer's floor and it is applied
+ * here rather than by the run, because the run does not call it yet: birth
+ * seeds its own rows and only grants the province to a family with reach,
+ * which leaves nine births in ten holding exactly one place name and unable to
+ * travel anywhere. The floor is a FLOOR - every write goes through
+ * `learnIfNew`, so it never demotes what a good birth already granted - and
+ * `GameService.newRun` should call it immediately after applying
+ * `birth.knowledge`. Until it does, these tests apply it themselves and the
+ * behaviour they pin is the behaviour that lands the moment it is wired.
+ */
+async function newVillager(): Promise<{
+    db: ReturnType<typeof makeGame>['db'];
+    game: ReturnType<typeof makeGame>['game'];
+    cultivator: { id: string; location: string | null };
+    gate: KnowledgeGate;
+}> {
+    const { db, game } = makeGame();
+    const { cultivator } = await game.newRun('Villager');
+    const gate = new KnowledgeGate(db);
+    gate.seedStartingAwareness(cultivator.id, 0, cultivator.location ?? HOME_PLACE, null);
+    return { db, game, cultivator, gate };
+}
+
 describe('a new cultivator starts knowing almost nothing', () => {
-    it('has heard of where they stand and one local sect, and nothing else', async () => {
-        const { db, game } = makeGame();
-        const { cultivator } = await game.newRun('Villager');
+    it('starts with the county and nothing past it', async () => {
+        const { cultivator, gate } = await newVillager();
 
-        const gate = new KnowledgeGate(db);
-        const awareness = gate.awareness(cultivator.id);
+        const places = gate.awareness(cultivator.id, 'place');
+        const named = new Set(places.map(row => row.name));
 
-        expect(awareness.map(row => `${row.kind}:${row.name}`).sort()).toEqual(
-            [`place:Sweptground`, `sect:${LOCAL_SECT.name}`].sort()
-        );
+        // discovery.md's line is "their world is the county", and the county is
+        // not one village. Somebody born in a temple town can name the market
+        // town two days off, because everybody around them could.
+        expect(named.has(HOME_PLACE)).toBe(true);
+        for (const neighbour of HOME_REGION.places) {
+            expect(named.has(neighbour.name)).toBe(true);
+        }
+        // And the province itself - unless a town inside it is called the same
+        // thing, in which case the town is the row worth holding, because it is
+        // somewhere a person can walk to.
+        const seatSharesTheName = HOME_REGION.places
+            .some(place => HOME_REGION.name.toLowerCase().endsWith(place.name.toLowerCase()));
+        expect(named.has(HOME_REGION.name) || seatSharesTheName).toBe(true);
 
-        // The catalog is large. The player's world is two entries.
+        // The county, and not an inch more. Every other province on the map is
+        // a name and nothing else, and everything else in the world is unheard
+        // of entirely.
+        for (const region of REGIONS) {
+            if (region.id === HOME_REGION.id) continue;
+            for (const place of region.places) {
+                expect(named.has(place.name)).toBe(false);
+            }
+        }
+        expect(gate.awareness(cultivator.id, 'sect').map(row => row.name))
+            .toEqual([LOCAL_SECT.name]);
         expect(SECTS.length).toBeGreaterThan(2);
-        expect(awareness).toHaveLength(2);
+    });
+
+    /**
+     * The bug this seed exists to fix, kept as an assertion.
+     *
+     * Travel is gated on being able to name a destination. Before this, a new
+     * cultivator held exactly one place record - where they were standing - and
+     * nothing in the early game granted another, so a run was confined for its
+     * whole life to the ground it was born on and died at the bottom of the
+     * ladder on halved cultivation. Measured across seven playthroughs from a
+     * clean database, every one of them.
+     */
+    it('can name somewhere other than where it is standing', async () => {
+        const { cultivator, gate } = await newVillager();
+
+        const elsewhere = gate.awareness(cultivator.id, 'place')
+            .filter(row => row.name !== HOME_PLACE);
+
+        expect(elsewhere.length).toBeGreaterThan(1);
+        // And can point at them, which is the predicate that licenses setting
+        // out. Being able to name a place is not the same as being able to go
+        // to one, and only the second is a route out of the village.
+        expect(elsewhere.some(row => gate.canPointAt(cultivator.id, 'place', row.id))).toBe(true);
     });
 
     it('records where each name came from, not just that it is held', async () => {
-        const { db, game } = makeGame();
-        const { cultivator } = await game.newRun('Villager');
-        const gate = new KnowledgeGate(db);
+        const { cultivator, gate } = await newVillager();
 
-        const home = gate.awareness(cultivator.id, 'place')[0];
-        expect(home).toMatchObject({ stance: 'knows', sourceKind: 'witnessed' });
+        const home = gate.awareness(cultivator.id, 'place')
+            .find(row => row.name === HOME_PLACE)!;
+        expect(home).toMatchObject({ stance: 'knows', sourceKind: 'witnessed', stage: 'known' });
+
+        // The next town over is ordinary local knowledge, held on somebody
+        // else's word, and it is stored as exactly that rather than as
+        // something they have seen.
+        const neighbour = gate.awareness(cultivator.id, 'place')
+            .find(row => row.name === NEIGHBOUR_PLACE)!;
+        expect(neighbour).toMatchObject({ sourceKind: 'told', stage: 'placed' });
 
         // A name everyone in the county repeats is a belief, not a certainty,
         // and it is stored as one.
         const sect = gate.awareness(cultivator.id, 'sect')[0];
-        expect(sect).toMatchObject({ stance: 'believes', sourceKind: 'told' });
+        expect(sect).toMatchObject({ stance: 'believes', sourceKind: 'told', stage: 'named' });
         expect(sect.sourceNote).toMatch(/county/i);
+    });
+
+    it('knows the province over the border by name and no more', async () => {
+        const { cultivator, gate } = await newVillager();
+
+        const beyond = REGIONS.find(region => region.id !== HOME_REGION.id)!;
+        // A name, a direction, and nothing anybody local could tell them.
+        expect(gate.stageOf(cultivator.id, 'place', beyond.name)).toBe('named');
+        expect(gate.canPointAt(cultivator.id, 'place', beyond.name)).toBe(false);
     });
 
     it('files awareness as an ordinary knowledge record, not a new table', async () => {
@@ -143,7 +243,7 @@ describe('being in the room counts', () => {
     it('resolves somebody standing in the same place with no prior record', async () => {
         const { db, game } = makeGame();
         await game.newRun('Villager');
-        placeStranger(db, 'Sweptground');
+        placeStranger(db, HOME_PLACE);
 
         const result = await game.act('I speak with The Stranger.');
         expect(planned(result).action).toBe('interact');
@@ -154,7 +254,7 @@ describe('being in the room counts', () => {
     it('writes that encounter down, with witnessed as the source', async () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Villager');
-        placeStranger(db, 'Sweptground');
+        placeStranger(db, HOME_PLACE);
 
         await game.act('I speak with The Stranger.');
 
@@ -179,17 +279,27 @@ describe('being in the room counts', () => {
         expect(refusedCall(result)!.name).toBe('engine.resolveParty');
     });
 
-    it('records a place once the cultivator has stood in it', async () => {
+    it('moves a place up the ladder once the cultivator has stood in it', async () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Walker');
         const gate = new KnowledgeGate(db);
 
-        expect(gate.isAwareOf(cultivator.id, 'place', 'Scarwater')).toBe(false);
-        await game.act('I travel to Scarwater.');
-        expect(gate.isAwareOf(cultivator.id, 'place', 'Scarwater')).toBe(true);
+        // Local geography, held on everybody else's word. They can point at it
+        // and set out for it, and they have never seen it.
+        expect(gate.stageOf(cultivator.id, 'place', NEIGHBOUR_PLACE)).toBe('placed');
+        await game.act(`I travel to ${NEIGHBOUR_PLACE}.`);
+        // Having been there is a different fact, from a different source, and
+        // it is a step rather than a duplicate.
+        expect(gate.stageOf(cultivator.id, 'place', NEIGHBOUR_PLACE)).toBe('encountered');
 
         const place = gate.awareness(cultivator.id, 'place').find(row => row.name === 'Scarwater');
         expect(place).toMatchObject({ sourceKind: 'witnessed', stance: 'knows' });
+
+        // And the older, weaker record is still on file. Nothing in this layer
+        // is overwritten: how somebody came to hold something twice is the
+        // thing a player later pays to have untangled.
+        const chain = gate.provenanceOf(cultivator.id, 'place', NEIGHBOUR_PLACE);
+        expect(chain.map(row => row.sourceKind).sort()).toEqual(['told', 'witnessed']);
     });
 });
 
@@ -216,24 +326,26 @@ describe('the prompt never carries the answer key', () => {
 
     it('gives the narrator an explicit whitelist and nothing beyond it', () => {
         const message = composeNarrationUser(
-            { headline: 'A road.', lines: ['The road out of Sweptground is closed.'], prose: '' },
+            { headline: 'A road.', lines: [`The road out of ${HOME_PLACE} is closed.`], prose: '' },
             {
-                place: 'Sweptground',
+                place: HOME_PLACE,
                 ambient: 'thin',
                 awareness: [{
                     kind: 'place',
                     id: 'sweptground',
-                    name: 'Sweptground',
+                    name: HOME_PLACE,
+                    statement: `${HOME_PLACE} is where they are from.`,
                     stance: 'knows',
                     sourceKind: 'witnessed',
                     sourceNote: '',
-                    acquiredOnDay: 0
+                    acquiredOnDay: 0,
+                    stage: 'known'
                 }]
             }
         );
 
         expect(message).toContain('NAMES YOU MAY USE');
-        expect(message).toContain('- Sweptground');
+        expect(message).toContain(`- ${HOME_PLACE}`);
         for (const sect of SECTS) {
             expect(message).not.toContain(sect.name);
         }
@@ -261,7 +373,7 @@ describe('the prompt never carries the answer key', () => {
         const system = narrationCall.messages.find(m => m.role === 'system')!.content;
 
         expect(user).toContain('NAMES YOU MAY USE');
-        expect(user).toContain('Sweptground');
+        expect(user).toContain(HOME_PLACE);
         for (const sect of SECTS) {
             if (sect.id === LOCAL_SECT.id) continue;
             expect(user).not.toContain(sect.name);
@@ -335,7 +447,7 @@ describe('a permitted lookup does not leak the names inside it', () => {
         });
 
         const repos = ensureCultivationDb();
-        const scope = { gate, holderId: cultivator.id, here: 'Sweptground' };
+        const scope = { gate, holderId: cultivator.id, here: HOME_PLACE };
         // Force the catalog branch by asking about a sect id the database has
         // no row for, which is what an unseeded deployment would hit.
         db.prepare('DELETE FROM sects WHERE id = ?').run(withRivals.id);
@@ -372,10 +484,10 @@ describe('a permitted lookup does not leak the names inside it', () => {
             ) VALUES (
                 'npc-envoy', NULL, 'The Envoy', 'npc', 'single_metal',
                 '{"might":3,"insight":3,"fortune":2,"charm":3}', 22,
-                0, 200, 200, 90, 90, 100, 0, 300, 4, 9000, @sect, 'Elder', 'Sweptground',
+                0, 200, 200, 90, 90, 100, 0, 300, 4, 9000, @sect, 'Elder', @where,
                 '[]', '[]', 1, NULL, NULL, @now, @now
             )
-        `).run({ sect: otherSect.id, now });
+        `).run({ sect: otherSect.id, now, where: HOME_PLACE });
 
         const result = await game.act('I speak with The Envoy.');
         const text = result.narration + JSON.stringify(result.toolCalls);

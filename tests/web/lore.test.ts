@@ -57,6 +57,22 @@ import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-s
 import { makeGame } from './harness';
 import { CultivationRNG } from '../../src/engine/cultivation/rng';
 
+/**
+ * Wherever the player actually is.
+ *
+ * Read off the row rather than named. Every run used to open in the same
+ * village, so "Sweptground" was correct by construction; births are drawn from
+ * the seed now, and a hardcoded village silently put every one of these
+ * witnesses in a different province from the person they were supposed to be
+ * standing next to - which reads as a channel that stopped working.
+ */
+function playerPlace(db: Database.Database): string {
+    const row = db
+        .prepare("SELECT location FROM cultivators WHERE kind = 'pc' ORDER BY rowid DESC LIMIT 1")
+        .get() as { location: string | null } | undefined;
+    return row?.location ?? 'Sweptground';
+}
+
 /** Put somebody in the same place as the player. */
 function placePerson(
     db: Database.Database,
@@ -82,7 +98,7 @@ function placePerson(
         id,
         name,
         ordinal,
-        where: opts.where ?? 'Sweptground',
+        where: opts.where ?? playerPlace(db),
         sectId: opts.sectId ?? null,
         sectRank: opts.sectRank ?? null,
         now
@@ -447,6 +463,12 @@ describe('the overheard channel', () => {
         for (let i = 0; i < 120; i++) {
             const heard = offerHearing({ repos, gate, cultivator, run, occasion: `frag-${i}` });
             if (!heard) continue;
+            // The traveller channel shares this path and is a different device
+            // entirely - somebody who came through and said where from. What is
+            // being asserted here is that a scene with nobody addressing the
+            // player produces one of the two unaddressed channels and never a
+            // conversation.
+            if (heard.mode === 'passing') continue;
             expect(heard.mode).toBe('overheard');
             expect(heard.speaker).toBeNull();
             if (heard.names.length === 2) {
@@ -469,7 +491,7 @@ describe('the overheard channel', () => {
         const run = game.state().run as never;
 
         let heard = null;
-        for (let i = 0; i < 120 && !(heard && heard.names.length === 2); i++) {
+        for (let i = 0; i < 120 && !(heard && heard.mode === 'overheard' && heard.names.length === 2); i++) {
             heard = offerHearing({ repos, gate, cultivator, run, occasion: `two-${i}` });
         }
         expect(heard).not.toBeNull();
@@ -493,7 +515,12 @@ describe('the overheard channel', () => {
         const run = game.state().run as never;
 
         for (let i = 0; i < 40; i++) {
-            expect(offerHearing({ repos, gate, cultivator, run, occasion: `mono-${i}` })).toBeNull();
+            const heard = offerHearing({ repos, gate, cultivator, run, occasion: `mono-${i}` });
+            // A monologue for the player's benefit is the exact failure the
+            // overheard device exists to avoid, and one person alone is not
+            // having a conversation. Somebody walking through the village is a
+            // different thing and is allowed.
+            expect(heard?.mode).not.toBe('overheard');
         }
     });
 });
@@ -712,9 +739,10 @@ describe('listening on purpose', () => {
         const run = game.state().run as never;
 
         for (let i = 0; i < 60; i++) {
-            expect(offerHearing({
+            const heard = offerHearing({
                 repos, gate, cultivator, run, occasion: `la-${i}`, intent: 'listening'
-            })).toBeNull();
+            });
+            expect(heard?.mode).not.toBe('overheard');
         }
     });
 });

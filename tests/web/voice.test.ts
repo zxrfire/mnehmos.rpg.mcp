@@ -24,6 +24,10 @@
 import { describe, it, expect } from 'vitest';
 import { SECTS } from '../../src/data/cultivation/index';
 import { makeGame, engineCalls } from './harness';
+import { drawBirth } from '../../src/engine/birth/birth';
+
+/** Where the default harness seed births somebody. Derived, never assumed. */
+const HOME_PLACE = drawBirth('test-seed').place.name;
 
 const LOCAL_SECT = SECTS
     .filter(sect => sect.recruits)
@@ -118,7 +122,7 @@ describe('refusals read as the world declining', () => {
         expect(shown).not.toContain('The engine will not conjure');
         expect(shown).not.toContain('Known to this cultivator');
         // What is there instead is the world: a place, or a person not knowing.
-        expect(shown).toMatch(/Sweptground|carries on|answers to it|nobody about/i);
+        expect(shown).toMatch(new RegExp(`${HOME_PLACE}|carries on|answers to it|nobody about`, 'i'));
         expect(shown.length).toBeGreaterThan(30);
     });
 
@@ -184,7 +188,7 @@ describe('the zero-provider narration is a situation, not a sheet', () => {
 
         const shown = playerFacing(await game.act('I look around.'));
         expect(shown.length).toBeGreaterThan(60);
-        expect(shown).toMatch(/Sweptground/);
+        expect(shown).toContain(HOME_PLACE);
     });
 });
 

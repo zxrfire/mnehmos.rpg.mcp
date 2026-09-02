@@ -65,8 +65,14 @@ describe('above the early game the allowance tracks the realm', () => {
     it('grows with the lifespan the realm actually grants', () => {
         for (const tier of REALM_TIERS) {
             const allowance = stagnationYearsForOrdinal(tier.ordinalStart);
+            // Read off the rung, not the tier: the Immortal realm's two rungs
+            // do not share a lifespan, so `tier.lifespanYears` is the headline
+            // figure rather than the one that applies at its first ordinal.
             expect(allowance).toBe(
-                Math.max(STAGNATION_YEARS, tier.lifespanYears * STAGNATION_LIFESPAN_FRACTION)
+                Math.max(
+                    STAGNATION_YEARS,
+                    lifespanForOrdinal(tier.ordinalStart) * STAGNATION_LIFESPAN_FRACTION
+                )
             );
         }
     });

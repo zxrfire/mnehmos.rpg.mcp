@@ -14,6 +14,11 @@
 
 import { describe, it, expect } from 'vitest';
 
+import {
+    FALSE_IMMORTAL_ORDINAL,
+    LAST_CROSSING_ORDINAL,
+    rankName
+} from '../../src/engine/cultivation/realms.js';
 import { getSect } from '../../src/data/cultivation/sects.js';
 import { getEncounter } from '../../src/data/cultivation/encounters.js';
 import { getImmortalItem, getHoldingsOf } from '../../src/data/cultivation/immortal-items.js';
@@ -58,7 +63,11 @@ describe('wandering figures', () => {
     it('is a False Immortal, permanently barred, with a countable lifespan', () => {
         const w = getWanderer(LU_SHENG)!;
         expect(w.crossingOutcome).toBe('false_immortal');
-        expect(w.lastOrdinal).toBe(44);
+        // On the ladder, not beside it: he holds the lower rung of the
+        // Immortal realm and sorts into the ordinary power table there.
+        expect(w.lastOrdinal).toBe(FALSE_IMMORTAL_ORDINAL);
+        expect(w.lastOrdinal).toBeGreaterThan(LAST_CROSSING_ORDINAL);
+        expect(rankName(w.lastOrdinal)).toBe('False Immortal');
         expect(w.crossingYearsAgo).toBeGreaterThan(100);
         // Vast, finite, and he knows the number.
         expect(w.lifespanYearsRemaining).toBeGreaterThan(1_000);

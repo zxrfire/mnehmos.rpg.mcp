@@ -19,6 +19,10 @@ import {
     makeGame, cultivatorRow, injuryCount, planned, engineCalls,
     ScriptedProvider, UnreachableProvider
 } from './harness';
+import { drawBirth } from '../../src/engine/birth/birth';
+
+/** Where the default harness seed births somebody. Derived, never assumed. */
+const HOME_PLACE = drawBirth('test-seed').place.name;
 
 /**
  * The nightmare response: a model that has decided what happened, invented the
@@ -65,15 +69,21 @@ describe('a hallucinating model cannot mutate state', () => {
         expect(planned(result)).toMatchObject({ action: 'look', source: 'fallback' });
         expect(planned(result).note).toMatch(/rejected/);
 
-        // 4. Every engine call the inspector lists is a read.
-        expect(engineCalls(result).map(c => c.name)).toEqual(['engine.readState']);
+        // 4. Every engine call the inspector lists is a read, or a knowledge
+        //    record the ENGINE chose to write. A name landing in a scene is
+        //    decided from real rows before any prose exists - it is the
+        //    opposite of the failure under test here, which is the model
+        //    asserting an outcome - and it moves no column on the cultivator,
+        //    which assertion 1 has already checked byte for byte.
+        const calls = engineCalls(result).map(c => c.name);
+        expect(calls.filter(name => name !== 'knowledge.learn')).toEqual(['engine.readState']);
         expect(engineCalls(result)[0].summary).toContain('no time passed');
 
         // 5. The prose was still shown - decoratively. It is in the log as a
         //    narrator line, sitting next to the engine line that contradicts it.
         expect(result.narration).toBe(HALLUCINATED_PROSE);
         const engineLines = result.state.log.filter(e => e.role === 'engine');
-        expect(engineLines.some(e => e.text.includes('Sweptground'))).toBe(true);
+        expect(engineLines.some(e => e.text.includes(HOME_PLACE))).toBe(true);
     });
 
     it('invented stat fields on a VALID action are stripped, not applied', async () => {
@@ -315,7 +325,7 @@ describe('the deterministic path is a first-class way to play', () => {
         // Not a stub: prose with paragraphs, a place, a rank, and the account
         // of what the years cost.
         expect(acted.narration.length).toBeGreaterThan(200);
-        expect(acted.narration).toContain('Sweptground');
+        expect(acted.narration).toContain(HOME_PLACE);
         expect(acted.narration).toMatch(/Qi Condensation/);
         expect(acted.narration.split('\n\n').length).toBeGreaterThanOrEqual(3);
         expect(acted.narration).not.toMatch(/undefined|NaN|\[object Object\]/);

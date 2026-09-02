@@ -11,6 +11,7 @@ import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator'
 import type { Narrator } from '../../src/web/narrator';
 import { createApp, type ProviderStatus } from '../../src/web/server';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
+import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
 /** In-memory database with the real migrations, foreign keys on. */
 export function makeDb(): Database.Database {
@@ -88,6 +89,22 @@ export interface HarnessOptions {
      * and almost no test is asserting anything about them.
      */
     worldEnabled?: boolean;
+    /**
+     * The world's own seed - the OTHER half of a reproducible run.
+     *
+     * `seed` above fixes the run. It does not fix the world the run is lived
+     * in: an installation with no world mints one from `randomUUID()` on first
+     * touch, so the same run seed against two fresh databases meets a
+     * different several hundred people. Measured: `npc-0` was "Duan Fuyan" at
+     * ordinal 10 in one and "Han Fulu" at ordinal 9 in the other, and "I
+     * attack someone of my own rank" fought a different person each time.
+     *
+     * Set this and the world is created from a known seed before the run
+     * opens, which is what lets a played test pin one seed to one outcome
+     * instead of sweeping thirty and asserting a rate. Only
+     * `makeGameInWorld` honours it, because creating a world is async.
+     */
+    worldSeed?: string;
     narrator?: Narrator;
     provider?: LLMProvider;
 }
@@ -101,6 +118,11 @@ export interface Harness {
 }
 
 export function makeGame(options: HarnessOptions = {}): Harness {
+    if (options.worldSeed !== undefined) {
+        // Not silently ignored: a test that thinks it pinned the world and did
+        // not is a test that pins a coincidence.
+        throw new Error('worldSeed needs the async form - use `await makeGameInWorld({ ... })`.');
+    }
     const db = makeDb();
     const narrator = options.narrator
         ?? (options.provider
@@ -116,6 +138,43 @@ export function makeGame(options: HarnessOptions = {}): Harness {
     });
 
     return { db, game, narrator, repos: ensureCultivationDb() };
+}
+
+/**
+ * A game whose WORLD is pinned as well as its run.
+ *
+ * `makeGame` is synchronous and 200-odd call sites depend on that, and
+ * creating a world is not - it loads the catalog and seeds several hundred
+ * people - so the pinned form is its own async function rather than a flag
+ * that sometimes returns a promise.
+ *
+ * What it does is the whole of the fix: create the world from `worldSeed`
+ * BEFORE the run opens. `activeWorld()` only mints a world when the
+ * installation has none, so a world that already exists is the one the run
+ * enters, and both halves of the outcome are then fixed - who is alive, at
+ * what rung, standing where, and what the run's own streams draw.
+ *
+ * `worldEnabled` defaults to TRUE here, unlike `makeGame`: pinning a world a
+ * test never advances is meaningless, and asking for one is saying you care.
+ */
+export async function makeGameInWorld(options: HarnessOptions = {}): Promise<Harness> {
+    const { worldSeed, ...rest } = options;
+    if (worldSeed === undefined) throw new Error('makeGameInWorld needs a worldSeed.');
+
+    const harness = makeGame({ ...rest, worldEnabled: rest.worldEnabled ?? true });
+
+    // The world layer's process caches are keyed by world id, and a world id
+    // is `world-${seed}` - so two harnesses pinning the same seed produce the
+    // same id, and a stale handle from the PREVIOUS harness's database would
+    // otherwise be the one found. The worlds are in SQLite; dropping the
+    // caches costs a reload and nothing else.
+    resetCultivationWorlds();
+    // `makeGame` has already pointed the ambient handle at this harness's
+    // database - the `GameService` constructor does it - so this world is
+    // created in the right place.
+    await createWorld({ seed: worldSeed });
+
+    return harness;
 }
 
 export const TEST_PROVIDER_STATUS: ProviderStatus = {

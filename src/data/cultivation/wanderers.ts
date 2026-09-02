@@ -26,7 +26,7 @@
  */
 
 import { z } from 'zod';
-import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { AwarenessSchema } from './hierarchy.js';
 import type { SecretStatus } from '../../engine/social/secrets.js';
 
@@ -241,7 +241,13 @@ export const WandererSchema = z.object({
     recordName: z.string().min(1),
     /** What most people who know anything call him. */
     commonName: z.string().min(1),
-    /** Above the ladder in effect; the ordinal is the last one he stood on. */
+    /**
+     * Where he stands, on the same ladder as everybody else. False Immortal is
+     * a rank rather than a condition, so he sorts into the ordinary power table
+     * above every Tribulation Transcendence in the world - which is the whole
+     * difficulty he presents. It is also the last ordinal he will ever hold:
+     * the rung above it is legal, occupied, and shut against his name.
+     */
     lastOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     crossingOutcome: CrossingOutcomeSchema,
     crossingYearsAgo: z.number().int().min(1),
@@ -457,13 +463,13 @@ export const WANDERERS: readonly Wanderer[] = [
         id: 'wanderer-lu-sheng',
         recordName: 'Lu Sheng',
         commonName: 'the Guest',
-        lastOrdinal: 44,
+        lastOrdinal: FALSE_IMMORTAL_ORDINAL,
         crossingOutcome: 'false_immortal',
         crossingYearsAgo: 640,
         before:
             'Born at the eastern perimeter to the Girdle remnant, three generations after the Anchorhold took the survey, into a lineage that is permitted to live there and barred from holding rank in the house that replaced theirs. He climbed anyway, without a patron, without a grant, and without ever being admitted to anything, which is the part of the account nobody disputes because there is nobody who could have sponsored him.',
         whatHappened:
-            'He reached the end of Tribulation Transcendence six hundred and forty years ago and made the last crossing. The tribulation was survived and the hole was opened. The crossing did not complete: what is left stayed on this side, permanently and by name, and the Lid does not open twice for the same name. He is stronger than anything at Tribulation Transcendence and he is not a True Immortal, and both halves of that are permanent.',
+            'He reached the end of Tribulation Transcendence six hundred and forty years ago and made the last crossing. The tribulation was survived and the hole was opened. The crossing did not complete: he came out over the Lid rather than through it, permanently and by name, and the Lid does not open twice for the same name. So he stands one rung above every Tribulation Transcendence alive and one rung below the thing he was reaching for, and both halves of that are permanent.',
         incomplete:
             'He cannot hear rain. Every other sound reaches him normally. He watches it come down in silence and refers to it, when it comes up at all, the way a person refers to a mild inconvenience of long standing.',
         incompleteIsUnexplained: true,
@@ -485,14 +491,14 @@ export const WANDERERS: readonly Wanderer[] = [
             rankHeld: 'Guest of the Court',
             formerRank: 'First Seat',
             whatItAmountsTo:
-                'It is real and it is empty, and it is what is left of something that was not. He held First Seat: at Tribulation Transcendence Perfection there was nobody above him, and he made the crossing from the top of the Court rather than from the edge of it. What came back could not hold a seat. Seats go by ordinal and then by remaining years, and a False Immortal has no ordinal and no attempts left at all, so he is not merely unranked - he is the one person the rule can never favour, and the Court had to invent somewhere to put him. Guest of the Court sits outside the four rungs rather than beneath them, he was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service. He does go back, though - not often and on no schedule, and he sits with the Seats and talks, which is the one obligation-free conversation any of them get and the only place he is not the strangest thing in the room. There is no obligation attached in either direction and neither party has ever proposed one - including the obvious one: if the mountains were attacked tomorrow nothing whatsoever compels him to come, and nobody can say whether he would. The tie is real for all that. He is on the roll and has never asked to be taken off it, and what that would mean in an emergency is a question nobody has put to him - not because it is delicate but because it has never come up, and because the handful who could ask are the four who would need the answer. Outside the mountains it is not even a question: too few people know he is on the roll for it to deter anybody, and the Court has never tried to trade on it.',
+                'It is real and it is empty, and it is what is left of something that was not. He held First Seat: at Tribulation Transcendence Perfection there was nobody above him, and he made the crossing from the top of the Court rather than from the edge of it. What came back could not hold a seat. Seats go by ordinal and then by remaining years, and by ordinal he outranks all four of them - which is exactly why the rule cannot seat him. A seat is a position in a queue for the crossing, and he has no attempts left at all, so the strongest person on the mountain is the one person the queue can never order, and the Court had to invent somewhere to put him. Guest of the Court sits outside the four rungs rather than beneath them, he was entered on it without discussion, and has never used it for anything. No Seat has asked him for a service. He does go back, though - not often and on no schedule, and he sits with the Seats and talks, which is the one obligation-free conversation any of them get and the only place he is not the strangest thing in the room. There is no obligation attached in either direction and neither party has ever proposed one - including the obvious one: if the mountains were attacked tomorrow nothing whatsoever compels him to come, and nobody can say whether he would. The tie is real for all that. He is on the roll and has never asked to be taken off it, and what that would mean in an emergency is a question nobody has put to him - not because it is delicate but because it has never come up, and because the handful who could ask are the four who would need the answer. Outside the mountains it is not even a question: too few people know he is on the roll for it to deter anybody, and the Court has never tried to trade on it.',
             whatTheFactionGets:
                 'Prestige, without having done anything to earn it: the Court has a False Immortal on its roll, everyone who knows anything knows it, and the Court has never once mentioned him. It also gets the only living account of what the crossing looks like from the top of that ladder, from somebody who went at it with every advantage the Court can supply. It has never asked, and the three who would benefit most are the three who have to sit with why not.',
             whenHeVisits:
                 'Every visit the Third Seat delivers a dao sermon on obligation, at length, to a man permanently barred from the only obligation that would have mattered. He finds it insufferable and does not hide it well. He sits through it anyway, and not for her: the other three would lose face if a Seat were seen to be walked out on, and he has nothing left to lose but they do. It is the only thing in his life he still does purely because somebody else would be diminished if he did not.'
         },
         whoKnows:
-            'Four Seats and him. The Court is opaque by construction rather than by policy - it does not announce, deny, correct or brief, and it has never once mentioned him in any setting where a third party was present. So none of this is discoverable: no archive holds it, no register records it, and there is no rumour with a source behind it. What escapes, escapes because he said it to somebody, usually in passing, usually to a person with no way to check and no idea what they were being handed.',
+            'Four Seats and him, and that is knowing rather than suspecting. The Court is opaque by construction rather than by policy - it does not announce, deny, correct or brief, and it has never once mentioned him in any setting where a third party was present. So no archive anywhere holds confirmation of any of it, which is not the same as no archive holding anything: all three apex institutions carry a line with his name on it, the Hollow Court against it, and the word possible. That is the whole of what any of them has. No date, no circumstances, no account of anything, nothing about where he is or what he does, and nothing whatever about the Court\'s arrangement with him. Nor that he held First Seat, which is the single most significant fact about him and is in nobody\'s records anywhere: what is public about that house is who has entered it and nothing after, so no roster of its seats has ever existed outside those mountains and the seats could turn over inside a century with no event for anybody to observe and nothing to observe it against. None of the three has ever added a fourth thing to the line and none of them has been able to strike it either: confirming it means approaching the one house in the world nobody approaches, an unconfirmed False Immortal is not a thing any institution moves on, and being wrong in either direction costs more than the answer is worth. Outside those four and those three lines there is nothing at all. What escapes, escapes because he said it to somebody, usually in passing, usually to a person with no way to check and no idea what they were being handed.',
         whyNotWithThem:
             'The Hollow Court is four people working continuously on the crossing, and presence there is measured in decades of absence because that is what the work looks like. He is permanently barred from that crossing - it has been opened against his name and will not open again - so there is nothing at the Court for him to do. Everyone else on those mountains has the only thing he does not have, which is something left to attempt. So he left, and nobody argued.',
         wants:
