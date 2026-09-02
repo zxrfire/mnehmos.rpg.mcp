@@ -137,6 +137,10 @@ describe('which verb ADMIN was told to run', () => {
 
     it('and spelling force is how the playable one is asked for instead', () => {
         expect(readAForcedVerb('force move Nine Peaks')?.verb).toBe('move');
+        // The same for `give`, which is an alias of `grant_item` on the admin
+        // surface as well as a playable verb.
+        expect(readAForcedVerb('give Shen Liefeng my purse')).toBeNull();
+        expect(readAForcedVerb('force give Shen Liefeng my purse')?.verb).toBe('give');
     });
 
     it('reads no verb out of prose, and none out of key=value', () => {
@@ -158,7 +162,12 @@ describe('which verb ADMIN was told to run', () => {
     });
 
     it('accepts every playable verb that is not also an admin word', () => {
-        const admin = new Set(['move', 'site', 'wait', 'unclear']);
+        // `give` joins the three: it is an alias of the admin `grant_item`
+        // action, so a bare `ADMIN give ...` is the operator asking for the
+        // admin surface and not for the playable verb. Spelling the force word
+        // still reaches it - `ADMIN force give ...` - which is the whole of
+        // what this collision costs and is asserted below.
+        const admin = new Set(['move', 'site', 'wait', 'unclear', 'give']);
         for (const verb of ACTION_NAMES) {
             const read = readAForcedVerb(verb);
             if (admin.has(verb)) expect(read, verb).toBeNull();

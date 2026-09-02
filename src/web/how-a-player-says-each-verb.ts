@@ -215,6 +215,18 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I part with it for whatever it fetches',
         'what would anybody pay me for this'
     ],
+    // Every one of these is somebody parting with a thing for nothing. None of
+    // them names a price, because a sentence that says what is wanted back is a
+    // purchase or a trade and belongs to `buy` or `request` - which is the one
+    // boundary this verb has to hold, and the tier reads it off these.
+    give: [
+        'I hand him the purse',
+        'I give Shen Liefeng my manual',
+        'I press it into her hand',
+        'I pass it to him',
+        'I put ten stones on the table',
+        'I hand over what I am carrying to her'
+    ],
     inventory: [
         'what am I carrying',
         'what is in my pack',

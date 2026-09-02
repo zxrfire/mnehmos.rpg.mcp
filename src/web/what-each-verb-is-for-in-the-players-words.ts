@@ -69,7 +69,13 @@ import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
  * at the point the verb is recognised and never by a model - that is what keeps
  * "what was put on the table" a mechanic rather than a word.
  */
-export type PlanField = 'days' | 'target' | 'intent' | 'topic' | 'rations' | 'terms' | 'opening';
+export type PlanField =
+    | 'days' | 'target' | 'intent' | 'topic' | 'rations' | 'terms' | 'opening'
+    // How many stones a gift is. Read off the sentence and never asked of a
+    // model, for the reason `rations` is not asked of one: it is a fact about
+    // what was typed, and a model that supplies it is deciding how much of
+    // somebody's purse left the room.
+    | 'stones';
 
 /**
  * The fields a MODEL may fill in, which is not all of them.
@@ -283,6 +289,16 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             herb becomes spirit stones, so it is the right answer whenever the player wants
             money and is carrying something. A buyer pays less than list, and how much less
             depends on the ladder. Passes no time.`
+    },
+    give: {
+        takes: ['target', 'topic', 'stones'],
+        says: `hand somebody a thing you are already carrying, for nothing. "target" is who -
+            omit it for whoever is at hand; "topic" is what, in the player's own words, resolved
+            against the pouch; "stones" is the number where the sentence names one. It costs no
+            day and nothing can fail: they are not being asked for anything. NOT for a purchase
+            or a trade - a sentence that says what is wanted back is "buy" or "request". What it
+            leaves is a favour they hold about the player, which is the only way to put somebody
+            in your debt without leaning on them.`
     },
     inventory: {
         takes: [],
