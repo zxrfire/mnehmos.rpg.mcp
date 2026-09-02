@@ -437,6 +437,13 @@ import {
     oddsOf,
     resolveAttempt,
     whatFollowsFromTheBout,
+    // Who this particular person is about parting with things, which the
+    // resolver would derive on its own. Read here so the PROSE can say it: a
+    // term in an odds breakdown is legible to somebody reading the mechanical
+    // channel and invisible to somebody reading the sentence, and the ruling
+    // this serves is that a generous elder should READ as generous.
+    openHandednessOf,
+    howTheyHoldWhatTheyHave,
     type AskWeight,
     type BoutTerms
 } from '../engine/social-leverage/index.js';
@@ -11843,6 +11850,23 @@ ${unnamed}`;
         const heldTie = tieFrom(this.repos, party.id, cultivator.id);
         const tieStrength = heldTie?.active ? heldTie.strength : 0;
 
+        // ── AND WHO THIS PARTICULAR PERSON IS ────────────────────────────
+        //
+        // Read from their id and from nothing else, which is the whole of the
+        // ruling: *"kind elders exist just as greedy demonic cultivators
+        // exist."* Two people at the same rung of the same house, equally owed
+        // and equally fond of you, answered identically before this.
+        //
+        // The resolver would derive the same number on its own if this were not
+        // passed; it is read here so the SENTENCES can say it, in the facts
+        // before the outcome and in the refusal after it. A term nobody can see
+        // is a term nobody can play against.
+        const openHandedness = openHandednessOf(party.id);
+        const holdsThings = howTheyHoldWhatTheyHave(openHandedness);
+        const aboutThem = holdsThings === null
+            ? party.facts
+            : [...party.facts, `${party.name} ${holdsThings}.`];
+
         // ── ONE INPUT, PRICED ONCE, ROLLED AT MOST ONCE ──────────────────
         //
         // Built before the read branches off, because the read and the attempt
@@ -11868,7 +11892,8 @@ ${unnamed}`;
                 ...(party.party.charm === undefined ? {} : { charm: party.party.charm }),
                 factionId: asked.factionId,
                 alignment: theirSect?.alignment ?? null,
-                ranked: party.party.ranked
+                ranked: party.party.ranked,
+                openHandedness
             },
             onDay: Math.floor(run.elapsedDays),
             // ── AND WHAT THE TWO OF THEM ALREADY ARE TO EACH OTHER ───────
@@ -11912,7 +11937,7 @@ ${unnamed}`;
         if (weighing) {
             const weighed = oddsOf(attempt);
             const weighing = this.freeAction(run, 'request', factsForWeighingARequest(
-                cultivator, party.name, shape, costing, party.facts, offered, priorAsks,
+                cultivator, party.name, shape, costing, aboutThem, offered, priorAsks,
                 tieStrength, weighed.odds
             ));
             // Filed as a call rather than only onto `structure`, so the read
@@ -12007,8 +12032,8 @@ ${unnamed}`;
         // claim about the ledger and the only honest source for that claim is
         // whether anything went into it.
         const facts = factsForRequest(
-            cultivator, party.name, shape, named, costing, result, party.facts, priorAsks,
-            left.wroteToTheLedger, tieStrength
+            cultivator, party.name, shape, named, costing, result, aboutThem, priorAsks,
+            left.wroteToTheLedger, tieStrength, openHandedness
         );
         facts.lines.push(...spent.facts.lines);
         facts.structure.push(...spent.facts.structure);

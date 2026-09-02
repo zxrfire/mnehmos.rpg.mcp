@@ -92,6 +92,64 @@ The `purse` term is three constraints and no fourth:
 `PURSE_MAX` is 0.2, deliberately under one realm of standing and under a tie at
 full strength. Money is a term and it is never **the** term.
 
+## Two people at the same rung of the same house are not the same door
+
+The design owner's ruling:
+
+> some people are greedy some generous, this should be part of their character -
+> **kind elders exist just as greedy demonic cultivators exist.**
+
+The second clause is the constraint, and it is a constraint on the model rather
+than a note about flavour. **Disposition must not be predictable from alignment.**
+The righteous/demonic axis in this world is about method and permission - see the
+table above, which is entirely about what a house supplies and what it takes up -
+and it is not about being nice. A model that let a demonic robe imply a tight fist
+would flatten the most interesting thing about the setting into a colour code, and
+it would do it invisibly, because every individual result would still read
+plausibly.
+
+`how-freely-somebody-parts-with-what-they-have.ts` is the whole of it, and it
+takes **a person's id and nothing else**. There is no parameter through which an
+alignment, a faction or a rung could reach it. What comes back is one number on
+-1..+1, triangular, so most people are ordinary about this and the ends are
+uncommon without being absent.
+
+**Nothing switches on a personality, because there is no personality to switch
+on.** AGENTS.md forbids enumerating what NPCs do, and greed and generosity are an
+example of a disposition rather than the set of them - so the shape has to be one
+where a tenth kind of person costs no code. The inversion that gets there is to
+stop asking *what kind of person is this* and start asking *how heavily does what
+a thing costs them weigh with them*, then multiply. A tenth kind of person is a
+different number with a different sentence beside it.
+
+The `disposition` term is shaped like `purse` and for the same reason:
+
+- **Drawn from the subject when the caller does not supply it.** `Party.openHandedness`
+  is an override, not the source. Two callers reach `resolveAttempt` - the played
+  game and the world simulation - and a field either could forget is a field one
+  of them will forget.
+- **It discounts cost, not danger.** `AskWeight` runs two quantities up one scale:
+  what a thing COSTS them at the bottom and what it RISKS them at the top.
+  Generosity is about the first only, so `DISPOSITION_REACH` peaks at
+  `a_real_favour` and falls to a tenth at `a_betrayal`. A generous person hands
+  over the book; a generous person is not one rung likelier to end their own
+  standing.
+- **`DISPOSITION_MAX` is 0.18** - over half a purse, because who somebody is
+  should outweigh what a stranger happens to be carrying, and under both a realm
+  of standing and a tie at full strength, because otherwise the world turns on a
+  coin the player cannot see.
+
+**And it has to be visible, not only arithmetic.** A term in an odds breakdown is
+legible to somebody reading the mechanical channel and invisible to somebody
+reading the sentence, so the module also owns two readings of the same number:
+what somebody is like, said among the facts before the outcome, and what a no from
+*this* person is like, said in the refusal. Measured in a played run, two neutral
+Standing Grants at the same rung in the same town, asked the same thing on the
+same day by the same cultivator, came back at **8 in a hundred against 2** - and
+the engine channel said why, term by term: *"how freely this particular person
+parts with things added 9 points"* against *"cost 11 points"*, with every other
+term identical.
+
 ## The four outcomes
 
 Two is not play.
@@ -192,6 +250,9 @@ Three things about it are load-bearing:
 
 ```text
 an-attempt-to-move-somebody.ts          the odds, the four outcomes, the marks
+how-freely-somebody-parts-with-what-they-have.ts
+                                        one number per person, from their id and
+                                        never from their house
 what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
 going-further-than-an-agreed-bout-allowed.ts
