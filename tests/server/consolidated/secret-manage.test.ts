@@ -484,7 +484,9 @@ describe('secret_manage consolidated tool', () => {
             const parsed = JSON.parse(result.content[0].text);
             expect(parsed.error).toBe('invalid_action');
             expect(parsed.suggestions).toBeDefined();
-            expect(parsed.message).toContain('Did you mean');
+            // Below the noise floor the refusal names every action instead of
+            // three unrelated near-misses. See SUGGESTION_NOISE_FLOOR.
+            expect(parsed.message).toContain('The actions are');
         });
 
         it('should return validation error for missing required params', async () => {

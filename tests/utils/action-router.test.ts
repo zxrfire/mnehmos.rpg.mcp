@@ -107,7 +107,11 @@ describe('action-router utilities', () => {
 
                 expect(parsed.error).toBe('invalid_action');
                 expect(parsed.suggestions).toBeDefined();
-                expect(parsed.message).toContain('Did you mean');
+                // Below the noise floor the refusal names every action rather
+                // than three near-misses ranked by letter overlap. See
+                // SUGGESTION_NOISE_FLOOR in fuzzy-enum.ts.
+                expect(parsed.validActions).toBeDefined();
+                expect(parsed.message).toContain('The actions are');
             });
 
             it('should return error for missing action parameter', async () => {

@@ -345,6 +345,18 @@ docker compose --profile local-llm up
 
 Set `ANTHROPIC_API_KEY` and `RUNTIME_PROVIDER=claude` to have Claude narrate instead.
 
+### Forcing a situation to test it
+
+`ADMIN_MODE=true` opens the operator surface. **[`docs/admin.md`](docs/admin.md)** is what it
+is for, what each action takes, and which phrasings reach it; the law it follows is in the
+header of `src/server/consolidated/admin-manage.ts`. In one line, from the design owner:
+
+> **The admin panel can set preconditions, but it allows me to test outcomes.**
+
+So the test for anything added there is **does it arrange a situation, or assert a result?**
+Arrange, and it belongs. And when you arrange one and the world does not do what it says it
+does, that is a finding about the world - `docs/admin.md` lists three found that way.
+
 ## If you are the narrator
 
 When an agent is acting as the runtime narrator rather than editing code, the same rule

@@ -182,7 +182,7 @@ export function createActionRouter<TActions extends string>(
         const parseResult = definition.schema.safeParse(argsWithResolvedAction);
 
         if (!parseResult.success) {
-            return formatValidationError(action, parseResult.error);
+            return formatValidationError(action, parseResult.error, definition.schema);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -353,11 +353,24 @@ export function formatMcpError(
 }
 
 /**
- * Format a Zod validation error as MCP response with helpful details
+ * A wrong ARGUMENT should be as informative as a wrong verb.
+ *
+ * This used to answer "Validation failed for action X" with the hint "Check the
+ * parameter types and required fields", which names nothing the caller can act
+ * on - the exact shape AGENTS.md records under "a fallback written in ordinary
+ * English is invisible". The issue list was in the body and every renderer
+ * dropped it, so `ADMIN spawn_encounter` with no rung reported a failure
+ * without ever saying the word `ordinal`.
+ *
+ * So the message itself now carries what went wrong and where, and - when the
+ * schema is to hand - what the action WILL take, read off the schema rather
+ * than restated anywhere. A field list that comes from the schema cannot go
+ * stale when somebody adds a field.
  */
 export function formatValidationError(
     action: string,
-    error: z.ZodError
+    error: z.ZodError,
+    schema?: z.ZodType<any>
 ): McpResponse {
     const issues = error.issues.map(issue => ({
         path: issue.path.join('.') || '(root)',
@@ -365,18 +378,38 @@ export function formatValidationError(
         code: issue.code
     }));
 
+    const accepts = fieldNamesOf(schema);
+    const named = issues
+        .map(i => (i.path === '(root)' ? i.message : `${i.path}: ${i.message}`))
+        .join('; ');
+
     return {
         content: [{
             type: 'text',
             text: JSON.stringify({
                 error: 'validation_error',
                 action,
-                message: `Validation failed for action "${action}"`,
+                message: `"${action}" cannot run as asked. ${named}`,
                 issues,
-                hint: 'Check the parameter types and required fields'
+                accepts,
+                hint: accepts.length > 0
+                    ? `"${action}" takes: ${accepts.join(', ')}.`
+                    : 'Check the parameter types and required fields.'
             }, null, 2)
         }]
     };
+}
+
+/**
+ * The field names a schema accepts, or an empty list when it is not an object.
+ *
+ * `action` is dropped: it is the discriminator the caller already supplied, and
+ * listing it as an argument reads as though it were one more thing to pass.
+ */
+function fieldNamesOf(schema?: z.ZodType<any>): string[] {
+    const shape = (schema as unknown as { shape?: Record<string, unknown> } | undefined)?.shape;
+    if (!shape || typeof shape !== 'object') return [];
+    return Object.keys(shape).filter(key => key !== 'action');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

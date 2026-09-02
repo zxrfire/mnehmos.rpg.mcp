@@ -4,6 +4,29 @@
  * Exploratory testing surface. Gated behind `ADMIN_MODE=true` in the process
  * environment and refused, clearly, otherwise.
  *
+ * `docs/admin.md` IS THE OTHER HALF OF THIS COMMENT
+ * -------------------------------------------------
+ * This header is the LAW - what admin may and may not do, and why. The doc is
+ * the MAP - what each action is for, which phrasings reach it, the intent
+ * table, and the world laws that turned out not to fire when somebody went
+ * looking for them. Neither restates the other, on purpose.
+ *
+ * The pointer runs both ways deliberately. The best description of immortal
+ * medicine in this project is a comment at the top of a data file that `docs/`
+ * never mentions, and an agent was told it was undocumented and believed it: a
+ * doc nobody can find is the same as no doc, and so is a header nothing points
+ * at.
+ *
+ * WHAT ADMIN IS FOR
+ * -----------------
+ * The design owner: "The admin panel can set preconditions, but it allows me to
+ * test outcomes." The `but` is the load-bearing word. The restriction below is
+ * not a limit on this tool - it is what makes it worth having, because if admin
+ * could set outcomes there would be nothing left to test.
+ *
+ * The test for anything added here follows straight from it: DOES THIS ACTION
+ * ARRANGE A SITUATION, OR DOES IT ASSERT A RESULT? Arrange, and it belongs.
+ *
  * WHAT ADMIN IS
  * -------------
  * From context.md: "ADMIN bypasses GATES, not TRUTH."
@@ -48,15 +71,17 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
-import { RichFormatter } from '../utils/formatter.js';
 import {
     AmbientQiSchema,
     STARTING_SPIRIT_STONES,
     type AmbientQi
 } from '../../schema/cultivation.js';
+import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
     MAX_ORDINAL,
+    OBJECT_CEILING_BELOW_THE_LID,
+    REALM_TIERS,
     TRUE_IMMORTAL_ORDINAL,
     canAttemptBreakthrough,
     forStream,
@@ -67,11 +92,13 @@ import {
     rollAttributes,
     rollSpiritRoot
 } from '../../engine/cultivation/index.js';
-import { getPill } from '../../data/cultivation/pills.js';
-import { getHerb } from '../../data/cultivation/herbs.js';
+import { PILLS, getPill } from '../../data/cultivation/pills.js';
+import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
+import { ARTIFACTS, getArtifact } from '../../data/cultivation/artifacts.js';
 import { REGIONS } from '../../data/cultivation/regions.js';
 import { SITES, type Site } from '../../data/cultivation/inheritance-trials.js';
 import { MATCH_THRESHOLD, matchScore } from '../../web/entities.js';
+import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said-as-a-sentence.js';
 import { KnowledgeGate, loosePlaceKey } from '../../web/knowledge.js';
 import { SiteLedger } from '../../web/trials.js';
 import { handleCultivate } from './cultivation-manage.js';
@@ -80,6 +107,7 @@ import {
     AMBIENT_BLOCK_DAYS,
     addToPouch,
     adminAuditTrail,
+    carriedArtifact,
     aliasForAmbient,
     describeCultivator,
     ensureCultivationDb,
@@ -92,9 +120,198 @@ import {
 
 const ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
-    'set_ambient', 'set_location', 'advance_days', 'grant_progress', 'set_realm', 'audit_log'
+    'set_ambient', 'set_location', 'advance_days', 'grant_progress', 'set_realm',
+    'audit_log', 'help'
 ] as const;
 type AdminAction = typeof ACTIONS[number];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WHAT ADMIN CAN DO, IN THE WORDS SOMEBODY WOULD TYPE
+//
+// A refusal has to name what would have worked. That is the standard everywhere
+// else in this build and the admin errors were failing it badly: the fuzzy
+// matcher answered `spawn NPC tribulation transcender in front of me` with
+// three action names and a percentage each, and answered `I` with "audit_log
+// (11%)". A ranked list of things the operator did not ask for is not an
+// answer, and 11% is not a suggestion - it is a number apologising for itself.
+//
+// So the refusal shows THIS instead: a worked line per capability, which is
+// what somebody actually needs, and which doubles as `admin help`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface Recipe {
+    /** What an operator wants, said as a want rather than as an action name. */
+    want: string;
+    /** A line that really works, copy-pasteable. */
+    line: string;
+}
+
+const RECIPES: readonly Recipe[] = Object.freeze([
+    { want: 'Put a person in front of me at a rung I could never meet',
+      line: 'ADMIN spawn_encounter ordinal=41' },
+    { want: '...and give them a name and a mood',
+      line: 'ADMIN spawn_encounter ordinal=41 name=Yun Shizhen disposition=wary' },
+    { want: 'Put a rated object in my pouch',
+      line: 'ADMIN grant_item ordinal=45 kind=artifact' },
+    { want: '...or a specific one, by the name the catalog prints',
+      line: 'ADMIN grant_item name=The Standing Edge' },
+    { want: 'Put a pill or a herb in my pouch',
+      line: 'ADMIN grant_item itemId=<catalog id> quantity=3' },
+    { want: 'Make a catalogued grave or trial nameable',
+      line: 'ADMIN spawn_site ordinal=41 kind=grave' },
+    { want: 'Stand somewhere else on the map',
+      line: 'ADMIN set_location location=The Dead Verge' },
+    { want: 'Stand somewhere the engine derives a chosen ambient band for',
+      line: 'ADMIN set_ambient band=dense' },
+    { want: 'Move myself on the ladder',
+      line: 'ADMIN set_realm ordinal=41' },
+    { want: 'Reach a crossing ATTEMPT from where I stand (rolls nothing)',
+      line: 'ADMIN grant_progress fill=true' },
+    { want: 'Let real time pass, with real aging, hunger and death checks',
+      line: 'ADMIN advance_days years=50 rations=2000' },
+    { want: 'See every cultivator in the world',
+      line: 'ADMIN roster' },
+    { want: 'See what ADMIN has done to this run',
+      line: 'ADMIN audit_log' }
+]);
+
+/**
+ * The things ADMIN deliberately cannot do, and the honest route to each.
+ *
+ * Listed because a refusal that only says "no" teaches nothing, and because
+ * these are the four an operator reaches for first when they want to test a bad
+ * ending. Every one of them is reachable - through the engine, at its own price.
+ * `admin-manage`'s header is the law: there is no action here that takes an
+ * outcome as input and records it, and none may ever be added.
+ */
+const NOT_HERE: ReadonlyArray<{ asked: string; instead: string }> = Object.freeze([
+    {
+        asked: 'set_hp / kill / revive',
+        instead:
+            'ADMIN spawn_encounter ordinal=<well above you> and fight it, or ' +
+            'ADMIN advance_days years=200 with rations=0 and starve. Death is truth, so it is ' +
+            'reached by dying rather than by being declared.'
+    },
+    {
+        asked: 'force_success / declare a breakthrough',
+        instead:
+            'ADMIN grant_progress fill=true fills the accumulator the engine already reads, then ' +
+            'the attempt is made in play and can still fail or kill.'
+    },
+    {
+        asked: 'heal / clear injuries',
+        instead:
+            'ADMIN grant_item with the medicine the wound needs, then take it in play. What a wound ' +
+            'needs is the engine\'s answer, not this surface\'s.'
+    },
+    {
+        asked: 'invent an item, a site or a place',
+        instead:
+            'Every one of those is chosen from an authored catalog. ADMIN reveals and grants what ' +
+            'exists; it does not author. Add the row to the catalog if it should exist.'
+    }
+]);
+
+const HelpSchema = z.object({
+    action: z.literal('help'),
+    /** Narrow the answer to lines mentioning this word. */
+    about: z.string().optional(),
+    /**
+     * A line the sentence reader could not turn into an action. Set only by
+     * `parseAdminCommand`, and it turns this from a listing into a refusal:
+     * an operator who typed something and got a menu has not been answered.
+     */
+    unreadable: z.string().optional(),
+    ambiguity: z.enum(['no_subject', 'two_subjects']).optional(),
+    collided: z.array(z.string()).optional()
+});
+
+/**
+ * Which part of the sheet was asked for.
+ *
+ * All of it at once is more than anybody reads - twelve capabilities, four
+ * refusals and eleven action descriptions - and the design owner stopped
+ * reading it, which is the correct response to a wall. So `about` picks a
+ * section first and only then filters, and the two most useful sections have
+ * short names an operator would guess.
+ */
+function sectionAsked(about?: string): 'what' | 'refusals' | 'actions' | null {
+    const word = (about ?? '').trim().toLowerCase();
+    if (word.length === 0) return 'what';
+    if (/^(refus|cannot|can.?t|wont|will.?not|no|forbid)/.test(word)) return 'refusals';
+    if (/^(action|verb|command|list|all)/.test(word)) return 'actions';
+    return null;
+}
+
+/** The capability sheet, as a response body. Shared by `help` and every refusal. */
+function whatAdminCanDo(about?: string): Record<string, unknown> {
+    const needle = (about ?? '').trim().toLowerCase();
+    const section = sectionAsked(about);
+    const recipes = needle.length === 0 || section !== null
+        ? RECIPES
+        : RECIPES.filter(r => `${r.want} ${r.line}`.toLowerCase().includes(needle));
+    return {
+        section: section ?? 'what',
+        adminMode: true,
+        help: true,
+        // The purpose first and the law second, because the law read alone is a
+        // list of prohibitions and says nothing about what the tool is for. The
+        // design owner's sentence does both halves at once, and the "but" is
+        // the load-bearing word: the restriction is what makes the tool useful.
+        purpose: 'The admin panel can set preconditions, but it allows me to test outcomes. ' +
+            'If it could set outcomes there would be nothing left to test.',
+        law: 'ADMIN bypasses GATES, not TRUTH. Every action performs a real deterministic mutation ' +
+            'and returns what the engine actually did. The test for any new action: does it ' +
+            'ARRANGE A SITUATION, or does it ASSERT A RESULT? Arrange, and it belongs.',
+        documentation: 'docs/admin.md',
+        actions: ACTIONS.map(name => ({
+            action: name,
+            does: definitions[name]?.description ?? '',
+            takes: Object.keys(
+                (definitions[name]?.schema as unknown as { shape?: Record<string, unknown> })?.shape ?? {}
+            ).filter(key => key !== 'action')
+        })),
+        canDo: (recipes.length > 0 ? recipes : RECIPES).map(r => ({ want: r.want, line: r.line })),
+        cannotDo: NOT_HERE,
+        vocabulary:
+            'Arguments are key=value and a value runs to the NEXT key, so a multi-word name needs no ' +
+            'quoting. A line that does not begin with an action is read as a sentence instead - ' +
+            '"spawn an NPC at Tribulation Transcendence", "give me a 45 weapon" - and the equivalent ' +
+            'key=value line is always printed back so the reading is visible and correctable.',
+        filteredBy: needle.length > 0 && recipes.length > 0 ? about : null,
+        note: 'Read-only. Nothing here writes state and this call is not audited as a change.'
+    };
+}
+
+export async function handleHelp(args: z.infer<typeof HelpSchema>): Promise<object> {
+    if (!isAdminModeEnabled()) return adminDisabled('help');
+    if (args.unreadable === undefined) return whatAdminCanDo(args.about);
+
+    // ── THE REFUSAL ───────────────────────────────────────────────────────
+    //
+    // Reached only from a typed line that named no capability, or named two.
+    // It is an error rather than a listing on purpose: the operator asked for
+    // something and did not get it, and a menu returned as a success reads as
+    // though the request was honoured.
+    const twoWays = args.ambiguity === 'two_subjects';
+    return guidingError(
+        twoWays ? 'admin_sentence_ambiguous' : 'admin_sentence_unreadable',
+        twoWays
+            ? `"${args.unreadable}" asks for two different things at once ` +
+              `(${(args.collided ?? []).join(' and ')}), and ADMIN will not pick one for you.`
+            : `"${args.unreadable}" does not name anything ADMIN does. Nothing was changed.`,
+        {
+            asked: args.unreadable,
+            ...whatAdminCanDo(),
+            hint: twoWays
+                ? 'Ask for one of them, or spell it as key=value - a line with an = in it is taken ' +
+                  'exactly as typed and nothing is inferred.'
+                : 'ADMIN reads a sentence by the KIND OF THING in it - a person, an object, a site, a ' +
+                  'place - and the rung, as a number or as a realm name. A line with none of those in ' +
+                  'it has nothing to read. Every line listed above works as written.'
+        }
+    );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE GATE
@@ -161,11 +378,64 @@ function unquote(value: string): string {
 }
 
 export interface ParsedAdminCommand {
-    /** The leading word. Empty when the operator typed a bare ADMIN. */
+    /**
+     * The action to route to.
+     *
+     * The leading word when that word is an action or an alias. Otherwise the
+     * action a SENTENCE was read as - see `readAdminSentence` - or `help`,
+     * carrying `__unreadable`, when the sentence said nothing this surface does.
+     * Empty only when the operator typed a bare ADMIN.
+     */
     action: string;
     /** Every `key=value` pair, numbers coerced where the whole value is one. */
     args: Record<string, unknown>;
 }
+
+/**
+ * The action names and aliases a leading word may be, for the sentence check.
+ *
+ * Built from the router's own definitions rather than restated, so an action
+ * added below is understood here without anybody remembering to update a list.
+ * Assembled lazily because `definitions` is declared at the bottom of the file.
+ */
+let LEADING_WORDS: Map<string, string> | null = null;
+function actionWordFor(word: string): string | null {
+    if (LEADING_WORDS === null) {
+        LEADING_WORDS = new Map<string, string>();
+        for (const [name, def] of Object.entries(definitions)) {
+            LEADING_WORDS.set(name.toLowerCase(), name);
+            for (const alias of def.aliases ?? []) LEADING_WORDS.set(alias.toLowerCase(), name);
+        }
+    }
+    return LEADING_WORDS.get(word.trim().toLowerCase()) ?? null;
+}
+
+/**
+ * Key under which an inferred reading rides along to the renderer.
+ *
+ * Every admin schema is a plain `z.object`, which STRIPS unknown keys rather
+ * than rejecting them, so this reaches `handleAdminManage` and reaches no
+ * handler. That is the property being relied on: the inference is printed back
+ * to the operator and changes nothing about what any handler receives.
+ */
+export const INFERRED_KEY = '__inferredFromASentence';
+
+/**
+ * The one free-text argument each action would mean, when prose follows its name.
+ *
+ * Not a guess about the words - a property of the action. `set_location` has
+ * exactly one string field somebody could be naming, and so does every entry
+ * here; an action absent from this table takes no prose at all and refuses in
+ * its own words instead, which is the honest outcome for `advance_days 50 years`.
+ */
+const PRIMARY_ARG: Partial<Record<AdminAction, string>> = {
+    help: 'about',
+    set_location: 'location',
+    set_ambient: 'band',
+    spawn_site: 'name',
+    grant_item: 'name',
+    spawn_encounter: 'name'
+};
 
 /**
  * Parse an ADMIN command line into an action and its arguments.
@@ -217,12 +487,154 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         args[keys[i].name] = Number.isFinite(asNumber) && raw.trim() !== '' ? asNumber : raw;
     }
 
+    // ── A LINE THAT DOES NOT BEGIN WITH AN ACTION IS A SENTENCE ───────────
+    //
+    // `spawn NPC tribulation transcender in front of me` and `I run into a 45
+    // weapon` both arrive here, and both used to leave with `spawn` and `I` as
+    // their action and everything after the first word discarded. The rest of
+    // this game answers a player in their own words; there is no reason the
+    // operator surface should be the one place that does not, provided the
+    // reading is printed back rather than acted on silently. See
+    // `admin-said-as-a-sentence.ts` for why that proviso is the whole safety
+    // property, and why an ambiguous line refuses instead of picking.
+    //
+    // Only the PROSE half is read. Anything the operator spelled as key=value
+    // is already in the schema's own vocabulary and wins over any inference, so
+    // `spawn npc ordinal=41` reads the noun and takes the rung as typed.
+    const prose = (keys.length > 0 ? line.slice(0, keys[0].keyFrom) : line).trim();
+    const known = action === '' ? null : actionWordFor(action);
+    const hasProse = /\s/.test(prose);
+
+    if (action !== '' && (known === null || hasProse)) {
+        const reading = readAdminSentence(prose);
+        const usable =
+            reading !== null &&
+            !isSentenceRefusal(reading) &&
+            // A NAMED action wins over an inferred one. When the operator wrote
+            // `audit log`, the action is `audit_log` and the sentence reader's
+            // opinion about the rest is not wanted; when they wrote `npc at
+            // Core Formation`, the alias and the reading agree and the reading
+            // is carrying the argument.
+            (known === null || known === reading.action);
+        if (usable) {
+            const merged = { ...(reading as { args: Record<string, unknown> }).args, ...args };
+            const chosen = (reading as { action: string }).action;
+            return {
+                action: chosen,
+                args: {
+                    ...merged,
+                    [INFERRED_KEY]: JSON.stringify({
+                        typed: line,
+                        asTyped: `ADMIN ${[
+                            chosen,
+                            ...Object.entries(merged).map(([k, v]) => `${k}=${v}`)
+                        ].join(' ')}`,
+                        because: (reading as { because: string[] }).because
+                    })
+                }
+            };
+        }
+        // ── THE ACTION WAS NAMED AND PROSE FOLLOWED IT ────────────────────
+        //
+        // `ADMIN help refusals` reached `help` with no arguments and printed
+        // the default sheet, because "refusals" was neither a key=value pair
+        // nor a subject noun and so was simply dropped. Every action that takes
+        // one free-text argument has the same hole: `ADMIN move Nine Peaks`,
+        // `ADMIN grave the count that outlived him`, `ADMIN give The Standing
+        // Edge`.
+        //
+        // So when the operator has NAMED the action, whatever prose follows is
+        // that action's principal argument. Which argument is a property of the
+        // action rather than a guess about the words, which is what keeps this
+        // from being an inference at all - there is exactly one free-text field
+        // it could mean, and if an action has none the prose is left alone and
+        // the action refuses in its own words.
+        if (known !== null && hasProse) {
+            const field = PRIMARY_ARG[known as AdminAction];
+            const rest = prose.slice(prose.indexOf(action) + action.length).trim();
+            if (field !== undefined && rest.length > 0 && args[field] === undefined) {
+                args[field] = rest;
+            }
+        }
+
+        // A prose line that named no action AND could not be read gets the
+        // capability sheet rather than a ranked list of action names. A SINGLE
+        // unknown word falls through to the router instead, because a single
+        // word is usually a typo and the fuzzy matcher is genuinely good at
+        // those - `spawn_encountr` should be corrected, not answered with a
+        // menu. And a line that DID name an action is routed as that action,
+        // so `advance_days 50 years` still reaches `advance_days` and is
+        // refused there, by the action, in that action's own words.
+        if (known === null && hasProse) {
+            return {
+                action: 'help',
+                args: {
+                    unreadable: line,
+                    ambiguity: reading !== null && isSentenceRefusal(reading) ? reading.reason : 'no_subject',
+                    collided: reading !== null && isSentenceRefusal(reading) ? reading.collided : []
+                }
+            };
+        }
+    }
+
+    // ── A RUNG MAY BE NAMED RATHER THAN NUMBERED ──────────────────────────
+    //
+    // `ordinal=Core Formation` is how somebody who has been reading the game's
+    // own output writes it - the ladder prints rank names everywhere and prints
+    // ordinals almost nowhere - and every schema here wants a number, so it
+    // arrived as a string and was rejected with "expected number, received
+    // string". AGENTS.md: any name the game prints is a name the game must
+    // accept. Resolved once, here, so `set_realm`, `spawn_encounter`,
+    // `spawn_site` and `grant_item` all gain it without four separate coercions.
+    if (typeof args.ordinal === 'string') {
+        const named = ordinalNamed(args.ordinal);
+        if (named) args.ordinal = named.ordinal;
+    }
+
     return { action, args };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
+//
+// ── A RUNG MAY BE NAMED, NOT ONLY NUMBERED ───────────────────────────────
+//
+// The single highest-value argument change on this surface. Everything that
+// prints a rank in this game prints a NAME - "Core Formation Early", "Qi
+// Condensation Layer 5" - and almost nothing prints an ordinal, so both a
+// person and a model asking for a Core Formation opponent have the realm and
+// not the number. `ordinal: z.number()` rejected that with "expected number,
+// received string", which asks the caller to know that Core Formation is 17-20.
+// Nothing should have to know that: `realms.ts` knows it, and it is the
+// authority.
+//
+// AGENTS.md: any name the game prints is a name the game must accept. So every
+// ordinal argument on this surface is preprocessed through `ordinalNamed`,
+// which reads a bare number, a realm by name, or a realm-plus-sub-rank, and is
+// the same function the sentence layer uses. One definition, four actions.
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A rung, as a number or as a name the ladder knows.
+ *
+ * A realm names a band, and this takes its FIRST rung - the weakest reading of
+ * a claim made without a rung. A caller who wants the top of the band says a
+ * number, or names the sub-rank.
+ */
+function ordinalArg(description: string) {
+    return z.preprocess(
+        value => {
+            if (typeof value !== 'string') return value;
+            const named = ordinalNamed(value);
+            return named === null ? value : named.ordinal;
+        },
+        z.number().int().min(0).max(MAX_ORDINAL)
+    ).describe(
+        `${description} Accepts a number 0-${MAX_ORDINAL}, or a realm by name ` +
+        `(${REALM_TIERS.map(t => t.name).join(', ')}), or a realm plus its sub-rank ` +
+        '("Core Formation Early"). A realm name alone means the first rung of that band.'
+    );
+}
 
 const RosterSchema = z.object({
     action: z.literal('roster'),
@@ -231,25 +643,39 @@ const RosterSchema = z.object({
 
 const SpawnEncounterSchema = z.object({
     action: z.literal('spawn_encounter'),
-    ordinal: z.number().int().min(0).max(MAX_ORDINAL)
-        .describe('Realm ordinal of the opponent. Normally gated by the player\'s own ordinal.'),
-    name: z.string().min(1).max(100).optional(),
-    location: z.string().optional(),
+    ordinal: ordinalArg('How strong this person is. The one argument with no sensible default.'),
+    name: z.string().min(1).max(100).optional()
+        .describe('What to call them. Defaults to "A <realm> cultivator".'),
+    location: z.string().optional()
+        .describe('Where they are standing. DEFAULTS TO WHERE THE PLAYER IS - "in front of me" needs no argument.'),
     disposition: z.enum(['hostile', 'wary', 'indifferent']).optional().default('hostile')
+        .describe('How they are disposed toward the player. Defaults to hostile.')
 });
 
 const SpawnSiteSchema = z.object({
     action: z.literal('spawn_site'),
     kind: z.enum(['grave', 'trial', 'any']).optional().default('any'),
-    ordinal: z.number().int().min(0).max(MAX_ORDINAL).optional()
-        .describe('Realm ordinal to aim at. The nearest catalogued site to it is revealed.'),
+    ordinal: ordinalArg('What rung to aim at. The nearest catalogued site to it is revealed.').optional(),
     name: z.string().min(1).max(120).optional()
         .describe('Name a specific catalogued site instead. Its own name, or the phrase in its id.')
 });
 
 const GrantItemSchema = z.object({
     action: z.literal('grant_item'),
-    itemId: z.string().describe('A catalog pill id or herb id. Nothing else exists.'),
+    itemId: z.string().optional()
+        .describe('A catalog pill, herb or artifact id. Nothing outside the catalogs exists.'),
+    /**
+     * Aim at a rung instead of naming an id. The nearest catalogued ARTIFACT to
+     * it is granted, exactly the way `spawn_site` aims at a site: a rated object
+     * is on the realm ladder and "a 45 weapon" is how anybody asks for one.
+     * Pills and herbs are graded 1-9, not laddered, so this is artifact-only and
+     * says so rather than quietly meaning something different per kind.
+     */
+    ordinal: ordinalArg('ARTIFACTS ONLY: grant the catalogued object nearest this rung. This is how "a 45 weapon" is asked for.').optional(),
+    /** Narrow what a name or an ordinal is searched against. */
+    kind: z.enum(['pill', 'herb', 'artifact', 'any']).optional().default('any'),
+    /** A catalog entry by its own name, rather than by its id. */
+    name: z.string().min(1).max(160).optional(),
     quantity: z.number().int().min(1).max(999).optional().default(1),
     cultivatorId: z.string().optional()
 });
@@ -293,7 +719,7 @@ const GrantProgressSchema = z.object({
 
 const SetRealmSchema = z.object({
     action: z.literal('set_realm'),
-    ordinal: z.number().int().min(0).max(MAX_ORDINAL),
+    ordinal: ordinalArg('The rung to stand the cultivator at. Up or down; both go through advanceRealm.'),
     cultivatorId: z.string().optional()
 });
 
@@ -516,8 +942,8 @@ export async function handleSpawnSite(args: z.infer<typeof SpawnSiteSchema>): Pr
                     nearest: scored.slice(0, 5).map(s => s.entry.name),
                     catalogSize: SITES.length,
                     hint:
-                        'ADMIN reveals sites that exist; it does not author them. Omit `name` and pass ' +
-                        '`ordinal=N` to be given the catalogued site nearest that rung.'
+                        'ADMIN reveals sites that exist; it does not author them. Omit name= and pass ' +
+                        'ordinal=N to be given the catalogued site nearest that rung.'
                 }
             );
         }
@@ -715,6 +1141,60 @@ export async function handleSpawnEncounter(
     };
 }
 
+/**
+ * A catalog artifact by name, or by the rung it was made at.
+ *
+ * The same shape `spawn_site` uses for sites, and for the same reason: the
+ * catalog is authored, it has no entry at every rung, and aiming at 45 should
+ * land on the nearest thing that really exists rather than refuse or invent.
+ * Ties break toward the STRONGER object, so aiming high never lands low.
+ */
+function artifactNearest(
+    wanted: number
+): { record: (typeof ARTIFACTS)[number]; gap: number } | null {
+    let best: (typeof ARTIFACTS)[number] | null = null;
+    let bestGap = Infinity;
+    for (const record of ARTIFACTS) {
+        if (record.power === null) continue;
+        const gap = Math.abs(record.power - wanted);
+        if (gap < bestGap || (gap === bestGap && best !== null && record.power > (best.power ?? 0))) {
+            best = record;
+            bestGap = gap;
+        }
+    }
+    return best === null ? null : { record: best, gap: bestGap };
+}
+
+/**
+ * Put something the catalogs really hold into the real pouch.
+ *
+ * ══ WHY ARTIFACTS ARE HERE NOW ════════════════════════════════════════════
+ *
+ * This used to be pills and herbs only, and the header above this file said so
+ * as though it were a design position. It was not - it was the whole set of
+ * things anybody had wired. `artifacts.ts` is the catalog the setting's entire
+ * hierarchy of force is legible in, from a notched sabre to something an
+ * ascended founder sent back down, and there was no route from it into a
+ * player's hands from ANY surface, admin or otherwise. An operator asking for
+ * "a 45 weapon" was asking for a row that exists, by the number the catalog
+ * itself sorts on, and got told no pill has that id.
+ *
+ * Nothing is invented. `ordinal=N` picks the nearest catalogued object the same
+ * way `spawn_site` picks the nearest catalogued site, `name=` matches the
+ * catalog's own name, and a miss is refused with what is actually there.
+ *
+ * ══ AND WHAT CARRYING IT IS CURRENTLY WORTH ═══════════════════════════════
+ *
+ * Less than it should be, and the response says so rather than leaving the
+ * operator to find out. `CombatantInput.artifactOrdinal` is the engine's price
+ * for a rated object - "a second body of that rank, standing beside them" - and
+ * NOTHING in `src/` passes it, for the player or for anybody. So the object is
+ * genuinely in the pouch, genuinely readable back, and genuinely worth nothing
+ * in a fight until `combatantFromCultivator` reads `carriedArtifact`. Reporting
+ * a grant while hiding that would be the surface lying about a write it really
+ * performed, which is the exact defect the multi-word gazetteer note above
+ * records.
+ */
 export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('grant_item');
     const repos = ensureCultivationDb();
@@ -722,42 +1202,185 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
     if (isGuidingErrorBody(resolved)) return resolved;
 
     const { run, cultivator } = resolved;
-    const pill = getPill(args.itemId);
-    const herb = pill ? undefined : getHerb(args.itemId);
-    if (!pill && !herb) {
+    const want = args.kind ?? 'any';
+    const asked = args.itemId ?? args.name;
+
+    // ── WHICH THING. Id beats name; name beats rung. ──────────────────────
+    let pill = want === 'pill' || want === 'any' ? getPill(args.itemId ?? '') : undefined;
+    let herb = !pill && (want === 'herb' || want === 'any') ? getHerb(args.itemId ?? '') : undefined;
+    let artifact =
+        !pill && !herb && (want === 'artifact' || want === 'any')
+            ? getArtifact(args.itemId ?? '')
+            : undefined;
+    let how = asked !== undefined ? `catalog id "${args.itemId}"` : '';
+
+    if (!pill && !herb && !artifact && args.name) {
+        const named = args.name;
+        const pool: Array<{ id: string; name: string; kind: 'pill' | 'herb' | 'artifact' }> = [
+            ...(want === 'pill' || want === 'any' ? PILLS.map(p => ({ id: p.id, name: p.name, kind: 'pill' as const })) : []),
+            ...(want === 'herb' || want === 'any' ? HERBS.map(h => ({ id: h.id, name: h.name, kind: 'herb' as const })) : []),
+            ...(want === 'artifact' || want === 'any' ? ARTIFACTS.map(a => ({ id: a.id, name: a.name, kind: 'artifact' as const })) : [])
+        ];
+        const scored = pool
+            .map(entry => ({ entry, score: matchScore(named, entry.name) }))
+            .sort((a, b) => b.score - a.score);
+        if (scored.length > 0 && scored[0].score >= MATCH_THRESHOLD) {
+            const hit = scored[0].entry;
+            if (hit.kind === 'pill') pill = getPill(hit.id);
+            else if (hit.kind === 'herb') herb = getHerb(hit.id);
+            else artifact = getArtifact(hit.id);
+            how = `named "${named}" and matched to the catalog at ${scored[0].score}/100`;
+        }
+    }
+
+    if (!pill && !herb && !artifact && args.ordinal !== undefined) {
+        if (want === 'pill' || want === 'herb') {
+            return guidingError(
+                'not_on_the_ladder',
+                `A ${want} is graded 1-9, not rated on the realm ladder, so ordinal=${args.ordinal} does not ` +
+                `name one. Only an artifact has a rung.`,
+                {
+                    hint:
+                        `ADMIN grant_item kind=artifact ordinal=${args.ordinal} grants the nearest rated object. ` +
+                        'For a pill or a herb, pass itemId= or name=.'
+                }
+            );
+        }
+        const nearest = artifactNearest(args.ordinal);
+        if (nearest) {
+            artifact = nearest.record;
+            how =
+                nearest.gap === 0
+                    ? `catalogued at ordinal ${args.ordinal} exactly`
+                    : `nearest catalogued object to ordinal ${args.ordinal}; it is rated ` +
+                      `${nearest.record.power}, ${nearest.gap} rung(s) away. The catalog is authored ` +
+                      'and has no entry at every rung.';
+        }
+    }
+
+    if (!pill && !herb && !artifact) {
+        const rated = ARTIFACTS.filter(a => a.power !== null)
+            .slice(0, 5)
+            .map(a => `${a.name} (${a.id}, rated ${a.power})`);
         return guidingError(
             'unknown_item',
-            `No pill or herb with id ${args.itemId} exists in the catalogs.`,
+            asked === undefined && args.ordinal === undefined
+                ? 'grant_item needs something to grant: a catalog itemId=, a name=, or - for a rated ' +
+                  'object - an ordinal= on the realm ladder.'
+                : `Nothing in the pill, herb or artifact catalogs answers to "${asked ?? args.ordinal}".`,
             {
+                asked: asked ?? args.ordinal,
+                kind: want,
+                catalogSizes: { pills: PILLS.length, herbs: HERBS.length, artifacts: ARTIFACTS.length },
+                strongestArtifacts: rated,
                 hint:
-                    'Admin lifts gates on things that exist. It does not invent items. ' +
-                    'alchemy_manage({ action: "list_recipes" }) shows catalog pill ids.'
+                    'Admin lifts gates on things that exist. It does not invent items. Three that work:\n' +
+                    '  ADMIN grant_item ordinal=45 kind=artifact      the nearest rated object to that rung\n' +
+                    '  ADMIN grant_item name=The Standing Edge        a catalog entry by its own name\n' +
+                    '  ADMIN grant_item itemId=pill-qi-gathering      a catalog id'
             }
         );
     }
 
-    const kind = pill ? ('pill' as const) : ('herb' as const);
-    const quantity = args.quantity ?? 1;
+    const kind = pill ? ('pill' as const) : herb ? ('herb' as const) : ('artifact' as const);
+    const id = pill?.id ?? herb?.id ?? artifact!.id;
+    // A rated object is singular. Two of the same one is not a thing the world
+    // has, and granting 999 of a sent-down blade would be inventing a stock the
+    // catalog explicitly does not have - see `HOW_A_FORTY_FIVE_EXISTS`.
+    const quantity = kind === 'artifact' ? 1 : args.quantity ?? 1;
 
     repos.db.transaction(() => {
-        addToPouch(repos.db, cultivator.id, args.itemId, kind, quantity);
+        addToPouch(repos.db, cultivator.id, id, kind, quantity);
         writeAdminAudit(repos, 'grant_item', run.id, {
             cultivatorId: cultivator.id,
-            itemId: args.itemId,
+            itemId: id,
             kind,
-            quantity
+            quantity,
+            selection: how,
+            ratedAt: artifact?.power ?? null
         });
     })();
+
+    const carried = carriedArtifact(repos.db, cultivator.id);
 
     return {
         adminMode: true,
         granted: true,
         item: pill
             ? { kind, id: pill.id, name: pill.name, grade: pill.grade, effect: pill.effect, potency: pill.potency }
-            : { kind, id: herb!.id, name: herb!.name, grade: herb!.grade, biome: herb!.biome },
+            : herb
+                ? { kind, id: herb.id, name: herb.name, grade: herb.grade, biome: herb.biome }
+                : {
+                    kind,
+                    id: artifact!.id,
+                    name: artifact!.name,
+                    ordinal: artifact!.power,
+                    rank: artifact!.power === null ? null : rankName(artifact!.power),
+                    significance: artifact!.significance,
+                    description: artifact!.description
+                },
         quantity,
+        selection: how,
         cultivatorId: cultivator.id,
-        runFlagged: true
+        // AGENTS.md: any name the game prints is a name the game must accept.
+        // AGENTS.md: any name the game prints is a name the game must accept.
+        // For a rated object the only surface that reads it back today is this
+        // one, which is why `ADMIN audit_log` is the line offered rather than a
+        // player verb that would come back empty.
+        sayThis: kind === 'artifact'
+            ? ['ADMIN audit_log']
+            : ['look in my pouch'],
+        carrying: carried
+            ? { id: carried.id, name: carried.name, ordinal: carried.power, rank: rankName(carried.power) }
+            : null,
+        // ── A RUNG THE WORLD SAYS CANNOT STAY HERE ────────────────────────
+        //
+        // `OBJECT_CEILING_BELOW_THE_LID` is 45 and the catalog holds three
+        // objects above it. The rule that an object over the ceiling cannot
+        // remain below the Lid is real and written - `evaluateLayerCrossing` in
+        // `layers.ts` refuses it by name - and it is consulted ONLY from
+        // `immortal-world.ts`, for NPC descents in the world simulation.
+        // Nothing anywhere looks at what a player is carrying.
+        //
+        // So the grant is allowed and the discrepancy is reported, rather than
+        // the surface either refusing on a law nothing enforces or pretending
+        // to enforce it. ADMIN's job is to arrange the situation; if the world
+        // then fails to do what it says it does, THAT IS THE FINDING, and a
+        // surface that faked the departure would have destroyed it.
+        aboveTheCeiling: kind === 'artifact' && (artifact!.power ?? 0) > OBJECT_CEILING_BELOW_THE_LID
+            ? {
+                ceiling: OBJECT_CEILING_BELOW_THE_LID,
+                ratedAt: artifact!.power,
+                theWorldSays:
+                    'Nothing rated above the ceiling can be held below the Lid. It should go up, and ' +
+                    'take whoever is holding it, inside ten to fifteen breaths.',
+                whatActuallyHappens:
+                    'It stays. evaluateLayerCrossing is the rule and its only caller is the world ' +
+                    'simulation, for NPC descents - nothing reads what a PLAYER carries. This is a ' +
+                    'gap in the world, not in ADMIN, and it is reported rather than papered over.'
+            }
+            : null,
+        // ── THE HALF OF THIS THAT IS NOT WIRED, SAID OUT LOUD ─────────────
+        worthInAFight: kind === 'artifact'
+            ? {
+                enginePrice: 'CombatantInput.artifactOrdinal - a second body of that rank beside you',
+                readBy: 'nothing in src/ today - not for the player, not for an NPC',
+                consequence:
+                    'The object is really in cultivator_pouch and carriedArtifact reads it back by ' +
+                    'name. TWO THINGS IT DOES NOT DO YET, both of them gaps in the game rather than ' +
+                    'in ADMIN: it changes no combat number until combatantFromCultivator in ' +
+                    'combat-manage.ts passes carriedArtifact through as artifactOrdinal, and no ' +
+                    'player-facing listing shows it until handleInventory grows an artifacts field ' +
+                    'beside pills and herbs. Stated rather than left to be found.'
+            }
+            : null,
+        runFlagged: true,
+        note: kind === 'artifact'
+            ? 'A real catalogued object, chosen from the artifact table and not invented, in the real ' +
+              'pouch. Quantity is 1 whatever was asked for: a rated object is singular and the catalog ' +
+              'has no stock of one. Nothing about who is entitled to carry it was checked, which is the ' +
+              'gate ADMIN lifted; nothing about what it does was asserted.'
+            : undefined
     };
 }
 
@@ -891,6 +1514,25 @@ export async function handleAdvanceDays(
 
     const { run, cultivator } = resolved;
 
+    // A span is the one argument this action cannot default. Zero is not a
+    // sensible "advance nothing", and guessing a length would be picking how
+    // much of somebody's life to spend.
+    if (args.days === undefined && args.months === undefined && args.years === undefined) {
+        return guidingError(
+            'no_span_given',
+            'advance_days needs a span. Nothing was advanced.',
+            {
+                hint:
+                    'Any one of these, and they add:\n' +
+                    '  ADMIN advance_days days=30\n' +
+                    '  ADMIN advance_days years=50 rations=2000\n' +
+                    'Unprovisioned, a body gets about fifty turns before the belly empties and the ' +
+                    'simulation stops - that is truth, not a clamp, and rations=N is how you pay ' +
+                    'for the span rather than lift it.'
+            }
+        );
+    }
+
     // Real time, through the real simulation. `idle` focus means no cultivation
     // progress accrues, but the body still ages, the belly still empties, the
     // stagnation clock still runs and the death checks still fire. Skipping
@@ -944,7 +1586,16 @@ export async function handleAdvanceDays(
                 unsimulatedDays: requested! - simulated!,
                 reason,
                 explanation: explainInterrupt(reason),
-                limit: interruptLimitFor(reason)
+                limit: interruptLimitFor(reason),
+                // THE LINE THAT WOULD HAVE WORKED, WITH ITS NUMBER IN IT.
+                // "Pass rations=N" left the operator to work N out, and N is a
+                // division this side already has both terms of. A refusal that
+                // names what would work should name it exactly.
+                tryThis: reason === 'provisions_exhausted' || reason === 'starvation_begun'
+                    ? `ADMIN advance_days days=${requested} rations=${rationsForDays(requested!)}`
+                    : reason === 'iteration_limit'
+                        ? 'ADMIN advance_days again for the rest of the span; the ceiling is per call.'
+                        : null
             }
             : null,
         note: short
@@ -958,6 +1609,23 @@ export async function handleAdvanceDays(
               'simulated; nothing was skipped except the gain.',
         runFlagged: true
     };
+}
+
+/**
+ * How many rations cover a span, so the refusal can print the number.
+ *
+ * `ACTIONS_PER_FULL_SATIETY` is the engine's own figure and is imported rather
+ * than retyped - AGENTS.md is explicit that balance numbers live in one place.
+ * Rounded UP and never below one: a span short by a single ration stops for the
+ * same reason a span short by a thousand does.
+ *
+ * This is an ESTIMATE and the response says so, because hunger tapers by realm
+ * and a body high enough on the ladder needs fewer. Over-provisioning is
+ * harmless - unspent rations stay in the purse's worth of goods - and
+ * under-provisioning is the thing that wasted the operator's call.
+ */
+function rationsForDays(days: number): number {
+    return Math.max(1, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
 }
 
 /**
@@ -978,11 +1646,11 @@ function explainInterrupt(reason: string | null): string {
     }
     switch (reason) {
         case 'provisions_exhausted':
-            return 'The provisions ran out. Pass `rations=N` to buy N days of food up front, at the ordinary price out of the ordinary purse - unprovisioned, a body gets about fifty turns.';
+            return 'The provisions ran out. Pass rations=N to buy N rations up front, at the ordinary price out of the ordinary purse - unprovisioned, a body gets about fifty turns. The line printed under this one has the figure in it.';
         case 'starvation_begun':
-            return 'The belly emptied and starvation began. Pass `rations=N` to provision the span.';
+            return 'The belly emptied and starvation began. Pass rations=N to provision the span; the line printed under this one has the figure in it.';
         case 'hostile_ground':
-            return 'The ground where the cultivator is standing is killing them. Move somewhere survivable first with `set_location`.';
+            return 'The ground where the cultivator is standing is killing them. Move somewhere survivable first with ADMIN set_location.';
         case 'lethal_injury_threshold':
             return 'Untreated wounds reached the lethal count. Treat them before advancing further.';
         case 'major_encounter':
@@ -1059,7 +1727,7 @@ export async function handleGrantProgress(
             'already_at_the_bar',
             `${cultivator.name} already holds ${before} of the ${required} qi-units the attempt from ` +
             `${rankName(cultivator.realmOrdinal)} needs.`,
-            { progress: before, required, hint: 'Pass `amount=N` to add anyway.' }
+            { progress: before, required, hint: 'Pass amount=N to add anyway.' }
         );
     }
 
@@ -1225,66 +1893,91 @@ export async function handleAuditLog(args: z.infer<typeof AuditLogSchema>): Prom
 // ROUTER
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── ALIASES ARE THE CHEAPEST FIX ON THIS SURFACE ─────────────────────────
+//
+// Four of the owner's attempts failed and only one was a missing capability.
+// `spawn_encounter` in particular was losing to `spawn_site` on the one thing
+// it is best at, because the word an operator reaches for is "spawn" and the
+// two names differ only in a suffix. A name that loses to its neighbour on its
+// own subject is a name problem, and the fix is not to rename the action - the
+// action list is a contract - but to make every word somebody would actually
+// type land on it.
+//
+// AGENTS.md: "if a near-synonym works, the phrasing that fails is a bug". Each
+// list below is the three or four ways somebody would say the thing, tried
+// rather than imagined.
 const definitions: Record<AdminAction, ActionDefinition> = {
     roster: {
         schema: RosterSchema,
         handler: handleRoster,
-        aliases: ['world', 'everyone', 'all_cultivators'],
-        description: 'Every cultivator in the world, read-only'
+        aliases: ['world', 'everyone', 'all_cultivators', 'who', 'people', 'list'],
+        description: 'READ. Lists every cultivator that exists right now - name, rung, root, sect, where they are standing, alive or dead. Writes nothing. Use it to find an id, or to see what the world is holding.'
     },
     spawn_encounter: {
         schema: SpawnEncounterSchema,
         handler: handleSpawnEncounter,
-        aliases: ['encounter', 'spawn_enemy'],
-        description: 'Instantiate a real opponent at a normally-gated realm ordinal'
+        aliases: [
+            'encounter', 'spawn_enemy', 'spawn_npc', 'spawn_person',
+            'spawn_cultivator', 'npc', 'enemy', 'opponent', 'stage_encounter'
+        ],
+        description: 'CREATES A PERSON. A real, persisted NPC cultivator at any strength you name, standing where the player is standing unless told otherwise, with spirit root and attributes rolled from the run seed and advanced through advanceRealm like anybody else. This is the action for "put an X in front of me" - a fight, a conversation, a threat. It does NOT create a place; that is spawn_site.'
     },
     spawn_site: {
         schema: SpawnSiteSchema,
         handler: handleSpawnSite,
-        aliases: ['site', 'spawn_grave', 'grave', 'reveal_site'],
-        description: 'Reveal a real catalogued site so the player can name it; its own gates all stand'
+        aliases: ['site', 'spawn_grave', 'grave', 'reveal_site', 'reveal', 'tomb', 'trial'],
+        description: 'REVEALS A PLACE. Makes an existing catalogued grave or trial nameable by this cultivator - it lifts the awareness gate and nothing else, so the strength bar, the comprehension bar and every claim condition inside still stand and still refuse. It does NOT put a person in front of you; that is spawn_encounter.'
     },
     grant_item: {
         schema: GrantItemSchema,
         handler: handleGrantItem,
-        aliases: ['grant', 'give_item', 'give'],
-        description: 'Put a catalog pill or herb into the real pouch'
+        aliases: [
+            'grant', 'give_item', 'give', 'item', 'grant_artifact',
+            'give_weapon', 'weapon', 'artifact'
+        ],
+        description: 'GIVES AN OBJECT. Puts a real catalog pill, herb or rated artifact into the real pouch. Ask by catalog id, by the name the catalog prints, or - for an artifact - by the rung it is rated at, which is how "a 45 weapon" is said. Invents nothing: a miss is refused with what actually exists.'
     },
     set_ambient: {
         schema: SetAmbientSchema,
         handler: handleSetAmbient,
-        aliases: ['ambient', 'set_qi'],
-        description: 'Relocate to a place the engine derives the requested ambient band for'
+        aliases: ['ambient', 'set_qi', 'qi', 'band', 'set_band'],
+        description: 'CHANGES THE AIR. Finds a place near the cultivator that the engine genuinely derives the requested ambient qi band for, and stands them in it for this 30-day block. The band is found, never declared. Use it to test cultivation rate, breakthrough odds or hostile ground.'
     },
     set_location: {
         schema: SetLocationSchema,
         handler: handleSetLocation,
-        aliases: ['move', 'teleport', 'relocate'],
-        description: 'Move the cultivator to a place that is really on the map'
+        aliases: ['move', 'teleport', 'relocate', 'go', 'travel', 'goto', 'stand'],
+        description: 'MOVES THE PLAYER. Places the cultivator at a named location that is really on the map - checked against the region catalog, the world\'s own locations, and everywhere somebody is standing. No travel time passes and nothing happens on the road. Refuses a place that does not exist.'
     },
     advance_days: {
         schema: AdvanceDaysSchema,
         handler: handleAdvanceDays,
-        aliases: ['advance', 'skip_time', 'fast_forward'],
-        description: 'Advance real in-world time with real consequences and no cultivation gain'
+        aliases: ['advance', 'skip_time', 'fast_forward', 'wait', 'time', 'age', 'skip', 'days', 'years'],
+        description: 'PASSES TIME. Runs real in-world time through simulateTimeSkip at idle focus: real aging, real hunger, real stagnation, real death checks, and no cultivation gain. Reports how much of the span actually ran and what stopped it. Pass rations=N to provision the span - unprovisioned, a body gets about fifty turns.'
     },
     grant_progress: {
         schema: GrantProgressSchema,
         handler: handleGrantProgress,
-        aliases: ['progress', 'grant_qi', 'fill_progress', 'fill'],
-        description: 'Fill the qi-unit accumulator so a crossing can be ATTEMPTED. Rolls nothing.'
+        aliases: ['progress', 'grant_qi', 'fill_progress', 'fill', 'qi_units', 'top_up'],
+        description: 'FILLS THE TANK. Adds qi-units to the accumulator the engine already reads, so a breakthrough can be ATTEMPTED from where the cultivator stands. It rolls no breakthrough and claims none - the attempt is still made in play and can still fail or kill. Use with set_realm to test a crossing FROM any rung.'
     },
     set_realm: {
         schema: SetRealmSchema,
         handler: handleSetRealm,
-        aliases: ['realm', 'set_ordinal', 'set_rank'],
-        description: 'Move the cultivator on the ladder through advanceRealm; logged and flagged'
+        aliases: ['realm', 'set_ordinal', 'set_rank', 'ordinal', 'rank', 'rung', 'promote', 'demote'],
+        description: 'SETS THE PLAYER RUNG. Moves the cultivator up or down the ladder through advanceRealm, the same road every rank change takes: the peak is stamped, accumulated progress is cleared, the stagnation clock restarts. No breakthrough is rolled and none is claimed. This is how "I am ordinal 44" is said.'
     },
     audit_log: {
         schema: AuditLogSchema,
         handler: handleAuditLog,
-        aliases: ['audit', 'log', 'trail'],
-        description: 'The admin audit trail for a run - the rows that flag it'
+        aliases: ['audit', 'log', 'trail', 'history', 'what_did_i_do'],
+        description: 'READ. The admin audit trail for this run - every ADMIN call, in order, with what it did. These rows ARE the admin flag: run_manage.ledger reads them to exclude this run from the death ledger and from balance data.'
+    },
+    help: {
+        schema: HelpSchema,
+        handler: handleHelp,
+        aliases: ['?', 'commands', 'actions', 'usage', 'options', 'can', 'how'],
+        description: 'READ. What ADMIN can do, as lines you can copy, and what it deliberately cannot with the honest route to each. Call this first if you are not sure which action you want.'
     }
 };
 
@@ -1303,10 +1996,12 @@ There is NO action here - and there must never be one - that takes an outcome as
 records it. No declare, no force_success, no set_hp, no revive. Every action below performs a real
 deterministic mutation and returns what the engine actually did.
 
+- help             what ADMIN can do, as lines you can type, and what it deliberately cannot
 - roster           every cultivator in the world with rank, location, sect, standing (read-only)
 - spawn_site       reveals a real catalogued site by ordinal or by name; awareness gate only
 - spawn_encounter  a REAL persisted NPC cultivator with engine-rolled talent at any ordinal
-- grant_item       catalog pills and herbs only, into the real pouch
+- grant_item       catalog pills, herbs and ARTIFACTS into the real pouch. A rated object can be
+                   asked for by rung - 'ordinal=45 kind=artifact' - or by its catalog name
 - set_ambient      relocates to a place the engine genuinely derives that band for, this block only
 - set_location     move the cultivator; the destination is checked against the real gazetteer
 - advance_days     real time through simulateTimeSkip: real aging, hunger, stagnation, death.
@@ -1319,6 +2014,13 @@ Arguments are key=value. A value runs to the next key, so a multi-word name need
   ADMIN set_location location=The Dead Verge
   ADMIN spawn_site ordinal=41 kind=grave
 
+A line that does not begin with an action is read as a SENTENCE instead, by the kind of thing in
+it and the rung it names - as a number or as a realm the ladder knows by name:
+  ADMIN spawn an NPC at Tribulation Transcendence   ->  spawn_encounter ordinal=41
+  ADMIN I run into a 45 weapon                      ->  grant_item kind=artifact ordinal=45
+The equivalent key=value line is always printed back, so the reading is visible and correctable,
+and a line naming two different things refuses rather than picking one.
+
 Every call is audited, and the run is flagged so it is excluded from the death ledger and from
 balance statistics.
 
@@ -1328,12 +2030,20 @@ Actions: ${ACTIONS.join(', ')}`,
         action: z.string().describe(`Action: ${ACTIONS.join(', ')}`),
         cultivatorId: z.string().optional(),
         runId: z.string().optional(),
-        ordinal: z.number().int().optional(),
-        kind: z.enum(['grave', 'trial', 'any']).optional(),
+        // A rung is a number OR a realm name at this layer too, so a caller
+        // reading only the top-level schema is not told it must be numeric.
+        ordinal: z.union([z.number().int(), z.string()]).optional()
+            .describe(`A rung: 0-${MAX_ORDINAL}, or a realm by name.`),
+        // Two actions take a `kind` and they mean different things by it -
+        // `spawn_site` a site kind, `grant_item` a catalog. The union is
+        // declared here and each action's own schema narrows it, which is where
+        // a wrong one is caught with a message naming that action's options.
+        kind: z.enum(['grave', 'trial', 'pill', 'herb', 'artifact', 'any']).optional(),
         name: z.string().optional(),
         location: z.string().optional(),
         disposition: z.enum(['hostile', 'wary', 'indifferent']).optional(),
         itemId: z.string().optional(),
+        about: z.string().optional(),
         quantity: z.number().int().optional(),
         band: AmbientQiSchema.optional(),
         days: z.number().optional(),
@@ -1366,6 +2076,63 @@ export async function adminResult(args: unknown): Promise<Record<string, unknown
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDERING - PLAIN TEXT, BECAUSE THAT IS WHAT THE SURFACE RENDERS
+//
+// ── WHY NOT `RichFormatter` ──────────────────────────────────────────────
+//
+// It used to use it, and the design owner's verdict on the result was "very
+// ugly and leaky". They were right, and the reason is one line in `web/app.js`:
+//
+//     const paras = text.split(/\n\s*\n/) ... map(p => html`<p>${p.trim()}</p>`)
+//
+// A narrator entry is HTML-ESCAPED and split on BLANK LINES. There is no
+// markdown renderer anywhere on that path. So every `**bold**`, every backtick,
+// every `- ` bullet and every `|` table pipe arrived as literal characters, and
+// - worse - a SINGLE newline is not a paragraph break, so consecutive lines of
+// a list collapsed onto one another into a wall of text. `.entry--engine` has
+// `white-space: pre-wrap` and would have preserved them; `.entry--narrator`,
+// which is what ADMIN is logged as, does not.
+//
+// So the rules this renderer follows, and they are the whole of it:
+//
+//   1. NO MARKUP. Not emphasis, not code fences, not tables. It is not rendered
+//      and it is read as noise by the person the output is for.
+//   2. A BLANK LINE IS THE ONLY STRUCTURE. Anything that must appear on its own
+//      line gets a blank line around it, because that is the one separator the
+//      surface honours.
+//   3. INDENTATION SURVIVES within a paragraph only as a leading space run,
+//      which HTML collapses - so a copyable command line gets its own block
+//      rather than an indent.
+//
+// This is the "a fallback written in ordinary English is invisible" lesson
+// pointed at markup instead of prose: output that only renders in a viewer
+// nobody is using is output nobody reads.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Join blocks with the blank line that is this surface's only separator. */
+function blocks(...parts: Array<string | null | undefined>): string {
+    return parts.filter(p => typeof p === 'string' && p.trim().length > 0).join('\n\n');
+}
+
+/** A heading, in the one register plain text has for one. */
+function heading(text: string): string {
+    return `ADMIN · ${text.toUpperCase()}`;
+}
+
+/** `name: value` lines, one block each so the surface keeps them apart. */
+function fields(pairs: Record<string, unknown>): string {
+    return Object.entries(pairs)
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('\n\n');
+}
+
+/** What a want and the line that serves it look like as two blocks. */
+function recipeBlock(want: string, line: string): string {
+    return `${want}\n\n    ${line}`;
+}
+
 export async function handleAdminManage(
     args: unknown,
     _ctx?: SessionContext
@@ -1376,100 +2143,207 @@ export async function handleAdminManage(
         if (!jsonText) return response;
         const data = JSON.parse(jsonText);
 
-        let output = '';
-        if (data.error === 'admin_mode_disabled') {
-            output = RichFormatter.header('Admin Mode Disabled', '🔒');
-            output += RichFormatter.alert(data.message, 'error');
-            output += `\n*${data.hint}*\n`;
-        } else if (data.error === true || typeof data.error === 'string') {
-            output = RichFormatter.header('Admin Refused', '❌');
-            output += RichFormatter.alert(data.message || 'Unknown error', 'error');
-            if (Array.isArray(data.nearest) && data.nearest.length > 0) {
-                output += RichFormatter.list(data.nearest.map(String));
+        const out: string[] = [];
+
+        // ── WHAT WAS INFERRED, ABOVE WHATEVER IT DID ──────────────────────
+        //
+        // Printed first and always, because the whole licence for reading a
+        // sentence at all is that the reading is visible. An operator who meant
+        // something else sees the line they should have typed, in the same
+        // breath as the result of the line they did not.
+        const inferredRaw = (args as Record<string, unknown> | null)?.[INFERRED_KEY];
+        if (typeof inferredRaw === 'string') {
+            try {
+                const inferred = JSON.parse(inferredRaw) as {
+                    typed: string; asTyped: string; because: string[];
+                };
+                out.push(heading('read as'));
+                out.push(`You typed:  ${inferred.typed}`);
+                out.push(`ADMIN ran:  ${inferred.asTyped}`);
+                out.push(inferred.because.join('\n\n'));
+                out.push(
+                    'Nothing was inferred that key=value could not have said. If the reading is ' +
+                    'wrong, type the line above with the argument you meant.'
+                );
+            } catch {
+                // A malformed rider is not worth failing a real call over.
             }
-            if (data.hint) output += `\n*${data.hint}*\n`;
+        }
+
+        if (data.error === 'admin_mode_disabled') {
+            out.push(heading('off'));
+            out.push(String(data.message));
+            out.push(String(data.hint));
+        } else if (data.error === true || typeof data.error === 'string') {
+            out.push(heading('refused'));
+            out.push(String(data.message ?? 'Unknown error'));
+            if (Array.isArray(data.nearest) && data.nearest.length > 0) {
+                out.push(`Nearest: ${data.nearest.join(', ')}`);
+            }
+            // A wrong ARGUMENT was reported as "Validation failed" and nothing
+            // else, because this renderer read `message` and dropped `issues`.
+            if (Array.isArray(data.issues) && data.issues.length > 0) {
+                out.push(data.issues
+                    .map((i: { path: string; message: string }) =>
+                        i.path === '(root)' ? i.message : `${i.path}: ${i.message}`)
+                    .join('\n\n'));
+            }
+            // `message` already ends with the list when the floor suppressed
+            // the suggestions - printing it again underneath was the answer
+            // twice, which reads as a stutter and doubles the wall.
+            const listed = typeof data.message === 'string' && data.message.includes('The actions are:');
+            if (Array.isArray(data.validActions) && data.validActions.length > 0) {
+                if (!listed) out.push(`The actions are: ${(data.validActions as string[]).join(', ')}.`);
+                out.push('ADMIN help says what each one does, with a line you can copy.');
+            }
+            // The worked line for the action that refused, straight from the
+            // capability sheet, so a wrong argument answers itself.
+            if (typeof data.action === 'string') {
+                const worked = RECIPES.filter(r => r.line.includes(` ${data.action} `));
+                if (worked.length > 0) {
+                    out.push('Lines that work:');
+                    for (const r of worked) out.push(`    ${r.line}`);
+                }
+            }
+            if (Array.isArray(data.canDo) && data.canDo.length > 0) {
+                out.push('ADMIN help lists everything this surface can arrange.');
+            }
+            // The router's generic hint names `validActions`, which is a JSON
+            // field and not a thing anybody can type. When the list is already
+            // on screen it adds nothing but jargon.
+            if (data.hint && !(listed && String(data.hint).includes('validActions'))) {
+                out.push(String(data.hint));
+            }
+        } else if (data.help === true) {
+            out.push(...renderHelp(data));
         } else if (data.roster) {
-            output = RichFormatter.header(`World Roster (${data.count})`, '🗺️');
-            output += RichFormatter.table(
-                ['Name', 'Kind', 'Rank', 'Root', 'Sect', 'Location', 'Alive'],
-                data.roster.map((r: Record<string, unknown>) => [
-                    String(r.name), String(r.kind), String(r.rank), String(r.spiritRootName),
-                    String(r.sectName ?? '-'), String(r.location ?? '-'), r.alive ? 'yes' : 'no'
-                ])
-            );
+            out.push(heading(`world roster - ${data.count}`));
+            for (const r of data.roster as Array<Record<string, unknown>>) {
+                out.push(
+                    `${r.name} - ${r.rank}, ${r.spiritRootName}` +
+                    `${r.sectName ? `, ${r.sectName}` : ''}, at ${r.location ?? 'nowhere recorded'}` +
+                    `${r.alive ? '' : ', dead'}`
+                );
+            }
+        } else if (Array.isArray(data.entries)) {
+            // The trail itself was never rendered - `audit_log` came back as
+            // "Action performed: read" and nothing else, so the one action
+            // whose entire content is a list printed no list.
+            out.push(heading(`admin trail - ${data.entries.length}`));
+            if (data.entries.length === 0) {
+                out.push('Nothing. ADMIN has not touched this run.');
+            } else {
+                for (const e of data.entries as Array<Record<string, any>>) {
+                    out.push(
+                        `${String(e.action).replace(/^admin_manage\./, '')} ` +
+                        `at ${e.timestamp}\n\n    ${JSON.stringify(e.details ?? {})}`
+                    );
+                }
+            }
+            out.push(String(data.note));
         } else if (data.site) {
-            output = RichFormatter.header(`Site Revealed: ${data.site.name}`, '⛏️');
-            output += RichFormatter.keyValue({
+            out.push(heading(`site revealed - ${data.site.name}`));
+            out.push(fields({
                 'Catalog id': data.site.catalogId ?? data.site.id,
                 'Kind': data.site.kind,
                 'Pitched at': `ordinal ${data.site.ordinal} (${data.site.rank})`,
                 'Chosen because': data.selection,
-                'Was already nameable': data.site.awarenessAlreadyHeld ? 'yes' : 'no',
-                'Say this': Array.isArray(data.sayThis) ? data.sayThis.join('  |  ') : undefined
-            });
-            output += RichFormatter.alert(
-                'Awareness gate lifted, and nothing else. Every gate inside this site still stands.',
-                'warning'
-            );
+                'Was already nameable': data.site.awarenessAlreadyHeld ? 'yes' : 'no'
+            }));
+            if (Array.isArray(data.sayThis)) {
+                out.push('Say this:');
+                for (const line of data.sayThis) out.push(`    ${line}`);
+            }
+            out.push('Awareness gate lifted, and nothing else. Every gate inside this site still stands.');
+        } else if (data.granted === true && data.item) {
+            out.push(heading(`granted - ${data.item.name}`));
+            out.push(fields({
+                'Catalog id': data.item.id,
+                'Kind': data.item.kind,
+                'Rated at': data.item.ordinal === undefined || data.item.ordinal === null
+                    ? undefined
+                    : `ordinal ${data.item.ordinal} (${data.item.rank})`,
+                'Grade': data.item.grade,
+                'Quantity': data.quantity,
+                'Chosen because': data.selection || undefined
+            }));
+            if (Array.isArray(data.sayThis) && data.sayThis.length > 0) {
+                out.push(`Say this: ${data.sayThis.join('   ')}`);
+            }
+            if (data.aboveTheCeiling) out.push(String(data.aboveTheCeiling.whatActuallyHappens));
+            if (data.worthInAFight) out.push(String(data.worthInAFight.consequence));
         } else if (data.encounterId) {
-            output = RichFormatter.header('Encounter Spawned', '⚔️');
-            output += RichFormatter.keyValue({
-                'Encounter': data.encounterId,
+            out.push(heading('encounter spawned'));
+            out.push(fields({
                 'Opponent': data.opponent?.name,
-                'Rank': data.opponent?.realm?.name,
-                'Power ratio': data.gateLifted?.powerRatio,
-                'Disposition': data.disposition
-            });
+                'Rank': data.opponent?.realm?.name ?? data.opponent?.rank,
+                'Standing at': data.location,
+                'Disposition': data.disposition,
+                'Power ratio against you': data.gateLifted?.powerRatio
+            }));
+            out.push(String(data.gateLifted?.note ?? ''));
+        } else if (data.set === true && data.band) {
+            // This fell through to a generic "Action performed: set" shrug,
+            // which is the invisible-fallback defect: the alias the engine
+            // actually found - the whole content of the action - was never
+            // printed, only asserted in the note underneath.
+            out.push(heading(`ambient set - ${data.band}`));
+            out.push(fields({
+                'Standing at': data.location,
+                'Band derived from': data.alias,
+                'Holds': `day ${data.fromDay} to day ${data.toDay}, then the world goes back`
+            }));
         } else if (data.moved) {
-            output = RichFormatter.header('Moved', '🧭');
-            output += RichFormatter.keyValue({
+            out.push(heading('moved'));
+            out.push(fields({
                 'From': data.from ?? '(nowhere recorded)',
                 'To': data.to,
                 'Asked for': data.normalised ? data.asked : undefined
-            });
+            }));
         } else if (data.advanced) {
-            output = RichFormatter.header('Time Advanced', '⏳');
-            output += RichFormatter.keyValue({
+            out.push(heading('time advanced'));
+            out.push(fields({
                 'Requested': `${data.requestedDays} day(s)`,
-                'Simulated': `${data.simulatedDays} day(s) (${data.simulatedYears} years)`,
+                'Simulated': `${data.simulatedDays} day(s), ${data.simulatedYears} years`,
                 'Stopped short by': data.stoppedShort
                     ? `${data.stoppedShort.unsimulatedDays} day(s) - ${data.stoppedShort.reason}`
                     : 'nothing; the whole span ran'
-            });
+            }));
             if (data.stoppedShort) {
-                output += RichFormatter.alert(String(data.stoppedShort.explanation), 'warning');
+                out.push(String(data.stoppedShort.explanation));
+                if (data.stoppedShort.tryThis) out.push(`    ${data.stoppedShort.tryThis}`);
             }
         } else if (data.granted === true && data.progressAfter !== undefined) {
-            output = RichFormatter.header('Progress Granted', '📈');
-            output += RichFormatter.keyValue({
+            out.push(heading('progress granted'));
+            out.push(fields({
                 'Standing at': `ordinal ${data.ordinal} (${data.rank})`,
-                'Progress': `${data.progressBefore} -> ${data.progressAfter} of ${data.progressRequired} required`,
+                'Progress': `${data.progressBefore} to ${data.progressAfter}, of ${data.progressRequired} required`,
                 'Attempt now legal': data.eligibility?.eligible
                     ? 'yes'
                     : `no - ${data.eligibility?.reason ?? 'the engine says not'}`,
                 'Dao roads': `${data.eligibility?.daoHeld} held, ${data.eligibility?.daoRequired} required`
-            });
+            }));
         } else if (data.set === true && data.toRank) {
-            output = RichFormatter.header(`Rung Set: ${data.toRank}`, '🪜');
-            output += RichFormatter.keyValue({
+            out.push(heading(`rung set - ${data.toRank}`));
+            out.push(fields({
                 'From': `${data.fromOrdinal} (${data.fromRank})`,
                 'To': `${data.toOrdinal} (${data.toRank})`,
                 'Immortal status': data.immortalStatus,
                 'Status written here': data.immortalStatusWritten ?? 'no - the rung is below the Lid',
                 'Progress cleared': data.progressCleared ? 'yes' : 'no',
                 'Peak stamped': data.peakOrdinal
-            });
+            }));
         } else {
-            output = RichFormatter.header('Admin', '🔧');
-            output += RichFormatter.keyValue({
+            out.push(heading('done'));
+            out.push(fields({
                 'Action performed': Object.keys(data).find(k =>
                     ['granted', 'moved', 'set', 'advanced', 'spawned'].includes(k)
                 ) ?? 'read',
                 'Run flagged': data.runFlagged ?? false
-            });
+            }));
         }
 
-        if (data.note) output += `\n*${data.note}*\n`;
+        if (data.note) out.push(String(data.note));
 
         // ── NO SERIALISED STATE OBJECT ────────────────────────────────────
         //
@@ -1477,16 +2351,62 @@ export async function handleAdminManage(
         // `RichFormatter.embedJson`. The wrapper is an HTML comment, which is
         // invisible in a browser and NOT invisible in the game's narrative log,
         // where it is rendered as text - so every admin call dumped several
-        // kilobytes of internal state into the player's story, the same family
-        // as the `technique_manage.list_available` and `encounters.assessFit`
-        // leaks. Admin output is out-of-world and it is legible; it is not a
-        // machine payload wearing prose as a hat. Anything an operator needs is
-        // rendered above by name, and `audit_log` holds the record.
-        output += `\n> ADMIN - out of world. Nothing above is narration, and no part of it is a claim about ` +
-            `what a character perceives. Run flagged: ${data.runFlagged === true ? 'yes' : 'no'}.\n`;
+        // kilobytes of internal state into the player's story. Admin output is
+        // out-of-world and it is legible; it is not a machine payload wearing
+        // prose as a hat. Anything an operator needs is rendered above by name,
+        // and `audit_log` holds the record.
+        out.push(
+            'ADMIN - out of world. Nothing above is narration, and no part of it is a claim about ' +
+            `what a character perceives. Run flagged: ${data.runFlagged === true ? 'yes' : 'no'}.`
+        );
 
-        return { content: [{ type: 'text', text: output }] };
+        return { content: [{ type: 'text', text: blocks(...out) }] };
     } catch {
         return response;
     }
+}
+
+/**
+ * Help, in sections, because all of it at once is more than anybody reads.
+ *
+ * Twelve capabilities, four refusals, eleven action descriptions and two
+ * footnotes arrived as a single wall and the design owner stopped reading it,
+ * which is the correct response to a wall. `about` chooses a section, and the
+ * default one is short enough to finish - the others say how to reach them.
+ */
+function renderHelp(data: Record<string, any>): string[] {
+    const section = String(data.section ?? 'what');
+    const out: string[] = [];
+
+    if (section === 'refusals') {
+        out.push(heading('what admin will not do'));
+        out.push(String(data.purpose));
+        for (const entry of data.cannotDo as Array<{ asked: string; instead: string }>) {
+            out.push(`${entry.asked}\n\n    ${entry.instead}`);
+        }
+        out.push('ADMIN help for what it will do.');
+        return out;
+    }
+
+    if (section === 'actions') {
+        out.push(heading('the actions'));
+        for (const a of data.actions as Array<{ action: string; does: string; takes: string[] }>) {
+            out.push(`${a.action}(${a.takes.join(', ')})\n\n    ${a.does}`);
+        }
+        out.push(String(data.vocabulary));
+        return out;
+    }
+
+    out.push(heading('what admin can do'));
+    out.push(String(data.purpose));
+    for (const entry of data.canDo as Array<{ want: string; line: string }>) {
+        out.push(recipeBlock(entry.want, entry.line));
+    }
+    out.push(String(data.law));
+    out.push(
+        'ADMIN help refusals - what it will not do, and the honest route to each.\n\n' +
+        'ADMIN help actions - every action, what it does and what it takes.\n\n' +
+        `Written up in full: ${data.documentation}`
+    );
+    return out;
 }
