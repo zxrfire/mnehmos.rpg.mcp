@@ -1287,8 +1287,18 @@ So the budget is on **what it costs the player**, never on the number of calls:
 - **At most one act that spends time, stones or the body**, and it is the one they asked for -
   never one added on the way. A sentence must not spend two seasons because the reader chose
   two skips.
-- **And say what was not done.** A plan silently truncated is worse than a refusal, because the
-  player believes all of it happened.
+- **And where two costly acts are asked for at once, do neither and ask which comes first.**
+  Not a truncation, not a refusal, and not a guess: a question, answerable in one word, naming
+  them in the player's own terms. A question costs nothing and hands the choice back to the
+  person whose life is being spent. Run the free reads first anyway, so the question can name
+  what they found - and word it so it does not read as a failure, because nothing failed: the
+  turn understood the whole sentence, which is the opposite of the defect this exists to fix.
+
+**And this is precisely what the model buys, stated plainly.** Without one, a player types the
+steps out one at a time - which is fine, and is the deterministic rungs working as intended.
+With one, a sentence carrying a plan is carried out. **That difference is the reason to have a
+model at all**, and it is a larger one than better prose: the writing gets nicer, and the game
+gets easier to say things to.
 
 **More reach is never more authority.** The reader may understand more of a sentence; it may
 never decide more of the outcome. The engine rules, exactly as before, and a reader that
