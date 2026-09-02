@@ -1263,6 +1263,43 @@ And it is a question the world should be able to answer out loud, because it is 
 people gossip about: which houses are finished, which are dangerous, and which have somebody
 coming up who has outgrown them.
 
+### A sentence is a plan, and refusing it is what makes the game unfun
+
+**Count the refusals in a session. That number is the game's quality.** Not the prose, not the
+depth of the model underneath - a player who is told *no* four times in ten turns has stopped
+playing a world and started guessing at a parser, and no amount of good writing recovers it.
+
+The reason it happens is structural rather than careless. **A player types a plan; the engine
+has a verb per step.** *"I offer her family my spirit stones for the match"* is two acts -
+find the party, put something to them - and a reader that can answer with one verb has to
+refuse it. So the refusal is not the player failing to say the magic word. **It is the reader
+being unable to hold what they said.**
+
+**What makes carrying out a plan safe is that most acts are free.** Looking, asking who is
+here, reading a wall, checking a purse, recalling a name - none of them costs a day, and the
+codebase already marks them (`freeAction`). A plan is usually one costly step with several free
+ones around it, and running the free ones is not spending anything.
+
+So the budget is on **what it costs the player**, never on the number of calls:
+
+- **Free reads chain as far as the sentence goes.** Resolving who somebody is, what they hold,
+  and what their house would want is one intention and should be one turn.
+- **At most one act that spends time, stones or the body**, and it is the one they asked for -
+  never one added on the way. A sentence must not spend two seasons because the reader chose
+  two skips.
+- **And say what was not done.** A plan silently truncated is worse than a refusal, because the
+  player believes all of it happened.
+
+**More reach is never more authority.** The reader may understand more of a sentence; it may
+never decide more of the outcome. The engine rules, exactly as before, and a reader that
+resolves an act it merely inferred has stopped reading and started playing.
+
+**Where a refusal is genuinely right, it is the ones that already have rules here:** an act the
+world cannot hold, a bar somebody does not clear, a thing that is not for sale. Those name a
+route and teach the world. **Everything else is the reader's failure and should be fixed
+there** - and the tell is easy to check: if a person watching over the player's shoulder would
+have understood the sentence, the refusal was not the player's fault.
+
 ### It has to play as a game, not as a command line
 
 **A command line answers what you typed. A game answers what you meant, and tells you what you
