@@ -62,6 +62,7 @@ import {
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
+import { THE_LINE_AT_MILLRUN } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
 import {
@@ -244,8 +245,15 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const regionLocations = seedRegions(state, opts.catalog, presentDay);
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
     const npcs = seedPopulation(state, opts.catalog, factions, population, presentDay);
-    state.populationTarget = npcs.length;
-    const lineages = seedLineages(state, npcs, presentDay);
+    // AFTER the population, so every procedural person draws exactly what they
+    // drew before this existed, and BEFORE the lineages, so the family the
+    // dilution ladder is read off is on a roll like anybody else's. They are
+    // counted in the target because they are people: a world that replaces its
+    // dead back to a figure that excluded them would quietly delete them.
+    const line = seedTheLineThatCameDown(state, opts.catalog, presentDay);
+    const everybody = [...npcs, ...line];
+    state.populationTarget = everybody.length;
+    const lineages = seedLineages(state, everybody, presentDay);
     const opportunities = seedOpportunities(state, opts.catalog, regionLocations, presentDay);
     const effects = seedGrantSchedule(state, opts.catalog, presentDay);
 
@@ -303,7 +311,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
             regions: opts.catalog.regions.length,
             locations: state.locations.length,
             factions: factions.length,
-            npcs: npcs.length,
+            npcs: everybody.length,
             lineages: lineages.length,
             opportunities: opportunities.length,
             scheduledEffects: effects.length,
@@ -1348,6 +1356,78 @@ function seedPopulation(
  * the stratum has to EXIST so it can act, be referred to and be encountered
  * rarely, without becoming something a beginner trips over.
  */
+/**
+ * The one family in the world that came down from something that changed.
+ *
+ * Instantiating what the catalog says is true, exactly as `seedNamedFigures`
+ * does for the upper stratum, and for the same reason: **the dilution ladder is
+ * a rule with no writer until somebody in the world carries a line.** The birth
+ * pass writes one from a match, but the event that starts a line is a beast
+ * reaching `BEAST_CHANGE_ORDINAL` and then marrying, which no run will see. So
+ * one family already exists, and the ladder is being read from the first day.
+ *
+ * Nothing about the seeding is special. They are ordinary people in an ordinary
+ * village on an ordinary province's roster, and the only authored facts are who
+ * they are, what they carry, and the ancestor's rung - which is authored because
+ * standing above the change is what being the ancestor MEANS rather than a
+ * rating. Everybody else's rung comes off `deriveLife` like anybody's.
+ *
+ * Its own stream, keyed on ids nothing else uses, so every other person in every
+ * already-seeded world draws exactly what they drew before this existed.
+ */
+function seedTheLineThatCameDown(
+    state: WorldState,
+    catalog: WorldCatalog,
+    presentDay: number
+): NpcRecord[] {
+    const line = THE_LINE_AT_MILLRUN;
+    const region = catalog.regions.find(r => r.id === line.regionId);
+    if (!region) return [];
+    const place = region.places.find(p => p.name === line.place);
+    // A family with nowhere to live is not seeded rather than being put on the
+    // province container. See the birth pass: people are born where people can
+    // live, and a fallback onto a map node nobody stands on is the quiet defect.
+    if (!place) return [];
+    const locationId = placeLocationId(region.id, place.name);
+
+    const created: NpcRecord[] = [];
+    for (let i = 0; i < line.people.length; i++) {
+        const person = line.people[i];
+        const id = `npc-line-${i}`;
+        const rng = forStream(state.seed, 'the-line-that-came-down', id);
+
+        let npc = createNpc(state.seed, {
+            id,
+            name: `${line.surname} ${person.given}`,
+            bornOnDay: presentDay - years(person.ageYears),
+            onDay: presentDay,
+            locationId,
+            occupation: 'unknown',
+            sex: person.sex,
+            bloodline: person.tier === null
+                ? null
+                : { speciesId: line.speciesId, tier: person.tier },
+            description: person.note,
+            tags: [`region:${region.id}`]
+        });
+
+        const ordinal = person.ordinal ?? deriveLife(
+            npc.cultivation.spiritRoot,
+            npc.cultivation.attributes,
+            person.ageYears,
+            region.ambientRateMultiplier,
+            region.localCeilingOrdinal,
+            rng,
+            { origin: npc.identity.origin }
+        ).ordinal;
+        npc = setRealm(npc, ordinal, presentDay);
+
+        state.npcs.push(npc);
+        created.push(npc);
+    }
+    return created;
+}
+
 function seedNamedFigures(
     state: WorldState,
     catalog: WorldCatalog,

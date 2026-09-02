@@ -106,6 +106,10 @@ import {
     type AskWeight
 } from '../social-leverage/index.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
+import { bloodlineForChild } from './hunting-a-spirit-beast.js';
+import {
+    canBeTheTwoParentsOf
+} from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { applyRuinProspecting } from './how-the-world-keeps-finding-more-ruins.js';
 import { repairRetiredWoundKeys } from './recording-the-day-a-wound-was-taken.js';
 import { deriveOrdinal } from './seeding.js';
@@ -698,6 +702,41 @@ function applyDemography(
             ? candidates[own.int(0, candidates.length - 1)]
             : null;
         if (parent) {
+            // ── WHAT THE LINE COMES TO IN THIS CHILD ─────────────────────
+            //
+            // `bloodlineTierForChild` was argued out in detail, tested, and had
+            // NO WRITER ANYWHERE. Nothing in the world ever put an `AbilityTier`
+            // on a person, so it returned null for everybody alive and the whole
+            // half of the design that rests on it - dilution, the clan that will
+            // not marry out, the clan pricing its own decay, the child who runs
+            // - could not occur. This is the writer.
+            //
+            // Both parents, and the second one is where the parentage field
+            // earns its place: a household is whoever two people are, and the
+            // two who could have had this child between them is a narrower
+            // question. Where the household's other half is not one of them the
+            // child has one blood parent as far as the world knows, which is
+            // the ordinary case for most of the population anyway - and a line
+            // with one carrier steps down, which is exactly right.
+            //
+            // Nothing here decides the ladder. `bloodlineForChild` reads both
+            // parents and nothing else, there is no dilution constant, and a
+            // child of two carriers holds the line because there are two of it.
+            const spouseTie = parent.relationships.find(r => r.kind === 'spouse');
+            const spouseAt = spouseTie ? roster.at.get(spouseTie.targetId) : undefined;
+            const spouse = spouseAt === undefined ? null : state.npcs[spouseAt];
+            const otherBloodParent = spouse
+                && canBeTheTwoParentsOf(parent.identity.sex, spouse.identity.sex)
+                ? spouse
+                : null;
+            const line = bloodlineForChild(
+                parent.identity.bloodline,
+                otherBloodParent?.identity.bloodline ?? null
+            );
+            if (line !== null || npc.identity.bloodline !== null) {
+                npc = { ...npc, identity: { ...npc.identity, bloodline: line } };
+            }
+
             const surname = parent.name.split(' ')[0];
             npc = { ...npc, name: `${surname} ${npc.name.split(' ').slice(1).join(' ')}`.trim() };
             const lineageId = `lin-${surname.toLowerCase()}`;
