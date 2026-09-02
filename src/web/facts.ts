@@ -1325,10 +1325,40 @@ export function factsForMove(
         ...base.lines
     ];
 
+    // ── A JOURNEY SAYS WHERE IT ENDED, WHATEVER HAPPENED ON THE WAY ──────
+    //
+    // The quiet-road sentence was the ONLY place `destination` reached the
+    // prose, and it was behind `skip.events.length === 0` - so any event at all
+    // threw the arrival away and printed the seclusion digest in its place. A
+    // bookless cultivator files a `method_ceiling` event on every skip there
+    // is, which means for the whole opening stretch of a run every journey read
+    // like this, verbatim, on a one-day walk:
+    //
+    //   > I go to the Wide Field vein
+    //   "Millrun. Lin Baoqing took to the road. Travel of 1 day was intended.
+    //    Day 0 - This cultivator is practising no cultivation method at all.
+    //    [the whole no-manual paragraph]
+    //    You stand at Qi Condensation Layer 1, 16 years old."
+    //
+    // Where they went is not in it. The player typed a destination and the
+    // answer names their rung and their age instead - which is the floor
+    // failure the section in `AGENTS.md` opens with, and it costs no model to
+    // fix, because the destination was a parameter to this function all along.
+    //
+    // Appended rather than prepended: the digest already opens with setting out
+    // and closes with how they stand, so the arrival is the sentence that
+    // belongs after it, and leading with it would say the going twice.
+    const arrival =
+        `${before.name} is in ${destination} now. ${describeAmbientPerceived(ambientAfter)}`;
     const prose = skip.events.length === 0 && !skip.died
         ? `${before.name} went out of ${placeName(before)} and into ${destination}. ` +
           `${describeAmbientPerceived(ambientAfter)} Nothing happened on the road, which is not the same as nothing being on it.`
-        : base.prose;
+        // Somebody who did not survive the road did not arrive on it, and
+        // saying they are standing there would be the engine contradicting the
+        // sentence it just filed.
+        : skip.died
+            ? base.prose
+            : [base.prose, arrival].join('\n\n');
 
     return {
         ...observable(
