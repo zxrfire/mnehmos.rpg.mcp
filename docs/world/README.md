@@ -66,6 +66,7 @@ converge on `NARRATOR-CORE.md`.
 | [`economy.md`](economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 and 3 |
 | [`items.md`](items.md) | Every object that can be held: counted against tracked, what money cannot buy, why a holder keeps what they cannot use, spent rows, possession as a signature | 2 and 3 |
 | [`immortals.md`](immortals.md) | The Immortal World as a place, ascension, what immortals leave behind, what crosses the Lid, immortal lineages | 2 and 3 |
+| [`injuries.md`](injuries.md) | What a wound costs: wounds of the body that impair and do not kill, against wounds of the cultivation that take a rung back; what a wound reaches, and the one axis it cannot touch | 2 and 3 |
 | [`people.md`](people.md) | NPCs as protagonists of their own lives, personality, prodigies, goals, morality, characters persisting after being surpassed | 2 and 3 |
 | [`tone.md`](tone.md) | The narrator's register, what to do and avoid, naming conventions, what makes a run interesting | 1 and 3 |
 | [`understanding.md`](understanding.md) | Understanding as an axis distinct from accumulation, personal realms, achievements, visions, and what separates two cultivators at the same rank | 2 and 3 |
@@ -134,6 +135,7 @@ These cut across place. A scene commonly takes one row from each table.
 | Something old, inherited, or built by somebody else is described | [`the-late-age.md`](the-late-age.md) |
 | Ownership, price, or provenance is disputed | [`economy.md`](economy.md) |
 | An object changes hands, is copied, spent, hidden, or refused; or somebody asks how many exist | [`items.md`](items.md) |
+| Somebody is wounded, asks what a wound will do to them, or fights and cultivates while carrying one | [`injuries.md`](injuries.md) |
 | The narrator is unsure how much to say, or in what voice | [`tone.md`](tone.md) |
 | A house's standing, ancestry, succession, or vault is in question | [`sects.md`](sects.md) |
 | A consequence arrives and nobody can trace where it came from | [`dao-houses.md`](dao-houses.md) |
