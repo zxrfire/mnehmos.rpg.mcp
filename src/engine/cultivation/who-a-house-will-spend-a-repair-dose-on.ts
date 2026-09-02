@@ -77,7 +77,7 @@
  * Pure. Facts in, a decision out. Nothing here reads the world or rolls.
  */
 
-import { BROKEN_STATUSES } from './what-goes-wrong-at-a-realm-boundary.js';
+import { brokenStatusKeyOf } from './what-goes-wrong-at-a-realm-boundary.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE STANDARD
@@ -148,7 +148,7 @@ export interface RepairDecision {
  * looking after its own blood or its own investment.
  */
 export function willTheHouseSpendOnThem(candidate: RepairCandidate): RepairDecision {
-    if (!candidate.woundKey || !BROKEN_STATUSES.includes(candidate.woundKey)) {
+    if (brokenStatusKeyOf(candidate.woundKey) === null) {
         return {
             claim: 'none',
             meetsTheStandard: false,

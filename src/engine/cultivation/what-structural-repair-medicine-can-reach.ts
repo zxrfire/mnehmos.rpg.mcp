@@ -88,6 +88,7 @@ import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS, MAX_ORDINAL } from '.
 import { netEarningsPerYear } from './origin.js';
 import {
     BROKEN_STATUSES,
+    brokenStatusKeyOf,
     REPAIRED_IN_THE_CRUCIBLE,
     brokenStatusFor,
     clearBrokenStatus
@@ -161,7 +162,13 @@ export function repairRefusalReason(
     woundKey: string | null,
     atOrdinal: number
 ): string | null {
-    if (!woundKey || !BROKEN_STATUSES.includes(woundKey)) {
+    // Resolved once and used throughout, so a saved row carrying a retired key
+    // is recognised as a break AND matched against `mends`. Refusing one on a
+    // stale string would tell somebody carrying a real structural wound that
+    // nothing is wrong with them, and matching `mends` on it would refuse the
+    // dose that is made for exactly their break.
+    const key = brokenStatusKeyOf(woundKey);
+    if (key === null) {
         return 'This mends a structure that did not set. What is wrong here is not a structure, so there is nothing for it to reach for - it would be swallowed, it would be gone, and the wound would be exactly where it was.';
     }
     if (atOrdinal > NOTHING_REPAIRS_ABOVE_ORDINAL) {
@@ -176,7 +183,7 @@ export function repairRefusalReason(
         }
         return 'Below its grade. It sets, it holds for a while, and it does not take - and the taker is out one dose and a year, which is the more common of the two disasters.';
     }
-    if (!medicine.mends.includes(woundKey) && !reachesFromBelow(medicine, woundKey)) {
+    if (!medicine.mends.includes(key) && !reachesFromBelow(medicine, key)) {
         return 'Wrong grade. This is made for a different structure and it will not find this one, which is the ordinary way a house wastes one: the box was right, the break was not.';
     }
     return null;
