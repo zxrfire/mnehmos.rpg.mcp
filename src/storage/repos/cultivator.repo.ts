@@ -12,7 +12,11 @@ import {
     CRIPPLING_UNTREATED_INJURIES,
     SATIETY_MAX
 } from '../../schema/cultivation.js';
-import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import {
+    MAX_ORDINAL,
+    maxHpForOrdinal,
+    maxQiForOrdinal
+} from '../../engine/cultivation/realms.js';
 import { isTraceable } from '../../engine/cultivation/understanding.js';
 
 /**
@@ -555,6 +559,25 @@ export class CultivatorRepository {
      * `foundationQuality` is deliberately untouched: it is carried through by
      * the spread, because the foundation survives every later advance and is
      * never re-laid.
+     *
+     * ── THE POOLS ARE RE-DERIVED HERE, AND THIS IS THE ONLY PLACE ────────
+     *
+     * `maxHp` and `maxQi` are a function of the attributes and the rung, and
+     * the rung is the half that moves - so a stored pool is a value nothing
+     * maintains and it goes stale the moment anybody climbs. It did: a played
+     * run reached False Immortal holding 50 HP and 30 qi, a newborn's body,
+     * while the world's NPCs were built with the ordinal in the formula.
+     *
+     * This is the one function every rank change in the codebase passes
+     * through - the played layer, the MCP tool surface and the admin panel all
+     * land here - which is what makes it the place the derivation can be
+     * enforced for everybody at once rather than repeated at four call sites
+     * that will disagree.
+     *
+     * Current HP and qi are carried across and clamped, never refilled. A
+     * crossing enlarges the vessel; it does not fill it, and it is emphatically
+     * not a heal. Going DOWN the ladder shrinks the vessel, which is why the
+     * clamp is not optional.
      */
     advanceRealm(id: string, ranks = 1): Cultivator | null {
         const existing = this.getById(id);
@@ -562,10 +585,16 @@ export class CultivatorRepository {
         this.assertMutable(existing);
 
         const target = Math.min(MAX_ORDINAL, Math.max(0, existing.realmOrdinal + Math.round(ranks)));
+        const maxHp = maxHpForOrdinal(existing.attributes.might, target);
+        const maxQi = maxQiForOrdinal(existing.attributes.insight, target);
 
         const valid = CultivatorSchema.parse({
             ...existing,
             realmOrdinal: target,
+            maxHp,
+            maxQi,
+            hp: Math.min(existing.hp, maxHp),
+            qi: Math.min(existing.qi, maxQi),
             cultivationProgress: 0,
             yearsAtCurrentRealm: 0,
             updatedAt: new Date().toISOString()
@@ -575,7 +604,21 @@ export class CultivatorRepository {
             this.updateStmt.run(this.toParams(c));
             // The ledger's peak must survive the cultivator's later decline
             // (and death), so it is stamped at the moment the rank is reached.
-            if (c.runId) {
+            //
+            // ONLY THE PLAYER'S OWN PEAK. A run's peak is how high THAT LIFE
+            // got, and every cultivator sharing the run's id was stamping it:
+            // `admin_manage.spawn_encounter` builds its opponent with the
+            // player's `runId` and then advances it up the ladder the ordinary
+            // way, so standing one person at ordinal 29 in front of a Qi
+            // Condensation player wrote "peak: Void Refinement First Tempering"
+            // onto that player's run. Measured in play: a run whose cultivator
+            // had never been above 17 reported a peak of 29, and the same road
+            // is taken by every NPC the world advances inside a run.
+            //
+            // Gated on kind rather than on the caller, because the caller is
+            // not the thing that is wrong - an enemy really did advance a rank,
+            // and it is simply not the life this run is a record of.
+            if (c.runId && c.kind === 'pc') {
                 this.db
                     .prepare('UPDATE runs SET peak_ordinal = ? WHERE id = ? AND peak_ordinal < ?')
                     .run(c.realmOrdinal, c.runId, c.realmOrdinal);
