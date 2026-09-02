@@ -37,6 +37,35 @@ the entire game-facing surface:
 `src/engine/cultivation/realms.ts` is the single authority on the ladder's bounds. Do not
 restate the number of ranks in prose anywhere: it goes stale silently, and it has before.
 
+### The Immortal realm is a place, not a rank band
+
+The top of the ladder is not more of the same ladder. The Immortal realm is somewhere the
+cultivator physically is, on the far side of the Lid, and what is there is other immortals
+and immortal beasts - not the province they came from.
+
+This has consequences the code must honour, and some of them were being got wrong:
+
+- **A True Immortal is not in the mortal world.** They are not standing in a town, they
+  cannot be hired, sold to, spoken with or bargained with, because none of those things
+  has anybody on the other end of it. Coming back down is possible and it is the most
+  expensive act in the setting - `evaluateLidTransit` prices a descent at nine strikes of
+  the heaviest tribulation there is, and it buys ten or fifteen breaths. It is not the
+  default state of a run. `GameService` gates the mortal-world actions on
+  `canExistBeyondTheLid` for exactly this reason.
+- **A False Immortal is.** They came out over the Lid rather than through it, and they are
+  still here, walking around, for a vast and finite span. Everything the mortal world does
+  still applies to them - they are simply the strongest thing in it.
+- **Nothing up there is denominated in qi.** `progressRequiredForOrdinal` returns `null` at
+  both rungs on purpose. Immortal qi is not the mortal currency and there is no exchange
+  rate worth writing down, so no surface may render a figure there.
+- **The mortal economy stops well below it.** Nobody offers work above
+  `MORTAL_WORK_CEILING_ORDINAL`, because a town that sends a delegation out to meet
+  somebody does not also put them on a day rate.
+
+See [`docs/world/immortals.md`](docs/world/immortals.md) for what the Immortal World is
+like as a place, and [`src/engine/cultivation/README.md`](src/engine/cultivation/README.md)
+for the two rungs and the crossing that lands on them.
+
 ## The Central Design Rule
 
 > **The AI narrates. The engine decides.**
