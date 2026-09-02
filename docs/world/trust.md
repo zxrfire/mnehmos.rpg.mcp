@@ -276,6 +276,25 @@ this house still hold what it held? — and she can authenticate the answer perc
 axis where she is strongest. **Her strong axis repairs her weak one, and objects are the only
 channel through which it can.**
 
+**And the standard she checks against is her own memory**, which is a peculiar kind of
+authority. She is not comparing the house to a record — records can be revised, and every
+record made since she was sealed was made by people she has no reason to trust. She is
+comparing it to what she personally saw. **Nothing alive can alter that, which makes it the
+one reference in this world the gossip system cannot degrade.**
+
+**Expect partial agreement, because partial is the normal result.** Some of it will match and
+some will not, and **the pattern of which is the actual information** — far more than any
+single verdict:
+
+- **The old pieces match and no face does** — the house kept its things and lost its line.
+- **The halls stand and the old pieces are gone** — hard centuries, debts paid with heirlooms.
+- **Everything matches, exactly** — somebody knew she was waking, and prepared the room.
+
+**And her certainty is unshareable.** She knows the blade is wrong because she watched it
+made, and she cannot demonstrate that to anybody — there is no evidence, there is only her.
+**Being certain and unable to convince is the position she is permanently in**, and it is a
+better engine than simply being powerful.
+
 Two failure modes fall out of that, and both are worth playing:
 
 - **A house that sold or lost its old things reads as discontinuous when it is not.** Poverty,
