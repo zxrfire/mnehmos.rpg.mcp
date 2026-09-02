@@ -1555,3 +1555,57 @@ Above them sit two generated indexes, and they answer different questions:
    only safe because that check exists - moving twenty-five files rewrote several
    hundred links, and a doc pointing at a moved neighbour is worse than one
    pointing nowhere, because it looks like it worked.
+
+### A file states the rule. Git holds the history
+
+**Do not write what a file used to say.** "This was 17 before", "somebody set this
+to 0 and broke two tests", "I tried X, was corrected, and reverted" - none of that
+helps a reader who never saw the old version, and every one of them is a sentence
+they have to read past to reach the rule. Git already has it, with the author, the
+date and the diff.
+
+**The distinction is whether it points forwards.**
+
+| Keep | Drop |
+|---|---|
+| the rule, stated plainly | who changed it, and when |
+| **why it is this and not the obvious alternative** | what it was before |
+| the hazard: what breaks if you change it | the sequence of attempts that got here |
+| the measurement behind a number | an apology, or a note that this was hard |
+
+So this is worth its place, because it is a warning:
+
+> `admissionOrdinal` must stay at the membership bar. `rankRealmBand` derives
+> every member's band from it, and moving it re-bands the whole roster.
+
+And this is not, because it is a diary:
+
+> This used to be 3. I read the prose about the floor door and changed it to 0,
+> which broke two member tests, so I put it back.
+
+**Same fact, and only one of them is about the code.** If a mistake is worth
+recording, record the constraint that would have prevented it, not the mistake.
+
+**A measurement is not history, and keep it.** "Over forty years and six seeds,
+zero deaths at the heaven band" is a fact about the world that a reader cannot
+recover from the source, and it is why the rule beside it exists. Date it if it
+could go stale, and say what produced it so it can be re-run.
+
+**And there is one exception: a dead end worth signposting.** "This was tried and
+it does not work" earns its place when the approach is the obvious one and
+somebody will otherwise spend an afternoon rediscovering it. A repo this size
+accumulates attractive wrong turns, and the cost of re-walking one is far higher
+than the cost of a sentence.
+
+**Write it as a warning, not as a diary.** The test is whether it is addressed to
+the next person or about you:
+
+> **Do not fold this onto the world id.** Eighteen catalog people have no world
+> row and never will, so that direction loses them.
+
+not
+
+> I first tried folding onto the world id and had to undo it.
+
+**Same dead end, and only one of them saves anybody anything.** Name the approach,
+say what defeats it, and leave yourself out.
