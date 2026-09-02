@@ -378,14 +378,16 @@ has nothing to do with being able to fight.
 **That is general, and the Court is only its extreme case.** Anybody who has changed houses
 carries the same ambiguity; the Court is an entire institution made of it.
 
-**And the transfers are the point, because what the Court actually holds is a library.** Every
-person who arrives brings what their old house taught them, and the Court **pools it and shares
-it among members** — so it holds the accumulated arts of everywhere it has ever taken somebody
-from, and holds them for the specific stretch of ladder its people are on. **That is the draw.**
-A Void Refinement cultivator who could cross joins because the Court hands them the means that
-no single house, however great, could assemble: the arts of all of them, for the climb from 29
-to 41. The Seats' own art then takes over at 41 for the last stretch to 44. **The Court is a
-pipeline, and the library is the first half of it.**
+**What the Court does *not* hold is everybody else's arts.** A member arriving from a great
+house does not bring that house's art into a common pool. **Houses do not let their arts leak,
+and that rule does not bend for the Court** — if it did, joining would be an act of betrayal
+rather than a career, and every house in the world would forbid it. **A transfer keeps what
+they were taught and does not teach it onward.**
+
+So the Court's people each carry an art that is genuinely theirs, genuinely their old house's,
+and not available to the person standing next to them. **Whatever the Court shares among its
+members, it is not that** — and what it does share is not settled here. The Seats' own art,
+passed at 41 for the last stretch to 44, is the one piece that is.
 
 **Their own top art is a different matter, and it is not a secret kept for secrecy's sake.** The
 Seats pass it on when somebody reaches 41, as the vehicle for the last climb to 44 — so the
