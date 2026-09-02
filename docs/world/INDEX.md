@@ -89,7 +89,7 @@ Generated from the `trigger` attributes in this directory. Do not edit by hand -
 
 <!-- BEGIN GENERATED: triggers -->
 
-**219 situations, from 22 files.**
+**220 situations, from 22 files.**
 Sorted by the situation, not by the file, because the file is the thing you do not know.
 
 | When this is true | Read | Section |
@@ -278,6 +278,7 @@ Sorted by the situation, not by the file, because the file is the thing you do n
 | the player is deciding whether to keep searching or accept the ceiling | [`past-the-ceiling.md`](past-the-ceiling.md#searching-must-be-rational-not-compulsory) | Searching must be rational, not compulsory (tier 2) |
 | the player is earning rank inside a house in order to reach its archive | [`past-the-ceiling.md`](past-the-ceiling.md#5-climbing-to-the-shelf) | 5. Climbing to the shelf (tier 2) |
 | the player is exploring, entering a sealed site, or considering grave-reading | [`the-late-age.md`](the-late-age.md#what-ruins-are-for) | What ruins are for (tier 2) |
+| the player is in a town, a city or at a crossroads with no house behind them | [`discovery.md`](discovery.md#the-houses-that-need-people-come-looking) | The houses that need people come looking (tier 2) |
 | the player is in trouble somewhere and has powerful connections | [`ruins.md`](ruins.md#but-somebody-might-come-for-you) | But somebody might come for you (tier 2) |
 | the player is in, from, or asking about a qi-poor region | [`qi.md`](qi.md#thin-regions-have-a-ceiling) | Thin regions have a ceiling (tier 2) |
 | the player is inside a sect compound, a hall, a vault, or any interior | [`architecture.md`](architecture.md#what-is-generated-and-from-what) | What is generated, and from what (tier 2) |
