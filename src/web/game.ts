@@ -485,6 +485,13 @@ import type { NpcRecord } from '../engine/world/npc-state.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
+// A played deed goes into the world's own record, not only into the ledger.
+// See the module header for the measurement: before it, three player actions
+// in the whole game wrote a world fact, and every propagation system in the
+// repo - digest, rumour, hearsay, the market repeat - reads that table alone.
+import {
+    aDeedEntersTheWorld
+} from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 // The owner's two axes: severity of the wound, realm of the wounded.
 import {
     medicineNeededFor,
@@ -3490,6 +3497,76 @@ ${noticed}`;
         const actorName = loserIsThePlayer ? party.name : cultivator.name;
         const hurtName = loserIsThePlayer ? cultivator.name : party.name;
 
+        // ── AND EVERYONE WHO HEARS ABOUT IT KNOWS SOMETHING ABOUT YOU ────
+        //
+        // AGENTS.md's own worked example ends on that sentence, and it was the
+        // one half of the ruling that had no mechanism: the obligation row said
+        // a house was owed something, and the WORLD did not contain the bout.
+        // Nobody could repeat it, no digest carried it, and a stranger asking
+        // around about this cultivator in forty years found the ledger empty of
+        // the event that the account rests on.
+        //
+        // Written whatever `followed.against` came to, because how far past the
+        // terms it went is not the same question as whether anybody has a claim.
+        // A bout that went too far against somebody who answers to nobody opens
+        // no account at all - `followed.brokenPromise` is exactly that case -
+        // and the world should still contain it. AGENTS.md: write the fact and
+        // no grudge.
+        //
+        // The severity is `whatFollowsFromTheBout`'s where it decided one, and
+        // it is not re-decided here. Where it decided none, the fact still needs
+        // a weight, and the honest floor is the lowest band: nobody is owed
+        // anything, so nothing about it is grave to anybody but the person it
+        // happened to.
+        const deed = this.atHand
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'betrayal',
+                weight: followed.against?.severity ?? 'slight',
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [
+                    { id: actorId, name: actorName, role: 'went past what was agreed' },
+                    {
+                        id: loserIsThePlayer ? cultivator.id : party.id,
+                        name: hurtName,
+                        role: 'it was done to'
+                    }
+                ],
+                factionIds: theirHouseId ? [theirHouseId] : [],
+                summary:
+                    `${actorName} and ${hurtName} went out on ${terms} terms and `
+                    + `${actorName} took it ${followed.howFar}.`
+                    + (loserDied ? ` ${hurtName} did not get up.` : ''),
+                unattributed:
+                    'Two people went out to measure each other and only the arrangement came '
+                    + 'back the way it went out.',
+                data: {
+                    boutTerms: terms,
+                    howFar: followed.howFar,
+                    outcome,
+                    witnesses,
+                    died: loserDied
+                }
+            })
+            : null;
+        if (deed) {
+            this.worldDirty = true;
+            lines.push(deed.line);
+            calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'attack',
+                summary:
+                    `${deed.fact.id} (betrayal, ${deed.weight}, magnitude `
+                    + `${deed.fact.magnitude.toFixed(2)}, ${deed.fact.visibility}) written to the `
+                    + `world's history on day ${deed.fact.day}, naming ${actorId} and `
+                    + `${loserIsThePlayer ? cultivator.id : party.id}. `
+                    + `${deed.fact.witnessIds.length} witness id(s). terms=${terms}; `
+                    + `howFar=${followed.howFar}. The bout is now repeatable as news.`,
+                ok: true
+            });
+        }
+
         if (followed.against && theirHouseId && theirHouse) {
             // `blood_feud` is a different KIND and not a heavier grudge -
             // `grudges.ts` keeps them apart because a feud runs between lines,
@@ -3505,6 +3582,9 @@ ${noticed}`;
                 cause: followed.against.cause,
                 severity: followed.against.severity,
                 onDay,
+                // The ground-truth row this account rests on, so a reader in
+                // forty years can get from the claim to the event and back.
+                triggeringEventId: deed?.fact.id ?? null,
                 description:
                     `${followed.against.description} ${hurtName} was ${theirHouse.name}'s, and `
                     + `${actorName} is the name on it.`,
@@ -7636,16 +7716,72 @@ ${noticed}`;
         /** Claimants this cultivator has no name for. Counted, then said once. */
         let nameless = 0;
 
-        for (const factionId of site.factionIds) {
-            const house = this.repos.sects.getById(factionId);
-            if (!house) continue;
+        const claimants = site.factionIds
+            .map(id => ({ id, house: this.repos.sects.getById(id) }))
+            .filter((row): row is { id: string; house: NonNullable<typeof row.house> } =>
+                row.house !== undefined && row.house !== null);
 
+        // ── AND THE WORLD CONTAINS THE THEFT ─────────────────────────────
+        //
+        // Written FIRST, so the grudges below can carry its id. Before this,
+        // emptying a house's ground produced an obligation row and nothing
+        // else: the ledger said a house was owed something and the world did
+        // not contain the event the house was owed for. Nobody could repeat it,
+        // no digest carried it, and a stranger in the next province had heard
+        // nothing - because `circulating` and `digest` both read
+        // `state.history.facts` and only the simulation was writing to it.
+        //
+        // The severity is NOT recomputed. It was decided above for the record
+        // the house holds and it is decided exactly once; this hands the same
+        // word to the fact so the two cannot disagree, and joins them by id
+        // rather than by keeping two opinions.
+        const deed = this.atHand && claimants.length > 0
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'resource_contested',
+                weight: severity,
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: 'took it' }],
+                factionIds: claimants.map(row => row.id),
+                summary:
+                    `${cultivator.name} emptied ${site.name}, which `
+                    + `${claimants.map(row => row.house.name).join(' and ')} `
+                    + `${claimants.length === 1 ? 'claims' : 'claim'}.`,
+                unattributed:
+                    'Somebody has been up at the old ground, and whoever holds it has people on '
+                    + 'the road asking.',
+                data: { siteId: site.id, siteKind: site.kind, pitch }
+            })
+            : null;
+        if (deed) {
+            this.worldDirty = true;
+            lines.push(deed.line);
+            calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'site',
+                summary:
+                    `${deed.fact.id} (${deed.fact.kind}, ${deed.weight}, magnitude `
+                    + `${deed.fact.magnitude.toFixed(2)}, ${deed.fact.visibility}) written to the `
+                    + `world's history on day ${deed.fact.day}, naming ${cultivator.id}. `
+                    + `${deed.fact.witnessIds.length} witness id(s). It is now a thing that can be `
+                    + 'repeated, digested and heard about second hand.',
+                ok: true
+            });
+        }
+
+        for (const { id: factionId, house } of claimants) {
             const record = createGrudge({
                 holderId: factionId,
                 subjectId: cultivator.id,
                 cause: 'robbery',
                 severity,
                 onDay,
+                // The ground-truth event this record rests on. The column has
+                // existed since the social migration, `grudges.ts` indexes by
+                // it, and until the fact above existed nothing in `src/web/`
+                // had one to put in it.
+                triggeringEventId: deed?.fact.id ?? null,
                 description:
                     `${site.name} was emptied on day ${onDay}. The ground is ${house.name}'s and `
                     + 'what came off it did not.',
@@ -13298,6 +13434,91 @@ ${done.lines.join(' ')}`;
                 + `Floor ${floor} = stipend at rank 0.`,
             ok: true
         }];
+
+        // ── AND WHETHER IT WAS ANYTHING WORTH REMEMBERING ────────────────
+        //
+        // The kindness direction, and the one place in this file where nothing
+        // has priced the deed already - so `whatADeedLeaves` prices it, which
+        // is what that module is for. Its whole argument is that a gift and a
+        // killing are one transfer with the sign flipped, and the weight is
+        // COST AGAINST WHAT THE PAYER HAD: a hundred stones off somebody
+        // carrying a hundred and one is most of a life, and off somebody
+        // carrying ten thousand it is a gesture. That is exactly the
+        // distinction that decides whether a house tells anybody, and it is
+        // unreachable from the sum alone.
+        //
+        // No account is opened. `whatADeedLeaves` says what the record WOULD
+        // be and the obligation ledger is not this method's to write; the
+        // engine's answer here is only that the world now contains the gift.
+        // A slight one is a slight fact, which is what `magnitude` is for.
+        const purseBefore = cultivator.spiritStones;
+        const gift = this.atHand
+            ? aDeedEntersTheWorld(this.atHand, {
+                kind: 'debt_incurred',
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                actors: [{ id: cultivator.id, name: cultivator.name, role: 'paid it in' }],
+                factionIds: [sect.id],
+                summary:
+                    `${cultivator.name} paid ${offered} spirit stones into ${sect.name}'s `
+                    + `coffers, out of the ${purseBefore} they were carrying.`,
+                unattributed:
+                    'A house has money it did not have, and nobody at the gate will say who '
+                    + 'brought it.',
+                price: {
+                    deed: {
+                        cause: 'gifted_resource',
+                        paidBy: 'actor',
+                        // Against what they had, which is the whole of the
+                        // model being fair in both directions.
+                        cost: purseBefore > 0 ? offered / purseBefore : 1,
+                        onDay: Math.floor(run.elapsedDays),
+                        description:
+                            `${offered} spirit stones into ${sect.name}'s coffers, credited as `
+                            + `${credited} contribution.`,
+                        // A house takes money in front of the people who keep
+                        // its books. This is not a secret gift, and the deed
+                        // module weighs an unwitnessed kindness higher for a
+                        // reason that does not apply to a clerk's ledger.
+                        witnesses: 1
+                    },
+                    actor: {
+                        id: cultivator.id,
+                        name: cultivator.name,
+                        houseId: sect.id,
+                        houseName: sect.name,
+                        alignment: sect.alignment,
+                        ranked: true
+                    },
+                    subject: {
+                        id: sect.id,
+                        name: sect.name,
+                        houseId: sect.id,
+                        houseName: sect.name,
+                        alignment: sect.alignment,
+                        ranked: true
+                    }
+                },
+                data: { stones: offered, contribution: credited }
+            })
+            : null;
+        if (gift) {
+            this.worldDirty = true;
+            execution.facts.lines.push(gift.line);
+            execution.calls.push({
+                name: 'world.aDeedEntersTheWorld',
+                action: 'sect',
+                summary:
+                    `${gift.fact.id} (debt_incurred, ${gift.weight}, magnitude `
+                    + `${gift.fact.magnitude.toFixed(2)}, ${gift.fact.visibility}) written to the `
+                    + `world's history on day ${gift.fact.day}. Priced by whatADeedLeaves at cost `
+                    + `${(purseBefore > 0 ? offered / purseBefore : 1).toFixed(2)} of the purse; `
+                    + `it reached ${gift.leaves?.reached}. No obligation row was opened - the `
+                    + 'record it would open is returned, not written.',
+                ok: true
+            });
+        }
         return execution;
     }
 
@@ -14203,6 +14424,27 @@ ${done.lines.join(' ')}`;
             factionId: membership?.sectId ?? null,
             rankIndex: membership?.rankIndex ?? -1
         }, this.atHand.currentDay);
+    }
+
+    /**
+     * Where a deed by this cultivator happened, as a location id the world
+     * resolves.
+     *
+     * A fact carries a location ID and the character sheet carries a NAME, so
+     * the two are joined by `worldLocationFor` the way every other read in this
+     * file does it. Null is honest and handled: `whoWasThere` answers a deed
+     * somewhere the world does not model with the parties and no one else.
+     *
+     * NOT read off the player's own world row, which was the first version and
+     * is wrong. `the-player-as-a-row-the-world-can-invite.ts` states outright
+     * that the row's `locationId` is null and is never set - presence belongs
+     * to the play layer, and a second stored source of it cost four separate
+     * defects in one afternoon. This resolves the play layer's answer at write
+     * time and stores nothing, so the row still stands nowhere.
+     */
+    private worldPlaceOf(cultivator: Cultivator): string | null {
+        if (!this.atHand) return null;
+        return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
     }
 
     /**
