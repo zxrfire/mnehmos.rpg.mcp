@@ -219,7 +219,19 @@ const NOISE = new Set([
     'here', 'there', 'with', 'and', 'for', 'into', 'onto', 'up', 'please',
     'spawn', 'give', 'grant', 'put', 'make', 'add', 'run', 'find', 'get',
     'want', 'need', 'place', 'summon', 'create', 'drop', 'hand', 'bring',
-    'is', 'am', 'be', 'it', 'that', 'this', 'some', 'stage'
+    'is', 'am', 'be', 'it', 'that', 'this', 'some', 'stage',
+    // A GRANT HAS NO HOLDER ARGUMENT, SO A PRONOUN IS NEVER PART OF A NAME.
+    // "give myself chaos healing pill" read as `name=myself chaos healing`,
+    // and then nothing in three catalogs answered to it. `me`, `my` and `i`
+    // were already here; the reflexives and the plurals were not, which is the
+    // whole of why one spelling worked and its nearest neighbour did not - the
+    // failing half being the more natural sentence, exactly as `AGENTS.md`
+    // says it usually is.
+    'myself', 'mine', 'us', 'our', 'ourselves', 'player',
+    // And the word that qualifies a grade rather than naming anything. "a
+    // chaos GRADE tribulation pill" carried it into the name, where it
+    // matched no row and pulled a resolvable description under the bar.
+    'grade', 'graded', 'grades', 'tier', 'rated', 'level'
 ]);
 
 // ═══════════════════════════════════════════════════════════════════════════

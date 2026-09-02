@@ -54,13 +54,30 @@
  *                    It rolls no breakthrough and claims none.
  *   set_realm        goes through `advanceRealm` like every other rank change,
  *                    stamping peak_ordinal and restarting the stagnation clock
+ *   set_age          moves one number through the repository's own delta path,
+ *                    and refuses an age the rung's lifespan cannot hold
+ *   force            runs an ORDINARY VERB, in play, through the same code the
+ *                    played game runs, with the ATTEMPT LANDING and every gate
+ *                    still standing. See `forcing-an-attempt-to-land.ts`.
  *
  * WHAT ADMIN IS NOT
  * -----------------
- * There is NO action here that takes an outcome as input and records it. No
- * `set_breakthrough_result`, no `declare`, no `force_success`, no `revive`, no
- * `set_hp`. That affordance must never be added: it is precisely the one that
- * invites the model to narrate a world that does not exist.
+ * There is NO action here that takes an outcome as input and RECORDS it. No
+ * `set_breakthrough_result`, no `declare`, no `revive`, no `set_hp`. That
+ * affordance must never be added: it is precisely the one that invites the
+ * model to narrate a world that does not exist.
+ *
+ * `force` is not that, and the distinction is worth being exact about because
+ * it is one word away. It takes no outcome as input. It names a VERB, runs the
+ * verb, and answers ONE question the engine was already going to ask - the
+ * uncertain one - as landed. Everything the verb then does, it does itself: the
+ * days, the stones, the wound, the record, the refusal. And a refusal that was
+ * a PRECONDITION rather than a roll still refuses, because a state reached by
+ * removing a precondition is a state the world cannot produce, and an operator
+ * looking at one is looking at a lie. The whole rule, from the design owner:
+ *
+ *   ADMIN WRITES THROUGH THE PATHS ORDINARY PLAY WRITES THROUGH. IT DECIDES
+ *   UNCERTAIN OUTCOMES; IT NEVER WRITES A STATE THOSE PATHS WOULD REFUSE.
  *
  * Every call is written to the audit log with the run id as its target, which
  * is also how a run is flagged as admin-touched - `run_manage.ledger` reads the
@@ -75,7 +92,9 @@ import {
     AmbientQiSchema,
     SectAlignmentSchema,
     STARTING_SPIRIT_STONES,
-    type AmbientQi
+    TechniqueGradeSchema,
+    type AmbientQi,
+    type TechniqueGrade
 } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
 import {
@@ -85,6 +104,7 @@ import {
     REALM_TIERS,
     TRUE_IMMORTAL_ORDINAL,
     canAttemptBreakthrough,
+    effectiveLifespanYears,
     forStream,
     getSpiritRoot,
     progressRequiredForOrdinal,
@@ -100,6 +120,11 @@ import { REGIONS } from '../../data/cultivation/regions.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import { SITES, type Site } from '../../data/cultivation/inheritance-trials.js';
 import { MATCH_THRESHOLD, matchScore } from '../../web/entities.js';
+// The closed set of playable verbs. Imported rather than restated so that a
+// verb added to the game is forceable the day it exists, and a verb removed
+// stops being a word this surface accepts. `actions.ts` imports nothing from
+// here, so the direction is one-way.
+import { ACTION_NAMES, type ActionName } from '../../web/actions.js';
 import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said-as-a-sentence.js';
 import { KnowledgeGate, loosePlaceKey } from '../../web/knowledge.js';
 import { SiteLedger } from '../../web/trials.js';
@@ -123,7 +148,7 @@ import {
 const ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
     'set_ambient', 'set_location', 'advance_days', 'grant_progress', 'set_realm',
-    'audit_log', 'grant_knowledge', 'help'
+    'set_age', 'audit_log', 'grant_knowledge', 'force', 'help'
 ] as const;
 type AdminAction = typeof ACTIONS[number];
 
@@ -167,8 +192,14 @@ const RECIPES: readonly Recipe[] = Object.freeze([
       line: 'ADMIN set_ambient band=dense' },
     { want: 'Move myself on the ladder',
       line: 'ADMIN set_realm ordinal=41' },
+    { want: '...and be old enough, or young enough, for a door that asks',
+      line: 'ADMIN set_age 250' },
     { want: 'Reach a crossing ATTEMPT from where I stand (rolls nothing)',
       line: 'ADMIN grant_progress fill=true' },
+    { want: 'Make an ordinary verb LAND, when the thing in the way was a roll',
+      line: 'ADMIN sect join the Azure Dew Sect' },
+    { want: '...spelled out, when the verb is also an admin word',
+      line: 'ADMIN force move Nine Peaks' },
     { want: 'Let real time pass, with real aging, hunger and death checks',
       line: 'ADMIN advance_days years=50 rations=2000' },
     { want: 'See every cultivator in the world',
@@ -199,10 +230,12 @@ const NOT_HERE: ReadonlyArray<{ asked: string; instead: string }> = Object.freez
             'reached by dying rather than by being declared.'
     },
     {
-        asked: 'force_success / declare a breakthrough',
+        asked: 'declare a breakthrough / promote somebody past a precondition',
         instead:
-            'ADMIN grant_progress fill=true fills the accumulator the engine already reads, then ' +
-            'the attempt is made in play and can still fail or kill.'
+            'ADMIN <verb> forces the ROLL and never the GATE, so ADMIN breakthrough on an empty ' +
+            'accumulator is refused and names what to do instead. ADMIN grant_progress fill=true ' +
+            'makes the attempt legal, and then ADMIN breakthrough lands it. ADMIN set_realm is ' +
+            'the action for standing at a rung without crossing to it.'
     },
     {
         asked: 'heal / clear injuries',
@@ -511,6 +544,7 @@ const BARE_NUMBER_ARG: Partial<Record<AdminAction, string>> = {
     spawn_site: 'ordinal',
     grant_item: 'ordinal',
     set_realm: 'ordinal',
+    set_age: 'age',
     advance_days: 'days'
 };
 
@@ -522,6 +556,126 @@ const PRIMARY_ARG: Partial<Record<AdminAction, string>> = {
     grant_item: 'name',
     spawn_encounter: 'name'
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADMIN <VERB> - AN ORDINARY VERB, WITH THE ATTEMPT LANDING
+//
+// The law is in `forcing-an-attempt-to-land.ts` and is not restated here.
+// This is the READING: how a typed line becomes "which of the forty-six
+// playable verbs, and against what sentence".
+//
+// ── THE WORD IS A LOOKUP, NOT A GUESS ────────────────────────────────────
+//
+// `ACTION_NAMES` is a closed enum and the operator's word either is a member
+// of it or is not. No fuzzy matching, no inference from the rest of the line,
+// and no reading of a verb out of prose - which is the same discipline
+// `BARE_NUMBER_ARG` and `PRIMARY_ARG` follow, and for the reason recorded
+// beside the withdrawn alignment draft further down this file: a word lifted
+// out of a sentence cannot be told from a word that is part of a name.
+//
+// ── AND A CANONICAL ADMIN ACTION STILL WINS ──────────────────────────────
+//
+// Three playable verbs are also admin words: `move` and `site` are aliases of
+// `set_location` and `spawn_site`, and `wait` is an alias of `advance_days`.
+// Those keep their admin meanings, because the action list is a contract and
+// an operator who has been typing `ADMIN move Nine Peaks` for months must not
+// find it means something else. `ADMIN force move <somewhere>` is the
+// unambiguous spelling, and spelling `force` is what says the playable verb
+// was meant. Same rule as the sentence reader's: a named action beats a
+// reading, and the operator's own word decides.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** The words that say "run the verb after this, and let the attempt land". */
+const FORCE_WORDS = /^(?:force|force_action|forced|succeed|land|do|play)(?![a-z_])[:\s-]*/i;
+
+export interface ForcedVerbLine {
+    /** The playable verb, a member of `ACTION_NAMES`. */
+    verb: ActionName;
+    /**
+     * The sentence the verb resolves against, as a player would have typed it.
+     *
+     * Carries the verb word itself, because the ordinary parser is pattern-based
+     * and the verb word is usually the strongest pattern in the line - dropping
+     * it turns `sect join the Azure Dew Sect` into `join the Azure Dew Sect`,
+     * which is a weaker sentence than the operator actually typed.
+     */
+    sentence: string;
+    /** Whether the operator spelled a force word rather than only the verb. */
+    spelled: boolean;
+}
+
+/**
+ * Read `ADMIN <verb> ...` - or `ADMIN force <verb> ...` - into a playable verb.
+ *
+ * Null when the line names no playable verb, or names one that is also an admin
+ * word and the operator did not spell `force`. Both of those mean the ordinary
+ * admin surface should answer, and it does.
+ *
+ * Exported because `game.ts` is the only place a playable verb can be run - the
+ * verbs ARE the play surface - and the grammar lives beside the actions it
+ * belongs to rather than beside the keystrokes, exactly as `parseAdminCommand`
+ * does and for the same reason.
+ */
+export function readAForcedVerb(request: string): ForcedVerbLine | null {
+    const line = request.trim();
+    if (line.length === 0) return null;
+
+    const forceWord = FORCE_WORDS.exec(line);
+    const spelled = forceWord !== null;
+    const rest = spelled ? line.slice(forceWord![0].length).trim() : line;
+    if (rest.length === 0) return null;
+
+    // `key=value` is the surface's own vocabulary and belongs to the admin
+    // actions. A line carrying one is not a player sentence.
+    const head = rest.split(/\s+/)[0] ?? '';
+    if (head.includes('=')) return null;
+
+    const wanted = head.toLowerCase().replace(/-/g, '_');
+    const verb = ACTION_NAMES.find(name => name === wanted) ?? null;
+    if (verb === null) return null;
+    // `unclear` is the fallback the parser reaches when it understood nothing.
+    // Naming it deliberately would force an attempt at doing nothing.
+    if (verb === 'unclear') return null;
+    if (!spelled && actionWordFor(head) !== null) return null;
+
+    return { verb, sentence: rest, spelled };
+}
+
+const ForceSchema = z.object({
+    action: z.literal('force'),
+    /** The playable verb. Read from the line by `readAForcedVerb`, not by this. */
+    verb: z.string().optional(),
+    sentence: z.string().optional()
+});
+
+/**
+ * `force` on the TOOL path, which is the one place it cannot run.
+ *
+ * A playable verb runs inside a run, through `GameService`, and the MCP tool
+ * has no run pipeline - it holds repositories. Rather than build a second way
+ * to execute a verb, which is the exact duplication the whole design forbids,
+ * this says where the door is. `docs/admin.md` says the same thing in the
+ * operator's own terms.
+ */
+export async function handleForce(args: z.infer<typeof ForceSchema>): Promise<object> {
+    if (!isAdminModeEnabled()) return adminDisabled('force');
+    return guidingError(
+        'force_runs_in_play',
+        'Forcing runs an ORDINARY VERB, and an ordinary verb runs inside a run. This tool holds ' +
+        'repositories, not a run, so there is nothing here to run it in - and building a second ' +
+        'way to execute a verb is what would make the forced path and the played path drift.',
+        {
+            asked: args.verb ?? args.sentence ?? null,
+            reachableAs: 'ADMIN <verb> <the sentence>, typed at the game, for example: ' +
+                'ADMIN sect join the Azure Dew Sect',
+            law:
+                'Forcing decides an uncertain outcome. It does not make an illegal action legal. A ' +
+                'refusal that was a precondition still refuses, and names the action that arranges it.',
+            verbs: ACTION_NAMES.filter(name => name !== 'unclear'),
+            hint: 'ADMIN help actions for the arranging actions this tool does hold.'
+        }
+    );
+}
 
 /**
  * Parse an ADMIN command line into an action and its arguments.
@@ -769,7 +923,31 @@ function ordinalArg(description: string) {
             const named = ordinalNamed(value);
             return named === null ? value : named.ordinal;
         },
-        z.number().int().min(0).max(MAX_ORDINAL)
+        // ── "THERE IS NO SUCH RUNG", NOT "TOO HIGH" ───────────────────────
+        //
+        // The design owner: "admin can't create a level 47 weapon, because it
+        // doesn't exist". The refusal has to say that and not the other thing.
+        // A message reading "must be less than or equal to 46" describes a
+        // LIMIT, and a limit is something somebody raises; what is actually
+        // true is that the ladder ends at MAX_ORDINAL and 47 is not a number
+        // this world has a meaning for. Nothing anywhere would know what to do
+        // with a thing rated there, so everything observed downstream of one
+        // would be about a world that does not exist.
+        //
+        // Note what this does NOT refuse. 46 is a real rung and
+        // `ADMIN grant_item ordinal=46` is legal, even though
+        // `OBJECT_CEILING_BELOW_THE_LID` is 45 and such a thing cannot stay
+        // below the Lid. That is not an impossible precondition - it is a
+        // precondition the world has a violent opinion about, and watching the
+        // world answer is the whole purpose. `artifacts.ts` has already written
+        // what happens.
+        z.number().int()
+            .min(0, { message: `The ladder starts at 0. There is no rung below it.` })
+            .max(MAX_ORDINAL, {
+                message:
+                    `The ladder ends at ${MAX_ORDINAL}. There is no such rung above it - not a ` +
+                    'limit, an absence, and nothing in this world has a meaning for one.'
+            })
     ).describe(
         `${description} Accepts a number 0-${MAX_ORDINAL}, or a realm by name ` +
         `(${REALM_TIERS.map(t => t.name).join(', ')}), or a realm plus its sub-rank ` +
@@ -873,6 +1051,42 @@ const GrantProgressSchema = z.object({
 const SetRealmSchema = z.object({
     action: z.literal('set_realm'),
     ordinal: ordinalArg('The rung to stand the cultivator at. Up or down; both go through advanceRealm.'),
+    cultivatorId: z.string().optional()
+});
+
+/**
+ * How old the cultivator is.
+ *
+ * ── WHY THIS EXISTS, AND IT IS A REFUSAL'S FAULT ─────────────────────────
+ *
+ * A bar in this world is not always a rung. `AZURE_CLOUD_INTAKE` sorts its
+ * intake on age as well as ordinal, and the Hollow Court's fostering terms -
+ * `returnOrdinal: 29`, `returnByAge: 250` - are a pair. So a refusal that
+ * honestly names what somebody is short by can name an AGE, and until this
+ * existed such a refusal pointed at an action that was not on the surface: the
+ * only way to age anybody was `advance_days`, which also feeds them, ages the
+ * world, runs death checks and cannot go backwards.
+ *
+ * ── IT IS A BOOKKEEPING WRITE AND IT SAYS SO ─────────────────────────────
+ *
+ * The same shape as `set_realm`: it moves one number through the repository's
+ * own delta path, it rolls nothing, and it claims nothing about a life having
+ * been lived. Years the cultivator did not live are years in which nothing
+ * happened to them - no wounds, no hunger, no stagnation, no world. If what is
+ * wanted is a life, `advance_days` is the action that actually spends one.
+ *
+ * ── AND IT CANNOT WRITE A BODY THE WORLD WOULD NOT HOLD ──────────────────
+ *
+ * A lifespan is a real bound, `lifespan_exhausted` is a real death, and an age
+ * at or past the rung's span is not an arranged situation - it is a corpse the
+ * survival check has not been asked about yet. So it refuses there and names
+ * the two honest routes: a higher rung buys more span, and `advance_days` is
+ * how somebody actually reaches the end of theirs.
+ */
+const SetAgeSchema = z.object({
+    action: z.literal('set_age'),
+    age: z.number().min(0).max(1e7)
+        .describe('Age in years. Absolute, not a delta - up or down, both go through applyDeltas.'),
     cultivatorId: z.string().optional()
 });
 
@@ -1518,6 +1732,163 @@ function comparePower(ratio: number): string {
     return 'you are worth about the same as each other';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SAYING WHICH THING, IN THE WORDS SOMEBODY WOULD USE
+//
+// Found by playing. `ADMIN give myself chaos healing pill` was read as
+// `grant_item kind=pill name="myself chaos healing"` and refused with "nothing
+// in the pill, herb or artifact catalogs answers to 'myself chaos healing'".
+// The reading was honest and the refusal was still a failure: the design owner
+// does not know the catalog spells it `pill-soul-returning-clarity`, and
+// should not have to.
+//
+//   "I don't know the exact names, but the LLM should be able to adapt it to
+//    fit - that's the point of an LLM (and of the embedding to the same
+//    extent)."
+//
+// The whole of that sentence is a DESCRIPTION that identifies rows, and
+// resolving a description against a closed catalog is a lookup rather than an
+// invention. Three of its four words are members of closed sets this file
+// already owns - `chaos` is a grade, `pill` is a kind, `myself` is not an
+// argument at all - and only "healing" is free text.
+//
+// ── AND THE GUARD THAT MADE THE ORIGINAL REFUSAL CORRECT STAYS ───────────
+//
+// ADMIN DOES NOT INVENT ITEMS. If nothing in the catalog is close, it still
+// refuses. What changes is that "close" is measured properly, and that the
+// refusal lists the actual near misses spelled the way this surface takes
+// them, instead of three unrelated examples. A refusal that names candidates
+// teaches the catalog; one that names none teaches nothing.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Words in a `name=` that are not part of any name.
+ *
+ * `grant_item` has no holder argument - the pouch is the player's, always - so
+ * a pronoun in the name is noise the sentence layer swept up, not a thing to
+ * match against. Closed, and deliberately only pronouns: a word outside this
+ * list is content and is matched, so "The Standing Edge" is untouched.
+ */
+const NOT_PART_OF_A_NAME = new Set([
+    'me', 'my', 'myself', 'i', 'mine', 'us', 'our', 'ourselves', 'player',
+    'the', 'a', 'an', 'some', 'to', 'for', 'of',
+    // And the word that qualifies a grade rather than naming anything: "chaos
+    // grade" is one fact about the pool, not a name word that has to be found
+    // in a row. Kept here as well as in the sentence reader's noise list
+    // because `name=` can be typed directly and never goes through that.
+    'grade', 'graded', 'grades', 'tier', 'rated', 'level'
+]);
+
+/**
+ * Words that say which CATALOG rather than which row.
+ *
+ * The sentence reader already sets `kind` from most of these; they survive
+ * into the name when the operator said one twice ("give me a pill, a healing
+ * pill") or when the reader took a different word as the subject. Either way
+ * they narrow rather than name, so they are removed from what is matched and
+ * folded into the kind.
+ */
+const A_WORD_FOR_A_CATALOG: Readonly<Record<string, 'pill' | 'herb' | 'artifact'>> = Object.freeze({
+    pill: 'pill', pills: 'pill', medicine: 'pill', elixir: 'pill', pellet: 'pill',
+    herb: 'herb', herbs: 'herb', plant: 'herb', root: 'herb', ingredient: 'herb',
+    artifact: 'artifact', weapon: 'artifact', sword: 'artifact', blade: 'artifact',
+    treasure: 'artifact', object: 'artifact'
+});
+
+/** How a name is broken into words for matching. Lowercase, punctuation out. */
+function wordsOf(text: string): string[] {
+    return text.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 0);
+}
+
+/**
+ * What an operator's description of an item actually said.
+ *
+ * Every part of this is a lookup against a closed set that already exists -
+ * `TechniqueGradeSchema` for the grade ladder, the two tables above - and none
+ * of it is an inference about English. That matters for the same reason the
+ * withdrawn alignment draft further up this file matters: a word lifted out of
+ * loose prose cannot be told from a word somebody was christened with. Here it
+ * can, because the vocabulary is closed and the leftovers are matched rather
+ * than interpreted.
+ */
+interface WhatWasDescribed {
+    /** Grade words found, e.g. `chaos`. Narrows the pool; never names a row. */
+    grades: TechniqueGrade[];
+    /** Catalog words found. Narrows the pool the same way `kind=` does. */
+    kinds: Array<'pill' | 'herb' | 'artifact'>;
+    /** Everything left, which is what a name is matched against. */
+    words: string[];
+    /** The words dropped as not being part of any name, for the echo. */
+    dropped: string[];
+}
+
+export function readAnItemDescription(name: string): WhatWasDescribed {
+    const grades: TechniqueGrade[] = [];
+    const kinds: Array<'pill' | 'herb' | 'artifact'> = [];
+    const words: string[] = [];
+    const dropped: string[] = [];
+    const gradeNames = TechniqueGradeSchema.options as readonly string[];
+
+    for (const word of wordsOf(name)) {
+        if (NOT_PART_OF_A_NAME.has(word)) { dropped.push(word); continue; }
+        if (gradeNames.includes(word)) {
+            if (!grades.includes(word as TechniqueGrade)) grades.push(word as TechniqueGrade);
+            continue;
+        }
+        const kind = A_WORD_FOR_A_CATALOG[word];
+        if (kind !== undefined) {
+            if (!kinds.includes(kind)) kinds.push(kind);
+            continue;
+        }
+        words.push(word);
+    }
+    return { grades, kinds, words, dropped };
+}
+
+/** One catalog row, flattened so the three catalogs can be scored together. */
+interface CatalogRow {
+    id: string;
+    name: string;
+    kind: 'pill' | 'herb' | 'artifact';
+    grade: TechniqueGrade | null;
+    /** A rated object's rung, where it has one. */
+    power: number | null;
+}
+
+function everyItemRow(): CatalogRow[] {
+    return [
+        ...PILLS.map(p => ({
+            id: p.id, name: p.name, kind: 'pill' as const,
+            grade: (p as { grade?: TechniqueGrade }).grade ?? null, power: null
+        })),
+        ...HERBS.map(h => ({
+            id: h.id, name: h.name, kind: 'herb' as const,
+            grade: (h as { grade?: TechniqueGrade }).grade ?? null, power: null
+        })),
+        ...ARTIFACTS.map(a => ({
+            id: a.id, name: a.name, kind: 'artifact' as const,
+            grade: null, power: (a as { power?: number | null }).power ?? null
+        }))
+    ];
+}
+
+/**
+ * How well one row answers a description.
+ *
+ * Word overlap first and the character matcher only as the tie-break, because
+ * the two disagree in exactly the case this exists for: "healing" against
+ * "Soul-Returning Clarity Pill" scores something on shared letters and nothing
+ * on shared words, and a shared WORD is evidence while a shared letter run is
+ * a coincidence. `matchScore` keeps its job of surviving a typo.
+ */
+function howWellItAnswers(described: WhatWasDescribed, row: CatalogRow): number {
+    if (described.words.length === 0) return 0;
+    const inTheName = new Set([...wordsOf(row.name), ...wordsOf(row.id)]);
+    const hit = described.words.filter(w => inTheName.has(w)).length;
+    const whole = hit / described.words.length;
+    return whole * 100 + matchScore(described.words.join(' '), row.name) / 1000;
+}
+
 export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('grant_item');
     const repos = ensureCultivationDb();
@@ -1537,22 +1908,90 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
             : undefined;
     let how = asked !== undefined ? `catalog id "${args.itemId}"` : '';
 
+    // What a description narrowed the catalog to, kept out here so the refusal
+    // below can list the same near misses the match was chosen from.
+    let described: WhatWasDescribed | null = null;
+    let narrowed: CatalogRow[] = [];
+
     if (!pill && !herb && !artifact && args.name) {
         const named = args.name;
-        const pool: Array<{ id: string; name: string; kind: 'pill' | 'herb' | 'artifact' }> = [
-            ...(want === 'pill' || want === 'any' ? PILLS.map(p => ({ id: p.id, name: p.name, kind: 'pill' as const })) : []),
-            ...(want === 'herb' || want === 'any' ? HERBS.map(h => ({ id: h.id, name: h.name, kind: 'herb' as const })) : []),
-            ...(want === 'artifact' || want === 'any' ? ARTIFACTS.map(a => ({ id: a.id, name: a.name, kind: 'artifact' as const })) : [])
-        ];
-        const scored = pool
-            .map(entry => ({ entry, score: matchScore(named, entry.name) }))
-            .sort((a, b) => b.score - a.score);
-        if (scored.length > 0 && scored[0].score >= MATCH_THRESHOLD) {
-            const hit = scored[0].entry;
-            if (hit.kind === 'pill') pill = getPill(hit.id);
-            else if (hit.kind === 'herb') herb = getHerb(hit.id);
-            else artifact = getArtifact(hit.id);
-            how = `named "${named}" and matched to the catalog at ${scored[0].score}/100`;
+
+        // ── WHICH OF THE TWO THIS IS, DECIDED BY A CLOSED SET ─────────────
+        //
+        // A NAME is matched whole - "The Standing Edge" must not be taken
+        // apart and rebuilt, or a catalog name that happens to contain a grade
+        // word loses it. A DESCRIPTION is narrowed and then matched on words.
+        //
+        // What says which is whether the line contains a word from a closed
+        // set - a grade or a catalog word - and nothing else. That is not a
+        // judgement about English: a grade word in the line is a FACT about
+        // which rows can answer, and it has to beat letter similarity, because
+        // letter similarity gets it wrong in exactly this case. Measured: "a
+        // heaven grade herb" matched Heavenly Tribulation Cinder Fruit at
+        // 80/100 on the letters of "heaven", and the fruit is chaos grade -
+        // a confident, plausible, wrong resolution, which is the failure mode
+        // this whole surface's echo exists to catch.
+        described = readAnItemDescription(named);
+        const isADescription = described.grades.length > 0 || described.kinds.length > 0;
+
+        if (!isADescription) {
+            const whole = everyItemRow()
+                .filter(row => want === 'any' || row.kind === want)
+                .map(row => ({ row, score: matchScore(named, row.name) }))
+                .sort((a, b) => b.score - a.score);
+            if (whole.length > 0 && whole[0].score >= MATCH_THRESHOLD) {
+                const hit = whole[0].row;
+                if (hit.kind === 'pill') pill = getPill(hit.id);
+                else if (hit.kind === 'herb') herb = getHerb(hit.id);
+                else artifact = getArtifact(hit.id);
+                how = `named "${named}" and matched to the catalog at ${whole[0].score}/100`;
+            }
+            narrowed = whole.map(w => w.row);
+            described = null;
+        }
+
+        if (!pill && !herb && !artifact && described !== null) {
+            const kinds = described.kinds.length > 0
+                ? described.kinds
+                : want === 'any' ? [] : [want as 'pill' | 'herb' | 'artifact'];
+
+            narrowed = everyItemRow()
+                .filter(row => kinds.length === 0 || kinds.includes(row.kind))
+                .filter(row => described!.grades.length === 0
+                    || (row.grade !== null && described!.grades.includes(row.grade)));
+
+            const scored = narrowed
+                .map(row => ({ row, score: howWellItAnswers(described!, row) }))
+                .sort((a, b) => b.score - a.score);
+
+            // A WHOLE WORD, OR NOTHING. The bar is that every free word in the
+            // description is in the row's own name or id, and that no second
+            // row answers as well - two rows tied on the same words is an
+            // ambiguity and this surface refuses those rather than picking, the
+            // same rule the sentence reader follows. Under the bar, the pool is
+            // listed instead, which is the useful answer: "these seven are what
+            // chaos-grade pills there are" teaches the catalog.
+            const clear = scored.length > 0
+                && scored[0].score >= 100
+                && (scored.length === 1 || scored[1].score < 100);
+            if (clear) {
+                const hit = scored[0].row;
+                if (hit.kind === 'pill') pill = getPill(hit.id);
+                else if (hit.kind === 'herb') herb = getHerb(hit.id);
+                else artifact = getArtifact(hit.id);
+                how =
+                    `described as "${named}", read as ` +
+                    [
+                        described.kinds.length > 0 ? `kind ${described.kinds.join('/')}` : null,
+                        described.grades.length > 0 ? `grade ${described.grades.join('/')}` : null,
+                        described.words.length > 0 ? `name word(s) "${described.words.join(' ')}"` : null
+                    ].filter(Boolean).join(', ') +
+                    `, and resolved to the one row that answers all of it: ${hit.id}`;
+            } else {
+                // Ordered for the refusal, so the near misses it prints are the
+                // ones this actually weighed rather than the head of a catalog.
+                narrowed = scored.map(s => s.row);
+            }
         }
     }
 
@@ -1582,25 +2021,60 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
     }
 
     if (!pill && !herb && !artifact) {
-        const rated = ARTIFACTS.filter(a => a.power !== null)
-            .slice(0, 5)
-            .map(a => `${a.name} (${a.id}, rated ${a.power})`);
+        // ── A REFUSAL LISTS THE CANDIDATES IT WEIGHED ─────────────────────
+        //
+        // Three unrelated worked lines taught nothing about the catalog, which
+        // is what the operator was actually short of. What a description
+        // narrowed to IS the answer to "which one did you mean" - a
+        // chaos-grade pill request that matched no name should come back with
+        // the chaos-grade pills, spelled the way this surface takes them, and
+        // asking which. That is a good answer at a rung with no model in it,
+        // rather than a failure to be one.
+        const nearMisses = (narrowed.length > 0
+            ? narrowed
+            : everyItemRow().filter(row => want === 'any' || row.kind === want)
+        ).slice(0, 8);
+        const spelled = nearMisses.map(row =>
+            `ADMIN grant_item itemId=${row.id}` +
+            `   (${row.name}${row.grade ? `, ${row.grade} grade` : ''}` +
+            `${row.power !== null ? `, rated ${row.power}` : ''})`
+        );
+        const narrowing = described === null ? null : {
+            gradesRead: described.grades,
+            kindsRead: described.kinds,
+            nameWordsLeft: described.words,
+            wordsDropped: described.dropped,
+            narrowedTo: narrowed.length
+        };
+
         return guidingError(
             'unknown_item',
             asked === undefined && args.ordinal === undefined
                 ? 'grant_item needs something to grant: a catalog itemId=, a name=, or - for a rated ' +
                   'object - an ordinal= on the realm ladder.'
-                : `Nothing in the pill, herb or artifact catalogs answers to "${asked ?? args.ordinal}".`,
+                : `Nothing in the pill, herb or artifact catalogs answers to "${asked ?? args.ordinal}"` +
+                  (narrowing !== null && narrowing.narrowedTo > 0
+                      ? `. ${narrowing.narrowedTo} row(s) match what was read from it` +
+                        `${described!.grades.length > 0 ? ` (grade ${described!.grades.join('/')})` : ''}` +
+                        `${described!.kinds.length > 0 ? ` (kind ${described!.kinds.join('/')})` : ''}` +
+                        (described!.words.length > 0
+                            ? `, and none of them is named ${described!.words.map(w => `"${w}"`).join(' or ')}. ` +
+                              'Which of them was it?'
+                            : ', and nothing in the line says which. Which of them was it?')
+                      : '.'),
             {
                 asked: asked ?? args.ordinal,
                 kind: want,
+                readAs: narrowing,
                 catalogSizes: { pills: PILLS.length, herbs: HERBS.length, artifacts: ARTIFACTS.length },
-                strongestArtifacts: rated,
+                // Named `nearest` so the renderer prints it the way it prints
+                // every other list of candidates on this surface.
+                nearest: nearMisses.map(row => row.name),
+                arrangeInstead: spelled,
                 hint:
-                    'Admin lifts gates on things that exist. It does not invent items. Three that work:\n' +
-                    '  ADMIN grant_item ordinal=45 kind=artifact      the nearest rated object to that rung\n' +
-                    '  ADMIN grant_item name=The Standing Edge        a catalog entry by its own name\n' +
-                    '  ADMIN grant_item itemId=pill-qi-gathering      a catalog id'
+                    'Admin lifts gates on things that exist. It does not invent items. Copy one of the ' +
+                    'lines above, or say it another way: ordinal=45 kind=artifact takes the nearest ' +
+                    'rated object to a rung, and name= takes a catalog entry by its own name.'
             }
         );
     }
@@ -2198,6 +2672,93 @@ export async function handleSetRealm(args: z.infer<typeof SetRealmSchema>): Prom
     };
 }
 
+export async function handleSetAge(args: z.infer<typeof SetAgeSchema>): Promise<object> {
+    if (!isAdminModeEnabled()) return adminDisabled('set_age');
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { run, cultivator } = resolved;
+    const from = cultivator.age;
+    const wanted = Math.round(args.age);
+    const span = effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none');
+
+    if (wanted === from) {
+        return guidingError(
+            'already_that_age',
+            `${cultivator.name} is already ${from}.`,
+            { age: from, lifespanYears: span }
+        );
+    }
+
+    // ── AN AGE PAST THE SPAN IS A CORPSE, NOT AN ARRANGEMENT ──────────────
+    //
+    // `lifespan_exhausted` is a real death cause and `resolveSurvival` reads
+    // exactly this comparison. Writing an age at or past the rung's span would
+    // put a body in the database that the very next survival check kills, and
+    // an operator would be looking at a state the world does not hold. Admin
+    // never writes a state the ordinary write paths would refuse - and the
+    // route is named, because a rung buys span and time is how anybody
+    // actually reaches the end of theirs.
+    const immortal = cultivator.immortalStatus === 'true_immortal';
+    if (!immortal && wanted >= span) {
+        return guidingError(
+            'past_the_span_of_that_rung',
+            `${rankName(cultivator.realmOrdinal)} carries ${span} years and ${wanted} is past it. ` +
+            'That is not an age, it is a death by old age that has not been asked about yet.',
+            {
+                asked: wanted,
+                age: from,
+                ordinal: cultivator.realmOrdinal,
+                rank: rankName(cultivator.realmOrdinal),
+                lifespanYears: span,
+                overBy: wanted - span + 1,
+                arrangeInstead: [
+                    'ADMIN set_realm ordinal=<higher rung> - a rung buys span, and the age then fits.',
+                    'ADMIN advance_days years=<n> - if the point is to die of it, time is what does that, ' +
+                    'and the survival check says so in its own words.'
+                ],
+                hint: 'ADMIN sets preconditions. Death is truth, so it is reached by dying.'
+            }
+        );
+    }
+
+    const updated = repos.db.transaction(() => {
+        // The same road every aging write takes. `applyDeltas` clamps at zero
+        // and re-parses through the schema, so nothing here can store an age
+        // the contract would reject.
+        const result = repos.cultivators.applyDeltas(cultivator.id, { age: wanted - from });
+        writeAdminAudit(repos, 'set_age', run.id, {
+            cultivatorId: cultivator.id,
+            fromAge: from,
+            toAge: wanted,
+            delta: wanted - from,
+            ordinal: cultivator.realmOrdinal,
+            lifespanYears: span,
+            via: 'CultivatorRepository.applyDeltas'
+        });
+        return result;
+    })();
+
+    const runAfter = repos.runs.getById(run.id)!;
+    return {
+        adminMode: true,
+        set: true,
+        fromAge: from,
+        toAge: updated?.age ?? wanted,
+        lifespanYears: span,
+        yearsLeft: span - (updated?.age ?? wanted),
+        rank: rankName(cultivator.realmOrdinal),
+        cultivator: updated ? describeCultivator(repos, updated, runAfter) : null,
+        runFlagged: true,
+        note:
+            'One number moved, through the repository\'s own delta path, and nothing else did. NO ' +
+            'LIFE WAS LIVED AND NONE IS CLAIMED: the years between are years in which nothing ' +
+            'happened - no wounds, no hunger, no stagnation, no world. ADMIN advance_days is the ' +
+            'action that actually spends a life, with every check the engine runs on one.'
+    };
+}
+
 /**
  * Every place, or every house, or one of either, made nameable.
  *
@@ -2440,6 +3001,18 @@ const definitions: Record<AdminAction, ActionDefinition> = {
         aliases: ['realm', 'set_ordinal', 'set_rank', 'ordinal', 'rank', 'rung', 'promote', 'demote'],
         description: 'SETS THE PLAYER RUNG. Moves the cultivator up or down the ladder through advanceRealm, the same road every rank change takes: the peak is stamped, accumulated progress is cleared, the stagnation clock restarts. No breakthrough is rolled and none is claimed. This is how "I am ordinal 44" is said.'
     },
+    set_age: {
+        schema: SetAgeSchema,
+        handler: handleSetAge,
+        aliases: ['age', 'set_years', 'make_older', 'make_younger', 'years_old'],
+        description: 'SETS THE PLAYER AGE. Moves one number through the repository\'s own delta path, up or down, and nothing else moves with it - no life was lived and none is claimed. Exists because a bar in this world is often age AND rung, so a refusal that names what somebody is short by can name an age. Refuses an age past what the rung\'s lifespan supports, because that is a death rather than a situation.'
+    },
+    force: {
+        schema: ForceSchema,
+        handler: handleForce,
+        aliases: ['force_action', 'succeed', 'land_it'],
+        description: 'RUNS AN ORDINARY VERB WITH THE ATTEMPT LANDING. Typed at the game as ADMIN <verb> <sentence> - "ADMIN sect join the Azure Dew Sect". It decides an UNCERTAIN OUTCOME and never makes an illegal action legal: a refusal that was a precondition still refuses, and names the action that arranges it. Not runnable from this tool, which holds repositories rather than a run.'
+    },
     grant_knowledge: {
         schema: GrantKnowledgeSchema,
         handler: handleGrantKnowledge,
@@ -2490,7 +3063,14 @@ deterministic mutation and returns what the engine actually did.
                    Says how much of the span it actually simulated and what stopped it.
 - grant_progress   fills the qi-unit accumulator so a crossing can be ATTEMPTED; rolls nothing
 - set_realm        goes through advanceRealm like any other rank change; logged and flagged
+- set_age          moves the age through the repository's own delta path; refuses past the span
+- force            runs an ORDINARY VERB with the attempt landing. Typed at the game as
+                   'ADMIN <verb> <sentence>'; not runnable from this tool, which has no run
 - audit_log        the admin trail for this run
+
+FORCING DECIDES AN UNCERTAIN OUTCOME. IT DOES NOT MAKE AN ILLEGAL ACTION LEGAL. A refusal that
+was a precondition still refuses and names the action that arranges it; a refusal that was a
+roll is the thing force reaches.
 
 Arguments are key=value. A value runs to the next key, so a multi-word name needs no quoting:
   ADMIN set_location location=The Dead Verge
@@ -2534,6 +3114,9 @@ Actions: ${ACTIONS.join(', ')}`,
         years: z.number().optional(),
         rations: z.number().int().optional(),
         amount: z.number().optional(),
+        age: z.number().optional().describe('Age in years, for set_age. Absolute, not a delta.'),
+        verb: z.string().optional().describe('A playable verb, for force. Runs in play, not here.'),
+        sentence: z.string().optional(),
         fill: z.boolean().optional(),
         includeDead: z.boolean().optional(),
         limit: z.number().int().optional()
@@ -2707,6 +3290,18 @@ export async function handleAdminManage(
                     for (const r of worked) out.push(`    ${r.line}`);
                 }
             }
+            // ── A REFUSAL THAT WAS A PRECONDITION CARRIES ITS ROUTE ───────
+            //
+            // The design owner, on being refused an admission below the bar:
+            // "it should say no, you can do it by setting your realm to 29 and
+            // your age." Every one, not the first - an operator handed both
+            // does the thing in two calls, and one handed "refused" goes and
+            // reads a catalog. The lines are built by whatever did the
+            // refusing, so a bar with three conditions names three.
+            if (Array.isArray(data.arrangeInstead) && data.arrangeInstead.length > 0) {
+                out.push('What would arrange it:');
+                for (const line of data.arrangeInstead as string[]) out.push(`    ${line}`);
+            }
             if (Array.isArray(data.canDo) && data.canDo.length > 0) {
                 out.push('ADMIN help lists everything this surface can arrange.');
             }
@@ -2742,7 +3337,11 @@ export async function handleAdminManage(
                     );
                 }
             }
-            out.push(String(data.note));
+            // `data.note` is pushed once, at the bottom, for every branch. It
+            // used to be pushed here as well, so the audit trail printed its
+            // own footer twice - visible in any played transcript that reads
+            // the log, and invisible in a unit test that asserts the string is
+            // present.
         } else if (data.site) {
             out.push(heading(`site revealed - ${data.site.name}`));
             out.push(fields({
@@ -2845,6 +3444,15 @@ export async function handleAdminManage(
                     ? 'yes'
                     : `no - ${data.eligibility?.reason ?? 'the engine says not'}`,
                 'Dao roads': `${data.eligibility?.daoHeld} held, ${data.eligibility?.daoRequired} required`
+            }));
+        } else if (data.set === true && data.toAge !== undefined) {
+            out.push(heading(`age set - ${data.toAge}`));
+            out.push(fields({
+                'From': `${data.fromAge}`,
+                'To': `${data.toAge}`,
+                'Standing at': data.rank,
+                'Lifespan at that rung': `${data.lifespanYears} years`,
+                'Years left': data.yearsLeft
             }));
         } else if (data.set === true && data.toRank) {
             out.push(heading(`rung set - ${data.toRank}`));

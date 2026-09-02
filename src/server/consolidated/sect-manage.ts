@@ -31,6 +31,11 @@ import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
 import { rankName } from '../../engine/cultivation/index.js';
+// ADMIN forcing a verb decides the one uncertain question this handler asks -
+// whether the house took them - and no other. Every bar above is a gate and
+// stays one. See `forcing-an-attempt-to-land.ts` for why that line is where it
+// is, and note that the draw below is still TAKEN either way.
+import { theRollLands } from './forcing-an-attempt-to-land.js';
 import {
     intakeRouteOf,
     getDaoHouse, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
@@ -563,7 +568,12 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     const look = forStream(
         run.seed, 'sect_admission', Math.floor(run.elapsedDays), sect.id
     ).next();
-    if (!recalledHere && look >= chance) {
+    // The draw is taken FIRST and asked about second, so a forced turn and an
+    // unforced one leave this stream in the same place. Skipping the draw
+    // would shift every later one off it, which is a regression until proved
+    // otherwise - `AGENTS.md` on a new RNG draw, read backwards.
+    const forced = theRollLands('a_house_looking_at_an_applicant');
+    if (!recalledHere && !forced && look >= chance) {
         // The whole of what a player is told goes in `message`. `hint` is the
         // developer channel - `fromToolResult` routes it to `structure` and
         // never to prose - so a refusal whose reason lives only in the hint
@@ -699,6 +709,24 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
             : null,
         entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
         seatedAboveTheDoor: entryIndex > 0,
+        // ARRANGED, and it says so where anybody reading the result can see it.
+        // The bar was cleared for real and the seat is the seat the house would
+        // have given; what an operator decided is the one thing the house was
+        // uncertain about. A run whose history holds an arranged success is not
+        // the same evidence as one that earned it.
+        admissionForced: forced
+            ? {
+                decidedByAdmin: true,
+                wouldHaveTaken: look < chance,
+                chance: round2(chance),
+                roll: round2(look),
+                note:
+                    'ADMIN decided the one uncertain question here - whether the house took '
+                    + 'them - and decided nothing else. Every bar was cleared on the row as it '
+                    + 'stands, the seat is the seat the ladder gives, and the stipend clock '
+                    + 'started the way it starts for anybody.'
+            }
+            : null,
         // SAID, not merely applied. A returning member seated below what their
         // rung would otherwise buy has to be told why, or the house looks as
         // though it has simply misjudged them.

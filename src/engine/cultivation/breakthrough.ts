@@ -785,6 +785,28 @@ export interface ConsumedPill {
 export interface BreakthroughContext {
     /** Stream for this attempt. Caller derives it, e.g. forStream(seed, 'breakthrough', turn). */
     rng: CultivationRNG;
+    /**
+     * Whether the primary roll is decided rather than sampled.
+     *
+     * ADMIN's forced verb, and NOTHING ELSE, sets this - see
+     * `server/consolidated/forcing-an-attempt-to-land.ts` for the law. It is an
+     * explicit input rather than an ambient one on purpose: this module is a
+     * pure resolver, and a hidden reading would make its answer depend on
+     * something its seed does not carry.
+     *
+     * It decides ONE question, the one the engine was already going to ask -
+     * did the barrier give - and it decides nothing else. Eligibility is a
+     * GATE and is checked above, unchanged: somebody with an empty accumulator
+     * still cannot attempt a crossing, and `set_realm` is the honest way to
+     * stand at a rung. Everything a success costs is still charged, because
+     * the success is resolved by the same code that resolves an earned one:
+     * the accumulator is spent, the Price of Advancement is taken, the
+     * tribulation is met, the foundation is sampled.
+     *
+     * The roll is still DRAWN below and then overridden, so the stream is left
+     * in the same place either way.
+     */
+    theAttemptLands?: boolean;
     ambient: AmbientQi;
     /** Turn number, stamped onto any injuries sustained. */
     turn: number;
@@ -1716,7 +1738,11 @@ export function attemptBreakthrough(
     // foundation sample, then the toll's three. A stream keyed to
     // (seed, 'breakthrough', turn) therefore replays identically.
     const roll = ctx.rng.next();
-    const succeeded = roll < odds.finalChance;
+    // Drawn first and asked about second: a decided attempt leaves this stream
+    // exactly where a sampled one leaves it, so nothing downstream of the
+    // crossing - the severity draw, the foundation sample, the toll's three -
+    // shifts because an operator arranged the answer.
+    const succeeded = ctx.theAttemptLands === true || roll < odds.finalChance;
 
     // Unreachable: `canAttemptBreakthrough` refuses everything above the Lid
     // before an attempt gets this far. Asserted rather than defaulted, so a

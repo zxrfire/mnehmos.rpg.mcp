@@ -226,7 +226,12 @@ describe('ADMIN answers in the words it was addressed in', () => {
             // A refusal must name what would work.
             expect(Array.isArray(result.canDo)).toBe(true);
             expect(result.canDo.length).toBeGreaterThan(0);
-            expect(JSON.stringify(result.cannotDo)).toContain('force_success');
+            // The refusals sheet still answers the thing that was asked for,
+            // and answers it more usefully than it used to: `ADMIN <verb>` is
+            // now the honest route, and it decides the ROLL rather than the
+            // gate, so a crossing on an empty accumulator is still refused.
+            expect(JSON.stringify(result.cannotDo)).toContain('declare a breakthrough');
+            expect(JSON.stringify(result.cannotDo)).toContain('grant_progress fill=true');
         });
 
         it('leaves a single unknown word to the fuzzy matcher, which is good at typos', async () => {
@@ -484,8 +489,38 @@ describe('ADMIN answers in the words it was addressed in', () => {
         it('has no action anywhere that takes an outcome as input', async () => {
             const result = await admin({ action: 'help' });
             for (const name of result.actions.map((a: any) => a.action)) {
-                expect(name).not.toMatch(/^(set_hp|revive|kill|force|declare|heal)/);
+                expect(name).not.toMatch(/^(set_hp|revive|kill|declare|heal)/);
             }
+        });
+
+        // `force` used to be on the list above, and the design has moved under
+        // it rather than the guard having been loosened - which is the only
+        // reason a test in this file may change. So the rule it now asserts is
+        // written out rather than deleted:
+        //
+        //   FORCING DECIDES AN UNCERTAIN OUTCOME. IT DOES NOT MAKE AN ILLEGAL
+        //   ACTION LEGAL.
+        //
+        // The distinction is one word wide and worth pinning. `set_hp` takes an
+        // outcome AS INPUT and records it. `force` takes a VERB, runs the verb,
+        // and answers one question the engine was already going to ask. A
+        // refusal that was a precondition still refuses, and the played tests
+        // in `tests/web/forcing-an-attempt-to-land.test.ts` are where that is
+        // checked in behaviour.
+        it('and force takes a verb rather than a result', async () => {
+            const result = await admin({ action: 'help' });
+            const force = result.actions.find((a: any) => a.action === 'force');
+            expect(force).toBeDefined();
+            expect(force.takes).toContain('verb');
+            expect(force.takes).not.toContain('outcome');
+            expect(force.takes).not.toContain('result');
+            expect(force.does).toContain('never makes an illegal action legal');
+        });
+
+        it('and it is not runnable from this tool at all, which has no run', async () => {
+            const refusal = await admin({ action: 'force', verb: 'breakthrough' });
+            expect(refusal.error).toBe('force_runs_in_play');
+            expect(refusal.reachableAs).toContain('ADMIN <verb>');
         });
     });
 });
