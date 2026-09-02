@@ -65,7 +65,7 @@
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
-import { makeObject, type ObjectRecord } from './possessions.js';
+import { makeObject, type KeptAs, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import {
     canRefineGrade,
     refiningOrdinalFor,
@@ -111,6 +111,41 @@ export interface ConveyanceRecipe {
     workDays: number;
     /** Before the crafter's margin over the rung is applied. */
     baseSuccessRate: number;
+}
+
+/**
+ * Which of the two stored tiers a conveyance of this grade is in.
+ *
+ * ONE LINE, AND EVERYTHING ELSE READS IT. `ratedOrdinalFor` asks it whether
+ * there is an ordinal to give, `significanceForConveyance` asks it what tier to
+ * stamp, and `craft` in the catalog asks it whether a row may exist at all. The
+ * defect this exists to prevent is the one where each of those three decides
+ * separately and two of them are right: the rule was previously upheld by an
+ * early return in one place and by authoring discipline in the other, which is
+ * `docs/world/things/items.md`'s line ASSERTED rather than ENFORCED.
+ *
+ * The threshold is not a number written here. It is where `items.md` already
+ * puts it - the grade at which the population that can make the thing stops
+ * being large enough to restock it - and `refiningOrdinalFor` is the function
+ * that knows where that is. Mortal and earth grade are made by enough hands
+ * that nobody cares which carriage you took; heaven grade is a few dozen hands
+ * in the world, so which one it is and how it got here is a question somebody
+ * should be able to ask two centuries later.
+ */
+export function conveyanceKeptAs(grade: TechniqueGrade): KeptAs {
+    return refiningOrdinalFor(grade) >= refiningOrdinalFor('heaven') ? 'tracked' : 'counted';
+}
+
+/**
+ * What a conveyance of this grade is stamped as when it becomes a row.
+ *
+ * `mundane` is the counted tier and is what a drawn carriage is, forever. The
+ * tracked tier's floor is `significant` rather than `notable` because a hull is
+ * never an incidental object - but a caller may raise it within the tracked
+ * tier, and `keptAs` is what stops anybody raising it ACROSS the line.
+ */
+export function significanceForConveyance(grade: TechniqueGrade): ObjectSignificance {
+    return conveyanceKeptAs(grade) === 'tracked' ? 'significant' : 'mundane';
 }
 
 /**
@@ -411,9 +446,8 @@ export interface LaunchOutcome {
  * the bar the materials set and above by the wright, and nothing else touches it.
  */
 export function ratedOrdinalFor(recipe: ConveyanceRecipe, bestHandOrdinal: number): number | null {
-    const floor = refiningOrdinalFor('heaven');
-    if (refiningOrdinalFor(recipe.grade) < floor) return null;
-    return Math.max(floor, Math.floor(bestHandOrdinal));
+    if (conveyanceKeptAs(recipe.grade) === 'counted') return null;
+    return Math.max(refiningOrdinalFor('heaven'), Math.floor(bestHandOrdinal));
 }
 
 /**
@@ -457,7 +491,7 @@ export function mintCraft(
         id: input.id,
         name: input.name,
         kind: 'artifact',
-        significance: 'significant',
+        significance: significanceForConveyance(recipe.grade),
         power,
         ownerId: input.ownerId,
         ownerName: input.ownerName,
