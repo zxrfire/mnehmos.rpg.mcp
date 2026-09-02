@@ -68,6 +68,47 @@
  * meal from the same catalog row the shop charges against. The one number
  * invented here is `WARNING_HORIZON`, and it decides nothing but the ORDER two
  * lines appear in.
+ *
+ * ── A LINE NAMES AN ATTEMPT. IT NEVER NAMES AN OUTCOME ────────────────────
+ *
+ * Ruled by the design owner while this file was being widened, over the case
+ * that tempts hardest - a war:
+ *
+ *   "I said kill, I mean attack. Kill is a definite and this game doesn't
+ *   guarantee that via buttons, only via engine."
+ *
+ * The client renders these as buttons, and a button is the *may I*, never the
+ * answer. `attack` is a thing somebody does; `kill` is a thing that either
+ * happens to the other person or does not, and the engine is the only thing
+ * with the authority to say which. A player who pressed a button labelled
+ * `kill` and read that the other one walked away has been lied to by the
+ * interface rather than surprised by the world.
+ *
+ * So the test for every `say` below: is it a thing the player DOES, or a thing
+ * that HAPPENS to somebody? Attack, ask, offer, follow, refuse, take, leave -
+ * attempts, all fine. Kill, win, persuade, convince, escape - outcomes, and
+ * none of them may appear on this list however natural the phrasing.
+ *
+ * ── AND NOTHING HERE SWITCHES A VERB ON ───────────────────────────────────
+ *
+ * The whole loop the owner described, in three steps: a war makes `attack`
+ * appear, the player learns the word without reading anything, and then they
+ * type it at a merchant in a quiet market where nobody offered it - and the
+ * world answers differently, because attacking a trader in a square is not
+ * attacking a soldier in a war.
+ *
+ * That only works if the button is a SUBSET of what can be typed and never the
+ * boundary of it. A verb reachable only while something is suggesting it would
+ * break the loop at the second step: the player would have learnt a word that
+ * stops working the moment the situation that taught it ends, which is worse
+ * than never having been told. So this module reads state and returns
+ * sentences. It grants nothing, unlocks nothing, and every line it offers was
+ * typeable before it appeared and stays typeable after it goes.
+ *
+ * It follows that the lines worth offering are the ones whose MEANING SURVIVES
+ * BEING CARRIED SOMEWHERE ELSE. A sentence that is only coherent in the corner
+ * that produced it teaches nothing transferable, whatever it does for the turn
+ * it appears on.
  */
 
 import { STARVATION_TURNS } from '../schema/cultivation.js';
@@ -117,6 +158,47 @@ const URGENCY_ORDER: Record<Urgency, number> = { now: 0, soon: 1, open: 2 };
 /** One thing that is live standing here. */
 export interface Affordance {
     /**
+     * What made it live: this square, this cultivator, or nothing at all.
+     *
+     * ── The ruling this field exists to serve ────────────────────────────
+     *
+     * The design owner, on the row of buttons the client renders from this:
+     * *"a button appearing is how a verb is learned"*, and *"appearance is
+     * information, so do not pad."* Both sentences are about the same
+     * property. A player finds out a verb exists because one turn it was not
+     * offered and the next turn it was - which only teaches anything if the
+     * arrival MEANT something, and a row topped up with evergreen reads to
+     * look full teaches nothing at all.
+     *
+     * ── Why three values and not two ─────────────────────────────────────
+     *
+     * Because two was measured and it did not fix the reported defect. The row
+     * that was called way too basic is produced by three lines firing off ONE
+     * condition - practising no method - and a flag that only separated "gated
+     * on something" from "always true" left all three tied with everything
+     * else that was gated, so they went on filling the row while two houses
+     * held intakes in the square.
+     *
+     * The distinction that actually orders them is the owner's own: *what is
+     * here and will not be here later* beats *what is merely possible*. A fact
+     * about the square is gone the moment the player walks out of it. A fact
+     * about the body travels with them and will still be true in an hour
+     * wherever they are standing. So:
+     *
+     *   `here`   the wall, the counter, the board, who is in the square, what
+     *            the ground is. Perishable, and the reason to look up.
+     *   `you`    no method, a stalled manual, an empty purse, a torn meridian,
+     *            a crossing that is ready. Real, and it keeps.
+     *   `always` the floor. True in every square in the world on every day of
+     *            a life, and only ever shown to keep a quiet turn from looking
+     *            like a broken one.
+     *
+     * NOT a second urgency. Urgency says how pressing something is; this says
+     * how long it will go on being true. A wall with paper on it is not urgent
+     * and it is the most informative thing in the square.
+     */
+    whatItIsAbout: 'here' | 'you' | 'always';
+    /**
      * Stable key. Used to dedupe when two conditions surface the same verb,
      * and it is what a test asserts against rather than the prose.
      */
@@ -156,6 +238,20 @@ export interface Affordance {
  * of the state space without standing up a database.
  */
 export interface StandingHere {
+    // ── FIVE OF THESE ARE OPTIONAL, AND IT IS TEMPORARY ──────────────────
+    //
+    // `pillsCarried`, `peopleHere`, `paperOnTheWall`, `spanCounterHere` and
+    // `dutiesGoing` are `?`, on the same grounds and with the same expiry as
+    // `peopleHereWithSomethingToSell` below: the only thing that can compute
+    // them is `whatIsLiveHere` in `game.ts`, and that file was held by several
+    // other agents when this landed. Absent reads as "nothing here", which
+    // loses the lines and keeps every other one, so a tree without the caller
+    // still builds and still answers.
+    //
+    // MAKE THEM REQUIRED THE MOMENT THAT WRITER LANDS. A field nothing writes
+    // reads as a value and the code around it goes on answering with total
+    // confidence - `AGENTS.md` has the whole entry, and this file has already
+    // shipped one dead prompt on exactly that mistake.
     /** 0-100, as the schema defines it. Carried for the operator line only. */
     satiety: number;
     /** Consecutive turns spent at zero. Non-zero means the body is paying. */
@@ -215,8 +311,32 @@ export interface StandingHere {
     inASect: boolean;
     /** Rows in the pouch a buyer would put a price on. */
     sellableGoods: number;
+    /**
+     * Pills in the pouch that nothing has swallowed.
+     *
+     * A separate count from {@link StandingHere.sellableGoods} because it is a
+     * different fact with a different answer. A pill bought and never taken
+     * does nothing at all - it is the one purchase in this game that can sit in
+     * a pouch through the exact crossing it was bought for - and the read that
+     * says so is not the same read as "what would a buyer give me".
+     */
+    pillsCarried?: number;
     /** People standing here, right now, at a higher rung than this cultivator. */
     peopleAboveHere: number;
+    /**
+     * People standing here at all, whatever rung they are at.
+     *
+     * A COUNT AND NEVER A NAME, like every other roster figure in this file.
+     * Found by playing: a Stone-Shell Tortoise in Human Form was standing in
+     * the square at ordinal 29 and nothing offered looking at it, which is the
+     * clearest possible case of the world failing to volunteer - somebody was
+     * RIGHT THERE and the row went on suggesting the same three reads.
+     *
+     * Distinct from `peopleAboveHere`, which asks a question about the ladder.
+     * Somebody at or below this cultivator's rung is still a person, still has
+     * a face, and is still the most interesting thing in an empty square.
+     */
+    peopleHere?: number;
     /**
      * People standing here who would part with something they are holding.
      *
@@ -257,6 +377,65 @@ export interface StandingHere {
      * shut: the affordance cannot leak what the read would refuse to say.
      */
     groundThatTeachesARoad: number;
+    /**
+     * The paper nailed up where this cultivator is standing.
+     *
+     * ── The miss this closes, in the owner's own words ────────────────────
+     *
+     * *"Standing at Wheatgate at Qi Condensation Layer 1 with no method, the
+     * engine already knew that two houses were holding intakes there - one in
+     * 35 days, one in 70 - and said so in the prose. Neither appeared as
+     * something live to do."*
+     *
+     * That is the whole shape of what was wrong here: the fact was computed,
+     * the fact was narrated, and the row of things to do went on offering the
+     * same three evergreen reads. A wall with paper on it is the single most
+     * place-specific thing in a settlement and it is the one channel in this
+     * world that runs TOWARDS the player - houses short of bodies come looking
+     * - so it belongs at the top of what a nobody is shown.
+     *
+     * COUNTS AND A NUMBER OF DAYS, NEVER A HOUSE NAME. The line this decides
+     * routes to the read that walks over to the wall, and that read does its
+     * own granting through `learnIfNew`. Naming a house here would hand over a
+     * record the player has not been given, which is the leak the discovery
+     * gate exists to prevent.
+     *
+     * Null where the caller could not answer - no world loaded, an unplaceable
+     * location - rather than a zeroed shape, because "there is no wall here"
+     * and "I could not tell" are different facts and only the first is worth a
+     * sentence.
+     */
+    paperOnTheWall?: {
+        /** Bills up here today. */
+        bills: number;
+        /** Of those, how many state a bar this cultivator already clears. */
+        withinReach: number;
+        /** Days until the soonest intake opens, or null when none is dated. */
+        daysToTheSoonest: number | null;
+    } | null;
+    /**
+     * A Measured Span counter answers where they are standing.
+     *
+     * Three of the five provinces have none, which is the information rather
+     * than a gap - so this is false almost everywhere and its being true is a
+     * fact about this square. Reading the board costs nothing and is how
+     * somebody who has never left their province finds out there are others.
+     */
+    spanCounterHere?: boolean;
+    /**
+     * Commission work the board would actually put to somebody at this rung.
+     *
+     * The count and not the wall. `commissionBoard` filters on the ordinal
+     * bands the catalog states, so this number MOVES AS THE PLAYER CLIMBS -
+     * which is the point: the duty line used to be gated on not being in a
+     * house, so a member, who is the person the whole mission board exists
+     * for, was never once shown it, and a nobody with an empty board was shown
+     * a sentence that came back "you belong to nothing, so there is no wall".
+     * Both halves of that were wrong in the same way, and the count fixes
+     * both: it is offered when there is something going, to whoever it is
+     * going to.
+     */
+    dutiesGoing?: number;
     /**
      * Past the Lid, where none of the mortal-world lines apply at all.
      *
@@ -338,6 +517,12 @@ const SAY = {
     cultivate: { id: 'cultivate', say: 'I cultivate for a year', routesTo: 'cultivate' },
     room: { id: 'room', say: 'who is here', routesTo: 'look' },
     news: { id: 'news', say: 'what news is there', routesTo: 'news' },
+    // The wall. Free everywhere, and the one discovery channel in this world
+    // that comes looking for the player instead of waiting to be found.
+    bills: { id: 'bills', say: 'what is posted here', routesTo: 'look' },
+    // The counter, where there is one. Reading the board is free and is how
+    // somebody who has never left their province learns there are others.
+    passage: { id: 'passage', say: 'what runs from the Span counter', routesTo: 'passage' },
     // The one answer to a broken seclusion that needs words. It routes to
     // `cultivate` here and it is INTERCEPTED before phase 1 while a fork is
     // standing, so it resumes the interrupted sitting for its remaining days
@@ -349,8 +534,38 @@ const SAY = {
 
 type Line = typeof SAY[keyof typeof SAY];
 
+/**
+ * A line that fired on a fact about this cultivator.
+ *
+ * True of them and of nobody standing beside them, and still true tomorrow in
+ * the next province. An empty purse, a torn meridian, a manual that has stopped
+ * carrying them.
+ */
 const at = (line: Line, urgency: Urgency, because: string): Affordance =>
-    ({ ...line, urgency, because });
+    ({ ...line, urgency, because, whatItIsAbout: 'you' });
+
+/**
+ * A line that fired on a fact about the square they are standing in.
+ *
+ * The perishable half, and the half that was missing. Walk out and it is not
+ * true any more: paper on this wall, a counter at this station, work on this
+ * board, somebody standing right there. This is what the row leads with inside
+ * each urgency band, because it is the thing a player will not get another
+ * chance at and the thing they cannot know without being told.
+ */
+const inTheSquare = (line: Line, urgency: Urgency, because: string): Affordance =>
+    ({ ...line, urgency, because, whatItIsAbout: 'here' });
+
+/**
+ * A line that is true of everybody, everywhere, forever.
+ *
+ * The floor. It exists so that `help` is never the word "nothing", and it is
+ * marked so the ordering can keep it BELOW anything that is live for a reason
+ * - because a row topped up with these to look full is the padding the design
+ * owner ruled against, and it is what made the row read as static.
+ */
+const always = (line: Line, because: string): Affordance =>
+    ({ ...line, urgency: 'open', because, whatItIsAbout: 'always' });
 
 /**
  * What is worth doing standing here, most pressing first.
@@ -362,6 +577,15 @@ const at = (line: Line, urgency: Urgency, because: string): Affordance =>
 export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const out: Affordance[] = [];
     const add = (a: Affordance): void => { out.push(a); };
+
+    // The five the caller may not be supplying yet, read once, so the rules
+    // below stay readable and there is exactly one place that decides what an
+    // absent count means. See the note at the top of `StandingHere`.
+    const pillsCarried = here.pillsCarried ?? 0;
+    const peopleHere = here.peopleHere ?? 0;
+    const paperOnTheWall = here.paperOnTheWall ?? null;
+    const spanCounterHere = here.spanCounterHere ?? false;
+    const dutiesGoing = here.dutiesGoing ?? 0;
 
     const turns = here.turnsUntilStarvation;
     // The belly is empty and the grace period is running. `starvationTurns` is
@@ -472,7 +696,8 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
                     say: `I buy a ${cure.name}`,
                     routesTo: 'buy',
                     urgency: cure.affordable ? 'now' : 'soon',
-                    because: whatToSayAboutTheCure(cure)
+                    because: whatToSayAboutTheCure(cure),
+                    whatItIsAbout: 'you'
                 });
                 // Named for the shortfall rather than for hunger, because a
                 // player who cannot afford the cure needs the same two verbs
@@ -496,14 +721,25 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     }
 
     // ── the road, which is what the run is actually about ─────────────────
+    //
+    // ONE OF THESE IS `soon`, AND IT USED TO BE ALL THREE. That is the defect
+    // the design owner reported as "way too basic": three lines fire off one
+    // condition, all at the same urgency, and a row with room for three shows
+    // the same three for as long as the condition holds - which for somebody
+    // with no method is the entire opening of the game, across every turn and
+    // every place they walk to. The world could be on fire behind them.
+    //
+    // The one kept at `soon` is the arts read, on the owner's own calibration:
+    // a player with no method "should be told the one thing that matters, and
+    // 'what arts can I learn' is close". The other two are the same fact said
+    // twice more; they stay offered, one band down, where anything actually
+    // happening in the square outranks them.
     if (!here.aboveTheLid && !here.practisesAMethod) {
-        // The single most consequential fact about a starting cultivator, and
-        // the one the engine already states plainly the moment it is asked.
         const why = 'You practise no method, so nothing accumulates however long you sit.';
-        add(at(SAY.teacher, 'soon', `${why} A teacher is one of the two ways out.`));
         add(at(SAY.arts, 'soon', `${why} What a root like yours could take up is a short list.`));
+        add(at(SAY.teacher, 'open', `${why} A teacher is one of the two ways out.`));
         if (!here.inASect) {
-            add(at(SAY.sects, 'soon',
+            add(at(SAY.sects, 'open',
                 'A house is the ordinary way somebody with nothing gets a book, a stipend and a bed.'));
         }
     }
@@ -528,7 +764,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     }
 
     if (here.thinGround && !here.aboveTheLid) {
-        add(at(SAY.destinations, 'soon',
+        add(inTheSquare(SAY.destinations, 'soon',
             'The ground here is thin: half rate, and a penalty at the bottleneck. Ground is the '
             + 'largest multiplier a cultivator with no money can change.'));
     }
@@ -543,7 +779,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         // down the same road. Named as a shape rather than with a name in it,
         // because the discovery rule forbids handing over anybody the player
         // has not met and the read above already says how many there are.
-        add(at(SAY.teacher, 'open',
+        add(inTheSquare(SAY.teacher, 'open',
             `${here.peopleAboveHere} ${here.peopleAboveHere === 1 ? 'person' : 'people'} standing `
             + 'here are further up the ladder than you. Putting it to one of them by name - '
             + '"ask <them> to teach me", "ask <them> to introduce me to <somebody>" - is a '
@@ -567,7 +803,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         const sellers = here.peopleHereWithSomethingToSell ?? 0;
         if (sellers > 0) {
             const n = sellers;
-            add(at(SAY.market, 'open',
+            add(inTheSquare(SAY.market, 'open',
                 `${n} ${n === 1 ? 'person' : 'people'} standing here would rather have stones `
                 + 'than what they are carrying. What a stall asks and what a person asks are the '
                 + 'same read, and the second one comes with a reason attached.'));
@@ -578,26 +814,126 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         }
     }
 
-    if (!here.aboveTheLid && !here.inASect && here.practisesAMethod) {
-        add(at(SAY.duties, 'open',
-            'What is being contracted out locally, and what it pays, whether or not you serve anybody.'));
+    // ── WHAT IS NAILED UP HERE, AND WHEN IT STOPS BEING TRUE ──────────────
+    //
+    // The clearest miss in the report that produced this pass, and the reason
+    // the whole file grew a `whatItIsAbout` axis. A wall of paper is a fact about
+    // one square on one day: two houses were holding intakes at Wheatgate, one
+    // in 35 days and one in 70, the engine knew both, said both in the prose,
+    // and offered neither as anything to do.
+    //
+    // The bar decides the band, and it is the only place in this file where
+    // the RUNG changes what is offered rather than what is said. A bill whose
+    // stated bar this cultivator already clears is a door standing open in
+    // front of somebody who may have nothing; a wall of bills all pitched
+    // above them is worth reading and is not an opportunity.
+    if (!here.aboveTheLid && paperOnTheWall !== null && paperOnTheWall.bills > 0) {
+        const paper = paperOnTheWall;
+        const sheets = `${paper.bills} ${paper.bills === 1 ? 'bill' : 'bills'}`;
+        const when = paper.daysToTheSoonest === null
+            ? ''
+            : ` The soonest intake opens in ${paper.daysToTheSoonest} `
+              + `day${paper.daysToTheSoonest === 1 ? '' : 's'}, and it is held here.`;
+        add(inTheSquare(SAY.bills, paper.withinReach > 0 ? 'soon' : 'open', paper.withinReach > 0
+            ? `${sheets} up on the wall here, ${paper.withinReach} of them stating a bar you `
+              + `already clear.${when} A house that has to advertise is telling you something `
+              + 'true about itself, and the bar on the paper is the real bar.'
+            : `${sheets} up on the wall here, none of them pitched at anybody standing where you `
+              + `are.${when} Reading it costs nothing and it is where the names of houses come `
+              + 'from.'));
+    }
+
+    // ── THE COUNTER, WHERE THERE IS ONE ───────────────────────────────────
+    //
+    // Two provinces in five have one and three have none, so this is false
+    // almost everywhere and its being true is the whole of what it says. A
+    // capability nobody can find out about is a capability nobody has, and
+    // this one had no route to the player at all: a passage counter is not a
+    // thing anybody guesses at, and the board is free to read.
+    if (spanCounterHere) {
+        add(inTheSquare(SAY.passage, 'open',
+            'The Measured Span keeps a counter here. There is a board with what runs from it, '
+            + 'what each costs and when it goes, and reading it costs nothing - which is how '
+            + 'somebody who has never left their province finds out there are others.'));
+    }
+
+    // ── WHAT THE BOARD IS ASKING FOR, AT THIS RUNG ────────────────────────
+    //
+    // Gated on the count and not on membership. The old gate was
+    // `!inASect && practisesAMethod`, which got it wrong at both ends: a
+    // member - the person the entire mission board exists for - was never once
+    // offered it, and a nobody standing in front of an empty wall was offered
+    // a sentence whose honest answer is "you belong to nothing, so there is no
+    // wall". A suggestion that refuses when it is taken up teaches the player
+    // not to trust the row, and in a mouse-only turn it is a dead end rather
+    // than an annoyance.
+    //
+    // And this is one of the two places the row moves as the player CLIMBS.
+    // The catalog bands every commission by ordinal, so what is going changes
+    // under somebody who has not moved an inch.
+    if (!here.aboveTheLid && dutiesGoing > 0) {
+        add(inTheSquare(SAY.duties, 'open',
+            `${dutiesGoing} thing${dutiesGoing === 1 ? '' : 's'} on the wall `
+            + `${dutiesGoing === 1 ? 'is' : 'are'} being put to somebody at your rung, with `
+            + 'what each pays. Work that is asked for by name is worth more than work you go '
+            + 'looking for.'));
+    }
+
+    // ── AND SOMEBODY IS STANDING RIGHT THERE ──────────────────────────────
+    //
+    // The other half of the Wheatgate miss: a Stone-Shell Tortoise in Human
+    // Form was in the square at ordinal 29 and nothing offered looking at it.
+    // `who is here` was on the floor below, where it was outranked forever by
+    // three evergreen reads - so the most place-specific fact in the game, a
+    // person within arm's reach, lost to a sentence that is true in every
+    // square in the world.
+    //
+    // A COUNT AND NEVER A NAME. Seeing somebody is not knowing them, and the
+    // read this points at is the one that decides how much of a face a player
+    // has earned.
+    if (!here.aboveTheLid && peopleHere > 0) {
+        add(inTheSquare(SAY.room, 'open',
+            `${peopleHere} ${peopleHere === 1 ? 'person is' : 'people are'} standing `
+            + 'here with you. What they are and how far above you they stand is a look, and it '
+            + 'costs nothing; what any of them would do about you is a sentence with their name '
+            + 'in it.'));
+    }
+
+    // ── AND A PILL NOBODY SWALLOWED ───────────────────────────────────────
+    //
+    // The purchase that does nothing until it is taken, and the one a player
+    // reliably carries through the exact crossing it was bought for. Folded
+    // into the pouch read rather than given a line of its own, because naming
+    // one pill would be picking which, and the pouch says all of them.
+    if (!here.aboveTheLid && pillsCarried > 0) {
+        add(at(SAY.inventory, 'open',
+            `${pillsCarried} pill${pillsCarried === 1 ? '' : 's'} in the pouch that `
+            + `${pillsCarried === 1 ? 'has' : 'have'} not been swallowed. A pill bought and `
+            + 'never taken does nothing at all, and a breakthrough pill has to go down BEFORE '
+            + 'the attempt for the attempt to know about it.'));
     }
 
     // ── the floor ─────────────────────────────────────────────────────────
     //
     // Always present, always free, and never a wall of text because everything
-    // above is deduped over the top of it. These four are the ones a player who
-    // has just arrived should learn first: why nothing is moving, where else
-    // there is, who is standing here, and what the world is doing.
-    add(at(SAY.ceiling, 'open', 'Every gate on your progress, named, in the order they bind.'));
-    add(at(SAY.destinations, 'open', 'Where you could go from here, and what the ground is like there.'));
+    // above is deduped over the top of it. These are the ones a player who has
+    // just arrived should learn first: why nothing is moving, where else there
+    // is, who is standing here, and what the world is doing.
+    //
+    // MARKED `always`, WHICH IS WHAT KEEPS THEM UNDERNEATH. They are true in
+    // every square in the world on every day of a life, so a row that leads
+    // with them is a row that says nothing - which is exactly what was
+    // reported. They are the answer to `help` and the tail of the row, not its
+    // head.
+    add(always(SAY.ceiling, 'Every gate on your progress, named, in the order they bind.'));
+    add(always(SAY.destinations, 'Where you could go from here, and what the ground is like there.'));
     // Only once somebody has actually been told about one. Understanding is
     // drawn from what a cultivator is exposed to rather than from what they
     // accumulate, and this is the one line that points at the exposure - but
     // offering it to somebody holding no records would tell them such places
     // exist, which is a discovery the world is supposed to hand over.
     if (here.groundThatTeachesARoad > 0) {
-        add(at(SAY.roads, 'open',
+        add(inTheSquare(SAY.roads, 'open',
             `${here.groundThatTeachesARoad === 1 ? 'One thing' : here.groundThatTeachesARoad + ' things'} `
             + 'within your reach '
             + `${here.groundThatTeachesARoad === 1 ? 'is' : 'are'} ground a road can be walked on `
@@ -613,12 +949,12 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // because until the hunt verb existed the catalog had no reader. It is on
     // the floor rather than gated on hunger because it is the answer to "what
     // is there to DO", not to "how do I eat this month".
-    add(at(SAY.hunt, 'open',
+    add(always(SAY.hunt,
         'What is out on the ground here that is worth killing, what is out there that would '
         + 'kill you, and what either of them is carrying.'));
     if (!here.aboveTheLid) {
-        add(at(SAY.room, 'open', 'Who is standing here, and how far above you they are.'));
-        add(at(SAY.news, 'open',
+        add(always(SAY.room, 'Who is standing here, and how far above you they are.'));
+        add(always(SAY.news,
             'What the people here say is happening elsewhere. Some of it will be wrong.'));
         if (here.sellableGoods > 0) {
             add(at(SAY.inventory, 'open', 'What is in the pouch, and roughly what it is worth.'));
@@ -629,21 +965,49 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
 }
 
 /**
- * One line per verb, keeping the most urgent occurrence.
+ * One line per verb, keeping the most urgent occurrence, most pressing first.
  *
  * Two rules can surface the same sentence - a starving cultivator with a thin
  * purse reaches `I look for work` twice - and the same sentence twice on one
  * screen reads as a bug. The FIRST reason wins at equal urgency, because the
- * rules are written in the order they bind.
+ * rules are written in the order they bind. A reason about the square beats one
+ * about the body at equal urgency for the same verb, and both beat the floor,
+ * because the more specific reason is the one that says why it is live NOW.
+ *
+ * ── The second sort key, and why the first one was not enough ────────────
+ *
+ * Urgency alone produced the row the design owner called way too basic. Across
+ * a fresh run, several turns and two locations it offered the same three every
+ * time - `who can teach me`, `what arts can I learn`, `what sects are there` -
+ * because those three fire off one condition that holds for the entire opening
+ * of the game, they were all at the same band, and the client shows the top of
+ * this list. Nothing that was actually happening could get above them: not two
+ * houses holding intakes in the square, not somebody standing an arm's length
+ * away, not a counter selling passage out of the province.
+ *
+ * So inside each band the square comes first, then the body, then the floor.
+ * That is the ordering the owner asked for in as many words - what is urgent,
+ * then what is here and will not be here later, then what merely remains
+ * possible - and it is what makes a button's ARRIVAL mean something, which is
+ * how a player learns a verb exists at all.
+ *
+ * A two-valued version of this was written first and measured, and it did not
+ * fix the reported case: separating gated lines from the floor left all three
+ * road reads tied with the wall and the square, so they went on filling the
+ * row. It is the here-against-you distinction that does the work.
  */
+const ABOUT_ORDER: Record<Affordance['whatItIsAbout'], number> = { here: 0, you: 1, always: 2 };
+
 function dedupe(all: readonly Affordance[]): Affordance[] {
+    const rank = (a: Affordance): number =>
+        URGENCY_ORDER[a.urgency] * 3 + ABOUT_ORDER[a.whatItIsAbout];
     const best = new Map<string, Affordance>();
     for (const a of all) {
         const held = best.get(a.id);
-        if (!held || URGENCY_ORDER[a.urgency] < URGENCY_ORDER[held.urgency]) best.set(a.id, a);
+        if (!held || rank(a) < rank(held)) best.set(a.id, a);
     }
     return [...best.values()]
-        .sort((a, b) => URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency])
+        .sort((a, b) => rank(a) - rank(b))
         .slice(0, MOST_A_PLAYER_SHOULD_READ);
 }
 

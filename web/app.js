@@ -1782,10 +1782,8 @@ function renderQuickActions() {
  * Three deliberate restraints, because the failure mode here is not a bug but
  * a drift in what the game IS:
  *
- *   - CAPPED AT THREE. The engine will offer up to eight. A row of eight reads
- *     as the set of legal moves, and this game is one you speak to in your own
- *     words - the moment the row looks complete, the command line becomes
- *     decoration.
+ *   - BOUNDED, AND NOT PADDED. See the two constants below. The engine will
+ *     offer up to eight and this row is not the set of legal moves.
  *   - LABELLED AS PARTIAL. The heading says these are what is live, not what is
  *     possible, and the engine's own reads all close by saying they are not the
  *     list.
@@ -1794,16 +1792,71 @@ function renderQuickActions() {
  *     to type them. A button that silently performs a hidden action would teach
  *     nothing, which is the whole point of the feature.
  *
+ * ── AND IT IS THE TUTORIAL, WHICH IS WHAT THE ORDERING IS FOR ────────────
+ *
+ * The design owner, on what this row is actually doing:
+ *
+ *   "The buttons also do help the player do discoverability, because it lets
+ *   them play without typing. Maybe a player sees 'kill' during a war - the
+ *   kill button."
+ *
+ * and then the correction that matters more than the example: *"I said kill, I
+ * mean attack. Kill is a definite and this game doesn't guarantee that via
+ * buttons, only via engine."* A button is the *may I*, never the answer, and
+ * every label here is an attempt rather than an outcome. That rule is enforced
+ * where the sentences are written - see the banner in
+ * `what-is-worth-doing-standing-here.ts` - because this file only renders what
+ * it is handed.
+ *
+ * What the ordering has to preserve is the loop underneath it: a situation
+ * makes a verb appear, the player learns the word without reading anything,
+ * and then they type it somewhere nobody offered it and the world answers
+ * differently. That only works if a button's ARRIVAL means something - so the
+ * engine marks every line with what made it live (`here`, `you`, `always`),
+ * hands them back in that order, and this row uses the last of the three as
+ * the padding it is: the floor is reached for only to keep a quiet turn from
+ * looking like a broken one. Filling the row with reads that are true in every
+ * square in the world is what made it read as static.
+ *
  * `because` goes on the title rather than the face: the reason is worth having
- * but it is a sentence, and three sentences here would out-shout the prose.
+ * but it is a sentence, and five sentences here would out-shout the prose.
  */
+
+/**
+ * The most buttons this row will ever show.
+ *
+ * Raised from three on the owner's ruling that a player must be able to finish
+ * a turn with the mouse alone - three is not enough surface for that, and the
+ * three that were showing were the same three in every place and at every rung.
+ * It is still a cap and not a target: the row is a vocabulary and never the
+ * boundary of what can be said.
+ */
+const MOST_BUTTONS = 5;
+
+/**
+ * The fewest, below which the floor is used to top the row up.
+ *
+ * "Appearance is information, so do not pad" - so the evergreen reads are only
+ * reached for when there is genuinely almost nothing live, and never to fill a
+ * row that already has situational lines in it.
+ */
+const FEWEST_BUTTONS = 3;
+
 function renderStandingHere() {
   const wrap = $('#standing');
   const row = $('#standing-row');
   if (!wrap || !row) return;
 
-  const live = Array.isArray(S.derived?.standingHere) ? S.derived.standingHere : [];
-  const shown = live.filter(item => item && typeof item.say === 'string' && item.say).slice(0, 3);
+  const live = (Array.isArray(S.derived?.standingHere) ? S.derived.standingHere : [])
+    .filter(item => item && typeof item.say === 'string' && item.say);
+  // `!== 'always'` rather than testing for the two live values, so a payload
+  // from an engine that predates the field degrades to the old behaviour -
+  // everything shown in the order given - instead of rendering an empty row.
+  const shown = live.filter(item => item.whatItIsAbout !== 'always').slice(0, MOST_BUTTONS);
+  for (const item of live.filter(item => item.whatItIsAbout === 'always')) {
+    if (shown.length >= FEWEST_BUTTONS) break;
+    shown.push(item);
+  }
 
   if (shown.length === 0) {
     wrap.hidden = true;
@@ -4492,6 +4545,15 @@ function wire() {
   // implicit submission that would otherwise raise a second `submit` on the
   // same keypress. The in-flight guard is `S.busy`, which both handlers check
   // before doing anything, so a keypress racing the button press loses.
+  //
+  // AND THE KEY NAME IS `Enter`, WHICH IS WHAT A REAL KEYBOARD SENDS. Worth
+  // saying because this binding has now been reported broken twice by
+  // automation and was working both times: a driver that dispatches the key as
+  // `Return` produces a keydown whose `key` is the empty string, which matches
+  // nothing here and reaches no handler. The page is fine and the tool is
+  // lying. `tests/web/pressing-enter-submits-the-action.test.ts` records the
+  // trap next to the assertions, so the next person checks their driver before
+  // they check this file.
   const enterSubmits = (selector, handler) => {
     const el = $(selector);
     if (!el) return;
