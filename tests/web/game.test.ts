@@ -82,14 +82,23 @@ describe('character creation', () => {
         expect(cultivator.alive).toBe(true);
     });
 
-    it('writes an opening engine ruling and an opening narration to the log', async () => {
+    it('writes the mode, an opening engine ruling and an opening narration to the log', async () => {
         const { game } = makeGame();
         await game.newRun('Lin Que');
         const state = game.state();
 
-        expect(state.log.filter(e => e.role === 'engine')).toHaveLength(1);
+        // TWO engine lines now. The first says which of the two ways of playing
+        // this session is in, and it is said in both directions on purpose: a
+        // line that only appears when a key is missing is an apology, and the
+        // harness has no provider, so what it reads is the local one. The
+        // status bar's "(not configured)" describes an absent environment
+        // variable and reads like a broken install; nothing here is broken.
+        const engine = state.log.filter(e => e.role === 'engine');
+        expect(engine).toHaveLength(2);
+        expect(engine[0].text).toContain('Local Mode');
+        expect(engine[0].text).toContain('fully playable');
+        expect(engine[1].text).toContain('Talent is rolled once and never redrawn.');
         expect(state.log.filter(e => e.role === 'narrator')).toHaveLength(1);
-        expect(state.log[0].text).toContain('Talent is rolled once and never redrawn.');
     });
 });
 
