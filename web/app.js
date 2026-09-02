@@ -2018,9 +2018,15 @@ function showTimeSkip(skip, narration, merged) {
     ['injuriesGained', 'Injuries', 0, true]
   ];
 
+  // Note the raw() around the prose paragraph below, which every other nested
+  // html`` in this function already had. Without it the outer template escapes
+  // the inner one's own tags, and the account of the years opened with a
+  // literal paragraph tag printed in front of the prose and its closing tag
+  // printed after it. Found on the `Sit anyway` branch, which is the only way
+  // most early runs reach this panel at all.
   const body = html`
     <div class="skip">
-      ${narration ? html`<p class="skip__prose">${narration}</p>` : ''}
+      ${narration ? raw(html`<p class="skip__prose">${narration}</p>`) : ''}
       <div class="skip__head">
         <span>Requested <b>${fmtDays(skip.requestedDays)}</b></span>
         <span class="muted">·</span>
@@ -2293,6 +2299,16 @@ function openBreakthroughConfirm() {
 }
 
 /**
+ * The sentence `Go and find a manual` sends, typed as a player would type it.
+ *
+ * A phrase, not a slug: it goes through the same parser as anything the player
+ * writes themselves, so if this stops reaching the teacher answer it stops for
+ * everybody at once and a test of the verb catches it. Kept in the player's own
+ * idiom for the same reason - the game must accept what the game printed.
+ */
+const THE_ASK_THE_REFUSAL_NAMES = 'who would teach me';
+
+/**
  * The engine has refused a stretch it knows returns exactly zero.
  *
  * Its own words, in full, with the way through beside them. The refusal names
@@ -2311,9 +2327,26 @@ function openSitAnywayConfirm(days, reason) {
            uncertain except what wanders past while you are in it.</p>
       </div>`,
     foot: html`
-      <button class="btn" type="button" data-overlay-close data-autofocus>Go and find a manual</button>
+      <button class="btn" type="button" id="find-a-manual" data-autofocus>Go and find a manual</button>
       <button class="btn btn--danger" type="button" id="sit-anyway">Sit anyway</button>`,
     onClose: () => focusCommand()
+  });
+
+  // This button was `data-overlay-close` and nothing else, so the best moment
+  // in the game - a refusal that names its own cure - offered a way through
+  // that closed the panel and left the player exactly where they had been, on
+  // the same turn, with no new text. `Sit anyway` worked; this did not.
+  //
+  // It now carries the player into the thing it is offering, down the ordinary
+  // command path so the narrator handles it and it lands in the transcript as
+  // a turn the player took. The wording is the refusal's own: it ends "Ask who
+  // would teach you, or what there is to learn", and this is that ask.
+  $('#find-a-manual').addEventListener('click', () => {
+    closeOverlay();
+    const input = $('#command-input');
+    if (!input || S.busy) return;
+    input.value = THE_ASK_THE_REFUSAL_NAMES;
+    submitAction();
   });
 
   $('#sit-anyway').addEventListener('click', () => {
@@ -3812,12 +3845,34 @@ function toggleSheetDrawer() {
 function wire() {
   $('#begin-form').addEventListener('submit', beginRun);
   $('#command-form').addEventListener('submit', submitAction);
-  // Enter submits explicitly (and never while an IME composition is open).
-  $('#command-input').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' || e.isComposing || e.shiftKey) return;
-    e.preventDefault();
-    submitAction(e);
-  });
+
+  // Enter submits explicitly in both boxes (and never while an IME composition
+  // is open).
+  //
+  // Both forms have a submit button, so the browser's own implicit submission
+  // ought to cover this and for a long time we assumed it did. It does not
+  // survive everything - an automated driver dispatching a raw key event never
+  // triggers it at all, which is how this was finally pinned down - and the
+  // first Enter a player presses is on the name field, before anything else in
+  // the game has happened. The action box's hint text promises `Enter` in so
+  // many words, which makes a silent Enter a documented feature that does not
+  // work.
+  //
+  // preventDefault() is what stops this double-firing: it suppresses the
+  // implicit submission that would otherwise raise a second `submit` on the
+  // same keypress. The in-flight guard is `S.busy`, which both handlers check
+  // before doing anything, so a keypress racing the button press loses.
+  const enterSubmits = (selector, handler) => {
+    const el = $(selector);
+    if (!el) return;
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing || e.shiftKey) return;
+      e.preventDefault();
+      handler(e);
+    });
+  };
+  enterSubmits('#begin-name', beginRun);
+  enterSubmits('#command-input', submitAction);
   $('#btn-cultivate').addEventListener('click', () => openCultivatePicker());
   // Issued down the ordinary command path rather than as a side-channel read,
   // so the narrator handles it and it lands in the transcript like any other
