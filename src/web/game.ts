@@ -75,7 +75,7 @@ import {
 } from '../engine/cultivation/injuries.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { FOUNDATION_ORDINAL } from '../engine/cultivation/realms.js';
-import type { Injury } from '../schema/cultivation.js';
+import { InjurySchema, type Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
 import { round2 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
@@ -393,6 +393,10 @@ import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
+import {
+    whatTheConfrontationDidToThem
+} from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 // The owner's two axes: severity of the wound, realm of the wounded.
 import {
     medicineNeededFor,
@@ -2708,6 +2712,20 @@ ${noticed}`;
             && this.repos.cultivators.getById(party.id) !== null;
         const standing = this.present(cultivator).find(row => row.id === party.id);
 
+        // ── THE PERSON THE WORLD ACTUALLY HOLDS ──────────────────────────
+        //
+        // Where there is no row there is usually still a RECORD, and it is the
+        // one the world has been keeping: their attributes, and what they are
+        // carrying from every fight, crossing and tribulation before this one.
+        // Describing them as a bare name and an ordinal handed the resolver a
+        // stunt double - might 2, insight 2, unwounded - so a man who was
+        // crippled here last week stood up fresh, and no wound this layer wrote
+        // could ever be read back. Only the fields `OpponentSchema` already has
+        // are filled; nothing about the tool's surface changes for this.
+        const theirRecord = !onRecord && this.atHand
+            ? this.atHand.npcs.find(npc => npc.id === party.id) ?? null
+            : null;
+
         const result = await handleResolve({
             action: 'resolve',
             cultivatorId: cultivator.id,
@@ -2715,7 +2733,21 @@ ${noticed}`;
                 ? { cultivatorId: party.id }
                 : {
                     name: party.name,
-                    ...(standing ? { realmOrdinal: standing.realmOrdinal } : {})
+                    ...(standing ? { realmOrdinal: standing.realmOrdinal } : {}),
+                    ...(theirRecord
+                        ? {
+                            realmOrdinal: theirRecord.cultivation.realmOrdinal,
+                            // Clamped to the schema's bands rather than passed
+                            // raw: an out-of-range attribute is a validation
+                            // error, and a fight that fails to start is a worse
+                            // answer than one fought on the nearest legal body.
+                            might: Math.max(1, Math.min(3, theirRecord.cultivation.attributes.might)),
+                            insight: Math.max(1, Math.min(4, theirRecord.cultivation.attributes.insight)),
+                            untreatedInjuries: Math.max(0, Math.min(
+                                10, Math.floor(theirRecord.cultivation.untreatedInjuries)
+                            ))
+                        }
+                        : {})
                 },
             goal: intent,
             vector: 'body',
@@ -2732,6 +2764,18 @@ ${noticed}`;
 
         const execution = this.fromToolResult('combat_manage.resolve', 'attack', result, party.name);
 
+        // ── AND WHAT IT DID TO THEM ──────────────────────────────────────
+        //
+        // The other side of the boundary, crossed here because this is the only
+        // layer that holds both stores. `combat_manage` wrote the player's half
+        // and, for an opponent with a row, theirs; for everybody else it wrote
+        // nothing, which is most of the people a player ever swings at. This
+        // carries the findings it already made to the record that holds them.
+        // Nothing is re-decided - see the module header - and it runs after the
+        // resolve for the same reason the fallout does.
+        const inTheWorld = this.whatItDidToThem(cultivator, theirRecord, result);
+        execution.calls.push(...inTheWorld.calls);
+
         // ── AND WHAT THE ROOM MAKES OF IT ────────────────────────────────
         //
         // After the resolve, never before it and never instead of it. Every
@@ -2739,8 +2783,9 @@ ${noticed}`;
         // layer and is already written down; this only says who else now holds
         // something about it.
         const fallout = this.whatFollowedTheBout(
-            run, cultivator, party, standing ?? null, terms, result
+            run, cultivator, party, standing ?? null, terms, result, inTheWorld.died
         );
+        fallout.lines.unshift(...inTheWorld.lines);
         if (fallout.lines.length > 0) {
             // Into `prose` as well as `lines`, and this is not belt and braces.
             // `lines` is what a narrator may know and `prose` is the
@@ -2759,6 +2804,110 @@ ${noticed}`;
         }
         execution.calls.push(...fallout.calls);
         return execution;
+    }
+
+    /**
+     * Carry what the resolver decided to the record that holds the person.
+     *
+     * ── THE BOUNDARY, AND WHY IT IS CROSSED HERE ─────────────────────────
+     *
+     * `combat_manage.resolve` persists its opponent's half only for an opponent
+     * with a row in the `cultivators` table. Everybody else - which is most of a
+     * square, and effectively all of the people a player actually spars with -
+     * is DESCRIBED to it, because there is no id to pass, and everything it then
+     * decided about them was thrown away on the way out. Beat somebody bloody
+     * and they were whole the next turn; kill them and they were standing there.
+     *
+     * Neither side could close that alone. The tool owns one store, runs its
+     * writes in one synchronous transaction, and has no run handle at all when
+     * it is driven off the MCP surface - so it cannot reach an async per-run
+     * world. The world layer has never heard of a run or a played cultivator.
+     * This method is the only place that holds both, so this is where the two
+     * are joined, and it does no deciding of its own: it reads the findings out
+     * of the body the resolver returned and hands them to the world layer's own
+     * write path.
+     *
+     * ── WHAT IT DOES NOT CARRY ───────────────────────────────────────────
+     *
+     * Hit points. The world does not store them and `gatherings.ts` explains at
+     * `BOUT_BODY` why it must not start: damage is a fraction of a maximum, so
+     * the absolute number is arbitrary, and a body model here would be a second
+     * one beside the cultivation engine's. What a fight leaves that the world
+     * can hold is wounds, and those are carried in full.
+     */
+    private whatItDidToThem(
+        cultivator: Cultivator,
+        theirRecord: NpcRecord | null,
+        result: object
+    ): { died: boolean; lines: string[]; calls: ToolCallRecord[] } {
+        const nothing = { died: false, lines: [] as string[], calls: [] as ToolCallRecord[] };
+        if (!theirRecord || !this.atHand || isGuidingErrorBody(result)) return nothing;
+
+        const body = result as Record<string, unknown>;
+        const outcome = body.outcome;
+        if (typeof outcome !== 'string') return nothing;
+
+        // The synthetic id the tool minted for a described body. Everything
+        // about who lost is read against it rather than inferred from who won,
+        // because a stalemate has a winner of neither.
+        const them = body.opponent as { id?: unknown } | undefined;
+        const theirRollId = typeof them?.id === 'string' ? them.id : null;
+        const loserId = typeof body.loserId === 'string' ? body.loserId : null;
+
+        // Parsed, not cast. These rows came from `summariseInjury` one call away
+        // and are going onto a permanent record, so they go through the schema
+        // that owns their shape - a body that does not parse writes no wounds
+        // rather than writing invented ones.
+        const reported = (body.injuries as { opponent?: unknown } | undefined)?.opponent;
+        const parsed = InjurySchema.array().safeParse(reported ?? []);
+        const wounds: Injury[] = parsed.success ? parsed.data : [];
+
+        const wrote = whatTheConfrontationDidToThem(this.atHand, {
+            npcId: theirRecord.id,
+            byId: cultivator.id,
+            byName: cultivator.name,
+            day: Math.floor(this.atHand.currentDay),
+            wounds,
+            outcome: outcome as ConfrontationOutcome,
+            lost: loserId !== null && theirRollId !== null && loserId === theirRollId,
+            finished: body.finished === true
+        });
+        if (!wrote.wrote) return nothing;
+
+        // A world changed inside one turn. `act` persists on this flag before
+        // anything is narrated, so a restart cannot lose a killing.
+        this.worldDirty = true;
+
+        const calls: ToolCallRecord[] = [{
+            name: 'world.whatTheConfrontationDidToThem',
+            action: 'attack',
+            summary:
+                `${theirRecord.id} (${theirRecord.name}) in world state: `
+                + `${wrote.wounds} wound ${wrote.wounds === 1 ? 'row' : 'rows'} written, `
+                + `died=${wrote.died}, facts=${wrote.facts.length}`
+                + (wrote.handoff?.primaryHeirId
+                    ? `, heir=${wrote.handoff.primaryHeirId} inheriting `
+                      + `${wrote.handoff.goalsInherited.length} goals`
+                    : '')
+                + `. outcome=${outcome}; finished=${body.finished === true}. No hit points are `
+                + 'written: the world stores wounds, not a bar.',
+            ok: true
+        }];
+        if (!parsed.success && Array.isArray(reported) && reported.length > 0) {
+            // Loud rather than silent. A body that stopped parsing means the
+            // resolver's projection changed shape, and a quietly unwounded world
+            // is exactly the failure this whole method exists to end.
+            calls.push({
+                name: 'world.whatTheConfrontationDidToThem',
+                action: 'attack',
+                summary:
+                    `${reported.length} reported opponent wounds did not parse as injuries and `
+                    + 'were NOT written. The resolve body\'s shape has drifted from InjurySchema.',
+                ok: false
+            });
+        }
+
+        return { died: wrote.died, lines: wrote.lines, calls };
     }
 
     /**
@@ -2810,7 +2959,16 @@ ${noticed}`;
         party: { id: string; name: string },
         theirRow: RosterEntry | null,
         terms: BoutTerms,
-        result: object
+        result: object,
+        /**
+         * Whether the world recorded the opponent's death, for an opponent the
+         * world holds and the cultivators table does not.
+         *
+         * The resolve body's own `opponentDied` covers the other half. Both are
+         * the survival layer's answer about the same person reaching this by
+         * different routes, because the person is stored in different places.
+         */
+        diedInTheWorld = false
     ): { lines: string[]; calls: ToolCallRecord[] } {
         const nothing = { lines: [] as string[], calls: [] as ToolCallRecord[] };
         if (isGuidingErrorBody(result)) return nothing;
@@ -2825,14 +2983,25 @@ ${noticed}`;
         const loserId = typeof body.loserId === 'string' ? body.loserId : null;
         if (loserId === null) return nothing;
 
-        // `died` is the survival layer's word, written before this ran. Note
-        // that it can only ever be the PLAYER's: `combat_manage.resolve` asks
-        // the death gate about the cultivator whose run this is and about
-        // nobody else, so an opponent driven to nothing is at nothing rather
-        // than dead. That is the physical layer's business and not this file's;
-        // when it is answered, this reads the answer without changing.
+        // `died` is the survival layer's word, written before this ran, and it
+        // is THE PLAYER's - `combat_manage.resolve` has always read that way and
+        // its callers read it that way.
+        //
+        // The opponent's has two homes because the opponent does. Somebody with
+        // a cultivator row is answered by the tool's own death gate and arrives
+        // as `opponentDied`; somebody the world holds is answered on the far
+        // side of the boundary and arrives as `diedInTheWorld`. Both are the
+        // same ruling by the same layer about the same event.
+        //
+        // This is what the header's ruling was waiting for. Until an opponent
+        // could die at all, `loserDied` could only ever be false for the person
+        // a player actually spars with, so the killed-somebody-in-an-agreed-bout
+        // consequence was unreachable against the entire population a player
+        // meets. It is reachable now, and nothing else about the charge changed.
         const playerDied = body.died === true;
+        const opponentDied = body.opponentDied === true || diedInTheWorld;
         const loserIsThePlayer = loserId === cultivator.id || playerDied;
+        const loserDied = loserIsThePlayer ? playerDied : opponentDied;
 
         // Everybody standing here who is not one of the two of them. The room
         // is what `look` already lists, so this claims no witness the player
@@ -2848,7 +3017,7 @@ ${noticed}`;
         const followed = whatFollowsFromTheBout({
             terms,
             outcome: outcome as ConfrontationOutcome,
-            loserDied: playerDied,
+            loserDied,
             witnesses,
             theirHouse: theirHouse
                 ? {
@@ -7617,9 +7786,26 @@ ${noticed}`;
         }
 
         if (sealed) {
+            // ── THE PROSE YIELDS TO THE MEASUREMENT ──────────────────────
+            //
+            // This used to read "no encounter and no opportunity could reach
+            // this stretch", and it had been false since the door became a rate
+            // rather than a switch. `randomEvents` is on behind a seal, scaled
+            // by `doorScaleOverStretch`, and the comment at that call site says
+            // in full why: a door that made a cultivator simply safe made
+            // closed-door seclusion the dominant strategy rather than a trade.
+            //
+            // A player who reads the old sentence and is then interrupted has
+            // been told the engine lied to them, which is worse than being
+            // interrupted. So this says what the seal actually buys - a rate,
+            // and a better crossing - and it says that the rate is not zero and
+            // does not stay where it was set.
             facts.lines.unshift(
-                'The door was sealed: no encounter and no opportunity could reach this stretch. ' +
-                'Safety was bought with every chance that would have found you.'
+                'The door was sealed. Less reaches you behind it and it is not nothing: a seal '
+                + 'is a thing somebody built, it thins what finds you rather than stopping it, '
+                + 'and over a long enough sitting it goes on its own. What it certainly buys is '
+                + 'the crossing - a shut door and a chosen site are worth more at the boundary '
+                + 'than provisions alone.'
             );
         }
         facts.lines.push(...applied.tollLines);
@@ -10211,6 +10397,50 @@ ${fit.line}`;
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = them.factionId ? getSect(them.factionId) : null;
 
+        // ── A BRIBE IS A NUMBER ──────────────────────────────────────────
+        //
+        // Measured in play: "I bribe Kong Kelin" came back "Kong Kelin agreed.
+        // It was taken." with the purse at 6043 before and 6043 after. Nothing
+        // was named, nothing was priced, nothing moved. That is the softening
+        // the agency rule forbids and it is the invisible kind - the player
+        // believes they spent something.
+        //
+        // The resolver's own contract has carried `stonesOffered` from the
+        // start, documented as "spirit stones actually put down. Only spent
+        // when the attempt lands", and this caller never filled it. So the sum
+        // comes off the player's own sentence, which is where it belongs: what
+        // somebody is willing to put down is a decision and not a derivation,
+        // and an engine that picked a figure would be choosing for them.
+        //
+        // Not banning. A coin approach with no sum in it is a sentence with a
+        // hole in it, and the refusal names the hole and the purse rather than
+        // shrugging - the same shape as every other guiding refusal here.
+        const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
+        if (leverage === 'coin' && offered === null) {
+            return refused('engine.resolveAttempt', 'interact', factsForRefusal(
+                'You did not say how much.',
+                `You get as far as suggesting there is money in it and then find you have not `
+                + `decided on a figure, which ${party.name} notices before you do. A bribe is a `
+                + `number said out loud. You are carrying ${cultivator.spiritStones} spirit `
+                + 'stones; say what you are putting down.',
+                `Coin leverage with no sum in the sentence. resolveAttempt.stonesOffered is `
+                + '"spirit stones actually put down"; without one the attempt would resolve at '
+                + 'full odds and charge nothing, which is what it did for as long as this '
+                + 'caller left the field unset.'
+            ));
+        }
+        if (offered !== null && offered > cultivator.spiritStones) {
+            return refused('engine.resolveAttempt', 'interact', factsForRefusal(
+                'You do not have it.',
+                `The figure is out of your mouth before you have counted it. You said ${offered} `
+                + `and you are carrying ${cultivator.spiritStones}, which leaves you `
+                + `${offered - cultivator.spiritStones} short of what you have just promised. `
+                + `${party.name} waits for the rest of it and then stops waiting.`,
+                `Offered ${offered} against a purse of ${cultivator.spiritStones}. Refused before `
+                + 'the resolver, so no days were spent and no mark was written.'
+            ));
+        }
+
         const result = resolveAttempt({
             actor: {
                 id: cultivator.id,
@@ -10232,6 +10462,7 @@ ${fit.line}`;
             },
             onDay: Math.floor(run.elapsedDays),
             ask: askWeightOf(rawInput),
+            ...(offered === null ? {} : { stonesOffered: offered }),
             approach: {
                 // The player's own words, recorded and echoed, never parsed for
                 // an outcome. `leverage` is what the resolver actually reads.
@@ -10242,6 +10473,15 @@ ${fit.line}`;
             // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
             rng: forStream(run.seed, 'social_leverage', Math.floor(run.elapsedDays), party.id)
         });
+
+        // AND THE MONEY IS REAL. The resolver's contract is that stones are
+        // spent only when the attempt LANDS - somebody who refuses you does not
+        // keep the purse - so this is the one write and it is on `stonesSpent`
+        // rather than on what was offered, because those two are the same
+        // number only on a take and the resolver owns the difference.
+        if (result.stonesSpent > 0) {
+            this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -result.stonesSpent });
+        }
 
         // THE DAYS ARE REAL. Pressing somebody for a betrayal is a season and a
         // half of work, and an attempt that costs no time is not a decision.
@@ -11506,6 +11746,26 @@ ${fit.line}`;
  */
 const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
 
+/**
+ * The sum somebody said they were putting down, off their own sentence.
+ *
+ * Read here rather than in the parser because it is not a routing decision:
+ * `actions.ts` chooses a verb, and how much money is in a bribe is a parameter
+ * of the act. Keeping it out of the plan object also keeps a model from ever
+ * being in a position to name a figure that leaves the purse - the enum's whole
+ * discipline - since this reads the PLAYER'S raw sentence and nothing else.
+ *
+ * Requires the noun. A bare number in "I bribe the third guard" is not an offer,
+ * and reading it as one would have somebody paying three stones for a sentence
+ * about a person.
+ */
+export function stonesNamedIn(sentence: string): number | null {
+    const said = /\b(\d[\d,]*)\s*(?:spirit\s+)?stones?\b/i.exec(sentence);
+    if (!said) return null;
+    const value = Number.parseInt(said[1].replace(/,/g, ''), 10);
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 export function withoutTheHandlerName(line: string): string {
     const stripped = line.replace(A_HANDLER_NAME_AT_THE_FRONT, '');
     if (stripped === line) return line;
@@ -11627,6 +11887,42 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     // them. See the entry cap in `sect-manage.ts`.
     const returning = body.returning as { note?: string } | null | undefined;
     if (returning?.note) lines.push(returning.note);
+
+    // ── BEING RAISED A RUNG ──────────────────────────────────────────────
+    //
+    // `handlePromote` returns the old title, the new one, the contribution it
+    // cost and the new stipend, and this function had no branch for that shape.
+    // Measured in play:
+    //
+    //     > I ask to be promoted to Outer Disciple
+    //     It is done. Nothing about it drew attention.
+    //
+    // The state changed correctly and one of the few structural events in a
+    // career came back as the last-resort line. It is the fifth time this
+    // fallback has swallowed a verb, which is why the shrug is the thing worth
+    // hunting rather than any one of the verbs.
+    //
+    // The contribution is the part a player most needs said: a promotion is
+    // BOUGHT, the ledger is spent rather than merely met, and somebody who does
+    // not know that will plan the next twenty years off a balance they no
+    // longer have.
+    if (body.promoted === true) {
+        const sect = body.sect as { name?: string } | undefined;
+        const to = typeof body.toRank === 'string' ? body.toRank : null;
+        const from = typeof body.fromRank === 'string' ? body.fromRank : null;
+        if (to) {
+            lines.push(
+                `${from ? `${from} no longer; ` : ''}${to}`
+                + `${sect?.name ? ` of ${sect.name}` : ''}.`
+                + (typeof body.contributionSpent === 'number'
+                    ? ` It cost ${body.contributionSpent} contribution, which is gone rather than met.`
+                    : '')
+                + (typeof body.newStipendPerMonth === 'number'
+                    ? ` The seat draws ${body.newStipendPerMonth} spirit stones a month.`
+                    : '')
+            );
+        }
+    }
 
     const rank = body.rank as { title?: string; stipendPerMonth?: number } | undefined;
     if (body.member === true && rank?.title) {
