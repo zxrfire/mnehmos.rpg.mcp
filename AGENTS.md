@@ -399,6 +399,66 @@ the more natural phrasing. When you add a verb, try the three or four ways someb
 actually say it, and try the ways they would say the thing next to it to check you have
 not swallowed it.
 
+### A module nothing calls is not a feature
+
+**The most-repeated defect in this project, by a wide margin.** A subsystem is designed
+carefully, written well, tested, sometimes even rendered on a page - and **nothing in the
+running game ever calls it.** It passes review because every artefact of a finished feature is
+present except the one that matters.
+
+The roll of them, all found in a single session:
+
+| What | Where it lived | What never read it |
+|---|---|---|
+| The teacher layer - `carriesTo`, `teachersOf`, `THE_DEEPEST_ROADS` | catalog + register | anything in `src/engine/` |
+| `WITHDRAWN_POWERS` - the Hollow Court's four seats | catalog + register | the seeder. The apex of the setting was empty and dissolved |
+| The inheritance economy | `past-the-ceiling.md`, in detail | no divest, bequest or estate concept exists at all |
+| 261 cultivation chambers with their own qi | seeded into every world | nobody stood in one; the largest multiplier in the model reached no one |
+| Prospected ruins | a working discovery engine | `nameableSites` read only the static catalog |
+| Gossip | a 700-line module with 309 lines of tests | no verb. Zero player-facing wiring, one commit old |
+
+**So the definition of done is not "the module exists and its tests pass". It is that somebody
+in the running world - a player or an NPC - reaches it by doing something.** Until then it is
+documentation with a type signature.
+
+Three habits that catch it:
+
+1. **Before building, ask what will call this**, and name the file. If the answer is "the
+   register" or "a test", stop: those are readers, not callers.
+2. **After building, reach it the way a person would.** Type the sentence a player would type,
+   or run the world and check the thing happened. `grep -rn "yourExport" src/` and looking at
+   who imports it takes ten seconds and has caught six of the seven above.
+3. **Suspect it hardest when the module is good.** Every one of these was well written. Quality
+   is not evidence of reachability, and a beautiful module is if anything likelier to have been
+   built in isolation.
+
+The mirror image is worth stating too: **a rule that binds NPCs and not the player, or the
+player and not NPCs, is the same failure with one caller instead of none.** See
+[the world's rules must bind the player too](#the-worlds-rules-must-bind-the-player-too).
+
+### The population pyramid is a law, not a preference
+
+**Whatever is changed, the shape of the population survives it.** Far more people at the bottom
+than the middle, far more in the middle than the top, and that ordering holds at every horizon
+and every scale. `tests/engine/world/the-pyramid.test.ts` is the acceptance test for any change
+that touches advancement, ground, teaching, seeding or the ladder - **run it in both arms, in
+one command, on a tree you have checked.**
+
+Two rules inside it, because the two ends of the ladder need different instruments:
+
+- **Where both bands are populations, the ordering is absolute** - a single seed is proof.
+  Qi Condensation outnumbering Foundation Establishment is roughly 300 against 80; samples that
+  size do not trade places by chance. If that ever inverts, something structural has broken.
+- **Where either band is individuals, the ordering holds only in aggregate.** Four against six
+  swap for ordinary reasons. An inversion there fails only if it reproduces across seeds - and
+  **the summit is expected to be irregular**, because a prodigy institution sits on it and
+  concentrates the people who get that far.
+
+And the rule that governs every proposed fix: **a change that makes the middle of the world
+climb faster is the wrong change, even if it achieves the thing you wanted.** A world full of
+cultivators at the top destroys the scarcity the whole setting rests on. What is wanted is a
+handful going all the way against a population that overwhelmingly does not.
+
 ### The player must be able to type back what the game printed
 
 The listing named ruins - "The Gate Frame With No Gate In It" - and the parser accepted
