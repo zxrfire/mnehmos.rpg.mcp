@@ -285,6 +285,8 @@ describe('asking whether somebody could be moved does not move them', () => {
         db: Database.Database;
         game: Harness['game'];
         people: string[];
+        /** Who is standing here NOW. See the note below on why this exists. */
+        stillHere: () => Promise<string[]>;
     }> {
         resetCultivationWorlds();
         const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
@@ -299,7 +301,33 @@ describe('asking whether somebody could be moved does not move them', () => {
 
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(square.location.name, cultivator.id);
-        return { db, game, people: square.people.map(p => p.name) };
+        return {
+            db,
+            game,
+            people: square.people.map(p => p.name),
+            // ── A CROWD IS NOT A FIXTURE ─────────────────────────────────
+            //
+            // `people` is a snapshot taken on day zero, and it is fine for the
+            // tests that spend no days. It is NOT fine for one that spends six,
+            // and that used to be invisible: the busiest place in a seeded world
+            // was a REGION node holding 116 people, and nobody ever leaves one,
+            // because a region is a container that the movement layer does not
+            // move anybody in or out of.
+            //
+            // Once the seeder stopped stranding the upper stratum on region
+            // nodes, the busiest place became an actual settlement - Scarwater,
+            // 14 people - and a real settlement churns. Measured across the ten
+            // turns below: 14 standing on day 0, 10 on day 1, and the tenth
+            // person in the snapshot walked off with the other four.
+            //
+            // So a test that names somebody and then lets days pass has to ask
+            // again who is there. This is the honest version of the fixture, and
+            // it is worth having gone red to get it.
+            stillHere: async () => {
+                const now = (await game.loadWorld())!;
+                return npcsAt(now, square.location.id).map(p => p.name);
+            }
+        };
     }
 
     /** The question forms, one per intent that presses somebody. */
@@ -384,25 +412,36 @@ describe('asking whether somebody could be moved does not move them', () => {
      * entirely the wrong reason.
      */
     it('spends on exactly the intents it says press somebody', async () => {
-        const { game, people } = await inTheBusiestSquare('which-ones-cost');
-        const w = (i: number) => people[i];
+        const { game, stillHere } = await inTheBusiestSquare('which-ones-cost');
 
-        const commanding: ReadonlyArray<readonly [string, string]> = [
-            ['talk', `I talk to ${w(0)}`],
-            ['trade', `I trade with ${w(1)}`],
-            ['apologise', `I apologise to ${w(2)}`],
-            ['bribe', `I bribe ${w(3)} with 1 spirit stone`],
-            ['threaten', `I threaten ${w(4)}`],
-            ['seduce', `I seduce ${w(5)}`],
-            ['deceive', `I deceive ${w(6)}`],
-            ['interrogate', `I interrogate ${w(7)}`],
-            ['recruit', `I recruit ${w(8)}`],
-            ['negotiate', `I negotiate with ${w(9)}`]
+        // The sentence for each intent, built around whoever that intent's turn
+        // is actually spoken to. The person is chosen at the moment of speaking
+        // rather than ten turns earlier - see `stillHere`. What the docstring
+        // asks for is preserved exactly: one sentence per intent, a different
+        // person for each, and every one of them somebody who is standing here.
+        const forms: ReadonlyArray<readonly [string, (who: string) => string]> = [
+            ['talk', who => `I talk to ${who}`],
+            ['trade', who => `I trade with ${who}`],
+            ['apologise', who => `I apologise to ${who}`],
+            ['bribe', who => `I bribe ${who} with 1 spirit stone`],
+            ['threaten', who => `I threaten ${who}`],
+            ['seduce', who => `I seduce ${who}`],
+            ['deceive', who => `I deceive ${who}`],
+            ['interrogate', who => `I interrogate ${who}`],
+            ['recruit', who => `I recruit ${who}`],
+            ['negotiate', who => `I negotiate with ${who}`]
         ];
-        expect(commanding.map(([intent]) => intent).sort(), 'an intent was added and not played here')
+        expect(forms.map(([intent]) => intent).sort(), 'an intent was added and not played here')
             .toEqual([...INTERACT_INTENTS].sort());
 
-        for (const [intent, sentence] of commanding) {
+        const spokenTo = new Set<string>();
+        for (const [intent, form] of forms) {
+            const here = await stillHere();
+            const who = here.find(name => !spokenTo.has(name));
+            expect(who, `nobody is left in the square to put ${intent} to`).toBeDefined();
+            spokenTo.add(who!);
+
+            const sentence = form(who!);
             expect(parseIntent(sentence).intent, `"${sentence}" does not reach ${intent}`)
                 .toBe(intent);
 

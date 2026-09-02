@@ -326,15 +326,33 @@ function nameOrShape(
     return scope.gate.isAwareOf(scope.holderId, kind, id) ? name : shape;
 }
 
-/** A place name, or an admission that the player could not name it. */
+/**
+ * A place name, or an admission that the player could not name it.
+ *
+ * The value handed in is whatever that roster row carries, and the two
+ * populations carry different things: a `cultivators` row's `location` is free
+ * text - a display name - and a world NPC's is a location id. Both reach here.
+ *
+ * So a gate that passes is not licence to print the argument. Where the holder
+ * holds a record under the id, the record's own NAME is what gets said, because
+ * nobody in this world says `loc-sect-azure-dew-sect-ground`. Found the moment
+ * sect grounds became somewhere a player could learn about: the read went
+ * straight from "somewhere this cultivator could not name" to printing the id,
+ * which is the same defect as naming a ruin by its slug and breaks the rule
+ * that a name the game prints is a name the game must accept.
+ */
 function placeOrShape(scope: KnowledgeScope | undefined, place: string | null): string {
     if (!place) return 'unrecorded';
     if (!scope) return place;
     const here = (scope.here ?? '').trim().toLowerCase();
     if (here.length > 0 && place.trim().toLowerCase() === here) return place;
-    return scope.gate.isAwareOf(scope.holderId, 'place', place)
-        ? place
-        : 'somewhere this cultivator could not name';
+    if (!scope.gate.isAwareOf(scope.holderId, 'place', place)) {
+        return 'somewhere this cultivator could not name';
+    }
+    const held = scope.gate
+        .awareness(scope.holderId, 'place')
+        .find(row => row.id === place);
+    return held?.name ?? place;
 }
 
 /**
