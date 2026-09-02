@@ -1022,6 +1022,27 @@ export function brokenStatusKeyOf(woundType: string | null | undefined): string 
     return key !== null && BROKEN_STATUSES.includes(key) ? key : null;
 }
 
+/**
+ * EVERY broken status this cultivator carries, under current names.
+ *
+ * `brokenStatusOf` answers "are they halted, and by what", so it stops at the
+ * first one. This answers "what has been taken from them", which is a different
+ * question: the capability layer subtracts a grant per break, and somebody
+ * carrying two breaks has lost what both of them cost.
+ *
+ * Untreated only, deduplicated, and resolved through the retirement table, so a
+ * saved row carrying an old key denies what its wound has always denied.
+ */
+export function brokenStatusesOn(injuries: readonly Injury[]): string[] {
+    const out: string[] = [];
+    for (const injury of injuries) {
+        if (injury.treated) continue;
+        const status = brokenStatusKeyOf(injury.woundType);
+        if (status !== null && !out.includes(status)) out.push(status);
+    }
+    return out;
+}
+
 /** The broken status this cultivator carries, if any. */
 export function brokenStatusOf(injuries: readonly Injury[]): string | null {
     for (const injury of injuries) {

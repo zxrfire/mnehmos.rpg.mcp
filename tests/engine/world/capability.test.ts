@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
     assessCapability,
     can,
+    ARRANGED_GRANTS,
     grantStatus,
+    grantsConferredAt,
+    grantsHeldWith,
     grantsAvailableAt,
     heldGrants,
     makeCapabilityModifier,
@@ -172,6 +175,89 @@ describe('capability: realm classes are potential, not entitlement', () => {
     it('drops a claimed grant the realm does not support', () => {
         const overreaching = actor({ realmOrdinal: 14, heldGrants: ['no_ambient_needed'] });
         expect(heldGrants(overreaching)).toHaveLength(0);
+    });
+
+    it('hands over what the rung earned, because capability is enforced', () => {
+        // The defect this replaced: `capabilityActorFor` returned `heldGrants:
+        // []`, so NOBODY held any of the fifteen and every consumer downstream
+        // was off. A capability nobody can hold is not a capability.
+        const conferred = grantsConferredAt(33);
+        expect(conferred).toContain('no_seam');
+        expect(conferred).toContain('carries_own_ambient');
+        expect(conferred).toContain('no_ambient_needed');
+
+        // And it really reaches the consumer, rather than merely being returned.
+        const whole = actor({ realmOrdinal: 33, heldGrants: conferred });
+        expect(neutralisedHazards(whole, ['soul_pressure']).map(n => n.grant))
+            .toEqual(['no_seam']);
+    });
+
+    it('does not confer what somebody had to go and arrange', () => {
+        // The half of the old argument that was right, kept: a realm cannot
+        // hand over an actual vessel that an actual person readied somewhere.
+        expect(ARRANGED_GRANTS).toContain('prepared_vessel');
+        expect(grantsConferredAt(24)).not.toContain('prepared_vessel');
+        expect(grantsAvailableAt(24)).toContain('prepared_vessel');
+    });
+
+    it('takes back what a structural break denies, per the realm it broke at', () => {
+        // The point of a broken status, mechanically. Before this, a crippled
+        // nascent soul and a whole one were the same person with different
+        // prose - which is the softening the agency rule forbids.
+        const cases: [string, number, string][] = [
+            ['failed-transformation', 28, 'carries_own_ambient'],
+            ['partial-refinement', 32, 'no_ambient_needed'],
+            ['failed-integration', 36, 'no_seam'],
+            ['unfulfilled-ascension', 40, 'gates_places'],
+            ['crippled-nascent-soul', 24, 'soul_persists']
+        ];
+        for (const [breakKey, ordinal, lost] of cases) {
+            expect(grantsConferredAt(ordinal), `${breakKey}: whole`).toContain(lost);
+            expect(grantsHeldWith(ordinal, [breakKey]), `${breakKey}: broken`)
+                .not.toContain(lost);
+        }
+    });
+
+    it('takes back only what the break names, and leaves the rest of the realm', () => {
+        // "a lot of it IS stitched, so they're still a lot stronger than
+        // anybody before that." An impairment among the great, not a demotion.
+        const held = grantsHeldWith(36, ['failed-integration']);
+        expect(held).not.toContain('no_seam');
+        expect(held).toContain('immune_contamination');
+        expect(held).toContain('spatial_folding');
+
+        // And a partial refinement still survives the weak scars, which is the
+        // owner's own distinction: folding goes, dead ground does not.
+        const partial = grantsHeldWith(32, ['partial-refinement']);
+        expect(partial).not.toContain('spatial_folding');
+        expect(partial).not.toContain('no_ambient_needed');
+        expect(partial).toContain('enters_dead_zones');
+    });
+
+    it('denies through the consumer, not merely in the list', () => {
+        // The test that would have caught the original defect: assert the
+        // BEHAVIOUR changes, not that an array is shorter.
+        const ordinal = 28;
+        const whole = actor({ realmOrdinal: ordinal, heldGrants: grantsConferredAt(ordinal) });
+        const failed = actor({
+            realmOrdinal: ordinal,
+            heldGrants: grantsHeldWith(ordinal, ['failed-transformation'])
+        });
+        expect(neutralisedHazards(whole, ['thin_qi'])).toHaveLength(1);
+        expect(neutralisedHazards(failed, ['thin_qi'])).toHaveLength(0);
+    });
+
+    it('stacks two breaks rather than letting the second one be free', () => {
+        const both = grantsHeldWith(40, ['failed-integration', 'unfulfilled-ascension']);
+        expect(both).not.toContain('no_seam');
+        expect(both).not.toContain('gates_places');
+    });
+
+    it('ignores a wound that is not a break, and an unknown key', () => {
+        const whole = grantsConferredAt(36);
+        expect(grantsHeldWith(36, [])).toEqual(whole);
+        expect(grantsHeldWith(36, ['torn-meridians'])).toEqual(whole);
+        expect(grantsHeldWith(36, ['no-such-wound'])).toEqual(whole);
     });
 
     it('gives two same-realm cultivators different answers at the same door', () => {

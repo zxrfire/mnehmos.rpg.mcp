@@ -55,9 +55,11 @@ import {
     understandingEffects
 } from '../../engine/cultivation/understanding.js';
 import { getSpiritRoot, rankName } from '../../engine/cultivation/index.js';
+import { brokenStatusesOn } from '../../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import {
     assessCapability,
     makeSubject,
+    grantsHeldWith,
     realmClassForOrdinal,
     requirementsFromInscription,
     subjectFromLocation,
@@ -151,11 +153,28 @@ export const UnderstandingSchema = z.object({
 /**
  * A cultivator as the capability layer sees them.
  *
- * `heldGrants` is deliberately empty. A realm is a capability class and a class
- * is POTENTIAL: reaching Void Refinement makes `no_ambient_needed` possible and
- * does not hand it over. Nothing in this engine stores an acquired grant yet, so
- * claiming one here would be the tool inventing capability - which is precisely
- * what the five predicates exist to prevent.
+ * ── `heldGrants` USED TO BE EMPTY, AND THAT WAS THE DEFECT ───────────────
+ *
+ * It was `[]` with a comment arguing that a realm is POTENTIAL and that
+ * claiming a grant here would be the tool inventing capability. The argument
+ * was careful and the result was that **no cultivator in the game held any of
+ * the fifteen grants**, so every consumer downstream was off: `judge` never saw
+ * `gates_places` or `reads_formations`, `neutralisedHazards` never subtracted
+ * anything, and the whole layer read as built while doing nothing.
+ *
+ * The ruling is that realm capability is ENFORCED rather than asserted, so this
+ * hands over what the rung has actually earned. The half of the old argument
+ * that was right is kept and lives in `ARRANGED_GRANTS`: a few capabilities
+ * name a thing in the world rather than a property of the body, and a realm
+ * cannot supply those. A prepared vessel is an actual vessel somebody readied.
+ * Being at home in ice is not.
+ *
+ * ── AND A BREAK TAKES SOME OF IT BACK ────────────────────────────────────
+ *
+ * `grantsHeldWith` subtracts what this cultivator's structural breaks deny, so
+ * a crippled nascent soul and a whole one are no longer the same person with
+ * different prose. Retired wound keys are resolved first, or a saved row would
+ * silently deny nothing.
  *
  * `knowledgeIds` is the honest counterpart: comprehension the cultivator
  * genuinely holds, keyed the way an inscription's `comprehensionKey` is, so a
@@ -180,7 +199,7 @@ export function capabilityActorFor(cultivator: Cultivator): CapabilityActor {
         attributes: cultivator.attributes,
         knowledgeIds: [...knowledgeIds],
         profile: { specialties: [...specialties] },
-        heldGrants: [],
+        heldGrants: grantsHeldWith(cultivator.realmOrdinal, brokenStatusesOn(cultivator.injuries)),
         present: true,
         alive: cultivator.alive
     };
