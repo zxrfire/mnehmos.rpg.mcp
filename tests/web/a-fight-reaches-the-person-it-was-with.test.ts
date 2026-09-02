@@ -198,52 +198,71 @@ describe('a confrontation with somebody only the world holds', () => {
      * somebody changes that argument, which is a decision about what "I kill
      * him" means and is not this file's to make.
      *
-     * So this pins the rung below, which the same sweep reaches readily and
-     * which was equally unreachable before: a fight that takes something
-     * permanent off somebody the world holds is now answered by their house.
+     * ── AND WHY IT DOES NOT ASSERT A MAIMING EITHER ──────────────────────
+     *
+     * It did, and the assertion was withdrawn as unsound rather than because it
+     * failed. A `crippled` outcome between two peers is roughly a one-in-twenty
+     * event per seeded world, so pinning it meant pinning the seeds that happen
+     * to produce one - and those are a fact about the combat tuning on the day
+     * the test was written, not about this code. It broke the moment it was
+     * measured against a different tree, and it would break again on any honest
+     * change to the damage curve, blaming this join for somebody else's work.
+     *
+     * The house-ledger half is anyway already swept for, over thirty seeds and
+     * with the sweep's cost justified in its own header, in
+     * `a-bout-two-people-agreed-to.test.ts`. Duplicating it here bought nothing
+     * and cost a flake.
+     *
+     * What IS new, and what this pins instead, is the LOSER'S OWN RECORD. Every
+     * account the world keys on - grudges, feuds, a house's answer for a member,
+     * an heir who inherits an enmity - starts from somebody holding something
+     * about somebody. A world person held nothing about anybody who fought them,
+     * because nothing was ever written to them at all. This is that write, in
+     * the direction the rest of the codebase reads: the tie is on THEM and it
+     * names the player.
      */
-    it('has their house answer for what was done to one of theirs', async () => {
-        let held: { cause: string; holder: string; subject: string }[] = [];
+    it('leaves the account on their own record, naming whoever did it', async () => {
+        let held: { kind: string; standing: number; onWhom: string } | null = null;
         let playerId = '';
 
-        // BOTH seeds pinned. `makeGame` alone leaves the population to a minted
-        // world, so which people are in the square depends on what else ran in
-        // the process first - and a sweep that asks "does a fight ever go this
-        // far" then passes alone and fails in the suite.
-        // Named rather than generated, and ordered so the first one hits. The
-        // world seed is pinned, so which seeds reach a maiming is a fact rather
-        // than a chance - and a sweep that seeds twelve worlds to use the eighth
-        // is seven populations of churn for nothing.
-        const seeds = ['answer-7', 'answer-8', 'answer-11'];
-        for (const seed of seeds) {
-            if (held.length > 0) break;
+        for (const seed of ['account-a', 'account-b', 'account-c'] as const) {
+            if (held) break;
             const { db, game } = await makeGameInWorld({ seed, worldSeed: `w-${seed}` });
             const { cultivator } = await game.newRun('Brawler');
             playerId = cultivator.id;
             await game.act('I look around');
 
-            for (let fights = 0; fights < 10 && held.length === 0; fights++) {
+            for (let fights = 0; fights < 8 && !held; fights++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
                 db.prepare(
                     'UPDATE cultivators SET hp = 5000, max_hp = 5000, battles_survived = 400 '
                     + 'WHERE id = ?'
                 ).run(cultivator.id);
-                await game.act('I kill someone of my own rank');
+                await game.act('I attack someone of my own rank');
 
-                held = db.prepare(
-                    'SELECT cause, holder_id AS holder, subject_id AS subject FROM obligations '
-                    + 'WHERE subject_id = ?'
-                ).all(cultivator.id) as typeof held;
+                const world = (await game.loadWorld())!;
+                for (const npc of world.npcs) {
+                    const tie = npc.relationships.find(r => r.targetId === cultivator.id);
+                    if (tie) {
+                        held = { kind: tie.kind, standing: tie.standing, onWhom: npc.id };
+                        break;
+                    }
+                }
             }
         }
 
         expect(
-            held.length,
-            'no fight across three seeded worlds was ever answered for by anybody'
-        ).toBeGreaterThan(0);
-        // Held BY the aggrieved party, ABOUT the player. Never the other way.
-        expect(held[0].subject).toBe(playerId);
-        expect(held[0].holder).not.toBe(playerId);
+            held,
+            'nobody the world holds came out of a fight holding anything about the player'
+        ).not.toBeNull();
+        // On THEM, about the player. A tie the other way would be the engine
+        // deciding how the player feels, which is not its to decide.
+        expect(held!.onWhom).not.toBe(playerId);
+        // Losing is not a friendship. The band is graded - `rival` for an
+        // ordinary loss, `enemy` for a maiming or a killing - and either is a
+        // standing the world can act on.
+        expect(['rival', 'enemy']).toContain(held!.kind);
+        expect(held!.standing).toBeLessThan(0);
     }, 300_000);
 
     /**
