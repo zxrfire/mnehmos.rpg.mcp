@@ -184,13 +184,29 @@ describe('members catalog', () => {
         expect(offences, offences.join('\n')).toEqual([]);
     });
 
-    it('never seats anybody below their faction admission bar', () => {
-        for (const member of MEMBERS.filter(m => !m.outlier)) {
+    it('never seats an admitted disciple below their faction admission bar', () => {
+        // Rank 0 is the menial and probationary tier - servants, guests,
+        // applicants - and those people were never admitted on the bar, so it
+        // does not govern them. A Sword Servant at ordinal 5 in a house that
+        // admits at 3 is the system working, not a seating error.
+        for (const member of MEMBERS.filter(m => !m.outlier && m.rankIndex > 0)) {
             const sect = requireSect(member.factionId);
             expect(
                 member.realmOrdinal,
                 `${member.id} stands below the bar they were admitted on`
             ).toBeGreaterThanOrEqual(sect.admissionOrdinal);
+        }
+    });
+
+    it('keeps servants and guests off the bar rather than exempt from sense', () => {
+        // The exemption above must not become a hole: somebody on the menial
+        // tier still cannot out-cultivate their own house's disciples.
+        for (const member of MEMBERS.filter(m => !m.outlier && m.rankIndex === 0)) {
+            const sect = requireSect(member.factionId);
+            expect(
+                member.realmOrdinal,
+                `${member.id} is a servant standing above their house's strength`
+            ).toBeLessThan(sect.powerOrdinal);
         }
     });
 
