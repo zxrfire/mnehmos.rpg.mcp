@@ -3890,7 +3890,7 @@ ${noticed}`;
 
         const facts = factsForToolResult(
             `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
-            said
+            answer.lines
         );
         facts.structure.push(...answer.structure);
         if (dropped) addHearing(facts, dropped);
@@ -3980,72 +3980,6 @@ ${noticed}`;
         topic?: string,
         days?: number
     ): Promise<Execution> {
-        // ── ASKING IN THE REGION GIVES IT ────────────────────────────────
-        //
-        // `seedSectGround` states the rule about its own location in as many
-        // words: "A name you have to be given. Joining gives it; being told
-        // gives it; asking in the region gives it." The first two clauses were
-        // reachable and the third was not, so a player who had been told a
-        // house existed - which is where every fresh cultivator starts, at
-        // stage `named`, "exists somewhere out there and takes disciples" -
-        // could name the house forever and never learn where its gate was.
-        //
-        // The consequence was not cosmetic. Every catalog figure in the world
-        // stands on their house's ground, so a route that cannot reach a gate
-        // cannot reach anybody worth asking, and the listing's own closing line
-        // - "or you would have to walk up on your own" - described a thing the
-        // game did not let you do.
-        //
-        // IN THE REGION is the whole of the condition, and it is doing real
-        // work rather than decorating one. Where a house's gate stands is
-        // ordinary local knowledge to the people who live in that province and
-        // is not ordinary anywhere else, so this grants the gates around you
-        // and never a map of the world. A house three provinces over stays a
-        // name until somebody who knows says otherwise.
-        //
-        // AND IT DOES NOT HANG OFF `answer.teaches`, which is the version that
-        // was written first and measured as a dead branch. `teaches` requires
-        // `holdsIt` - a knowledge row on the NPC being asked - and a villager in
-        // a square has no row for the house up the gorge, so a player who
-        // travelled six days to the right province and asked got "agrees that it
-        // is a good question, agrees that people do ask it, and has finished
-        // speaking" and learned nothing. That is the correct answer about the
-        // house's BUSINESS and the wrong one about the mountain it is on. This
-        // is the same principle as `seedTheGroundAroundHome`: a farm boy knows
-        // where the caves are, and everybody in a province knows which valley
-        // the local house keeps its gate in, whether or not the particular
-        // person asked has anything else to say.
-        const gate = subject?.kind === 'sect' && this.atHand
-            ? this.atHand.locations.find(row =>
-                row.kind === 'sect_seat' && row.controllingFactionId === subject.id)
-            : undefined;
-        // Both provinces read off the WORLD, not off the gazetteer. `standingOf`
-        // is a name match against the static places and answers with the HOME
-        // region for anything it does not name - which is every sect ground,
-        // every cave and every ruin. Asking somebody a question while standing
-        // on a house's ground would then have been priced as though the player
-        // were back where they were born, and the gate a province away would
-        // have opened for free. A fallback written in ordinary English is
-        // invisible; this one is a wrong answer that never looks like one.
-        const provinceOf = (locationId: string | null | undefined): string | null => {
-            if (!this.atHand || !locationId) return null;
-            const row = this.atHand.locations.find(l => l.id === locationId);
-            if (!row) return null;
-            return row.kind === 'region' ? row.id : row.parentId ?? null;
-        };
-        const standingIn = this.atHand
-            ? provinceOf(worldLocationFor(this.atHand, cultivator.location)?.id)
-            : null;
-        const gateIsLocal = gate !== undefined
-            && standingIn !== null
-            && provinceOf(gate.id) === standingIn;
-        const showed = gate && gateIsLocal
-            ? this.noteEncounter(
-                cultivator, run, { kind: 'place', id: gate.id, name: gate.name }, 'told',
-                `Asked after the ${subject!.name} at ${placeName(cultivator)}, which is in the `
-                + 'province the house keeps its gate in. Ordinary local knowledge here.')
-            : false;
-
         // The four member verbs. `sect_manage` has had all of them the whole
         // time and none of them was reachable: "I ask for a promotion", "I draw
         // my stipend", "where do I stand in the sect" and "I leave the sect" all
@@ -4053,25 +3987,6 @@ ${noticed}`;
         // nothing whatever about it for the rest of the run.
         switch (intent) {
             case 'duty':
-        // Said out loud, and said BEFORE the facts are built rather than pushed
-        // onto `lines` afterwards - `factsForToolResult` composes the prose from
-        // the array it is handed, so a line appended after the call reaches the
-        // engine channel and never reaches the player. Measured exactly that
-        // way once: the grant landed, the destinations read listed the gate on
-        // the next turn, and the turn that granted it said nothing at all.
-        //
-        // A knowledge row the player is never told about is a grant they cannot
-        // use. This is the sentence that turns a house they can name into a door
-        // they can walk to.
-        const said = showed && gate
-            ? [
-                ...answer.lines,
-                `Whatever else they had to say, where the ${subject!.name} keeps its gate is `
-                + `not news in this province - anybody would have pointed. ${gate.name} is a `
-                + 'place you could set out for now.'
-            ]
-            : answer.lines;
-
                 return this.duty(run, cultivator, ambient, target);
 
             case 'siphon': {
@@ -4123,18 +4038,6 @@ ${noticed}`;
             // the sentence before the one that spends it. So an argument that
             // does not resolve prices the act rather than guessing at it.
             case 'recruit': {
-        if (showed && gate) {
-            execution.calls.push({
-                name: 'knowledge.learn',
-                action: 'gate_placed',
-                summary:
-                    `${gate.name} recorded at stage placed, source told. Asked about a house `
-                    + 'in the province its gate stands in, which is the third of the three ways '
-                    + "`seedSectGround` says its own name is given. `canPointAt` now passes, so "
-                    + 'the destinations read names it and the move verb accepts it.',
-                ok: true
-            });
-        }
                 const kind = topic === 'elder' ? 'elder' : 'disciple';
                 // "three disciples" is three people. Read off the same phrase
                 // the parser handed over, bounded by the tool's own schema.
@@ -9379,7 +9282,8 @@ ${noticed}`;
             // on the Cultivate control, which names the Lesser Qi-Gathering
             // Manual when there is no method. A refusal is finished when it
             // names the alternative.
-            const cure = whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones);
+            const cure = whatWouldCloseThisWound(
+                hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
                 'Past what a physician can do.',
                 `They look at what you are carrying and put their hands in their sleeves. `
@@ -10922,7 +10826,14 @@ ${noticed}`;
                 medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
             woundsPastMortalCare: mendable.filter(injury =>
                 !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
-            cure: whatWouldCloseThisWound(hurt, cultivator.realmOrdinal, cultivator.spiritStones),
+            cure: whatWouldCloseThisWound(
+                hurt,
+                cultivator.realmOrdinal,
+                cultivator.spiritStones,
+                // The province they are standing in, so the panel quotes the
+                // figure `buy` will charge rather than the board's base.
+                standingOf(cultivator).regionId
+            ),
             battered: cultivator.hp < cultivator.maxHp,
             practisesAMethod: road.state !== 'no_method',
             methodExhausted: road.state === 'exhausted',
@@ -11012,40 +10923,6 @@ ${noticed}`;
             + `physician could still close and ${here.woundsPastMortalCare} past what mortal `
             + `care reaches. `
             + (here.practisesAMethod
-        // ── AND THE GATES ────────────────────────────────────────────────
-        //
-        // Same gate, same shape, different half of the map. A house's ground is
-        // where the people worth asking actually stand - measured on 5 seeds,
-        // every one of the 88 cultivators at Foundation Establishment and above
-        // is on one - and until it appeared here the read that answers "where
-        // can I go" could not name a single one of the 34.
-        //
-        // Counted into `unnamed` when the gate refuses, exactly like quiet
-        // ground. That counter reaches the engine channel and never the prose,
-        // which is right: `unplaceable` is the player-facing "and two further
-        // names you cannot place", and it is about names they HOLD. A gate they
-        // have never been told about is not a name they are carrying, and
-        // saying "there are eight things here you cannot see" would advertise
-        // the discovery instead of gating it.
-        for (const record of this.housesWithGroundIn(fromRegion.name)) {
-            if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
-            if (!this.canPointAtLocation(cultivator, record)) {
-                unnamed++;
-                continue;
-            }
-            remember({
-                name: record.name,
-                kind: record.kind,
-                ambient: ordinaryBandFor(record.qiDensity),
-                regionName: fromRegion.name,
-                travelDays: null,
-                localCeilingOrdinal: fromRegion.localCeilingOrdinal,
-                hereNow: loosePlaceKey(record.name) === loosePlaceKey(cultivator.location ?? ''),
-                sameProvince: true,
-                ...this.occupancyOf(record.name)
-            });
-        }
-
                 ? (here.methodExhausted
                     ? 'The method being practised has stopped carrying them.'
                     : 'The method being practised is still carrying them.')
@@ -12048,42 +11925,6 @@ ${fit.line}`;
         // believes they spent something.
         //
         // The resolver's own contract has carried `stonesOffered` from the
-    /**
-     * The gates of the houses that hold ground in one province.
-     *
-     * WHY THIS IS A SEPARATE READ FROM `quietGroundIn`. That one lists ground
-     * nobody holds and is filtered on `discovered`, which is true of all of it
-     * on a fresh world - local geography, and a farm child knows where the
-     * caves are. A sect's ground is the opposite case in both halves. It is
-     * seeded `discovered: false` on purpose, because its own header says so:
-     * "A name you have to be given. Joining gives it; being told gives it;
-     * asking in the region gives it." So the `discovered` flag is not the gate
-     * here; the caller's `canPointAtLocation` is, and this read is deliberately
-     * permissive so that the gate is the only thing deciding.
-     *
-     * WHY IT EXISTS AT ALL. `sectGroundId` had exactly two references in `src/`
-     * - its own definition and the one line that builds the location - which is
-     * the shape `AGENTS.md` calls a module nothing calls. 34 seats, each with a
-     * generated compound inside it, road-linked to their province, and no
-     * player-facing read in the game named one. The listing said "Knowing a
-     * name is not an introduction. Somebody would have to put you in front of
-     * them, or you would have to walk up on your own" and there was nothing to
-     * walk up to.
-     *
-     * Sorted by name rather than by qi: this is a list of doors, and which door
-     * is worth knocking on is not a question about ground.
-     */
-    private housesWithGroundIn(regionName: string): LocationRecord[] {
-        if (!this.atHand) return [];
-        const region = this.atHand.locations.find(
-            row => row.kind === 'region' && loosePlaceKey(row.name) === loosePlaceKey(regionName)
-        );
-        if (!region) return [];
-        return this.atHand.locations
-            .filter(row => row.kind === 'sect_seat' && row.parentId === region.id)
-            .sort((a, b) => (a.name < b.name ? -1 : 1));
-    }
-
         // start, documented as "spirit stones actually put down. Only spent
         // when the attempt lands", and this caller never filled it. So the sum
         // comes off the player's own sentence, which is where it belongs: what

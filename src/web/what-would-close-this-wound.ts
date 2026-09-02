@@ -56,7 +56,8 @@
  */
 
 import { PILLS } from '../data/cultivation/pills.js';
-import { PRICES } from '../data/cultivation/mortal-world.js';
+import { cashToStones, PRICES } from '../data/cultivation/mortal-world.js';
+import { localPrice } from '../data/cultivation/regions.js';
 import {
     medicineNeededFor,
     medicineRank,
@@ -71,14 +72,33 @@ export interface TheCure {
     name: string;
     grade: TechniqueGrade;
     /**
-     * What the board asks, in spirit stones, or null where money is not the
-     * medium.
+     * What a counter HERE asks, in spirit stones, or null where money is not
+     * the medium.
      *
-     * Deliberately the BOARD's figure and not a local one: this is the sentence
-     * "there is a thing that would work and it costs about this", said before
-     * the player walks to a counter. `buy` applies `localPrice` and quotes the
-     * real number, and the two are allowed to differ - what must never happen
-     * is this file inventing a price of its own.
+     * ── This field used to be the board figure, and that was wrong ────────
+     *
+     * It said so in its own docstring: deliberately the BOARD's price and not a
+     * local one, on the reasoning that this is the sentence "there is a thing
+     * that would work and it costs about this", said before the player walks to
+     * a counter, and that `buy` quoting a different number was a difference the
+     * two surfaces were allowed to have.
+     *
+     * They are not allowed to have it, and the reason is the field below.
+     * `affordable` is a claim about THIS PURSE against THIS PRICE, and a purse
+     * is only ever spent at a real counter - so an "about" that is not the
+     * number the counter charges makes the affordability line a falsehood
+     * rather than an approximation. Measured in the Quiet Marches, whose
+     * multiplier is 2.2: the advice read "about 420 spirit stones. You are
+     * carrying enough for one" and `buy` then asked 924. Pre-existing, and
+     * invisible until a catalog row put it on a large enough absolute number to
+     * be noticed.
+     *
+     * So this is `localPrice` at the region the cultivator is standing in,
+     * rounded up the same way `buy` rounds, and the two surfaces now agree by
+     * construction rather than by coincidence. What has NOT changed is the rule
+     * the old note was protecting: this file still invents no price of its own,
+     * it reads the board and applies the region multiplier the board is already
+     * charged through.
      */
     stones: number | null;
     /**
@@ -142,7 +162,7 @@ function whatSomebodyWouldGoAndGet(
  * Marrow-Washing Pill, which is the earth-grade answer an ordinary tear on a
  * Core Formation body needs and had never been quoted anywhere.
  */
-function boardPrice(pill: Pill): number | null {
+function boardPrice(pill: Pill, regionId: string): number | null {
     const row = PRICES.find(price => price.name === pill.name);
     if (!row) return null;
     // The board is in cash and the purse is in stones, at the rate the whole
@@ -150,7 +170,14 @@ function boardPrice(pill: Pill): number | null {
     // ("Sixty stones" beside 6,000 cash), and rounding UP is the direction a
     // quote may be wrong in: a player must never be told a figure lower than
     // what they will be charged.
-    return Math.max(1, Math.ceil(row.cash / 100));
+    //
+    // `localPrice` and `Math.ceil(cashToStones(...))` are the two calls `buy`
+    // makes, in the order `buy` makes them, deliberately: any other arithmetic
+    // here - the board figure scaled afterwards, say, or rounding before the
+    // multiplier - produces a number that is off by one somewhere and puts the
+    // quote and the charge back into disagreement over exactly the rows nobody
+    // checks.
+    return Math.max(1, Math.ceil(cashToStones(localPrice(regionId, row.cash))));
 }
 
 /**
@@ -162,7 +189,14 @@ function boardPrice(pill: Pill): number | null {
 export function whatWouldCloseThisWound(
     untreated: readonly Injury[],
     realmOrdinal: number,
-    spiritStones: number
+    spiritStones: number,
+    /**
+     * Where the asking is being done. Required rather than defaulted: a
+     * defaulted region is how the quote and the charge came to differ in the
+     * first place, and a caller that has a cultivator has a region -
+     * `standingOf(cultivator).regionId` is the whole of it.
+     */
+    regionId: string
 ): TheCure | null {
     if (untreated.length === 0) return null;
 
@@ -177,7 +211,7 @@ export function whatWouldCloseThisWound(
     if (!pill) return null;
 
     const notForSale = cashRefusalReason(pill);
-    const stones = notForSale === null ? boardPrice(pill) : null;
+    const stones = notForSale === null ? boardPrice(pill, regionId) : null;
 
     return {
         name: pill.name,
@@ -213,7 +247,11 @@ export function whatToSayAboutTheCure(cure: TheCure): string {
     if (cure.stones === null) {
         return `What closes ${wound} is a ${cure.name}. Nothing on any board here quotes one.`;
     }
-    return `What closes ${wound} is a ${cure.name}, about ${cure.stones} spirit stones. `
+    // "about N spirit stones" was the old wording and it is retired with the
+    // board price it went with: the figure is now what a counter in this
+    // province actually charges, and hedging an exact number invites the reader
+    // to expect the difference somewhere else.
+    return `What closes ${wound} is a ${cure.name}, ${cure.stones} spirit stones at a counter here. `
         + (cure.affordable
             ? 'You are carrying enough for one.'
             : 'You are not carrying enough for one, which is a thing that can be changed.');
