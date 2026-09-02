@@ -5177,8 +5177,33 @@ ${noticed}`;
                 // CAUSE is `known`, which has to be found out from somebody who
                 // has it. Walking into a famine does not tell you why.
                 const stageHere = this.knowledge.stageOf(cultivator.id, 'place', row.id);
+                // ── AND STANDING IN A THING IS ENCOUNTERING IT ───────────
+                //
+                // The cap above was right and half of a rule. `encountered`
+                // is the ladder's own word for *they have been in it, so they
+                // have the signs*, and somebody looking at the ground under
+                // their own feet has been in it - so the stage is FLOORED
+                // there as well as capped there, for the place they are
+                // actually standing on.
+                //
+                // Without the floor the read was gated on a knowledge row
+                // nothing grants for standing still, so a player could walk
+                // into a famine, examine the province, and be told nothing was
+                // wrong - over a status that was stopping the food,
+                // quadrupling the prices and adding to the danger the whole
+                // time. What a status DOES has never depended on anybody
+                // knowing about it; what this fixes is the half that does.
+                //
+                // Only where they are. Asking after somewhere else is asking,
+                // and asking is what the ordinary ladder is for.
+                const standingHere = placeName(cultivator) === row.name
+                    || this.worldPlaceOf(cultivator) === row.id;
+                const floored: KnowingStage = standingHere
+                    && stageRank(stageHere) < stageRank('encountered')
+                    ? 'encountered'
+                    : stageHere;
                 const capped: KnowingStage =
-                    stageRank(stageHere) > stageRank('encountered') ? 'encountered' : stageHere;
+                    stageRank(floored) > stageRank('encountered') ? 'encountered' : floored;
                 const wrong = whatIsGoingOnHere(
                     this.atHand.statuses, this.atHand.locations, row.id, day, () => capped
                 ).flatMap(reading => reading.lines);
