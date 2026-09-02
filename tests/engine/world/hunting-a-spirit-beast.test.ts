@@ -36,6 +36,7 @@ import {
     requireBeastMaterial,
     materialsOf
 } from '../../../src/data/cultivation/beasts.js';
+import { keptAs } from '../../../src/engine/world/possessions.js';
 
 const OPEN = { sealed: false, onAVein: false };
 const VEIN = { sealed: false, onAVein: true };
@@ -220,9 +221,32 @@ describe('counted or tracked, per items.md', () => {
         expect(requireBeastMaterial('mat-dragon-scale').core).toBe(false);
     });
 
-    it('raises the bookkeeping with the grade', () => {
+    /**
+     * RE-DERIVED, because the old bar asserted the opposite of the test above
+     * it. It read `notable` for earth grade - "raises the bookkeeping with the
+     * grade" - while `howAMaterialIsStored` two tests up says earth is COUNTED,
+     * and `possessions.ts` documents `mundane` as the marker for a thing that
+     * gets no provenance at all. So a tiger pelt was a counted thing that
+     * `keptAs` and `isTracked` both answered "tracked" about.
+     *
+     * Bookkeeping does not rise smoothly with grade. It STEPS ONCE, at the
+     * counted/tracked line, and then grades within the tracked side - which is
+     * exactly the shape `significanceOfPill` and `significanceOfDose` already
+     * have, and `significanceOf` now derives from `howAMaterialIsStored` so the
+     * two cannot part again.
+     */
+    it('steps once at the counted line, then grades within the tracked side', () => {
+        for (const m of BEASTS.flatMap(b => materialsOf(b.id))) {
+            expect(
+                keptAs(significanceOf(m)),
+                `${m.id} is ${m.grade} and its two answers disagree`
+            ).toBe(howAMaterialIsStored(m) === 'counted' ? 'counted' : 'tracked');
+        }
+        // A pelt off a hare and a pelt off a tiger are both a number in a
+        // pouch. Neither is worth a story, and the tiger is not worth one for
+        // being a tiger.
         expect(significanceOf(requireBeastMaterial('mat-hare-pelt'))).toBe('mundane');
-        expect(significanceOf(requireBeastMaterial('mat-tiger-pelt'))).toBe('notable');
+        expect(significanceOf(requireBeastMaterial('mat-tiger-pelt'))).toBe('mundane');
         expect(significanceOf(requireBeastMaterial('mat-tiger-core'))).toBe('significant');
         expect(significanceOf(requireBeastMaterial('mat-dragon-core'))).toBe('legendary');
     });

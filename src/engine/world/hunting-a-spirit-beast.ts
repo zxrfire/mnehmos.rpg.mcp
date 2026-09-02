@@ -567,14 +567,21 @@ export function howAMaterialIsStored(material: BeastMaterial): HarvestShape {
         : 'tracked';
 }
 
-/** How much bookkeeping the world keeps on one of these. */
+/**
+ * How much bookkeeping the world keeps on one of these.
+ *
+ * DERIVED FROM {@link howAMaterialIsStored} rather than written out beside it,
+ * because the two used to disagree: earth grade is stored as a count and was
+ * filed `notable`, which `possessions.ts` reads as a row with a provenance.
+ * `mundane` is the documented marker for a thing that gets none, so a counted
+ * material filed above it is a counted thing that answers `isTracked` with yes.
+ *
+ * The same shape as `significanceOfPill` and `significanceOfDose`: one
+ * threshold, both consequences, and nothing here that can drift from it.
+ */
 export function significanceOf(material: BeastMaterial): ObjectSignificance {
-    switch (material.grade) {
-        case 'mortal': return 'mundane';
-        case 'earth': return 'notable';
-        case 'heaven': return 'significant';
-        default: return 'legendary';
-    }
+    if (howAMaterialIsStored(material) === 'counted') return 'mundane';
+    return material.grade === 'heaven' ? 'significant' : 'legendary';
 }
 
 export interface TakenMaterial {
