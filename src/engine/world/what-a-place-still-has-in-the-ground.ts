@@ -735,11 +735,16 @@ export function howTheGroundReads(place: LocationRecord, onDay: number): string 
  * Said out loud by the hunt, because a player who is suddenly meeting worse
  * things deserves to know they did it.
  *
- * NOT YET READ BY THE DRAW. `whatIsOnThisGround` still offers the whole
- * reachable pool whatever this says, so the sentence is currently ahead of the
- * mechanic: the district reports that it has been hunted out and then turns up
- * a hare anyway. Closing that means `GroundForBeasts` carrying the fact, which
- * is `hunting-a-spirit-beast.ts`'s call to make.
+ * AND IT IS NOW A CAUSE RATHER THAN ONLY A SENTENCE. `tidesWhereTheGameWent`
+ * in `what-goes-wrong-with-a-place-and-what-ends-it.ts` reads this, and ground
+ * that has been hunted out and still has people standing on it carries a
+ * status with the danger on it and the signs a gatherer would notice.
+ *
+ * WHAT IS STILL AHEAD OF THE MECHANIC. `whatIsOnThisGround` offers the whole
+ * reachable pool whatever this says, so the district reports that it has been
+ * hunted out and then turns up a hare anyway. Closing that means
+ * `GroundForBeasts` carrying the fact, which is `hunting-a-spirit-beast.ts`'s
+ * call to make.
  */
 export function theOrdinaryAnimalsAreGone(place: LocationRecord, onDay: number): boolean {
     return standingStock(place, 'beast_material', 'mortal', onDay).reading === 'worked_out';
