@@ -1077,6 +1077,36 @@ what the participants are trying to do, not because the engine stopped keeping s
 And the tell that you are banning is a refusal with no cost attached. A world that says no is
 smaller than a world that says *"yes, and it went badly, and here is who saw."*
 
+#### The one exception: madness takes the choice, because the character lost it
+
+**A mad cultivator does not act. Things are narrated as having happened.** The player reads what
+they did; they did not choose it and they cannot veto it.
+
+That is the rule above inverted, and it is the only place it should be. The reason it is
+principled rather than the banning this entry forbids: **everywhere else, taking the verb away
+lies about the world** - the player could have tried and the engine pretended otherwise. **Here,
+keeping the verb would be the lie.** The character has no agency; the player losing the choice
+is the honest rendering of that, not a punishment applied to them.
+
+Two things keep it honest, and neither is optional:
+
+- **The outcomes are not only bad.** The owner's framing is that you may not like it one bit -
+  *and* that you might run into a ruin in your madness and come out rich. A mad stretch must be
+  genuinely uncertain rather than a debuff with prose on it. Somebody who walks through a gate a
+  careful person would have measured first is the shape: several of those gates ask for
+  something that is not power.
+- **The decision moves upstream, it does not vanish.** What the player still chooses is whether
+  to risk the heart demon at all, and what to do about the state once they are in it. If a run
+  can enter madness with no prior decision that led there, this has become a random punishment
+  and the exception no longer applies.
+
+**Do not confuse this with the engine deciding on a lucid character's behalf**, which is a
+defect and has been fixed as one. The seclusion interrupt used to narrate a real dilemma -
+*going costs the stretch; staying means being found* - and then resolve it silently. Same
+surface, opposite verdict: there the character had a choice and the engine took it; here the
+character has none and the engine saying so is the truth. **The test is not whether the player
+chose. It is whether the character could have.**
+
 ### Commit with a pathspec, never a bare `git commit`
 
 Every agent on this tree shares one git index. A bare `git commit` commits **whatever is
