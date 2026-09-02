@@ -681,6 +681,60 @@ The masking is three nulls on `CrowdingRead` rather than a parallel type, becaus
 the client already renders a headcount where `share` is not a number. The null
 *is* the gate, and there is no second rendering path to keep in step.
 
+### And geography is perceived on the same principle
+
+> *"at higher ranks you should just be able to fly and look around. why should the
+> entire thing be dependent on asking? that's a mortal's POV."*
+
+[`what-you-can-see-from-up-there.ts`](what-you-can-see-from-up-there.ts) generalises the
+paragraph above from a measurement to the map. Consumed by `destinations`, which now
+answers with two channels kept visibly apart: what was said to you, and then what you can
+see.
+
+**Perception gives you the world. It does not give you people.** You can see the mountain;
+you cannot see whose mountain it is. Terrain, distance, bearing, what the ground carries
+and whether anything is standing on it are physical and are perceived. A name, a holder, a
+house, a province's ceiling stay behind the knowledge gate at every rung.
+
+The enforcement is in the type: **`Sighting` has no name field**, so the module cannot leak
+one because it is never handed one. A change that wants to print a name up there has to add
+a field and argue for it.
+
+One scale and no rungs in it. A height buys **one number** - how far a thing can be and
+still be made out, in the travel days the gazetteer prices roads in - and everything else
+is `distance <= horizon`. Zero below ordinal 15 (`gale-riding-sword-flight`, the catalog's
+own first flight), the near provinces at 22 (`thousand-li-cloud-tread`), the whole world by
+Deity Transformation, which the curve reaches on its own rather than by arrangement. It
+saturates against the map, so nothing needs a cap.
+
+### A question with weight behind it is not a question
+
+> *"you can DEMAND knowledge. whether it succeeds is whether people respect you - either
+> via power or something else."*
+
+The third channel, and it is **an ask with a different subject and no resolver of its
+own**. `interact` routes a topic + an attempt intent to `demandOf`, which reads the
+ordinary ask for its verdict and then hands the whole thing to `resolveAttempt` - the same
+call a bribe and a threat go through, already pricing standing, charm, the tie, the ledger,
+grudges, what they want from you, the room and how freely that person parts with anything.
+[`making-somebody-tell-you.ts`](making-somebody-tell-you.ts) owns the register and decides
+no outcome.
+
+Three things it must keep getting right:
+
+- **It reaches limits two and three and never limit one.** `askedAbout` takes a `compelled`
+  flag and reads it BELOW the "could they know" test, so *somebody who does not know cannot
+  be made to know* is enforced by the position of a branch rather than by a rule. That
+  refusal is taken before the resolver runs - no day, no mark, no grudge - and reads
+  nothing like being turned down.
+- **A failed demand is not a failed ask.** Being refused costs a day. Being *corrected in
+  public about what you are worth* is the other thing, and the sentence says so, because a
+  cost nobody can see is not being charged.
+- **A bare demand is backed by `name`** - the asker's own reputation - and never by `force`,
+  which is a threat and is a different sentence the parser already labels. Found by playing:
+  without it every demand went to the resolver at `leverage: none` and the ruling's first
+  half was not being read at all.
+
 ### `recall` resolves against the holder, never against the world
 
 The one target resolution in this package that does **not** consult a catalog. "What do I

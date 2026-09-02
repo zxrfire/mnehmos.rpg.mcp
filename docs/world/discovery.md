@@ -7,6 +7,29 @@ How the player learns the world is bigger than they thought, and the rule that p
 Read with [understanding.md](understanding.md) (access gates comprehension) and
 [sects.md](sects.md).
 
+## Three ways in, and they are different questions
+
+<!-- tier: 2 trigger="the player asks what lies beyond what they have already met" -->
+
+Most of this document is about the first of these, and for most of a cultivator's life
+that is correct. It is not the whole of it.
+
+| | What it is gated on | What it yields |
+|---|---|---|
+| **Being told** | proximity, and whether they are willing | names, and everything a name carries |
+| **Seeing** | your rung | the world, and nothing that lives in it |
+| **Demanding** | your standing, and whether they can refuse you | what one person will say, under pressure |
+
+The second was missing, and its absence had shaped the whole design:
+
+> *"at higher ranks you should just be able to fly and look around. **why should the
+> entire thing be dependent on asking? that's a mortal's POV.**"*
+
+Which is right. Everything below this section is an account of how the world reaches a
+farm child at Qi Condensation Layer 1, and for that person it is exact and load-bearing.
+It is the wrong account of somebody who can leave the ground. **A Void Refinement
+cultivator does not need a carter to mention that there is a mountain over there.**
+
 ## Sections
 
 <!-- tier: 3 -->
@@ -14,6 +37,8 @@ Read with [understanding.md](understanding.md) (access gates comprehension) and
 | Section | Loads when |
 |---|---|
 | [You do not start knowing what exists](#you-do-not-start-knowing-what-exists) | the player asks what lies beyond what they have already met |
+| [What you can see, which is not what you have been told](#what-you-can-see-which-is-not-what-you-have-been-told) | the player is above Foundation and asks what is around them |
+| [Making somebody tell you](#making-somebody-tell-you) | the player puts weight behind a question |
 | [The ladder of knowing](#the-ladder-of-knowing) | the player learns of something new, or their grasp of it is in question |
 | [Encountering something from above](#encountering-something-from-above) | the player meets something plainly beyond their stratum |
 | [The hard rule for the narrator](#the-hard-rule-for-the-narrator) | the narrator is about to name a place, house, or person |
@@ -32,6 +57,140 @@ whatever their grandmother believed.
 
 This is not ignorance to be corrected. It is the accurate state of almost everyone, and
 the world is *designed* so that most people die in it.
+
+## What you can see, which is not what you have been told
+
+<!-- tier: 2 trigger="the player is above Foundation and asks what is around them" -->
+
+**Perception gives you the world. It does not give you people.**
+
+You can see the mountain. You cannot see whose mountain it is.
+
+| Physical, and a high cultivator perceives it | Social, and it stays behind the gate above |
+|---|---|
+| That there is a settlement in that valley | What it is called |
+| How far away it is, and which way | Whose it is, and what house runs it |
+| What the ground under it carries | How far that province carries anybody |
+| Whether anything is standing on it | Who is standing on it |
+| What a compound looks like from outside | That it is a sect at all |
+
+This is not a new principle. It is one the setting already holds, pointed at geography:
+**an object's nature is realm-gated perception and its provenance is proximity-gated.**
+Somebody high enough can tell a relic is genuine anywhere in the world, and no amount of
+altitude tells them whose ancestor carried it.
+
+### Flight already existed, and it is not a realm grant
+
+Worth stating because the temptation on reading the ruling is to mint one, and there is
+nothing to mint. Flight is in the technique catalog and nowhere else:
+
+```text
+gale-riding-sword-flight   ordinal 15   "the first true flight most cultivators achieve"
+thousand-li-cloud-tread    ordinal 22   "sustained flight at the height where the air
+                                         thins and the birds stop"
+'no flight'                             a local law a place may declare
+```
+
+So the honest reading is the catalog's own - **leaving the ground is a Foundation-era
+capability and real altitude is a Nascent Soul one** - and that is what the perceptual
+channel is keyed on. It is deliberately not gated on holding either art: the description
+says *most cultivators achieve*, so keying on a technique id would turn a universal
+capability into one house's privilege, and gating perception behind something a player has
+to be told about would rebuild the exact problem this exists to fix, one layer down.
+
+### One scale, and no rungs in it
+
+What a height buys is **one number**: how far away a thing can be and still be made out,
+in the travel days the gazetteer already prices roads in. Everything else is
+`distance <= horizon`. A tenth thing visible at a tenth height needs no branch, because
+there are no branches on height at all.
+
+Where it lands, read against the roads that actually exist:
+
+```text
+below 15         nothing. The next ridge, and the sky behind it
+15               your own province, and nothing past it - the shortest road is six days
+22               the near provinces. Not the ones seventeen and thirty-four days out
+26               the whole world
+```
+
+It saturates against the map rather than against a constant, so nothing has to be capped
+and nothing has to be maintained. That the world closes at Deity Transformation was not
+arranged: the cultivation README already claims *"spiritual perception extends across a
+region rather than a field"* for that realm, and the curve arrives there on its own.
+
+**The gate scales; it does not vanish.** Below the floor the read returns nothing at all,
+and says so, and says what would change it. And what a cultivator at the top of the ladder
+gets is still shapes on ground, a bearing and a distance - **never the catalog.** The list
+of everything that exists stays something the world has to say out loud.
+
+`src/web/what-you-can-see-from-up-there.ts` owns this, and the enforcement is in the type
+rather than in a rule: a `Sighting` has no name field, so the module cannot leak one
+because it is never handed one.
+
+### What the engine has no answer for yet
+
+**The awareness ladder below has no rung for what perception produces.** It runs
+`unaware -> whisper -> named -> placed`, which assumes the name arrives first and is then
+located. Seeing inverts that: you know exactly where a thing is and have no idea what it
+is called. There is currently nowhere to record that, so a sighting is a read and not a
+knowledge row, and **a player cannot yet set out for something they have only seen.** The
+setting already knows what that would look like - a Blown Ground finder *"sells the
+location once and does not lead the buyer to it; the buyer takes the direction and the
+distance and finds it themselves"* - so the shape exists and the machinery does not.
+
+## Making somebody tell you
+
+<!-- tier: 2 trigger="the player puts weight behind a question" -->
+
+> *"you can **DEMAND** knowledge. whether it succeeds is whether people respect you -
+> either via power or something else."*
+
+**A demand is not a politer ask with a louder voice, and it is not a second system.**
+Asking depends on somebody being willing. Demanding depends on their being unable, or
+unwilling, to refuse - and what decides that is already modelled in full: the gap in
+standing, charm, the tie they hold, what is owed your way, what grudges they carry, what
+they want from you, who is watching, and how freely that particular person parts with
+anything.
+
+That list is what *"either via power or something else"* means, and **the something else
+is most of it.** An elder at no great rung who is owed a great deal can demand
+successfully. A strong stranger with a bad name may not.
+
+### It does not bypass the gate. It changes who opens it
+
+[`asking.md`](asking.md) gives three limits, and a demand can reach two of them:
+
+```text
+1  what this person could know          UNREACHABLE. No amount of standing moves it
+2  what they are placed to say          reachable
+3  what saying it would cost them       reachable
+```
+
+> **Somebody who does not know cannot be made to know, however far above them you stand.**
+
+And that refusal must **read differently** from an unwilling one, or the two collapse and
+the whole channel becomes a coin flip. It does, and it is refused before anything is
+resolved - no day spent, no attempt recorded, no grudge - because leaning on somebody
+about a thing they have never heard of could not have worked.
+
+### And a failed demand is not a failed ask
+
+Being turned down costs a day. **Leaning on somebody and being told no is a different
+event**: you have said out loud what you believe your standing to be, been corrected, and
+there were people in the room.
+
+The funnier half, and the one that teaches the mechanic fastest: **leaning on somebody who
+was going to tell you anyway is a pure loss.** You get the answer, you spend the days and
+the marks, and they have noticed which of the two you thought was necessary.
+
+One more property, which falls out rather than being imposed: somebody with a position who
+is *made* to answer gives the minimum. **You can make a person tell you, and what you get
+is the least they can get away with saying** - less than turning up twice would have got
+you for nothing.
+
+`src/web/making-somebody-tell-you.ts` owns the register. Nothing in it decides an outcome:
+`resolveAttempt` does, and it is the same call a bribe and a threat go through.
 
 ## The ladder of knowing
 
@@ -110,6 +269,14 @@ The knowledge layer already models exactly this: what is true, what a person kno
 believes, suspects, and what the public believes are separate. Awareness of *existence* is
 a knowledge record like any other. There is no new machinery here - only the discipline
 not to spend it.
+
+**And the perceptual channel does not soften this rule by one word.** A cultivator who can
+see a compound from the air has seen a compound. They have not learned a name, and the
+narrator still may not supply one - not as colour, not in passing, not because the
+sentence wants it. What the engine hands over up there is a shape, a bearing and a
+distance, and the correct narration of it is a shape, a bearing and a distance. If a
+paragraph about something seen from height contains a proper noun, the rule has been
+broken in the one place it is easiest to break it and hardest to notice.
 
 ## Why this is the payoff
 

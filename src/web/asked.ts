@@ -73,6 +73,28 @@ export interface AskedInput {
      * acquisition the world declined to make.
      */
     speakerName: string | null;
+    /**
+     * Whether standing has already overridden their unwillingness.
+     *
+     * The one hook a DEMAND has into this file, and it is deliberately the
+     * smallest one that could work. asking.md's three limits are what a person
+     * asked politely runs into; a demand is the same question with weight
+     * behind it, and weight can only ever move the SECOND and THIRD of them -
+     * what they are placed to say and what saying it would cost.
+     *
+     * It cannot move the first, and the guarantee is structural rather than
+     * remembered: limit one is tested above the branch this flag is read in, so
+     * a compelled answer from somebody who does not know the answer is not a
+     * case anybody has to think about. It cannot be reached.
+     *
+     *   > "Somebody who does not know the answer cannot be made to know it,
+     *   >  however far above them you stand."
+     *
+     * Set by `making-somebody-tell-you.ts` off a landed `resolveAttempt`, and
+     * by nothing else. This file decides nothing about whether the demand
+     * worked - it is told.
+     */
+    compelled?: boolean;
 }
 
 export interface Answer {
@@ -97,6 +119,15 @@ export interface Answer {
      * telling you everything else.
      */
     introduces: boolean;
+    /**
+     * Whether limit one was passed: could this person know it at all.
+     *
+     * Exposed because a demand has to be able to tell the two refusals apart
+     * before it spends anybody's day on an attempt. Leaning on somebody who is
+     * withholding is a thing that can work; leaning on somebody who has never
+     * heard of it is not, and the two must not read alike.
+     */
+    couldKnow: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -287,6 +318,7 @@ export function askedAbout(input: AskedInput): Answer {
             if (!subject) {
                 return {
                     reach: 'deflects',
+                    couldKnow: false,
                     lines: [pick(UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
                     structure: [
                         ...structure,
@@ -299,6 +331,7 @@ export function askedAbout(input: AskedInput): Answer {
             }
             return {
                 reach: 'blank',
+                couldKnow: false,
                 lines: [pick(BLANK_LINES, who, input.rawTopic, asked.id)],
                 structure: [...structure, 'Reach: blank. Above their stratum, and placed to say nothing.'],
                 teaches: false,
@@ -307,6 +340,7 @@ export function askedAbout(input: AskedInput): Answer {
         }
         return {
             reach: 'guesses',
+            couldKnow: false,
             lines: [pick(GUESS_LINES, who, input.rawTopic, asked.id)],
             structure: [...structure, 'Reach: guesses. Above their stratum, nothing to protect, so they fill it.'],
             teaches: false,
@@ -314,16 +348,33 @@ export function askedAbout(input: AskedInput): Answer {
         };
     }
 
-    if (holdsPosition && goodwill < 2) {
+    // ── limit three, and the one a DEMAND can reach ──
+    //
+    // They know it and the account they owe costs more than the telling. That
+    // is a judgement about what saying it is worth to them, and a judgement is
+    // exactly the kind of thing weight moves - which is the whole of what
+    // `compelled` is for. Note where the flag is read: BELOW limit one, so it
+    // has already been established that there is something here to be got out
+    // of them. Somebody who does not know cannot be leaned into knowing, and
+    // that is enforced by the position of this branch rather than by a rule.
+    if (holdsPosition && goodwill < 2 && !input.compelled) {
         // Warm, useless, and not a refusal - a deflection has to be survivable
         // or the player learns to stop asking rather than learning who to ask.
         return {
             reach: 'deflects',
+            couldKnow: true,
             lines: [pick(DEFLECT_LINES, who, input.rawTopic, asked.id)],
             structure: [...structure, 'Reach: deflects. Knows it; the account they owe costs more than the telling.'],
             teaches: false,
             introduces: false
         };
+    }
+    if (input.compelled) {
+        structure.push(
+            'Compelled: the account they owe was outweighed, so limit two did not bite. '
+            + 'Limit one was passed before this was read - nothing here can make somebody know '
+            + 'a thing they do not.'
+        );
     }
 
     if (!subject) {
@@ -334,6 +385,7 @@ export function askedAbout(input: AskedInput): Answer {
         // to tell that it was worthless.
         return {
             reach: 'guesses',
+            couldKnow: true,
             lines: [pick(UNATTACHED_UNPLACEABLE_LINES, who, input.rawTopic, asked.id)],
             structure: [
                 ...structure,
@@ -350,11 +402,19 @@ export function askedAbout(input: AskedInput): Answer {
     //
     // The substance is the subject's own observable facts, unchanged. This
     // layer decides whether they were said, never what they are.
+    //
+    // `compelled` is deliberately absent from this line, and the consequence is
+    // worth having rather than an oversight: somebody with a position who was
+    // MADE to answer lands on `partial` - the first fact and no more, and "that
+    // is as far as it goes". So a demand that works still gets less out of
+    // somebody than turning up twice does. You can make a person tell you, and
+    // what you get is the least they can get away with saying.
     const full = !holdsPosition || goodwill >= 2;
     const said = full ? subject.facts : subject.facts.slice(0, 1);
 
     return {
         reach: full ? 'answers' : 'partial',
+        couldKnow: true,
         lines: [
             `${who} names ${subject.name}.`,
             ...said,

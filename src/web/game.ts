@@ -393,6 +393,26 @@ import { transmissionsBy } from '../data/cultivation/techniques.js';
 import { createObligation, settleObligation } from '../engine/social/grudges.js';
 import type { AttemptResult } from '../engine/social-leverage/index.js';
 import { whereCouldTheyGo, type Destination } from './where-this-cultivator-could-go.js';
+// The third discovery channel: you make somebody tell you, and standing decides
+// whether that works. An ask with a different subject - there is no resolver in
+// it, and `resolveAttempt` below is the only thing that settles one.
+import {
+    WHAT_A_BARE_DEMAND_IS_BACKED_BY,
+    WHAT_A_WITHHELD_ANSWER_WEIGHS,
+    nothingToBeGotFrom,
+    whatLeaningOnThemCost,
+    whatStandsInTheWay,
+    type WhatStandsInTheWay
+} from './making-somebody-tell-you.js';
+// The perceptual half of discovery, beside the social one above it. See that
+// module's banner for the line between them: it gives the world and never
+// gives people.
+import {
+    LEAVES_THE_GROUND,
+    horizonInDays,
+    whatCanBeSeenFromUpThere,
+    type Sighting
+} from './what-you-can-see-from-up-there.js';
 // The fourth, and the one a player asks first: what kinds of thing are live at
 // all, standing here, in this state. Prompts rather than a menu - see the
 // banner in the module for why that distinction is the whole design.
@@ -3631,6 +3651,65 @@ ${noticed}`;
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
 
+        // ── A QUESTION WITH WEIGHT BEHIND IT IS NOT A QUESTION ───────────
+        //
+        //   "you can DEMAND knowledge. whether it succeeds is whether people
+        //    respect you - either via power or something else."
+        //
+        // Every one of the `askAround` short-circuits below took a topic to the
+        // polite path whatever was behind it, so "I question the elder about
+        // the Nine Peaks" and "I press him about the Sill" - attempt intents
+        // with real topics, both of which the parser produces today - were
+        // silently downgraded to requests and answered by the other party's
+        // willingness alone. The player's standing, the ledger, what they are
+        // owed and every other term the pressure model prices had no bearing
+        // whatever on whether they found anything out.
+        //
+        // Asked FIRST, ahead of all three, because being downgraded is the
+        // defect and each of those branches is one of the ways it happened.
+        //
+        // Routed on the set this file already means by "an attempt to move
+        // somebody". Nothing here reads `intent` to decide an OUTCOME: what
+        // settles a demand is `resolveAttempt`, the same call a bribe and a
+        // threat go through, and there is no second resolver on this path.
+        // See `making-somebody-tell-you.ts`.
+        if (topic && topic.length >= 2 && ATTEMPT_INTENTS.has(intent)) {
+            // ── A NAME IS NOT A DESCRIPTION, AND THE DIFFERENCE IS THE WHOLE
+            //    GUARD ──
+            //
+            // Caught by `misparse.test.ts` on the first build of this branch,
+            // which is the test that exists for exactly this mistake: "I ask
+            // the Hollow Court about the crossing", from somebody who has never
+            // heard of the Court, got re-aimed at whoever was standing nearest.
+            // A name that resolves to nothing must NOT substitute a bystander -
+            // the refusal below owns that case and has to keep owning it.
+            //
+            // So the same three shapes the polite path already separates, on
+            // the same predicate: nothing said, a POINTING phrase, or a name.
+            // Only the first two may reach for whoever is at hand.
+            const atHand = this.present(cultivator);
+            const namedParty = query.length >= 2
+                ? this.partyPutTo(cultivator, query, scope)
+                : null;
+            const mayReachForABystander = query.length < 2 || POINTING.test(query);
+            const who = namedParty
+                ? atHand.find(row => row.id === namedParty.id) ?? null
+                : mayReachForABystander
+                    ? atHand[atHand.length - 1] ?? null
+                    : null;
+            const leanedOn = namedParty
+                ?? (who ? this.partyPutTo(cultivator, who.name, scope, who) : null);
+            if (who && leanedOn && leanedOn.kind === 'cultivator' && leanedOn.party) {
+                return this.demandOf(
+                    run, cultivator, ambient, leanedOn, who, intent, leverage, topic, rawInput, scope
+                );
+            }
+            // Nobody here to lean on, or a name that resolved to nobody. Falls
+            // through deliberately: the paths below already own every refusal
+            // for a person who is not there, and duplicating one here would be
+            // a second wrong answer to keep in step with the first.
+        }
+
         // A question put to nobody in particular is still put to somebody:
         // asking around a village means asking whoever is at hand. Only
         // when a question was actually asked, though - an approach with no
@@ -3874,7 +3953,12 @@ ${noticed}`;
         cultivator: Cultivator,
         asked: RosterEntry,
         topic: string,
-        scope: KnowledgeScope
+        scope: KnowledgeScope,
+        // Set only by `demandOf`, off a landed `resolveAttempt`. See
+        // `making-somebody-tell-you.ts`: it moves what somebody is WILLING to
+        // say and can never move what they hold, and the guarantee for that is
+        // where `askedAbout` reads the flag rather than anything written here.
+        compelled = false
     ): Execution {
         // What the question was about, resolved against the same catalogs
         // everything else uses. Unresolvable is a real outcome, not an error:
@@ -3895,7 +3979,8 @@ ${noticed}`;
             holdsIt: subject !== null
                 && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
                 && this.knowledge.isAwareOf(asked.id, subject.kind, subject.id),
-            priorDealings: this.dealingsWith(cultivator, asked.id)
+            priorDealings: this.dealingsWith(cultivator, asked.id),
+            compelled
         });
 
         // Written before narration, deliberately. The alternative is a name
@@ -10755,6 +10840,11 @@ ${noticed}`;
         // this cultivator can point at the row, rather than asking whether the
         // row is one of the kinds somebody remembered to exclude.
         let unnamed = 0;
+        // Ground this cultivator cannot point at, kept as what it looks like
+        // from above it. Filled by this loop and the one after it, and read at
+        // the foot of the method. `Sighting` carries no name and no holder, so
+        // nothing social can cross into it however this pool is filled.
+        const onTheGround: Sighting[] = [];
         for (const record of this.quietGroundIn(fromRegion.name)) {
             // Named already, under its catalog id. Checked before the gate so
             // that a place already on the list is not also counted as ground
@@ -10762,6 +10852,14 @@ ${noticed}`;
             if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
             if (!this.canPointAtLocation(cultivator, record)) {
                 unnamed++;
+                const standing = this.occupancyOf(record.name);
+                onTheGround.push({
+                    kind: record.kind,
+                    bearing: fromRegion.bearing,
+                    days: null,
+                    ambient: ordinaryBandFor(record.qiDensity),
+                    inhabited: standing.occupants === null ? null : standing.occupants > 0
+                });
                 continue;
             }
             remember({
@@ -10777,6 +10875,54 @@ ${noticed}`;
             });
         }
 
+        // ── AND WHAT IS SIMPLY VISIBLE FROM UP THERE ─────────────────────
+        //
+        // The second discovery channel, and the one the design was missing.
+        // Everything above this line is somebody having SAID something: the
+        // knowledge rows, `canPointAt`, the count of names too vague to walk
+        // towards. That is the whole of how the world reached a player, and it
+        // is a mortal's account of how the world reaches anybody.
+        //
+        //   "at higher ranks you should just be able to fly and look around."
+        //
+        // So the gazetteer is walked a second time on a different question -
+        // not "have you been told about this" but "could you see it from the
+        // height you can reach" - and what comes back is physical and stripped.
+        // See `what-you-can-see-from-up-there.ts` for the line this must hold
+        // and for why `Sighting` has no name on it.
+        //
+        // Ground already on `reachable` is skipped: for a place they can point
+        // at, the read above says more and says it better, and printing the
+        // silhouette of somewhere they can already name is noise.
+        for (const region of REGIONS) {
+            const sameProvince = region.id === fromRegion.id;
+            // No stated road is not a distance. A province the catalog does not
+            // connect is left out rather than given a null that `withinSight`
+            // would read as "inside this province" - the exact fabricated-zero
+            // mistake `whereCouldTheyGo` records having made once already.
+            const days = sameProvince ? null : cost.get(region.id) ?? null;
+            if (!sameProvince && days === null) continue;
+            for (const place of region.places) {
+                const key = loosePlaceKey(place.name);
+                if (reachable.some(row => loosePlaceKey(row.name) === key)) continue;
+                if (key === loosePlaceKey(cultivator.location ?? '')) continue;
+                const standing = this.occupancyOf(place.name);
+                onTheGround.push({
+                    kind: place.kind,
+                    bearing: region.bearing,
+                    days,
+                    ambient: place.ambient,
+                    inhabited: standing.occupants === null ? null : standing.occupants > 0
+                });
+            }
+        }
+
+        const overlook = whatCanBeSeenFromUpThere({
+            ordinal: cultivator.realmOrdinal,
+            from: fromRegion.bearing,
+            onTheGround
+        });
+
         const read = whereCouldTheyGo({
             ordinal: cultivator.realmOrdinal,
             placeName: placeName(cultivator),
@@ -10788,6 +10934,23 @@ ${noticed}`;
 
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
+
+        // The two channels are kept visibly apart in the prose as well as in
+        // the code. What was said to you comes first, because it is the answer
+        // to the question; what you can see comes after it and is introduced as
+        // a different kind of knowing, so a player can tell at a glance which
+        // of their facts came from a person and which from their own eyes.
+        //
+        // Said whenever there is ground out here they cannot point at - which
+        // includes the case where the horizon is zero, because a refusal that
+        // names what would work is worth more than silence, and "you cannot get
+        // above it yet" is exactly the sentence that tells a low cultivator
+        // their map has holes and that asking is still the way to fill them.
+        if (onTheGround.length > 0) {
+            facts.lines.push('', overlook.headline, ...overlook.lines);
+            facts.prose = `${facts.prose}\n\n${overlook.headline}\n${overlook.lines.join('\n')}`;
+        }
+        facts.structure.push(...overlook.structure);
 
         const execution = this.freeAction(run, 'destinations', facts);
         execution.calls = [{
@@ -10802,6 +10965,17 @@ ${noticed}`;
                 + `catalog.`,
             ok: true
         }];
+        execution.calls.push({
+            name: 'engine.whatCanBeSeenFromUpThere',
+            action: 'destinations',
+            summary:
+                `${overlook.seen} of ${onTheGround.length} piece(s) of unnameable ground inside a `
+                + `horizon of ${horizonInDays(cultivator.realmOrdinal).toFixed(1)} travel days at `
+                + `ordinal ${cultivator.realmOrdinal}. Perception, not knowledge: no name, holder `
+                + `or ceiling crosses this channel, and below ordinal ${LEAVES_THE_GROUND} it `
+                + `returns nothing at all.`,
+            ok: overlook.seen > 0
+        });
         return execution;
     }
 
@@ -11930,6 +12104,74 @@ ${fit.line}`;
      * which is the forgiving direction: assuming somebody asked for a betrayal
      * when they asked for directions would price an afternoon as a season.
      */
+    /**
+     * A demand for something somebody knows, resolved by standing.
+     *
+     * The third discovery channel and the shortest method in it, which is the
+     * point: **there is no resolver here.** `resolveAttempt` prices the gap in
+     * standing, the charm, the tie, what is owed your way, what they want from
+     * you, the audience and how freely this particular person parts with
+     * anything, and that list IS the ruling - "either via power or something
+     * else", where the something else is most of the arithmetic.
+     *
+     * What this adds is the one thing the resolver cannot know: whether there
+     * was anything to be got in the first place. An ordinary ask is run first,
+     * unpressed, purely to read which of `asking.md`'s three limits is in the
+     * way - and a demand that runs into limit one is refused before anybody's
+     * day is spent, because standing moves what a person will SAY and never
+     * what they hold.
+     */
+    private async demandOf(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        party: ResolvedEntity,
+        who: RosterEntry,
+        intent: string,
+        leverage: ApproachLeverage | undefined,
+        topic: string,
+        rawInput: string,
+        scope: KnowledgeScope
+    ): Promise<Execution> {
+        // The unpressed reading, taken for its verdict and thrown away. Nothing
+        // is written by it: `askedAbout` is pure, and the record-writing half of
+        // `askAround` is not reached until the demand has actually resolved.
+        const subject = resolveAnything(this.repos, topic, cultivator, scope);
+        const unpressed = askedAbout({
+            asker: cultivator,
+            asked: who,
+            speakerName: this.knowledge.isAwareOf(cultivator.id, 'cultivator', who.id)
+                ? who.name
+                : null,
+            subject,
+            rawTopic: topic,
+            holdsIt: subject !== null
+                && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
+                && this.knowledge.isAwareOf(who.id, subject.kind, subject.id),
+            priorDealings: this.dealingsWith(cultivator, who.id)
+        });
+
+        const standing = whatStandsInTheWay(unpressed);
+        if (standing === 'they_do_not_know') {
+            const copy = nothingToBeGotFrom(party.name, subject?.name ?? topic);
+            return refused('engine.askedAbout', 'interact', factsForRefusal(
+                copy.headline, copy.prose, copy.structure
+            ));
+        }
+
+        // What is behind it, when the sentence named nothing. A demand with
+        // nothing else on the table is backed by the asker's own name, which is
+        // both the honest reading and the ruling's own first half. See the
+        // constant: this was measured going in at `none` and the standing term
+        // was doing nothing at all.
+        return this.pressSomebody(
+            run, cultivator, ambient, party, intent,
+            leverage ?? WHAT_A_BARE_DEMAND_IS_BACKED_BY,
+            rawInput, null,
+            { who, topic, scope, standing }
+        );
+    }
+
     private async pressSomebody(
         run: Run,
         cultivator: Cultivator,
@@ -11938,8 +12180,28 @@ ${fit.line}`;
         intent: string,
         leverage: ApproachLeverage | undefined,
         rawInput: string,
-        spoken: Hearing | null
+        spoken: Hearing | null,
+        /**
+         * Present when what is being demanded is an ANSWER.
+         *
+         * The whole of what makes a demand a demand rather than a second verb:
+         * it changes what the ask weighs and it gives the landed attempt
+         * something to actually hand over. Everything else on this path - the
+         * resolver, the days, the stones, the marks - is identical.
+         */
+        demand?: {
+            who: RosterEntry;
+            topic: string;
+            scope: KnowledgeScope;
+            standing: WhatStandsInTheWay;
+        }
     ): Promise<Execution> {
+        // What the ask weighs. A name somebody is sitting on is not a courtesy,
+        // whatever the sentence around it looked like - and the constant is
+        // read here rather than off the player's wording on purpose, because a
+        // price that moves with the phrasing is a price you can talk your way
+        // out of. See `making-somebody-tell-you.ts`.
+        const asked = demand ? WHAT_A_WITHHELD_ANSWER_WEIGHS : askWeightOf(rawInput);
         const them = party.party!;
         const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
@@ -12018,7 +12280,7 @@ ${fit.line}`;
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
             // And the fourth, which was the last term with no caller at all.
             theyWantSomethingFromYou: this.whatTheyWantOfYou(cultivator, party.id) !== null,
-            ask: askWeightOf(rawInput),
+            ask: asked,
             ...(offered === null ? {} : { stonesOffered: offered }),
             approach: {
                 // The player's own words, recorded and echoed, never parsed for
@@ -12053,6 +12315,8 @@ ${fit.line}`;
 
         const facts = factsForAttempt(cultivator, party.name, intent, result, party.facts);
         if (spoken) addHearing(facts, spoken);
+        // Whatever the answering half of a demand did, on the engine channel.
+        const demandCalls: ToolCallRecord[] = [];
 
         // ── AND WHAT, EXACTLY, DID THEY AGREE TO ─────────────────────────
         //
@@ -12068,7 +12332,31 @@ ${fit.line}`;
         // A line and not a refusal. `AGENTS.md` forbids the removed verb: the
         // approach still happens, the stones still move, and what is added is
         // the thing the player needs in order to ask for something next time.
-        if (requestPutToSomebody(rawInput) === null) {
+        //
+        // A demand takes neither branch: something WAS named, and what was
+        // named was an answer. What follows is the answer being handed over, or
+        // not, plus the sentence that makes leaning on somebody a different
+        // event from asking them.
+        if (demand) {
+            // The ordinary ask, run for real this time, with `compelled` set
+            // off what the resolver decided. Everything downstream is the
+            // untouched asking path - the knowledge write, the name that falls
+            // out of the answer, the stranger who introduced themselves by
+            // replying - so a compelled answer deposits exactly what a
+            // volunteered one does and by exactly the same route.
+            const carried = result.outcome === 'taken' || result.outcome === 'turned';
+            const answered = this.askAround(
+                run, cultivator, demand.who, demand.topic, demand.scope, carried
+            );
+            const cost = whatLeaningOnThemCost(party.name, demand.standing, result);
+
+            const said = [...answered.facts.lines, ...cost.lines];
+            facts.lines.push(...said);
+            facts.prose = [facts.prose, ...said].join('\n\n');
+            facts.structure.push(...answered.facts.structure, ...cost.structure);
+            demandCalls.push(...answered.calls);
+        }
+        if (!demand && requestPutToSomebody(rawInput) === null) {
             const unnamed =
                 `Nothing was named to go with it, so what ${party.name} agreed to or refused was `
                 + `the approach itself. Asking for a thing is "ask ${party.name} to teach me `
@@ -12106,7 +12394,7 @@ ${unnamed}`;
                 summary: whatTheAskCameTo({
                     subject: party.name,
                     kind: intent,
-                    ask: askWeightOf(rawInput),
+                    ask: asked,
                     leverage,
                     odds: result.odds,
                     terms: result.terms,
@@ -12120,7 +12408,8 @@ ${unnamed}`;
             },
             ...structureCalls(party.structure),
             ...spent.calls,
-            ...marks
+            ...marks,
+            ...demandCalls
         ];
         return execution;
     }
