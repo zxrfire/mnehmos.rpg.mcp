@@ -85,6 +85,47 @@ describe('the sentence that had no verb', () => {
     });
 });
 
+/**
+ * A player naming their own property is the NORMAL way to say this.
+ *
+ * Found in the UI against ollama, and it is the worst thing this package can
+ * produce. `I hand Tao Chunxi the purse` worked; `hand <person> my <thing>` did
+ * not, so the sentence fell through to the theft path:
+ *
+ *   > I hand Shen Liefeng my two spirit stones
+ *   The approach was labelled "steal". Shen Liefeng: countered.
+ *   Reprisal: injured. Weighed as serious robbery.
+ *
+ * A player tried to hand somebody money, was charged with robbery, took a wound
+ * for it, and came away carrying a grudge from the person they were being
+ * generous to. The bare definite article the first tests used is the LESS
+ * common phrasing; a possessive and a count is how anybody says it.
+ */
+describe('a player naming their own property', () => {
+    it.each([
+        ['I hand Shen Liefeng my two spirit stones', 'Shen Liefeng', 2],
+        ['I hand her the two stones', undefined, 2],
+        ['I give Shen Liefeng ten stones', 'Shen Liefeng', 10]
+    ] as ReadonlyArray<readonly [string, string | undefined, number]>)(
+        '%s', (said, who, count) => {
+            const plan = parseIntent(said);
+            expect(plan.action).toBe('give');
+            expect(plan.target).toBe(who);
+            expect(plan.stones).toBe(count);
+        }
+    );
+
+    it.each([
+        'I hand Shen Liefeng my manual',
+        'I give him my last stones',
+        'I hand over what I am carrying to her'
+    ])('%s is a gift and not a taking', said => {
+        const plan = parseIntent(said);
+        expect(plan.action).toBe('give');
+        expect(plan.intent).not.toBe('steal');
+    });
+});
+
 describe('a gift has no price on it', () => {
     it('is not a gift the moment the sentence says what is wanted back', () => {
         // "I give him ten stones for the manual" is a purchase. A gift with a
