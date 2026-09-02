@@ -137,7 +137,7 @@ export function migrateSocial(db: Database.Database): void {
     -- judgement, and judgements belong to the narrator reading the record.
     CREATE TABLE IF NOT EXISTS obligations (
       id TEXT PRIMARY KEY,
-      kind TEXT NOT NULL,                            -- grudge | debt | favor | oath | blood_feud
+      kind TEXT NOT NULL,                            -- grudge, debt, favor, oath, blood_feud, leverage
       holder_id TEXT NOT NULL,                       -- the aggrieved party / debtor / oath-taker
       subject_id TEXT NOT NULL,                      -- the offender / creditor / beneficiary
       cause TEXT NOT NULL,                           -- killed_kin | saved_life | sworn_brotherhood | ...
