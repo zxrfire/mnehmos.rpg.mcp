@@ -557,8 +557,9 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // need a shopping trip, and `dedupe` keeps the more urgent occurrence of a
     // line anyway.
     if (!here.aboveTheLid) {
-        if (here.peopleHereWithSomethingToSell > 0) {
-            const n = here.peopleHereWithSomethingToSell;
+        const sellers = here.peopleHereWithSomethingToSell ?? 0;
+        if (sellers > 0) {
+            const n = sellers;
             add(at(SAY.market, 'open',
                 `${n} ${n === 1 ? 'person' : 'people'} standing here would rather have stones `
                 + 'than what they are carrying. What a stall asks and what a person asks are the '
