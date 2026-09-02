@@ -32,6 +32,9 @@ import {
     listPouch
 } from '../../src/server/consolidated/cultivation-support.js';
 import { getArtifact } from '../../src/data/cultivation/artifacts.js';
+import { SECTS } from '../../src/data/cultivation/sects.js';
+import { KnowledgeGate } from '../../src/web/knowledge.js';
+import { othersPresent } from '../../src/web/hearsay.js';
 import { OBJECT_CEILING_BELOW_THE_LID } from '../../src/engine/cultivation/realms.js';
 
 const admin = async (args: Record<string, unknown>) => (await adminResult(args)) as any;
@@ -230,6 +233,158 @@ describe('ADMIN answers in the words it was addressed in', () => {
             await newRun();
             const parsed = parseAdminCommand('rostr');
             expect(parsed.action).toBe('rostr');
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    describe('a spawned person exists in the played game', () => {
+        it('is nameable, which is what makes who-is-here mention them at all', async () => {
+            const created = await newRun();
+            const result = await admin({ action: 'spawn_encounter', ordinal: 19 });
+            expect(result.error).toBeUndefined();
+
+            // The defect: the row was written correctly, at the player's exact
+            // location, alive - and `company()` in game.ts splits the people
+            // present on whether the player holds a knowledge record, so an
+            // opponent nobody had heard of rendered as an anonymous band
+            // reading. `spawn_site` had solved this for places already.
+            const gate = new KnowledgeGate(ensureCultivationDb().db);
+            const opponentId = result.opponent.id;
+            expect(gate.isAwareOf(created.cultivator.id, 'cultivator', opponentId)).toBe(true);
+            expect(gate.canPointAt(created.cultivator.id, 'cultivator', opponentId)).toBe(true);
+        });
+
+        it('stands where the player stands, so the co-location read finds them', async () => {
+            const created = await newRun();
+            await admin({ action: 'spawn_encounter', ordinal: 19 });
+            const repos = ensureCultivationDb();
+            const pc = repos.cultivators.getById(created.cultivator.id)!;
+            const here = othersPresent(repos, pc, null);
+            expect(here.some(row => row.realmOrdinal === 19)).toBe(true);
+        });
+
+        it('carries the hostility on the record, and writes no grudge for it', async () => {
+            await newRun();
+            const result = await admin({ action: 'spawn_encounter', ordinal: 19 });
+            expect(result.disposition).toBe('hostile');
+            // Answered when asked, not volunteered - and said so rather than
+            // left to be discovered.
+            expect(result.dispositionReaches.notSaid).toContain('no grudge was written');
+        });
+
+        it('names the ratio in words instead of printing twelve decimal places', async () => {
+            await newRun();
+            const result = await admin({ action: 'spawn_encounter', ordinal: 19 });
+            // 0.000244140625 was what this printed. The figure is worth keeping
+            // and the precision is worth none of it.
+            expect(String(result.gateLifted.powerRatio)).not.toMatch(/\d{6}/);
+            expect(result.gateLifted.howTheyCompare).toContain('worth about');
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    describe('a pair with the equals sign left out', () => {
+        it('reads ENCOUNTER ORDINAL 19, which named the action and lost the rung', async () => {
+            await newRun();
+            // The parser leaves the leading word as typed - the ROUTER resolves
+            // `encounter` to `spawn_encounter` through its alias table - so the
+            // thing to assert here is the argument that was being dropped, and
+            // then that the whole line really does spawn somebody.
+            const parsed = parseAdminCommand('ENCOUNTER ORDINAL 19');
+            expect(parsed.args.ordinal).toBe(19);
+
+            const result = await typed('ENCOUNTER ORDINAL 19');
+            expect(result.error).toBeUndefined();
+            expect(result.gateLifted.opponentOrdinal).toBe(19);
+        });
+
+        it('runs a value to the NEXT field, so a multi-word value needs no quoting', () => {
+            const parsed = parseAdminCommand('spawn_encounter name Yun Shizhen disposition wary');
+            expect(parsed.args.name).toBe('Yun Shizhen');
+            expect(parsed.args.disposition).toBe('wary');
+        });
+
+        it('does not let the field names become the name', () => {
+            // `grant_item ordinal 45 kind artifact` came out as
+            // `name=grant_item ordinal kind` - the field names themselves in
+            // the field the world calls somebody by.
+            const parsed = parseAdminCommand('grant_item ordinal 45 kind artifact');
+            expect(parsed.args.ordinal).toBe(45);
+            expect(parsed.args.kind).toBe('artifact');
+            expect(parsed.args.name).toBeUndefined();
+        });
+
+        it('lets an explicit key=value still win', () => {
+            const parsed = parseAdminCommand('spawn_encounter ordinal 19 ordinal=30');
+            expect(parsed.args.ordinal).toBe(30);
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    describe('the awareness gate, lifted wide', () => {
+        it('makes every place nameable as ordinary knowledge rows', async () => {
+            const created = await newRun();
+            const before = await admin({ action: 'grant_knowledge', kind: 'place' });
+            expect(before.learned).toBeGreaterThan(0);
+
+            const gate = new KnowledgeGate(ensureCultivationDb().db);
+            expect(gate.isAwareOf(created.cultivator.id, 'place', 'Nine Peaks')).toBe(true);
+
+            // A floor, not a replacement: calling twice writes nothing.
+            const again = await admin({ action: 'grant_knowledge', kind: 'place' });
+            expect(again.learned).toBe(0);
+        });
+
+        it('makes every house nameable, and lifts nothing else', async () => {
+            const created = await newRun();
+            const result = await admin({ action: 'grant_knowledge', kind: 'sect' });
+            expect(result.learned).toBeGreaterThan(0);
+            const gate = new KnowledgeGate(ensureCultivationDb().db);
+            expect(gate.isAwareOf(created.cultivator.id, 'sect', SECTS[0].id)).toBe(true);
+            // The whole point: a name is not an admission.
+            expect(result.note).toContain('does not open its door');
+        });
+
+        it('takes one by name, and refuses a name nothing answers to', async () => {
+            await newRun();
+            const one = await admin({ action: 'grant_knowledge', name: 'Nine Peaks' });
+            expect(one.error).toBeUndefined();
+            expect(one.offered).toBe(1);
+
+            const miss = await admin({ action: 'grant_knowledge', name: 'Atlantis' });
+            expect(miss.error).toBe('nothing_of_that_name');
+            expect(miss.hint).toContain('does not author');
+        });
+
+        it('is reached by the words the owner actually used', async () => {
+            // "give" is an alias of grant_item, so this was refused with
+            // "nothing in the pill, herb or artifact catalogs answers to
+            // 'me knowledge of every sect'". An alias is not a named action:
+            // the operator used an ordinary verb and the NOUN says what they
+            // meant, so a generic verb yields to an explicit subject.
+            const sects = parseAdminCommand('give me knowledge of every sect');
+            expect(sects.action).toBe('grant_knowledge');
+            expect(sects.args.kind).toBe('sect');
+
+            const places = parseAdminCommand('I know every location');
+            expect(places.action).toBe('grant_knowledge');
+            expect(places.args.kind).toBe('place');
+        });
+
+        it('does not let that rule steal a sentence from grant_item', () => {
+            // The other half of the same rule: "give me a 45 weapon" still
+            // means an object, because the noun still decides.
+            const parsed = parseAdminCommand('give me a 45 weapon');
+            expect(parsed.action).toBe('grant_item');
+            expect(parsed.args.ordinal).toBe(45);
+        });
+
+        it('is audited, so the ledger keeps excluding the run', async () => {
+            await newRun();
+            await admin({ action: 'grant_knowledge', kind: 'sect' });
+            const trail = await admin({ action: 'audit_log' });
+            expect(trail.runFlagged).toBe(true);
+            expect(trail.entries.some((e: any) => e.action.endsWith('grant_knowledge'))).toBe(true);
         });
     });
 
