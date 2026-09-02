@@ -348,12 +348,26 @@ while a minor noble who has barely left one city has. **Connection, not mileage*
 diffusion is why an ordinary person can hold a real opinion about a house they will never see,
 while still being exactly the person a good forgery works on.
 
-**The Hollow Court is the exception, and it is what makes them what they are.** They do not
-compete and are not seen, so **nobody holds the reference** — which cuts exactly both ways.
-Nobody can impersonate a Court member, and **nobody can confirm one either**, including the
-Court itself when it would be convenient. That suits a body which does not answer, does not
-report its dead, and does not wish to be approached; it is the same posture as the rest of their
-silence, paid for in the same coin.
+**The Hollow Court breaks this in a better way than being invisible.** They take nobody below a
+Void Refinement floor, so **every one of their people arrives already trained somewhere else.**
+The Court is built of transfers, and it holds as many arts as it has taken people.
+
+**So a Court member performing an art shows their origin house's art** — genuinely theirs,
+honestly learned, perfectly recognisable, and **completely misleading about who they now serve.**
+There is nothing to see through. The strongest check in the hierarchy returns a true answer to a
+question nobody asked.
+
+> **An art tells you where somebody was trained. It does not tell you whom they serve.**
+
+**That is general, and the Court is only its extreme case.** Anybody who has changed houses
+carries the same ambiguity; the Court is an entire institution made of it.
+
+**Their own top art is a different matter, and it is not a secret kept for secrecy's sake.** The
+Seats pass it on when somebody reaches 41, as the vehicle for the last climb to 44 — so the
+people who could recognise it are the Seats and whoever is currently making that climb, and the
+only occasion it is used is a crossing almost nobody witnesses. **It is not withheld to stop
+imitation. It is simply an instrument for a stretch of ladder four beings and a handful of
+climbers have ever stood on.**
 
 **It is also the precise reason a woken ancestor is the authority she is.** She is the rare
 reader holding *both* axes for her own era: the realm to read a demonstration exactly, and a
