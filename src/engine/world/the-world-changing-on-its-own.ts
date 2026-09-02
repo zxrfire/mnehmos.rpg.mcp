@@ -91,6 +91,7 @@ import {
     activeGoals,
     addGoal,
     createNpc,
+    isTheWorldsToMove,
     markDead,
     markMissing,
     relationshipWith,
@@ -819,6 +820,11 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
         if (npc.status !== 'alive' || !isBelowTheLid(npc)) continue;
+        // The player climbs on their own sheet, through `time-skip.ts`.
+        // Reviewing their mirror row here would advance them a second time and
+        // - worse, because a refresh cannot undo it - write a breakthrough into
+        // the world's chronicle that the character never made.
+        if (!isTheWorldsToMove(npc)) continue;
         if (reviewSlot(npc.id, ADVANCEMENT_REVIEW_YEARS) !== slot) continue;
         due.push(i);
     }
@@ -1249,7 +1255,12 @@ function applyBookAcquisition(state: WorldState, year: number, day: number): num
     const rng = forStream(state.seed, 'books', year);
     const living: number[] = [];
     for (let i = 0; i < state.npcs.length; i++) {
-        if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])) living.push(i);
+        if (state.npcs[i].status === 'alive' && isBelowTheLid(state.npcs[i])
+            // What the player has read is on their own sheet, and `manuals.ts`
+            // is emphatic that a book they never earned is the defect this
+            // whole layer exists to close. The row would take one and lose it
+            // again at the next refresh, having spent a draw on the way.
+            && isTheWorldsToMove(state.npcs[i])) living.push(i);
     }
     if (living.length === 0) return 0;
 
@@ -1297,7 +1308,12 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
     const free: number[] = [];
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
-        if (npc.status === 'alive' && isBelowTheLid(npc) && npc.factionId === null) free.push(i);
+        // And never the player. Which house they are in is a decision they make
+        // at a gate, through `sects`, and a world pass that quietly enrolled
+        // them would be the engine taking the decision - the exact shape the
+        // agency rule forbids.
+        if (npc.status === 'alive' && isBelowTheLid(npc) && npc.factionId === null
+            && isTheWorldsToMove(npc)) free.push(i);
     }
     if (free.length === 0) return 0;
 
@@ -1778,6 +1794,25 @@ function pick<T>(rng: CultivationRNG, items: readonly T[]): T | null {
     return items.length === 0 ? null : items[rng.int(0, items.length - 1)];
 }
 
+/**
+ * The people the world may pick to DO something.
+ *
+ * Everybody except the player's own mirror row. An event template that draws an
+ * actor is the world deciding that somebody opened a hall, took an opportunity,
+ * killed somebody, walked into the hills or worked on a neighbour - and it
+ * writes a chronicle fact saying so. Drawn on the player, that is the engine
+ * asserting the player did a thing they never did, in a layer the play loop
+ * never saw, and the next refresh silently discards the state while the fact
+ * stays. See `PLAYER_ROW_TAG`.
+ *
+ * The world may still COUNT them - how many people live in this province,
+ * whether anybody alive still holds this art - because those are true about
+ * them. What it may not do is act as them.
+ */
+function theWorldsPeople(state: WorldState): NpcRecord[] {
+    return state.npcs.filter(isTheWorldsToMove);
+}
+
 function membersOf(state: WorldState, factionId: string): NpcRecord[] {
     return state.npcs.filter(
         n => n.factionId === factionId && n.status === 'alive' && isBelowTheLid(n)
@@ -2125,7 +2160,7 @@ const TEMPLATES: Template[] = [
         kind: 'elder_died',
         weight: 16,
         apply(state, day, rng) {
-            const seniors = state.npcs.filter(
+            const seniors = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.factionId != null && n.factionRankIndex >= 3 &&
                     // Not somebody on the last project. Dying of age at a
@@ -2188,7 +2223,7 @@ const TEMPLATES: Template[] = [
         kind: 'killing',
         weight: 11,
         apply(state, day, rng) {
-            const living = state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n));
+            const living = theWorldsPeople(state).filter(n => n.status === 'alive' && isBelowTheLid(n));
 
             // ── THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX. ──
             //
@@ -2327,7 +2362,7 @@ const TEMPLATES: Template[] = [
             );
             const ruin = pick(rng, openable);
             if (!ruin) return null;
-            const opener = pick(rng, state.npcs.filter(
+            const opener = pick(rng, theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)
             ));
@@ -2396,7 +2431,8 @@ const TEMPLATES: Template[] = [
             });
             const opp = pick(rng, open);
             if (!opp) return null;
-            const taker = pick(rng, state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n)));
+            const taker = pick(rng, theWorldsPeople(state).filter(
+                n => n.status === 'alive' && isBelowTheLid(n)));
             if (!taker) return null;
 
             const claim = claimOpportunity(opp, taker.id, day);
@@ -2766,7 +2802,7 @@ const TEMPLATES: Template[] = [
         kind: 'technique_lost',
         weight: 5,
         apply(state, day, rng) {
-            const holders = state.npcs.filter(
+            const holders = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.cultivation.techniqueIds.length > 0
             );
@@ -3001,7 +3037,7 @@ const TEMPLATES: Template[] = [
             const to = pick(rng, regions.filter(r => r.id !== from?.id));
             if (!from || !to) return null;
 
-            const movers = state.npcs.filter(
+            const movers = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.locationId === from.id && n.factionId === null
             ).slice(0, rng.int(3, 12));
@@ -3035,7 +3071,7 @@ const TEMPLATES: Template[] = [
         kind: 'disappearance',
         weight: 6,
         apply(state, day, rng) {
-            const candidates = state.npcs.filter(
+            const candidates = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) && n.cultivation.realmOrdinal >= 13
             );
             // Weighted by how much of themselves is left, and this is the one
@@ -3102,7 +3138,7 @@ const TEMPLATES: Template[] = [
         kind: 'leverage_applied',
         weight: 12,
         apply(state, day, rng) {
-            const living = state.npcs.filter(n => n.status === 'alive' && isBelowTheLid(n));
+            const living = theWorldsPeople(state).filter(n => n.status === 'alive' && isBelowTheLid(n));
 
             // ── A MANOEUVRE ALREADY RUNNING IS PICKED UP AGAIN. ──────────
             //

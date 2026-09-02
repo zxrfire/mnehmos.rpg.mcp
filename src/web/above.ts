@@ -128,6 +128,33 @@ export function residentAbove(
             occupation: 'came through'
         });
         Object.assign(state, upsertNpc(state, npc));
+    } else if (npc.layer !== IMMORTAL_LAYER) {
+        // THE ROW WAS ALREADY THERE, ON THE WRONG SIDE.
+        //
+        // Since `the-player-as-a-row-the-world-can-invite.ts`, the player has a
+        // mortal-layer row from the first span - so by the time anybody crosses
+        // the Lid, `getNpc` finds one and the branch above never runs. Left
+        // unhandled, a True Immortal would stand on the immortal layer with a
+        // record that still says `mortal`, and `isBelowTheLid` would keep
+        // returning them to every pass in the lower world.
+        //
+        // Moving it is the correct operation rather than replacing it:
+        // `npc-state.ts` says ascension "changes nothing else about the record:
+        // the same id, the same lineage edges, the same grudges, the same
+        // history". So the layer, the landing and the rung move, and the
+        // person does not.
+        npc = {
+            ...npc,
+            layer: IMMORTAL_LAYER,
+            locationId: IMMORTAL_LANDING_LOCATION_ID,
+            cultivation: { ...npc.cultivation, realmOrdinal: TRUE_IMMORTAL_ORDINAL },
+            // The purse is one of the things the Lid took, the same as for
+            // somebody arriving without a row.
+            spiritStones: 0,
+            updatedOnDay: onDay,
+            lastConfirmedOnDay: onDay
+        };
+        Object.assign(state, upsertNpc(state, npc));
     }
 
     const hadAbode = getLocation(state, abodeLocationId(cultivator.id)) !== null;

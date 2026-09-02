@@ -919,6 +919,46 @@ a calendar.
 `scripts/audit-gatherings.ts` measures the rate, the supply of attendees, where
 relationships originate, whether the same houses always win, and what exclusion costs.
 
+### And the player is on the invitation list
+
+Every attendee is drawn from `chosenOf`, which reads `state.npcs`. Below the Lid the
+player had no `NpcRecord` at all, so they were not rarely invited - they were **absent from
+the list the invitation is drawn from**, at every rung and in every house, and none of the
+above could include the person playing.
+
+`src/web/the-player-as-a-row-the-world-can-invite.ts` puts one row there, with the **same
+id as the cultivator**, following the shape `residentAbove` already uses above the Lid so
+that lineage, grudges, obligations and provenance keep resolving against one identity. It
+is refreshed from the authoritative `Cultivator` at the top of every turn and again at the
+end of it: the sheet is the source and the row is a projection of it, in that order.
+
+**The row is not the world's to move.** It carries `PLAYER_ROW_TAG`, and the four passes
+that decide something *for* a cultivator skip it:
+
+```text
+applyAdvancement       Would climb the ladder a second time - the player's rung is
+                       time-skip.ts's - and would chronicle a breakthrough that never
+                       happened.
+the lifespan pass      time.ts.  Would declare the player dead mid-run and write it
+                       into the world's own history.
+applyRecruitment       Would enrol them in a house they never walked into. Which house
+                       somebody is in is a decision taken at a gate.
+applyBookAcquisition   Would hand them a manual they never earned, which is the defect
+                       manuals.ts exists to close, running the other way.
+```
+
+Those four and no others. Everything else - being met, ranked, resented, owed something,
+named in somebody's goal, seated at a gathering - is left alone deliberately, because it
+is the whole point of the row existing.
+
+Two of those guards are also what keeps a world *reproducible*. The refresh undoes any
+record the world writes to this row, so on correctness alone the advancement and lifespan
+guards would be enough - a fact appended to the chronicle is the only thing a refresh
+cannot take back. But `applyRecruitment` and `applyBookAcquisition` both draw a random
+index over the roster, so a row sitting in their candidate lists shifts every draw after
+it and quietly reseeds the world. **Any pass that samples the roster by index needs this
+guard even where the write itself would be harmless.**
+
 ---
 
 ## Absence: the world noticing that somebody is gone

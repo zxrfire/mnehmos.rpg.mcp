@@ -27,6 +27,7 @@ import {
     type AttemptInput,
     type Party
 } from '../../../src/engine/social-leverage/index.js';
+import { earningsPerYear } from '../../../src/engine/cultivation/origin.js';
 import { severityRank } from '../../../src/engine/social/grudges.js';
 import type { SectAlignment } from '../../../src/schema/cultivation.js';
 
@@ -120,6 +121,105 @@ describe('what is being asked is what makes it hard', () => {
         const nameAlone = oddsOf(attempt({ approach: { leverage: 'name', audience: 'alone' } }));
         const nameSeen = oddsOf(attempt({ approach: { leverage: 'name', audience: 'peers' } }));
         expect(nameSeen.terms.room).toBe(nameAlone.terms.room);
+    });
+});
+
+/**
+ * Money on the table used to be named, refused without a figure, and debited
+ * on a take - and it did not appear in the odds at all. The player spent stones
+ * and bought nothing, which is the invisible kind of softening: the world's
+ * answer was identical whether they put down a purse or nothing.
+ *
+ * The claims below are `docs/world/items.md` and `docs/world/economy.md` stated
+ * as arithmetic rather than as tuning bars.
+ */
+describe('what a purse buys, and what it does not', () => {
+    /** Coin on the table, alone, against somebody well inside cash's reach. */
+    function bribe(stones: number, over: Partial<AttemptInput> = {}) {
+        return oddsOf(attempt({
+            ask: 'a_courtesy',
+            approach: { leverage: 'coin', audience: 'alone' },
+            stonesOffered: stones,
+            ...over
+        }));
+    }
+
+    it('moves the odds at all, which is the whole defect', () => {
+        expect(bribe(600).odds).toBeGreaterThan(bribe(0).odds);
+        expect(bribe(600).terms.purse).toBeGreaterThan(0);
+        expect(bribe(0).terms.purse).toBe(0);
+    });
+
+    it('is on the table only when coin is what is on the table', () => {
+        // The same figure in the same sentence behind a different lever is not
+        // a sum anybody put down, and `stonesSpent` agrees: stones are only
+        // ever charged on a coin approach.
+        expect(oddsOf(attempt({
+            ask: 'a_courtesy', approach: { leverage: 'name' }, stonesOffered: 5000
+        })).terms.purse).toBe(0);
+    });
+
+    it('saturates, because past a point the problem is not the price', () => {
+        const theirYear = earningsPerYear(6);
+        const one = bribe(Math.round(theirYear)).terms.purse;
+        const ten = bribe(Math.round(theirYear * 10)).terms.purse;
+        const thousand = bribe(Math.round(theirYear * 1000)).terms.purse;
+
+        // A year of their own income is half the ceiling, by construction.
+        expect(one).toBeCloseTo(LEVERAGE_ATTEMPT_CONSTANTS.PURSE_MAX / 2, 3);
+        // Ten years is worth a good deal more than one. A thousand is worth
+        // barely more than ten, and nothing can pass the ceiling.
+        expect(ten).toBeGreaterThan(one);
+        expect(thousand - ten).toBeLessThan(ten - one);
+        expect(thousand).toBeLessThan(LEVERAGE_ATTEMPT_CONSTANTS.PURSE_MAX);
+    });
+
+    it('is worth less to somebody who earns more, at the same figure', () => {
+        const guard = bribe(600, { subject: party({ id: 'subject', ordinal: 2 }) }).terms.purse;
+        const elder = bribe(600, { subject: party({ id: 'subject', ordinal: 40 }) }).terms.purse;
+        expect(elder).toBeLessThan(guard);
+    });
+
+    it('never outweighs who somebody is', () => {
+        // The ceiling on the whole term is under one realm of standing
+        // (RUNG_CLAMP * PER_RUNG) and under an existing tie at full strength
+        // (TIE_WEIGHT). A purse is a term and is never THE term, which is the
+        // line between a world where money helps and a world that is bought.
+        expect(LEVERAGE_ATTEMPT_CONSTANTS.PURSE_MAX).toBeLessThan(0.3);
+    });
+
+    it('buys the ordinary favour, and does not buy a betrayal', () => {
+        const enormous = 1_000_000;
+        const byAsk = (['a_courtesy', 'a_real_favour', 'against_their_interest', 'a_betrayal'] as const)
+            .map(ask => bribe(enormous, { ask }).terms.purse);
+
+        // Strictly decreasing: what money reaches shrinks as what is being
+        // asked stops being the kind of thing money is the medium for.
+        for (let i = 1; i < byAsk.length; i++) {
+            expect(byAsk[i]).toBeLessThan(byAsk[i - 1]);
+        }
+        // At the far end it is a door left open rather than a price. An
+        // unlimited purse is worth about one point of a percent, because
+        // "typically does not" is not "never".
+        expect(byAsk[3]).toBeGreaterThan(0);
+        expect(byAsk[3]).toBeLessThan(0.02);
+    });
+
+    it('cannot turn a betrayal into a formality at any figure', () => {
+        function stacked(stonesOffered?: number) {
+            return oddsOf(attempt({
+                actor: party({ id: 'actor', ordinal: 40, charm: 3 }),
+                subject: party({ id: 'subject', ordinal: 0 }),
+                ask: 'a_betrayal',
+                approach: { leverage: 'coin', audience: 'alone' },
+                theirTie: { active: true, strength: 1 },
+                theyWantSomethingFromYou: true,
+                ...(stonesOffered === undefined ? {} : { stonesOffered })
+            })).odds;
+        }
+        // Everything else that helps, plus every stone in the world, and the
+        // money is worth about a percent of it.
+        expect(stacked(10_000_000) - stacked()).toBeLessThan(0.011);
     });
 });
 

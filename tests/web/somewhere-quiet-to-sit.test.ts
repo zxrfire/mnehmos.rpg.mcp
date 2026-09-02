@@ -21,6 +21,8 @@
  */
 
 import { parseIntent } from '../../src/web/actions';
+import { KnowledgeGate } from '../../src/web/knowledge';
+import { DAO_GROUND_TAG } from '../../src/engine/world/how-a-cultivator-comes-by-a-road.js';
 import { makeGame, planned, engineCalls } from './harness';
 
 describe('the question a player asks the moment occupancy matters', () => {
@@ -147,4 +149,66 @@ describe('the ground under the cultivator, on the wire', () => {
         expect(where.narration).toMatch(/drawing on it|Nobody is drawing on it/);
         expect(where.narration).toMatch(/a cave|the wilds|a spirit vein/);
     }, 60_000);
+});
+
+/**
+ * AND IT IS STILL GATED.
+ *
+ * The read above was fixed by walking the world's own location table into a
+ * player-facing list with no knowledge check anywhere in it, which closed one
+ * hole by opening another: a cultivator holding no record for any of them was
+ * handed The Glass Field and The Nine-City Assize by name, and would have been
+ * handed any prospected find that landed on one of the three kinds.
+ *
+ * Those are dao grounds - `how-a-cultivator-comes-by-a-road.ts` seeds its
+ * `open` catalog rows as ordinary `wilds`, discovered from day one - and this
+ * read is the only place in the played game they appear at all.
+ *
+ * The fix is not an exclusion list. It is the gate the rest of the read
+ * already uses, applied here too, with the ordinary local ground granted at
+ * birth as a real record so the farm boy keeps his caves.
+ */
+describe('the ground is learned, not handed over', () => {
+    it('names nothing this cultivator has no record for', async () => {
+        const { db, game } = makeGame({ worldEnabled: true, seed: 'gated-ground' });
+        const created = await game.newRun('Wei Zhaoxun');
+        const where = await game.act('where can I go');
+
+        const world = await game.loadWorld();
+        expect(world).not.toBeNull();
+        const gate = new KnowledgeGate(db);
+
+        // Every piece of quiet ground the world holds, anywhere: whatever the
+        // read named, this cultivator can point at.
+        const quiet = world!.locations.filter(row =>
+            row.kind === 'wilds' || row.kind === 'cave' || row.kind === 'vein');
+        expect(quiet.length, 'the world holds no quiet ground to test against').toBeGreaterThan(0);
+
+        let named = 0;
+        for (const row of quiet) {
+            if (!(where.narration ?? '').includes(row.name)) continue;
+            named++;
+            expect(
+                gate.canPointAt(created.cultivator.id, 'place', row.id)
+                || gate.awareness(created.cultivator.id, 'place')
+                    .some(held => held.name === row.name
+                        && gate.canPointAt(created.cultivator.id, 'place', held.id)),
+                `${row.name} was named to somebody holding no record for it`
+            ).toBe(true);
+        }
+        expect(named, 'nothing was named, so this proves nothing').toBeGreaterThan(0);
+    }, 120_000);
+
+    it('does not hand over a road that teaches itself', async () => {
+        const { game } = makeGame({ worldEnabled: true, seed: 'gated-ground' });
+        await game.newRun('Wei Zhaoxun');
+        const where = await game.act('where can I go');
+
+        const world = await game.loadWorld();
+        const dao = world!.locations.filter(row => row.tags.includes(DAO_GROUND_TAG));
+        expect(dao.length, 'no dao ground in this world to withhold').toBeGreaterThan(0);
+        for (const ground of dao) {
+            expect(where.narration ?? '', `${ground.name} leaked`).not.toContain(ground.name);
+        }
+    }, 120_000);
 });

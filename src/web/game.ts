@@ -213,6 +213,9 @@ import {
     theTwoWaysStructure,
     type Resident
 } from './above.js';
+import { standInTheWorld } from './the-player-as-a-row-the-world-can-invite.js';
+import { DAO_GROUND_TAG } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
+import { FOUND_BY_PROSPECTING_TAG } from '../engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
     elderRungTitle,
     mayCommitTheHouse,
@@ -1673,6 +1676,19 @@ export class GameService {
         // anyway.
         await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
 
+        // AND THE GROUND. The same ruling, applied to geography: somebody who
+        // grew up here can point at the caves and the wild ground outside the
+        // village. That was previously handled by `destinations` listing the
+        // world's own location table without asking the gate anything, which
+        // handed over dao ground and prospected finds along with the caves.
+        // The knowledge is real now, and the gate is closed. Needs the world,
+        // which the call above has just brought into being.
+        this.seedTheGroundAroundHome(created.cultivator);
+
+        // And the roster, so the world can put them on a list from the first
+        // day rather than from the first turn. See the banner in `act`.
+        this.refreshThePlayerRow(created.cultivator);
+
         const awareness = this.knowledge.awareness(created.cultivator.id);
 
         const ambient = this.ambientFor(created.cultivator, created.run);
@@ -1756,6 +1772,27 @@ export class GameService {
         const ambient = this.ambientFor(cultivator, run);
         this.atHand = await this.loadWorld();
 
+        // ── THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE ─────
+        //
+        // Before phase 1, which is before any span this turn could spend. The
+        // world's systems are keyed on `state.npcs` - most sharply
+        // `gatherings.ts`, whose entire invitation list is drawn from it - so
+        // without a row the person playing was structurally uninvitable to
+        // every meeting, bout, competition and expedition the world holds.
+        //
+        // HERE rather than in `advanceWorld`, which is the tempting place and
+        // is not sufficient: `work` spends its days through the consolidated
+        // tool, which calls `advanceWorldForCultivator` itself and never passes
+        // through this class's span helper. A turn is the thing every path has
+        // in common.
+        //
+        // And a row rewritten from the `Cultivator` at the top of every turn
+        // cannot drift from it: whatever the world wrote to it last turn is
+        // gone, and the sheet is the only thing that can ever set a rung. See
+        // `the-player-as-a-row-the-world-can-invite.ts` for the two simulation
+        // passes that additionally skip it, and why those two and no others.
+        this.refreshThePlayerRow(cultivator);
+
         // ── phase 1 ──
         const plan = await this.narrator.plan(
             trimmed,
@@ -1772,6 +1809,14 @@ export class GameService {
         // ── phase 2 ──
         const execution = await this.execute(plan.action, run, cultivator, ambient, trimmed);
 
+        const after = this.currentRun();
+        // And again, now the turn is over, BEFORE the write below. The refresh
+        // at the top is what the world reads while the span runs - the player
+        // as they were when it began, which is correct - and this one is what
+        // gets stored, so a row read between turns or after a restart says what
+        // the sheet says rather than what it said a turn ago.
+        this.refreshThePlayerRow(after.cultivator);
+
         // A world changed inside one turn is written before anything is
         // narrated, so a restart cannot lose an abode, a descent or a thing
         // that went down a channel. Nothing here reads the narration; the
@@ -1781,7 +1826,6 @@ export class GameService {
             await saveWorldForRun(run);
         }
 
-        const after = this.currentRun();
         const scene = {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -9587,8 +9631,36 @@ ${noticed}`;
         // Own province only, and only what the world has already discovered.
         // This is local geography - a farm boy knows where the caves are - and
         // not the hard discovery that finding a lone rich cave is meant to be.
+        //
+        // ── AND IT IS STILL GATED, WHICH IT WAS NOT ──────────────────────
+        //
+        // "A farm boy knows where the caves are" is a reason to GRANT a record,
+        // not a reason to skip the gate, and this loop read the world's own
+        // location table straight into a player-facing list with no knowledge
+        // check anywhere in it. `seedTheGroundAroundHome` grants the ordinary
+        // ground at birth so the farm boy keeps his caves; everything else has
+        // to be learned like anything else.
+        //
+        // Measured before this: a fresh cultivator holding no record for any of
+        // them was handed The Glass Field and The Nine-City Assize by name.
+        // Those are DAO GROUNDS - `how-a-cultivator-comes-by-a-road.ts` seeds
+        // its `open` catalog rows as ordinary `wilds`, discovered - and this
+        // read was the only place in the game they appear at all, ungated,
+        // stripped of everything that makes them what they are. The same hole
+        // would have handed over any prospected find that landed on one of
+        // these three kinds.
+        //
+        // The gate is `canPointAt`, the same predicate the rest of this read
+        // and `foundGroundIn` already use. Default-deny: the loop asks whether
+        // this cultivator can point at the row, rather than asking whether the
+        // row is one of the kinds somebody remembered to exclude.
+        let unnamed = 0;
         for (const record of this.quietGroundIn(fromRegion.name)) {
             if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
+            if (!this.canPointAtLocation(cultivator, record)) {
+                unnamed++;
+                continue;
+            }
             reachable.push({
                 name: record.name,
                 kind: record.kind,
@@ -9620,9 +9692,11 @@ ${noticed}`;
             action: 'destinations',
             summary:
                 `${reachable.length} place(s) this cultivator can point at, `
-                + `${unplaceable} name(s) held and unplaceable. Gated on canPointAt, the `
-                + `same predicate the move verb enforces. Travel days off region `
-                + `connections; qi bands off the region catalog.`,
+                + `${unplaceable} name(s) held and unplaceable, `
+                + `${unnamed} piece(s) of ground in this province held by the world and `
+                + `not by them. Gated on canPointAt, the same predicate the move verb `
+                + `enforces. Travel days off region connections; qi bands off the region `
+                + `catalog.`,
             ok: true
         }];
         return execution;
@@ -10300,6 +10374,84 @@ ${fit.line}`;
                 && row.discovered !== false
                 && row.parentId === region.id)
             .sort((a, b) => b.qiDensity - a.qiDensity || (a.name < b.name ? -1 : 1));
+    }
+
+    /**
+     * Whether this cultivator could set out for a world location.
+     *
+     * The location-record form of the predicate `somewhereReal` already applies
+     * to a typed name. Both keys are tried because place records are written
+     * against both over the life of a database - `seedStartingAwareness` writes
+     * the birthplace under its NAME and the province under its ID, and a record
+     * written under either has to satisfy this.
+     *
+     * `canPointAt` rather than `isAwareOf`, for the reason `destinations`
+     * states at length: a name caught through a wall is a name and not a
+     * destination.
+     */
+    private canPointAtLocation(cultivator: Cultivator, record: LocationRecord): boolean {
+        if (this.knowledge.canPointAt(cultivator.id, 'place', record.id)) return true;
+        const wanted = loosePlaceKey(record.name);
+        return this.knowledge
+            .awareness(cultivator.id, 'place')
+            .some(row =>
+                (loosePlaceKey(row.name) === wanted || loosePlaceKey(row.id) === wanted)
+                && this.knowledge.canPointAt(cultivator.id, 'place', row.id));
+    }
+
+    /**
+     * The ground around home, as records rather than as a hole in a gate.
+     *
+     * `seedStartingAwareness` deals out the county - the birthplace, the
+     * province, the neighbouring towns - off the static gazetteer, and stops
+     * there. The world's own caves, wilds and veins are not in that catalog, so
+     * a new cultivator held no record for a single piece of open ground in the
+     * province they grew up in, and `destinations` covered for it by listing
+     * them ungated. That is the wrong half to fix: what a farm child knows is
+     * where the local caves are, and knowing something is a record.
+     *
+     * So the ordinary ground of the home province is granted at `placed`, the
+     * same stage and for the same reason as the next town along - it is not an
+     * advantage, it is what everybody has.
+     *
+     * TWO KINDS ARE DELIBERATELY WITHHELD, and they are the two the world means
+     * somebody to find:
+     *
+     *   DAO GROUND    `how-a-cultivator-comes-by-a-road.ts` seeds The Glass
+     *                 Field, The Nine-City Assize and their siblings as
+     *                 ordinary `wilds`. Nobody is born knowing where a road
+     *                 teaches itself.
+     *   PROSPECTED    what the world uncovered while somebody was alive.
+     *                 `foundGroundIn` already refuses to name one without a
+     *                 record, and this keeps the two surfaces agreeing.
+     *
+     * Every write is `learnIfNew`, so this is a floor and never a replacement,
+     * and calling it twice writes nothing the second time.
+     */
+    private seedTheGroundAroundHome(cultivator: Cultivator): number {
+        if (!this.atHand) return 0;
+        const home = requireRegion(standingOf(cultivator).regionId);
+
+        let granted = 0;
+        for (const record of this.quietGroundIn(home.name)) {
+            if (record.tags.includes(DAO_GROUND_TAG)) continue;
+            if (record.tags.includes(FOUND_BY_PROSPECTING_TAG)) continue;
+            const wrote = this.knowledge.learnIfNew({
+                holderId: cultivator.id,
+                kind: 'place',
+                id: record.id,
+                name: record.name,
+                onDay: 0,
+                sourceKind: 'told',
+                sourceNote:
+                    'Ordinary local ground. People here have been cutting across it, '
+                    + 'grazing on it or staying off it since before this one could walk.',
+                stage: 'placed',
+                statement: `${record.name} is out past the edge of ${home.name}'s settled ground.`
+            });
+            if (wrote) granted++;
+        }
+        return granted;
     }
 
     /**
@@ -11462,6 +11614,24 @@ ${fit.line}`;
         ));
 
         return reportFromDigest(advance?.result.digest ?? null);
+    }
+
+    /**
+     * Put the player on the world's roster, or refresh the row already there.
+     *
+     * Thin on purpose: everything about what the row contains and what the
+     * world may do to it lives in
+     * `the-player-as-a-row-the-world-can-invite.ts`. What this knows is the two
+     * things only this layer can answer - which world is loaded, and which
+     * house the sect repository says they are in.
+     */
+    private refreshThePlayerRow(cultivator: Cultivator): void {
+        if (!this.atHand) return;
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        standInTheWorld(this.atHand, cultivator, {
+            factionId: membership?.sectId ?? null,
+            rankIndex: membership?.rankIndex ?? -1
+        }, this.atHand.currentDay);
     }
 
     /**

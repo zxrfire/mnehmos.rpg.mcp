@@ -43,6 +43,9 @@
  *     grudges    open grudges they hold against you, by stored severity.
  *     the ask    what you are actually asking them to do, which is the term
  *                that makes a betrayal hard to buy at any price.
+ *     the purse  what was actually put down, priced against what a year of
+ *                THEIR life earns. Saturating, and reaching only as far into
+ *                the ask as money reaches in this world. See THE PURSE.
  *     the room   discreet leverage does not survive an audience.
  *
  * FOUR OUTCOMES, BECAUSE TWO IS NOT PLAY
@@ -74,6 +77,7 @@ import {
     type ApproachLeverage,
     type SectAlignment
 } from '../../schema/cultivation.js';
+import { earningsPerYear } from '../cultivation/origin.js';
 import { regardFor } from '../cultivation/regard.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import type { ObligationInput, ObligationRecord, Severity } from '../social/grudges.js';
@@ -183,6 +187,74 @@ const GRUDGE_PER_RANK = 0.1;
 
 /** They have an open goal you are in a position to move. */
 const THEY_WANT_SOMETHING = 0.15;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE PURSE
+//
+// Money named a sum, was refused without one, and was debited on a take - and
+// it did not appear in the odds at all. The player put stones on the table and
+// bought exactly nothing, which is the softening the agency rule forbids in its
+// most invisible form: the sentence was accepted, the purse moved, and the
+// world's answer would have been identical had they offered nothing.
+//
+// Three properties, and each of them is a design constraint rather than a
+// tuning choice.
+//
+// IT IS PRICED AGAINST THEM, NOT AGAINST A TABLE. A hundred stones is a year of
+// a gate guard's life and a rounding error to an elder, and the difference has
+// to come from an income curve that already exists rather than from a second
+// one written here. `earningsPerYear` is the one the world runs on - the same
+// function `holdingsFor` seeds every purse in the world from - so what a sum is
+// WORTH is asked once and answered in one place.
+//
+// IT SATURATES. Past a point the problem is not the price. Doubling an offer
+// that is already ten years of somebody's income moves the odds by under a
+// percent, because what is stopping them at that point is not the number.
+//
+// IT DOES NOT REACH THE THINGS MONEY DOES NOT REACH. `docs/world/items.md`
+// holds the line: below it things have prices, and above it "cash is simply not
+// the medium. Not 'expensive' - not for sale." What a sum buys is the ORDINARY
+// FAVOUR - a seat in a queue, a look the other way, an introduction, a release
+// from a house - and PURSE_REACH is that line expressed against the ask rather
+// than against a catalog tier. Never zero at the far end, because "typically
+// does not" is not "never" and a desperate enough person in front of a large
+// enough sum is a door that has to stay open.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The most a purse can ever be worth, before the ask damps it.
+ *
+ * Deliberately smaller than one realm of standing (`RUNG_CLAMP * PER_RUNG` is
+ * 0.3) and smaller than an existing tie at full strength. Money is a term and
+ * it is never the term: who you are and what they already think of you both
+ * outweigh it, which is the whole reason this world is not bought.
+ */
+const PURSE_MAX = 0.2;
+
+/**
+ * The offer, in years of the SUBJECT'S own income, worth half of `PURSE_MAX`.
+ *
+ * A year of what somebody earns is a serious offer and gets half the ceiling.
+ * The curve is `years / (years + this)`, so three years reaches 0.75 of it,
+ * nine reaches 0.9, and ninety-nine reaches 0.99 - which is the saturation
+ * stated as arithmetic instead of as a cap somebody has to remember.
+ */
+const PURSE_HALF_AT_YEARS = 1;
+
+/**
+ * How far a purse reaches into what is being asked.
+ *
+ * The ordinary favour at full weight, and almost nothing at the end of the
+ * scale, because somebody weighing the end of their own house is not weighing
+ * it against a number. At `a_betrayal` the whole term maxes out at one point of
+ * a percent, which is a door left open rather than a price.
+ */
+const PURSE_REACH: Record<AskWeight, number> = {
+    a_courtesy: 1,
+    a_real_favour: 0.6,
+    against_their_interest: 0.2,
+    a_betrayal: 0.05
+} as const;
 
 /**
  * Nothing is certain and nothing is impossible.
@@ -416,6 +488,32 @@ function grudgeAgainstYou(input: AttemptInput): Severity | null {
 }
 
 /**
+ * What the money on the table is worth to the person it is in front of.
+ *
+ * Zero unless coin is what is being offered: `stonesOffered` is only ever SPENT
+ * on a coin approach, and a sum nobody put down is not on the table. So this
+ * reads the same closed `leverage` enum every other term reads and never the
+ * word the player typed.
+ *
+ * Exported so a probe can price an offer without resolving one, and so the
+ * curve is testable at the two ends that matter - the sum that is a year of
+ * their life, and the sum that is a hundred.
+ */
+export function purseWeight(input: AttemptInput): number {
+    if ((input.approach?.leverage ?? 'none') !== 'coin') return 0;
+    const offered = Math.max(0, Math.trunc(input.stonesOffered ?? 0));
+    if (offered === 0) return 0;
+
+    // Their year, not a market rate and not the actor's. What a sum means is a
+    // fact about the person it is being offered to.
+    const theirYear = earningsPerYear(Math.max(0, input.subject.ordinal));
+    if (!(theirYear > 0)) return 0;
+
+    const years = offered / theirYear;
+    return PURSE_MAX * (years / (years + PURSE_HALF_AT_YEARS)) * PURSE_REACH[input.ask];
+}
+
+/**
  * Every term, computed and named.
  *
  * Exported because a probe that cannot see the breakdown cannot tell a tuning
@@ -460,6 +558,7 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         wants: round4(wants),
         grudge: round4(grudge),
         ask: round4(ask),
+        purse: round4(purseWeight(input)),
         room: round4(room)
     };
 
@@ -840,6 +939,9 @@ function describeCost(ask: AskWeight): string {
 export const LEVERAGE_ATTEMPT_CONSTANTS = Object.freeze({
     ASK_RESISTANCE,
     ASK_DAYS,
+    PURSE_MAX,
+    PURSE_HALF_AT_YEARS,
+    PURSE_REACH,
     DISCREET_LEVERAGE,
     AUDIENCE_RESISTANCE,
     BASE_ODDS,
