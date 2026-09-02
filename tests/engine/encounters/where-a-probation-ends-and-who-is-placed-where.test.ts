@@ -30,7 +30,7 @@ import {
     shelfTopOf
 } from '../../../src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 import { getSubsidiariesOf } from '../../../src/data/cultivation/governance-and-water-rights.js';
-import { getSect, SECTS } from '../../../src/data/cultivation/sects.js';
+import { AZURE_INTAKE, getSect, SECTS } from '../../../src/data/cultivation/sects.js';
 import { getMembersOf } from '../../../src/data/cultivation/members.js';
 import { FOUNDATION_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import { stagnationYearsForOrdinal } from '../../../src/schema/cultivation.js';
@@ -71,6 +71,45 @@ describe('the ladder is the grant chain, walked', () => {
         // part of it.
         expect(apexHoldingTheDoorOver(DEW)).toBe(PAVILION);
         expect(apexHoldingTheDoorOver('sect-nine-peaks-ascetic-order')).toBeNull();
+    });
+});
+
+describe('the sort agrees with the specification it was written from', () => {
+    it('places the three bands at the three houses AZURE_INTAKE names, in its order', () => {
+        // `AZURE_INTAKE` is the complete written specification and was read by
+        // nothing at all - it is on the reachability table in
+        // `docs/world/INDEX.md` under the sixteen constants with no consumer.
+        // The code implements the STRUCTURE it describes rather than parsing
+        // its prose, which is right; what would go wrong quietly is the two
+        // drifting apart, so this pins them together.
+        const ladder = placementLadderFrom(PAVILION);
+        const bands = ['exceptional', 'promising', 'unformed'];
+
+        expect(AZURE_INTAKE.placements).toHaveLength(ladder.length);
+        AZURE_INTAKE.placements.forEach((placement, depth) => {
+            expect(placement.startsWith(`${bands[depth]}:`), placement).toBe(true);
+            // The house each band names, matched on the words the catalog
+            // itself uses rather than on an id it does not carry.
+            const named = getSect(ladder[depth])!.name;
+            const shortName = named.replace(/^(?:The )?Azure /, '').split(' ')[0];
+            expect(placement).toContain(shortName);
+        });
+
+        // And the judgement returns those band words for those depths.
+        expect(judgeProbation({
+            hostFactionId: PAVILION, ordinal: FOUNDATION_ORDINAL, age: 20, yearsOnTheRoll: 4
+        }).band).toBe(bands[0]);
+    });
+
+    it('ends a probation the way the catalog says it ends, which is not at the gate', () => {
+        // "One gate, at the terraces, and nobody is refused at it. An applicant
+        // is taken, scored, and placed, and the placement is the answer."
+        expect(AZURE_INTAKE.theGate).toMatch(/nobody is refused at it/);
+        // So there is no refusal at entry anywhere in the sort - the only
+        // outcomes are placement, being kept on, being turned out, and still
+        // being carried, and all four happen at the far end.
+        const carried = walkedUpAt16(0, 0);
+        expect(carried.outcome).toBe('carried');
     });
 });
 
