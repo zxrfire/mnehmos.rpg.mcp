@@ -326,6 +326,18 @@ that the mechanic is not invented for one of them:**
   it in a sentence*. **That is this entire section, stated in the data before it was stated
   here**, for a sealed ancestor nobody designed the model around.
 
+**And a line can simply end.** Cultivators have few children and most of them die on the
+ladder, so a family going out is **ordinary rather than sinister** — and a house can turn over
+entirely, every name on the roll new, while having been continuously itself the whole time.
+
+> **An absent name is a question, not a verdict.**
+
+Reading it as proof of catastrophe is the same error as reading a hall of strangers as loss:
+**mistaking attrition for a crime.** And it is worse for her than for anybody else, because
+she cannot tell an ended line from a purged one by looking — **only by asking**, which costs
+the time the previous section says she may not have. **The check she trusts most is the one
+most likely to hand her a false catastrophe**, and she has no way to know which she is holding.
+
 - **The old pieces are there and the old names are not** — the house kept its things and lost
   its lines. **A family does not simply fade**; somebody was purged, exiled, or walked out,
   and that is an event with a cause somebody is still carrying.
