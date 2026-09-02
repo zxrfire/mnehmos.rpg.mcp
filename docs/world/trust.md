@@ -362,6 +362,15 @@ question nobody asked.
 **That is general, and the Court is only its extreme case.** Anybody who has changed houses
 carries the same ambiguity; the Court is an entire institution made of it.
 
+**And the transfers are the point, because what the Court actually holds is a library.** Every
+person who arrives brings what their old house taught them, and the Court **pools it and shares
+it among members** — so it holds the accumulated arts of everywhere it has ever taken somebody
+from, and holds them for the specific stretch of ladder its people are on. **That is the draw.**
+A Void Refinement cultivator who could cross joins because the Court hands them the means that
+no single house, however great, could assemble: the arts of all of them, for the climb from 29
+to 41. The Seats' own art then takes over at 41 for the last stretch to 44. **The Court is a
+pipeline, and the library is the first half of it.**
+
 **Their own top art is a different matter, and it is not a secret kept for secrecy's sake.** The
 Seats pass it on when somebody reaches 41, as the vehicle for the last climb to 44 — so the
 people who could recognise it are the Seats and whoever is currently making that climb, and the
