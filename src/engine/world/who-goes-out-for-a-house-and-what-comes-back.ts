@@ -44,17 +44,20 @@
  *
  * which reads 0 at `matched` and below, 0.375 at `stretch`, 0.667 at
  * `overmatched` and 0.833 at `unreachable`. Then, of the attempts that did not
- * finish, the same number decides how badly:
+ * finish, the same number decides how much of the party stays out there:
  *
- *     lost  = notFinished^2
- *     short = notFinished - lost
+ *     lost = notFinished^2
  *
- * So a posting nine rungs above the party is finished about one time in six,
- * and about seven attempts in ten end with nobody coming back to say so. That
- * is the "mad prestige" band and it is priced rather than gated. No constant
- * in this module was chosen; both lines fall out of a table that already
- * decides what a fight at this gap costs, so retuning `REGARD_BANDS` retunes
- * this and there is nothing to keep in step by hand.
+ * which is 0.14 at `stretch`, 0.44 at `overmatched` and 0.69 at `unreachable` -
+ * the same statement made twice, because a gap that is hard to finish across is
+ * disproportionately hard to retreat across.
+ *
+ * So a posting nine rungs above the party is finished about one attempt in six,
+ * and the five that are not lose roughly seven of every ten people on them.
+ * That is the "mad prestige" band and it is priced rather than gated. No
+ * constant in this module was chosen; both lines fall out of a table that
+ * already decides what a fight at this gap costs, so retuning `REGARD_BANDS`
+ * retunes this and there is nothing to keep in step by hand.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * NUMBERS BUY A WITNESS. THEY DO NOT BUY FORCE
@@ -327,11 +330,14 @@ export function notFinishedChance(regard: Regard): number {
 }
 
 /**
- * The share of attempts at this band from which nobody comes back at all.
+ * The share of an unfinished party that does not come back.
  *
- * The square of the line above, which is the same statement made twice: a gap
- * that is hard to finish across is disproportionately hard to retreat across.
- * Nothing was chosen; if `REGARD_BANDS` moves, both move together.
+ * A fraction of the party, not a probability of a total loss - whether ANYBODY
+ * returns is the party-size draw in {@link resolveSending}, and this is how
+ * many of them it costs. The square of the line above, which is the same
+ * statement made twice: a gap that is hard to finish across is
+ * disproportionately hard to retreat across. Nothing was chosen; if
+ * `REGARD_BANDS` moves, both move together.
  */
 export function lostChance(regard: Regard): number {
     const notFinished = notFinishedChance(regard);
