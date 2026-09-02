@@ -99,6 +99,7 @@ import type { FactionRecord, WorldState } from './world-state.js';
 import { makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
+import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
 import { getTechnique, TECHNIQUES } from '../../data/cultivation/techniques.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import type { SpiritRootKey } from '../../schema/cultivation.js';
@@ -429,11 +430,70 @@ export function significanceOfManual(techniqueId: string, cap: number): ObjectSi
     return cap >= INNER_SHELF_CAP ? 'significant' : 'notable';
 }
 
+/**
+ * Ordinary market stock: cheap enough and numerous enough that a stall has one.
+ *
+ * ── WHAT THIS ANSWERS, AND THE QUESTION IT MUST NOT BE ASKED ─────────────
+ *
+ * It answers IS THIS THE KIND OF BOOK A COUNTER SELLS. That is what its three
+ * lines are: a thing with no `cap` is not a road and no stall stocks a road it
+ * is not; a road under {@link COMMON_MANUAL_CAP} is the primer the world is
+ * awash in; and above that, a road on four shelves or more is stock because
+ * four houses reproducing it is a supply. `significanceOfManual` reads it for
+ * exactly that - a book nobody owns is a count, a book somebody owns is a row -
+ * and `what-a-copy-of-a-manual-costs-at-a-stall.ts` reads it to price one.
+ *
+ * IT DOES NOT ANSWER WHOSE IT IS, and it was being asked. Its first line
+ * returns `true` for everything without a `cap`, which is every fighting art in
+ * the catalog, because it was written about roads and a sword art has no ladder
+ * to reason about. Measured across the catalog: 51 techniques are taught by
+ * fewer than {@link COMMON_HOUSE_COUNT} houses and read `true` here, and 20 of
+ * them are some house's own `signatureTechniqueId` - `void-piercing-sword-domain`
+ * on one shelf, `cinder-lotus-blossom` on one, `hundred-cut-flying-blade` on
+ * two. The one road among them is `azure-dew-gathering-canon`, which the cap
+ * line calls common at 13 while exactly one house teaches it.
+ *
+ * So the property question is {@link noHouseCanCallItTheirs} and this is not
+ * it. `recognising-whose-art-you-just-watched.ts` found the same thing
+ * independently, refused to use this predicate, and wrote down why; that note
+ * is now the shared function rather than a private copy.
+ */
 export function isCommonlyHeld(techniqueId: string): boolean {
     const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
     if (!t || t.class !== 'cultivation' || t.cap == null) return true;
     if (Number(t.cap) <= COMMON_MANUAL_CAP) return true;
     return housesTeaching(techniqueId) >= COMMON_HOUSE_COUNT;
+}
+
+/**
+ * Whether this art is anybody's property at all.
+ *
+ * THE PROPERTY QUESTION, and the only one of the two that says whose a thing
+ * is. It counts holders and nothing else, which is the half of
+ * {@link isCommonlyHeld} that generalises past roads - *"commonness was never a
+ * fact about height, it is a fact about HOW MANY PEOPLE HOLD IT"* - applied to
+ * every kind of technique rather than only to the kind with a `cap`.
+ *
+ * Two ways to be nobody's, and they are different facts that want the same
+ * answer:
+ *
+ *   NOBODY TEACHES IT      it is on no house's list at all - dug out of a hole,
+ *                          derived by somebody, sold by a league that is not a
+ *                          house. There is no house to be answerable to.
+ *   EVERYBODY TEACHES IT   {@link COMMON_HOUSE_COUNT} shelves or more. The
+ *                          province's standard crossing is not the Weir
+ *                          Office's private property because twenty-four houses
+ *                          hand it out.
+ *
+ * Everything between is somebody's, whether it is a road or a fighting art, and
+ * `betrayalOfSelling`, `unauthorisedPractice` and `ifCaughtPractising` all open
+ * with this. They used to open with {@link isCommonlyHeld}, which meant every
+ * signature art in the game priced as nobody's and no house could be wronged
+ * over the one thing that most makes it a house.
+ */
+export function noHouseCanCallItTheirs(techniqueId: string): boolean {
+    const houses = housesTeaching(techniqueId);
+    return houses === 0 || houses >= COMMON_HOUSE_COUNT;
 }
 
 /** Manuals cheap and numerous enough to be ordinary market stock. */
@@ -1114,7 +1174,11 @@ export function betrayalOfSelling(
     ownerFactionId: string | null
 ): 0 | 1 | 2 | 3 {
     // Nobody's property, so selling copies is a trade rather than a betrayal.
-    if (isCommonlyHeld(techniqueId)) return 0;
+    // {@link noHouseCanCallItTheirs} and NOT `isCommonlyHeld`: whether a stall
+    // stocks a thing and whether anybody owns it are different questions, and
+    // asking the market one here priced every signature art in the world at
+    // zero. See the note on `isCommonlyHeld`.
+    if (noHouseCanCallItTheirs(techniqueId)) return 0;
     if (!ownerFactionId) return 1;
     const shelf = manualsOf(ownerFactionId);
     const isTop = shelf.length > 0 && shelf[shelf.length - 1].id === techniqueId;
@@ -1161,11 +1225,38 @@ export function whoseArt(techniqueId: string): string[] {
  *
  * `null` when there is nothing to answer for. Otherwise the houses that would
  * want a word, in the order they would get to you.
+ *
+ * ── AND IT IS NOT THE JOIN FOR SELLING ONE ───────────────────────────────
+ *
+ * Asked whether it should be what a leak is priced off, the answer is no, and
+ * the reason is one line of this function: `.filter(id => id !== npc.factionId)`.
+ * That filter is CORRECT for practising - a disciple performing their own
+ * house's art has an answer ready, and being one of theirs is the answer - and
+ * it removes exactly the case a leak is worst in. Selling your own house's art
+ * is `betrayalOfSelling`'s rung 2, *the betrayal proper*, and a join that
+ * dropped your own house from the list of who wants a word would have been
+ * silent about the only leak the setting calls unforgivable.
+ *
+ * The two questions differ in sign, which is the whole of it: membership is an
+ * EXCUSE for holding an art and an AGGRAVATION for selling one. So selling is
+ * priced by `betrayalOfSelling` and `whoseArt`, and this stays what it says it
+ * is - who will want a word with somebody SEEN PRACTISING a thing that is not
+ * theirs, which is the buyer's problem for the rest of their life. It is read
+ * at the moment a copy changes hands, in `game.ts`, where the person acquiring
+ * one is told who that leaves them answerable to.
  */
-export function unauthorisedPractice(npc: NpcRecord, techniqueId: string): string[] | null {
-    // Common books are nobody's - and "common" is how widely a manual is
-    // held, not how high it carries.
-    if (isCommonlyHeld(techniqueId)) return null;
+export function unauthorisedPractice(
+    /**
+     * Narrowed to the one field this reads, on `betrayalOfSelling`'s own
+     * precedent and for its reason: the player is not an `NpcRecord` and the
+     * question is about them too. A whole `NpcRecord` still satisfies it.
+     */
+    npc: Pick<NpcRecord, 'factionId'>,
+    techniqueId: string
+): string[] | null {
+    // Nobody's art is nobody's business - and "nobody's" is how widely it is
+    // held, not how high it carries and not whether a stall stocks it.
+    if (noHouseCanCallItTheirs(techniqueId)) return null;
     const owners = whoseArt(techniqueId).filter(id => id !== npc.factionId);
     if (owners.length === 0) return null;
     // Somebody carrying the tag of a house that teaches it has an answer ready.
@@ -1212,7 +1303,8 @@ export function ifCaughtPractising(
     techniqueId: string,
     ownerFactionId: string | null
 ): IfCaught {
-    if (isCommonlyHeld(techniqueId)) return 'nothing';
+    // The property question, not the market one. See `isCommonlyHeld`.
+    if (noHouseCanCallItTheirs(techniqueId)) return 'nothing';
     if (!ownerFactionId) return 'nothing';
     const owner = (SECTS as readonly { id: string; alignment?: string }[])
         .find(s => s.id === ownerFactionId);
@@ -1408,32 +1500,137 @@ export function roadTheyFound(npc: NpcRecord, ceiling: number, rng: CultivationR
 
 
 /**
- * Can this person write out another copy?
+ * Full mastery, on the engine's own 0..1 scale.
  *
- * Mastery, not acquaintance: somebody must have taken the book to its end
- * before they can reproduce it. So a library grows only where a house still
- * holds a master of that art, and the death of the last one turns a manual into
- * a finite number of physical objects - which is how an art becomes scarce, and
- * then rare, and then lost, without anybody deciding it should.
+ * `cultivator_techniques.mastery` is raised by `practise` and
+ * `technique-manage.ts` already treats 1 as the end of it - *"already at full
+ * mastery. There is nothing further to understand."* Named rather than typed
+ * out, because it is now the gate on copying as well as the end of a practice
+ * clock, and those two must not drift apart.
+ */
+export const FULLY_MASTERED = 1;
+
+/**
+ * Could this particular person write out a copy of this particular thing?
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * COPYABILITY IS A FACT ABOUT THE HOLDER, NOT ABOUT THE BOOK
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The design owner's constraint, and it is what makes the whole leak question
+ * self-limiting instead of needing a prohibition:
+ *
+ *   > HOW WOULD YOU BE ABLE TO COPY THESE SIGNATURE ARTS? YOU'D HAVE TO MASTER
+ *   > IT, WHICH WOULD MEAN YOU ARE AT SECT LEADER OR HIGHER.
+ *
+ * So there is no permission check anywhere and there must not be one. An
+ * ordinary disciple cannot leak their house's signature art because they cannot
+ * WRITE IT OUT - not because a rule forbids it, but by the same fact that makes
+ * them an ordinary disciple. And the people who can are, by construction, the
+ * people at the top of that house: the ones it has no reprisal against, which
+ * `what-a-house-does-when-it-catches-you.ts` reaches on its own and returns
+ * *"stands where nothing they could do about it would reach"* for.
+ *
+ * Measured on one seeded world of 586 living people, over every house's
+ * `signatureTechniqueId`:
+ *
+ *   void-piercing-sword-domain   2 holders,  1 could copy - the Pavilion's peak
+ *   cinder-lotus-blossom         2 holders,  2 could copy
+ *   protected-crossing-canon     4 holders,  0 could copy
+ *   rime-heart-stillness-canon   3 holders,  0 could copy
+ *   nine-heaven-scourging-bolt   1 holder,   0 could copy
+ *   azure-dew-gathering-canon    7 holders,  0 could copy
+ *
+ * A gathering primer stays freely copyable by everybody who holds one, and it
+ * is the SAME RULE producing both answers rather than an exceptions list:
+ * anybody can master a primer, and four people in the world have mastered the
+ * Pavilion's sword.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * THREE READINGS OF ONE RULE, BECAUSE THERE ARE THREE KINDS OF RECORD
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ *   A WIDELY-HELD ROAD   anybody holding one may write it out. Not a hole in
+ *                        the rule: it is the loop that keeps a common book
+ *                        common - copyable means plentiful, plentiful means
+ *                        cheap, cheap means the next person can afford one and
+ *                        copy it too - and it is why selling copies is an
+ *                        ordinary living for a cultivator who needs stones.
+ *   ANY OTHER ROAD       mastered where it leaves you. Somebody standing at its
+ *                        `cap` took the book to its end, which is exactly what
+ *                        `canReproduce` has always said and is unchanged.
+ *   A FIGHTING ART       has no `cap` to stand at, so mastery is read off
+ *                        {@link HolderOfAnArt.masteryOfIt} where the caller has
+ *                        a per-person figure and off the ordinal where it does
+ *                        not. See {@link masteryBarFor} for why the fallback is
+ *                        a realm rather than a number chosen here.
+ *
+ * The per-person figure wins wherever it exists, on the same reasoning
+ * `reachableCeilingFor` beats `manualCeilingOf`: an `NpcRecord` does not carry
+ * one and a played cultivator does, so the world reads a proxy and the player
+ * is read exactly.
+ */
+export interface HolderOfAnArt {
+    realmOrdinal: number;
+    /**
+     * Their own mastery of this one thing, 0..1, where the caller holds a row
+     * that says. Null or absent for a record that carries no such column -
+     * every `NpcRecord` in the world - and then the ordinal answers instead.
+     */
+    masteryOfIt?: number | null;
+}
+
+/**
+ * The rung at which somebody counts as having mastered a fighting art, for a
+ * record that carries no mastery figure.
+ *
+ * THE START OF THE REALM ABOVE THE ONE IT OPENS IN. A realm is the unit this
+ * world already measures capability gaps in - `HELPLESS_REALM_GAP`, the
+ * perceptual axis in `recognising-whose-art-you-just-watched.ts` - and it is
+ * the same shape as the road rule one line up: a road is mastered a realm or
+ * more above where it opens, because that is where its `cap` sits.
+ *
+ * Nothing is chosen here. `REALM_TIERS` decides it, and the arithmetic lands on
+ * the owner's sentence by itself: the Azure Cloud Pavilion's sword opens at 21
+ * and is mastered at 25, and the one person in the seeded world who holds it
+ * that high stands at 41.
+ */
+export function masteryBarFor(techniqueId: string): number | null {
+    const t = getTechnique(techniqueId) as
+        { class?: string; cap?: number | null; requiredOrdinal?: number } | undefined;
+    if (!t) return null;
+    if (t.class === 'cultivation' && t.cap != null) return Number(t.cap);
+    const opens = Number(t.requiredOrdinal ?? 0);
+    const at = REALM_TIERS.findIndex(tier => tier.key === realmForOrdinal(opens).key);
+    if (at < 0) return null;
+    return REALM_TIERS[Math.min(at + 1, REALM_TIERS.length - 1)].ordinalStart;
+}
+
+export function couldWriteOutACopy(holder: HolderOfAnArt, techniqueId: string): boolean {
+    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
+    if (!t) return false;
+    const isARoad = t.class === 'cultivation' && t.cap != null;
+    if (isARoad && isCommonlyHeld(techniqueId)) return true;
+    const bar = masteryBarFor(techniqueId);
+    if (bar === null) return false;
+    if (!isARoad && holder.masteryOfIt != null) return holder.masteryOfIt >= FULLY_MASTERED;
+    return holder.realmOrdinal >= bar;
+}
+
+/**
+ * Can this person in the world write out another copy of a ROAD?
+ *
+ * {@link couldWriteOutACopy} asked about the only kind of thing the world layer
+ * mints library rows for. Kept as its own name because every caller of it -
+ * `applyManualCopying`, the shelf passes - is about books on a shelf, and
+ * handing them a fighting art would have them writing a `cap` of `NaN` into an
+ * object row. The rule itself lives one function up and is not restated here.
  */
 export function canReproduce(npc: NpcRecord, techniqueId: string): boolean {
     if (!npc.cultivation.techniqueIds.includes(techniqueId)) return false;
     const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
     if (!t || t.class !== 'cultivation' || t.cap == null) return false;
-    // A common book is common because anybody holding it can write it out
-    // again - no mastery, no permission, no ceremony. That is a loop rather
-    // than a coincidence: copyable means plentiful, plentiful means cheap, and
-    // cheap means the next person can afford one and copy it too. Selling
-    // copies is an ordinary living for a cultivator who needs stones and has
-    // nothing else to trade, and it is why a primer costs what it costs.
-    // A widely-held book is copyable by anybody holding it, which is the
-    // loop that keeps it widely held.
-    if (isCommonlyHeld(techniqueId)) return true;
-    // Above that line the loop breaks. Reproduction needs somebody who took
-    // the book to its end, so a house whose last master of an art has died
-    // holds a finite number of physical objects - and an art becomes scarce,
-    // then rare, then lost, with nobody having decided it should.
-    return npc.cultivation.realmOrdinal >= Number(t.cap);
+    return couldWriteOutACopy({ realmOrdinal: npc.cultivation.realmOrdinal }, techniqueId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

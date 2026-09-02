@@ -175,8 +175,35 @@ export interface AThingInSomebodysHands {
      * three seeded worlds and produced ZERO offers without it, because everyone
      * there is mid-primer or holds only a fighting art. The whole population
      * the owner asked for - random cultivators in a market town - was invisible.
+     *
+     * ── AND IT IS A FACT ABOUT THE HOLDER, NOT ABOUT THE THING ───────────
+     *
+     * It reads as a property of the object and it is not one, which is the
+     * single most important thing about this column. `couldWriteOutACopy` in
+     * `world/manuals.ts` is the authority and it takes the person: writing an
+     * art out requires having mastered it, so the same book is copyable by the
+     * four people in the world who took it to the end and by nobody else. That
+     * is what stops a house's signature leaving through a junior disciple
+     * without any rule forbidding it, and it is why {@link whatMovesIsACopy}
+     * below has to exist - a holder who cannot write one out has nothing to
+     * offer, rather than an object to hand over.
      */
     copyable: boolean;
+    /**
+     * What would change hands is a copy, and the original stays where it is.
+     *
+     * True for anything held in somebody's head or on their shelf - a book, an
+     * art - and false for a beast core, which is one object and is either in
+     * your hand or in theirs.
+     *
+     * The column exists because {@link copyable} became a fact about the holder
+     * and the two together are the only way to say the honest thing. A fighting
+     * art opens and stops at the same rung, so every one of the four readings
+     * below finds its holder to have *outgrown* it - and a holder who cannot
+     * write one out would have been shown offering an art out of their own
+     * head, which is not a transaction that exists.
+     */
+    whatMovesIsACopy?: boolean;
     /**
      * A need this thing answers that the caller knows about and this module
      * cannot see. A refusal at any figure.
@@ -225,7 +252,16 @@ export type WhyTheyWouldPartWithIt =
 export type WhyItDoesNotMove =
     | 'it_is_their_own_house_s'
     | 'nobody_alive_could_replace_it'
-    | 'they_are_going_to_need_it';
+    | 'they_are_going_to_need_it'
+    /**
+     * They hold it and they have not mastered it, so there is no copy to sell.
+     *
+     * Not a refusal in the way the other three are - nobody has decided
+     * anything. It is the owner's rule on copying arriving in the market:
+     * writing a thing out takes having taken it to the end, so most people
+     * holding a house's art are holding something they cannot reproduce.
+     */
+    | 'they_could_not_write_one_out';
 
 /**
  * How badly somebody wants a thing gone, as where their ask sits between what
@@ -380,6 +416,18 @@ export function whatThisPersonWouldPartWith(
             });
             continue;
         }
+        // AND THE THING THEY CANNOT WRITE OUT. What would move is a copy, and
+        // making one takes having taken the thing to its end - so a holder
+        // short of that has nothing to offer rather than an object to hand
+        // over. Ahead of the present-need rule because it is a harder fact:
+        // needing a thing is about today, and not being able to reproduce it is
+        // about what they are.
+        if (thing.whatMovesIsACopy === true && !thing.copyable) {
+            withheld.push({
+                thingId: thing.id, name: thing.name, why: 'they_could_not_write_one_out'
+            });
+            continue;
+        }
         // A COPY IS NOT A PARTING. Nothing leaves the holder's hands, so the
         // rule that protects the road they are walking has nothing to protect.
         // See {@link AThingInSomebodysHands.copyable}.
@@ -497,5 +545,9 @@ export const WHY_IT_STAYS_WHERE_IT_IS: Readonly<Record<WhyItDoesNotMove, string>
         they_are_going_to_need_it:
             'They are going to need it themselves, and inside the year. A present need is not a '
             + 'price you have not met; it is a refusal. Coming back after their crossing is a '
-            + 'different conversation.'
+            + 'different conversation.',
+        they_could_not_write_one_out:
+            'They hold it and they have not taken it to the end, so there is no copy for them to '
+            + 'sell and nothing they could do about that today. What moves a thing like this is '
+            + 'somebody who mastered it, and there are not many of those.'
     });

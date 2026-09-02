@@ -66,7 +66,7 @@ import { getTechnique } from '../data/cultivation/techniques.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
     betrayalOfSelling,
-    isCommonlyHeld,
+    couldWriteOutACopy,
     whoseArt
 } from '../engine/world/manuals.js';
 import {
@@ -152,9 +152,22 @@ export function whatOneCopyIsWorth(techniqueId: string): number | null {
  * identically anyway: any house that is not yours prices the same.
  */
 export function whatIsInTheirHands(
-    npcFactionId: string | null,
+    /**
+     * The holder, and it has to be the person rather than only their house.
+     *
+     * `copyable` is a fact about WHO IS HOLDING IT - writing an art out takes
+     * having mastered it - so this cannot be answered off a faction id and a
+     * list of ids. `masteryOfIt` is optional because an `NpcRecord` carries no
+     * such column and a played cultivator does; see `couldWriteOutACopy`.
+     */
+    holder: {
+        factionId: string | null;
+        ordinal: number;
+        masteryOfIt?: (techniqueId: string) => number | null;
+    },
     techniqueIds: readonly string[]
 ): AThingInSomebodysHands[] {
+    const npcFactionId = holder.factionId;
     const out: AThingInSomebodysHands[] = [];
     for (const id of techniqueIds) {
         const row = getTechnique(id) as
@@ -178,13 +191,40 @@ export function whatIsInTheirHands(
             listStones,
             awkwardToHold: betrayalOfSelling({ factionId: npcFactionId }, id, ownerFactionId),
             whoWouldWantAWord: ownerFactionId,
-            // `isCommonlyHeld` IS the copyable line and there must not be a
-            // second one. `manuals.md`: a common book belongs to nobody and
-            // anybody holding one may write it out again, which is exactly what
-            // makes them plentiful - and it is the same predicate
-            // `betrayalOfSelling` opens with, so the two cannot disagree about
-            // which end of the shelf a thing is on.
-            copyable: isCommonlyHeld(id)
+            // ── COPYABLE IS ABOUT THE PERSON, NOT ABOUT THE BOOK ─────────
+            //
+            // This line used to read `isCommonlyHeld(id)`, with a comment
+            // insisting that `isCommonlyHeld` IS the copyable line and there
+            // must not be a second one. Both halves were wrong, and they were
+            // wrong in opposite directions.
+            //
+            // `isCommonlyHeld` answers whether a STALL stocks a thing. Its
+            // first line returns true for everything without a `cap`, which is
+            // every fighting art in the catalog - so twelve houses' signature
+            // arts read as freely copyable by whoever was holding one, and
+            // `betrayalOfSelling` (which opened with the same predicate)
+            // priced selling them at nothing. The two could not disagree
+            // because both were answering the wrong question.
+            //
+            // What decides whether a copy exists to sell is the owner's rule:
+            // *"you'd have to master it, which would mean you are at sect
+            // leader or higher"*. So the predicate takes the holder, and the
+            // ownership question is `betrayalOfSelling`'s alone. A gathering
+            // primer stays copyable by everybody and a house's sword by four
+            // people in the world, out of one rule with no exceptions list.
+            copyable: couldWriteOutACopy(
+                {
+                    realmOrdinal: holder.ordinal,
+                    ...(holder.masteryOfIt
+                        ? { masteryOfIt: holder.masteryOfIt(id) }
+                        : {})
+                },
+                id
+            ),
+            // A book and an art are both held rather than carried. Nothing
+            // leaves the seller, which is why `copyable` is the gate on the
+            // sale and the present-need rule is not.
+            whatMovesIsACopy: true
         });
     }
     return out;
@@ -256,7 +296,10 @@ export function readWhatIsOnOfferHere(
         };
         read.push(whatThisPersonWouldPartWith(
             who,
-            whatIsInTheirHands(npc.factionId, npc.cultivation.techniqueIds ?? [])
+            whatIsInTheirHands(
+                { factionId: npc.factionId, ordinal: npc.cultivation.realmOrdinal },
+                npc.cultivation.techniqueIds ?? []
+            )
         ));
     }
 
