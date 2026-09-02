@@ -261,7 +261,7 @@ const HelpSchema = z.object({
      * an operator who typed something and got a menu has not been answered.
      */
     unreadable: z.string().optional(),
-    ambiguity: z.enum(['no_subject', 'two_subjects']).optional(),
+    ambiguity: z.enum(['no_subject', 'two_subjects', 'a_change_not_a_creation']).optional(),
     collided: z.array(z.string()).optional()
 });
 
@@ -333,6 +333,41 @@ export async function handleHelp(args: z.infer<typeof HelpSchema>): Promise<obje
     // something and did not get it, and a menu returned as a success reads as
     // though the request was honoured.
     const twoWays = args.ambiguity === 'two_subjects';
+
+    // ── A CHANGE TO SOMEBODY ALREADY THERE IS AN ABSENCE, NOT A MISREADING ─
+    //
+    // "set the fox cultivator to fox bloodline" is a perfectly reasonable
+    // operator sentence and this surface has no action for it: `set_realm` and
+    // `set_age` move the PLAYER, and `spawn_encounter` creates somebody new.
+    // The reader used to answer it by creating a person called "set fox fox
+    // bloodline", which is the worst of the three possible outcomes - the
+    // second worst being a generic refusal. Naming the absence is the useful
+    // one, and it is the same standard as everywhere else here: a refusal must
+    // say what would work, and where nothing would, it must say so plainly.
+    if (args.ambiguity === 'a_change_not_a_creation') {
+        return guidingError(
+            'no_action_for_changing_somebody_present',
+            `"${args.unreadable}" asks to CHANGE somebody who is already there, and ADMIN has no ` +
+            'action that does that. Nothing was created and nothing was changed. ' +
+            'spawn_encounter makes a NEW person; set_realm and set_age move the PLAYER.',
+            {
+                asked: args.unreadable,
+                wouldHaveCreated: args.collided ?? [],
+                ...whatAdminCanDo(),
+                arrangeInstead: [
+                    'ADMIN spawn_encounter ordinal=<rung> name=<what they are> - stands a new person ' +
+                    'up with the description in the name, which is the field that is free text.',
+                    'ADMIN roster - what is actually standing in the world right now, with ids.'
+                ],
+                hint:
+                    'This is a real gap rather than a phrasing problem, and it is worth reporting as ' +
+                    'one: what a spawned person IS - a bloodline, an art, a house, a want - is not ' +
+                    'something spawn_encounter can be told, and there is no verb for editing one ' +
+                    'afterwards. See docs/admin.md.'
+            }
+        );
+    }
+
     return guidingError(
         twoWays ? 'admin_sentence_ambiguous' : 'admin_sentence_unreadable',
         twoWays

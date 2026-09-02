@@ -352,10 +352,49 @@ export interface SentenceReading {
 
 export interface SentenceRefusal {
     /** Nothing in the line said what kind of thing was wanted. */
-    reason: 'no_subject' | 'two_subjects';
+    reason: 'no_subject' | 'two_subjects' | 'a_change_not_a_creation';
     /** The subjects that collided, when two did. */
     collided: string[];
 }
+
+/**
+ * Verbs that mean CHANGE SOMETHING THAT IS ALREADY THERE.
+ *
+ * ── THE DEFECT THIS ANSWERS ──────────────────────────────────────────────
+ *
+ * `ADMIN set the fox cultivator to fox bloodline` was read as
+ * `spawn_encounter name="set fox fox bloodline"` and then refused for a
+ * missing ordinal. Two failures in one line and the first is the worse: the
+ * operator asked to MODIFY somebody standing there, the reader matched the
+ * noun "cultivator" against `spawn_encounter`'s subject words, and threw the
+ * verb away - so a request to change a person became a request to create one,
+ * and the discarded verb went into the field the world calls somebody by.
+ *
+ * That is the same class of mistake as the withdrawn alignment draft recorded
+ * in `admin-manage.ts`: a decision taken off ONE token with the rest of the
+ * sentence not consulted. The subject noun says what KIND of thing; it does
+ * not say what is being asked about it, and a verb that says "change" is not a
+ * verb that says "create".
+ *
+ * ── WHY IT REFUSES RATHER THAN ROUTING SOMEWHERE ─────────────────────────
+ *
+ * Because there is nothing to route to. This surface has no action that
+ * modifies a person already present - `set_realm` and `set_age` move the
+ * PLAYER, and `spawn_encounter` creates. So the honest answer is a refusal
+ * that says exactly that, and a refusal that names an absence is worth more
+ * than a creation nobody asked for.
+ *
+ * ── AND IT IS READ AT THE HEAD OF THE LINE, NOT SCANNED ──────────────────
+ *
+ * A whole word at the START, before any subject noun. Scanning the line for
+ * these words would repeat the withdrawn draft's mistake from the other side:
+ * "set" appears inside plenty of sentences that are not asking to change
+ * anything, and a name could contain any of them.
+ */
+const A_CHANGE_RATHER_THAN_A_CREATION = new Set([
+    'set', 'change', 'modify', 'edit', 'update', 'alter', 'turn', 'convert',
+    'rename', 'retitle', 'adjust', 'fix'
+]);
 
 /**
  * Read an ADMIN line that did not begin with an action.
@@ -377,6 +416,17 @@ export function readAdminSentence(line: string): SentenceReading | SentenceRefus
         if (subject.words.some(word => words.includes(word))) found.push(subject);
     }
     const distinct = [...new Set(found.map(s => `${s.action}${s.fixed?.kind ? `:${s.fixed.kind}` : ''}`))];
+
+    // ── A CHANGE IS NOT A CREATION, WHATEVER NOUN IS IN THE LINE ──────────
+    //
+    // Checked after the subjects are found and before any of them is acted on,
+    // because it is the SUBJECT match that would otherwise be wrong: a
+    // modification verb in front of a person-noun is a request to change
+    // somebody, and `spawn_encounter` would answer it by making a new one.
+    // See `A_CHANGE_RATHER_THAN_A_CREATION`.
+    if (found.length > 0 && A_CHANGE_RATHER_THAN_A_CREATION.has(words[0])) {
+        return { reason: 'a_change_not_a_creation', collided: distinct };
+    }
 
     // ── THE SELF, when nothing else was named. ────────────────────────────
     if (found.length === 0) {
