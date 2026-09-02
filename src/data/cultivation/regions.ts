@@ -1594,6 +1594,23 @@ const REGION_BY_PLACE_NAME: ReadonlyMap<string, string> = (() => {
     for (const region of REGIONS) {
         for (const place of region.places) map.set(place.name.toLowerCase(), region.id);
     }
+    // A PROVINCE IS SOMEWHERE YOU CAN STAND, so its own name has to answer too.
+    //
+    // The world holds a row for each province and a player can travel to one -
+    // "I travel to The Quiet Marches" is an ordinary move and lands them on it.
+    // With only place names in this map, that arrival resolved to NO province,
+    // and every caller fell back to somewhere else: `where can I go` answered
+    // for the birth province, so it listed the wrong towns and could not name
+    // the gate of a house the player had just been told about, in the province
+    // they were standing in.
+    //
+    // Places win, and are therefore set first and never overwritten. A town
+    // named for its province is somewhere a person can walk to and a province
+    // is not, so the narrower answer is the more useful one.
+    for (const region of REGIONS) {
+        const key = region.name.toLowerCase();
+        if (!map.has(key)) map.set(key, region.id);
+    }
     return map;
 })();
 

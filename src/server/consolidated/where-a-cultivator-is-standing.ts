@@ -67,6 +67,26 @@ export function standingOf(cultivator: Cultivator): Standing {
             };
         }
     }
+    // STANDING ON A PROVINCE ITSELF, which is an ordinary thing to do: the
+    // world holds a row for each one and "I travel to The Quiet Marches" lands
+    // the player on it. Without this the loop above found no place, fell
+    // through to the home region, and reported somebody standing in the Quiet
+    // Marches as being in the Low Fall - so `where can I go` listed the wrong
+    // province's towns and could not name the gate of a house they had just
+    // been told about, in the province they were actually in.
+    //
+    // Checked AFTER places, so a town that shares its province's name still
+    // wins: a town is somewhere you can walk to and a province is not.
+    const asProvince = REGIONS.find(region => region.name.toLowerCase() === needle);
+    if (asProvince) {
+        return {
+            regionId: asProvince.id,
+            regionName: asProvince.name,
+            settlementKind: null,
+            placeName: asProvince.name
+        };
+    }
+
     const home = requireRegion(HOME_REGION_ID);
     return {
         regionId: home.id,
