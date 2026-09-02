@@ -166,6 +166,58 @@ export const BEAST_CORE_ORDINAL = 17;
  * header.
  */
 export const BEAST_CHANGE_ORDINAL = 29;
+/**
+ * Why a house sends a party out over BEASTS, which is two of its reasons and
+ * not all of them.
+ *
+ * A house puts people on the road for a marriage, for a war, to escort somebody,
+ * to collect tribute from a subsidiary and to find out why a subsidiary has
+ * stopped sending it, to answer a call for aid it cannot refuse, to open an
+ * inheritance, and to go out and recruit. Those are not this. What is written
+ * here is only
+ * the pair of errands that beasts produce - going out after them, and standing
+ * to when they come - which are one fact seen from either end, and the fact is
+ * `BEAST_CHANGE_ORDINAL`. Below it a beast is an animal: a thing that may be
+ * taken, and a thing that may arrive in numbers. Neither errand survives the
+ * change, which is what puts a ceiling on this trade specifically and on none
+ * of the others.
+ *
+ * This is the house-side statement. The beast side is in the file header and
+ * in the tide schema above, and neither is restated here.
+ */
+export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
+    toTake:
+        'A core is the only high-grade material in this world that is nobody\'s '
+        + 'property and cannot be written out again. Everything else at that grade '
+        + 'is already in some house\'s hands, and a book at that grade is a book: a '
+        + 'house that wants one can copy it, buy the copy, or be taught it. Material '
+        + 'cannot be copied, so the supply of it is a hunting problem, and hunting is '
+        + 'the one way a house acquires at that grade without taking from another '
+        + 'house. That is the whole of why parties go out, and it is also why a poor '
+        + 'house goes out more often than a rich one.',
+    toStand:
+        'Ground draws what ground draws. A house that holds a vein holds what the '
+        + 'vein attracts, and the obligation is not charity: the settlements under it '
+        + 'are its tithe, its intake and its cover, and a district that has been '
+        + 'walked through twice stops being any of the three. A tide is a survey '
+        + 'problem rather than a monster problem, for the reason the tide schema '
+        + 'above gives, and the survey is the house\'s too, because nobody else on '
+        + 'that ground can read it.',
+    whyItIsJuniorsWhoGo:
+        `Both errands stop at ordinal ${BEAST_CHANGE_ORDINAL}. Nobody hunts a `
+        + 'person, and nothing that speaks arrives in a tide, so the whole trade '
+        + 'lives below the rung a house\'s own strongest are standing on. Sending an '
+        + 'elder is not caution, it is waste, and a house that does it has usually '
+        + 'mistaken a driver for the tide. So the party at the gate is juniors with '
+        + 'one person on it who has seen this before, which is the arrangement that '
+        + 'produces most of what a young cultivator in this world ever survives.',
+    theSameGroundDoesBoth:
+        'A rich vein makes the material and makes the tide. A house cannot take the '
+        + 'first without eventually answering for the second, and a house that has '
+        + 'spent forty years taking the first and calling the second bad luck is the '
+        + 'ordinary case rather than the exception.'
+} as const;
+
 
 /** What sort of problem this is, before anything about its strength. */
 export const BeastNatureSchema = z.enum([

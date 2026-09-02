@@ -362,6 +362,7 @@ describe('every verb is reachable from plain English', () => {
         train_technique: 'I practise the Lid-Watching Stance technique',
         refine: 'I brew a pill in the cauldron',
         gather: 'forage for herbs',
+        hunt: 'I go hunting',
         eat: 'I buy a meal',
         wait: 'I wait',
         work: 'find work',
