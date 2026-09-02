@@ -378,11 +378,22 @@ has nothing to do with being able to fight.
 **That is general, and the Court is only its extreme case.** Anybody who has changed houses
 carries the same ambiguity; the Court is an entire institution made of it.
 
-**The Court is not an exception to the leak rule, and nothing here needs it to be.** A member
-arriving from a great house does not bring that house's art into a common pool — houses do not
-let their arts leak, and **that rule does not bend.** It does not have to: going to the Court
-*costs nothing and is an honour on the house you leave*, so nobody is betraying anybody, and
-what the Court actually rests on has nothing to do with taking arts. See
+**And the secrecy rule is narrower than it sounds, in a way that matters everywhere.**
+
+> **A manual is an object. What is in your head is not.**
+
+A house can stop a manual leaving — it is physical, countable, lockable, and **missed** — and
+houses police that exactly as they should. **A house cannot stop somebody teaching aloud what
+they already know, so it does not try.** The economy is enforceable on objects and unenforceable
+on memory, which is why both things are true at once: arts are guarded, *and* people carry them
+out of every house in the world in the only container nobody can search.
+
+**But teaching from memory is not a manual.** A manual is complete and exact; a person is
+neither. **Which is precisely why the manual is the thing worth stealing**, and why it is a
+tracked object with provenance in [`items.md`](items.md) while the knowing of it is not.
+
+At the Court this is the whole texture: members do share what their old houses taught them, and
+nobody arrives carrying the book. See
 [`past-the-ceiling.md`](past-the-ceiling.md#the-hollow-court-is-the-exception-to-all-of-it) for
 its selection and its ground, and `crossings.ts` for the thing that actually keeps it standing:
 **its records are good, and that is not incidental to its strength — it is its strength.**
