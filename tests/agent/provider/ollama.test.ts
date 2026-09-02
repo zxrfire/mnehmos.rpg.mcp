@@ -272,3 +272,82 @@ describe('OllamaProvider', () => {
             .rejects.toThrow(/empty message content/);
     });
 });
+
+describe('thinking is off unless somebody asks for it', () => {
+    /** Every request body this provider sent, in order. */
+    function recordingFetch(replies: Array<{ status?: number; body: string }>): {
+        fn: typeof fetch;
+        bodies: Array<Record<string, unknown>>;
+    } {
+        const bodies: Array<Record<string, unknown>> = [];
+        let n = 0;
+        const fn: typeof fetch = async (_input, init) => {
+            bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+            const reply = replies[Math.min(n, replies.length - 1)];
+            n++;
+            return new Response(reply.body, {
+                status: reply.status ?? 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        };
+        return { fn, bodies };
+    }
+
+    it('sends think: false when nobody configured one', async () => {
+        // The default, and the reason for it: a thinking-tuned model reasons
+        // whether or not it was asked, out of the same budget as the answer,
+        // and the narration comes back empty.
+        const mock = recordingFetch([{ body: chatReply('It rains on the terraces.') }]);
+        const provider = new OllamaProvider({ fetchImpl: mock.fn });
+
+        await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+
+        expect(mock.bodies).toHaveLength(1);
+        expect(mock.bodies[0].think).toBe(false);
+    });
+
+    it('sends think: true when somebody did', async () => {
+        const mock = recordingFetch([{ body: chatReply('It rains on the terraces.') }]);
+        const provider = new OllamaProvider({ think: true, fetchImpl: mock.fn });
+
+        await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+
+        expect(mock.bodies[0].think).toBe(true);
+    });
+
+    it('asks again without the flag when the model refuses it, and remembers', async () => {
+        // Ollama rejects `think` outright on a model that was not tuned for
+        // it. Rather than carry a list of which local models are - a list
+        // somebody would have to maintain forever, wrong the week a new one is
+        // pulled - the provider learns it from the refusal.
+        const mock = recordingFetch([
+            { status: 400, body: JSON.stringify({ error: 'model does not support thinking' }) },
+            { body: chatReply('It rains on the terraces.') }
+        ]);
+        const provider = new OllamaProvider({ fetchImpl: mock.fn });
+
+        const first = await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+        expect(first.text).toBe('It rains on the terraces.');
+        expect(mock.bodies).toHaveLength(2);
+        expect(mock.bodies[0].think).toBe(false);
+        expect(mock.bodies[1]).not.toHaveProperty('think');
+
+        // And the second call costs no refusal, because the model is known.
+        await provider.call({ messages: [{ role: 'user', content: 'again' }] });
+        expect(mock.bodies).toHaveLength(3);
+        expect(mock.bodies[2]).not.toHaveProperty('think');
+    });
+
+    it('does not retry a 400 that has nothing to do with thinking', async () => {
+        // The retry is narrow on purpose. A real failure reported as a
+        // successful second attempt is worse than the failure.
+        const mock = recordingFetch([
+            { status: 400, body: JSON.stringify({ error: 'invalid message role' }) }
+        ]);
+        const provider = new OllamaProvider({ fetchImpl: mock.fn });
+
+        await expect(provider.call({ messages: [{ role: 'user', content: 'hello' }] }))
+            .rejects.toBeInstanceOf(ProviderError);
+        expect(mock.bodies).toHaveLength(1);
+    });
+});

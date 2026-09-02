@@ -49,9 +49,12 @@ export interface ProviderFactoryConfig {
     ollamaModel?: string;
     /**
      * Whether the local model reasons before answering. Read from OLLAMA_THINK
-     * if omitted; unset means the flag is not sent at all. Set OLLAMA_THINK to
-     * "false" on a thinking-tuned model, or its reasoning eats the completion
-     * budget and the narration comes back empty. See `OllamaProviderConfig`.
+     * if omitted, and **off** when neither is set - a thinking-tuned model
+     * reasons whether or not anybody asked, and the reasoning comes out of the
+     * same budget as the answer, so the narration comes back empty. A model
+     * that does not take the flag at all refuses it once and is then asked
+     * without it. Set OLLAMA_THINK to "true" to get reasoning back. See
+     * `OllamaProviderConfig`.
      */
     ollamaThink?: boolean;
     /**
