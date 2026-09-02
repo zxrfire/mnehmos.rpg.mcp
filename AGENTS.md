@@ -1457,3 +1457,32 @@ measurement attached to the hash it was taken at.
 
 If you find unexplained edits appearing in your worktree, a stray `stash pop` is
 the first thing to suspect.
+
+### Where work goes: `origin` only, and `feat/xianxia-cultivation`
+
+Two remotes are configured and they are not equal.
+
+| remote | url | what you may do |
+|---|---|---|
+| `origin` | `github.com/zxrfire/mnehmos.rpg.mcp` | **everything** |
+| `upstream` | `github.com/Mnehmos/mnehmos.rpg.mcp` | **nothing** |
+
+**Never push to `upstream`, never open a pull request against it, and never
+force anything anywhere near it.** It belongs to somebody else. It is present so
+this fork can pull from it, and that is the whole of its purpose here. A command
+that names `upstream` is a mistake unless the owner asked for it in those words.
+
+**All work lands on `feat/xianxia-cultivation` on `origin`.** That is the branch
+this project is built on, and it is where a change is finished rather than
+merely written.
+
+**And prefer it to a new branch.** One night produced sixteen side branches -
+several of them carrying good, tested, finished work that then sat unmerged
+while the thing they were built on moved underneath them, so a clean change
+became a conflict for no reason but delay. Branch when you genuinely need
+isolation, land promptly, and do not leave a finished piece parked on a name
+only you know.
+
+When several agents work at once, the shared checkout is dirty almost all the
+time. That is a reason to stage explicit paths, not a reason to start another
+branch.
