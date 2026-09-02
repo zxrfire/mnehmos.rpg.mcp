@@ -31,9 +31,16 @@ medicine: **does this wound threaten your life, or does it take a rung from you?
 forced through faster than the channel could pass it, or the walls were torn rather than burned.
 They hurt, they last, they are a genuine impairment, and **they do not stop you climbing.**
 
-**The structural wounds** - `cracked-core`, `ruined-dantian`, `unformed-nascent-soul` - are the
-rare family, and they are a different kind of problem entirely. These take something back. A
-cracked core is not an inconvenience on the road; it is the road closing.
+**The wounds of the cultivation** - a cracked core, a ruined dantian, a shattered foundation,
+an unformed nascent soul - are the rare family, and they are a different kind of problem
+entirely. **These take something back.** A cracked core is not an inconvenience on the road; it
+is the road closing. A shattered foundation is an injury in every ordinary sense - it is done to
+you, it can be inflicted, and it can in principle be mended - and it belongs here rather than
+beside a torn channel, because what it costs is a rung and not a season.
+
+The useful shorthand is **body against cultivation**. A channel wound is damage to the flesh
+qi moves through. A foundation or a core is damage to the cultivation itself. Both are injuries;
+only the second one takes something the ladder already gave you.
 
 **The two must never be treated as one scale with a bigger number at the end.** A crippling
 torn meridian is still a channel wound and is still survivable; a cracked core is categorically
