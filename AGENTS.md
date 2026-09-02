@@ -398,6 +398,22 @@ binds it: interpret intent, call tools, write prose - and narrate only what a to
 actually returned, including when the engine's answer is bad news. Never describe an
 outcome you did not get back from the engine.
 
+**And point the player only at things they can actually do.** A narrator that does not know
+the verb list invents affordances - it writes *"you could try climbing the wall"* where
+there is no climb verb, and the player spends a turn finding out the prose lied. The engine's
+own action set is the only honest account of what somebody may be pointed at, and it is
+written down: **[`docs/verbs.md`](docs/verbs.md)** is every verb, what a player is asking
+for when they say it, what it costs, what its intents are, and where it resolves.
+
+It is **generated** from [`what-each-verb-is-for-in-the-players-words.ts`](src/web/what-each-verb-is-for-in-the-players-words.ts),
+which is a `Record<ActionName, …>` - so a verb added to `ACTION_NAMES` does not compile
+until somebody has said what it is for, and the phase-1 glossary the classifier is sent is
+composed from that same record rather than written out beside it. Two renderings of one
+source, which is the [`NARRATOR-CORE.md`](docs/world/NARRATOR-CORE.md) rule applied to the
+interface: **do not paraphrase the verb list anywhere.** Run
+`node scripts/build-the-verb-surface.mjs` after touching the action set; a staleness test
+runs the same check.
+
 ---
 
 ## The acceptance test
@@ -1169,6 +1185,65 @@ anything they did not practise.
 And note what this does NOT license. A repetitive life failing *early* is not this rule
 working; it is something else killing them, and it should be investigated rather than credited.
 This effect is about who somebody has become over a long life, so it can only show up over one.
+
+### A house's shelf outruns its people, and the gap is the content
+
+**An art nobody alive can use is the ordinary case here, not a hole to be filled.** A house holds
+what it inherited. Whether anybody currently standing in it can reach the top of that is a
+separate question, and in this world the answer is usually no.
+
+That is the Late Age stated as a roster rather than as prose. The catalog already says it in
+several places without calling it a rule - four portable nodes and a set of fragments a house
+depends on, cannot reproduce, and is visibly wearing out; nine lit nodes out of forty-one; a
+practice yard cut for six hundred that holds ninety. **The shelf is the house's memory. The
+roster is what it has left.**
+
+So the rung where a house's shelf stops being reachable **is** its decline, expressed as a
+number instead of an adjective - and it is something the house knows about itself and says out
+loud. *Nobody has taken the fifth form in five hundred years* is not a lament somebody wrote
+for flavour; it is a roster fact with a date on it, and the people inside can tell you which
+generation it stopped in.
+
+**The failure mode is the opposite of the obvious one.** Faced with an art no living member
+holds, the instinct is to deal it to somebody so the house "works". Doing that everywhere
+flattens the world into one where every shelf is fully staffed, every house is at its own
+height, and nothing is in decline - which is a different setting, and a much duller one.
+
+**Two things are genuinely broken and neither is this:**
+
+- **A house that cannot teach its own beginners.** If nobody can carry a new disciple off the
+  entry rung, nobody could ever have joined and got anywhere, and the roster is a fiction.
+  That is a defect wherever it appears.
+- **An absence produced by the machinery rather than by the world.** If a house's art demands a
+  root its members are never dealt, then its shelf is dead every seed for a mechanical reason,
+  and nobody inside the world could tell you when it stopped - because it never started. **The
+  test is whether the absence has a story.** Decline has one. A seeding accident does not.
+
+When in doubt, ask which of those two you are looking at before adding anybody to anything.
+
+
+#### It also gives every house a direction, which is the more useful half
+
+**A house is at its peak, in decline, or rising, and the shelf against the roster is how you
+can tell without being told.**
+
+- **In decline**: the shelf outruns the people. Arts nobody can reach, a rung where the
+  teaching stops, seniors who hold less than their predecessors did. The commonest case here.
+- **At its peak**: the roster reaches the top of what the house holds, and there is nothing
+  further on the shelf to want. A house in this state has a different problem - it is looking
+  outward, because everything inward is finished.
+- **Rising**: the people are outrunning the shelf. Somebody is at a rung the house has no book
+  for, which is a house that has to acquire, borrow, steal or be given something, and that is
+  a house with a reason to move.
+
+**None of those needs a field.** Each is a comparison between two things the roster and the
+catalog already hold, and it is better derived than stored: a stored trajectory drifts the
+first time somebody dies, and a derived one is true by construction. **Where a house sits is a
+question, not a property.**
+
+And it is a question the world should be able to answer out loud, because it is exactly what
+people gossip about: which houses are finished, which are dangerous, and which have somebody
+coming up who has outgrown them.
 
 ### It has to play as a game, not as a command line
 
