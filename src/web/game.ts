@@ -848,13 +848,14 @@ import {
     sayingWhereItStopped,
     stepsOfThePlan,
     theQuestionStillStands,
+    howTheStepWent,
     sayingWhatIsStillToCome,
+    sayingWhatItCostTheRest,
     theRowForAStepOverTheBound,
     theRowForSomethingStillToCome,
     theRowThatAsksWhichFirst,
     theRowThatOpensAStep,
     theRowThatSaysWhereItStopped,
-    theWorldStoppedHere,
     whatTheQuestionAsks,
     whatTheQuestionAsksStructurally,
     whatThisTurnMayRun,
@@ -3221,6 +3222,8 @@ export class GameService {
         const budget = whatThisTurnMayRun(steps, rawInput);
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
+        /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */
+        let stoppedHavingLanded = false;
         let notReached: readonly PlanStep[] = [];
 
         for (let i = 0; i < budget.toRun.length; i++) {
@@ -3231,14 +3234,29 @@ export class GameService {
                 step.action, now.run, now.cultivator,
                 this.ambientFor(now.cultivator, now.run), rawInput
             );
+            // Read BEFORE the bookkeeping row goes on, as well as excluding it
+            // there. Two guards for one mistake, because the mistake read as a
+            // successful theft and cost a played turn to find.
+            const went = howTheStepWent(one, step);
             one.calls.unshift(theRowThatOpensAStep(step, i, steps.length));
             done.push(one);
 
-            // Somebody noticed, or the run ended. Either way the sequence stops
-            // where the world stopped it, and the rest of the plan cost nothing.
-            if (theWorldStoppedHere(one, step) || !this.currentRun().cultivator.alive) {
+            // ── TWO WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT ───
+            //
+            // The step did not come off, or it came off and the run did not
+            // survive it. Told apart because the player has to be able to tell
+            // them apart: see `howTheStepWent`, where a live turn reported a
+            // theft that plainly landed as one that "did not come off".
+            //
+            // `notReached` is only what THIS TURN was going to run. Steps held
+            // by the budget were never this turn's and are not collateral of
+            // anything - reporting them here is what made a journey the player
+            // had sequenced for later read as a casualty of the theft.
+            const stillAlive = this.currentRun().cultivator.alive;
+            if (went === 'did_not_come_off' || !stillAlive) {
                 stoppedOn = step;
-                notReached = [...budget.toRun.slice(i + 1), ...budget.heldForTheQuestion];
+                stoppedHavingLanded = went !== 'did_not_come_off';
+                notReached = budget.toRun.slice(i + 1);
                 break;
             }
         }
@@ -3275,11 +3293,19 @@ export class GameService {
         const folded: Execution = foldTheCallsIntoOneTurn(done);
 
         if (stoppedOn !== null && notReached.length > 0) {
-            sayThisWhateverTheNarratorDoes(folded.facts, sayingWhereItStopped(stoppedOn, notReached));
+            const said = stoppedHavingLanded
+                ? sayingWhatItCostTheRest(stoppedOn, notReached)
+                : sayingWhereItStopped(stoppedOn, notReached);
+            sayThisWhateverTheNarratorDoes(folded.facts, said);
             folded.calls.push(
-                theRowThatSaysWhereItStopped(stoppedOn, notReached)
+                theRowThatSaysWhereItStopped(stoppedOn, notReached, stoppedHavingLanded)
             );
-        } else if (fork === null && budget.heldForTheQuestion.length > 0) {
+        }
+
+        // Held by the budget, and said WHETHER OR NOT the turn also stopped -
+        // they are separate facts about separate steps, and an `else if` here
+        // meant a plan that stopped never mentioned what the player had queued.
+        if (fork === null && budget.heldForTheQuestion.length > 0) {
             // THE PLAYER ALREADY SAID WHICH COMES FIRST, so nothing was asked -
             // the first act ran and the rest is next turn's. Said once, as a
             // fact about where they now stand rather than as a report about the
@@ -10802,6 +10828,28 @@ ${noticed}`;
 
 ${line}`;
         }
+        // The cost half goes to `lines`, and it has to.
+        //
+        // This whole sentence used to live in `structure`, which
+        // `composeNarrationUser` never sends - so a model narrating a market
+        // read was never told the turn had spent nothing. Played against
+        // ollama, the sentence "I look over the stalls, ask who is selling a
+        // manual, and buy the cheapest one they have" returned prose saying
+        // "You trade eleven spirit stones for the copy" over a ruling that said
+        // nothing was bought, and the player believed they owned the one object
+        // that unblocks the opening of this game.
+        //
+        // The prompt now forbids that, but a prompt cannot be obeyed by a model
+        // that is not shown the ruling. And this fact belongs on `lines` by that
+        // channel's own test: it is OBSERVABLE. Somebody who spends an afternoon
+        // at the stalls and buys nothing knows both of those things without
+        // being told a single number.
+        //
+        // The counts and the pricing band stay in `structure`, where they are
+        // read by an operator and would only be paraphrased into exposition.
+        board.facts.lines.push(
+            'You read what is on offer here. Nothing was bought and no time passed.'
+        );
         board.facts.structure.push(
             `${offered.peopleHere} person(s) standing here; ${offered.offers.length} offer(s) `
             + 'after the cut, priced between what a counter would give the holder and what the '
@@ -13146,6 +13194,8 @@ ${opened.text}` : receipt,
         });
 
         const tollLines: string[] = [];
+        /** What the crossing took out of the body, once it has been clamped. */
+        let paidWithTheBody = 0;
         const after = this.db.transaction((): Cultivator => {
             for (const injury of result.injuriesSustained) {
                 this.repos.cultivators.addInjury(cultivator.id, {
@@ -13184,16 +13234,39 @@ ${opened.text}` : receipt,
             // `a87d251`: an absolute carry leaves a whole cultivator at two per
             // cent of themselves after a large advance, and nothing in this
             // world says that climbing wounds you. What a crossing COSTS is a
-            // separate question and belongs to the resolver, which is where the
-            // tribulation's own injuries already come from.
+            // separate question, decided by the resolver and charged below.
             const maxHp = maxHpForOrdinal(cultivator.attributes.might, result.toOrdinal);
             const maxQi = maxQiForOrdinal(cultivator.attributes.insight, result.toOrdinal);
+            const carried = carriedAcross(cultivator.hp, cultivator.maxHp, maxHp);
+
+            // ── AND WHAT ARRIVING COST THE BODY ─────────────────────────
+            //
+            // The design owner's ruling, and this is the path a player reaches
+            // by typing. See `bodyCost` on `BreakthroughResultSchema`.
+            //
+            // Charged against the NEW pool, after the share has carried, so it
+            // means the same thing at every rung and is not partly refunded by
+            // the vessel growing underneath it. `bodyCost` is zero on every
+            // failure and on a death, so this branch only ever fires on an
+            // arrival.
+            //
+            // CLAMPED SO IT CANNOT KILL, and this path needs the clamp most:
+            // `strikeBarrier` spends NO DAYS, so somebody with banked progress
+            // can strike four times in an afternoon and owe a whole pool. A
+            // crossing that succeeded must not end the run by arithmetic - that
+            // would collapse `success` and `death` into one answer. What it does
+            // instead is leave them on almost nothing, which is the risk the
+            // ruling is about and which the turn now says out loud.
+            const owed = result.bodyCost > 0
+                ? Math.max(1, Math.round(maxHp * result.bodyCost))
+                : 0;
+            paidWithTheBody = Math.min(owed, Math.max(0, carried - 1));
 
             let updated = this.repos.cultivators.update(cultivator.id, {
                 realmOrdinal: result.toOrdinal,
                 maxHp,
                 maxQi,
-                hp: carriedAcross(cultivator.hp, cultivator.maxHp, maxHp),
+                hp: carried - paidWithTheBody,
                 qi: carriedAcross(cultivator.qi, cultivator.maxQi, maxQi),
                 cultivationProgress: Math.max(0, cultivator.cultivationProgress - result.progressConsumed),
                 yearsAtCurrentRealm: advanced ? 0 : cultivator.yearsAtCurrentRealm
@@ -13321,8 +13394,21 @@ ${opened.text}` : receipt,
             });
         }
 
-        const facts = factsForBreakthrough(cultivator, after, result, ambient);
+        const facts = factsForBreakthrough(cultivator, after, result, ambient, paidWithTheBody);
         facts.lines.push(...tollLines);
+        if (result.bodyCost > 0) {
+            facts.structure.push(
+                `Body cost: ${(result.bodyCost * 100).toFixed(0)}% of the pool - `
+                + `${Math.round(after.maxHp * result.bodyCost)} of ${after.maxHp} at the rung `
+                + `arrived at - and ${paidWithTheBody} was taken. `
+                + (paidWithTheBody < Math.round(after.maxHp * result.bodyCost)
+                    ? 'The rest was clamped: a crossing that succeeded may not kill by '
+                      + 'arithmetic, so at least one point is always left.'
+                    : 'Nothing was clamped; the body carried the whole of it.')
+                + ' Charged against the pool at the rung arrived at, after the share carried '
+                + 'across, so the vessel growing does not refund it.'
+            );
+        }
 
         return {
             facts,
@@ -15168,6 +15254,29 @@ ${opened.text}` : receipt,
         }
 
         const name = this.lotFor(chosen)?.name ?? chosen.itemId;
+
+        // ── THE ONE PILL THAT IS NOT A PILL ──────────────────────────────
+        //
+        // Before `getPill`, because it is not in that catalog and never will
+        // be: an Unearned Step is an object that came down from over the Lid,
+        // and `alchemy_manage.consume_pill` prices medicine somebody refined.
+        //
+        // This is the exemption that gives the crossing toll its meaning. The
+        // design owner's ruling is that a crossing costs the body *"unless via
+        // admin panel or the immortal pill that lets you skip a ordinal - that's
+        // the diff between the immortal pill and the ones that give you qi, the
+        // qi ones you still have to cross and risk it."* Every qi pill in the
+        // pouch hands over accumulation and leaves the wall exactly where it
+        // was; this one hands over the far side.
+        //
+        // It goes through `advanceRealm` and never through `attemptBreakthrough`,
+        // which is the whole of how the exemption is expressed - no roll, no
+        // failure table, no tribulation, no toll and no `bodyCost`, because none
+        // of those code paths is entered. An exemption implemented as a flag on
+        // the resolver would be a second set of rules for one act; this is the
+        // absence of the act.
+        const step = theUnearnedStepIn(chosen.itemId);
+        if (step) return this.spendTheUnearnedStep(run, cultivator, chosen, step);
 
         // ── ASK BEFORE WASTING IT ──
         //
