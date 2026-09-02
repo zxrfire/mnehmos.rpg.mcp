@@ -357,6 +357,25 @@ So the test for anything added there is **does it arrange a situation, or assert
 Arrange, and it belongs. And when you arrange one and the world does not do what it says it
 does, that is a finding about the world - `docs/admin.md` lists three found that way.
 
+Two things follow, and both are load-bearing:
+
+**Arranging is followed by looking.** An admin call that changes something narrates the
+post-state afterwards - the engine report verbatim, then phase 3 over the world as it now
+stands. Without it an operator arranges a situation and has no way to see it. It is also the
+only place the engine-to-narrator seam runs against states ordinary play reaches once in
+hundreds of runs, so **a bad narration after an admin call is a finding about phase 3.** Which
+narrator answers is settled at process start, which is what makes engine-only testing "start
+it without a model" rather than a mode. Do not add a flag for it.
+
+**ADMIN never reaches the LLM**, by dispatch order: it is handled before phase 1. Every
+phrasing it accepts is read deterministically, so a line naming a creature the reader has no
+noun for is refused rather than improvised. If you widen the reader, widen it with a lookup
+keyed on the action - `BARE_NUMBER_ARG` and `PRIMARY_ARG` are the shape - never with an
+inference about the words. Which field an operator meant is a property of the action.
+
+`reset` is the exception to where admin lives: it ends the run and opens a new birth in the
+same world, and it is in `game.ts` because runs are written there and nowhere else.
+
 ## If you are the narrator
 
 When an agent is acting as the runtime narrator rather than editing code, the same rule

@@ -190,7 +190,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `help` | READ. What admin can do, as copyable lines. Three sections, because all of it at once is more than anybody reads: `ADMIN help` is the capabilities, `ADMIN help refusals` is what it will not do with the honest route to each, `ADMIN help actions` is every action with its arguments. | `about` |
 | `roster` | READ. Every cultivator that exists: name, rung, root, sect, where they stand, alive or dead. | `includeDead` |
 | `audit_log` | READ. Every admin call on this run. **These rows ARE the admin flag** - `run_manage.ledger` reads them to exclude the run from the death ledger and balance data. | `runId`, `limit` |
-| `spawn_encounter` | **Creates a PERSON.** A real persisted NPC at any strength, standing where the player is, talent rolled from the run seed and advanced through `advanceRealm` like anybody. | `ordinal`, `name`, `location`, `disposition` |
+| `spawn_encounter` | **Creates a PERSON.** A real persisted NPC at any strength, standing where the player is, talent rolled from the run seed and advanced through `advanceRealm` like anybody. `alignment` puts them in a real house of that leaning, which is what decides how far they go when wronged. Omitted, they are a rogue, and a rogue answers as a neutral. | `ordinal`, `name`, `location`, `disposition`, `alignment` |
 | `spawn_site` | **Reveals a PLACE.** Makes a catalogued grave or trial nameable. Lifts the awareness gate and nothing else. | `kind`, `ordinal`, `name` |
 | `grant_item` | **Gives an OBJECT.** A catalog pill, herb or rated artifact into the real pouch. | `itemId`, `name`, `ordinal`, `kind`, `quantity` |
 | `set_location` | Moves the player to a place really on the map. No travel time, nothing on the road. | `location` |
@@ -199,6 +199,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `grant_progress` | Fills the qi-unit accumulator so a crossing can be **attempted**. Rolls nothing. | `amount`, `fill` |
 | `set_realm` | Moves the player on the ladder through `advanceRealm`: peak stamped, progress cleared, stagnation clock restarted. | `ordinal` |
 | `grant_knowledge` | **Lifts the awareness gate wide.** Makes every place, every house, or one named either, nameable by this cultivator. They already exist; what changes is whether their names can be said. | `kind`, `name` |
+| `reset` | **Ends this run and begins another.** Closes the current run with no death cause - it did not die - flags it admin so it never reaches the ledger, and opens a fresh birth in the SAME world. Handled in `game.ts` rather than here: runs are written there and nowhere else, and a tool handler ending one would be a second writer. | a name, optional |
 
 ### Which of the two `spawn`s
 
@@ -231,6 +232,10 @@ arguments, which is the property that makes reading prose safe at all.
 | show me a grave / a trial at *rung* | `spawn_site ordinal=<rung>` |
 | give me knowledge of every sect / I know every location | `grant_knowledge kind=sect` / `kind=place` |
 | ENCOUNTER ORDINAL 19 (the equals sign left out) | `spawn_encounter ordinal=19` |
+| spawn_encounter 41 / encounter 41 (a bare rung, nothing else) | `spawn_encounter ordinal=41` |
+| set_realm 30 / spawn_site 41 / advance_days 50 | `set_realm ordinal=30` / `spawn_site ordinal=41` / `advance_days days=50` |
+| reset / restart / reroll / regenerate | `reset`, keeping the current name |
+| reset Shen Yuan | `reset`, with that name |
 | what can you do / how do I ... | `help` |
 
 **An alias is not a named action.** `give` is an alias of `grant_item`, so *"give me knowledge
@@ -260,6 +265,95 @@ description goes into the **name**, which is free text the action already takes,
 else about the person differs - the spirit root and the attributes are rolled from the run
 seed either way. That is the agency rule applied to a word: the wording changes what was
 intended and what the world calls her, and changes nothing about what the engine then does.
+
+---
+
+## Doing something to them, and what comes back
+
+A threat, a lie, a theft or an interrogation put to somebody standing in front of you is a
+**wrong**, and it is answered. Before this existed the engine wrote a social TIE for a landed
+threat - the record it keeps for two people who are getting ON - so coercion and theft
+registered as relationship-building and nothing else happened at all.
+
+What comes back is the lesser of two things, floored at a warning:
+
+- **what they CAN do**, from the gap in major realms. A full realm below you and words are all
+  they have; level, and they can hurt you; a realm up, cripple you; two up, kill you.
+- **how far they WOULD go**, from their house's alignment. Righteous will not start with a
+  corpse. Demonic does not warn anybody twice. Neutral is proportional, and a rogue answers as
+  a neutral.
+
+**The floor is a warning and never silence.** Somebody who cannot touch you can still tell you
+what you are, and that line is the cheapest signal that the act landed on a person rather than
+on a ledger.
+
+The answer is one of five, and the floor is never silence:
+
+| | what it costs you |
+| --- | --- |
+| **warned** | words, and nothing else. What somebody who cannot reach you has instead |
+| **driven off** | put out, told not to come back. No wound |
+| **injured** | a real wound, and it does not close on its own |
+| **crippled** | a wound that does not come back |
+| **killed** | the run is closed, `combat_defeat`. No reload and no continuation |
+
+A wound is never fatal unless the verdict was `killed` - those are separate answers, and one
+that killed by arithmetic would collapse them into one. Set the target's house with
+`alignment=` on `spawn_encounter` to see the axis move; leave it off and they are a rogue,
+which answers as a neutral.
+
+The rule lives in `engine/social-leverage/what-somebody-does-about-being-wronged.ts`, which
+owns the ordering and is the file to read for the current thresholds. Which verbs are wrongs
+at all is a separate closed table in `game.ts`, so a verb added to the parser does not
+silently acquire consequences nobody chose for it.
+
+`ADMIN reset` is read BEFORE the live-run guard, and is the only admin verb that is: every
+other one is refused once the cultivator is dead, and the refusal ends "Begin a new run" -
+which is exactly what reset does.
+
+---
+
+## And then the world is looked at
+
+An action that CHANGES something is followed by a look at what it changed into: the engine
+report, verbatim and labelled out-of-world, and then phase 3 over the post-state - the same
+call that opens a life. Arranging a situation and then saying nothing left the operator
+holding a receipt: the encounter existed, and there was no way to see it exist.
+
+**The receipt is not narrated.** What follows it is the world as it now stands, and the person
+just stood up is in it because `company()` reads the world rather than the command. The engine
+decided, the narrator describes, and the narrator is not told what to say about it. A read -
+`roster`, `audit_log`, `help` - changed nothing and so is followed by nothing.
+
+Which narrator answers is settled at process start and ADMIN gets whatever the process was
+started with, so **testing the engine alone is "start it without a model"** rather than a mode.
+There is no flag, and there should not be one.
+
+This is also the only place the engine-to-narrator seam is exercised against arbitrary state.
+Ordinary play reaches Core Formation in about one run in a hundred and eighty, so phase 3 has
+barely run above Foundation at all. From here it is one line. **A bad narration after an admin
+call is a finding about phase 3**, not about admin.
+
+## What the model does not see
+
+**ADMIN never reaches the LLM.** It is dispatched at the top of `act`, before phase 1, so no
+model parses it and no model can be steered through it. Every phrasing on this page is read
+deterministically, in `admin-said-as-a-sentence.ts`.
+
+That is a real limit and not only a safety property. *"spawn a void tempering tortoise in
+human form in front of me"* is refused - "tortoise" is not a subject noun, and nothing infers
+a rung from "void tempering". The same thing is reachable spelled the surface own way:
+
+```
+ADMIN spawn_encounter name=Void-Tempering Tortoise in Human Form ordinal=29
+```
+
+which stands up a real, nameable, attackable person at Void Refinement under that name.
+
+What is **not** reachable is bespoke mechanics. `spawn_encounter` builds a CULTIVATOR: hp, qi
+and attributes come from the rung and a rolled spirit root, and the ladder is walked with
+`advanceRealm` like anybody. The name is free text; the creature is not. Anything that wants
+its own statline is a data change in `src/data/cultivation`, not an admin argument.
 
 ---
 
