@@ -25,8 +25,8 @@
  *                                        wound; it does not crack them, and a
  *                                        structural repair has nothing to
  *                                        reach for.
- *   a ruined dantian, a severed meridian `wounds.ts` says plainly that nothing
- *                                        answers these, which is a deliberate
+ *   an unfinished base, a severed        `wounds.ts` says plainly that nothing
+ *   meridian                             answers these, which is a deliberate
  *                                        answer rather than a gap.
  *
  * The gate in code is `BROKEN_STATUSES` in

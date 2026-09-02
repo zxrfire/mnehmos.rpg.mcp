@@ -52,7 +52,7 @@ function report(tag: string, state: WorldState, seeded: Set<string>, ms: number,
 
     // Wounds and broken statuses on NPC records.
     const anyState = state as unknown as { npcs: { cultivation: Record<string, unknown>; status: string }[] };
-    let wounded = 0, brokenCount = 0, woundTotal = 0, halted = 0;
+    let wounded = 0, brokenCount = 0, woundTotal = 0, incompleteBase = 0;
     const byStatus = new Map<string, number>();
     for (const n of anyState.npcs) {
         if (n.status !== 'alive') continue;
@@ -63,7 +63,9 @@ function report(tag: string, state: WorldState, seeded: Set<string>, ms: number,
         for (const inj of injuries) {
             const w = inj?.woundType ?? null;
             if (!w) continue;
-            if (w === 'ruined-dantian') halted++;
+            // The failure table's gravest row. It does NOT halt - the bar reads
+            // BROKEN_STATUSES only - so it is counted beside them, not as one.
+            if (w === 'incomplete-cultivation') incompleteBase++;
             if (BROKEN_STATUSES.includes(w)) {
                 brokenCount++;
                 byStatus.set(w, (byStatus.get(w) ?? 0) + 1);
@@ -83,7 +85,7 @@ function report(tag: string, state: WorldState, seeded: Set<string>, ms: number,
         + ` 29+:${at(29)}(${arrivedAt(29)})`
         + ` 13+:${at(13)}(${arrivedAt(13)})`
         + `  roads:${roads.size} arts:${arts.size}`
-        + `  wounded:${wounded}/${woundTotal}w broken:${brokenCount} halted:${halted}`
+        + `  wounded:${wounded}/${woundTotal}w broken:${brokenCount} incomplete-base:${incompleteBase}`
         + `  ${(ms / (years / 100)).toFixed(0)}ms/century`
     );
     if (byStatus.size > 0) console.log('              broken: ' + [...byStatus].map(([k, v]) => `${k} x${v}`).join(', '));

@@ -276,7 +276,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
         });
     }
 
-    // ── the qi in the dantian, which is the one thing sitting still fixes.
+    // ── the qi they have gathered, which is the one thing sitting still fixes.
     if (input.progressRequired !== null && !input.eligible) {
         const short = input.progressRequired - input.progressAvailable;
         if (short > 0) {
@@ -353,7 +353,7 @@ function headlineFor(kind: GateKind): string {
         case 'region_ceiling': return 'the province has no more to give';
         case 'thin_qi': return 'the qi here is thin';
         case 'seat': return 'the seat above is not theirs yet';
-        case 'progress': return 'there is not enough qi in the dantian';
+        case 'progress': return 'there is not enough qi gathered yet';
         case 'clock': return 'the years have run out';
         case 'open': return 'nothing';
     }

@@ -106,6 +106,7 @@ import {
 } from '../social-leverage/index.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { applyRuinProspecting } from './how-the-world-keeps-finding-more-ruins.js';
+import { repairRetiredWoundKeys } from './recording-the-day-a-wound-was-taken.js';
 import { deriveOrdinal } from './seeding.js';
 import {
     guideOrdinalFor,
@@ -293,6 +294,11 @@ export function applyPressure(
     const lastYear = yearOfDay(toDay);
     let yearsStepped = 0;
     let born = 0;
+
+    // Worlds are persisted, so retiring a wound key in the catalog does not
+    // retire the rows already carrying it. Once per pass rather than per year:
+    // it is idempotent and it has nothing to do after the first sweep.
+    repairRetiredWoundKeys(state);
 
     for (let year = firstYear; year <= lastYear && events.length < maxEvents; year++) {
         yearsStepped++;

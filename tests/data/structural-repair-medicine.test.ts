@@ -123,7 +123,7 @@ describe('the two ceilings, enforced rather than described', () => {
 
     it('refuses a wound that is not structural at all', () => {
         const earth = STRUCTURAL_REPAIR_MEDICINES.find(m => m.grade === 'earth')!;
-        for (const key of ['heart-demon', 'torn-meridians', 'ruined-dantian', null]) {
+        for (const key of ['heart-demon', 'torn-meridians', 'incomplete-cultivation', null]) {
             expect(mendsThisBreak(earth, key, 17)).toBe(false);
         }
     });

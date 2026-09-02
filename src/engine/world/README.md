@@ -1325,7 +1325,8 @@ by succeeding.
 the wounds layer is what a failure leaves, so the world getting more broken is wanted.
 Broken statuses now appear on NPCs - `unformed-nascent-soul`, `damaged-spirit-sense`,
 `cracked-core` have all been observed on living people - and one to four cultivators at
-any time are carrying `ruined-dantian`. That is the population the setting most wanted and
+any time are carrying `incomplete-cultivation`, which is the row this figure was measured
+against under its former key. That is the population the setting most wanted and
 could not produce.
 
 They are not frozen. `canAttemptBreakthrough` applies the structural gate **only at a
