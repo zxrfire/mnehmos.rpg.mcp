@@ -61,10 +61,19 @@ describe('the offer the Pavilion actually makes at ordinal 25', () => {
         expect(offer.offered).toBe(sect.ranks.indexOf('Core Disciple'));
         expect(offer.band).toBe('under_their_own');
 
-        // The defect, stated as the gap: the old lookup seats them a rank higher.
+        // The defect, stated as the gap rather than as a rank name: the old
+        // lookup seats them higher, and HOW MUCH higher is a property of the
+        // ladder rather than of this rule. When the Grand Sword Elder rung was
+        // inserted between the elders and the head, the lookup went from
+        // offering a stranger at 25 the Sword Elder's seat to offering them the
+        // Grand Sword Elder's - the arithmetic reading one rung further up a
+        // longer ladder, which is the same defect getting worse. Pinning the
+        // rank name here would have made that read as a failure of this rule.
         const old = entryRankIndexFor(sect.ranks, sect.admissionOrdinal, 25);
-        expect(old).toBe(sect.ranks.indexOf('Sword Elder'));
         expect(offer.offered!).toBeLessThan(old);
+        // And it is the house's own standard that decides, not the ladder's
+        // length: Xiang Yuwei stands at 24 as a Sword Elder either way.
+        expect(sect.ranks[offer.peerRank!]).toBe('Sword Elder');
     });
 
     it('says the slight out loud on the mechanical channel', () => {

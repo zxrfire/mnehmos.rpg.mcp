@@ -381,7 +381,29 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     };
 }
 
-export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<object> {
+/**
+ * What the house's own deciders make of this person, when the caller has read
+ * them.
+ *
+ * NOT ON `JoinSchema`, deliberately. The schema is what a player or a model may
+ * SAY, and how a house feels about somebody is not sayable - putting it there
+ * would let a narrator assert the one thing this whole path exists to have the
+ * engine decide. It is a second function parameter instead, supplied only by a
+ * caller that has already read the council off state it holds.
+ *
+ * Absent for the MCP tool path, which has no world handle: that door gets the
+ * ordinary offer, which is the correct answer for a caller with no council
+ * rather than a degraded one.
+ */
+export interface WhatTheHouseMakesOfThem {
+    /** `WhereTheBodyLands.leaning`, on -1..+1. */
+    leaning?: number | null;
+}
+
+export async function handleJoin(
+    args: z.infer<typeof JoinSchema>,
+    house?: WhatTheHouseMakesOfThem
+): Promise<object> {
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     if (isGuidingErrorBody(resolved)) return resolved;
@@ -702,7 +724,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // 0.89 ranks high - above the house's own standard in 234 cases against 5
     // below. An outsider has the cultivation and not the standing, so they are
     // seated one under their peers. See `entry-offer.ts`.
-    const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal);
+    const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal, house?.leaning);
 
     // ── AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK ─────────────────
     //
@@ -1372,7 +1394,11 @@ const definitions: Record<SectAction, ActionDefinition> = {
     },
     join: {
         schema: JoinSchema,
-        handler: handleJoin,
+        // Wrapped rather than passed straight through: the registry hands a
+        // `SessionContext` second, and this door's second argument is what the
+        // house's deciders make of the asker. The tool path has no world to
+        // read them off, so it supplies none and gets the ordinary offer.
+        handler: (args: z.infer<typeof JoinSchema>) => handleJoin(args),
         aliases: ['enrol', 'enroll', 'apply'],
         description: 'Join a sect; the admission ordinal is enforced'
     },
