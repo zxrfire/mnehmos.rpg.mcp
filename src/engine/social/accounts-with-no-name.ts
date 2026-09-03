@@ -286,12 +286,24 @@ const PRIORITY_AT: Readonly<Record<string, number>> = Object.freeze({
  * what people do about wrongs they can point at. This one only answers the
  * question the middle state asks, which is *who was it*.
  *
- * ── NOT WIRED TO ANYTHING YET ────────────────────────────────────────────
+ * ── WHO CALLS IT ─────────────────────────────────────────────────────────
  *
- * The caller this wants is the pass that opens unnamed accounts for the kin of
- * the war dead - thousands of them, most of whom will never get a name - which
- * is being built beside this. It hands the result to `addGoal` in
- * `npc-state.ts`, once, on the day the account opens.
+ * `openTheAccountItLeaves` in `engine/world/when-somebody-does-not-come-back.ts`,
+ * on the day somebody finally stops waiting for a person who never came back
+ * and whose absence nobody could explain. It hands the result straight to
+ * `addGoal` in `npc-state.ts`, once, on that day.
+ *
+ * That is the road MOST people take into the middle state, and it is worth
+ * saying because the obvious one is not: hardly anybody is told a name and
+ * then told it was a lie. What actually happens is that the letters stop.
+ * Measured across four worlds at five centuries each, 2,027 of these were
+ * opened - about a hundred per world-century - against an equal number of war
+ * dead leaving accounts that DO have a name on them.
+ *
+ * Almost none of them are ever settled, and that is the design owner's ruling
+ * rather than a loose end: *you can die never knowing and then it just dies,
+ * that's fine too.* `grudges.ts` carries the matching ruling on why a holder
+ * dying is a derived reading and not a second status.
  *
  * It is deliberately NOT called for a played cultivator, and that asymmetry is
  * principled rather than an omission. AGENTS.md's one exception - *madness takes

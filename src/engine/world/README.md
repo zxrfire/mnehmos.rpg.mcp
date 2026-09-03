@@ -1037,15 +1037,62 @@ Four rules bind it:
   was written and nothing had ever produced one. Using it rather than a new field means
   waiting **inherits**: `settleNpcDeath` hands unfinished goals to an heir with the
   generation counter bumped, so a childhood friend's grandchild can still be looking.
-- **Telling people is the lever.** Waiting requires having been informed, and both clocks
-  are halved for somebody who was told where the absentee went. Patience factors take the
-  **smaller** of whatever applies rather than the product, because loving somebody and
-  having been told by them are the same reason to keep a door open, and multiplying them
-  produced a world where the people who mattered most cost you least.
+- **Telling people is the lever, and it buys patience rather than permission.** Both
+  clocks are halved for somebody who was told where the absentee went. Patience factors
+  take the **smaller** of whatever applies rather than the product, because loving somebody
+  and having been told by them are the same reason to keep a door open, and multiplying
+  them produced a world where the people who mattered most cost you least.
 - **Nothing about the player.** The absentee is an id and a name, and nothing branches on
   whether they have an `NpcRecord`. The same pass serves a sealed player and the ordinary
   `disappearance` event, whose own chronicle line already read "treated as dead by
   everyone except one person" without anybody ever having been that person.
+
+### Where the list lives, and who puts things on it
+
+`WorldState.absences`, persisted in `world_absences`, advanced by `driver.ts` on the same
+yearly line as everything else. It is the world's because **the world is what fails to
+account for somebody**, and because a list carried beside the world does not survive a
+restart - which is what it was, an argument to the driver that nothing in `src/` ever
+filled, so `absenceConsequences` was empty on every seed at every horizon.
+
+Two writers, split on one question - *can anybody say where they went?*
+
+| | Who opens it | Why there |
+|---|---|---|
+| **No** | `openAbsencesForTheUnaccountedFor`, sweeping everybody `isUnadjudicated` | `markMissing` is reached from four places today and the number only goes up. One sweep binds every road into it, including the ones nobody has written yet |
+| **Yes** | whoever explained it, calling `beginAbsence` with the lists | Only they know who was standing there. This is the seclusion road, and it is the player's |
+
+An absence is never deleted, settled or not: the snapshot of who was waiting on the day
+somebody vanished is the only thing that can answer *what did it cost me* two centuries
+later, and `homecoming` is a question asked against it.
+
+### And an unexplained absence leaves an account with nobody's name on it
+
+The other half of `accounts-with-no-name.ts`'s middle state - *something is wrong and
+nobody knows who* - and **it is the road most people take into it**. You do not learn your
+brother is dead because somebody tells you; you learn it because the letters stopped and
+one day you stop expecting him. The moment a waiting tie gives up on an absence nobody
+could explain, `withNoNameOnIt` writes a `grudge` with a **null subject**, and
+`theSearchItOpens` - which had no caller at all - turns it into the `revenge` goal of
+somebody asking questions with no name to ask about. Goals inherit, so the grandchild is
+still looking.
+
+Three rules, each of them a fact the module already held:
+
+- **Only an unexplained absence opens one.** A man who told you he was sitting down for
+  forty years and did not come out has not been wronged by anybody. Both lists empty is
+  the whole test.
+- **It never acquires a subject here.** A name arriving later is `aNameAttaches` on the
+  same row at the same id, and that is somebody else's moment.
+- **Most of them never resolve.** Ruled by the design owner - *you can die never knowing
+  and then it just dies, that's fine too* - so there is deliberately no mechanism trying
+  to close one, and several hundred open rows is not a backlog. `grudges.ts` carries the
+  matching ruling on why a dead holder is a **derived** reading and not a second status.
+
+Measured through the driver, four seeds at five centuries each: **720 absences opened,
+3,524 ties snapshotted, 2,717 of them waiting, 2,027 people who eventually stopped, 571
+who died still waiting and 119 still waiting at the end** - about 36 absences and 101
+nameless accounts per world-century, against zero before it was wired.
 
 ### Two things measurement changed here
 

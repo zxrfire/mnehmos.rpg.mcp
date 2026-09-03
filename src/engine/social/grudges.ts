@@ -39,6 +39,49 @@
  * This module does not import realms, ordinals or power, and stores none. Who
  * holds what against whom has nothing to do with where either of them stands
  * on the ladder.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * THE HOLDER DIED STILL HOLDING IT, AND THAT IS NOT A SECOND STATUS
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * Rule 1 says settlement is the only exit, and it is written above as though
+ * every record eventually meets one. Most do not. The design owner, on the
+ * accounts an absence opens for people who never find out what happened:
+ *
+ *     you can die never knowing and then it just dies, that's fine too
+ *
+ * So a ledger that has been running for five centuries holds several hundred
+ * rows that are `open`, will never be settled, and are held by people who are
+ * dead. That is correct rather than a backlog: they are people who went to
+ * their graves not knowing. It does raise a real question, because on the
+ * strength of rule 1 alone those rows read as live business forever.
+ *
+ * **It is a DERIVED reading, and it is deliberately not a status.** Three
+ * reasons, in the order they bind:
+ *
+ *   It would break inheritance. {@link inheritOnDeath} refuses a record that
+ *   is not `open`, and it is called BECAUSE the holder died. A status that
+ *   changed on death would close the row a moment before the only function
+ *   that reads a death could hand it to an heir, and the whole inherited-feud
+ *   half of this subsystem would go quiet.
+ *
+ *   It would be a second source of truth. Whether somebody is still in the
+ *   world is `NpcRecord.status` and nothing else, and it moves: `missing` is
+ *   not dead, a preserved soul still acts, and somebody presumed dead by a
+ *   register may walk back through the door. Copying any of that onto the row
+ *   means the ledger and the world can disagree, and the ledger will be the
+ *   one that is stale.
+ *
+ *   And it is not a fact about the record. Nothing happened to the wrong. The
+ *   row says exactly what it said the day it was written, which is the point
+ *   of a ledger that never quietly shrinks anything.
+ *
+ * So the question "is anybody still carrying this" is asked of the WORLD, by
+ * whoever is asking - `isActing` on the holder, or `isUnadjudicated` where
+ * that matters - and a sweep over the ledger is the wrong shape twice, because
+ * it would both write the derived answer down and have to be re-run whenever
+ * the world moved. A row whose holder can no longer act is inert, and inert is
+ * a reading rather than a state.
  */
 
 import { byId, stableId, type DayIndex } from './common.js';
