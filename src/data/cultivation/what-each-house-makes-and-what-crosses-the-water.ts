@@ -58,6 +58,7 @@
 
 import { z } from 'zod';
 import { REGIONS, getRegionForFaction, SOUTH_REGION_ID } from './regions.js';
+import { PLACE } from './place-names.js';
 import type { SeaLane } from '../../engine/world/what-a-sea-crossing-costs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -228,8 +229,8 @@ export function housesWithAWrittenCraft(): readonly string[] {
 export const SEA_LANES: readonly SeaLane[] = [
     {
         id: 'lane-eastern-passage',
-        fromPlace: 'Watering',
-        toPlace: 'Ninewatch',
+        fromPlace: PLACE.WATERING,
+        toPlace: PLACE.NINEWATCH,
         expectedDays: 21,
         openMonthsPerYear: 9,
         // Halfwater at nine days is the reason this is the busiest water in the
@@ -241,7 +242,7 @@ export const SEA_LANES: readonly SeaLane[] = [
     },
     {
         id: 'lane-the-northern-capes',
-        fromPlace: 'Salt Reach',
+        fromPlace: PLACE.SALT_REACH,
         toPlace: 'Rimefall inlet',
         expectedDays: 34,
         openMonthsPerYear: 2,
@@ -255,7 +256,7 @@ export const SEA_LANES: readonly SeaLane[] = [
     {
         id: 'lane-the-river-mouth',
         fromPlace: 'The river mouth below Low Fall',
-        toPlace: 'Watering',
+        toPlace: PLACE.WATERING,
         expectedDays: 9,
         openMonthsPerYear: 12,
         // Coastal the whole way, which is why the Clear River Alliance will

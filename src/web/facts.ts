@@ -49,6 +49,7 @@ import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultiv
 import { getSect } from '../data/cultivation/sects.js';
 import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-just-watched.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
+import { PLACE } from '../data/cultivation/place-names.js';
 
 export interface EngineFacts {
     /** One-line summary. Used as the overlay title and the log's first line. */
@@ -320,7 +321,9 @@ export function placeName(
     // because nothing clears it - and every surface that read it then reported
     // them as standing in a market town they left permanently.
     if ((cultivator.immortalStatus ?? 'none') === 'true_immortal') return ABOVE_THE_LID_PLACE;
-    return cultivator.location?.trim() || 'Sweptground';
+    // The same const `STARTING_LOCATION` is built from, rather than a second
+    // spelling of it: this fallback IS where a cultivator with no row started.
+    return cultivator.location?.trim() || PLACE.SWEPTGROUND;
 }
 
 /** "10 years", "3 months", "18 days" - whichever unit reads plainest. */

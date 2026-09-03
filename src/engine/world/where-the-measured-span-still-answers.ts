@@ -75,6 +75,7 @@
 
 import type { SpanRoute } from './buying-passage-at-a-measured-span-counter.js';
 import type { OpeningCycle } from './locations.js';
+import { PLACE } from '../../data/cultivation/place-names.js';
 
 /** The house whose counters these are. */
 export const THE_SPAN_HOUSE_ID = 'house-measured-span';
@@ -132,16 +133,16 @@ export const SPAN_ROUTES: readonly SpanRoute[] = Object.freeze([
     // five months a year, which is the whole reason this station is paid for.
     {
         id: 'span-fourhands-low-fall',
-        fromPlace: 'Fourhands',
-        toPlace: 'Low Fall',
+        fromPlace: PLACE.FOURHANDS,
+        toPlace: PLACE.LOW_FALL,
         walkedDaysItReplaces: 17,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: true
     },
     {
         id: 'span-low-fall-fourhands',
-        fromPlace: 'Low Fall',
-        toPlace: 'Fourhands',
+        fromPlace: PLACE.LOW_FALL,
+        toPlace: PLACE.FOURHANDS,
         walkedDaysItReplaces: 17,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: true
@@ -155,16 +156,16 @@ export const SPAN_ROUTES: readonly SpanRoute[] = Object.freeze([
     // somebody's hand.
     {
         id: 'span-scarwater-kettle',
-        fromPlace: 'Scarwater',
-        toPlace: 'Kettle',
+        fromPlace: PLACE.SCARWATER,
+        toPlace: PLACE.KETTLE,
         walkedDaysItReplaces: 11,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: false
     },
     {
         id: 'span-kettle-scarwater',
-        fromPlace: 'Kettle',
-        toPlace: 'Scarwater',
+        fromPlace: PLACE.KETTLE,
+        toPlace: PLACE.SCARWATER,
         walkedDaysItReplaces: 11,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: false

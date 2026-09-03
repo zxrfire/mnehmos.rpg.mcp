@@ -86,6 +86,7 @@
 import type { AbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
 import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { BEAST_CHANGE_ORDINAL } from './beasts.js';
+import { PLACE } from './place-names.js';
 
 export interface SomebodyInTheLine {
     /** Given name. The surname is the family's and is the same for all of them. */
@@ -138,7 +139,7 @@ export interface TheLineThatCameDown {
 export const THE_LINE_AT_MILLRUN: TheLineThatCameDown = Object.freeze({
     speciesId: 'beast-millennial-tortoise',
     surname: 'Duan',
-    place: 'Millrun',
+    place: PLACE.MILLRUN,
     regionId: 'region-wide-field',
     people: Object.freeze<readonly SomebodyInTheLine[]>([
         {

@@ -126,6 +126,7 @@ import { z } from 'zod';
 import { AmbientQiSchema, type AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { TraditionIdSchema } from './traditions.js';
+import { PLACE, REGION_NAME } from './place-names.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -710,7 +711,7 @@ export const BLOWN_GROUND_ID = 'ungoverned-blown-ground';
 const THE_FIVE_PROVINCES: readonly Region[] = [
     {
         id: HOME_REGION_ID,
-        name: 'The Low Fall',
+        name: REGION_NAME.LOW_FALL,
         role: 'home',
         bearing: 'centre',
         traditionId: 'tradition-drawn',
@@ -806,10 +807,10 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             }
         ],
         places: [
-            { name: 'Low Fall', kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
-            { name: 'Scarwater', kind: 'market_town', ambient: 'thin', note: 'The last ford before the border road, and where Marches goods are sold.' },
-            { name: 'Sweptground', kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
-            { name: 'Nine Peaks', kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' }
+            { name: PLACE.LOW_FALL, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
+            { name: PLACE.SCARWATER, kind: 'market_town', ambient: 'thin', note: 'The last ford before the border road, and where Marches goods are sold.' },
+            { name: PLACE.SWEPTGROUND, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
+            { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' }
         ],
         exports: [
             'refined pills and formulae, which the Marches cannot make at all',
@@ -908,7 +909,7 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
 
     {
         id: ADJACENT_REGION_ID,
-        name: 'The Quiet Marches',
+        name: REGION_NAME.QUIET_MARCHES,
         role: 'adjacent',
         bearing: 'west',
         traditionId: 'tradition-cut',
@@ -992,11 +993,11 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             }
         ],
         places: [
-            { name: 'Kettle', kind: 'market_town', ambient: 'thin', note: 'The Weir Office town: grant queue, assay house, mission, and a permanent dust plume.' },
-            { name: 'Hollowmarket', kind: 'village', ambient: 'thin', note: 'The Gleaners\' sorting yard, where salvage is priced before it goes to Kettle.' },
-            { name: 'Sixmile', kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.' },
-            { name: 'The Gapwater face', kind: 'site', ambient: 'dense', note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
-            { name: 'The Dead Verge', kind: 'site', ambient: 'thin', note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
+            { name: PLACE.KETTLE, kind: 'market_town', ambient: 'thin', note: 'The Weir Office town: grant queue, assay house, mission, and a permanent dust plume.' },
+            { name: PLACE.HOLLOWMARKET, kind: 'village', ambient: 'thin', note: 'The Gleaners\' sorting yard, where salvage is priced before it goes to Kettle.' },
+            { name: PLACE.SIXMILE, kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.' },
+            { name: PLACE.GAPWATER_FACE, kind: 'site', ambient: 'dense', note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
+            { name: PLACE.DEAD_VERGE, kind: 'site', ambient: 'thin', note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
         ],
         exports: [
             'sealed-site salvage, the region\'s only real product',
@@ -1073,7 +1074,7 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
     // in. This is where those rooms are.
     {
         id: EAST_REGION_ID,
-        name: 'The Wide Field',
+        name: REGION_NAME.WIDE_FIELD,
         role: 'adjacent',
         bearing: 'east',
         traditionId: 'tradition-drawn',
@@ -1162,11 +1163,11 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             }
         ],
         places: [
-            { name: 'Ninewatch', kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.' },
-            { name: 'Thirdwall', kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.' },
-            { name: 'Wheatgate', kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.' },
-            { name: 'Mudsummer', kind: 'site', ambient: 'dense', note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
-            { name: 'Millrun', kind: 'village', ambient: 'thin', note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
+            { name: PLACE.NINEWATCH, kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.' },
+            { name: PLACE.THIRDWALL, kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.' },
+            { name: PLACE.WHEATGATE, kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.' },
+            { name: PLACE.MUDSUMMER, kind: 'site', ambient: 'dense', note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
+            { name: PLACE.MILLRUN, kind: 'village', ambient: 'thin', note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
         ],
         exports: [
             'assayed spirit stones and the rate they are assayed at, which is the only export in the world that arrives before the goods do',
@@ -1238,7 +1239,7 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
     // is a different sort of place from one that does not.
     {
         id: NORTH_REGION_ID,
-        name: 'The White Stair',
+        name: REGION_NAME.WHITE_STAIR,
         role: 'adjacent',
         bearing: 'north',
         traditionId: 'tradition-drawn',
@@ -1317,11 +1318,11 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             }
         ],
         places: [
-            { name: 'Rimefall', kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
-            { name: 'The Giving', kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Giving and nobody says what it is giving, or for how much longer.' },
-            { name: 'Underhang', kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
-            { name: 'Undersnow', kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
-            { name: 'Fourhands', kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' }
+            { name: PLACE.RIMEFALL, kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
+            { name: PLACE.THE_GIVING, kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Giving and nobody says what it is giving, or for how much longer.' },
+            { name: PLACE.UNDERHANG, kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
+            { name: PLACE.UNDERSNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
+            { name: PLACE.FOURHANDS, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' }
         ],
         exports: [
             'ice-cut stones, which assay high and shatter if they are cut warm, so the whole trade moves in winter or not at all',
@@ -1395,7 +1396,7 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
     // above and in `hazards` below, and it is somebody else's task.
     {
         id: SOUTH_REGION_ID,
-        name: 'The Drowned Reach',
+        name: REGION_NAME.DROWNED_REACH,
         role: 'adjacent',
         bearing: 'south',
         traditionId: 'tradition-drawn',
@@ -1479,11 +1480,11 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             }
         ],
         places: [
-            { name: 'Watering', kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.' },
-            { name: 'Bellhead', kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.' },
-            { name: 'The Sounding', kind: 'site', ambient: 'dense', note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
-            { name: 'Dryrun', kind: 'site', ambient: 'thin', note: 'The stretch of the eastern passage with no landfall in it. The name is a joke about the water ration and nobody finds it funny after the fourth day.' },
-            { name: 'Farside', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Low Fall, when it opens, which is four days in nine and never in a storm.' },
+            { name: PLACE.WATERING, kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.' },
+            { name: PLACE.BELLHEAD, kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.' },
+            { name: PLACE.THE_SOUNDING, kind: 'site', ambient: 'dense', note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
+            { name: PLACE.DRYRUN, kind: 'site', ambient: 'thin', note: 'The stretch of the eastern passage with no landfall in it. The name is a joke about the water ration and nobody finds it funny after the fourth day.' },
+            { name: PLACE.FARSIDE, kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Low Fall, when it opens, which is four days in nine and never in a storm.' },
             // ── the middle of the water, which was a gap in the map ────────
             //
             // The province was written as coasts and the water between them
@@ -1494,10 +1495,10 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
             // was a number of days between two landfalls with a blank in the
             // middle. These four are that blank, and every one of them is
             // somewhere a hull is rather than somewhere a hull calls.
-            { name: 'Halfwater', kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.' },
-            { name: 'The Roads', kind: 'site', ambient: 'thin', note: 'The anchorage off Halfwater, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
-            { name: 'The Long Middle', kind: 'site', ambient: 'thin', note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
-            { name: 'Salt Reach', kind: 'site', ambient: 'thin', note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
+            { name: PLACE.HALFWATER, kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.' },
+            { name: PLACE.THE_ROADS, kind: 'site', ambient: 'thin', note: 'The anchorage off Halfwater, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
+            { name: PLACE.THE_LONG_MIDDLE, kind: 'site', ambient: 'thin', note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
+            { name: PLACE.SALT_REACH, kind: 'site', ambient: 'thin', note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
         ],
         exports: [
             'passage, priced in stones per head per day, which is the only thing this province sells that anybody ashore actually wants',
@@ -2263,8 +2264,8 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         name: 'The Gorge Head',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: 'Low Fall',
-        places: ['Low Fall'],
+        seat: PLACE.LOW_FALL,
+        places: [PLACE.LOW_FALL],
         heldByFactionId: 'sect-azure-cloud-pavilion',
         delegatedFromId: null,
         subHoldings: [
@@ -2292,8 +2293,8 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         name: 'The Nine Peaks Catchment',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: 'Nine Peaks',
-        places: ['Nine Peaks'],
+        seat: PLACE.NINE_PEAKS,
+        places: [PLACE.NINE_PEAKS],
         heldByFactionId: 'sect-nine-peaks-ascetic-order',
         delegatedFromId: 'court-third-sill',
         subHoldings: [
@@ -2387,8 +2388,8 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         name: 'The Scarwater Catchment',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: 'Scarwater',
-        places: ['Scarwater'],
+        seat: PLACE.SCARWATER,
+        places: [PLACE.SCARWATER],
         heldByFactionId: null,
         delegatedFromId: null,
         subHoldings: [
@@ -2413,11 +2414,11 @@ const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-sweptground',
-        name: 'Sweptground',
+        name: PLACE.SWEPTGROUND,
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: 'Sweptground',
-        places: ['Sweptground'],
+        seat: PLACE.SWEPTGROUND,
+        places: [PLACE.SWEPTGROUND],
         heldByFactionId: 'sect-sweptground-temple',
         delegatedFromId: null,
         subHoldings: [
@@ -2485,8 +2486,8 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         name: 'The Gapwater District',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
-        seat: 'Kettle',
-        places: ['The Gapwater face'],
+        seat: PLACE.KETTLE,
+        places: [PLACE.GAPWATER_FACE],
         heldByFactionId: 'sect-weir-office',
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
@@ -2503,7 +2504,7 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         name: 'The Fourth Face District',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
-        seat: 'Kettle',
+        seat: PLACE.KETTLE,
         places: [],
         heldByFactionId: 'sect-weir-office',
         delegatedFromId: 'court-ninth-face',
@@ -2521,8 +2522,8 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         name: 'The Hollowmarket District',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
-        seat: 'Hollowmarket',
-        places: ['Hollowmarket'],
+        seat: PLACE.HOLLOWMARKET,
+        places: [PLACE.HOLLOWMARKET],
         heldByFactionId: 'sect-gleaners-company',
         delegatedFromId: 'sect-weir-office',
         subHoldings: [],
@@ -2539,8 +2540,8 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         name: 'The Sixmile District',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
-        seat: 'Sixmile',
-        places: ['Sixmile'],
+        seat: PLACE.SIXMILE,
+        places: [PLACE.SIXMILE],
         heldByFactionId: null,
         delegatedFromId: null,
         subHoldings: [
@@ -2560,11 +2561,11 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'district-dead-verge',
-        name: 'The Dead Verge',
+        name: PLACE.DEAD_VERGE,
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
         seat: 'no seat: nobody lives inside it',
-        places: ['The Dead Verge'],
+        places: [PLACE.DEAD_VERGE],
         heldByFactionId: null,
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
@@ -2601,7 +2602,7 @@ const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
 export const PROVINCES: readonly Province[] = [
     {
         id: LOW_FALL_PROVINCE_ID,
-        name: 'The Low Fall',
+        name: REGION_NAME.LOW_FALL,
         standing: 'played',
         regionId: HOME_REGION_ID,
         heldByApexId: 'apex-deep-survey',
@@ -2618,7 +2619,7 @@ export const PROVINCES: readonly Province[] = [
     },
     {
         id: QUIET_MARCHES_PROVINCE_ID,
-        name: 'The Quiet Marches',
+        name: REGION_NAME.QUIET_MARCHES,
         standing: 'played',
         regionId: ADJACENT_REGION_ID,
         heldByApexId: 'apex-long-cut',
@@ -3027,7 +3028,7 @@ export type UngovernedGround = z.infer<typeof UngovernedGroundSchema>;
  */
 export const THE_BLOWN_GROUND: UngovernedGround = {
     id: BLOWN_GROUND_ID,
-    name: 'The Blown Ground',
+    name: REGION_NAME.BLOWN_GROUND,
     bearing: 'interior',
     borderingRegionIds: [
         HOME_REGION_ID,
@@ -3187,12 +3188,12 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     veinStatus:
         'Shallow, rich, unmapped and unsurveyable in any way that lasts. It is one vein rather than several, it runs the length of the wedge, and what varies is not the vein but the depth of the cover over it - which is why the ground is worth more than the Quiet Marches and less than nothing to anybody who wants to own it.',
     places: [
-        { name: 'The Meet', kind: 'market_town', ambient: 'thin', note: 'The one market, which assembles for about six weeks after the wind turns and disperses. Everything sold here is sold once and nothing bought here comes with a name attached.' },
-        { name: 'The Sink', kind: 'site', ambient: 'thin', note: 'Water under the sand, dug for and shared because there is no second one within four days. The only fixed point in the whole wedge and the only thing here nobody has ever fought over.' },
-        { name: 'Long Open', kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
-        { name: 'The Fortnight', kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
-        { name: 'Tuo\'s Wall', kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
-        { name: 'Midway', kind: 'waystation', ambient: 'thin', note: 'The gate station, which is not midway and is about a third of the way, and which everybody provisions against as though it were half.' }
+        { name: PLACE.THE_MEET, kind: 'market_town', ambient: 'thin', note: 'The one market, which assembles for about six weeks after the wind turns and disperses. Everything sold here is sold once and nothing bought here comes with a name attached.' },
+        { name: PLACE.THE_SINK, kind: 'site', ambient: 'thin', note: 'Water under the sand, dug for and shared because there is no second one within four days. The only fixed point in the whole wedge and the only thing here nobody has ever fought over.' },
+        { name: PLACE.LONG_OPEN, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
+        { name: PLACE.THE_FORTNIGHT, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
+        { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
+        { name: PLACE.MIDWAY, kind: 'waystation', ambient: 'thin', note: 'The gate station, which is not midway and is about a third of the way, and which everybody provisions against as though it were half.' }
     ],
     hazards: [
         'no water: four days between the Sink and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
