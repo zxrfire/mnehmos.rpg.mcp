@@ -41,9 +41,17 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOC = path.join(ROOT, 'docs', 'verbs.md');
 
+// `actions.ts` was split by subject, so the four things this script used to
+// scrape out of one file now sit in three. Each entry is named for what is
+// read from it rather than for the module, because that is the thing that goes
+// stale: the closed set and its classification lists, the day counts a
+// description interpolates, and the pattern table whose `action:` literals say
+// which verbs the deterministic reader can actually reach.
 const SOURCE = {
     surface: 'src/web/what-each-verb-is-for-in-the-players-words.ts',
-    actions: 'src/web/actions.ts',
+    actions: 'src/web/action-set.ts',
+    days: 'src/web/verb-day-costs.ts',
+    table: 'src/web/actions.ts',
     game: 'src/web/game.ts'
 };
 
@@ -359,6 +367,8 @@ function splice(text, name, body) {
 
 export function model() {
     const actions = read(SOURCE.actions);
+    const table = read(SOURCE.table);
+    const days = read(SOURCE.days);
     const game = read(SOURCE.game);
     const surfaceText = read(SOURCE.surface);
     const readOnly = namedList(actions, 'export const READ_ONLY_ACTIONS');
@@ -368,9 +378,9 @@ export function model() {
         readOnly,
         timed: namedList(actions, 'export const TIME_CONSUMING_ACTIONS'),
         bare: readOnly.filter(v => v !== 'unclear'),
-        routes: parserRoutes(actions),
+        routes: parserRoutes(table),
         fallback: fallbackAction(actions),
-        nums: numbers(actions),
+        nums: numbers(days),
         resolved: resolutions(game),
         handlers: handlerLines(game),
         admin: namedList(game, 'const ADMIN_ACTIONS'),
