@@ -14,6 +14,7 @@ import {
 } from '../../schema/cultivation.js';
 import {
     MAX_ORDINAL,
+    carriedAcross,
     maxHpForOrdinal,
     maxQiForOrdinal
 } from '../../engine/cultivation/realms.js';
@@ -213,26 +214,19 @@ export interface ListCultivatorsFilter {
 /**
  * Carry a pool across a change of rung, keeping the share rather than the number.
  *
- * A crossing is not a heal and never fills anybody, so the fraction is what
- * survives: whole stays whole, half stays half, and somebody who was nearly
- * finished is still nearly finished in a larger body. Rounds up off zero so a
- * living cultivator cannot be rounded into a corpse, and returns the new
- * maximum when the old one is missing or zero, which is the only reading
- * available when there is no share to take.
+ * RE-EXPORTED, NOT DEFINED HERE. It moved to `engine/cultivation/realms.ts`, next
+ * to `maxHpForOrdinal` and `maxQiForOrdinal` - "the one derivation of a
+ * cultivator's HP pool. Nobody may write another" - because how a pool survives
+ * a rung change is that same rule asked at the moment the rung moves, and the
+ * world layer needs it too. An engine-layer rule addressed inside a module that
+ * opens a database is a rule `engine/` cannot import without dragging SQLite in
+ * behind it, and the world would have grown its own copy instead.
  *
- * EXPORTED because `advanceRealm` below is not, in fact, the only place a rung
- * changes. `GameService.strikeBarrier` writes the ordinal directly - it has to,
- * because `advanceRealm` zeroes accumulated progress and a successful attempt
- * consumes exactly `progressConsumed` with the overflow carrying - so it needs
- * the same pool arithmetic without the rest of the method. One exported
- * function is what stops that being a second rule; the alternative was a copy
- * of this in `web/`, which is how the two would come to disagree.
+ * The name stays reachable here because `advanceRealm` below is not, in fact, the
+ * only place a rung changes: `GameService.strikeBarrier` writes the ordinal
+ * directly and asks for this by this address.
  */
-export function carriedAcross(current: number, wasMax: number, nowMax: number): number {
-    if (!Number.isFinite(wasMax) || wasMax <= 0) return nowMax;
-    const share = Math.min(1, Math.max(0, current / wasMax));
-    return Math.min(nowMax, Math.max(current > 0 ? 1 : 0, Math.round(share * nowMax)));
-}
+export { carriedAcross };
 
 /**
  * Persistence for cultivators and their injuries.

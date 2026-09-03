@@ -37,7 +37,13 @@
 import { forStream } from '../cultivation/rng.js';
 import { reconcileSoulAndSelf, ruinSoul } from '../cultivation/how-much-of-a-person-is-left.js';
 import { whoTheyAreNow } from './reading-a-tie-against-the-roster.js';
-import { clampOrdinal, lifespanForOrdinal, rankName } from '../cultivation/realms.js';
+import {
+    carriedAcross,
+    clampOrdinal,
+    lifespanForOrdinal,
+    maxHpForOrdinal,
+    rankName
+} from '../cultivation/realms.js';
 import {
     rollAttributes,
     rollSpiritRoot,
@@ -49,7 +55,7 @@ import { rollSex, type Sex } from '../birth/what-sex-somebody-is-and-what-it-is-
 import type { Bloodline } from './hunting-a-spirit-beast.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
-import type { Injury } from '../../schema/cultivation.js';
+import { HP_RECOVERY_FRACTION_PER_DAY, type Injury } from '../../schema/cultivation.js';
 import { personName } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 
@@ -320,6 +326,50 @@ export interface NpcCultivation {
      * list nothing downstream would read.
      */
     injuries: Injury[];
+    /**
+     * WHAT IS STANDING IN THE BODY, as of `bodyOnDay`.
+     *
+     * ── WHY THE WORLD HOLDS ONE AT ALL ───────────────────────────────────
+     *
+     * A crossing costs the body - `bodyCost` on `BreakthroughResult`, a share of
+     * the pool at every rung and three times that at a realm boundary - and
+     * there was nothing on an NPC for it to come out of, so it bound the player
+     * and nobody else. That is `AGENTS.md`'s commonest defect running backwards:
+     * the player paid blood for every rung and every cultivator in the world
+     * climbed for free, and every comparison the world then made between them
+     * was against a population that had never been charged.
+     *
+     * ── AND IT IS NOT A SECOND BODY MODEL ────────────────────────────────
+     *
+     * The MAXIMUM is not stored. `maxBodyOf` derives it from Might and the rung
+     * through `maxHpForOrdinal`, which `realms.ts` states is the one derivation
+     * of a pool and forbids a second of - so the number cannot drift from the
+     * ordinal beside it, and a rung change re-derives rather than migrating a
+     * cache. What is stored is the absolute standing in that pool, which is the
+     * only part the world cannot recompute.
+     *
+     * `gatherings.ts` still prices a bout on one normalised body for both sides
+     * and that ruling is untouched: what it now reads off here is the SHARE, so
+     * a cultivator who crossed a wall last spring fights at what is left of
+     * themselves rather than at full.
+     */
+    hp: number;
+    /**
+     * The day `hp` was last true. Mending runs forward from here on read.
+     *
+     * DERIVED ON READ RATHER THAN SWEPT. `HP_RECOVERY_FRACTION_PER_DAY` is a
+     * fraction of the pool per day and nothing about it is stochastic, so what
+     * is standing on any later day is arithmetic - and a stored value that
+     * nothing maintains is the slower version of a field nothing writes. There
+     * is no mending pass over the roster and there must not be one: it would be
+     * a per-person cost every simulated year to compute a number two
+     * multiplications answer, and it would go stale between years anyway.
+     *
+     * A separate anchor rather than `updatedOnDay`, because that moves when
+     * somebody changes house or walks to another town, and mending accrued
+     * before an unrelated write would be lost at the next read.
+     */
+    bodyOnDay: number;
     /** Technique ids they can actually use. */
     techniqueIds: string[];
     /** Tags for environmental compatibility: 'fire', 'poison', 'soul', 'sword'. */
@@ -565,6 +615,11 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         foundation: 'incomplete',
         untreatedInjuries: 0,
         injuries: [],
+        // Whole, at the rung they are placed on. Nobody is born or seeded
+        // already spent, and the pool is the one derivation rather than a
+        // number chosen here.
+        hp: maxHpForOrdinal(attributes.might, ordinal),
+        bodyOnDay: opts.onDay,
         techniqueIds: [],
         specialties: root.elements.slice(),
         lifespanEndsOnDay: opts.bornOnDay + lifespanForOrdinal(ordinal) * DAYS_PER_YEAR,
@@ -572,10 +627,19 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         accumulatingSinceDay: opts.onDay,
         ...(opts.cultivation ?? {})
     };
-    // Recompute the derived field if the caller overrode the ordinal but not it.
+    // Recompute the derived fields if the caller overrode the ordinal but not
+    // them. Both are functions of the rung and neither may be stored
+    // inconsistently with it - a seeded elder placed at ordinal 29 with a
+    // newborn's pool would read as a body nine tenths spent.
     if (opts.cultivation?.lifespanEndsOnDay === undefined) {
         cultivation.lifespanEndsOnDay =
             opts.bornOnDay + lifespanForOrdinal(cultivation.realmOrdinal) * DAYS_PER_YEAR;
+    }
+    if (opts.cultivation?.hp === undefined) {
+        cultivation.hp = maxHpForOrdinal(
+            cultivation.attributes.might,
+            cultivation.realmOrdinal
+        );
     }
 
     return {
@@ -637,19 +701,99 @@ export function setFaction(
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE BODY
+//
+// Three functions, and between them they are the whole of what the world knows
+// about a body. Every one of them defers: the pool to `maxHpForOrdinal`, the
+// carry to `carriedAcross`, the mending rate to `HP_RECOVERY_FRACTION_PER_DAY`.
+// Nothing here decides a number of its own, which is the only way a body on the
+// roster is the same body the player has rather than a second one beside it.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The pool this person holds at the rung they are standing on.
+ *
+ * Derived every time rather than stored, so it cannot disagree with the ordinal
+ * on the row next to it. See `hp` for why that is the direction taken.
+ */
+export function maxBodyOf(npc: NpcRecord): number {
+    return maxHpForOrdinal(npc.cultivation.attributes.might, npc.cultivation.realmOrdinal);
+}
+
+/**
+ * What is actually standing in the body on a given day.
+ *
+ * `hp` is what was left on `bodyOnDay`; the days since are mending at the same
+ * rate a player's body mends, which is denominated in years on purpose - a
+ * whole pool back from empty takes about five and a half of them. So a crossing
+ * that took a realm boundary's share is repaid in a little under a year and
+ * costs nothing that lasts, and a cultivator met inside that year is met at
+ * what the wall left them.
+ *
+ * Floored, so it never reads above the pool and never reads below zero. A day
+ * BEFORE the anchor mends nothing rather than un-mending: time does not run
+ * backwards for anybody, and a caller asking what was standing last year is
+ * asking a question the record does not keep the answer to.
+ */
+export function bodyStandingOn(npc: NpcRecord, day: number): number {
+    const max = maxBodyOf(npc);
+    // A record with no body on it reads as WHOLE, never as empty. Saves written
+    // before the world held one load that way out of the repository, and a
+    // fixture assembled by hand in a test has the same nothing on it - and the
+    // failure mode of reading it as zero is a whole population of corpses that
+    // no assertion in the file would be looking for.
+    const stored = npc.cultivation.hp;
+    const held = Number.isFinite(stored) ? Math.max(0, Math.min(max, stored)) : max;
+    const anchor = Number.isFinite(npc.cultivation.bodyOnDay) ? npc.cultivation.bodyOnDay : day;
+    const days = Math.max(0, day - anchor);
+    if (days === 0 || held >= max) return held;
+    return Math.min(max, Math.floor(held + max * HP_RECOVERY_FRACTION_PER_DAY * days));
+}
+
+/**
+ * Take something out of the body, and stamp the day it was taken.
+ *
+ * The caller decides HOW MUCH - for a crossing that is
+ * `whatACrossingTakesFrom`, which is the same clamp the played verb runs - and
+ * this only writes it down. Mending accrued up to `onDay` is banked first, so
+ * charging somebody does not silently discard the months they spent healing.
+ */
+export function bodyTaken(npc: NpcRecord, amount: number, onDay: number): NpcRecord {
+    const standing = bodyStandingOn(npc, onDay);
+    const left = Math.max(0, standing - Math.max(0, Math.round(amount)));
+    return {
+        ...npc,
+        cultivation: { ...npc.cultivation, hp: left, bodyOnDay: onDay },
+        updatedOnDay: onDay
+    };
+}
+
 /**
  * Move a cultivator up the ladder.
  *
  * Recomputes lifespan and resets the settling clock, because both are functions
  * of the realm and neither should ever be stored inconsistently with it.
+ *
+ * AND CARRIES THE BODY ACROSS AS A SHARE. The pool is derived from the ordinal,
+ * so a rung change enlarges it underneath whatever absolute is stored - and an
+ * absolute left alone would read as a body suddenly half spent. `carriedAcross`
+ * is the same arithmetic the played path runs at a crossing, so whole stays
+ * whole and half stays half on both sides of the game. What ARRIVING costs is a
+ * separate question and is charged after this, by the caller that resolved the
+ * attempt.
  */
 export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRecord {
     const realmOrdinal = clampOrdinal(ordinal);
+    const wasMax = maxBodyOf(npc);
+    const nowMax = maxHpForOrdinal(npc.cultivation.attributes.might, realmOrdinal);
     return {
         ...npc,
         cultivation: {
             ...npc.cultivation,
             realmOrdinal,
+            hp: carriedAcross(bodyStandingOn(npc, onDay), wasMax, nowMax),
+            bodyOnDay: onDay,
             lifespanEndsOnDay:
                 npc.identity.bornOnDay + lifespanForOrdinal(realmOrdinal) * DAYS_PER_YEAR,
             lastAdvancedOnDay: onDay,

@@ -28,6 +28,7 @@ import {
 } from '../../../src/engine/world/npc-state.js';
 import { addLineageEdge, createLineageRecord } from '../../../src/engine/world/lineage.js';
 import { createInjury } from '../../../src/engine/cultivation/injuries.js';
+import { maxHpForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { whatTheConfrontationDidToThem } from '../../../src/engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
@@ -111,13 +112,40 @@ describe('the body', () => {
         expect(JSON.stringify(state.npcs[0].cultivation)).toBe(before);
     });
 
-    it('invents no hit points anywhere on the record', () => {
+    /**
+     * The claim narrowed, and it narrowed because the world grew a body.
+     *
+     * This used to assert that the string `"hp"` appeared nowhere on the record
+     * at all, on the ruling that the world layer stores no hit points and this
+     * module must not be the one to invent them. Half of that has changed and
+     * half has not, so the assertion has to say which half.
+     *
+     * WHAT CHANGED: `NpcCultivation.hp` exists, because a crossing costs the
+     * body and there was nothing on an NPC for the toll to come out of - so it
+     * bound the player and nobody else. It is not an invention of a second body
+     * model either: the POOL is not stored, it is derived from Might and the
+     * rung through `maxHpForOrdinal`, which is why there is still no `maxHp`
+     * anywhere on the row and why this file can still assert that.
+     *
+     * WHAT DID NOT: a confrontation still writes no body. What a fight leaves
+     * that the world can hold is WOUNDS, and the two tests above are that. If
+     * that ever changes it is a separate design decision with its own
+     * measurement, because a world where every bout permanently depletes
+     * everybody who fought is a different world.
+     */
+    it('writes wounds and not the body, and stores no second pool', () => {
         const { state } = build();
+        const before = state.npcs[0].cultivation.hp;
+
         fought(state, { wounds: [wound('crippling')], finished: false, outcome: 'crippled' });
 
-        const serialised = JSON.stringify(state.npcs[0]);
-        expect(serialised).not.toMatch(/"hp"/);
-        expect(serialised).not.toMatch(/"maxHp"/);
+        const after = state.npcs[0];
+        expect(after.cultivation.hp).toBe(before);
+        // The pool is derived, never stored. A `maxHp` on the row would be a
+        // cache that can disagree with the ordinal sitting next to it.
+        expect(JSON.stringify(after)).not.toMatch(/"maxHp"/);
+        expect(after.cultivation.hp)
+            .toBe(maxHpForOrdinal(after.cultivation.attributes.might, after.cultivation.realmOrdinal));
     });
 
     it('gives a permanent wound its day in the ledger and an ordinary one none', () => {

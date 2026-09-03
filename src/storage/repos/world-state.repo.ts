@@ -19,6 +19,7 @@ import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
 import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
 import { yearOfDay } from '../../engine/world/history.js';
+import { maxHpForOrdinal } from '../../engine/cultivation/realms.js';
 import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
 import {
     SEX_A_LEGACY_ROW_READS_AS,
@@ -236,7 +237,7 @@ export class WorldStateRepository {
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                accumulating_since_day,
+                accumulating_since_day, hp, body_on_day,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -247,7 +248,7 @@ export class WorldStateRepository {
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @accumulatingSinceDay,
+                @accumulatingSinceDay, @hp, @bodyOnDay,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -942,6 +943,8 @@ export class WorldStateRepository {
                 lifespanEndsOnDay: npc.cultivation.lifespanEndsOnDay,
                 lastAdvancedOnDay: npc.cultivation.lastAdvancedOnDay,
                 accumulatingSinceDay: npc.cultivation.accumulatingSinceDay,
+                hp: npc.cultivation.hp,
+                bodyOnDay: npc.cultivation.bodyOnDay,
                 locationId: npc.locationId,
                 layer: npc.layer,
                 factionId: npc.factionId,
@@ -1539,7 +1542,20 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             lastAdvancedOnDay: row.last_advanced_on_day,
             // Zero means the column predates the two clocks being told apart.
             accumulatingSinceDay:
-                row.accumulating_since_day || row.last_advanced_on_day
+                row.accumulating_since_day || row.last_advanced_on_day,
+            // A negative hp means the column predates the world holding a body,
+            // and the honest reading of a row that never recorded one is whole -
+            // not empty, which is what a plain `?? 0` would have loaded a whole
+            // seeded population as. The pool is re-derived here rather than
+            // stored, so this is `maxHpForOrdinal` and never a figure of the
+            // repository's own.
+            hp: row.hp >= 0
+                ? row.hp
+                : maxHpForOrdinal(
+                    Number(JSON.parse(row.attributes)?.might ?? 1),
+                    row.realm_ordinal
+                ),
+            bodyOnDay: row.body_on_day || row.last_advanced_on_day
         },
         locationId: row.location_id,
         layer: toLayerKey(row.layer),
@@ -2069,6 +2085,8 @@ interface NpcRow {
     lifespan_ends_on_day: number;
     last_advanced_on_day: number;
     accumulating_since_day: number;
+    hp: number;
+    body_on_day: number;
     location_id: string | null;
     layer: string;
     faction_id: string | null;

@@ -499,6 +499,30 @@ export function maxQiForOrdinal(insight: number, ordinal: number): number {
     return Math.round((BASE_APERTURE_QI + insight * QI_PER_INSIGHT) * bodyMultiplierForOrdinal(ordinal));
 }
 
+/**
+ * Carry a pool across a change of rung, keeping the share rather than the number.
+ *
+ * A crossing is not a heal and never fills anybody, so the fraction is what
+ * survives: whole stays whole, half stays half, and somebody who was nearly
+ * finished is still nearly finished in a larger body. Rounds up off zero so a
+ * living cultivator cannot be rounded into a corpse, and returns the new
+ * maximum when the old one is missing or zero, which is the only reading
+ * available when there is no share to take.
+ *
+ * IT LIVES HERE BECAUSE THE POOLS DO. The two functions above are "the one
+ * derivation of a cultivator's HP pool. Nobody may write another", and how that
+ * pool survives a rung change is the same question asked at the moment the rung
+ * moves. It was in `storage/repos/cultivator.repo.ts`, which still re-exports it
+ * for the callers that ask there, and that address put an engine-layer rule
+ * behind a module that opens a database - so the world layer could not reach it
+ * without pulling SQLite into `engine/`, and would have written a second copy.
+ */
+export function carriedAcross(current: number, wasMax: number, nowMax: number): number {
+    if (!Number.isFinite(wasMax) || wasMax <= 0) return nowMax;
+    const share = Math.min(1, Math.max(0, current / wasMax));
+    return Math.min(nowMax, Math.max(current > 0 ? 1 : 0, Math.round(share * nowMax)));
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // THE FALSE IMMORTAL
 //
