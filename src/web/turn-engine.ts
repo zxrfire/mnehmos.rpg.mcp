@@ -283,7 +283,24 @@ import {
 // here is the sentence, the two facts about the played world a pure function
 // cannot have, and the writes.
 import { portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
-import { whatTheyHold } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import {
+    type APortfolio,
+    whatTheyHold,
+    whoAnswersAbout
+} from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import {
+    THE_ROOM_COMPLAINTS_GO_TO
+} from '../engine/social-leverage/reporting-what-you-saw.js';
+// Somebody walking up the hill with the player's name, and the same rows read
+// from the other end by whoever holds the room complaints go to.
+import {
+    complaintsBroughtTo,
+    reportWhatTheySaw,
+    settleAComplaint,
+    whoSawIt
+} from './false-decree-reports.js';
+import type { ContactPerson } from '../engine/encounters/contact.js';
+import type { HousePosition } from './standing.js';
 import {
     THE_HOUSE_ANSWERS,
     aTakenCopyOf,
@@ -5075,6 +5092,14 @@ ${noticed}`;
             case 'authority':
                 return this.whatIRunHere(run, cultivator);
 
+            // The same rows from the other end. A verdict on the topic and the
+            // person on the target; with neither it is a read of the pile.
+            case 'complaints':
+                return this.complaintsBrought(
+                    run, cultivator, target,
+                    topic === 'upheld' || topic === 'dismissed' ? topic : null
+                );
+
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
                 // days, both optional: naming neither is a request to see the
@@ -5110,17 +5135,28 @@ ${noticed}`;
                 const errand = topic === 'gather' || topic === 'carry' || topic === 'labour'
                     ? topic
                     : DEFAULT_ERRAND;
-                return this.fromToolResult(
-                    'sect_manage.order', 'sect',
-                    await handleOrder({
-                        action: 'order',
-                        cultivatorId: cultivator.id,
-                        errand,
-                        authority: intent === 'decree' ? 'delegated' : 'personal',
-                        days: Math.max(1, Math.min(365, Math.round(days ?? 7)))
-                    }),
-                    'The order'
-                );
+                const body = await handleOrder({
+                    action: 'order',
+                    cultivatorId: cultivator.id,
+                    errand,
+                    authority: intent === 'decree' ? 'delegated' : 'personal',
+                    days: Math.max(1, Math.min(365, Math.round(days ?? 7)))
+                });
+                const given = this.fromToolResult('sect_manage.order', 'sect', body, 'The order');
+
+                // ── AND SOMEBODY WATCHED ─────────────────────────────────
+                //
+                // Only after a claim the house did not recognise, and only
+                // then: the decree is already spent and already failed by this
+                // point. Being reported is what decides whether a RECORD opens,
+                // never whether the forgery happened - the same ordering the
+                // library theft follows, and inverting it would make an
+                // unreported forgery into a forgery that did not occur.
+                const claim = (body as { authority?: { legitimate?: boolean } }).authority;
+                if (claim && claim.legitimate === false) {
+                    await this.somebodyWatchedThatDecree(run, cultivator, body, given);
+                }
+                return given;
             }
             // ── the four powers a rank buys above `order` ──
             //
@@ -11033,6 +11069,264 @@ ${fit.line}`;
             });
         }
         return execution;
+    }
+
+    /**
+     * The house's roll, its portfolios, and who sits at the top of it.
+     *
+     * Three things every authority question needs together, assembled once
+     * rather than in each caller. The roll is the named cast plus this
+     * cultivator at their own rung, which is what `whoDecidesIn` reads.
+     */
+    private async theHouseAround(cultivator: Cultivator, held: HousePosition): Promise<{
+        roster: ContactPerson[];
+        portfolios: APortfolio[];
+        headId: string | null;
+    }> {
+        const world = this.atHand ?? await this.loadWorld();
+        this.atHand = world;
+        const roster = rosterFor(
+            { repos: this.repos, knowledge: this.knowledge, world }, cultivator
+        );
+        const roll = [
+            { id: cultivator.id, rankIndex: held.rankIndex },
+            ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
+        ];
+        const portfolios = portfoliosIn({
+            locations: world?.locations ?? [],
+            sectId: held.sectId,
+            roll,
+            rankCount: held.rankCount
+        });
+        const top = Math.max(0, held.rankCount - 1);
+        const headId = roll.find(person => person.rankIndex >= top)?.id ?? null;
+        return { roster, portfolios, headId };
+    }
+
+    /**
+     * Somebody was standing there when the false decree was given.
+     *
+     * The design owner's ruling, in one clause: *"or rat him out to the
+     * punishment elder."* Before this, forging a mandate cost 3.36 standing and
+     * the witness went back to what they were doing - a rounding error for an
+     * act that spends the house's own name without holding any of it.
+     *
+     * Nothing here decides anything. `whatTheWitnessDoesAboutIt` reads what that
+     * particular person holds against this one and what this one holds over
+     * them, `ifCaughtAtSomethingTheHousePunishes` decides what the house does,
+     * and `whatYourOwnHouseOpensAboutYou` writes the row. There is no RNG on
+     * this path at all - deliberately, because the lesson is meant to be that
+     * WHO you tried it on mattered more than that you tried it, and a die roll
+     * would make that unlearnable.
+     */
+    private async somebodyWatchedThatDecree(
+        run: Run,
+        cultivator: Cultivator,
+        body: object,
+        execution: Execution
+    ): Promise<void> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) return;
+
+        const sentTo = (body as { sentRank?: { index?: number } }).sentRank?.index ?? 0;
+        const { roster, portfolios, headId } = await this.theHouseAround(cultivator, held);
+        const witness = whoSawIt(roster, sentTo, cultivator.id);
+        if (!witness) {
+            execution.facts.structure.push(
+                `false-decree-reports.whoSawIt: nobody named on rung ${sentTo} at `
+                + `${held.sectId}. The hands are real and the catalog does not name them, so `
+                + 'there is no witness anybody could be reported by.'
+            );
+            return;
+        }
+
+        const report = reportWhatTheySaw({
+            repos: this.repos,
+            offenderId: cultivator.id,
+            offenderName: cultivator.name,
+            offenderOrdinal: cultivator.realmOrdinal,
+            houseId: held.sectId,
+            houseName: held.sectName,
+            alignment: getSect(held.sectId)?.alignment ?? null,
+            portfolios,
+            headId,
+            witness,
+            onDay: Math.floor(run.elapsedDays),
+            what: `${cultivator.name} gave an order in ${held.sectName}'s name and holds none of `
+                + 'its authority.'
+        });
+
+        const nameOf = (id: string | null): string =>
+            id === null
+                ? 'nobody'
+                : roster.find(person => person.id === id)?.name ?? 'somebody senior';
+
+        const line = report.what.does === 'reports'
+            ? `${witness.name} does not argue with you. They walk up the hill and tell `
+              + `${nameOf(report.toId)}, who holds the room that hears this kind of thing.`
+            : report.what.does === 'swallows_it'
+                ? `${witness.name} looks at you for a moment longer than is comfortable and lets `
+                  + 'it go. They owe you, and both of you know the number.'
+                : report.what.does === 'says_nothing_and_remembers'
+                    ? `${witness.name} says nothing, and does not forget. That is not the same as `
+                      + 'nothing having happened.'
+                    : `${witness.name} saw it and there is nobody in this house to tell.`;
+
+        execution.facts.lines.push(line);
+        execution.facts.prose = `${execution.facts.prose}\n\n${line}`;
+        execution.facts.required = [...(execution.facts.required ?? []), line];
+
+        if (report.record && report.what.does === 'reports') {
+            const answer = THE_HOUSE_ANSWERS[report.doing](held.sectName);
+            execution.facts.lines.push(answer);
+            execution.facts.prose = `${execution.facts.prose}\n\n${answer}`;
+        }
+
+        execution.facts.structure.push(
+            `reporting-what-you-saw: ${report.what.line} `
+            + `does=${report.what.does}, to=${report.toId ?? 'nobody'}, `
+            + `house does=${report.doing}, row=${report.record?.id ?? 'none'}.`
+        );
+        execution.calls.push({
+            name: 'false-decree-reports.reportWhatTheySaw',
+            action: 'sect',
+            summary: `${witness.name} ${report.what.does}. ${report.what.line}`,
+            ok: report.what.does !== 'reports'
+        });
+    }
+
+    /**
+     * What has been brought to you about the house's own people.
+     *
+     * The other end of the same rows, and the reason it exists: building only
+     * the reported-on half would be a punishment that happens TO the player and
+     * never THROUGH them, which is the officeless-elder problem again - standing
+     * with no jurisdiction attached to it.
+     *
+     * Gated on the portfolio and never on the rank. Somebody senior who does not
+     * hold the room is not brought complaints, and being told so names the thing
+     * they would have to go and get.
+     */
+    private async complaintsBrought(
+        run: Run,
+        cultivator: Cultivator,
+        verdictOn: string | undefined,
+        verdict: 'upheld' | 'dismissed' | null
+    ): Promise<Execution> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) {
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'Nobody brings you anything.',
+                'Complaints go to whoever holds the room that hears them, and you are on '
+                + 'nobody\'s roll.',
+                `No membership for ${cultivator.id}.`
+            ));
+        }
+
+        const { roster, portfolios } = await this.theHouseAround(cultivator, held);
+        const mine = whatTheyHold(portfolios, cultivator.id);
+        if (!mine.includes(THE_ROOM_COMPLAINTS_GO_TO)) {
+            const holder = whoAnswersAbout(portfolios, THE_ROOM_COMPLAINTS_GO_TO);
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'That is not your room.',
+                holder === null
+                    ? `${held.sectName} has nobody holding the room complaints go to, so they go `
+                      + 'to the head of the house or nowhere.'
+                    : `${roster.find(p => p.id === holder)?.name ?? 'Somebody else'} holds it. `
+                      + 'What you would need is the room, not the rank - they are different '
+                      + 'things and only one of them is given to you.',
+                `${cultivator.id} holds [${mine.join(', ') || 'nothing'}]; `
+                + `${THE_ROOM_COMPLAINTS_GO_TO} is ${holder ?? 'unheld'}.`
+            ));
+        }
+
+        const open = complaintsBroughtTo(this.repos, held.sectId);
+        const nameOf = (id: string | null): string =>
+            id === cultivator.id
+                ? cultivator.name
+                : roster.find(person => person.id === id)?.name ?? 'somebody on the roll';
+
+        // ── DECIDING ONE ─────────────────────────────────────────────────
+        if (verdict !== null && (verdictOn ?? '').trim().length > 0) {
+            const wanted = (verdictOn ?? '').trim();
+            // ── NOBODY DECIDES THEIR OWN CASE ────────────────────────────
+            //
+            // `whereAComplaintGoes` already refuses to ROUTE one to its own
+            // subject, and the same rule has to hold at the other end or
+            // holding the room would be a way of making your own record go
+            // away. Filtered before the match so that "I dismiss the complaint
+            // against me" cannot resolve by being the only row on the pile.
+            const theirs = open.filter(row => row.subjectId !== cultivator.id);
+            const chosen = theirs.find(row =>
+                matchScore(wanted, nameOf(row.subjectId)) > MATCH_THRESHOLD)
+                ?? (theirs.length === 1 ? theirs[0] : undefined);
+            if (!chosen && open.some(row => row.subjectId === cultivator.id
+                && matchScore(wanted, cultivator.name) > MATCH_THRESHOLD)) {
+                return refused('false-decree-reports.settleAComplaint', 'sect', factsForRefusal(
+                    'That one is about you.',
+                    'Holding the room does not mean deciding your own case. It goes over your '
+                    + 'head, and somebody else says what happens - which is the whole reason '
+                    + 'the room is worth holding when the name on the complaint is not yours.',
+                    `${cultivator.id} is the subject of that row and also holds `
+                    + `${THE_ROOM_COMPLAINTS_GO_TO}. Refused at the deciding end, the same way `
+                    + '`whereAComplaintGoes` refuses at the routing end.'
+                ));
+            }
+            if (!chosen) {
+                return refused('false-decree-reports.settleAComplaint', 'sect', factsForRefusal(
+                    `Nothing open about ${wanted}.`,
+                    open.length === 0
+                        ? 'Nothing has been brought to you.'
+                        : `What has: ${open.map(row => nameOf(row.subjectId)).join(', ')}.`,
+                    `Unresolved subject "${wanted}" against ${open.length} open row(s).`
+                ));
+            }
+            const settled = settleAComplaint(this.repos, chosen, {
+                verdict,
+                byId: cultivator.id,
+                onDay: Math.floor(run.elapsedDays),
+                note: `Decided by ${cultivator.name}, who holds the room.`
+            });
+            const line = verdict === 'upheld'
+                ? `You uphold it. ${nameOf(chosen.subjectId)} is answerable to `
+                  + `${held.sectName} for it, and the record says who decided that.`
+                : `You throw it out. ${nameOf(chosen.subjectId)} walks, the row closes as `
+                  + 'proven false, and your name is on that too.';
+            const facts = factsForToolResult(
+                verdict === 'upheld' ? 'Upheld.' : 'Dismissed.', [line]
+            );
+            facts.required = [line];
+            facts.structure.push(
+                `false-decree-reports.settleAComplaint: ${settled.id} -> `
+                + `${settled.settlement?.resolution}, by ${cultivator.id}. `
+                + 'This is the office being exercised rather than held.'
+            );
+            return this.freeAction(run, 'sect', facts);
+        }
+
+        // ── READING THE PILE ─────────────────────────────────────────────
+        const lines = open.length === 0
+            ? [`Nothing is outstanding. ${held.sectName} has nobody's name in front of you, `
+               + 'which is either a quiet season or a house nobody is watching.']
+            : [
+                `${held.sectName} has these open against its own, and they are yours to decide:`,
+                ...open.slice(0, DUTIES_SHOWN).map(row =>
+                    `  ${nameOf(row.subjectId)} - ${row.severity}. ${row.description}`
+                    + (row.subjectId === cultivator.id
+                        // Shown, because a player must be able to see what the
+                        // house is holding about them. Not decidable, because
+                        // holding the room is not a way of closing your own row.
+                        ? ' (this one is about you, and is not yours to decide)'
+                        : ''))
+            ];
+        const facts = factsForToolResult(
+            open.length === 0 ? 'Nothing brought.' : `${open.length} in front of you.`, lines
+        );
+        facts.structure.push(
+            `false-decree-reports.complaintsBroughtTo: ${open.length} open AGAINST_THEIR_OWN `
+            + `row(s) held by ${held.sectId}. Read only. Holder of the room: ${cultivator.id}.`
+        );
+        return this.freeAction(run, 'sect', facts);
     }
 
     /**
