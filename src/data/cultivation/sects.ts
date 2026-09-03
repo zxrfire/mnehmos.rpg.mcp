@@ -1085,6 +1085,100 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'The Road Elders have been quietly holding back three names from the bells so that the recruiters cannot follow the route, which is the first thing the league has ever concealed.'
         }
     },
+    // ── THE SECOND HOUSE THAT TAKES ONE SEX ──────────────────────────────
+    //
+    // `the-three-floors-a-house-admits-at.ts` carried this house as the known
+    // missing piece for a long time, along with the design owner's ruling that
+    // a closed door has to be a Court, because a gate is only interesting if
+    // what is behind it is worth wanting.
+    //
+    // WHAT IS BEHIND THIS ONE IS GROUND, NOT A CURRICULUM, and that is the
+    // deliberate difference from the Storm Tyrant Court rather than a weaker
+    // copy of it. The two closed houses fail in opposite directions, which is
+    // what stops "closed house" becoming a type of house: the Storm Tyrant
+    // Court can teach what it holds and cannot source it, and the Orchid Court
+    // can source what it stands on and cannot teach past the middle.
+    //
+    // THE ROAD STOPS AT 33 AND SHE STANDS AT 34. `unhurried-canon` caps at
+    // thirty-three and the Matriarch is one rung past it. That gap is the
+    // house: she is the only one who ever crossed that stretch, the Court has
+    // never claimed to have taught her, and the valley did it. DO NOT "FIX"
+    // THE LADDER TO REACH ITS OWN HEAD - a road that reached thirty-four
+    // would delete the thesis this entry exists to state. `FLOWER_SUBJECT` in
+    // `techniques.ts` carries the same warning at the other end.
+    //
+    // AND IT IS UNSUPPORTED BY CHOICE, WHICH IS NOT THE SAME AS UNWANTED.
+    // Every other holding in the North is a band of altitude that has to
+    // follow the ice uphill, and holding from an apex is what pays for that.
+    // This house was offered the same and refused, went down instead of up,
+    // and is the only body in the province whose ground does not move. That is
+    // also exactly why it is NOT unassailable: it is fixed, and everybody
+    // knows where it is.
+    {
+        id: 'sect-orchid-court',
+        // The house, which is NOT the settlement. The terraces it lives on
+        // are Orchid Terrace; this is the body standing on them, the way
+        // Rimefall is a town and the Frostmirror Court is the house on it.
+        // They were briefly one name and it cost the house its own
+        // mentionability - see the note in `place-names.ts`.
+        name: 'Orchid Court',
+        alignment: 'neutral',
+        // The Matriarch, and the Court did not make her: its deepest book
+        // stops at thirty-three. The second and third of them are at the top
+        // of that book now with nothing left to open.
+        powerOrdinal: 34,
+        ranks: ['Bed Hand', 'Frost Watch', 'Bloom Warden', 'Terrace Elder', 'Valley Elder', 'Grand Valley Elder', 'Orchid Matriarch'],
+        // Low on purpose, and it is the whole design of the house: the rung is
+        // not the gate here, the door is. A bar a player could climb to would
+        // make a closed door a delay rather than a fact.
+        admissionOrdinal: 3,
+        stipend: [6, 18, 55, 180, 600, 1_100, 1_900],
+        teaches: [
+            // The climb, wood end to end, and the only complete flower road in
+            // the world. Thirteen, seventeen, twenty-one, twenty-five,
+            // twenty-nine - and it stops.
+            'lesser-qi-gathering-manual',
+            'cold-bed-foundation-canon',
+            'overwintering-canon',
+            'second-flowering-canon',
+            'late-opening-canon',
+            'unhurried-canon',
+            // The working arts of the same school. A house that lives on a
+            // floor which freezes every night wants hands that can keep
+            // something alive on it, and its one weapon is a knife that was
+            // for cuttings first.
+            'frost-setting-bud',
+            'nine-night-opening',
+            'cold-set-petal-cut',
+            'standing-bed-array',
+            'hundred-bloom-opening',
+            'unclosing-bloom',
+            'orchid-domain'
+        ],
+        signatureTechniqueId: 'orchid-domain',
+        specialities: ['support', 'defense', 'cultivation'],
+        rivals: [],
+        territory: 'A north-facing valley nine retreats below the working face, and the terraces above it - the one holding in the North that has stopped moving uphill, held on no grant because none was ever accepted.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 26,
+            formationNodesLit: 19,
+            remnant: 'Frost channels cut into rock along the valley floor to hold the cold where the beds are. The Court maintains them, did not lay them, and could not cut a new one.'
+        },
+        description:
+            'A north-facing valley nine retreats below the working face, which the melt fog settles into and never leaves, so there is frost on the floor every night of the year and the qi that came out of the ice a century ago is still lying in it. That is the whole of the Court and everything else follows. Every other holding in this province is a band of altitude that has to climb every year to stay where it is; this one went down instead, onto ground the North had already written off under its own taboo against cutting below the face, and it is the only body here whose ground does not move. It was offered a grant from the same apex the other two hold from and refused it, which the province has never fully forgiven and has never been able to punish. What it grows is the only thing growing anywhere north of the pass, in a province that eats hard cheese and imported grain, and the Cold Crucible buys a third of it at a price nobody publishes. Its library is one road, wood from end to end, and it is the only complete flower road in the world - which stops at Body Integration, one rung below the woman at the top of its own ladder, and the Court has never once claimed to have taught her. It takes only women, on the same footing the Storm Tyrant Court refuses them: a condition stated at the door and checked nowhere else. What it is actually afraid of is a warm year.',
+        ambition: {
+            wants:
+                'To be left where it is. Not recognition, not a grant, not a seat at anything - simply for nobody to arrive with a reason why a body holding a fixed band below the face is an anomaly that ought to be resolved.',
+            blockedBy: ['sect-frostmirror-court', 'apex-deep-survey'],
+            wouldCost:
+                'Nothing it can pay and everything it would have to stop doing. Being left alone is only available while nobody has a reason to insist, and the Court sells into a Guild that has to account for what it buys. Every season it sells is a season somebody could work backwards from to a valley that is on nobody\'s figure.',
+            contestedWith: [],
+            movedOn:
+                'It has begun selling forward two seasons at a time through the Fourhands station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
+        }
+    },
     {
         id: 'sect-frostmirror-court',
         name: 'Frostmirror Court',
@@ -2849,6 +2943,21 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         minOrdinal: 0,
         preferredRoots: [],
         requirement: 'Show up. Ring the bell. That is the whole ceremony.'
+    },
+    // THE BAR IS NOT THE GATE HERE, AND THE REQUIREMENT SAYS SO OUT LOUD.
+    //
+    // Three is low, deliberately - see the entry in SECTS. The condition that
+    // actually decides is in `A_HOUSE_THAT_TAKES_ONE_SEX`, checked by
+    // `theDoorIsShutTo`, and it is NOT restated as a number here: a bar and a
+    // door are different objects, and putting the door in `minOrdinal` would
+    // make it a rung somebody could climb to, which is the one thing it is
+    // not.
+    'sect-orchid-court': {
+        minOrdinal: 3,
+        minInsight: 2,
+        preferredRoots: ['single_wood', 'single_water'],
+        requirement:
+            'Qi Condensation Layer 4, a night on the valley floor without leaving it, and the Court takes only women. The first two are a bar and the third is not - no man has ever been taken on any terms, and no word from anybody has opened it, so a man who clears the other two is told what a man at Nascent Soul is told.'
     },
     'sect-frostmirror-court': {
         minOrdinal: 13,

@@ -1100,6 +1100,22 @@ export const DEFAULT_MANUAL_QUALITY: ManualQuality = 'sound';
 export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // ── Qi Condensation. The one band where the same rungs are sold at a
     // stall and taught in a courtyard, so it carries the whole spread. ──
+    // ── The flower road, and the spread is the house saying what it is. ──
+    //
+    // Sound at the bottom and refined at the top, with nothing crude and
+    // nothing pristine. The Orchid Court has copied its own books by hand for
+    // as long as it has had them and has never sold one, so there is no
+    // stall-grade copy of any of these anywhere - and no masterwork either,
+    // because a house that has never been rich has never had anybody spend a
+    // life on a fair copy. The last volume is the one exception and it is
+    // refined for a reason the house would not put that way: it is the book
+    // the Matriarch worked from, and it has her corrections in it.
+    'cold-bed-foundation-canon': 'sound',
+    'overwintering-canon': 'sound',
+    'second-flowering-canon': 'sound',
+    'late-opening-canon': 'refined',
+    'unhurried-canon': 'refined',
+
     'lesser-qi-gathering-manual': 'crude',
     'azure-dew-gathering-canon': 'refined',
     'five-breath-circulation-scripture': 'sound',
@@ -2923,6 +2939,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The best-paved road in the world, and it does not reach a rung further than the other three. What it has is no bad stretch anywhere in it: every transition between realms is written out by somebody who had just made it and was asked to explain how, every place a reader has historically stopped has an answer beside it, and there is nothing in it a student is expected to work out alone. That is what a body with exactly one purpose produces after enough centuries of it. The Hollow Court exists to get its own members over the last crossing and has spent everything it has on the question, and the road is where the spending shows.'
     }),
 
+
     // ═══════════════════════════════════════════════════════════════════
     // DAO HOUSE DISCIPLINES
     // What the ancient houses actually teach. None of these is a good
@@ -3941,7 +3958,249 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 9,
         description:
             'Not the coming down, which needs no art and costs a great deal. This is the going back, taken deliberately and on the practitioner\'s own count rather than waiting to be taken, and it is why nothing from up there is ever left lying about afterwards - what a visitor is carrying goes with them, on the breath they chose, every time it has ever happened.'
-    })
+    }),
+    // ═══════════════════════════════════════════════════════════════════
+    // THE FLOWER ROAD
+    //
+    // A school, built the way the sword school is built and for the same
+    // reason. See the note beside `FLOWER_SUBJECT` below.
+    //
+    // WHAT THE ROAD IS ABOUT, in one line, because that is the test a road
+    // has to pass: the sword is a moving edge and nothing that stands
+    // anywhere. A flower art is SET, AND OPENS AT ITS OWN TIME - placed
+    // rather than thrown, a season rather than a swing. That is why the
+    // cooldowns here are long and why the two arts that hold a volume do it
+    // by standing rather than by reaching: the road's whole premise is that
+    // the practitioner decides WHEN, and never how fast.
+    //
+    // NOT AN ELEMENT. Every row here is wood or ice, and neither of those is
+    // the road - the same distinction the sword note draws, where the
+    // Pavilion's shelf is metal end to end including a bell and a thread and
+    // neither of those is a sword. What these twelve have in common is the
+    // bed, not the material.
+    //
+    // THE CLIMB STOPS AT 33 AND THE HOUSE THAT TEACHES IT STANDS AT 34, AND
+    // THAT IS DELIBERATE. Do not "fix" the ladder to reach its own head. The
+    // Orchid Court's Matriarch is one rung past the top of her own road, the
+    // Court has never claimed to have taught her, and the valley did it -
+    // which is the whole of what that house is about and is stated in
+    // `sects.ts` in those words. A road that reached 34 would delete it.
+    // ═══════════════════════════════════════════════════════════════════
+    art({
+        id: 'frost-setting-bud',
+        // The road's premise, taught first and never taught again: a thing is
+        // set, and then left. Everything above this is the same act at more
+        // cost.
+        subjects: ['flower'],
+        name: 'Frost-Setting Bud',
+        category: 'support',
+        grade: 'mortal',
+        element: 'wood',
+        requiredOrdinal: 3,
+        qiCost: 5,
+        damage: null,
+        cooldown: 2,
+        description:
+            'A cutting is held alive through a night on ground that freezes, by putting a little of the practitioner into it and then leaving it alone until morning. It is the first thing a bed hand is shown and the only one they are made to fail at repeatedly, because the failure is always the same failure: going back to look.'
+    }),
+    art({
+        id: 'nine-night-opening',
+        subjects: ['flower'],
+        name: 'Nine-Night Opening',
+        category: 'support',
+        grade: 'mortal',
+        element: 'wood',
+        requiredOrdinal: 9,
+        qiCost: 11,
+        damage: null,
+        // Nine nights, and the cooldown is the art rather than a cost on it.
+        cooldown: 4,
+        description:
+            'A wound is set the way a cutting is set and opened over nine nights instead of closed over one. It is slower than any mending palm in the world and it leaves nothing behind, which is the trade, and it is why the people who can afford to wait send for the valley rather than for a physician.'
+    }),
+    art({
+        id: 'cold-set-petal-cut',
+        // The house's one weapon, and it is a bed hand's knife. The petal is
+        // set in the air and opens when it is CROSSED - so it strikes
+        // whoever moves rather than whoever was aimed at, which is the road's
+        // premise used against somebody instead of on a plant.
+        subjects: ['flower'],
+        name: 'Cold-Set Petal Cut',
+        category: 'attack',
+        grade: 'earth',
+        element: 'ice',
+        requiredOrdinal: 15,
+        qiCost: 22,
+        damage: '3d8+3',
+        cooldown: 3,
+        description:
+            'A dozen edges are set in the standing air and left there, and they open when something crosses them. It cannot be aimed and does not need to be: whoever moves first is who it was for. The valley teaches it to anybody who walks the path after dark, which is a sentence the Court has never seen any reason to say more gently.'
+    }),
+    art({
+        id: 'standing-bed-array',
+        // NOT ON THE FORMATION ROAD, and it was drafted that way and taken
+        // back off. The frost channels along the valley floor genuinely are an
+        // array, so the crossover read as obvious - but raising arrays is two
+        // arts in the whole catalog by an owner ruling ("not every sword art
+        // is also a formation art, maybe one or two is"), and a second school
+        // picking it up doubles that as a SIDE EFFECT of building a road.
+        // `a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts` says
+        // to change that count deliberately, with the rows, and the ruling was
+        // made about the sword. Whether a second school may raise arrays is a
+        // question for the design owner, not a thing to take while nobody is
+        // looking.
+        subjects: ['flower'],
+        name: 'Standing Bed Array',
+        category: 'defense',
+        grade: 'earth',
+        element: 'wood',
+        requiredOrdinal: 19,
+        qiCost: 40,
+        damage: null,
+        cooldown: 4,
+        description:
+            'The bed is laid as the array and the array is the bed: nodes set at the spacing a plant wants rather than at the spacing a formation wants, holding cold where the cold is needed and holding it off everything else. Anybody who has seen a working one says the same thing about it, which is that it does not look like a formation, it looks like farming.'
+    }),
+    art({
+        id: 'hundred-bloom-opening',
+        // A whole bed set and opened at once. `reach: 'several'` because it
+        // is still a thing done to people standing near each other rather
+        // than to the ground they are on - the field version is the Domain.
+        reach: 'several',
+        subjects: ['flower'],
+        name: 'Hundred-Bloom Opening',
+        category: 'attack',
+        grade: 'heaven',
+        element: 'wood',
+        requiredOrdinal: 24,
+        qiCost: 85,
+        damage: '6d10+12',
+        cooldown: 4,
+        description:
+            'A season of setting spent in one breath. The whole bed opens together and the practitioner has nothing left set anywhere afterwards, which is the honest limit of the art and the reason it is the last thing tried rather than the first.'
+    }),
+    art({
+        id: 'unclosing-bloom',
+        // The art `soul-anchoring-invocation` names and declines: it pins a
+        // nascent soul to a body being ruined and its own description ends
+        // "Does nothing for the body. That is somebody else's art." This is
+        // that art, and it belongs to a house that holds things open for a
+        // living.
+        subjects: ['flower'],
+        name: 'Unclosing Bloom',
+        category: 'support',
+        grade: 'heaven',
+        element: 'wood',
+        requiredOrdinal: 27,
+        qiCost: 120,
+        damage: null,
+        cooldown: 5,
+        description:
+            'A wound that is closing wrong is held open instead, the way a cut stem is held, until somebody who knows what they are doing can finish it properly. It buys hours and it costs the practitioner every one of them, and the Court is careful to say out loud that it saves nobody by itself - it only stops the body from settling the question early.'
+    }),
+    art({
+        id: 'orchid-domain',
+        // The valley as an art. `reach: 'field'` is the immortal-grade end of
+        // the same idea the Standing Bed Array opens at Foundation, and that
+        // relation is carried by reach alone rather than by the formation
+        // road - see the note on the Array for why this school does not raise
+        // arrays.
+        reach: 'field',
+        subjects: ['flower'],
+        name: 'Orchid Domain',
+        category: 'attack',
+        grade: 'immortal',
+        element: 'ice',
+        requiredOrdinal: 31,
+        qiCost: 200,
+        damage: '9d12+30',
+        cooldown: 5,
+        description:
+            'A standing cold laid over ground, inside which nothing opens until the practitioner allows it - a held breath, a drawn blade, a wound, a decision. It does not stop anybody doing anything. It decides when the doing arrives, and against most people that is the same thing said politely.'
+    }),
+
+    // ── the climb, wood end to end ──────────────────────────────────────
+    // One element the whole way, which is deliberate and is the difference
+    // between this house and the physician house one province over: the
+    // Verdant Spring Hall's wood line runs 16, 17, 21, 25 and stops, so a
+    // wood root there has a real career and a real ceiling. Here the same
+    // root goes to thirty-three. Which road you are on decides nothing
+    // inside these walls; the door does.
+    art({
+        id: 'cold-bed-foundation-canon',
+        subjects: ['flower'],
+        name: 'Cold-Bed Foundation Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'wood',
+        domain: 'element',
+        requiredOrdinal: 13,
+        qiCost: 30,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The foundation is set in the cold and left to take, over a winter rather than over a season, and the book is unusually frank that this is slower than every other road to the same rung and produces nothing better at the end of it. What it produces is somebody who has done the thing the whole road is made of, which is waiting on purpose.'
+    }),
+    art({
+        id: 'overwintering-canon',
+        subjects: ['flower'],
+        name: 'Overwintering Canon',
+        category: 'cultivation',
+        grade: 'earth',
+        element: 'wood',
+        domain: 'element',
+        requiredOrdinal: 17,
+        qiCost: 46,
+        damage: null,
+        cooldown: 0,
+        description:
+            'A core formed by keeping something alive through a season that is trying to end it, rather than by forcing it in a furnace or holding it under. The valley supplies the season; the book is mostly about what not to do in it, and about half of the text is a list of interventions that have killed people who could not leave a thing alone.'
+    }),
+    art({
+        id: 'second-flowering-canon',
+        subjects: ['flower'],
+        name: 'Second-Flowering Canon',
+        category: 'cultivation',
+        grade: 'heaven',
+        element: 'wood',
+        domain: 'element',
+        requiredOrdinal: 21,
+        qiCost: 78,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The soul is brought up as a second flowering off a stem that has already flowered once, which is a thing plants do and bodies are not supposed to. The Court holds that this is why its people take so long over Nascent Soul and why so few of them break in the attempt, and it has the roll to argue it with.'
+    }),
+    art({
+        id: 'late-opening-canon',
+        subjects: ['flower'],
+        name: 'Late-Opening Canon',
+        category: 'cultivation',
+        grade: 'heaven',
+        element: 'wood',
+        domain: 'element',
+        requiredOrdinal: 25,
+        qiCost: 128,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Written for somebody who has already been at a rung long enough to be told they are finished at it. Its argument is that a late opening is not a delayed one - that what opens late opens having been fed longer - and it is the only book in the valley that argues with the reader rather than instructing them.'
+    }),
+    art({
+        id: 'unhurried-canon',
+        subjects: ['flower'],
+        name: 'Unhurried Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'wood',
+        domain: 'element',
+        requiredOrdinal: 29,
+        qiCost: 210,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The top of the road, and it stops one rung short of where the Matriarch stands. The book does not pretend otherwise: its last section is about what it cannot carry anybody through, and the Court has never claimed that the woman at the top of its ladder got there out of this volume. Everybody in the valley knows what she did instead, which was to stay in it.'
+    }),
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -4044,6 +4303,80 @@ export const SWORD_ARTS: readonly TechniqueEntry[] = TECHNIQUES
 export function isSwordArt(techniqueId: string): boolean {
     const t = getTechnique(techniqueId);
     return t !== undefined && isOnRoad(t, SWORD_SUBJECT);
+}
+
+/**
+ * The flower is a school, and taking without ending the stand belongs to it.
+ *
+ * Built to the shape the sword road established directly above, deliberately
+ * and point for point, because a second road invented on its own terms would
+ * be a second way of being a road.
+ *
+ * WHAT IT IS ABOUT. The sword is *a moving edge, and nothing that stands
+ * anywhere*. The flower is its structural opposite: an art on this road is
+ * SET, AND OPENS AT ITS OWN TIME - placed rather than thrown, a season rather
+ * than a swing. That is a real identity rather than a re-skin, and it is what
+ * earns the long cooldowns and the two arts that hold a volume by standing.
+ *
+ * WHY NOT ELEMENT, again. These twelve are wood and ice and neither is the
+ * road, exactly as the five sword arts are metal and water and neither is the
+ * blade. What they have in common is the bed.
+ *
+ * WHAT THE ROAD BUYS, which is the part that makes it a road rather than a
+ * tag on twelve rows. The sword road's answer is flight, and its consumer is
+ * `couldFlyOnTheirOwnBlade`. This road's answer is
+ * {@link takesWithoutEndingTheStand}, and its consumer is
+ * `drawFromTheGround` in `engine/world/what-a-place-still-has-in-the-ground.ts`:
+ * a taker on this road gets the same armful and the bed loses less. It is the
+ * whole explanation of the house that teaches it - the Orchid Court has worked
+ * the same beds for centuries and they still set, and anybody else with a
+ * knife gets the same armful and a thinner bed next year.
+ *
+ * It reduces and never zeroes, which is `AGENTS.md`'s law about defences
+ * applied to a bed: the ground still goes down, it goes down more slowly, and
+ * nothing here creates a herb that was not there.
+ *
+ * AND THE ROAD STOPS BELOW THE HOUSE THAT TEACHES IT. `unhurried-canon` caps
+ * at 33 and the Orchid Court's Matriarch stands at 34. That gap is load
+ * bearing and is argued in `sects.ts`: she is the only one who ever crossed
+ * that last stretch, the Court has never claimed to have taught her, and what
+ * is behind that gate is ground rather than a curriculum. A road extended to
+ * 34 would delete the house's whole thesis, so do not extend it.
+ */
+export const FLOWER_SUBJECT = 'flower';
+
+/** Every art whose subject is the bed, strongest requirement last. */
+export const FLOWER_ARTS: readonly TechniqueEntry[] = TECHNIQUES
+    .filter(t => isOnRoad(t, FLOWER_SUBJECT))
+    .slice()
+    .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
+
+/** Whether this art is one of the school's. Read off the row, never a list. */
+export function isFlowerArt(techniqueId: string): boolean {
+    const t = getTechnique(techniqueId);
+    return t !== undefined && isOnRoad(t, FLOWER_SUBJECT);
+}
+
+/**
+ * Whether this cultivator takes from a bed the way the school takes.
+ *
+ * The flower road's answer to flight, and the gate is built the same way
+ * `couldFlyOnTheirOwnBlade` is: holding one page out of a school is not being
+ * of it. Another art of the school, or a road that is the flower, and the page
+ * stops being a page.
+ *
+ * Deliberately NOT gated on a rung. Taking a cutting without killing the stand
+ * is the first thing a bed hand is shown - `frost-setting-bud` opens at 3 -
+ * and it is the one part of this road that is not about height at all.
+ */
+export function takesWithoutEndingTheStand(input: {
+    /** Every art they hold. Order is not read. */
+    knownTechniqueIds: readonly string[];
+    /** `dao.subject` from `assessDao`. Null for almost everybody. */
+    daoSubject?: string | null;
+}): boolean {
+    if (input.daoSubject === FLOWER_SUBJECT) return true;
+    return input.knownTechniqueIds.some(isFlowerArt);
 }
 
 /** Throwing variant, for engine paths where a missing id is a bug, not input. */

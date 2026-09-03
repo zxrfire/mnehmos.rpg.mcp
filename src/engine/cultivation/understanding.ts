@@ -861,6 +861,12 @@ const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
     sword: 'weapon',
     spear: 'weapon',
     blade: 'weapon',
+    // The second school, and it belongs to alchemy rather than to weapons
+    // even though two of its arts are things you hit people with. What the
+    // flower road is ABOUT is the bed - see `FLOWER_SUBJECT` in
+    // `data/cultivation/techniques.ts` - and a comprehension earned in a
+    // valley should match the arts practised in one.
+    flower: 'alchemy',
     fist: 'body',
     body: 'body',
     formation: 'formation',
