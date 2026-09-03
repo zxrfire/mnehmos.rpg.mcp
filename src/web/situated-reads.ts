@@ -81,7 +81,10 @@ import { rosterFor, sectBoardFor } from './encounters.js';
 import { resolveTechnique, worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
-import { whatStandingAmongYourOwnShows } from './meeting-your-own-house.js';
+import {
+    whatBeingAMemberTellsYou,
+    whatStandingAmongYourOwnShows
+} from './meeting-your-own-house.js';
 import {
     type GroundNearby,
     type ThingThatTeaches,
@@ -477,6 +480,23 @@ export const situatedReads = {
                 known: this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
             }))
         });
+        // AND THE STRUCTURE, which needs nobody in the room. Being told who
+        // leads your house is what joining consists of; `told` rather than
+        // `witnessed`, so the ceiling holds it at `placed` and knowing the
+        // head's name never becomes having met them. The protector and the
+        // guests are out - `what-joining-tells-you.ts` says why.
+        const structure = whatBeingAMemberTellsYou(membership?.sectId ?? null, {
+            houseName: getSect(membership?.sectId ?? '')?.name ?? 'the house',
+            ladder: getMembersOf(membership?.sectId ?? '').map(member => ({
+                id: member.id,
+                name: member.name,
+                rankIndex: member.rankIndex,
+                realmOrdinal: member.realmOrdinal
+            })),
+            ranks: getSect(membership?.sectId ?? '')?.ranks ?? []
+        });
+        if (structure) (execution.perceived ??= []).push(structure);
+
         if (meeting) {
             (execution.perceived ??= []).push(meeting.perception);
             execution.facts.structure.push(
