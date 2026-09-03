@@ -57,6 +57,7 @@ import {
 import {
     anyClauseReadsAsThisVerb,
     theClausesNoStepAccountsFor,
+    theWholeSentenceAsAPlan,
     spendsSomething,
     stepsInTheResponse,
     theClauseThisStepQuotes,
@@ -809,9 +810,22 @@ export class ProviderNarrator implements Narrator {
      * the costly one is the act.
      */
     private async aPlanRatherThanAVerb(
-        steps: readonly PlanStep[],
+        fromTheReader: readonly PlanStep[],
         input: string
     ): Promise<PlanWithSteps> {
+        // ── THE SENTENCE SAYS HOW MANY ACTS ARE IN IT ───────────────────
+        //
+        // Before anything is checked, because a clause the reader never sent
+        // cannot be declined, held or reported - it simply is not there. Any
+        // costly clause of the player's own sentence that no step is answering
+        // is read with the deterministic table and put back where they wrote
+        // it. See `theWholeSentenceAsAPlan` for why this is the sentence's
+        // authority rather than a rescue of a weak model.
+        const whole = await theWholeSentenceAsAPlan(
+            input, fromTheReader, async clause => (await readTheSentence(clause)).action
+        );
+        const steps = whole.steps;
+
         const checked: PlanStep[] = [];
         const declined: string[] = [];
         const dropped: PlanStep[] = [];
@@ -835,6 +849,17 @@ export class ProviderNarrator implements Narrator {
             // Comparing against a reading of the WHOLE sentence, which is what
             // this did, declined the owner's own acceptance sentence into
             // nothing - see `anyClauseReadsAsThisVerb` for the transcript.
+            // A step the SENTENCE put back is the deterministic reading of the
+            // player's own clause, so there is nothing for this check to
+            // compare it against: it is the baseline. Checking it would compare
+            // the table's answer with the table's answer and, where the clause
+            // and the whole sentence read differently, decline the player's own
+            // words for not being a model's.
+            if (whole.backfilled.includes(step)) {
+                checked.push(step);
+                continue;
+            }
+
             const quoted = theClauseThisStepQuotes(step, input);
             const verdict = await theModelIsNotWhyThisTurnIsDangerous(
                 step.action, quoted ?? input
@@ -907,6 +932,15 @@ export class ProviderNarrator implements Narrator {
             `read as a plan of ${checked.length}: `
             + checked.map(step => step.action.action).join(' -> ')
             + '. Resolved in order, each against the world the one before it left.',
+            // Said out loud, because a step nobody sent is exactly the kind of
+            // reading AGENTS.md asks to be shown: the player can see that their
+            // sentence put an act back that the reader had not.
+            ...(whole.backfilled.length > 0
+                ? [`The reader answered with ${fromTheReader.length} of them; `
+                    + `${whole.backfilled.map(step => step.action.action).join(', ')} `
+                    + 'came from the sentence itself, read without a model and put back where '
+                    + 'it was written.']
+                : []),
             ...declined
         ].join(' ');
 

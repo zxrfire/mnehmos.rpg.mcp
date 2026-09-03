@@ -415,6 +415,110 @@ export async function theClausesNoStepAccountsFor(
     return lost;
 }
 
+/**
+ * The player's whole sentence as a plan, with any act the reader missed put
+ * back in the position they wrote it.
+ *
+ * ── WHY THE SENTENCE OUTRANKS THE READER ON THIS ONE QUESTION ────────────
+ *
+ * Played, repeatedly, against a live model:
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *   read as 2: interact(Cao Antao), move(away)
+ *
+ * Three clauses in, two acts out, and the one it lost is **the middle one** -
+ * which is the clause the other two exist for. Take and walk away is a person
+ * leaving. The handover is what makes it a frame-up. Everything downstream
+ * behaved correctly on what it was handed; it was handed a smaller sentence
+ * than the player typed.
+ *
+ * **How many acts are in a sentence is a property of the sentence, not a
+ * judgement the reader makes.** That is the same division this architecture
+ * runs on everywhere else - the engine rules, the model reads, and a reader is
+ * never given more authority for having more reach. A model that under-splits
+ * is not exercising judgement, it is failing to read, and the player's own
+ * words are sitting there to be read instead.
+ *
+ * It is also what makes composition a property of the GAME rather than of the
+ * top tier. There are four reading tiers down to a browser embedding, and if a
+ * three-act sentence only composes when a good model splits it, composition is
+ * a feature the bottom three do not have.
+ *
+ * ── THE TWO GUARDS, BOTH ALREADY MEASURED ────────────────────────────────
+ *
+ * **Only a clause that would COST something.** A free read the model routed to
+ * its neighbour must not be re-run or announced - the house rule, and it caught
+ * a live false positive the moment it was left out.
+ *
+ * **Never a step the player did not write.** Every backfilled step is the
+ * deterministic reading of a clause of their own typed sentence, so this cannot
+ * invent an act, and it cannot be steered by a model: the model contributes
+ * nothing to a backfill but the gap that let it happen.
+ *
+ * ── AND IT NEVER REORDERS WHAT THE READER SENT ───────────────────────────
+ *
+ * The reader's steps come out in the order it sent them. A backfill is placed
+ * between them, at the clause position the player wrote it in, which is the
+ * only thing being decided here. Order is meaning in this file and a backfill
+ * must not be the thing that changes it.
+ */
+export async function theWholeSentenceAsAPlan(
+    input: string,
+    fromTheReader: readonly PlanStep[],
+    read: (clause: string) => Promise<PlannedAction>
+): Promise<{ steps: PlanStep[]; backfilled: PlanStep[] }> {
+    const clauses = theClausesOf(input);
+    if (clauses.length < 2) return { steps: [...fromTheReader], backfilled: [] };
+
+    const readings = await Promise.all(clauses.map(read));
+
+    // Which clause each of the reader's steps is answering. `said` when it
+    // quoted the player; otherwise the first clause not yet spoken for whose
+    // own reading reaches the same verb.
+    const spokenFor = new Set<number>();
+    const positionOf = fromTheReader.map(step => {
+        const quoted = theClauseThisStepQuotes(step, input);
+        if (quoted !== null) {
+            const at = clauses.findIndex(clause => forMatching(clause) === forMatching(quoted));
+            if (at !== -1) { spokenFor.add(at); return at; }
+        }
+        const at = readings.findIndex(
+            (reading, i) => !spokenFor.has(i) && reading.action === step.action.action
+        );
+        if (at !== -1) { spokenFor.add(at); return at; }
+        return null;
+    });
+
+    const steps: PlanStep[] = [];
+    const backfilled: PlanStep[] = [];
+
+    /** Costly clauses nobody is answering, from `from` up to but not including `to`. */
+    const fillBetween = (from: number, to: number): void => {
+        for (let at = from; at < to; at++) {
+            if (spokenFor.has(at)) continue;
+            const reading = readings[at]!;
+            if (reading.action === 'unclear' || costsTheAskerNothing(reading)) continue;
+            spokenFor.add(at);
+            const put = { action: reading, said: clauses[at]! };
+            backfilled.push(put);
+            steps.push(put);
+        }
+    };
+
+    let next = 0;
+    fromTheReader.forEach((step, i) => {
+        const at = positionOf[i];
+        if (at !== null && at >= next) {
+            fillBetween(next, at);
+            next = at + 1;
+        }
+        steps.push(step);
+    });
+    fillBetween(next, clauses.length);
+
+    return { steps, backfilled };
+}
+
 export async function anyClauseReadsAsThisVerb(
     input: string,
     verb: ActionName,
@@ -890,6 +994,7 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     interact: 'the approach to',
     request: 'the ask of',
     provision: 'buying the rations',
+    give: 'handing it over to',
     buy: 'the purchase',
     sell: 'the sale',
     consume_pill: 'taking the pill',
@@ -1474,16 +1579,50 @@ export function sayingWhatTheReadingDropped(dropped: readonly PlanStep[]): strin
 }
 
 /** The same, as an inspector row per dropped clause. */
-export function theRowForADroppedClause(step: PlanStep): ToolCallRecordish {
+export function theRowForADroppedClause(step: PlanStep, wasTheirs = true): ToolCallRecordish {
+    const at = `${step.action.action}`
+        + `${step.action.target ? `(${step.action.target})` : '()'}`;
     return {
         name: 'engine.stepNotRun',
         action: step.action.action,
-        summary: `Not run: the reading layer declined ${step.action.action}`
-            + `${step.action.target ? `(${step.action.target})` : '()'}`
-            + ' - only a model read the sentence that way, and a model may not be the reason '
-            + 'a turn became dangerous. Nothing was spent on it.',
+        summary: wasTheirs
+            ? `Not run: the reading layer declined ${at} - only a model read the sentence that `
+              + 'way, and a model may not be the reason a turn became dangerous. Nothing was '
+              + 'spent on it.'
+            : `Not run, and NOT the player's: the reader added ${at}, which quotes no clause of `
+              + 'what was typed. Declined and dropped without telling them, because a player '
+              + 'told an act they never asked for "did not happen" learns that their sentence '
+              + 'was misread when what happened is that the reader added to it.',
         ok: false
     };
+}
+
+/**
+ * Whether a dropped step is one of the PLAYER'S clauses or one the reader added.
+ *
+ * ── FOUND BY PLAYING, AND IT IS A LIE IN THE PLAYER'S DIRECTION ──────────
+ *
+ *   > I press Cao Antao's purse into Shen Liefeng's hand and walk away
+ *
+ * The model added a third step - `interact(Cao Antao, steal)`, a theft the
+ * sentence does not ask for and which had already happened a turn earlier. The
+ * danger check declined it, correctly. And then the turn told the player:
+ *
+ *     "the approach to Cao Antao" was not part of what happened - that part of
+ *     the sentence did not become an act. Say it on its own and it will run.
+ *
+ * **There is no such part of the sentence.** Reporting an invented act as a
+ * lost clause teaches the player their words were misread, and invites them to
+ * say again a thing they never said - which is the one direction a report like
+ * this must never be wrong in.
+ *
+ * So a dropped step reaches the player only when its words are genuinely
+ * theirs. Everything else is an inspector row, where an operator can see the
+ * reader reaching for something nobody asked for, which is exactly the thing
+ * that surface exists to show.
+ */
+export function theseWereThePlayersOwnWords(step: PlanStep, input: string): boolean {
+    return theClauseThisStepQuotes(step, input) !== null;
 }
 
 /** The sentence a player reads when the bound cut something off. */

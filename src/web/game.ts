@@ -864,13 +864,19 @@ import {
     sayingWhereItStopped,
     stepsOfThePlan,
     theQuestionStillStands,
+    carryingTheReferentForward,
     howTheStepWent,
     sayingWhatIsStillToCome,
     sayingWhatItCostTheRest,
+    sayingWhatTheReadingDropped,
+    theRowForADroppedClause,
+    theseWereThePlayersOwnWords,
     theRowForAStepOverTheBound,
     theRowForSomethingStillToCome,
     theRowThatAsksWhichFirst,
+    theRowForAResolvedPronoun,
     theRowThatOpensAStep,
+    theThingThisStepNamed,
     theRowThatSaysWhereItStopped,
     whatTheQuestionAsks,
     whatTheQuestionAsksStructurally,
@@ -3278,7 +3284,11 @@ export class GameService {
         rawInput: string
     ): Promise<Execution> {
         const steps = stepsOfThePlan(plan);
-        if (steps.length === 1) {
+        // The old single-call path, byte for byte - but only when there is
+        // genuinely nothing else to say. A turn whose OTHER clauses were dropped
+        // by the reading layer still has to report them, and taking the shortcut
+        // is what left the narrator as the only thing that knew they existed.
+        if (steps.length === 1 && !(plan.droppedClauses?.length)) {
             return await this.execute(steps[0]!.action, run, cultivator, ambient, rawInput);
         }
 
@@ -3289,8 +3299,14 @@ export class GameService {
         let stoppedHavingLanded = false;
         let notReached: readonly PlanStep[] = [];
 
+        // What the clause before this one was about, so "press IT into his hand"
+        // reaches the purse rather than a pouch row called "it".
+        let lastThingNamed: string | null = null;
+
         for (let i = 0; i < budget.toRun.length; i++) {
-            const step = budget.toRun[i]!;
+            const asPlanned = budget.toRun[i]!;
+            const step = carryingTheReferentForward(asPlanned, lastThingNamed);
+            lastThingNamed = theThingThisStepNamed(step) ?? lastThingNamed;
             // The world the last step left, re-read rather than remembered.
             const now = this.currentRun();
             const one = await this.execute(
@@ -3302,6 +3318,9 @@ export class GameService {
             // successful theft and cost a played turn to find.
             const went = howTheStepWent(one, step);
             one.calls.unshift(theRowThatOpensAStep(step, i, steps.length));
+            if (step !== asPlanned) {
+                one.calls.splice(1, 0, theRowForAResolvedPronoun(asPlanned, step));
+            }
             done.push(one);
 
             // ── TWO WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT ───
@@ -3414,6 +3433,32 @@ export class GameService {
 
         for (const over of budget.overTheBound) {
             folded.calls.push(theRowForAStepOverTheBound(over));
+        }
+
+        // A CLAUSE THE READING LAYER DROPPED IS SAID TOO.
+        //
+        // The executor cannot report a step it was never given, so without this
+        // the narrator is the only thing in the turn that knows the clause
+        // existed - and measured, it filled the gap: handed a turn whose only
+        // ruling was a refusal, a model wrote "You take the purse from Cao Antao
+        // and press it into Shen Liefeng's hand". The same treatment a clause
+        // the budget declined already gets.
+        if (plan.droppedClauses && plan.droppedClauses.length > 0) {
+            // Only what the player actually typed reaches the player. A step the
+            // reader ADDED and the check then declined is an inspector row and
+            // nothing else - telling somebody an act they never asked for "was
+            // not part of what happened" invites them to say it again.
+            const theirs = plan.droppedClauses.filter(
+                step => theseWereThePlayersOwnWords(step, rawInput)
+            );
+            if (theirs.length > 0) {
+                sayThisWhateverTheNarratorDoes(folded.facts, sayingWhatTheReadingDropped(theirs));
+            }
+            for (const step of plan.droppedClauses) {
+                folded.calls.push(
+                    theRowForADroppedClause(step, theirs.includes(step))
+                );
+            }
         }
         if (budget.overTheBound.length > 0) {
             sayThisWhateverTheNarratorDoes(

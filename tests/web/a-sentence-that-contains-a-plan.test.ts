@@ -481,20 +481,68 @@ describe("the owner's acceptance sentence", () => {
         expect(whatThisTurnMayRun(chained, SAID).theOrderWasGiven).toBe(true);
     });
 
-    it('never silently loses a clause the reading layer declined', async () => {
+    /**
+     * A step the READER added is declined and dropped without telling the
+     * player, because they never asked for it. Found by playing: the model
+     * added a theft to "I press Cao Antao's purse into Shen Liefeng's hand and
+     * walk away", the check declined it, and the turn then told the player that
+     * "the approach to Cao Antao" was not part of what happened - a clause that
+     * does not exist, and an invitation to say a thing they never said.
+     */
+    it('declines a step the reader added without blaming the player’s sentence', async () => {
         const { game } = await playing([
             STEPS(
-                // A fight nobody could read out of this sentence: the danger
-                // check declines it, and the player has to be told it did not
-                // happen rather than left to read prose that says it did.
+                // A fight nobody could read out of this sentence, quoting no
+                // clause of it: the reader reaching for something on its own.
                 { action: 'attack', target: 'Cao Antao', said: 'I run him through' },
-                { action: 'status', said: 'and check myself over' }
+                { action: 'status', said: 'look myself over' }
             )
         ]);
         await game.newRun('Probe');
         const turn = await game.act('I look myself over');
 
-        expect(turn.toolCalls.some(row => row.name === 'engine.stepNotRun')).toBe(true);
-        expect(turn.narration).toContain('not part of what happened');
+        // Visible to an operator, which is what that surface is for...
+        const row = turn.toolCalls.find(r => r.name === 'engine.stepNotRun');
+        expect(row).toBeDefined();
+        expect(row!.summary).toContain('the reader added');
+
+        // ...and never said to the player as a clause of theirs.
+        expect(turn.narration).not.toContain('not part of what happened');
+        expect(turn.narration).not.toContain('run him through');
+    });
+});
+
+/**
+ * COMPOSITION MUST NOT DEPEND ON THE MODEL BEING GOOD AT COMPOSITION.
+ *
+ * The reader here sends two steps for a three-act sentence, which is exactly
+ * what gemma4:26b did on the owner's acceptance sentence, repeatedly. The
+ * middle clause - the handover, which is the clause the other two exist for -
+ * is put back from the player's own text.
+ */
+describe('the sentence composes even when the reader under-splits', () => {
+    it('routes the clause the reader missed, in the position it was written', async () => {
+        const { game } = await playing([
+            // Two steps for three acts: the handover is gone.
+            STEPS(
+                { action: 'interact', target: 'Cao Antao', intent: 'steal',
+                    said: "I take Cao Antao's purse" },
+                { action: 'move', target: 'away', said: 'walk away' }
+            )
+        ]);
+        await game.newRun('Probe');
+
+        const turn = await game.act(
+            "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away"
+        );
+
+        const routing = turn.toolCalls.find(row => row.name === 'narrator.plan')!;
+        expect(routing.summary).toContain('read as a plan of 3');
+        expect(routing.summary).toContain('interact -> give -> move');
+        // And the reading is SHOWN rather than done quietly.
+        expect(routing.summary).toContain('came from the sentence itself');
+
+        // Nothing is reported as lost any more, because nothing was lost.
+        expect(turn.toolCalls.filter(row => row.name === 'engine.stepNotRun')).toHaveLength(0);
     });
 });
