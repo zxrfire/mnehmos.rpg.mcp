@@ -2322,3 +2322,25 @@ with no provenance cannot be re-derived and will be widened by whoever it fails.
 currently behaves, not a contract. Moving one deliberately, with the new measurement
 written beside it, is the tier working; widening one to make a red test green is the tier
 being defeated.
+
+### World state regenerates from a seed. Do not write code to preserve it
+
+**A migration that would be delicate against real records is not delicate here.** The houses,
+the people, the ground and everything the world derived from them come back identically from
+the same world seed, so a database in a bad state is a database to rebuild rather than a
+dataset to rescue.
+
+The practical consequence is about **where the effort goes**. When a schema change collides
+with existing rows - a constraint that will not apply, a column that must change type, a
+reference that was never enforced - the answer is the correct schema and a delete, not
+reconciliation logic. Rows that violate a constraint being added are usually the corruption
+that constraint exists to prevent; preserving them preserves the bug.
+
+**Measure anyway, and report the count.** Not as a decision - as a signal. A large number of
+bad rows means something is actively writing them and that is worth knowing; a small number
+is reassurance. It costs one query.
+
+**The line this does not cross:** a reference that was valid and is being broken by the
+change is a different thing from one that was never valid. Deleting rows that point at
+nothing is cleanup. Cascading away rows that point at something is a design decision about
+what survives what, and it has to be argued rather than defaulted.
