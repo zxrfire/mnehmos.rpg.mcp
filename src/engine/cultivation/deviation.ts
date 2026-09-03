@@ -18,6 +18,36 @@
  * Deviation is not instant death. It tears meridians and burns accumulated
  * progress, which is worse in a slow way: it moves you toward the three-
  * untreated-injuries state where the *next* fight is what kills you.
+ *
+ * ══ IT IS THE PRICE OF AN ACT, NEVER A CLOCK ══════════════════════════════
+ *
+ * Ruled by the design owner: *"Idle shouldn't RANDOMLY accumulate injuries.
+ * Injuries come from what you DO. Events, right?"* **A wound has a cause you
+ * can point at.**
+ *
+ * Nothing in this module fires on its own. `deviationRisk` prices a DANGER and
+ * `rollDeviation` tests it, and both wait to be asked by something that
+ * happened: `time-skip.ts` asks on the check grid *while the cultivator is
+ * drawing qi* and not otherwise, and `technique-manage.ts` asks when somebody
+ * opens or practises an art that fights their root. There is no third caller
+ * and there must not be one that keys on the calendar alone.
+ *
+ * ── WHAT THIS FILE USED TO CLAIM, AND THE PART THAT SURVIVES ─────────────
+ *
+ * Cause 1 above says a conflicting root "is not a situation you can leave; it
+ * is standing inside your own meridians for the entire run", and the time skip
+ * read that as licence to roll every thirty days regardless of what the body
+ * was doing. Measured through `ADMIN advance_days`: a body that did nothing at
+ * all took better than one wound a year and died of qi deviation inside a
+ * decade, whatever it paid for food.
+ *
+ * The sentence is kept because it is still true, and what it means is now
+ * exact. **A conflicting root is a STATE and a state raises what an act costs.
+ * It does not act.** Same for the other two standing terms below - untreated
+ * wounds and qi past a bottleneck are facts about a body, and they make
+ * drawing qi more dangerous rather than making time dangerous. Only
+ * `CONFLICTING_TECHNIQUE_RISK` is an act in its own right, and it has always
+ * been gated on there being an art in hand.
  */
 
 import {

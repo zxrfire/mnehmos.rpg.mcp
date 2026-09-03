@@ -133,21 +133,37 @@ describe('walking up the terraces', () => {
 
     it('keeps somebody who never crosses, at the rung the catalog already has a name for',
         async () => {
-            // ── THIS ARM IS PLAYED RATHER THAN ADVANCED, AND THAT IS A FINDING ──
+            // ── THIS ARM IS PLAYED RATHER THAN ADVANCED, AND IT IS THE POINT ──
             //
-            // Every attempt to reach the judgement with `ADMIN advance_days`
-            // ended the same way: an idle body accumulates untreated channels
-            // at rather more than one a year and dies of qi deviation inside
-            // eight to thirty, whatever is paid for rations and however often
-            // the rung is moved to reset the stagnation clock. Somebody who is
-            // actually CULTIVATING survives it - measured, forty-four years and
-            // eleven rungs on this seed - which is the world saying something
-            // rather worth hearing about what a probation is.
+            // A probation is a person practising under a house's eye for
+            // decades, so the arm that tests one has to be somebody DOING
+            // that. Playing it also keeps the treatment in the loop, which is
+            // the whole subject: a cultivator who closes their channels once a
+            // course survives the climb, and one who cannot afford to does not.
+            // Measured on this seed: forty-four years and eleven rungs.
             //
-            // It also happens to validate where the line was put. The house
-            // decides at `stagnationYearsForOrdinal(0)`, and that is very close
-            // to the horizon past which somebody who has not crossed is not a
-            // candidate any more because they are dead.
+            // ── AND WHAT THIS COMMENT USED TO SAY INSTEAD ────────────────
+            //
+            // It recorded a finding: *"an idle body accumulates untreated
+            // channels at rather more than one a year and dies of qi deviation
+            // inside eight to thirty, whatever is paid for rations"* - offered
+            // as the reason `ADMIN advance_days` could not reach the judgement.
+            // That was a real measurement of a defect rather than a fact about
+            // the world. The time skip rolled qi deviation against the calendar
+            // instead of against the act it is the price of.
+            //
+            // The design owner has ruled: **a wound has a cause you can point
+            // at.** A body drawing no qi tears no meridians, and the roll is
+            // gated on the act now - see the banner over `DEVIATION_CHECK_DAYS`
+            // in `time-skip.ts`. So advancing this arm would no longer kill
+            // anybody, and it is still played, for the reason above rather than
+            // for the reason that used to be written here.
+            //
+            // The stagnation observation survives untouched, because it never
+            // rested on the deviation roll. The house decides at
+            // `stagnationYearsForOrdinal(0)`, and that is very close to the
+            // horizon past which somebody who has not crossed is not a
+            // candidate any more because they are dead of not having crossed.
             //
             // The seed pair is pinned because THIS person survives it. The same
             // branch is exercised without the survival layer in
