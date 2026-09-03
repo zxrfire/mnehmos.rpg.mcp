@@ -188,7 +188,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         power: 45,
         ownerId: 'sect-hollow-court',
         ownerName: 'The Hollow Court',
-        possessorId: 'seat-first',
+        possessorId: 'hollow-court-first-seat',
         description:
             'Carried rather than stored, by somebody at forty-four who uses it as a tool for the crossing and would think describing it to an outsider a waste of an afternoon. Nobody outside the Court has seen it and the Court has never said it exists.',
         tags: ['immortal-made', 'carried', 'undeclared']
@@ -230,7 +230,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         power: 44,
         ownerId: 'sect-hollow-court',
         ownerName: 'The Hollow Court',
-        possessorId: 'seat-second',
+        possessorId: 'hollow-court-second-seat',
         description:
             'The same, one rung down. What the province knows is that four people went in, and that the mountains are visited while the occupants are not; what it does not know is that all four are carrying something an apex would empty a vault for.',
         tags: ['immortal-made', 'carried', 'undeclared']
@@ -244,7 +244,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         power: 43,
         ownerId: 'sect-hollow-court',
         ownerName: 'The Hollow Court',
-        possessorId: 'seat-third',
+        possessorId: 'hollow-court-third-seat',
         description:
             'Held by the Third Seat, who stands level with the Deep Survey\'s head and is better equipped than him, and who has never had a reason to be within a province of the man.',
         tags: ['immortal-made', 'carried', 'undeclared']
@@ -257,7 +257,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         power: 43,
         ownerId: 'sect-hollow-court',
         ownerName: 'The Hollow Court',
-        possessorId: 'seat-fourth',
+        possessorId: 'hollow-court-fourth-seat',
         description:
             'The weakest of the Court\'s four and still the equal of the Long Cut\'s Nail. The Fourth Seat is the youngest and the one most likely to be met, on the grounds that they are the only one who still occasionally answers the gate.',
         tags: ['immortal-made', 'carried', 'undeclared']

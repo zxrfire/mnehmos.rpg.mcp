@@ -42,6 +42,7 @@ import {
     THE_REVOLT
 } from '../../src/data/cultivation/standoff.js';
 import { ARTIFACTS, artifactPowerOf, artifactsOwnedBy } from '../../src/data/cultivation/artifacts.js';
+import { MEMBERS } from '../../src/data/cultivation/members.js';
 import { APEX_INSTITUTIONS, COURTS } from '../../src/data/cultivation/hierarchy.js';
 import { SECT_ANCESTRY, sectThreat, sectsWithASealedCeiling } from '../../src/data/cultivation/sects.js';
 import {
@@ -376,7 +377,16 @@ describe('the Hollow Court could, and does not', () => {
         const held = artifactsOwnedBy('sect-hollow-court');
         expect(held).toHaveLength(4);
         for (const a of held) {
-            expect(a.possessorId, `${a.name} is on a Seat`).toMatch(/^seat-/);
+            // A PERSON, named by the id the catalog holds people under - which
+            // is what `artifact-placement.ts` joins to a world row, and the
+            // whole reason these four reach anybody's hands. A positional key
+            // that resolves to nobody reads exactly like this assertion
+            // passing, which is why it is the roll that is asked and not the
+            // shape of the string.
+            const carrier = MEMBERS.find(m => m.id === a.possessorId);
+            expect(carrier, `${a.name} is on nobody the roll holds`).toBeDefined();
+            expect(carrier!.factionId, `${a.name}`).toBe('sect-hollow-court');
+            expect(carrier!.rank, `${a.name}`).toBe('Seat');
             expect(a.tags, a.name).toContain('carried');
         }
         for (const apex of APEX_INSTITUTIONS) {

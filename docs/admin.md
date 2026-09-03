@@ -160,10 +160,16 @@ Each is the shape `AGENTS.md` records under
 [the world's rules must bind the player too](../AGENTS.md) - the rumour mill binds NPCs
 and cannot see the player at all.
 
-A rated object in the pouch has a fourth, smaller one: `CombatantInput.artifactOrdinal` is
-the engine's price for a carried rated object, and **nothing in `src/` passes it, for
-anybody.** `grant_item` says so in its own response rather than letting an operator find out
-by losing a fight they should have won.
+A rated object in the pouch was a fourth and is not one now. `combatantFromCultivator` reads
+`carriedArtifact` into `CombatantInput.weapon`, `assessPower` prices `weapon.power` as the
+rated ordinal, and a granted object can be broken in the fight by the ordinary rule - the same
+field an NPC's blade arrives in through `bestObjectHeldBy`, read by the same resolver.
+`grant_item` names both in its own response rather than letting an operator find out by
+losing a fight they should have won.
+
+**What the grant still does not do is touch the world's register, and it must not.** Holding a
+thing and owning it are two facts ([`things/items.md`](world/things/items.md)); the world going
+on saying a house owns something the player is carrying is what a stolen artifact is.
 
 ### And a fifth, found by the design owner, which read exactly like the surface lying
 
@@ -175,7 +181,7 @@ at all."*
 is the READ: the `inventory` verb goes to `alchemy_manage.inventory`, an alchemy tool, and
 `listPouch` filters to pills and herbs **by design** - a rated object is a different kind of
 thing and `listCarriedArtifacts` is its accessor. That accessor had exactly one caller,
-`carriedArtifact`, which prices a fight nothing has ever asked it to price.
+`carriedArtifact`, which itself had none.
 
 So the object was in the database, invisible to every sentence a player can type, and worth
 nothing in a fight. **A write nobody can read is indistinguishable from a write that did not

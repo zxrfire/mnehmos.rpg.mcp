@@ -1681,25 +1681,6 @@ function ordinalOf(id: string): number {
         ?? 0;
 }
 
-/**
- * A seat id, as the artifact catalog writes them, resolved to a seat.
- *
- * The four withdrawn seats are positions rather than people - the catalog
- * records a rung and a position and no name for any of them - so `seat-third`
- * resolves to the third entry of the owning faction's withdrawn ladder and
- * carries that seat's own ordinal. It is worth the resolution: the Fourth Seat
- * stands at forty-two and is carrying a forty-three, and the two numbers next
- * to each other are the most useful line in the table.
- */
-const SEAT_WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
-
-function resolveSeat(ownerId: string | null, possessorId: string): { name: string; ordinal: number } | null {
-    const word = /^seat-(.+)$/.exec(possessorId)?.[1];
-    if (!word || !ownerId) return null;
-    const index = SEAT_WORDS.indexOf(word);
-    const seat = index >= 0 ? WITHDRAWN_POWERS[ownerId]?.seats[index] : undefined;
-    return seat ? { name: seat.position, ordinal: seat.ordinal } : null;
-}
 
 /**
  * Every artifact, in the catalog's own order.
@@ -1710,11 +1691,16 @@ function resolveSeat(ownerId: string | null, possessorId: string): { name: strin
  * - and `artifactsOwnedBy` is the thing that knows. What is left null at the
  * end is genuinely an owner this sheet has no entry for, which is worth seeing
  * rather than worth hiding.
+ *
+ * A holder who is a PERSON is looked up on the roll, under the same catalog id
+ * `artifact-placement.ts` joins to a world row. The four withdrawn Seats come
+ * back through that lookup like anybody else - the Fourth Seat stands at
+ * forty-two and is carrying a forty-three, and the two numbers next to each
+ * other are the most useful line in the table.
  */
 function buildArtifacts(): RegisterArtifact[] {
     return ARTIFACTS.map(a => {
         const inVault = a.possessorId !== null && a.possessorId === a.ownerId;
-        const seat = a.possessorId ? resolveSeat(a.ownerId, a.possessorId) : null;
         const member = a.possessorId ? MEMBERS.find(m => m.id === a.possessorId) : undefined;
 
         return {
@@ -1730,9 +1716,9 @@ function buildArtifacts(): RegisterArtifact[] {
                 ? ''
                 : inVault
                     ? a.ownerName || nameOf(a.possessorId)
-                    : seat?.name ?? member?.name ?? nameOf(a.possessorId),
+                    : member?.name ?? nameOf(a.possessorId),
             inVault,
-            possessorOrdinal: seat?.ordinal ?? member?.realmOrdinal
+            possessorOrdinal: member?.realmOrdinal
                 ?? (inVault && a.ownerId ? ordinalOf(a.ownerId) || null : null),
             tags: [...a.tags],
             description: a.description

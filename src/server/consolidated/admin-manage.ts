@@ -1720,17 +1720,27 @@ function artifactNearest(
  * way `spawn_site` picks the nearest catalogued site, `name=` matches the
  * catalog's own name, and a miss is refused with what is actually there.
  *
- * ══ AND WHAT CARRYING IT IS CURRENTLY WORTH ═══════════════════════════════
+ * ══ AND WHAT CARRYING IT IS WORTH ═════════════════════════════════════════
  *
- * Less than it should be, and the response says so rather than leaving the
- * operator to find out. `CombatantInput.artifactOrdinal` is the engine's price
- * for a rated object - "a second body of that rank, standing beside them" - and
- * NOTHING in `src/` passes it, for the player or for anybody. So the object is
- * genuinely in the pouch, genuinely readable back, and genuinely worth nothing
- * in a fight until `combatantFromCultivator` reads `carriedArtifact`. Reporting
- * a grant while hiding that would be the surface lying about a write it really
- * performed, which is the exact defect the multi-word gazetteer note above
- * records.
+ * What the catalog says it is worth, and the response says which line of the
+ * engine says so. `combatantFromCultivator` in `combat-manage.ts` reads
+ * `carriedArtifact` into `CombatantInput.weapon`, and `assessPower` prices
+ * `weapon.power` as the rated ordinal - "a second body of that rank, standing
+ * beside them". The same field an NPC's blade arrives in through
+ * `bestObjectHeldBy`, read by the same resolver, which is the point.
+ *
+ * A granted object can therefore also be BROKEN, by the ordinary rule: swung
+ * far under the rung it is swung into, it comes apart. Nothing about that is
+ * special to a granted one.
+ *
+ * ══ WHAT THE GRANT DOES NOT DO, AND MUST NOT ══════════════════════════════
+ *
+ * It writes a pouch row and it writes nothing to the world's register. That is
+ * not a gap: holding a thing and owning it are two facts
+ * (`docs/world/things/items.md`), and the world going on saying a house owns
+ * something a player is carrying is what a stolen artifact IS. A surface that
+ * rewrote the register off a pouch row would be asserting a fact nobody
+ * established, and would erase the thread that makes a taken thing findable.
  */
 /**
  * A power ratio at a precision somebody can hold.
@@ -2192,19 +2202,20 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
                     'gap in the world, not in ADMIN, and it is reported rather than papered over.'
             }
             : null,
-        // ── THE HALF OF THIS THAT IS NOT WIRED, SAID OUT LOUD ─────────────
+        // ── WHAT IT IS WORTH, AND WHO SAYS SO ─────────────────────────────
         worthInAFight: kind === 'artifact'
             ? {
-                enginePrice: 'CombatantInput.artifactOrdinal - a second body of that rank beside you',
-                readBy: 'nothing in src/ today - not for the player, not for an NPC',
+                enginePrice: 'CombatantInput.weapon.power - a second body of that rank beside you',
+                readBy:
+                    'combatantFromCultivator in combat-manage.ts, through carriedArtifact; the ' +
+                    'same field bestObjectHeldBy fills for an NPC, priced by the same resolver',
                 consequence:
-                    'The object is really in cultivator_pouch, carriedArtifact reads it back by ' +
-                    'name, and "what am I carrying" now lists it - that read used to answer ' +
-                    '"Nothing in the pouch at all" over a row that was really there, which is ' +
-                    'indistinguishable from the write never having happened. ONE THING IT STILL ' +
-                    'DOES NOT DO, and it is a gap in the game rather than in ADMIN: it changes no ' +
-                    'combat number until combatantFromCultivator in combat-manage.ts passes ' +
-                    'carriedArtifact through as artifactOrdinal. Stated rather than left to be found.'
+                    'The object is really in cultivator_pouch, it is really priced in the next ' +
+                    'fight, and it can really be broken there - swung far under the rung it is ' +
+                    'swung into, it comes apart, by the ordinary rule and not by one written for ' +
+                    'a granted thing. What the grant does NOT do is touch the world register: the ' +
+                    'house that owns it still owns it, which is what carrying somebody else\'s ' +
+                    'artifact is.'
             }
             : null,
         runFlagged: true,

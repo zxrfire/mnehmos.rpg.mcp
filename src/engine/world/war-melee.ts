@@ -79,27 +79,27 @@
  * So breakages here come off `exchanges` and nowhere else. `war-spoils.ts` is
  * about the SETTLEMENT rather than the fighting and is untouched.
  *
- * ── AND A FOUND ABSENCE, BECAUSE IT READS EXACTLY LIKE A WORKING FEATURE ─
+ * ── HOW FEW HANDS THERE ARE, BECAUSE IT READS LIKE A WORKING FEATURE ─────
  *
- * NOTHING IN A SEEDED WORLD PUTS A RATED OBJECT IN A PERSON'S HANDS, so the
- * weapon slot in every fight the world simulation runs is empty and always has
- * been. Measured at seeding, five seeds, the same in each: of eighteen rated
- * objects, ZERO are possessed by an `NpcRecord`. Seven sit in a house's hold,
- * two are held by nobody, and the other nine - which are the strongest objects
- * in the world, the Hollow Court's seats and the apex blades - are keyed under
- * CATALOG ids (`figure-…`, `seat-…`, `apex-…`) that match no world row in
- * either direction. `a-catalog-person-and-their-world-row.ts` exists so those
- * two cannot drift, and on this axis they have.
+ * A war in which nothing breaks looks exactly like a war in which breaking is
+ * rare, so the population of armed people is worth stating rather than
+ * assuming. Measured at seeding, identical across seeds: of eighteen rated
+ * objects in the world, FOUR are in a person's hands, nine sit in a house's
+ * hold, two are held by nobody, and three are held above the Lid by people this
+ * world cannot reach.
  *
- * The consequence is not this file's and is not fixed here: `bestObjectHeldBy`
- * in `gatherings.ts` compares `possessorId` against `npc.id`, so it returns null
- * for everybody, in a war and at a gathering alike. This caller passes the slot
- * through correctly - a war is the first thing in `src/` to build a melee that
- * COULD carry a weapon - and the mid-fight re-pricing when an object goes has
- * still never run in play, because the world has nothing to put in the slot.
+ * The four are the Hollow Court's Seats, and the Court does not go to war. So a
+ * war party drawn off an ordinary house's roster still carries nothing, and
+ * that is a fact about the CATALOG rather than a defect here: every ordinary
+ * weapon in `artifacts.ts` is `significance: 'mundane'` - a kind standing in
+ * for several hundred of the thing - and `artifact-placement.ts` deliberately
+ * seats none of them, because a tracked row per notched sabre is the ledger
+ * rubble that file exists to refuse. `docs/world/things/items.md` says what the
+ * counted tier is; nothing represents it to the combat layer, and until
+ * something does, an ordinary fight is two people with their hands.
  *
- * Recorded rather than left to be discovered. A war in which nothing breaks
- * looks exactly like a war in which breaking is rare.
+ * The path that DOES reach the slot today is the player's, through
+ * `carriedArtifact` and `combatantFromCultivator`. Same field, same resolver.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * COMPOSE EVERY SUMMARY FROM WHAT THE MELEE RETURNED
