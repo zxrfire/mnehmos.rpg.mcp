@@ -61,6 +61,7 @@ const ABOVE = (over: Partial<SomebodyAbove> = {}): SomebodyAbove => ({
     mayNotSay: null,
     costsThem: null,
     here: false,
+    carriesYouTo: null,
     ...over
 });
 

@@ -39,7 +39,7 @@ import { getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import { REGIONS, canAdvanceHere, placeRoadDays, requireRegion } from '../data/cultivation/regions.js';
 import { getSectsTeaching } from '../data/cultivation/sects.js';
-import { capOf, classOf } from '../data/cultivation/techniques.js';
+import { capOf, carriesTo, classOf } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
@@ -123,6 +123,63 @@ import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
 import { type RankStanding, whyProgressHasStopped } from './why-progress-has-stopped.js';
 import type { GameService } from './turn-engine.js';
+
+/**
+ * The furthest rung anything this person is carrying could put the asker on,
+ * or null where nothing they hold goes past where the asker already stands.
+ *
+ * ── EVERY PIECE OF THIS ALREADY DECIDED THE SAME QUESTION ────────────────
+ *
+ * `whatTheyAreCarrying` is the same read the ASK path uses to decide what can
+ * be asked for at all - a world row's `techniqueIds`, a cultivator row's
+ * `knownTechniques`, and `LIVING_TRANSMISSIONS` for the handful of people who
+ * are worth more than the shelf they stand beside. `carriesTo` is the same
+ * arithmetic that then prices it: the lower of their own rung and the book's
+ * teachable end. Take those two away and there is nothing here.
+ *
+ * So this adds no rule about who may teach whom. It answers, on the READ, a
+ * question the ASK has always answered - and it exists because a player had no
+ * way to find out which of the people above them was a road except by spending
+ * a turn walking up to each of them in turn.
+ *
+ * Measured, for a cultivator at ordinal 38 across five seeded worlds: SIX
+ * people in the world hold a road that carries any further, standing in two
+ * places. Before this the read could not tell that player apart from one whose
+ * house is full of elders who hold nothing.
+ *
+ * Null rather than the asker's own rung when nothing goes further, because
+ * "they hold an art you have not got" and "they could take you up" are
+ * different answers, and the read says both in different words.
+ */
+function howFarTheyCouldCarry(
+    game: GameService,
+    personId: string,
+    askerOrdinal: number
+): number | null {
+    let best: number | null = null;
+    for (const id of game.whatTheyAreCarrying(personId)) {
+        const reach = carriesTo(
+            // Their own rung is not passed in: `carriesTo` wants the TEACHER's
+            // ordinal and the world row already knows it. Reading it back out
+            // of the roster row here would be a second source for the same
+            // number, and the two drift the moment somebody advances.
+            game.repos.cultivators.getById(personId)?.realmOrdinal
+                ?? ordinalOfWorldPerson(game, personId),
+            id
+        );
+        if (reach === null || reach <= askerOrdinal) continue;
+        if (best === null || reach > best) best = reach;
+    }
+    return best;
+}
+
+/** Where a world NPC stands, for people who have no cultivator row. */
+function ordinalOfWorldPerson(game: GameService, personId: string): number {
+    for (const npc of game.atHand?.npcs ?? []) {
+        if (npc.id === personId) return npc.cultivation.realmOrdinal;
+    }
+    return 0;
+}
 
 export const situatedReads = {
     /**
@@ -303,7 +360,10 @@ export const situatedReads = {
                 knows: person.known ? (member?.teaching?.knows ?? null) : null,
                 mayNotSay: person.known ? (member?.teaching?.mayNotSay ?? null) : null,
                 costsThem: person.known ? (member?.teaching?.costsThem ?? null) : null,
-                here: inTheRoom.has(person.id)
+                here: inTheRoom.has(person.id),
+                carriesYouTo: person.known
+                    ? howFarTheyCouldCarry(this, person.id, cultivator.realmOrdinal)
+                    : null
             });
         }
 
@@ -335,7 +395,14 @@ export const situatedReads = {
                 knows: null,
                 mayNotSay: null,
                 costsThem: null,
-                here: true
+                here: true,
+                // And this half is where it matters most. A wanderer or a rogue
+                // has no roster row to be marked a master on, so `willTeach` is
+                // false for every one of them by construction - what they are
+                // CARRYING is the only thing that can say they are a road.
+                carriesYouTo: known
+                    ? howFarTheyCouldCarry(this, id, cultivator.realmOrdinal)
+                    : null
             });
         }
 

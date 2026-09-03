@@ -85,6 +85,39 @@ export interface SomebodyAbove {
     costsThem: string | null;
     /** Standing in the same place right now, rather than merely on the roll. */
     here: boolean;
+    /**
+     * The furthest rung anything they are carrying could put this cultivator
+     * on, or null where nothing they hold goes past where the asker stands.
+     *
+     * ── WHY THIS FIELD EXISTS ────────────────────────────────────────────
+     *
+     * Measured across five seeded worlds, for a cultivator at ordinal 38:
+     * SIX people in the whole world hold a road that carries any further, and
+     * they stand in exactly two places - five of them on the Hollow Court's
+     * ground, and Ru Anwei in a hall she has not left in three hundred and
+     * eighty years. That is the top of this ladder working as designed.
+     *
+     * What was NOT working is that this read never said so. It answered "N
+     * stand above you, M of those teach" and stopped, so a player standing in
+     * front of the one person in the province who could take them to 41 was
+     * told she was above them and nothing else. The ask path has priced this
+     * correctly since it was written - `what-asking-this-person-for-this-
+     * would-cost-them.ts` reads the same `carriesTo` and prices the leak -
+     * and there was no read that pointed anybody at it.
+     *
+     * `carriesTo` and nothing else: the lower of their own rung and the book's
+     * teachable end. Standing above somebody is not the same fact as holding a
+     * road, which is the distinction this whole file turns on, and a null here
+     * is the honest answer for the large majority of people above you.
+     *
+     * ── AND IT IS GATED LIKE THE NAME, FOR THE SAME REASON ───────────────
+     *
+     * Null for anybody the player cannot name. What somebody practises is not
+     * legible across a yard, and a stranger's ceiling handed over unasked is
+     * the same leak as a stranger's name - `discovery.md` does not have one
+     * rule for identities and a looser one for what they are carrying.
+     */
+    carriesYouTo: number | null;
 }
 
 export interface TeacherInput {
@@ -153,9 +186,32 @@ function mechanicalPerson(person: SomebodyAbove, playerOrdinal: number): string 
         + (person.willTeach
             ? 'Marked a master on the roll: they teach, inside stated limits. '
             : 'Nothing on the roll marks them a teacher. ')
+        + (person.carriesYouTo === null
+            ? 'Nothing they are carrying goes past where the asker already stands, so what '
+              + 'they could hand over is an art and not a road further up. '
+            : `carriesTo puts their reach at ${rungAndOrdinal(person.carriesYouTo)}, being the `
+              + `lower of their own rung and the teachable end of the deepest thing they hold. `)
         + (person.here
             ? 'They are standing here, so they can be approached today.'
             : 'They are on the roll and not in this place, so reaching them is its own journey.');
+}
+
+/**
+ * The half-sentence that says a person is a road rather than an altitude.
+ *
+ * Appended to whatever line already describes them, so the two populations -
+ * masters on the roll and everybody else above - get the same fact in the same
+ * words. That matters more than it looks: `willTeach` is a catalog role and
+ * `carriesYouTo` is arithmetic off what somebody is actually carrying, and the
+ * measurement that produced this field found the second one live on people the
+ * first one says nothing about. Shen Quan is not marked a master anywhere and
+ * is one of the six people in the world who could take a cultivator at 38 any
+ * further.
+ */
+function whatTheyCouldCarryYouTo(person: SomebodyAbove): string {
+    if (person.carriesYouTo === null) return '';
+    return ` The deepest thing they are carrying could take you to `
+        + `${rankName(person.carriesYouTo)}, which is as far as they have stood themselves.`;
 }
 
 /**
@@ -176,10 +232,17 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
     const masters = named.filter(p => p.willTeach);
     const others = named.filter(p => !p.willTeach);
 
+    // The number the whole read is actually about, and it is not the headcount.
+    // Standing above somebody is common; holding a road past them is not - six
+    // people in a seeded world hold one past ordinal 38, and this is the count
+    // of how many of those six the asker is looking at.
+    const roads = named.filter(p => p.carriesYouTo !== null);
+
     structure.push(
         `${input.above.length} stand above ${rungAndOrdinal(input.ordinal)} on the roll and `
-        + `in the room. ${named.length} can be named, ${masters.length} of those teach, and `
-        + `${unnamed.length} are counted without a name because this cultivator has never `
+        + `in the room. ${named.length} can be named, ${masters.length} of those teach, `
+        + `${roads.length} are carrying a road that goes past ${rungAndOrdinal(input.ordinal)}, `
+        + `and ${unnamed.length} are counted without a name because this cultivator has never `
         + `met them. ${WHY_A_TEACHER_MATTERS[input.manualState]}`
     );
 
@@ -190,6 +253,7 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
             + `${master.rankTitle ? `, ${master.rankTitle}` : ''}, ${rungs(gap)} above you at `
             + `${standing}, and teaches.`
             + `${master.here ? ' They are here.' : ''}`
+            + whatTheyCouldCarryYouTo(master)
         );
         // The three limits, kept separate. Merging them is how a master becomes
         // an oracle, which is the one thing `asking.md` forbids.
@@ -206,6 +270,11 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
             + `${person.rankTitle ? `, ${person.rankTitle}` : ''}, ${rungs(gap)} above you. `
             + `Nothing on record says they teach.`
             + `${person.here ? ' They are here.' : ''}`
+            // And this is where the field earns itself. Somebody the roll does
+            // not mark a teacher, who is nonetheless carrying a road past where
+            // you stand, is the most useful person in this answer and used to
+            // read as an altitude with a name on it.
+            + whatTheyCouldCarryYouTo(person)
         );
         structure.push(mechanicalPerson(person, input.ordinal));
     }
