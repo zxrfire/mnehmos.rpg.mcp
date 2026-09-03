@@ -5,9 +5,8 @@
  * THE CORRECTION THIS FILE IS
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `war-breakage.ts` was built first and it answers what a war BREAKS. Put on
- * its own it says something false about the world, and the design owner said so
- * in one line:
+ * What a war BREAKS was built first, and put on its own it says something false
+ * about the world. The design owner said so in one line:
  *
  *   > why would anyone bring a single use dao material in a war? those are all
  *   > in vaults (which may be destroyed accidentally) but are typically left as
@@ -81,13 +80,11 @@
  *
  * WHETHER A HOUSE BREAKS UP IS NOT DECIDED HERE AND THERE IS NO `willFlee`
  * FIELD. Ruled by the design owner, a war *can be easily simulated as a group
- * fight*, so it is a reading over who is left standing after one - and
- * `resolveMelee` already lists exactly that, by name, along with who fell. A
- * body whose seniors are all on the second list scatters and one whose elders
- * came out of it does not. This file takes the answer as an argument
- * ({@link TheLosingSide.holdsTogether}) rather than inventing a second one.
- * Until something supplies it, `carried off` is machinery with no producer, and
- * that is a gap with an owner rather than a gap nobody noticed.
+ * fight*, so it is a reading over who is left standing after one. `war-melee.ts`
+ * makes it: a house holds together while somebody it was led by when the war
+ * opened is still alive in it, and one whose seniors are all on the fallen list
+ * scatters. This file takes the answer as an argument
+ * ({@link TheLosingSide.holdsTogether}) rather than forming a second one.
  *
  * ── AND DISBANDING IS NOT BEING DESTROYED ────────────────────────────────
  *
@@ -170,11 +167,11 @@ export interface ThingChangedHands {
  * The things a house has left that a settlement can move.
  *
  * ONE PREDICATE AND IT NAMES NO KIND, and note that it is the COMPLEMENT of
- * `war-breakage.ts`'s: that one takes what somebody carried out of the gate,
- * and this one takes what stayed in. A house's stores were never in the
- * fighting and are exactly what is left to be argued over afterwards, which is
- * the owner's own reading of why nobody brings a dao material to a battle and
- * why one changes hands anyway.
+ * what the fighting reaches: a melee breaks what the people in it carried out
+ * of the gate, and this takes what stayed in. A house's stores were never in
+ * the fighting and are exactly what is left to be argued over afterwards, which
+ * is the owner's own reading of why nobody brings a dao material to a battle
+ * and why one changes hands anyway.
  *
  * Anything already ended or emptied is skipped: a settlement moves what is
  * there, and a ruined row is a record rather than a thing.
@@ -380,106 +377,24 @@ export function settleTheSpoils(
 }
 
 /**
- * Which of two sides lost.
+ * Whether there is anybody left under this banner at all.
  *
- * ── THE HONEST FLOOR, AND IT HAS AN OWNER ELSEWHERE ──────────────────────
- *
- * Nothing in this engine decides a war's outcome. `war_opened` schedules a
- * settlement and `settleWarsThatAreOver` removes the tags; neither of them ever
- * asks who won, because until spoils existed nothing turned on it.
- *
- * So this is what a house could put out, and nothing else: the highest rung
- * standing under each banner, tie-broken on how many are standing at all. It is
- * `partyOrdinal`'s rule - the strongest person, never an average, because
- * averaging lets a crowd of juniors outweigh somebody they could not touch -
- * read across a whole roster instead of a party.
- *
- * ── AND WHAT REPLACES IT IS ALREADY WRITTEN. RULED BY THE DESIGN OWNER ───
- *
- *   > obviously this can be easily simulated as a group fight, right? not
- *   > bespoke.
- *
- * So who is losing is not a subsystem anybody has to design. A war is two
- * groups fighting, and `resolveMelee` in `engine/cultivation/combat.ts` already
- * resolves a fight between any number of sides made of any number of people.
- * Enter it with a roster on each side and it hands back every question this
- * file and the two above it have been working around:
- *
- *   WHO LOST            `winningSideId`, and `MeleeSideOutcome.defeated`.
- *   HOW BADLY           `strength`, and `fallen` against `standing`, and it is
- *                       a quantity that MOVES as the thing runs rather than a
- *                       verdict stamped at the end.
- *   WHO IS LEFT         `standing` and `withdrawn`, by name. Which is the one
- *                       input the third fate needs - see
- *                       {@link holdsTogetherAsFarAsAnybodyKnows}.
- *
- * Replace this function the day something builds that; it has one caller and
- * nothing else reads it. What it must NOT become is a second answer standing
- * beside the melee's, so delete it rather than keeping it as a fallback.
- *
- * Null when the two are indistinguishable, which is a real answer: a war that
- * neither side lost moves nothing.
- */
-export function whoLost(
-    state: WorldState,
-    a: FactionRecord,
-    b: FactionRecord
-): { loser: FactionRecord; winner: FactionRecord } | null {
-    const priced = (f: FactionRecord) => {
-        const roster = state.npcs.filter(n => n.status === 'alive' && n.factionId === f.id);
-        let best = -1;
-        for (const n of roster) best = Math.max(best, n.cultivation.realmOrdinal);
-        return { best, heads: roster.length };
-    };
-    const pa = priced(a);
-    const pb = priced(b);
-    if (pa.best !== pb.best) {
-        return pa.best < pb.best ? { loser: a, winner: b } : { loser: b, winner: a };
-    }
-    if (pa.heads !== pb.heads) {
-        return pa.heads < pb.heads ? { loser: a, winner: b } : { loser: b, winner: a };
-    }
-    return null;
-}
-
-/**
- * Whether a losing house holds together, as far as anything can currently say.
- *
- * THE OWNER'S WORD IS *TYPICALLY*, so capture is the ordinary ending and this
- * answers true wherever there is anybody left to hold together. What it does
- * NOT do is read who came out of the fighting still standing, which is what
- * would make it sometimes answer false. Grep this function to find the seam; it
- * is the only place the third fate is decided.
- *
- * ── THE INPUT IT WANTS IS `MeleeSideOutcome.standing` ────────────────────
- *
- * Run the war as a group fight - `resolveMelee`, see {@link whoLost} - and the
- * losing side comes back with its survivors listed by name, its fallen listed
- * by name, and whether it was `defeated` at all. Whether a body breaks up is a
- * reading over those survivors and nothing else, and it is a reading somebody
- * can make honestly because the people it is about are named.
- *
- * Note the shape it should keep: this takes a BOOLEAN and should carry on
- * taking one. `settleTheSpoils` has no business knowing how the answer was
- * reached, and the day a melee decides it, what changes is who computes the
- * boolean rather than anything downstream of it.
+ * ── ONE HALF OF THE ANSWER, AND DELIBERATELY NOT THE WHOLE OF IT ─────────
  *
  * A house with nobody alive in it does not hold together and does not scatter
  * either. It has already ended, and its things are simply there to be taken -
  * which `settleTheSpoils` handles by falling back to capture.
  *
- * ── SO `carried off` HAS NO PRODUCER TODAY, AND HERE IS THE MEASUREMENT ───
+ * The OTHER half, which is what makes the answer sometimes false for a house
+ * that still has people, is `HowAHouseIsFaring.ledStill` in `war-melee.ts`: the
+ * war took everybody the house was led by, so it has living members and nobody
+ * senior enough to hold them. `settleOneWar` there is the caller, and it ands
+ * the two together.
  *
- * The two conditions this interim reading can produce are exactly "somebody is
- * alive" and "nobody is", and the second one is also the case in which there is
- * nobody left to carry anything. Eight seeds and five hundred years: 241
- * settlements, 1737 things moved, and NOT ONE object in a private pair of
- * hands. The third fate is machinery with no producer until a reading exists
- * that can say a house with living members still breaks up - which is a reading
- * over a group fight's survivors, and is somebody else's.
- *
- * Recorded here rather than left to be discovered, because a state nothing
- * produces reads exactly like a state that never fires.
+ * Note the shape this file keeps. {@link TheLosingSide.holdsTogether} is a
+ * BOOLEAN and stays one: `settleTheSpoils` has no business knowing how the
+ * answer was reached, and when the reading changed, what changed was who
+ * computes it rather than anything downstream.
  */
 export function holdsTogetherAsFarAsAnybodyKnows(
     state: WorldState,

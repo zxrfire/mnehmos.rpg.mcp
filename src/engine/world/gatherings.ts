@@ -1497,6 +1497,11 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
 /**
  * Price an NPC for the combat layer.
  *
+ * Exported because it is the world layer's ONE answer to "how big is this
+ * person in a fight", and a second one would be two answers to the same
+ * question. `war-melee.ts` builds a war's parties with it, so a house's people
+ * are priced in a war exactly as they are priced at a gathering.
+ *
  * Everything the world layer actually stores, and nothing invented. One of the
  * combat layer's inputs has no world-layer equivalent and is handled rather
  * than faked:
@@ -1514,7 +1519,7 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
  * to today, so a crossing paid for last spring is still being carried into this
  * hall. Qi has no world-layer equivalent at all and stays whole.
  */
-function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
+export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
     const wounds: Injury[] = woundsCarriedBy(npc);
     const max = maxBodyOf(npc);
     const share = max > 0 ? bodyStandingOn(npc, state.currentDay) / max : 1;
