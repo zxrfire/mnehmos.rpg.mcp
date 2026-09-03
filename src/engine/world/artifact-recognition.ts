@@ -119,6 +119,22 @@ function lower(a: Certainty, b: Certainty): Certainty {
  * A structural subset rather than the whole record, so a caller holding a
  * catalog row, a world row or a copy of one can all ask - and so the fields it
  * reads are legible from the signature.
+ *
+ * ── `possessorId` IS WHO IS HOLDING IT UP, NOT WHAT THE REGISTER SAYS ────
+ *
+ * The caller sets it to whoever the observer is looking at, and for a player
+ * that is emphatically NOT the world row's own value. A pouch row is not a
+ * claim on the register (`items.md`), so a stolen thing's world row goes on
+ * saying `possessorId: null` while somebody carries it about - which is the
+ * whole coherent state, and reading it here would make the one interesting
+ * answer, {@link ThingRecognised.inTheWrongHands}, unreachable for exactly the
+ * case it exists for.
+ *
+ * Found by playing it: an NPC who had been told where a house's tally came from
+ * watched a player swing it and read as merely recognising the thing, because
+ * the register still had it in nobody's hand. So a caller passes
+ * `{ ...row, possessorId: whoeverIsHoldingIt }`, and the check reads what is in
+ * front of the observer rather than what the world last wrote down.
  */
 export type ThingOnShow = Pick<
     ObjectRecord,
