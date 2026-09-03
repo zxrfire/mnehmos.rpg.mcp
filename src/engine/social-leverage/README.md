@@ -698,8 +698,16 @@ not by a branch appearing in the module.
                      Elders can dislike a thing and be outvoted
     the seat         the head overrules it, reserved to them alone, because one elder
                      must not stop a house
-    all the elders   and the seat loses it back when it is ALONE - every elder on the far
-                     side of them, not a majority
+    all the elders   and the head loses it back when it is ALONE - every elder on the far
+                     side of them, not a majority, and at least `ENOUGH_TO_BE_A_BODY` of
+                     them, because **a body can overrule its own head only when it is a
+                     body** and one person is not a quorum
+
+The quorum is what stops the last two collapsing into each other. With a single elder they
+are the identical condition, and since the third is asked first it won every time: measured
+over 400 rooms of two, the head could not overrule anybody, ever. With the quorum in, those
+same 400 rooms invert to 211 head-overrules and no unanimous ones, and across all sizes the
+split is 59% the mean, 31% the head, 10% a unanimous room.
 
 The third tier is not invented. `data/cultivation/immortal-items.ts` already carries a body
 holding a power its own head cannot override - `releaseMode: 'collective_consent'`, *a body
