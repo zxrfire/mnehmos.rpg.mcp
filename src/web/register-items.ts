@@ -332,6 +332,19 @@ const KINDS: Record<ObjectKind, KindFacts> = {
         provenance: 'A grant from an apex, a court posting, or possession nobody has yet been strong enough to argue with.',
         whoHolds: 'An apex holds it, a court administers it, and a house sits on it. Those are three answers and they routinely differ.'
     },
+    formation: {
+        what: 'A made thing that stands where it was made and is never carried. Rated on the ladder people stand on, and it is the lower of the art that described it and the hand that laid it.',
+        source: 'engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts',
+        // Zero, and honestly so: no technique row carries subject: "formation"
+        // yet, so nothing in the world can raise one. Six of the 138 arts carry
+        // a subject at all and all six say "sword".
+        catalogued: () => 0,
+        keptAs: ['tracked'],
+        gradeAxis: 'power, the rung it was raised at',
+        ratedInPower: true,
+        provenance: 'Laid by somebody standing at a rung, out of an art that describes the work. It never gets stronger afterwards and every hole in it costs a rung.',
+        whoHolds: 'Nobody holds one. A house may own the ground it stands on; a formation still running over a dead house is owned by nobody at all.'
+    },
     other: {
         what: 'The escape hatch on the record. Nothing in the world is filed under it.',
         source: 'no catalog',

@@ -137,6 +137,16 @@ export type ObjectKind =
     | 'key'
     | 'corpse'
     | 'territory'
+    /**
+     * A made thing that stands where it was made, and is never carried.
+     *
+     * Its own kind rather than `territory` - which nothing anywhere writes -
+     * because a formation is not ground, it is a thing ON ground, with a rung
+     * and a builder and a day. `possessorId` is null on every one of them
+     * forever, which is what "cannot be carried" is in this data model.
+     * `a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts` mints it.
+     */
+    | 'formation'
     | 'other';
 
 /**
