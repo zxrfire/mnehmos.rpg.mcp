@@ -123,6 +123,7 @@ import {
     SAY_TO_PRESS,
     SAY_TO_SHOUT
 } from './fight-answers.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wound.js';
 
 /**
@@ -1323,11 +1324,11 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         add(naming('enter_site', `I go into ${site.name}`, 'site',
             site.survivable ? 'soon' : 'open',
             !site.survivable
-                ? `${site.name} is set at ordinal ${site.setAtOrdinal} and you are not there `
-                  + 'yet. You can walk in anyway; the ground does not check, it asks the body '
-                  + 'for what the ground is set at. This is a thing to aim at rather than a '
-                  + `door that says no.${toldNotStood}`
-                : `${site.name} is set at ordinal ${site.setAtOrdinal}, which your body reaches. `
+                ? `${site.name} is pitched at ${rankName(site.setAtOrdinal)} and you are not `
+                  + 'there yet. You can walk in anyway; the ground does not check, it asks the '
+                  + 'body for what the ground is set at. This is a thing to aim at rather than '
+                  + `a door that says no.${toldNotStood}`
+                : `${site.name} is pitched at ${rankName(site.setAtOrdinal)}, which your body reaches. `
                   + 'What is behind a gate is what somebody was buried with, and going in is '
                   + `the only way to find out which kind of ground this is.${toldNotStood}`,
             // NOT 'here'. See the builder: this is a fact about what somebody
