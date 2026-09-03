@@ -364,8 +364,10 @@ import {
 import {
     createObligation,
     settleObligation,
-    type OathCause
+    type OathCause,
+    type ObligationRecord
 } from '../engine/social/grudges.js';
+import { obligationFromRow, type ObligationRow } from '../storage/repos/obligation.repo.js';
 // What is WRONG with a place, as against what is still in the ground under it.
 // The area-status layer had no importer anywhere in `src/web`, so a famine, a
 // shut pass or a worked-out district changed prices and danger and said nothing.
@@ -5254,10 +5256,40 @@ ${noticed}`;
             run,
             present: this.present(cultivator),
             world: this.atHand,
-            occasion: 'news'
+            occasion: 'news',
+            // Themselves, which is the floor: the person a wrong was done to is
+            // always somebody they carry for. Kin belong here too and the world
+            // holds them; adding them is a wider read, not a different rule.
+            carriesFor: { hearerId: cultivator.id, ids: [cultivator.id] },
+            heldAbout: factId => this.accountCarriedAbout(cultivator.id, factId)
         });
 
         for (const hearing of asked.hearings) recordHearing(this.knowledge, cultivator, run, hearing);
+
+        // ── AND FINDING OUT IS WHAT OPENS THE ACCOUNT ────────────────────
+        //
+        // AGENTS.md, *a fact reaches a person, and reaching them is an event*.
+        // The deed was already true and already on the record; what was missing
+        // was somebody who could act on it. `hearing-of-a-wrong.ts` decides
+        // whether this telling supplied that, and the row it hands back is
+        // dated to today rather than to the day it happened - which is the
+        // whole of the ruling, in one field.
+        const opened: ToolCallRecord[] = [];
+        for (const account of asked.opens) {
+            const record = createObligation(account.row);
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            opened.push({
+                name: 'social.createObligation',
+                action: 'news',
+                summary:
+                    `${record.holderId} now holds a ${record.severity} ${record.kind} about `
+                    + `${record.subjectId} (${record.cause}), opened on being told by `
+                    + `${account.speakerId} on day ${record.incurredOnDay}. `
+                    + `triggeringEventId=${record.triggeringEventId ?? 'none'}; `
+                    + `fromBelief=${record.fromBelief}. ${account.note}`,
+                ok: true
+            });
+        }
 
         const facts = factsForNews(asked);
         const execution = this.freeAction(run, 'news', facts);
@@ -5270,8 +5302,26 @@ ${noticed}`;
                 : `${asked.heard.length} rumour(s) drawn off the world ledger and recorded at `
                 + 'stage "whisper" with the speaker attached. No fact was taken as read.',
             ok: asked.heard.length > 0
-        }];
+        }, ...opened];
         return execution;
+    }
+
+    /**
+     * The account this holder already carries about this event, or null.
+     *
+     * Keyed on what it rests on rather than on who it is against, because the
+     * row worth finding is the one with NO name on it: that is the account they
+     * opened when they learned something had been done and could not say by
+     * whom, and a telling that supplies a name belongs on it rather than beside
+     * it.
+     */
+    private accountCarriedAbout(holderId: string, factId: string | null): ObligationRecord | null {
+        if (factId === null) return null;
+        const row = (this.db as unknown as DatabaseHandle).prepare(
+            'SELECT * FROM obligations WHERE holder_id = ? AND triggering_event_id = ? '
+            + "AND status = 'open' ORDER BY subject_id LIMIT 1"
+        ).get(holderId, factId);
+        return row ? obligationFromRow(row as ObligationRow) : null;
     }
 
     // ── what this cultivator is carrying ─────────────────────────────────
