@@ -279,7 +279,11 @@ describe('sects are reachable from plain English', () => {
         // Whatever a tool returns without a narration hint, the fallback may
         // report that the act went through. It may not make a claim about the
         // thing acted upon.
-        const source = readFileSync('src/web/game.ts', 'utf-8');
+        // `summariseToolBody` and the last-resort line moved out of `game.ts`
+        // into `tool-result-prose.ts`. The path follows the code: left pointing
+        // at `game.ts` this guard would still pass, over a file that no longer
+        // contains the branch it is about.
+        const source = readFileSync('src/web/tool-result-prose.ts', 'utf-8');
         expect(source).not.toContain('${subject} is done.');
     });
 });
