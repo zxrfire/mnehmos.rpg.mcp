@@ -145,13 +145,62 @@ describe('a sect is a place', () => {
 });
 
 describe('the thresholds are enforced', () => {
-    it('turns away anyone below the entry bar, and names both bars', () => {
+    // ── A REFUSAL NAMES ITS AUTHOR, AND A RUIN HAS NOBODY LEFT IN IT ─────
+    //
+    // This test used to assert that Blackbank turned an ordinal 0 cultivator
+    // away, and Blackbank is a ruin with nobody's name on it - so it pinned a
+    // refusal with no author, which is the thing the design owner ruled out:
+    // *"a ruin only turns people away IF A SECT OWNS IT. if you stumble upon
+    // ruins with nobody near, who is there to turn you away?"*
+    //
+    // What it asserts now is the rule that replaced it. `ruin-gatekeepers.ts`
+    // carries the reasoning and the measurement; the two halves that matter
+    // here are that an unheld ruin does not refuse, and that it does not
+    // thereby become safe.
+    it('does not turn anybody away from a ruin nobody holds', () => {
         const c = standingConsequence(blackbank(), { realmOrdinal: 0 });
+        expect(c.level).toBe('lethal');
+        expect(c.admitted).toBe(true);
+        // Admitted is not safe. The survival bar is geology and still applies:
+        // fifteen rungs short of nineteen, capped at what the worst ground takes.
+        expect(c.shortOfSurvival).toBe(19);
+        expect(c.dailyHpFraction).toBe(HOSTILE_GROUND_HP_CAP);
+        expect(c.reason).toContain('Blackbank');
+    });
+
+    it('turns somebody away where a house holds the ground, and says which house', () => {
+        const held = makeLocation({
+            id: 'loc-ruin-blackbank',
+            name: 'the sealed compound at Blackbank',
+            kind: 'ruin',
+            qiDensity: QI_DENSITY_MAX,
+            thresholds: makeThresholds(15, 19, 23, 25),
+            controllingFactionId: 'sect-azure-cloud-pavilion'
+        });
+        const c = standingConsequence(held, { realmOrdinal: 14 });
         expect(c.level).toBe('barred');
         expect(c.admitted).toBe(false);
-        // The sentence that teaches a player the ladder of places exists.
+        // The whole of the owner's objection: somebody is doing the turning and
+        // the player can see who.
+        expect(c.reason).toContain('Azure Cloud Pavilion');
         expect(c.reason).toContain('Blackbank');
-        expect(c.reason.length).toBeGreaterThan(40);
+    });
+
+    // LOW RUNG, YOU KNOW NOTHING - and that is not the same as nobody being
+    // there. The two silences were being printed identically, and they are
+    // opposite facts: one is an invitation and the other is a warning.
+    it('tells a nobody that the ground is somebody\'s without telling them whose', () => {
+        const held = makeLocation({
+            id: 'loc-ruin-blackbank',
+            name: 'the sealed compound at Blackbank',
+            kind: 'ruin',
+            thresholds: makeThresholds(15, 19, 23, 25),
+            controllingFactionId: 'sect-azure-cloud-pavilion'
+        });
+        const c = standingConsequence(held, { realmOrdinal: 0 });
+        expect(c.level).toBe('barred');
+        expect(c.reason).not.toContain('Azure Cloud Pavilion');
+        expect(c.reason).toContain('Somebody holds this ground');
     });
 
     it('takes a body apart between the entry and survival bars', () => {

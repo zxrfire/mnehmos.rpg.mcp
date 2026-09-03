@@ -1253,8 +1253,22 @@ export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
  */
 export const WHO_ANSWERS_FOR_THIS_GROUND = new RegExp(
     [
-        String.raw`\b(?:who (?:holds|owns|answers for)|whose)\b[^.?]*\b(?:this |the )?(?:ground|land|territory|patch)\b`,
-        String.raw`\bwho (?:is|'s) in charge (?:around |round )?(?:here|of this (?:ground|land|territory))\b`,
+        String.raw`\b(?:who (?:holds|owns|answers for|protects|guards)|whose)\b[^.?]*\b(?:this |the )?(?:ground|land|territory|patch)\b`,
+        // `who(?: is|'s)` and not `who (?:is|'s)`. The contraction has no space
+        // in front of the apostrophe, so the second form only ever matched
+        // "who 's" - which nobody types - and "who's in charge here", the way
+        // most people say this, fell through the whole pattern.
+        String.raw`\bwho(?: is|'s) in charge (?:around |round )?(?:here|of this (?:ground|land|territory))\b`,
+        // AND THE SAME QUESTION WITH NOTHING AFTER IT. Found by the design
+        // owner, by typing it: "who's in charge?" bare reached nothing, because
+        // every alternative above needs an object and this sentence has none.
+        //
+        // Anchored at the end, and that anchor is what makes it safe. The
+        // narrowness one line up is right for the reason it gives - "who is in
+        // charge of the Gleaners" is a sect question and must not be swallowed -
+        // and a sentence with no object at all cannot be that question. With
+        // nothing else in it, the only thing it can mean is HERE.
+        String.raw`\bwho(?: is|'s) in charge\s*[?!.]*$`,
         String.raw`\bwho (?:do|would|can|could) i (?:complain|report|appeal) to\b`
     ].join('|')
 );
@@ -4073,11 +4087,17 @@ function planIntent(input: string): PlannedAction {
     // answer is nobody, and where a run opens.
     //
     // Deliberately narrow, and the narrowness is the point. "who is in charge"
-    // needs `here` or the ground named after it, because "who is in charge of
-    // my sect" is a different question and this must not swallow it - and the
-    // ground nouns stop at `ground`, `land`, `territory` and `patch` rather
-    // than reaching `place`, because "who runs this place" is what somebody
-    // says about a shop, a stall or an inn.
+    // needs `here`, the ground named after it, or NOTHING AFTER IT AT ALL,
+    // because "who is in charge of my sect" is a different question and this
+    // must not swallow it - and a sentence with no object cannot be that
+    // question. The ground nouns stop at `ground`, `land`, `territory` and
+    // `patch` rather than reaching `place`, because "who runs this place" is
+    // what somebody says about a shop, a stall or an inn.
+    //
+    // `protects` and `guards` are in the verb list because on closed ground the
+    // reason and the authority are one fact: a house turns you away from a ruin
+    // BECAUSE it protects it. They inherit the ground-noun requirement, so
+    // "who protects this place" is still somebody else's sentence.
     if (WHO_ANSWERS_FOR_THIS_GROUND.test(text)) {
         return { action: 'look', intent: 'holder' };
     }

@@ -65,6 +65,14 @@
  * get in and die. Between `survival` and `operational` you are alive and
  * useless, standing in the vault unable to open anything.
  *
+ * **`entry` is the only one of the four that is a person.** Somebody stands on
+ * the road and sends you back, and a refusal with nobody behind it is not a
+ * refusal - so a ruin nobody holds does not turn anybody away, and reads
+ * `lethal` rather than `barred`. `ruin-gatekeepers.ts` owns that rule, states
+ * why it is scoped to ruins, and is the only thing `evaluateAccess` consults
+ * before deciding the level. The other three are geology and apply to
+ * everybody, which is what keeps an open ruin dangerous rather than free.
+ *
  * Thresholds are lowered by what a character actually has - a technique built
  * for this hazard, an artifact, a physique, a formation, or knowing what the
  * door says - and by ENVIRONMENTAL AFFINITY, which is the place itself
@@ -92,6 +100,7 @@ import { forStream } from '../cultivation/rng.js';
 import { yearOfDay, type PriorAges, type Ruin, type Scar } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MIN, clampQiDensity, qiFraction } from './qi-scale.js';
+import { whoTurnsYouAwayFrom } from './ruin-gatekeepers.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THRESHOLDS
@@ -1064,8 +1073,17 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
     const cycleOpen = query.onDay === undefined ? true : isOpenOn(location, query.onDay);
     const closed = (location.sealed && !keyed) || !cycleOpen;
 
+    // ── AN ENTRY BAR IS A PERSON, AND A RUIN HAS NOBODY LEFT IN IT ───────
+    //
+    // `ruin-gatekeepers.ts` holds the rule and the measurement behind it. In
+    // one line: a ruin nobody holds refuses nobody, because everybody who
+    // could have refused you is why it is a ruin. It does not become safe -
+    // `survival` is geology and still applies - so the reading falls through
+    // to `lethal`, which is admitted and being taken apart by the day.
+    const gate = whoTurnsYouAwayFrom(location);
+
     let level: AccessLevel;
-    if (ordinal < effective.entry) level = 'barred';
+    if (gate.barApplies && ordinal < effective.entry) level = 'barred';
     else if (ordinal < effective.survival) level = 'lethal';
     else if (ordinal < effective.operational) level = 'surviving';
     else if (ordinal < effective.mastery) level = 'operational';
@@ -1193,8 +1211,28 @@ function describeAccess(
             : `${location.name} is shut. It is not open on this day.`;
     }
     switch (level) {
-        case 'barred':
-            return `${who} cannot enter ${location.name}; entry requires ${rankName(effective.entry)}.`;
+        case 'barred': {
+            // A REFUSAL NAMES ITS AUTHOR, OR SAYS IT CANNOT. Being turned away
+            // is somebody doing the turning; a bar with nobody behind it never
+            // reaches here, because `whoTurnsYouAwayFrom` drops it before the
+            // level is decided. What is left is the two cases that were being
+            // printed identically - told who, and too low to be told - and the
+            // second one still says that somebody is there, because that is the
+            // half of the answer that keeps a person alive.
+            const keeper = whoTurnsYouAwayFrom(location, ordinal);
+            const by = keeper.factionName
+                ? ` ${keeper.factionName} holds it`
+                    + (keeper.authority.length > 1
+                        ? `, under ${keeper.authority[0]}`
+                        : '')
+                    + `, and holds it against ${who}.`
+                : keeper.factionId
+                    ? ' Somebody holds this ground and nobody is going to tell '
+                      + `${who} who.`
+                    : '';
+            return `${who} cannot enter ${location.name}; entry requires `
+                + `${rankName(effective.entry)}.${by}`;
+        }
         case 'lethal':
             return `${who} can enter ${location.name} and will not survive it; surviving requires ${rankName(effective.survival)}.`;
         case 'surviving':
