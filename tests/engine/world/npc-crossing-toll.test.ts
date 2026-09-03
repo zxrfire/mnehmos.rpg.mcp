@@ -49,9 +49,21 @@
  * requirement, so one crossing per review is the ceiling and a review is long
  * enough to mend several pools over.
  *
- * The population pyramid is therefore expected to be insensitive to this, and
- * measured back-to-back on one tree it is. Do not read that as the charge being
- * dropped again - the tests below are what says it is not.
+ * Measured, `scripts/probe-what-a-crossing-costs-the-world.ts`, five seeds at
+ * 200 years - it walks the world a year at a time and watches every living
+ * body, so a charge is observed rather than inferred:
+ *
+ *     1,319 charges over 1,000 world-years   mean 0.058 of the pool, deepest 0.150
+ *     4 of 2,680 alive carrying one          0.15% of the world, at any instant
+ *
+ * So the toll is written more than once a world-year and read almost always
+ * against a whole body, because a realm boundary's share is repaid in under a
+ * year. The population pyramid is consequently insensitive to it: taken
+ * back-to-back in one command on one tree, base against change, both arms read
+ * 2364 / 234 / 82 bottom/middle/top with every adjacent inversion identical.
+ *
+ * Do not read that as the charge being dropped again - the probe and the tests
+ * below are what say it is not.
  */
 import { describe, expect, it } from 'vitest';
 
