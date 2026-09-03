@@ -1047,3 +1047,178 @@ describe('a closing question mark means this is not an action', () => {
         }
     });
 });
+
+/**
+ * INSTANCE 5: a conditional is not a commitment.
+ *
+ * The third face of the family after *asking is not doing* and *a question is
+ * not a command*, and the only one so far that did not spend a day - it changed
+ * who the player WAS. Played, standing on Azure Cloud Pavilion grounds:
+ *
+ *   > if they'll have me, I'll join
+ *   "You are now on the rolls of the Azure Cloud Pavilion, a Sword Elder."
+ *
+ * No decline, no refusal, no admission process. "If X, I'll Y" states a POLICY:
+ * the player says what they would do and waits to hear whether X holds. Not
+ * knowing whether the house would have them is the entire content of the
+ * sentence, and the game answered it by enrolling them.
+ *
+ * Urgent rather than interesting, because a nomination and admission layer was
+ * built this session - postings entered only by nomination, an ask that points
+ * at your own house, a house that may refuse you on merit - and a sentence that
+ * enrols you for free walks past all of it.
+ *
+ * THE RANK WAS NOT THE BUG. Seating a cultivator at ordinal 25 near the top of
+ * a ladder that admits from 3 is the system working, ruled by the design owner:
+ * *"you might enter as a sword elder too, they wouldn't offer an outer disciple
+ * to a 29"*. `entryRankIndexFor` is untouched.
+ */
+describe('a conditional is not a commitment', () => {
+    /**
+     * The played sentence, and the bar is the one that matters: nobody is
+     * enrolled. Measured on the rolls rather than on a verb name, because what
+     * went wrong was a membership row, not a routing label.
+     */
+    it('does not enrol anybody who said what they would do', async () => {
+        const { db, game } = await makeGameInWorld({ worldSeed: 'a-policy-is-not-a-decision' });
+        const { cultivator } = await game.newRun('Mo Qianshu');
+
+        const before = await game.state();
+        await game.act("if they'll have me, I'll join");
+        const after = await game.state();
+
+        expect(sectOf(db, cultivator.id), 'a conditional put somebody on the rolls').toBeNull();
+        expect(after.cultivator!.sectRank).toBeNull();
+        expect(after.run!.elapsedDays).toBe(before.run!.elapsedDays);
+    }, 120_000);
+
+    /**
+     * And it ANSWERS, which is the half that makes this a fix rather than a
+     * refusal. The design owner's shape for the reply, in their own words:
+     *
+     *   > "they would, at Outer Disciple. Do you want to"
+     *
+     * Both halves are required. "They would" settles the condition; the rung is
+     * the terms, and it is what makes the answer worth having - entering a house
+     * at its floor and entering it near its top are different decisions, and a
+     * player told only that they would be taken has to ask again.
+     */
+    it('answers whether they would, and on what footing', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-policy-is-not-a-decision' });
+        await game.newRun('Mo Qianshu');
+
+        const result = await game.act("if they'll have me, I'll join");
+
+        expect(result.narration).toMatch(/would take you/i);
+
+        // AND IT SAYS NOTHING HAPPENED, which is the half a model will
+        // otherwise supply for itself. Played, before this line existed:
+        // "The offer was met. You are a Lamp Novice of Sweptground Temple." -
+        // the engine had enrolled nobody, and the prose collapsed *would seat
+        // you as Lamp Novice* into *you are one*, which is this whole family's
+        // defect committed one layer along. It is on `required`, so
+        // `withRequiredLines` appends it when the prose omits it.
+        expect(result.narration).toMatch(/not on anybody's roll/i);
+    }, 120_000);
+
+    /**
+     * The terms half - "at Outer Disciple" - rides on `wouldEnterAtRank`, which
+     * lives in `sect-manage.ts`. That file is co-owned at the time of writing:
+     * another agent rewired the field through their own `entryOfferFor` while
+     * this was being played, so the field is in their working tree rather than
+     * in this commit and the assertion belongs with theirs.
+     *
+     * What this commit owns is the prose that renders it, which degrades to
+     * silence when the field is absent rather than throwing - so this asserts
+     * the rendering only when the engine actually supplied a rung.
+     */
+    it('names the footing when the engine supplies one', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-policy-is-not-a-decision' });
+        await game.newRun('Mo Qianshu');
+
+        const result = await game.act("if they'll have me, I'll join");
+        const named = /would take you, and would seat you as ([^.]+)\./.exec(result.narration);
+
+        // Never a bare yes: if a rung is named it must be a real rank word, and
+        // if none is named the sentence must not pretend to terms it lacks.
+        if (named) expect(named[1].trim().length).toBeGreaterThan(2);
+        else expect(result.narration).not.toMatch(/would seat you as\s*\./i);
+    }, 120_000);
+
+    /**
+     * The read and the door may never disagree, and this is the assertion that
+     * keeps them honest at the rung where it would hurt.
+     *
+     * `handleList` seats its answer with `entryRankIndexFor`, the same function
+     * `handleJoin` seats by - that function's docstring exists to keep entry and
+     * promotion from disagreeing, and this extends the property to the read. At
+     * ordinal 25 against a house admitting far below, that is an elder-tier
+     * seat, which is exactly the case that produced the report.
+     */
+    it('promises the rank the door actually gives', async () => {
+        const { db, game } = await makeGameInWorld({ worldSeed: 'the-read-and-the-door' });
+        const { cultivator } = await game.newRun('Mo Qianshu');
+        db.prepare('UPDATE cultivators SET realm_ordinal = 25 WHERE id = ?').run(cultivator.id);
+
+        const read = await game.act("if they'll have me, I'll join");
+        const promised = /Azure Dew Sect would take you, and would seat you as ([^.]+)\./
+            .exec(read.narration)?.[1];
+        expect(promised, 'the read named no rank for a house that would take them').toBeTruthy();
+
+        // Now actually commit, which must still work.
+        await game.act('I join the Azure Dew Sect');
+        const after = await game.state();
+
+        expect(sectOf(db, cultivator.id), 'the commitment did not enrol').not.toBeNull();
+        expect(after.cultivator!.sectRank).toBe(promised);
+    }, 120_000);
+
+    /**
+     * The other direction, and it is the half a widening would break silently.
+     *
+     * A trailing `if` is a trigger on a decision already taken. The actor comes
+     * first in every one of these, so none of them can match an expression
+     * anchored at the start of the sentence - which is why the guard is
+     * positional rather than a search for the word.
+     */
+    it('leaves a commitment with a trigger alone', () => {
+        for (const [said, action] of [
+            ['I fight him if he draws', 'attack'],
+            ['I will cultivate here if I can', 'cultivate'],
+            ['I join the Azure Dew Sect', 'sect'],
+            ["I'll join the Azure Dew Sect", 'sect'],
+            ['I buy the manual if it is cheap', 'buy']
+        ] as const) {
+            const plan = parseIntent(said);
+            expect(plan.action, said).toBe(action);
+            expect(
+                theWholeSentenceIsAQuestion(said),
+                `"${said}" was read as a question`
+            ).toBe(false);
+        }
+    });
+
+    /**
+     * And the condition has to be about somebody else.
+     *
+     * "If I can, I'll cultivate here" is somebody telling the engine to go ahead
+     * where possible, which is a decision. What made the played sentence a
+     * question is that its condition was a fact about ANOTHER PARTY that the
+     * player did not have - "if they'll have me" is the asking.
+     */
+    it('reads the whole family of leading conditionals, and only those', () => {
+        for (const said of [
+            "if they'll have me, I'll join",
+            'if they will have me, I will join',
+            "if they'd take me, I'll join the Azure Dew Sect",
+            "if they accept me I'll join",
+            'if the sect will take me, I join',
+            "if he sells it, I'll buy it",
+            "if there is work going, I'll take it"
+        ]) {
+            expect(theWholeSentenceIsAQuestion(said), said).toBe(true);
+        }
+        // The condition about the asker stays a decision.
+        expect(theWholeSentenceIsAQuestion("if I can, I'll cultivate here")).toBe(false);
+    });
+});

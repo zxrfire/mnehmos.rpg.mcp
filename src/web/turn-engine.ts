@@ -5285,7 +5285,7 @@ ${noticed}`;
             return this.fromToolResult('sect_manage.list', 'sect', listing, 'The sects');
         }
 
-        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null; guestDoorOpen?: boolean | null }> }).sects ?? [];
+        const all = (listing as { sects?: Array<{ id: string; name: string; admissible?: boolean | null; guestDoorOpen?: boolean | null; wouldEnterAtRank?: string | null }> }).sects ?? [];
         const heard = all.filter(s => this.knowledge.isAwareOf(cultivator.id, 'sect', s.id));
 
         const facts = heard.length === 0
@@ -5307,6 +5307,24 @@ ${noticed}`;
                         ? `There is one name you have for this: ${heard[0].name}.`
                         : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
                           `and ${heard[heard.length - 1].name}.`,
+                    // ── AND THE HOUSES THAT WOULD, AND ON WHAT FOOTING ──
+                    //
+                    // This listing said which doors were SHUT and never which
+                    // were open, so the one question somebody standing outside
+                    // a house actually has - would they have me - went
+                    // unanswered by the read written to answer it.
+                    //
+                    // Found by playing, from the other end: "if they'll have
+                    // me, I'll join" enrolled the player on the spot. A
+                    // conditional is now routed here instead of to the door,
+                    // and this is the sentence it is routed here FOR. The rung
+                    // is half the answer and not decoration - entering a house
+                    // at its floor and entering it near its top are different
+                    // decisions, and a player told only "yes" has to ask again.
+                    ...heard
+                        .filter(x => x.admissible === true && typeof x.wouldEnterAtRank === 'string')
+                        .map(x => `${x.name} would take you, and would seat you as `
+                            + `${x.wouldEnterAtRank}.`),
                     ...heard
                         .filter(x => x.admissible === false && x.guestDoorOpen !== true)
                         .map(x => `${x.name} would not take you as you stand.`),
@@ -5323,6 +5341,38 @@ ${noticed}`;
                     'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
                     'or you would have to walk up on your own.'
                 ]);
+
+        // ── AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED ──
+        //
+        // Played, immediately after the listing learned to say who would take
+        // you. The engine was right - no membership row, no rank, no day spent -
+        // and ollama wrote:
+        //
+        //   > if they'll have me, I'll join
+        //   "The offer was met. You are a Lamp Novice of Sweptground Temple."
+        //
+        // It collapsed *would seat you as Lamp Novice* into *you are a Lamp
+        // Novice*, which is the very failure this whole family is about,
+        // committed one layer along: a conditional read as an accomplishment.
+        // The rank in the sentence is what makes it so easy - a rung named
+        // beside the player reads as theirs.
+        //
+        // `sayThisWhateverTheNarratorDoes` rather than another line on `lines`,
+        // because `lines` is a licence and `required` is a duty:
+        // `withRequiredLines` appends this verbatim when the prose does not
+        // already carry it, so a model that omits it cannot leave the player
+        // believing they were taken on.
+        //
+        // Only when somebody WOULD take them. Where every door is shut there is
+        // nothing to mistake for an offer, and saying it anyway would be the
+        // engine talking to itself.
+        if (heard.some(x => x.admissible === true)) {
+            sayThisWhateverTheNarratorDoes(
+                facts,
+                'None of this has happened. You are not on anybody\'s roll and no house has '
+                + 'been asked yet - this is what the doors would do if you walked up to them.'
+            );
+        }
 
         facts.structure.push(
             `sect_manage.list: ${all.length} admissible, ${heard.length} known to this cultivator.`

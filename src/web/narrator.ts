@@ -248,6 +248,48 @@ function readsAsTaking(plan: PlannedAction): boolean {
 }
 
 /**
+ * A reading that changes what the player IS, rather than what a turn costs.
+ *
+ * ── THE THIRD AXIS, AND IT WAS THE HOLE THE WORST ONE CAME THROUGH ───────
+ *
+ * The cost rule below is gated on {@link TIME_CONSUMING_ACTIONS}, and `sect` is
+ * on neither that list nor `READ_ONLY_ACTIONS`. So a model answering `sect` was
+ * waved through at the cheap exit and its reading was NEVER compared against
+ * the sentence's own. Measured with a scripted provider, at ordinal 25:
+ *
+ *   > if they'll have me, I'll join
+ *   sect_manage.join: "Taken on by Azure Dew Sect, ranked Dew Elder."
+ *
+ * The player stated a policy contingent on a fact they did not have and was
+ * enrolled at the house's elder tier. Nothing about the house, the bar or the
+ * rank was wrong - `entryRankIndexFor` seats a cultivator at 25 exactly there,
+ * by design. What was wrong is that a model's reading put somebody on a roll
+ * and no guard looked at it.
+ *
+ * Checked OUTSIDE the cost rule and separately from it, for the reason the
+ * giving-and-taking rule states two functions up: cost is not the axis this is
+ * about. Joining a house takes no days at all, and it is the single most
+ * consequential thing a turn can do to somebody - it is the difference between
+ * being nobody and being a Dew Elder, and everything downstream reads off it.
+ *
+ * The axis is whether the sentence NAMES A HOUSE, because that is precisely
+ * what `GameService.sect` dispatches on: a named house that resolves is a join,
+ * and no house named is the listing. Keying on `intent` would have missed it -
+ * the deterministic reading of "I join the Azure Dew Sect" carries no intent at
+ * all and still enrols.
+ *
+ * `leave` rides along because it is the same act with the sign flipped, and
+ * because INSTANCE 3 at the top of `asking-is-not-doing.ts` is a played run
+ * where "can I leave my sect" LEFT it. That fix guards the deterministic
+ * reading; this guards a model asserting the same thing.
+ */
+function changesWhoYouAre(plan: PlannedAction): boolean {
+    if (plan.action !== 'sect') return false;
+    if (plan.intent === 'leave') return true;
+    return (plan.target ?? '').trim().length > 0;
+}
+
+/**
  * Whether a verb has anywhere to put the thing a sentence named.
  *
  * Read off `WHAT_EACH_VERB_IS_FOR` rather than restated, for the reason
@@ -408,7 +450,11 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     const droppedTheObject = theObjectWasDropped(fromModel, input);
     if (droppedTheObject) return droppedTheObject;
 
-    if (!spendsMoreThanASentence(fromModel.action) && !takingFromThem) {
+    // The identity axis, asked with the other two and before the cheap exit,
+    // because `sect` is on neither cost list and the exit would wave it through.
+    const putsThemInAHouse = changesWhoYouAre(fromModel);
+
+    if (!spendsMoreThanASentence(fromModel.action) && !takingFromThem && !putsThemInAHouse) {
         return { action: fromModel, declined: null, tierFailure: null };
     }
 
@@ -448,6 +494,32 @@ async function theModelIsNotWhyThisTurnIsDangerous(
                 + 'one opens a favour and the other opens a grudge and a reprisal - and a model '
                 + 'may not turn one into the other. '
                 + 'Say it plainly - "I steal from him" - to mean the taking.',
+            tierFailure: withoutAModel.tierFailure
+        };
+    }
+
+    // ── A MODEL MAY NOT BE THE REASON SOMEBODY JOINED A HOUSE ────────────
+    //
+    // The same shape as the giving-and-taking boundary above and for the same
+    // reason: a hard rule rather than a priority, and it does not matter which
+    // reading is cheaper. If the sentence read without a model does not put
+    // anybody in a house, no model may.
+    //
+    // What makes this land on the played sentence is the pair of changes
+    // working together. "if they'll have me, I'll join" reads, without a model,
+    // as `sect` with NO house named - the listing - because a leading
+    // conditional is now a question in `asking-is-not-doing.ts`, and the read
+    // it routes to drops the house it named. So the model's join is declined
+    // and the player is answered instead of enrolled.
+    if (putsThemInAHouse && !changesWhoYouAre(withoutAModel.action)) {
+        return {
+            action: withoutAModel.action,
+            declined:
+                `the model read this as joining a house (${labelFor(fromModel)}); reading the same `
+                + 'sentence without a model does not put anybody on a roll. Being taken on changes '
+                + 'what you are and what every house in the world reads off you, and a model may '
+                + 'not be the reason it happened. '
+                + 'Say it plainly - "I join the Azure Dew Sect" - to mean it.',
             tierFailure: withoutAModel.tierFailure
         };
     }
