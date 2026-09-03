@@ -1794,7 +1794,22 @@ export const PillEffectSchema = z.enum([
     'extend_lifespan',
     'sate_hunger',
     'grain_abstinence',  // removes the need to eat, the logistics solution
-    'cleanse_deviation'
+    'cleanse_deviation',
+    /**
+     * Ends the soul, and the body with it.
+     *
+     * The only entry here that is not a benefit, and the only one whose
+     * potency figure means nothing - a soul is out or it is not. What it buys
+     * is what a later reader FAILS to find: `whatASoulSearchTakes` answers
+     * `nothing_left` for a soul that is fading, so this is a denial rather
+     * than an escape.
+     *
+     * It is not suicide with extra steps. Dying leaves knowledge rows filed
+     * under the id and a body a Nascent Soul can still read - death deletes
+     * nothing. This is the difference between being killed and taking it with
+     * you.
+     */
+    'end_the_soul'
 ]);
 export type PillEffect = z.infer<typeof PillEffectSchema>;
 

@@ -10458,6 +10458,29 @@ ${opened.text}` : receipt,
         // goes through, which is the same shape every other deliberate
         // override in this game takes.
         const pill = getPill(chosen.itemId);
+
+        // -- AND THE ONE THAT IS NOT A WASTE BUT AN ENDING ----------------
+        //
+        // Same gate, opposite reason. The refusal below is for a pill that
+        // would do nothing; this is for the one that does something no second
+        // sentence can undo, and it is the only irreversible thing in the
+        // pouch. A player who typed "I take a pill" while hurt, or who let a
+        // model choose which one, must not die of it.
+        //
+        // It reuses `TAKE_IT_ANYWAY` rather than inventing a confirmation, so
+        // it is the same override every other deliberate act in this game
+        // takes, and the refusal says plainly what saying it again buys.
+        if (pill?.effect === 'end_the_soul' && !GameService.TAKE_IT_ANYWAY.test(rawInput)) {
+            return refused('engine.thisOneEndsYou', 'consume_pill', factsForRefusal(
+                `${name} is not medicine.`,
+                'It puts the soul out, and then the body. There is no version of this you walk '
+                + 'away from and nothing anybody can do about it afterwards - not a physician, '
+                + 'not a house, not a pill. What it buys is that whoever takes your body finds '
+                + 'nothing in it.',
+                'Say it again with "anyway" and it goes down.'
+            ));
+        }
+
         const wasted =
             (pill?.effect === 'restore_qi' && cultivator.qi >= cultivator.maxQi)
                 ? { what: 'qi', at: cultivator.qi, of: cultivator.maxQi }

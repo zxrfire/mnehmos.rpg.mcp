@@ -28,7 +28,7 @@
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import { getPill } from './pills.js';
+import { getPill, SOUL_QUENCHING_PILL_ID } from './pills.js';
 import type { Band } from './techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -129,6 +129,26 @@ const RECIPE_DATA: readonly Recipe[] = [
         ],
         baseSuccessRate: 0.9,
         requiredOrdinal: 0
+    },
+    {
+        id: 'recipe-soul-quenching',
+        name: 'Soul-Quenching Pill Formula',
+        producesPillId: SOUL_QUENCHING_PILL_ID,
+        // Grave lily and hollow reed - a flower that grows where people are
+        // buried and a stem with nothing inside it. Both common, both cheap,
+        // and neither of them rare enough to be a gate. Whether somebody can
+        // make one of these has never been the interesting question.
+        ingredients: [
+            { itemId: 'herb-grave-lily', quantity: 1 },
+            { itemId: 'herb-hollow-reed', quantity: 1 }
+        ],
+        // It is not delicate work. Nothing about the thing it does is
+        // difficult, which is most of what is unpleasant about it.
+        baseSuccessRate: 0.9,
+        // Where the grave lily grows, and nothing more than that. The gate on
+        // this recipe is a herb somebody has to be able to reach rather than
+        // any skill the refining takes.
+        requiredOrdinal: 5
     },
     {
         id: 'recipe-qi-gathering',

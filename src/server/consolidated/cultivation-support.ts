@@ -278,6 +278,16 @@ export function resolveActiveRun(
 // FLAGS - durable per-cultivator scalars
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * That this run ended by a soul being put out rather than by a body failing.
+ *
+ * The player has no `NpcRecord`, which is where the soul state of everybody
+ * else lives, so the same fact needs a home on this side. Read by whatever
+ * asks what a corpse still holds - and by nothing that decides an outcome,
+ * because the outcome already happened.
+ */
+export const FLAG_SOUL_ENDED = 'soul_ended';
+
 export const FLAG_GRAIN_ABSTINENCE_UNTIL = 'grain_abstinence_until_day';
 export const FLAG_PENDING_PILL = 'pending_pill';
 export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';
