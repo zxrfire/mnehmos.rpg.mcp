@@ -424,3 +424,40 @@ everyone can feel.
 For the player this is the most pleasant institution in the world to live near and the
 hardest to join - and if they ever do join, they will be one of six people, all of whom
 are watched.
+
+## A house has fewer offices than people who could hold one
+
+<!-- tier: 2 -->
+
+**An elder is somebody whose climb has stopped.** They take responsibility because they are
+not going further - management is what you do when you have settled. A conclave disciple can
+stand at the **same rung**, young, with a future, and is given no administration to carry. So
+the title is the house's verdict on whether you are finished, and an elder may still advance
+anyway, out of luck.
+
+**What an elder holds is a room.** Not a word on a ladder - every house names its tiers in its
+own idiom and none of those names is a domain. An office is a room with a bar on it: the
+sealed ones, the archive and the treasury and the tribute room and the under hall. A room not
+everybody can walk into is a room somebody is in charge of, and whoever holds it answers first
+about anything inside it.
+
+**And there are not enough of them.** Measured across the catalog: **2.06 sealed rooms per
+house against 2.3 deciders.** Slightly more people who could hold an office than offices to
+hold, in every house, permanently. That gap is not an accident of counting - **it is the
+pressure that moves people.**
+
+**So the ordinary reason somebody leaves a house is not failure.** It is that they have
+settled, they are worth a room, every room is taken, and whoever holds the one they want is
+not dying soon. They wait, or they build a following instead, or they take somebody's office,
+or they go. `leadership.ts` has always said elders who leave take their followings with them;
+office scarcity is what drives it.
+
+**An elder with no office is rare and earned**, because a house carrying a title and a stipend
+with no room attached is carrying bloat and will not do it for somebody it is lukewarm about.
+They keep elder standing and may take disciples - and since a following is what weighs a voice
+in the room, somebody with no office and many disciples can outweigh somebody with a sealed
+room and none. It is strictly the worse seat, since an office-holder takes disciples too, and
+it is still enough to matter.
+
+**This is also where the world's existing rivalries come from.** The seeded `rival` tie whose
+note reads *"Was the other candidate"* is exactly this: the person who did not get the office.
