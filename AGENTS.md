@@ -2396,6 +2396,14 @@ else staged can be picked up, and their work stays exactly where they left it. O
 this to land a change in a file that was dirty with somebody else's work and verified the
 staged blob byte-for-byte afterwards; that is the standard.
 
+**Re-read HEAD immediately before you commit, and verify the commit touched only your paths.**
+`git read-tree HEAD` snapshots the tree at the moment you run it, and HEAD moves under you while
+you work. Commit against a stale read and **every file another agent landed in that window is
+silently reverted, by a commit that names none of them** - measured here as 24 lines of this
+file disappearing inside a commit about ruins. So: `git read-tree HEAD` again just before
+committing, and afterwards read `git show --stat HEAD` and count the files. **More files than
+you staged is the whole tell**, and it is the only check that catches this.
+
 **Then clear the shared index for those paths, because you have just made it stale.** This is
 the step that is easy to miss and it fails in the dangerous direction: committing from a private
 index leaves the **shared** index still holding the pre-commit blob for your paths, which is now
