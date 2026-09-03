@@ -105,21 +105,36 @@ code. What a piece of ground buys a stranger is the answer to *if this person li
 is there anybody who would make them pay for it?* - which is a question the world already
 answers, in [`what-a-house-will-do-about-it.ts`](../../../src/engine/social-leverage/what-a-house-will-do-about-it.ts),
 about what a house does when one of its own is worked. Asked of the house that holds the
-ground instead, it produces four answers and they order themselves:
+ground instead, it produces answers that order themselves:
 
 | Where you are standing | What happens if you are wronged here | What a stranger's word is worth |
 |---|---|---|
 | a righteous house's ground | the house takes it up | most |
 | a neutral house's or a court's | it is written down and collected | middling |
+| **ground the survey does not describe** | **the record does not say, and somebody may well hold it** | **nothing either way** |
+| ground with no name against it, inside a province | nobody whose ground it is; a bench that is under no obligation | a little less |
 | a demonic house's ground | the house prices the member who was had | little |
-| **ground nobody holds** | nothing | **least** |
+| **ground nobody holds at all** | nothing | **least** |
 
-**The floor being unheld ground rather than demonic ground is the catalog's own argument,
-not a moral one.** `THE_BLOWN_GROUND.whatItMakesTrue` puts it plainly: a house on your
-border that eats its own disciples is a house that *answers a letter, keeps a compound at a
-fixed address, can be arbitrated against, and can be leaned on through whatever it holds
-from whoever granted it*. The neighbours tolerate demonic houses because they have seen
-eleven days of the other thing and would rather have a correspondent.
+**The floor being a vacuum rather than demonic ground is the catalog's own argument, not a
+moral one.** `THE_BLOWN_GROUND.whatItMakesTrue` puts it plainly: a house on your border that
+eats its own disciples is a house that *answers a letter, keeps a compound at a fixed
+address, can be arbitrated against, and can be leaned on through whatever it holds from
+whoever granted it*. The neighbours tolerate demonic houses because they have seen eleven
+days of the other thing and would rather have a correspondent.
+
+**But that argument is about a vacuum and not about unheld ground generally**, and the two
+rows in the middle are the difference. Scarwater is on the register with nobody's name
+against it, inside a province with a survey, a bench, a Ledger and an assay house, and run
+by a fordhall that holds no grant and takes a toll it has no authority to take: a complaint
+there has somewhere to go and nothing obliges anybody to hear it. Eleven days of sand with
+no bench anywhere on it is a different fact, and pricing the two the same was a real defect
+- three of the four readings collapsed onto the floor, and 204 of 435 people in a seeded
+world were standing on them.
+
+**And the survey being silent is a third thing again.** It is ignorance rather than a
+vacuum: somebody may well hold that ground and the people standing on it would know who. So
+it moves nothing, in either direction, which is what the honest price of not knowing is.
 
 **It is a term and never a gate.** Somewhere trustworthy makes trust easier and never
 automatic; somewhere lawless makes it harder and never impossible. It weighs less than a

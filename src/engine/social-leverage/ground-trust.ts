@@ -53,6 +53,48 @@
  * Recourse is the axis, and a demonic house is a correspondent.
  *
  * ═════════════════════════════════════════════════════════════════════════
+ * THERE ARE FOUR WAYS TO BE WITHOUT A HOLDER AND ONLY ONE OF THEM IS A VACUUM
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * `GroundHolding` resolves FOUR answers and its own docstring says they are not
+ * interchangeable: *"`unrecorded` ... is NOT the same as unheld, and a caller
+ * that treats it as such has invented a vacuum out of a missing row."* Reading
+ * only `holding === 'held'` collapses the other three onto `none`, which is the
+ * floor, and it is wrong in both directions:
+ *
+ *   no_authority          The Blown Ground. No house, no court, no register, no
+ *                         certified datum, so no oath binds and no boundary can
+ *                         be arbitrated. This is the vacuum and it is the floor
+ *   no_holder_of_record   Scarwater. Nobody's name is against the ground, INSIDE
+ *                         a province that has a survey, a bench, a ledger and an
+ *                         assay house. Somebody can still be complained to; it
+ *                         is simply not the ground's owner, and nothing obliges
+ *                         them to hear it
+ *   unrecorded            the survey does not say. The absence is in the record
+ *                         and not in the world, and somebody may well hold it -
+ *                         the people standing here usually know who
+ *
+ * The ordering extends the catalog's own argument rather than inventing a
+ * scale. What a piece of ground buys a stranger is *an address that can be made
+ * to answer*, and the six rows are how much of one there is: a house that
+ * answers for you, a house that records, a province whose apparatus reaches
+ * this ground without holding it, a house that has published that it will not
+ * answer, and nothing at all.
+ *
+ * **`unrecorded` is not on that scale, and prices at zero.** Not as a
+ * compromise - because a missing row is not evidence, and the honest price of
+ * not knowing is nothing. `AttemptInput.where` already rules exactly this one
+ * level up: an absent reading *"means the caller does not know where this is
+ * happening, which weighs nothing"*. Finding the place and finding the record
+ * silent is the same epistemic state one step in, and it costs the same.
+ *
+ * Measured on a seeded world, which is why this mattered: of 435 people alive,
+ * 231 stand on held ground, 71 on the vacuum, 20 on Scarwater-shaped ground and
+ * **113 on ground the record merely does not describe** - ruins, scars, wilds
+ * and seven towns. All 204 of the last three priced at the same floor as eleven
+ * days of sand with no bench on it.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
  * A TERM, NEVER A GATE
  * ═════════════════════════════════════════════════════════════════════════
  *
@@ -109,9 +151,37 @@ import { whenItIsDoneToOneOfOurs, type HouseResponse } from './what-a-house-will
 // THE READING
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * What happens here when somebody is wronged.
+ *
+ * {@link HouseResponse} answers it for ground somebody holds, and is called
+ * rather than copied so a fourth alignment tomorrow arrives here for free. The
+ * two rows beside it are the ones a house cannot answer, because there is no
+ * house: ground with no name against it inside a province that has
+ * institutions, and ground the record simply does not describe.
+ *
+ * They are rows here rather than a second field because the caller's question
+ * is one question - *if this person lies to me, is there anybody who would make
+ * them pay for it* - and a reading that answered it twice would need a rule for
+ * which answer wins.
+ */
+export type GroundRecourse =
+    | HouseResponse
+    /**
+     * Nobody's name is against this ground, and the province around it has a
+     * survey, a bench and a register. A complaint has somewhere to go and
+     * nothing obliges anybody to hear it.
+     */
+    | 'unheld_inside_a_province'
+    /**
+     * The record does not say. Not a vacuum - an absence of record, over
+     * ground somebody may well hold, among people who probably know who.
+     */
+    | 'the_record_does_not_say';
+
 export interface TheGroundUnderYou {
     /** What happens here when somebody is wronged. The whole of the axis. */
-    recourse: HouseResponse;
+    recourse: GroundRecourse;
     placeName: string | null;
     holderName: string | null;
     /** True when something the world had to write down is running here. */
@@ -150,24 +220,15 @@ export function theGroundUnderYou(
     holding: WhoHoldsThisGround,
     statuses: readonly AreaStatus[] = []
 ): TheGroundUnderYou {
-    // `ranked` is true by construction: a house that holds ground has something
-    // invested in it. `wasAnAttachment` and `ask` reach only the severity floor
-    // in that function, which is not what is being asked for here.
-    const verdict = whenItIsDoneToOneOfOurs({
-        alignment: holding.alignment,
-        ranked: holding.holding === 'held',
-        wasAnAttachment: false,
-        ask: 'a_real_favour'
-    });
-
+    const recourse = whatThereIsToTakeItTo(holding);
     const underDuress = statuses.some(bites);
 
     return {
-        recourse: verdict.response,
+        recourse,
         placeName: holding.placeName,
         holderName: holding.holderName,
         underDuress,
-        why: `${holding.why} ${WHAT_THAT_MEANS_FOR_A_STRANGER[verdict.response]}`
+        why: `${holding.why} ${WHAT_THAT_MEANS_FOR_A_STRANGER[recourse]}`
             + (underDuress
                 ? ' And the place is having a bad year, which is not when anybody here is at '
                   + 'their most trusting.'
@@ -176,12 +237,48 @@ export function theGroundUnderYou(
 }
 
 /**
+ * Which of the six answers this ground gives.
+ *
+ * The four `GroundHolding` readings map onto them, and the mapping is the whole
+ * of what this file adds to `whoHoldsTheGround`: three of the four used to
+ * collapse onto `none`.
+ */
+function whatThereIsToTakeItTo(holding: WhoHoldsThisGround): GroundRecourse {
+    switch (holding.holding) {
+        case 'held':
+            // A holder the sect catalog cannot place is still a holder.
+            // `whenItIsDoneToOneOfOurs` answers `none` to a null alignment -
+            // the vacuum - and `ground-holder.ts` says in as many words that
+            // this degradation must read as "somebody holds this and I cannot
+            // say what kind of house they are" rather than as unheld. So it
+            // goes where every other unanswered record goes.
+            if (holding.alignment === null) return 'the_record_does_not_say';
+            // `ranked` is true by construction: a house that holds ground has
+            // something invested in it. `wasAnAttachment` and `ask` reach only
+            // the severity floor in that function, which is not what is being
+            // asked for here.
+            return whenItIsDoneToOneOfOurs({
+                alignment: holding.alignment,
+                ranked: true,
+                wasAnAttachment: false,
+                ask: 'a_real_favour'
+            }).response;
+        case 'no_holder_of_record':
+            return 'unheld_inside_a_province';
+        case 'no_authority':
+            return 'none';
+        case 'unrecorded':
+            return 'the_record_does_not_say';
+    }
+}
+
+/**
  * What each answer means for somebody nobody here knows.
  *
  * Keyed on the response and not on an alignment, so this reads as one sentence
  * per thing a house DOES rather than one per kind of house.
  */
-const WHAT_THAT_MEANS_FOR_A_STRANGER: Readonly<Record<HouseResponse, string>> = {
+const WHAT_THAT_MEANS_FOR_A_STRANGER: Readonly<Record<GroundRecourse, string>> = {
     taken_up:
         'Somebody answers for what is done here, which is the whole of why a stranger gets '
         + 'the benefit of the doubt: lying to you would cost the liar something.',
@@ -192,6 +289,17 @@ const WHAT_THAT_MEANS_FOR_A_STRANGER: Readonly<Record<HouseResponse, string>> = 
         'The house that holds this does not answer for its own people when they are taken '
         + 'in, so it certainly does not answer for you. Being had here is your own failure '
         + 'and everybody knows it, which is why nobody takes a stranger\'s word.',
+    unheld_inside_a_province:
+        'There is nobody here who answers for the ground itself. The province around it keeps '
+        + 'a survey, a bench and a register, and whoever keeps this place working was never '
+        + 'appointed to and would rather it went on working - so a complaint has somewhere to '
+        + 'go and nothing at all obliges anybody to hear it, which leaves a stranger neither '
+        + 'vouched for nor written off.',
+    the_record_does_not_say:
+        'What is open is what would actually happen to somebody who lied to you here, and that '
+        + 'is a gap in the paper rather than a hole in the world - the people standing on this '
+        + 'ground would be able to tell you. So it says nothing about a stranger in either '
+        + 'direction, and a word is worth what the person saying it is worth.',
     none:
         'Nobody answers for anything here. There is no house to complain to, nothing anybody '
         + 'could be made to pay, and a stranger\'s word is worth exactly what it can be '
@@ -218,14 +326,43 @@ export const GROUND_UNDER_DURESS = 0.05;
 /**
  * How much recourse there is, on -1..+1.
  *
- * Keyed on {@link HouseResponse} rather than on an alignment, which is what
+ * Keyed on {@link GroundRecourse} rather than on an alignment, which is what
  * keeps this from being a second alignment table. The ordering is the catalog's
- * own - see the header on why unheld ground sits below a demonic house rather
- * than above it.
+ * own argument extended, not a scale invented beside it: what a piece of ground
+ * buys a stranger is an address that can be made to answer, and this is how
+ * much of one there is.
+ *
+ *   taken_up                  +1     a house, and it answers for you
+ *   collected              +0.25     a house, and it records
+ *   the_record_does_not_say    0     see below
+ *   unheld_inside_a_province -0.25   no address for this ground; the apparatus
+ *                                    that makes addresses is a few days away,
+ *                                    and the people who keep the place working
+ *                                    have an interest in it going on working.
+ *                                    Discretionary rather than owed, which for
+ *                                    a stranger specifically is the wrong side
+ *                                    of nothing: a body with no obligation
+ *                                    helps the people it already knows
+ *   the_member_is_priced     -0.6    an address that has published that it will
+ *                                    not answer, on ground where being taken in
+ *                                    is understood as the victim's failure. The
+ *                                    catalog's argument is that this beats a
+ *                                    VACUUM, and it does. It does not beat a
+ *                                    province with a bench in it
+ *   none                       -1    no address, no apparatus, no survey, and
+ *                                    no oath that binds. The floor
+ *
+ * **Zero is a decision and not a midpoint.** A missing row is not evidence, so
+ * it moves nothing - the same ruling `AttemptInput.where` already makes about a
+ * caller that does not know where it is. Pricing ignorance as a vacuum is
+ * precisely the defect `GroundHolding`'s own docstring warns about, and it was
+ * the reading 113 of 435 people in a seeded world were getting.
  */
-const RECOURSE: Readonly<Record<HouseResponse, number>> = {
+const RECOURSE: Readonly<Record<GroundRecourse, number>> = {
     taken_up: 1,
     collected: 0.25,
+    the_record_does_not_say: 0,
+    unheld_inside_a_province: -0.25,
     the_member_is_priced: -0.6,
     none: -1
 };
