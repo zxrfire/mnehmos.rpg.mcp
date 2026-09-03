@@ -81,6 +81,7 @@ import { rosterFor, sectBoardFor } from './encounters.js';
 import { resolveTechnique, worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
+import { whatStandingAmongYourOwnShows } from './meeting-your-own-house.js';
 import {
     type GroundNearby,
     type ThingThatTeaches,
@@ -444,6 +445,46 @@ export const situatedReads = {
                 + `unreachable and this read therefore never mentions.`,
             ok: true
         }];
+
+        // ── AND THE PEOPLE ON YOUR OWN ROLL, WHOM YOU HAVE MET ───────────
+        //
+        // FOUND BY PLAYING, as a Sword Elder of the Azure Cloud Pavilion,
+        // enrolled, standing on the house's own ground: "who are the other
+        // elders here?" answered *7 present: 0 this cultivator can put a name
+        // to, 7 they cannot*, and the narrator wrote that none of them looked
+        // up. A member of a house could not name one person in it.
+        //
+        // This read had already done every piece of the work - it joins the
+        // roll to the room and gates both on `noticesThatTheyAreThere` - and
+        // then showed the player people without recording that it had. Which
+        // is the seam's whole subject: what the game shows you, you know.
+        //
+        // DECLARED, not written. `the-people-you-serve-with.ts` holds the rule
+        // and why it is two conditions rather than one.
+        const meeting = whatStandingAmongYourOwnShows(cultivator, membership?.sectId ?? null, {
+            // The catalog's display name, which is what a member would say.
+            houseName: getSect(membership?.sectId ?? '')?.name ?? 'the house',
+            // THE ROOM, not the catalog roster. Measured: the authored roll
+            // carries `member-*` ids and the people standing on a house's
+            // ground are `npc-*` rows - overlap by id, zero. `RosterEntry`
+            // carries `sectId`, so the house is asked of the person in front of
+            // you rather than looked up in a catalog they may not be in.
+            here: [...inTheRoom.values()].map(row => ({
+                id: row.id,
+                name: row.name,
+                realmOrdinal: row.realmOrdinal,
+                factionId: row.sectId,
+                known: this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+            }))
+        });
+        if (meeting) {
+            (execution.perceived ??= []).push(meeting.perception);
+            execution.facts.structure.push(
+                `on the roll and in the room: ${meeting.perception.names.length} newly nameable, `
+                + `${meeting.hiddenByHeight} withheld for height. Serving together grants `
+                + '`named` and nothing about their arts or their business.'
+            );
+        }
         return execution;
     },
 

@@ -84,6 +84,9 @@ import {
     howStandingHerePutIt,
     whoBeingHereIntroducesYouTo
 } from '../engine/world/being-on-their-ground.js';
+import type { Perception } from './shown-this-turn.js';
+import { whatStandingAmongYourOwnShows } from './meeting-your-own-house.js';
+import { getSect } from '../data/cultivation/sects.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
@@ -145,6 +148,32 @@ function noteWhoseGroundThisIs(
         sourceNote: 'They hold the ground this cultivator walked onto.',
         stage: 'named',
         statement: howStandingHerePutIt(introduced)
+    });
+}
+
+/**
+ * Who of your own house is standing where you have just arrived.
+ *
+ * A local function rather than a `GameService` method for the ordinary reason:
+ * adding a method means editing `turn-engine.ts`, which several agents are in at
+ * once, and this needs nothing from the class but three readers.
+ *
+ * `the-people-you-serve-with.ts` holds the rule - on the same roll AND in the
+ * same room, height gate first - and `meeting-your-own-house.ts` turns it into
+ * the declaration the turn boundary writes.
+ */
+function meetingYourOwnHouse(game: GameService, cultivator: Cultivator) {
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    if (!membership) return null;
+    return whatStandingAmongYourOwnShows(cultivator, membership.sectId, {
+        houseName: getSect(membership.sectId)?.name ?? 'the house',
+        here: game.present(cultivator).map(row => ({
+            id: row.id,
+            name: row.name,
+            realmOrdinal: row.realmOrdinal,
+            factionId: row.sectId,
+            known: game.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+        }))
     });
 }
 
@@ -298,9 +327,29 @@ export const travelVerbs = {
         noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
 
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
+        const facts = factsForMove(
+            cultivator, applied.cultivator, place.name, intent, skip, ambient, ambientAfter
+        );
+
+        // ── AND WHO OF YOUR OWN IS STANDING HERE ─────────────────────────
+        //
+        // Walking into your own house's ground and finding your own people
+        // is the same arrival as the two facts above it. A Sword Elder who
+        // could not name one person in his own house was the defect;
+        // `the-people-you-serve-with.ts` holds the rule and why it needs
+        // both the roll AND the room.
+        const met = meetingYourOwnHouse(this, applied.cultivator);
+        const perceived: Perception[] = [];
+        if (met) {
+            perceived.push(met.perception);
+            facts.structure.push(
+                `on the roll and in the room: ${met.perception.names.length} newly nameable, `
+                + `${met.hiddenByHeight} withheld for height.`
+            );
+        }
 
         return {
-            facts: factsForMove(cultivator, applied.cultivator, place.name, intent, skip, ambient, ambientAfter),
+            facts,
             events: skip.events,
             timeSkip: skip,
             breakthrough: null,
@@ -315,7 +364,8 @@ export const travelVerbs = {
                 ...skipCalls('move', skip, null),
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
-            ]
+            ],
+            perceived
         };
     },
 
