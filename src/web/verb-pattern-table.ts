@@ -696,13 +696,35 @@ export const SECT_THEFT_PATTERN =
  *
  * `which houses take people` and `what would it take to be admitted` are the
  * `sect` verb's OWN exemplars in `how-a-player-says-each-verb.ts`, so they
- * stay with `sect` rather than being taken here on a technicality. What this
- * claims is the shape those two do not have: somebody asking whether a house
- * would take THEM - `would take me`, `would have me`, `would admit me` - which
- * is a question about prospects and not about the catalog.
+ * stay with `sect` rather than being taken here on a technicality.
+ *
+ * ── AND SO DOES THE WHOLE `would take me` FAMILY ─────────────────────────
+ *
+ * An alternative was added here claiming `would take me`, `would have me` and
+ * `would admit me`, on the reading that asking whether a house would take YOU
+ * is a question about prospects rather than about the catalog. The reading is
+ * defensible; the routing was wrong, and the reason is ordering rather than
+ * meaning. This pattern is tested BEFORE the join branch, so it did not add a
+ * shape the table was missing - it took three sentences off a surface that
+ * already answered them better.
+ *
+ * `sect` replies with the register of houses that would actually have this
+ * asker. The wall replies with whatever happens to be nailed up where they
+ * are standing. For "which sects would take me" the first is the answer and
+ * the second is a coincidence of where the player is.
+ *
+ * Two comments in this file already said so and disagreed with each other -
+ * see the note on {@link namesNoHouse}, which states that the join branch
+ * "fires on a house noun beside any question word, so `which sects would take
+ * me` and `what houses would have me` were reaching the sect surface the whole
+ * time". They were, until this pattern started reaching them first.
+ *
+ * The wall keeps every shape that is genuinely about what is posted -
+ * `recruiting`, `posted`, `bills`, `wall`, `taking disciples` - and none of
+ * those needs the removed alternative.
  */
 export const RECRUITING_BILL_PATTERN =
-    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:would|will|might|could)\s+(?:take|have|admit|accept)\s+(?:me|us|somebody like me|someone like me|a nobody)\b/;
+    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b/;
 
 export const SECT_DUTY_PATTERN =
     /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b|\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b|\b(?:volunteer for|sign up for|put my name down)\b/;
