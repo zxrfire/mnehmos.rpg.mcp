@@ -2,39 +2,6 @@
  * The world rolling a REAL breakthrough for somebody who is not the player.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `attemptBreakthrough` is the engine's answer to "did they get past the wall".
- * It carries the odds, the failure table, the boundary trial, the wound the
- * wall leaves, the price of advancement and death. Until this module existed
- * the world simulation never called it once. `applyAdvancement` advanced NPCs
- * with `deriveOrdinal`, and its own comment said what that is:
- *
- *     Not a behaviour model - the same closed-form derivation seeding uses.
- *
- * A derivation answers "given this talent and this age, where would somebody
- * plausibly be". Used as a progression rule it has three properties that
- * between them decide the shape of the whole world:
- *
- *   IT ONLY RISES        the result is kept only if it beats what they have, so
- *                        nobody in the world had ever got worse at cultivating.
- *   IT NEVER HURTS       no failure, no wound, no death at a wall. The entire
- *                        tribulation-and-wounds layer was unreachable from the
- *                        world, and no NPC anywhere could carry a broken
- *                        foundation or a cracked core.
- *   IT SATURATES         it walks one life against one lifespan, so it stops
- *                        where that life stops and never moves again however
- *                        many centuries the person then lives.
- *
- * Measured across three seeds before this module: at 500, 1500 and 5000 years,
- * every single person standing at ordinal 41 or above was a survivor of the
- * seeding. Not most of them - all of them, at every horizon, on every seed. The
- * apex was inherited furniture with a hundred-thousand-year lifespan, and the
- * world's own answer to "where do the giants come from" was "they were here
- * when we arrived".
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * THE RULE
  * ═══════════════════════════════════════════════════════════════════════════
  *

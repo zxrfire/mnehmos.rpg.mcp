@@ -2,22 +2,6 @@
  * What a copy of a manual costs at a stall, and which manuals a stall has.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Found by playing the opening. Pressing Cultivate produced the right refusal -
- * without a manual there is no road for the qi to take, and the Lesser
- * Qi-Gathering Manual carries further than you stand - and then typing "I want
- * to learn the Lesser Qi-Gathering Manual" simply handed it over: the technique
- * was held, the purse untouched at thirty stones, no teacher involved, no time
- * passed and no house joined. Meanwhile "buy a manual" was refused with the
- * look people give somebody asking for a thing that is not sold.
- *
- * So the correct verb was blocked and the free one worked, which is exactly
- * backwards, and the whole drama the opening had just built evaporated the
- * moment the book was named.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * WHAT THE SETTING ALREADY SAID
  * ═══════════════════════════════════════════════════════════════════════════
  *

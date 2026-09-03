@@ -1,53 +1,39 @@
 /**
  * What a player can actually do about somebody they cannot fight.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES, AND IT IS THE LAST HOP
- * ═════════════════════════════════════════════════════════════════════════
+ * ── A REFUSAL NAMES A ROUTE ──────────────────────────────────────────────
  *
- * `assessGap` returns `REAL_OPTIONS` on `GapAssessment.options` whenever the
+ * `assessGap` puts `REAL_OPTIONS` on `GapAssessment.options` whenever the
  * verdict is `helpless`, and its own comment says what they are: *"Not
  * consolation text - these are the branches the world genuinely permits, and
- * every one of them is a different tool call."* That list rides on
- * `ConfrontationResult.gap`, through the tool projection, into the web layer,
- * and was never printed. Measured in play: a Qi Condensation 6 attacking a
- * Grand Ascension NPC got six identical no-contests and not one word about what
- * would have worked.
+ * every one of them is a different tool call."* This is the layer that prints
+ * them, and a computed route that never reaches the player is the same as no
+ * route at all.
  *
- * AGENTS.md: **a refusal names a route.** Here the route was computed, correct,
- * already in the payload, and thrown away by the layer that talks to the player.
+ * ── AND PRINTING THE LIST RAW IS WORSE THAN DROPPING IT ──────────────────
  *
- * ═════════════════════════════════════════════════════════════════════════
- * AND PRINTING THE LIST RAW WOULD HAVE BEEN WORSE THAN DROPPING IT
- * ═════════════════════════════════════════════════════════════════════════
+ * `REAL_OPTIONS` has nine entries and **five of them have no verb behind
+ * them**. Printing all nine is the narrator inventing affordances - the
+ * failure AGENTS.md names by example, *"it writes 'you could try climbing the
+ * wall' where there is no climb verb"* - in the one moment a player is
+ * desperate enough to try every line in the paragraph.
  *
- * This is the part that took the work. `REAL_OPTIONS` has nine entries and
- * **five of them have no verb behind them**. Printing all nine would be the
- * narrator inventing affordances - the failure AGENTS.md names by example,
- * *"it writes 'you could try climbing the wall' where there is no climb
- * verb"* - and it would do it in the one moment a player is desperate enough to
- * try every line in the paragraph.
- *
- * So each option is mapped to the sentence a player would actually type, and an
- * option with nothing behind it is NOT printed. What it is instead is written
- * down in {@link NO_VERB_CARRIES_THESE}, because an absence nobody records gets
- * mistaken for a design decision.
+ * So each option is mapped to the sentence a player would actually type, and
+ * an option with nothing behind it is NOT printed. What it is instead is
+ * written down in {@link NO_VERB_CARRIES_THESE}, because an absence nobody
+ * records gets mistaken for a design decision.
  *
  * `tests/web/gap-routes.test.ts` asserts that every entry in `REAL_OPTIONS` is
  * either mapped or listed as unreachable, so a tenth option cannot be added
  * without somebody saying which of the two it is.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY THE LIST IS KEEPABLE NOW AND WAS NOT BEFORE
- * ═════════════════════════════════════════════════════════════════════════
+ * ── THE BAR FOR PRINTING ONE ─────────────────────────────────────────────
  *
- * When `REAL_OPTIONS` was written, *"flee, and accept being hunted"* was a
- * `move` intent that resolved as a journey, and there was no moment in which to
- * negotiate with somebody who was already swinging. A fight is now something a
- * player stands inside for several turns, breaking off is `attemptFlight` with
- * a priced chance, and a shout asks a real question about who is able and
- * willing. Each of the four routes below is a promise the game can keep, and
- * that is the bar for printing one.
+ * **Each route printed is a promise the game can keep.** Breaking off is
+ * `attemptFlight` with a priced chance; a shout asks a real question about who
+ * is able and willing. An option whose verb does not exist, or exists and
+ * cannot be reached from where the player is standing, belongs in
+ * {@link NO_VERB_CARRIES_THESE} however good the sentence would read.
  *
  * Pure. No state, no I/O, no engine call.
  */

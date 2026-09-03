@@ -2,29 +2,6 @@
  * THE PEOPLE A CULTIVATOR ALREADY KNOWS ON THE DAY THE RUN OPENS.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * A new run knew nine to fourteen PLACES and not one PERSON. Measured on three
- * seeds, with thirteen, five and seventeen people standing in the square:
- *
- *     known 9:   place x 8, sect x 1     cultivator: 0
- *     known 14:  place x 13, sect x 1    cultivator: 0
- *     known 9:   place x 8, sect x 1     cultivator: 0
- *
- * `company()` splits a square into `named` - people the holder has a record
- * for - and `strangers`, who are reported as an ordinal and nothing else. With
- * no person on the roll at birth, every single body in the world was a
- * stranger, permanently, until something happened to introduce one. So the
- * verbs that need somebody to be pointed at - a bout, a favour asked, a bribe,
- * a threat - all resolved and none of them could find a target, and the game
- * said so in the best line in it:
- *
- *     "You have no name to ask for, which is the whole of what is stopping you."
- *
- * Four working verbs behind one missing thing.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * THE RULING
  * ═══════════════════════════════════════════════════════════════════════════
  *

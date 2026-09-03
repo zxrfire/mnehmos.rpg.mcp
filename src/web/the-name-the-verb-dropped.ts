@@ -1,62 +1,48 @@
 /**
  * The person the player named, when the verb arrived without them.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
+ * Phase 1 can pick a verb and drop its object. When it does, a confrontation
+ * arrives with an empty target and refuses for naming nobody - which is true
+ * about what it received and false about the sentence that produced it. From a
+ * chair that reads as people not persisting between turns.
  *
- * Found by playing, with an opponent standing in the square:
+ * This reads the player's own sentence for a name of somebody standing here,
+ * and it runs BEFORE the refusal so that everything downstream - the faction
+ * branch, the resolution, the whole bout - runs on the recovered name exactly
+ * as it would on a typed one.
  *
- *     > I coerce claire to hand over her stuff, all of it
- *     Nobody in particular.
- *     Unresolved party: no subject named for a confrontation.
+ * ── IT IS NOT KNOWLEDGE-GATED, AND MUST NOT BECOME SO ────────────────────
  *
- * Claire was there. She was in the roster the same turn, she had been spawned
- * the turn before, and the player had just typed her name. What reached the
- * engine was `coerce()` with an EMPTY target, because phase 1 picked the verb
- * and dropped the object - so the refusal was true about what it received and
- * false about the sentence that produced it.
+ * Every other path from a name to a person is gated on awareness, because
+ * handing back a name the player has not earned is a discovery leak -
+ * `nearbyNames` says so in its own header, and `whoIsAbout` will not print a
+ * lone stranger's name for that reason.
  *
- * From a chair this reads as people not persisting: you talk to somebody, and
- * next turn the game behaves as though nobody is there. Nothing was actually
- * forgotten. The name simply never survived the trip.
+ * **Here the player supplied the name.** Matching what they typed against who
+ * is standing there tells them nothing they did not already write down. The
+ * gate exists to stop the engine VOLUNTEERING a name; it was never meant to
+ * stop the engine from hearing one.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY READING THE PLAYER'S OWN SENTENCE IS NOT A LEAK
- * ═══════════════════════════════════════════════════════════════════════════
+ * Adding the gate "for consistency" is the change that looks safe and is not:
+ * it puts back the refusal for every unknown person a player can see, spawn or
+ * be attacked by.
  *
- * Every other path that turns a name into a person is gated on knowledge,
- * because handing back a name the player has not earned is the discovery leak
- * this codebase keeps closing - `nearbyNames` says so in its own header, and
- * `whoIsAbout` will not print a lone stranger's name for exactly that reason.
+ * ── AND IT DOES NOT GUESS ────────────────────────────────────────────────
  *
- * **This one is not gated, and the reason is that the player supplied the
- * name.** Matching what they typed against who is standing there tells them
- * nothing they did not already write down. The gate exists to stop the engine
- * VOLUNTEERING a name; it was never meant to stop the engine from hearing one.
+ * No fuzzy scoring and no closest match. `best()` covers approximate spelling
+ * on the ordinary path, where a target IS present; this runs only when the
+ * target is MISSING, so a wrong answer would be an act against somebody the
+ * player never mentioned - worse than the refusal it replaces.
  *
- * The distinction is worth keeping straight, because the safe-looking change
- * is to add the gate here "for consistency", and that would restore the bug
- * for every unknown person a player can see, spawn or be attacked by.
+ * So: exact, whole-word, case-insensitive, longest name wins, one person or
+ * nothing.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT IT DELIBERATELY DOES NOT DO
- * ═══════════════════════════════════════════════════════════════════════════
+ * **Longest matters** where a roster holds both a given name and a full one.
+ * "Ru Anwei" must beat a "Ru" standing beside her, or the sentence resolves to
+ * the wrong person with total confidence.
  *
- * It does not guess. There is no fuzzy scoring here and no "closest match":
- * `best()` exists for the case where the player named somebody and got the
- * spelling approximately right, and it runs on the ordinary path where a
- * target IS present. This runs only when the target is MISSING, so a wrong
- * answer would be an act against somebody the player never mentioned - which
- * is worse than the refusal it replaces.
- *
- * So the match is exact, on a whole word, case-insensitively, and it takes
- * the LONGEST name that appears. Longest matters where a roster holds both a
- * given name and a full one: "Ru Anwei" must win over a "Ru" standing beside
- * her, or the sentence resolves to the wrong person with total confidence.
- *
- * And it returns ONE person or nothing. Two names in a sentence is a sentence
- * the engine has no business picking a victim out of.
+ * **One or nothing matters** because two names in a sentence is a sentence the
+ * engine has no business picking a victim out of.
  */
 
 /** The least a caller has to know about somebody to hand them to a verb. */
@@ -80,8 +66,8 @@ function flattened(text: string): string {
 /**
  * Whether `name` appears in `said` as whole words rather than inside another.
  *
- * The padding on both sides is what stops "An" matching the middle of
- * "Chan", which on a large roster is not hypothetical.
+ * The padding on both sides is what stops "An" matching the middle of "Chan",
+ * which on a large roster is not hypothetical.
  */
 function saidOutLoud(said: string, name: string): boolean {
     const needle = flattened(name).trim();
@@ -114,8 +100,8 @@ export function theNameTheVerbDropped(
     const distinct = new Set(named.map(who => who.id));
     if (distinct.size > 1) {
         // Unless one name contains the other, in which case the longer is the
-        // player being specific rather than the player naming two people:
-        // "Ru Anwei" also matches a "Ru" who is standing there.
+        // player being specific rather than naming two people: "Ru Anwei" also
+        // matches a "Ru" who is standing there.
         const longest = named[0];
         const rest = named.slice(1);
         const allInside = rest.every(who => saidOutLoud(longest.name, who.name));

@@ -2,33 +2,6 @@
  * Books, and who has one.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * A seeded world contained no objects at all. `makeObject` was called zero
- * times by the seeder, `world_objects` migrated and stayed empty, and every one
- * of the five hundred-odd NPCs carried `techniqueIds: []`. Nobody in the world
- * held a book.
- *
- * That is not cosmetic, because advancement read it. `applyAdvancement` had no
- * manual to consult, so it fell back on `deriveOrdinal` - a SEEDING function,
- * which answers "given this talent and this age, where would somebody
- * plausibly be" - and used it as a progression rule. Measured, the consequences
- * were total:
- *
- *   - `deriveOrdinal` saturates. The best root in the catalog reaches ordinal
- *     16 at age 120 and never moves again, for the remaining nine centuries of
- *     a life. The region permits 44.
- *   - 192 of 565 living cultivators sat ABOVE that curve's maximum already, so
- *     `derived <= current` short-circuited and they could never advance at any
- *     age, ever.
- *   - Over two hundred simulated years, the number of cultivators anywhere in
- *     the world who gained a single rung was ZERO.
- *
- * The pyramid looked right - 310 people at the bottom, two at the top - and was
- * entirely furniture. Nobody was climbing it.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * THE RULE
  * ═══════════════════════════════════════════════════════════════════════════
  *

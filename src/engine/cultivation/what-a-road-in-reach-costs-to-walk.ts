@@ -3,36 +3,6 @@
  * for a player and for anybody else, out of one function.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The dao gate asks one question and, until this module, it was answered by two
- * different rules depending on who was standing at the wall.
- *
- *   THE PLAYER  `roadsWalked(cultivator.insights)`. An insight forms in exactly
- *               three places, all of them in `time-skip.ts`, whose own docblock
- *               says "there is no path into this function that a cultivator can
- *               reach by spending time or stones": surviving a tribulation,
- *               surviving a CRIPPLING qi deviation, and a meditative state
- *               checked once a year. Measured across the whole space at Insight
- *               3, that meditative state runs 0.6% a year on thin ground with
- *               nothing matching and 3.4% in a spirit tide with everything
- *               favourable - one road per 35 years at the very best, one per 165
- *               doing the ordinary thing. Every completed playtest run ended
- *               with `insights: []`.
- *   EVERYBODY   `roadsWalkedBy(npc)` SYNTHESISED an insight per distinct domain
- *   ELSE        among the arts they held, at birth, for free, and
- *               `roadsInReachOf` then added a road for every dao ground they
- *               could get at and every material ever spent on them - also free,
- *               also instant, also unrelated to how long they had been alive.
- *
- * So an NPC was handed a road for HOLDING a thing and a player had to survive
- * something extraordinary for the same road. Measured at 800 years over three
- * seeds, NPCs standing in Nascent Soul held 2.09 roads each and the player held
- * none, ever. That is the split AGENTS.md names first - "the world's rules must
- * bind the player too" - running in its usual direction.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * THE RULE, AND IT IS ONE RULE
  * ═══════════════════════════════════════════════════════════════════════════
  *

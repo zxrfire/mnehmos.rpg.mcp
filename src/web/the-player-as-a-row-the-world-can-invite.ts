@@ -2,23 +2,6 @@
  * THE PLAYER, AS A ROW THE WORLD CAN PUT ON AN INVITATION LIST.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `gatherings.ts` draws its attendees from `chosenOf`, which reads
- * `state.npcs`. Below the Lid the player has never had an `NpcRecord` - they
- * are a `Cultivator` row and an `Observer` and nothing else - so they were
- * STRUCTURALLY UNINVITABLE. Not "rarely invited": absent from the list the
- * invitation is drawn from, permanently, at every rung and in every house.
- *
- * The whole gathering system - introductions across houses, friendly bouts,
- * ranked competitions with prestige and selection upward, expeditions into a
- * site with several houses' chosen scored against each other - could not
- * include the person playing. That is this repository's signature defect
- * (AGENTS.md: "the world's rules must bind the player too") in a system that
- * is otherwise finished and tested.
- *
- * ═════════════════════════════════════════════════════════════════════════
  * THE PRECEDENT
  * ═════════════════════════════════════════════════════════════════════════
  *

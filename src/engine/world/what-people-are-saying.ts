@@ -2,23 +2,6 @@
  * The world's news, in the mouths of people who mostly were not there.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The simulation produces rankings, refusals, duels, houses opening closed
- * ground and people crossing the last wall, and writes every one of them into
- * the ledger as a dated fact. A player standing in a market heard none of it.
- * The digest reaches them only for facts they had standing to be told, which
- * is correct for a REPORT and is not how anybody actually finds out what is
- * happening two provinces away and nine realms above them.
- *
- * What was missing is the ordinary channel: somebody says a thing they heard
- * off somebody who heard it off somebody.
- *
- *   "Sect x is opening ancient ground y."
- *   "abc was refused by xyz, and they fought over it."
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * WHAT A RUMOUR IS
  * ═══════════════════════════════════════════════════════════════════════════
  *
