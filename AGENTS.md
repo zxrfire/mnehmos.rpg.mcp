@@ -64,7 +64,12 @@ Concretely, this means:
   green, and had a false regression ready to file; the same test passed on the same change
   when run properly. **Both arms have to run in one command**, and where that is impossible,
   find a measurement that does not depend on the tree at all. A line-by-line identity check
-  on a moved block is worth more than any suite reading on this branch.
+  on a moved block is worth more than any suite reading on this branch. And **reverting a whole file as
+  one arm reverts everybody's work in it**: an agent checking their own change by restoring
+  `admin-manage.ts` stripped another agent's half-finished edit along with it and got a clean
+  green/red split that looked exactly like a finding. A control arm that removes more than your
+  own change is not a control arm - it is the do-not-act-on-an-error-in-a-file-you-do-not-own
+  trap wearing one as a costume.
 - Engine functions should be **pure where possible**: state in, deltas out, no mutation
   of inputs, no I/O in the mechanics layer.
 
