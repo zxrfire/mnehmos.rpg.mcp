@@ -20,8 +20,10 @@ something to be right against.
 
 **"Bypasses gates" is about AWARENESS and about reach**, and it is worth saying which gates,
 because there is one place it does not apply. `spawn_site` and `grant_knowledge` lift the gate
-that is *you have to have happened to hear of it*; `set_location` lifts the road. **A
-precondition on the actor is a different animal and stays exactly where it is** - see
+that is *you have to have happened to hear of it*, permanently, by writing rows; an ADMIN line
+[reaches past it for that one line](#and-the-operator-reaches-past-what-the-cultivator-has-heard-of)
+and writes nothing; `set_location` lifts the road. **A precondition on the actor is a different
+animal and stays exactly where it is** - see
 [ADMIN &lt;verb&gt;](#admin-verb---forcing-an-attempt-to-land), which decides an uncertain
 outcome and never makes an illegal action legal.
 
@@ -367,6 +369,55 @@ admission writes the membership row at the seat the house's own ladder gives.
 can do without re-implementing the verb; an operator who wants a success to be affordable arranges
 affordability first. That is `AGENTS.md` on softening, from the other side.
 
+### And the operator reaches past what the cultivator has heard of
+
+> *"operator can bypass knowledge checks."*
+> - the design owner
+
+The other half of the same line, and it opens with the force through the same door. An operator
+line is not subject to the played cultivator's ignorance: a name nobody has said in front of them
+resolves, a place held below `REACHABLE_FROM` can be set out for, a house they have never met can
+be asked about. Being subject to one character's memory is exactly what stops an operator standing
+the world where they need it.
+
+**It lifts the awareness predicate and nothing else, and the demonstration is one command.**
+`ADMIN sect join the Hollow Court` from a cultivator who has never heard the name resolves the
+house - and is then refused, by the Court's own bar, with the route attached:
+
+```
+ADMIN - FORCED SECT
+
+Nothing was decided. The world refused before any uncertain question arose [...]
+
+    ADMIN set_realm ordinal=<the bar named above> - the house admits from there, and the
+    bar is the house's, not this surface's.
+
+The Hollow Court admits from Void Refinement First Tempering. Shen Yuan stands at Qi
+Condensation Layer 1.
+```
+
+Typed plainly, the same sentence answers *"you have said a name and it is not one anybody has said
+to you"*. So the reach moved the gate and left the rule where it was, which is the same line this
+surface draws everywhere else.
+
+**Three things hold it in place.**
+
+- **It writes nothing, and it is not knowledge.** No row, no stage, no name learned. After a
+  reached line the cultivator has heard of exactly what they had heard of before it, and the very
+  next ordinary sentence is refused for the reason it was always refused. `grant_knowledge` is the
+  action that actually gives somebody the names, and it is still the only one.
+- **It ends with the line, because it is a scope and not a flag.** A flag can be left set; that is
+  the failure this is built to be incapable of. It is the same `AsyncLocalStorage` arrangement
+  forcing uses, and for the same reason - a field on a request is a field a model can set.
+- **It is scoped to the played cultivator.** Nobody else's gate moves for the whole of the line,
+  which matters because a forced wrong is answered by people who found out about it. Lifting
+  *their* awareness would hand the world grudges nobody could have held.
+
+And it says so: a line that reached past anything writes a `reach.<verb>` audit row naming every
+name it reached past, alongside the `force.<verb>` row. The law is in
+[`src/web/operator-knowledge-reach.ts`](../src/web/operator-knowledge-reach.ts) and is not
+restated here.
+
 ### And it is always marked
 
 Every forced call writes an audit row - `force.<verb>`, with the sentence, the outcome, and which
@@ -380,6 +431,29 @@ cannot tell an arranged success from an earned one is testing nothing.
 `ACTION_NAMES`. The rest of the line goes through the ordinary deterministic parser, so the
 target, intent, topic and duration are read exactly as they are for anybody - what the operator
 settled is **which verb**.
+
+**And the operator's word can carry a whole player sentence after it.** Two things get written
+here and both are ordinary:
+
+| | |
+|---|---|
+| `ADMIN sect join the Azure Dew Sect` | the word is the sentence's own head, and the rest is its argument |
+| `ADMIN coerce I threaten the nearest cultivator` | the word is a **label**, and what follows is a sentence in its own right |
+
+Which one it is is decided by asking the ordinary parser about **the rest of the line on its
+own**: a remainder that reaches a verb IS a sentence, so the operator's word was a label; a
+remainder that reaches nothing means the word was the head and the whole line stands. That is a
+lookup against the same closed parser a player's sentence goes through, not a reading of what the
+words might have meant.
+
+It was found by the design owner as a defect and it had teeth: taking the whole line every time
+is wrong for exactly the verbs whose **name is also an ordinary English word**, because the
+pattern table matches the operator's own word and hands back everything after it as the target.
+`ADMIN coerce I threaten the nearest cultivator` filed *"Unresolved party 'I threaten the nearest
+cultivator'. No exchange was run"* - so forcing reached `sect`, `interact` and `breakthrough`,
+and could not reach coercion, theft or an attack on a named person, which are the acts most worth
+forcing. Nothing changed for a line whose remainder is not a sentence: `ADMIN force move Nine
+Peaks` and `ADMIN force give Shen Liefeng my purse` read exactly as they always did.
 
 Three playable verbs are also admin words - `move`, `site` and `wait`, aliases of `set_location`,
 `spawn_site` and `advance_days` - and **the admin meaning still wins**, because the action list
@@ -437,7 +511,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `set_realm` | Moves the player on the ladder through `advanceRealm`: peak stamped, progress cleared, stagnation clock restarted. | `ordinal` |
 | `set_age` | Moves the age through the repository's own delta path, up or down. **No life was lived** - the clock does not move and nothing happened in between; `advance_days` is the action that spends a life. Refuses an age past the rung's lifespan, because that is a death the survival check has not been asked about yet, and names the two routes. | `age` |
 | `force` | **Runs an ORDINARY VERB with the attempt landing.** Typed at the game as `ADMIN <verb> <sentence>`. Decides an uncertain outcome; never makes an illegal action legal. Refuses on this tool's own path, because a playable verb needs a run. | `verb` |
-| `grant_knowledge` | **Lifts the awareness gate wide.** Makes every place, every house, or one named either, nameable by this cultivator. They already exist; what changes is whether their names can be said. | `kind`, `name` |
+| `grant_knowledge` | **Lifts the awareness gate wide, and permanently.** Makes every place, every house, or one named either, nameable by this cultivator **and reachable** - the rows land at `placed`, which is what `REACHABLE_FROM` asks for and what a `told` source can carry. They already exist; what changes is whether their names can be said and set out for. | `kind`, `name` |
 | `reset` | **Ends this run and begins another.** Closes the current run with no death cause - it did not die - flags it admin so it never reaches the ledger, and opens a fresh birth in the SAME world. Handled in `turn-engine.ts` rather than here: runs are written there and nowhere else, and a tool handler ending one would be a second writer. | a name, optional |
 
 ### Which of the two `spawn`s
@@ -727,6 +801,20 @@ everything flag**: a flag that read as knowledge would be a second source of tru
 table, and the first surface that forgot to check it would quietly disagree with the rest of
 the game. `learnIfNew` is a floor, so anything already held at a firmer stance keeps it.
 
+**And the stage is `placed`, which is the whole gate rather than half of it.** Measured before
+it was: this wrote **992 place rows and the game could point at 10 of them**, so `where can I go`
+- one of the two lines this action tells the operator to type next - answered with eight names and
+*"there are 982 further names you are carrying that you cannot place. You know the word and not
+the road."* `REACHABLE_FROM` is `placed` and nothing stated a stage, so the rows derived `named`
+and only the naming half lifted. `placed` is exactly what `stageCeilingFor('told')` permits -
+somebody who says where a thing is has placed it - and nothing above it is available or should be:
+`encountered` and `known` are claims about having been in a room with it and having dealt with it,
+which are claims about a life this cultivator did not live.
+
+**A line-by-line reach is the other half of this and is not a substitute for it.** An ADMIN line
+[reaches past the gate for that line](#and-the-operator-reaches-past-what-the-cultivator-has-heard-of)
+and writes nothing at all; this action is how a name genuinely enters somebody's world.
+
 ## What the surface actually renders
 
 **Plain text. Not markdown.** This trap has been walked into once and it is worth writing
@@ -770,6 +858,7 @@ And the banner under every admin response stays exactly as it is:
 | The suggestion floor | `SUGGESTION_NOISE_FLOOR` in [`src/utils/fuzzy-enum.ts`](../src/utils/fuzzy-enum.ts) |
 | Where `ADMIN` is intercepted in play | the ADMIN branch of `act` in `src/web/turn-engine.ts`, which routes a named playable verb to the forced path and everything else to `adminAct` |
 | Forcing an attempt to land: the law, the decisions, the routes | [`src/server/consolidated/forcing-an-attempt-to-land.ts`](../src/server/consolidated/forcing-an-attempt-to-land.ts) |
-| Reading `ADMIN <verb>` | `readAForcedVerb` in [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
+| Reading `ADMIN <verb>`, and which half of the line is the sentence | `readAForcedVerb` and `theSentenceTheVerbResolvesAgainst` in [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
+| Reaching past what the cultivator has heard of: the law, the scope, what it says afterwards | [`src/web/operator-knowledge-reach.ts`](../src/web/operator-knowledge-reach.ts) |
 | Where a forced verb is dispatched, and its receipt written | `act` and `receiptForAForcedVerb` in `src/web/turn-engine.ts` |
 | The ladder, the ceiling, the breaths | [`src/engine/cultivation/realms.ts`](../src/engine/cultivation/realms.ts) |

@@ -125,7 +125,7 @@ import { MATCH_THRESHOLD, matchScore } from '../../web/entities.js';
 // verb added to the game is forceable the day it exists, and a verb removed
 // stops being a word this surface accepts. `actions.ts` imports nothing from
 // here, so the direction is one-way.
-import { ACTION_NAMES, type ActionName } from '../../web/actions.js';
+import { ACTION_NAMES, FALLBACK_ACTION, parseIntent, type ActionName } from '../../web/actions.js';
 import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said-as-a-sentence.js';
 import { KnowledgeGate, loosePlaceKey } from '../../web/knowledge.js';
 import { SiteLedger } from '../../web/trials.js';
@@ -631,14 +631,67 @@ export interface ForcedVerbLine {
     /**
      * The sentence the verb resolves against, as a player would have typed it.
      *
-     * Carries the verb word itself, because the ordinary parser is pattern-based
-     * and the verb word is usually the strongest pattern in the line - dropping
-     * it turns `sect join the Azure Dew Sect` into `join the Azure Dew Sect`,
-     * which is a weaker sentence than the operator actually typed.
+     * See {@link theSentenceTheVerbResolvesAgainst} for which half of the line
+     * this is, and why the operator's own word is sometimes in it and sometimes
+     * not.
      */
     sentence: string;
+    /** The whole line after the force word, exactly as the operator typed it. */
+    typed: string;
     /** Whether the operator spelled a force word rather than only the verb. */
     spelled: boolean;
+}
+
+/**
+ * Which half of `ADMIN <verb> <rest>` the verb reads its ARGUMENTS out of.
+ *
+ * ── THE TWO THINGS AN OPERATOR WRITES ─────────────────────────────────────
+ *
+ * The verb word says WHICH VERB and it is settled by the time this is asked.
+ * What is still open is whether that word is also part of the sentence:
+ *
+ *   ADMIN sect join the Azure Dew Sect      the word is the sentence's own head
+ *   ADMIN coerce I threaten the nearest cultivator
+ *                                           the word is a LABEL, and what
+ *                                           follows is a whole player sentence
+ *
+ * Taking the whole line every time is what this used to do, and it is wrong for
+ * exactly the verbs whose NAME is also an ordinary English verb. Measured, on
+ * the line the design owner reported:
+ *
+ *   coerce I threaten the nearest cultivator
+ *     -> {action: coerce, target: "I threaten the nearest cultivator"}
+ *     -> engine.resolveParty: Unresolved party. No exchange was run.
+ *
+ * `COERCE_SUBJECT_VERBS` matches the operator's own word at position zero and
+ * `extractSubject` hands back everything after it, so the player's sentence
+ * became the name of a person nobody answers to. The same happens to `attack`,
+ * `give`, `move`, `buy` and every other verb named after the word a person would
+ * use, and it never happens to `sect`, `interact` or `breakthrough`. So forcing
+ * reached the verbs that need no target out of a sentence and could not reach
+ * the ones that do - coercion, theft, an attack on a named person, which are the
+ * acts most worth forcing.
+ *
+ * ── AND THE TEST IS A LOOKUP, NOT A READING OF PROSE ─────────────────────
+ *
+ * The ordinary deterministic parser is asked about the remainder ON ITS OWN. A
+ * remainder that reaches a verb IS a sentence and the operator's word was a
+ * label; a remainder that reaches {@link FALLBACK_ACTION} is not one, so the
+ * word was the sentence's own head and the whole line stands. Nothing here
+ * reads a word for what it might mean - it runs the same closed parser that
+ * would have read the line if a player had typed it, and prefers the reading in
+ * which ADMIN's vocabulary is ADMIN's.
+ *
+ * That is also what makes it safe: every line whose remainder parses to nothing
+ * is untouched, and the ones that do parse are the ones where the two readings
+ * agreed already (`sect join ...`, `interact I steal from ...`) or where the old
+ * one resolved nobody.
+ */
+function theSentenceTheVerbResolvesAgainst(rest: string): string {
+    const head = rest.split(/\s+/)[0] ?? '';
+    const remainder = rest.slice(head.length).trim();
+    if (remainder.length === 0) return rest;
+    return parseIntent(remainder).action === FALLBACK_ACTION ? rest : remainder;
 }
 
 /**
@@ -675,7 +728,7 @@ export function readAForcedVerb(request: string): ForcedVerbLine | null {
     if (verb === 'unclear') return null;
     if (!spelled && actionWordFor(head) !== null) return null;
 
-    return { verb, sentence: rest, spelled };
+    return { verb, sentence: theSentenceTheVerbResolvesAgainst(rest), typed: rest, spelled };
 }
 
 const ForceSchema = z.object({
@@ -3154,6 +3207,27 @@ export async function handleGrantKnowledge(
                 // actually happened - an operator said the name in front of
                 // this cultivator. The note carries the rest.
                 sourceKind: 'told',
+                // ── AND `placed`, WHICH IS WHERE THE ACTION MEANT TO PUT THEM ──
+                //
+                // Measured before it was named: this wrote 992 place rows and
+                // the game could point at 10 of them - `where can I go`, which
+                // is one of the two lines this action tells the operator to
+                // type next, answered with eight names and *"there are 982
+                // further names you are carrying that you cannot place"*.
+                //
+                // `stageFromStance` derives `named` from a stance nobody set,
+                // and `REACHABLE_FROM` is `placed`, so the gate this lifts was
+                // the naming half and the setting-out half stayed shut. The
+                // stage is stated rather than derived now, and `placed` is
+                // exactly what `stageCeilingFor('told')` permits: somebody who
+                // says where a thing is has placed it, and that is what an
+                // operator saying the name did.
+                //
+                // Nothing above `placed` is available here and nothing should
+                // be: `encountered` and `known` are claims about having been
+                // there and having dealt with it, which are claims about a life
+                // this cultivator did not live.
+                stage: 'placed',
                 sourceNote:
                     'ADMIN lifted the awareness gate. Nothing about admission, standing or what ' +
                     'anybody there will do was granted.',

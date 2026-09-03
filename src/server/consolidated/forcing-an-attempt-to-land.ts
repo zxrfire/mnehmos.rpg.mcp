@@ -6,6 +6,11 @@
  *   FORCING DECIDES AN UNCERTAIN OUTCOME. IT DOES NOT MAKE AN ILLEGAL ACTION
  *   LEGAL.
  *
+ * `withTheAttemptLanding` is also the door for the OTHER half of an operator
+ * line - reaching past what the played cultivator has heard of - because there
+ * is one line and it should have one door. That law is in
+ * `web/operator-knowledge-reach.ts` and is not restated here.
+ *
  * The design owner, on the case this was built for: a Qi Condensation
  * cultivator stealing from a Nascent Soul is a legal attempt with a terrible
  * chance, and forcing it makes the unlikely branch the one that happens -
@@ -106,6 +111,12 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+
+import {
+    whatTheOperatorReachedPast,
+    withTheOperatorReaching
+} from '../../web/operator-knowledge-reach.js';
+import { ensureCultivationDb, writeAdminAudit } from './cultivation-support.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THE DECISIONS FORCE REACHES
@@ -340,12 +351,34 @@ export function decisionsReachedBy(verb: string): ForceableDecisionName[] {
 }
 
 /**
- * Run `fn` with an attempt forced.
+ * Run `fn` with an attempt forced, and with the operator reaching.
  *
  * The ONLY way into the context. Called in one place - the ADMIN dispatcher in
- * `game.ts` - behind `ADMIN_MODE`, on a verb the operator named. It returns
- * the attempt record alongside the result so the caller can say which
+ * `turn-engine.ts` - behind `ADMIN_MODE`, on a verb the operator named. It
+ * returns the attempt record alongside the result so the caller can say which
  * decisions were actually reached rather than which ones might have been.
+ *
+ * ── AND IT OPENS THE OTHER HALF OF THE SAME OPERATOR LINE ────────────────
+ *
+ * The design owner ruled two things about this surface in one breath: a forced
+ * verb has to be able to carry the operator's own sentence, and *"operator can
+ * bypass knowledge checks."* Those are the same line - `ADMIN <verb> <sentence>`
+ * - and they fail together. A forced approach to somebody this cultivator has
+ * never had named in front of them resolves nobody, and then there is nothing
+ * left for forcing to decide.
+ *
+ * So the reach opens here rather than in a second wrapper at the call site,
+ * because there is exactly one operator line and it should have exactly one
+ * door. Which is also what keeps the two facts about it true: it is scoped to
+ * the played cultivator, and it closes when this call returns. See
+ * `web/operator-knowledge-reach.ts` for the law, and for why it lifts the
+ * awareness predicate and nothing else.
+ *
+ * ── AND WHAT IT REACHED PAST IS WRITTEN DOWN ─────────────────────────────
+ *
+ * On the audit trail, which is where every other admin act is recorded and
+ * which IS the admin flag. A gate lifted silently is indistinguishable from a
+ * gate that was never there.
  */
 export async function withTheAttemptLanding<T>(
     verb: string,
@@ -356,8 +389,42 @@ export async function withTheAttemptLanding<T>(
         reaches: decisionsReachedBy(verb),
         landed: []
     };
-    const result = await CURRENT.run(forced, fn);
-    return { result, forced };
+    const playing = whoIsPlaying();
+    const ran = await withTheOperatorReaching(
+        playing?.cultivatorId ?? null,
+        () => CURRENT.run(forced, fn)
+    );
+    if (playing && ran.reach && ran.reach.reached.length > 0) {
+        writeAdminAudit(ensureCultivationDb(), `reach.${verb}`, playing.runId, {
+            verb,
+            holderId: playing.cultivatorId,
+            reachedPast: ran.reach.reached,
+            what: whatTheOperatorReachedPast(ran.reach)
+        });
+    }
+    return { result: ran.result, forced };
+}
+
+/**
+ * The cultivator an operator line is being typed for, or null.
+ *
+ * Read here rather than taken as an argument for the reason the context itself
+ * is not an argument: this is who is playing, which is a fact the repositories
+ * hold, and a caller that could pass a different one would be a way to open
+ * somebody else's gate.
+ *
+ * Null outside a run, and null when anything at all is missing. A reach that
+ * cannot name its holder is not opened, which is the safe direction: the gate
+ * then answers exactly as it answers in play.
+ */
+function whoIsPlaying(): { runId: string; cultivatorId: string } | null {
+    try {
+        const run = ensureCultivationDb().runs.getActiveRun();
+        if (!run || !run.cultivatorId) return null;
+        return { runId: run.id, cultivatorId: run.cultivatorId };
+    } catch {
+        return null;
+    }
 }
 
 /**
