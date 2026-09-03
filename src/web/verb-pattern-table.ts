@@ -663,8 +663,46 @@ export const SECT_THEFT_PATTERN =
  * surface - a collision worth knowing about but not worth stealing a working
  * phrase over.
  */
+/**
+ * The wall, and the question somebody with no house actually asks at it.
+ *
+ * -- THE THIRD OF THE SAME DEFECT ----------------------------------------
+ *
+ * Played, unaffiliated:
+ *
+ *   is there a sect anywhere near here that would take me?
+ *   -> "Unaffiliated. No stipend, no array, no elder, and nobody to notice
+ *      if this run ends badly."
+ *
+ * **The player asked which houses would admit them and was told whether they
+ * are currently in one.** A prospect question answered with a status row,
+ * which is the same shape as `is there work going here` answered with the
+ * price list and `where should I start` answered with the gazetteer: what
+ * should I do next, answered with here is what currently is.
+ *
+ * Measured: nine ways of asking it, and eight reached bare `sect`, whose
+ * default is the membership read. Only `is anyone recruiting` - which names
+ * the recruiting verb outright - reached the wall.
+ *
+ * -- AND THE ANSWER ALREADY EXISTS AND IS GOOD ---------------------------
+ *
+ * `billsOnTheWall` returns real intakes with dates and bars - *"The Sink
+ * Carriers is holding an intake at Watering in 8 days, and will hear anybody
+ * who has reached Qi Condensation at all"*. So this is a routing fix and not
+ * a missing surface: the phrasings are added to the rule that already
+ * reaches it rather than given a branch of their own.
+ *
+ * -- WHAT IS DELIBERATELY LEFT ALONE -------------------------------------
+ *
+ * `which houses take people` and `what would it take to be admitted` are the
+ * `sect` verb's OWN exemplars in `how-a-player-says-each-verb.ts`, so they
+ * stay with `sect` rather than being taken here on a technicality. What this
+ * claims is the shape those two do not have: somebody asking whether a house
+ * would take THEM - `would take me`, `would have me`, `would admit me` - which
+ * is a question about prospects and not about the catalog.
+ */
 export const RECRUITING_BILL_PATTERN =
-    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b/;
+    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:would|will|might|could)\s+(?:take|have|admit|accept)\s+(?:me|us|somebody like me|someone like me|a nobody)\b/;
 
 export const SECT_DUTY_PATTERN =
     /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b|\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b|\b(?:volunteer for|sign up for|put my name down)\b/;
