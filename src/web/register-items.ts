@@ -83,11 +83,18 @@ import {
     repairStorageModel,
     significanceOfDose
 } from '../engine/world/who-holds-the-structural-repair-medicine.js';
-import { repairCashPrice } from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
+import {
+    repairCashPrice,
+    readAllRepairMedicine,
+    ordinaryGradeCeiling,
+    NOTHING_REPAIRS_ABOVE_ORDINAL
+} from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import { MATERIAL_BANDS } from '../engine/world/single-use-dao-comprehension-materials.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { OBJECT_CEILING_BELOW_THE_LID, rankName } from '../engine/cultivation/realms.js';
 import { TechniqueGradeSchema } from '../schema/cultivation.js';
+import { hoistConstantColumns, hoistedLine } from './register-constant-columns.js';
+import { isSettledOnUse, RECORD_CAVEAT } from '../engine/cultivation/grade-spread.js';
 
 /**
  * The tier vocabulary, read off the contract rather than retyped.
@@ -380,16 +387,39 @@ function pillRows(): RegisterItemRow[] {
             provenance: sentDown
                 ? 'sent down; nobody here can refine one'
                 : 'refined from herbs, by a recipe somebody holds',
+            // WHAT THE PILL PROMISES, AND WHETHER THAT IS A PROMISE.
+            //
+            // On a grade whose effect is settled when the thing is used rather
+            // than when it was made, the potency figure beside it is one draw
+            // out of an open set - so the row is marked, on the row, in the
+            // same cell as the figure it qualifies. It must stay per-row even
+            // where a whole band carries it: a reader scanning one line has to
+            // see that this line's number is not a guarantee, and the
+            // incompleteness is the content rather than a repetition to fold
+            // into a heading.
             detail: `${p.effect.replace(/_/g, ' ')} ${p.potency} ${POTENCY_UNITS[p.effect]}`
                 + (p.toxicity > 0 ? `, toxicity ${p.toxicity}` : ', no toxicity')
+                + (isSettledOnUse(p.grade) ? ' - settled on use, not on the label' : '')
         };
     });
 }
 
-/** The four repair medicines, on the same columns as everything else. */
+/**
+ * The four repair medicines, on the same columns as everything else.
+ *
+ * THIS IS THE ONLY TABLE THEY ARE IN. They were in two, on one tab, four rows
+ * apiece with four columns in common - the almanac listing here, and a second
+ * section of their own further down - which is two authorities on one set of
+ * rows and the same defect the extinct materials had. What that section carried
+ * and this did not was the worth in stones and the terms; both are on the row
+ * now, so the merge lost nothing, and what a cell could not hold - where each
+ * grade stops - is the note above the table.
+ */
 function repairRows(): RegisterItemRow[] {
+    const readings = new Map(readAllRepairMedicine().map(r => [r.id, r]));
     return STRUCTURAL_REPAIR_MEDICINES.map(m => {
         const price = repairCashPrice(m);
+        const worth = readings.get(m.id)?.weightInStones ?? null;
         return {
             kind: 'pill' as const,
             group: 'repair medicine' as const,
@@ -401,11 +431,25 @@ function repairRows(): RegisterItemRow[] {
             significance: significanceOfDose(m),
             keptAs: (repairStorageModel(m) === 'count' ? 'counted' : 'tracked') as KeptAs,
             price,
+            // TERMS ON EVERY ROW, PRICED OR NOT. They used to appear only where
+            // there was no cash figure, so the two rows that do have one lost
+            // the fact entirely when their own table was folded in - and how a
+            // thing changes hands is a different question from what it costs.
             priceNote: price === null ? `terms: ${m.terms.replace(/_/g, ' ')}` : '',
             provenance: m.madeBelowTheLid
                 ? `refined on this side, ${m.refinedPerCentury ?? 0} a century in the whole world`
                 : 'sent down; the count only ever falls',
+            // WORTH AND TERMS, EACH SAID ONCE PER ROW AND NEVER BOTH IN THE
+            // SAME CELL AS THE PRICE. `repairCashPrice` IS the weight in stones
+            // wherever a thing is sold privately, so on those rows the price
+            // cell already carries the worth and what is missing is the terms;
+            // on the rows money cannot buy, the price cell carries the terms
+            // and what is missing is the worth. Printing both columns
+            // unconditionally is how the merged table said one number twice.
             detail: `mends ${m.mends.join(', ').replace(/_/g, ' ')}`
+                + (price === null
+                    ? (worth === null ? '' : ` · worth ${stones(worth)} stones`)
+                    : ` · ${m.terms.replace(/_/g, ' ')}`)
         };
     });
 }
@@ -639,23 +683,48 @@ const keptChip = (kept: KeptAs): string =>
  */
 function itemTable(caption: string, rows: readonly RegisterItemRow[]): string {
     if (!rows.length) return '';
+
+    const HEADS = ['Name', 'Grade', 'Pitched at', 'Kept as', 'Price', 'Where it comes from'];
+    // WIDTHS AND CELL CLASSES TRAVEL WITH THEIR COLUMN, not with its position,
+    // because a hoisted column takes its slot out of the row and everything to
+    // its right would otherwise be sized and aligned as its neighbour.
+    const WIDTH = ['23%', '8%', '18%', '9%', '18%', '24%'];
+    const CLASS = ['nm', 'm', 'n', 'm', 'q', 'q'];
+
+    const cells = rows.map(r => [
+        `${esc(r.name)}<span class="dim"> ${esc(r.detail)}</span>`,
+        r.grade === null ? '<span class="dim">none</span>' : esc(r.grade),
+        r.pitchedAt === null
+            ? '<span class="dim">-</span>'
+            : `${r.pitchedAt} <span class="dim">${esc(rankName(r.pitchedAt))}</span>`,
+        keptChip(r.keptAs),
+        r.price === null ? `<span class="dim">${esc(r.priceNote)}</span>` : stones(r.price),
+        esc(r.provenance)
+    ]);
+
+    // A COLUMN SAYING ONE THING ON EVERY ROW IS SAID ONCE, ABOVE THE TABLE.
+    // Measured here: the comprehension materials carried four such columns
+    // across seven rows. Computed rather than written into the caption, so the
+    // column returns by itself the moment a catalog edit makes two rows differ.
+    const { heads, rows: body, kept, hoisted } = hoistConstantColumns(HEADS, cells);
+
     return `<div class="scroll"><table class="itemtbl">
   <caption>${esc(caption)}</caption>
   <!-- Names less, prose more. Price held fifteen per cent for a four-digit
        number while "Where it comes from" - the only column here anybody reads
        as a sentence - had twenty-four, and "Pitched at" was too narrow for the
-       realm name it prints and overflowed into the column beside it. -->
-  <colgroup><col style="width:23%"><col style="width:8%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:33%"></colgroup>
-  <thead><tr><th>Name</th><th>Grade</th><th>Pitched at</th><th>Kept as</th><th>Price</th><th>Where it comes from</th></tr></thead>
-  <tbody>${rows.map(r => `<tr>
-    <td class="nm">${esc(r.name)}<span class="dim"> ${esc(r.detail)}</span></td>
-    <td class="m">${r.grade === null ? '<span class="dim">none</span>' : esc(r.grade)}</td>
-    <td class="n">${r.pitchedAt === null ? '<span class="dim">-</span>' : `${r.pitchedAt} <span class="dim">${esc(rankName(r.pitchedAt))}</span>`}</td>
-    <td class="m">${keptChip(r.keptAs)}</td>
-    <td class="q">${r.price === null ? `<span class="dim">${esc(r.priceNote)}</span>` : stones(r.price)}</td>
-    <td class="q">${esc(r.provenance)}</td>
-  </tr>`).join('')}</tbody>
-</table></div>`;
+       realm name it prints and overflowed into the column beside it.
+
+       PRICE THEN TOOK EIGHTEEN, because it is not a number on the rows that
+       matter. Twenty-five of the forty-three pills are not for sale and the
+       cell holds the reason instead, which at nine per cent broke one
+       character to a line and stood the row 238px tall. -->
+  <colgroup>${kept.map(i => `<col style="width:${WIDTH[i]}">`).join('')}</colgroup>
+  <thead><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+  <tbody>${body.map(r => `<tr>${r.map((cell, i) =>
+        `<td class="${CLASS[kept[i]]}">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+</table></div>
+${hoistedLine(hoisted, rows.length)}`;
 }
 
 /**
@@ -668,6 +737,20 @@ function itemTable(caption: string, rows: readonly RegisterItemRow[]): string {
 const techniqueNameOf = (id: string): string => TECHNIQUES.find(t => t.id === id)?.name ?? id;
 const recipeNameOf = (id: string): string => RECIPES.find(x => x.id === id)?.name ?? id;
 const siteNameOf = (id: string): string => SITES.find(s => s.id === id)?.name ?? id;
+
+/**
+ * Where repair medicine stops, which is the one thing its rows cannot carry.
+ *
+ * Two different ceilings, and a reader gets them wrong from prose alone: the
+ * last rung anything made on this side reaches, and the last rung anything at
+ * all reaches. Read off the engine, never restated. This is the half of the
+ * repair-medicine section that was worth keeping when its table was folded into
+ * the listing above; the rest of it was four rows already on this page.
+ */
+const repairCeilings = (): { madeBelowTheLid: number; anythingAtAll: number } => ({
+    madeBelowTheLid: ordinaryGradeCeiling(),
+    anythingAtAll: NOTHING_REPAIRS_ABOVE_ORDINAL
+});
 
 /**
  * What each grade of a thing that came down actually reaches.
@@ -806,12 +889,14 @@ export function renderItemsSection(): string {
 <section>
   <div class="sh"><h2>Every catalogued thing</h2><span class="r">${r.rows.length} rows &middot; by kind</span></div>
   <p class="note"><strong>The <em>pitched at</em> column is a rung, and it does not mean the same thing twice.</strong> ${esc(pitch.map(p => p.replace(/^the /, '')).join('; '))}. They are printed in one column because they are all positions on the one ladder and a reader wants them comparable, and they are annotated because flattening them silently would be the sheet inventing a comparison the engine does not make.</p>
-  <p class="note"><strong>The tier column is one vocabulary and the top of it is a tie.</strong> ${TIERS.slice(0, -2).join(', ')}, then ${TIERS.slice(-2).join(' and ')} - the ones before them ascend, and the last two are peers rather than a further two steps. An immortal-grade thing is reliable and uniformly good; a chaos-grade one is as powerful and its effects are drawn rather than chosen, so it can go badly. Nothing on this page is sorted on the tier, because a sort would have to put one of those two above the other.</p>
+  <p class="note"><strong>The tier column is one vocabulary and the top of it is a tie.</strong> ${TIERS.slice(0, -2).join(', ')}, then ${TIERS.slice(-2).join(' and ')} - the ones before them ascend, and the last two are peers rather than a further two steps. An immortal-grade thing does what it says every time; a chaos-grade one is as powerful and its effect is settled when it is used rather than when it was made, so what it does is drawn rather than chosen and the draw includes outcomes nobody wanted. Nothing on this page is sorted on the tier, because a sort would have to put one of those two above the other.</p>
+  <p class="note"><strong>Which is why a row marked <em>settled on use, not on the label</em> is not telling you what the thing does.</strong> The figure beside it is one outcome the material has been seen to have, and it is on the row rather than gathered into this paragraph on purpose: a reader scanning one line has to see that that line's number is not a promise. ${esc(RECORD_CAVEAT)}</p>
   ${itemTable(`Pills - ${rowsOf('pills').length} of them, the only reliable way to undo damage, and the ${IMMORTAL_ITEMS.length} things that came down that nobody here can make`, rowsOf('pills'))}
   ${immortalGradeDetail()}
   <p class="note"><strong>Grade caps the destination, not the distance.</strong> Every grade of the two objects above performs the same single crossing - the top rung of one realm to the first rung of the next - and what a higher grade buys is permission to perform it further up the ladder. That is why the <em>pitched at</em> column is empty on those two rows: each of them is pitched at three rungs, one per grade, and the catalog states them:</p>
   <ul class="spendlist">${THE_LAST_REALM_IS_UNBUYABLE.theCeilings.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
   <p class="note">${esc(THE_LAST_REALM_IS_UNBUYABLE.theAbsolute)} Who is holding one is on the Items tab, and what each house holds altogether is on Holdings.</p>
+  <p class="note"><strong>What mends a cultivator who crossed and arrived broken.</strong> Nothing refined below the Lid reaches a break above ordinal ${repairCeilings().madeBelowTheLid}, and nothing at all reaches above ordinal ${repairCeilings().anythingAtAll} - the crossing into the last realm is your own effort, and medicine is barred at it by rule. Who is holding a dose, and what has been spent on whom, is on the Items tab.</p>
   ${itemTable(`Structural repair medicine - ${rowsOf('repair medicine').length}, for a cultivator who crossed and arrived broken`, rowsOf('repair medicine'))}
   ${itemTable(`Comprehension materials - ${rowsOf('comprehension materials').length} bands, spent by being understood`, rowsOf('comprehension materials'))}
   ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the ingredient layer under all of it, ${LOST_MATERIALS.length} of them extinct`, rowsOf('spirit herbs'))}

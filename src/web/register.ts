@@ -55,7 +55,6 @@ import { IMMORTAL_ITEMS, IMMORTAL_HOLDINGS } from '../data/cultivation/immortal-
 // one call rather than an edit inside this file. See its header.
 import {
     buildRepairMedicineRegister,
-    renderRepairMedicineSection,
     renderRepairMedicineHolders,
     type RegisterRepairMedicine
 } from './register-structural-repair-medicine.js';
@@ -82,7 +81,7 @@ import {
     HOW_THE_COURT_IS_SEEN,
     getHollowCourtMember
 } from '../data/cultivation/hollow-court-roster.js';
-import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
+import { ARTERIALS, PROVINCES, REGIONS } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
     SHARED_EVENTS,
@@ -110,7 +109,7 @@ import {
     carriesTo,
     classOf,
     getTechnique,
-    gradeRank,
+    compareGrades,
     opacityOf,
     teachableEndOf,
     transmissionModeOf
@@ -121,7 +120,9 @@ import {
     MEDICINE_HOLDINGS
 } from '../data/cultivation/lost-ages.js';
 import type { TechniqueGrade } from '../schema/cultivation.js';
+import { isSettledOnUse, RECORD_CAVEAT } from '../engine/cultivation/grade-spread.js';
 import { glossaryGroups } from './register-glossary.js';
+import { hoistConstantColumns, hoistedLine } from './register-constant-columns.js';
 import {
     REALM_TIERS,
     MAX_ORDINAL,
@@ -887,7 +888,26 @@ export interface RegisterHoldsFrom {
  * tie, printed beside this body's, so an asymmetry is visible on the entry
  * rather than requiring a reader to go and open the other one.
  */
-export interface RegisterRelationship extends ResolvedRelationship {
+export interface RegisterRelationship extends Omit<
+    ResolvedRelationship, 'since' | 'howTheyPutIt' | 'andSoTheyDo'
+> {
+    /**
+     * The three partisan fields, WIDENED TO NULL, and the null is the point.
+     *
+     * A tie somebody wrote has a date, a phrasing and a course of action, and
+     * all three are that body's own words. A contention the sheet DERIVED has
+     * none of them - nobody wrote it down, which is what "derived" means - and
+     * the register used to answer that by stamping the same three sentences
+     * onto every such row: 154, 152 and 152 copies of one constant apiece,
+     * under a lead note that already said it.
+     *
+     * Null instead, and the sentences are said once in {@link NOBODY_WROTE_IT}
+     * where a reader meets the rows. A constant is said once; a legend is not
+     * repeated per row.
+     */
+    since: string | null;
+    howTheyPutIt: string | null;
+    andSoTheyDo: string | null;
     /** The other body's entry on this sheet, where it has one. */
     anchor: string | null;
     /**
@@ -2033,8 +2053,17 @@ function buildTechniques(): RegisterTechnique[] {
             taughtBy: teachersOf(t.id),
             heldBy: heldByOf(t.id)
         }))
+        // BY FORCE, THEN BY HOW HIGH IT IS WRITTEN, THEN BY NAME.
+        // `compareGrades` returns 0 for immortal against chaos, because
+        // they are the same magnitude and differ only in whether the
+        // effect is settled when the thing was made or when it is used. So
+        // the tie is real and it is resolved deliberately here rather than
+        // by whichever order the catalog happens to be written in: of two
+        // arts at the same force, the one written for the higher rung is
+        // above, and of two at the same rung, the earlier name. A reader
+        // looking at two adjacent rows can always say why.
         .sort((a, b) =>
-            gradeRank(b.grade) - gradeRank(a.grade)
+            compareGrades(b.grade, a.grade)
             || b.requiredOrdinal - a.requiredOrdinal
             || a.name.localeCompare(b.name));
 }
@@ -2055,8 +2084,17 @@ function buildTeaching(byId: ReadonlyMap<string, RegisterTechnique>): RegisterTe
                 .map(id => byId.get(id))
                 .filter((t): t is RegisterTechnique => t !== undefined)
                 .map(t => ({ id: t.id, name: t.name, grade: t.grade, requiredOrdinal: t.requiredOrdinal }))
+                // BY FORCE, THEN BY HOW HIGH IT IS WRITTEN, THEN BY NAME.
+                // `compareGrades` returns 0 for immortal against chaos, because
+                // they are the same magnitude and differ only in whether the
+                // effect is settled when the thing was made or when it is used. So
+                // the tie is real and it is resolved deliberately here rather than
+                // by whichever order the catalog happens to be written in: of two
+                // arts at the same force, the one written for the higher rung is
+                // above, and of two at the same rung, the earlier name. A reader
+                // looking at two adjacent rows can always say why.
                 .sort((a, b) =>
-                    gradeRank(b.grade) - gradeRank(a.grade)
+                    compareGrades(b.grade, a.grade)
                     || b.requiredOrdinal - a.requiredOrdinal
                     || a.name.localeCompare(b.name));
 
@@ -2110,8 +2148,17 @@ function buildCurriculum(
             onlyHere: t.taughtBy.length === 1,
             housesTeachingIt: t.taughtBy.length
         }))
+        // BY FORCE, THEN BY HOW HIGH IT IS WRITTEN, THEN BY NAME.
+        // `compareGrades` returns 0 for immortal against chaos, because
+        // they are the same magnitude and differ only in whether the
+        // effect is settled when the thing was made or when it is used. So
+        // the tie is real and it is resolved deliberately here rather than
+        // by whichever order the catalog happens to be written in: of two
+        // arts at the same force, the one written for the higher rung is
+        // above, and of two at the same rung, the earlier name. A reader
+        // looking at two adjacent rows can always say why.
         .sort((a, b) =>
-            gradeRank(b.grade) - gradeRank(a.grade)
+            compareGrades(b.grade, a.grade)
             || b.requiredOrdinal - a.requiredOrdinal
             || a.name.localeCompare(b.name));
 
@@ -2342,16 +2389,29 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
             stance: 'alongside' as const,
             kind: 'contested_claim' as const,
             source: 'the contested claims' as const,
-            what: c.over.map(o => o.what).join(' '),
-            since: 'Undated. It is read off what both of them hold rather than off anything either of them wrote.',
+            // EMPTY, BECAUSE THE BLOCK UNDERNEATH IS THE ANSWER. This used to
+            // join one sentence per THING contended over - one per shared art,
+            // one per shared patron - so a pair teaching three of the same arts
+            // got the identical sentence three times in one cell, and then the
+            // contention block printed all three again below it. The block is
+            // the better rendering of the two: it groups on the sentence and
+            // names what they actually contend over.
+            what: '',
+            // NULL, NOT A SENTENCE. Every row built here is derived rather than
+            // authored, so the answer to "since when", "how do they put it" and
+            // "and so they do" is the same on all of them - and that makes it a
+            // property of the KIND of row, said once against the listing, not a
+            // paragraph stamped a hundred and fifty times. NOBODY_WROTE_IT
+            // carries the words.
+            since: null,
             // No warmth is recorded because nothing recorded a relationship.
             // `distant` is the scale's word for exactly that - no ill will and
             // no contact, nobody maintains this one - and it is the honest
             // answer rather than a neutral placeholder.
             warmth: 'distant' as const,
             theirWarmth: 'distant' as const,
-            howTheyPutIt: 'Neither body has said anything about the other that the catalog records.',
-            andSoTheyDo: 'Nothing either of them has written down. What they have is the object below, and both of them have a hand on it.',
+            howTheyPutIt: null,
+            andSoTheyDo: null,
             grievance: null,
             anchor: null as string | null,
             contestedOver: c.over
@@ -5394,7 +5454,10 @@ function techniqueQuadrantSections(list: RegisterTechnique[]): string {
   <div class="sh"><h2>${q.head}</h2><span class="r">${rows.length} art${rows.length === 1 ? '' : 's'}${untaught ? ` &middot; ${untaught} with no teacher` : ''} &middot; by grade</span></div>
   <p class="note">${q.note}${capped.length
             ? ` ${capped.length} of these ${capped.length === 1 ? 'has' : 'have'} a supply ceiling in the <em>Ceiling</em> column.`
-            : ''}</p>
+            : ''}${rows.length ? ' Every band below is ordered by the rung the art is written for.' : ''}</p>
+  ${rows.some(t => isSettledOnUse(t.grade as TechniqueGrade))
+            ? `<p class="note"><strong>A row marked <span class="chip ex">settled on use</span> does not say what the art does, and cannot.</strong> Its grade is the one whose effect is drawn when the thing is used rather than fixed when it was made, so the description beside it is one outcome the art has been seen to have. ${esc(RECORD_CAVEAT)}</p>`
+            : ''}
   ${rows.length
             ? techniqueTables(rows)
             // AN EMPTY QUADRANT IS PRINTED, NOT HIDDEN. The design states all
@@ -5409,11 +5472,13 @@ function techniqueQuadrantSections(list: RegisterTechnique[]): string {
 
 function techniqueTables(list: RegisterTechnique[]): string {
     // THE BAND ORDER IS DISPLAY, NOT A RANKING, and the top two are the reason
-    // to say so. Immortal and chaos are peers - one reliable, one as powerful
-    // with its effects drawn rather than chosen - so whichever of them a
-    // reversed catalog order happens to put first is an artefact of how the
-    // list was declared and not a claim that it is above the other. Nothing
-    // downstream may read a position here as a height.
+    // to say so. `GRADE_ORDER` is documented in the technique catalog as a
+    // listing order whose virtue is being arbitrary and stable; the power
+    // ladder is `compareGrades`, and on it immortal and chaos tie. So a band
+    // printed above another is not a claim that it is stronger - it is the
+    // sequence a list has to be written in - and the two at the top are
+    // adjacent because they are peers. Nothing downstream may read a position
+    // here as a height.
     return [...GRADE_ORDER].reverse().map(grade => {
         const rows = list.filter(t => t.grade === grade);
         if (!rows.length) return '';
@@ -5424,26 +5489,55 @@ function techniqueTables(list: RegisterTechnique[]): string {
         // baseline opacity - so it is the axis a reader is most often sorting
         // by inside a quadrant, and a page that opens on every row of every
         // grade at once has made that sort useless.
-        return `<details class="band"${untaught ? '' : ''}>
+        // THE CAPTION NAMES THE TABLE AND NOTHING ELSE. It used to read
+        // "<grade> grade - <n> - by the rung the art is written for", inside a
+        // disclosure whose summary already says the grade and the count, with a
+        // trailing clause identical on all seventeen of these tables. The count
+        // is the summary's, because a reader wants it while the band is shut;
+        // the ordering is the quadrant's, because it is the same in every band.
+        const HEADS = ['Ord', 'Art', 'Kind', 'Reach', 'Channel', 'Ceiling', 'Taught by', 'What it does'];
+        const CLASS = ['pw', 'nm', 'm', 'm', 'm', 'm', 'q', 'q'];
+        const cells = rows.map(t => [
+            String(t.requiredOrdinal),
+            esc(t.name),
+            `${esc(t.category)}${t.element ? ' &middot; ' + esc(t.element) : ' <span class="dim">elementless</span>'}`,
+            t.reach === 'single' ? `<span class="dim">${esc(t.reach)}</span>` : esc(t.reach),
+            `${esc(t.transmission)}${t.survivingCopy ? '' : ' &middot; no copy'}`,
+            // The world's BELIEF about where the material runs out, not a bar
+            // the engine applies. See the section note.
+            t.worldSupplyCeiling === null
+                ? '<span class="dim">none</span>'
+                : `${Math.round(t.worldSupplyCeiling * 100)}%`,
+            taughtByLine(t),
+            // A CHAOS ROW MAY NOT CLAIM TO SAY WHAT IT DOES, and this is the
+            // one marker on the sheet that must NOT be hoisted out of the grid
+            // when a whole band carries it. The description is what the art
+            // promises; on a grade whose effect is settled when it is used
+            // rather than when it was made, that promise is one outcome out of
+            // an open set, and a reader scanning a single row has to see the
+            // qualification on that row. It rides in the same cell as the
+            // description, so it varies with it and the hoist never fires.
+            esc(t.description)
+                + (isSettledOnUse(t.grade as TechniqueGrade)
+                    ? ' <span class="chip ex">settled on use</span>'
+                    : '')
+        ]);
+        // A whole band reaching one person, with no ceiling on any row, is a
+        // fact about the band - said once above it rather than eight times
+        // down it. It comes back by itself the moment one art differs.
+        const { heads, rows: body, kept, hoisted } = hoistConstantColumns(HEADS, cells);
+
+        return `<details class="band">
     <summary><span class="bandhead">${esc(grade)} <span>${rows.length}</span>`
             + (untaught ? `<span>&middot; ${untaught} with no teacher</span>` : '')
             + `</span></summary>
+  ${hoistedLine(hoisted, rows.length)}
   <div class="scroll"><table class="arts">
-    <caption>${esc(grade)} grade &middot; ${rows.length} &middot; by the rung the art is written for</caption>
-    <thead><tr><th class="pw">Ord</th><th>Art</th><th>Kind</th><th>Reach</th><th>Channel</th><th>Ceiling</th><th>Taught by</th><th>What it does</th></tr></thead>
-    <tbody>${rows.map(t => `<tr${t.taughtBy.length ? '' : ' class="orphan"'}>`
-        + `<td class="pw">${t.requiredOrdinal}</td>`
-        + `<td class="nm">${esc(t.name)}</td>`
-        + `<td class="m">${esc(t.category)}${t.element ? ' &middot; ' + esc(t.element) : ' <span class="dim">elementless</span>'}</td>`
-        + `<td class="m">${t.reach === 'single' ? `<span class="dim">${esc(t.reach)}</span>` : esc(t.reach)}</td>`
-        + `<td class="m">${esc(t.transmission)}${t.survivingCopy ? '' : ' &middot; no copy'}</td>`
-        // The world's BELIEF about where the material runs out, not a bar the
-        // engine applies. See the section note.
-        + `<td class="m">${t.worldSupplyCeiling === null
-            ? '<span class="dim">none</span>'
-            : `${Math.round(t.worldSupplyCeiling * 100)}%`}</td>`
-        + `<td class="q">${taughtByLine(t)}</td>`
-        + `<td class="q">${esc(t.description)}</td></tr>`).join('')}</tbody></table></div>
+    <caption>${esc(grade)} grade</caption>
+    <thead><tr>${heads.map((h, i) => `<th${CLASS[kept[i]] === 'pw' ? ' class="pw"' : ''}>${h}</th>`).join('')}</tr></thead>
+    <tbody>${body.map((r, n) => `<tr${rows[n].taughtBy.length ? '' : ' class="orphan"'}>`
+        + r.map((cell, i) => `<td class="${CLASS[kept[i]]}">${cell}</td>`).join('')
+        + '</tr>').join('')}</tbody></table></div>
   </details>`;
     }).join('');
 }
@@ -5493,21 +5587,35 @@ function groundTable(): string {
 
     const crossed = rows.filter(r => r.crossed);
 
-    return `<div class="scroll"><table class="arts">
-    <caption>Arterials, their holder, and who administers them &middot; ${rows.length}</caption>
-    <thead><tr><th>Arterial</th><th>In</th><th>Held by</th><th>Administered through</th><th>Which answers to</th></tr></thead>
-    <tbody>${rows.map(r => `<tr${r.crossed ? ' class="orphan"' : ''}>`
-        + `<td class="nm">${esc(r.arterial)}</td>`
-        + `<td class="m">${esc(r.province)}</td>`
-        + `<td class="nm">${esc(apexName(r.holder))}</td>`
-        + `<td class="q">${r.court === null
+    // WHERE EVERY ARTERIAL IS AND WHO HOLDS IT CAN BE ONE FACT RATHER THAN
+    // FOUR. Both are true of all four rows in the world as it currently stands,
+    // and both are catalog facts rather than design ones - a province granted
+    // elsewhere would put the column straight back, which is why this is
+    // computed and not written into the caption.
+    const HEADS = ['Arterial', 'In', 'Held by', 'Administered through', 'Which answers to'];
+    const CLASS = ['nm', 'm', 'nm', 'q', 'nm'];
+    const cells = rows.map(r => [
+        esc(r.arterial),
+        esc(r.province),
+        esc(apexName(r.holder)),
+        r.court === null
             ? '<span class="dim">nobody; the holder works it directly</span>'
-            : esc(r.court)}</td>`
-        + `<td class="nm">${r.patron === null
+            : esc(r.court),
+        r.patron === null
             ? '<span class="dim">&mdash;</span>'
             : r.crossed
                 ? `<strong>${esc(apexName(r.patron))}</strong>`
-                : esc(apexName(r.patron))}</td></tr>`).join('')}</tbody></table></div>
+                : esc(apexName(r.patron))
+    ]);
+    const { heads, rows: body, kept, hoisted } = hoistConstantColumns(HEADS, cells);
+
+    return `<div class="scroll"><table class="arts">
+    <caption>Arterials, their holder, and who administers them &middot; ${rows.length}</caption>
+    <thead><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${body.map((r, n) => `<tr${rows[n].crossed ? ' class="orphan"' : ''}>`
+        + r.map((cell, i) => `<td class="${CLASS[kept[i]]}">${cell}</td>`).join('')
+        + '</tr>').join('')}</tbody></table></div>
+  ${hoistedLine(hoisted, rows.length)}
   ${crossed.length === 0
         ? '<p class="note">Every arterial here is administered through a court answering to the house that holds the ground. Nothing crosses.</p>'
         : `<p class="note"><strong>${crossed.length === 1 ? 'One arterial is' : `${crossed.length} arterials are`} administered through a court that answers to somebody else.</strong> ${crossed.map(r =>
@@ -5800,8 +5908,12 @@ function fieldedBlock(f: RegisterFielded): string {
 
     return `<div class="assess"><dl>
     <dt>Can field now</dt><dd><b>${f.acting}</b> &middot; ${esc(f.actingRank)}${f.canProjectLastRealm ? ' &middot; and can send somebody at the last realm away from home, which almost nothing can' : ''}</dd>
+    <!-- THE VALUE, NOT THE GLOSS. What a blank here means - that the house's
+         one-off is its everyday and it has nothing in reserve - is the Key
+         tab's entry for this row, said once. It was a sentence on all thirty
+         of the factions that have nothing held back. -->
     <dt>Could field once</dt><dd>${f.ceiling === null
-        ? '<span class="dim">Nothing held back. The first figure is the whole of it.</span>'
+        ? '<span class="dim">nothing held back</span>'
         : `<b>${f.ceiling}</b> &middot; ${esc(f.ceilingRank as string)}`}</dd>
     ${gap}
     ${produces}
@@ -6348,12 +6460,13 @@ interface TiePair {
     kind: string;
     source: string;
     what: string;
-    since: string;
+    /** Null on a derived contention - see {@link NOBODY_WROTE_IT}. */
+    since: string | null;
     /** How A regards B, and how B regards A. */
     aWarmth: Warmth;
     bWarmth: Warmth;
-    aPutsIt: string;
-    aDoes: string;
+    aPutsIt: string | null;
+    aDoes: string | null;
     aGrievance: string | null;
     /** Filled when the other end's entry was seen too, which is the usual case. */
     bPutsIt: string | null;
@@ -6568,6 +6681,70 @@ function warmthLegend(): string {
 }
 
 /**
+ * The thing two houses have a hand on, by the name people call it.
+ *
+ * A contention's `on` is a prefixed id - `road:<art>`, `patron:<body>`,
+ * `ground:<region>` - and only some of those resolve to something a reader
+ * would recognise. Where one does, it is worth printing, because it is the
+ * whole answer to "which art" that the generic sentence beside it leaves out.
+ * Where it does not, nothing is printed rather than a slug.
+ */
+function namedContention(on: string): string | null {
+    const [kind, id] = [on.slice(0, on.indexOf(':')), on.slice(on.indexOf(':') + 1)];
+    if (kind === 'road') return TECHNIQUES.find(t => t.id === id)?.name ?? null;
+    if (kind === 'ground') return REGIONS.find(r => r.id === id)?.name ?? null;
+    return null;
+}
+
+/**
+ * The recognisable ones, listed; a count where none of them resolve.
+ *
+ * PLAIN TEXT, no markup. It is handed to `chunkedDd`, which escapes what it is
+ * given - correctly, because it is handed catalog prose everywhere else - so a
+ * span in here reaches the page as visible angle brackets.
+ */
+function contentionSubjects(on: readonly string[]): string {
+    const named = on.map(namedContention).filter((x): x is string => x !== null);
+    if (!named.length) return on.length > 1 ? `(${on.length} of them)` : '';
+    return `(${named.join(', ')})`;
+}
+
+/**
+ * WHAT A DERIVED CONTENTION ROW SAYS, AND IT SAYS IT ONCE.
+ *
+ * A tie somebody wrote carries a date, a phrasing and a course of action. A
+ * contention the sheet derived carries none of them, identically, on every one
+ * of them - so these are facts about the KIND of row and belong against the
+ * listing rather than inside each member of it. They were three sentences
+ * stamped onto a hundred and fifty rows apiece.
+ *
+ * NOTHING WAS DELETED IN MOVING THEM. Each is still said, in the same words,
+ * exactly where a reader first meets a row it applies to; what changed is how
+ * many times. The rows themselves now carry null, which is the honest value:
+ * nobody wrote this down.
+ */
+const NOBODY_WROTE_IT = {
+    since: 'Undated. It is read off what both of them hold rather than off anything either of them wrote.',
+    howTheyPutIt: 'Neither body has said anything about the other that the catalog records.',
+    andSoTheyDo: 'Nothing either of them has written down. What they have is the object between them, and both of them have a hand on it.'
+} as const;
+
+/**
+ * The legend for the derived rows, printed where the ties are read.
+ *
+ * It only appears if there are any, so the sheet does not explain a kind of row
+ * it is not showing - the same discipline as printing an empty quadrant with a
+ * reason rather than a legend with no referent.
+ */
+function contentionLegend(pairs: readonly TiePair[]): string {
+    const derived = pairs.filter(p => p.since === null).length;
+    if (!derived) return '';
+    return `<p class="note"><strong>${derived} of these ${derived === 1 ? 'is' : 'are'} a contention rather than a tie, and nobody wrote ${derived === 1 ? 'it' : 'them'} down.</strong> `
+        + `They are derived: two houses drawing on one patron, teaching one road, or with a hand on one object are contending whether or not anybody ever recorded a relationship between them. So the same three things are true of every one of them, and they are said here rather than on each row. `
+        + `<em>Since:</em> ${esc(NOBODY_WROTE_IT.since)} <em>How they put it:</em> ${esc(NOBODY_WROTE_IT.howTheyPutIt)} <em>And so they do:</em> ${esc(NOBODY_WROTE_IT.andSoTheyDo)}</p>`;
+}
+
+/**
  * What ONE house makes of another, on that house's own entry.
  *
  * ONE SUBJECT PER ENTRY, ONE DIRECTION PER ROW. This card used to print the
@@ -6626,11 +6803,28 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
     // where it is; it does not say what it contains.
     const theirWarmth = secondWarmth;
 
+    // ONE LINE PER SENTENCE, WITH WHAT THEY ACTUALLY CONTEND OVER ON IT.
+    //
+    // A contention carries three fields and the sheet was printing two of them:
+    // the source and a generic sentence about that source, with `on` - the art,
+    // the patron, the province, the event - thrown away. Two houses sharing
+    // three arts therefore produced the same sentence three times, and the one
+    // thing a reader wanted to know from those three rows was which three arts.
+    // Grouped on the sentence, and the things named beside it.
     const contested = p.rel.contestedOver;
-    const contentionBlock = contested.length
+    const bySentence = new Map<string, { from: string; what: string; on: string[] }>();
+    for (const cl of contested) {
+        const entry = bySentence.get(cl.what);
+        if (entry) entry.on.push(cl.on);
+        else bySentence.set(cl.what, { from: cl.from, what: cl.what, on: [cl.on] });
+    }
+    const contentionBlock = bySentence.size
         ? '<div class="tiecontend"><h5>What they both have a hand on</h5>'
-            + `<dl class="relsides">${contested
-                .map(cl => `<dt>${esc(cl.from)}</dt>${chunkedDd(cl.what)}`)
+            + `<dl class="relsides">${[...bySentence.values()]
+                .map(cl => `<dt>${esc(cl.from)}</dt>${chunkedDd(cl.what
+                    + (cl.on.length > 1 || namedContention(cl.on[0])
+                        ? ` ${contentionSubjects(cl.on)}`
+                        : ''))}`)
                 .join('')}</dl></div>`
         : '';
 
@@ -6661,20 +6855,30 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
                 ? `. Between them: ${esc(tiePhrase(p.rel))}. `
                 : `, as ${esc(tiePhrase(p.rel))}. `}`
             + `${warmthSentence(p.rel, p.aName)}</p>`
-            + chunked(p.what, 'the rest of what the tie is', 'relwhat')
-            + `<dl class="relsides"><dt>Since</dt>${chunkedDd(p.since)}</dl>`
+            + (p.what ? chunked(p.what, 'the rest of what the tie is', 'relwhat') : '')
+            // NOTHING IS PRINTED HERE ON A DERIVED ROW. Its date, its phrasing
+            // and its course of action are the same on every one of them, so
+            // they are the listing's legend rather than this card's content -
+            // see NOBODY_WROTE_IT. The provenance line at the foot already says
+            // which kind of row a reader is looking at.
+            + (p.since === null ? '' : `<dl class="relsides"><dt>Since</dt>${chunkedDd(p.since)}</dl>`)
             + contentionBlock
-            + `<div class="tieside tieside--mine"><h5>${esc(mineName)} on ${esc(theirName)} `
-            + `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span></h5>`
-            + (myPutsIt
-                ? `<dl class="relsides"><dt>How they put it</dt>${chunkedDd(myPutsIt)}`
-                    + (myDoes ? `<dt>And so they do</dt>${chunkedDd(myDoes)}` : '')
-                    + (myGrievance ? `<dt>The grievance</dt>${chunkedDd(myGrievance)}` : '')
-                    + '</dl>'
-                : `<p class="none">The catalog carries this tie from ${esc(theirName)}'s end only.</p>`)
-            + '</div>'
-            + `<p class="tieother">${esc(theirName)} answers <span class="warmtag warm-${esc(theirWarmth)}">${esc(theirWarmth)}</span>, `
-            + `and says why on ${jumpTo(theirAnchor, 'its own entry')}.</p>`)}
+            + (p.since === null ? '' : `<div class="tieside tieside--mine"><h5>${esc(mineName)} on ${esc(theirName)} `
+                + `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span></h5>`
+                + (myPutsIt
+                    ? `<dl class="relsides"><dt>How they put it</dt>${chunkedDd(myPutsIt)}`
+                        + (myDoes ? `<dt>And so they do</dt>${chunkedDd(myDoes)}` : '')
+                        + (myGrievance ? `<dt>The grievance</dt>${chunkedDd(myGrievance)}` : '')
+                        + '</dl>'
+                    : `<p class="none">The catalog carries this tie from ${esc(theirName)}'s end only.</p>`)
+                + '</div>')
+            // THE OTHER SIDE'S WORD, WITHOUT THE SENTENCE ROUND IT. The rule -
+            // that their own account is on their own entry - is the section's
+            // lead note and was being restated on every row, and the pointer
+            // was a second link to the target the card's own heading already
+            // links to. What is left is the fact: their word for this, which is
+            // allowed to differ from ours and frequently does.
+            + `<p class="tieother">${esc(theirName)} answers <span class="warmtag warm-${esc(theirWarmth)}">${esc(theirWarmth)}</span></p>`)}
       <p class="prov">read from ${esc(p.source)}</p>
     </div>
   </details>`;
@@ -8682,6 +8886,7 @@ export function renderRegisterHtml(
   <p class="note"><strong>Open a house, and every line under it is that house's own view outward: the other body, and the one word this house would use about it.</strong> What that other body makes of this one is on its entry and not on this one. Those two words are allowed to differ and frequently do, and reading them one direction at a time is the point - printed as a pair they read as a mutual temperature belonging to neither party, when what the catalog actually holds is two separate statements, each made by somebody.</p>
   <p class="note"><strong>Standing and warmth are different questions.</strong> <em>Stands</em> is the ladder - over it, level with it, under it - and says nothing about how anybody feels. <em>Contesting</em> is a third fact again: it means the two of them have a hand on the same object, which is true or false regardless of the warmth, and two houses can contest a claim while remaining perfectly civil about it.</p>
   <p class="note"><em>Nobody wrote a date on it</em> means the year is not recorded and the tie is remembered by both houses rather than by a document.</p>
+  ${contentionLegend(tiePairs)}
   ${warmthLegend()}
   ${structure(tiesView)}
 </section>
@@ -8733,22 +8938,25 @@ export function renderRegisterHtml(
 <div class="pane" data-pane="objects" hidden>
 ${renderItemsSection()}
 
-${renderRepairMedicineSection()}
-
-<!-- NEITHER THE IMMORTAL OBJECTS NOR THE EXTINCT MATERIALS HAVE A SECTION HERE,
-     AND THAT IS THE FIX RATHER THAN AN OMISSION. Both used to be a listing
-     split off the listing they belonged in, which is the arrangement this sheet
-     exists to avoid: a reader had to know the field existed before they could
-     look in the right place, and the thing they were comparing against was
-     somewhere else on the page. A property is a column.
+<!-- THIS TAB IS ONE LISTING AND THE SECTIONS THAT USED TO SIT UNDER IT ARE IN
+     IT. Three of them: the immortal objects, the extinct materials, and the
+     repair medicine. Each was split off the listing it belonged in, which is
+     the arrangement this sheet exists to avoid - a reader had to know the field
+     existed before they could look in the right place, and the thing they were
+     comparing against was somewhere else on the page. A property is a column.
 
      An immortal object is a thing at a tier, so it is a row in the pill table
-     with immortal in its tier cell, exactly as the Unbroken Pattern Pill is a
-     row in the repair-medicine table. An extinct material is a material with a
-     property, so it is a row in the herb table saying extinct. What no cell can
-     carry - what each grade of an immortal object reaches, and what each
-     extinction took with it - sits directly under the table its rows are in.
-     All of it is rendered by renderItemsSection, above. -->
+     with immortal in its tier cell, exactly as the Unbroken Pattern Pill is an
+     immortal-grade row in the repair-medicine table. An extinct material is a
+     material with a property, so it is a row in the herb table saying extinct.
+     The repair medicine was a different defect - two tables of the same four
+     rows with four columns in common, which is two authorities rather than one
+     property split off - and its worth and terms moved onto the row.
+
+     What no cell can carry stays directly under the table its rows are in:
+     what each grade of an immortal object reaches, what each extinction took
+     with it, and where each grade of repair medicine stops. All of it is
+     rendered by renderItemsSection, above. -->
 </div>
 
 <!-- ── THE LEDGER ─────────────────────────────────────────────────────────
