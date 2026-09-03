@@ -37,7 +37,7 @@
 
 import { getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
-import { REGIONS, canAdvanceHere, requireRegion } from '../data/cultivation/regions.js';
+import { REGIONS, canAdvanceHere, placeRoadDays, requireRegion } from '../data/cultivation/regions.js';
 import { getSectsTeaching } from '../data/cultivation/sects.js';
 import { capOf, classOf } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
@@ -222,11 +222,40 @@ export const situatedReads = {
      * Somebody in both is reported once, from the roster, because the roster
      * row carries strictly more - and `here` is set from the room, so "they
      * are here" is a fact about the present rather than about the catalog.
+     *
+     * ── AND A NAME GATE IS NOT ENOUGH ────────────────────────────────────
+     *
+     * Both populations then go through `noticesThatTheyAreThere`, and that is
+     * a second gate rather than a tightening of the first. Played at ordinal
+     * 25 on the Pavilion's ground, this read answered *"1 are counted without
+     * a name because this cultivator has never met them"* about Ru Anwei, who
+     * stands at 41 and has not left her hall in three hundred and eighty
+     * years - so the name was withheld and the count, and the exact rung gap,
+     * were handed over. The design owner: *"this you shouldn't even know"*,
+     * *"you can only count those you know about (even if you don't know their
+     * names)"*, *"a DT wouldn't even make himself visible to you for no
+     * reason"*.
+     *
+     * `presence-recognition.ts` carries the whole argument and derives the
+     * threshold from `REGARD_BANDS` rather than picking one. What matters here
+     * is which way the two gates compose: knowledge WINS, so an elder holding
+     * court or somebody who has spoken to you is still on this list at any
+     * height, and what drops out is only a person the roster would otherwise
+     * have introduced by arithmetic.
      */
     teacher(this: GameService, run: Run, cultivator: Cultivator): Execution {
         const inTheRoom = new Map(this.present(cultivator).map(row => [row.id, row]));
         const above: SomebodyAbove[] = [];
         const counted = new Set<string>();
+        /**
+         * How many were dropped for being unnoticeable, for the inspector.
+         *
+         * Reported on the engine channel and NOT to the player, which is the
+         * whole distinction this fix rests on: an operator reading the log
+         * needs to know the gate fired, and telling the player "there are two
+         * more you cannot perceive" is the leak wearing an apology.
+         */
+        let unnoticed = 0;
 
         const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
         const membership = this.repos.sects.getMembership(cultivator.id);
@@ -241,6 +270,21 @@ export const situatedReads = {
         for (const person of rosterFor(deps, cultivator)) {
             if (person.id === cultivator.id) continue;
             if (person.realmOrdinal <= cultivator.realmOrdinal) continue;
+            // Before anything else is read off the row. A roster is not a
+            // reason to have noticed somebody, and being on the same roll as
+            // a person nine rungs up is not the same fact as being able to
+            // tell they are there.
+            if (!noticesThatTheyAreThere({
+                theirOrdinal: person.realmOrdinal,
+                yourOrdinal: cultivator.realmOrdinal,
+                known: person.known
+            })) {
+                // Marked counted anyway, so the room half below does not
+                // re-introduce the same person through the other door.
+                counted.add(person.id);
+                unnoticed++;
+                continue;
+            }
             counted.add(person.id);
             const member = catalog.get(person.id);
             above.push({
@@ -424,11 +468,26 @@ export const situatedReads = {
                 kind: found.place.kind,
                 ambient: found.place.ambient,
                 regionName: found.region.name,
-                // Never zero for "somewhere in this province". Nothing in the
-                // catalog prices a road between two settlements of one region,
-                // and a fabricated zero is a number a player plans around.
+                // Never zero for "somewhere in this province", and never
+                // fabricated. Two figures can answer, at two scales, and the
+                // one that applies is decided by where the player is standing:
+                //
+                //   same province   `placeRoadDays`, if the catalog states a
+                //                   road between here and there. Sparse, so
+                //                   usually null, and null still prints as
+                //                   "nothing states how far" rather than as a
+                //                   zero a player would plan around.
+                //   another one     the province road, as before.
+                //
+                // Found by playing. The listing said Scarwater was in this
+                // province and "nothing states how far", and `move` then spent
+                // the two days the catalog states for that road - the game
+                // printing one thing and charging another, which is the exact
+                // defect the place-road layer was added to end. `daysOnTheRoadTo`
+                // is the charging half and this is the printing half, and they
+                // now read the same row.
                 travelDays: found.region.id === fromRegion.id
-                    ? null
+                    ? placeRoadDays(cultivator.location, found.place.name)
                     : cost.get(found.region.id) ?? null,
                 localCeilingOrdinal: found.region.localCeilingOrdinal,
                 hereNow: wanted === loosePlaceKey(cultivator.location ?? ''),
