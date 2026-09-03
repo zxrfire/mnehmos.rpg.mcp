@@ -13,6 +13,8 @@
  *   - a death goes through the world's own settlement: heirs, inherited goals,
  *     and an account the heir now holds against the killer
  *   - somebody the world does not hold, or no longer holds acting, is untouched
+ *   - and a death hands back the LEDGER ROWS it opens, which is what makes a
+ *     war death and a killing in a square the same event
  */
 
 import { describe, it, expect } from 'vitest';
@@ -71,6 +73,9 @@ function fought(state: WorldState, over: {
     lost?: boolean;
     finished?: boolean;
     npcId?: string;
+    terms?: 'open' | 'agreed';
+    witnesses?: number;
+    knownTo?: readonly string[];
 } = {}) {
     return whatTheConfrontationDidToThem(state, {
         npcId: over.npcId ?? 'npc-95',
@@ -80,7 +85,10 @@ function fought(state: WorldState, over: {
         wounds: over.wounds ?? [],
         outcome: (over.outcome ?? 'decisive_victory') as never,
         lost: over.lost ?? true,
-        finished: over.finished ?? false
+        finished: over.finished ?? false,
+        ...(over.terms ? { terms: over.terms } : {}),
+        ...(over.witnesses === undefined ? {} : { witnesses: over.witnesses }),
+        ...(over.knownTo === undefined ? {} : { knownTo: over.knownTo })
     });
 }
 
@@ -273,5 +281,134 @@ describe('somebody the world cannot answer for', () => {
         expect(did.wrote).toBe(false);
         expect(state.npcs[0].endNote).toBe('Died of something else.');
         expect(state.npcs[0].cultivation.untreatedInjuries).toBe(0);
+    });
+});
+
+/**
+ * A war death is a grudge, by the same code a killing in a square is.
+ *
+ * The design owner, on the two leaving different things:
+ *
+ *   > this is bespoke. a war death is still a grudge. fix it.
+ *
+ * The defect he named is worth keeping in front of whoever reads this: the two
+ * callers each ASSEMBLED the ledger rows themselves, so only the one somebody
+ * had got round to writing had any. `war-melee.ts` never did, and a world could
+ * fight for five hundred years without one of its dead reaching the ledger -
+ * so the world was full of killers no record knew about, and the alignment
+ * reading over that ledger was measuring the player alone.
+ *
+ * Both paths now come through this function for the rows, so a war and a square
+ * are one event to every line below it.
+ */
+/** The victim, with somebody to leave it to and a house that would care. */
+function withPeople(): { state: WorldState; them: NpcRecord } {
+    const { state, them } = build();
+    state.factions.push({
+        id: 'house-a',
+        name: 'The Eastern Shelf',
+        alignment: 'righteous'
+    } as unknown as WorldState['factions'][number]);
+    const heir = createNpc(state.seed, {
+        id: 'npc-96',
+        name: 'Ren Yao',
+        bornOnDay: DAY - 18 * 365,
+        onDay: DAY,
+        locationId: 'loc-square',
+        cultivation: { realmOrdinal: 2 }
+    });
+    state.npcs.push(heir);
+    state.lineages.push(addLineageEdge(createLineageRecord({
+        id: 'lin-ren',
+        surname: 'Ren',
+        founderId: them.id,
+        foundedOnDay: them.identity.bornOnDay
+    }), {
+        parentId: them.id,
+        childId: heir.id,
+        relation: 'descendant',
+        onDay: heir.identity.bornOnDay
+    }));
+    return { state, them };
+}
+
+describe('the accounts it hands back', () => {
+    it('opens one against whoever did it, held by the dead one\'s house', () => {
+        const { state } = withPeople();
+        const did = fought(state, { outcome: 'lethal', finished: true, witnesses: 6 });
+
+        expect(did.died).toBe(true);
+        expect(did.opens.length).toBeGreaterThan(0);
+        for (const row of did.opens) {
+            expect(row.subjectId).toBe('cult-player');
+            expect(row.cause).toBe('killed_kin');
+            // Findable as what it was rather than as a fight.
+            expect(row.tags).toContain('bout');
+        }
+        expect(did.opens.some(row => row.holderId === 'house-a')).toBe(true);
+    });
+
+    /**
+     * The severity rules do not care whether it happened in a war, which is
+     * exactly the point - if they did, this would be the bespoke thing again.
+     * A war is `open` because nobody promised anybody anything, and an open
+     * killing is one band under a killing after a given word.
+     */
+    it('prices a war the way it prices any fight nobody arranged', () => {
+        const open = fought(withPeople().state, {
+            outcome: 'lethal', finished: true, terms: 'open'
+        });
+        const agreed = fought(withPeople().state, {
+            outcome: 'lethal', finished: true, terms: 'agreed'
+        });
+
+        expect(open.opens[0]!.severity).toBe('grave');
+        expect(open.opens[0]!.kind).toBe('grudge');
+        expect(agreed.opens[0]!.severity).toBe('unforgivable');
+        // A killing after a promise runs between LINES, and the ledger keeps
+        // that as its own kind rather than as a heavier grudge.
+        expect(agreed.opens[0]!.kind).toBe('blood_feud');
+    });
+
+    /** `open` unless somebody says otherwise, which is what a war passes. */
+    it('defaults to nobody having arranged anything', () => {
+        const did = fought(withPeople().state, { outcome: 'lethal', finished: true });
+        expect(did.opens[0]!.tags).toContain('open');
+    });
+
+    /**
+     * One death is one deed however many people end up holding a record of it.
+     * The alignment reading collapses rows onto this field, so a victim's
+     * family size must not price the killer's character.
+     */
+    it('stamps every row with the one event behind it', () => {
+        const { state } = withPeople();
+        const did = fought(state, { outcome: 'lethal', finished: true });
+        expect(did.opens.length).toBeGreaterThan(1);
+        const events = new Set(did.opens.map(row => row.triggeringEventId));
+        expect(events.size).toBe(1);
+        expect([...events][0]).toBe(did.facts.find(f => f.kind === 'death')?.id);
+    });
+
+    it('opens nothing for somebody who walked away, or for the winner', () => {
+        expect(fought(withPeople().state, { outcome: 'withdrawal' }).opens).toEqual([]);
+        expect(fought(withPeople().state, {
+            outcome: 'lethal', finished: true, lost: false
+        }).opens).toEqual([]);
+    });
+
+    /**
+     * The seam for AGENTS.md's *a fact reaches a person, and reaching them is
+     * an event*. Nobody who can be told is nobody who holds anything - and the
+     * death is still in the world, still true, still findable the day somebody
+     * works it out.
+     */
+    it('opens nothing for a party nobody has told', () => {
+        const did = fought(withPeople().state, {
+            outcome: 'lethal', finished: true, knownTo: ['somebody-who-was-not-there']
+        });
+        expect(did.died).toBe(true);
+        expect(did.facts.some(f => f.kind === 'death')).toBe(true);
+        expect(did.opens).toEqual([]);
     });
 });

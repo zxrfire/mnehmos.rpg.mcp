@@ -82,6 +82,12 @@ import {
     markDead,
     upsertRelationship
 } from './npc-state.js';
+import type { ObligationInput } from '../social/grudges.js';
+import {
+    theAccountsAFightOpens,
+    whatFollowsFromTheBout,
+    type BoutTerms
+} from '../social-leverage/going-further-than-an-agreed-bout-allowed.js';
 import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -123,6 +129,33 @@ export interface WhatTheFightDecided {
      * which is the same ruling on the other side of the same boundary.
      */
     finished: boolean;
+    /**
+     * What the two of them had said it was, where anybody said anything.
+     *
+     * `open` unless told otherwise, and a WAR is `open` rather than a special
+     * case: this file's own definition over in
+     * `going-further-than-an-agreed-bout-allowed.ts` is that *open is the
+     * absence of an arrangement, not a declaration of hostility*, and two
+     * houses at war have promised each other nothing. Only a played bout the
+     * parser read as arranged passes `agreed`.
+     */
+    terms?: BoutTerms;
+    /**
+     * How many people could see it, beyond the two of them.
+     *
+     * It does not decide whether the actor is named - being in a fight with
+     * somebody does that. It prices what the actor's own house has to have a
+     * position on.
+     */
+    witnesses?: number;
+    /**
+     * Who can put a name to it. Omit and everybody the account names can.
+     *
+     * The seam for AGENTS.md's *a fact reaches a person* ruling, carried
+     * through to `theAccountsAFightOpens` and read there. See its own comment
+     * for why it defaults open rather than shut.
+     */
+    knownTo?: readonly string[];
 }
 
 export interface WhatItDidToThem {
@@ -136,6 +169,27 @@ export interface WhatItDidToThem {
     /** Chronicle rows written. Usually none. */
     facts: HistoricalFact[];
     /**
+     * The accounts the fight opened, ready for the ledger. Never written here.
+     *
+     * ── WHY THEY ARE HANDED BACK RATHER THAN WRITTEN ─────────────────────
+     *
+     * There is no obligation ledger in `WorldState`. This layer hands social
+     * rows to its caller exactly the way it already hands back estates and
+     * heirs, and for the same reason: the ledger is a SQLite table and the
+     * world tick has no handle on one.
+     *
+     * ── AND WHY THEY ARE DECIDED HERE ────────────────────────────────────
+     *
+     * Because both fights come through here. `war-melee.ts` writes its dead
+     * through this function and so does the played killing, and until this
+     * field existed only the played one left an account - a world could fight
+     * for five hundred years and the ledger would not contain one of its dead.
+     * The design owner's ruling on that was *this is bespoke; a war death is
+     * still a grudge*, and the way to stop it being bespoke is for the rows to
+     * come out of the one place both paths already meet.
+     */
+    opens: ObligationInput[];
+    /**
      * Engine truth, in the words the ledger uses. The caller decides whether a
      * narrator sees it; this decides only what is true.
      */
@@ -143,7 +197,7 @@ export interface WhatItDidToThem {
 }
 
 const NOTHING: WhatItDidToThem = {
-    wrote: false, wounds: 0, died: false, handoff: null, facts: [], lines: []
+    wrote: false, wounds: 0, died: false, handoff: null, facts: [], lines: [], opens: []
 };
 
 /**
@@ -291,5 +345,73 @@ export function whatTheConfrontationDidToThem(
         );
     }
 
-    return { wrote: true, wounds: input.wounds.length, died, handoff, facts, lines };
+    // ── AND WHAT ANYBODY IS NOW OWED ─────────────────────────────────────
+    //
+    // Decided by the module that owns the table and rendered by the module that
+    // owns the rows. Nothing here prices anything: `whatFollowsFromTheBout`
+    // reads what the resolver already said and returns a severity and a list of
+    // parties, and `theAccountsAFightOpens` turns that into ledger rows.
+    //
+    // The victim's people come off the handoff, which was computed on the
+    // record as it stood at death - the only moment the answer is right.
+    // `principalCannotHoldIt` is implicit and is the bout module's rule: the
+    // people are read only where the loser died, because the dead hold nothing
+    // and somebody ruined and living already holds their own record.
+    const opens = accountsFor(state, input, at, handoff, facts);
+
+    return { wrote: true, wounds: input.wounds.length, died, handoff, facts, lines, opens };
+}
+
+/**
+ * The rows a fight leaves, through the one decider both callers share.
+ *
+ * Split out only so the body above stays readable. Everything it reads is
+ * already settled: who lost, whether they died, whose they were, and who they
+ * left.
+ */
+function accountsFor(
+    state: WorldState,
+    input: WhatTheFightDecided,
+    at: number,
+    handoff: DeathHandoff | null,
+    facts: readonly HistoricalFact[]
+): ObligationInput[] {
+    if (!input.lost) return [];
+    const them = state.npcs[at];
+    const house = them.factionId
+        ? state.factions.find(f => f.id === them.factionId) ?? null
+        : null;
+
+    const followed = whatFollowsFromTheBout({
+        terms: input.terms ?? 'open',
+        outcome: input.outcome,
+        loserDied: handoff !== null,
+        witnesses: input.witnesses ?? 0,
+        theirHouse: house
+            ? {
+                alignment: house.alignment,
+                // Somebody the house has anything invested in. A place on the
+                // rank ladder is the world's own statement of that and the one
+                // `whenItIsDoneToOneOfOurs` already asks for.
+                ranked: them.factionRankIndex >= 0
+            }
+            : null,
+        theirPeople: handoff?.heirs ?? []
+    });
+
+    return theAccountsAFightOpens({
+        followed,
+        parties: {
+            actor: { id: input.byId, name: input.byName },
+            loser: { id: them.id, name: them.name },
+            houseId: house?.id ?? null,
+            houseName: house?.name ?? null
+        },
+        onDay: input.day,
+        // The death row where there is one, so a reader in forty years can walk
+        // from the account to the event and back. A crippling writes no
+        // chronicle row of its own and correctly carries none.
+        triggeringEventId: facts.find(f => f.kind === 'death')?.id ?? null,
+        ...(input.knownTo === undefined ? {} : { knownTo: input.knownTo })
+    });
 }

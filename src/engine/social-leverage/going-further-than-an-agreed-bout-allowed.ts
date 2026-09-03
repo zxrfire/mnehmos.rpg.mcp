@@ -63,7 +63,13 @@
 
 import type { SectAlignment } from '../../schema/cultivation.js';
 import type { ConfrontationOutcome } from '../cultivation/combat.js';
-import type { GrudgeCause, InheritanceRelation, Severity } from '../social/grudges.js';
+import type {
+    GrudgeCause,
+    InheritanceRelation,
+    ObligationInput,
+    Severity
+} from '../social/grudges.js';
+import type { DayIndex } from '../social/common.js';
 import { severityWithHouse } from './what-a-house-will-do-about-it.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -502,4 +508,134 @@ function accountOf(input: WhatTheBoutCameTo, howFar: HowFarPastIt): string {
             input.witnesses > 0 ? seen : ''}`
         : `Ruined in a confrontation neither of them pretended was friendly.${
             input.witnesses > 0 ? seen : ''}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROWS IT OPENS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The rows {@link WhatFollows.against} becomes, ready for the ledger.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * WHY THIS IS HERE AND NOT IN EACH CALLER
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * The design owner, on a war death leaving nothing where a played killing left
+ * a grudge:
+ *
+ *   > this is bespoke. a war death is still a grudge. fix it.
+ *
+ * And it was bespoke for a reason worth naming, because it is the shape the
+ * defect always takes here: **the two callers each assembled the rows
+ * themselves, so only the one somebody had got round to writing had any.** The
+ * played path built a row from `against` inline; `war-melee.ts` never did, so a
+ * world could fight for five hundred years and the ledger would not contain one
+ * of its dead. A fact that means different things depending on which code path
+ * produced it is the definition of the thing AGENTS.md forbids.
+ *
+ * So the assembly moves here, beside the decision it renders, and both callers
+ * hand it the same `WhatFollows`. A war death and a killing in a square are the
+ * same event to every line below this one.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
+ * NOTHING NEW IS DECIDED
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * Not the severity - `whatFollowsFromTheBout` decided it once, off
+ * `WHAT_IT_IS_WORTH`, and `grudges.ts` requires exactly that. Not the kind, not
+ * the cause, and not who holds it: `heldBy` already named every party. This
+ * substitutes the house id it was never given, writes the descriptions, and
+ * tags each row with how its holder comes to be holding it.
+ *
+ * A war is `terms: 'open'` and needs no special case to be so - this file's own
+ * definition is that *open is the absence of an arrangement, not a declaration
+ * of hostility*, and two houses at war have promised each other nothing.
+ */
+export interface AFightsParties {
+    /** The person who went too far. The subject of every row. */
+    actor: { id: string; name: string };
+    /** The person it was done to. */
+    loser: { id: string; name: string };
+    /** The loser's house, where `heldBy` named one. */
+    houseId: string | null;
+    houseName: string | null;
+}
+
+export function theAccountsAFightOpens(input: {
+    followed: WhatFollows;
+    parties: AFightsParties;
+    onDay: DayIndex;
+    /**
+     * The world's own fact for the fight, so a reader in forty years can get
+     * from the claim to the event and back.
+     */
+    triggeringEventId?: string | null;
+    /**
+     * Who can put a name to it. Omit and everybody `heldBy` names can.
+     *
+     * ── THE SEAM FOR THE TELLING, LEFT OPEN DELIBERATELY ─────────────────
+     *
+     * AGENTS.md: *a fact reaches a person, and reaching them is an event* -
+     * telling a man who killed his brother creates the grudge, because the deed
+     * was already true and what was missing was somebody who could act on it.
+     * This is the field that expresses it, and it is the same field
+     * `Deed.knownTo` already is in `what-a-deed-leaves.ts`: a party who is not
+     * on the list opens no account, because a grudge is held against somebody
+     * and they have no name to put on it.
+     *
+     * It is left defaulting to *everybody named knows* rather than gated shut,
+     * and the reason is measured rather than lazy: a pitched battle between two
+     * houses is the least deniable event in this world. Both houses know
+     * exactly who they lost and the survivors walked home. Gating it now, with
+     * nothing yet writing the telling, would produce a world at war in which
+     * nobody holds anything - the field-nothing-writes defect, arrived at while
+     * fixing a different one.
+     *
+     * Where it bites is the QUIET killing, and that is what this field is for
+     * when the telling layer lands: pass the people who were actually there and
+     * the kin two provinces away open nothing until somebody carries the news.
+     */
+    knownTo?: readonly string[];
+}): ObligationInput[] {
+    const { followed, parties } = input;
+    if (!followed.against || followed.heldBy.length === 0) return [];
+
+    const knows = (id: string): boolean =>
+        input.knownTo === undefined || input.knownTo.includes(id);
+
+    const rows: ObligationInput[] = [];
+    for (const holder of followed.heldBy) {
+        const isTheHouse = holder.as === 'house';
+        const holderId = isTheHouse ? parties.houseId : holder.id;
+        if (!holderId || !knows(holderId)) continue;
+        rows.push({
+            kind: followed.against.kind,
+            holderId,
+            subjectId: parties.actor.id,
+            cause: followed.against.cause,
+            // Decided once, upstream. Not adjusted per holder, on `grudges.ts`'s
+            // own rule that inheritance does not discount: the brother holds
+            // what the brother holds.
+            severity: followed.against.severity,
+            onDay: input.onDay,
+            triggeringEventId: input.triggeringEventId ?? null,
+            description:
+                `${followed.against.description} `
+                + (isTheHouse
+                    ? `${parties.loser.name} was ${parties.houseName ?? 'the house'}'s, and `
+                      + `${parties.actor.name} is the name on it.`
+                    : `${parties.loser.name} was theirs, and ${parties.actor.name} is the `
+                      + 'name on it.'),
+            participants: [parties.actor.id, parties.loser.id],
+            tags: [
+                ...followed.against.tags,
+                // How this party comes to be holding it, in the ledger's own
+                // word for the connection, so a reader can tell the
+                // institution's row from the family's without guessing.
+                isTheHouse ? 'institutional' : `carried:${holder.as}`
+            ]
+        });
+    }
+    return rows;
 }
