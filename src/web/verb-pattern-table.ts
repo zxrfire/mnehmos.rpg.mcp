@@ -2687,7 +2687,25 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
     ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
     ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
-    ['hand_over', /\bforce (?:him|her|them|it) (?:to|into)\b/]
+    // ── AND "force him to ..." IS NOT A ROW ON ITS OWN ───────────────────
+    //
+    // This was `force (him|her|them|it) (to|into)` with NOTHING after it,
+    // which is not a pattern for handing things over - it is a pattern for
+    // making somebody do anything at all, wearing this row's label.
+    //
+    // Measured: "I force him to swallow it" reached `hand_over`. That was
+    // harmless while the label was only a label. It stopped being harmless
+    // the moment `hand_over` moved a purse, because the sentence then EMPTIED
+    // THE POCKETS of somebody a player had meant to make swallow a pill, and
+    // opened a `robbery` grudge about it. A verb that runs the wrong act is
+    // worse than one that fails to parse: the turn reports success, the prose
+    // reads correctly, and there is nothing for the player to notice.
+    //
+    // So the tail has to name a handing. The two acts a coercion is most
+    // often for - taking their things and making them drink something - are
+    // nowhere near close enough to guess between, and a sentence this table
+    // cannot route is honest where a sentence it routes wrongly is not.
+    ['hand_over', /\bforce (?:him|her|them|it) (?:to|into)\b[^.!?]*\b(?:hand|hands|handing|give|gives|giving|pay|pays|paying|open|opens|opening|surrender|surrenders|surrendering|turn out|empty|part with|cough up)\b/]
 ];
 
 const COERCE_SUBJECT_VERBS =
