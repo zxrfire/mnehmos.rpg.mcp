@@ -97,6 +97,7 @@ import {
     type TechniqueGrade
 } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
+import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
     MAX_ORDINAL,
@@ -128,7 +129,7 @@ import { ACTION_NAMES, type ActionName } from '../../web/actions.js';
 import { isSentenceRefusal, ordinalNamed, readAdminSentence } from './admin-said-as-a-sentence.js';
 import { KnowledgeGate, loosePlaceKey } from '../../web/knowledge.js';
 import { SiteLedger } from '../../web/trials.js';
-import { handleCultivate } from './cultivation-manage.js';
+import { handleCultivate, RATION_COST_STONES } from './cultivation-manage.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import {
     AMBIENT_BLOCK_DAYS,
@@ -142,7 +143,8 @@ import {
     isAdminRun,
     isGuidingErrorBody,
     resolveActiveRun,
-    writeAdminAudit
+    writeAdminAudit,
+    type CultivationRepos
 } from './cultivation-support.js';
 
 const ACTIONS = [
@@ -2377,21 +2379,114 @@ export async function handleAdvanceDays(
         );
     }
 
-    // Real time, through the real simulation. `idle` focus means no cultivation
-    // progress accrues, but the body still ages, the belly still empties, the
-    // stagnation clock still runs and the death checks still fire. Skipping
-    // time is not skipping consequences.
-    const result = await handleCultivate({
-        action: 'cultivate',
-        cultivatorId: cultivator.id,
-        days: args.days,
-        months: args.months,
-        years: args.years,
-        focus: 'idle',
-        rations: args.rations ?? 0,
-        autoBreakthrough: false,
-        randomEvents: false
-    } as Parameters<typeof handleCultivate>[0]);
+    // ── ONE SPAN, AS MANY STRETCHES AS IT TAKES ───────────────────────────
+    //
+    // Real time, through the real simulation, at `idle` focus - which grants no
+    // cultivation progress and takes nothing else away. The body ages, the
+    // belly empties, the stagnation clock runs, the death checks fire, AND THE
+    // QI DEVIATION CHECK STILL ROLLS EVERY THIRTY DAYS. See `THE IDLE ROLL`
+    // below for why that last one is correct and why it used to be missing from
+    // this list.
+    //
+    // Because it rolls, a long span used to end almost immediately. Measured on
+    // four world seeds, `years=120` at ordinal 20: 780 of 43800 days, stopped on
+    // `lethal_injury_threshold`, three untreated `qi_deviation` wounds. Every
+    // measurement anybody took through this surface was silently a fortnight of
+    // the century they asked for, and the shortfall was a line in the engine
+    // channel that nothing made anybody read.
+    //
+    // The interrupt itself is right and stays. It exists so a PLAYER gets
+    // control back at the moment they would want to go and do something - which
+    // is `time-skip.ts`'s own ruling and is why it announces once and not every
+    // fortnight. An operator standing a world up is not playing a character:
+    // they asked for a century and the honest answer to a bulletin is to read
+    // it, keep it, and carry on. So this drives the stretch to its end the way
+    // an operator would - `ADMIN advance_days` again, and again - and reports
+    // every stretch it drove through.
+    //
+    // WHAT IT WILL NOT DRIVE THROUGH is anything that needs a decision the
+    // operator has not made: death, an empty pack, and ground that is killing
+    // them. Those are not bulletins, they each have a named fix, and looping
+    // past an empty pack would be the one thing `time-skip.ts` says the skip
+    // must never be - the place somebody dies without being asked.
+    const totals = {
+        requested: null as number | null,
+        simulated: 0,
+        injuries: [] as unknown[],
+        events: [] as Record<string, unknown>[]
+    };
+    const stretches: { days: number; reason: string | null }[] = [];
+    let carriedRations = 0;
+    let last: Record<string, unknown> | null = null;
+    let failed: object | null = null;
+
+    for (let stretch = 0; stretch < MAX_ADVANCE_STRETCHES; stretch += 1) {
+        const first = stretch === 0;
+        const remaining = totals.requested === null
+            ? null
+            : Math.max(0, totals.requested - totals.simulated);
+        if (remaining !== null && remaining < 1) break;
+
+        const leg = await handleCultivate({
+            action: 'cultivate',
+            cultivatorId: cultivator.id,
+            // The first stretch is the span as the operator wrote it, so the
+            // engine does the days/months/years arithmetic once and this side
+            // never keeps a second copy of it. Every stretch after is whatever
+            // is left of what the engine said it was asked for.
+            ...(first
+                ? { days: args.days, months: args.months, years: args.years }
+                : { days: remaining! }),
+            focus: 'idle',
+            // Bought once. Food is charged per stretch, so what is left in the
+            // pack is carried rather than re-bought - the rule
+            // `src/web/README.md` states for the seclusion crossroads, applied
+            // here for the same reason.
+            rations: first ? args.rations ?? 0 : 0,
+            carriedRations: first ? 0 : carriedRations,
+            autoBreakthrough: false,
+            randomEvents: false
+        } as Parameters<typeof handleCultivate>[0]);
+
+        if (isGuidingErrorBody(leg)) {
+            // A refusal on the first stretch is the operator's answer. A
+            // refusal partway is not - the stretches already run are real and
+            // stay - so it is reported beside them rather than instead of them.
+            if (first) { failed = leg; break; }
+            stretches.push({ days: 0, reason: 'refused' });
+            break;
+        }
+
+        const legBody = leg as Record<string, unknown>;
+        last = legBody;
+        if (totals.requested === null && typeof legBody.requestedDays === 'number') {
+            totals.requested = legBody.requestedDays;
+        }
+        const legDays = typeof legBody.simulatedDays === 'number' ? legBody.simulatedDays : 0;
+        const legReason = typeof legBody.interruptReason === 'string' ? legBody.interruptReason : null;
+        // Event offsets are relative to the stretch that produced them. Rebased
+        // onto the whole span, because a digest whose day numbers restart at
+        // zero three times over is worse than no digest.
+        const base = totals.simulated;
+        for (const event of (Array.isArray(legBody.events) ? legBody.events : []) as Record<string, unknown>[]) {
+            const offset = typeof event.dayOffset === 'number' ? event.dayOffset : 0;
+            totals.events.push({
+                ...event,
+                dayOffset: base + offset,
+                yearOffset: Math.round(((base + offset) / DAYS_PER_YEAR) * 100) / 100
+            });
+        }
+        if (Array.isArray(legBody.injuriesSustained)) totals.injuries.push(...legBody.injuriesSustained);
+        totals.simulated += legDays;
+        carriedRations = typeof legBody.rationsRemaining === 'number' ? legBody.rationsRemaining : 0;
+        stretches.push({ days: legDays, reason: legReason });
+
+        if (totals.requested !== null && totals.simulated >= totals.requested) break;
+        if (!isResumableInterrupt(legReason)) break;
+        // A stretch that moved nothing will move nothing next time either.
+        // Never spin on one.
+        if (legDays <= 0) break;
+    }
 
     writeAdminAudit(repos, 'advance_days', run.id, {
         cultivatorId: cultivator.id,
@@ -2399,10 +2494,16 @@ export async function handleAdvanceDays(
         months: args.months,
         years: args.years,
         rations: args.rations ?? 0,
-        result: isGuidingErrorBody(result) ? result : { advanced: true }
+        stretches,
+        result: failed ?? { advanced: true, simulatedDays: totals.simulated }
     });
 
-    if (isGuidingErrorBody(result)) return result;
+    if (failed) return failed;
+    if (last === null) return guidingError(
+        'nothing_to_advance',
+        'The span resolved to no days at all. Nothing was advanced.',
+        { hint: 'ADMIN advance_days days=30' }
+    );
 
     // ── THE SPAN THAT WAS ASKED FOR AND THE SPAN THAT HAPPENED ────────────
     //
@@ -2413,21 +2514,40 @@ export async function handleAdvanceDays(
     // lesson wearing a reassurance. There is no arbitrary clamp here: the
     // simulation stops when something stops it, and what stopped it is a fact
     // the operator needs more than the day count.
-    const body = result as Record<string, unknown>;
-    const requested = typeof body.requestedDays === 'number' ? body.requestedDays : null;
-    const simulated = typeof body.simulatedDays === 'number' ? body.simulatedDays : null;
-    const reason = typeof body.interruptReason === 'string' ? body.interruptReason : null;
-    const short = requested !== null && simulated !== null && simulated < requested;
+    const requested = totals.requested;
+    const simulated = totals.simulated;
+    const reason = typeof last.interruptReason === 'string' ? last.interruptReason : null;
+    const short = requested !== null && simulated < requested;
+    // Only the ones that actually stopped a stretch and were carried on past.
+    // The last stretch's reason is what STOPPED the span and is not one of them.
+    const resumedPast = stretches
+        .slice(0, -1)
+        .map(s => s.reason)
+        .filter((r): r is string => r !== null);
 
     return {
         adminMode: true,
         advanced: true,
-        ...result,
+        // The last stretch's shape, then every field it can only speak for
+        // itself about put back as the whole span's. A `simulatedDays` that
+        // reports the tail of a century is the same defect this action already
+        // had once, one level in.
+        ...last,
+        requestedDays: requested,
+        simulatedDays: simulated,
+        simulatedYears: Math.round((simulated / DAYS_PER_YEAR) * 100) / 100,
+        stoppedEarly: short,
+        injuriesSustained: totals.injuries,
+        events: totals.events,
+        // What it drove through, in order, so the shortfall is auditable rather
+        // than asserted. One entry is the ordinary case.
+        stretches,
+        resumedPast,
         stoppedShort: short
             ? {
                 requestedDays: requested,
                 simulatedDays: simulated,
-                unsimulatedDays: requested! - simulated!,
+                unsimulatedDays: requested! - simulated,
                 reason,
                 explanation: explainInterrupt(reason),
                 limit: interruptLimitFor(reason),
@@ -2435,24 +2555,113 @@ export async function handleAdvanceDays(
                 // "Pass rations=N" left the operator to work N out, and N is a
                 // division this side already has both terms of. A refusal that
                 // names what would work should name it exactly.
+                //
+                // AND IT HAS TO BE AFFORDABLE TO BE A FIX. Rations are bought
+                // out of the ordinary purse, so a span long enough to need
+                // hundreds of them prints an instruction that comes straight
+                // back as `insufficient_stones` - measured: `years=120` on a
+                // fresh run named `rations=876`, which is 1752 stones against a
+                // purse of 30. A line that names an unaffordable number is the
+                // "fallback in ordinary English" defect with arithmetic on it.
                 tryThis: reason === 'provisions_exhausted' || reason === 'starvation_begun'
-                    ? `ADMIN advance_days days=${requested} rations=${rationsForDays(requested!)}`
+                    ? provisioningLine(repos, cultivator.id, requested!)
                     : reason === 'iteration_limit'
                         ? 'ADMIN advance_days again for the rest of the span; the ceiling is per call.'
                         : null
             }
             : null,
-        note: short
+        note: (short
             ? `The span asked for was ${requested} day(s) and ${simulated} were simulated. ` +
               `${explainInterrupt(reason)} This is not a clamp on how much time ADMIN may advance - ` +
-              'it is the simulation refusing to run past something that happened. Time was advanced ' +
-              'through simulateTimeSkip at idle focus: no cultivation progress, but real aging, real ' +
-              'hunger, real stagnation and real death checks.'
-            : 'Time was advanced through simulateTimeSkip at idle focus: no cultivation progress, but real ' +
-              'aging, real hunger, real stagnation and real death checks. The whole span asked for was ' +
-              'simulated; nothing was skipped except the gain.',
+              'it is the simulation refusing to run past something that happened. '
+            : 'The whole span asked for was simulated; nothing was skipped except the gain. ') +
+            'Time was advanced through simulateTimeSkip at idle focus: no cultivation progress, but ' +
+            'real aging, real hunger, real stagnation, real death checks, and the real qi deviation ' +
+            'roll every thirty days - a deviating root does not stop deviating because nobody is ' +
+            'cultivating.' +
+            (resumedPast.length > 0
+                ? ` Carried on past ${resumedPast.length} interrupt(s) that hand a PLAYER control back ` +
+                  `and do not stop an operator: ${resumedPast.join(', ')}.`
+                : ''),
         runFlagged: true
     };
+}
+
+/**
+ * How many stretches one `advance_days` will drive before it stops.
+ *
+ * A ceiling rather than a budget: with `randomEvents` and `autoBreakthrough`
+ * both off, the only bulletin an admin span can actually meet is
+ * `lethal_injury_threshold`, which `time-skip.ts` announces once per call and
+ * suppresses on re-entry for a body already over the line - so the real figure
+ * is one or two. This exists so that a reason nobody has thought of yet cannot
+ * turn a loop into a hang.
+ */
+const MAX_ADVANCE_STRETCHES = 64;
+
+/**
+ * Whether an interrupt is a bulletin an operator may be carried past.
+ *
+ * ══ THE IDLE ROLL, AND WHY THIS IS THE FIX RATHER THAN SILENCING IT ═══════
+ *
+ * The question this answers is a design one and it was put properly before
+ * anything was changed: SHOULD a span at `idle` focus roll qi deviation at all?
+ * Nobody is cultivating. Deviation is cultivation going wrong.
+ *
+ * It should, and the repo already says so in four places written by people who
+ * found it by playing rather than by reading:
+ *
+ *  - `deviation.ts` names two causes and only ONE of them is an act. The other
+ *    is who you are: a conflicting root "is not a situation you can leave; it
+ *    is standing inside your own meridians for the entire run", which
+ *    `engine/cultivation/README.md` states again as "not a rare accident but a
+ *    standing condition, a low fever that never resolves". The remaining
+ *    contributors - untreated wounds, qi accumulated past a bottleneck - are
+ *    facts about a body and not about a schedule. Only
+ *    `CONFLICTING_TECHNIQUE_RISK` needs somebody to be practising something,
+ *    and it is already gated on `techniqueElement`, which is null here.
+ *  - `work` (`cultivation-mortal.ts`) fixes `focus: 'idle'` and is the mortal
+ *    economy's whole loop. If idle were safe, a poor cultivator with a bad root
+ *    could labour for a century and never deviate, and `RISK_PER_UNTREATED_INJURY`
+ *    - a ruling with its own guard in `root-cliff.test.ts` - would be escapable
+ *    for free by the cheapest verb in the game.
+ *  - Two test files record the behaviour as a FINDING about the world rather
+ *    than a defect: "an idle body accumulates untreated channels at rather more
+ *    than one a year" (`walking-up-the-terraces.test.ts`,
+ *    `a-probation-ends-in-a-placement.test.ts`), both of which then designed
+ *    around it.
+ *  - And `learn_technique` routes through the same deviation engine on the
+ *    spot, which settles it: deviation is not exclusive to time spent
+ *    cultivating, and never was.
+ *
+ * So the roll is correct and the defect was here: this action stated three
+ * times what idle preserves and left the deviation check out of every list, so
+ * the one thing that actually stopped the span was the one thing the surface
+ * never mentioned. The lists now name it, and the span drives past the
+ * bulletin.
+ *
+ * The split below is the same one `time-skip.ts` draws in its own comments.
+ * `lethal_injury_threshold` and `major_encounter` say in as many words that
+ * they exist to hand control back for a decision; a toll and a wounding
+ * breakthrough are things that already happened and are being reported;
+ * `iteration_limit` is a per-call ceiling whose own explanation says to call
+ * again. None of them is the simulation being unable to continue.
+ *
+ * Everything absent from this list stops the span, and each has a named fix
+ * the response already prints: death ends the run, an empty pack wants
+ * `rations=N`, hostile ground wants `set_location`. Driving past those would be
+ * ADMIN deciding an outcome, which is the one thing this surface may not do.
+ */
+function isResumableInterrupt(reason: string | null): boolean {
+    if (reason === null) return false;
+    if (reason.startsWith('death:')) return false;
+    // A survivable failure that was wounding enough to interrupt. It happened
+    // and it is in the digest; there is nothing for an operator to decide.
+    if (reason.startsWith('breakthrough_')) return true;
+    return reason === 'lethal_injury_threshold'
+        || reason === 'major_encounter'
+        || reason === 'toll_charged'
+        || reason === 'iteration_limit';
 }
 
 /**
@@ -2470,6 +2679,27 @@ export async function handleAdvanceDays(
  */
 function rationsForDays(days: number): number {
     return Math.max(1, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
+}
+
+/**
+ * The provisioning line, priced against the purse that would have to pay it.
+ *
+ * Rations are bought, and `handleCultivate` refuses the whole call when the
+ * stones are not there - so the fix a shortfall prints has to be one the
+ * operator can actually type. Where the purse covers it this is the command;
+ * where it does not, it is the command AND the fact that it will be refused,
+ * with both figures, because the surface knowing and not saying is worse than
+ * the surface not knowing.
+ */
+function provisioningLine(repos: CultivationRepos, cultivatorId: string, days: number): string {
+    const needed = rationsForDays(days);
+    const cost = needed * RATION_COST_STONES;
+    const held = repos.cultivators.getById(cultivatorId)?.spiritStones ?? 0;
+    const command = `ADMIN advance_days days=${days} rations=${needed}`;
+    if (cost <= held) return command;
+    return `${command} - which costs ${cost} spirit stones against the ${held} in the purse, so it ` +
+        'will be refused as it stands. Provisions are bought and ADMIN does not lift that; a shorter ' +
+        'span, or a rung whose body eats less, is what fits the money.';
 }
 
 /**
@@ -2496,7 +2726,16 @@ function explainInterrupt(reason: string | null): string {
         case 'hostile_ground':
             return 'The ground where the cultivator is standing is killing them. Move somewhere survivable first with ADMIN set_location.';
         case 'lethal_injury_threshold':
-            return 'Untreated wounds reached the lethal count. Treat them before advancing further.';
+            // The name is the engine's and is older than the ruling. Open
+            // channels are not fatal any more - `engine/cultivation/README.md`
+            // records the retirement - so this says what is actually true: the
+            // body has stopped coping, at idle focus the qi deviation roll is
+            // what put it there, and it does not improve on its own. A span
+            // that met this was carried on past it; a span that ENDED here met
+            // it on its last stretch.
+            return 'Untreated meridian wounds reached the count at which the body stops coping. ' +
+                'Nothing about it is fatal and nothing about it heals on its own - a physician or a ' +
+                'healing pill is what closes them.';
         case 'major_encounter':
             return 'Somebody walked in. The span stops so the encounter can be played.';
         case 'toll_charged':
@@ -3470,13 +3709,25 @@ export async function handleAdminManage(
                 'Asked for': data.normalised ? data.asked : undefined
             }));
         } else if (data.advanced) {
+            const stretches = Array.isArray(data.stretches) ? data.stretches : [];
+            const resumedPast = Array.isArray(data.resumedPast) ? data.resumedPast : [];
             out.push(heading('time advanced'));
             out.push(fields({
                 'Requested': `${data.requestedDays} day(s)`,
                 'Simulated': `${data.simulatedDays} day(s), ${data.simulatedYears} years`,
                 'Stopped short by': data.stoppedShort
                     ? `${data.stoppedShort.unsimulatedDays} day(s) - ${data.stoppedShort.reason}`
-                    : 'nothing; the whole span ran'
+                    : 'nothing; the whole span ran',
+                // What it drove through to get there. Absent for the ordinary
+                // one-stretch span rather than printed as "1", because a line
+                // that is always there stops being read.
+                'Stretches': stretches.length > 1
+                    ? stretches
+                        .map((s: { days: number; reason: string | null }) =>
+                            `${s.days}d${s.reason ? ` (${s.reason})` : ''}`)
+                        .join(' then ')
+                    : undefined,
+                'Carried on past': resumedPast.length > 0 ? resumedPast.join(', ') : undefined
             }));
             if (data.stoppedShort) {
                 out.push(String(data.stoppedShort.explanation));

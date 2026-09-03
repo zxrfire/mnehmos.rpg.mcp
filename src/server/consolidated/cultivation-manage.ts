@@ -239,6 +239,19 @@ const CultivateSchema = z.object({
     location: z.string().optional().describe('Move here first; ambient qi follows the place'),
     rations: z.number().int().min(0).max(10_000).optional().default(0)
         .describe(`Rations to carry. Each costs ${RATION_COST_STONES} spirit stones and refills the belly once.`),
+    /**
+     * Rations ALREADY bought and not yet eaten, carried into a resumed stretch.
+     *
+     * Added to `rations` and deliberately NOT charged for. Food is bought per
+     * stretch, so a caller that resumes an interrupted span would otherwise buy
+     * the same pack twice - the rule `src/web/README.md` states for the
+     * seclusion crossroads ("the clock is neither handed back nor charged
+     * twice"), which reads `endState.rationsRemaining` off the engine and hands
+     * it to the resumption. This is the same field on the tool path, and it
+     * exists because the two paths must not disagree about what a resumed skip
+     * costs. `advance_days` is the caller.
+     */
+    carriedRations: z.number().int().min(0).max(10_000).optional().default(0),
     autoBreakthrough: z.boolean().optional().default(true),
     randomEvents: z.boolean().optional().default(true)
 });
@@ -562,12 +575,17 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     }
 
     // ── Provisions are bought, not declared. ──
-    const rations = args.rations ?? 0;
-    const rationCost = rations * RATION_COST_STONES;
+    //
+    // Bought is `rations`. `carriedRations` is what a previous stretch paid for
+    // and did not eat, so it is added to the pack and charged for nothing.
+    const bought = args.rations ?? 0;
+    const carried = args.carriedRations ?? 0;
+    const rations = bought + carried;
+    const rationCost = bought * RATION_COST_STONES;
     if (rationCost > cultivator.spiritStones) {
         return guidingError(
             'insufficient_stones',
-            `${rations} rations cost ${rationCost} spirit stones; ${cultivator.name} holds ${cultivator.spiritStones}.`,
+            `${bought} rations cost ${rationCost} spirit stones; ${cultivator.name} holds ${cultivator.spiritStones}.`,
             { required: rationCost, held: cultivator.spiritStones }
         );
     }
@@ -822,6 +840,10 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             age: round2(result.deltas.age)
         },
         injuriesSustained: injuries.map(summariseInjury),
+        // What the pack still holds. Reported so a caller resuming an
+        // interrupted span can hand it back through `carriedRations` instead of
+        // buying the same food twice - see that field's note above.
+        rationsRemaining: result.endState.rationsRemaining ?? 0,
         tolls: (result.tolls ?? []).map((toll, index) => ({
             fromOrdinal: toll.fromOrdinal,
             toOrdinal: toll.toOrdinal,

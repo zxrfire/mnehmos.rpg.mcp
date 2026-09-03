@@ -91,12 +91,28 @@ async function aNobody(name: string, seed: string) {
  * put in front of it.
  *
  * The REST of a long probation is set rather than lived, and the reason is a
- * finding rather than a convenience. An unprovisioned idle body accumulates
- * untreated wounds at rather more than one a year and dies of qi deviation
- * inside eight - measured here, at ordinal 0, with rations paid for. That is
- * the survival layer doing its job and it has its own suite; a probation is
- * thirty to fifty years, so a test that insisted on living every one of them
- * would be a test of qi deviation wearing a sort as a costume.
+ * finding rather than a convenience. An idle body accumulates untreated wounds
+ * at rather more than one a year and dies of qi deviation - measured here, at
+ * ordinal 0, with rations paid for. That is the survival layer doing its job
+ * and it has its own suite; a probation is thirty to fifty years, so a test
+ * that insisted on living every one of them would be a test of qi deviation
+ * wearing a sort as a costume.
+ *
+ * ── AND THE LIVED STRETCH IS ONE YEAR, WHICH IT HAD TO BECOME ────────────
+ *
+ * It was three, and three only ever WORKED because `advance_days` stopped at
+ * the first `lethal_injury_threshold` and gave back about two. Once that
+ * action started driving on past the bulletin - which is a report and not a
+ * decision for an operator - three years became three years, and two of these
+ * eight seeds died inside it: `azure-intake-promising` (dual_water_fire) at day
+ * 840 and `azure-intake-turned-out` (triple_metal_wood_earth) at day 1080, both
+ * `death:qi_deviation`. Two years carries all eight and leaves one of them on
+ * 10 HP of 30, which is a fixture sitting on a cliff edge.
+ *
+ * One year carries all eight with the whole span simulated, no interrupt at
+ * all, and nobody below 27 of their maximum. The lived stretch exists so the
+ * clock, the age and the belly move through the code the game moves them
+ * through, and one year does that exactly as well as three did.
  *
  * So the clock and the age are advanced directly for the remainder, which is
  * arranging a precondition. Nothing about the sort is touched: it reads the
@@ -108,7 +124,7 @@ async function carryFor(id: string, years: number, restRungAt: number): Promise<
     const cultivators = new CultivatorRepository(getDb());
 
     // Real time first, through the real simulation.
-    const livedYears = Math.min(years, 3);
+    const livedYears = Math.min(years, 1);
     const res = await admin({
         action: 'advance_days', cultivatorId: id, years: livedYears, rations: livedYears * 400
     });
