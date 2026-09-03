@@ -3395,7 +3395,10 @@ ${noticedWaiting}`;
                 const sheet = this.freeAction(run, 'status', factsForStatus(
                     cultivator, ambient, eligibility.progressRequired, eligibility.eligible,
                     techniqueCeiling(
-                        cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
+                        cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
+                        // Or the sheet sends somebody to buy a book that is in
+                        // their bag. See `techniqueCeiling`.
+                        copiesHeldBy(this.db, cultivator.id).length > 0
                     ).line
                 ));
                 // ── AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE ──

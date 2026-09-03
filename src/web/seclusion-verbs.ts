@@ -48,7 +48,7 @@ import {
     isGuidingErrorBody,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
-import { handleListAvailable } from '../server/consolidated/technique-manage.js';
+import { copiesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
 import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
 import {
@@ -205,8 +205,12 @@ export const seclusionVerbs = {
         // still spendable - the player just has to mean it. Same shape as the
         // wasted-pill override, and for the same reason: this layer cannot ask
         // a question and wait for an answer.
+        // This refusal is the single most useful place in the game to know
+        // whether a copy is already in the bag: the errand is `learn` and it
+        // is free, against years in a cave that would return nothing.
         const wall = techniqueCeiling(
-            cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap
+            cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
+            copiesHeldBy(this.db, cultivator.id).length > 0
         );
         if (wall.multiplier === 0 && !options.acknowledged) {
             return this.sittingWouldReturnNothing(cultivator, wall, days);
@@ -452,7 +456,10 @@ export const seclusionVerbs = {
         // seclusion out from under somebody who chose it knowingly, and an
         // interrupt every chunk would leave a stalled cultivator unable to pass
         // time at all.
-        const ceiling = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+        const ceiling = techniqueCeiling(
+            cultivator.realmOrdinal, terms.techniqueCap,
+            copiesHeldBy(this.db, cultivator.id).length > 0
+        );
         if (ceiling.line !== null) {
             facts.lines.unshift(ceiling.line);
             (facts.required ??= []).push(ceiling.line);
