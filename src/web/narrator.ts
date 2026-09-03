@@ -55,6 +55,8 @@ import {
     verbForASentenceThePatternsMissed
 } from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
 import {
+    anyClauseReadsAsThisVerb,
+    theClausesNoStepAccountsFor,
     spendsSomething,
     stepsInTheResponse,
     theClauseThisStepQuotes,
@@ -812,6 +814,7 @@ export class ProviderNarrator implements Narrator {
     ): Promise<PlanWithSteps> {
         const checked: PlanStep[] = [];
         const declined: string[] = [];
+        const dropped: PlanStep[] = [];
         let tierFailure: string | null = null;
 
         for (const step of steps) {
@@ -819,22 +822,83 @@ export class ProviderNarrator implements Narrator {
                 checked.push(step);
                 continue;
             }
-            // THE SAME WORDS, AND FOR A PLAN THAT MEANS THE CLAUSE.
+
+            // ── THE SAME WORDS, AND FOR A PLAN THAT MEANS A CLAUSE ──────
             //
-            // The invariant is that a player must not meet a bigger bill for
-            // the same words. With one verb a turn, the sentence and the act
-            // were the same thing; with a plan they are not, and reading a
-            // three-clause sentence with the table gives whichever verb it
-            // reaches FIRST - so every later costly step would be declined for
-            // not being the first thing said. `theClauseThisStepQuotes` returns
-            // the player's own words only when they really are the player's own
-            // words, and falls back to the whole sentence, which is stricter.
-            const sameWords = theClauseThisStepQuotes(step, input) ?? input;
-            const verdict = await theModelIsNotWhyThisTurnIsDangerous(step.action, sameWords);
+            // Two ways to be that clause, and the second is the one that
+            // matters. The reader may have quoted the player - preferred, and
+            // only ever accepted when it really is a quotation. Where it did
+            // not, the question is put to the player's own text instead: cut
+            // their sentence where a person would cut it, and ask whether any
+            // piece of it reads as this verb with no model in the room.
+            //
+            // Comparing against a reading of the WHOLE sentence, which is what
+            // this did, declined the owner's own acceptance sentence into
+            // nothing - see `anyClauseReadsAsThisVerb` for the transcript.
+            const quoted = theClauseThisStepQuotes(step, input);
+            const verdict = await theModelIsNotWhyThisTurnIsDangerous(
+                step.action, quoted ?? input
+            );
             tierFailure = verdict.tierFailure ?? tierFailure;
-            if (verdict.declined !== null) declined.push(verdict.declined);
-            checked.push({ action: verdict.action, said: step.said });
+
+            if (verdict.declined === null) {
+                checked.push({ action: verdict.action, said: step.said });
+                continue;
+            }
+
+            if (quoted === null && await anyClauseReadsAsThisVerb(
+                input, step.action.action, async clause => (await readTheSentence(clause)).action.action
+            )) {
+                // The player's own words reach this verb somewhere in the
+                // sentence, so the model is not why the turn can cost them.
+                checked.push(step);
+                continue;
+            }
+
+            // ── A DECLINED STEP IS DROPPED, NEVER SUBSTITUTED ───────────
+            //
+            // In a one-verb turn, replacing the model's reading with the
+            // deterministic one is right: the turn has to do something. In a
+            // PLAN the other steps are already doing something, and putting the
+            // whole-sentence reading in the declined step's place duplicates a
+            // verb another step is already carrying - which is exactly how
+            // `give -> give -> give` happened, and `oneClauseIsOneAct` then
+            // collapsed the plan to a single act.
+            //
+            // So it is removed and NAMED. The player is told what was not done
+            // and how to say it plainly, which is what the decline already
+            // said; what changes is that no invented step runs in its place.
+            declined.push(verdict.declined);
+            dropped.push(step);
         }
+
+        // Every step declined. The turn still has to be a turn, so it falls all
+        // the way back to the one reading a player with no model would have
+        // got - the same degradation every other model failure in this class
+        // takes, and the dropped clauses are still named below.
+        if (checked.length === 0) {
+            const withoutAModel = await readTheSentence(input);
+            return {
+                action: withoutAModel.action,
+                droppedClauses: dropped,
+                source: 'fallback',
+                note: withTheTierFailure(
+                    ['every step of the plan was declined; read without a model instead.',
+                        ...declined].join(' '),
+                    withoutAModel.tierFailure ?? tierFailure
+                )
+            };
+        }
+
+        // AND THE CLAUSES THE READER NEVER TURNED INTO A STEP AT ALL.
+        //
+        // Found by playing: on one turn the model split the owner's sentence
+        // into two steps and simply left the middle clause out, and nothing
+        // downstream could know it had existed. Checked against the player's own
+        // text rather than against what the model said about it.
+        dropped.push(...await theClausesNoStepAccountsFor(
+            input, checked, async clause => (await readTheSentence(clause)).action.action
+        ));
 
         const costly = checked.filter(spendsSomething);
         const headline = (costly.length === 1 ? costly[0] : checked[0])!;
@@ -849,6 +913,7 @@ export class ProviderNarrator implements Narrator {
         return {
             action: headline.action,
             steps: checked,
+            droppedClauses: dropped,
             // `model` when nothing was declined, because the model chose every
             // verb that ran; `fallback` when something was, because at least one
             // of them is the reading the player would have got with no model.

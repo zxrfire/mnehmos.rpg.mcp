@@ -18,7 +18,12 @@ import {
     sayingWhereItStopped,
     spendsSomething,
     stepsInTheResponse,
+    anyClauseReadsAsThisVerb,
+    carryingTheReferentForward,
     everyVerbTheQuestionCouldName,
+    theClausesNoStepAccountsFor,
+    theClausesOf,
+    theThingThisStepNamed,
     stepsOfThePlan,
     theClauseThisStepQuotes,
     theQuestionStillStands,
@@ -221,6 +226,66 @@ describe('the question never requires a player to know a string', () => {
     it('prefers the player\'s own words over any of them', () => {
         expect(whatThisStepIsCalled(step('train_technique', { target: 'manual' }, 'work at the manual')))
             .toBe('work at the manual');
+    });
+});
+
+/**
+ * FOUND BY PLAYING, and it ate the owner's own acceptance sentence.
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *
+ * The model returned all three steps, read correctly. The danger check declined
+ * the first and third - because the reader had sent no `said`, so each was
+ * compared against a reading of the WHOLE sentence, which the table calls
+ * `give` - and replaced both with that reading. The plan became
+ * give -> give -> give, `oneClauseIsOneAct` collapsed it to one, and the theft
+ * vanished from a turn where the model had escalated nothing.
+ */
+describe("a costly step survives when the player's own words reach it", () => {
+    const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
+
+    it('cuts the sentence where a person would cut it', () => {
+        expect(theClausesOf(SAID)).toEqual([
+            "I take Cao Antao's purse",
+            "press it into Shen Liefeng's hand",
+            'walk away'
+        ]);
+    });
+
+    it('finds the verb in a clause even when no clause was quoted', async () => {
+        const reads = async (clause: string) =>
+            (clause.includes('take') ? 'interact' : 'give') as ActionName;
+        expect(await anyClauseReadsAsThisVerb(SAID, 'interact', reads)).toBe(true);
+        expect(await anyClauseReadsAsThisVerb(SAID, 'attack', reads)).toBe(false);
+    });
+});
+
+describe('a pronoun means what the clause before it named', () => {
+    const THE_TAKE = step('interact', { target: 'Cao Antao', intent: 'steal' },
+        "I take Cao Antao's purse");
+    const THE_GIVE = step('give', { target: 'Shen Liefeng', topic: 'it' },
+        "press it into Shen Liefeng's hand");
+
+    it('reads the object out of the clause without a noun catalog', () => {
+        expect(theThingThisStepNamed(THE_TAKE)).toBe("Cao Antao's purse");
+        expect(theThingThisStepNamed(step('buy', {}, 'buy the cheapest manual')))
+            .toBe('cheapest manual');
+    });
+
+    it('fills a bare pronoun and nothing else', () => {
+        const carried = carryingTheReferentForward(THE_GIVE, "Cao Antao's purse");
+        expect(carried.action.topic).toBe("Cao Antao's purse");
+        // The person they named is untouched.
+        expect(carried.action.target).toBe('Shen Liefeng');
+    });
+
+    it('never overwrites a thing the player named', () => {
+        const named = step('give', { target: 'Shen Liefeng', topic: 'the jade seal' });
+        expect(carryingTheReferentForward(named, "Cao Antao's purse")).toBe(named);
+    });
+
+    it('carries nothing when the clause before it named nothing', () => {
+        expect(carryingTheReferentForward(THE_GIVE, null)).toBe(THE_GIVE);
     });
 });
 
@@ -458,5 +523,47 @@ describe('folding several calls into one turn', () => {
     it('a single call is returned as itself, byte for byte', () => {
         const one = call('only', 'only');
         expect(foldTheCallsIntoOneTurn([one])).toBe(one);
+    });
+});
+
+/**
+ * A clause the READER never turned into a step is the worst of the three
+ * dropped-clause shapes, because nothing downstream can know it existed - the
+ * executor cannot report a step it was not given. Measured: on one live turn
+ * the model split the owner's sentence into two steps, left the middle clause
+ * out, and the prose then wrote the missing act as though it had happened.
+ */
+describe('a clause the split lost is found from the player’s own text', () => {
+    const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
+    const reads = async (clause: string): Promise<ActionName> =>
+        clause.includes('take') ? 'interact'
+            : clause.includes('press') ? 'give'
+                : 'move';
+
+    it('names a costly clause no step accounts for', async () => {
+        const plan = [step('interact', { target: 'Cao Antao', intent: 'steal' }), step('move')];
+        const lost = await theClausesNoStepAccountsFor(SAID, plan, reads);
+        expect(lost.map(s => s.action.action)).toEqual(['give']);
+        expect(lost[0]!.said).toBe("press it into Shen Liefeng's hand");
+    });
+
+    it('finds nothing when every clause is accounted for', async () => {
+        const plan = [step('interact'), step('give'), step('move')];
+        expect(await theClausesNoStepAccountsFor(SAID, plan, reads)).toHaveLength(0);
+    });
+
+    /**
+     * The measured house rule, reproduced here the moment it was left out:
+     * "who is here, what am I carrying, and what do I know of them" ran
+     * look/status/recall, and the middle clause also reads as `inventory` - so
+     * a free read the model had routed to its neighbour was announced to the
+     * player as a thing that had not happened. Nothing was taken from them.
+     */
+    it('says nothing about a FREE clause, because nothing was taken', async () => {
+        const asked = 'who is here, what am I carrying, and what do I know of them';
+        const freeReads = async (clause: string): Promise<ActionName> =>
+            clause.includes('carrying') ? 'inventory' : clause.includes('know') ? 'recall' : 'look';
+        const plan = [step('look'), step('status'), step('recall')];
+        expect(await theClausesNoStepAccountsFor(asked, plan, freeReads)).toHaveLength(0);
     });
 });
