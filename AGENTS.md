@@ -2514,6 +2514,37 @@ holds a `node_modules`, and is indistinguishable from a project.
 numbers. A directory left behind so somebody can go and look at the evidence later is a
 directory nobody will ever look at, and it will still be there in a month.
 
+### A blob you commit is not a file you changed
+
+`git hash-object -w` plus `git update-index --cacheinfo` is how you commit HEAD-plus-your-hunk
+out of a contended file without carrying somebody else's work. It writes an object and an
+index entry. **It does not touch the working tree.**
+
+So the commit lands, the push succeeds, and the file on disk still does not have your
+change in it. Nobody's editor shows it. The owner opened the repository in PyCharm,
+looked at the top of `AGENTS.md`, and the thing that had just been committed and pushed
+was not there.
+
+It is worse than a no-op, because the working tree now reads as a REVERT of what you
+committed: your paths show as modified, and the modification is the absence of your own
+edit. The next bare commit from that tree removes it, and the diff will look deliberate.
+
+**Do both, in this order:**
+
+```bash
+# 1. edit the working tree normally, so disk is right and the editor shows it
+# 2. build HEAD-plus-your-hunk separately, and commit THAT
+GIT_INDEX_FILE=$IDX git read-tree HEAD
+h=$(git hash-object -w "$SCRATCH/yourfile")
+GIT_INDEX_FILE=$IDX git update-index --cacheinfo 100644,$h,path/to/yourfile
+GIT_INDEX_FILE=$IDX git commit
+git reset -- path/to/yourfile
+```
+
+**Check it afterwards, because the failure is silent.** `git show HEAD:<path> | head` against
+`head <path>` is the whole test: if they disagree about your change, the working tree is
+the one that is wrong.
+
 ### The scratchpad is shared between agents in a session
 
 **Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.
