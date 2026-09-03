@@ -12,7 +12,7 @@
  *
  * The last one is the worst of the three: `thousand` was in no table at all,
  * so the article behind it answered instead. A player asking for a millennium
- * of seclusion got a year and was told nothing — the sentence was understood,
+ * of seclusion got a year and was told nothing - the sentence was understood,
  * the number was not, and the turn looked entirely ordinary.
  */
 import { describe, expect, it } from 'vitest';
