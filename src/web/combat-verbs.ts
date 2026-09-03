@@ -1222,19 +1222,23 @@ export const combatVerbs = {
         // which is the model deciding a fact about the world.
         if (intent === 'coerce') {
             const line =
-                `What was wanted out of ${party.name}: ${(wanted ?? 'submit').replace(/_/g, ' ')}. `
-                + 'This was force applied to get compliance rather than to end anybody, and it '
-                + 'was resolved by the confrontation engine - so it could fail the way a fight '
-                + 'fails.';
+                `What was wanted out of ${party.name}: ${(wanted ?? 'submit').replace(/_/g, ' ')}.`;
             execution.facts.lines.push(line);
-            // Into `prose` as well, and `required`, for the reason the fallout
-            // block below gives at length: `lines` is what a model MAY know and
-            // `prose` is what the deterministic narrator actually ships, so a
-            // fact written to only the first is computed and never shown to
-            // anybody playing without a model attached. A coercion narrated as
-            // an ordinary brawl is the verb not existing.
+            // ── IN `prose`, NOT IN `required` ────────────────────────
+            //
+            // Owner, reading it in play: "this is not required - we know this
+            // cuz of what we did and the description." Right on both counts.
+            // The sentence used to go on to explain that force was applied to
+            // get compliance and could fail the way a fight fails - which the
+            // player had just typed and the outcome had just shown - and
+            // `required` is for facts a player cannot play WITHOUT. Somebody
+            // knows what they demanded.
+            //
+            // It stays in `prose`, which is a different question: `prose` is
+            // what the deterministic narrator ships, so dropping it there
+            // would make a coercion read as an ordinary brawl for anybody
+            // playing without a model - and that is the verb not existing.
             execution.facts.prose = [execution.facts.prose, line].join('\n');
-            execution.facts.required = [...(execution.facts.required ?? []), line];
             execution.facts.structure.push(
                 `coerce: intent label "${wanted ?? 'submit'}", goal handed to the resolver `
                 + '"coerce". Nothing in the engine branches on the label.'
