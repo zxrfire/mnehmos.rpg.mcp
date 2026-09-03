@@ -51,9 +51,28 @@ const SOURCE = {
     surface: 'src/web/what-each-verb-is-for-in-the-players-words.ts',
     actions: 'src/web/action-set.ts',
     days: 'src/web/verb-day-costs.ts',
-    table: 'src/web/actions.ts',
     game: 'src/web/game.ts'
 };
+
+/**
+ * The modules the pattern table is spread across, scanned together for the
+ * `action:` literals that say which verbs a sentence can reach with no model.
+ *
+ * A LIST rather than one path because the table is being split by subject and
+ * a route counted off one file would drop a verb every time a block moves.
+ * `theReadThatAnswersIt` was the whole of `legacy`'s count until it left
+ * `actions.ts`, and the doc immediately reported a live verb as unreachable.
+ *
+ * Known gap, and it is older than the split: `leaving-things-for-the-next-life.ts`
+ * holds `legacyStep`, the real deterministic route to that verb, and has never
+ * been scanned. So `legacy`'s count comes from the mood post-pass rather than
+ * from its own step. Left alone deliberately - adding it would change what this
+ * number measures, which is not a thing to do inside a move.
+ */
+const TABLE = [
+    'src/web/actions.ts',
+    'src/web/asking-is-not-doing.ts'
+];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
@@ -367,7 +386,7 @@ function splice(text, name, body) {
 
 export function model() {
     const actions = read(SOURCE.actions);
-    const table = read(SOURCE.table);
+    const table = TABLE.map(read).join('\n');
     const days = read(SOURCE.days);
     const game = read(SOURCE.game);
     const surfaceText = read(SOURCE.surface);
