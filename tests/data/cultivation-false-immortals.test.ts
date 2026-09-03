@@ -430,25 +430,41 @@ describe('the dao protector office', () => {
         expect(THE_OFFICE.theWordDoesTwoJobs).toMatch(/Nascent Soul|Core Formation/);
         expect(THE_OFFICE.theWordDoesTwoJobs).toMatch(/filled/i);
         expect(THE_OFFICE.theReservedPost).toMatch(/will not fill it/i);
-        // Only a house that produced a crossing can expect one, which is the
-        // structural reason the reserved chair sits where it does.
+        // Only a house whose person CAME BACK can expect one. The qualifier is
+        // a False Immortal, never a completed crossing: a crossing that
+        // finished produces a departure and no chair at all.
         expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/crossed and came back/i);
-        expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/produced somebody/i);
-        // And the qualifier is the crossing record rather than a rank in a
-        // hierarchy, because the house with the most crossings behind it is
-        // outside every hierarchy the setting has.
-        expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/crossing record/i);
+        expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/CAME BACK, not GOT THROUGH/);
+        // And the crossing record is named as the WRONG instrument, because it
+        // counts departures and vacancies together and they are opposites.
+        expect(THE_OFFICE.onlyAHouseThatProducedOneCanHaveOne).toMatch(/wrong instrument/i);
         expect(
             APEX_INSTITUTIONS.some(a => a.id === 'sect-hollow-court'),
             'the Hollow Court holds from nobody and is not an apex; see hierarchy.ts'
         ).toBe(false);
-        // And the empty chair is a monument to success, not to failure.
-        const monument = THE_OFFICE.theChairIsEmptyBecauseTheirPeopleGotThrough;
-        expect(monument).toMatch(/opposite of failure/i);
-        expect(monument).toMatch(/Ru Anjing/);
-        expect(monument).toMatch(/First Abbot/);
-        expect(monument).toMatch(/First Tyrant/);
-        // Those four houses are real and their crossing dates agree with sects.ts.
+    });
+
+    it('separates the three outcomes a crossing has, and only one leaves a chair', () => {
+        const outcomes = THE_OFFICE.whatACrossingLeavesBehind;
+        expect(outcomes).toMatch(/opposite of failure/i);
+        // All three are named and ordered.
+        expect(outcomes).toMatch(/FIRST/);
+        expect(outcomes).toMatch(/SECOND/);
+        expect(outcomes).toMatch(/THIRD/);
+        // A full success leaves NO chair, which is the correction. The four
+        // houses cited are the success case, not the vacancy case.
+        expect(outcomes).toMatch(/Ru Anjing/);
+        expect(outcomes).toMatch(/First Abbot/);
+        expect(outcomes).toMatch(/First Tyrant/);
+        expect(outcomes).toMatch(/Not one of those houses is short a protector/i);
+        // And not knowing is the commonest outcome by a wide margin, which is
+        // what `CROSSING_PRACTICE` already says about caves nobody was told of.
+        expect(outcomes).toMatch(/CROSSING_PRACTICE/);
+        expect(outcomes).toMatch(/commonest/i);
+
+        // Those four houses are real and their crossing dates agree with
+        // sects.ts. Still asserted - the fact is true, only its consequence
+        // changed.
         for (const sectId of [
             'sect-azure-cloud-pavilion',
             'sect-sweptground-temple',
@@ -462,6 +478,24 @@ describe('the dao protector office', () => {
                 `${sectId} is cited as having produced a crossing and has no ascended ancestor`
             ).toBe(true);
         }
+    });
+
+    it('states that a reserved chair is a piece of knowledge, not a trophy', () => {
+        expect(THE_OFFICE.theChairIsAPieceOfKnowledge).toMatch(/KNOWS/);
+        expect(THE_OFFICE.theChairIsAPieceOfKnowledge).toMatch(/stopped rather than finished/i);
+        // Two filters in series, and the second is the scarcer one.
+        expect(THE_OFFICE.theChairIsAPieceOfKnowledge).toMatch(/scarcer|rarer/i);
+    });
+
+    it('retracts the Sweptground chair in place rather than deleting it', () => {
+        const retraction = THE_VACANCY.theSweptgroundEntryWasWrongAndIsRetracted;
+        expect(retraction).toMatch(/has no chair and never had one/i);
+        expect(retraction).toMatch(/SUCCEEDED/);
+        // The retraction says which qualifier was wrong, so the mistake is not
+        // available to be made again.
+        expect(retraction).toMatch(/crossing record, which is the wrong qualifier/i);
+        // And the struck line is not still sitting in the residue list.
+        expect(THE_VACANCY.whatTheResidueLooksLike.join(' ')).not.toMatch(/Sweptground/);
     });
 
     it('is open rather than abolished, with concrete residue to prove it', () => {

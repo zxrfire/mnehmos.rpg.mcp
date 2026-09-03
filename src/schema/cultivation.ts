@@ -1835,6 +1835,89 @@ export type Recipe = z.infer<typeof RecipeSchema>;
 export const SectAlignmentSchema = z.enum(['righteous', 'neutral', 'demonic']);
 export type SectAlignment = z.infer<typeof SectAlignmentSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE PROTECTOR
+//
+// One post, off the ladder, carrying one duty: stand for this house when
+// something comes for it. Two policies decide who may hold it, and the
+// difference between them is the whole of the design.
+//
+// NOT ON THE LADDER, and this is authored rather than a convenience.
+// `THE_OFFICE.whatItIsNot` in `data/cultivation/false-immortals.ts`:
+//
+//   "not on the house's ladder at all - the office sits outside the ranks
+//    rather than above them, because a seat is a position in an order of
+//    precedence and there is no order that could contain one."
+//
+// So it is a field beside `ranks` and never an entry in it. That also keeps
+// it clear of the index contract: `ranks[rankCount - 1]` is the head,
+// `rankRealmBand` derives every band from position in the array, and
+// `members.ts` pins every member to a `rankIndex`. A rank inserted anywhere
+// moves all three. A field does not.
+//
+// NOT THE GUEST FLOOR. A guest is an admission floor
+// (`the-three-floors-a-house-admits-at.ts`), honorary and obligation-free in
+// both directions - which is why the Hollow Court can keep Lu Sheng and a
+// house cannot keep a protector. The duty is what separates them.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Who a house will let stand in its protector's chair.
+ *
+ *   filled     Anybody the house can actually bind, which in practice means
+ *              one of its own who has stopped leading: a retired head, or the
+ *              grand elder he retired into. Ordinary, occupied, unremarkable.
+ *              This is the end of the retirement path - a house's oldest and
+ *              deepest person, no longer leading and no longer administering,
+ *              standing in the compound so somebody is there when something
+ *              arrives.
+ *
+ *   reserved   A False Immortal, and nobody else. The house declines to seat
+ *              the retired heads who are right there and qualified by any
+ *              normal standard, which is what makes the emptiness mean
+ *              something: it is a refusal rather than a shortage of bodies.
+ *              A reserved chair is therefore ALWAYS empty - see `heldBy`.
+ */
+export const ProtectorPolicySchema = z.enum(['filled', 'reserved']);
+export type ProtectorPolicy = z.infer<typeof ProtectorPolicySchema>;
+
+export const HouseProtectorSchema = z.object({
+    /**
+     * The house's own word for the post. Every house names its own offices,
+     * exactly as it names its own rungs, and no two used the same title.
+     */
+    title: z.string().min(3),
+    policy: ProtectorPolicySchema,
+    /**
+     * Member id of whoever stands in it, or null for a vacant post.
+     *
+     * A DECLARED NULL IS NOT A MISSING FIELD. An absent `protector` means the
+     * house has no such office; `heldBy: null` means the office exists and
+     * nobody is in it. The distinction is the point of declaring it at all -
+     * `THE_VACANCY` calls the reserved post "a vacancy rather than a history",
+     * and a vacancy has to be representable as one.
+     */
+    heldBy: z.string().nullable(),
+    /** Why this house holds the post the way it does. */
+    note: z.string().min(80)
+}).superRefine((val, ctx) => {
+    // There are no serving protectors anywhere in the world, and there have
+    // been none for eight hundred years. `FalseImmortalRecord.servingNow` is a
+    // `z.literal(false)` for the same reason: seating one should fail a test
+    // rather than pass quietly.
+    if (val.policy === 'reserved' && val.heldBy !== null) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['heldBy'],
+            message:
+                'A reserved protector post is empty by construction. Only a False Immortal may hold '
+              + 'one, and there is no False Immortal standing in any house in the world. If this is '
+              + 'meant to change, it is a world event and not a catalog edit.'
+        });
+    }
+});
+export type HouseProtector = z.infer<typeof HouseProtectorSchema>;
+
 export const SectSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -1849,6 +1932,14 @@ export const SectSchema = z.object({
     admissionOrdinal: z.number().int().min(0).max(MAX_ORDINAL).default(3),
     /** Monthly spirit-stone stipend by rank index. */
     stipend: z.array(z.number().int().min(0)).default([5, 15, 40, 120, 400, 1000]),
+    /**
+     * The protector's chair, where this house keeps one.
+     *
+     * Optional because not every house has the office, and deliberately NOT
+     * parallel to `ranks` or `stipend`: it sits beside the ladder rather than
+     * on it, so adding it moves no index and re-bands nobody.
+     */
+    protector: HouseProtectorSchema.optional(),
     description: z.string().default('')
 });
 export type Sect = z.infer<typeof SectSchema>;
