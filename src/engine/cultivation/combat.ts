@@ -1062,6 +1062,24 @@ export interface ExchangeContext {
     defenderEdges?: readonly Edge[];
     /** Where the attacker is aiming. Defaults to the body. */
     vector?: AttackVector;
+    /**
+     * What the attacker's POSTURE this round is worth on this blow, and what
+     * the defender's is worth against it. 1 for the ordinary case, which is
+     * every caller that does not stand inside the fight and choose.
+     *
+     * Separate from `attackerEdges` because an edge is something somebody
+     * BROUGHT - a formation laid, an art mastered, ground scouted - and a
+     * posture is something they are doing right now instead of something else.
+     * `assessEdges` prices the first against `MAX_EDGE_MULTIPLIER` and would
+     * quietly spend a cap on the second.
+     *
+     * Both are itemised into `modifiers` under their own names, so a player who
+     * guarded can see the line their guard bought. Absent or 1 pushes nothing
+     * and draws nothing, so every existing caller's seeded sequence and
+     * modifier list are byte-identical.
+     */
+    attackerPosture?: number;
+    defenderPosture?: number;
 }
 
 export interface ExchangeResult {
@@ -1152,6 +1170,17 @@ export function resolveExchange(
     }
     if (defenderEdges.multiplier !== 1) {
         modifiers.push({ source: `defender_edges:${defenderEdges.edges.join('+')}`, factor: 1 / defenderEdges.multiplier });
+    }
+
+    // What each of them is DOING this round, as against what they brought to
+    // the fight. See `ExchangeContext.attackerPosture`.
+    const attackerPosture = ctx.attackerPosture ?? 1;
+    if (attackerPosture !== 1) {
+        modifiers.push({ source: 'attacker_posture', factor: attackerPosture });
+    }
+    const defenderPosture = ctx.defenderPosture ?? 1;
+    if (defenderPosture !== 1) {
+        modifiers.push({ source: 'defender_posture', factor: 1 / defenderPosture });
     }
 
     let advantage = 1;
@@ -1502,6 +1531,284 @@ export interface ConfrontationResult {
     narrationHint: string;
 }
 
+// ═════════════════════════════════════════════════════════════════════════
+// ONE ROUND
+//
+// A confrontation is a loop over rounds, and until this section existed the
+// loop was inside `resolveConfrontation` and nothing else could reach it. That
+// made the whole fight a single call, which is fine for two NPCs meeting on a
+// road at the far end of a time skip and is not fine for the person playing:
+//
+//   > combat should also of course resolve across multiple turns to give the
+//   > player agency (fleeing, how, to where, using what ability, or item?). if
+//   > you fought and it resolves in one turn and you died it would be
+//   > unsatisfying cuz there's nothing you can do about it.
+//
+// So the round is lifted out and both entrances go through it. There is not a
+// player fight and an NPC fight; there is one round function, called eight
+// times in a row by `resolveConfrontation` and once per turn by a caller that
+// is holding a fight open for somebody. The physics cannot drift because there
+// is only one copy of them.
+//
+// What the two entrances genuinely differ in is WHO CHOOSES, and that is the
+// whole of `RoundAct`. `resolveConfrontation` chooses `strike` for both sides
+// every round, which is exactly what it did before this existed, so its seeded
+// sequence is unchanged.
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * RULE 1, before anything is rolled: whether there is a fight here at all.
+ *
+ * Returns a finished result when the gap has already decided it, and null when
+ * there is something to resolve. Lifted out of `resolveConfrontation` for the
+ * same reason the round was: a caller holding a fight open across turns has to
+ * ask this question first and must get the same answer, or the two entrances
+ * disagree about who can be fought - which would be the categorical gap, the
+ * load-bearing claim of the whole setting, holding in one place and not the
+ * other.
+ *
+ * `hp` and `injuries` are the running totals, handed in so the returned result
+ * carries them.
+ */
+export function theGapDecidesItAlone(
+    aggressorInput: CombatantInput,
+    defenderInput: CombatantInput,
+    aggressor: CombatantPower,
+    defender: CombatantPower,
+    gap: GapAssessment,
+    ctx: ConfrontationContext,
+    hp: Record<string, number>,
+    injuries: Record<string, Injury[]>
+): ConfrontationResult | null {
+    // Checked in both directions: an aggressor who is helpless against their
+    // target achieves nothing, and an aggressor several realms above one does
+    // not have a fight either - they have a decision.
+    const reverseGap = assessGap(defender, aggressor);
+    if (gap.verdict === 'helpless') {
+        // NOT NOTHING. The fight does not happen and the swing does.
+        //
+        // "Swing a sword at someone two realms above and they shatter it" is the
+        // design owner's own example, and two realms is exactly where
+        // `HELPLESS_REALM_GAP` stops the fight - so if the object were only put
+        // at risk inside the exchange loop, the one case everybody quotes would
+        // be the one case the engine had nothing to say about.
+        //
+        // The gap being categorical is a statement about what the aggressor can
+        // do to the DEFENDER. It is not a statement about what the defender's
+        // body does to a piece of metal swung into it, and at this distance
+        // `weaponExposure` reaches certainty on the body alone, so nothing is
+        // rolled here either: it is not luck, it is what happens.
+        const swung = aggressor.weapon === null ? null : atRisk(aggressor.weapon, defender, ctx.rng);
+        return noContest(aggressor, defender, gap, hp, injuries, aggressorInput.id, defenderInput.id,
+            `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}` +
+            (swung?.broke ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}` : ''),
+            swung?.broke
+                ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
+                : []);
+    }
+    if (reverseGap.verdict === 'helpless') {
+        return oneSided(aggressor, defender, gap, ctx, aggressorInput, defenderInput, hp, injuries);
+    }
+    return null;
+}
+
+/**
+ * What somebody is doing with their round.
+ *
+ * Three postures on ONE axis, and that is deliberate: a round is a fixed amount
+ * of attention, and all three answers are about where it went. Guarding spends
+ * it on not being hit and has nothing left to swing with; pressing spends it on
+ * the blow and leaves nothing over to keep anybody off you; striking is the
+ * ordinary even split and is what everybody does when nobody chose.
+ *
+ * There is no fourth. A posture that both raised your blow and lowered theirs
+ * would be a free lunch, and a fight in which one answer dominates is a fight
+ * with no decision in it.
+ */
+export type RoundAct =
+    /** The ordinary exchange. Swing, and take what comes back. */
+    | 'strike'
+    /** Spend the round on not being hit. No blow of your own. */
+    | 'guard'
+    /** Spend the round on the blow. Theirs lands the harder for it. */
+    | 'press';
+
+/**
+ * What a posture is worth, in either direction.
+ *
+ * DERIVED, NOT CHOSEN. It is the cheapest entry in `EDGE_VALUES`, and the
+ * reasoning is that a posture is the one advantage in this engine that costs
+ * NOTHING to have: anybody can guard, at any rung, with no art, no preparation
+ * and no ground. So it must be worth no more than the cheapest thing somebody
+ * had to go and get, which is `terrain` - free to use and not free to find.
+ *
+ * Read off the table rather than restated, so it cannot drift from it. If the
+ * cheapest edge is ever repriced this moves with it, which is correct: the
+ * claim being made is "no better than the cheapest edge", not a number.
+ */
+export const POSTURE_WORTH = Math.min(...Object.values(EDGE_VALUES));
+
+/** One side of a round: the row, its price, and what it is doing with the round. */
+export interface RoundParty {
+    /** The row, with anything already lost taken off it. */
+    input: CombatantInput;
+    /** That row, priced. Re-priced by the round when a weapon goes. */
+    power: CombatantPower;
+    act: RoundAct;
+    /** What they brought to the fight, as against what they are doing this round. */
+    edges: readonly Edge[];
+    /** Where they are aiming, for an art that can choose. */
+    vector: AttackVector;
+}
+
+export interface RoundContext {
+    rng: CultivationRNG;
+    ambient: AmbientQi;
+    /** Stamped onto any injury the round produces. */
+    turn: number;
+    /** The first round of the whole fight. */
+    opening: boolean;
+    /**
+     * The aggressor came out of concealment. Only ever meaningful on the
+     * opening round: the ambush edge is worth it once, and the target does not
+     * swing back in the round they did not know they were in.
+     */
+    fromConcealment: boolean;
+    /** Whether a side under `WITHDRAW_HP_FRACTION` breaks off on its own. */
+    willWithdraw: boolean;
+}
+
+export interface RoundResult {
+    /** In the order they were thrown. `index` is the caller's to stamp. */
+    exchanges: Array<Omit<ExchangeRecord, 'index'>>;
+    brokenObjects: ConfrontationResult['brokenObjects'];
+    /** Both sides as they now stand, re-priced if anything came apart. */
+    aggressor: RoundParty;
+    defender: RoundParty;
+    winnerId: string | null;
+    loserId: string | null;
+    /** Why the fight ended, when the round ended it. */
+    ending: 'down' | 'withdrew' | null;
+}
+
+/**
+ * Resolve one round between two priced combatants.
+ *
+ * `hp` and `injuries` are the running totals and ARE written to, because a
+ * round is an event in a fight rather than a question about one - the same
+ * thing `resolveConfrontation` has always done to its own locals. Everything
+ * else is returned.
+ *
+ * Nothing here decides an ending beyond "somebody is down" and "somebody broke
+ * off under the floor". What that ending MEANS - a killing, a capture, a
+ * submission, a body destroyed - is `concludeConfrontation`'s, because it turns
+ * on the goal and the tradition and not on the blow.
+ */
+export function resolveConfrontationRound(
+    aggressorSide: RoundParty,
+    defenderSide: RoundParty,
+    hp: Record<string, number>,
+    injuries: Record<string, Injury[]>,
+    ctx: RoundContext
+): RoundResult {
+    const powerCtx: PowerContext = { ambient: ctx.ambient };
+    let aggressor = aggressorSide;
+    let defender = defenderSide;
+
+    const exchanges: RoundResult['exchanges'] = [];
+    const brokenObjects: ConfrontationResult['brokenObjects'] = [];
+    let winnerId: string | null = null;
+    let loserId: string | null = null;
+    let ending: RoundResult['ending'] = null;
+
+    // `assessEdges` de-duplicates, so an aggressor already carrying an ambush
+    // edge from somewhere else is not paid for it twice.
+    const openingEdges: readonly Edge[] = ctx.opening && ctx.fromConcealment
+        ? [...aggressorSide.edges, 'ambush']
+        : aggressorSide.edges;
+
+    // The aggressor swings, then the defender swings back if still standing.
+    // Held as WHO is striking rather than as the priced pair, so a weapon lost
+    // on the first swing of a round is already gone on the second.
+    const order: boolean[] = [true, false];
+    // The target had no round. Nothing is rolled for them, which is why an open
+    // fight's seeded sequence is untouched by concealment existing.
+    if (ctx.opening && ctx.fromConcealment) order.pop();
+
+    for (const aggressorStrikes of order) {
+        const striker = aggressorStrikes ? aggressor : defender;
+        const target = aggressorStrikes ? defender : aggressor;
+        if (hp[striker.input.id] <= 0) continue;
+
+        // A guard has no blow in it. That is the whole of what it costs, and it
+        // is charged by there being nothing here to resolve - not by a
+        // multiplier that would have to be believed.
+        if (striker.act === 'guard') continue;
+
+        const result = resolveExchange(striker.power, target.power, target.input.maxHp, {
+            rng: ctx.rng,
+            ambient: ctx.ambient,
+            turn: ctx.turn,
+            // The aggressor's own aim; the defender always answers at the body,
+            // which is what this loop has always done.
+            vector: aggressorStrikes ? striker.vector : 'body',
+            attackerEdges: aggressorStrikes ? openingEdges : striker.edges,
+            defenderEdges: target.edges,
+            // Pressing puts the round into the blow. Guarding puts it into not
+            // being hit, and a guard that never gets to swing still gets this.
+            attackerPosture: striker.act === 'press' ? POSTURE_WORTH : 1,
+            defenderPosture: target.act === 'guard'
+                ? POSTURE_WORTH
+                : target.act === 'press' ? 1 / POSTURE_WORTH : 1
+        });
+
+        hp[target.input.id] = Math.max(0, hp[target.input.id] - result.damage);
+        if (result.injury) injuries[target.input.id].push(result.injury);
+
+        // The object went. Take it off the person who was swinging it and price
+        // them again, so the rest of the fight is fought without it.
+        if (result.weapon?.broke) {
+            brokenObjects.push({
+                carrierId: striker.input.id,
+                breakerId: target.input.id,
+                broke: result.weapon
+            });
+            const stripped = { ...striker.input, weapon: null, artifactOrdinal: undefined };
+            const repriced: RoundParty = {
+                ...striker,
+                input: stripped,
+                power: assessPower(stripped, powerCtx)
+            };
+            if (aggressorStrikes) aggressor = repriced; else defender = repriced;
+        }
+
+        exchanges.push({
+            attackerId: striker.input.id,
+            defenderId: target.input.id,
+            result,
+            defenderHpAfter: hp[target.input.id]
+        });
+
+        if (hp[target.input.id] <= 0) {
+            winnerId = striker.input.id;
+            loserId = target.input.id;
+            ending = 'down';
+            break;
+        }
+
+        // Breaking off is the ordinary end of a cultivation fight. Somebody
+        // decides the price has stopped being worth it and goes.
+        if (ctx.willWithdraw && hp[target.input.id] < target.input.maxHp * WITHDRAW_HP_FRACTION) {
+            winnerId = striker.input.id;
+            loserId = target.input.id;
+            ending = 'withdrew';
+            break;
+        }
+    }
+
+    return { exchanges, brokenObjects, aggressor, defender, winnerId, loserId, ending };
+}
+
 /**
  * Resolve a confrontation between two combatants.
  *
@@ -1542,32 +1849,10 @@ export function resolveConfrontation(
     // Checked in both directions: an aggressor who is helpless against their
     // target achieves nothing, and an aggressor several realms above one does
     // not have a fight either - they have a decision.
-    const reverseGap = assessGap(defender, aggressor);
-    if (gap.verdict === 'helpless') {
-        // NOT NOTHING. The fight does not happen and the swing does.
-        //
-        // "Swing a sword at someone two realms above and they shatter it" is the
-        // design owner's own example, and two realms is exactly where
-        // `HELPLESS_REALM_GAP` stops the fight - so if the object were only put
-        // at risk inside the exchange loop, the one case everybody quotes would
-        // be the one case the engine had nothing to say about.
-        //
-        // The gap being categorical is a statement about what the aggressor can
-        // do to the DEFENDER. It is not a statement about what the defender's
-        // body does to a piece of metal swung into it, and at this distance
-        // `weaponExposure` reaches certainty on the body alone, so nothing is
-        // rolled here either: it is not luck, it is what happens.
-        const swung = aggressor.weapon === null ? null : atRisk(aggressor.weapon, defender, ctx.rng);
-        return noContest(aggressor, defender, gap, hp, injuries, aggressorInput.id, defenderInput.id,
-            `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}` +
-            (swung?.broke ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}` : ''),
-            swung?.broke
-                ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
-                : []);
-    }
-    if (reverseGap.verdict === 'helpless') {
-        return oneSided(aggressor, defender, gap, ctx, aggressorInput, defenderInput, hp, injuries);
-    }
+    const settledAlready = theGapDecidesItAlone(
+        aggressorInput, defenderInput, aggressor, defender, gap, ctx, hp, injuries
+    );
+    if (settledAlready) return settledAlready;
 
     // ── Exchanges. ──
     const exchanges: ExchangeRecord[] = [];
@@ -1591,91 +1876,106 @@ export function resolveConfrontation(
     // same person" - so the edge is added to the opening exchange, and the
     // target, who did not know they were in a fight, does not swing back in it.
     //
-    // `assessEdges` de-duplicates, so an aggressor who was already carrying an
-    // ambush edge from somewhere else is not paid for it twice.
+    // Both halves are `resolveConfrontationRound`'s now; this only says whether
+    // it happened.
     const fromConcealment = ctx.intent.opening === 'from_concealment';
-    const openingEdges: readonly Edge[] = fromConcealment
-        ? [...(ctx.attackerEdges ?? []), 'ambush']
-        : (ctx.attackerEdges ?? []);
+
+    // BOTH SIDES STRIKE, EVERY ROUND, WHICH IS WHAT THIS LOOP HAS ALWAYS DONE.
+    //
+    // Nobody standing inside this call is choosing anything: it is two people
+    // meeting and the whole thing being settled. A posture is a decision, and a
+    // decision needs somebody to make it, which is what the round-at-a-time
+    // entrance is for. `POSTURE_WORTH` is never applied here and no draw
+    // changes, so this resolver's seeded sequence is exactly what it was.
+    let aggressorSide: RoundParty = {
+        input: aggressorLive, power: aggressor, act: 'strike',
+        edges: ctx.attackerEdges ?? [], vector
+    };
+    let defenderSide: RoundParty = {
+        input: defenderLive, power: defender, act: 'strike',
+        edges: ctx.defenderEdges ?? [], vector: 'body'
+    };
 
     for (let i = 0; i < MAX_EXCHANGES; i++) {
-        // The aggressor swings, then the defender swings back if still standing.
-        // Held as WHO is striking rather than as the priced pair, so a weapon
-        // lost on the first swing of a round is already gone on the second.
-        const opening = i === 0;
-        const order: Array<[boolean, AttackVector, readonly Edge[], readonly Edge[]]> = [
-            [true, vector, opening ? openingEdges : (ctx.attackerEdges ?? []), ctx.defenderEdges ?? []],
-            [false, 'body', ctx.defenderEdges ?? [], ctx.attackerEdges ?? []]
-        ];
-        // The target had no round. Nothing is rolled for them, which is why an
-        // open fight's seeded sequence is untouched by this field existing.
-        if (fromConcealment && opening) order.pop();
+        const round = resolveConfrontationRound(aggressorSide, defenderSide, hp, injuries, {
+            rng: ctx.rng,
+            ambient: ctx.ambient,
+            turn: ctx.turn,
+            opening: i === 0,
+            fromConcealment,
+            willWithdraw
+        });
 
-        for (const [aggressorStrikes, strikeVector, strikerEdges, targetEdges] of order) {
-            const striker = aggressorStrikes ? aggressor : defender;
-            const target = aggressorStrikes ? defender : aggressor;
-            const strikerIn = aggressorStrikes ? aggressorLive : defenderLive;
-            const targetIn = aggressorStrikes ? defenderLive : aggressorLive;
-            if (hp[strikerIn.id] <= 0) continue;
+        aggressorSide = round.aggressor;
+        defenderSide = round.defender;
+        aggressor = aggressorSide.power;
+        defender = defenderSide.power;
+        aggressorLive = aggressorSide.input;
+        defenderLive = defenderSide.input;
+        brokenObjects.push(...round.brokenObjects);
+        for (const e of round.exchanges) exchanges.push({ ...e, index: exchanges.length });
 
-            const result = resolveExchange(striker, target, targetIn.maxHp, {
-                ...ctx,
-                vector: strikeVector,
-                attackerEdges: strikerEdges,
-                defenderEdges: targetEdges,
-                turn: ctx.turn
-            });
-
-            hp[targetIn.id] = Math.max(0, hp[targetIn.id] - result.damage);
-            if (result.injury) injuries[targetIn.id].push(result.injury);
-
-            // The object went. Take it off the person who was swinging it and
-            // price them again, so the rest of the fight is fought without it.
-            if (result.weapon?.broke) {
-                brokenObjects.push({
-                    carrierId: strikerIn.id,
-                    breakerId: targetIn.id,
-                    broke: result.weapon
-                });
-                if (aggressorStrikes) {
-                    aggressorLive = { ...aggressorLive, weapon: null, artifactOrdinal: undefined };
-                    aggressor = assessPower(aggressorLive, powerCtx);
-                } else {
-                    defenderLive = { ...defenderLive, weapon: null, artifactOrdinal: undefined };
-                    defender = assessPower(defenderLive, powerCtx);
-                }
-            }
-
-            exchanges.push({
-                index: exchanges.length,
-                attackerId: strikerIn.id,
-                defenderId: targetIn.id,
-                result,
-                defenderHpAfter: hp[targetIn.id]
-            });
-
-            if (hp[targetIn.id] <= 0) {
-                winnerId = strikerIn.id;
-                loserId = targetIn.id;
-                break;
-            }
-
-            // Breaking off is the ordinary end of a cultivation fight. Somebody
-            // decides the price has stopped being worth it and goes.
-            if (willWithdraw && hp[targetIn.id] < targetIn.maxHp * WITHDRAW_HP_FRACTION) {
-                winnerId = strikerIn.id;
-                loserId = targetIn.id;
-                outcome = 'withdrawal';
-                break;
-            }
+        if (round.winnerId !== null) {
+            winnerId = round.winnerId;
+            loserId = round.loserId;
+            if (round.ending === 'withdrew') outcome = 'withdrawal';
+            break;
         }
-
-        if (winnerId !== null) break;
     }
 
     if (winnerId === null) {
         return stalemate(aggressor, defender, gap, exchanges, hp, injuries, aggressorInput, defenderInput, brokenObjects);
     }
+
+    return concludeConfrontation({
+        aggressorInput, defenderInput, aggressor, defender, gap, ctx,
+        exchanges, hp, injuries, brokenObjects,
+        winnerId, loserId: loserId!, endedBy: outcome === 'withdrawal' ? 'withdrew' : 'down'
+    });
+}
+
+/** Everything a finished fight knows about itself, whoever ran the rounds. */
+export interface ConcludeInput {
+    aggressorInput: CombatantInput;
+    defenderInput: CombatantInput;
+    /** Both sides as they stood at the end, re-priced for anything lost. */
+    aggressor: CombatantPower;
+    defender: CombatantPower;
+    gap: GapAssessment;
+    ctx: ConfrontationContext;
+    exchanges: ExchangeRecord[];
+    hp: Record<string, number>;
+    injuries: Record<string, Injury[]>;
+    brokenObjects: ConfrontationResult['brokenObjects'];
+    winnerId: string;
+    loserId: string;
+    /** Down on the ground, or broke off under the floor. */
+    endedBy: 'down' | 'withdrew';
+    /**
+     * What the loser's own HP was when the fight OPENED, for the line that says
+     * whether the winner was touched. Defaults to the input rows, which is right
+     * for a fight that ran start to finish in one call and wrong for one that
+     * was carried across turns from an already-hurt body.
+     */
+    hpAtOpening?: Record<string, number>;
+}
+
+/**
+ * What the ending MEANT.
+ *
+ * Split out of `resolveConfrontation` so that a fight taken a round at a time
+ * ends the same way one settled in a single call does. Everything in here turns
+ * on the goal, the tradition and the wounds - never on how many turns the
+ * player spent getting here - so there is exactly one answer to "what happened
+ * to the loser" and both entrances get it.
+ */
+export function concludeConfrontation(input: ConcludeInput): ConfrontationResult {
+    const {
+        aggressorInput, defenderInput, aggressor, defender, gap, ctx,
+        exchanges, hp, injuries, brokenObjects, winnerId, loserId
+    } = input;
+    const vector: AttackVector = ctx.vector ?? 'body';
+    let outcome: ConfrontationOutcome = input.endedBy === 'withdrew' ? 'withdrawal' : 'stalemate';
 
     const loserInput = loserId === aggressorInput.id ? aggressorInput : defenderInput;
     const loserPower = loserId === aggressorInput.id ? aggressor : defender;
@@ -1716,6 +2016,11 @@ export function resolveConfrontation(
         outcome = 'crippled';
     }
 
+    const openedOn = input.hpAtOpening ?? {
+        [aggressorInput.id]: aggressorInput.hp,
+        [defenderInput.id]: defenderInput.hp
+    };
+
     return {
         outcome,
         winnerId,
@@ -1742,7 +2047,7 @@ export function resolveConfrontation(
         // resolution already knows.
         narrationHint: describeOutcome(
             outcome, requirement, remnant,
-            hp[winnerId] < (winnerId === aggressorInput.id ? aggressorInput.hp : defenderInput.hp)
+            hp[winnerId] < openedOn[winnerId]
         )
     };
 }
@@ -2090,7 +2395,7 @@ function oneSided(
     };
 }
 
-function stalemate(
+export function stalemate(
     aggressor: CombatantPower,
     defender: CombatantPower,
     gap: GapAssessment,

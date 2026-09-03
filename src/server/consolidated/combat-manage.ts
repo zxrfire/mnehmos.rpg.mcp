@@ -63,6 +63,7 @@ import {
     recordAchievement,
     whatAFightTaught,
     type CombatantInput,
+    type ConfrontationResult,
     type Edge,
     type InsightCandidate
 } from '../../engine/cultivation/index.js';
@@ -87,7 +88,7 @@ import {
     type GuidingErrorBody
 } from './cultivation-support.js';
 import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
-import type { Cultivator, Run } from '../../schema/cultivation.js';
+import type { Cultivator, Run, Technique } from '../../schema/cultivation.js';
 
 const ACTIONS = [
     'assess', 'strike', 'resolve', 'flee', 'history',
@@ -284,7 +285,7 @@ const EndSchema = z.object({
  * increments on every resolve, so two people cannot draw the same stream in one
  * run however alike they are.
  */
-function opponentRollIdentity(opponent: CombatantInput): string {
+export function opponentRollIdentity(opponent: CombatantInput): string {
     const name = opponent.name.trim().toLowerCase().replace(/\s+/g, '-');
     return `${name.length > 0 ? name : 'unnamed'}@${opponent.realmOrdinal}`;
 }
@@ -296,7 +297,7 @@ function opponentRollIdentity(opponent: CombatantInput): string {
  * engine has no artifact catalog yet, and the honest value for "what are they
  * carrying that helps" is zero rather than a guess.
  */
-function combatantFromCultivator(
+export function combatantFromCultivator(
     cultivator: Cultivator,
     repos: CultivationRepos,
     techniqueId?: string
@@ -356,7 +357,7 @@ function combatantFromCultivator(
  * unstated field takes the honest neutral value rather than something flattering
  * to either side: a described opponent is an ordinary person at the stated rank.
  */
-function combatantFromOpponent(
+export function combatantFromOpponent(
     spec: z.infer<typeof OpponentSchema>,
     repos: CultivationRepos
 ): CombatantInput | GuidingErrorBody {
@@ -713,6 +714,55 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         }
     });
 
+    return settleAFight({
+        repos, run, cultivator, self, opponent, technique, result,
+        nextTurn, day,
+        opponentIdOnRecord: args.opponent.cultivatorId ?? null,
+        edges: args.edges ?? []
+    });
+}
+
+/**
+ * Everything that happens AFTER a fight is over: what it taught, what it cost,
+ * what was written down, and what the caller is told.
+ *
+ * ── WHY THIS IS ITS OWN FUNCTION ─────────────────────────────────────────
+ *
+ * Because there are now two ways to have a fight and there must not be two ways
+ * to record one. `resolveConfrontation` settles a whole fight in a single call,
+ * which is right for the simulation; a player stands inside one and answers it a
+ * round at a time through `unfinished-fight.ts`, on the design owner's ruling
+ * that a death you could not have acted against is unsatisfying. Both produce a
+ * `ConfrontationResult`, and both come here.
+ *
+ * A second persistence path is exactly the drift the transaction below exists to
+ * prevent, one level up: a fight taken over six turns that wrote the wounds but
+ * not the feud, or the death but not the lesson, would be indistinguishable from
+ * a working feature until somebody went looking.
+ *
+ * Everything in here reads the RESULT and never how it was reached. There is no
+ * argument for how many turns it took and there must not be one.
+ */
+export function settleAFight(input: {
+    repos: CultivationRepos;
+    run: Run;
+    cultivator: Cultivator;
+    /** The player, priced. Read for the art actually swung. */
+    self: CombatantInput;
+    opponent: CombatantInput;
+    technique: Technique | null;
+    result: ConfrontationResult;
+    nextTurn: number;
+    day: number;
+    /** The opponent's cultivator row id, when they have one. Most do not. */
+    opponentIdOnRecord: string | null;
+    /** What the aggressor brought, for the battle record. */
+    edges: readonly Edge[];
+}): object {
+    const {
+        repos, run, cultivator, self, opponent, technique, result, nextTurn, day
+    } = input;
+
     // ── WHAT THE FIGHT TAUGHT ────────────────────────────────────────────
     //
     // Design owner: "Fighting should give you comprehension of your art (and
@@ -795,8 +845,8 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         // Closing that means this tool learning to write to the world, which it
         // does not do today and which is a boundary decision rather than a bug
         // fix. The gate below is the half that can be closed here.
-        if (args.opponent.cultivatorId) {
-            const opponentRow = repos.cultivators.getById(args.opponent.cultivatorId);
+        if (input.opponentIdOnRecord) {
+            const opponentRow = repos.cultivators.getById(input.opponentIdOnRecord);
             if (opponentRow) {
                 const delta = result.hp[opponent.id] - opponentRow.hp;
                 if (delta !== 0) {
@@ -941,13 +991,13 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
 
         combat.recordBattle({
             cultivatorId: cultivator.id,
-            opponentId: args.opponent.cultivatorId ?? null,
+            opponentId: input.opponentIdOnRecord,
             opponentName: opponent.name,
             opponentOrdinal: opponent.realmOrdinal,
             outcome: result.outcome,
             won: result.winnerId === cultivator.id,
             realmGap: result.gap.realmGap,
-            edges: args.edges ?? [],
+            edges: [...input.edges],
             onDay: run.elapsedDays,
             turn: nextTurn,
             summary: result.narrationHint
