@@ -1296,10 +1296,24 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
                     + 'standing, and no party who will come and ask about you on the road.'
             };
         }
+        // A standing read for somebody with no house has to name the route out
+        // of that, because it is the answer a player gets when what they asked
+        // was whether anybody would take them. Stating the absence and stopping
+        // is a dead end at the one rung where the whole question is how to
+        // leave it.
+        //
+        // The route is a phrasing the player can type and the wall it reaches
+        // is real: houses short of people advertise, with a bar and a date on
+        // the paper, and `houses-that-have-to-advertise-for-disciples.ts` is
+        // what answers it.
         return {
             member: false,
             cultivator: { id: cultivator.id, name: cultivator.name, rank: rankName(cultivator.realmOrdinal) },
-            note: 'Unaffiliated. No stipend, no array, no elder, and nobody to notice if this run ends badly.'
+            note:
+                'Unaffiliated. No stipend, no array, no elder, and nobody to notice if this run '
+                + 'ends badly. Houses short of people advertise rather than wait, so what is '
+                + 'nailed up locally is where an intake with a bar and a date on it would be '
+                + 'found - "what is posted here" reads it, and costs nothing.'
         };
     }
 
