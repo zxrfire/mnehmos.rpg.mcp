@@ -1297,19 +1297,39 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // Prefer one the body could actually survive; fall back to the shallowest
     // that is still above, because that is the thing to aim at and the reason
     // the row is allowed to name it at all.
+    //
+    // ── AND IT SAYS IT IS NOT HERE, BECAUSE NOTHING KNOWS WHERE IT IS ────
+    //
+    // Reported from play: the strip led with `I go into The One Who Was Struck
+    // At the Boundary` while standing on Azure Cloud Pavilion grounds, and
+    // "go into" reads as a thing in this square. It is not. Checked before
+    // writing a location into the sentence, and there is none to write: all 30
+    // rows in `SITES` carry `id, kind, name, character, origin, scale, intent,
+    // access, factionIds, outside, interior` and NO region, province, place or
+    // location field of any kind. A site is nowhere.
+    //
+    // That is a fact about the world model rather than about this row, and it
+    // is why `site/enter` resolves from any square in the world. So the
+    // sentence cannot say where, and the honest thing is to stop implying it
+    // is underfoot: this is ground somebody TOLD you about, which is exactly
+    // what the `you` axis below already says about how long it stays true.
     if (here.sitesYouCouldOpen.length > 0) {
         const within = here.sitesYouCouldOpen.filter(s => s.survivable);
         const site = within[0] ?? here.sitesYouCouldOpen[0];
+        const toldNotStood =
+            ' You were told about it rather than brought to it, and the record does not say '
+            + 'where it stands - so this is a road you are choosing, not a door you are '
+            + 'standing in front of.';
         add(naming('enter_site', `I go into ${site.name}`, 'site',
             site.survivable ? 'soon' : 'open',
             !site.survivable
                 ? `${site.name} is set at ordinal ${site.setAtOrdinal} and you are not there `
                   + 'yet. You can walk in anyway; the ground does not check, it asks the body '
                   + 'for what the ground is set at. This is a thing to aim at rather than a '
-                  + 'door that says no.'
+                  + `door that says no.${toldNotStood}`
                 : `${site.name} is set at ordinal ${site.setAtOrdinal}, which your body reaches. `
                   + 'What is behind a gate is what somebody was buried with, and going in is '
-                  + 'the only way to find out which kind of ground this is.',
+                  + `the only way to find out which kind of ground this is.${toldNotStood}`,
             // NOT 'here'. See the builder: this is a fact about what somebody
             // told you, it travels with you, and marking it as a fact about
             // the square made it identical in all 68 of them.

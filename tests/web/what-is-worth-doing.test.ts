@@ -1110,8 +1110,8 @@ describe('a fight is what is happening, and the square stops being the subject',
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('the row offers things that can end badly, because those are live too', () => {
-    const ARUIN = { name: 'The Gate Frame With No Gate In It', setAtOrdinal: 21, survivable: false };
-    const OPENABLE = { name: 'The Bench at the Burned Seat', setAtOrdinal: 3, survivable: true };
+    const ARUIN = { name: 'The Empty Frame', setAtOrdinal: 21, survivable: false };
+    const OPENABLE = { name: 'The Burned Bench', setAtOrdinal: 3, survivable: true };
 
     it('offers the ground it cannot survive, rather than hiding it', () => {
         // The owner's ruling, and the same one the buy chip already follows:
@@ -1120,16 +1120,23 @@ describe('the row offers things that can end badly, because those are live too',
         // okay." Knowledge running ahead of capability is what turns a thing
         // into something to aim at rather than a door that says no.
         const out = byId({ ...WELL, sitesYouCouldOpen: [ARUIN] }, 'enter_site')!;
-        expect(out.say).toBe('I go into The Gate Frame With No Gate In It');
+        expect(out.say).toBe('I go into The Empty Frame');
         expect(out.because).toMatch(/ordinal 21/);
         expect(out.because).toMatch(/aim at rather than a door that says no/);
+        // And it does not imply the thing is underfoot. Reported from play:
+        // the chip led with a site while the player stood on somebody else's
+        // grounds, and 'go into' reads as a thing in this square. Checked
+        // before writing a location in: all 30 SITES rows carry no region,
+        // province, place or location field at all, so there is none to
+        // write and the sentence says so instead of implying otherwise.
+        expect(out.because).toMatch(/record does not say where it stands/);
     });
 
     it('prefers ground the body would come back out of', () => {
         // `readAdmission` splits being LET IN from surviving it, and the
         // caller sorts on the survivable half first.
         expect(byId({ ...WELL, sitesYouCouldOpen: [OPENABLE, ARUIN] }, 'enter_site')!.say)
-            .toBe('I go into The Bench at the Burned Seat');
+            .toBe('I go into The Burned Bench');
     });
 
     it('does not dress a fact about your records as a fact about this square', () => {
