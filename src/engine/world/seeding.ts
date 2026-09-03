@@ -61,6 +61,7 @@ import {
     type AmbientQi
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
+import { rosterByRung, elderRungOf } from '../cultivation/leadership.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
 import { THE_LINE_AT_MILLRUN } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
@@ -1870,17 +1871,57 @@ function assignFactionRoles(
         const climbing = members.filter(n => !refused(n));
         if (climbing.length === 0) continue;
 
-        // A pyramid: one at the top, a few elders, the rest below. Indexed on
-        // the people who can climb, so a servant standing between two elders in
-        // raw ordinal does not push everyone below them down a rung.
-        const elderFloor = Math.max(0, ladder - 3);
+        // A pyramid: one at the top, fewer at each rung down. Indexed on the
+        // people who can climb, so a servant standing between two elders in raw
+        // ordinal does not push everyone below them down a rung.
+        //
+        // THE SHAPE COMES FROM `rosterByRung` AND IS NOT COMPUTED HERE. What
+        // stood here was a hand-rolled cascade - top 8% elders, next 25%, next
+        // 50%, rest at the bottom - which is a second answer to a question
+        // `leadership.ts` already answers with the house taper, and the two
+        // were free to disagree. They did:
+        //
+        //   `Math.max(elderFloor, ladder - 2)` named the elder rung while the
+        //   second rung from the top WAS the elder rung. The grand elder landed
+        //   between them, and without a line changing here the band started
+        //   seating people into a seat that is explicitly ONE SPOT ONLY - and
+        //   seating several, because the 8% is a count rather than a cap. The
+        //   curated clamp below did the same thing from the other side, capping
+        //   an authored head at `ladder - 2` and pushing them down into it.
+        //
+        // Measured before the fix: the grand elder rung read occupied in all
+        // thirty-one houses that have one, against one in the authored catalog,
+        // and two houses had two people in it.
+        //
+        // AND AN EMPTY RUNG IS AN ANSWER. The taper is steep - a rung holds
+        // four tenths of the one below - so a house with a dozen seeded people
+        // genuinely does not reach the top of its own ladder, and the honest
+        // result is a seat nobody is standing in. That is a decision the code
+        // can state rather than a gap: nobody was seated there because the
+        // house is not big enough to carry one, and only a curated author or a
+        // later promotion puts somebody in it.
+        const seats = rosterByRung(climbing.length, ladder);
+        const derived = new Array<number>(climbing.length);
+        {
+            let c = 0;
+            for (let rung = ladder - 1; rung >= 0 && c < climbing.length; rung--) {
+                for (let k = 0; k < (seats[rung] ?? 0) && c < climbing.length; k++) {
+                    derived[c++] = rung;
+                }
+            }
+            // Anybody the taper did not reach stands at the bottom.
+            for (; c < climbing.length; c++) derived[c] = 0;
+        }
+
+        // The grand elder is one spot. `elderRungOf` is the authority on where
+        // the elders start, so the seat above it is the grand one - and only
+        // where the house actually has that shape.
+        const grandRung = ladder - 2;
+        const hasGrand = grandRung > elderRungOf(ladder);
+        let grandTaken = false;
+
         for (let c = 0; c < climbing.length; c++) {
             const i = c;
-            const rank =
-                i === 0 ? ladder - 1
-                    : i <= Math.max(1, Math.floor(climbing.length * 0.08)) ? Math.max(elderFloor, ladder - 2)
-                        : i <= Math.max(2, Math.floor(climbing.length * 0.25)) ? Math.min(elderFloor, 2)
-                            : i <= Math.max(3, Math.floor(climbing.length * 0.5)) ? 1 : 0;
             const at = state.npcs.findIndex(n => n.id === climbing[c].id);
             if (at < 0) continue;
 
@@ -1891,9 +1932,18 @@ function assignFactionRoles(
             // enforce, so a curated rank is honoured as a FLOOR everywhere
             // except the top rung.
             const curated = state.npcs[at].tags.some(t => t.startsWith('catalog:'));
-            const assigned = curated
-                ? (i === 0 ? ladder - 1 : Math.min(Math.max(state.npcs[at].factionRankIndex, rank), Math.max(0, ladder - 2)))
-                : rank;
+            let assigned = i === 0
+                ? ladder - 1
+                : curated
+                    ? Math.min(Math.max(state.npcs[at].factionRankIndex, derived[i]), Math.max(0, ladder - 2))
+                    : derived[i];
+
+            // One spot only, and it is never taken by the overflow of a lower
+            // rung: a second arrival stands at the elder rung instead.
+            if (hasGrand && assigned === grandRung && i !== 0) {
+                if (grandTaken) assigned = elderRungOf(ladder);
+                else grandTaken = true;
+            }
             state.npcs[at] = { ...state.npcs[at], factionRankIndex: assigned };
         }
 
