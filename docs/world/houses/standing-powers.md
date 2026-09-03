@@ -6,6 +6,10 @@ The named bodies of the region, and what each of them is.
 
 Part of [`sects.md`](./sects.md).
 
+The catalog is [`sects.ts`](../../../src/data/cultivation/sects.ts), and
+[`hollow-court-roster.ts`](../../../src/data/cultivation/hollow-court-roster.ts) for who is
+actually standing on the four mountains.
+
 ## The standing powers
 
 <!-- tier: 2 trigger="one of the named powers appears, is invoked, or is being traded with" -->

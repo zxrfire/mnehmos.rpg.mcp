@@ -6,6 +6,9 @@ What a sect is as a body, and what it is for from the disciple's side.
 
 Part of [`sects.md`](./sects.md).
 
+The catalog is [`sects.ts`](../../../src/data/cultivation/sects.ts) - every house in the world,
+with what it holds, teaches and wants.
+
 ## Sects are institutions
 
 <!-- tier: 2 trigger="a sect's motives, decisions, or internal politics are in play" -->

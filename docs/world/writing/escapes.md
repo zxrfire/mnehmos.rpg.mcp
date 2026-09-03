@@ -1,4 +1,5 @@
 <!-- tier: 3 -->
+<!-- no-catalog: a redirect, not a subject; the catalog behind it is named where it points -->
 
 # Moved to [`past-the-ceiling.md`](../climbing/past-the-ceiling.md)
 

@@ -7,6 +7,12 @@ unbacked, and the houses that rule directly instead.
 
 Part of [`sects.md`](./sects.md).
 
+The catalog is
+[`governance-and-water-rights.ts`](../../../src/data/cultivation/governance-and-water-rights.ts) -
+who holds the water and on what terms - with
+[`faction-relationships.ts`](../../../src/data/cultivation/faction-relationships.ts) for how
+each house stands with the bodies around it.
+
 ## Sects are a pyramid, and the pyramid is the vein network
 
 <!-- tier: 2 trigger="the player asks why a house is where it is, or who a house answers to" -->
