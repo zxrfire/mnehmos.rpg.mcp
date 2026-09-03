@@ -28,7 +28,7 @@ import {
     resolveRuntimeProviderConfig,
     type ResolvedRuntimeProviderConfig
 } from '../agent/provider/config.js';
-import { GameError, GameService } from './game.js';
+import { GameError, GameService } from './turn-engine.js';
 import {
     DeterministicNarrator,
     ProviderNarrator,

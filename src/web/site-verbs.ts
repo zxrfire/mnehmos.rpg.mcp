@@ -125,7 +125,7 @@ import {
 } from './trials.js';
 import { ENTERING_DAYS, ENTERING_FOCUS, STARTING_AGE } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * The words that mean "the site in front of me" rather than naming one.

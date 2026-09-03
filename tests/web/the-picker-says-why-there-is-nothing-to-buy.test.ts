@@ -148,12 +148,12 @@ describe('the seclusion picker, when the bill comes to nothing', () => {
 
         expect(billText(stopped)).toContain(clause);
 
-        // `game.ts` splits the sentence over three concatenated literals, so the
+        // `turn-engine.ts` splits the sentence over three concatenated literals, so the
         // joins come out before the whitespace is flattened. Asserted as a
         // boolean because the file is 25,000 lines and a failed `toContain`
         // prints all of it.
         const engineSide = readFileSync(
-            fileURLToPath(new URL('../../src/web/game.ts', import.meta.url)), 'utf8'
+            fileURLToPath(new URL('../../src/web/turn-engine.ts', import.meta.url)), 'utf8'
         ).replace(/\s+/g, ' ').replace(/' \+ '/g, '');
         expect(
             engineSide.includes(clause),

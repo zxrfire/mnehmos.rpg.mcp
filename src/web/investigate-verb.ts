@@ -29,7 +29,7 @@ import { resolveAnything, worldLocationFor } from './entities.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 
 

@@ -117,7 +117,7 @@ import { type Destination, whereCouldTheyGo } from './where-this-cultivator-coul
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
 import { type SeatStanding, whyProgressHasStopped } from './why-progress-has-stopped.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 export const situatedReads = {
     /**

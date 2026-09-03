@@ -89,7 +89,7 @@ import {
     SHORT_ACTION_DAYS
 } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * How much of an open seclusion gets through a door over the whole sitting.
