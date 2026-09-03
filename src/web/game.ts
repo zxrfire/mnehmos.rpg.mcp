@@ -962,6 +962,20 @@ import {
     type RunView
 } from './view.js';
 
+// ── THE PRICE BOARD MOVED OUT ────────────────────────────────────────────
+//
+// `MarketPrice`, `MORTAL_CATEGORIES`, `MARKET_LINES`, `boardSample`, `priceOf`,
+// `describePurseCash` and `MARKET_CATEGORIES` are in `market-prices.ts` now.
+// What a board line says is its own reason to change, and two callers here
+// depend on the two of them agreeing.
+import {
+    boardSample,
+    describePurseCash,
+    MARKET_CATEGORIES,
+    priceOf
+} from './market-prices.js';
+import type { MarketPrice } from './market-prices.js';
+
 // ── THE WIRE SHAPES AND THE REFUSAL MOVED OUT ────────────────────────────
 //
 // `GameError`, `StateView`, `ToolCallRecord`, `ActResult`, `CultivateResult`,
@@ -1289,32 +1303,6 @@ function rollFor(houseId: string | null, ranked: boolean): 'by blood' | 'by taki
     return ranked ? 'by taking' : null;
 }
 
-/**
- * A price as the mortal-economy tool reports it.
- *
- * Both currencies, because the world has two on purpose: `mortal-world.ts`
- * anchors a hundred cash to the spirit stone precisely so that ordinary life
- * is priced in cash and cultivation is priced in stones.
- */
-interface MarketPrice {
-    name?: string;
-    category?: string;
-    unit?: string;
-    cash?: number;
-    spiritStones?: number;
-    affordable?: boolean;
-}
-
-/**
- * Categories that belong to ordinary life and are priced in cash.
- *
- * Rendering a bowl of millet as 0.01 spirit stones throws away the whole point
- * of the second currency and produces a number nobody can hold in their head.
- * One cash for the millet, a hundred and twenty for a month of rations: those
- * are figures a player can reason with.
- */
-const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', 'service']);
-
 /** What a thing costs, in whichever currency it is actually sold in. */
 /**
  * How many lines of a price board get read out.
@@ -1340,8 +1328,6 @@ const DONATION_DISCOUNT = 1 / 3;
 
 /** Reference span when a house is offering nothing to take a median of. */
 const DEFAULT_DUTY_DAYS = 20;
-
-const MARKET_LINES = 8;
 
 /**
  * The interact intents that are ATTEMPTS TO MOVE SOMEBODY.
@@ -1386,43 +1372,6 @@ function askWeightOf(text: string): AskWeight {
         return 'a_real_favour';
     }
     return 'a_courtesy';
-}
-
-/**
- * Which lines of a price board get read out, when it will not all fit.
- *
- * NOT the cheapest eight, which is what it used to be and which hid an entire
- * category of goods from every player in the game. `handleMarket` sorts by
- * price ascending; medicine runs 2,000-6,000 cash against a bowl of millet at
- * 1, so a board of 41 things showed millet, a ferry, salt, an inn, a letter, a
- * night's lodging, firewood and a bell - and the pills that close a torn
- * meridian sat thirty lines below the fold.
- *
- * That is not a cosmetic problem. Untreated meridian injuries are the leading
- * cause of death in this game, the cure is ON THIS BOARD, and a playtester
- * reading this list concluded across dozens of runs that no settlement sells
- * pills at all. They were there the whole time and off the bottom of the page.
- *
- * One line per category first, cheapest of each, so nothing a market sells can
- * be invisible; then the cheapest of whatever is left, so the board still opens
- * with what a poor cultivator can actually afford. The order within the result
- * is by price, because that is how a board reads.
- */
-function boardSample(prices: MarketPrice[]): MarketPrice[] {
-    if (prices.length <= MARKET_LINES) return prices;
-
-    const firstOfCategory = new Map<string, MarketPrice>();
-    for (const item of prices) {
-        const category = String(item.category ?? 'other');
-        if (!firstOfCategory.has(category)) firstOfCategory.set(category, item);
-    }
-
-    const chosen = new Set<MarketPrice>([...firstOfCategory.values()].slice(0, MARKET_LINES));
-    for (const item of prices) {
-        if (chosen.size >= MARKET_LINES) break;
-        chosen.add(item);
-    }
-    return prices.filter(item => chosen.has(item));
 }
 
 /**
@@ -1543,53 +1492,6 @@ const DUTY_STOPWORDS: ReadonlySet<string> = new Set([
     'into', 'take', 'taking', 'accept', 'one', 'ones', 'job', 'jobs', 'mission',
     'missions', 'commission', 'duty', 'task', 'work', 'sect', 'house'
 ]);
-
-function priceOf(item: MarketPrice): string {
-    const unit = item.unit ? ` the ${item.unit}` : '';
-    const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
-
-    if (mortal && typeof item.cash === 'number') {
-        return `${Math.round(item.cash)} cash${unit}`;
-    }
-    // NOTHING IS PRICED IN A FRACTION OF A STONE.
-    //
-    // A stone is a large denomination - a hundred cash - so a bolt of cloth
-    // came out as "0.5 spirit stones the bolt", which is not a price anybody
-    // says out loud. It was invisible while the board only ever showed its
-    // eight cheapest lines, all of which are food and lodging and quoted in
-    // cash; surfacing one line per category brought it straight up, and
-    // `presence.test.ts` had the rule written down waiting for it.
-    //
-    // Sub-stone goods are quoted in cash whatever their category. Cultivator
-    // goods that genuinely cost stones still read in stones, which is the
-    // distinction the currency exists to make.
-    if (typeof item.spiritStones === 'number') {
-        if (item.spiritStones < 1 && typeof item.cash === 'number') {
-            return `${Math.round(item.cash)} cash${unit}`;
-        }
-        return `${round2(item.spiritStones)} spirit stones${unit}`;
-    }
-    return `an unmarked price${unit}`;
-}
-
-/**
- * The purse, in both currencies.
- *
- * The conversion appears here and almost nowhere else, which is where it
- * belongs: changing a stone for cash is the small moment a cultivator has when
- * they discover their savings are somebody's month of dinners.
- */
-function describePurseCash(purse: { cash?: number; spiritStones?: number }): string {
-    const stones = typeof purse.spiritStones === 'number' ? purse.spiritStones : 0;
-    const cash = typeof purse.cash === 'number' ? purse.cash : stones * 100;
-    if (stones === 0) return `${Math.round(cash)} cash and no stones`;
-    return `${stones} spirit stones, which is ${Math.round(cash)} cash`;
-}
-
-/** Market board categories the parser can narrow to. */
-const MARKET_CATEGORIES = [
-    'food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information'
-] as const;
 
 /** Engine event summaries appended to the log per action, at most. */
 const MAX_LOGGED_EVENTS = 40;
