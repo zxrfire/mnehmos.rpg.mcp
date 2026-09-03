@@ -71,6 +71,7 @@ import {
 } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { listPouch } from '../server/consolidated/cultivation-support.js';
+import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     requiredContributionForRank,
     requiredOrdinalForRank
@@ -205,7 +206,13 @@ export const situatedReads = {
      */
     ceiling(this: GameService, run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
         const terms = this.rateTermsFor(cultivator);
-        const manual = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+        // The third argument is what stops the sheet telling somebody to go and
+        // buy a book they are already carrying. See `techniqueCeiling`.
+        const manual = techniqueCeiling(
+            cultivator.realmOrdinal,
+            terms.techniqueCap,
+            copiesHeldBy(this.db, cultivator.id).length > 0
+        );
         const eligibility = canAttemptBreakthrough(cultivator);
         const where = standingOf(cultivator);
         const region = requireRegion(where.regionId);
@@ -1055,7 +1062,11 @@ export const situatedReads = {
         run: Run
     ): StandingHere {
         const terms = this.rateTermsFor(cultivator);
-        const road = techniqueCeiling(cultivator.realmOrdinal, terms.techniqueCap);
+        const road = techniqueCeiling(
+            cultivator.realmOrdinal,
+            terms.techniqueCap,
+            copiesHeldBy(this.db, cultivator.id).length > 0
+        );
 
         const hurt = untreatedInjuries(cultivator.injuries);
         const mendable = hurt.filter(injury => !isPermanentWound(injury.woundType));
