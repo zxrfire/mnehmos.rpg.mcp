@@ -754,6 +754,7 @@ import {
     whatRefusingAMatchTheyAlreadyMadeLeaves,
     whatTheChildIs,
     whatTheHousesNoIsWorth,
+    theSuitorIsPastWhatTheyCouldReach,
     whetherTheyGoAlongWithIt,
     whoAgreesAndWhoDoesNot,
     YEARS_BEFORE_A_CHILD_CAN_BE_PLACED,
@@ -20178,8 +20179,16 @@ ${done.lines.join(' ')}`;
 
         const table: OnTheTable[] = putDown === null
             ? []
+            // The fourth argument is WHO IS RECEIVING IT, and without it the
+            // function cannot honour its own contract. A medicine carries the
+            // person who takes it somewhere, and where that is depends on where
+            // they already stand: an Unearned Step whose grade tops out beneath
+            // somebody carries them nowhere at all. Measured against a receiver
+            // at rung 29, a middle Step is worth 0 to them and a higher one is
+            // worth 33 - and with no receiver passed, both read 29.
             : [whatIsBeingPutDown(
-                putDown, cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id)
+                putDown, cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id),
+                party.party?.realmOrdinal
             )];
 
         const answer = whatItWouldTake(holding, table);
@@ -20501,8 +20510,16 @@ ${done.lines.join(' ')}`;
         // an art, a manual, a material, protection, an alliance: one field.
         const table: OnTheTable[] = [];
         if (offered && offered.trim().length >= 2) {
+            // `theirs.reachesTo` is the fourth argument for the reason the
+            // barter caller passes one: what a thing is worth is a fact about
+            // the person receiving it. This is the owner's Hollow Court case,
+            // and it falls out of rows rather than out of a branch on a house -
+            // a member standing at the Void Refinement floor is refused stones
+            // and refused a heaven-grade pill, and the one thing in the catalog
+            // that reaches past her own rung is a higher Unearned Step.
             table.push(whatIsBeingPutDown(
-                offered.trim(), cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id)
+                offered.trim(), cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id),
+                theirs.reachesTo
             ));
         }
 
@@ -20552,7 +20569,19 @@ ${done.lines.join(' ')}`;
         const stick = whatTheHousesNoIsWorth({
             theFamily: { houseId: theirFaction },
             theSuitorsBacking: membership !== null ? 'backed' : 'none',
-            theSuitorIsOutOfTheirReach: answer.howFarApart === 'dismissed'
+            // ── AND THE GAP IS READ LOOKING UP, NOT DOWN ─────────────────
+            //
+            // `answer.howFarApart` is the band read from the suitor toward the
+            // house, and the question here is the other one: can the FAMILY
+            // reach the SUITOR. The two are not mirror images - `dismissed`
+            // wants seventeen rungs and `unreachable` wants nine - and taking
+            // the wrong one handed the family power it does not have. Played:
+            // a cultivator at rung 44 was told by a family that reaches 29 to
+            // elope or give up. It now reads `they can be pressed`, whose own
+            // line is the right answer to the owner's case - "they can still
+            // start something, and they are in no position to finish it".
+            theSuitorIsOutOfTheirReach:
+                theSuitorIsPastWhatTheyCouldReach(theirs.reachesTo, mine.reachesTo)
         });
 
         // ── AND WHETHER THE PERSON GOES ALONG WITH IT ────────────────────
@@ -20573,8 +20602,9 @@ ${done.lines.join(' ')}`;
             `Match: ${cultivator.name} (rung ${mine.reachesTo}, `
             + `${mine.houseId ?? 'no house'}) with ${party.name} (rung ${theirs.reachesTo}, `
             + `${theirs.houseId ?? 'no house'}, on the roll ${theirs.onTheRoll ?? 'not at all'}).`,
-            `The house is short of: ${answer.shortOf}. The two stand ${answer.howFarApart} of `
-            + `each other. Children of it would carry `
+            `The house is short of: ${answer.shortOf}. Standing between them: `
+            + `${answer.howFarApart}, read from the suitor toward the house. `
+            + `Children of it would carry `
             + `${answer.theLineTheChildrenWouldCarry ?? 'no line'}.`,
             `Bar ${answer.price.theHeightToReach}; on the table `
             + `${answer.price.theBestPutDown ?? 'nothing singular'} at `
