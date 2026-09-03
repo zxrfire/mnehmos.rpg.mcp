@@ -47,6 +47,16 @@
  * A cultivator who heard "Kettle" through a wall passes the first and fails
  * the second, which is the entire design: "Seeing is a knowledge state, not an
  * access state."
+ *
+ * ── The one thing that overrides both, for one line ───────────────────────
+ * An ADMIN line reaches past the played cultivator's own ignorance, because an
+ * operator's job is to stand the world somewhere ordinary play would take four
+ * hundred years to reach and being subject to one character's ignorance is what
+ * stops them. Both predicates ask the table first and answer honestly; the
+ * override is applied to the ANSWER, is scoped to one holder for the duration of
+ * one call, and writes nothing - so nothing here has stopped gating and the
+ * holder's own map of the world is exactly what it was. See
+ * [`operator-knowledge-reach.ts`](operator-knowledge-reach.ts).
  */
 
 import type Database from 'better-sqlite3';
@@ -70,6 +80,7 @@ import {
 } from '../engine/social/discovery.js';
 import { theOneIdAPersonIsKnownBy } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { localGeographyFor } from './lore.js';
+import { theOperatorReachesPast } from './operator-knowledge-reach.js';
 
 /**
  * Entity kinds whose existence is gated.
@@ -298,9 +309,20 @@ export class KnowledgeGate {
         `);
     }
 
-    /** Has this holder ever heard of it? The predicate the whole rule rests on. */
+    /**
+     * Has this holder ever heard of it? The predicate the whole rule rests on.
+     *
+     * ── AND THE ONE THING THAT OVERRIDES IT ──────────────────────────────
+     *
+     * An operator line reaches past this holder's ignorance, for that line and
+     * no other. The table is asked first and answers honestly; the override is
+     * applied to the answer rather than instead of the question, so nothing here
+     * stops gating and the lift is recorded where the surface can print it. See
+     * `operator-knowledge-reach.ts` for why it is a scope and not a flag.
+     */
     isAwareOf(holderId: string, kind: KnownEntityKind, id: string): boolean {
-        return this.awareStmt.get(holderId, existenceClaimKey(kind, id)) !== undefined;
+        if (this.awareStmt.get(holderId, existenceClaimKey(kind, id)) !== undefined) return true;
+        return theOperatorReachesPast(holderId, 'isAwareOf', kind, id);
     }
 
     /**
@@ -332,7 +354,14 @@ export class KnowledgeGate {
      * other half and is asked separately.
      */
     canPointAt(holderId: string, kind: KnownEntityKind, id: string): boolean {
-        return stageCanPointAt(this.stageOf(holderId, kind, id));
+        if (stageCanPointAt(this.stageOf(holderId, kind, id))) return true;
+        // Lifted for one operator line, exactly as `isAwareOf` is, and asked
+        // separately because it is a separate question: an operator who can name
+        // a place has to be able to set out for it, and `REACHABLE_FROM` is the
+        // rung that decides that. `stageOf` is deliberately NOT lifted - where
+        // this holder actually stands is a fact, and the receipt is better for
+        // being able to say they stood at `unaware` and were reached past.
+        return theOperatorReachesPast(holderId, 'canPointAt', kind, id);
     }
 
     /**

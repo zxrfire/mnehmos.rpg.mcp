@@ -32,7 +32,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { makeGame } from './harness';
+import { engineCalls, makeGame, planned } from './harness';
 import { readAForcedVerb, readAnItemDescription } from '../../src/server/consolidated/admin-manage';
 import {
     FORCEABLE_DECISIONS,
@@ -40,7 +40,7 @@ import {
     whatWouldArrangeIt,
     withTheAttemptLanding
 } from '../../src/server/consolidated/forcing-an-attempt-to-land';
-import { ACTION_NAMES } from '../../src/web/actions';
+import { ACTION_NAMES, FALLBACK_ACTION, parseIntent } from '../../src/web/actions';
 
 /** ADMIN_MODE is read at call time, so a test can turn it on and put it back. */
 async function withAdminMode<T>(on: boolean, fn: () => Promise<T>): Promise<T> {
@@ -115,9 +115,71 @@ describe('which verb ADMIN was told to run', () => {
     it('takes a playable verb as the leading word', () => {
         expect(readAForcedVerb('sect join the Azure Dew Sect')).toEqual({
             verb: 'sect',
-            sentence: 'sect join the Azure Dew Sect',
+            // The operator's word said WHICH VERB and the rest is a sentence on
+            // its own, so the sentence is the rest. `typed` keeps the line.
+            sentence: 'join the Azure Dew Sect',
+            typed: 'sect join the Azure Dew Sect',
             spelled: false
         });
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // WHICH HALF OF THE LINE THE VERB READS ITS ARGUMENTS OUT OF
+    //
+    // The design owner, on the gap: "`ADMIN <verb> <sentence>` takes the whole
+    // remaining line as the target, so `ADMIN coerce I threaten the nearest
+    // cultivator` resolves nobody. Forcing can't carry a player's own sentence
+    // into a verb that needs a target out of it."
+    //
+    // It bit exactly the verbs whose NAME is also the word a person would use.
+    // `COERCE_SUBJECT_VERBS` matches "coerce" at position zero and
+    // `extractSubject` hands back everything after it, so the player's whole
+    // sentence became the name of a person nobody answers to - and the acts
+    // most worth forcing are precisely the ones that need a target out of a
+    // sentence: coercion, theft, an attack on a named person.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    it('drops the operator\'s word when what follows is a sentence of its own', () => {
+        // The owner's line. Before this, `target` was the whole sentence.
+        const read = readAForcedVerb('coerce I threaten the nearest cultivator');
+        expect(read?.verb).toBe('coerce');
+        expect(read?.sentence).toBe('I threaten the nearest cultivator');
+        expect(parseIntent(read!.sentence).target).toBe('nearest cultivator');
+
+        // And the same for the other verbs named after ordinary English words.
+        expect(readAForcedVerb('attack I attack Yun Shizhen')?.sentence)
+            .toBe('I attack Yun Shizhen');
+        expect(readAForcedVerb('force give I hand Shen Liefeng the manual')?.sentence)
+            .toBe('I hand Shen Liefeng the manual');
+    });
+
+    it('keeps it when the rest of the line is not a sentence', () => {
+        // `Nine Peaks`, `Shen Liefeng my purse` and `The Standing Edge` all
+        // reach the parser's fallback on their own, which is what says the
+        // operator's word was the sentence's own head rather than a label. Every
+        // line of this shape reads exactly as it always did.
+        expect(readAForcedVerb('force move Nine Peaks')?.sentence).toBe('move Nine Peaks');
+        expect(readAForcedVerb('force give Shen Liefeng my purse')?.sentence)
+            .toBe('give Shen Liefeng my purse');
+        expect(readAForcedVerb('breakthrough')?.sentence).toBe('breakthrough');
+    });
+
+    it('is a lookup against the parser, not a reading of the words', () => {
+        // The rule is exactly "does the remainder reach a verb on its own", and
+        // the parser is the only thing that answers it. Nothing here inspects a
+        // word for what it might have meant - same discipline as PRIMARY_ARG.
+        for (const line of [
+            'sect join the Azure Dew Sect',
+            'coerce I threaten the nearest cultivator',
+            'force move Nine Peaks',
+            'interact I steal from Yun Shizhen'
+        ]) {
+            const read = readAForcedVerb(line)!;
+            const rest = read.typed.slice(read.typed.split(/\s+/)[0].length).trim();
+            const remainderIsASentence = rest.length > 0
+                && parseIntent(rest).action !== FALLBACK_ACTION;
+            expect(read.sentence, line).toBe(remainderIsASentence ? rest : read.typed);
+        }
     });
 
     it('takes it spelled out, which is the unambiguous form', () => {
@@ -256,6 +318,31 @@ describe('a roll is what forcing reaches', () => {
             // And the price is charged by the verb, not waived by the force:
             // being robbed is answered, and the answer is a real wound.
             expect(forcedTheft.narration).toMatch(/answers being robbed/);
+        });
+    }, 60_000);
+
+    it('carries the operator\'s own sentence into a verb that needs a target', async () => {
+        // THE GAP THE OWNER FOUND, played. `ADMIN coerce <a player sentence>`
+        // used to file `engine.resolveParty: Unresolved party "I threaten the
+        // nearest cultivator". No exchange was run.` - so the acts most worth
+        // forcing were the ones forcing could not reach.
+        await withAdminMode(true, async () => {
+            const { game } = makeGame({ adminMode: true, seed: 'coerce-1' });
+            await game.newRun('Shen Yuan');
+            await game.act('ADMIN spawn_encounter ordinal=9 name=Yun Shizhen');
+
+            const forced = await game.act('ADMIN coerce I threaten Yun Shizhen');
+
+            expect(forced.narration).toContain('ADMIN - FORCED COERCE');
+            // The target is the person, not the sentence. That one line is the
+            // whole fix, and everything below it follows from it.
+            expect(planned(forced).summary).toContain('coerce(target="Yun Shizhen")');
+            // So the confrontation engine answered, rather than the party
+            // lookup filing "Unresolved party" and nothing running at all.
+            const calls = engineCalls(forced).map(call => call.name);
+            expect(calls).not.toContain('engine.resolveParty');
+            expect(calls).toContain('combat.round');
+            expect(forced.narration).toContain('Yun Shizhen');
         });
     }, 60_000);
 
