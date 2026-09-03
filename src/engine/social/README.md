@@ -97,6 +97,58 @@ comes back, and whether a word was given first - never from which word is on it 
 wrong nobody has thought of yet arrives with a cost and gets a weight without anybody
 editing a table. A `switch` on a cause that decides an outcome is a bug, not a feature.
 
+### An account opens when somebody finds out, not when it happens
+
+**The deed does not open the account. The telling does.** AGENTS.md's *a fact reaches a
+person, and reaching them is an event* is the ruling; `hearing-of-a-wrong.ts` is the join
+and `accounts-with-no-name.ts` is the state it needs that the ledger did not have.
+
+The deed was already true and already on the record. What was missing was somebody who
+could act on it, and being told supplies exactly that - so **a wrong nobody witnessed
+stays true, stays findable, and opens nothing.** That is what makes doing a thing quietly
+worth doing.
+
+There are **three states, not two**, and the middle one is the design:
+
+| | what they hold | the row |
+|---|---|---|
+| 1 | nothing | none |
+| 2 | it was done, and they cannot say by whom | open, no subject on it |
+| 3 | who did it | the subject attaches |
+
+State 2 is why a killing with no witness still has a consequence, and it is what changes
+what silencing a witness buys: **killing the only person who could name you converts a
+named account into an unnamed one that goes looking.** You buy time and a wrong name, not
+absolution.
+
+Four rules govern all of it, and each one is a thing a future reader will otherwise undo:
+
+- **The account is dated to the day they were told**, not the day it happened. One field,
+  and the whole ruling.
+- **The weight is the deed's.** Decided once, at creation, exactly as this ledger already
+  requires. Finding out late makes a thing HELD, never heavier or cheaper.
+- **It opens against whoever the telling NAMED.** There is deliberately no check that the
+  name was right, because a hearer who could tell a true telling from a false one is a
+  hearer with `KnowledgeLedger`'s omniscient view. `retell` already swaps the doer under
+  `misattributed`, so a grudge held with complete conviction against the wrong man falls
+  out of machinery that was already running.
+- **Whether state 2 is available is a property of the ACT, not a list of causes.** One
+  question: *could a stranger have done it?* A theft in the dark could; a betrayal could
+  not, because being betrayed means somebody you had something with turned on you and the
+  name came with the wrong. `theWrongedPartyAlreadyHasTheName` asks it of fields the deed
+  already carries - never of the word on it.
+
+**The record is never conditional on knowledge.** `world_chronicle` holds the deed and
+provenance holds it whatever anybody knows. What is conditional is who holds an ACCOUNT
+about it, and conflating the two deletes the thread that makes a quiet wrong discoverable
+later.
+
+An account with no name on it currently carries the empty string as its subject, because
+`obligations.subject_id` is `NOT NULL` and relaxing that in SQLite is a table rebuild on a
+shared registry rather than an idempotent ALTER. **The honest column is `subject_id
+TEXT`.** Until it is, `NO_NAME_ON_IT` and `hasANameOnIt` are the whole interface and
+nothing else may compare to it.
+
 ### Karma is a relationship graph, not a score
 
 Karma is modelled as **persistent relationships between entities** - favour, debt,
@@ -280,6 +332,12 @@ how-near-you-stand-to-somebody.ts
                   decides whether they get the story or the fact
 what-is-said-about-somebody.ts
                   reputation, derived at read time and never stored
+hearing-of-a-wrong.ts
+                  somebody finding out, and the account that opens because they
+                  did. The three states and the two transitions a telling makes
+accounts-with-no-name.ts
+                  an account held against nobody, when one can be, and what it
+                  makes its holder want
 ```
 
 ## Reputation is derived, and the gap between it and the ledger is the feature

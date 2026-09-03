@@ -165,6 +165,21 @@ export interface Rumour {
     /** What the teller actually says. Composed from fields, right or wrong. */
     text: string;
     named: RumouredName[];
+    /**
+     * Everybody the sentence puts a name to, doer first, as ids.
+     *
+     * Not the same list as {@link named}, and the difference matters. `named`
+     * is what the knowledge layer may write a record about, so it carries only
+     * people the world holds a row for. This is who the SENTENCE spoke of -
+     * `sentenceFor` renders `actors[0]` as the person it is about and
+     * `actors[1]` as the other party - which includes a played cultivator, who
+     * has no world row and whose name is in the text all the same.
+     *
+     * Bent exactly as the sentence is: under `misattributed` the first id is
+     * the person being wrongly named for it, and the rest are untouched,
+     * because no distortion has ever moved them.
+     */
+    spokenOfIds: string[];
     /** The highest rung anybody in the rumour stands at, as told. */
     subjectOrdinal: number;
     scale: EventScale;
@@ -358,6 +373,7 @@ export function retell(
         hands,
         text: told.text,
         named: told.named,
+        spokenOfIds: told.spokenOfIds,
         subjectOrdinal: highestOrdinalIn(state, fact),
         scale: fact.scale
     };
@@ -408,6 +424,8 @@ function drawDistortion(
 interface Told {
     text: string;
     named: RumouredName[];
+    /** Who the sentence spoke of, doer first. See `Rumour.spokenOfIds`. */
+    spokenOfIds: string[];
 }
 
 /**
@@ -482,8 +500,13 @@ function bend(
     }
 
     return {
+        spokenOfIds: actors.slice(0, 2).map(a => a.id),
         text: sentenceFor({
             kind,
+            // Read off the fact, so a distortion cannot invent an author for a
+            // wrong that never had one. `misattributed` still swaps who is
+            // NAMED, and a fact with nobody in the doer slot has nobody to swap.
+            authorless: fact.data.deedNamesNobody === true,
             who: actors[0]?.name ?? null,
             other: actors[1]?.name ?? null,
             house: house?.name ?? null,
@@ -567,6 +590,17 @@ function anotherFact(
 
 interface Saying {
     kind: HistoricalFact['kind'];
+    /**
+     * The fact names nobody for it.
+     *
+     * A body found on the low road, a vault emptied in the dark. Every template
+     * below renders a single name as the SENTENCE'S SUBJECT, which reads as the
+     * person who did it - so without this a fact naming only the person it was
+     * done to accuses them of it, in a sentence the player is handed as news.
+     * Found by playing: "Prober turned on their own at the low road", about a
+     * wrong done to Prober by somebody nobody could name.
+     */
+    authorless: boolean;
     who: string | null;
     other: string | null;
     house: string | null;
@@ -618,6 +652,16 @@ function sentenceFor(s: Saying): string {
     const at = where ? ` at ${where}` : '';
     const when = whenPhrase(s.years);
     const size = sizePhrase(s.size);
+
+    // Nobody is named for it, and the one name in it is the person it happened
+    // to. Said this way whatever kind of event it was, because what the teller
+    // has is exactly this and no more: it was done, it was done to them, and
+    // that is where the account of it stops.
+    if (s.authorless) {
+        return other
+            ? `Something was done to ${who} and ${other}${at}, ${when}, ${size}.`
+            : `Something was done to ${who}${at}, ${when}, ${size}.`;
+    }
 
     switch (s.kind) {
         case 'ruin_opened':
