@@ -69,7 +69,10 @@ born, unchangeable, and worth more than any effort you will ever make.
   they are worth.
 - **Dual conflicting roots** (water-fire, metal-wood) draw two energies that fight each
   other on the way in. This is qi deviation: not a rare accident but a standing condition,
-  a low fever that never resolves.
+  a low fever that never resolves. **A standing condition is what drawing qi COSTS you, not
+  a clock that runs while you sleep** - see [a wound has a cause you can point
+  at](#a-wound-has-a-cause-you-can-point-at) below, which is the ruling that settles what
+  that sentence is allowed to mean.
 - **The triple root** (metal-wood-earth) holds three links of the overcoming cycle in a
   row. Metal cuts wood, wood breaks earth, and the chain never closes - so exactly one of
   its three elements, earth, can be cultivated cleanly. Most people who hold it spend
@@ -493,6 +496,42 @@ it runs on `RISK_PER_UNTREATED_INJURY` which is a separate ruling with its own g
 that *does* treat its wounds: median age at death 47 against 27, median peak ordinal 9
 against 2, and six of fifteen runs surviving the whole probe. The medicine ladder is what
 that difference is made of.
+
+**And it ends a run that CULTIVATES and never treats anything, which is not the same
+sentence.** See below.
+
+### A wound has a cause you can point at
+
+> *"Idle shouldn't RANDOMLY accumulate injuries. Injuries come from what you DO. Events,
+> right?"*
+> - the design owner
+
+Every wound in this world is the price of something that happened. You cultivated, you
+crossed a boundary, you fought, you swallowed something, you practised an art that fights
+your root - and the wound is what that cost. **Nothing is wounded by the calendar.**
+
+This was found through `ADMIN advance_days`, which spends real time at `idle` focus. The
+time skip rolled qi deviation on a thirty-day grid regardless of what the body was doing,
+so a cultivator sitting still took better than one torn meridian a year and died of
+`qi_deviation` inside a decade, whatever was paid for food, having done nothing whatever.
+Measured at ordinal 20 over a requested century: 780 days simulated and three wounds before
+the ruling, **the full 36500 days and zero wounds after it**, ending on the stagnation clock
+instead - which is a law that names its own cause.
+
+The axis is **event against state**, and it is the thing to sort any new hazard against:
+
+- **An event fires a check.** Drawing qi is one. So is opening a manual that overcomes your
+  root (`technique-manage.ts`), attempting a crossing (`breakthrough.ts`), and every blow
+  landed in `combat.ts`.
+- **A state prices the check that an event fires.** A conflicting spirit root, open untreated
+  channels, qi accumulated past a bottleneck. All three still count for exactly what they
+  counted for; none of them acts. A state that fires on its own is the defect this rule
+  exists to name.
+
+`deviationRisk` was not retuned and did not need to be - only the firing condition moved, to
+`drawingQi` in `time-skip.ts`. A cultivator practising anything rolls what they always
+rolled, on the same grid, off the same per-day streams, so the treated-against-untreated
+cliff above is intact and `root-cliff.test.ts` passes untouched.
 
 ### Lifespan is not a straight line
 

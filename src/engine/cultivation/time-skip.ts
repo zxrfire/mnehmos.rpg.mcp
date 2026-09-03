@@ -143,7 +143,55 @@ import { forStream } from './rng.js';
 // death sentence inside a season.
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Days between qi-deviation checks. */
+/**
+ * Days between qi-deviation checks, ON DAYS THE CULTIVATOR IS CULTIVATING.
+ *
+ * ══ A WOUND HAS A CAUSE YOU CAN POINT AT ══════════════════════════════════
+ *
+ * Ruled by the design owner, and it reverses what this file used to do:
+ *
+ * > *"Idle shouldn't RANDOMLY accumulate injuries. Injuries come from what you
+ * > DO. Events, right?"*
+ *
+ * A wound is what an act cost. Something happened - you cultivated, you
+ * crossed a boundary, you fought, you swallowed something, you practised an
+ * art that fights your root - and the wound is the price of it. **A body
+ * sitting still is not accumulating torn meridians out of the air**, and a die
+ * rolled against the calendar is exactly that.
+ *
+ * This check used to fire every thirty days regardless, which made the clock
+ * the enemy. Measured through `ADMIN advance_days` at idle focus: an untreated
+ * body took better than one wound a year having done nothing whatever, hit the
+ * three-wound threshold in 780 days, and died of `qi_deviation` inside a
+ * decade whatever it paid for food. That is not a hard world; it is a world in
+ * which "stand still and survive" is impossible, in a game whose whole subject
+ * is spending decades.
+ *
+ * ── WHAT DID NOT CHANGE, AND WHY THAT IS THE WHOLE OF IT ─────────────────
+ *
+ * `deviationRisk` is untouched and every contributor it prices still counts.
+ * The owner's axis is EVENT against STATE, and the sort falls out cleanly:
+ *
+ *   - Practising an art that overcomes your root is an ACT, and
+ *     `CONFLICTING_TECHNIQUE_RISK` was already gated on `techniqueElement`.
+ *   - A conflicting ROOT, untreated wounds, and qi accumulated past a
+ *     bottleneck are STATES. **A state raises what an act costs; it does not
+ *     fire on its own.** `deviation.ts` argues a conflicting root is "standing
+ *     inside your own meridians for the entire run", and that stays true - it
+ *     is a standing multiplier on the danger of drawing qi, not a clock that
+ *     runs while you sleep.
+ *
+ * So the risk arithmetic keeps every term, and only the FIRING CONDITION moved.
+ * A cultivator practising anything rolls exactly what they always rolled, on
+ * the same day grid, off the same per-day stream - the streams are keyed on the
+ * absolute day, so a skipped day perturbs nothing downstream and a cultivating
+ * run is bit-identical to before this change.
+ *
+ * Rates are per CHECK, not per day: a dual root's 0.08 innate risk fires
+ * roughly once every three years OF SECLUSION, which is a hazard. Fired daily
+ * it would be a death sentence inside a season; fired against the calendar it
+ * was a death sentence for doing nothing.
+ */
 export const DEVIATION_CHECK_DAYS = 30;
 /** Days between "did something find you out here" checks. */
 export const ENCOUNTER_CHECK_DAYS = 90;
@@ -451,6 +499,30 @@ export function simulateTimeSkip(
     const eventScale = Math.min(1, Math.max(0, ctx.randomEventScale ?? 1));
     const grainAbstinence = ctx.grainAbstinence ?? false;
     const hostility = ctx.hostility;
+
+    /**
+     * Whether this span is spent DRAWING QI, which is the act qi deviation is
+     * the price of. See the banner over `DEVIATION_CHECK_DAYS`.
+     *
+     * Read off the focus multiplier because that is what "how the time is being
+     * spent" already means: seclusion, steady practice and cultivating on the
+     * road are all fractions of the same act, and `idle` is the absence of it.
+     * `advance_days` and `work` are the two callers that pass zero, and both
+     * are somebody spending a span on something other than the method.
+     *
+     * DEFAULTS TO TRUE, via `DEFAULT_OPTIONS.focusMultiplier`. Every caller
+     * that passes no options at all - NPC stubs, fixtures, the calibration
+     * sweeps - is a cultivator cultivating, and gets exactly the behaviour it
+     * always had.
+     *
+     * Note what this deliberately does NOT read: `rate.perDay`. Ground too
+     * strong to work in returns nothing (`hostility.inert`) and a body still
+     * practising in it is still practising - the act is what is priced, not the
+     * yield. Pricing the yield would make bad ground a place to hide from the
+     * consequences of drawing qi, which is the opposite of what those bars are
+     * for.
+     */
+    const drawingQi = (ctx.options?.focusMultiplier ?? 1) > 0;
 
     // ── Working state. A shallow copy; the input is never touched. ──
     const startAge = cultivator.age;
@@ -1218,7 +1290,7 @@ export function simulateTimeSkip(
         const newAbsDay = startDay + elapsed;
 
         // ── 4. Grid checks that land exactly on this day. ──
-        if (onGrid(newAbsDay, DEVIATION_CHECK_DAYS)) {
+        if (drawingQi && onGrid(newAbsDay, DEVIATION_CHECK_DAYS)) {
             const check = rollDeviation(
                 { spiritRoot: cultivator.spiritRoot, injuries },
                 forStream(ctx.seed, 'deviation', newAbsDay),
