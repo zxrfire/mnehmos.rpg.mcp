@@ -2375,3 +2375,38 @@ The shape that made this worth a section: a per-house rank title, read at **sixt
 ### The scratchpad is shared between agents in a session
 
 **Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.
+
+### Build a commit from a temporary index, because the real one is shared
+
+**Staging and committing are two moments, and another agent commits in between.** This is not
+a sequencing mistake you can drill your way out of - `git add <your file>` followed by a bare
+`git commit` will take everything anybody else has staged in the gap, and it happened twice in
+one hour, in both directions, between people who both knew the rule.
+
+`git commit -- <paths>` is not the fix either: a pathspec commits the **working tree** at those
+paths, sweeping in another agent's unstaged edits to any file you name.
+
+**And `git diff --cached --stat` is only a check if you can act on it.** Chained into the same
+command as the commit, it prints its answer *after* the commit has already been composed - which
+is how this is usually discovered rather than prevented.
+
+**The safe pattern is a private index.** Point `GIT_INDEX_FILE` at a scratch file, stage only
+what is yours into it, and commit from it. The shared index is never touched, nothing anybody
+else staged can be picked up, and their work stays exactly where they left it. One agent used
+this to land a change in a file that was dirty with somebody else's work and verified the
+staged blob byte-for-byte afterwards; that is the standard.
+
+**Then clear the shared index for those paths, because you have just made it stale.** This is
+the step that is easy to miss and it fails in the dangerous direction: committing from a private
+index leaves the **shared** index still holding the pre-commit blob for your paths, which is now
+a staged **revert of your own work**, sitting there for the next agent's bare `git commit` to
+pick up. `git show --stat HEAD` passes cleanly and cannot see it, because the damage is ahead of
+HEAD rather than in it. So finish with `git reset -- <the paths you committed>` and confirm
+`git diff --cached` is empty for them. Resetting a path leaves the working tree alone, so
+anybody else's unstaged edits in the same file survive.
+
+**Whatever you do, verify after rather than only before.** `git show --stat HEAD` is the check
+that catches this, and it is the only one that runs late enough to see the race. If you swept
+somebody, say so to them immediately and **do not rewrite the commit** - a pushed commit that
+other agents are pulling against is worse to rewrite than to mislabel. Their work is not lost;
+it is under the wrong title, and that is a cheap thing to say and an expensive thing to fix.
