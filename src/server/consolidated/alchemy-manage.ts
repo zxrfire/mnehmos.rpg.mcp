@@ -96,6 +96,7 @@ import {
 import {
     FLAG_GRAIN_ABSTINENCE_UNTIL,
     FLAG_SOUL_ENDED,
+    FLAG_SOUL_HOLLOWED,
     FLAG_BREAKTHROUGH_PILLS_TAKEN,
     FLAG_BLOODLINE_SPECIES,
     FLAG_BLOODLINE_TIER,
@@ -913,6 +914,24 @@ function resolvePillEffect(
                     'The soul goes out before the body does, which is the whole of what was '
                     + 'bought. Whatever was in there is not in there now, and nobody who takes '
                     + 'the body will find it.'
+            };
+
+        // -- AND THE OTHER END OF THE SAME AXIS ---------------------------
+        //
+        // Hollows the swallower and appoints nobody. Whose hand a body is
+        // under is written by whoever put the pill in them, which is not this
+        // path: somebody who takes one alone is emptied and belongs to no one.
+        //
+        // No death here, which is the whole difference from `end_the_soul`.
+        // The body goes on, and the flag is what a later reader consults.
+        case 'hollow_the_soul':
+            return {
+                ...base,
+                flags: { [FLAG_SOUL_HOLLOWED]: '1' },
+                summary:
+                    'It does not hurt, and that is the first sign that something is wrong. What '
+                    + 'is left standing is a body in good repair with nobody keeping it, and it '
+                    + 'will go on standing there until somebody tells it not to.'
             };
 
         case 'heal_hp': {

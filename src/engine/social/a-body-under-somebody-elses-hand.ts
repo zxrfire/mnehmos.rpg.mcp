@@ -47,6 +47,24 @@
  * reads as `nothing_left` to `whatASoulSearchTakes`. Somebody who hollows a
  * courier to walk them home has also destroyed what the courier knew, and
  * neither end of that had to be told about the other.
+ *
+ * ── WHICH MAKES IT A CHOICE, AND THE CHOICE IS THE POINT ─────────────────
+ *
+ * READ THIS BEFORE CHANGING EITHER END. That agreement is not an
+ * implementation detail, it is a rule a player will feel:
+ *
+ *     YOU CANNOT BOTH CONTROL SOMEBODY AND READ THEM.
+ *
+ * Hollow the courier and you own a body that walks home. Read the courier and
+ * you learn where the children were taken. Two things worth having and one
+ * person to spend on them, and the spending is exclusive.
+ *
+ * Nobody wrote that. It fell out of two modules agreeing about what
+ * `identityContinuity: 0` means, and it is the kind of decision this engine
+ * should generate rather than script. Anybody touching `whatTheHollowingLeaves`
+ * or the `nothing_left` branch is holding both sides of it: give a held body a
+ * readable soul, or let a search survive a hollowing, and the choice quietly
+ * stops existing.
  */
 
 import type { ObligationInput } from './grudges.js';

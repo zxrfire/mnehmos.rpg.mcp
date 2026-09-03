@@ -2697,6 +2697,23 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // not, so the object sits inside the verb. Found by the intent walk.
     ['tame', /\b(?:tame|tames|taming|break(?:s|ing)?(?:\s+\S+){0,3}\s+in\b|bring (?:it|him|her|them) to heel|subjugate)\b/],
     ['talk', /\b(?:beat (?:it|the truth|an answer|the location|the name) out of|wring (?:it|the truth|an answer) (?:out )?(?:of|from)|make (?:him|her|them) talk|force (?:him|her|them) to talk|torture)\b/],
+    // ── SOMETHING GOING INTO THEM ────────────────────────────────────────
+    //
+    // Above every `hand_over` row and above the `force him to` catch-all,
+    // because those two frames are the same sentence pointing in opposite
+    // directions - a person made to do a thing with a thing - and the tail is
+    // the only place the direction is written. The catch-all read "I force him
+    // to swallow it" as a robbery for exactly this reason, and once
+    // `hand_over` moved a purse that sentence emptied the pockets of somebody
+    // a player had meant to make take a pill.
+    //
+    // Told apart on the OBJECT rather than on the purpose, which is why it is
+    // askable of a sentence at all. The `coerce` intent measurement put
+    // `swallow` and `hand_over` on opposite sides of every probe by margins of
+    // 0.020 to 0.198 - the two intents of this verb that a reader CAN
+    // separate, because a thing going in and a thing coming out are both in
+    // the words.
+    ['swallow', /\b(?:force|forces|forcing|make|makes|making|push|pushes|pushing|hold|holds|holding)\b[^.!?]*\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take the (?:pill|medicine|tablet)|down (?:his|her|their|its) throat|past (?:his|her|their) teeth)\b|\bforce(?:s|d)? (?:the |a )?(?:pill|tablet|medicine|it) down\b/],
     ['hand_over', /\b(?:force|forces|forcing|strong-?arm|strong-?arms|strong-?arming|extort|extorts|extorting|shake down|shakes down)\b[^.!?]*\b(?:into (?:handing|giving|paying|opening)|to hand|to give|to pay|to open|out of (?:him|her|them))\b/],
     // `make` is how somebody says this and the pattern had only `force`,
     // `strong-arm`, `extort` and `shake down` - so `hand_over` was a declared
@@ -2740,7 +2757,7 @@ const COERCE_SUBJECT_VERBS =
  * over-the-ledger.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
-    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open)\b.*$/i;
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn)\b.*$/i;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 

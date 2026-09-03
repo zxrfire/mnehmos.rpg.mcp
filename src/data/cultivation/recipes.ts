@@ -28,7 +28,7 @@
 import type { Recipe, TechniqueGrade } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
-import { getPill, SOUL_QUENCHING_PILL_ID } from './pills.js';
+import { getPill, HOLLOWING_PILL_ID, SOUL_QUENCHING_PILL_ID } from './pills.js';
 import type { Band } from './techniques.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -149,6 +149,19 @@ const RECIPE_DATA: readonly Recipe[] = [
         // this recipe is a herb somebody has to be able to reach rather than
         // any skill the refining takes.
         requiredOrdinal: 5
+    },
+    {
+        id: 'recipe-hollowing',
+        name: 'Hollowing Pill Formula',
+        producesPillId: HOLLOWING_PILL_ID,
+        ingredients: [
+            { itemId: 'herb-corpse-silver-flower', quantity: 2 },
+            { itemId: 'herb-grave-lily', quantity: 2 }
+        ],
+        // The difficult part was never the refining. It fails more often than
+        // the quiet pill does because there is more to keep alive.
+        baseSuccessRate: 0.6,
+        requiredOrdinal: 17
     },
     {
         id: 'recipe-qi-gathering',

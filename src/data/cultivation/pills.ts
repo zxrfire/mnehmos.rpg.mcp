@@ -59,7 +59,9 @@ export const POTENCY_UNITS: Record<PillEffect, string> = {
     grain_abstinence: 'days without hunger',
     cleanse_deviation: 'deviation severity levels',
     // Nothing. A soul is out or it is not, and there is no amount of it.
-    end_the_soul: 'none - the effect is absolute'
+    end_the_soul: 'none - the effect is absolute',
+    // Nothing either. What is left is a state, not a quantity.
+    hollow_the_soul: 'none - what is left is a state'
 } as const;
 
 /**
@@ -248,6 +250,9 @@ export function lifespanRefusalReason(pill: Pill, ordinal: number): string | nul
  */
 export const SOUL_QUENCHING_PILL_ID = 'pill-soul-quenching';
 
+/** The other end of the same axis. See `SOUL_QUENCHING_PILL_ID`. */
+export const HOLLOWING_PILL_ID = 'pill-hollowing';
+
 export const MINOR_HEALING_PILL_ID = 'pill-minor-healing';
 
 /** The hunger problem's real solution, and a genuine mid-game objective. */
@@ -319,6 +324,21 @@ export const PILLS: readonly Pill[] = [
         value: 40,
         description:
             'Grey, chalky, and small enough to hold behind a tooth. Houses that send people into other houses issue them without comment, and the instruction that comes with it is not about when to take it but about what is worth more than the person carrying it.'
+    },
+    {
+        id: HOLLOWING_PILL_ID,
+        name: 'Hollowing Pill',
+        grade: 'earth',
+        effect: 'hollow_the_soul',
+        potency: 1,
+        // There is no body afterwards that carries anything, in the sense the
+        // toxicity model means. What it leaves is not a burden on a person.
+        toxicity: 0,
+        // Dearer than the quiet pill and not by much, which is the whole
+        // uncomfortable fact about it. Nothing here is priced by what it does.
+        value: 400,
+        description:
+            'Pale and slightly warm, and it does not dissolve so much as go. Whoever refined the first one wrote down that the difficult part was keeping the body breathing, which tells you what the easy part was.'
     },
     {
         id: 'pill-qi-gathering',
