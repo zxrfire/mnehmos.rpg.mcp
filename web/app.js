@@ -4605,10 +4605,19 @@ function mapFlockMarkup(key, group, sharedDescriptions) {
     </details>`;
 }
 
-/** Descriptions carried by more than one row on this level. */
-function mapSharedDescriptions(rows) {
+/**
+ * Descriptions carried by more than one place on this level.
+ *
+ * Over the WHOLE level, not over what survived the filters. Whether a sentence
+ * is a constant of this world is a fact about the world; computing it over the
+ * visible rows made it a fact about the search box, so searching "Neargate"
+ * left one ruin standing alone, no longer "shared", reading "The seat of a
+ * power that no longer exists." again - the same row saying two different
+ * things depending on what was typed above it.
+ */
+function mapSharedDescriptions() {
   const seen = new Map();
-  for (const { n } of rows) {
+  for (const n of mapFrameNodes()) {
     const d = String(n.description || '').trim();
     if (!d) continue;
     seen.set(d, (seen.get(d) || 0) + 1);
@@ -4629,7 +4638,7 @@ function mapListMarkup() {
 
   const origin = MAP.byId.get(MAP.originId);
   const container = mapContainer();
-  const shared = mapSharedDescriptions(rows);
+  const shared = mapSharedDescriptions();
 
   // One pass to band the rows, so a band can be summarised before it is drawn.
   const bands = new Map();
