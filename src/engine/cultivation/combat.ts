@@ -2422,7 +2422,12 @@ function oneSided(
             (injuries[defenderInput.id].length > 0
                 ? ` and carrying a ${injuries[defenderInput.id][0].severity} wound that will not close on its own.`
                 : '.') +
-            ` ${aggressorInput.name} took nothing.`
+            // "took nothing" for "was not hurt" was read in play as "took
+            // nothing OFF THEM", which is a different sentence and now a
+            // reachable one: a coercion for `hand_over` moves a purse, so the
+            // damage line and the taking line sat next to each other saying
+            // opposite things. This says the body and only the body.
+            ` ${aggressorInput.name} was not touched.`
     };
 }
 
