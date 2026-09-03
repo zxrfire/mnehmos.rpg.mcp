@@ -94,11 +94,21 @@ and it is the route by which anything the head personally holds reaches anybody 
 taken, and they have them - but this is the head's personal matter and the final say is theirs.
 It is the one choice in a house that is not the room's to settle.
 
-**And a personal disciple's place dies with their master's.** When a head dies, or **retires
-into being an elder because they are old**, their personal disciples **are demoted**. The tie
-was to a person, not to the house, so it does not survive that person leaving the position -
-and the next head takes their own. That is the risk carried by the best seat below the top:
-everything you have depends on somebody else keeping theirs.
+**There is one rank between an elder and the head: the GRAND ELDER.** First among equals of
+the elders, **one spot only**, second to the patriarch and below him. **It is where a head
+retires to.** A patriarch who steps down because he is old goes into that seat rather than out
+of the house - he stops leading and does not stop being the deepest person in it.
+
+**And a personal disciple's PLACE dies with their master's seat. The relationship does not.**
+When a head dies, or retires into being grand elder, their personal disciples lose **the
+position**, and the next head takes their own. But **a master is a master until he dies.** A
+retired head is still teaching, and the people he taught are still his - they simply are not
+with him every day any more.
+
+So what somebody drops into is not *nobody*. It is **a disciple with a master**, which is the
+ordinary condition of most conclave disciples and a good many inner ones. The rare thing was
+being the head's *personal* student; having a master is normal, and it survives everything
+except death.
 
 **They are demoted to wherever their skill puts them against the pool as it stands today** -
 which is usually conclave, since somebody the head was teaching is generally at least the equal
