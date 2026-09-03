@@ -107,9 +107,13 @@ import {
 } from './object-damage.js';
 import {
     isRuined,
-    transferPossession,
     type ObjectRecord
 } from './possessions.js';
+import {
+    takenByForceOfArms,
+    takenByStandingOverIt,
+    type CouldObject
+} from './ownership-transfer.js';
 import { whatIsBehindIt, type WhatIsBehindIt } from './sheltering.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
@@ -203,17 +207,25 @@ export function whatIsLeftInTheHold(state: WorldState, factionId: string): Objec
  */
 export function takenAsSpoils(
     object: ObjectRecord,
-    input: { by: { id: string; name: string }; from: { name: string }; war: string; onDay: number }
+    input: {
+        by: { id: string; name: string };
+        from: { id: string; name: string };
+        war: string;
+        onDay: number;
+    }
 ): ObjectRecord {
-    return transferPossession(object, {
+    return takenByForceOfArms(object, {
+        by: input.by,
         onDay: input.onDay,
-        toHolderId: input.by.id,
-        toHolderName: input.by.name,
-        how: 'looted',
-        transfersOwnership: true,
         source: input.war,
         note: `Taken off the ${input.from.name} at the end of ${input.war}. Nothing was done to `
-            + 'the thing; what changed is whose it is.'
+            + 'the thing; what changed is whose it is.',
+        // THE LOAD-BEARING HALF. `items.md`: force of arms moves the register
+        // only where everyone else acknowledges it, and the party whose
+        // acknowledgement means anything is the house that lost. A house that
+        // cannot take a thing back has lost the thing rather than the use of
+        // it, and this is where that is written down instead of assumed.
+        acknowledgedBy: [input.from.id]
     });
 }
 
@@ -233,21 +245,44 @@ export function takenAsSpoils(
  * The person is not deleted and neither is anybody else. `dissolvedOnDay` on
  * the house is the whole of what ends; the people scatter with their ties,
  * their grudges and what they know, and one of them is carrying this.
+ *
+ * ── AND WHETHER IT BECOMES THEIRS IS THE THIRD ROUTE ─────────────────────
+ *
+ * This used to move ownership unconditionally, and `items.md` has since ruled
+ * that it cannot: **a single person does not become an owner by walking out
+ * with something**, however long they keep it, and that is what leaves a stolen
+ * thing findable and dangerous to carry. What decides it is whether anybody who
+ * scattered with them is in a position to raise the question -
+ * `nobodyLeftToArgueWith` in `ownership-transfer.ts`, which is a rung and not a
+ * fight.
+ *
+ * So the commonest outcome here is now POSSESSION: an ordinary member walks out
+ * with the hold's best thing and their seniors, also scattered, also alive,
+ * know exactly what they took. The route only completes for somebody standing
+ * far enough above every one of them that there is no question to raise. Both
+ * write a claim, because a claim nobody acknowledges is still a claim and it is
+ * what somebody's descendants inherit the argument off.
  */
 export function carriedOff(
     object: ObjectRecord,
-    input: { by: { id: string; name: string }; from: { name: string }; war: string; onDay: number }
+    input: {
+        by: { id: string; name: string; realmOrdinal: number };
+        from: { name: string };
+        /** Who else walked out of the same house and could say whose it is. */
+        objectors: readonly CouldObject[];
+        war: string;
+        onDay: number;
+    }
 ): ObjectRecord {
-    return transferPossession(object, {
+    return takenByStandingOverIt(object, {
+        by: input.by,
         onDay: input.onDay,
-        toHolderId: input.by.id,
-        toHolderName: input.by.name,
-        how: 'lost',
-        transfersOwnership: true,
+        holder: { realmOrdinal: input.by.realmOrdinal },
+        objectors: input.objectors,
         source: `the breaking up of the ${input.from.name}`,
         note: `Walked out of the ${input.from.name}'s hold when it broke up at the end of `
             + `${input.war}. Whoever asks after it next will find a name and then nothing.`
-    });
+    }).object;
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -322,7 +357,11 @@ export function settleTheSpoils(
         if (canScatter) {
             const carrier = survivors[rng.int(0, survivors.length - 1)];
             state.objects[at] = carriedOff(object, {
-                by: { id: carrier.id, name: carrier.name },
+                by: carrier,
+                // Everybody else who walked out of the same door. They know what
+                // the hold contained and they know who left with it, which is
+                // the whole of what standing to raise it means here.
+                objectors: survivors.filter(other => other.id !== carrier.id),
                 from: input.loser,
                 war: input.war,
                 onDay: input.onDay
@@ -404,8 +443,10 @@ export function holdsTogetherAsFarAsAnybodyKnows(
 }
 
 /** Whoever is still alive under this banner. */
-function livingMembersOf(state: WorldState, factionId: string): { id: string; name: string }[] {
+function livingMembersOf(state: WorldState, factionId: string): CouldObject[] {
+    // The rung comes along because whoever ends up carrying something out
+    // has to be measured against everybody who did not - see `carriedOff`.
     return state.npcs
         .filter(n => n.status === 'alive' && n.factionId === factionId)
-        .map(n => ({ id: n.id, name: n.name }));
+        .map(n => ({ id: n.id, name: n.name, realmOrdinal: n.cultivation.realmOrdinal }));
 }

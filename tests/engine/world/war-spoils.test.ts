@@ -232,25 +232,72 @@ describe('whether a losing house has anybody left at all', () => {
     });
 });
 
+/**
+ * ── THE RULE THESE TWO NOW OBEY ──────────────────────────────────────────
+ *
+ * `docs/world/things/items.md`: ownership moves three ways and no others, and
+ * *"a single thief does not become an owner however long they keep it."* So the
+ * two helpers are no longer the same act with a different holder:
+ *
+ *   TAKEN        force of arms, and the losing house's acknowledgement is the
+ *                load-bearing half. The register moves and a `conquest` claim
+ *                records why.
+ *   CARRIED OFF  one person, walking out. The register moves ONLY where nobody
+ *                who scattered with them is in a position to raise it.
+ *
+ * The second used to move ownership unconditionally, and that assertion is what
+ * this file used to make. It is rewritten rather than loosened, because the
+ * design behind it changed and it can be said what it should assert now.
+ */
 describe('the two transfer helpers write what they say they write', () => {
-    it('taken moves ownership; carried off moves it to a person', () => {
-        const row = makeObject({
-            id: 'o', name: 'a thing', kind: 'artifact', power: 20,
-            ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser'
-        }) as ObjectRecord;
-        const took = takenAsSpoils(row, {
-            by: { id: 'winner', name: 'Storm Court' }, from: { name: 'Kiln Clan' },
+    const thing = () => makeObject({
+        id: 'o', name: 'a thing', kind: 'artifact', power: 20,
+        ownerId: 'loser', ownerName: 'Kiln Clan', possessorId: 'loser'
+    }) as ObjectRecord;
+
+    it('taken moves the register, and records on what basis and who accepted it', () => {
+        const took = takenAsSpoils(thing(), {
+            by: { id: 'winner', name: 'Storm Court' },
+            from: { id: 'loser', name: 'Kiln Clan' },
             war: 'a war', onDay: 9
         });
         expect(took.ownerId).toBe('winner');
         expect(took.power).toBe(20);
 
-        const ran = carriedOff(row, {
-            by: { id: 'npc-l1', name: 'Kiln Elder' }, from: { name: 'Kiln Clan' },
+        // The claim layer had no caller anywhere in `src/` before this. A
+        // register that moves with no basis and nobody's acknowledgement is
+        // exactly the half of the ruling that was missing.
+        const claim = took.claims.at(-1)!;
+        expect(claim.basis).toBe('conquest');
+        expect(claim.acknowledgedByIds).toContain('loser');
+    });
+
+    it('carried off moves possession, and the register only where nobody can argue', () => {
+        // The ordinary case. An elder walks out with it and the rest of the
+        // house walked out too, knows what was in the hold, and knows who has
+        // it. That is possession, for as long as it goes on.
+        const watched = carriedOff(thing(), {
+            by: { id: 'npc-l1', name: 'Kiln Elder', realmOrdinal: 14 },
+            objectors: [{ id: 'npc-l2', name: 'Another Elder', realmOrdinal: 12 }],
+            from: { name: 'Kiln Clan' },
             war: 'a war', onDay: 9
         });
-        expect(ran.ownerId).toBe('npc-l1');
-        expect(ran.possessorId).toBe('npc-l1');
-        expect(ran.power).toBe(20);
+        expect(watched.possessorId).toBe('npc-l1');
+        expect(watched.ownerId).toBe('loser');
+        // And the claim is still written. A claim nobody acknowledges is still
+        // a claim, and it is what somebody's descendants inherit the argument
+        // off.
+        expect(watched.claims.at(-1)!.acknowledgedByIds).toEqual([]);
+
+        // And the case the ruling carves out: somebody far enough above every
+        // one of them that there is no question to raise.
+        const unanswerable = carriedOff(thing(), {
+            by: { id: 'npc-l1', name: 'Kiln Elder', realmOrdinal: 40 },
+            objectors: [{ id: 'npc-l2', name: 'Another Elder', realmOrdinal: 4 }],
+            from: { name: 'Kiln Clan' },
+            war: 'a war', onDay: 9
+        });
+        expect(unanswerable.possessorId).toBe('npc-l1');
+        expect(unanswerable.ownerId).toBe('npc-l1');
     });
 });

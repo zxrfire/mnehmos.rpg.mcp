@@ -78,6 +78,16 @@ export interface ProvenanceEntry {
 
 // ─────────────────────────────────────────────────────────────────────────
 // CLAIMS
+//
+// The storage. WHICH OF THESE MOVES THE REGISTER is not decided here and must
+// not be: `ownership-transfer.ts` carries the three routes `items.md` allows -
+// legitimate acquisition, force of arms where everybody acknowledges it, and
+// enough strength that nobody argues - and a caller states which one it is
+// rather than passing a boolean that means all three at once.
+//
+// `transferPossession` below stays the primitive and stays honest on its own:
+// its `transfersOwnership` defaults to false because taking a thing does not
+// make it yours.
 // ─────────────────────────────────────────────────────────────────────────
 
 /** On what grounds a right is asserted. Several may be valid at once. */
