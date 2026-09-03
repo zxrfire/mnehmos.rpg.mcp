@@ -118,7 +118,16 @@ export type SectIntent =
      * price on the ladder; what differs is what was claimed, and therefore what
      * can be checked.
      */
-    | 'decree';
+    | 'decree'
+    /**
+     * What the house is holding against its own, read and decided by whoever
+     * holds the room complaints go to.
+     *
+     * The other end of a report, and the reason it exists: a punishment that
+     * happens TO the player and never THROUGH them is standing with no
+     * jurisdiction attached to it.
+     */
+    | 'complaints';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -242,9 +251,45 @@ export const WITHOUT_ASKING = /\bwithout (?:asking|permission|leave|a word)\b/;
 export const CLAIMING_THE_HOUSES_AUTHORITY =
     /\b(?:by (?:the )?order of|in the name of|on the authority of|by the authority of|by decree of|as (?:the )?(?:sect|house|clan|school|order)'?s?)\b|\b(?:sect|house|clan|school|order) (?:orders?|decrees?|commands?)\b/;
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT HAS BEEN BROUGHT TO YOU
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Complaints the house is holding against its own, read by whoever holds the
+ * room they go to.
+ *
+ * The other end of a report. A house's `AGAINST_THEIR_OWN` rows had exactly one
+ * writer and no reader at all, so being the punishment elder was standing with
+ * no jurisdiction attached - the officeless-elder problem with the office
+ * filled in.
+ */
+export const COMPLAINTS_BROUGHT_TO_ME =
+    /\b(?:what has been brought (?:to me|before me)|what complaints?|who has been reported|what is (?:outstanding|open) against|complaints? against|reports? against|who has been brought (?:to|before) me|what am i being asked to judge)\b/;
+
+/** Deciding one. The two verdicts the ledger already has words for. */
+export const COMPLAINT_VERDICTS: ReadonlyArray<[string, RegExp]> = [
+    ['dismissed', /\b(?:dismiss\w*|throw (?:it|this|them) out|throws out|let (?:him|her|them) go|clear\w*|acquit\w*|no case|drop (?:it|the))\b/],
+    ['upheld', /\b(?:uphold\w*|upheld|find (?:him|her|them) guilty|guilty|punish\w*|make (?:an )?example|it stands|confirm\w*)\b/]
+];
+
 /** Asking who runs what, which is the sentence before the one that claims it. */
+/**
+ * ── EVERY ALTERNATIVE HERE IS ABOUT THE SPEAKER ──────────────────────────
+ *
+ * `who is in charge of` and `who runs the` were in this list and had to come
+ * out. "who is in charge of my sect" is a question about who LEADS the house
+ * and `sect/standing` had it first - a house's head and a room's holder are
+ * different facts and only one of them is a portfolio. `ground-holder-lines`
+ * caught it, which is the test that exists because this exact widening keeps
+ * happening.
+ *
+ * So this asks only what the SPEAKER holds. Whose room a given room is, is a
+ * question worth answering and is not this one; it wants its own phrasing gated
+ * on a room noun, and it has not been demonstrated yet.
+ */
 export const ASKING_ON_WHAT_AUTHORITY =
-    /\b(?:on whose authority|on what authority|by what right|who says so|what am i in charge of|what do i run|which rooms? (?:are|is) mine|who runs the|who is in charge of|what is my office|what office do i hold)\b/;
+    /\b(?:on whose authority|on what authority|by what right|what am i in charge of|what do i run|which rooms? (?:are|is) mine|what is my office|what office do i hold)\b/;
 
 /**
  * What is being taken, with the shelf and the confession trimmed off.
@@ -519,6 +564,32 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * not recruiting, and practising what a house teaches is not decreeing it.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    // ── WHAT HAS BEEN BROUGHT TO YOU, AND DECIDING IT ────────────────────
+    //
+    // Before the authority read, because "what complaints are open against
+    // Shu Wanping" is a question about the pile rather than about the rung the
+    // asker holds. The verdict rides on the topic and the person on the target;
+    // with neither, it is a read of what is outstanding, which is the cheap
+    // branch every committing verb in this file falls through to.
+    if (COMPLAINTS_BROUGHT_TO_ME.test(text)
+        // `charge` is deliberately NOT in this list. "who is in charge here" is
+        // a question about who runs the room and it belongs to `look/holder`,
+        // which had it first - and the word appears in that phrase as a
+        // preposition rather than as a noun. Measured: including it stole that
+        // sentence, which is the failure `verb-pattern-table.ts` warns about in
+        // its own header, committed inside the file that quotes the warning.
+        || (matchIntent(text, COMPLAINT_VERDICTS) !== null
+            && /\b(?:complaints?|reports?|charges|the charge|case|accusation)\b/.test(text))) {
+        const verdict = matchIntent(text, COMPLAINT_VERDICTS);
+        const who = namedAfter(input, 'against|about|concerning');
+        return {
+            action: 'sect',
+            intent: 'complaints',
+            ...(verdict ? { topic: verdict } : {}),
+            ...(who ? { target: who } : {})
+        };
+    }
+
     // ── ASKING WHAT YOU RUN ──────────────────────────────────────────────
     //
     // Free, and the sentence before the one that spends. A player who cannot
