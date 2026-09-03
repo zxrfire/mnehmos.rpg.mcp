@@ -1663,6 +1663,12 @@ Several agents work in this tree at once and it is dirty almost all the time.
 - **`git commit` with no pathspec commits the WHOLE INDEX**, including files another agent has
   already staged. `git add` of your own paths does not protect you. Stage explicit paths and
   check `git status --short` before committing.
+- **`git commit -- <your paths>` is the protection, and it is the habit to have.** It takes
+  those paths and nothing else, whatever else is sitting in the index. Checking the index and
+  then running a bare commit is not enough on its own: chaining the check into the same command
+  as the commit means you read the file list *after* the commit was composed, which is how two
+  of somebody else's files landed under a message about duration parsing in this session. Name
+  the paths on the commit, or check in a separate call first and then commit.
 - **Never `git apply --cached --unidiff-zero`** to stage a partial hunk selection. With zero
   context git applies by line number and verifies nothing, so dropping hunks invalidates the
   offsets of the rest. That committed syntactically invalid TypeScript that took three commits
