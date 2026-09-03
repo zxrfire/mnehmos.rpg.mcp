@@ -537,8 +537,8 @@ export function takeAFightTurn(
     const mine = playerIsAggressor ? fight.aggressor : fight.defender;
     const theirs = playerIsAggressor ? fight.defender : fight.aggressor;
 
-    const minePower = assessPower(mine.input, powerCtx);
-    const theirPower = assessPower(theirs.input, powerCtx);
+    const minePower = assessPower(asItNowStands(mine, fight.hp), powerCtx);
+    const theirPower = assessPower(asItNowStands(theirs, fight.hp), powerCtx);
 
     const theirAct = howTheyAreFighting(
         fight.hp[theirs.input.id], theirs.input.maxHp,
@@ -591,8 +591,8 @@ export function takeAFightTurn(
         // They did not get clear, and turning your back cost them the round. The
         // other side gets its blow with nothing in the way of it.
         const caught = resolveConfrontationRound(
-            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard'),
-            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct),
+            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
+            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
             roundCtx(fight, ctx, rng)
         );
@@ -634,8 +634,8 @@ export function takeAFightTurn(
         // Nobody who ends it. The round was still spent on a shout, so the
         // other side swings into somebody who is not swinging back.
         const shouted = resolveConfrontationRound(
-            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard'),
-            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct),
+            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
+            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
             fight.hp, fight.injuries,
             roundCtx(fight, ctx, rng)
         );
@@ -653,10 +653,10 @@ export function takeAFightTurn(
 
     const round = resolveConfrontationRound(
         asRound(fight.aggressor, playerIsAggressor ? minePower : theirPower,
-            playerIsAggressor ? act : theirAct,
+            playerIsAggressor ? act : theirAct, fight.hp,
             playerIsAggressor ? vector : fight.aggressor.vector),
         asRound(fight.defender, playerIsAggressor ? theirPower : minePower,
-            playerIsAggressor ? theirAct : act,
+            playerIsAggressor ? theirAct : act, fight.hp,
             playerIsAggressor ? fight.defender.vector : vector),
         fight.hp, fight.injuries,
         roundCtx(fight, ctx, rng)
@@ -669,13 +669,54 @@ export function takeAFightTurn(
 // PLUMBING
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The body as it NOW stands, for pricing.
+ *
+ * ── WHY THIS EXISTS, AND IT IS THE DIFFERENCE A MULTI-TURN FIGHT MAKES ───
+ *
+ * `assessPower`'s `condition` factor reads `combatant.hp`, so what somebody can
+ * bring falls away as they are hurt. `resolveConfrontation` prices both sides
+ * ONCE at the top and re-prices only when a weapon comes apart - its own comment
+ * says why that would otherwise be "a claim the engine made and did not honour".
+ * The same argument applies to the body and the one-call path does not make it:
+ * inside a single call, somebody on their last legs swings exactly as hard as
+ * they did on the first exchange.
+ *
+ * That is survivable when a whole fight is one call and eight exchanges pass in
+ * an instant. It is not survivable here, because the whole claim of a held-open
+ * fight is that the player can SEE they are losing - and a state line reporting
+ * 15 of 120 beside a flight chance that has not moved since the first round is
+ * a number that looks like information and is not.
+ *
+ * So the running total is folded onto the row before every pricing. This is not
+ * a second combat system: it is the same `assessPower`, asked about the body
+ * that is actually standing there.
+ *
+ * The one-call resolver is deliberately NOT changed to match. Re-pricing between
+ * its exchanges would move the outcome of every fight in the world, which is a
+ * balance decision for a person rather than a fix to make in passing.
+ */
+function asItNowStands(side: FightSide, hp: Record<string, number>): CombatantInput {
+    const now = hp[side.input.id];
+    return now === undefined || now === side.input.hp
+        ? side.input
+        : { ...side.input, hp: now };
+}
+
 function asRound(
     side: FightSide,
     power: CombatantPower,
     act: RoundAct,
+    hp: Record<string, number>,
     vector?: AttackVector
 ): Parameters<typeof resolveConfrontationRound>[0] {
-    return { input: side.input, power, act, edges: side.edges, vector: vector ?? side.vector };
+    return {
+        input: asItNowStands(side, hp),
+        power,
+        act,
+        edges: side.edges,
+        vector: vector ?? side.vector
+    };
 }
 
 function roundCtx(
@@ -742,11 +783,11 @@ function afterRound(
             ...base,
             fight: null,
             finished: stalemate(
-                assessPower(fight.aggressor.input, { ambient: ctx.ambient }),
-                assessPower(fight.defender.input, { ambient: ctx.ambient }),
+                assessPower(asItNowStands(fight.aggressor, fight.hp), { ambient: ctx.ambient }),
+                assessPower(asItNowStands(fight.defender, fight.hp), { ambient: ctx.ambient }),
                 assessGap(
-                    assessPower(fight.aggressor.input, { ambient: ctx.ambient }),
-                    assessPower(fight.defender.input, { ambient: ctx.ambient })
+                    assessPower(asItNowStands(fight.aggressor, fight.hp), { ambient: ctx.ambient }),
+                    assessPower(asItNowStands(fight.defender, fight.hp), { ambient: ctx.ambient })
                 ),
                 fight.exchanges, fight.hp, fight.injuries,
                 fight.aggressor.input, fight.defender.input, fight.brokenObjects
@@ -772,8 +813,8 @@ function concludeFrom(
     ctx: FightTurnContext
 ): ConfrontationResult {
     const powerCtx: PowerContext = { ambient: ctx.ambient };
-    const aggressor = assessPower(fight.aggressor.input, powerCtx);
-    const defender = assessPower(fight.defender.input, powerCtx);
+    const aggressor = assessPower(asItNowStands(fight.aggressor, fight.hp), powerCtx);
+    const defender = assessPower(asItNowStands(fight.defender, fight.hp), powerCtx);
     return concludeConfrontation({
         aggressorInput: fight.aggressor.input,
         defenderInput: fight.defender.input,
@@ -860,8 +901,8 @@ export function whereThisFightStands(
     // the fight. The chance and the itemised modifiers are the answer; the roll
     // in it is discarded by the caller and is not the one a real flight uses.
     const preview = attemptFlight(
-        assessPower(mine.input, powerCtx),
-        assessPower(theirs.input, powerCtx),
+        assessPower(asItNowStands(mine, fight.hp), powerCtx),
+        assessPower(asItNowStands(theirs, fight.hp), powerCtx),
         {
             rng: forStream(seed, 'fight-preview', fight.id, fight.roundsFought),
             turn: fight.openedOnTurn,

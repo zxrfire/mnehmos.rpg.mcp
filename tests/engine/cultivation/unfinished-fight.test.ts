@@ -151,6 +151,27 @@ describe('a fight is a thing you stand inside', () => {
         expect(turns).toBeLessThanOrEqual(MAX_EXCHANGES);
     });
 
+    it('prices a hurt body as a hurt body, round by round', () => {
+        // FOUND BY PLAYING IT. `assessPower`'s `condition` factor reads `hp`,
+        // and the fight's running total lives beside the row rather than on it -
+        // so before this, somebody on 15 of 120 swung exactly as hard as they
+        // had on the first round, and the state line reported a flight chance
+        // that had not moved all fight. A number that looks like information and
+        // is not is worse than no number.
+        let fight: UnfinishedFight | null = open(
+            combatant({ id: 'p', name: 'Player', maxHp: 400 }),
+            combatant({ id: 'q', name: 'Other', maxHp: 400 })
+        ).fight;
+        const first = whereThisFightStands(fight!, NEUTRAL).flight.chance;
+        for (let i = 0; i < 3 && fight; i++) {
+            fight = takeAFightTurn(fight, { kind: 'guard' }, { ambient: NEUTRAL, turn: 1 }).fight;
+        }
+        expect(fight).not.toBeNull();
+        expect(fight!.hp.p).toBeLessThan(400);
+        // Hurt, so worse off in the one number a frightened player is reading.
+        expect(whereThisFightStands(fight!, NEUTRAL).flight.chance).toBeLessThan(first);
+    });
+
     it('says where the fight stands before the player has to answer', () => {
         const { fight } = open(
             combatant({ id: 'p', name: 'Player' }),
