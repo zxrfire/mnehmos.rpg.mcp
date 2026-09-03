@@ -1401,15 +1401,34 @@ The record now carries `hp` and `bodyOnDay`, and **it is not a second body model
   of the pool per day and nothing about it is stochastic, so a pass would spend per-person
   time every simulated year computing what two multiplications answer.
 
-**What it is worth in aggregate is close to nothing, and that is a fact about how the
-world climbs.** The toll prices SPEED - striking repeatedly with no days in between, which
-`strikeBarrier` permits because it spends none. This pass cannot reach that state: a
-person is reviewed once every twelve years and `readyToStrike` refuses anybody who has not
-stood at the rung long enough to hold the whole requirement, so one crossing per review is
-the ceiling and a review mends several pools over. **So an NPC cannot die of the toll**,
-directly or by attrition; what it does is make somebody who crossed a wall this year turn
-up to a gathering at what the wall left them, which `combatantOf` and `assessPower`'s
-condition line both read. A fight still writes no body back - see
+**It is charged, and it is worth close to nothing in aggregate - which is a fact about how
+the world climbs rather than about the price.** The toll prices SPEED: striking repeatedly
+with no days in between, which `strikeBarrier` permits because it spends none. This pass
+cannot reach that state. A person is reviewed once every twelve years and `readyToStrike`
+refuses anybody who has not stood at the rung long enough to hold the whole requirement, so
+one crossing per review is the ceiling and a review mends several pools over.
+
+Measured with `scripts/probe-what-a-crossing-costs-the-world.ts`, five seeds at 200 years:
+
+    1,319 charges over 1,000 world-years   mean 0.058 of the pool, deepest 0.150
+    4 of 2,680 alive carrying one          0.15% of the world, at any instant
+    106 deaths at a wall                   none of them the toll's; see below
+
+So the write happens more than once a world-year and the read almost always finds a whole
+body, because a realm boundary's share is repaid in under a year and a rung's in about a
+third of one. **And an NPC cannot die of the toll**, by any path currently in the world:
+`whatACrossingTakesFrom` clamps above zero, the charge is only made on a SUCCESS, and the
+one consumer that could compound it - a gathering bout - fights at `goal: 'subdue'` with
+`willWithdraw`, so it writes wounds and never a death. What the toll does reach is who
+wins a bout and what wounds come out of it, through `combatantOf` and `assessPower`'s
+condition line, and wounds do drag the rate and every later crossing.
+
+The population pyramid is therefore insensitive to it. Measured back-to-back in one command
+on one tree, base against change: **2364 / 234 / 82 bottom/middle/top, identical**, with
+every adjacent inversion identical too. Do not read that as the charge being dropped again -
+the probe above and `tests/engine/world/npc-crossing-toll.test.ts` are what say it is not.
+
+A fight still writes no body back - see
 `what-a-confrontation-does-to-somebody-the-world-holds.ts` for why that is a separate
 ruling with its own measurement.
 
