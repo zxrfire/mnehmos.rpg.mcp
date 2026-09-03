@@ -4391,7 +4391,91 @@ const OATH_INTENT_PATTERNS: ReadonlyArray<[OathIntent, RegExp]> = [
 const AIMED_AT_THE_LADDER =
     /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|wall|ceiling|next (?:rank|realm))\b/;
 
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for/;
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip/;
+
+/**
+ * NOT EXPORTED, AND THAT IS LOAD-BEARING.
+ *
+ * `harvestVocabulary` walks this module's EXPORTS to build the spelling
+ * repair's dictionary. Exporting the three patterns below put `strangle` into
+ * it, and the repair promptly rewrote the corpus's own investigate exemplar -
+ * *"there is something strange here and I want to understand it"* - into a
+ * strangling. One word of new vocabulary took a whole verb's sentence.
+ *
+ * These are read only in this file, so they stay in it.
+ */
+/**
+ * Violence done to a body, said the way people say it.
+ *
+ * ── ELEVEN OF THIRTEEN WAYS OF KILLING SOMEBODY REACHED NOTHING ──────────
+ *
+ * Probed after a played turn in which "I cut Gu Peiyan's throat" came back
+ * `unclear`. The whole family went with it:
+ *
+ *   cut <name>'s throat    slit his throat        break her neck
+ *   stab him               put my knife in his back
+ *   cut off his arm        take his hand off      cripple his cultivation
+ *   poison his tea         burn the house down with them in it
+ *
+ * Only "kill X" and "cut him down" worked, so the game answered the word
+ * `kill` and nothing else. This catalog is emphatic that maiming is WORSE than
+ * robbery, that crippling somebody's cultivation is its own kind of wrong, and
+ * that what a person does about being wronged is most of the content - and
+ * none of it was reachable by saying it.
+ *
+ * ── THE OBJECT IS THE SIGNAL, NOT THE VERB ───────────────────────────────
+ *
+ * This is its own pattern rather than more entries in the alternation above,
+ * because `cut`, `break`, `open` and `take off` are ordinary words with
+ * ordinary objects - cutting herbs, breaking camp, taking a day off - and
+ * adding any of them there would steal sentences from four other verbs, which
+ * is this file's most-repeated lesson.
+ *
+ * What makes it violence is WHAT IS BEING CUT: a part of somebody. So the body
+ * part is the anchor, the verb is narrow around it, and the possessive between
+ * them may be a pronoun or a name. "I cut the rope" cannot reach it and
+ * neither can "I break camp".
+ *
+ * `stab`, `strangle` and `poison` are matched on the verb instead, for the
+ * opposite reason: with a person on the end of them they have no innocent
+ * reading, exactly as `murder` and `assassinate` already do not.
+ */
+const VIOLENCE_TO_A_BODY =
+    // Something taken off, opened or broken, and it is part of a person.
+    /\b(?:cut|cuts|cutting|slit|slits|slitting|slash|slashes|open|opens|break|breaks|breaking|snap|snaps|crush|crushes|hack|hacks|sever|severs|take|takes|taking|tear|tears|rip|rips)\s+(?:off\s+|out\s+|through\s+)?(?:the|his|her|their|its|my|[A-Z][a-z]+(?:'s)?(?:\s+[A-Z][a-z]+)?(?:'s)?)\s+(?:throat|neck|spine|skull|head|arm|arms|hand|hands|leg|legs|eye|eyes|ear|ears|tongue|fingers?|kneecaps?|ribs?|jaw|heart)\b/
+    ;
+
+/**
+ * The part is not the person, and the resolver wants the person.
+ *
+ * `extractSubject` hands back everything after the verb, so "I cut Gu Peiyan's
+ * throat" produced a target called `Gu Peiyan's throat`, which resolves against
+ * nobody - the same failure `HOW_THE_FIGHT_OPENED_TAIL` was written for, one
+ * noun along. Somebody's throat is not a second person standing next to them.
+ *
+ * Cuts at both ends, because the phrasings put the person in the middle: the
+ * preposition that opens `cut OFF his arm` and `put my knife IN his back`, and
+ * the part itself at the tail. `down` goes with it so "cut him down" resolves
+ * to `him`.
+ */
+const THE_PART_IS_NOT_THE_PERSON = [
+    /^(?:off|out|in|into|through|down)\s+/i,
+    /(?:'s)?\s+(?:throat|neck|spine|skull|head|arms?|hands?|legs?|eyes?|ears?|tongue|fingers?|kneecaps?|ribs?|jaw|heart|back|cultivation|dantian|meridians|foundation|golden core|core|tea|cup|food|drink)\s*$/i,
+    /\s+down\s*$/i
+];
+
+/** The verbs that have no innocent object once a person is on the end of them. */
+const VIOLENCE_WITH_NO_OTHER_READING =
+    /\b(?:stab|stabs|stabbing|stabbed|knife|knifes|knifing|gut|guts|disembowel|disembowels|strangle|strangles|throttle|throttles|smother|smothers|drown|drowns|poison|poisons|poisoning)\b|\bput (?:my|the|a) (?:knife|blade|dagger|sword|spear) (?:in|into|through)\b/;
+
+/**
+ * Taking somebody's cultivation off them, which this world holds to be worse
+ * than killing them. `faction-character.ts` says a broken oath is structural
+ * rather than punitive; so is this, and it is the sentence the reprisal
+ * machinery already knows how to answer.
+ */
+const CRIPPLING_SOMEBODY =
+    /\b(?:cripple|cripples|crippling|ruin|ruins|ruining|destroy|destroys|destroying|break|breaks|breaking)\s+(?:the|his|her|their|my|[A-Z][a-z]+(?:'s)?(?:\s+[A-Z][a-z]+)?(?:'s)?)\s+(?:cultivation|dantian|meridians|foundation|golden core|core)\b/;
 
 /**
  * The fight was opened from cover, which is a different act from squaring up.
@@ -5701,7 +5785,12 @@ function planIntent(input: string): PlannedAction {
             + 'draw (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
             + 'draws (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
             + 'start a fight|starts a fight|pick a fight|picks a fight|make an example of')
-            || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text))) {
+            || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text)
+            // Said the way a person says it, where the body part is what makes
+            // it violence rather than the verb. See `VIOLENCE_TO_A_BODY`.
+            || VIOLENCE_TO_A_BODY.test(input)
+            || VIOLENCE_WITH_NO_OTHER_READING.test(text)
+            || CRIPPLING_SOMEBODY.test(input))) {
         return {
             action: 'attack',
             // The manner clause is cut off the name. "I attack him from behind"
@@ -5709,10 +5798,26 @@ function planIntent(input: string): PlannedAction {
             // so the commonest ambush phrasing in the genre reached neither the
             // fight nor a person - the manner is read off the whole sentence by
             // `OPENED_FROM_COVER` and does not belong in the target.
-            target: (extractSubject(input, ATTACK_SUBJECT_VERBS) ?? '')
-                .replace(HOW_THE_FIGHT_OPENED_TAIL, '').trim() || undefined,
+            target: THE_PART_IS_NOT_THE_PERSON.reduce(
+                (name, cut) => name.replace(cut, ''),
+                (extractSubject(input, ATTACK_SUBJECT_VERBS) ?? '')
+                    .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
+            ).trim() || undefined,
             ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {}),
+            // ── SAYING HOW IS SAYING HOW FAR ─────────────────────────────
+            //
+            // A throat cut and a neck broken are not attempts to drive somebody
+            // off, and `cut down` never matched its own commonest form because
+            // "cut him down" puts a word in the middle. Measured before this:
+            // every phrasing in `VIOLENCE_TO_A_BODY` came out `drive_off`,
+            // so the engine was handed a brawl where the player had described
+            // a killing - and `drive_off` is the one intent that stops early.
             intent: /\b(?:kill|murder|assassinate|slay|finish|cut down|put (?:him|her|them) down)\b/.test(text)
+                || /\b(?:cut|cuts|slit|slits|slash|slashes|open|opens)\s+(?:[A-Za-z]+(?:'s)?\s+){1,3}throat\b/i.test(input)
+                || /\b(?:break|breaks|snap|snaps|crush|crushes)\s+(?:[A-Za-z]+(?:'s)?\s+){1,3}(?:neck|spine|skull)\b/i.test(input)
+                || /\b(?:cut|cuts|slit|slits)\s+(?:his|her|their|my|the)\s+throat\b/i.test(input)
+                || /\b(?:disembowel|disembowels|strangle|strangles|throttle|throttles|smother|smothers|drown|drowns)\b/.test(text)
+                || /\bcut (?:him|her|them) down\b/.test(text)
                 ? 'kill'
                 : /\b(?:subdue|pin|restrain|capture|take alive)\b/.test(text)
                     ? 'subdue'
