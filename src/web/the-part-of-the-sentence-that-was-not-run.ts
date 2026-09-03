@@ -80,11 +80,39 @@
  * injuries and then go to the market` - because browsing a board is free. That
  * trade is deliberate: a lie about half the player's sentence is worse than
  * silence about something they can have next turn at no price.
+ *
+ * ── AND A QUESTION HAS NO CLAUSES THAT PROPOSE ANYTHING ──────────────────
+ *
+ * The second rule, found by playing and by a wider margin the more serious of
+ * the two, because it does not merely say something untrue to the PLAYER - it
+ * says something untrue to the NARRATOR, in the engine's own voice.
+ *
+ *     > is it safe to sit and cultivate here, or will someone bother me?
+ *
+ * The split lands on the `and` inside "sit and cultivate", which is one verb
+ * phrase, and the tail carries half a question. Read alone that tail is a
+ * thirty-day cultivate, so the turn declined it - and then reported it, with
+ * the sentence this file writes for every report: *"You said two things, and
+ * only the first of them was done."* The player's first half is "is it safe to
+ * sit and cultivate here", so the fact line handed to phase 3 asserted that the
+ * sitting and cultivating is the part that ran. The model narrated it settling
+ * into meditation, and it was right to: it narrated what it was told.
+ *
+ * `narrator.ts` records the ruling that the prompt is where this class of
+ * defect is fixed, on the evidence that **the model lies when the turn does not
+ * tell it what was not done, and stops lying when it does.** This is the third
+ * case that ruling did not cover and it is consistent with it: the turn told
+ * the narrator something, and what it told it was wrong. No prompt wording
+ * reaches that.
+ *
+ * The guard is a whole-sentence mood test taken BEFORE the split, because the
+ * split is what destroys the evidence. See {@link theWholeSentenceIsAQuestion}.
  */
 
 import {
     costsTheAskerNothing,
     parseIntent,
+    theWholeSentenceIsAQuestion,
     type ActionName,
     type PlannedAction
 } from './actions.js';
@@ -148,6 +176,35 @@ export interface ClauseNotRun {
  * once is saying it.
  */
 export function theClauseThisTurnDidNotRun(input: string, ran: ActionName): ClauseNotRun | null {
+    // ── A QUESTION HAS NO CLAUSES THAT PROPOSE ANYTHING ──────────────────
+    //
+    // Asked of the WHOLE utterance, before it is cut up, because the mood is a
+    // property of the sentence and the split is what destroys the evidence for
+    // it. Every clause below is read on its own by `parseIntent`, which does
+    // run the mood guard - but by then the interrogative opening is in some
+    // OTHER clause and the fragment reads as a plain command.
+    //
+    // Played, against ollama, standing on dense ground:
+    //
+    //   > is it safe to sit and cultivate here, or will someone bother me?
+    //
+    // split at the `and` INSIDE "sit and cultivate", which is one verb phrase
+    // and not two acts, leaving "cultivate here, or will someone bother me" -
+    // a fragment carrying half a question, which on its own reads as a
+    // thirty-day cultivate. The turn declined it correctly and then reported it,
+    // and the report is where the damage was done. It told the player they had
+    // said two things; it told the narrator that "only the FIRST of them was
+    // done", and the player's first half is "is it safe to sit and cultivate
+    // here". The model narrated the sitting down, which is what the engine's
+    // own fact line had just said had happened.
+    //
+    // So this is not the narrator ignoring its constitution. It read the facts
+    // it was given, and the facts were wrong about which half ran. See
+    // `theWholeSentenceIsAQuestion` for why the test here is wider than the one
+    // that decides routing: silence about a clause costs a retype, and a false
+    // report costs the player a sentence AND hands the narrator an untruth.
+    if (theWholeSentenceIsAQuestion(input)) return null;
+
     const clauses = input.split(A_SECOND_INSTRUCTION_STARTS).map(tidy).filter(Boolean);
     if (clauses.length < 2) return null;
 

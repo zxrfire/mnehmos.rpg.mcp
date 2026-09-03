@@ -2357,3 +2357,21 @@ is reassurance. It costs one query.
 change is a different thing from one that was never valid. Deleting rows that point at
 nothing is cleanup. Cascading away rows that point at something is a design decision about
 what survives what, and it has to be argued rather than defaulted.
+
+### When a lookup has a hardcoded fallback, check whether the fallback is doing the work
+
+**`x[i] ?? 'some literal'` is where a wrong answer hides**, because the branch that fires is correct and the branch nobody profiles is the one carrying the defect. It reads as defensive coding and it is often a half-finished fix.
+
+The shape that made this worth a section: a per-house rank title, read at **sixteen sites**, exactly one of which read the index that carried the meaning - and that one site wrote
+
+```ts
+`${position.ranks[opensAtRung(position)] ?? 'the seat'}.`
+```
+
+**The correct lookup and the leaked word were in the same expression.** The house's own title as the value, one particular house's private vocabulary as the fallback. Fifteen other sites had quietly agreed on a different answer than the sixteenth, and the file's own header stated the right principle four hundred lines above the line that broke it.
+
+**This is not the unwired-system defect and the existing entries will not catch it.** Nothing was uncalled and no field was unwritten - the array was read constantly. What was missing was anybody noticing that one index meant something the others did not. So it needs its own tell, and the tell is cheap: **grep for `?? '` and ask, for each hit, whether the literal is a real default or a stand-in for a lookup somebody did not finish.**
+
+### The scratchpad is shared between agents in a session
+
+**Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.

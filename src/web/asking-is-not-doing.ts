@@ -160,7 +160,14 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bam\s+i\s+(?:able|allowed|permitted|supposed)\s+to\b/,
     /\bdo\s+i\s+(?:have\s+to|need\s+to|get\s+to)\b/,
     // The impersonal forms of the same question.
-    /\bis\s+it\s+(?:possible|allowed|permitted|worth\s+it|wise|any\s+use|a\s+good\s+idea)\b/,
+    // `safe` and `dangerous` were absent and the gap was found by playing:
+    // "is it wise to sit and cultivate here" was a question and "is it SAFE to
+    // sit and cultivate here" was not, which is `AGENTS.md`'s near-synonym rule
+    // exactly - the phrasing that fails is the one a player reaches for first,
+    // and they cannot find the working half except by guessing. The antonym is
+    // here with it because "is it dangerous to X" is the same question asked
+    // from the other end and would have been the next report.
+    /\bis\s+it\s+(?:possible|allowed|permitted|worth\s+it|wise|safe|dangerous|any\s+use|a\s+good\s+idea)\b/,
     /\b(?:is|would)\s+(?:it|there)\s+(?:be\s+)?(?:any\s+)?(?:way|point|use)\s+(?:to|in|for)\b/,
     /\bwould\s+it\s+be\s+possible\b/,
     // What follows from an act nobody has taken yet.
@@ -206,6 +213,41 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bwhat\s+(?:is|are)\s+(?:there\s+|left\s+)?(?:here\s+)?to\s+[a-z]+\b/,
     /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/
 ].map(r => r.source).join('|'), 'i');
+
+/**
+ * Whether the WHOLE utterance is a question, asked of the sentence rather than
+ * of any clause inside it.
+ *
+ * ── WHY THIS IS SEPARATE FROM THE ROUTING TEST ABOVE ─────────────────────
+ *
+ * {@link ASKING_RATHER_THAN_DOING} answers "which verb should run", and for
+ * that job a bare question mark is deliberately excluded: half the questions a
+ * player types carry no punctuation, and half the sentences that end in one -
+ * "what now?" - are not about any particular act, so routing on the mark alone
+ * would move verbs around for no reason.
+ *
+ * This answers a different and much cheaper question: "may a clause of this
+ * sentence be REPORTED to the player as an act they asked for and did not get?"
+ * The two failure modes there are not symmetrical, and that asymmetry is the
+ * whole argument for a wider test:
+ *
+ *   - staying silent about a clause costs the player a sentence they can retype
+ *     next turn for nothing. `the-part-of-the-sentence-that-was-not-run` already
+ *     made exactly this trade once and wrote it down;
+ *   - reporting a clause of a question tells the player that half of what they
+ *     said was an act - and then tells the NARRATOR that the other half ran.
+ *
+ * The second one is what was found by playing. See the header of
+ * `the-part-of-the-sentence-that-was-not-run.ts` for the played transcript.
+ *
+ * A question mark is only ever accepted at the END, so "what now? I cultivate
+ * for a year" is untouched: the mark has to close the utterance to be evidence
+ * about it.
+ */
+export function theWholeSentenceIsAQuestion(input: string): boolean {
+    const said = input.trim().toLowerCase();
+    return said.endsWith('?') || ASKING_RATHER_THAN_DOING.test(said);
+}
 
 /**
  * The free read that answers a question about each committing verb.
