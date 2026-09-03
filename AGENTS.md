@@ -57,6 +57,14 @@ Concretely, this means:
   seeding the world from the run instead would delete cross-run persistence.
   Tests: `makeGameInWorld` in `tests/web/harness.ts`. **A played test that pins
   a seed to an outcome without pinning the world is pinning a coincidence.**
+- **A stash-and-rerun is not a control arm, and a test that does not pin its world cannot be
+  an arm at all.** Two runs minutes apart are two different trees: other agents commit, and
+  vitest loads a different set of files, so an unpinned test draws whatever world the file
+  before it left behind. Measured - an agent stashed their own three paths, saw a red test go
+  green, and had a false regression ready to file; the same test passed on the same change
+  when run properly. **Both arms have to run in one command**, and where that is impossible,
+  find a measurement that does not depend on the tree at all. A line-by-line identity check
+  on a moved block is worth more than any suite reading on this branch.
 - Engine functions should be **pure where possible**: state in, deltas out, no mutation
   of inputs, no I/O in the mechanics layer.
 
