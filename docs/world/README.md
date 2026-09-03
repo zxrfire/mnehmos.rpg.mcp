@@ -99,7 +99,12 @@ directory's own index did not admit existed. Add the row when you add the file.
 | [`architecture.md`](./places/architecture.md) | Built places: what a compound is generated from, precincts and rooms, house style as an archaeological fingerprint, access as a chain of gates, and what knowing a room means. Also the authoring guide for adding one | 2 and 3 |
 | [`techniques.md`](./climbing/techniques.md) | What an art can DO, by height: the ladder that escalates in kind rather than magnitude, ending in causal speech; how it composes with class and era; dormant archives; what runs out | 1, 2 and 3 |
 | [`manuals.md`](./climbing/manuals.md) | Books as items with a count: who can copy one, where a manual stops, the shelf a disciple climbs, what a house can teach against what it can supply, and an art as a signature | 2 and 3 |
-| [`sects.md`](./houses/sects.md) | Sects as political institutions, factions, succession, ancestral records, dormant and ascended ancestors, the standing powers | 2 and 3 |
+| [`sects.md`](./houses/sects.md) | The index for the four below: sects as political institutions rather than quest hubs | 2 and 3 |
+| [`institutions.md`](./houses/institutions.md) | What a sect is as a body - hierarchy, internal factions, scarcity as the source of conflict, and what a sect is for from the disciple's side | 2 |
+| [`ancestors.md`](./houses/ancestors.md) | Ancestral records and the millennial offering, ascended against dormant ancestors, and how a house's prestige decays as its crossing recedes | 2 |
+| [`standing-powers.md`](./houses/standing-powers.md) | The named powers of the region, and what each of them is | 2 |
+| [`patronage.md`](./houses/patronage.md) | The pyramid and the vein network, the feeder relationship, guest elders, the unbacked, and the houses that rule directly instead | 2 |
+| [`offices-and-succession.md`](./houses/offices-and-succession.md) | Offices are scarcer than the people who could hold one: what that pressure moves, what removal costs, and why a personal disciple's place dies with their master's | 2 |
 | [`dao-houses.md`](./houses/dao-houses.md) | The ancient houses, specialisation without ownership, civil authority, counters and blind spots, rewritten histories | 2 and 3 |
 | [`economy.md`](./things/economy.md) | Scarcity, resources, spirit stones, provenance, possession and ownership and claim, trade, graves, inheritances | 2 and 3 |
 | [`items.md`](./things/items.md) | Every object that can be held: counted against tracked, what money cannot buy, why a holder keeps what they cannot use, spent rows, possession as a signature | 2 and 3 |
@@ -148,7 +153,7 @@ anything else. Descend it until the rows stop applying.
 |---|---|
 | **The world at large** - a region, its ground, why cultivation goes well or badly here | [`qi.md`](./climbing/qi.md) |
 | **A settlement** - a city, a town, a market, anywhere people simply live | [`economy.md`](./things/economy.md), [`architecture.md`](./places/architecture.md) |
-| **A sect or house** - its politics, its ladder, who it answers to | [`sects.md`](./houses/sects.md) |
+| **A sect or house** - what it is, its politics, its ladder, who it answers to | [`institutions.md`](./houses/institutions.md), [`patronage.md`](./houses/patronage.md), [`offices-and-succession.md`](./houses/offices-and-succession.md) |
 | **A Dao house** - karma, oaths, names, or space invoked as authority | [`dao-houses.md`](./houses/dao-houses.md) |
 | **Inside a built place** - a gate, a hall, a compound, somebody's residence | [`architecture.md`](./places/architecture.md) |
 | **A ruin, sealed site, or convergence** | [`ruins.md`](./places/ruins.md) |
@@ -177,7 +182,9 @@ These cut across place. A scene commonly takes one row from each table.
 | An object changes hands, is copied, spent, hidden, or refused; or somebody asks how many exist | [`items.md`](./things/items.md) |
 | Somebody is wounded, asks what a wound will do to them, or fights and cultivates while carrying one | [`injuries.md`](./climbing/injuries.md) |
 | The narrator is unsure how much to say, or in what voice | [`tone.md`](./writing/tone.md) |
-| A house's standing, ancestry, succession, or vault is in question | [`sects.md`](./houses/sects.md) |
+| A house's standing, ancestry, or vault is in question | [`ancestors.md`](./houses/ancestors.md) |
+| A house's offices, its elders, or who succeeds to what is in question | [`offices-and-succession.md`](./houses/offices-and-succession.md) |
+| One of the named powers of the region appears or is invoked | [`standing-powers.md`](./houses/standing-powers.md) |
 | A consequence arrives and nobody can trace where it came from | [`dao-houses.md`](./houses/dao-houses.md) |
 | Ascension, the Lid, or an ascended ancestor is raised | [`immortals.md`](./climbing/immortals.md) |
 
