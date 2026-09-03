@@ -58,6 +58,13 @@
  *                                        against them is actually in a position
  *                                        to use it, and who has written the name
  *                                        down with nothing behind it
+ *   what-a-body-wants-is-what-its-       what a HOUSE is, by the same move one
+ *   deciders-want.ts                     rung up: an institution has no
+ *                                        preferences of its own, so its answer
+ *                                        is its deciders' weighted, plus what
+ *                                        the asker has already done to each of
+ *                                        them, over three tiers that close into
+ *                                        a loop rather than a hierarchy
  */
 
 export * from './an-attempt-to-move-somebody.js';
@@ -71,3 +78,4 @@ export * from './what-somebody-does-about-being-wronged.js';
 export * from './what-a-house-does-when-it-catches-you.js';
 export * from './personal-alignment.js';
 export * from './being-hunted.js';
+export * from './what-a-body-wants-is-what-its-deciders-want.js';

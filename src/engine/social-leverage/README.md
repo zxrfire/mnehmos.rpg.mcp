@@ -647,6 +647,83 @@ whole of `src/`, on the MCP combat path. Nothing in the played game has ever wri
 the sheet said *"No one is currently hunting you"* to a cultivator with a province behind
 them. That is AGENTS.md's *a field nothing writes* exactly - not inert, reading as a value.
 
+## A house's answer is a question about its deciders, not a field on the house
+
+The same move as the section above, one rung up, and the design owner's ruling is that it
+generalises past sects:
+
+> the thing about sects applies to every organization. Sects are an amalgamation of what
+> their upper echelon thinks. same for families, some can pressure or sell off their
+> daughter, some won't. the same system should apply for free, based on character traits,
+> motivations.
+
+**An institution has no preferences of its own.** `what-a-body-wants-is-what-its-deciders-want.ts`
+takes a body's roll and its ladder and answers with what the people who decide in it want.
+There is no column saying whether a family sells its daughters and there must never be one -
+a flag on a family row is the exact thing the ruling forbids.
+
+**A sect's elders and a family's seniors are one type and one call.** A family here is a
+faction whose roll is entered by blood (`intakeRouteOf` answers `adoption` for seven of
+thirty-four), on the same ladder, with the same two fields on its members. A second
+aggregation for families would be the defect this module exists to remove.
+
+### Two terms, because a baseline nobody can move is a council nobody can bribe
+
+    what they are        `openHandednessOf`, drawn from the person's own id.  Present
+                         for every decider in every world with no seeder pass, stable
+                         forever, and it already spreads a house's elders from -0.61 to
+                         +0.65 across the catalog with nothing authored
+    what has been done   the obligation ledger between them and whoever is asking.  A
+    to them              favour they owe pulls them toward yes; a wrong they hold pushes
+                         them away.  Zero on day one and filling through play
+
+Everything good about an id-derived leaning is the same fact as *nothing can ever change
+it*, so the baseline alone would have shipped the ruling's point and bolted it shut. **An
+empty ledger at world creation is therefore correct rather than a defect** - nobody owes
+anybody anything on day one, and a house's answer drifting as its elders accumulate accounts
+with a player is the system working. No bribery verb is built: `resolveAttempt` and
+`what-a-deed-leaves.ts` already decide what an approach does and what it writes down, and
+this only makes what they wrote legible to a council.
+
+**What was measured, and what it ruled out.** The obvious input was `NpcGoal.priority`. Over
+a pinned world 240 of 435 people carry a goal row and **not one of the 77 at an elder rung
+does** - the seeder writes goals bottom-up and stops at rank 2. An aggregation over goal
+priorities would have answered identically for all 34 houses while reading like a working
+mechanism. When that is fixed, goals become a second axis by being passed in as `readingOf`,
+not by a branch appearing in the module.
+
+### Three tiers, and the third makes it a loop
+
+    the elders       the weighted mean, by `distributeFollowing`'s own seniority weight.
+                     Elders can dislike a thing and be outvoted
+    the seat         the head overrules it, reserved to them alone, because one elder
+                     must not stop a house
+    all the elders   and the seat loses it back when it is ALONE - every elder on the far
+                     side of them, not a majority
+
+The third tier is not invented. `data/cultivation/immortal-items.ts` already carries a body
+holding a power its own head cannot override - `releaseMode: 'collective_consent'`, *a body
+decides, and any member can refuse* - and its `RecordedRefusal.refusedBy` is sixty characters
+of authored prose rather than a boolean. Two things are taken from it: that a body's
+collective answer binds its own head, and that **a refusal names who and why**. The types are
+not, and the module says precisely why in its header.
+
+**Nothing here spends anything.** `leadership.ts` owns what an act against the room costs in
+standing; the answer reports `against` so the caller charges it in the one place standing is
+kept.
+
+### The scalar is the least useful half
+
+A player's problem under three tiers is not what the house thinks, it is **which elder** -
+whether they are trying to buy the answer or to become it. So the answer carries
+`whoMovedIt`, at their weight, with what their own history did to them.
+
+And the player has to be able to sit in the room. A decider is `{ id, rankIndex }`; there is
+no NPC type in the file, no roster and no lookup, so the player's own id goes in the same
+shape at their own weight, and at the top rung they get the overrule and become the person
+the unanimity tier can overrule. **A caller that resolves deciders through an NPC-only lookup
+makes the player a spectator at their own council.**
+
 ## A reprisal has three axes and crossing two of them ruins it
 
 `what-a-house-does-when-it-catches-you.ts` asks three questions and the order is the
