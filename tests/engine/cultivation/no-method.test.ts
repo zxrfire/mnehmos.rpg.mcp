@@ -143,3 +143,54 @@ describe('it reaches the player, not just the inspector', () => {
         expect(result.events.some(e => e.kind === 'method_ceiling')).toBe(false);
     });
 });
+
+describe('a copy in the bag is not a road, and it is not an absence either', () => {
+    // Found by playing. Two copies bought at one stall for twelve spirit
+    // stones, and the sheet then said what was missing was "a book" - pointing
+    // the player at a purchase they had already made twice. `buy`'s own ruling
+    // had said it in the same session: "the copy is now held and the art is
+    // not: owning it and having sat down with it are separate facts."
+    it('does not send somebody carrying an unopened copy to go and find a book', () => {
+        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, true);
+
+        expect(carrying.state).toBe('no_method');
+        expect(carrying.line).toMatch(/never opened/i);
+        // The errand, which is `learn` and is free - not another trip to a stall.
+        expect(carrying.line).not.toMatch(/It is a book/);
+        expect(carrying.line).not.toMatch(/willing to teach them one/);
+    });
+
+    it('still says find a book to somebody who holds none', () => {
+        const empty = techniqueCeiling(0, NO_MANUAL_CEILING);
+
+        expect(empty.line).toMatch(/It is a book, or somebody willing to teach them one/);
+        expect(empty.line).not.toMatch(/never opened/i);
+    });
+
+    it('leaves the two halves saying different things, which is the whole point', () => {
+        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, true);
+        const empty = techniqueCeiling(0, NO_MANUAL_CEILING, false);
+
+        expect(carrying.line).not.toBe(empty.line);
+        // Both are still the same STATE and the same stop. Nothing accumulates
+        // either way; only the errand differs.
+        expect(carrying.state).toBe(empty.state);
+        expect(carrying.multiplier).toBe(0);
+        expect(empty.multiplier).toBe(0);
+    });
+
+    it('defaults to the empty-handed wording, so a caller that cannot see a pouch is unchanged', () => {
+        expect(techniqueCeiling(0, NO_MANUAL_CEILING).line)
+            .toBe(techniqueCeiling(0, NO_MANUAL_CEILING, false).line);
+    });
+
+    // Above the Lid a book is not the answer at all, and that sentence must not
+    // acquire a copy-in-the-bag branch: there is nothing for a manual to carry
+    // anybody to up there, whether they hold one or not.
+    it('says nothing about a held copy above the Lid, where no book is the answer', () => {
+        const above = techniqueCeiling(46, NO_MANUAL_CEILING, true);
+
+        expect(above.line).toMatch(/It is what they understand/);
+        expect(above.line).not.toMatch(/never opened/i);
+    });
+});

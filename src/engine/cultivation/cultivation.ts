@@ -428,8 +428,10 @@ export const NO_MANUAL_CEILING = 0;
  * The rule is right and is not weakened here. What was missing was the
  * sentence, and the two ends of this axis want OPPOSITE advice:
  *
- *   no_method   there is no book. Go and learn one. Sitting is not the answer
- *               and more years are not the answer.
+ *   no_method   nothing has been learned. Sitting is not the answer and more
+ *               years are not the answer. WHAT IS is either "find a book" or
+ *               "open the one you are carrying", and those are not the same
+ *               errand - see `holdsAnUnlearnedCopy`.
  *   exhausted   there is a book and it has ended. Go and find the next volume.
  *
  * This is the fourth of the four reasons a manual can fail somebody - no
@@ -465,7 +467,8 @@ export interface TechniqueCeiling {
  */
 export function techniqueCeiling(
     realmOrdinal: number,
-    techniqueCap?: number | null
+    techniqueCap?: number | null,
+    holdsAnUnlearnedCopy: boolean = false
 ): TechniqueCeiling {
     if (!techniqueExhausted(realmOrdinal, techniqueCap)) {
         return {
@@ -499,8 +502,26 @@ export function techniqueCeiling(
     // `TechniqueCeilingState` would be the honest model and it is not free: the
     // value is passed into a separately-declared `manualState` union in
     // `who-would-teach-this-cultivator.ts`, so widening it here breaks a caller
-    // rather than teaching it something. They hold no book, which is what the
-    // state says; only the advice was wrong.
+    // rather than teaching it something. Only the advice was wrong.
+    //
+    // ── AND A COPY IN THE BAG IS NOT A ROAD, BUT IT IS NOT AN ABSENCE ────
+    //
+    // This branch used to end "It is a book, or somebody willing to teach them
+    // one" unconditionally, on the reasoning that `NO_MANUAL_CEILING` means
+    // they hold no book. It does not. It means nothing has been LEARNED, and
+    // this game sells manuals at a stall: `buy` says so in its own ruling -
+    // "the copy is now held and the art is not: owning it and having sat down
+    // with it are separate facts."
+    //
+    // Found by playing. Two copies bought at the same stall, twelve spirit
+    // stones spent, and the sheet then told the player what was missing was a
+    // book - pointing them at a purchase they had already made twice. The
+    // remedy for a copy you are carrying is `learn`, and it is free.
+    //
+    // Inside this branch nothing at all is learned, so any copy held is
+    // necessarily an unlearned one and the caller does not have to diff two
+    // lists to know it. The parameter defaults false, which keeps every caller
+    // that cannot see the pouch saying exactly what it said before.
     const nothingLeftToAccumulateFor = progressRequiredForOrdinal(realmOrdinal) === null;
 
     if (techniqueCap === NO_MANUAL_CEILING) {
@@ -517,11 +538,15 @@ export function techniqueCeiling(
                   'carry them to and nothing for the sitting to accumulate. What is left is ' +
                   'not a book. It is what they understand.'
                 : 'This cultivator is practising no cultivation method at all. Sitting in a ' +
-                  'quiet room and breathing is not cultivation: without a manual there is no ' +
-                  'road for the qi to take, so nothing accumulates and nothing ever will. ' +
+                  'quiet room and breathing is not cultivation: without a road the qi has ' +
+                  'nowhere to go, so nothing accumulates and nothing ever will. ' +
                   `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
-                  'What is missing is not years and not discipline. It is a book, or somebody ' +
-                  'willing to teach them one.'
+                  'What is missing is not years and not discipline. ' +
+                  (holdsAnUnlearnedCopy
+                      ? 'They are carrying a copy they have never opened. Owning it and ' +
+                        'having sat down with it are separate facts, and only the second ' +
+                        'one teaches anybody anything.'
+                      : 'It is a book, or somebody willing to teach them one.')
         };
     }
 
