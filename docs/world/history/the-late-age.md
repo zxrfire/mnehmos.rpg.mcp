@@ -38,9 +38,22 @@ drained and abandoned.
 So the qi is thin in most places now because most places have already been used. The
 current age is not unlucky. It is *late*.
 
+And there is a second half to the poverty, which is the one people miss: **the only thing
+that ever put qi back was somebody finishing.** A completed crossing lends the ground it
+happened on a great deal for 999 years, running down to nothing over that term - so an age
+with crossings in it is an age being topped up, and an age without them is one that only
+spends. Veins deplete either way. What has stopped is the lending.
+[`../climbing/qi.md`](../climbing/qi.md) has the term, the decay and who in the world
+knows any of it.
+
 This is why the ladder has a practical ceiling it did not used to have. The upper realms
 exist, and the manuals describing them exist, and the people who wrote them were real. But
 nobody has ascended in living memory. The last confirmed crossing is centuries back.
+
+**"In living memory" is doing exact work in that sentence.** A crossing is once in an age
+and the long-lived at the top span ages, so the last one is not beyond everybody - it is
+beyond nearly everybody. The people who watched it are still standing, and what they know
+has not reached the province.
 
 ---
 
