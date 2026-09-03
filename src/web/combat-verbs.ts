@@ -91,6 +91,8 @@ import { creditIn, headTitleOf, positionIn, spendStanding } from './standing.js'
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
+import { writeFlag } from '../server/consolidated/cultivation-support.js';
 
 /**
  * Priority at which a want is the whole of why somebody is standing there.
@@ -1044,6 +1046,21 @@ export const combatVerbs = {
             if (lastRound.shout) {
                 execution.facts.structure.push(...lastRound.shout.heard.map(h => h.because));
             }
+        }
+
+        // -- SOMEBODY KNELT, AND THAT HAS TO OUTLIVE THE SENTENCE --------
+        //
+        // The fight row ends with the submission, so without a note of it the
+        // fact exists for one turn's prose and then nowhere. It is the state a
+        // situated read needs in order to offer what a submission opens.
+        //
+        // Written only for a coercion that actually reached one: a fight the
+        // player won outright leaves somebody hurt, not somebody kneeling.
+        if (held.verb === 'coerce' && result.outcome === 'submission') {
+            writeFlag(
+                this.db, cultivator.id, FLAG_YIELDING_TO_YOU,
+                `${held.party.id}:${run.turn}`
+            );
         }
 
         return this.afterAFight(run, cultivator, held, settled, execution);

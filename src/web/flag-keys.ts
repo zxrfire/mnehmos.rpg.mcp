@@ -48,3 +48,20 @@ export const FLAG_RATIONS_HELD = 'rations_held';
  * hold".
  */
 export const FLAG_MASTER = 'master_who_took_them_on';
+
+/**
+ * Who is on their knees in front of this cultivator, and the turn it happened.
+ *
+ * Stored as `<id>:<turn>`. A submission is the outcome of a confrontation and
+ * the fight row ends with it, so without this the fact that somebody yielded
+ * exists for exactly one turn's prose and then nowhere - which is why the
+ * affordance strip went on offering travel and a reading list to somebody
+ * standing over a person who had just knelt.
+ *
+ * What makes it lapse is PRESENCE rather than a timer. Somebody who yielded and
+ * then walked off is not yielding to anybody, and the strip already knows who is
+ * in the square; a countdown here would be a second answer to a question the
+ * room already settles. The turn is kept for the engine channel and for
+ * whatever wants to know how long ago.
+ */
+export const FLAG_YIELDING_TO_YOU = 'yielding_to_you';
