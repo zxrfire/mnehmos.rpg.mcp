@@ -216,17 +216,39 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
             state.locations.push(grave);
         }
 
-        // What they were carrying. Provenance names them, so a sect can
-        // recognise its own missing property three centuries later.
+        // What they were carrying.
+        //
+        // TWO LINKS, NOT ONE, and the first is the one that makes the claim in
+        // this comment true. The chain has to say the object was ON THIS
+        // PERSON, by id, because that is what a sect recognising its own
+        // missing property three centuries later actually queries - it reads
+        // `previousHolderId` and `ownerId`, not free text. Built with the dead
+        // cultivator holding it and then handed to nobody, so `previousHolderId`
+        // on the second link is theirs rather than null.
         for (const item of input.carried ?? []) {
+            const onTheBody = makeObject({
+                id: `obj-grave-${deceased.id}-${item.itemId}`,
+                name: item.name,
+                kind: item.kind as ObjectRecord['kind'],
+                significance: 'significant',
+                possessorId: deceased.id,
+                ownerId: deceased.id,
+                ownerName: deceased.name,
+                locationId: grave?.id ?? null,
+                provenance: [{
+                    onDay,
+                    holderId: deceased.id,
+                    holderName: deceased.name,
+                    how: 'unknown',
+                    source: `carried by ${deceased.name}`,
+                    previousHolderId: null,
+                    previousHolderName: null,
+                    factId: null,
+                    note: 'On the body at the moment of death.'
+                }]
+            });
             const object = transferPossession(
-                makeObject({
-                    id: `obj-grave-${deceased.id}-${item.itemId}`,
-                    name: item.name,
-                    kind: item.kind as ObjectRecord['kind'],
-                    significance: 'significant',
-                    locationId: grave?.id ?? null
-                }),
+                onTheBody,
                 {
                     onDay,
                     toHolderId: null,
