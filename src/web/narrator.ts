@@ -433,8 +433,16 @@ export interface Narrator {
      * every deterministic answer, and absent means one call, which is the object
      * that reached the engine before sequences existed. See
      * `a-sentence-can-be-more-than-one-call.ts` for the law that bounds it.
+     *
+     * `lastTurn` is one turn of memory and never more - what the previous turn
+     * did and what it told the player, already composed into a prompt block by
+     * `describeTheLastTurn`. It is a parameter rather than a session: nothing
+     * accumulates, and a reader that resolves *the cheaper one* from it has
+     * been given information and no authority at all. Absent when there is
+     * nothing to say, which is every first turn and every deterministic tier,
+     * where the same record is read by `game.ts` with no model in the room.
      */
-    plan(input: string, stateSummary: string): Promise<PlanWithSteps>;
+    plan(input: string, stateSummary: string, lastTurn?: string | null): Promise<PlanWithSteps>;
     narrate(facts: EngineFacts, scene: NarratorScene): Promise<Narration>;
 }
 
@@ -704,7 +712,11 @@ export class ProviderNarrator implements Narrator {
      * is a legal action, because a player mid-run must not be blocked by an
      * unreachable inference server.
      */
-    async plan(input: string, stateSummary: string): Promise<PlanWithSteps> {
+    async plan(
+        input: string,
+        stateSummary: string,
+        lastTurn?: string | null
+    ): Promise<PlanWithSteps> {
         let text: string;
         try {
             const result = await this.provider.call({
@@ -714,7 +726,7 @@ export class ProviderNarrator implements Narrator {
                 signal: AbortSignal.timeout(this.timeoutMs),
                 messages: [
                     { role: 'system', content: INTENT_SYSTEM_PROMPT },
-                    { role: 'user', content: composeIntentUser(input, stateSummary) }
+                    { role: 'user', content: composeIntentUser(input, stateSummary, lastTurn) }
                 ]
             });
             text = result.text ?? '';

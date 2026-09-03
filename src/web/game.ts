@@ -912,6 +912,25 @@ import {
     type PlanWithSteps,
     type WhichComesFirst
 } from './a-sentence-can-be-more-than-one-call.js';
+// One turn of memory, so "keep at it for ten years" and "I will take the
+// cheaper one" have something to refer to. The record is held on this service
+// beside `crossroads` and `whichComesFirst`; what it means is that module's.
+import {
+    carryingOnFromTheLastTurn,
+    describeTheLastTurn,
+    nothingToCarryOnWith,
+    resolvingAgainstTheLastTurn,
+    sayingWhatItWasTakenToMean,
+    sayingWhatWasCarriedOn,
+    theLastTurnStillStands,
+    theRowForAResolvedReference,
+    theRowForCarryingOn,
+    theRowForNothingToCarryOnWith,
+    theSentenceCarriesOn,
+    withoutSayingTheSameThingTwice,
+    type ThingNamed,
+    type WhatTheLastTurnDid
+} from './last-turn-memory.js';
 import { announceMode } from './which-mode-this-session-is-playing-in.js';
 import { composeStateSummary } from './prompt.js';
 import {
@@ -2328,6 +2347,41 @@ export class GameService {
      */
     private whichComesFirst: WhichComesFirst | null = null;
     /**
+     * What the turn before this one did, and what it told the player.
+     *
+     * Beside `crossroads` and `whichComesFirst` and for the same reasons: a
+     * fact about a turn in flight rather than about the world, one turn deep,
+     * in memory, and worth nothing to lose - losing it costs the player a
+     * back-reference and never an act, because the act is still theirs the
+     * moment they name it.
+     *
+     * ONE TURN, AND THE BOUND IS THE DESIGN. It is composed into the phase-1
+     * prompt and thrown away, so nothing accumulates and there is no
+     * conversation history anywhere. A reader given ten turns starts writing
+     * continuity; one turn is enough to resolve "keep at it" and "the cheaper
+     * one" and structurally cannot become a narrative. See
+     * `last-turn-memory.ts`.
+     */
+    private lastTurn: WhatTheLastTurnDid | null = null;
+    /**
+     * Steps that ran this turn, being collected for {@link lastTurn}.
+     *
+     * Written where the executor already classifies how a step went, so a step
+     * the world refused never lands here and a refused turn leaves nothing to
+     * carry on with. That is the honest answer and it is the one the player
+     * gets.
+     */
+    private ranThisTurn: PlanStep[] = [];
+    /**
+     * Things this turn named to the player, being collected for {@link lastTurn}.
+     *
+     * Written by the branches that LIST things - the market board, the
+     * copyist's stall - rather than recovered by reading the narration back.
+     * Parsing prose for what exists would make the narrator authoritative over
+     * the world, which is the one thing it may never be.
+     */
+    private namedThisTurn: ThingNamed[] = [];
+    /**
      * Set when an action changed the world without spending a day.
      *
      * Every other world write rides on the time skip, which persists at the end
@@ -2820,6 +2874,46 @@ export class GameService {
         this.whichComesFirst = null;
         const picked = asked === null ? null : whichOneTheyChose(trimmed, asked);
 
+        // ── AND THE TURN BEFORE THIS ONE, WHICH IS ALL THERE IS ──────────
+        //
+        // Captured and CLEARED here, before anything can add to it, which is
+        // the whole of its lifetime management: the memory is one turn deep, it
+        // is replaced at the bottom of this method, and a turn that never gets
+        // there leaves nothing behind. `theLastTurnStillStands` additionally
+        // refuses a record that is two turns old, because a turn that threw
+        // could otherwise leave one wearing the clothes of a fresh one.
+        //
+        // Two things read it and they read it for different reasons. The
+        // deterministic path below resolves "keep at it" and "the cheaper one"
+        // against it with no model in the room, because the vocabulary is
+        // closed and the list is one list, and the bottom reading tiers are a
+        // shipping mode. Phase 1 is additionally SHOWN it, as one labelled
+        // block composed fresh and thrown away - information, never authority.
+        const before = theLastTurnStillStands(
+            this.lastTurn, run.id, cultivator.id, run.turn
+        ) ? this.lastTurn : null;
+        this.lastTurn = null;
+        this.ranThisTurn = [];
+        this.namedThisTurn = [];
+
+        // ── "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID ───────────────
+        //
+        // Read before phase 1 and not by it, for the same reason the crossroads
+        // answer is: it is not a verb, and the act it means is one the player
+        // themselves ran a turn ago rather than one anything inferred. That
+        // ordering is also what makes the danger check unnecessary here rather
+        // than skipped - there is no model in this reading, so "do it again"
+        // after an attack is a second attack at every reading tier, produced
+        // from the player's own previous turn. It costs exactly what saying it
+        // out in full costs; see `last-turn-memory.ts`.
+        const carriesOn = fightAnswer === null && picked === null
+            && forced === null && answered === null
+            ? theSentenceCarriesOn(trimmed)
+            : null;
+        const carryingOn = carriesOn === null || before === null
+            ? null
+            : carryingOnFromTheLastTurn(before, trimmed);
+
         // ── phase 1 ──
         //
         // Skipped outright when ADMIN named the verb. The rest of the sentence
@@ -2863,6 +2957,26 @@ export class GameService {
                     ? 'an open seclusion crossroads, answered by sitting back down'
                     : 'an open seclusion crossroads, answered by getting up'
             }
+            : carryingOn !== null
+            ? {
+                action: carryingOn.action,
+                steps: [carryingOn],
+                source: 'fallback',
+                note: `the sentence carried on from the turn before it ("${carriesOn}"), which `
+                    + `ran ${carryingOn.action.action}. No model read this line; the act is the `
+                    + 'one the player themselves ran, charged in full.'
+            }
+            : carriesOn !== null
+            // NOTHING TO CARRY ON WITH, AND NO MODEL IS ASKED ABOUT IT.
+            // "Keep at it" has no second meaning to fall back on: either there
+            // is an act behind it or there is not, and that is a fact about the
+            // record rather than about the sentence. Phase 2 answers it below.
+            ? {
+                action: { action: 'unclear' },
+                source: 'fallback',
+                note: `the sentence carried on ("${carriesOn}") and the turn before it left `
+                    + 'nothing to carry on with. No model read this line.'
+            }
             : await this.narrator.plan(
                 trimmed,
                 composeStateSummary({
@@ -2872,8 +2986,25 @@ export class GameService {
                     sectName: this.sectNameFor(cultivator),
                     knownTechniques: this.knownTechniqueNames(cultivator),
                     awareness: this.awarenessOf(cultivator)
-                })
+                }),
+                describeTheLastTurn(before)
             );
+
+        // ── AND "THAT ONE" MEANS ONE OF THE THINGS YOU WERE JUST SHOWN ───
+        //
+        // After phase 1 rather than inside it, so it holds at every reading
+        // tier: the model is TOLD the list and will usually name the thing
+        // outright, and a reader that hands back the player's demonstrative
+        // instead - which is what both deterministic tiers do, and what a model
+        // did on the played turn this exists for - gets it substituted here.
+        // Only a phrase that names nothing on its own is touched, and only from
+        // a list the ENGINE printed last turn.
+        const resolved = before === null || carryingOn !== null
+            ? null
+            : resolvingAgainstTheLastTurn(plan, before, trimmed);
+        const theTurnsPlan: PlanWithSteps = resolved && resolved.resolutions.length > 0
+            ? resolved.plan
+            : plan;
 
         // ── phase 2 ──
         const execution = fightAnswer !== null
@@ -2881,12 +3012,44 @@ export class GameService {
             : answered === 'stay'
             ? await this.sitBackDown(run, cultivator, ambient, standing!)
             : answered === 'go'
-                ? this.getUpAndGo(run, standing!)
-                : await this.takeTheRoundFirst(
-                    inAFight,
-                    () => this.carryOutThePlan(plan, run, cultivator, ambient, trimmed),
-                    run, cultivator, ambient, plan.action.action
-                );
+            ? this.getUpAndGo(run, standing!)
+            : carriesOn !== null && carryingOn === null
+            // NOTHING TO CARRY ON WITH, AND SAYING SO IS THE WHOLE ANSWER.
+            // A refused turn leaves no act behind, and neither does a memory
+            // that has lapsed. The refusal names the route - say the thing
+            // itself - and spends nothing, because a question is a free turn.
+            ? this.freeAction(run, 'unclear', factsForRefusal(
+                'There is nothing there to carry on with.',
+                nothingToCarryOnWith(before),
+                `The sentence read as carrying on ("${carriesOn}") and the turn before this one `
+                + 'left no act to carry on with. No day passed and nothing was spent.'
+            ))
+            : await this.takeTheRoundFirst(
+                inAFight,
+                () => this.carryOutThePlan(theTurnsPlan, run, cultivator, ambient, trimmed),
+                run, cultivator, ambient, theTurnsPlan.action.action
+            );
+
+        if (carriesOn !== null && carryingOn === null) {
+            execution.calls.push(theRowForNothingToCarryOnWith(before));
+        }
+
+        // WHERE A READING IS A JUDGEMENT CALL, SHOW IT. AGENTS.md's rule, and
+        // resolving a back-reference is one of the clearest cases of it: the
+        // player is owed the chance to see that "keep at it" was taken to mean
+        // sitting down for another decade, and to say otherwise if it was not.
+        if (carryingOn !== null && carriesOn !== null) {
+            sayThisWhateverTheNarratorDoes(
+                execution.facts, sayingWhatWasCarriedOn(carriesOn, carryingOn)
+            );
+            execution.calls.push(theRowForCarryingOn(carriesOn, carryingOn));
+        }
+        if (resolved && resolved.resolutions.length > 0) {
+            sayThisWhateverTheNarratorDoes(
+                execution.facts, sayingWhatItWasTakenToMean(resolved.resolutions)
+            );
+            execution.calls.push(theRowForAResolvedReference(resolved.resolutions, before!));
+        }
 
         // Doing something else with a day in it is going, and going says what
         // it cost. Before phase 3, so the sentence is in the facts the narrator
@@ -2941,9 +3104,9 @@ export class GameService {
         // one handler, not a similarity test. Two verbs that resolve to the same
         // engine call cannot be two things a turn had to choose between, and
         // that is a fact about the dispatch above rather than about the words.
-        const naming = theClauseThisTurnDidNotRun(trimmed, plan.action.action);
-        const dropped = stepsOfThePlan(plan).length > 1
-            || (naming !== null && sameActUnderTwoNames(plan.action.action, naming.action))
+        const naming = theClauseThisTurnDidNotRun(trimmed, theTurnsPlan.action.action);
+        const dropped = stepsOfThePlan(theTurnsPlan).length > 1
+            || (naming !== null && sameActUnderTwoNames(theTurnsPlan.action.action, naming.action))
             ? null
             : naming;
         if (dropped) {
@@ -2954,16 +3117,35 @@ export class GameService {
             // log, which is the only one of the three that cannot be dressed.
             execution.facts.lines.push(said);
             execution.facts.prose = `${execution.facts.prose}\n\n${said}`;
-            execution.facts.structure.push(theStructureLineFor(dropped, plan.action.action));
+            execution.facts.structure.push(
+                theStructureLineFor(dropped, theTurnsPlan.action.action)
+            );
             execution.calls.push({
                 name: 'engine.parseIntent',
-                action: plan.action.action,
-                summary: theStructureLineFor(dropped, plan.action.action),
+                action: theTurnsPlan.action.action,
+                summary: theStructureLineFor(dropped, theTurnsPlan.action.action),
                 ok: false
             });
         }
 
         const after = this.currentRun();
+
+        // ── AND THIS TURN BECOMES THE ONE THE NEXT ONE MAY REFER TO ──────
+        //
+        // Recorded LAST, after everything that could have added to either list,
+        // and it replaces rather than appends: the memory is exactly one turn
+        // deep by construction rather than by being trimmed. `onTurn` is the
+        // counter as this turn leaves it, and the next turn reads that same
+        // number - so a turn taken by any other door moves the counter past it
+        // and the memory lapses on its own. See `last-turn-memory.ts`.
+        this.lastTurn = {
+            runId: after.run.id,
+            cultivatorId: after.cultivator.id,
+            onTurn: after.run.turn,
+            outcome: execution.outcome,
+            acts: this.ranThisTurn,
+            named: withoutSayingTheSameThingTwice(this.namedThisTurn)
+        };
         // And again, now the turn is over, BEFORE the write below. The refresh
         // at the top is what the world reads while the span runs - the player
         // as they were when it began, which is correct - and this one is what
@@ -3383,7 +3565,15 @@ export class GameService {
         // by the reading layer still has to report them, and taking the shortcut
         // is what left the narrator as the only thing that knew they existed.
         if (steps.length === 1 && !(plan.droppedClauses?.length)) {
-            return await this.execute(steps[0]!.action, run, cultivator, ambient, rawInput);
+            const only = await this.execute(steps[0]!.action, run, cultivator, ambient, rawInput);
+            // What the next turn may refer to, read off the classifier the
+            // executor already uses rather than off a second judgement. A step
+            // the world refused is not something to carry on with, so a refused
+            // turn leaves nothing behind and says so.
+            if (howTheStepWent(only, steps[0]!) !== 'did_not_come_off') {
+                this.ranThisTurn.push(steps[0]!);
+            }
+            return only;
         }
 
         const budget = whatThisTurnMayRun(steps, rawInput);
@@ -3411,6 +3601,7 @@ export class GameService {
             // there. Two guards for one mistake, because the mistake read as a
             // successful theft and cost a played turn to find.
             const went = howTheStepWent(one, step);
+            if (went !== 'did_not_come_off') this.ranThisTurn.push(step);
             one.calls.unshift(theRowThatOpensAStep(step, i, steps.length));
             if (step !== asPlanned) {
                 one.calls.splice(1, 0, theRowForAResolvedPronoun(asPlanned, step));
@@ -11527,6 +11718,33 @@ ${line}`;
             + 'after the cut, priced between what a counter would give the holder and what the '
             + 'copy is worth. Reading them costs nothing: nothing bought, no time passed.'
         );
+        // WHAT WAS NAMED IS WHAT "THE CHEAPER ONE" CAN MEAN NEXT TURN.
+        //
+        // Recorded here, where the engine decides what to print, rather than
+        // recovered by reading the narration back: parsing prose for what
+        // exists would make the narrator authoritative over the world, which is
+        // the one thing it may never be. See `last-turn-memory.ts`.
+        //
+        // IN THE ORDER THE BOARD PRINTS THEM, which is the order the player
+        // reads them - the stall block first, then whoever is standing here
+        // holding something. Only the nameable objects: a bowl of millet is a
+        // price and an availability with no row anywhere, and "the cheaper one"
+        // is never about the ferry.
+        const stall = (result as { manuals?: MarketPrice[] }).manuals;
+        if (Array.isArray(stall)) {
+            for (const book of stall) {
+                if (typeof book.name !== 'string') continue;
+                this.namedThisTurn.push({
+                    name: book.name,
+                    ...(typeof book.spiritStones === 'number' ? { stones: book.spiritStones } : {})
+                });
+            }
+        }
+        this.namedThisTurn.push(...offered.offers.map(offer => ({
+            name: offer.name,
+            stones: offer.askStones,
+            from: offer.sellerName
+        })));
         if (offered.offers.length > 0) {
             board.calls.push({
                 name: 'engine.whatThisPersonWouldPartWith',
@@ -14905,6 +15123,13 @@ ${opened.text}` : receipt,
                 + `priced at this region's own rate rather than a catalog list price. `
                 + 'Reading the stall costs nothing: nothing bought, nothing spent, no time passed.'
             );
+            // A name the game printed is a name the next turn may point at with
+            // "the cheaper one". Recorded where the listing is decided; see the
+            // note in `market`.
+            this.namedThisTurn.push(...stock.map(book => ({
+                name: book.name,
+                stones: askingFor(book)
+            })));
             return this.freeAction(run, 'buy', facts);
         }
 
