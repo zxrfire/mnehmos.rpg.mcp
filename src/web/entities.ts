@@ -38,6 +38,8 @@
 
 import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
+import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
+import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
@@ -70,6 +72,14 @@ export type EntityKind =
     | 'herb'
     | 'recipe'
     | 'place'
+    /**
+     * A thing in the world, resolved off its own row.
+     *
+     * Not gated, for the reason `resolveObject` gives at length: the player
+     * receives the reading their rung and their reference support, never the
+     * catalog entry, so naming a thing hands nobody an answer key.
+     */
+    | 'object'
     /** A line on the mortal price board. Not gated: the player was shown it. */
     | 'price'
     /**
@@ -104,6 +114,16 @@ export interface KnowledgeScope {
      * list means nobody is about; an absent list means nobody asked.
      */
     present?: readonly RosterEntry[];
+    /**
+     * The world's own object rows.
+     *
+     * Supplied rather than looked up, for the same reason `present` is: the
+     * world is loaded once per action and not once per lookup. An empty list
+     * means the world holds nothing here; an absent one means nobody asked, and
+     * `resolveObject` answers null to both rather than reaching for the catalog
+     * - see the note there on why a catalog answer would be a lie.
+     */
+    objects?: readonly ObjectRecord[];
 }
 
 /**
@@ -984,6 +1004,175 @@ export function resolvePill(query: string): ResolvedEntity | null {
 }
 
 /**
+ * A thing somebody is holding, or a thing with a name.
+ *
+ * ── THE DEFECT THIS CLOSES ───────────────────────────────────────────────
+ *
+ * `resolveAnything` walked self, cultivator, sect, place, technique, recipe,
+ * pill, herb - and OBJECTS WERE NOT IN IT AT ALL, so `I examine the Unearned
+ * Step`, `I look at the sword in his hand` and `I examine my sword` all reached
+ * the generic refusal. Every ingredient of the answer existed; nothing asked.
+ *
+ * ── THE ROW, NEVER THE CATALOG ───────────────────────────────────────────
+ *
+ * Resolved out of `scope.objects`, which is the world's own table, and never
+ * out of `artifacts.ts`. Two different reasons and both matter: `possessorId`
+ * and `ownerId` are separate facts that only a row carries, and a catalog
+ * lookup would describe a thing that is not anywhere - silently confirming an
+ * artifact exists in a world where it may have been destroyed, or was never
+ * placed. A ruined row still resolves, because being able to find out that the
+ * thing is gone is the whole of why the row is kept.
+ *
+ * ── UNGATED, AND THE GRADING DOES THE WORK A GATE WOULD DO BADLY ─────────
+ *
+ * Naming any object is allowed, exactly as naming any technique or pill is. It
+ * hands nobody the answer key, because THE PLAYER DOES NOT RECEIVE THE CATALOG
+ * ENTRY - they receive the reading their own rung and their own reference
+ * support, out of `artifact-recognition.ts`. A carter naming the Standing Edge
+ * gets a carter's answer. The design owner's ruling, in one line:
+ *
+ *   *"if you inspect a counted but untracked artifact you get a generic
+ *   description. ownership of this IS tracked. a tracked one, and you are aware
+ *   of what it is, you get a damn good one. all dependent on your own
+ *   cultivation and awareness, ofc."*
+ *
+ * ── AND `possessorId` IS HOW "THE SWORD IN HIS HAND" RESOLVES ────────────
+ *
+ * That phrasing names a thing THROUGH the person holding it, which is a lookup
+ * by possessor rather than by name and is what a player actually types. It runs
+ * second, so a bare person's name is still a person: `resolveCultivator` is
+ * ahead of this in `resolveAnything` and takes them first.
+ */
+export function resolveObject(
+    query: string,
+    self: Cultivator,
+    scope?: KnowledgeScope
+): ResolvedEntity | null {
+    const wanted = query.trim();
+    if (wanted.length < 3 || !scope?.objects || scope.objects.length === 0) return null;
+
+    const named = best(wanted, scope.objects, object => object.name);
+    // By the person holding it. Their best rated thing, which is the one a
+    // sentence about "the sword in his hand" is about - and the same ordering
+    // `bestObjectHeldBy` arms somebody with, because there is one answer to
+    // which of two things somebody is holding up.
+    const byHolder = named ? null : (() => {
+        const who = best(wanted, scope.present ?? [], row => row.name);
+        if (!who) return null;
+        return scope.objects!
+            .filter(object => object.possessorId === who.id && object.power !== null)
+            .reduce<ObjectRecord | null>(
+                (bestSoFar, object) =>
+                    bestSoFar === null || (object.power ?? 0) > (bestSoFar.power ?? 0)
+                        ? object
+                        : bestSoFar,
+                null
+            );
+    })();
+
+    const thing = named ?? byHolder;
+    if (!thing) return null;
+
+    const read = whatTheyRecogniseAboutIt(thing, {
+        id: self.id,
+        factionId: self.sectId ?? null,
+        realmOrdinal: self.realmOrdinal,
+        referenceFor: (factionId: string) =>
+            scope.gate.stageOf(scope.holderId, 'sect', factionId)
+    });
+
+    return {
+        kind: 'object',
+        id: thing.id,
+        // ── THE NAME IS PART OF THE ANSWER, NOT A LABEL ON IT ────────────
+        //
+        // Callers print this, so handing back the catalog name for a thing the
+        // reader cannot place would give away the entry the grading exists to
+        // withhold - and it reads as a contradiction on the page: *"The
+        // Standing Edge. You could not say what it is."* Played, that is
+        // exactly what came out.
+        //
+        // `id` is untouched, so an inspector, a log line and any caller that
+        // needs to find the row again still can. What is withheld is only what
+        // the player is told.
+        name: read.reading === 'nothing' && !read.nothingToRecognise
+            ? 'Something you cannot place'
+            : thing.name,
+        facts: whatTheySeeLookingAtIt(thing, read),
+        structure: [
+            `${thing.name} (${thing.id}), ${keptAs(thing.significance)}, `
+            + `rated ${thing.power ?? 'nothing in a fight'}. Holder `
+            + `${thing.possessorId ?? 'nobody'}; owner ${thing.ownerId ?? 'nobody'}. Those are two `
+            + 'facts and the row keeps them apart.',
+            `Realm afforded ${read.fromRealm}; reference afforded ${read.fromReference} at stage `
+            + `${read.reference}. Identification is the lower of the two, ${read.reading}. The gap `
+            + `itself: ${read.outOfTheirDepth.account}`
+        ]
+    };
+}
+
+/**
+ * What a reader actually comes away with, graded.
+ *
+ * Four answers and they are not degrees of one thing. The counted one and the
+ * out-of-your-depth one in particular are real readings rather than softer
+ * versions of the good one - see `artifact-recognition.ts` on why the two axes
+ * do not fail the same way.
+ */
+function whatTheySeeLookingAtIt(
+    thing: ObjectRecord,
+    read: ReturnType<typeof whatTheyRecogniseAboutIt>
+): string[] {
+    // A kind, not a thing. Several hundred exist and there is nothing to know.
+    // The name is not repeated in any of these. The caller prints
+    // `ResolvedEntity.name` ahead of the facts, and saying it again gave
+    // *"The Standing Edge. The Standing Edge. It settles who somebody is..."*
+    // in play - the same fact twice, which is what a dump reads like.
+    if (read.nothingToRecognise) {
+        return [
+            thing.description,
+            'One of a great many, and nothing about this one says otherwise.'
+        ];
+    }
+
+    const gone = thing.tags.includes('ruined')
+        ? ['What is left of it is a record. The thing itself did not survive what was done with it.']
+        : [];
+
+    if (read.reading === 'nothing') {
+        // The correction the design owner made to the realm axis: being unable
+        // to read a thing is itself a reading, and at this end it is the only
+        // one that matters.
+        if (read.outOfTheirDepth.beyondThem) {
+            return [
+                'It is beyond you, and there is nothing uncertain about that. You could not say '
+                + 'what it is, whose it is, or what it has done. You can say that it would end '
+                + 'you, and you would not be guessing.',
+                ...gone
+            ];
+        }
+        return [
+            'You can see what it is made of and how it is held, and nothing about it tells you '
+            + 'whose it was or what it has been used for.',
+            ...gone
+        ];
+    }
+
+    const lines = [thing.description];
+    if (read.ownerName) {
+        lines.push(
+            read.inTheWrongHands
+                ? `It is ${read.ownerName}'s, and the person holding it is not them.`
+                : `It is ${read.ownerName}'s, and it is where it belongs.`
+        );
+    }
+    if (read.outOfTheirDepth.beyondThem) {
+        lines.push('And it is well past anything you could stand in front of.');
+    }
+    return [...lines, ...gone];
+}
+
+/**
  * A line on the price board.
  *
  * The board is the only list in the game the player has actually been shown -
@@ -1203,6 +1392,11 @@ export function resolveAnything(
         resolveSect(repos, query, scope, self.sectId) ??
         resolveKnownPlace(query, self, scope) ??
         resolveTechnique(repos, query, self.id) ??
+        // After the person, so a bare name is still a person, and after the
+        // art, so a house's signature is still an art. Before the consumable
+        // catalogs, because a thing standing in front of somebody is a better
+        // answer than a pill with a similar name that is nowhere near them.
+        resolveObject(query, self, scope) ??
         resolveRecipe(query) ??
         resolvePill(query) ??
         resolveHerb(query)

@@ -65,7 +65,20 @@ export const investigateVerb = {
             );
         }
 
-        const scope = this.scopeFor(cultivator);
+        // ── AND THE THINGS, WHICH NOTHING HAD EVER PUT IN A SCOPE ────────
+        //
+        // `resolveAnything` walked self, cultivator, sect, place, technique,
+        // recipe, pill and herb, and objects were in none of it - so
+        // `I examine the Unearned Step`, `I look at the sword in his hand` and
+        // `I examine my sword` all reached the generic refusal with every
+        // ingredient of the answer sitting in the world.
+        //
+        // Supplied HERE rather than in `scopeFor`, and that is the seam rather
+        // than a shortcut: looking at a thing is what this verb is for, and the
+        // verbs that take a scope to find somebody to swear an oath to or a
+        // house to petition have no business resolving a sword. An absent list
+        // is how `resolveObject` is told nobody asked.
+        const scope = { ...this.scopeFor(cultivator), objects: this.atHand?.objects ?? [] };
         // Ruins are load-bearing: origin.md closes on them being the one door
         // in this world that opens on nerve rather than standing, and the only
         // route a poor cultivator has. "The ruins" is how a player refers to
