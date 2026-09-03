@@ -57,7 +57,9 @@ export const POTENCY_UNITS: Record<PillEffect, string> = {
     extend_lifespan: 'years',
     sate_hunger: 'satiety points',
     grain_abstinence: 'days without hunger',
-    cleanse_deviation: 'deviation severity levels'
+    cleanse_deviation: 'deviation severity levels',
+    // Nothing. A soul is out or it is not, and there is no amount of it.
+    end_the_soul: 'none - the effect is absolute'
 } as const;
 
 /**
@@ -236,6 +238,16 @@ export function lifespanRefusalReason(pill: Pill, ordinal: number): string | nul
 }
 
 /** Every run starts holding exactly one of these. */
+/**
+ * The one pill in the catalog nobody is meant to want.
+ *
+ * Named as a constant like the starter healing pill because the same three
+ * places have to agree about it - the row, the swallow path and the decision
+ * an NPC makes about carrying one - and a string typed three times is a
+ * silent no-op the third time.
+ */
+export const SOUL_QUENCHING_PILL_ID = 'pill-soul-quenching';
+
 export const MINOR_HEALING_PILL_ID = 'pill-minor-healing';
 
 /** The hunger problem's real solution, and a genuine mid-game objective. */
@@ -286,6 +298,27 @@ export const PILLS: readonly Pill[] = [
         value: 35,
         description:
             'Made from blood millet and crimson marrow, and it tastes like both. Standard issue for sect patrols who expect to be bleeding by evening.'
+    },
+    {
+        id: SOUL_QUENCHING_PILL_ID,
+        name: 'Soul-Quenching Pill',
+        grade: 'mortal',
+        effect: 'end_the_soul',
+        // A soul is out or it is not. `POTENCY_UNITS` says the figure means
+        // nothing here, and it is 1 rather than 0 so that a reader who sorts
+        // the catalog by potency does not find it filed with the inert.
+        potency: 1,
+        // Not a poison it survives. The toxicity model prices what a body
+        // carries afterwards, and there is no afterwards.
+        toxicity: 0,
+        // An ordinary mortal-grade price, beside a Blood-Replenishing Pill at
+        // 35, and that is the point rather than an accident. It is not rare
+        // and it is not dear: a house that sends people into other houses can
+        // issue one to everybody it sends without noticing the expense. What
+        // makes it hard to carry was never the money.
+        value: 40,
+        description:
+            'Grey, chalky, and small enough to hold behind a tooth. Houses that send people into other houses issue them without comment, and the instruction that comes with it is not about when to take it but about what is worth more than the person carrying it.'
     },
     {
         id: 'pill-qi-gathering',

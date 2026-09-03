@@ -95,6 +95,7 @@ import {
 } from '../../engine/cultivation/grade-spread.js';
 import {
     FLAG_GRAIN_ABSTINENCE_UNTIL,
+    FLAG_SOUL_ENDED,
     FLAG_BREAKTHROUGH_PILLS_TAKEN,
     FLAG_BLOODLINE_SPECIES,
     FLAG_BLOODLINE_TIER,
@@ -888,6 +889,32 @@ function resolvePillEffect(
     };
 
     switch (pill.effect) {
+        // ── THE ONE THAT IS NOT A BENEFIT ────────────────────────────────
+        //
+        // Death through the ordinary path, so nothing here is a second way to
+        // die: the damage is dealt and the pipeline that handles every other
+        // death handles this one, with the same record and the same estate.
+        //
+        // What makes it worth swallowing is the flag rather than the damage.
+        // Dying alone leaves a body a Nascent Soul can still read - death
+        // deletes no knowledge rows, they stay filed under the id - so being
+        // killed and taking it with you are different events, and this is the
+        // second one.
+        //
+        // The refusal that guards it is `handleConsumePill`'s existing
+        // wasted-pill gate, reused rather than rebuilt. A player who types
+        // "I take a pill" loosely must not die of it.
+        case 'end_the_soul':
+            return {
+                ...base,
+                deltas: { hp: -(cultivator.hp + cultivator.maxHp) },
+                flags: { [FLAG_SOUL_ENDED]: '1' },
+                summary:
+                    'The soul goes out before the body does, which is the whole of what was '
+                    + 'bought. Whatever was in there is not in there now, and nobody who takes '
+                    + 'the body will find it.'
+            };
+
         case 'heal_hp': {
             const healed = Math.min(pill.potency, cultivator.maxHp - cultivator.hp);
             return {
