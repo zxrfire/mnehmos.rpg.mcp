@@ -1051,6 +1051,21 @@ export interface BreakthroughContext {
      * be one.
      */
     protection?: number;
+    /**
+     * Who is standing, for the line's own label.
+     *
+     * Not a second protection term - the same one, named. `protectionModifier`
+     * labels its line `dao_protection:<names>` because, in its own words, the
+     * identity of the somebody IS the mechanic, and a ledger line reading
+     * "somebody was standing there" is not an answer to where a number came
+     * from. `ctx.protection` is a bare share and carries no identities, so
+     * without this the reachable route would book a poorer line than the
+     * unreachable one it replaces.
+     *
+     * Omitted books the bare `dao_protection`, which is the honest label for a
+     * caller that genuinely does not know who stood.
+     */
+    protectionBy?: readonly string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1621,6 +1636,26 @@ export function lifespanPressureOnsetAge(ordinal: number): number {
 export const MAX_OVERFLOW_BONUS = 0.15;
 
 /**
+ * The most a watch can ever be worth, as a flat modifier.
+ *
+ * Sized against the terms it sits beside in the same ledger: a single spirit
+ * root is +0.06, a realm boundary costs -0.08, the last crossing costs -0.15,
+ * and a whole life spent waiting on a full gate is worth at most +0.15. This is
+ * larger than any of them, which is a deliberate claim and it is the setting's
+ * claim: `CROSSING_PRACTICE.why` says protection is the thing secrecy is a
+ * substitute for, and that everything about how a crossing is conducted follows
+ * from not being able to get one.
+ *
+ * It is affordable at that size because of what gates it rather than because of
+ * what caps it. At ordinal 44 a protector must be inside one major realm of
+ * Tribulation Transcendence to contribute anything at all, and the world holds
+ * almost nobody who is and is also willing. The scarcity is the balance; making
+ * the number small as well would have priced protection as a minor convenience
+ * and left the whole practice unexplained.
+ */
+export const MAX_PROTECTION_BONUS = 0.2;
+
+/**
  * The overflow ratio at which HALF the bonus has arrived. 0.5 - so half of it
  * is bought by 1.5x the requirement and the rest costs progressively more.
  *
@@ -1668,7 +1703,7 @@ export function computeBreakthroughOdds(
             'foundationQuality' | 'insights' | 'age' | 'cultivationProgress' | 'knownTechniques'
         >>
         & { roadsWithinReach?: readonly RoadWithinReach[] },
-    ctx: Pick<BreakthroughContext, 'ambient' | 'pill' | 'manualQuality'>
+    ctx: Pick<BreakthroughContext, 'ambient' | 'pill' | 'manualQuality' | 'protection' | 'protectionBy'>
         & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
@@ -1834,6 +1869,36 @@ export function computeBreakthroughOdds(
                 delta: beforePill * (factor - 1)
             });
         }
+    }
+
+    // ── The watch, last of all. ──
+    //
+    // `ctx.protection` is the share of a full watch that is standing, 0..1, and
+    // it is THE protection term - the field's own note says there must not be a
+    // second one in this file, and there is not. It was already read by the
+    // failure-cost half; this is the same fact reaching the ODDS, which is the
+    // half that had no reader at all.
+    //
+    // `foldProtectionIntoOdds` was written to do this from outside and is
+    // unreachable in practice: every real crossing goes through
+    // `attemptBreakthrough`, which computes its own odds internally and never
+    // hands them out to be folded. That function's own docstring called this
+    // the better version and left it to whoever owned this file next.
+    //
+    // Booked LAST, after the pill, for the reason the fold gives: nothing
+    // earlier may be rewritten, because the pill term multiplies a mid-list
+    // clamp that has to keep meaning what it meant. Absent or zero books no
+    // line, so every caller without a watch produces a byte-identical ledger.
+    // The clamp below is what stops a watch pushing an attempt past the rung's
+    // ceiling - protection buys a crossing nobody interferes with, and there
+    // was never a wall a guard could open.
+    const watching = Math.min(1, Math.max(0, Number(ctx.protection ?? 0)));
+    if (watching > 0) {
+        const who = (ctx.protectionBy ?? []).filter(name => name.length > 0);
+        modifiers.push({
+            source: who.length > 0 ? `dao_protection:${who.join(', ')}` : 'dao_protection',
+            delta: watching * MAX_PROTECTION_BONUS
+        });
     }
 
     const raw = modifiers.reduce((sum, m) => sum + m.delta, 0);

@@ -232,3 +232,100 @@ describe('what the vigil costs the person standing there', () => {
         expect(b.next()).toBe(afterWatch);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE WATCH REACHES A REAL CROSSING
+//
+// `foldProtectionIntoOdds` is applied to an already-computed `BreakthroughOdds`
+// and is unreachable in practice: every real crossing goes through
+// `attemptBreakthrough`, which computes its own odds internally and never hands
+// them out to be folded. Its own docstring named the one-line version - a term
+// booked beside `accumulated_overflow` - as the better one and left it to
+// whoever owned that file next.
+//
+// So `computeBreakthroughOdds` now books it, off `BreakthroughContext.protection`
+// - the share of a full watch that is standing, which the failure-cost half
+// already read and the odds half never did. These are the guards on that term.
+// ─────────────────────────────────────────────────────────────────────────
+describe('the watch as a term in the real odds', () => {
+    const share = (watch: { protectors: Protector[] }, ordinal: number) =>
+        protectionBonus(watch, ordinal) / MAX_PROTECTION_BONUS;
+
+    it('keeps sum(modifiers) === finalChance exactly, with a watch standing', () => {
+        const watch = { protectors: [someone(LAST), someone(LAST, 1, 'p2')] };
+        const odds = computeBreakthroughOdds(subject(FIRST_WALL), {
+            ambient: 'normal', pill: null, manualQuality: null,
+            protection: share(watch, FIRST_WALL)
+        });
+        const summed = odds.modifiers.reduce((total, m) => total + m.delta, 0);
+        // The identity the whole ledger rests on: a player reading the lines
+        // can add them up and get the number they were shown.
+        expect(summed).toBeCloseTo(odds.finalChance, 12);
+    });
+
+    it('books no line at all when nobody is standing', () => {
+        const bare = computeBreakthroughOdds(subject(FIRST_WALL), { ambient: 'normal', pill: null, manualQuality: null });
+        const zero = computeBreakthroughOdds(subject(FIRST_WALL), {
+            ambient: 'normal', pill: null, manualQuality: null, protection: 0
+        });
+        // Byte-identical for every caller without a watch, which is all of them
+        // until the verb lands.
+        expect(zero).toEqual(bare);
+        expect(bare.modifiers.some(m => m.source === 'dao_protection')).toBe(false);
+    });
+
+    it('agrees with the fold it replaces', () => {
+        const watch = { protectors: [someone(LAST)] };
+        const bare = computeBreakthroughOdds(subject(FIRST_WALL), { ambient: 'normal', pill: null, manualQuality: null });
+        const folded = foldProtectionIntoOdds(bare, watch, FIRST_WALL);
+        const booked = computeBreakthroughOdds(subject(FIRST_WALL), {
+            ambient: 'normal', pill: null, manualQuality: null, protection: share(watch, FIRST_WALL)
+        });
+        // Same arithmetic reached by the route that a played crossing actually
+        // takes. The fold stays correct; it simply has no caller.
+        expect(booked.finalChance).toBeCloseTo(folded.finalChance, 12);
+    });
+
+    it('helps, and cannot push an attempt past the rung ceiling', () => {
+        const watch = { protectors: [someone(LAST), someone(LAST, 1, 'p2'), someone(LAST, 1, 'p3')] };
+        const bare = computeBreakthroughOdds(subject(FIRST_WALL), { ambient: 'normal', pill: null, manualQuality: null });
+        const guarded = computeBreakthroughOdds(subject(FIRST_WALL), {
+            ambient: 'normal', pill: null, manualQuality: null, protection: share(watch, FIRST_WALL)
+        });
+        expect(guarded.finalChance).toBeGreaterThan(bare.finalChance);
+        expect(guarded.finalChance).toBeLessThanOrEqual(maxChanceFor(FIRST_WALL));
+        // And the line names itself, because a player reading the ledger has to
+        // be able to see where the number came from.
+        expect(guarded.modifiers.some(m => m.source === 'dao_protection')).toBe(true);
+    });
+
+    it('names who stood, in the same label the fold uses', () => {
+        // The guard module calls the identity of the somebody the whole
+        // mechanic, so the reachable route must not book a poorer line than the
+        // unreachable one it replaces.
+        const watch = { protectors: [someone(LAST, 1, 'a'), someone(43, 1, 'b')] };
+        const folded = foldProtectionIntoOdds(
+            computeBreakthroughOdds(subject(LAST), { ambient: 'normal', pill: null, manualQuality: null }),
+            watch, LAST
+        );
+        const booked = computeBreakthroughOdds(subject(LAST), {
+            ambient: 'normal', pill: null, manualQuality: null,
+            protection: share(watch, LAST),
+            protectionBy: watch.protectors.map(p => p.name)
+        });
+        const foldedLine = folded.modifiers.find(m => m.source.startsWith('dao_protection'))!;
+        const bookedLine = booked.modifiers.find(m => m.source.startsWith('dao_protection'))!;
+        expect(bookedLine.source).toBe(foldedLine.source);
+    });
+
+    it('is worth nothing when the watch cannot matter', () => {
+        // Two major realms below the attempt is not a watch, and the odds must
+        // say so rather than paying for the gesture.
+        const useless = { protectors: [someone(2)] };
+        const bare = computeBreakthroughOdds(subject(LAST), { ambient: 'normal', pill: null, manualQuality: null });
+        const same = computeBreakthroughOdds(subject(LAST), {
+            ambient: 'normal', pill: null, manualQuality: null, protection: share(useless, LAST)
+        });
+        expect(same.finalChance).toBeCloseTo(bare.finalChance, 12);
+    });
+});

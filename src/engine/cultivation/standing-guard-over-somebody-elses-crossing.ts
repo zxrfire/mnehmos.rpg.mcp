@@ -78,7 +78,7 @@ import {
     triggersHeavenlyTribulation
 } from './realms.js';
 import type { BreakthroughModifier, BreakthroughOdds } from './breakthrough.js';
-import { MIN_BREAKTHROUGH_CHANCE, maxChanceFor } from './breakthrough.js';
+import { MAX_PROTECTION_BONUS, MIN_BREAKTHROUGH_CHANCE, maxChanceFor } from './breakthrough.js';
 import { createInjury } from './injuries.js';
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import type { CultivationRNG } from './rng.js';
@@ -92,22 +92,18 @@ import type { Injury, InjurySeverity } from '../../schema/cultivation.js';
 /**
  * The most a watch can ever be worth, as a flat modifier.
  *
- * Sized against the terms it sits beside in the same ledger: a single spirit
- * root is +0.06, a realm boundary costs -0.08, the last crossing costs -0.15,
- * and a whole life spent waiting on a full gate is worth at most +0.15. This is
- * larger than any of them, which is a deliberate claim and it is the setting's
- * claim: `CROSSING_PRACTICE.why` says protection is the thing secrecy is a
- * substitute for, and that everything about how a crossing is conducted follows
- * from not being able to get one.
+ * MOVED to `breakthrough.ts` and re-exported here, because it is a constant in
+ * CHANCE units and its own argument sizes it against terms that live in that
+ * file's ledger - a spirit root at +0.06, a boundary at -0.08, the overflow cap
+ * at +0.15. `computeBreakthroughOdds` now books the watch's line itself and
+ * cannot import this module without closing a cycle, so the constant sits with
+ * the other numbers in its own unit and the concept stays here.
  *
- * It is affordable at that size because of what gates it rather than because of
- * what caps it. At ordinal 44 a protector must be inside one major realm of
- * Tribulation Transcendence to contribute anything at all, and the world holds
- * almost nobody who is and is also willing. The scarcity is the balance; making
- * the number small as well would have priced protection as a minor convenience
- * and left the whole practice unexplained.
+ * Re-exported rather than relocated in name: every existing reader of
+ * `MAX_PROTECTION_BONUS` from this module keeps working, and this is where
+ * somebody looking for what a watch is worth will come.
  */
-export const MAX_PROTECTION_BONUS = 0.2;
+export { MAX_PROTECTION_BONUS } from './breakthrough.js';
 
 /**
  * The summed protector weight at which HALF the bonus has arrived. One - so a
