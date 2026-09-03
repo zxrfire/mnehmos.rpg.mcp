@@ -770,6 +770,17 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (where?.sealed === true) {
             lines.push('It is sealed. Something was shut here deliberately and has stayed shut.');
         }
+
+        // ── AND WHO COULD REACH YOU ON IT ────────────────────────────────
+        //
+        // The second half of the question the verb is mostly asked with.
+        // Composed in `engine/encounters/arrival-exposure-read.ts` rather than
+        // here, because it is a read of the arrival tables and belongs beside
+        // them; this branch only decides where it goes in the paragraph, which
+        // is after survivability - "can I live through this ground" is the
+        // bigger question and stays first.
+        const reach = body.reach as { lines?: string[] } | undefined;
+        for (const line of reach?.lines ?? []) lines.push(line);
         // Only where nothing above landed. `assessment.summary` is the
         // capability layer's own one-liner and it restates the survival verdict
         // in different words - said after the sentences above, it is the same

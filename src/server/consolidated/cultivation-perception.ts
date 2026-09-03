@@ -76,6 +76,8 @@ import {
     type TechniqueGrade
 } from '../../schema/cultivation.js';
 import { getMembersOf } from '../../data/cultivation/members.js';
+import { locatabilityFrom, theArrivalReadFor } from '../../engine/encounters/index.js';
+import { npcsAt } from '../../engine/world/world-state.js';
 import { regardFor, type RegardAsker } from '../../engine/cultivation/regard.js';
 import { worldForRun } from '../state/cultivation-world.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
@@ -367,6 +369,42 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             statuses: world.statuses,
             locations: world.locations
         });
+        // ── AND THE OTHER HALF OF THE QUESTION ───────────────────────────
+        //
+        // Found by playing: *"is it safe to sit and cultivate here, or will
+        // someone bother me?"*. The survivability half was answered well and
+        // NOTHING answered the second half, because nothing could - every input
+        // to the arrival machinery is consulted at execution and nowhere else.
+        // So the player could be interrupted and could not ask about being
+        // interrupted, which is `AGENTS.md`'s own signature for a half-built
+        // system: the world does a thing to somebody and no verb lets them ask
+        // about it.
+        //
+        // Here rather than behind a new verb, on the ruling that the player
+        // asked ONE question with two halves and should not have to know it was
+        // two. `assess` is already the verb for what happens if I try.
+        //
+        // THE INPUTS, NEVER THE ROLL. `encountersFor` would answer this exactly
+        // and must not be called: it takes the span as a parameter, so running
+        // it forward would hand the player an outcome the engine has not filed.
+        // `theArrivalReadFor` is pure, unseeded, and reports only standing facts
+        // that are true whether or not anybody ever sits down. Same discipline
+        // as `request`'s weigh mode, which runs everything up to the roll and
+        // stops.
+        const membership = repos.sects.getMembership(cultivator.id);
+        const locatability = locatabilityFrom(location, membership?.sectId ?? null);
+        const heads = npcsAt(world, location.id).length;
+        const reach = {
+            locatability,
+            heads,
+            lines: theArrivalReadFor({
+                placeName: location.name,
+                locatability,
+                heads,
+                realmOrdinal: cultivator.realmOrdinal
+            })
+        };
+
         context = {
             place: {
                 id: location.id,
@@ -375,7 +413,8 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
                 // Hazards are what a body notices, not a category label.
                 hazards: location.hazards,
                 sealed: location.sealed
-            }
+            },
+            reach
         };
     }
 
