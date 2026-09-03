@@ -116,6 +116,13 @@ import {
     STARVATION_TURNS,
     type AmbientQi
 } from '../schema/cultivation.js';
+import {
+    SAY_TO_BREAK_OFF,
+    SAY_TO_GUARD,
+    SAY_TO_KEEP_SWINGING,
+    SAY_TO_PRESS,
+    SAY_TO_SHOUT
+} from './fight-answers.js';
 import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wound.js';
 
 /**
@@ -604,6 +611,72 @@ export interface StandingHere {
      * design.
      */
     brokenSeclusion: { daysRemaining: number; canWithdraw: boolean } | null;
+    /**
+     * A fight that is happening right now, and has not finished.
+     *
+     * ── The defect this closes, in one transcript ────────────────────────
+     *
+     * Played, mid-exchange, with the engine's own words above the strip:
+     *
+     *   ATTACK -> You are on 41 of 50; Yun Keqing is on 63 of 67. 7 rounds
+     *   before neither of you can finish it. Breaking off would come off at
+     *   41%, and turning your back costs something either way.
+     *
+     *   WHAT IS LIVE HERE
+     *   I travel to Nine Peaks | I ask Yun Keqing to teach me |
+     *   what is posted here | what arts can I learn | I look at Duan Zhaokuan
+     *
+     * The strip was BYTE-IDENTICAL to the turn before the fight opened. It
+     * offered to ask the person currently hitting the player to teach them,
+     * and it offered a notice board - while `wayOut()` had already priced
+     * breaking off at 41% in the same breath. A finished mechanism, correctly
+     * computed, printed to nobody.
+     *
+     * It was not one missing rule. `fightView` composes the whole surface -
+     * both HP bars, the rounds left, the flight chance and all five sentences
+     * a person in a fight can say - `turn-engine.ts` puts it on the wire every
+     * turn, and `web/app.js` does not read `fight` at all. The view model, the
+     * payload and the reader all existed except the last one.
+     *
+     * ── SITUATION BEATS PLACE, AND THAT IS THE RULE TO STATE ─────────────
+     *
+     * A fight in a safe town is a fight. Everything else in this file is a
+     * fact about a square or a body and stays true while you decide what to do
+     * about it; this is the one state where the square has stopped being the
+     * subject. So the branch reading this runs FIRST and returns, rather than
+     * adding to a row that also carries a market stall - and it is not gated
+     * on `aboveTheLid`, because being an immortal does not make a fight not a
+     * fight.
+     *
+     * Null on every ordinary turn, which is nearly all of them.
+     */
+    fight: {
+        /** Who is hitting you. Named because they are swinging at you. */
+        them: string;
+        yourHp: number;
+        yourMaxHp: number;
+        theirHp: number;
+        theirMaxHp: number;
+        /** Before neither side can finish it. `whereThisFightStands`. */
+        roundsLeft: number;
+        /**
+         * 0..1, the preview roll from `attemptFlight`, rolled on a stream
+         * nobody fights from so that LOOKING at the odds cannot move them.
+         *
+         * Stated as the number and never as "you could probably get away". A
+         * way out whose odds are hidden is not agency, and the whole claim of
+         * this game is that the numbers are the honest part.
+         */
+        flightChance: number;
+        /**
+         * The nearest road out, when the ground has one.
+         *
+         * Null is a real and important state - a fight in the middle of
+         * nowhere - and the honest answer is then "away from them, and that is
+         * all you know". `wayOut()` says which; this file never picks one.
+         */
+        wayOut: { name: string; days: number } | null;
+    } | null;
 }
 
 /**
@@ -729,6 +802,31 @@ const naming = (
  * - because a row topped up with these to look full is the padding the design
  * owner ruled against, and it is what made the row read as static.
  */
+/**
+ * A line that answers the SITUATION rather than the square.
+ *
+ * Deliberately not a `SAY` row, and the reason is not convenience. Every entry
+ * in that table carries `routesTo`, an engine ACTION, and is pinned against
+ * `parseIntent` by test. A fight answer is not routed by `parseIntent` at all:
+ * while a fight stands, `GameService.act` reads the sentence with
+ * `whatTheySaidInTheFight` first, and what it yields is a `FightAnswer` kind -
+ * `strike`, `guard`, `press`, `break_off`, `call_for_help`. Putting those in
+ * the table would file five sentences under a router that never sees them, and
+ * the test that guards the table would go green over a lie.
+ *
+ * So `routesTo` here names the answer kind, and the test that pins these
+ * drives them through `whatTheySaidInTheFight` instead. Two readers, two
+ * guards, and neither pretending to be the other.
+ */
+const situation = (
+    id: string,
+    say: string,
+    answers: string,
+    because: string
+): Affordance =>
+    ({ id, say, routesTo: answers, urgency: 'now', because,
+        whatItIsAbout: 'here', namesSomething: false });
+
 const always = (line: Line, because: string): Affordance =>
     ({ ...line, urgency: 'open', because, whatItIsAbout: 'always', namesSomething: false });
 
@@ -766,6 +864,84 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const paperOnTheWall = here.paperOnTheWall ?? null;
     const spanCounterHere = here.spanCounterHere ?? false;
     const dutiesGoing = here.dutiesGoing ?? 0;
+
+    // ── A FIGHT IS HAPPENING, AND NOTHING ELSE IS THE SUBJECT ─────────────
+    //
+    // SITUATION BEATS PLACE. The first branch in the file and the only one
+    // that RETURNS: every other rule here describes a square or a body, and
+    // both of those keep while you think about them. A fight does not. A fight
+    // in a safe town is a fight, so this is not gated on the ground, not gated
+    // on `aboveTheLid` - an immortal in a fight is in a fight - and it does not
+    // merge its entries into a row that also carries a market stall.
+    //
+    // That ordering is the thing somebody will get wrong later, which is why it
+    // is stated rather than left to the reader of a long function.
+    //
+    // The five sentences are IMPORTED from `fight-answers.ts` and never
+    // retyped. That module owns both the patterns that read them and the
+    // strings the panel sends, so a phrasing change there moves this row with
+    // it; a copy here would be a second vocabulary that goes stale silently,
+    // and the failure would be a button that the fight has no answer for.
+    if (here.fight) {
+        const f = here.fight;
+        const odds = `${Math.round(f.flightChance * 100)}%`;
+        const standing =
+            `You are on ${f.yourHp} of ${f.yourMaxHp}; ${f.them} is on ${f.theirHp} of `
+            + `${f.theirMaxHp}, with ${f.roundsLeft} round${f.roundsLeft === 1 ? '' : 's'} `
+            + 'before neither of you can finish it.';
+
+        // ── THE WAY OUT, WITH ITS PRICE ON IT, FIRST ─────────────────────
+        //
+        // First because it is the only one of the five whose odds the engine
+        // states, and NOT because it is advised - urgency in this file is how
+        // pressing something is and never a recommendation. What earns it the
+        // position is that it carries a number the player cannot get any other
+        // way. The ruling it serves: "if you fought and it resolves in one turn
+        // and you died it would be unsatisfying cuz there's nothing you can do
+        // about it" - which is a complaint about INFORMATION as much as about
+        // turns, and a way out whose odds are hidden is not agency.
+        //
+        // Named toward somewhere only when the ground actually has a road out.
+        // `wayOut()` decides which; an empty list is a fight in the middle of
+        // nowhere and the sentence stays bare, which is the honest version.
+        add(f.wayOut
+            ? naming('fight_break_off', `${SAY_TO_BREAK_OFF} toward ${f.wayOut.name}`,
+                'break_off', 'now',
+                `${standing} Breaking off comes off at ${odds}, and turning your back costs `
+                + `something either way. ${f.wayOut.name} is ${f.wayOut.days} `
+                + `day${f.wayOut.days === 1 ? '' : 's'} out and is the nearest road from here.`)
+            : situation('fight_break_off', SAY_TO_BREAK_OFF, 'break_off',
+                `${standing} Breaking off comes off at ${odds}, and turning your back costs `
+                + 'something either way. Nothing here is a road, so it is away from them and '
+                + 'that is all you know.'));
+
+        // The ordinary round, and what happens anyway when nobody chose - so it
+        // is on the row rather than assumed, because a player who does not know
+        // the other four exist has been given one option and told it is a turn.
+        add(situation('fight_strike', SAY_TO_KEEP_SWINGING, 'strike',
+            `${standing} This is the round that happens if you say nothing the fight `
+            + 'has an answer for.'));
+
+        add(situation('fight_guard', SAY_TO_GUARD, 'guard',
+            'Spend the round on not being hit rather than on hitting. It buys a round '
+            + 'off the budget and it does not end anything, which is the point when what you '
+            + 'are waiting for is somebody arriving.'));
+
+        add(situation('fight_press', SAY_TO_PRESS, 'press',
+            'Wear what is coming so that what you are throwing lands. The genre\'s own '
+            + 'move, and it is the one that trades your remaining rounds for their remaining '
+            + 'body.'));
+
+        add(situation('fight_shout', SAY_TO_SHOUT, 'call_for_help',
+            'Spend the round on a shout. Who comes is a fact about who is standing '
+            + 'here and not about how loud you are, so this is worth a round where there are '
+            + 'people and worth nothing where there are not.'));
+
+        // RETURNS. Everything below is about a square or a body, and neither is
+        // what is happening. `dedupe` still runs, so the cap and the ordering
+        // are the same machinery as every other row.
+        return dedupe(out);
+    }
 
     const turns = here.turnsUntilStarvation;
     // The belly is empty and the grace period is running. `starvationTurns` is

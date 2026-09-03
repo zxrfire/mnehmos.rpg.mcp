@@ -108,6 +108,8 @@ import {
     linesFor,
     whatIsWorthDoingStandingHere
 } from './what-is-worth-doing-standing-here.js';
+import { wayOut, whereThisFightStands } from '../engine/cultivation/unfinished-fight.js';
+import { theFightStillStands } from './fight-answers.js';
 import { whatWouldCloseThisWound } from './what-would-close-this-wound.js';
 import {
     LEAVES_THE_GROUND,
@@ -952,6 +954,37 @@ export const situatedReads = {
             // The one entry here that is gone next turn whatever happens. See
             // the field's note in the affordance module for why it is offered
             // ahead of the body, which nothing else is.
+            // ── WHAT IS HAPPENING, WHICH BEATS WHERE IT IS HAPPENING ─────
+            //
+            // Read off the same held fight `act` routes a sentence through, and
+            // priced with the same `whereThisFightStands` the narration quotes -
+            // so the row and the prose above it cannot disagree about the odds.
+            // The preview rolls on a stream nobody fights from, which is what
+            // makes it safe to run on every state read: looking at the chance
+            // cannot move it.
+            fight: theFightStillStands(this.fight, run.id, cultivator.id)
+                ? (() => {
+                    const held = this.fight!;
+                    const where = whereThisFightStands(held.state, ambient);
+                    return {
+                        them: held.party.name,
+                        yourHp: where.yourHp,
+                        yourMaxHp: where.yourMaxHp,
+                        theirHp: where.theirHp,
+                        theirMaxHp: where.theirMaxHp,
+                        roundsLeft: where.roundsLeft,
+                        flightChance: where.flight.chance,
+                        // `wayOut` with nothing named picks the nearest, which
+                        // is where somebody actually running goes. Null where
+                        // the ground has no road, and that stays null rather
+                        // than becoming a direction this layer invented.
+                        wayOut: (() => {
+                            const out = wayOut(held.state.ground, null);
+                            return out ? { name: out.name, days: out.days } : null;
+                        })()
+                    };
+                })()
+                : null,
             brokenSeclusion: stillStands(this.crossroads, run.id, cultivator)
                 ? {
                     daysRemaining: this.crossroads.daysRemaining,
