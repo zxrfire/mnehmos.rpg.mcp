@@ -58,6 +58,8 @@ import type { CultivationRepos } from '../server/consolidated/cultivation-suppor
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
 import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js';
+import { getMembersOf } from '../data/cultivation/members.js';
+import { getSect } from '../data/cultivation/sects.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
     readALineageOffAName,
@@ -81,6 +83,16 @@ export type EntityKind =
      * field on either half of `SiteSchema`. See `resolveNameableSite`.
      */
     | 'site'
+    /**
+     * A RUNG on a house's ladder, used as a way of referring to whoever
+     * holds it - *the grand elder*, *the Pavilion Master*.
+     *
+     * Not `cultivator`, deliberately. The subject of the sentence is the
+     * office, and resolving the office must not hand over the person: the
+     * asker may be entitled to know the rung exists and entitled to nothing
+     * about whoever stands on it. See `resolveRankOnALadder`.
+     */
+    | 'rank'
     /**
      * A thing in the world, resolved off its own row.
      *
@@ -1398,6 +1410,10 @@ export function resolveAnything(
         // hands.
         resolveTheAskerThemselves(query, self) ??
         resolveCultivator(repos, query, self.id, scope, self.realmOrdinal) ??
+        // After a person's own name, so somebody actually called Abbot is
+        // still themselves, and before the house, so a rung whose title
+        // echoes a house name is read as the rung the asker serves under.
+        resolveRankOnALadder(query, self, scope) ??
         resolveSect(repos, query, scope, self.sectId) ??
         // AHEAD OF THE ORDINARY PLACE, and that ordering is the fix rather
         // than a preference. Measured: `tell me about The Tended Tomb` with
@@ -1422,6 +1438,188 @@ export function resolveAnything(
         resolvePill(query) ??
         resolveHerb(query)
     );
+}
+
+/**
+ * A rung on the asker's own house's ladder, and whoever stands on it.
+ *
+ * -- THE DEFECT THIS EXISTS FOR -------------------------------------------
+ *
+ * Played as a Sword Elder of the Azure Cloud Pavilion, one turn after the house
+ * gained a `Grand Sword Elder` rung:
+ *
+ *   who is the grand elder here?
+ *   Nothing here answers to it.
+ *   Unresolved subject "grand elder here": no knowledge record and nothing
+ *   co-located.
+ *
+ * **The parser took a rank as a name** and went looking for a person called
+ * "grand elder here".
+ *
+ * -- AND THE TOLD-THE-STRUCTURE GRANT IS WHAT MAKES IT WRONG ---------------
+ *
+ * `what-joining-tells-you.ts` landed the rule that being enrolled tells you the
+ * ladder - the shape of the house and who is on the rungs that matter. So a
+ * member KNOWS there is a grand elder. They know the rank exists, they know
+ * somebody holds it, and they may hold nothing at all about the person.
+ *
+ * **Asking by the rung is the natural thing to type in exactly that state**, and
+ * it is the state that grant produces at the bottom of a house. A player who
+ * knows the structure and not the roster has no other way to refer to anybody.
+ *
+ * -- IT IS PER-HOUSE VOCABULARY, NOT A GLOBAL ONE -------------------------
+ *
+ * "The grand elder" means nothing in general and means one person at the
+ * Pavilion. Every house names its own rungs - Pavilion Master, Hall Sovereign,
+ * Order Patriarch, Abbot - and `sect.ranks` is already that list, so the
+ * vocabulary is data and no table is added here.
+ *
+ * The house is the asker's own. Standing on somebody's ground is the other
+ * context that should reach this and does not yet: `KnowledgeScope` carries a
+ * place NAME and not the location rows, so the holder of the ground cannot be
+ * read from here. A non-member asking after "the abbot" while standing in the
+ * Temple is the case that is still missing, and it wants a scope field rather
+ * than a second rule.
+ *
+ * -- RESOLVING THE RUNG IS NOT NAMING THE HOLDER --------------------------
+ *
+ * The two silences, and they are the same shape as the ground holder's. Being
+ * told the ladder entitles somebody to ask; whether a NAME comes back is a
+ * separate question answered by what they hold about the person:
+ *
+ *   nobody holds it     a real answer about the house, and useful.
+ *   somebody does and   the rung resolves, the person does not. "There is one,
+ *   you cannot say who  and you do not know who" is the honest sentence, and it
+ *                       is worth more than a refusal.
+ *   you can name them   the ordinary case for a member of any standing.
+ *
+ * KNOWING AN OFFICE EXISTS IS NEVER A ROUTE TO THE PERSON HOLDING IT, and the
+ * knowledge row is what enforces that rather than a second check. Somebody the
+ * asker holds nothing about is not named however plainly the rung resolves, so
+ * the office can be common knowledge while its holder is not - which is exactly
+ * the state a new member is in and the reason this exists.
+ *
+ * A height gate was written here and removed: see the note at the filter for why
+ * it could not fire, and why knowledge winning over the gap is the right rule
+ * for a row somebody was handed rather than one they perceived.
+ */
+export function resolveRankOnALadder(
+    query: string,
+    self: Cultivator,
+    scope?: KnowledgeScope
+): ResolvedEntity | null {
+    const house = self.sectId;
+    if (!house || !scope) return null;
+    const sect = getSect(house);
+    if (!sect || sect.ranks.length === 0) return null;
+
+    // "the grand elder here" is the rung plus two words that mean nothing to a
+    // ladder. Stripped rather than matched around, because a rank title is a
+    // short phrase and the noise is longer than the signal.
+    const wanted = query
+        .trim()
+        .replace(/^(?:the|a|an)\s+/i, '')
+        .replace(/\s+(?:here|of\s+(?:my|our|the)\s+(?:sect|house|order))\s*$/i, '')
+        .trim();
+    if (wanted.length < 3) return null;
+
+    // ---- THE PLAYER SAYS THE SHORT FORM, AND THE LADDER SAYS THE LONG ----
+    //
+    // Measured on the sentence that produced this: `who is the grand elder` did
+    // NOT reach `Grand Sword Elder` on a score alone, because the house's idiom
+    // puts its own word in the middle of the title and a player naturally leaves
+    // it out. Everybody says "the grand elder"; nobody says "the grand sword
+    // elder".
+    //
+    // So a title also matches when it CONTAINS every word the player used, and
+    // the score is still what chooses between the ones that do - which is what
+    // keeps `sword elder` on `Sword Elder` rather than on `Grand Sword Elder`,
+    // where both contain the words and only one is what was said.
+    const said = wanted.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+    const singular = (word: string) => word.replace(/s$/, '');
+
+    let rankIndex = -1;
+    let winning = 0;
+    sect.ranks.forEach((title, index) => {
+        const words = title.toLowerCase().split(/\s+/);
+        const containsAll = said.every(
+            word => words.some(other => singular(other) === singular(word))
+        );
+        const score = matchScore(wanted, title);
+        // A containment match still has to beat the others on score, so the
+        // longest title never wins by merely being long enough to contain the
+        // query.
+        const reaches = score >= MATCH_THRESHOLD || containsAll;
+        if (reaches && score > winning) {
+            winning = score;
+            rankIndex = index;
+        }
+    });
+    if (rankIndex < 0) return null;
+
+    const title = sect.ranks[rankIndex]!;
+    const holders = getMembersOf(house).filter(member => member.rankIndex === rankIndex);
+
+    // ---- WHO OF THEM THIS ASKER MAY BE TOLD ABOUT ------------------------
+    //
+    // The knowledge row, and only that. A presence check was written here and
+    // taken out again, because it could not fire: `noticesThatTheyAreThere`
+    // answers true outright for anybody `known`, and everybody reaching it had
+    // already passed `isAwareOf`. A gate that cannot fail is worse than no gate
+    // - it reviews as a check and is a no-op.
+    //
+    // And removing it is right rather than merely tidy. The rule everywhere else
+    // is that KNOWLEDGE WINS OVER THE GAP: a row about somebody survives any
+    // number of rungs, because being told who leads your house is not a claim to
+    // have perceived them. The height gate belongs where a name would otherwise
+    // arrive by arithmetic - the roster read, the room read - and a member
+    // naming their own Pavilion Master off a row they were given on their first
+    // day is not that case.
+    const nameable = holders.filter(
+        member => scope.gate.isAwareOf(scope.holderId, 'cultivator', member.id)
+    );
+
+    const unnamed = holders.length - nameable.length;
+    // No article anywhere in these, deliberately. "There is a Inner Disciple"
+    // was what composing one produced, and a rank title can be singular, plural,
+    // vowel-initial or a bare office - so the sentence is built to not need one
+    // rather than to get four cases right.
+    const facts = holders.length === 0
+        ? [`${sect.name} has the rank of ${title}, and nobody standing at it.`]
+        : nameable.length === 0
+            ? [
+                `Somebody at ${sect.name} holds the rank of ${title}. You could not say `
+                + 'which of them it is.'
+            ]
+            : [
+                nameable.length === 1
+                    ? `${nameable[0]!.name} is ${title} of ${sect.name}.`
+                    : `${nameable.map(m => m.name).join(', ')} hold the rank of ${title} at `
+                      + `${sect.name}.`
+            ];
+    if (unnamed > 0 && nameable.length > 0) {
+        facts.push(
+            `${unnamed} other${unnamed === 1 ? '' : 's'} stand at that rank whom you could `
+            + 'not name.'
+        );
+    }
+
+    return {
+        kind: 'rank',
+        // The rung, not the person: this is not a cultivator id, so nothing
+        // downstream can mistake it for a resolved person and act on somebody
+        // the asker cannot name.
+        id: `${house}#rank-${rankIndex}`,
+        name: title,
+        facts,
+        structure: [
+            `rank read: "${wanted}" matched ${title} (index ${rankIndex} of `
+            + `${sect.ranks.length}) on ${sect.name}'s own ladder, scoring ${winning}. `
+            + `${holders.length} holder(s), ${nameable.length} nameable by this cultivator.`,
+            'Resolving the rung is not naming the holder. The office is what the sentence '
+            + 'named; who stands on it is gated on the knowledge row and the presence gate.'
+        ]
+    };
 }
 
 /**
