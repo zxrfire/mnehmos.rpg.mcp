@@ -41,6 +41,30 @@ touched by phase 3.
 Read the method bodies in `game.ts` with one question in mind: *where does a value from a
 model response become a row?* The answer is nowhere.
 
+### Phase 2 is one class spread across several files
+
+`GameService` is being split by subject, because at 24,000 lines it had a dozen reasons to
+change and only one file to change them in. A family of verbs - travel, so far - is an
+object of methods in its own module, merged onto the prototype at the bottom of `game.ts`
+with its signatures merged into the class declaration. `this.move(...)` resolves and
+typechecks exactly as it did when the body sat in the class, and the split is invisible at
+every call site.
+
+Two things about the shape, because both look wrong on first reading:
+
+- **The bodies keep `this`.** That is what makes each move a move rather than a rewrite:
+  every line of a moved method is the line it was, so a reviewer can diff it against the
+  original. Passing the service in as a parameter instead would have rewritten about
+  twelve hundred expressions.
+- **The members those families reach are not marked `private`.** `private` is a
+  compile-time annotation that is erased entirely, so nothing about the running program
+  changes and nothing becomes reachable that `(service as any)` could not already reach.
+  Do not "tidy" the keyword back on - it breaks the build.
+
+**`execute` stays in `game.ts` and is not a family.** It is the switch whose whole job is
+to reach every one of them, so it can never be a module with a small surface, and it
+changes for the same reason `act` does.
+
 ### Phase 3 is checked against phase 2
 
 Not parsed - **checked**. The distinction matters and it took a measurement to find:
