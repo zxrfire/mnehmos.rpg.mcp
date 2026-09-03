@@ -23,7 +23,12 @@ import {
 } from '../engine/social/what-a-look-at-somebody-reaches.js';
 import { howTheGroundReads } from '../engine/world/what-a-place-still-has-in-the-ground.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
-import { resolveAnything, worldLocationFor } from './entities.js';
+import {
+    MATCH_THRESHOLD,
+    matchScore,
+    resolveAnything,
+    worldLocationFor
+} from './entities.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
@@ -87,6 +92,79 @@ export const investigateVerb = {
             ?? this.groundAtHand(query, cultivator)
             ?? resolveAnything(this.repos, query, cultivator, scope);
         if (!subject) {
+            // ── A NAME THEY HOLD IS NOT A PLACE THAT HAS NO SUCH THING ───
+            //
+            // FOUND BY PLAYING, one town from somebody known since childhood.
+            // "I look at Fang Nuoshan", typed in Fourhands with Fang Nuoshan in
+            // Sixmile, came back as *"You go over Fourhands looking for it and
+            // it is not the kind of place that has one"* - and the inspector
+            // line printed underneath it read *"Unresolved subject "Fang
+            // Nuoshan": no knowledge record and nothing co-located. Known to
+            // this cultivator, or standing here: ... Fang Nuoshan"*.
+            //
+            // **The refusal denied a record it listed in its own next breath.**
+            // `what do I know of Fang Nuoshan` answered fully one command later.
+            //
+            // Two things were wrong and only the second is about resolution.
+            // `resolveCultivator` searches the run's own roster plus whoever is
+            // standing here, and a world NPC who is neither - anybody met once
+            // and walked away from, anybody merely heard of, anybody DEAD - is
+            // in neither list however well the holder knows them. And the
+            // refusal is place-shaped, about a person.
+            //
+            // ── WHY THE ANSWER IS HERE AND NOT IN THE RESOLVER ───────────
+            //
+            // Because `resolveAnything` is shared. `askAround` and `demandOf`
+            // pass a question's TOPIC through it, and `withinStratum` reads a
+            // subject with no recorded ordinal as within reach - so a stratum of
+            // this kind arriving there would have an unattached stranger recite
+            // the facts back, which for a record-only person is the PLAYER'S OWN
+            // MEMORY in somebody else's mouth. The gap is real and general; the
+            // answer to it is this verb's, because this verb is the one that was
+            // asked.
+            //
+            // ── AND IT TEACHES NOTHING, WHICH IS WHAT MAKES IT SAFE ──────
+            //
+            // Read from the holder's own awareness rows and from nothing else,
+            // exactly like `recall`, so a name nobody has said still resolves to
+            // nothing. It deliberately does NOT go through `noteEncounter`:
+            // reading your own memory does not put you in a room with somebody,
+            // and writing a `witnessed` row here would promote a whisper to
+            // `encountered` and quietly falsify the reference axis the look read
+            // below depends on. Nothing is written at all.
+            //
+            // Refused rather than executed, because the look did not happen -
+            // and the refusal names the route by walking the first step of it.
+            const heldName = this.knowledge
+                .awareness(cultivator.id, 'cultivator')
+                .find(row => matchScore(query, row.name) >= MATCH_THRESHOLD);
+            if (heldName) {
+                const reaches = whatALookAtSomebodyReaches(heldName.stage, heldName.name);
+                // The record's own sentence, verbatim. `AwarenessRow.statement`
+                // says why: for most rows in that table it is the whole of what
+                // somebody has, and a reader composing a phrase of its own here
+                // would be inventing a memory on the holder's behalf.
+                const bare = `${heldName.name} exists.`;
+                return refused('engine.resolveEntity', 'investigate', factsForRefusal(
+                    `${heldName.name} is not here.`,
+                    // "not here" and never "somewhere else". Whether they are
+                    // one town over or dead is not something this cultivator
+                    // has been told, and the whole of the knowledge layer is
+                    // that the engine does not tell them - a look that reached
+                    // nothing cannot be the thing that reports a death.
+                    `You look for ${heldName.name} and ${heldName.name} is not here. What `
+                    + 'you have of them is what you were already carrying.'
+                    + (heldName.statement && heldName.statement !== bare
+                        ? ` ${heldName.statement}`
+                        : '')
+                    + ` ${reaches.line} ${reaches.ceiling}`,
+                    `Unresolved subject "${query}": held as a knowledge record at stage `
+                    + `${heldName.stage} (${reaches.reference}) and neither on the run's roster `
+                    + 'nor standing here, so no row could be read. Answered out of the holder\'s '
+                    + 'own rows and nothing else; nothing was written and no stage moved.'
+                ));
+            }
+
             // Worded so that it does not confirm existence either. "You have
             // never heard of it" and "it is not there" have to look the same
             // from inside, or the refusal itself becomes the answer key. And it
@@ -99,8 +177,19 @@ export const investigateVerb = {
                 // explore the ruins" was answered with somebody looking up from
                 // their work - which named a stranger the player had not met and
                 // described a social act nobody had attempted.
-                `You go over ${placeName(cultivator)} looking for it and it is not the kind of ` +
-                'place that has one. Either it is somewhere else, or it is nowhere, and standing ' +
+                //
+                // ── AND IT SAYS NOTHING ABOUT WHAT KIND OF THING IT WAS ──
+                //
+                // It used to read "it is not the kind of PLACE that has one",
+                // which is a claim about the subject: a person's name refused in
+                // those words tells the player the engine took it for a
+                // feature. The branch above now owns every name this cultivator
+                // actually holds, so what is left here is a word that has
+                // reached nothing at all, and the refusal has to stay silent
+                // about which kind of nothing - that is the same rule the
+                // paragraph above states and the old wording quietly broke.
+                `You go over ${placeName(cultivator)} looking for it and nothing here answers ` +
+                'to it. Either it is somewhere else, or it is nowhere, and standing ' +
                 'here turning it over is not going to settle which.',
                 `Unresolved subject "${query}": no knowledge record and nothing co-located. ` +
                 `${this.knownNamesLine(cultivator, scope)}`

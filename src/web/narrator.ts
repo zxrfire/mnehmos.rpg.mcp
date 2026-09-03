@@ -64,6 +64,11 @@ import {
     type PlanStep,
     type PlanWithSteps
 } from './a-sentence-can-be-more-than-one-call.js';
+// The one place every verb declares which fields it reads. `canCarryASubject`
+// asks it whether a verb has anywhere to put the thing a sentence named, which
+// is a question it already answers for the phase-1 glossary and for
+// `docs/verbs.md`. No second list.
+import { WHAT_EACH_VERB_IS_FOR } from './what-each-verb-is-for-in-the-players-words.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { EngineFacts } from './facts.js';
@@ -242,6 +247,99 @@ function readsAsTaking(plan: PlannedAction): boolean {
     return plan.action === 'interact' && plan.intent === 'steal';
 }
 
+/**
+ * Whether a verb has anywhere to put the thing a sentence named.
+ *
+ * Read off `WHAT_EACH_VERB_IS_FOR` rather than restated, for the reason
+ * {@link spendsMoreThanASentence} reads its list off `actions.ts`: the
+ * declaration already exists, the compiler already forces every verb to have
+ * one, and a second list here would be a second answer to a question that has
+ * one. `look` declares `takes: ['intent']` - the room read genuinely has no
+ * object - and that is the whole of what this predicate needs to know.
+ */
+function canCarryASubject(action: ActionName): boolean {
+    const takes = WHAT_EACH_VERB_IS_FOR[action]?.takes ?? [];
+    return takes.includes('target') || takes.includes('topic');
+}
+
+/** Whether a reading actually came out holding one. */
+function namesASubject(plan: PlannedAction): boolean {
+    return (plan.target ?? '').trim().length >= 2 || (plan.topic ?? '').trim().length >= 2;
+}
+
+/**
+ * THE SECOND THING A MODEL'S READING MAY NOT DO: DROP THE OBJECT.
+ *
+ * ── THE TURN THIS WAS FOUND ON ───────────────────────────────────────────
+ *
+ * Played against ollama, by the design owner:
+ *
+ *   > look at Shellback
+ *   engine.readState/look
+ *   "You look at Shellback. The person is here, alongside another figure..."
+ *
+ * The room, with the name pasted on the front of it. The table reads that
+ * sentence correctly - `investigate` with `target: "Shellback"`, and so do
+ * `I look at Shellback`, `I examine Shellback` and `I inspect Shellback` - so
+ * this is not a parser gap. The MODEL answered a sentence that names a person
+ * with the verb that reads the surroundings, and `look` has nowhere to put a
+ * person: its glossary entry declares `takes: ['intent']`.
+ *
+ * ── WHY THE EXISTING GUARD CANNOT SEE IT ─────────────────────────────────
+ *
+ * {@link theModelIsNotWhyThisTurnIsDangerous} compares COST, and both readings
+ * are free. It is the same blind spot the giving-and-taking rule above was
+ * written for and it wants the same shape: a hard boundary on one axis, checked
+ * separately, because the axis the cost rule measures does not contain it.
+ *
+ * ── AND IT IS DELIBERATELY NOT "THE MODEL MUST AGREE" ────────────────────
+ *
+ * The file's standing rule is that a model reading a sentence differently is
+ * the entire point of having one - a question read as a bargain, a threat read
+ * as an ask - and none of that is touched. What is checked is narrower and
+ * structural: **did the model answer a sentence that names something with a
+ * verb that has nowhere to put it.** A verb that can hold the subject and
+ * chooses to hold a different one is a reading, and readings are free.
+ *
+ * ── THE DEGRADE IS THE SAME ONE, AND IT CANNOT ESCALATE ──────────────────
+ *
+ * What runs instead is the table's own plan, which is what the player would
+ * have got with no model at all - the same degrade every other rule in this
+ * class uses. It is refused outright where the table's verb can spend a day, so
+ * this rule can never be the reason a turn became expensive; that is the one
+ * direction the whole file is one-directional about.
+ *
+ * Costs nothing to ask: `parseIntent` is regex over one sentence, and
+ * `carryWhatOnlyTheSentenceKnows` has already run it on this same input one
+ * line earlier.
+ *
+ * KNOWN EDGE, written down rather than left to be discovered: inside a
+ * multi-step plan this is only reached for a step that spends something, since
+ * {@link GameService} skips the free ones before calling the check. A dropped
+ * object on a free step of a plan is not caught.
+ */
+function theObjectWasDropped(fromModel: PlannedAction, input: string): ReadingCheck | null {
+    if (canCarryASubject(fromModel.action)) return null;
+
+    const fromTable = parseIntent(input);
+    if (fromTable.action === fromModel.action) return null;
+    if (!namesASubject(fromTable) || !canCarryASubject(fromTable.action)) return null;
+    // One-directional, exactly like the cost rule: correcting a dropped object
+    // may hand back a free read and may never start something.
+    if (spendsMoreThanASentence(fromTable.action)) return null;
+
+    return {
+        action: fromTable,
+        declined:
+            `the model read this as ${labelFor(fromModel)}, which has nowhere to put a subject; `
+            + `the sentence names one, and reading it without a model reaches `
+            + `${labelFor(fromTable)} on "${(fromTable.target ?? fromTable.topic ?? '').slice(0, 40)}". `
+            + 'A model may read a sentence any way it likes; it may not answer a sentence about '
+            + 'something with a read of the surroundings.',
+        tierFailure: null
+    };
+}
+
 function labelFor(plan: PlannedAction): string {
     return plan.intent ? `${plan.action}/${plan.intent}` : plan.action;
 }
@@ -299,6 +397,16 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     input: string
 ): Promise<ReadingCheck> {
     const takingFromThem = readsAsTaking(fromModel);
+
+    // ── THE OTHER AXIS, AND IT HAS TO BE ASKED BEFORE THE CHEAP EXIT ─────
+    //
+    // A verb with nowhere to put a subject is free by construction - `look`,
+    // `status`, `news` - so the exit below waves every one of them through, and
+    // the whole defect this catches lives on that side of it. Same reasoning as
+    // the giving-and-taking rule, which is also checked outside the cost rule
+    // because cost is not the axis it is about.
+    const droppedTheObject = theObjectWasDropped(fromModel, input);
+    if (droppedTheObject) return droppedTheObject;
 
     if (!spendsMoreThanASentence(fromModel.action) && !takingFromThem) {
         return { action: fromModel, declined: null, tierFailure: null };
