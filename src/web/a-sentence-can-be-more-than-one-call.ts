@@ -796,7 +796,7 @@ export async function anyClauseReadsAsThisVerb(
  */
 export interface ASelection {
     /** Which field of the rows is being compared. */
-    readonly field: 'rung' | 'age' | 'distance' | 'price';
+    readonly field: 'rung' | 'age' | 'distance' | 'price' | 'ambient';
     /** Which end of it the player asked for. */
     readonly want: 'most' | 'least';
     /** The player's own word, for saying who was picked and why. */
@@ -811,6 +811,46 @@ export interface ASelection {
  * a field the engine can compare has no business here, because the alternative
  * to refusing it is guessing what the player meant about their own life.
  */
+/** The words a place's ground goes by, on a row or in a sentence. */
+const GROUND = '(?:air|qi|ground|vein|veins|energy)';
+
+/**
+ * Ground asked for at its best, however the comparison is phrased.
+ *
+ * Either order, because people say both: "the best air" and "the air is
+ * thickest". A bare `best` counts only next to a ground noun - "the best one"
+ * on its own names no field, and guessing one would be this rule reaching past
+ * what it knows.
+ */
+const GROUND_COMPARED_UPWARD = new RegExp(
+    `\\b(?:thickest|richest|densest|deepest|strongest|best|finest|most)\\b[^.!?]{0,20}\\b${GROUND}\\b`
+    + `|\\b${GROUND}\\b[^.!?]{0,24}\\b(?:thickest|richest|densest|deepest|strongest|best|finest|thick|thicker|rich|richer|dense|denser|deep|deeper|strong|stronger)\\b`,
+    'i'
+);
+
+/** And at its worst, which somebody asks for far less often but does ask. */
+const GROUND_COMPARED_DOWNWARD = new RegExp(
+    `\\b(?:thinnest|poorest|emptiest|worst)\\b[^.!?]{0,20}\\b${GROUND}\\b`
+    + `|\\b${GROUND}\\b[^.!?]{0,24}\\b(?:thinnest|poorest|emptiest|worst)\\b`,
+    'i'
+);
+
+/**
+ * A clause pointing back at the set the clause before it produced.
+ *
+ * **The strongest signal there is that a selection is meant**, and stronger than
+ * the superlative: *"take the road to whichever of them has the best air"* says
+ * outright that the choice is being made out of something already in hand. A
+ * clause carrying one of these needs no choosing verb and no "somewhere" frame,
+ * because the player has said what they are choosing from.
+ */
+const POINTING_AT_THE_LAST_SET =
+    /\b(?:whichever|whoever|whatever)\b|\b(?:of|among|from|out of)\s+(?:them|these|those|the list|the ones)\b|\bone of them\b/i;
+
+/** The frames in which a PLACE is asked for by what it is like, not by name. */
+const SOMEWHERE_RATHER_THAN_A_NAME =
+    /\b(?:somewhere|anywhere|a place|some place|someplace|a province|a town|wherever|where the|where it is)\b/i;
+
 const WHAT_A_SUPERLATIVE_NAMES: ReadonlyArray<[RegExp, ASelection['field'], ASelection['want']]> = [
     [/\b(?:strongest|toughest|mightiest|deepest|highest|most powerful|most dangerous)\b/i, 'rung', 'most'],
     [/\b(?:weakest|lowest|least powerful|softest|most harmless)\b/i, 'rung', 'least'],
@@ -819,7 +859,19 @@ const WHAT_A_SUPERLATIVE_NAMES: ReadonlyArray<[RegExp, ASelection['field'], ASel
     [/\b(?:nearest|closest)\b/i, 'distance', 'least'],
     [/\b(?:furthest|farthest)\b/i, 'distance', 'most'],
     [/\b(?:cheapest|least expensive)\b/i, 'price', 'least'],
-    [/\b(?:dearest|priciest|most expensive)\b/i, 'price', 'most']
+    [/\b(?:dearest|priciest|most expensive)\b/i, 'price', 'most'],
+    // GROUND, the fifth field, and the one with rows in hand on a turn where
+    // the player has just asked where they could go. Every place carries an
+    // `ambient` band and the read prints it on every row - "a spirit tide,
+    // triple rate", "thin qi, half rate" - so this is `pick the strongest one`
+    // with the field being ground instead of rung.
+    //
+    // Matched on the COMPARISON and never on a word shape, because the played
+    // sentence had no superlative in it at all: "whichever of them has the best
+    // air". `best`, `most`, `thickest`, `densest` and "thick enough to matter"
+    // are one selection said five ways, and only one of them ends in -est.
+    [GROUND_COMPARED_UPWARD, 'ambient', 'most'],
+    [GROUND_COMPARED_DOWNWARD, 'ambient', 'least']
 ];
 
 /**
@@ -837,10 +889,29 @@ const CHOOSING_RATHER_THAN_DOING =
 
 /** The selection a clause makes, or null when it is not making one. */
 export function theSelectionInThisClause(clause: string): ASelection | null {
-    if (!CHOOSING_RATHER_THAN_DOING.test(clause)) return null;
+    const comparison = theComparisonIn(clause);
+    if (comparison === null) return null;
+
+    // A comparison is only a CHOICE inside a frame that says one is being made.
+    // Three of them, and the first is the strongest: the player pointing at the
+    // set, a verb that chooses, or a place asked for by what it is like. Without
+    // this, "I attack the strongest one" would become a free selection step and
+    // the act in it would be lost - the defect this file exists to prevent,
+    // caused by the fix for it.
+    return POINTING_AT_THE_LAST_SET.test(clause)
+        || CHOOSING_RATHER_THAN_DOING.test(clause)
+        || (comparison.field === 'ambient' && SOMEWHERE_RATHER_THAN_A_NAME.test(clause))
+        ? comparison
+        : null;
+}
+
+/** The comparison a clause makes, and the field it names, or null. */
+function theComparisonIn(clause: string): ASelection | null {
     for (const [pattern, field, want] of WHAT_A_SUPERLATIVE_NAMES) {
         const found = pattern.exec(clause);
-        if (found) return { field, want, word: found[0].toLowerCase() };
+        if (found) {
+            return { field, want, word: found[0].toLowerCase().replace(/\s+/g, ' ').trim() };
+        }
     }
     return null;
 }

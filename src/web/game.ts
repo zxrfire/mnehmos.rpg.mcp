@@ -41,7 +41,7 @@ import {
     type Run,
     type TimeSkipResult
 } from '../schema/cultivation.js';
-import { ambientForBlock } from '../engine/cultivation/ambient.js';
+import { AMBIENT_QI_ORDER, ambientForBlock } from '../engine/cultivation/ambient.js';
 import {
     attemptBreakthrough,
     canAttemptBreakthrough,
@@ -835,6 +835,7 @@ import {
     factsForUnsupported,
     type Company,
     type SiteFace,
+    describeAmbientPerceived,
     factsForRefusal,
     factsForStatus,
     factsForGroundRefused,
@@ -3622,6 +3623,11 @@ export class GameService {
         cultivator: Cultivator,
         selection: ASelection
     ): { name: string; because: string } | null {
+        // GROUND is a choice over PLACES rather than over people, so it has its
+        // own row set. Played: "take the road to whichever of them has the best
+        // air" - the read had just listed ten places with the band printed on
+        // every one of them, and the selection still came out `unspecified`.
+        if (selection.field === 'ambient') return this.whereTheGroundIsBest(cultivator, selection);
         if (selection.field !== 'rung' && selection.field !== 'age') return null;
 
         const nameable = this.present(cultivator).filter(
@@ -3642,6 +3648,55 @@ export class GameService {
                 ? rankName(best.realmOrdinal)
                 : `${Math.floor(best.age)} years old`
         };
+    }
+
+    /**
+     * The place with the best ground, out of the places this cultivator knows.
+     *
+     * ── SAME ROWS THE READ PRINTS, SAME GATE ────────────────────────────
+     *
+     * A projection of this cultivator's own place awareness onto the catalog,
+     * which is the join `destinations` opens with and is the only part of it a
+     * choice needs - roads, ruins, occupancy and province ceilings are that
+     * read's business and none of them decides which ground is thickest.
+     *
+     * The gate is the same one everywhere else in this package: a place the
+     * player has no record for is not a candidate, so a choice can never be the
+     * thing that hands over a name. `sealed_vein` is deliberately absent from
+     * the ordering - it is not reachable by travelling, so offering it as the
+     * answer to "somewhere the air is thick" would be naming a door rather than
+     * a destination.
+     */
+    private whereTheGroundIsBest(
+        cultivator: Cultivator,
+        selection: ASelection
+    ): { name: string; because: string } | null {
+        const here = loosePlaceKey(cultivator.location ?? '');
+        const known = new Set(
+            this.awarenessOf(cultivator)
+                .filter(row => row.kind === 'place')
+                .map(row => loosePlaceKey(row.name))
+        );
+
+        const candidates: Array<{ name: string; band: AmbientQi }> = [];
+        for (const region of REGIONS) {
+            for (const place of region.places) {
+                const key = loosePlaceKey(place.name);
+                // Somewhere they already are is not somewhere to go.
+                if (key === here || !known.has(key)) continue;
+                if (AMBIENT_QI_ORDER.indexOf(place.ambient) === -1) continue;
+                candidates.push({ name: place.name, band: place.ambient });
+            }
+        }
+        if (candidates.length === 0) return null;
+
+        const depth = (band: AmbientQi): number => AMBIENT_QI_ORDER.indexOf(band);
+        const best = candidates.reduce((held, place) =>
+            (selection.want === 'most' ? depth(place.band) > depth(held.band) : depth(place.band) < depth(held.band))
+                ? place
+                : held);
+
+        return { name: best.name, because: describeAmbientPerceived(best.band) };
     }
 
     private async execute(
