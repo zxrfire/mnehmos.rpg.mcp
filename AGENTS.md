@@ -2410,3 +2410,46 @@ that catches this, and it is the only one that runs late enough to see the race.
 somebody, say so to them immediately and **do not rewrite the commit** - a pushed commit that
 other agents are pulling against is worse to rewrite than to mislabel. Their work is not lost;
 it is under the wrong title, and that is a cheap thing to say and an expensive thing to fix.
+
+### Anything two places must agree about has one source, exported and imported
+
+**If a fact has to stay consistent, export it as a const and import it. Never retype it.** A
+value typed out in a second place is not a copy, it is a **second source of truth**, and the
+only question left is when the two will disagree.
+
+The demonstrated instance: place names. A place is identified by its display string, so the
+name *is* the key - and the name was retyped in route tables, member records, tests and prose,
+across three layers. Renaming one place therefore touched a hundred and fifty files, and every
+one of those was somewhere the world could quietly end up describing a place that no longer
+exists.
+
+**It generalises to anything two modules must agree about** - names of houses, arts and
+objects, the words a verb answers to, the bands of a scale, the id of anything. When you find
+yourself typing a value you have seen elsewhere, that is the moment: import it, or export it
+and then import it.
+
+**The guard is cheap and it holds:** a test asserting that the literal does not appear outside
+the module that owns it. That is a rate test in the sense above - it fails the moment somebody
+retypes the value, rather than years later when the two copies have drifted.
+
+**Two things this does not mean.** Authored prose that mentions a name is a *sentence*, not a
+reference - it cannot import anything and it is swept by hand when the name changes; that cost
+is irreducible and should be counted rather than engineered away. And a value that two places
+hold for unrelated reasons is not one fact - forcing them to share a const couples them, and
+the next person to change one breaks the other.
+
+### Fan rules out to the README nearest the code
+
+**AGENTS.md is the general layer, not the only one.** Every substantial directory here carries
+its own README - `src/web/`, `src/engine/world/`, `src/engine/social-leverage/`,
+`src/data/cultivation/`, `src/storage/` and a dozen more - and a rule that only governs one
+area belongs in that area's README, where the person about to break it is already reading.
+
+**This is a context argument as much as a filing one.** AGENTS.md is loaded for everybody on
+every task. Every paragraph in it that only matters to one directory is paid for by every
+agent who never goes near that directory. Keeping it general keeps it affordable.
+
+So: **if the rule names a specific module, function or file, it goes in that area's README.**
+If it would change how somebody works anywhere in the repo, it goes here. When a rule here
+grows a long worked example, that is usually the example asking to move down and leave a
+sentence behind.
