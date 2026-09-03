@@ -620,3 +620,52 @@ describe('the sentence composes wherever the reader’s split went wrong', () =>
         expect(lost[0]!.action.intent).toBe('steal');
     });
 });
+
+/**
+ * PICKING ONE OUT OF WHAT THE LAST STEP FOUND, PLAYED. At ordinal 40:
+ *
+ *   > I look over who is here, pick the strongest one, and tell them I want
+ *   > their sect to answer for something
+ *
+ *   read as 2: gather(strongest one), interact(unnamed cultivator)
+ *   Which comes first? "pick the strongest one" or "the approach to unnamed
+ *   cultivator"?
+ *
+ * The middle clause selects from what the first returned. Nothing carried the
+ * set, so the third clause's target was a placeholder - and the selection had
+ * landed on a costly verb, so the turn asked the player to choose between two
+ * acts, one of which spends nothing.
+ */
+describe('a clause that chooses from what the last one found', () => {
+    const SAID = 'I look over who is here, pick the strongest one, '
+        + 'and tell them I want their sect to answer for something';
+
+    it('spends nothing, names who it landed on, and points the next clause at them', async () => {
+        const { game } = await playing([
+            STEPS(
+                { action: 'look', said: 'I look over who is here' },
+                // `pick the strongest one` reached `gather`, the herb verb.
+                { action: 'gather', target: 'strongest one', said: 'pick the strongest one' },
+                { action: 'interact', target: 'unnamed cultivator', intent: 'threaten',
+                    said: 'tell them I want their sect to answer for something' }
+            )
+        ]);
+        await game.newRun('Probe');
+        const turn = await game.act(SAID);
+
+        // The choice is not one of the acts, so there is nothing to ask about.
+        expect(turn.toolCalls.filter(row => row.name === 'engine.whichComesFirst')).toHaveLength(0);
+        expect(turn.toolCalls.some(row => row.action === 'gather')).toBe(false);
+
+        // Who it landed on is said out loud, with the field it was chosen on.
+        const choice = turn.toolCalls.find(row => row.summary.includes('Choice over rung'));
+        expect(choice).toBeDefined();
+
+        // And the approach is pointed at a real person rather than a placeholder.
+        const approach = turn.toolCalls.find(
+            row => row.name === 'engine.step' && row.action === 'interact'
+        );
+        expect(approach).toBeDefined();
+        expect(approach!.summary).not.toContain('unnamed cultivator');
+    });
+});

@@ -24,7 +24,10 @@ import {
     theClausesNoStepAccountsFor,
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
+    theSelectionInThisClause,
     theWholeSentenceAsAPlan,
+    whatTheChoiceFoundNobody,
+    whatTheChoiceLandedOn,
     theClausesOf,
     theThingThisStepNamed,
     stepsOfThePlan,
@@ -701,5 +704,170 @@ describe('only the player’s own clauses are reported to the player', () => {
         const added = step('interact', { target: 'Cao Antao', intent: 'steal' });
         expect(theRowForADroppedClause(added, false).summary).toContain('the reader added');
         expect(theRowForADroppedClause(added, false).summary).not.toContain('Say it on its own');
+    });
+});
+
+/**
+ * PICKING ONE OUT OF WHAT THE LAST STEP FOUND. Played, at ordinal 40:
+ *
+ *   > I look over who is here, pick the strongest one, and tell them I want
+ *   > their sect to answer for something
+ *
+ *   read as 2: gather(strongest one), interact(unnamed cultivator)
+ *   Which comes first? "pick the strongest one" or "the approach to unnamed
+ *   cultivator"?
+ *
+ * The middle clause is a selection from what the first returned. Nothing
+ * carried the set, so the third clause's target came out as a placeholder - and
+ * because the selection landed on a costly verb, a three-clause sentence became
+ * a question about a choice that spends nothing.
+ */
+describe('a clause that chooses is a choice, not an act', () => {
+    const SAID = 'I look over who is here, pick the strongest one, '
+        + 'and tell them I want their sect to answer for something';
+
+    it('recognises the superlative, and which field it names', () => {
+        expect(theSelectionInThisClause('pick the strongest one'))
+            .toEqual({ field: 'rung', want: 'most', word: 'strongest' });
+        expect(theSelectionInThisClause('choose the youngest of them'))
+            .toEqual({ field: 'age', want: 'least', word: 'youngest' });
+        expect(theSelectionInThisClause('find the cheapest one'))
+            .toEqual({ field: 'price', want: 'least', word: 'cheapest' });
+    });
+
+    it('is a CHOICE only in a choosing frame, never in an act', () => {
+        // The guard against swallowing every sentence with a superlative in it.
+        expect(theSelectionInThisClause('I attack the strongest one')).toBeNull();
+        expect(theSelectionInThisClause('I buy the cheapest manual')).toBeNull();
+        expect(theSelectionInThisClause('I walk to the nearest town')).toBeNull();
+    });
+
+    it('costs nothing, so it can never be one of two costly acts', () => {
+        const choice: PlanStep = {
+            action: { action: 'look' }, said: 'pick the strongest one',
+            selects: { field: 'rung', want: 'most', word: 'strongest' }
+        };
+        expect(spendsSomething(choice)).toBe(false);
+    });
+
+    it('supersedes a reader step that priced the choice as an act', async () => {
+        // `pick the strongest one` reached `gather`, the herb verb. Whatever
+        // anybody read it as, the clause only chooses.
+        const reads = async (clause: string): Promise<PlannedAction> =>
+            clause.includes('look over') ? { action: 'look' }
+                : clause.includes('pick') ? { action: 'gather', target: 'strongest one' }
+                    : { action: 'interact', target: 'unnamed cultivator', intent: 'threaten' };
+
+        const whole = await theWholeSentenceAsAPlan(SAID, [
+            { action: { action: 'gather', target: 'strongest one' } },
+            { action: { action: 'interact', target: 'unnamed cultivator', intent: 'threaten' } }
+        ], reads);
+
+        expect(whole.steps.some(s => s.action.action === 'gather')).toBe(false);
+        const choice = whole.steps.find(s => s.selects);
+        expect(choice).toBeDefined();
+        expect(choice!.selects!.field).toBe('rung');
+        // And it is not counted among the acts that spend.
+        expect(whole.steps.filter(spendsSomething).map(s => s.action.action)).toEqual(['interact']);
+    });
+
+    it('a reader placeholder for the chosen person resolves like a pronoun', () => {
+        const later: PlanStep = {
+            action: { action: 'interact', target: 'unnamed cultivator', intent: 'threaten' }
+        };
+        expect(carryingTheReferentForward(later, 'Gu Anzhi').action.target).toBe('Gu Anzhi');
+
+        const bySuperlative: PlanStep = {
+            action: { action: 'interact', target: 'the strongest one', intent: 'threaten' }
+        };
+        expect(carryingTheReferentForward(bySuperlative, 'Gu Anzhi').action.target).toBe('Gu Anzhi');
+    });
+
+    it('says who was picked and on what, so a player can correct it', () => {
+        const selection = { field: 'rung' as const, want: 'most' as const, word: 'strongest' };
+        const said = whatTheChoiceLandedOn(selection, 'Gu Anzhi', 'Core Formation');
+        expect(said).toContain('Gu Anzhi');
+        expect(said).toContain('strongest');
+        expect(said).toContain('Core Formation');
+        expect(said).toContain('say the name yourself if you meant somebody else');
+    });
+
+    it('refuses a field it holds no rows for, and names what would carry it', () => {
+        const said = whatTheChoiceFoundNobody({ field: 'price', want: 'least', word: 'cheapest' });
+        expect(said).toContain('price board');
+        expect(said).not.toMatch(/^No\.?$/);
+    });
+});
+
+/**
+ * A FREE CLAUSE IS PUT BACK ONLY WHERE THE READER PLAINLY UNDER-SPLIT.
+ *
+ * Played: "I look over who is here, pick the strongest one of them, and ask
+ * them about their sect" came back with ONE step, and the looking and the
+ * asking - both free, both plainly asked for - simply did not happen. The
+ * measured rule against re-running free reads is about a reader that answered
+ * every clause and chose a different verb for one; it is a different thing when
+ * the reader answered fewer acts than the sentence has clauses.
+ */
+describe('a free clause the reader lost is still the player’s', () => {
+    const SAID = 'I look over who is here, pick the strongest one of them, '
+        + 'and ask them about their sect';
+    const reads = async (clause: string): Promise<PlannedAction> =>
+        clause.includes('look over') ? { action: 'investigate', target: 'who is here' }
+            : clause.includes('pick') ? { action: 'gather', target: 'strongest one' }
+                : { action: 'interact', target: 'them', intent: 'talk' };
+
+    it('puts back the free clauses when the reader answered fewer acts than clauses', async () => {
+        const whole = await theWholeSentenceAsAPlan(SAID, [
+            { action: { action: 'gather', target: 'strongest one' } }
+        ], reads);
+        expect(whole.steps.map(s => s.action.action)).toEqual(['investigate', 'look', 'interact']);
+        expect(whole.steps.find(s => s.selects)).toBeDefined();
+    });
+
+    it('and leaves them alone when the reader answered every clause', async () => {
+        // The measured false positive: look/status/recall over a sentence whose
+        // middle clause also reads as `inventory`. Nothing was lost, so nothing
+        // is re-run.
+        const asked = 'who is here, what am I carrying, and what do I know of them';
+        const freeReads = async (clause: string): Promise<PlannedAction> =>
+            clause.includes('carrying') ? { action: 'inventory' }
+                : clause.includes('know') ? { action: 'recall' } : { action: 'look' };
+        const whole = await theWholeSentenceAsAPlan(
+            asked, [step('look'), step('status'), step('recall')], freeReads
+        );
+        expect(whole.backfilled).toHaveLength(0);
+    });
+});
+
+/**
+ * Played: "ask them about their sect", after a clause that had chosen a person,
+ * reached the engine as `interact()` with NO target - the table read the topic
+ * and let the "them" go - so the approach landed on whoever happened to be
+ * nearest rather than on the person the turn had just named.
+ */
+describe('a pronoun the table dropped is still a pronoun', () => {
+    it('fills an absent target from the player’s own clause', () => {
+        const asking: PlanStep = {
+            action: { action: 'interact', topic: 'their sect', intent: 'talk' },
+            said: 'ask them about their sect'
+        };
+        expect(carryingTheReferentForward(asking, 'Yu Lanyin').action.target).toBe('Yu Lanyin');
+    });
+
+    it('fills nothing where the clause names no pronoun', () => {
+        const asking: PlanStep = {
+            action: { action: 'interact', topic: 'their sect', intent: 'talk' },
+            said: 'ask the gate warden about their sect'
+        };
+        expect(carryingTheReferentForward(asking, 'Yu Lanyin').action.target).toBeUndefined();
+    });
+
+    it('never overrides a target the player named', () => {
+        const asking: PlanStep = {
+            action: { action: 'interact', target: 'Cao Antao', intent: 'talk' },
+            said: 'ask them about their sect'
+        };
+        expect(carryingTheReferentForward(asking, 'Yu Lanyin').action.target).toBe('Cao Antao');
     });
 });
