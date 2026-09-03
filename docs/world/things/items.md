@@ -146,6 +146,47 @@ Two consequences worth stating, because both have already been got wrong once:
   by the people who lost it. A looter who becomes the owner by the act of looting erases the
   only thread anybody could have followed.
 
+### How somebody comes to own a thing, as opposed to holding it
+
+**Possession moves easily. Ownership moves three ways and no others.**
+
+- **Legitimate acquisition.** Bought, given, inherited, granted by a house that had it to
+  grant. The register moves because everybody agrees it should.
+- **Force of arms, acknowledged.** Taken in a war, kept, and not recoverable - and *"everyone
+  else acknowledges"* is the load-bearing half. Might makes right only where the might is
+  public and the holding survives contest. A house that loses its hold and cannot take it back
+  has lost the thing, not merely the use of it.
+- **Enough strength that nobody argues.** A single thief does not become an owner, however long
+  they keep it. Somebody at the top of the ladder taking a thing and standing over it is a
+  different fact, because there is nobody to raise the question with.
+
+**Everything else is possession, indefinitely.** A stolen artifact stays somebody else's for
+as long as the register says so, which is what makes it findable, what makes it dangerous to
+carry, and what gives its owner a claim their descendants inherit. **A thief who becomes an
+owner by the act of theft erases the only thread anybody could have followed.**
+
+**And a granted thing is a copy, not a transfer.** The operator surface hands somebody an
+object to stand a state up; it is not a house losing property, and nothing in the world should
+read as though a register moved. Outside that, ordinary play applies and the three routes above
+are the only ones.
+
+### A famous thing is recognised the way a famous art is
+
+**An artifact with a name is known the way a technique with a name is known** - by people who
+have reason to know it, to the degree they have reason. The machinery exists: an art is
+recognised off what somebody has seen and been told, gated by what their own knowledge reaches,
+and it produces the good scene where the person in front of you goes quiet because they know
+what you are holding.
+
+An object should reach the same read. What follows from it is the content:
+
+- **Carrying a famous thing is a statement**, and not always one you want to make. A stolen
+  blade with a name on it is a confession that walks into the room ahead of you.
+- **Somebody who recognises it knows something you did not tell them** - where it came from,
+  whose it was, and therefore what you must have done.
+- **And recognition is uneven, which is the interesting part.** A village carter does not know
+  the Standing Edge from any other sword; the house that lost it knows it across a courtyard.
+
 ### Nothing moves up
 
 <!-- tier: 2 trigger="somebody proposes refining, upgrading, improving or promoting an object, or asks whether a material can be raised a grade" -->
