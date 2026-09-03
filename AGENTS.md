@@ -2106,10 +2106,20 @@ who. **Sitting still keeps you from giving anybody a reason. It does not keep an
 having one.** Idle is not a shield - it is the absence of an act of your own, and other people
 still act.
 
-Measured, and it is more true than it looks: encounters are already rolled on the same
-absolute-day grid a time skip runs on, and the mortal-work path already passes
-`randomEvents: true`. **A labourer working four years is already meeting people.** What has
-never happened is the meeting costing anything unless the player elected to fight it.
+Measured, and the first two attempts at this paragraph were both wrong, which is why the
+measurement is written down instead of the guess. `randomEvents: true` on the mortal-work path
+does **not** mean a labourer is meeting people. There are two encounter systems and only one of
+them contains anybody:
+
+- `simulateTimeSkip`'s internal grid - what `work` and `advance_days` get - raises a
+  `major_encounter` interrupt and materialises **nobody**. The file says so itself.
+- `encounters.ts` - real occurrences, with hp and stone deltas, knowledge grants and
+  relationship rows - is reached through **one caller in the repo**, the seclusion verb.
+
+So the true statement is sharper than the guess it replaces: **the only span in which a real
+person can reach you is the one where you chose to sit down and cultivate.** Sitting still is
+currently a perfect shield, and not because idle was designed to be safe - the arrival
+machinery was only ever wired to the one verb that is not idle.
 
 The far end of that range is what makes it worth having. A purse taken on the road is one
 thing; a demonic cultivator taking somebody's core and leaving them to start again is the same
@@ -2128,6 +2138,19 @@ conflicting root, untreated channels, qi standing past a bottleneck: those are s
 state **raises what an act costs** rather than going off on its own. Somebody with three open
 wounds who crosses a barrier pays more for the crossing. Somebody with three open wounds who
 sits in a room and does nothing is somebody with three open wounds.
+
+**Nothing is ever hurt by scenery, and a category named after a place is the tell.** An
+`InjurySource` called `ground` was written, committed and withdrawn inside a day, and it was
+withdrawn for the reason the section above already gives: *"torn by ground deeper than they
+were"* names a cause and no author, and those are not the same thing. **A ruin does not injure
+you. A sealed automaton in the ruin injures you, or a trap does, or a formation does** - and
+each of those is a thing with a rung, which means it is an ordinary exchange with a
+non-person attacker rather than a new category. Granularity is what fixes vagueness here;
+a better word for the vague category would only have hidden it.
+
+The same test catches the version of this that arrives inside a time skip. An arrival that
+hurts the player must be **a thing that arrived**. A digest that can say *"you were injured
+during those four years"* without naming who or what has reinvented `ground` in a costume.
 
 The tell is the sentence the game can say afterwards. *"The barrier tore two meridians"*,
 *"the fifth month of hauling opened the old wound"* and *"somebody took your purse on the road
@@ -2194,3 +2217,54 @@ A theft in the dark can; a betrayal cannot, because betrayal names its subject b
 
 And it composes with the fidelity the news layer already carries, so the chain is **unknown ->
 suspected -> named**, and a wrong name can be held with complete conviction and acted on.
+
+### Not knowing is itself something you know
+
+**Being unable to read a thing is a reading, and it is the one that keeps a player alive.** The
+recognition check runs on two axes - realm as capability, worldview as reference - and takes
+the lower of the two, so that a reader short on either gets a hedged answer instead of a
+confident wrong one. That combinator is right about *confidence* and wrong about *what the
+reader comes away with*, because the two axes do not fail the same way:
+
+- **No reference fails blank.** You have never heard of the house, and standing near the object
+  tells you nothing about that. Nothing is felt, so nothing is reported.
+- **A realm gap does not fail blank. The gap is the signal, and it gets louder the wider it
+  is.** A mortal in front of an immortal artifact learns exactly one thing, with total
+  certainty: this is beyond me. No name, no house, no provenance, and an unhedged warning.
+
+So this is the one reading in the game that gets **more** certain the further out of your depth
+you are, which is the opposite of every other check here. For a player deciding whether to
+touch something, *"you cannot read this and that is what it tells you"* is the most useful
+sentence available; a shrug is the least.
+
+**It belongs upstream of any one subject.** Artifact recognition imports its axes from the art
+check on purpose, and a technique performed far above you must do the same thing - you cannot
+tell what art that was, and you can tell you are outclassed. That is the genre's most basic
+beat.
+
+**And two silences are not the same silence.** Whether somebody controls this ground and
+whether *you* are allowed to know are separate questions, and printing them identically is a
+bug with real stakes. Authority runs apex -> court -> local, so a local house holds ground
+*under* somebody and the chain is the answer; where no chain terminates, nobody holds it.
+Standing low, you are told nothing; standing high, you are told the name and what stands behind
+it. **"Nobody holds this" and "somebody holds this and you are too low to be told who" are
+opposite facts** - the first is an invitation, the second is a warning - and by the rule above,
+the cultivator too low for the name can still be told that it is somebody's.
+
+### A house has no opinions of its own
+
+**An institution's preferences are the aggregate of the preferences of the people who decide in
+it.** A sect is an amalgamation of what its upper echelon thinks, and so is a family. A house
+that takes guest disciples during a war and refuses them after has not changed a policy - its
+deciders' priorities shifted. A family that will sell a daughter and a family that will not are
+not two configurations; they are two sets of people.
+
+This has to fall out **for free**, from people who already exist. The per-person half is built:
+NPCs carry goals with priorities, and there is a personal-alignment axis. Elders carry
+followings whose size is a real number, which is a weight already computed and already derived
+- a voice with more people behind it counts for more.
+
+**The tell that this has gone wrong is a flag.** A field on a family row saying whether it sells
+daughters, or a stance arrived at by looking up a pair of faction ids, is the thing this rule
+forbids: it makes the house the author of a preference no person in it holds, and it goes stale
+against its own members the moment one of them dies.
