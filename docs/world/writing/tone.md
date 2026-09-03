@@ -81,10 +81,46 @@ the extraordinary its weight.
 
 <!-- tier: 1 -->
 
-Sects take Hall / Pavilion / Court / Consortium / Sect. Techniques are verb-noun
-compounds, often numbered - *Nine Severing Threads*, *Lid-Watching Stance*, *Borrowed
-Breath*. Pills are graded - *third-grade Meridian Knitting Pill*. Places are plain and
-physical - Sweptground, the Low Fall, Scarwater.
+**A name should feel translated from an established world, not invented in English.** The
+target is a name a reader could remember and believe has stood for centuries. *Chang'an* and
+*Jade Gate Pass* are the register: one is simply a real-feeling name, the other is simple and
+evocative, and neither is a description with a label on the end.
+
+**Translate the meaning creatively rather than literally.** Where a literal rendering is flat,
+take the liberty - keep the feeling, not the words. Translate when the English is an image a
+reader sees; a name whose meaning has worn away into being only a name can stay
+untranslated.
+
+**Vary the register deliberately. Most things are ordinary.** Some names are poetic, some
+historical, some ominous, and the majority are plain. This is the load-bearing half: *Chang'an*
+is powerful because it is ordinary, and grandeur only reads against a plain background. A world
+where everything is Heavenly Jade Azure Ninefold Dragon Sacred is a world where nothing is.
+
+**The strongest names come out of recorded history.** *Heavenfall Cliff* beats *Cloudbreak
+Cliff* only if something fell there. A place or object named for an event this world actually
+holds is both memorable and *answerable* - a player can ask what happened here and be told.
+Prefer an event the catalog already records over inventing one to justify a name.
+
+**Avoid the two failure modes, which are opposite and equally bad:**
+
+- **Generic English labels.** *Greywater Cliff*, *Grey Banner*, *Dragonback*, *Four Hands* -
+  descriptive, gamey, forgettable. A qualifier plus a geographic noun is a floor, not a target,
+  and a name assembled to satisfy that form reads as assembled.
+- **Definite article plus abstract noun.** *The Turned Ledger*, *The Fourth Refusal*, *The
+  Datum Lamp* - these belong in a poetry collection, not a cultivation world. A named treasure
+  is an image and what it does: *Azure Dragon Sword*, *Soul Suppressing Pagoda*.
+
+**What is already right, by kind.** Sects take Hall / Pavilion / Court / Consortium / Sect.
+Techniques are verb-noun compounds, often numbered - *Nine Severing Threads*, *Lid-Watching
+Stance*, *Borrowed Breath*, *void-piercing sword domain*. Pills are graded and plainly
+functional - *third-grade Meridian Knitting Pill*, *Blood-Replenishing Pill*, *Spirit Dew
+Pill*; a healing pill must never become an elixir of nine heavens. Herbs run from the vivid
+(*Corpse Silver Flower*) to the flat (*Qi Grass*), and both ends are correct.
+
+**One deliberate exception: what frightened people call a ruin.** Ruin and scar names are
+generated from what somebody saw, what happened, or a name that is simply wrong - *Nothing
+Standing*, *Half a Roof*, *The Burn*. They carry no type noun and no poetry **because a person
+naming something they are afraid of does not reach for either.** Do not formalise them.
 
 ---
 
