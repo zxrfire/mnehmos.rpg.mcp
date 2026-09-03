@@ -40,7 +40,7 @@ describe('the agreement changes nothing about the fight', () => {
     it('reports only who holds what, and never what happened', () => {
         const followed = whatFollowsFromTheBout(bout({ outcome: 'crippled' }));
         expect(Object.keys(followed).sort())
-            .toEqual(['against', 'brokenPromise', 'howFar', 'note', 'ownHouseCost']);
+            .toEqual(['against', 'brokenPromise', 'heldBy', 'howFar', 'note', 'ownHouseCost']);
     });
 
     /**
@@ -249,5 +249,101 @@ describe('the record a descendant inherits', () => {
         const open = whatFollowsFromTheBout(bout({ terms: 'open', loserDied: true })).against!;
         expect(open.description).toMatch(/neither of them pretended was friendly/);
         expect(open.tags).toContain('open');
+    });
+});
+
+describe('the dead hold nothing, so their people do', () => {
+    /**
+     * THE MEASUREMENT THAT PRODUCED THIS BLOCK. Played, on a pinned world: a
+     * cultivator killed two people in front of eight witnesses and the
+     * obligations table held zero rows, while the world's own report of the
+     * same event named an heir on the way past. So there was somebody to
+     * answer to and nobody had told this function about them.
+     */
+    it('opens the account against the actor for somebody with no house at all', () => {
+        const followed = whatFollowsFromTheBout(bout({
+            terms: 'open',
+            loserDied: true,
+            theirHouse: null,
+            theirPeople: [{ id: 'their-son', relation: 'descendant' }]
+        }));
+        expect(followed.against).not.toBeNull();
+        expect(followed.against!.cause).toBe('killed_kin');
+        expect(followed.heldBy).toEqual([{ id: 'their-son', as: 'descendant' }]);
+    });
+
+    /**
+     * The table is the design, and a family imposes no floor on it.
+     * `severityWithHouse` raises a floor an INSTITUTION imposes; what the
+     * brother holds is exactly what the deed was worth.
+     */
+    it('writes it at the table\'s own weight, with nothing composed on top', () => {
+        const open = whatFollowsFromTheBout(bout({
+            terms: 'open', loserDied: true, theirHouse: null,
+            theirPeople: [{ id: 'kin', relation: 'clan' }]
+        }));
+        const agreed = whatFollowsFromTheBout(bout({
+            terms: 'agreed', loserDied: true, theirHouse: null,
+            theirPeople: [{ id: 'kin', relation: 'clan' }]
+        }));
+        expect(open.against!.severity).toBe('grave');
+        expect(open.against!.kind).toBe('grudge');
+        expect(agreed.against!.severity).toBe('unforgivable');
+        expect(agreed.against!.kind).toBe('blood_feud');
+    });
+
+    /** Two kinds of party, and a killing can reach both at the one weight. */
+    it('names the house and the people together where there are both', () => {
+        const followed = whatFollowsFromTheBout(bout({
+            terms: 'agreed',
+            loserDied: true,
+            theirPeople: [
+                { id: 'their-son', relation: 'descendant' },
+                { id: 'their-disciple', relation: 'disciple' }
+            ]
+        }));
+        expect(followed.heldBy.map(h => h.id)).toEqual([
+            'their-son', 'their-disciple', 'their-house'
+        ]);
+        // Inheritance does not discount, and neither does this.
+        expect(new Set(followed.heldBy.map(() => followed.against!.severity)).size).toBe(1);
+    });
+
+    /**
+     * Somebody with nobody stays the cheapest killing in the world. That is a
+     * fact about who they were and not a discount to whoever did it, and it
+     * has to stay reachable or the ledger stops meaning anything.
+     */
+    it('still opens nothing for somebody who left nobody', () => {
+        const followed = whatFollowsFromTheBout(bout({
+            terms: 'agreed', loserDied: true, theirHouse: null
+        }));
+        expect(followed.against).toBeNull();
+        expect(followed.heldBy).toEqual([]);
+        // And the actor's own house is still charged for it. Nobody to answer
+        // to is not nobody having heard.
+        expect(followed.ownHouseCost).toBeGreaterThan(0);
+    });
+
+    /**
+     * Read only where the loser died. Somebody ruined and living holds their
+     * own record from the resolver, and whether their brothers hold one too is
+     * a ruling this file does not make in passing.
+     */
+    it('does not hand a living loser\'s record to their family', () => {
+        const followed = whatFollowsFromTheBout(bout({
+            terms: 'agreed', outcome: 'crippled', theirHouse: null,
+            theirPeople: [{ id: 'their-son', relation: 'descendant' }]
+        }));
+        expect(followed.howFar).toBe('ruined');
+        expect(followed.against).toBeNull();
+        expect(followed.heldBy).toEqual([]);
+    });
+
+    /** The old callers are unchanged: one house, one holder, same weight. */
+    it('leaves the house-only case exactly where it was', () => {
+        const followed = whatFollowsFromTheBout(bout({ loserDied: true }));
+        expect(followed.heldBy).toEqual([{ id: 'their-house', as: 'house' }]);
+        expect(followed.against!.severity).toBe('unforgivable');
     });
 });

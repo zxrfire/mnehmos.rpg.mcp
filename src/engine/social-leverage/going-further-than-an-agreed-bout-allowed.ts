@@ -63,7 +63,7 @@
 
 import type { SectAlignment } from '../../schema/cultivation.js';
 import type { ConfrontationOutcome } from '../cultivation/combat.js';
-import type { GrudgeCause, Severity } from '../social/grudges.js';
+import type { GrudgeCause, InheritanceRelation, Severity } from '../social/grudges.js';
 import { severityWithHouse } from './what-a-house-will-do-about-it.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -125,6 +125,34 @@ export interface WhatTheBoutCameTo {
     witnesses: number;
     /** The loser's house, where they had one. */
     theirHouse: HouseStanding | null;
+    /**
+     * The loser's people, in inheritance order, for when the loser is dead.
+     *
+     * ── WHY THIS FIELD EXISTS, MEASURED ──────────────────────────────────
+     *
+     * Without it this file said, in its own words, *"they answered to nobody,
+     * so there is nobody to answer to"*, and returned no account for anybody
+     * killed outside a ranked house. Played: a cultivator killed two people in
+     * front of eight witnesses and `obligations` held **zero rows**, while the
+     * world's own report of the same event named an heir on the way past
+     * (`heir=npc-232`). So there WAS somebody to answer to, and the only reason
+     * nothing was written is that nobody had told this function about them.
+     *
+     * `whatADeedLeaves` has always been the module that routes this, and its
+     * own table says what happens: *heavy, and they have people - their family
+     * carries it at the same weight.* Its field for it is
+     * `principalCannotHoldIt`, and this is that field, arriving where the bout
+     * is priced so that the severity is still decided exactly once.
+     *
+     * Empty or absent means the loser genuinely has nobody, which stays a real
+     * answer and stays the cheapest killing in the world - a fact about who
+     * they were rather than a discount to whoever did it.
+     *
+     * Only read when the loser DIED. Somebody who was ruined and lived holds
+     * their own record from the resolver, and whether their brothers should
+     * hold one too is a separate ruling this file does not make in passing.
+     */
+    theirPeople?: readonly { id: string; relation: InheritanceRelation }[];
 }
 
 /** What a house is, for the purpose of deciding what it does about a member. */
@@ -155,6 +183,18 @@ export interface AccountOpened {
     tags: readonly string[];
 }
 
+/**
+ * One party who opens {@link WhatFollows.against}.
+ *
+ * `house` for the loser's house; otherwise the ledger's own
+ * {@link InheritanceRelation}, so a record opened here and a record carried by
+ * `inheritOnDeath` describe the same kind of connection in the same word.
+ */
+export interface TheyOpenIt {
+    id: string;
+    as: 'house' | InheritanceRelation;
+}
+
 export interface WhatFollows {
     howFar: HowFarPastIt;
     /**
@@ -162,8 +202,19 @@ export interface WhatFollows {
      * badly it ended: a duel that kills is a killing and not a betrayal.
      */
     brokenPromise: boolean;
-    /** What the loser's house opens, or null when there is nobody to open it. */
+    /** What the loser's side opens, or null when there is nobody to open it. */
     against: AccountOpened | null;
+    /**
+     * Everybody who opens it, at that one weight. Empty exactly when `against`
+     * is null.
+     *
+     * A list rather than a single holder because a killing can reach two kinds
+     * of party at once - the house that had something invested in them, and the
+     * people they left - and `grudges.ts` is explicit that inheritance does not
+     * discount: the brother holds what the brother holds. Nothing here weights
+     * anybody differently for being one or the other.
+     */
+    heldBy: readonly TheyOpenIt[];
     /**
      * Standing the actor's OWN house takes off them, as a raw figure for
      * `spendStanding` to run through the house's own arithmetic. Zero when the
@@ -253,6 +304,7 @@ export function whatFollowsFromTheBout(input: WhatTheBoutCameTo): WhatFollows {
             howFar,
             brokenPromise: false,
             against: null,
+            heldBy: [],
             ownHouseCost: 0,
             note:
                 input.terms === 'agreed'
@@ -265,27 +317,56 @@ export function whatFollowsFromTheBout(input: WhatTheBoutCameTo): WhatFollows {
 
     const personal = WHAT_IT_IS_WORTH[howFar][input.terms];
     const house = input.theirHouse;
+    const houseIsAParty = Boolean(house && house.alignment !== null && house.ranked);
 
-    // Nobody to take it anywhere. The loser's own account still stands - the
-    // resolver wrote it - and where they are dead it does not, which is what
-    // makes killing a wanderer in an arranged bout the cheapest version of this
-    // in the world. That is a fact about who they were, not a discount.
-    if (!house || house.alignment === null || !house.ranked) {
+    // ── WHO IS LEFT TO HOLD IT ───────────────────────────────────────────
+    //
+    // Two kinds of party and they are independent: the house that had something
+    // invested in them, and the people they left. A killing can reach both, one
+    // or neither, and only the last of those three is nothing.
+    //
+    // The people are read ONLY where the loser is dead, because that is the
+    // whole of what they are answering: the dead hold nothing, so an account
+    // that would have been theirs has nowhere else to go. Somebody ruined and
+    // living already holds their own, from the resolver.
+    const theirPeople = howFar === 'killed' ? (input.theirPeople ?? []) : [];
+    const heldBy: TheyOpenIt[] = [
+        ...theirPeople.map(person => ({ id: person.id, as: person.relation })),
+        ...(houseIsAParty && house ? [{ id: HOUSE, as: 'house' as const }] : [])
+    ];
+
+    // Genuinely nobody. The loser's own account still stands where they lived -
+    // the resolver wrote it - and where they are dead it does not, which is
+    // what makes killing somebody with no house and no people the cheapest
+    // version of this in the world. That is a fact about who they were, not a
+    // discount to whoever did it.
+    if (heldBy.length === 0) {
         return {
             howFar,
             brokenPromise,
             against: null,
+            heldBy: [],
             ownHouseCost: ownHouseCost(howFar, input),
             note: !house || house.alignment === null
-                ? 'They answered to nobody, so there is nobody to answer to. Nothing was opened '
-                  + 'on their side.'
-                : 'Not somebody their house had anything invested in. It stays between the two '
-                  + 'of them, and one of them is in no position to pursue it.'
+                ? 'They answered to nobody and left nobody, so there is nobody to answer to. '
+                  + 'Nothing was opened on their side.'
+                : 'Not somebody their house had anything invested in, and nobody of their own '
+                  + 'is left. It stays between the two of them, and one of them is in no '
+                  + 'position to pursue it.'
         };
     }
 
-    const verdict = whatTheirHouseMakesOfIt(house.alignment, brokenPromise);
-    const severity = severityWithHouse(personal, verdict.severityFloor);
+    // The house's own reading, where there is a house. Where there is not, the
+    // weight is the table's and nothing composes with it - which is correct
+    // rather than lenient: `severityWithHouse` raises a floor an institution
+    // imposes, and a family imposes none. What the brother holds is exactly
+    // what the deed was worth.
+    const verdict = houseIsAParty && house
+        ? whatTheirHouseMakesOfIt(house.alignment as SectAlignment, brokenPromise)
+        : null;
+    const severity = verdict
+        ? severityWithHouse(personal, verdict.severityFloor)
+        : personal;
 
     return {
         howFar,
@@ -302,10 +383,25 @@ export function whatFollowsFromTheBout(input: WhatTheBoutCameTo): WhatFollows {
                 ? ['bout', 'agreed', howFar, ...(input.witnesses > 0 ? ['witnessed'] : [])]
                 : ['bout', 'open', howFar, ...(input.witnesses > 0 ? ['witnessed'] : [])]
         },
+        heldBy,
         ownHouseCost: ownHouseCost(howFar, input),
-        note: verdict.note
+        note: verdict
+            ? verdict.note
+            : 'Their house is not a party to it and their people are. What one person held is '
+              + 'held by the ones they left, at the weight it was worth, and it is inherited '
+              + 'from there like everything else in that ledger.'
     };
 }
+
+/**
+ * The stand-in id for the loser's house on {@link WhatFollows.heldBy}.
+ *
+ * This file has never seen an id and does not start now: it is handed
+ * alignment and investment, not a name. The caller knows which house it asked
+ * about and substitutes it, exactly as it already did when there was only one
+ * holder to write.
+ */
+export const HOUSE = 'their-house';
 
 /**
  * What actually happened to the loser, in this file's three words.
