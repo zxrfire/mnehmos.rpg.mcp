@@ -112,7 +112,60 @@ what it means, and the narrator should describe it this way:
 | **thin** | Drawn down, or never rich. Cultivating here is chewing on nothing - half rate, and breakthroughs suffer. Most of the world is thin, and some of it is hopeless |
 | **normal** | Ordinary inhabited land. Progress is possible and unhurried |
 | **dense** | A vein close to the surface, or ground nobody has worked. Somebody owns this, or somebody is about to |
-| **spirit_tide** | A surge - a vein shifting, a seal failing, a season turning over. Everyone within a hundred li feels it, sects mobilise, and it does not last |
+| **spirit_tide** | Somebody finished. A cultivator went through the Lid, and what they could not take with them fell back into the ground where they crossed. Everyone within a hundred li feels it and sects mobilise. **In the province they will tell you it was a vein shifting or a seal failing** - see below |
+
+### What a spirit tide is, and who knows it
+
+<!-- tier: 2 trigger="a spirit tide is running, or somebody asks why the qi here is better than it should be" -->
+
+**A tide is somebody finishing.** The last crossing takes everything the
+cultivator still had - `price-of-advancement.ts` collects the account in full -
+and what falls back is a spirit tide in the ground they crossed from. It is the
+one thing that puts qi back into a world that is otherwise only ever spending
+it.
+
+**It lends rather than gives.** The ground stays richer for **999 years** and
+runs down in a straight line to nothing over that term, so a crossing four
+hundred years ago is still worth standing on and one from twelve hundred years
+ago is not. That is why the thinning still happens: **failure takes ground
+forever and success only lends it back.** A tribulation failed leaves a scar
+where the qi never returns; a crossing completed leaves a loan that is repaid.
+Nobody makes a new vein.
+
+**And it is the cherry, not the cake.** The ordinary reason a place is rich or
+poor is the vein under it and how much has been taken out of it - ground is
+worked and drawn down, and that is the primary story of a thinning age. A
+crossing is a rare addition on top of whatever the vein was doing. The
+interesting places are where the two coincide: a good vein nobody has worked
+out, that somebody also finished on recently enough to still matter.
+
+**Almost nobody knows any of this**, and that is the part worth playing.
+
+| Who | What they have |
+|---|---|
+| The long-lived at the top | **They were there.** A crossing is once in an age and their spans run across ages, so the last one is a thing they personally watched |
+| An apex's disciples, a house's inner people | **They were told**, by somebody who was. They know what a tide is; they were not there, and the told-ceiling is where that stops |
+| Everybody else | **The rumour.** A vein shifted, or a seal failed; nobody agreed which |
+
+The rumour is not a garbled memory. An ordinary person has never seen a crossing
+and neither did anybody they knew, so they are reasoning honestly from the only
+evidence there was: the ground changed. Being near a tide teaches you that a
+tide happened, never what one is.
+
+So **the truth is something a player can go and get.** A village says the vein
+moved. An apex elder knows a person finished there. Closing that gap is worth
+something, and it is reached the ordinary ways - asking somebody old enough,
+reading a record, standing high enough to be told. Note which way this cuts: a
+wandering cultivator at rung 30 with nobody to be told by may not know, and an
+apex outer disciple at rung 12 does. **It is a marker of proximity to power
+rather than of personal height.**
+
+**The marks are legible before their cause is.** Somebody standing on that
+ground can read what the passage left and gain real comprehension from it
+without ever learning what made it - so knowing the mechanism is worth something
+distinct from the ground itself.
+
+---
 
 **Spirit stones** are qi compressed until it holds its shape. They are money, they are
 fuel, and they are the only way to cultivate somewhere the ambient qi will not support

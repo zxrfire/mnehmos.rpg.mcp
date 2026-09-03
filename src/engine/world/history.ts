@@ -855,6 +855,37 @@ export interface Scar {
     radiusLi: number;
 }
 
+/**
+ * Somebody who finished, and the ground they left better than they found it.
+ *
+ * The exact mirror of {@link Scar}, and the two should be read together: a
+ * failed tribulation takes ground permanently, and a completed crossing lends
+ * some back for {@link CROSSING_ENRICHMENT_YEARS}. Both are dated events with a
+ * name attached and both become real locations - see `locationFromCrossing`.
+ *
+ * `year` is the load-bearing field. How much is left in the ground now is a
+ * function of how long ago this was, so where the qi is still good is a record
+ * of when somebody last finished nearby.
+ */
+export interface Crossing {
+    id: string;
+    /** The seat it happened at, as the province names it. */
+    location: string;
+    year: number;
+    originFactId: string;
+    /** Null where nobody kept the name, which is most of them. */
+    crossedName: string | null;
+    /**
+     * The ruin that grew on the same seat, which is the ground this lifted.
+     *
+     * A crossing makes no new place. Everybody who crossed in a prior age
+     * crossed from the compound of a house that later fell, so the ground is
+     * already on the map as a sealed ruin - and this is why a few of them sit
+     * on a vein nobody can account for.
+     */
+    groundRuinId: string;
+}
+
 /** Descriptor for something that will become a technique or treasure record. */
 export interface RemnantDescriptor {
     id: string;
@@ -869,6 +900,13 @@ export interface PriorAges {
     ledger: HistoryLedger;
     ruins: Ruin[];
     scars: Scar[];
+    /** Everybody who finished, and the ground each of them lent something to. */
+    crossings: Crossing[];
+    /**
+     * The year the present age opens, carried so a consumer can price how long
+     * ago something was without being told separately and getting it wrong.
+     */
+    presentYear: number;
     lostTechniques: RemnantDescriptor[];
     buriedTreasures: RemnantDescriptor[];
     /** Factions that no longer exist but whose compounds are still standing. */
@@ -1069,6 +1107,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
     const ledger = createLedger();
     const ruins: Ruin[] = [];
     const scars: Scar[] = [];
+    const crossings: Crossing[] = [];
     const lostTechniques: RemnantDescriptor[] = [];
     const buriedTreasures: RemnantDescriptor[] = [];
     const deadFactionNames: string[] = [];
@@ -1175,10 +1214,44 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     causes: [ascFact.id],
                     visibility: 'public',
                     fidelity,
-                    causeKnown,
+                    // THE MISATTRIBUTION IS ABOUT THE RECORD, NOT ABOUT EVERY
+                    // LIVING PERSON, and the difference is the content.
+                    //
+                    // `causeKnown` is this ledger's own question - "was the
+                    // true cause ever written down" - and the answer is no,
+                    // because `CROSSING_PRACTICE` says people go to a cave they
+                    // told nobody about and stop being seen. So the summary
+                    // carries the world's two wrong guesses, which is what a
+                    // record written by people whose grandparents were not born
+                    // yet actually says.
+                    //
+                    // It is NOT a claim that nobody alive knows. A crossing is
+                    // once in an age and a cultivator high enough on the ladder
+                    // lives across ages, so somebody who was THERE may still be
+                    // standing - and they hold it firsthand while the province
+                    // holds a rumour about rock. That gap is derivable from two
+                    // numbers this engine already has, the crossing's date and
+                    // `lifespanForOrdinal`, and it is asked rather than stored:
+                    // see `whoCouldRememberACrossing`. Do not add a field here.
+                    causeKnown: false,
                     magnitude: 1,
                     data: { days: 11 }
                 }));
+
+                // And the ground it left, which outlasts every record of it.
+                // See `crossing-enrichment.ts`: a completed crossing lends the
+                // ground some qi back for 999 years, decaying from this date,
+                // so most of these are already spent and a few are not.
+                crossings.push({
+                    id: `crossing-${ageIndex}-${s}`,
+                    location: seat,
+                    year: ascendedYear,
+                    originFactId: ascFact.id,
+                    crossedName: who,
+                    // The house fell later and its compound is on the map as a
+                    // ruin at the same seat. Same id this loop pushes below.
+                    groundRuinId: `ruin-${ageIndex}-${s}`
+                });
             }
 
             // Failed tribulations leave dead ground the qi never returns to.
@@ -1350,7 +1423,10 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
 
     openTheShallowestRuin(seed, o.presentYear, ledger, ruins);
 
-    return { ledger, ruins, scars, lostTechniques, buriedTreasures, deadFactionNames };
+    return {
+        ledger, ruins, scars, crossings, lostTechniques, buriedTreasures, deadFactionNames,
+        presentYear: o.presentYear
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

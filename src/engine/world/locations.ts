@@ -97,9 +97,26 @@
 import type { AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, clampOrdinal, rankName } from '../cultivation/realms.js';
 import { forStream } from '../cultivation/rng.js';
-import { yearOfDay, type PriorAges, type Ruin, type Scar } from './history.js';
+import {
+    yearOfDay,
+    type Crossing,
+    type PriorAges,
+    type Ruin,
+    type Scar
+} from './history.js';
+import {
+    CROSSING_ENRICHMENT_YEARS,
+    crossingStillGiving,
+    enrichedDensity
+} from './crossing-enrichment.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
-import { QI_DENSITY_DEFAULT, QI_DENSITY_MIN, clampQiDensity, qiFraction } from './qi-scale.js';
+import {
+    QI_DENSITY_DEFAULT,
+    QI_DENSITY_MIN,
+    clampQiDensity,
+    ordinaryBandFor,
+    qiFraction
+} from './qi-scale.js';
 import { whoTurnsYouAwayFrom } from './ruin-gatekeepers.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1572,7 +1589,114 @@ export function locationsFromPriorAges(prior: PriorAges): LocationRecord[] {
     const out: LocationRecord[] = [];
     for (const ruin of prior.ruins) out.push(locationFromRuin(ruin));
     for (const scar of prior.scars) out.push(locationFromScar(scar));
+
+    // And the loan a crossing left in the ground, applied on top of whatever
+    // that ground already was. Ordered after the ruins deliberately: a crossing
+    // makes no new place, it changes one that is already here.
+    const at = new Map(out.map((l, i) => [l.id, i]));
+    for (const crossing of prior.crossings) {
+        const index = at.get(`loc-${crossing.groundRuinId}`);
+        if (index === undefined) continue;
+        out[index] = groundACrossingLifted(out[index], crossing, prior.presentYear);
+    }
     return out;
+}
+
+/**
+ * What a completed crossing left in the ground under it.
+ *
+ * ── IT IS A CONTRIBUTION, NOT AN EXPLANATION ─────────────────────────────
+ *
+ * **This is not why a place is rich.** How much qi a place offers is mostly the
+ * vein under it and how much has been taken out of it - `capacityFor` in
+ * `what-a-place-still-has-in-the-ground.ts` reads `qiDensity` as the capacity
+ * term and subtracts what has been drawn since. Ground is worked and drawn
+ * down, and that is the primary story of a thinning age.
+ *
+ * A crossing is the cherry on top: a rare, decaying addition laid over a
+ * baseline that is going down anyway. The interesting places are where the two
+ * coincide - a good vein that has not been worked out, that somebody also
+ * finished on recently enough to still matter - and this function supplies
+ * exactly one of those two facts.
+ *
+ * ── HOW IT COMPOSES WITH DEPLETION, WHICH IS ALREADY LIVE ────────────────
+ *
+ * They do not collide, because they are different fields with one writer each.
+ * The vein is `qiDensity`; what has been taken is a pair of scalars on
+ * `LocationRecord.data`, written only by drawing on the place. So enriching the
+ * vein raises the CAPACITY and leaves the shortfall exactly where it was - a
+ * worked-out place with a fresh crossing on it has more to give and is still as
+ * far behind as it was. That falls out of the existing arithmetic rather than
+ * being arranged here, and nothing in this function reads or writes a count.
+ *
+ * ── SEALED GROUND IS RICH AND UNDRAWABLE ─────────────────────────────────
+ *
+ * `spiritualDensity` is left at whatever the ruin's own seal decided. A sealed
+ * pocket sits on a vein nobody can touch, which is the existing economy of
+ * exploration and not something a crossing changes: the loan is in the rock,
+ * and somebody has to get in to spend it.
+ *
+ * ── THE MARKS, AND WHY HALF OF THEM COST NOTHING TO WIRE ─────────────────
+ *
+ * Somebody crossing left marks, and reading marks is what comprehension IS. The
+ * band is what carries that here, through a rule that already exists:
+ * `INSIGHT_AMBIENT_CHANCE` in `understanding.ts` prices the meditative state at
+ * 0 on thin and normal ground, 0.005 on dense and 0.01 in a spirit tide. So
+ * lifting the vein makes comprehension likelier on exactly this ground, at
+ * exactly the places the loan is still paying, with no branch anywhere that has
+ * heard of crossings. `ambient` is patched alongside `qiDensity` so the record
+ * agrees with itself rather than saying two things about one place.
+ *
+ * What is NOT wired, and is a finding rather than an omission: the OTHER half
+ * of comprehension-from-ground, `atSiteOfUnderstanding`, does not read a
+ * `LocationRecord` tag at all. It runs off `siteTagsAt` over the separate
+ * `cultivation_sites` table for a player and off a dealt tag vocabulary for an
+ * NPC, and the world layer writes neither. Joining those is a cross-layer job
+ * with its own blast radius; inventing a tag here would be a hook that only
+ * looks connected.
+ */
+function groundACrossingLifted(
+    ruinGround: LocationRecord,
+    crossing: Crossing,
+    presentYear: number
+): LocationRecord {
+    const yearsSince = presentYear - crossing.year;
+    if (!crossingStillGiving(yearsSince)) return ruinGround;
+
+    const own = ruinGround.qiDensity;
+    const now = enrichedDensity(own, yearsSince);
+    if (now <= own) return ruinGround;
+
+    const { location } = applyLocationChange(ruinGround, {
+        onDay: crossing.year * 365,
+        kind: 'enriched',
+        summary:
+            `The qi over ${ruinGround.name} came up when ` +
+            `${crossing.crossedName ?? 'somebody'} finished here, and has been going back ` +
+            `down ever since. ${Math.round(yearsSince)} of the ` +
+            `${CROSSING_ENRICHMENT_YEARS} years have run off it.`,
+        causeFactId: crossing.originFactId,
+        // Physically obvious to anybody who stands here; the reason for it went
+        // through the Lid with the person who caused it. Nobody below reads a
+        // rich vein as somebody's last day.
+        causeKnown: false,
+        fidelity: 'partial',
+        witnessed: false,
+        patch: {
+            qiDensity: now,
+            // Kept in step with the density on purpose: the band is what
+            // `INSIGHT_AMBIENT_CHANCE` reads, and a record whose declared band
+            // disagreed with its own vein would answer two ways.
+            ambient: ordinaryBandFor(now),
+            addTags: ['crossing_ground'],
+            data: {
+                crossingId: crossing.id,
+                crossingYear: crossing.year,
+                crossingLoanYears: CROSSING_ENRICHMENT_YEARS
+            }
+        }
+    });
+    return location;
 }
 
 export function locationFromRuin(ruin: Ruin): LocationRecord {
