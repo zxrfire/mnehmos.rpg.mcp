@@ -1572,7 +1572,11 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     descend: 'going down',
     propose: 'the match',
     decline: 'refusing the match',
-    child: 'the child'
+    child: 'the child',
+    // Not "telling", which reads as the question asking whether the player
+    // wants to be told something. What the step actually is, from the outside,
+    // is somebody being given news they did not have.
+    tell: 'carrying the news to'
 };
 
 function plainNameOf(action: ActionName): string {

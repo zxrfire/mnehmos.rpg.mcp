@@ -515,6 +515,20 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             and what comes back may be wrong. NOT for "what do people say about this place",
             which is the ground's own history and belongs to look.`
     },
+    tell: {
+        takes: ['target', 'topic'],
+        says: `TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The
+            other direction of news: that one asks what people are saying, this one carries it
+            to the person it is about. "target" is who is being told and they have to be here;
+            "topic" is what is being said, in the player's own words, including the name of
+            whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao
+            Antao killed his brother", "I let her know who killed her master", "I tell him what
+            happened to his brother" and "I tell him that I killed his brother". Passes no time.
+            Route it whether or not the claim is true - naming the wrong person, or a killing
+            that never happened, is an ordinary thing to say and the engine is what answers for
+            it. NOT for "tell me about X", which is a question and belongs to investigate, and
+            NOT for a threat, which is about something that has not happened yet.`
+    },
     request: {
         takes: ['target', 'intent', 'topic'],
         intents: REQUEST_KINDS,

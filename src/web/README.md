@@ -1856,6 +1856,20 @@ refusal says plainly that nobody here answers to that name. `whoIsAbout` carries
 gate on its lone-person branch, where being the only person in the square was enough to get
 your name printed.
 
+**And the delivery claim was the same defect one line lower.** Gating which name is printed
+left `You put the words to X` standing around it, so the paragraph still told the player
+their sentence had been delivered to somebody they never named - the redirect, surviving
+inside its own fix. Both branches now open with the fact the refusal is about, which is that
+the NAME reached nobody; a bystander may be named as somebody who heard a stranger say
+something, never as the person it was said to.
+
+That ordering is also what stops the paragraph reading as *I did not understand you*. A
+coherent sentence that names nobody present is not an unintelligible one, and the difference
+matters because a player cannot tell the two apart from the prose - which is what made this
+refusal the catch-all for `interact/talk` reaching nothing. Telling somebody a wrong was
+done to them used to land here for exactly that reason, and now has [its own
+verb](telling-a-wrong.ts).
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
