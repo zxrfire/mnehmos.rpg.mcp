@@ -66,6 +66,10 @@ import {
     type CoercionIntent
 } from '../../src/web/how-a-player-says-each-coercion.js';
 import {
+    HOW_A_PLAYER_SAYS_EACH_MOVE,
+    HOW_A_PLAYER_SAYS_EACH_SECT_ASK
+} from '../../src/web/how-a-player-says-each-intent.js';
+import {
     embed,
     loadTheModel,
     MODEL_DIRECTORY,
@@ -197,4 +201,150 @@ describe('exemplars and intents that share a sentence frame', () => {
             + 'and wants taking again rather than inheriting.'
         ).toBeLessThan(GOOD_ENOUGH_TO_RECONSIDER);
     });
+});
+
+/**
+ * THE PREDICTION, RUN ON TWO VERBS NAMED BEFORE IT WAS MEASURED.
+ *
+ * The rule the `coerce` pilot produced: an intent distinguished by its OBJECT
+ * is a parsing question; an intent distinguished by its PURPOSE is a situation
+ * question and must not be asked of the sentence. `move`'s five were predicted
+ * to separate, `sect`'s fourteen not to.
+ *
+ * ── THE NUMBERS, AND THE CONFOUND IN THE OBVIOUS ONE ─────────────────────
+ *
+ *     verb     intents  exemplars  leave-one-out  collapsed
+ *     move           5         20      14/20  70%      2/5
+ *     coerce         5         25      16/25  64%      3/5
+ *     sect          14         56      16/56  29%     10/14
+ *
+ * Read raw, `sect` looks catastrophic. That reading is WRONG and the error is
+ * worth more than the number: a fourteen-way choice has a chance baseline of
+ * 7.1% where a five-way has 20%, so as lift over chance the three verbs are
+ * 3.5x, 3.2x and 4.0x - and `sect` is marginally the BEST of them. Anybody
+ * comparing accuracies across different class counts is comparing the class
+ * counts.
+ *
+ * `collapsed` is the chance-independent measure - how many intents have some
+ * other intent nearer to them than their own exemplars are - and it does order
+ * the way the rule predicts: 2/5, 3/5, 10/14. But that is a far weaker signal
+ * than the raw figures pretend, and on its own it would not carry the ruling.
+ *
+ * ── WHAT ACTUALLY DECIDES IT IS THE SHAPE OF THE MISSES ──────────────────
+ *
+ * `sect` fails by INVERSION. Its errors are not scattered; they land on the
+ * opposite member of a shared frame:
+ *
+ *     join -> recruit      all four of them
+ *     expel -> leave       both
+ *     siphon -> donate     and donate -> siphon, both directions
+ *
+ * Joining a house and recruiting for it, leaving and expelling, taking from
+ * the vault and paying into it - each pair is one act with the DIRECTION
+ * reversed, and the direction is the purpose. The tier returns the wrong side
+ * confidently.
+ *
+ * `move` fails by ADJACENCY. Its errors are `approach -> enter`,
+ * `approach -> follow`, `travel -> flee` - neighbouring acts of the same kind,
+ * never their own opposites.
+ *
+ * That is the distinction that matters for a router, and it is what makes the
+ * rule a safety property rather than a quality one. An adjacency error gives a
+ * player a slightly wrong read. An inversion error gives the player who asked
+ * to JOIN a recruitment drive, and the player who asked to LEAVE somebody
+ * else's expulsion. Where intents are wired to acts, that is a wrong act
+ * reporting success - the same failure as a pattern row that read a pill
+ * sentence as a robbery.
+ *
+ * ── AND THE PREDICTION IS NOT CLEAN ON THE GOOD SIDE ─────────────────────
+ *
+ * Two of `move`'s five collapsed. `approach` sits nearer to `enter` (0.852)
+ * than to its own exemplars (0.746), because walking up to a gate and walking
+ * through it are very nearly the same sentence. The rule survives on the shape
+ * of the failures, not on a clean sweep, and pretending otherwise would be
+ * choosing the tidier story.
+ */
+describe('object-distinguished and purpose-distinguished intents fail differently', () => {
+    async function bankOf(corpus: Readonly<Record<string, readonly string[]>>) {
+        const built: Record<string, { said: string; vector: Float32Array }[]> = {};
+        for (const label of Object.keys(corpus)) {
+            built[label] = [];
+            for (const said of corpus[label]) built[label].push({ said, vector: await embed(said) });
+        }
+        return built;
+    }
+
+    const nearestIn = (
+        built: Record<string, { said: string; vector: Float32Array }[]>,
+        vector: Float32Array,
+        skip: string
+    ) => Object.keys(built)
+        .map(label => {
+            let best = -1;
+            for (const ex of built[label]) {
+                if (ex.said === skip) continue;
+                best = Math.max(best, similarity(vector, ex.vector));
+            }
+            return { label, score: best };
+        })
+        .sort((a, b) => b.score - a.score)[0];
+
+    const collapsedFraction = (built: Record<string, { said: string; vector: Float32Array }[]>) => {
+        const labels = Object.keys(built);
+        let collapsed = 0;
+        for (const label of labels) {
+            let own = -1;
+            for (const a of built[label]) {
+                for (const b of built[label]) {
+                    if (a.said !== b.said) own = Math.max(own, similarity(a.vector, b.vector));
+                }
+            }
+            let other = -1;
+            for (const o of labels) {
+                if (o === label) continue;
+                for (const a of built[label]) {
+                    for (const b of built[o]) other = Math.max(other, similarity(a.vector, b.vector));
+                }
+            }
+            if (other > own) collapsed++;
+        }
+        return collapsed / labels.length;
+    };
+
+    /**
+     * The chance-independent comparison. Deliberately NOT an accuracy
+     * comparison - see the confound in the header.
+     */
+    it('collapses more of a purpose-split verb than an object-split one', async () => {
+        const move = collapsedFraction(await bankOf(HOW_A_PLAYER_SAYS_EACH_MOVE));
+        const sect = collapsedFraction(await bankOf(HOW_A_PLAYER_SAYS_EACH_SECT_ASK));
+        expect(sect, `move ${move.toFixed(2)} vs sect ${sect.toFixed(2)}`).toBeGreaterThan(move);
+    }, 180_000);
+
+    /**
+     * THE ONE THAT MATTERS. Three pairs in `sect` are one act with the
+     * direction reversed, and the tier returns the opposite side.
+     *
+     * Pinned because it is a safety property: an intent wired to an act that
+     * inverts is a wrong act reporting success, and no amount of exemplars
+     * puts a direction into a sentence that never carried one.
+     */
+    it('returns the opposite side of a direction pair, confidently', async () => {
+        const built = await bankOf(HOW_A_PLAYER_SAYS_EACH_SECT_ASK);
+        const inversions: string[] = [];
+        for (const [label, opposite] of [
+            ['join', 'recruit'], ['expel', 'leave'], ['siphon', 'donate']
+        ] as const) {
+            for (const ex of built[label]) {
+                if (nearestIn(built, ex.vector, ex.said).label === opposite) {
+                    inversions.push(`${label} -> ${opposite}  "${ex.said}"`);
+                }
+            }
+        }
+        expect(
+            inversions.length,
+            'no direction pair inverted, which would weaken the rule this pins:\n'
+            + inversions.join('\n')
+        ).toBeGreaterThanOrEqual(4);
+    }, 180_000);
 });
