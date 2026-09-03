@@ -2528,13 +2528,33 @@ function pickerFoodHtml(days) {
   const p = FOOD.plan;
   const rations = (n) => `${fmtInt(n)} ration${n === 1 ? '' : 's'}`;
 
-  // Nothing to buy: either the stretch is short enough that the belly covers
-  // it, or the pack already holds the whole of it.
-  if (p.cost === 0) {
+  // A ZERO BILL HAS THREE DIFFERENT REASONS AND THEY ARE NOT INTERCHANGEABLE.
+  // The body has stopped taking meals; the pack already holds the stretch; the
+  // purse will not reach a single ration. The first two are good news and end
+  // the matter. The third is a starvation warning wearing their clothes, and it
+  // has to fall through to the bill below so the warnings actually print.
+
+  // The body has stopped taking meals. Not "cheap", not "the belly covers it"
+  // and not "the pack covers it": there is no purchase to make at any length of
+  // stretch, and forty years prices out exactly as a week does. Said in
+  // `GameService.buyProvisions`'s words on purpose - it is one fact, and two
+  // surfaces phrasing it differently is how a codebase acquires two answers.
+  if (p.hungerHasStopped) {
+    return raw(html`<div class="pick__food">Nothing to buy, and the pack is not opened. At this
+      rung the body has stopped taking meals, and the pantry is not what stands between you and
+      the far end of this.</div>`);
+  }
+
+  // Nothing to buy, and it is genuinely nothing to buy. `p.short === 0` is what
+  // separates this from an empty purse: with nothing bought, a shortfall of
+  // nought means the pack covered the whole of it.
+  if (p.cost === 0 && p.short === 0) {
     const line = p.wanted === 0
+      // Only a zero-length stretch reaches this, and the endpoint refuses one -
+      // a stretch is at least a day, and a day still opens a whole ration.
       ? 'Short enough that you can eat before you sit. Nothing to buy.'
-      : `${rations(p.wanted)} for the stretch, and ${p.carried === p.wanted ? 'all of them' : `${fmtInt(p.carried)} of them`} `
-        + `already in your pack. Nothing to buy; your ${fmtInt(p.stonesBefore)} spirit stones stay where they are.`;
+      : `${rations(p.wanted)} for the stretch, and all of them already in your pack. `
+        + `Nothing to buy; your ${fmtInt(p.stonesBefore)} spirit stones stay where they are.`;
     return raw(html`<div class="pick__food">${line}</div>`);
   }
 
@@ -2542,11 +2562,17 @@ function pickerFoodHtml(days) {
   // what the stretch WANTS, what the pack already holds, and what the purse
   // will actually stretch to. On a long seclusion the last is much smaller than
   // the first, and saying "the other 14" of 73 reads as though 73 were covered.
-  const head = `Food for this stretch: ${rations(p.wanted)}.`
-    + (p.carried > 0 ? ` ${fmtInt(p.carried)} already in your pack.` : '')
-    + ` ${fmtInt(p.toBuy)} more bought at the door for ${fmtInt(p.cost)} spirit stones, `
-    + `leaving ${fmtInt(p.stonesAfter)} of your ${fmtInt(p.stonesBefore)}.`
-    + (p.short > 0 ? ` The remaining ${fmtInt(p.short)} the purse will not stretch to.` : '');
+  const need = `Food for this stretch: ${rations(p.wanted)}.`
+    + (p.carried > 0 ? ` ${fmtInt(p.carried)} already in your pack.` : '');
+  const head = p.toBuy === 0
+    // Nothing bought because nothing is affordable, which costs nought and is
+    // the opposite news from a zero bill above. The food exists, it is needed,
+    // and this is the branch that ends in starvation.
+    ? `${need} Your ${fmtInt(p.stonesBefore)} spirit stone${p.stonesBefore === 1 ? '' : 's'} `
+      + `will not buy ${p.carried > 0 ? `the other ${fmtInt(p.short)}` : 'any of them'}.`
+    : `${need} ${fmtInt(p.toBuy)} more bought at the door for ${fmtInt(p.cost)} spirit stones, `
+      + `leaving ${fmtInt(p.stonesAfter)} of your ${fmtInt(p.stonesBefore)}.`
+      + (p.short > 0 ? ` The remaining ${fmtInt(p.short)} the purse will not stretch to.` : '');
 
   const rest = [];
   if (!p.coversTheWholeStretch) {
@@ -2592,8 +2618,19 @@ function pickerWarnings(days) {
       : `This carries you past ${fmtNum(clocks.pressureFrom, 0)}, where the span you have spent `
         + 'starts costing the next crossing its own odds.');
   }
+  // A LOW BELLY IS ONLY A WARNING FOR SOMEBODY WHO STILL EATS.
+  //
+  // From Deity Transformation up the body has stopped taking meals, the
+  // starvation counter cannot leave zero, and satiety is frozen wherever it
+  // stood at the crossing - so a cultivator who crossed hungry would otherwise
+  // be told on every seclusion, forever, that this is how runs end. The engine
+  // has already answered the question in the quote for this same stretch, so
+  // the answer is read rather than worked out here. Absent or stale, the
+  // warning stands: it is only suppressed on a positive no.
+  const quoteSaysHungerHasStopped =
+    !!FOOD.plan && FOOD.days === days && FOOD.plan.hungerHasStopped === true;
   const satiety = Number((S.cultivator || {}).satiety) || 0;
-  if (satiety <= 30 && days > 30) {
+  if (satiety <= 30 && days > 30 && !quoteSaysHungerHasStopped) {
     warnings.push(`Satiety is ${fmtInt(satiety)}. Long seclusion on an empty stomach is how runs end.`);
   }
   // Open meridians do not kill on a clock, and this warning used to say they
