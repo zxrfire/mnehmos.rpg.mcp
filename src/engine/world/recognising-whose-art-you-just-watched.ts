@@ -196,6 +196,105 @@ export function whatTheirRealmAffords(observerOrdinal: number, performedAtOrdina
     return 'certain';
 }
 
+// ═════════════════════════════════════════════════════════════════════════
+// THE TWO AXES DO NOT FAIL THE SAME WAY
+// ═════════════════════════════════════════════════════════════════════════
+//
+// Ruled by the design owner, correcting this file: *"they can tell that this is
+// something that will fuck them up, right? being unable to read something is
+// itself a sign."*
+//
+//   NO REFERENCE FAILS BLANK. You have never heard of the house, and standing
+//   near the thing tells you nothing about that. Nothing is felt, so nothing is
+//   reported, and the hedge above is right.
+//
+//   A REALM GAP DOES NOT FAIL BLANK. THE GAP IS THE SIGNAL, and it gets louder
+//   the wider it is. A mortal in front of an immortal artifact is not somebody
+//   who learns nothing. They learn exactly one thing, with total certainty, and
+//   it is the thing that keeps them alive: cannot name it, knows to back away.
+//
+// So `lower(realm, reference)` is the right combinator for IDENTIFICATION and
+// the wrong one for what a reader comes away with, because at the far end those
+// two separate and run in opposite directions - identification goes to nothing
+// while the sense of being outclassed goes to its maximum. This is the one
+// reading in the engine that gets MORE certain the further out of your depth
+// you are, and it is reported ALONGSIDE the identification rather than folded
+// into it.
+//
+// A VARIANT RATHER THAN A CHANGE, deliberately. `whatTheirRealmAffords` keeps
+// its meaning and its callers, and this is a second question asked of the same
+// subtraction. Widening what the old function returns would have made every
+// existing reader reinterpret an answer it was already handling correctly.
+
+/** What the gap itself told them, whatever they could or could not name. */
+export interface HowFarOutOfTheirDepth {
+    /** Major realms the thing stands above the reader. Negative when they are above it. */
+    realmsAbove: number;
+    /**
+     * Past the gap at which a contest is not a contest, in the reader's own
+     * body. Nothing about this is hedged and nothing about it is a guess.
+     */
+    beyondThem: boolean;
+    /**
+     * How sure they are of THAT - which rises as identification falls. `nothing`
+     * where they are level with it or above it, because somebody standing over
+     * a thing their own size is not out of their depth and has nothing to feel.
+     */
+    certainty: Certainty;
+    /** Engine-authored, and it always says which of the two directions it is. */
+    account: string;
+}
+
+/**
+ * What the rung gap tells the reader on its own.
+ *
+ * The other half of {@link whatTheirRealmAffords}, off the same subtraction. A
+ * caller wanting to say what somebody came away with needs both: the first says
+ * what they could name and the second says what they could feel, and for
+ * anybody far enough under, the second is the whole of the answer and it is not
+ * a consolation prize. For a player deciding whether to touch something it is
+ * the single most useful sentence the game can produce.
+ */
+export function whatTheGapItselfTells(
+    observerOrdinal: number,
+    atOrdinal: number
+): HowFarOutOfTheirDepth {
+    const realmsAbove = realmIndexOf(atOrdinal) - realmIndexOf(observerOrdinal);
+
+    if (realmsAbove >= HELPLESS_REALM_GAP) {
+        return {
+            realmsAbove,
+            beyondThem: true,
+            certainty: 'certain',
+            account:
+                `${realmsAbove} major realms above them, which is past the gap at which a `
+                + 'contest is not a contest. They cannot name it and they are in no doubt at all '
+                + 'about what it would do to them. Being unable to read a thing is itself the '
+                + 'reading.'
+        };
+    }
+    if (realmsAbove === 1) {
+        return {
+            realmsAbove,
+            beyondThem: false,
+            certainty: 'impression',
+            account:
+                'A realm above them. Enough to feel that they are the smaller party and not '
+                + 'enough to be certain of it, which is the rung at which people get themselves '
+                + 'killed.'
+        };
+    }
+    return {
+        realmsAbove,
+        beyondThem: false,
+        certainty: 'nothing',
+        account: realmsAbove === 0
+            ? 'Level with them. There is nothing here to feel outmatched by.'
+            : `${-realmsAbove} major realms under them. Whatever else it is, it is not a `
+                + 'thing that is going to hurt them.'
+    };
+}
+
 /**
  * What the observer's REFERENCE for that house lets them get out of watching.
  *
@@ -290,6 +389,17 @@ export interface WhereTheArtWasLearned {
      */
     perceivedButCouldNotPlaceIt: boolean;
     /**
+     * What the rung gap told them regardless of what they could name.
+     *
+     * The companion to `perceived`, and the two together are the whole of what
+     * a watcher came away with. `perceived: false` with
+     * `outOfTheirDepth.certainty: 'certain'` is not a failed check - it is
+     * somebody who cannot tell you what art that was and can tell you exactly
+     * what it would do to them, which is the genre's most basic beat and read
+     * as a shrug until this existed.
+     */
+    outOfTheirDepth: HowFarOutOfTheirDepth;
+    /**
      * The reader could only run this check by having been in rooms most people
      * cannot enter.
      *
@@ -343,6 +453,7 @@ export function whereThisArtWasLearned(
         houses,
         best,
         perceivedButCouldNotPlaceIt: perceived && !nobodysArt && owners.length > 0 && best === 'nothing',
+        outOfTheirDepth: whatTheGapItselfTells(observer.realmOrdinal, performedAtOrdinal),
         // Only an art that belongs to somebody can reveal anything about the
         // reader, and only a reference that came from the room can.
         revealsTheReader: !nobodysArt && houses.some(h => isAtLeast(h.reference, 'encountered'))
