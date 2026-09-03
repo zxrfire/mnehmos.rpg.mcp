@@ -341,3 +341,81 @@ describe('the overshoot the old lookup was carrying', () => {
         expect(total / n).toBeGreaterThan(0.5);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE EXCEPTION, AND WHY IT STAYS RARE
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a name big enough to out-offer the house\'s own', () => {
+    // The design owner's worked case: somebody who quit as an apex head's
+    // personal disciple, asking elsewhere for admission, ought to get a better
+    // offer than that house's own personal disciple - "but that's an exception
+    // rather than the rule".
+    //
+    // Nothing here encodes it. The magnitude is carried by HOW MUCH OF THE
+    // ROOM the name reached, because `whatTheBodyWants` takes a weighted mean
+    // across deciders and `renownReading` returns per decider. A name every
+    // decider has heard well of averages near +1; a locally liked person whose
+    // name reached two of five averages a fraction of that. So the ordering
+    // falls out of reach rather than out of a clause, and it is rare for the
+    // right reason: reaching every decider in a house you have never served is
+    // what being one of a handful of people in the world buys.
+    const DECIDERS = ['a', 'b', 'c', 'd', 'e'];
+    const meanOver = (read: (id: string) => number): number =>
+        DECIDERS.reduce((sum, id) => sum + read(id), 0) / DECIDERS.length;
+
+    /** The house's own best student, at the asker's rung. */
+    const house = {
+        ranks: ['servant', 'outer', 'inner', 'core', 'elder', 'head'],
+        admissionOrdinal: 3,
+        roll: [{ rankIndex: 3, realmOrdinal: 25 }],
+        askerOrdinal: 25
+    };
+
+    it('clears the house\'s own top student when the name reached everybody', () => {
+        const everybodyHeard = renownReading(
+            DECIDERS.map(id => ({ deciderId: id, heard: 4, saidToBe: 'well spoken of' as const }))
+        );
+        const offer = entryOfferFor({ ...house, leaning: meanOver(everybodyHeard) });
+
+        expect(offer.band).toBe('above_their_own');
+        // Strictly above the rank the house's own person at this rung holds,
+        // which is the whole of what the ruling asks for.
+        expect(offer.offered!).toBeGreaterThan(offer.peerRank!);
+    });
+
+    it('does not, for somebody only part of the room has heard of', () => {
+        // The guard on the exception staying an exception. If any prior
+        // association beat local standing, every wanderer with a name would
+        // outrank people who have served for decades.
+        const twoOfFive = renownReading([
+            { deciderId: 'a', heard: 2, saidToBe: 'well spoken of' },
+            { deciderId: 'b', heard: 1, saidToBe: 'well spoken of' }
+        ]);
+        const offer = entryOfferFor({ ...house, leaning: meanOver(twoOfFive) });
+
+        expect(offer.band).toBe('level_with_their_own');
+        expect(offer.offered).toBe(offer.peerRank);
+    });
+
+    it('leaves the ordinary stranger under the house\'s own people', () => {
+        // Nobody has heard of them, which is the overwhelmingly common case.
+        const nobodyHeard = renownReading(
+            DECIDERS.map(id => ({ deciderId: id, heard: 0, saidToBe: 'nothing said' as const }))
+        );
+        const offer = entryOfferFor({ ...house, leaning: meanOver(nobodyHeard) });
+
+        expect(offer.band).toBe('under_their_own');
+        expect(offer.offered!).toBeLessThan(offer.peerRank!);
+    });
+
+    it('shuts the door on a name that travelled badly', () => {
+        const illSpoken = renownReading(
+            DECIDERS.map(id => ({ deciderId: id, heard: 3, saidToBe: 'ill spoken of' as const }))
+        );
+        const offer = entryOfferFor({ ...house, leaning: meanOver(illSpoken) });
+
+        expect(offer.band).toBe('closed_door');
+        expect(offer.offered).toBeNull();
+    });
+});

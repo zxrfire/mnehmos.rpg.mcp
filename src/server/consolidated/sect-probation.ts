@@ -46,7 +46,7 @@ import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach
 import { getSect } from '../../data/cultivation/sects.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { guestPlaceHeldBy, FLAG_GUEST_STUDENT_OF } from './sect-guest.js';
-import { entryRankIndexFor } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { offerAtTheDoorOf } from '../../engine/social-leverage/entry-offer.js';
 import {
     FLAG_STIPEND_PAID_DAY,
     clearFlag,
@@ -149,13 +149,30 @@ export function applyProbation(
     repos.db.transaction(() => {
         if (judgement.outcome === 'placed' && judgement.factionId) {
             const target = getSect(judgement.factionId);
-            // Seated by the same rule a walk-up is seated by, because what
-            // somebody is seated by is what they visibly are, and a placement
-            // that used its own arithmetic would drift from `handleJoin`.
+            // ── THE SAME DOOR A WALK-UP GOES THROUGH ─────────────────────
+            //
+            // This comment already said "seated by the same rule a walk-up is
+            // seated by... a placement that used its own arithmetic would drift
+            // from `handleJoin`" - and it drifted anyway, because it held its
+            // own copy of the CALL rather than sharing a helper. When the
+            // walk-up moved to the roster rule this branch did not, and
+            // placements went on being seated a mean 0.99 ranks high by the
+            // lookup everything else had stopped using. `offerAtTheDoorOf` is
+            // the shared helper, in the engine so that both tool modules can
+            // reach it without `sect-probation.ts` importing `sect-manage.ts`.
+            //
+            // AND A PROBATIONER GETS NO BONUS HERE, WHICH IS THE RULING.
+            // Somebody coming off probation usually does better than a stranger
+            // and a famous enough stranger beats them anyway, and neither of
+            // those is encoded: the advantage is informational. The deciders
+            // have WATCHED a probationer, so what they hold about them is
+            // firsthand rather than hearsay, and there may be a ledger between
+            // them that a stranger cannot have. Both are read by the council,
+            // not by this branch - so there is no `wasOnProbation` anywhere,
+            // and a house passing over its own probationer for somebody whose
+            // name arrived before they did stays possible.
             rankIndex = target
-                ? entryRankIndexFor(
-                    target.ranks, target.admissionOrdinal, cultivator.realmOrdinal
-                )
+                ? offerAtTheDoorOf(target.id, cultivator.realmOrdinal)?.offered ?? 0
                 : 0;
             placedAt = judgement.factionId;
         } else if (judgement.outcome === 'kept') {
