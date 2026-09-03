@@ -79,6 +79,26 @@ const TABLE = [
     'src/web/institution-phrasings.ts'
 ];
 
+/**
+ * The modules the verb HANDLERS are spread across, scanned together so a
+ * handler still counts as defined after its family leaves `game.ts`.
+ *
+ * Same reason as the list above, one layer down. `GameService` is being split
+ * by subject: a family of verbs becomes an object of methods in its own file
+ * and is merged onto the prototype, so `handlerLines` scanning `game.ts` alone
+ * would stop finding `move` the moment travel moved and the doc would say
+ * every one of those verbs resolves nowhere.
+ *
+ * `game.ts` stays at the head of the list because `execute` stays in it. The
+ * dispatcher is a switch whose whole job is to reach every family, so it can
+ * never be a module with a small surface, and the link each verb carries
+ * points at it rather than at the handler.
+ */
+const HANDLERS = [
+    SOURCE.game,
+    'src/web/travel-verbs.ts'
+];
+
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 /** A path relative to `docs/`, which is where the document sits. */
@@ -406,7 +426,7 @@ export function model() {
         fallback: fallbackAction(actions),
         nums: numbers(days),
         resolved: resolutions(game),
-        handlers: handlerLines(game),
+        handlers: handlerLines(HANDLERS.map(read).join('\n')),
         admin: namedList(game, 'const ADMIN_ACTIONS'),
         sentenceFields: fieldsOffTheSentence(surfaceText)
     };
