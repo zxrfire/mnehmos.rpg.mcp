@@ -526,6 +526,20 @@ them to the people already there and put them where they actually stand. A membe
 a position and a stranger at the gate are the same question asked twice, and the arts the head
 taught them are theirs and do not unhappen.
 
+**And nobody is treated badly for it.** A house does not turn on its former personal disciples.
+They were chosen, they were taught, their master's seat ended - and they are placed where they
+now stand, which is usually near the top of what is left.
+
+**The same comparison runs downward, and it runs all the time.** Conclave is held **against the
+pool**, not awarded once: when enough inner disciples are plainly better, the elders ask
+somebody to step aside and go back to inner. That is not a punishment and it is not a
+disgrace - it is the count. Five worth watching, three places, and the three are not the same
+three forever.
+
+**Inner is where it stops. Once somebody is inner, they are in for life.** That is the tenure
+line of a house, and it is what makes the ranks below it a filter and the ranks above it a
+contest. Everything above inner can be lost by somebody else being better; inner itself cannot.
+
 So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
 shape: **more people who could than places to be.** A conclave disciple passed over for
 personal disciple has not failed at anything - somebody else was chosen, and there were only
