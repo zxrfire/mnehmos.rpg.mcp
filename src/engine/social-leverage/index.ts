@@ -48,6 +48,16 @@
  *                                        them, whether you are worth the
  *                                        trouble, and only then what kind of
  *                                        house caught you
+ *   personal-alignment.ts                what a PERSON is, off the ledger of
+ *                                        what they have done, rather than off
+ *                                        whose roll they are on. Righteous,
+ *                                        neutral and demonic are the same three
+ *                                        words a house wears and a different
+ *                                        source answers them
+ *   being-hunted.ts                      who among the people holding something
+ *                                        against them is actually in a position
+ *                                        to use it, and who has written the name
+ *                                        down with nothing behind it
  */
 
 export * from './an-attempt-to-move-somebody.js';
@@ -59,3 +69,5 @@ export * from './when-somebody-works-out-what-you-did.js';
 export * from './going-further-than-an-agreed-bout-allowed.js';
 export * from './what-somebody-does-about-being-wronged.js';
 export * from './what-a-house-does-when-it-catches-you.js';
+export * from './personal-alignment.js';
+export * from './being-hunted.js';

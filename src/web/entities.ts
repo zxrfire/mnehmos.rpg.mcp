@@ -42,6 +42,8 @@ import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { describeStanding, rungAndOrdinal } from './facts.js';
+import type { ObligationDb } from '../storage/repos/obligation.repo.js';
+import { whatTheWorldHoldsAbout } from './personal-record.js';
 import {
     HERBS,
     PILLS,
@@ -466,6 +468,49 @@ function knownNamesOnly(
     return { named, hidden };
 }
 
+/**
+ * One line saying what somebody's own record makes them, and who can use it.
+ *
+ * The live read of `personal-record.ts`, and it runs for ANYBODY the resolver
+ * finds - the player, an NPC in a square, a name off the roster - because the
+ * question and the rows are the same for all of them. A world in which only the
+ * player has a reputation is a world in which nobody else has done anything.
+ *
+ * `backing` is read off the roll rather than supplied: `Backing`'s own three
+ * values are somebody nobody answers for, somebody on a roll their house would
+ * not put its weight behind, and somebody a house would have to be dealt with
+ * over - which is a rank on a roll, no rank on a roll, and no roll.
+ *
+ * Holders are placed from the same candidate list the resolver already built,
+ * so a holder this reader cannot place is left out rather than invented.
+ */
+function whatTheirRecordSays(
+    repos: CultivationRepos,
+    match: RosterEntry,
+    candidates: readonly RosterEntry[]
+): string {
+    const byId = new Map(candidates.map(row => [row.id, row]));
+    const read = whatTheWorldHoldsAbout({
+        db: repos.db as unknown as ObligationDb,
+        person: {
+            id: match.id,
+            ordinal: match.realmOrdinal,
+            backing: match.sectId === null
+                ? 'none'
+                : match.sectRank
+                    ? 'backed'
+                    : 'unclaimable'
+        },
+        lookUpHolder: id => {
+            const row = byId.get(id);
+            return row
+                ? { id: row.id, name: row.name, ordinal: row.realmOrdinal, houseId: row.sectId ?? null }
+                : null;
+        }
+    });
+    return `Their own record reads ${read.is.alignment}. ${read.line}`;
+}
+
 /** One line for a list that may be wholly or partly unnameable. */
 function describeParties(label: string, named: string[], hidden: number): string | null {
     if (named.length === 0 && hidden === 0) return null;
@@ -613,7 +658,21 @@ export function resolveCultivator(
             + `. ${rootName(match.spiritRoot)}. ${match.spiritStones} spirit stones and `
             + `${match.untreatedInjuries} untreated `
             + `injur${match.untreatedInjuries === 1 ? 'y' : 'ies'}. Last recorded at `
-            + `${match.location ?? 'nowhere the row states'}.`
+            + `${match.location ?? 'nowhere the row states'}.`,
+            // ── WHAT THEIR OWN RECORD MAKES THEM ─────────────────────────
+            //
+            // Righteous, neutral or demonic off the obligation ledger rather
+            // than off whose roll they are on, and who among the people
+            // holding something is in a position to use it. Derived on every
+            // read, because what somebody IS changes every time they do
+            // something and a stored word would be stale the moment after it
+            // was written - `engine/social-leverage/personal-alignment.ts`.
+            //
+            // On the MECHANICAL channel and not in `facts`, on this file's own
+            // precedent two entries up: the inspector states what the prose
+            // gate withholds. Who is coming for somebody is exactly the kind
+            // of thing a stranger does not learn by looking at them.
+            whatTheirRecordSays(repos, match, candidates)
         ],
         // The same three values the line above prints, as numbers. See the
         // field's own comment on `ResolvedEntity`.
