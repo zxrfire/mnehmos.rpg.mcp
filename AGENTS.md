@@ -1,3 +1,39 @@
+> # 天道无情
+>
+> **The Way of Heaven is without sentiment.**
+>
+> Not cruel — **indifferent**. 无情 is the absence of feeling, not the presence of
+> malice. Heaven does not hate you and is not testing you; it does not know you are
+> there. That is what an engine is, and it is the one line every rule below is a
+> consequence of.
+
+It is already written all through this codebase, in the engine's own voice:
+
+- *"The barrier does not care how badly you want it."*
+- *"Talent is rolled once and never redrawn."*
+- *"There is no reload, no revival, no continue."*
+- **A rung buys advantage, never exemption.** The strong are not excused; they are
+  merely harder to stop.
+- **The same seed rules the same way with a model attached and without.** Prose is not
+  a variable the world reads.
+
+**What it means when you are writing code here.** Every recurring defect in this file is
+sentiment leaking into the Way:
+
+- A **hardcoded fallback** is the code deciding somebody deserves an answer.
+- A **narrator that rules** is the story deciding what happened.
+- A **guard that is secretly a constant** is a rule that flatters whoever wrote it.
+- A **refusal that names no route** is the world sulking rather than being indifferent.
+- **Softening an outcome** because the player tried hard, or because the sentence was
+  good, is the largest version of all of them.
+
+The engine owes nobody a good outcome. It owes everybody **the same** outcome, computed
+the same way, and stated plainly enough that they can see why. Be impartial in the code
+and the setting writes itself; be kind in the code and the setting stops meaning
+anything.
+
+---
+
 # AGENTS.md - Working Agreement for Coding Agents
 
 The single guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …)
