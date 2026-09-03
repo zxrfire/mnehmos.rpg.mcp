@@ -166,6 +166,12 @@ export function stageCeilingFor(source: SourceKind): KnowingStage {
     switch (source) {
         case 'witnessed':
         case 'confessed':
+        // Taken out of a mind, which is as direct as an acquisition gets - the
+        // subject was the one who knew it. The cap that does the work is not
+        // here: `whatASoulSearchTakes` holds every row to the stage the
+        // SUBJECT held it at, so a searcher cannot come away surer than the
+        // person they read.
+        case 'taken':
             return 'known';
         case 'told':
         case 'read':
