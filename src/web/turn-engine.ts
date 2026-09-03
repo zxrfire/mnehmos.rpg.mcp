@@ -5594,6 +5594,29 @@ ${noticed}`;
                         .map(x => `${x.name} would not take you as a disciple as you stand, and `
                             + 'its intake is open to you now - it takes people at the floor, '
                             + 'carries them, and decides about them later.'),
+                    // ── AND HOW MANY YOU HAVE NO NAME FOR ───────────────
+                    //
+                    // Counted, never listed. The filter above is the whole
+                    // discovery gate on this surface - `isAwareOf` decides
+                    // which houses may be named - and this is the other half
+                    // of the same rule: a player is entitled to know that the
+                    // world is larger than their address book, and not to be
+                    // handed what is in the rest of it.
+                    //
+                    // The travel read keeps the same discipline in the same
+                    // words: names below `placed` "are counted and never
+                    // listed: naming one would hand over a discovery that was
+                    // meant to be earned".
+                    //
+                    // It is also the more useful answer. A bare list of two
+                    // houses reads as the world being small; two and a number
+                    // reads as a reason to go and ask somebody, which is the
+                    // act that actually moves this forward.
+                    ...(all.length > heard.length
+                        ? [`There are ${all.length - heard.length} more that would take somebody `
+                            + 'like you and that you have no name for. Nobody has said them in '
+                            + 'front of you yet.']
+                        : []),
                     'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
                     'or you would have to walk up on your own.'
                 ]);
