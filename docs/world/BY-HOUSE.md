@@ -172,7 +172,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-crimson-abyss-hall` · its entry: [`sects.ts:1250`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`regions.ts`](../../src/data/cultivation/regions.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`regions.ts`](../../src/data/cultivation/regions.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
   …and 4 more files.
 
 ### Bone Lantern Cult
@@ -215,7 +215,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-sixmile-wardens` · its entry: [`sects.ts:1550`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`regions.ts`](../../src/data/cultivation/regions.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
   …and 4 more files.
 
 **Constants most about it:** `CALENDARS`
