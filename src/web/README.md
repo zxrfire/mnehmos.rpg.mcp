@@ -321,6 +321,26 @@ prints above its button. A preview computed by a second implementation would be 
 second economy and would drift the first time either half was touched, so there
 is no second implementation - the played test asserts the quote equals the charge.
 
+**A bill of nought has three reasons and they are not interchangeable.** The body
+has stopped taking meals (`hungerHasStopped`, from Deity Transformation up, where
+`SATIETY_BURN_BY_REALM` is zero); the pack already holds the whole stretch
+(`cost === 0 && short === 0`); or the purse will not reach a single ration
+(`toBuy === 0 && short > 0`). The first two end the matter. **The third is a
+starvation warning wearing their clothes**, and a surface that reads a zero bill
+as good news swallows it - which is what the picker did, returning early and
+never rendering the warning underneath. The engine half of this is
+`buyProvisions`, and the picker prints its sentence rather than a second one:
+two surfaces phrasing one fact differently is how a codebase acquires two answers
+to a question. Pinned by
+[`the-picker-says-why-there-is-nothing-to-buy.test.ts`](../../tests/web/the-picker-says-why-there-is-nothing-to-buy.test.ts).
+
+The same rung frees the low-belly warning too. Satiety stops moving where hunger
+stops, so a cultivator who crossed on an empty stomach carries that number for
+life, and the picker told them on every stretch that this is how runs end. **The
+sheet's satiety chips still do**, because `/api/state` carries no field saying
+whether this body eats and the client must not keep its own copy of the burn
+table.
+
 The picker asks a second time only when the purchase takes 75% or more of the
 purse, in the shape `Cultivate` with no manual already uses. Every other stretch
 gets the figure and no extra click: prompting on every seclusion is tedium on the

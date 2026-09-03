@@ -1467,10 +1467,35 @@ function handleBreakthrough() {
 const MOCK_DAYS_PER_RATION = 50;
 const MOCK_STONES_PER_RATION = 2;
 const MOCK_ASKS_ABOVE = 0.75;
+/**
+ * The realms `SATIETY_BURN_BY_REALM` prices at zero: the body has stopped
+ * taking meals, so there is no purchase to make at any length of stretch.
+ *
+ * Mirrored rather than derived because the mock has no burn table. The engine's
+ * one wound that takes the meals back - a partial transformation - is not
+ * modelled here, so an offline body at these realms never eats.
+ */
+const MOCK_REALMS_THAT_DO_NOT_EAT = new Set([
+  'deity_transformation', 'void_refinement', 'body_integration',
+  'grand_ascension', 'tribulation_transcendence', 'immortal'
+]);
 
 function provisionsFor(days) {
   const stonesBefore = Math.max(0, Math.floor(W.cultivator.spiritStones));
   const satiety = Math.max(0, Math.floor(W.cultivator.satiety));
+
+  // Nothing to price, and the picker has to be able to tell this apart from a
+  // stretch that is merely cheap. The scenario buttons put the mock cultivator
+  // at ordinals 41 and 44, so this is a state offline play actually reaches.
+  if (MOCK_REALMS_THAT_DO_NOT_EAT.has(realmFor(W.cultivator.realmOrdinal).key)) {
+    return {
+      days, wanted: 0, carried: 0, toBuy: 0, short: 0, cost: 0,
+      stonesBefore, stonesAfter: stonesBefore,
+      covered: days, coversTheWholeStretch: true,
+      shareOfThePurse: 0, worthAsking: false, hungerHasStopped: true
+    };
+  }
+
   const wanted = Math.ceil(days / MOCK_DAYS_PER_RATION);
   const carried = 0;
   const affordable = Math.floor(stonesBefore / MOCK_STONES_PER_RATION);
@@ -1487,7 +1512,8 @@ function provisionsFor(days) {
     covered,
     coversTheWholeStretch: covered >= days,
     shareOfThePurse,
-    worthAsking: cost > 0 && shareOfThePurse >= MOCK_ASKS_ABOVE
+    worthAsking: cost > 0 && shareOfThePurse >= MOCK_ASKS_ABOVE,
+    hungerHasStopped: false
   };
 }
 
