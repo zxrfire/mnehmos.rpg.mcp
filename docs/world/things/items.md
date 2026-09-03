@@ -122,6 +122,30 @@ kept at all. `mundane` things deliberately get none.
 adding a second one beside it is how two sources of truth start disagreeing, and comparing to
 `'mundane'` by hand is the same defect spread over more files.
 
+### Holding a thing and owning it are two facts
+
+**Possession is who has it. Ownership is whose it is. They move separately and the engine
+already knows the difference** - `transferPossession` moves the holder and takes
+`transfersOwnership` as a flag that **defaults to false**, with the reason written in place:
+*taking a thing does not make it yours*.
+
+That default is the whole design. A theft, a looting and a seizure all move a thing without
+moving title, so the provenance chain records a possessor who is not the owner and everybody
+involved knows it. A gift and a sale move both. Nothing needs a second field to say which
+happened, because the chain already says who had it, who has it now, and under what
+description - and `how` is the word that separates `gifted` from `stolen` from `looted`.
+
+Two consequences worth stating, because both have already been got wrong once:
+
+- **A row in somebody's pouch is not a claim on the world's register.** The world can hold that
+  a house owns a thing while a player is carrying it, and that is a coherent state rather than
+  a bug - it is what a stolen artifact *is*. Anything that rewrites the register off an
+  unchecked pouch row is asserting a fact nobody established.
+- **And an object taken off a corpse is possessed, not inherited.** Whoever picks it up holds
+  it; whose it is remains a question with an answer, and that answer is what makes it findable
+  by the people who lost it. A looter who becomes the owner by the act of looting erases the
+  only thread anybody could have followed.
+
 ### Nothing moves up
 
 <!-- tier: 2 trigger="somebody proposes refining, upgrading, improving or promoting an object, or asks whether a material can be raised a grade" -->
