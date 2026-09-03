@@ -279,6 +279,15 @@ import {
     readPendingSummons,
     summonsIsOverdue
 } from './pending-summons.js';
+// Taking a thing the house owns. The act and the reasoning are there; what is
+// here is the sentence, the two facts about the played world a pure function
+// cannot have, and the writes.
+import {
+    THE_HOUSE_ANSWERS,
+    takeFromYourOwnHouse,
+    whatThisHouseHolds,
+    whichHoldingTheyMeant
+} from './house-property-theft.js';
 import {
     knownTechniqueNames,
     nearbyNames,
@@ -5046,6 +5055,13 @@ ${noticed}`;
 
             case 'refuse':
                 return this.refuseWhatTheHouseAsked(run, cultivator, false);
+
+            // Putting a hand on something the house owns. `siphon` two cases
+            // up is the same crime against the counted tier and stays exactly
+            // where it is; this is the tracked one, and the two are separated
+            // by `keptAs` rather than by a list of nouns.
+            case 'take':
+                return this.takeFromTheHouse(run, cultivator, target);
 
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
@@ -10981,6 +10997,200 @@ ${fit.line}`;
                 ok: fit.fit === 'suited' || fit.fit === 'partly'
             });
         }
+        return execution;
+    }
+
+    /**
+     * Taking a thing your own house owns.
+     *
+     * Found by playing: "I take a manual from the sect library without asking"
+     * was answered with prose saying the hand closed around it, and NOTHING
+     * MOVED. `steal` is an intent on `interact`, `factsForInteraction` says
+     * outright that the intent is "carried for the narrator; read by no
+     * conditional", and `transferPossession` - the one function that moves a
+     * row - had callers for trade, bequest, estate, hunting and legacy, and not
+     * one for a taking.
+     *
+     * `house-property-theft.ts` holds the act and the reasoning. This resolves
+     * the sentence, supplies the two facts about the played world that a pure
+     * function cannot have - who is holding what, and who is standing here -
+     * and writes what comes back.
+     *
+     * THE ORDER IS THE WHOLE THING. The object moves because the player took
+     * it; notice is decided after and separately; the record opens only if it
+     * was noticed. Backwards, an unnoticed theft becomes a theft that did not
+     * happen, which is the defect this verb exists to close wearing different
+     * clothes.
+     */
+    private async takeFromTheHouse(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) {
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'You are on nobody\'s roll.',
+                'Taking from your own house is a thing you can only do to a house that is '
+                + 'yours. What you are describing is robbing strangers, and walking into a '
+                + 'compound you do not belong to is a different sentence with a worse answer.',
+                `No membership for ${cultivator.id}. This verb is the member-facing one; `
+                + 'nothing outside a house routes here.'
+            ));
+        }
+
+        // Held in a local as well as on the field: `atHand` is nullable and the
+        // narrowing does not survive the calls below, and a world this method
+        // has already loaded is not a world it should re-check for null four
+        // times.
+        const world = this.atHand ?? await this.loadWorld();
+        this.atHand = world;
+        const holdings = whatThisHouseHolds(world, held.sectId);
+        const wanted = (target ?? '').trim();
+
+        // ── A READ WHEN NOTHING WAS NAMED ────────────────────────────────
+        //
+        // The same split every committing verb in this file uses. Standing in
+        // front of a shelf and saying you would like to take something is not
+        // the sentence that takes it, and a player who has not been told what
+        // is on the shelf cannot name a line off it.
+        if (wanted.length < 3) {
+            const takeable = holdings.filter(h => h.takeable);
+            const lines = takeable.length === 0
+                ? [`${held.sectName} is holding nothing you could put a hand on. What a house `
+                   + 'keeps in quantity is not a thing you take one of.']
+                : [`${held.sectName} holds these, and each of them is one object with a name on `
+                   + 'it:',
+                    ...takeable.slice(0, DUTIES_SHOWN).map(h => `  ${h.object.name}.`)];
+            const facts = factsForToolResult(
+                takeable.length === 0
+                    ? 'Nothing here is a thing.'
+                    : `${takeable.length} thing${takeable.length === 1 ? '' : 's'} with a name on it.`,
+                lines
+            );
+            facts.structure.push(
+                `house-property-theft.whatThisHouseHolds: ${holdings.length} row(s) at `
+                + `${held.sectId}, ${takeable.length} tracked. Read only; nothing moved.`
+            );
+            return this.freeAction(run, 'sect', facts);
+        }
+
+        const holding = whichHoldingTheyMeant(holdings, wanted);
+        if (!holding) {
+            const going = holdings.filter(h => h.takeable).map(h => h.object.name).join(', ');
+            return refused('house-property-theft.whichHoldingTheyMeant', 'sect', factsForRefusal(
+                `${held.sectName} is not holding anything called ${wanted}.`,
+                going.length > 0
+                    ? `What it does hold, with a name on each: ${going}.`
+                    : 'It holds nothing that is one object rather than a quantity of something.',
+                `Unresolved holding "${wanted.slice(0, 60)}" against ${holdings.length} row(s) `
+                + `possessed by ${held.sectId}. Nothing moved.`
+            ));
+        }
+
+        // ── THE COUNTED TIER IS SOMEBODY ELSE'S VERB ─────────────────────
+        //
+        // `keptAs` is the single answer to which tier a row is in, so this
+        // refusal is the boundary with `siphon` rather than a second opinion
+        // about it - and it names the verb that does work, which is what a
+        // refusal owes.
+        if (!holding.takeable) {
+            // The refusal has to name the TRUE reason, and for a shelf of common
+            // primers that reason is not "go and siphon it". A house holds
+            // several copies of an ordinary manual and none of a deep one, so
+            // what is being refused here is that there is no single row to
+            // move - not that the player should reach for the other crime.
+            // Pointing at `siphon` for a book would be a sentence that reads
+            // like help and sends somebody to a verb that takes stones.
+            return refused('house-property-theft.keptAs', 'sect', factsForRefusal(
+                `${holding.object.name} is not a thing you take one of.`,
+                'The house keeps that in copies rather than as one object with a history behind '
+                + 'it. There is nothing to slip out under a sleeve and nothing anybody would '
+                + 'miss: what is on the shelf is a quantity, and a quantity is not stolen so '
+                + 'much as drawn on.',
+                `${holding.object.id} is significance=${holding.object.significance}, which `
+                + '`keptAs` puts in the counted tier. Nothing here decrements a count - the '
+                + 'counted tier has no identity to move and no provenance to write.'
+            ));
+        }
+
+        // ── WHO IS STANDING HERE, WHICH IS THE ONLY NOTICE THERE IS ──────
+        //
+        // Not a roll and not a clock. Detection is ruled to be what happens
+        // when somebody next reads the shelf, and nothing here forecloses
+        // that: what this asks is the narrower question of whether one of the
+        // house's own people watched it happen.
+        const watching = othersPresent(this.repos, cultivator, world)
+            .find(person => person.sectId === held.sectId && person.alive) ?? null;
+
+        const taken = takeFromYourOwnHouse({
+            takerId: cultivator.id,
+            takerName: cultivator.name,
+            houseId: held.sectId,
+            houseName: held.sectName,
+            alignment: getSect(held.sectId)?.alignment ?? null,
+            holding,
+            onDay: Math.floor(run.elapsedDays),
+            seenBy: watching ? { id: watching.id, name: watching.name } : null
+        });
+
+        // THE ROW MOVES. Everything below this line is reporting; if this write
+        // did not happen, the narration would be the original defect again.
+        const at = world ? world.objects.findIndex(o => o.id === taken.object.id) : -1;
+        if (world && at >= 0) world.objects[at] = taken.object;
+        this.worldDirty = true;
+
+        if (taken.record) {
+            writeObligation(
+                this.repos.db as unknown as DatabaseHandle,
+                createObligation(taken.record)
+            );
+        }
+
+        const lines = [
+            taken.seenBy
+                ? `You take ${holding.object.name}. ${taken.seenBy.name} is standing there and `
+                  + 'says nothing at all, which is worse than being shouted at.'
+                : `You take ${holding.object.name}. Nobody is in the room, and nothing happens `
+                  + 'that you can see.',
+            `It is ${held.sectName}'s and it stays ${held.sectName}'s: what you are holding is `
+            + 'their property, and the record of how it came to you travels with it.'
+        ];
+        if (taken.doing !== 'nothing') {
+            lines.push(THE_HOUSE_ANSWERS[taken.doing](held.sectName));
+        } else if (!taken.seenBy) {
+            lines.push(
+                'The shelf will be read by somebody eventually, and what they find is a gap '
+                + 'where this was.'
+            );
+        }
+
+        const facts = factsForToolResult(
+            taken.seenBy ? 'Taken, and seen.' : 'Taken.', lines
+        );
+        facts.required = [lines[0], lines[1]];
+        facts.structure.push(
+            `possessions.transferPossession: ${taken.object.id} possessor `
+            + `${held.sectId} -> ${cultivator.id}, how=stolen, transfersOwnership=false so `
+            + `owner stays ${taken.object.ownerId}. Provenance now `
+            + `${taken.object.provenance.length} link(s).`
+        );
+        facts.structure.push(
+            taken.record
+                ? `what-a-house-does-when-it-catches-you: seen by ${taken.seenBy?.id}, `
+                  + `doing=${taken.doing}, severity=${taken.severity}; obligation written with `
+                  + `${held.sectId} as holder and ${cultivator.id} as subject.`
+                : 'Nobody of the house was present. No record opened - which is a fact about '
+                  + 'notice and not about whether the taking happened.'
+        );
+
+        const execution = this.freeAction(run, 'sect', facts);
+        execution.calls.push({
+            name: 'possessions.transferPossession',
+            action: 'sect',
+            summary: `${taken.object.name} moved to ${cultivator.name}, ownership unmoved.`,
+            ok: true
+        });
         return execution;
     }
 

@@ -83,7 +83,22 @@ export type SectIntent =
      * caller anywhere passed `'failed'`, on the branch where the cultivator had
      * died, so the sole way to not finish a duty was to be killed doing it.
      */
-    | 'refuse';
+    | 'refuse'
+    /**
+     * Putting a hand on a thing the house owns.
+     *
+     * Found by playing: "I take a manual from the sect library without asking"
+     * was answered with prose saying the hand closed around it, and nothing
+     * moved - `steal` is an intent on `interact` and `factsForInteraction` says
+     * outright that it is "carried for the narrator; read by no conditional".
+     *
+     * `siphon` is the same crime against the other tier and keeps every
+     * sentence it had. The two are separated by `keptAs`, which is the existing
+     * single answer to whether a row is an amount or an object: stones out of
+     * the treasury are taken over months at a pace, and a manual off the shelf
+     * is one thing with a provenance that moves once.
+     */
+    | 'take';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -139,8 +154,72 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // a person says it and "I turn down them" is not - so the particle has to be
     // reachable across a short object. Bounded at two words so it cannot span a
     // clause and catch a `down` belonging to something else.
-    ['refuse', /\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/]
+    ['refuse', /\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/],
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// TAKING A THING THE HOUSE OWNS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Putting a hand on it, as a verb rather than as a noun.
+ *
+ * `take` is the commonest verb in this game - a duty, a commission, a road, a
+ * seat, a dose - so nothing here fires on the verb alone. The nouns below are
+ * what make it this act.
+ */
+export const HOUSE_TAKING_VERBS =
+    'take|takes|taking|steal|steals|stealing|pocket|pockets|pocketing|'
+    + 'help myself to|helps himself to|make off with|makes off with|'
+    + 'walk off with|walks off with|walk out with|walks out with';
+
+/**
+ * Where a house keeps the things that are one thing each.
+ *
+ * Nouns only an institution has, which is why this arm needs no house word:
+ * there is no library in this game that is not somebody's.
+ */
+export const HOUSE_SHELF_NOUNS =
+    /\b(?:librar\w+|archives?|scripture pavilion|book ?shelf|shelves)\b/;
+
+/**
+ * The counted tier, which `siphon` has owned since it was written.
+ *
+ * A veto rather than an ordering. `siphon` is tested inside the sect block far
+ * below this one, so without an explicit refusal here "I take the sect treasury
+ * and leave in the night" would be claimed by the taking branch and answered
+ * with a shelf listing - stealing a working sentence from a finished verb,
+ * which is the failure `verb-pattern-table.ts` warns about in its own header.
+ *
+ * The line is `keptAs`'s and not a second opinion about it: an amount on a
+ * holder is taken over months at a pace, and a thing with a provenance moves
+ * once.
+ */
+export const COUNTED_TIER_NOUNS =
+    /\b(?:treasur\w+|coffers|reserves?|spirit stones?|stones|funds|money|silver|vault|strongroom|storehouse)\b/;
+
+/** Said outright, which is how the sentence that found this defect was typed. */
+export const WITHOUT_ASKING = /\bwithout (?:asking|permission|leave|a word)\b/;
+
+/**
+ * What is being taken, with the shelf and the confession trimmed off.
+ *
+ * `namedAfter` hands back everything following the verb - "the Lesser
+ * Qi-Gathering Manual from the sect library without asking" - and the holding
+ * is only the first clause of that. Cut at the prepositions that introduce
+ * WHERE it was and at the clause that says HOW it was done, both of which are
+ * facts about the act rather than parts of the name.
+ */
+export function whatIsBeingTaken(input: string): string | undefined {
+    const phrase = namedAfter(input, HOUSE_TAKING_VERBS);
+    if (!phrase) return undefined;
+    const cut = phrase
+        .replace(/\s+(?:from|out of|off|in|at)\s+.*$/i, '')
+        .replace(/\s+without\s+.*$/i, '')
+        .replace(/^(?:the|a|an|some|one of the|my|our|its|their)\s+/i, '')
+        .trim();
+    return cut.length >= 3 ? cut : undefined;
+}
 
 /**
  * Sentences about taking the house's property, which are NOT sentences about
@@ -395,6 +474,24 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * not recruiting, and practising what a house teaches is not decreeing it.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    // ── TAKING A THING THE HOUSE OWNS ────────────────────────────────────
+    //
+    // Here rather than in `SECT_INTENT_UNAMBIGUOUS` because this act needs a
+    // TARGET and that table returns an intent alone. Measured: routed there,
+    // "I take the Lesser Qi-Gathering Manual from the sect library without
+    // asking" arrived with no subject and was answered with a listing of the
+    // shelf - which reads like an answer and takes nothing.
+    //
+    // First in this function, and the counted-tier veto is what makes that
+    // safe: every sentence `siphon` had, it keeps.
+    if (usedAsVerb(text, HOUSE_TAKING_VERBS)
+        && !COUNTED_TIER_NOUNS.test(text)
+        && (HOUSE_SHELF_NOUNS.test(text)
+            || (/\b(?:sect|house|clan|school|order)\b/.test(text) && WITHOUT_ASKING.test(text)))) {
+        const what = whatIsBeingTaken(input);
+        return { action: 'sect', intent: 'take', ...(what ? { target: what } : {}) };
+    }
+
     // Dismissal. The noun is the gate: this power reaches elders and nothing
     // else, so "I remove the seal" and "I throw the disciple out" are
     // deliberately not this rather than being answered with the wrong price.
