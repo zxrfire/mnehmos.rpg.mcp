@@ -364,6 +364,12 @@ export function migrateWorld(db: Database.Database): void {
       lifespan_ends_on_day INTEGER NOT NULL,         -- a stored date, so time advance is one pass
       last_advanced_on_day INTEGER NOT NULL DEFAULT 0,   -- the settling clock
       accumulating_since_day INTEGER NOT NULL DEFAULT 0, -- the progress clock; 0 reads as the above
+      -- What is standing in the body, and the day it was last true. The MAXIMUM
+      -- is not stored: maxHpForOrdinal derives it from might and the rung, so a
+      -- cached one could disagree with the ordinal on this row. -1 means the
+      -- column predates the world having a body and reads as whole.
+      hp INTEGER NOT NULL DEFAULT -1,
+      body_on_day INTEGER NOT NULL DEFAULT 0,
 
       location_id TEXT,
       -- Which side of the Lid this person is on. Stored rather than derived
@@ -997,6 +1003,16 @@ function addWorldColumns(db: Database.Database): void {
     if (!columnsOf('world_npcs').includes('accumulating_since_day')) {
         console.error('[Migration] Adding accumulating_since_day column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN accumulating_since_day INTEGER NOT NULL DEFAULT 0;');
+    }
+
+    // The body, which the world had no room for until a crossing started costing
+    // one. -1 rather than 0 is the sentinel for a row written before this,
+    // because 0 is a real and reachable value meaning nothing left standing, and
+    // reading a whole population as corpses on load is not a migration.
+    if (!columnsOf('world_npcs').includes('hp')) {
+        console.error('[Migration] Adding hp and body_on_day columns to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN hp INTEGER NOT NULL DEFAULT -1;');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN body_on_day INTEGER NOT NULL DEFAULT 0;');
     }
 
     if (!columnsOf('world_npcs').includes('wounds')) {

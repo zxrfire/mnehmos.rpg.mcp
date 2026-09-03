@@ -167,6 +167,14 @@ export function standInTheWorld(
         foundation: cultivator.foundationQuality,
         untreatedInjuries: cultivator.injuries.length,
         injuries: cultivator.injuries.slice(),
+        // The body, from the sheet that owns it. The row stores what is
+        // STANDING and derives the pool from the rung, so only the first half
+        // crosses; a player who just paid a realm boundary's toll is met by the
+        // world at what the wall left them, the same as anybody else. Anchored
+        // to today, because the sheet's figure is true now and mending is
+        // already the sheet's own business - see `time-skip.ts`.
+        hp: cultivator.hp,
+        bodyOnDay: onDay,
         techniqueIds: cultivator.knownTechniques.slice(),
         lifespanEndsOnDay:
             bornOnDay + lifespanForOrdinal(cultivator.realmOrdinal) * DAYS_PER_YEAR,

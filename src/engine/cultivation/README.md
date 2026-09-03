@@ -756,6 +756,15 @@ Three things follow, and each is pinned by
   either end of the ladder. That invariant is what makes the pool safe to grow at all, and
   it is the thing that breaks if damage is ever made an absolute number.
 
+**`carriedAcross` lives here too, and for the same reason.** How a pool SURVIVES a rung
+change is the same rule asked at the moment the rung moves - keep the share, not the
+number, so whole stays whole and half stays half in a larger body. It used to be addressed
+inside `storage/repos/cultivator.repo.ts`, which still re-exports it for the callers that
+ask there; that address put an engine-layer rule behind a module that opens a database, so
+`engine/world/` could not reach it without dragging SQLite in and would have grown its own
+copy instead. Every rung change in the codebase now passes through both halves: the player's
+through `strikeBarrier` and `advanceRealm`, the world's through `setRealm`.
+
 ---
 
 ## Existence is multi-valued once cultivation is profound

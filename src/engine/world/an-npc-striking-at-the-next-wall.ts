@@ -97,7 +97,11 @@
  * `world/README.md` section this module is documented from.
  */
 
-import { attemptBreakthrough, canAttemptBreakthrough } from '../cultivation/breakthrough.js';
+import {
+    attemptBreakthrough,
+    canAttemptBreakthrough,
+    whatACrossingTakesFrom
+} from '../cultivation/breakthrough.js';
 import {
     computeCultivationRate,
     DAYS_PER_YEAR
@@ -123,7 +127,15 @@ import {
 } from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
-import { carryingWounds, setRealm, woundsCarriedBy, type NpcRecord } from './npc-state.js';
+import {
+    bodyStandingOn,
+    bodyTaken,
+    carryingWounds,
+    maxBodyOf,
+    setRealm,
+    woundsCarriedBy,
+    type NpcRecord
+} from './npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHO IS SHOWING THEM THE WAY
@@ -470,28 +482,6 @@ export function strikeAtTheWall(
 
     let after = npc;
 
-    // ── AND `result.bodyCost` IS NOT APPLIED HERE, BECAUSE IT CANNOT BE ──
-    //
-    // Stated rather than left as an absence, because the next person to read
-    // `bodyCost` on `BreakthroughResultSchema` will otherwise assume the world
-    // charges it. It does not: `NpcCultivation` has no `hp` and no `maxHp`.
-    // There is no persisted pool on an NPC at all - it is derived on demand
-    // from `maxHpForOrdinal` wherever a fight needs one - so there is nothing
-    // for a fraction of the pool to come out of, and nothing that would still
-    // be missing an hour later.
-    //
-    // This is `AGENTS.md`'s own worked example one field further along: *"
-    // `NpcCultivation.untreatedInjuries` is an integer, so no NPC can carry a
-    // typed wound the player can carry."* That one was fixed by giving the
-    // world rows; this one wants a body, which is a larger change than a
-    // crossing price and is not one to make on the way past.
-    //
-    // What it means today, said plainly so nobody measures it by accident: the
-    // crossing toll binds the PLAYER and not the world. The pyramid is
-    // therefore insensitive to it - measured, both arms in one command, and
-    // byte-identical at 2364/234/82 - and anybody tuning the toll should use
-    // `root-cliff.test.ts`, which runs real cultivators through real skips and
-    // does move.
     const sustained: Injury[] = result.injuriesSustained;
     if (sustained.length > 0) after = carryingWounds(after, sustained, day);
 
@@ -512,6 +502,33 @@ export function strikeAtTheWall(
 
     if (result.outcome === 'success') {
         after = setRealm(after, result.toOrdinal, day);
+        // ── AND WHAT ARRIVING COST THE BODY ─────────────────────────────
+        //
+        // The same charge the played verb makes, through the same derivation,
+        // in the same order: `setRealm` has just carried the share into the
+        // larger pool, and the toll is taken against that pool afterwards so it
+        // means the same thing at every rung and is not partly refunded by the
+        // vessel growing underneath it. `whatACrossingTakesFrom` owns the clamp
+        // - a share of the pool or a share of what is standing, whichever is
+        // less - so a crossing can leave somebody on nothing and can never be
+        // the thing that finishes them.
+        //
+        // What the world cannot reproduce is the case the toll was written for.
+        // `strikeBarrier` spends no days, so a player with banked progress
+        // strikes four times in an afternoon and owes four tolls with nothing
+        // mending in between; this pass visits a person once every
+        // `ADVANCEMENT_REVIEW_YEARS` and `readyToStrike` refuses anybody who has
+        // not stood at the rung long enough to hold the whole requirement. One
+        // crossing per review is the ceiling, and a review is long enough to
+        // mend several pools. So the toll is charged honestly here and is
+        // expected to be nearly invisible in aggregate - which is a fact about
+        // how the world climbs, not about the price.
+        const taken = whatACrossingTakesFrom(
+            bodyStandingOn(after, day),
+            maxBodyOf(after),
+            result.bodyCost
+        );
+        if (taken > 0) after = bodyTaken(after, taken, day);
         if (result.foundationEstablished) {
             after = {
                 ...after,

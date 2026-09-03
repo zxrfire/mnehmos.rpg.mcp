@@ -144,7 +144,9 @@ import {
 import { expeditionBudget } from './convergence.js';
 import {
     addGoal,
+    bodyStandingOn,
     carryingWounds,
+    maxBodyOf,
     relationshipWith,
     upsertRelationship,
     woundsCarriedBy,
@@ -229,7 +231,7 @@ export const FRIENDSHIP_STANDING = 0.4;
 export const GRUDGE_STANDING = -0.4;
 
 /**
- * Both sides of a bout are priced on the same normalised body.
+ * Both sides of a bout are priced on the same normalised MAXIMUM.
  *
  * `resolveExchange` computes damage as a FRACTION of the defender's maximum
  * precisely so the arithmetic works at Qi Condensation and at Grand Ascension
@@ -237,11 +239,17 @@ export const GRUDGE_STANDING = -0.4;
  * too. So a bout between two equal-sized pools resolves on the advantage ratio
  * and the rolls, and the absolute number is arbitrary.
  *
- * That matters because the world layer does not store NPC hit points and this
- * module must not invent a formula for them - a second body model beside
- * `cultivation-manage.ts`'s is exactly the parallel system this project keeps
- * building by accident. What the bout produces that the world CAN store is an
- * untreated injury count, and that is what gets written back.
+ * THE MAXIMUM IS NORMALISED; WHAT IS STANDING IN IT IS NOT. The world now holds
+ * a body - `NpcCultivation.hp`, against a pool derived from `maxHpForOrdinal`
+ * and never a formula of this module's - so `combatantOf` scales the SHARE onto
+ * this figure rather than handing both sides a full one. That is not a second
+ * body model arriving by the back door: nothing here decides how large a body
+ * is, and the only thing that changed is that a cultivator who paid a realm
+ * boundary's toll last spring turns up to a bout with what the wall left them.
+ *
+ * `assessPower`'s condition line reads the same fraction, so it is also what a
+ * competition scores and what the world means when it says somebody is
+ * overmatched.
  */
 const BOUT_BODY = 100;
 
@@ -1500,9 +1508,16 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
  * what `combat-manage.ts` still does for an opponent described rather than
  * stored. NPCs now carry rows, so the rows are what a bout prices; the only
  * synthesis left is in `woundsCarriedBy`, for a save written before they did.
+ *
+ * And the body is no longer normalised in full. The MAXIMUM still is - see
+ * `BOUT_BODY` - but what is standing in it is the record's own, mended forward
+ * to today, so a crossing paid for last spring is still being carried into this
+ * hall. Qi has no world-layer equivalent at all and stays whole.
  */
 function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
     const wounds: Injury[] = woundsCarriedBy(npc);
+    const max = maxBodyOf(npc);
+    const share = max > 0 ? bodyStandingOn(npc, state.currentDay) / max : 1;
 
     return {
         weapon: bestObjectHeldBy(npc, state),
@@ -1512,7 +1527,7 @@ function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
         spiritRoot: npc.cultivation.spiritRoot,
         attributes: npc.cultivation.attributes,
         injuries: wounds,
-        hp: BOUT_BODY,
+        hp: Math.max(1, Math.round(BOUT_BODY * Math.max(0, Math.min(1, share)))),
         maxHp: BOUT_BODY,
         qi: BOUT_BODY,
         maxQi: BOUT_BODY,

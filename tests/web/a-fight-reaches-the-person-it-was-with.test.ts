@@ -44,6 +44,7 @@ import { worldLocationFor } from '../../src/web/entities';
 import { worldForRun, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGameInWorld, cultivatorRow } from './harness';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
+import { maxHpForOrdinal } from '../../src/engine/cultivation/realms';
 
 /** Everybody standing where the player is, as the world holds them. */
 async function othersHere(game: { loadWorld: () => Promise<unknown>; state: () => unknown }) {
@@ -132,9 +133,20 @@ describe('a confrontation with somebody only the world holds', () => {
         expect(them.cultivation.untreatedInjuries)
             .toBe(them.cultivation.injuries.filter(i => !i.treated).length);
 
-        // And no hit points anywhere. The world stores wounds; a bar here would
-        // be a second body model beside the cultivation engine's.
-        expect(JSON.stringify(them)).not.toMatch(/"(hp|maxHp)"/);
+        // And a FIGHT still writes no body, which is the narrower claim this
+        // used to make in the broader form "no hit points anywhere".
+        //
+        // The record does carry `hp` now: a crossing costs the body, and until
+        // there was somewhere on an NPC for the toll to land it bound the player
+        // and nobody else. It is not a second body model - the POOL is derived
+        // from Might and the rung through `maxHpForOrdinal`, which is why there
+        // is still no `maxHp` on a world row and why that half is still
+        // asserted. What a confrontation leaves is wounds, and if that ever
+        // changes it is a separate ruling with its own measurement.
+        expect(JSON.stringify(them)).not.toMatch(/"maxHp"/);
+        expect(them.cultivation.hp).toBeLessThanOrEqual(
+            maxHpForOrdinal(them.cultivation.attributes.might, them.cultivation.realmOrdinal)
+        );
     }, 300_000);
 
     /**

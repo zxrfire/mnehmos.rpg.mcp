@@ -33,12 +33,18 @@
  *
  * ── HIT POINTS ARE NOT WRITTEN, AND THAT IS NOT AN OMISSION ──────────────
  *
- * The world layer does not store hit points and this file will not be the one
- * that invents them. `gatherings.ts` states the rule at `BOUT_BODY`: both sides
- * of a bout are priced on one normalised body because `resolveExchange` computes
- * damage as a FRACTION of the maximum, so the absolute number is arbitrary, and
- * a second body model beside `cultivation-manage.ts`'s is exactly the parallel
- * system this project keeps building by accident.
+ * The record now carries a body - `NpcCultivation.hp`, against a pool derived
+ * from `maxHpForOrdinal` rather than stored - and this file still does not touch
+ * it. That is a decision rather than a leftover.
+ *
+ * What is on the row exists because a CROSSING costs the body and there was
+ * nowhere for the toll to come out of, so it bound the player and nobody else.
+ * A crossing is one event with a known price, charged once, and mended back over
+ * a year. A fight is not: every bout at every gathering would deplete everybody
+ * who fought, nothing but the mending rate would return it, and a world of
+ * permanently half-spent people is a different setting from this one. That
+ * change wants its own measurement and its own ruling; it is not something to
+ * arrive at as a side effect of the toll having somewhere to land.
  *
  * What a fight leaves on a body that the world CAN hold is WOUNDS, and those are
  * rows the resolver already produced. So a bout somebody walked away from

@@ -1377,6 +1377,42 @@ the second and leaves the first alone. Without the distinction a failure at a hi
 costs nothing but a review cycle and somebody who reached the wall once strikes at it
 every twelve years until it opens, which turns a thousand-year crossing into a formality.
 
+**And the world has a body, because a crossing costs one.** `BreakthroughResult.bodyCost`
+takes a share of the pool at every rung and three times that at a realm boundary, and for
+a while it bound the player and nobody else - `NpcCultivation` had nowhere for it to come
+out of, so the charge was silently dropped. That is the commonest defect in this repo
+running backwards: the player paid blood for each rung while every cultivator in the world
+climbed free, and every comparison the world then made between them was against a
+population that had never been charged.
+
+The record now carries `hp` and `bodyOnDay`, and **it is not a second body model**:
+
+- **The pool is derived, never stored.** `maxBodyOf` is `maxHpForOrdinal(might, ordinal)`,
+  which `realms.ts` states is the one derivation of a cultivator's pool and forbids a
+  second of. A cached maximum would be a number that can disagree with the ordinal sitting
+  next to it; there is no `maxHp` anywhere on a world row.
+- **A rung change carries the SHARE**, through `carriedAcross` - the same arithmetic
+  `strikeBarrier` runs. Note the pool is continuous across a realm boundary by
+  construction, so what this is actually for is the multi-rung jump `deriveOrdinal` writes.
+- **The charge is `whatACrossingTakesFrom`**, clamp included, so a crossing can leave
+  somebody standing on nothing and can never be the thing that finishes them.
+- **Mending is derived on read**, from `HP_RECOVERY_FRACTION_PER_DAY` and the days since
+  the anchor. There is no sweep over the roster and there must not be one: it is a fraction
+  of the pool per day and nothing about it is stochastic, so a pass would spend per-person
+  time every simulated year computing what two multiplications answer.
+
+**What it is worth in aggregate is close to nothing, and that is a fact about how the
+world climbs.** The toll prices SPEED - striking repeatedly with no days in between, which
+`strikeBarrier` permits because it spends none. This pass cannot reach that state: a
+person is reviewed once every twelve years and `readyToStrike` refuses anybody who has not
+stood at the rung long enough to hold the whole requirement, so one crossing per review is
+the ceiling and a review mends several pools over. **So an NPC cannot die of the toll**,
+directly or by attrition; what it does is make somebody who crossed a wall this year turn
+up to a gathering at what the wall left them, which `combatantOf` and `assessPower`'s
+condition line both read. A fight still writes no body back - see
+`what-a-confrontation-does-to-somebody-the-world-holds.ts` for why that is a separate
+ruling with its own measurement.
+
 **The last crossing is not this pass's.** `applyLastCrossing` owns ordinal 44 and runs it
 on the clock the crossing actually takes. Left unguarded the strike pass reached it every
 eight hundred years or so, forty times too often, and it emptied the apex: measured over
