@@ -98,7 +98,27 @@ export type SectIntent =
      * the treasury are taken over months at a pace, and a manual off the shelf
      * is one thing with a provenance that moves once.
      */
-    | 'take';
+    | 'take'
+    /**
+     * Which rooms of the house are yours to speak for.
+     *
+     * Free. `whoIsInChargeOfWhat` deals portfolios deterministically and with
+     * no RNG precisely so that this question has an answer - "a player has to
+     * be able to work out whose door to knock on before knocking" - and an
+     * order given in the house's name is only a decision if the player could
+     * have known whether it was true.
+     */
+    | 'authority'
+    /**
+     * The same order, given in the house's name rather than in your own.
+     *
+     * A separate intent rather than a flag on `order` because it is a different
+     * footing and not a parameter of one - and because `PlannedAction.terms` is
+     * a closed union owned by the combat verbs. Same errand, same rung, same
+     * price on the ladder; what differs is what was claimed, and therefore what
+     * can be checked.
+     */
+    | 'decree';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -200,6 +220,31 @@ export const COUNTED_TIER_NOUNS =
 
 /** Said outright, which is how the sentence that found this defect was typed. */
 export const WITHOUT_ASKING = /\bwithout (?:asking|permission|leave|a word)\b/;
+
+// ─────────────────────────────────────────────────────────────────────────
+// ON WHAT AUTHORITY
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A sentence reaching for the house's own authority rather than its speaker's.
+ *
+ * The engine tests the CLAIM rather than consulting a legitimacy table, which
+ * is what lets the player's own words decide which question is asked. "I order
+ * you to sweep the yard" claims rank and the ladder answers it. "By order of
+ * the Sect, sweep the yard" claims an office, and the house's portfolios answer
+ * that - which means somebody who does not hold one has said a specific false
+ * thing in front of people who can check.
+ *
+ * That asymmetry is only reachable because they reached for it, and it is why
+ * this pattern must stay narrow: a player who never says these words is never
+ * caught out by them.
+ */
+export const CLAIMING_THE_HOUSES_AUTHORITY =
+    /\b(?:by (?:the )?order of|in the name of|on the authority of|by the authority of|by decree of|as (?:the )?(?:sect|house|clan|school|order)'?s?)\b|\b(?:sect|house|clan|school|order) (?:orders?|decrees?|commands?)\b/;
+
+/** Asking who runs what, which is the sentence before the one that claims it. */
+export const ASKING_ON_WHAT_AUTHORITY =
+    /\b(?:on whose authority|on what authority|by what right|who says so|what am i in charge of|what do i run|which rooms? (?:are|is) mine|who runs the|who is in charge of|what is my office|what office do i hold)\b/;
 
 /**
  * What is being taken, with the shelf and the confession trimmed off.
@@ -474,6 +519,39 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * not recruiting, and practising what a house teaches is not decreeing it.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    // ── ASKING WHAT YOU RUN ──────────────────────────────────────────────
+    //
+    // Free, and the sentence before the one that spends. A player who cannot
+    // find out which rooms are theirs cannot know whether claiming the house's
+    // authority is true, and an engine that let them find out only by being
+    // caught would be a trap rather than a decision.
+    if (ASKING_ON_WHAT_AUTHORITY.test(text)) {
+        return { action: 'sect', intent: 'authority' };
+    }
+
+    // ── AN ORDER GIVEN IN THE HOUSE'S NAME ───────────────────────────────
+    //
+    // Ahead of the ordinary order block, which is the only difference between
+    // the two: same verb, same errand, same price on the ladder, and a claim
+    // attached. `terms` carries it for the same reason `attack` uses that field
+    // - it is the footing the act is done on rather than what the act is.
+    //
+    // The order VERB is not required here, and that is the difference between
+    // this branch and the ordinary one below it. "By order of the Sect, the
+    // disciples are to gather herbs" contains no ordering verb at all - the
+    // claim IS the verb - and routed by verb alone it reached `gather` and had
+    // the player picking the herbs personally. What makes it an order is the
+    // authority being invoked over somebody who can be sent.
+    if (CLAIMING_THE_HOUSES_AUTHORITY.test(text)
+        && SECT_SUBORDINATE_NOUNS.test(text)
+        && !SENDING_A_MESSAGE.test(text)) {
+        return {
+            action: 'sect',
+            intent: 'decree',
+            topic: matchIntent(text, SECT_ERRAND_PATTERNS) ?? DEFAULT_ERRAND
+        };
+    }
+
     // ── TAKING A THING THE HOUSE OWNS ────────────────────────────────────
     //
     // Here rather than in `SECT_INTENT_UNAMBIGUOUS` because this act needs a

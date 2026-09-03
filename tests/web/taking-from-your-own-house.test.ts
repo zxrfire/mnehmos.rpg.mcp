@@ -15,6 +15,8 @@ import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { SECTS } from '../../src/data/cultivation/index';
 import { openLedgerBetween } from '../../src/web/encounters';
+import { aTakenCopyOf } from '../../src/web/house-property-theft';
+import { LearnSchema } from '../../src/server/consolidated/technique-manage';
 import { isYourOwnHouseHoldingIt } from '../../src/engine/social-leverage/what-a-house-does-when-it-catches-you';
 
 const LOCAL_SECT = SECTS
@@ -151,5 +153,49 @@ describe('notice decides the record, never the theft', () => {
         const ledger = openLedgerBetween(harness.repos, cultivatorId, LOCAL_SECT.id)
             .filter(isYourOwnHouseHoldingIt);
         expect(ledger).toHaveLength(0);
+    }, 300_000);
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE BOOK OPENS
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a copy you took is a copy you have', () => {
+    it('offers `taken` rather than laundering it as found', () => {
+        // Ruled by the design owner. `found_in_place` would be the load-bearing
+        // kind of lie: a copy that reads as found is a copy nobody can ever be
+        // caught holding, which silently deletes the consequence the taking
+        // exists for. `where did you get that book` has a fifth honest answer
+        // and it is "I took it".
+        const base = { action: 'learn' as const, techniqueId: 't', cultivatorId: 'c' };
+        expect(LearnSchema.safeParse({ ...base, provenance: 'taken' }).success).toBe(true);
+        expect(LearnSchema.safeParse({ ...base, provenance: 'found_in_place' }).success).toBe(true);
+        // And it is a closed set still - the word had to be added, not guessed.
+        expect(LearnSchema.safeParse({ ...base, provenance: 'stolen' }).success).toBe(false);
+    });
+
+    it('recognises a manual the holder took, and not one they merely hold', async () => {
+        const { harness, cultivatorId } = await memberOfAHouseWithAShelf('theft-learn');
+        const world = await harness.game.loadWorld();
+        const target = world.objects
+            .find((o: any) => o.possessorId === LOCAL_SECT.id && o.significance !== 'mundane');
+        if (!target) return;
+
+        // Before it is taken, nothing about it is theirs.
+        expect(aTakenCopyOf(world, cultivatorId, String(target.data?.techniqueId ?? ''))).toBeNull();
+
+        await harness.game.act(`I take ${target.name} from the sect library without asking`);
+
+        const after = await harness.game.loadWorld();
+        const techniqueId = String(after.objects.find((o: any) => o.id === target.id)!
+            .data?.techniqueId ?? '');
+        if (techniqueId.length === 0) return;
+
+        // The chain says how it came to this hand, which is what the learn gate
+        // reads and what `knownOwnershipBy` turns on. Holding is not enough -
+        // the link has to say it was taken.
+        const found = aTakenCopyOf(after, cultivatorId, techniqueId);
+        expect(found).not.toBeNull();
+        expect(found!.ownerId).toBe(LOCAL_SECT.id);
     }, 300_000);
 });

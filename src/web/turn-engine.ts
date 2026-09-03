@@ -282,8 +282,11 @@ import {
 // Taking a thing the house owns. The act and the reasoning are there; what is
 // here is the sentence, the two facts about the played world a pure function
 // cannot have, and the writes.
+import { portfoliosIn } from '../engine/social-leverage/authority-for-an-order.js';
+import { whatTheyHold } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
 import {
     THE_HOUSE_ANSWERS,
+    aTakenCopyOf,
     takeFromYourOwnHouse,
     whatThisHouseHolds,
     whichHoldingTheyMeant
@@ -5063,6 +5066,12 @@ ${noticed}`;
             case 'take':
                 return this.takeFromTheHouse(run, cultivator, target);
 
+            // Which rooms are yours to speak for. Free, and the sentence before
+            // the one that claims: an order given in the house's name is only a
+            // decision if the player could have found out whether it was true.
+            case 'authority':
+                return this.whatIRunHere(run, cultivator);
+
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
                 // days, both optional: naming neither is a request to see the
@@ -5083,7 +5092,13 @@ ${noticed}`;
                     'The reserves'
                 );
             }
-            case 'order': {
+            // Two footings, one routine. `order` is somebody's own rank and
+            // `decree` is the house's authority being claimed - the parser
+            // separates them on the words the player used, and the engine tests
+            // the claim rather than consulting a table of who may say what.
+            // Same errand, same rung, same price on the ladder.
+            case 'order':
+            case 'decree': {
                 // The errand rides in on the plan's topic and how long they are
                 // out on its days. Both are the ORDERED rung's, not the
                 // caller's: `handleOrder` advances the turn and nothing else,
@@ -5098,6 +5113,7 @@ ${noticed}`;
                         action: 'order',
                         cultivatorId: cultivator.id,
                         errand,
+                        authority: intent === 'decree' ? 'delegated' : 'personal',
                         days: Math.max(1, Math.min(365, Math.round(days ?? 7)))
                     }),
                     'The order'
@@ -10931,10 +10947,26 @@ ${opened.text}` : receipt,
             ));
         }
 
+        // ── A COPY THEY TOOK IS A COPY THEY HAVE ────────────────────────
+        //
+        // `handleLearn`'s upper gate refuses anything above the common shelf
+        // unless `provenance` says how it was got, and its own refusal names
+        // the third road: "or find a copy. `provenance` records which of those
+        // it was." A stolen manual is that road, and until the enum had a word
+        // for it the theft moved the row and left the book shut.
+        //
+        // `taken` rather than `found_in_place`, ruled: a copy that reads as
+        // found is a copy nobody can ever be caught holding, which deletes the
+        // consequence the taking exists for. The book opens; what stays true is
+        // that `ownerId` still names the house and the chain still says stolen.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const took = aTakenCopyOf(this.atHand, cultivator.id, technique.id);
+
         const result = await handleLearn({
             action: 'learn',
             techniqueId: technique.id,
-            cultivatorId: cultivator.id
+            cultivatorId: cultivator.id,
+            ...(took ? { provenance: 'taken' as const } : {})
         });
         const execution = this.fromToolResult(
             'technique_manage.learn', 'learn_technique', result, technique.name
@@ -10998,6 +11030,79 @@ ${fit.line}`;
             });
         }
         return execution;
+    }
+
+    /**
+     * Which rooms of the house this person speaks for.
+     *
+     * The read that makes an order given in the house's name a decision rather
+     * than a trap. `whoIsInChargeOfWhat` deals portfolios deterministically and
+     * with no RNG for exactly this reason - *"a player has to be able to work
+     * out whose door to knock on before knocking"* - so the answer here is
+     * knowable in advance and stays the same when asked twice.
+     *
+     * ── IT READS PORTFOLIOS AND NEVER `Sect.office` ──────────────────────
+     *
+     * The hard rule, restated at the point of the read because this is where
+     * somebody would break it. Jurisdiction is `APortfolio`. `Sect.office` is
+     * the Protector's chair, sits off the ladder, and the design owner ruled
+     * that a member does not know whether their house has one - *"an empty
+     * chair and a filled one look identical from inside the house."* Naming it
+     * here would tell a member the one thing they are not told, and the two
+     * fields are one word apart.
+     */
+    private async whatIRunHere(run: Run, cultivator: Cultivator): Promise<Execution> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) {
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'You run nothing, because you are of nothing.',
+                'Rooms belong to houses and you are on nobody\'s roll. There is no door here '
+                + 'with your name on it and nobody would recognise the claim if you made one.',
+                `No membership for ${cultivator.id}; no portfolio to read.`
+            ));
+        }
+
+        const world = this.atHand ?? await this.loadWorld();
+        this.atHand = world;
+        const roll = rosterFor(
+            { repos: this.repos, knowledge: this.knowledge, world }, cultivator
+        ).map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }));
+        const portfolios = portfoliosIn({
+            locations: world?.locations ?? [],
+            sectId: held.sectId,
+            roll: [{ id: cultivator.id, rankIndex: held.rankIndex }, ...roll],
+            rankCount: held.rankCount
+        });
+        const mine = whatTheyHold(portfolios, cultivator.id);
+
+        const lines = mine.length === 0
+            ? [
+                `You hold ${held.rankTitle} of ${held.sectName} and you run none of it. A rung `
+                + 'is what you are addressed as; a room is what you answer for, and those are '
+                + 'different things.',
+                'Anything you tell somebody to do, you tell them yourself. Saying it is the '
+                + 'house speaking would be a claim people in the room can check.'
+            ]
+            : [
+                `${held.sectName} answers to you about ${mine.join(', ')}.`,
+                'An order about any of that can be given in the house\'s name and will stand. '
+                + 'Anything else is you asking.'
+            ];
+        const others = portfolios.filter(p => p.holderId !== null && p.holderId !== cultivator.id);
+        if (others.length > 0) {
+            lines.push(`Held by others: ${others.map(p => p.purpose).join(', ')}.`);
+        }
+
+        const facts = factsForToolResult(
+            mine.length === 0 ? 'You run nothing here.' : `You run ${mine.length} of it.`,
+            lines
+        );
+        facts.structure.push(
+            `authority-for-an-order.portfoliosIn: ${portfolios.length} sealed room(s) at `
+            + `${held.sectId}, ${mine.length} held by ${cultivator.id}. Read only. `
+            + 'Portfolios only - `Sect.office` is the Protector\'s chair and is not read here.'
+        );
+        return this.freeAction(run, 'sect', facts);
     }
 
     /**
