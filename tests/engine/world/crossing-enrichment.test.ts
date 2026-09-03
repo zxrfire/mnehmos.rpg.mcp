@@ -31,8 +31,10 @@ import {
     CROSSING_ENRICHMENT_YEARS,
     crossingEnrichmentRemaining,
     crossingStillGiving,
-    enrichedDensity
+    enrichedDensity,
+    whoCouldRememberACrossing
 } from '../../../src/engine/world/crossing-enrichment.js';
+import { stageCeilingFor, stageRank } from '../../../src/engine/social/discovery.js';
 import { seedPriorAges } from '../../../src/engine/world/history.js';
 import { locationsFromPriorAges } from '../../../src/engine/world/locations.js';
 import {
@@ -89,6 +91,55 @@ describe('the loan a crossing leaves', () => {
     it('is spent exactly when the years say and not before', () => {
         expect(crossingStillGiving(CROSSING_ENRICHMENT_YEARS - 1)).toBe(true);
         expect(crossingStillGiving(CROSSING_ENRICHMENT_YEARS)).toBe(false);
+    });
+});
+
+/**
+ * NOTE ON REACHABILITY, so nobody reads these as a finished feature.
+ *
+ * `whoCouldRememberACrossing` has NO CALLER in `src/` today. A test is a reader
+ * and not a caller, and this repository's commonest defect is exactly a module
+ * whose only consumer is its own suite. What is missing is the verb: a player
+ * asking somebody old enough what the tide over that ground actually was. Until
+ * that exists the rule is pinned and unreached, and this comment is the thing
+ * that should stop it reviewing as done.
+ */
+describe('who knows what a tide actually was', () => {
+    it('gives it firsthand to anybody who was alive for it', () => {
+        // A crossing is once in an age; the top of the ladder spans ages.
+        expect(whoCouldRememberACrossing(380, {
+            ageYears: 900, hasSomebodyWhoSawIt: false
+        })).toBe('known');
+    });
+
+    it('caps somebody who was only told, however close they stand', () => {
+        // An apex disciple knows the mechanism and was not there. That is the
+        // told ceiling, not a lesser firsthand.
+        const told = whoCouldRememberACrossing(380, {
+            ageYears: 40, hasSomebodyWhoSawIt: true
+        });
+        expect(told).toBe(stageCeilingFor('told'));
+        expect(stageRank(told)).toBeLessThan(stageRank(stageCeilingFor('witnessed')));
+    });
+
+    it('leaves an ordinary person the rumour and nothing else', () => {
+        // They have never seen one and neither did anybody they knew. No
+        // partial credit for living near where it happened.
+        expect(whoCouldRememberACrossing(380, {
+            ageYears: 40, hasSomebodyWhoSawIt: false
+        })).toBe('whisper');
+    });
+
+    it('is proximity to power rather than personal height', () => {
+        // The inversion the setting likes: a wanderer with a long life but
+        // nobody to be told by can know less than an apex's young disciple.
+        const loneWanderer = whoCouldRememberACrossing(600, {
+            ageYears: 300, hasSomebodyWhoSawIt: false
+        });
+        const apexOuterDisciple = whoCouldRememberACrossing(600, {
+            ageYears: 30, hasSomebodyWhoSawIt: true
+        });
+        expect(stageRank(apexOuterDisciple)).toBeGreaterThan(stageRank(loneWanderer));
     });
 });
 
