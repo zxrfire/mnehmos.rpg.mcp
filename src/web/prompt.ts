@@ -744,11 +744,40 @@ export function nameableNames(rows: readonly AwarenessRow[]): string[] {
     return [...new Set(rows.map(row => row.name))].sort();
 }
 
-export function composeIntentUser(input: string, stateSummary: string): string {
+/**
+ * Phase 1 user message.
+ *
+ * ── THE TURN BEFORE THIS ONE IS A PARAMETER, NEVER A SESSION ─────────────
+ *
+ * `lastTurn` is composed fresh by `describeTheLastTurn` and thrown away. There
+ * is no conversation history here and there must not be: the reader sees the
+ * current state, one turn of what just happened, and the sentence. The design
+ * owner's shape, and the bound is the design rather than a limitation -
+ *
+ *   > "you could send this to the llm again, the previous turn's info? and
+ *   >  clear the context between turns so it doesn't pollute"
+ *
+ * - because a reader given ten turns starts writing continuity, and this
+ * architecture's whole defence is that the reader has no authority. One turn is
+ * enough to resolve *keep at it* and *the cheaper one* and structurally cannot
+ * become a narrative.
+ *
+ * It gives the reader information and not one grain of authority. Every step it
+ * emits still goes through `validatePlan`, still lands in the closed enum, and
+ * is still resolved by phase 2 against the world rather than against anything
+ * said here. Omitted entirely when there is nothing to say, because a model
+ * shown an empty section reliably invents something to put in it.
+ */
+export function composeIntentUser(
+    input: string,
+    stateSummary: string,
+    lastTurn?: string | null
+): string {
     return [
         'CURRENT STATE',
         stateSummary,
         '',
+        ...(lastTurn ? [lastTurn, ''] : []),
         // -- THE REMINDER GOES NEXT TO THE SENTENCE, NOT ONLY AT THE TOP --
         //
         // The system prompt carries the whole glossary and the plan rules, and
