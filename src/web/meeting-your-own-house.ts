@@ -29,6 +29,11 @@ import {
     thePeopleYouServeWith,
     type SomebodyStandingHere
 } from '../engine/social/the-people-you-serve-with.js';
+import {
+    howBeingToldPutIt,
+    whatJoiningTellsYou,
+    type SomebodyOnTheLadder
+} from '../engine/social/what-joining-tells-you.js';
 import type { Perception } from './shown-this-turn.js';
 
 export interface MeetingYourOwnHouse {
@@ -76,5 +81,59 @@ export function whatStandingAmongYourOwnShows(
             // aims below it deliberately, exactly as the ground writer does.
             sourceKind: 'witnessed'
         }
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE STRUCTURE, WHICH IS TOLD RATHER THAN SEEN
+//
+// A separate producer on purpose: different source, different claim, different
+// trigger. `whatStandingAmongYourOwnShows` earns names through presence and
+// fires only when somebody new is in the room; this fires on membership alone
+// and would fire in an empty hall, because being told who leads your house does
+// not require anybody to be standing there.
+//
+// `what-joining-tells-you.ts` holds the ruling, the three edges - the protector
+// is out, guests are out, and the bottom of the ladder is not a gate - and why
+// the grant reaches the top two rungs.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface TheStructureYouWereTold {
+    houseName: string;
+    /** Everybody on the house's ladder. Guests are not in this table at all. */
+    ladder: readonly SomebodyOnTheLadder[];
+    /** The house's rank titles, bottom first. `sect.ranks`, never composed. */
+    ranks: readonly string[];
+}
+
+/**
+ * What being enrolled told this member, or null when it told them nothing.
+ *
+ * Already-held names are left in: this is not a perception that fires once, it
+ * is a standing fact about being a member, and `learnIfNew` is what makes
+ * re-declaring it free.
+ */
+export function whatBeingAMemberTellsYou(
+    factionId: string | null,
+    input: TheStructureYouWereTold
+): Perception | null {
+    if (!factionId) return null;
+    const told = whatJoiningTellsYou(input.ladder, input.ranks);
+    if (told.length === 0) return null;
+
+    return {
+        names: told.map(person => ({
+            kind: 'cultivator' as const,
+            id: person.id,
+            name: person.name,
+            // `placed` - the ceiling `told` allows, and exactly what it means:
+            // you know who they are and where they stand. Not that you have met
+            // them, which is what `witnessed` would have implied.
+            stage: 'placed' as const,
+            statement: howBeingToldPutIt(input.houseName, person)
+        })),
+        note: `Told on joining ${input.houseName}: the ladder and who is on its top rungs.`,
+        // NOT `witnessed`. Nobody saw anybody; they were told.
+        sourceKind: 'told'
     };
 }

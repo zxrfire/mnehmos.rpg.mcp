@@ -85,7 +85,11 @@ import {
     whoBeingHereIntroducesYouTo
 } from '../engine/world/being-on-their-ground.js';
 import type { Perception } from './shown-this-turn.js';
-import { whatStandingAmongYourOwnShows } from './meeting-your-own-house.js';
+import {
+    whatBeingAMemberTellsYou,
+    whatStandingAmongYourOwnShows
+} from './meeting-your-own-house.js';
+import { getMembersOf } from '../data/cultivation/members.js';
 import { getSect } from '../data/cultivation/sects.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
@@ -174,6 +178,33 @@ function meetingYourOwnHouse(game: GameService, cultivator: Cultivator) {
             factionId: row.sectId,
             known: game.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
         }))
+    });
+}
+
+/**
+ * And the structure being enrolled told them, which needs nobody present.
+ *
+ * Separate from the reading above because it is a different claim from a
+ * different source: `told` rather than `witnessed`, so `stageFromSource`
+ * clamps it at `placed` and knowing the head's name never becomes having met
+ * them. `what-joining-tells-you.ts` carries the ruling and its three edges.
+ */
+function theStructureYouWereTold(game: GameService, cultivator: Cultivator) {
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    if (!membership) return null;
+    const house = getSect(membership.sectId);
+    if (!house) return null;
+    return whatBeingAMemberTellsYou(membership.sectId, {
+        houseName: house.name,
+        // The house's own roll. Guests are in `GUEST_ELDERS` and are not in
+        // this table at all, so the exclusion costs nothing to enforce.
+        ladder: getMembersOf(membership.sectId).map(member => ({
+            id: member.id,
+            name: member.name,
+            rankIndex: member.rankIndex,
+            realmOrdinal: member.realmOrdinal
+        })),
+        ranks: house.ranks
     });
 }
 
@@ -340,6 +371,8 @@ export const travelVerbs = {
         // both the roll AND the room.
         const met = meetingYourOwnHouse(this, applied.cultivator);
         const perceived: Perception[] = [];
+        const structure = theStructureYouWereTold(this, applied.cultivator);
+        if (structure) perceived.push(structure);
         if (met) {
             perceived.push(met.perception);
             facts.structure.push(
