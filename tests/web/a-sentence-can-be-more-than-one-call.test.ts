@@ -22,6 +22,9 @@ import {
     carryingTheReferentForward,
     everyVerbTheQuestionCouldName,
     theClausesNoStepAccountsFor,
+    theRowForADroppedClause,
+    theseWereThePlayersOwnWords,
+    theWholeSentenceAsAPlan,
     theClausesOf,
     theThingThisStepNamed,
     stepsOfThePlan,
@@ -36,7 +39,7 @@ import {
     type PlanStep,
     type WhichComesFirst
 } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
-import type { ActionName } from '../../src/web/actions.js';
+import type { ActionName, PlannedAction } from '../../src/web/actions.js';
 
 function step(action: ActionName, extra: Partial<PlanStep['action']> = {}, said?: string): PlanStep {
     return { action: { action, ...extra }, ...(said ? { said } : {}) };
@@ -215,11 +218,19 @@ describe('where the sentence gives its own order, the turn takes it', () => {
 });
 
 describe('the question never requires a player to know a string', () => {
+    /**
+     * Asserted as "not the enum member", which is the only version of this that
+     * bites. The old form allowed a name equal to the verb itself, so `give`
+     * shipped with no plain words and a live question offered the player
+     * `"give Shen Liefeng" or "walking away"`.
+     */
     it('has plain words for every verb that could ever cost the player', () => {
         for (const verb of everyVerbTheQuestionCouldName()) {
             const name = whatThisStepIsCalled(step(verb));
             expect(name, `${verb} has no plain name`).not.toContain('_');
-            expect(name.length, `${verb} has no plain name`).toBeGreaterThan(verb.length - 2);
+            expect(name, `${verb} is named by its own enum member`).not.toBe(verb);
+            expect(name, `${verb} is named by its own enum member`)
+                .not.toBe(verb.replace(/_/g, ' '));
         }
     });
 
@@ -565,5 +576,126 @@ describe('a clause the split lost is found from the player’s own text', () => 
             clause.includes('carrying') ? 'inventory' : clause.includes('know') ? 'recall' : 'look';
         const plan = [step('look'), step('status'), step('recall')];
         expect(await theClausesNoStepAccountsFor(asked, plan, freeReads)).toHaveLength(0);
+    });
+});
+
+/**
+ * THE SENTENCE IS THE AUTHORITY ON HOW MANY ACTS ARE IN IT.
+ *
+ * Played, repeatedly, against a live model:
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *   read as 2: interact(Cao Antao), move(away)
+ *
+ * Three clauses in, two acts out, and the one lost is the middle one - which is
+ * the clause the other two exist for. Take and walk away is a person leaving;
+ * the handover is what makes it a frame-up. Everything downstream behaved
+ * correctly on what it was handed, and it was handed a smaller sentence than
+ * the player typed.
+ */
+describe('an act the reader missed is put back where the player wrote it', () => {
+    const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
+    const reads = async (clause: string): Promise<PlannedAction> =>
+        clause.includes('take') ? { action: 'interact', target: 'Cao Antao', intent: 'steal' }
+            : clause.includes('press') ? { action: 'give', target: 'Shen Liefeng', topic: 'it' }
+                : { action: 'move', target: 'away' };
+
+    it('puts the missing act back IN SENTENCE POSITION, not at the end', async () => {
+        const fromTheReader = [
+            step('interact', { target: 'Cao Antao', intent: 'steal' }),
+            step('move', { target: 'away' })
+        ];
+        const whole = await theWholeSentenceAsAPlan(SAID, fromTheReader, reads);
+
+        expect(whole.steps.map(s => s.action.action)).toEqual(['interact', 'give', 'move']);
+        expect(whole.backfilled.map(s => s.action.action)).toEqual(['give']);
+        // And the whole reading of the clause, not just its verb - or the give
+        // would reach the engine with nobody to give to.
+        expect(whole.backfilled[0]!.action.target).toBe('Shen Liefeng');
+        expect(whole.backfilled[0]!.action.topic).toBe('it');
+    });
+
+    it('never reorders what the reader sent', async () => {
+        const fromTheReader = [
+            step('move', { target: 'away' }),
+            step('interact', { target: 'Cao Antao', intent: 'steal' })
+        ];
+        const whole = await theWholeSentenceAsAPlan(SAID, fromTheReader, reads);
+        const kept = whole.steps.filter(s => !whole.backfilled.includes(s));
+        expect(kept.map(s => s.action.action)).toEqual(['move', 'interact']);
+    });
+
+    it('adds nothing when the reader already sent every act', async () => {
+        const fromTheReader = [
+            step('interact', { target: 'Cao Antao', intent: 'steal' }),
+            step('give', { target: 'Shen Liefeng', topic: 'it' }),
+            step('move', { target: 'away' })
+        ];
+        const whole = await theWholeSentenceAsAPlan(SAID, fromTheReader, reads);
+        expect(whole.backfilled).toHaveLength(0);
+        expect(whole.steps).toHaveLength(3);
+    });
+
+    /**
+     * The house rule, and the one that keeps this from being noise: a free read
+     * the model routed to its neighbour must not be re-run. Nothing was taken,
+     * so there is nothing to put back.
+     */
+    it('puts back only a clause that would COST something', async () => {
+        const asked = 'who is here, what am I carrying, and what do I know of them';
+        const freeReads = async (clause: string): Promise<PlannedAction> =>
+            clause.includes('carrying') ? { action: 'inventory' }
+                : clause.includes('know') ? { action: 'recall' } : { action: 'look' };
+        const whole = await theWholeSentenceAsAPlan(
+            asked, [step('look'), step('status'), step('recall')], freeReads
+        );
+        expect(whole.backfilled).toHaveLength(0);
+    });
+
+    it('leaves a one-clause sentence entirely alone', async () => {
+        const only = [step('cultivate', { days: 365 })];
+        const whole = await theWholeSentenceAsAPlan('I cultivate for a year', only, reads);
+        expect(whole.steps).toEqual(only);
+        expect(whole.backfilled).toHaveLength(0);
+    });
+
+    it('cannot invent an act, because every backfill is a clause they typed', async () => {
+        const whole = await theWholeSentenceAsAPlan(SAID, [], reads);
+        for (const put of whole.backfilled) {
+            expect(SAID.toLowerCase()).toContain(put.said!.toLowerCase());
+        }
+    });
+});
+
+/**
+ * FOUND BY PLAYING, and it is a lie in the direction that costs most.
+ *
+ *   > I press Cao Antao's purse into Shen Liefeng's hand and walk away
+ *
+ * The model added a third step - a theft the sentence does not ask for and
+ * which had happened a turn earlier. The danger check declined it, correctly,
+ * and the turn then told the player *"the approach to Cao Antao" was not part
+ * of what happened... Say it on its own and it will run.* There is no such part
+ * of the sentence. It teaches them their words were misread, and invites them
+ * to say a thing they never said.
+ */
+describe('only the player’s own clauses are reported to the player', () => {
+    const SAID = "I press Cao Antao's purse into Shen Liefeng's hand and walk away";
+
+    it('a clause they typed is theirs', () => {
+        const quoted = step('give', { target: 'Shen Liefeng' },
+            "press Cao Antao's purse into Shen Liefeng's hand");
+        expect(theseWereThePlayersOwnWords(quoted, SAID)).toBe(true);
+    });
+
+    it('a step the reader added quotes nothing, and is not theirs', () => {
+        const added = step('interact', { target: 'Cao Antao', intent: 'steal' });
+        expect(theseWereThePlayersOwnWords(added, SAID)).toBe(false);
+    });
+
+    it('and its inspector row says so, rather than blaming the sentence', () => {
+        const added = step('interact', { target: 'Cao Antao', intent: 'steal' });
+        expect(theRowForADroppedClause(added, false).summary).toContain('the reader added');
+        expect(theRowForADroppedClause(added, false).summary).not.toContain('Say it on its own');
     });
 });
