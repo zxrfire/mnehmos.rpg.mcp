@@ -47,11 +47,50 @@
  * operator can see the fog the player is standing in; a player-facing map
  * drops `discovered === false` at the boundary and needs no other change.
  * `docs/world/houses/discovery.md` is the authority on why that gate exists.
+ *
+ * ── What is TRUE of a place is not the same as what a place IS ───────────
+ *
+ * `WorldState.statuses` is the layer in
+ * `engine/world/what-is-true-of-a-place-right-now.ts`: a famine, a war on the
+ * ground a house stands on, a beast tide running, a district its holder has
+ * worked out. Those are the answer to "what is going on here", they change
+ * prices and danger while they last, and this view carried none of them - so
+ * an operator's map of the world could not report the one thing about it that
+ * is currently moving.
+ *
+ * They are joined here through `statusesInArea`, which is the same call the
+ * played `investigate` verb makes, so the map and the game cannot disagree
+ * about what is happening. A status is true of its area AND of everything
+ * under it, which is why a node inherits its ancestors' and says which of them
+ * it owns.
+ *
+ * `causeKnownLocally` travels raw. This surface is admin and sees everything;
+ * masking a cause by a knowing stage is `readStatusAtStage`'s job at the
+ * player boundary, and there is exactly one knowledge ladder in this repo.
+ *
+ * ── The ground scale moved, and old rows did not ─────────────────────────
+ *
+ * `qiDensity` is 1..100 (`engine/world/qi-scale.ts`, which records why it left
+ * 0..1). A world instantiated before that move holds fractions, and every one
+ * of them rounds to the bottom of the new scale: measured on a live database,
+ * Nine Peaks - "the deepest vein anyone has kept" - and a thin ford town both
+ * reported `ground 0 of 100, thin`, which is the map's single most important
+ * figure reading as a constant zero for every place in the world.
+ *
+ * So a value at or below 1 is read as the pre-move fraction it unambiguously
+ * is and multiplied by `QI_DENSITY_MAX` - the conversion `qiFraction` already
+ * states in the other direction, not a guess. `rescaledGround` counts them, so
+ * the panel can say once that it is looking at a world older than the scale
+ * rather than repeating a caveat on every row. Nothing is written back: this
+ * is a view, and a storage migration is not its business.
  */
 
 import type { WorldState } from '../engine/world/world-state.js';
 import type { LinkKind, LocationKind, LocationRecord } from '../engine/world/locations.js';
 import { isOpenOn, nextClosingDay, nextOpeningDay, ordinaryBandFor } from '../engine/world/locations.js';
+import { QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
+import type { AreaStatus } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { LayerKey } from '../engine/world/layers.js';
 import { WORLD_LAYERS } from '../engine/world/layers.js';
 
@@ -73,6 +112,8 @@ export interface PlaceNodeView {
     /** Geology, 1..100, and the band a surveyor would write down for it. */
     qiDensity: number;
     qiBand: 'thin' | 'normal' | 'dense' | 'spirit_tide';
+    /** True when this row was stored on the old 0..1 scale and was rescaled. */
+    groundRescaled: boolean;
     /** Usable qi, 0..1. Deliberately not the same number as `qiDensity`. */
     spiritualDensity: number;
     ambient: string;
@@ -140,6 +181,51 @@ export interface PlaceNodeView {
 
     /** Links this record holds, before deduplication. */
     linkCount: number;
+
+    /**
+     * What is true of this place today, innermost first.
+     *
+     * Includes what is true of every area above it, because a famine in a
+     * province is a famine in its towns. `ownArea` separates the two so a
+     * reader can tell a war on this ground from a war in the province.
+     */
+    statuses: PlaceStatusView[];
+}
+
+/**
+ * One thing that is true of a place right now.
+ *
+ * Every figure the status carries is kept - `stops`, the price multiplier and
+ * the danger delta are what it DOES, and a status shown without them is a mood
+ * rather than a mechanic. See `facts.ts` on keeping every number.
+ */
+export interface PlaceStatusView {
+    id: string;
+    /** The area it is written against, which may be an ancestor of this node. */
+    areaId: string;
+    areaName: string;
+    /** True when this node is the area itself rather than under it. */
+    ownArea: boolean;
+    kind: string;
+    statement: string;
+    /** What happened: a ground change, a seal, a decision, a harvest failing. */
+    cause: string;
+    /** What anybody standing here observes, understanding nothing. */
+    signs: string[];
+    /** Whether asking around here gets you the cause. Usually false. */
+    causeKnownLocally: boolean;
+    /** Who decided it, where somebody did. Null for weather and ground. */
+    decidedById: string | null;
+    decidedByName: string | null;
+    beganOnDay: number;
+    daysRunning: number;
+    reviewOnDay: number;
+    /** Days until the world looks at it again. Negative means overdue. */
+    reviewInDays: number;
+    /** What is simply not to be had here while this is true. */
+    stops: string[];
+    priceMultiplier: number;
+    dangerDelta: number;
 }
 
 /**
@@ -205,6 +291,14 @@ export interface PlacesView {
         closed: number;
         roots: number;
         maxDepth: number;
+        /**
+         * Places whose ground was stored on the old 0..1 scale. Counted so the
+         * panel can state it once instead of on every row, which is the rule
+         * `facts.ts` gives for a constant.
+         */
+        rescaledGround: number;
+        /** Area statuses running somewhere in the world on this day. */
+        runningStatuses: number;
         byKind: Record<string, number>;
         byLinkKind: Record<string, number>;
     };
@@ -224,6 +318,8 @@ const EMPTY_COUNTS: PlacesView['counts'] = {
     closed: 0,
     roots: 0,
     maxDepth: 0,
+    rescaledGround: 0,
+    runningStatuses: 0,
     byKind: {},
     byLinkKind: {}
 };
@@ -294,6 +390,33 @@ function originView(loc: LocationRecord): PlaceOriginView | null {
     };
 }
 
+/**
+ * The ground figure on the scale this view promises, 1..100.
+ *
+ * The tell is FRACTIONAL, not small. `clampQiDensity` rounds, so every value
+ * written on the current scale is an integer; a stored 0.3475 can only be the
+ * old fraction, and it is converted by the same constant `qiFraction` divides
+ * by - the conversion stated in the other direction, not a guess. An integer
+ * is returned untouched, so a fresh world never goes near this branch.
+ *
+ * The one ambiguous input is exactly 1.0, which is the old scale's ceiling and
+ * the new scale's floor. It is read as the floor. That errs toward calling
+ * ground dead rather than toward inventing the best vein in the world, which
+ * is the direction a map should be wrong in.
+ */
+function groundOf(stored: number): { value: number; rescaled: boolean } {
+    // The floor is `QI_DENSITY_MIN` on both branches, not zero: the scale says
+    // dead ground still reads 1, because 0 would mean unmeasured. Worlds older
+    // than the scale stored a literal 0 for a scar, which is an integer and so
+    // takes the untouched branch, and printed as `ground 0 of 100` - a figure
+    // the scale has no meaning for.
+    const onScale = (n: number) => Math.max(1, Math.min(QI_DENSITY_MAX, Math.round(n)));
+    if (!Number.isFinite(stored)) return { value: 1, rescaled: false };
+    if (Number.isInteger(stored) && stored >= 1) return { value: onScale(stored), rescaled: false };
+    if (stored === 0) return { value: 1, rescaled: true };
+    return { value: onScale(stored * QI_DENSITY_MAX), rescaled: true };
+}
+
 /** A `data` value that is meant to be a count, or null when it is not one. */
 function numberField(loc: LocationRecord, key: string): number | null {
     const raw = loc.data?.[key];
@@ -307,9 +430,11 @@ function nodeView(
     children: Map<string, string[]>,
     factionNames: Map<string, string>,
     occupancy: Map<string, number>,
+    statusesFor: (id: string) => PlaceStatusView[],
     day: number
 ): PlaceNodeView {
     const open = isOpenOn(loc, day);
+    const ground = groundOf(loc.qiDensity);
     const nextOpen = nextOpeningDay(loc, day);
     const nextClose = nextClosingDay(loc, day);
     const claim = loc.controllingFactionId ? factionNames.get(loc.controllingFactionId) ?? null : null;
@@ -325,8 +450,9 @@ function nodeView(
         childIds: children.get(loc.id) ?? [],
         description: loc.description,
 
-        qiDensity: loc.qiDensity,
-        qiBand: ordinaryBandFor(loc.qiDensity),
+        qiDensity: ground.value,
+        qiBand: ordinaryBandFor(ground.value),
+        groundRescaled: ground.rescaled,
         spiritualDensity: loc.environment.spiritualDensity,
         ambient: loc.ambient,
         danger: loc.environment.danger,
@@ -376,7 +502,47 @@ function nodeView(
         opensInDays: open || nextOpen === null ? null : Math.max(0, nextOpen - day),
         closesInDays: open && nextClose !== null ? Math.max(0, nextClose - day) : null,
 
-        linkCount: loc.links.length
+        linkCount: loc.links.length,
+
+        statuses: statusesFor(loc.id)
+    };
+}
+
+/**
+ * One running status, as this node sees it.
+ *
+ * `daysRunning` and `reviewInDays` are derived here rather than left to the
+ * client, because both are arithmetic on the world's current day and the
+ * client does not own that arithmetic anywhere else on this payload.
+ */
+function statusView(
+    status: AreaStatus,
+    nodeId: string,
+    names: Map<string, string>,
+    factionNames: Map<string, string>,
+    day: number
+): PlaceStatusView {
+    return {
+        id: status.id,
+        areaId: status.areaId,
+        areaName: names.get(status.areaId) ?? status.areaId,
+        ownArea: status.areaId === nodeId,
+        kind: status.kind,
+        statement: status.statement,
+        cause: status.cause.what,
+        signs: status.signs.slice(),
+        causeKnownLocally: status.causeKnownLocally,
+        decidedById: status.cause.decidedById,
+        decidedByName: status.cause.decidedById
+            ? factionNames.get(status.cause.decidedById) ?? null
+            : null,
+        beganOnDay: status.beganOnDay,
+        daysRunning: Math.max(0, day - status.beganOnDay),
+        reviewOnDay: status.reviewOnDay,
+        reviewInDays: status.reviewOnDay - day,
+        stops: status.stops.slice(),
+        priceMultiplier: status.priceMultiplier,
+        dangerDelta: status.dangerDelta
     };
 }
 
@@ -481,7 +647,20 @@ export function placesView(world: WorldState | null): PlacesView {
         if (at) occupancy.set(at, (occupancy.get(at) ?? 0) + 1);
     }
 
-    const nodes = locations.map(loc => nodeView(loc, byId, children, factionNames, occupancy, day));
+    // What is TRUE of a place, joined through the engine's own call so the map
+    // and the played `investigate` cannot answer differently. Statuses are a
+    // handful per world and the ancestor walk is short, so this is done per
+    // node rather than indexed; a world with a status per location would want
+    // an index and does not exist.
+    const allStatuses = world.statuses ?? [];
+    const names = new Map(locations.map(l => [l.id, l.name]));
+    const statusesFor = allStatuses.length === 0
+        ? () => []
+        : (id: string) => statusesInArea(allStatuses, locations, id, day)
+            .map(s => statusView(s, id, names, factionNames, day));
+
+    const nodes = locations.map(loc =>
+        nodeView(loc, byId, children, factionNames, occupancy, statusesFor, day));
     const { edges, dangling } = buildEdges(locations, byId);
 
     const byKind: Record<string, number> = {};
@@ -491,6 +670,7 @@ export function placesView(world: WorldState | null): PlacesView {
     let closed = 0;
     let roots = 0;
     let maxDepth = 0;
+    let rescaledGround = 0;
 
     for (const n of nodes) {
         byKind[n.kind] = (byKind[n.kind] ?? 0) + 1;
@@ -498,8 +678,15 @@ export function placesView(world: WorldState | null): PlacesView {
         if (n.sealed) sealed += 1;
         if (!n.open) closed += 1;
         if (!n.parentId) roots += 1;
+        if (n.groundRescaled) rescaledGround += 1;
         if (n.depth > maxDepth) maxDepth = n.depth;
     }
+    // Distinct statuses actually running, not the sum of the per-node lists -
+    // one famine over a province is inherited by every town in it and would
+    // otherwise be counted once per town.
+    const runningStatuses = new Set(
+        nodes.flatMap(n => n.statuses.filter(s => s.ownArea).map(s => s.id))
+    ).size;
     for (const e of edges) byLinkKind[e.kind] = (byLinkKind[e.kind] ?? 0) + 1;
 
     const layers = WORLD_LAYERS
@@ -515,7 +702,18 @@ export function placesView(world: WorldState | null): PlacesView {
         locations: nodes.sort((a, b) => a.name.localeCompare(b.name)),
         edges: edges.sort((a, b) => a.id.localeCompare(b.id)),
         layers,
-        counts: { total: nodes.length, discovered, sealed, closed, roots, maxDepth, byKind, byLinkKind },
+        counts: {
+            total: nodes.length,
+            discovered,
+            sealed,
+            closed,
+            roots,
+            maxDepth,
+            rescaledGround,
+            runningStatuses,
+            byKind,
+            byLinkKind
+        },
         danglingLinks: dangling,
         orphanedParents
     };

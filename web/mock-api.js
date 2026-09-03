@@ -561,7 +561,11 @@ function mockPlace(id, name, kind, over = {}) {
     qiDensity: qi,
     qiBand: band,
     spiritualDensity: Math.round(qi) / 100,
-    ambient: 'normal',
+    // The band the record itself carries, which the panel leads with. It
+    // agrees with the geology unless an entry says otherwise, because a `!=`
+    // on every row would make the marker mean nothing - the two DISAGREEING is
+    // what is worth seeing, and the fixture has to be able to show both.
+    ambient: band,
     danger: 0.2,
     climate: 'temperate',
     politicalControl: 'nobody in particular',
@@ -591,6 +595,31 @@ function mockPlace(id, name, kind, over = {}) {
     opensInDays: null,
     closesInDays: null,
     linkCount: 0,
+    groundRescaled: false,
+    statuses: [],
+    ...over
+  };
+}
+
+/* One thing that is true of a place right now. The mock carries two - a famine
+   nobody decided and a war somebody did - because those are the two shapes
+   `StatusCause` distinguishes and the renderer prints differently. */
+function mockStatus(id, areaId, areaName, kind, statement, over = {}) {
+  return {
+    id, areaId, areaName, kind, statement,
+    ownArea: true,
+    cause: 'a harvest that failed',
+    signs: [],
+    causeKnownLocally: false,
+    decidedById: null,
+    decidedByName: null,
+    beganOnDay: MOCK_PLACE_DAY - 210,
+    daysRunning: 210,
+    reviewOnDay: MOCK_PLACE_DAY + 120,
+    reviewInDays: 120,
+    stops: [],
+    priceMultiplier: 1,
+    dangerDelta: 0,
     ...over
   };
 }
@@ -605,12 +634,42 @@ function mockEdge(from, to, kind, travelDays, over = {}) {
 }
 
 function placesPayload() {
+  // A famine over the province, inherited by everything in it, and a war on
+  // the one piece of ground somebody is fighting over.
+  const famine = mockStatus('st-famine', 'r-fall', 'The Low Fall', 'famine',
+    'The rice went in the second year running and the province is eating its seed.', {
+      signs: ['the mills are idle by noon', 'grain is being sold by weight rather than by measure'],
+      stops: ['millet', 'a night at an inn'],
+      priceMultiplier: 2.4,
+      dangerDelta: 0.05
+    });
+  const war = mockStatus('st-war', 's-azure', 'Azure Cloud Pavilion grounds', 'war',
+    'Two houses are fighting over the gate and neither has withdrawn.', {
+      cause: 'a survey line neither house will re-cut',
+      decidedById: 'sect-azure-cloud',
+      decidedByName: 'Azure Cloud Pavilion',
+      causeKnownLocally: true,
+      signs: ['the forecourt is closed and nobody says why'],
+      stops: ['passage'],
+      priceMultiplier: 1.6,
+      dangerDelta: 0.3,
+      beganOnDay: MOCK_PLACE_DAY - 40,
+      daysRunning: 40,
+      reviewOnDay: MOCK_PLACE_DAY + 20,
+      reviewInDays: 20
+    });
+  const inherited = (s) => ({ ...s, ownArea: false });
+
   const L = [
-    mockPlace('r-fall', 'The Low Fall', 'region', { qiDensity: 35, childIds: ['s-azure', 't-sweptground', 'v-fall'], linkCount: 3 }),
+    mockPlace('r-fall', 'The Low Fall', 'region', { qiDensity: 35, childIds: ['s-azure', 't-sweptground', 'v-fall'], linkCount: 3, statuses: [famine] }),
     mockPlace('v-fall', 'the Low Fall vein', 'vein', { parentId: 'r-fall', depth: 1, qiDensity: 65, linkCount: 1 }),
-    mockPlace('t-sweptground', 'Sweptground', 'settlement', { parentId: 'r-fall', depth: 1, qiDensity: 31, linkCount: 3, politicalControl: 'a magistrate who is owed favours' }),
+    mockPlace('t-sweptground', 'Sweptground', 'settlement', { parentId: 'r-fall', depth: 1, qiDensity: 31, linkCount: 3, politicalControl: 'a magistrate who is owed favours', heldBy: 'a magistrate who is owed favours', statuses: [inherited(famine)],
+      // Stamped with its province's geology and carrying its own band, which
+      // is the shape that made Nine Peaks and a thin ford town read alike.
+      ambient: 'dense', description: 'Temple ground on a vein nobody has finished arguing about.' }),
     mockPlace('s-azure', 'Azure Cloud Pavilion grounds', 'sect_seat', {
       parentId: 'r-fall', depth: 1, qiDensity: 89, linkCount: 3,
+      statuses: [war, inherited(famine)],
       childIds: ['h-azure-gate', 'p-azure-outer'],
       controllingFactionName: 'Azure Cloud Pavilion',
       heldBy: 'several sects, none of them decisively',
@@ -662,7 +721,40 @@ function placesPayload() {
         { onDay: 1102, kind: 'destroyed', summary: 'Eleven li of forest burned in a night and did not come back.', causeKnown: true, attributedCauses: [], fidelity: 'full', witnessed: true }
       ]
     }),
-    mockPlace('a-abode', 'A borrowed abode', 'settlement', { layer: 'immortal', qiDensity: 100, linkCount: 0 })
+    mockPlace('a-abode', 'A borrowed abode', 'settlement', { layer: 'immortal', qiDensity: 100, linkCount: 0 }),
+
+    /* THE SHAPE THAT MADE THE PANEL UNREADABLE, kept so it stays fixed.
+       A seeded world holds a dozen ruins that share one description, hold no
+       links and hang off no province, and the panel used to print them as a
+       dozen near-identical eight-line rows under a heading that said "nothing
+       links these to where you are". They are one fact about several places
+       and the list groups them as one; what separates them is each one's own
+       change ledger, and that is what each row now leads with. */
+    ...['Blackpass', 'Neargate', 'Saltcrossing'].map((seat, i) => mockPlace(
+      `u-sealed-${i}`, `the sealed compound at ${seat}`, 'ruin', {
+        qiDensity: 40 + i * 9,
+        linkCount: 0,
+        sealed: true,
+        sealedOnDay: 900 + i * 260,
+        open: false,
+        discovered: false,
+        discoveredOnDay: null,
+        hazards: ['formation', 'sealed_qi', 'guardian'],
+        thresholds: { entry: 4 + i, survival: 8 + i, operational: 12 + i, mastery: 16 + i * 3 },
+        description: 'The seat of a power that no longer exists.',
+        changeCount: 1,
+        changes: [{
+          onDay: 900 + i * 260,
+          kind: 'sealed',
+          summary: `The compound at ${seat} was sealed. The formations are still drawing on a vein `
+            + `nobody is tapping, and the trials inside were calibrated for `
+            + `${['Foundation Establishment', 'Core Formation', 'Nascent Soul'][i]} disciples of a sect that no longer exists.`,
+          causeKnown: false,
+          attributedCauses: [],
+          fidelity: 'partial',
+          witnessed: false
+        }]
+      }))
   ];
 
   const E = [
@@ -698,6 +790,8 @@ function placesPayload() {
       closed: L.filter((l) => !l.open).length,
       roots: L.filter((l) => !l.parentId).length,
       maxDepth: L.reduce((m, l) => Math.max(m, l.depth), 0),
+      rescaledGround: L.filter((l) => l.groundRescaled).length,
+      runningStatuses: new Set(L.flatMap((l) => l.statuses.filter((s) => s.ownArea).map((s) => s.id))).size,
       byKind,
       byLinkKind
     },

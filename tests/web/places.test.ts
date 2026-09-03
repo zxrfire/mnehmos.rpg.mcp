@@ -408,3 +408,141 @@ describe("a place gives the ground it has, not its province's average", () => {
         expect(said.size).toBeGreaterThan(1);
     }, 120_000);
 });
+
+describe('the ground figure is on one scale, whatever the world was written on', () => {
+    /**
+     * `qi-scale.ts` moved `qiDensity` off a 0..1 fraction onto 1..100. A world
+     * instantiated before that move stores fractions, and every one of them
+     * rounds to the bottom of the new scale - measured on a live database, all
+     * thirty-nine places in it reported `ground 0 of 100, thin`, including
+     * Nine Peaks. The map's most important figure read as a constant zero.
+     *
+     * The tell is FRACTIONAL rather than small, because `clampQiDensity`
+     * rounds and so a current world can only ever store integers.
+     */
+    const at = (qiDensity: number) =>
+        placesView(world([makeLocation({ id: 'p', name: 'P', kind: 'settlement', qiDensity })]))
+            .locations[0];
+
+    it('leaves a value already on the scale alone', () => {
+        const view = at(65);
+        expect(view.qiDensity).toBe(65);
+        expect(view.qiBand).toBe('dense');
+        expect(view.groundRescaled).toBe(false);
+    });
+
+    it('converts a stored fraction by the constant the engine converts with', () => {
+        const view = at(0.3475);
+        expect(view.qiDensity).toBe(35);
+        expect(view.qiBand).toBe('normal');
+        expect(view.groundRescaled).toBe(true);
+    });
+
+    it('never reports zero, because the scale has no meaning for it', () => {
+        // Old worlds stored a literal 0 for a scar. `QI_DENSITY_MIN` is 1 and
+        // the scale says 0 would mean unmeasured.
+        expect(at(0).qiDensity).toBe(1);
+        expect(at(0).groundRescaled).toBe(true);
+    });
+
+    it('says how many it had to convert, once, rather than on every row', () => {
+        const w = world([
+            makeLocation({ id: 'a', name: 'A', kind: 'settlement', qiDensity: 0.35 }),
+            makeLocation({ id: 'b', name: 'B', kind: 'settlement', qiDensity: 0.2 }),
+            makeLocation({ id: 'c', name: 'C', kind: 'settlement', qiDensity: 40 })
+        ]);
+        expect(placesView(w).counts.rescaledGround).toBe(2);
+    });
+});
+
+describe('what is TRUE of a place travels with it', () => {
+    /**
+     * The area-status layer - a famine, a war on the ground a house stands on,
+     * a beast tide, a district its holder has worked out - is what answers
+     * "what is going on here", and this view carried none of it, so the
+     * operator's map of the world could not report the only part of it that
+     * was currently moving. Measured on a live world: fourteen statuses
+     * running and not one of them reachable from the map.
+     *
+     * The join is the engine's own `statusesInArea`, so the map and the played
+     * `investigate` verb cannot disagree about what is happening.
+     */
+    const province = makeLocation({ id: 'prov', name: 'The Low Fall', kind: 'region' });
+    const town = makeLocation({ id: 'town', name: 'Nine Peaks', kind: 'settlement', parentId: 'prov' });
+
+    const famine = {
+        id: 'st-famine', areaId: 'prov', kind: 'famine',
+        statement: 'The province is eating its seed.',
+        cause: { what: 'a harvest that failed', decidedById: null, factId: null },
+        signs: ['the mills are idle by noon'], causeKnownLocally: false,
+        beganOnDay: 90, reviewOnDay: 400, liftedOnDay: null,
+        stops: ['millet'], priceMultiplier: 2.4, dangerDelta: 0.05
+    };
+    const closed = {
+        id: 'st-closed', areaId: 'town', kind: 'closed_to_gathering',
+        statement: 'Lu Hall has closed the ground.',
+        cause: { what: 'the beds were worked out', decidedById: 'f-lu', factId: null },
+        signs: [], causeKnownLocally: true,
+        beganOnDay: 120, reviewOnDay: 500, liftedOnDay: null,
+        stops: ['gathering'], priceMultiplier: 1.5, dangerDelta: 0
+    };
+    const over = { ...famine, id: 'st-over', areaId: 'prov', liftedOnDay: 150 };
+
+    function viewed(day = 200) {
+        const w = {
+            ...world([province, town], day),
+            statuses: [famine, closed, over],
+            factions: [{ id: 'f-lu', name: 'Lu Hall' }]
+        } as unknown as WorldState;
+        return new Map(placesView(w).locations.map(l => [l.id, l]));
+    }
+
+    it('is true of the area and of everything under it', () => {
+        const byId = viewed();
+        expect(byId.get('prov')!.statuses.map(s => s.id)).toEqual(['st-famine']);
+        expect(byId.get('town')!.statuses.map(s => s.id).sort()).toEqual(['st-closed', 'st-famine']);
+    });
+
+    it('separates what is true of this ground from what is true above it', () => {
+        const town2 = viewed().get('town')!;
+        expect(town2.statuses.find(s => s.id === 'st-closed')!.ownArea).toBe(true);
+        const inherited = town2.statuses.find(s => s.id === 'st-famine')!;
+        expect(inherited.ownArea).toBe(false);
+        expect(inherited.areaName).toBe('The Low Fall');
+    });
+
+    it('carries every figure the status does, because that is what it DOES', () => {
+        const f = viewed().get('prov')!.statuses[0];
+        expect(f.stops).toEqual(['millet']);
+        expect(f.priceMultiplier).toBe(2.4);
+        expect(f.dangerDelta).toBe(0.05);
+        expect(f.daysRunning).toBe(110);
+        expect(f.reviewInDays).toBe(200);
+        expect(f.cause).toBe('a harvest that failed');
+    });
+
+    it('names whoever decided it, and says plainly when nobody did', () => {
+        const byId = viewed();
+        expect(byId.get('prov')!.statuses[0].decidedById).toBeNull();
+        const c = byId.get('town')!.statuses.find(s => s.id === 'st-closed')!;
+        expect(c.decidedById).toBe('f-lu');
+        expect(c.decidedByName).toBe('Lu Hall');
+    });
+
+    it('drops one that has already lifted', () => {
+        const ids = viewed().get('prov')!.statuses.map(s => s.id);
+        expect(ids).not.toContain('st-over');
+    });
+
+    it('counts a province-wide status once rather than once per town', () => {
+        const w = {
+            ...world([province, town], 200),
+            statuses: [famine, closed]
+        } as unknown as WorldState;
+        expect(placesView(w).counts.runningStatuses).toBe(2);
+    });
+
+    it('carries an empty list where nothing is going on, not a missing field', () => {
+        expect(placesView(world([province])).locations[0].statuses).toEqual([]);
+    });
+});

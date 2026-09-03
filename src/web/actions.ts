@@ -3959,6 +3959,56 @@ const WORD_NUMBERS: Readonly<Record<string, number>> = {
 };
 
 /**
+ * The words that multiply the word before them.
+ *
+ * Separate from `WORD_NUMBERS` because they behave differently: `five` is a
+ * count and `hundred` is a scale, and a scanner that treats them alike takes
+ * whichever it meets first.
+ */
+const WORD_MAGNITUDES: Readonly<Record<string, number>> = { hundred: 100, thousand: 1_000 };
+
+/**
+ * How many were named, from the two tokens before the unit.
+ *
+ * ── MEASURED, AND IT WAS SILENT ──────────────────────────────────────────
+ *
+ * The old scan walked the tokens right to left and stopped at the first one
+ * that resolved, so in "five hundred years" it met `hundred`, took 100, and
+ * threw the `five` away:
+ *
+ *     five hundred years   ->  100 years
+ *     two hundred years    ->  100 years
+ *     a thousand years     ->    1 year     (`thousand` was in no table, so the
+ *                                            `a` behind it answered instead)
+ *
+ * A player asking for a millennium of seclusion got a year and was told
+ * nothing, which is the worst shape a parse error takes: the sentence was
+ * understood, the number was not, and the turn looked ordinary.
+ *
+ * So a magnitude no longer ends the scan - it sets a scale and the scan
+ * continues to the count in front of it. `a` and `an` no longer end it either,
+ * which also repairs "half a year", where the `a` was answering for the
+ * `half` behind it.
+ */
+function howManyWereNamed(tail: readonly string[]): number {
+    let count = 1;
+    let magnitude = 1;
+    for (const token of [...tail].reverse()) {
+        const digits = Number(token.replace(/[^0-9.]/g, ''));
+        if (Number.isFinite(digits) && digits > 0) { count = digits; break; }
+        if (token === 'half') { count = 0.5; break; }
+        const scale = WORD_MAGNITUDES[token];
+        if (scale !== undefined) { magnitude = scale; continue; }
+        // An article carries no count of its own. Left to answer, it swallowed
+        // the word behind it.
+        if (token === 'a' || token === 'an') continue;
+        const word = WORD_NUMBERS[token];
+        if (word !== undefined) { count = word; break; }
+    }
+    return count * magnitude;
+}
+
+/**
  * The same table as a regex alternation, longest first so `fifteen` is not
  * eaten by `five`.
  *
@@ -3996,14 +4046,7 @@ export function parseDuration(input: string): number | null {
         const before = text.slice(0, match.index).trim();
         const tail = before.split(/[\s,]+/).filter(Boolean).slice(-2);
 
-        let count = 1;
-        for (const token of tail.reverse()) {
-            const digits = Number(token.replace(/[^0-9.]/g, ''));
-            if (Number.isFinite(digits) && digits > 0) { count = digits; break; }
-            if (token === 'half') { count = 0.5; break; }
-            const word = WORD_NUMBERS[token];
-            if (word !== undefined) { count = word; break; }
-        }
+        const count = howManyWereNamed(tail);
 
         const days = Math.round(count * unitDays);
         return Math.max(1, Math.min(MAX_CULTIVATION_DAYS, days));
@@ -4037,14 +4080,7 @@ export function durationAskedFor(input: string): number | null {
         const before = text.slice(0, match.index).trim();
         const tail = before.split(/[\s,]+/).filter(Boolean).slice(-2);
 
-        let count = 1;
-        for (const token of tail.reverse()) {
-            const digits = Number(token.replace(/[^0-9.]/g, ''));
-            if (Number.isFinite(digits) && digits > 0) { count = digits; break; }
-            if (token === 'half') { count = 0.5; break; }
-            const word = WORD_NUMBERS[token];
-            if (word !== undefined) { count = word; break; }
-        }
+        const count = howManyWereNamed(tail);
 
         return Math.max(1, Math.round(count * unitDays));
     }

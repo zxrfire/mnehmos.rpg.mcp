@@ -1489,19 +1489,51 @@ figure is the **shortest path over `links` in `travelDays`**, a plain Dijkstra o
 sub-thousand-node graph, not a straight line: two places either side of a mountain are far
 apart, and the link graph is where that is already written.
 
-**`unreachable` is a real answer** and has its own band. Measured against the seeded world,
-18 of 20 roots - every sealed ruin and every scar - hold no links at all, so most of the
-top level is honestly reported as having no recorded route rather than being sorted quietly
-to the bottom.
+**`unreachable` is a real answer** and has its own bands - two of them, and the split is a
+correction. Measured against the seeded world, 18 of 20 roots hold no links at all, and
+`seedRegions` links **provinces to provinces and provinces to sect gates and nothing
+else**, so no settlement, vein, ruin or scar is priced from anywhere, in any world. Filing
+all of that under *"No route recorded - nothing links these to where you are"* and then
+printing `no route` again on every row said something false about a town three hours away
+and read as a data error. It is not one:
+[`where-this-cultivator-could-go.ts`](where-this-cultivator-could-go.ts) rules that a
+settlement inside your own province has a **null** travel cost because nothing anywhere
+prices those, and that a fabricated zero is a number a player will plan around.
+
+So the panel says the two different things the data can actually distinguish, off
+`linkCount`:
+
+| | |
+|---|---|
+| **No road is recorded to these** | the record holds no crossing of any kind. Inside a container this reads *Inside &lt;the province&gt;*, because calling a province's own towns unreachable from its gate is the opposite of true |
+| **Roads, but none that reach here** | the record holds crossings and no chain of them arrives |
+
+**And the absence is stated once, in the heading, never on the rows.** That is
+[`facts.ts`](facts.ts)'s rule - a constant repeated on every row of a list is not a
+measurement, and `travelDays=unstated` eight times is what buried the two rows carrying a
+figure. A row under one of those headings carries no duration cell at all.
 
 The origin is the container the reader has walked into, which is also what puts a
 compound's precincts in the order somebody would actually pass through them. At the top of
 the world there is no such place, so it is the best-connected root, **named in every band
 heading** - an unlabelled origin makes every distance on the page unreadable.
-`cultivator.location` is free text by design (see `schema/cultivation.ts`) and is used only
-on an exact name match to a place that has at least one link. That guard was added after a
-live world matched `Sixmile`, a settlement holding no links, and reported every distance in
-the world as "no route".
+`cultivator.location` is free text by design (see `schema/cultivation.ts`) and is used as
+the origin only on an exact name match to a place that has at least one link. That guard
+was added after a live world matched `Sixmile`, a settlement holding no links, and reported
+every distance in the world as "no route".
+
+### Where the cultivator is standing is not where distances start
+
+The guard above had a cost nobody noticed: `mapChooseOrigin` was the **only** reader of
+`cultivator.location`, so a player standing anywhere unlinked - which is every settlement
+in every world - vanished from the map entirely, and the panel silently measured from a
+province instead. The operator's first question of a map had no answer on it.
+
+`MAP.hereId` is kept separately from `MAP.originId` now, and the panel gives one of three
+honest answers above the list: they are the origin; they are marked in the list and
+distances come from somewhere else *and why*; or the name on the character matches no place
+this world holds, printed as the free text it is. Nothing guesses which place an unmatched
+string meant.
 
 ### Descent is one click
 
@@ -1542,6 +1574,82 @@ the payload carries three things nothing else surfaced:
   because "nobody alive can explain it" is a stored state of the world.
 - **`capacity` against `occupancy`**. `architecture.ts` stores capacity and deliberately
   stores no other measurement; the other half is a count of NPCs standing there.
+
+### What is TRUE of a place is not the same as what a place IS
+
+A record's fixed fields say what somewhere **is**. `WorldState.statuses` - the layer in
+[`../engine/world/what-is-true-of-a-place-right-now.ts`](../engine/world/what-is-true-of-a-place-right-now.ts) -
+says what is **happening**: a famine, a war on the ground a house stands on, a beast tide
+running, a district its holder has worked out. The played `investigate` verb has read it
+since it was wired and the map carried none of it, so an operator's map of the world could
+not report the only part of the world that was currently moving. Measured on a live world:
+fourteen statuses running, none of them reachable from the panel.
+
+The join is the engine's own `statusesInArea`, so the map and the played verb cannot
+disagree about what is going on. A status is true of its area **and of everything under
+it**, so a node carries its ancestors' too and `ownArea` says which are its own. Every
+figure travels - `stops`, `priceMultiplier`, `dangerDelta`, the day it began and the day it
+is next reviewed - because those are what a status *does*, and a statement without them is
+a mood rather than a mechanic. `causeKnownLocally` travels raw: this surface is admin,
+and masking a cause by a knowing stage is `readStatusAtStage`'s job at the player boundary.
+
+`counts.runningStatuses` counts distinct statuses on their own areas, not the sum of the
+per-node lists - one famine over a province is inherited by every town in it.
+
+### The ground figure is on one scale, whatever the world was written on
+
+`qiDensity` is 1..100 (see `engine/world/qi-scale.ts`, which records why it left 0..1). A
+world instantiated before that move stores fractions, and every one of them rounds to the
+bottom of the new scale: measured on a live database, **all thirty-nine places reported
+`ground 0 of 100, thin`**, including Nine Peaks, "the deepest vein anyone has kept". The
+map's single most important figure read as a constant zero for the entire world.
+
+`groundOf` in `places.ts` converts a stored fraction by the constant `qiFraction` divides
+by - the same conversion stated in the other direction, not a guess - and the tell is
+**fractional rather than small**, because `clampQiDensity` rounds and a current world can
+only store integers. A stored `0` becomes 1, because the scale says dead ground still reads
+1 and 0 would mean unmeasured. `counts.rescaledGround` reports how many were converted so
+the panel can say it once in the footer. **Nothing is written back**: this is a view, and a
+storage migration is not its business.
+
+### A row that is not distinguishable is not a row
+
+The panel's worst block was a dozen ruins, identical in every field but the place name,
+each printing eight unlabelled lines of which seven were the same seven, under a heading
+that already said the eighth. Three separate rules of this repo were being broken in one
+place - an index does not restate its own titles, a constant is said once, and nothing
+should read as a dump - and the fix is one idea: **lead with what differs, and hoist what
+is shared.**
+
+- **Rows on a level that share a description are grouped**, at three or more. The group
+  says the shared sentence once and summarises what actually varies as a range: the ground,
+  the ordinal it would take to hold one, how many are sealed, how many nobody has found,
+  how many have something going wrong on them. It opens onto the individual records and
+  hides nothing.
+- **A row whose description is shared, or is its own name again, leads with its newest
+  change instead.** `locationFromRuin` writes *"The seat of a power that no longer exists."*
+  verbatim for every ruin in the world; what separates Blackpass from Neargate is in the
+  change ledger, which was already in the payload and was never on the row.
+- **A leading copy of the row's own name is taken off its own sentence.** *"The Door Ji
+  Yuanhe Did Not Open Again was opened by He Lanxue"* under a heading that is already that
+  name is the title read twice.
+- **The first sentence is not automatically the useful half.** The scar description is
+  *"Dead ground. Every scar was somebody's entire ambition."* and the old first-sentence
+  rule kept the half that says nothing.
+
+### The ground band on a row is the place's own
+
+`qiBand` is derived from `qiDensity`, and `seedRegions` writes the **province's** average
+density onto every settlement in it while putting the settlement's authored band in
+`ambient`. So the row's band comes from `ambient` - what somebody standing there would
+ordinarily draw - and the figure follows it. Where the two disagree the row carries a `≠`
+and the tooltip says why. That disagreement is a real state of the record (a sealed pocket
+holds far more than anybody can reach) and is marked rather than smoothed: averaging them
+would be the map inventing a third number.
+
+`web/mock-api.js` carries one row of each shape, deliberately - a group of three identical
+ruins, a famine nobody decided, a war somebody did, and one settlement whose band and
+geology disagree - because those are what break, not the volume.
 
 ## The player is a row on the world's roster
 

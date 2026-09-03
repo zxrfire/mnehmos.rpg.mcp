@@ -3523,13 +3523,25 @@ const MAP = {
   /** originId -> Map(id -> { days, viaId, kind }). Dijkstra is cheap; repeating it is not. */
   distCache: new Map(),
   openRows: new Set(),
+  /** Grouped rows the reader has unfolded, keyed by the group's signature. */
+  openFlocks: new Set(),
   q: '',
   fog: 'mark',
   ordinal: null,
   /** 'all' | 'operate' | 'survive' - what the reader would be able to do there. */
   reachFilter: 'all',
   /** Days. Infinity is no limit. */
-  withinDays: Infinity
+  withinDays: Infinity,
+  /**
+   * The place the cultivator is standing on, when the world holds one by that
+   * name. Distinct from `originId`: the player is very often somewhere nothing
+   * records a road to, and the panel has to be able to say BOTH "they are at
+   * Sixmile" and "distances are measured from somewhere else, because Sixmile
+   * has no priced road". Conflating them is what made the player invisible.
+   */
+  hereId: null,
+  /** `cultivator.location` verbatim, matched or not. */
+  hereName: ''
 };
 
 /** The pseudo-container above every root. The map's own top. */
@@ -3549,6 +3561,20 @@ const MAP_KIND_LABEL = {
   sealed_domain: 'Sealed domain', portal: 'Portal', precinct: 'Precinct',
   hall: 'Hall', chamber: 'Chamber', vault: 'Strongroom'
 };
+
+/** For a heading that stands in front of several of the same thing. */
+const MAP_KIND_PLURAL = {
+  region: 'provinces', settlement: 'settlements', sect_seat: 'sect seats', wilds: 'stretches of wilds',
+  vein: 'spirit veins', cave: 'caves', ruin: 'ruins', grave: 'graves', scar: 'scars',
+  forbidden_zone: 'forbidden zones', secret_realm: 'secret realms',
+  sealed_domain: 'sealed domains', portal: 'portals', precinct: 'precincts',
+  hall: 'halls', chamber: 'chambers', vault: 'strongrooms'
+};
+
+function mapKindPlural(kind, n) {
+  if (n === 1) return (MAP_KIND_LABEL[kind] || kind).toLowerCase();
+  return MAP_KIND_PLURAL[kind] || `${String(kind).replace(/_/g, ' ')} places`;
+}
 
 const MAP_LINK_LABEL = {
   road: 'road', path: 'path', tunnel: 'tunnel', gate: 'gate', portal: 'portal', seam: 'seam'
@@ -3580,6 +3606,37 @@ const MAP_DIST_BANDS = [
   { max: 30, label: 'A week to a month' },
   { max: 365, label: 'Months away' },
   { max: Infinity, label: 'The better part of a year or more' }
+];
+
+/**
+ * The two ways a place can fail to have a distance, which are not one way.
+ *
+ * The panel used to file both under "No route recorded - nothing links these
+ * to where you are", printed `no route` again on every row underneath it, and
+ * read as a data error. It is not one: this world prices roads BETWEEN
+ * PROVINCES and prices nothing else, deliberately -
+ * `where-this-cultivator-could-go.ts` states that a settlement inside your own
+ * province has a null travel cost because nothing anywhere prices those, and
+ * that a fabricated zero is a number a player will plan around. So a town
+ * three hours away and a ruin nobody has ever walked to are both unpriced, and
+ * saying "nothing links these to where you are" about the first is false.
+ *
+ * The distinction the data can actually make is whether the record holds any
+ * crossing AT ALL, which is `linkCount`. Two headings, both true, and the
+ * constant is said once in the heading rather than on every row -
+ * `src/web/facts.ts` on saying a constant once, and saying why.
+ */
+const MAP_NO_ROUTE_BANDS = [
+  {
+    key: 'unlinked',
+    label: 'No road is recorded to these',
+    note: 'the world prices roads between provinces and prices nothing else; these hold no crossing of any kind'
+  },
+  {
+    key: 'unreached',
+    label: 'Roads, but none that reach here',
+    note: 'these record crossings, and no chain of them arrives from where distances are measured'
+  }
 ];
 
 const MAP_WITHIN = [
@@ -3783,7 +3840,14 @@ function mapChooseOrigin() {
   // settlement that holds no links at all, and every distance on the page came
   // back "no route" - a true statement about Sixmile presented as a fact about
   // the world. An origin nothing connects to is not an origin.
-  const here = S.cultivator && S.cultivator.location;
+  //
+  // WHERE THEY ARE IS STILL RECORDED, and that is the correction. This
+  // function used to be the only reader of `cultivator.location`, so a player
+  // standing anywhere unlinked - which is every settlement in every world, by
+  // the seeder's design - vanished from the map entirely. `MAP.hereId` is kept
+  // separately and marks the row, whether or not the place can serve as an
+  // origin. See `mapHereMarkup`, which says which of the two is which.
+  const here = MAP.hereName;
   if (here) {
     const exact = (MAP.data.locations || []).find((l) => mapIsHere(l) && l.name === here);
     if (exact && (MAP.adj.get(exact.id) || []).length) return exact.id;
@@ -3800,29 +3864,145 @@ function mapChooseOrigin() {
 
 /* ── one row ─────────────────────────────────────────────────────────────── */
 
-/** Ground, as four cells of text. The only picture on the page, and it is type. */
-function mapDensityMark(n) {
+/**
+ * Ground, in the words a surveyor would use, with the figure attached.
+ *
+ * TWO CORRECTIONS LIVE HERE, and both were the same shape: a number with no
+ * sentence around it, which `src/web/facts.ts` names as the standard this
+ * channel failed. `▮▯▯▯ 0` told an operator nothing, and there was no header
+ * anywhere on the panel saying what the cells or the number were.
+ *
+ * FIRST, IT IS THE PLACE'S OWN BAND. `qiBand` is derived from `qiDensity`, and
+ * the seeder writes the PROVINCE'S average density onto every settlement in it
+ * while putting the settlement's authored band in `ambient`. So Nine Peaks -
+ * "the deepest vein anyone has kept", authored `dense` - and a thin ford town
+ * printed the same mark. `ambient` is the per-place fact and leads; the
+ * geology figure follows it and is labelled as the province's where the two
+ * disagree, because that disagreement is information rather than an error.
+ *
+ * SECOND, THE FIGURE IS ON ONE SCALE. `places.ts` normalises worlds written
+ * before the ground scale moved off 0..1 and flags the rows it converted; the
+ * panel states the count once in the footer rather than caveating every row.
+ */
+function mapGroundMark(n) {
+  const band = n.ambient && MAP_BAND_LABEL[n.ambient] ? n.ambient : n.qiBand;
   const filled = Math.max(1, Math.min(4, Math.ceil((n.qiDensity / 100) * 4)));
-  return html`<span class="dens" data-qi-band="${n.qiBand}" title="Ground ${fmtInt(n.qiDensity)} of 100 - ${MAP_BAND_LABEL[n.qiBand] || n.qiBand}"
-    aria-label="ground ${fmtInt(n.qiDensity)} of 100">${raw('▮'.repeat(filled) + '▯'.repeat(4 - filled))}<b>${fmtInt(n.qiDensity)}</b></span>`;
+  const disagrees = band !== n.qiBand;
+  const title = `The band this record carries is ${MAP_BAND_LABEL[band] || band}, which is what a `
+    + `cultivator standing here would ordinarily draw. The vein under it is ${fmtInt(n.qiDensity)} of 100`
+    + (disagrees
+      ? `, which would read ${MAP_BAND_LABEL[n.qiBand] || n.qiBand}. The two differ because the band is what this place gives and the figure is the geology it was stamped with - for a settlement that is its province's average.`
+      : '.')
+    + (n.groundRescaled ? ' Stored on the old 0-1 scale and shown rescaled.' : '');
+  return html`<span class="dens" data-qi-band="${band}" title="${title}" aria-label="${raw(esc(title))}"
+    >${raw('▮'.repeat(filled) + '▯'.repeat(4 - filled))}<b>${MAP_BAND_LABEL[band] || band} ${fmtInt(n.qiDensity)}</b
+    >${disagrees ? raw(html`<i class="dens__split" aria-hidden="true">≠</i>`) : ''}</span>`;
 }
 
 function mapStateChips(n) {
   const out = [];
+  if (n.id === MAP.hereId) out.push(html`<span class="chip chip--here">the cultivator is here</span>`);
   if (n.sealed) out.push(html`<span class="chip chip--sealed">${n.keyId ? 'sealed, keyed' : 'sealed'}</span>`);
   else if (!n.open) out.push(html`<span class="chip chip--shut">shut ${mapDays(n.opensInDays)}</span>`);
   else if (n.cycle) out.push(html`<span class="chip chip--window">open ${mapDays(n.closesInDays)}</span>`);
   if (!n.discovered) out.push(html`<span class="chip chip--fog">undiscovered</span>`);
   if (n.contested) out.push(html`<span class="chip chip--claim">claim disputed</span>`);
+  // What is TRUE of the place, ahead of what it is. A famine is the reason an
+  // operator opened the panel; it does not belong behind a disclosure.
+  for (const s of n.statuses || []) {
+    out.push(html`<span class="chip chip--status ${raw(s.ownArea ? '' : 'chip--status-above')}"
+      title="${raw(esc(s.statement + (s.ownArea ? '' : ` (true of ${s.areaName}, and so of everything in it)`)))}"
+      >${String(s.kind).replace(/_/g, ' ')}</span>`);
+  }
   return out.join('');
 }
 
-/** The first sentence of the description, for the closed row. */
-function mapLede(n) {
-  const d = String(n.description || '').trim();
+/** The first sentence of a description, when it is worth having on a shut row. */
+function mapFirstSentence(text) {
+  const d = String(text || '').trim();
   if (!d) return '';
   const cut = d.search(/[.!?](\s|$)/);
   return cut > 0 && cut < 160 ? d.slice(0, cut + 1) : d;
+}
+
+/** A name and a sentence, compared with the punctuation and case taken off. */
+function mapSameWords(a, b) {
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return norm(a) === norm(b);
+}
+
+/**
+ * The row's own name, taken off the front of its own sentence.
+ *
+ * The change ledger writes whole sentences - "The Door Ji Yuanhe Did Not Open
+ * Again was opened by He Lanxue." - and under a heading that is already that
+ * name, the first eight words are the title read twice. What the operator
+ * wanted out of that line is "opened by He Lanxue", and the name is not
+ * DROPPED, it is simply not repeated an inch below itself.
+ *
+ * Only a leading match, and only on a word boundary. A name in the middle of a
+ * sentence is doing work there.
+ */
+function mapWithoutOwnName(text, name) {
+  const t = String(text || '').trim();
+  const n = String(name || '').trim();
+  if (!n || !t.toLowerCase().startsWith(n.toLowerCase())) return t;
+  const rest = t.slice(n.length).replace(/^[\s,:;-]+/, '');
+  if (!rest || rest.length < 12) return t;
+  // Deliberately NOT recapitalised. The remainder reads as a continuation of
+  // the name it sits under - "was opened by Xu Heshan" - and forcing a capital
+  // both reads oddly and would rewrite the case of a remainder that starts
+  // with somebody's name.
+  return rest;
+}
+
+/**
+ * The line under the name, which must be the thing that is NOT shared.
+ *
+ * Three ways a row used to say nothing, all of them measured on the live
+ * panel, and all of them the same defect - a row that carries only what every
+ * row beside it also carries has no content in it:
+ *
+ *   THE DESCRIPTION IS THE NAME. "The Door Ji Yuanhe Did Not Open Again",
+ *   described as "The Door Ji Yuanhe Did Not Open Again." An index shows where
+ *   a thing is; it does not restate it.
+ *
+ *   THE DESCRIPTION IS A CONSTANT. Every ruin in the world reads "The seat of
+ *   a power that no longer exists." and every scar reads "Dead ground." -
+ *   `locationFromRuin` and the scar patch write those verbatim for all of
+ *   them. Whatever is actually different about Blackpass and Neargate is what
+ *   the operator came to find out, and the shared sentence is not it.
+ *
+ *   THE FIRST SENTENCE THREW THE REST AWAY. The scar description is "Dead
+ *   ground. Every scar was somebody's entire ambition." and the first-sentence
+ *   rule kept the half that says nothing and dropped the half that says
+ *   something. That one was the panel's own doing.
+ *
+ * So: when the description is shared with the row's neighbours, the shared
+ * part is hoisted to the group heading and said once, and the row leads with
+ * its own newest change instead - which for a ruin is the sentence naming when
+ * it was sealed and what the trials inside were calibrated for. That is real,
+ * per-place, and already in the payload.
+ */
+function mapTeaser(n, sharedDescriptions) {
+  const desc = String(n.description || '').trim();
+  const isShared = sharedDescriptions && sharedDescriptions.has(desc);
+  const restatesName = mapSameWords(desc, n.name) || mapSameWords(mapFirstSentence(desc), n.name);
+
+  if (desc && !isShared && !restatesName) {
+    const first = mapFirstSentence(desc);
+    // Do not keep a leading sentence that is itself the shared constant while
+    // the rest of the description is the part that differs.
+    if (!sharedDescriptions || !sharedDescriptions.has(first) || first === desc) return first;
+    return desc.slice(first.length).trim() || first;
+  }
+
+  const change = (n.changes || [])[0];
+  if (change && change.summary && !mapSameWords(change.summary, n.name)) {
+    return mapWithoutOwnName(change.summary, n.name);
+  }
+  if (desc && !restatesName && !isShared) return mapWithoutOwnName(mapFirstSentence(desc), n.name);
+  return '';
 }
 
 /**
@@ -3833,22 +4013,39 @@ function mapLede(n) {
  * they can get in at all. Then the first sentence of the description, so a
  * closed list still reads as prose rather than as a schema.
  */
-function mapSummaryMarkup(n, reach, d, inside, verb) {
-  const lede = mapLede(n);
+/**
+ * The shared face of a row, open or closed.
+ *
+ * Name, then the sentence that distinguishes this place from the ones beside
+ * it, then the facts that decide whether anybody would go: what the ground is
+ * worth, who holds it, whether it would kill them, and whether they can get in.
+ *
+ * The distance cell is printed only when there IS one. It used to read `no
+ * route` on every row of a band whose own heading already said so - the
+ * constant repeated a hundred times that `facts.ts` measured burying the rows
+ * that carried a figure.
+ */
+function mapSummaryMarkup(n, reach, d, inside, verb, sharedDescriptions) {
+  const teaser = mapTeaser(n, sharedDescriptions);
+  const held = n.heldBy && n.heldBy !== 'nobody in particular' ? n.heldBy : '';
   return html`
     <span class="nhead">
       <span class="nname">${n.name}</span>
-      <span class="nord" title="${raw(d && Number.isFinite(d.days) ? esc(mapRouteText(n.id) || 'you are here') : 'No crossing links this to where you are standing.')}">${d ? mapDays(d.days) : 'no route'}</span>
+      ${d && Number.isFinite(d.days)
+        ? raw(html`<span class="nord" title="${raw(esc(mapRouteText(n.id) || 'distances are measured from here'))}">${mapDays(d.days)}</span>`)
+        : ''}
     </span>
+    ${teaser ? raw(html`<span class="nwant">${teaser}</span>`) : ''}
     <span class="nkind">
       <span>${MAP_KIND_LABEL[n.kind] || n.kind}</span>
-      ${raw(mapDensityMark(n))}
-      ${MAP.ordinal == null ? '' : raw(html`<span class="chip chip--reach reach--${raw(reach)}">${MAP_REACH_TEXT[reach][0]}</span>`)}
+      ${raw(mapGroundMark(n))}
+      ${held ? raw(html`<span class="nheld" title="Who runs it on the ground, in the record's own words. The claim on paper is in the record, and the two disagreeing is a state rather than an error.">on the ground: ${held}</span>`) : ''}
+      ${MAP.ordinal == null ? '' : raw(html`<span class="chip chip--reach reach--${raw(reach)}"
+        title="${raw(esc(MAP_REACH_TEXT[reach][1]))}">${MAP_REACH_TEXT[reach][0]}</span>`)}
       ${raw(mapStateChips(n))}
       ${inside ? raw(html`<span class="chip chip--inside">${fmtInt(inside)} inside</span>`) : ''}
       <span class="ngo">${verb}</span>
-    </span>
-    ${lede ? raw(html`<span class="nwant">${lede}</span>`) : ''}`;
+    </span>`;
 }
 
 /**
@@ -3861,23 +4058,23 @@ function mapSummaryMarkup(n, reach, d, inside, verb) {
  * The distinction is visible before the click: only one of them carries an
  * `N inside` count.
  */
-function mapRowMarkup(n) {
+function mapRowMarkup(n, sharedDescriptions) {
   const reach = mapReach(n, MAP.ordinal);
   const d = mapDistanceTo(n.id);
   const inside = (n.childIds || []).length;
-  const cls = `ncard reach--${reach}${n.discovered ? '' : ' is-fogged'}`;
+  const cls = `ncard reach--${reach}${n.discovered ? '' : ' is-fogged'}${n.id === MAP.hereId ? ' is-here' : ''}`;
 
   if (inside) {
     return html`
       <button class="${raw(cls)} ncard--go" type="button" data-descend="${n.id}"
               aria-label="${raw(esc(`Go inside ${n.name}, ${inside} places`))}">
-        ${raw(mapSummaryMarkup(n, reach, d, inside, 'go in'))}
+        ${raw(mapSummaryMarkup(n, reach, d, inside, 'go in', sharedDescriptions))}
       </button>`;
   }
 
   return html`
     <details class="${raw(cls)}" data-row="${n.id}" ${raw(MAP.openRows.has(n.id) ? 'open' : '')}>
-      <summary>${raw(mapSummaryMarkup(n, reach, d, 0, 'open'))}</summary>
+      <summary>${raw(mapSummaryMarkup(n, reach, d, 0, 'read the record', sharedDescriptions))}</summary>
       <div class="nbody">${raw(MAP.openRows.has(n.id) ? mapBodyMarkup(n) : '')}</div>
     </details>`;
 }
@@ -3897,6 +4094,68 @@ function mapThresholdRow(label, value, note) {
       <span class="thr__num">${fmtInt(value)}</span>
       <span class="thr__note">${note}</span>
     </div>`;
+}
+
+/**
+ * What is true of this place today.
+ *
+ * The layer in `engine/world/what-is-true-of-a-place-right-now.ts`, which the
+ * played `investigate` verb has read since it was wired and this panel did
+ * not. It answers the operator's question the record cannot: a place's fixed
+ * properties say what it IS, and a famine, a war on the ground a house stands
+ * on or a district its holder has worked out say what is HAPPENING.
+ *
+ * Every figure the status carries is printed, in a sentence. What it stops,
+ * what it does to prices and what it does to danger are what a status IS - a
+ * statement without them is a mood - and `causeKnownLocally` is on the row
+ * because "nobody here can tell you why" is a stored fact about the world
+ * rather than a gap in the record.
+ */
+/**
+ * A stored fragment, printed as one sentence.
+ *
+ * `StatusCause.what` is authored prose and is sometimes already a full
+ * sentence with its own full stop. Wrapping it in a carrier phrase produced
+ * "It came of The bottom of the ground ... was taken out of it.." - a capital
+ * mid-clause and two full stops. Whatever the content gives, this ends up as
+ * exactly one sentence and adds no words of its own.
+ */
+function mapSentence(text) {
+  const t = String(text || '').trim().replace(/\s*\.+$/, '');
+  return t ? `${t}.` : '';
+}
+
+function mapStatusesMarkup(n) {
+  const list = n.statuses || [];
+  if (!list.length) return '';
+  return html`
+    <div class="section__label">What is going on here · ${fmtInt(list.length)}</div>
+    <ul class="stats">${raw(list.map((s) => html`
+      <li class="stat ${raw(s.ownArea ? '' : 'stat--above')}">
+        <span class="stat__kind">${String(s.kind).replace(/_/g, ' ')}</span>
+        <span class="stat__body">
+          <b>${s.statement}</b>
+          <span class="stat__where">${s.ownArea
+            ? `On this ground, since day ${fmtInt(s.beganOnDay)} - ${fmtInt(s.daysRunning)} days.`
+            : `True of ${s.areaName}, and so of everything in it, since day ${fmtInt(s.beganOnDay)}.`}
+            ${s.reviewInDays >= 0
+              ? `The world looks at it again in ${mapDays(s.reviewInDays)}.`
+              : `It was due to be looked at ${mapDays(-s.reviewInDays)} ago and has not been.`}</span>
+          <span class="stat__why">${mapSentence(s.cause)}
+            ${s.decidedByName ? `${s.decidedByName} decided it.` : s.decidedById ? 'Somebody decided it.' : 'Nobody decided it.'}
+            ${s.causeKnownLocally ? 'Asking around here gets you the reason.' : 'Nobody here can tell you why.'}</span>
+          ${s.signs.length ? raw(html`<span class="stat__signs">What anybody can see: ${s.signs.join('; ')}.</span>`) : ''}
+          <span class="stat__does">${[
+            s.stops.length ? `Not to be had here while it lasts: ${s.stops.join(', ')}.` : '',
+            s.priceMultiplier !== 1 ? `Everything still to be had costs ${fmtNum(s.priceMultiplier, 2)}x.` : '',
+            // Two decimals, and only when it rounds to something. Danger is a
+            // 0..1 fraction, so `fmtSigned` at zero digits printed a live
+            // status's real +0.004 as "+0 to the danger", which is a figure
+            // that says the opposite of what it measures.
+            Math.abs(s.dangerDelta) >= 0.005 ? `${fmtSigned(s.dangerDelta, 2)} to the danger of the ground, which stands at ${fmtPct(n.danger)}.` : ''
+          ].filter(Boolean).join(' ') || 'It stops nothing, moves no price and adds no danger.'}</span>
+        </span>
+      </li>`).join(''))}</ul>`;
 }
 
 function mapHistoryMarkup(n) {
@@ -3941,7 +4200,10 @@ function mapBodyLede(n, { asHere = false } = {}) {
 
     ${d && Number.isFinite(d.days) && d.days > 0
       ? raw(html`<p class="maproute"><b>${mapDays(d.days)}</b> from ${MAP.byId.get(MAP.originId)?.name || 'here'}${route ? `: ${route}` : ''}${d.shut ? '. Part of that route is shut.' : '.'}</p>`)
-      : (!d && !asHere ? raw(html`<p class="maproute maproute--none">No recorded crossing joins this to ${MAP.byId.get(MAP.originId)?.name || 'where you are'}. There may be no way there.</p>`) : '')}
+      : (!d && !asHere ? raw(html`<p class="maproute maproute--none">${n.linkCount
+          ? `This record holds ${fmtInt(n.linkCount)} crossing${n.linkCount === 1 ? '' : 's'} and no chain of them arrives from ${MAP.byId.get(MAP.originId)?.name || 'where distances are measured'}.`
+          : 'This record holds no crossing of any kind. The world prices roads between provinces and prices nothing else, so an unpriced place is not the same as an unreachable one.'
+        }</p>`) : '')}
 
     ${MAP.ordinal == null ? '' : raw(html`<p class="mapverdict reach--${raw(reach)}">${MAP_REACH_TEXT[reach][0]}<span>${MAP_REACH_TEXT[reach][1]}</span></p>`)}`;
 }
@@ -3977,6 +4239,8 @@ function mapBodyRest(n) {
                 ? raw(html`<b>Standing open now</b>; it shuts in ${mapDays(n.closesInDays)}.`)
                 : raw(html`<b>Shut.</b> It opens in ${mapDays(n.opensInDays)}.`)}`)}
       </p>`) : ''}
+
+    ${raw(mapStatusesMarkup(n))}
 
     <div class="section__label">What would kill you${MAP.ordinal == null ? '' : ` · you are ordinal ${fmtInt(MAP.ordinal)}`}</div>
     <div class="thrs">
@@ -4062,11 +4326,20 @@ async function openMap() {
   MAP.byId = new Map((res.data.locations || []).map((l) => [l.id, l]));
   MAP.distCache = new Map();
   MAP.openRows = new Set();
+  MAP.openFlocks = new Set();
   MAP.path = [];
   MAP.q = '';
   MAP.reachFilter = 'all';
   MAP.withinDays = Infinity;
   mapBuildAdjacency();
+  // Exact name match only. `cultivator.location` is free text by design in
+  // `schema/cultivation.ts` - the engine does not own a map - so guessing what
+  // an unmatched string meant would be the client inventing geography. An
+  // unmatched name is reported as unmatched, which is itself worth knowing.
+  MAP.hereName = (S.cultivator && S.cultivator.location) || '';
+  MAP.hereId = MAP.hereName
+    ? ((MAP.data.locations || []).find((l) => mapIsHere(l) && l.name === MAP.hereName) || {}).id || null
+    : null;
   MAP.originId = mapChooseOrigin();
   MAP.ordinal = S.cultivator && Number.isFinite(Number(S.cultivator.realmOrdinal))
     ? Number(S.cultivator.realmOrdinal)
@@ -4083,6 +4356,7 @@ function mapDescend(id) {
   if (!n || !(n.childIds || []).length) return;
   MAP.path = [...MAP.path, id];
   MAP.openRows = new Set();
+  MAP.openFlocks = new Set();
   MAP.q = '';
   MAP.originId = mapChooseOrigin();
   renderMapPanel();
@@ -4091,6 +4365,7 @@ function mapDescend(id) {
 function mapAscendTo(depth) {
   MAP.path = MAP.path.slice(0, depth);
   MAP.openRows = new Set();
+  MAP.openFlocks = new Set();
   MAP.q = '';
   MAP.originId = mapChooseOrigin();
   renderMapPanel();
@@ -4129,8 +4404,87 @@ function mapGoTo(id) {
   });
 }
 
+/**
+ * Where the cultivator is standing, and why that is not where distances start.
+ *
+ * The operator's first question of a map is where the player is, and the panel
+ * could not answer it: `cultivator.location` was read once, discarded whenever
+ * the place held no links - which is every settlement in every world, because
+ * the seeder links provinces to provinces and to sect gates and nothing else -
+ * and the page then measured everything from a province without saying it had
+ * substituted one.
+ *
+ * Three honest answers, and the middle one is the common case:
+ *
+ *   matched, and linked      they are the origin; nothing more to say.
+ *   matched, and unlinked    they are marked on the list, and the line says
+ *                            distances are from somewhere else and why.
+ *   not matched              the name is printed as the free text it is. The
+ *                            engine does not own a map and the client does not
+ *                            guess which place a string meant.
+ */
+function mapHereMarkup() {
+  if (!MAP.hereName) return '';
+  const here = MAP.hereId ? MAP.byId.get(MAP.hereId) : null;
+  const origin = MAP.byId.get(MAP.originId);
+
+  if (!here) {
+    return html`<p class="maphere maphere--adrift">The cultivator's location reads
+      <b>${MAP.hereName}</b>, and no place in this world answers to that name. It is free text on the
+      character rather than a reference, so nothing here guesses which place was meant.</p>`;
+  }
+  if (here.id === MAP.originId) {
+    return html`<p class="maphere">The cultivator is standing at <b>${here.name}</b>, and every
+      distance below is measured from there.</p>`;
+  }
+  return html`<p class="maphere">The cultivator is standing at
+    <button class="linkish" type="button" data-goto="${here.id}">${here.name}</button>, which records
+    ${here.linkCount ? `${fmtInt(here.linkCount)} crossing${here.linkCount === 1 ? '' : 's'} that reach nothing from here` : 'no crossing at all'},
+    so distances are measured from ${origin ? origin.name : 'the best-connected province'} instead. It is
+    marked in the list.</p>`;
+}
+
+/**
+ * What the marks on a row mean, said once.
+ *
+ * Added because an operator looking at `▮▯▯▯ 1 turned away open` could not
+ * tell what any of it was, and nothing on the panel said. The standard this
+ * channel is held to is `src/web/facts.ts`: a figure is worth showing and a
+ * bare number in an unheaded column is not showing it.
+ */
+function mapLegendMarkup() {
+  return html`
+    <details class="maplegend">
+      <summary>What the marks mean</summary>
+      <dl class="mapfacts">
+        <div><dt>▮▯▯▯ band N</dt><dd>The ground. The word is the band this place's own record
+          carries - what somebody standing here would ordinarily draw. The number is the vein
+          under it, 1 to 100. A <b>≠</b> means the two disagree, which is a real state and not an
+          error: a settlement is stamped with its province's geology while carrying its own band,
+          and a sealed pocket holds far more than anybody can reach.</dd></div>
+        <div><dt>held by</dt><dd>Who runs it on the ground, in the record's own words. The claim on
+          paper is in the record, and the two disagreeing is a state rather than an error.</dd></div>
+        <div><dt>turned away, alive and useless, can work here, can hold it</dt>
+          <dd>What the ordinal on the slider could do here, against the place's four thresholds.
+          They fail differently, and the four numbers are printed in the record.</dd></div>
+        <div><dt>sealed, shut, undiscovered</dt><dd>Whether it can be entered at all today, and
+          whether anybody knows it is there. Nothing here is filtered out for the operator.</dd></div>
+        <div><dt>famine, war, beast tide</dt><dd>What is TRUE of the place today, as against what
+          the place is. It is inherited from every area above it, and what it stops and what it
+          does to prices is in the record.</dd></div>
+        <div><dt>a duration, or nothing</dt><dd>How long the road takes, from wherever distances
+          are being measured. A row under a heading that says no road is priced carries no
+          duration, because saying the same absence on every row is what buried the rows that
+          carry a figure.</dd></div>
+      </dl>
+    </details>`;
+}
+
 function mapCrumbMarkup() {
-  const bits = [html`<button class="crumb ${raw(MAP.path.length ? '' : 'is-here')}" type="button" data-ascend="0">${MAP_ROOT.name}</button>`];
+  // At the top there is nowhere to walk back to, and the one crumb the trail
+  // held was the overlay's own title printed a second time under itself.
+  if (!MAP.path.length) return '';
+  const bits = [html`<button class="crumb" type="button" data-ascend="0">${MAP_ROOT.name}</button>`];
   MAP.path.forEach((id, i) => {
     const n = MAP.byId.get(id);
     if (!n) return;
@@ -4149,10 +4503,16 @@ function mapVisibleRows() {
   let hiddenFar = 0;
 
   for (const n of all) {
+    // Searching for a house has to find the ground it actually runs as well as
+    // the ground it claims on paper: `heldBy` is the words on the ground and
+    // the two disagreeing is a real state, so both are searched.
     if (q && !(String(n.name).toLowerCase().includes(q)
       || String(n.kind).toLowerCase().includes(q)
       || (n.tags || []).some((t) => String(t).toLowerCase().includes(q))
       || (n.hazards || []).some((t) => String(t).toLowerCase().includes(q))
+      || (n.statuses || []).some((s) => String(s.kind).toLowerCase().includes(q))
+      || String(n.heldBy || '').toLowerCase().includes(q)
+      || String(n.ambient || '').toLowerCase().includes(q)
       || String(n.controllingFactionName || '').toLowerCase().includes(q))) continue;
 
     if (MAP.ordinal != null && MAP.reachFilter !== 'all') {
@@ -4177,6 +4537,88 @@ function mapVisibleRows() {
   return { rows, hiddenReach, hiddenFar, total: all.length };
 }
 
+/**
+ * Which heading a row belongs under.
+ *
+ * A number for a real distance; one of two named keys for the two different
+ * ways of having none. See `MAP_NO_ROUTE_BANDS`.
+ */
+function mapBandKey(n, d) {
+  if (d && Number.isFinite(d.days)) return mapBandOf(d.days);
+  return n.linkCount ? 'unreached' : 'unlinked';
+}
+
+/** A range, said as a range, or as one value when there is only one. */
+function mapRange(values, render) {
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  return lo === hi ? render(lo) : `${render(lo)} to ${render(hi)}`;
+}
+
+/**
+ * Several places that are one fact.
+ *
+ * The panel's worst block was a dozen ruins, identical in every field but the
+ * place name, each printing eight unlabelled lines of which seven were the
+ * same seven. Rows that are not distinguishable are not rows: the shared
+ * sentence is said ONCE, above them, and what actually varies - the ground,
+ * the bar you would have to stand at, how many are sealed and how many nobody
+ * has found - is summarised as a range rather than repeated as a column.
+ *
+ * Nothing is hidden. The group opens onto the individual records, each of
+ * which leads with its own change ledger, which is where the difference
+ * between Blackpass and Neargate is actually written down.
+ */
+function mapFlockMarkup(key, group, sharedDescriptions) {
+  const [first] = group;
+  const open = MAP.openFlocks.has(key);
+  const sealed = group.filter((n) => n.sealed).length;
+  const unfound = group.filter((n) => !n.discovered).length;
+  const shut = group.filter((n) => !n.open && !n.sealed).length;
+  const shared = String(first.description || '').trim();
+
+  const wrong = group.filter((n) => (n.statuses || []).length).length;
+  const holders = new Set(group.map((n) => n.heldBy).filter((h) => h && h !== 'nobody in particular'));
+  const facts = [
+    `Ground ${mapRange(group.map((n) => n.qiDensity), (v) => fmtInt(v))} of 100.`,
+    `Holding one takes ${mapRange(group.map((n) => n.thresholds.mastery), (v) => `ordinal ${fmtInt(v)}`)}.`,
+    holders.size === 1 ? `On the ground, every one: ${[...holders][0]}.` : holders.size ? `${fmtInt(holders.size)} different holders.` : '',
+    sealed ? `${fmtInt(sealed)} sealed.` : '',
+    shut ? `${fmtInt(shut)} shut today.` : '',
+    unfound ? `${fmtInt(unfound)} nobody has found.` : '',
+    wrong ? `${fmtInt(wrong)} with something going wrong on them.` : ''
+  ].filter(Boolean).join(' ');
+
+  return html`
+    <details class="ncard ncard--flock" data-flock="${raw(esc(key))}" ${raw(open ? 'open' : '')}>
+      <summary>
+        <span class="nhead">
+          <span class="nname">${fmtInt(group.length)} ${mapKindPlural(first.kind, group.length)}, and the record says the same thing about all of them</span>
+        </span>
+        ${shared ? raw(html`<span class="nwant">They each read: &ldquo;${shared}&rdquo;</span>`) : ''}
+        <span class="nkind">
+          <span>${facts}</span>
+          <span class="ngo">name them</span>
+        </span>
+      </summary>
+      <div class="nflock">${raw(open ? group.map((n) => mapRowMarkup(n, sharedDescriptions)).join('') : '')}</div>
+    </details>`;
+}
+
+/** Descriptions carried by more than one row on this level. */
+function mapSharedDescriptions(rows) {
+  const seen = new Map();
+  for (const { n } of rows) {
+    const d = String(n.description || '').trim();
+    if (!d) continue;
+    seen.set(d, (seen.get(d) || 0) + 1);
+  }
+  return new Set([...seen.entries()].filter(([, c]) => c > 1).map(([d]) => d));
+}
+
+/** Three or more of a kind saying the same thing is a group, not a list. */
+const MAP_FLOCK_MIN = 3;
+
 function mapListMarkup() {
   const { rows, hiddenReach, hiddenFar, total } = mapVisibleRows();
   if (!rows.length) {
@@ -4186,17 +4628,58 @@ function mapListMarkup() {
   }
 
   const origin = MAP.byId.get(MAP.originId);
-  let out = '';
-  let band = -1;
+  const container = mapContainer();
+  const shared = mapSharedDescriptions(rows);
+
+  // One pass to band the rows, so a band can be summarised before it is drawn.
+  const bands = new Map();
   for (const { n, d } of rows) {
-    const b = mapBandOf(d ? d.days : Infinity);
-    if (b !== band) {
-      band = b;
-      const label = MAP_DIST_BANDS[b] ? MAP_DIST_BANDS[b].label : 'No route recorded';
-      out += html`<div class="bandhead"><span>${label}</span>
-        <span class="bandhead__from">${b < MAP_DIST_BANDS.length && origin ? `from ${origin.name}` : 'nothing links these to where you are'}</span></div>`;
+    const key = mapBandKey(n, d);
+    const bucket = bands.get(key);
+    if (bucket) bucket.push(n);
+    else bands.set(key, [n]);
+  }
+
+  const order = [...bands.keys()].sort((a, b) => {
+    const rank = (k) => (typeof k === 'number' ? k : k === 'unlinked' ? 100 : 101);
+    return rank(a) - rank(b);
+  });
+
+  let out = '';
+  for (const key of order) {
+    const inBand = bands.get(key);
+    const named = typeof key === 'number' ? null : MAP_NO_ROUTE_BANDS.find((b) => b.key === key);
+    // Inside a container the unpriced rows are its own contents, and calling
+    // them unreachable from their own gate is the opposite of true. Same fact,
+    // said the way it reads from where the reader is standing.
+    const inside = container !== MAP_ROOT && key === 'unlinked';
+    out += html`<div class="bandhead">
+      <span>${inside ? `Inside ${container.name}` : named ? named.label : (MAP_DIST_BANDS[key] || {}).label || 'Somewhere'}</span>
+      <span class="bandhead__from">${inside
+        ? 'no road between them is priced; the world states travel days between provinces and nowhere else'
+        : named ? named.note : origin ? `from ${origin.name}` : ''}</span></div>`;
+
+    // Group by kind and shared description. A group of one or two is not worth
+    // a heading of its own and is drawn as ordinary rows.
+    const groups = new Map();
+    for (const n of inBand) {
+      const d = String(n.description || '').trim();
+      const gk = shared.has(d) ? `${key}|${n.kind}|${d}` : null;
+      if (!gk) { groups.set(`solo:${n.id}`, [n]); continue; }
+      const bucket = groups.get(gk);
+      if (bucket) bucket.push(n);
+      else groups.set(gk, [n]);
     }
-    out += mapRowMarkup(n);
+    for (const [gk, group] of groups) {
+      if (group.length < MAP_FLOCK_MIN) {
+        out += group.map((n) => mapRowMarkup(n, shared)).join('');
+        continue;
+      }
+      // Walking to a place inside a group has to open the group, or the row
+      // the reader asked for is behind a summary and the scroll finds nothing.
+      if (group.some((n) => MAP.openRows.has(n.id))) MAP.openFlocks.add(gk);
+      out += mapFlockMarkup(gk, group, shared);
+    }
   }
 
   if (hiddenReach || hiddenFar) {
@@ -4234,10 +4717,13 @@ function renderMapPanel() {
       ${raw(mapCrumbMarkup())}
 
       ${container === MAP_ROOT
-        ? raw(html`<p class="mapv__lede">Everything below the Lid: ${fmtInt(below)} places, on day ${fmtInt(d.world.currentDay)}.
+        ? raw(html`<p class="mapv__lede">Everything below the Lid: ${fmtInt(below)} places, on day ${fmtInt(d.world.currentDay)}${
+            d.counts.runningStatuses ? `, with ${fmtInt(d.counts.runningStatuses)} thing${d.counts.runningStatuses === 1 ? '' : 's'} going wrong somewhere in it` : ''}.
             What is on the far side of the Lid is a different world rather than a corner of this one, and this map stops
             here${above ? ` - ${fmtInt(above)} place${above === 1 ? '' : 's'} above it are not listed` : ''}.</p>`)
         : raw(html`<div class="mapv__here">${raw(mapBodyMarkup(container, { asHere: true }))}</div>`)}
+
+      ${raw(mapHereMarkup())}
 
       <div class="mapv__controls">
         <input class="input" id="m-q" type="search" placeholder="Search this level…" value="${MAP.q}" aria-label="Search this level" />
@@ -4264,13 +4750,18 @@ function renderMapPanel() {
         </div>
       </div>
 
+      ${raw(mapLegendMarkup())}
+
       <div class="maplist" id="map-list">${raw(mapListMarkup())}</div>
 
       <p class="mapv__foot">Ordered by the shortest recorded route${origin ? ` from ${esc(origin.name)}` : ''}, in days over
         <code>links</code>. There are no coordinates in this world and none are invented here${
         d.danglingLinks || d.orphanedParents
           ? ` · ${fmtInt(d.danglingLinks)} link${d.danglingLinks === 1 ? '' : 's'} and ${fmtInt(d.orphanedParents)} parent reference${d.orphanedParents === 1 ? '' : 's'} name a place this world does not hold, counted and not followed`
-          : ''}.</p>
+          : ''}.${
+        d.counts.rescaledGround
+          ? ` This world predates the 1-100 ground scale: ${fmtInt(d.counts.rescaledGround)} of its ${fmtInt(d.counts.total)} places store the old 0-1 fraction and their ground is shown rescaled by the same constant the engine converts with. Nothing is written back.`
+          : ''}</p>
     </div>`;
 
   wireMap();
@@ -4337,6 +4828,21 @@ function wireMap() {
   // hundred records of history, crossings and thresholds rendered up front is
   // most of a second of work nobody asked for.
   body.addEventListener('toggle', (e) => {
+    const flock = e.target.closest('[data-flock]');
+    if (flock && flock.matches('[data-flock]')) {
+      const key = flock.dataset.flock;
+      if (flock.open) MAP.openFlocks.add(key);
+      else MAP.openFlocks.delete(key);
+      // The group's members are built on unfold for the same reason a row's
+      // body is: a dozen full records rendered behind a summary nobody opened
+      // is the work the summary exists to avoid.
+      const host = flock.querySelector('.nflock');
+      if (host && flock.open && !host.innerHTML.trim()) {
+        const list = $('#map-list');
+        if (list) list.innerHTML = mapListMarkup();
+      }
+      return;
+    }
     const row = e.target.closest('[data-row]');
     if (!row || !row.matches('[data-row]')) return;
     const id = row.dataset.row;
