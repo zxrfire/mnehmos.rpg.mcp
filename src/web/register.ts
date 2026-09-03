@@ -5319,7 +5319,7 @@ function artifactTable(list: RegisterArtifact[], ceiling: RegisterArtifactCeilin
 
     // WIDTHS, DECLARED, BECAUSE AUTO LAYOUT GOT THEM EXACTLY BACKWARDS.
     // Measured on the rendered page before this: the artifact name column was
-    // 351px holding "The First Course" with two hundred pixels of nothing
+    // 351px holding "The First Chisel" with two hundred pixels of nothing
     // beside it, while "What it is" - the only column on the row anybody reads
     // as prose - was squeezed to 317px and came out as eight lines of six
     // words. Auto layout sizes a column to its longest cell and a nowrap name

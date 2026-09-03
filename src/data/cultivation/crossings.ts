@@ -205,7 +205,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         factionId: 'apex-long-cut',
         kind: 'answering_channel',
         ancestor: {
-            name: 'The First Course, named on the schedule and nowhere else',
+            name: 'The First Chisel, named on the schedule and nowhere else',
             whatTheyWere: 'A carver who crossed from driven ground, which the Long Cut regards as the more difficult road and does not argue about with anybody',
             crossedYearsAgo: 2_600
         },
@@ -614,7 +614,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             // records without comment and which nobody outside has ever been
             // able to get an explanation of. Two people went up in the same
             // year, on the same ground, and only one of them is named.
-            { title: 'The First Course, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
+            { title: 'The First Chisel, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
             { title: 'Bai Zhuo', yearsAgo: 2_600, was: 'a cutter with no patron and a posted staff that did not notice until it was over', afterCrossing: 'still_above' }
         ],
         depletion: 'light',

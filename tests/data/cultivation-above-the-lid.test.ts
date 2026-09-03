@@ -192,7 +192,7 @@ describe('objects at the True Immortal rung', () => {
         // made to be leavable, at the rung that can stay. It is not a shard.
         expect(getArtifact('carried-the-first-course')!.description).toMatch(/Ninth Nail/);
         expect(getArtifact('carried-the-second-edge')!.description).toMatch(/Standing Edge/);
-        expect(getArtifact('carried-the-first-datum')!.description).toMatch(/Datum Lamp/);
+        expect(getArtifact('carried-the-first-datum')!.description).toMatch(/Fixed Star Lamp/);
         for (const id of ['sent-ninth-nail', 'artifact-the-standing-edge', 'sent-datum-lamp']) {
             const lesser = getArtifact(id);
             expect(lesser, `${id} left the catalog`).toBeDefined();
