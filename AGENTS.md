@@ -1246,7 +1246,13 @@ height, and nothing is in decline - which is a different setting, and a much dul
 
 - **A house that cannot teach its own beginners.** If nobody can carry a new disciple off the
   entry rung, nobody could ever have joined and got anywhere, and the roster is a fiction.
-  That is a defect wherever it appears.
+  That is a defect wherever it appears - **unless the body is a posting rather than a school.**
+  The Kiln Wardens and the Root Sill Court hold no cultivation manuals on purpose: you are
+  **posted** to them, you go on cultivating whatever you were already cultivating, and when
+  the posting ends **you go back to your own sect.** They teach nothing because there is
+  nothing they are for teaching, and an empty shelf there is the entry stating what the body
+  is. Before calling an empty shelf a defect, ask whether anybody was ever supposed to
+  arrive there with nothing.
 - **An absence produced by the machinery rather than by the world.** If a house's art demands a
   root its members are never dealt, then its shelf is dead every seed for a mechanical reason,
   and nobody inside the world could tell you when it stopped - because it never started. **The
