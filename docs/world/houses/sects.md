@@ -459,5 +459,20 @@ in the room, somebody with no office and many disciples can outweigh somebody wi
 room and none. It is strictly the worse seat, since an office-holder takes disciples too, and
 it is still enough to matter.
 
+**The narrowing runs the whole way up, and the top of it is a person rather than a rung.**
+Five inner disciples worth watching; three of them reach conclave; and of those, **one - or all
+three, depending on the patriarch - become personal disciples.** How many is the head's choice
+and is a fact about that head rather than about the house.
+
+**A personal disciple is the patriarch's own.** The head may teach others, and often does, but
+a personal disciple **gets the bulk of it** - and they are not the house's disciples, they are
+*theirs*. That is the difference between being taught in a house and being somebody's student,
+and it is the route by which anything the head personally holds reaches anybody at all.
+
+So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
+shape: **more people who could than places to be.** A conclave disciple passed over for
+personal disciple has not failed at anything - somebody else was chosen, and there were only
+ever one or three places.
+
 **This is also where the world's existing rivalries come from.** The seeded `rival` tie whose
 note reads *"Was the other candidate"* is exactly this: the person who did not get the office.
