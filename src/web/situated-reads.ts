@@ -110,6 +110,10 @@ import {
     whatIsWorthDoingStandingHere
 } from './what-is-worth-doing-standing-here.js';
 import { wayOut, whereThisFightStands } from '../engine/cultivation/unfinished-fight.js';
+import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
+import { readAdmission } from '../data/cultivation/inheritance-trials.js';
+import { canHurtYou } from './action-set.js';
+import { parseIntent } from './actions.js';
 import { theFightStillStands } from './fight-answers.js';
 import { whatWouldCloseThisWound } from './what-would-close-this-wound.js';
 import {
@@ -1095,6 +1099,44 @@ export const situatedReads = {
                 .sort((a, b) => a.askStones - b.askStones),
             roadUnderfoot: this.groundTheyCanPointAt(cultivator)
                 .find(row => row.underfoot)?.name ?? null,
+            // ── THE DANGEROUS HALF, WHICH WAS NEVER BEING PRODUCED ───────
+            //
+            // Measured against `canHurtYou` over 102 squares: of fifteen verbs
+            // this row generated, three could hurt anybody, and `site/enter`
+            // was not among them in any of the 42 squares standing on one.
+            //
+            // `nameableFor` is the `site` verb's own gate - `isAwareOf`
+            // through `nameableSites` - so a name that reaches the row is a
+            // name `siteMeant` will resolve. Openable first, then the
+            // shallowest that is still above, which is the one worth aiming at.
+            sitesYouCouldOpen: this.nameableFor(cultivator)
+                .map(site => ({
+                    name: site.name,
+                    setAtOrdinal: site.access.floorOrdinal,
+                    // The site's OWN reading, which splits being let in from
+                    // coming back out. A ground that admits somebody it will
+                    // not release is exactly what that distinction is for.
+                    survivable: readAdmission(site.access, cultivator.realmOrdinal).survives
+                }))
+                // Survivable first, deepest of those - the best ground the body
+                // can actually take. Then the shallowest that it cannot, which
+                // is the nearest thing to aim at rather than the worst.
+                .sort((a, b) =>
+                    Number(b.survivable) - Number(a.survivable)
+                    || (a.survivable
+                        ? b.setAtOrdinal - a.setAtOrdinal
+                        : a.setAtOrdinal - b.setAtOrdinal)
+                    || (a.name < b.name ? -1 : 1)),
+            // The ENUM and never `holderName` - that field is null both for an
+            // unheld ground and for a holder nothing can place, so an absent
+            // name is not evidence of absent authority. These are the same two
+            // readings `ground-holder-lines.ts` volunteers unasked.
+            groundIsUnheld: (() => {
+                const where = this.worldPlaceOf(cultivator);
+                if (!this.atHand || !where) return false;
+                const holding = whoHoldsTheGround(this.atHand.locations, where).holding;
+                return holding === 'no_authority' || holding === 'no_holder_of_record';
+            })(),
             aboveTheLid: canExistBeyondTheLid(cultivator),
             // The one entry here that is gone next turn whatever happens. See
             // the field's note in the affordance module for why it is offered
@@ -1411,9 +1453,32 @@ export const situatedReads = {
      */
     affordancesFor(this: GameService, cultivator: Cultivator, run: Run): Affordance[] {
         try {
-            return whatIsWorthDoingStandingHere(
+            const live = whatIsWorthDoingStandingHere(
                 this.whatIsLiveHere(cultivator, this.ambientFor(cultivator, run), run)
             );
+            // ── THE HARM AXIS, STAMPED HERE AND DEFINED NOWHERE NEAR HERE ─
+            //
+            // `canHurtYou` lives in `action-set.ts` beside the free-versus-
+            // spending split, and this is its consumer. The affordance module
+            // is deliberately not allowed to answer this question itself: a
+            // predicate about danger written inside the surface that ranks
+            // danger would be a second opinion, and this repo has spent a day
+            // removing second opinions.
+            //
+            // The exception is the fight register, which sets its own and must.
+            // `canHurtYou` takes an `ActionName`, and inside a live fight
+            // `I block` and `I keep swinging` never become plans at all -
+            // `fight-answers.ts` reads them before the pattern table, they
+            // spend no day, and they can end the run in the round they are
+            // typed. Running them through `parseIntent` here would score the
+            // five most dangerous strings in the game as safe, so anything
+            // already marked stays marked.
+            return live.map(a => a.canHurtYou
+                ? a
+                : (() => {
+                    const plan = parseIntent(a.say);
+                    return { ...a, canHurtYou: canHurtYou(plan.action, plan.intent) };
+                })());
         } catch {
             return [];
         }

@@ -106,6 +106,8 @@ const WELL: StandingHere = {
     groundThatTeachesARoad: 0,
     brokenSeclusion: null,
     fight: null,
+    sitesYouCouldOpen: [],
+    groundIsUnheld: false,
     aboveTheLid: false
 };
 
@@ -1088,5 +1090,117 @@ describe('a fight is what is happening, and the square stops being the subject',
         // the ordinary case would be the worse bug of the two.
         expect(whatIsWorthDoingStandingHere({ ...WELL, fight: null })
             .some(a => a.id.startsWith('fight_'))).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE GENERATOR ONLY POINTED AT TRAVEL
+//
+//   "THIS STILL NEEDS FIXING, IF YOU ARE IN A KETTLE WHY IS EVERYTHING SO
+//    SAFE???"
+//
+// Measured against `canHurtYou` across 102 squares: of the fifteen verbs this
+// row generated, only THREE could hurt anybody - `move`, `cultivate` and
+// `request/teaching`. It never once produced `attack`, `hunt`, `site/enter`,
+// `breakthrough`, `learn_technique` or `consume_pill`, and in all 42 squares
+// standing on a site it did not offer going in.
+//
+// So it was never a ranking failure and never a missing predicate. No amount
+// of sorting reaches an entry that is not being produced.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the row offers things that can end badly, because those are live too', () => {
+    const ARUIN = { name: 'The Gate Frame With No Gate In It', setAtOrdinal: 21, survivable: false };
+    const OPENABLE = { name: 'The Bench at the Burned Seat', setAtOrdinal: 3, survivable: true };
+
+    it('offers the ground it cannot survive, rather than hiding it', () => {
+        // The owner's ruling, and the same one the buy chip already follows:
+        // "it should open, you should know about it, and you should not go at
+        // ordinal 0. a player can hear gossip above their realm and that's
+        // okay." Knowledge running ahead of capability is what turns a thing
+        // into something to aim at rather than a door that says no.
+        const out = byId({ ...WELL, sitesYouCouldOpen: [ARUIN] }, 'enter_site')!;
+        expect(out.say).toBe('I go into The Gate Frame With No Gate In It');
+        expect(out.because).toMatch(/ordinal 21/);
+        expect(out.because).toMatch(/aim at rather than a door that says no/);
+    });
+
+    it('prefers ground the body would come back out of', () => {
+        // `readAdmission` splits being LET IN from surviving it, and the
+        // caller sorts on the survivable half first.
+        expect(byId({ ...WELL, sitesYouCouldOpen: [OPENABLE, ARUIN] }, 'enter_site')!.say)
+            .toBe('I go into The Bench at the Burned Seat');
+    });
+
+    it('does not dress a fact about your records as a fact about this square', () => {
+        // Measured, and it is why this axis is not `here`: `nameableSites` is
+        // world-wide, so the first draft offered the identical grave in all 68
+        // squares while claiming each time that it was about that square. That
+        // is the genericness this whole pass exists to delete, wearing a
+        // dangerous coat.
+        expect(byId({ ...WELL, sitesYouCouldOpen: [ARUIN] }, 'enter_site')!.whatItIsAbout)
+            .toBe('you');
+    });
+
+    it('offers taking from somebody only where nobody answers for the ground', () => {
+        const withMark: StandingHere = {
+            ...WELL,
+            peopleHere: 2,
+            peopleHereByName: [
+                { name: 'Mo Peilin', realmOrdinal: 2, standsAbove: false, rungsApart: 4 }
+            ]
+        };
+        // The same enum that has been answering "who comes when you are
+        // wronged" since it landed, read from the side nothing had read it
+        // from. Held ground: somebody answers, and the row says nothing.
+        expect(ids({ ...withMark, groundIsUnheld: false })).not.toContain('take_from_somebody');
+        const out = byId({ ...withMark, groundIsUnheld: true }, 'take_from_somebody')!;
+        expect(out.say).toBe('I rob Mo Peilin');
+        expect(out.because).toMatch(/nobody to take a wrong to/i);
+        // And it says what it actually costs, which is not the ground.
+        expect(out.because).toMatch(/what they do about it afterwards/);
+    });
+
+    it('does not offer robbing somebody standing above you, or a stranger', () => {
+        // Above you is not a mark, it is a bad idea with a different shape -
+        // and a stranger is a headcount, which cannot be robbed by name.
+        expect(ids({
+            ...WELL, groundIsUnheld: true, peopleHere: 1,
+            peopleHereByName: [
+                { name: 'Cao Fukuan', realmOrdinal: 9, standsAbove: true, rungsApart: 9 }
+            ]
+        })).not.toContain('take_from_somebody');
+        expect(ids({ ...WELL, groundIsUnheld: true, peopleHere: 4 }))
+            .not.toContain('take_from_somebody');
+    });
+
+    it('leaves the harm axis unset, because this module may not answer it', () => {
+        // `canHurtYou` is defined once, in `action-set.ts`, beside the
+        // free-versus-spending split. A predicate about danger written inside
+        // the surface that ranks danger would be a second opinion, and the
+        // caller stamps every entry from the real one.
+        for (const a of whatIsWorthDoingStandingHere({
+            ...WELL, sitesYouCouldOpen: [ARUIN], groundIsUnheld: true
+        })) {
+            expect(a.canHurtYou, a.id).toBe(false);
+        }
+    });
+
+    it('stamps the fight answers itself, because they never become plans', () => {
+        // The one thing in the can-hurt-you-and-costs-nothing cell. Inside a
+        // live fight `I block` and `I keep swinging` are read by
+        // `fight-answers.ts` before the pattern table, spend no day, and can
+        // end the run in the round they are typed - so no plan-level
+        // instrument can score them, and the register does not wait to be
+        // measured.
+        const inFight = whatIsWorthDoingStandingHere({
+            ...WELL,
+            fight: {
+                them: 'Yun Keqing', yourHp: 41, yourMaxHp: 50, theirHp: 63, theirMaxHp: 67,
+                roundsLeft: 7, flightChance: 0.41, wayOut: null
+            }
+        });
+        expect(inFight.length).toBeGreaterThan(0);
+        for (const a of inFight) expect(a.canHurtYou, a.say).toBe(true);
     });
 });

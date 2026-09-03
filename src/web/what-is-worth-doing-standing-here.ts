@@ -279,6 +279,30 @@ export interface Affordance {
      * the one that will not be true in the next square.
      */
     namesSomething: boolean;
+    /**
+     * Whether taking this up can end badly for the person who takes it.
+     *
+     * Stamped by the CALLER, from `canHurtYou` in `action-set.ts`, because the
+     * harm axis has exactly one definition in this codebase and this module is
+     * not allowed to be a second opinion about danger. It sits beside
+     * `costsTheAskerNothing` as the other half of a pair:
+     *
+     *                      costs nothing        costs something
+     *   cannot hurt you    reading a board      buying a manual
+     *   can hurt you       (see below)          walking into a ruin
+     *
+     * ── THE ONE THING IN THE EMPTY CELL, AND WHY IT IS STAMPED BY HAND ───
+     *
+     * `canHurtYou` takes an `ActionName`, and the five most dangerous strings
+     * in this game are not plans at all. Inside a live fight, `I block` and
+     * `I keep swinging` are read by `fight-answers.ts` BEFORE the pattern table
+     * is reached, spend no day, and can end the run in the round they are
+     * typed. No plan-level instrument can score them - they never become a
+     * plan - so the fight register sets this itself rather than being measured,
+     * and anybody auditing the row against `parseIntent` will find those five
+     * missing and should not conclude they are safe.
+     */
+    canHurtYou: boolean;
 }
 
 /**
@@ -516,6 +540,65 @@ export interface StandingHere {
      * is a place they can name, whatever the awareness table says.
      */
     roadUnderfoot: string | null;
+    /**
+     * Ground somebody told them about that can be opened, and what it costs.
+     *
+     * ── WHY THIS FIELD EXISTS: THE GENERATOR ONLY POINTED AT TRAVEL ──────
+     *
+     * The row was measured against `canHurtYou` across 102 squares, and of the
+     * fifteen verbs it generated only THREE could hurt anybody - `move`,
+     * `cultivate` and `request/teaching`. It never once produced `attack`,
+     * `hunt`, `site/enter`, `breakthrough`, `learn_technique` or
+     * `consume_pill`, which is where the danger in this game actually lives.
+     * In all 42 squares whose place is a `site`, standing on a ruin, it did not
+     * offer going in.
+     *
+     * So the owner's *"IF YOU ARE IN A KETTLE WHY IS EVERYTHING SO SAFE???"*
+     * was never a ranking failure and never a missing predicate. The dangerous
+     * options were not being PRODUCED, and no amount of sorting reaches an
+     * entry that does not exist.
+     *
+     * ── AND IT IS OFFERED WHEN IT IS OUT OF REACH, DELIBERATELY ──────────
+     *
+     * The owner's ruling on exactly this: a fresh world opens with a ruin the
+     * player knows about and cannot survive - *"it should open, you should know
+     * about it, and you should not go at ordinal 0. a player can hear gossip
+     * above their realm and that's okay."* Knowledge is allowed to run ahead of
+     * capability, because that is what turns a thing into something to aim at
+     * rather than a door that says no.
+     *
+     * Gated on `isAwareOf` through `nameableSites` - which is the same gate the
+     * `site` verb resolves names against, so a sentence built here is one the
+     * verb will accept. Below `named` the catalog withholds the name entirely,
+     * so there is nothing to type and nothing to leak.
+     */
+    sitesYouCouldOpen: readonly {
+        name: string;
+        /** The rung the ground is set at. `access.floorOrdinal`. */
+        setAtOrdinal: number;
+        /**
+         * Whether this body would come back out, from the site's own
+         * `readAdmission` at this rung - which splits being LET IN from
+         * surviving it, and the distinction is the whole point.
+         */
+        survivable: boolean;
+    }[];
+    /**
+     * Nobody holds the ground under them, on the register's own reading.
+     *
+     * Read off the `holding` ENUM and never off `holderName`: that field is
+     * null for every reading but `held` AND for a holder nothing can place, so
+     * an absent name is not evidence of absent authority. `no_authority` and
+     * `no_holder_of_record` are the two readings that mean nobody answers here,
+     * and they are the same two `ground-holder-lines.ts` volunteers unasked.
+     *
+     * What it changes is not whether an act is possible - taking something is
+     * possible anywhere - but what happens afterwards, which is the half a
+     * player cannot see and the half this world already models: with nobody
+     * holding the ground there is no one to take a wrong to, in either
+     * direction.
+     */
+    groundIsUnheld: boolean;
     /**
      * Ground this cultivator can point at where a road can be walked, plus the
      * things bound to them that carry one.
@@ -759,7 +842,7 @@ type Line = typeof SAY[keyof typeof SAY];
  * carrying them.
  */
 const at = (line: Line, urgency: Urgency, because: string): Affordance =>
-    ({ ...line, urgency, because, whatItIsAbout: 'you', namesSomething: false });
+    ({ ...line, urgency, because, whatItIsAbout: 'you', namesSomething: false, canHurtYou: false });
 
 /**
  * A line that fired on a fact about the square they are standing in.
@@ -771,7 +854,7 @@ const at = (line: Line, urgency: Urgency, because: string): Affordance =>
  * chance at and the thing they cannot know without being told.
  */
 const inTheSquare = (line: Line, urgency: Urgency, because: string): Affordance =>
-    ({ ...line, urgency, because, whatItIsAbout: 'here', namesSomething: false });
+    ({ ...line, urgency, because, whatItIsAbout: 'here', namesSomething: false, canHurtYou: false });
 
 /**
  * A line built around a name the world actually holds.
@@ -790,9 +873,20 @@ const naming = (
     say: string,
     routesTo: string,
     urgency: Urgency,
-    because: string
+    because: string,
+    /**
+     * Overridden only where a named thing is NOT a fact about this square.
+     *
+     * Measured, and it was the whole value of measuring: the site entry read
+     * 'here' at first and `nameableSites` is world-wide, so the same grave was
+     * offered in all 68 squares - identical everywhere, which is the exact
+     * genericness this pass exists to delete, wearing a dangerous coat. A site
+     * you can name is a fact about what you have been TOLD, so it keeps like
+     * one and ranks like one.
+     */
+    about: Affordance['whatItIsAbout'] = 'here'
 ): Affordance =>
-    ({ id, say, routesTo, urgency, because, whatItIsAbout: 'here', namesSomething: true });
+    ({ id, say, routesTo, urgency, because, whatItIsAbout: about, namesSomething: true, canHurtYou: false });
 
 /**
  * A line that is true of everybody, everywhere, forever.
@@ -825,10 +919,10 @@ const situation = (
     because: string
 ): Affordance =>
     ({ id, say, routesTo: answers, urgency: 'now', because,
-        whatItIsAbout: 'here', namesSomething: false });
+        whatItIsAbout: 'here', namesSomething: false, canHurtYou: true });
 
 const always = (line: Line, because: string): Affordance =>
-    ({ ...line, urgency: 'open', because, whatItIsAbout: 'always', namesSomething: false });
+    ({ ...line, urgency: 'open', because, whatItIsAbout: 'always', namesSomething: false, canHurtYou: false });
 
 /**
  * What a band is worth against ordinary ground, in words, from the one table.
@@ -1058,7 +1152,8 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
                     // for as long as this file has existed. `naming` cannot
                     // build it for that reason: that helper is for the square.
                     whatItIsAbout: 'you',
-                    namesSomething: true
+                    namesSomething: true,
+                    canHurtYou: false
                 });
                 // Named for the shortfall rather than for hunger, because a
                 // player who cannot afford the cure needs the same two verbs
@@ -1187,6 +1282,69 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             `${best.name} is ${whatTheGroundIsWorth(best.ambient)} against `
             + `${whatTheGroundIsWorth(here.ambient)} here - ${gain.toFixed(1)}x what this square `
             + `gives back for the same year. ${walk}`));
+    }
+
+    // ── GROUND THAT CAN BE OPENED, INCLUDING WHEN IT WOULD KILL YOU ───────
+    //
+    // The first entry this file has ever produced that reaches `site/enter`,
+    // which `canHurtYou` scores as `force` and `a_span_of_days`. Played at
+    // ordinal 0 against a gate set well above it, the engine's own answer is
+    // the ruling this serves, in its own words: "is set at an ordinal they are
+    // not at. Below Foundation the body has nothing to spread the load
+    // through" - a real refusal with a reason, which is a working answer and
+    // not a chip that reaches nothing.
+    //
+    // Prefer one the body could actually survive; fall back to the shallowest
+    // that is still above, because that is the thing to aim at and the reason
+    // the row is allowed to name it at all.
+    if (here.sitesYouCouldOpen.length > 0) {
+        const within = here.sitesYouCouldOpen.filter(s => s.survivable);
+        const site = within[0] ?? here.sitesYouCouldOpen[0];
+        add(naming('enter_site', `I go into ${site.name}`, 'site',
+            site.survivable ? 'soon' : 'open',
+            !site.survivable
+                ? `${site.name} is set at ordinal ${site.setAtOrdinal} and you are not there `
+                  + 'yet. You can walk in anyway; the ground does not check, it asks the body '
+                  + 'for what the ground is set at. This is a thing to aim at rather than a '
+                  + 'door that says no.'
+                : `${site.name} is set at ordinal ${site.setAtOrdinal}, which your body reaches. `
+                  + 'What is behind a gate is what somebody was buried with, and going in is '
+                  + 'the only way to find out which kind of ground this is.',
+            // NOT 'here'. See the builder: this is a fact about what somebody
+            // told you, it travels with you, and marking it as a fact about
+            // the square made it identical in all 68 of them.
+            'you'));
+    }
+
+    // ── AND WHAT NOBODY HERE WOULD STOP YOU DOING ─────────────────────────
+    //
+    // The other half of the ground question, read from the side nothing has
+    // ever read it from. `whoHoldsTheGround` has been answering "who comes when
+    // you are wronged" since it landed; the same enum answers "who comes when
+    // you are the one doing it", and on unheld ground the answer is nobody.
+    //
+    // Not advice, and emphatically not a recommendation - it is what is LIVE.
+    // The owner's standing position is that the bad actions are much of the
+    // point, and a player who never learns the world has teeth finds out when
+    // something bites, by which time they have learned the wrong game.
+    // `interact/steal` is what this reaches and `canHurtYou` scores it, so it
+    // ranks against everything else rather than sitting outside the ordering.
+    //
+    // Gated on somebody being NAMEABLE, like every other person entry here: a
+    // stranger stays a count, and you cannot rob a headcount.
+    if (!here.aboveTheLid && here.groundIsUnheld && here.peopleHereByName.length > 0) {
+        // The shallowest person below, on the same reasoning the teaching ask
+        // uses from the other direction: the one this could go any way with.
+        const below = here.peopleHereByName.filter(p => !p.standsAbove);
+        const mark = below.length > 0 ? below[below.length - 1] : null;
+        if (mark) {
+            add(naming('take_from_somebody', `I rob ${mark.name}`, 'interact', 'open',
+                'Nobody\'s name is against this ground, so there is nobody to take a wrong to - '
+                + `and that runs both ways. ${mark.name} stands ${mark.rungsApart} `
+                + `rung${mark.rungsApart === 1 ? '' : 's'} below you. What it costs you is not `
+                + 'the ground: it is what they do about it afterwards, and who they turn out '
+                + 'to know.'));
+        }
     }
 
     if (here.peopleAboveHere > 0 && !here.aboveTheLid) {
