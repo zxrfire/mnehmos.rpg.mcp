@@ -207,3 +207,30 @@ describe('what the square says', () => {
         expect(askAround(input).prose).toBe(askAround(input).prose);
     });
 });
+
+describe('the plainest way of asking what is being said', () => {
+    // Typed in play. `about` was read as somebody's NAME - "'about' matched
+    // nobody: no knowledge record for that name and nobody standing here it
+    // could have meant" - and the question was then put to whoever was
+    // nearest, who had nothing to say to a sentence with a hole in it.
+    it('reaches the news when the sentence stops at "talk about"', () => {
+        for (const said of [
+            'what do people around here talk about',
+            'what do people talk about',
+            'what are they talking about',
+            'what do the locals talk about',
+            'what do people round here talk about?'
+        ]) {
+            expect(parseIntent(said).action).toBe('news');
+        }
+    });
+
+    // The boundary the pattern's own docstring draws: `talk about` with
+    // nothing after it is the general question, and `talk about <something>`
+    // names a topic that has to go on reaching the topic.
+    it('leaves a named topic to whoever owns it', () => {
+        expect(parseIntent('what do people talk about the ruins').action).not.toBe('news');
+        expect(parseIntent('I ask Cao Antao to talk about the Azure Dew Sect').action)
+            .not.toBe('news');
+    });
+});
