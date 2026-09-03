@@ -80,11 +80,73 @@ import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
 import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolvePlace, worldLocationFor } from './entities.js';
+import {
+    howStandingHerePutIt,
+    whoBeingHereIntroducesYouTo
+} from '../engine/world/being-on-their-ground.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+
+/**
+ * The house whose ground somebody has just walked onto, written down.
+ *
+ * ── WHY ARRIVAL AND NOT `look` ───────────────────────────────────────────
+ *
+ * `being-on-their-ground.ts` landed with one caller, in the `look` path, and the
+ * gap was reported at the time: a player who walks in and acts without looking
+ * still holds nothing. It bit within the hour. Standing on Azure Cloud Pavilion
+ * grounds, with the house named to the player three times in the session -
+ * including `whoHoldsTheGround: held by Azure Cloud Pavilion` in an engine
+ * ruling - **"I ask the elders to put my name forward"** came back:
+ *
+ *   No such door.
+ *   Unresolved faction "Azure Cloud Pavilion": no knowledge record.
+ *
+ * **Arrival is the honest trigger and `look` is the optional one.** A player
+ * learns whose ground they are on by getting there; looking is something they
+ * may never type. So this sits beside the `noteEncounter` that already records
+ * the PLACE on arrival - same event, same source, one more fact about it.
+ *
+ * ── AND IT IS THE SAME NARROW RULE, NOT A WIDER ONE ──────────────────────
+ *
+ * `named` from `witnessed`, deliberately below `stageCeilingFor('witnessed')`,
+ * exactly as the `look` caller grants it. Being somewhere tells you whose it is
+ * and nothing about their politics. Only a `held` reading introduces anybody and
+ * only one the catalog can name - `whoBeingHereIntroducesYouTo` owns both
+ * refusals, so the two callers cannot drift.
+ */
+function noteWhoseGroundThisIs(
+    game: GameService,
+    cultivator: Cultivator,
+    run: Run,
+    arrivedAt: string
+): void {
+    if (!game.atHand) return;
+    const row = worldLocationFor(game.atHand, arrivedAt);
+    if (!row) return;
+    const introduced = whoBeingHereIntroducesYouTo(game.atHand.locations, row.id);
+    if (!introduced || !introduced.factionName) return;
+    // `learnIfNew` rather than `noteEncounter`, and the stage is the reason.
+    // `noteEncounter` lets the source decide, and `witnessed` carries a ceiling
+    // of `known` - measured, arrival granted `encountered`, which is somebody
+    // you have dealt with rather than a name you can say. Standing on their
+    // ground is worth `named` and no more, which is the same grant the `look`
+    // caller makes and the reason both are deliberately below their own ceiling.
+    game.knowledge.learnIfNew({
+        holderId: cultivator.id,
+        kind: 'sect',
+        id: introduced.factionId,
+        name: introduced.factionName,
+        onDay: Math.floor(run.elapsedDays),
+        sourceKind: 'witnessed',
+        sourceNote: 'They hold the ground this cultivator walked onto.',
+        stage: 'named',
+        statement: howStandingHerePutIt(introduced)
+    });
+}
 
 export const travelVerbs = {
     /**
@@ -231,6 +293,9 @@ export const travelVerbs = {
             applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
+
+        // AND WHOSE GROUND IT IS. The place and its holder are one arrival.
+        noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
 
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
@@ -491,6 +556,9 @@ export const travelVerbs = {
             applied.cultivator, run, { kind: 'place', id: arrivedAt, name: arrivedAt },
             'witnessed', `Arrived on day ${Math.round(applied.run.elapsedDays)}.`
         );
+
+        // AND WHOSE GROUND IT IS. The place and its holder are one arrival.
+        noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
 
         return { skip, applied, world };
     },
