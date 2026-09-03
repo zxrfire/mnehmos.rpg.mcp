@@ -357,6 +357,23 @@ export function carryWhatOnlyTheSentenceKnows(action: PlannedAction, input: stri
         merged.opening = fromSentence.opening;
     }
 
+    // ── WHAT THE COMPLIANCE WAS FOR ──────────────────────────────────────
+    //
+    // `intent` IS in the phase-1 schema, and a model still leaves it empty:
+    // measured on "I make Qiu Wanbo hand over what they carry", where the
+    // table reads `{coerce, hand_over}` and the model answered a bare
+    // `coerce`. That is not a harmless omission any more. `hand_over` moves a
+    // purse and opens a grudge, so a dropped intent is the difference between
+    // a robbery and a person kneeling while nothing happens - and the strip
+    // offers the sentence, so the commonest way to type it went through the
+    // model.
+    //
+    // Filled, never overridden, on the same rule as every field above: where
+    // the model named an intent the model's intent stands.
+    if (merged.intent === undefined && fromSentence.intent !== undefined) {
+        merged.intent = fromSentence.intent;
+    }
+
     // A count of rations is a different ask from a span of days, and the
     // conversion between them is not the parser's to make - how long a ration
     // lasts depends on the body carrying it. So where the sentence named a
