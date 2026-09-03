@@ -191,6 +191,64 @@ six rows are how much of one there is. `the_record_does_not_say` is not on that 
 prices at **zero**, because a missing row is not evidence - the same ruling `AttemptInput.where`
 already makes one level up, where a caller that does not know where it is weighs nothing.
 
+### The same fact read from the other end: a threat
+
+The design owner, asked whether the sign should flip:
+
+> I agree, the more lawless somewhere is, the more credible the threat.
+
+**One property read two ways, not two properties.** Recourse is the axis in both cases and
+what changes is who it protects:
+
+| | the question | nobody answers, so |
+|---|---|---|
+| **trust** | if this person lies to me, would anybody make them pay? | their word is worth less |
+| **a threat** | if this person does what they promise, would anybody make them pay? | the promise is worth more |
+
+**It keys on the LEVERAGE, never on a verb.** `force` is the enum member meaning *the credible
+ability to take it*, and it is the same field the world simulation already fills for every
+manoeuvre any NPC runs - so this is one rule through one resolver for the player and everybody
+else, and a verb added tomorrow that puts force on the table gets it with no code. There is no
+branch on `coerce` anywhere and there must not be one.
+
+**And the threat reading is not the trust reading negated.** Two rows land where a mirror
+would not have put them:
+
+```text
+                          trust    a threat
+taken_up                  +0.12      -0.12
+collected                 +0.03      -0.03
+the_member_is_priced     -0.072     -0.024
+the_record_does_not_say        0          0
+unheld_inside_a_province  -0.03     +0.018
+none                      -0.12      +0.12
+```
+
+- **The alignment distinction largely collapses.** `the_member_is_priced` is a ruling about a
+  house that will not avenge a member who was *outwitted*, and being outwitted is not what a
+  threat is - the same file calls a demonic house "dangerous to belong to and not only to
+  cross". A body that holds ground and can be crossed deters force about as well as any other,
+  so it sits beside `collected` and stays NEGATIVE. What matters to somebody weighing a threat
+  is whether anybody holds this ground at all.
+- **Scarwater is not the mirror of Scarwater.** The un-appointed keepers of an unheld ford have
+  more reason to move against violence - it is exactly what stops the road working - than to
+  vouch for somebody they do not know, so it is worth less to a threatener than it costs a
+  stranger.
+- `the_record_does_not_say` is zero in both directions, for the same reason in both: a missing
+  row is not evidence either way.
+
+**The tie damper is trust's alone.** What makes a threat credible is what would happen to the
+person making it, and thirty years of acquaintance does not change that.
+
+**Still a term.** `GROUND_MAX` is one number for both readings - two caps would be two designs -
+and the odds floor and ceiling are untouched. Lawless ground makes a threat more credible and
+never certain.
+
+**`secret` is the open question** and is deliberately left on the trust side rather than
+guessed at. Blackmail is a promise to speak, so lawless ground should make it more credible;
+against that, what a secret is worth is the damage disclosure does to standing, and where
+nobody is on a register there is less standing to damage. The owner has not been asked.
+
 `GROUND_MAX` is 0.12 - under a realm of standing, under a tie, under a purse and under a
 disposition - and the term is damped by whatever tie the subject already holds, because the
 ruling is about a STRANGER. Somebody who has known you thirty years reads you the same in a

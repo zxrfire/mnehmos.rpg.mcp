@@ -2075,6 +2075,14 @@ export const BUYING_A_PERSON_OFF =
 const LEVERAGE_BEHIND_INTENT: Readonly<Partial<Record<string, z.infer<typeof ApproachLeverageSchema>>>> = {
     bribe: 'coin',
     threaten: 'force',
+    // A theft is backed by the ability to take it, which is what `force` means
+    // in this enum - so it says so, here, rather than falling through to
+    // `WHAT_A_BARE_DEMAND_IS_BACKED_BY` and being priced as a polite request
+    // backed by the asker's reputation. Measured before this: "asked steal with
+    // nothing on the table but the asking", and the ground under it read as
+    // whether a stranger is BELIEVED rather than as whether anybody would make
+    // a thief pay.
+    steal: 'force',
     // The asker themselves. Priced by the same machine as the other two.
     seduce: 'attachment'
 };

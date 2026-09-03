@@ -25,7 +25,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
     GROUND_MAX,
-    groundTrustWeight,
+    groundWeight,
     theGroundUnderYou
 } from '../../../src/engine/social-leverage/ground-trust';
 import { oddsOf, type AttemptInput, type Party } from '../../../src/engine/social-leverage/an-attempt-to-move-somebody';
@@ -112,7 +112,7 @@ const DEMONIC = 'sect-storm-tyrant-court';
 describe('the ground under two people', () => {
     it('orders on recourse, so a vacuum sits below a demonic house', () => {
         const ask = 'a_real_favour' as const;
-        const w = (g: ReturnType<typeof held>) => groundTrustWeight({ ground: g, ask });
+        const w = (g: ReturnType<typeof held>) => groundWeight({ ground: g, ask });
 
         const righteous = w(held(RIGHTEOUS));
         const neutral = w(held(NEUTRAL));
@@ -139,9 +139,9 @@ describe('the ground under two people', () => {
      */
     it('does not price four kinds of unheld ground as one', () => {
         const ask = 'a_real_favour' as const;
-        const vacuum = groundTrustWeight({ ground: noAuthority(), ask });
-        const noName = groundTrustWeight({ ground: noHolderOfRecord(), ask });
-        const silent = groundTrustWeight({ ground: unrecorded(), ask });
+        const vacuum = groundWeight({ ground: noAuthority(), ask });
+        const noName = groundWeight({ ground: noHolderOfRecord(), ask });
+        const silent = groundWeight({ ground: unrecorded(), ask });
 
         expect(new Set([vacuum, noName, silent]).size).toBe(3);
         expect(noAuthority().why).not.toBe(noHolderOfRecord().why);
@@ -156,10 +156,10 @@ describe('the ground under two people', () => {
      */
     it('puts ground with no name against it above a house that answers for nobody', () => {
         const ask = 'a_real_favour' as const;
-        expect(groundTrustWeight({ ground: noHolderOfRecord(), ask }))
-            .toBeGreaterThan(groundTrustWeight({ ground: held(DEMONIC), ask }));
-        expect(groundTrustWeight({ ground: held(DEMONIC), ask }))
-            .toBeGreaterThan(groundTrustWeight({ ground: noAuthority(), ask }));
+        expect(groundWeight({ ground: noHolderOfRecord(), ask }))
+            .toBeGreaterThan(groundWeight({ ground: held(DEMONIC), ask }));
+        expect(groundWeight({ ground: held(DEMONIC), ask }))
+            .toBeGreaterThan(groundWeight({ ground: noAuthority(), ask }));
     });
 
     /**
@@ -172,10 +172,10 @@ describe('the ground under two people', () => {
      */
     it('charges nothing at all for ground the record merely does not describe', () => {
         for (const ask of ['a_courtesy', 'a_real_favour', 'against_their_interest', 'a_betrayal'] as const) {
-            expect(groundTrustWeight({ ground: unrecorded(), ask })).toBe(0);
+            expect(groundWeight({ ground: unrecorded(), ask })).toBe(0);
         }
-        expect(groundTrustWeight({ ground: unrecorded(), ask: 'a_real_favour' }))
-            .toBe(groundTrustWeight({ ground: null, ask: 'a_real_favour' }));
+        expect(groundWeight({ ground: unrecorded(), ask: 'a_real_favour' }))
+            .toBe(groundWeight({ ground: null, ask: 'a_real_favour' }));
     });
 
     /**
@@ -188,8 +188,8 @@ describe('the ground under two people', () => {
      */
     it('does not read a holder it cannot place as a vacuum', () => {
         const g = held('sect-a-house-renamed-since-this-world-was-written');
-        expect(groundTrustWeight({ ground: g, ask: 'a_real_favour' }))
-            .toBeGreaterThan(groundTrustWeight({ ground: noAuthority(), ask: 'a_real_favour' }));
+        expect(groundWeight({ ground: g, ask: 'a_real_favour' }))
+            .toBeGreaterThan(groundWeight({ ground: noAuthority(), ask: 'a_real_favour' }));
     });
 
     /** A place in trouble still bites on ground the record says nothing about. */
@@ -205,12 +205,12 @@ describe('the ground under two people', () => {
             [status('famine', { priceMultiplier: 4 })]
         );
         expect(troubled.underDuress).toBe(true);
-        expect(groundTrustWeight({ ground: troubled, ask: 'a_real_favour' })).toBeLessThan(0);
+        expect(groundWeight({ ground: troubled, ask: 'a_real_favour' })).toBeLessThan(0);
     });
 
     it('weighs nothing at all when the caller does not know where this is', () => {
-        expect(groundTrustWeight({ ground: null, ask: 'a_real_favour' })).toBe(0);
-        expect(groundTrustWeight({ ground: undefined, ask: 'a_courtesy' })).toBe(0);
+        expect(groundWeight({ ground: null, ask: 'a_real_favour' })).toBe(0);
+        expect(groundWeight({ ground: undefined, ask: 'a_courtesy' })).toBe(0);
     });
 
     it('is a term and not a gate: nowhere is certain and nowhere is impossible', () => {
@@ -247,8 +247,8 @@ describe('the ground under two people', () => {
 
     it('reaches an ordinary favour and barely reaches a betrayal', () => {
         const ground = noAuthority();
-        expect(Math.abs(groundTrustWeight({ ground, ask: 'a_real_favour' })))
-            .toBeGreaterThan(Math.abs(groundTrustWeight({ ground, ask: 'a_betrayal' })));
+        expect(Math.abs(groundWeight({ ground, ask: 'a_real_favour' })))
+            .toBeGreaterThan(Math.abs(groundWeight({ ground, ask: 'a_betrayal' })));
     });
 
     it('counts a place in trouble once, however much is running on it', () => {
@@ -266,8 +266,8 @@ describe('the ground under two people', () => {
         );
         expect(one.underDuress).toBe(true);
         expect(quiet.underDuress).toBe(false);
-        expect(groundTrustWeight({ ground: one, ask: 'a_real_favour' }))
-            .toBeLessThan(groundTrustWeight({ ground: quiet, ask: 'a_real_favour' }));
+        expect(groundWeight({ ground: one, ask: 'a_real_favour' }))
+            .toBeLessThan(groundWeight({ ground: quiet, ask: 'a_real_favour' }));
     });
 
     it('reads a status by what it does and never by what it is called', () => {
@@ -302,6 +302,104 @@ describe('the ground under two people', () => {
             .map(g => g.why);
         expect(new Set(whys).size).toBe(4);
         for (const why of whys) expect(why.length).toBeGreaterThan(60);
+    });
+});
+
+/**
+ * WHETHER RECOURSE PROTECTS THE ASKER OR THE TARGET.
+ *
+ * The design owner: *"I agree, the more lawless somewhere is, the more credible
+ * the threat."* One property read two ways rather than two properties - trust
+ * asks whether anybody would make a liar pay, a threat asks whether anybody
+ * would make the threatener pay, and the answer to both is recourse.
+ *
+ * Four claims, and they are the four ways this could have been built wrong:
+ *
+ *   1. It keys on the LEVERAGE, never on a verb. `force` reads one way and
+ *      everything else reads the other, through the same field the world
+ *      simulation already fills for every NPC manoeuvre.
+ *   2. It is not the trust reading negated. A demonic house still DETERS force,
+ *      because declining to avenge a member who was outwitted is a statement
+ *      about deception; and Scarwater is worth less to a threatener than it
+ *      costs a stranger.
+ *   3. It is still a term. Lawless ground makes a threat more credible and
+ *      never certain.
+ *   4. A missing row is not evidence in either direction.
+ */
+describe('the ground under a threat', () => {
+    const ask = 'a_real_favour' as const;
+    const trust = (g: ReturnType<typeof held>) => groundWeight({ ground: g, ask });
+    const threat = (g: ReturnType<typeof held>) =>
+        groundWeight({ ground: g, ask, leverage: 'force' });
+
+    it('flips the sign where nobody holds the ground', () => {
+        // The vacuum: worst place to be believed, best place to be threatened.
+        expect(trust(noAuthority())).toBeLessThan(0);
+        expect(threat(noAuthority())).toBeGreaterThan(0);
+        // And a house that answers for what happens on it runs the other way.
+        expect(trust(held(RIGHTEOUS))).toBeGreaterThan(0);
+        expect(threat(held(RIGHTEOUS))).toBeLessThan(0);
+    });
+
+    it('reads the leverage and never the verb', () => {
+        // Everything that is a claim to be believed reads as trust, including
+        // the ones a careless table would have called coercive.
+        for (const leverage of
+            ['none', 'coin', 'favour', 'debt', 'name', 'sect', 'secret', 'attachment'] as const) {
+            expect(groundWeight({ ground: noAuthority(), ask, leverage }), leverage)
+                .toBe(trust(noAuthority()));
+        }
+        // And force alone reads the other way.
+        expect(threat(noAuthority())).not.toBe(trust(noAuthority()));
+        // Absent leverage is the trust reading, which is what every existing
+        // caller relies on.
+        expect(groundWeight({ ground: noAuthority(), ask })).toBe(trust(noAuthority()));
+    });
+
+    /**
+     * THE TWO ROWS A MIRROR WOULD HAVE GOT WRONG.
+     */
+    it('is not the trust reading with a minus sign in front of it', () => {
+        // A demonic house does not avenge a member who was WORKED. That says
+        // nothing about force, and the house still holds ground and is still
+        // dangerous to cross - so it deters a threat rather than inviting one.
+        expect(trust(held(DEMONIC))).toBeLessThan(0);
+        expect(threat(held(DEMONIC))).toBeLessThan(0);
+
+        // Scarwater: the un-appointed keepers of an unheld ford have more
+        // reason to move against violence than to vouch for a stranger.
+        expect(threat(noHolderOfRecord())).toBeGreaterThan(0);
+        expect(Math.abs(threat(noHolderOfRecord())))
+            .toBeLessThan(Math.abs(trust(noHolderOfRecord())));
+    });
+
+    it('charges nothing for a missing row in either direction', () => {
+        expect(trust(unrecorded())).toBe(0);
+        expect(threat(unrecorded())).toBe(0);
+    });
+
+    /**
+     * The tie damper is about being READ. What makes a threat credible is what
+     * would happen to the person making it, and thirty years of acquaintance
+     * does not change that.
+     */
+    it('damps trust with an existing tie and does not damp a threat', () => {
+        const known = { ground: noAuthority(), ask, theirTieStrength: 1 };
+        expect(groundWeight(known)).toBe(0);
+        expect(groundWeight({ ...known, leverage: 'force' as const }))
+            .toBe(threat(noAuthority()));
+    });
+
+    it('is a term and not a gate, in both directions', () => {
+        for (const where of [noAuthority(), held(RIGHTEOUS), noHolderOfRecord()]) {
+            for (const leverage of ['force', 'coin'] as const) {
+                const odds = oddsOf(attempt({
+                    where, approach: { leverage }
+                })).odds;
+                expect(odds).toBeGreaterThan(0);
+                expect(odds).toBeLessThan(1);
+            }
+        }
     });
 });
 
