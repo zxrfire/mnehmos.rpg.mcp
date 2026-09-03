@@ -2453,3 +2453,27 @@ So: **if the rule names a specific module, function or file, it goes in that are
 If it would change how somebody works anywhere in the repo, it goes here. When a rule here
 grows a long worked example, that is usually the example asking to move down and leave a
 sentence behind.
+
+### A catalog file mirrors the thing it describes, or it becomes a queue
+
+The single-reason-to-change rule applies to **data**, not only to code, and the tell is
+different. A catalog holding six regions has six reasons to change - but the cost that
+actually bites is not editing difficulty, it is **contention**.
+
+Measured on this branch: `regions.ts` at 3,694 lines held every region, settlement,
+prefecture and arterial in the world, imported by 24 modules. Three separate pieces of work -
+a rename of every place name, a fix to the place-kind taxonomy, and intra-province adjacency -
+all needed it at once, and **only one could have it.** The other two waited on a file none of
+them shared any real subject with.
+
+**One file per thing the world actually has** and they proceed in parallel. The structure of
+the catalog should match the structure of what it describes, so that two people working on
+two different parts of the world are working on two different files.
+
+**Split it by re-export**, as with code: the old path stays as a barrel forwarding everything,
+so none of the importers change and nobody else's file is touched. And **prove the split
+changed nothing** - serialise the catalog before and after and diff it. A data refactor that
+silently drops a row is far harder to notice than a code one that fails to compile.
+
+The general tell, worth checking before you start any large piece of work: **if you find
+yourself waiting on a file rather than on a decision, the file is the problem.**
