@@ -130,7 +130,22 @@ describe('asking who holds this ground', () => {
             'who owns this land',
             'who is in charge here',
             'who do I complain to',
-            'who answers for this ground'
+            'who answers for this ground',
+            // FOUND BY THE OWNER, BY TYPING IT. Every alternative in the
+            // pattern needed an object, and this sentence has none - so the
+            // commonest way anybody asks the question reached nothing. With
+            // nothing else in it, the only thing it can mean is HERE.
+            "who's in charge?",
+            'who is in charge',
+            // The contraction, with an object. This failed too, and for a
+            // different reason: the pattern read `who (?:is|'s)`, and there is
+            // no space in front of the apostrophe.
+            "who's in charge here",
+            'I ask who\'s in charge',
+            // On closed ground the reason and the authority are one fact: a
+            // house turns you away from a ruin because it protects it.
+            'who protects this ground',
+            'who guards this land'
         ]) {
             expect(routed(line), line).toBe('look/holder');
         }
