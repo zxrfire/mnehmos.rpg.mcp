@@ -400,17 +400,23 @@ export function theClausesOf(input: string): string[] {
 export async function theClausesNoStepAccountsFor(
     input: string,
     steps: readonly PlanStep[],
-    read: (clause: string) => Promise<ActionName>
+    read: (clause: string) => Promise<PlannedAction>
 ): Promise<PlanStep[]> {
     const carried = new Set(steps.map(step => step.action.action));
     const lost: PlanStep[] = [];
 
     for (const clause of theClausesOf(input)) {
-        const verb = await read(clause);
-        if (verb === 'unclear' || carried.has(verb)) continue;
-        if (costsTheAskerNothing({ action: verb })) continue;
-        carried.add(verb);
-        lost.push({ action: { action: verb }, said: clause });
+        // THE WHOLE READING, NOT THE BARE VERB. This took an ActionName and
+        // rebuilt a plan from it, which threw the intent away - and `interact`
+        // with no intent is FREE, while `interact` with `steal` is not. So a
+        // lost theft, the exact clause this was written for, priced itself as a
+        // free read and was never reported. `costsTheAskerNothing` is a fact
+        // about a plan, and it has to be given one.
+        const reading = await read(clause);
+        if (reading.action === 'unclear' || carried.has(reading.action)) continue;
+        if (costsTheAskerNothing(reading)) continue;
+        carried.add(reading.action);
+        lost.push({ action: reading, said: clause });
     }
     return lost;
 }
@@ -462,13 +468,40 @@ export async function theClausesNoStepAccountsFor(
  * only thing being decided here. Order is meaning in this file and a backfill
  * must not be the thing that changes it.
  */
+export interface TheSentenceAsAPlan {
+    steps: PlanStep[];
+    backfilled: PlanStep[];
+    /**
+     * What happened to each clause, in the player's own words.
+     *
+     * ── WHY THIS IS NOT DEBUG OUTPUT ─────────────────────────────────────
+     *
+     * The backfill worked in one played transcript and silently did nothing in
+     * the next, on the same build, because the model's split differed - and
+     * every `continue` in the fill is a clause disappearing without saying why.
+     * Reasoning about it from outside cost a round trip and did not settle it.
+     *
+     * `AGENTS.md` asks that where a reading is a judgement call, it is shown.
+     * This is that rule applied to the reading that decides how many acts a
+     * sentence contains, and it goes to the routing row an operator can already
+     * open beside every turn.
+     */
+    why: string[];
+}
+
 export async function theWholeSentenceAsAPlan(
     input: string,
     fromTheReader: readonly PlanStep[],
     read: (clause: string) => Promise<PlannedAction>
-): Promise<{ steps: PlanStep[]; backfilled: PlanStep[] }> {
+): Promise<TheSentenceAsAPlan> {
     const clauses = theClausesOf(input);
-    if (clauses.length < 2) return { steps: [...fromTheReader], backfilled: [] };
+    if (clauses.length < 2) {
+        return {
+            steps: [...fromTheReader],
+            backfilled: [],
+            why: [`one clause, so there is nothing to compose: "${input.slice(0, 60)}"`]
+        };
+    }
 
     const readings = await Promise.all(clauses.map(read));
 
@@ -477,9 +510,26 @@ export async function theWholeSentenceAsAPlan(
     // own reading reaches the same verb.
     const spokenFor = new Set<number>();
     const positionOf = fromTheReader.map(step => {
+        // A quotation claims its clause only when the two READINGS agree.
+        //
+        // Found by driving a reader's real answer through this: a step labelled
+        // with clause 0's words - "I take Cao Antao's purse" - while carrying
+        // the verb `give` claimed the theft's clause, so the theft was never put
+        // back, and the fill then produced a SECOND `give` for the clause that
+        // really was one. The act at the head of the owner's own sentence
+        // disappeared with nothing said about it.
+        //
+        // A label the reader attached is the reader's account of the sentence;
+        // the clause's own reading is the sentence's. Where they disagree, the
+        // sentence wins, which is the same rule the rest of this file runs on.
+        // The step is not lost by it - it falls through to the verb match below,
+        // and where that finds nothing it keeps its place unpositioned.
         const quoted = theClauseThisStepQuotes(step, input);
         if (quoted !== null) {
-            const at = clauses.findIndex(clause => forMatching(clause) === forMatching(quoted));
+            const at = clauses.findIndex((clause, i) =>
+                !spokenFor.has(i)
+                && forMatching(clause) === forMatching(quoted)
+                && readings[i]!.action === step.action.action);
             if (at !== -1) { spokenFor.add(at); return at; }
         }
         const at = readings.findIndex(
@@ -491,17 +541,38 @@ export async function theWholeSentenceAsAPlan(
 
     const steps: PlanStep[] = [];
     const backfilled: PlanStep[] = [];
+    const why: string[] = clauses.map((clause, at) => {
+        const answering = positionOf.indexOf(at);
+        return `"${clause}" reads as ${readings[at]!.action}`
+            + `${readings[at]!.target ? `(${readings[at]!.target})` : ''}`
+            + `${costsTheAskerNothing(readings[at]!) ? ', free' : ', costly'}`
+            + (answering === -1
+                ? `; no step of the reader's is answering it`
+                : `; the reader's step ${answering + 1} (${
+                    fromTheReader[answering]!.action.action}) is answering it`);
+    });
 
     /** Costly clauses nobody is answering, from `from` up to but not including `to`. */
     const fillBetween = (from: number, to: number): void => {
         for (let at = from; at < to; at++) {
             if (spokenFor.has(at)) continue;
             const reading = readings[at]!;
-            if (reading.action === 'unclear' || costsTheAskerNothing(reading)) continue;
+            // Every reason a clause is passed over is SAID. A silent `continue`
+            // here is a clause vanishing, which is the thing this whole file
+            // exists to stop happening one layer up.
+            if (reading.action === 'unclear') {
+                why[at] += '; not put back - nothing reads it';
+                continue;
+            }
+            if (costsTheAskerNothing(reading)) {
+                why[at] += '; not put back - it costs nothing, so nothing was taken';
+                continue;
+            }
             spokenFor.add(at);
             const put = { action: reading, said: clauses[at]! };
             backfilled.push(put);
             steps.push(put);
+            why[at] += '; PUT BACK from the sentence itself';
         }
     };
 
@@ -516,7 +587,15 @@ export async function theWholeSentenceAsAPlan(
     });
     fillBetween(next, clauses.length);
 
-    return { steps, backfilled };
+    for (const [at, place] of positionOf.entries()) {
+        if (place === null) {
+            why.push(`the reader's step ${at + 1} (${fromTheReader[at]!.action.action}`
+                + `${fromTheReader[at]!.action.target ? `/${fromTheReader[at]!.action.target}` : ''}`
+                + ') answers no clause of the sentence, and was kept in the order it was sent');
+        }
+    }
+
+    return { steps, backfilled, why };
 }
 
 export async function anyClauseReadsAsThisVerb(

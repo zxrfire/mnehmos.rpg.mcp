@@ -546,10 +546,13 @@ describe('folding several calls into one turn', () => {
  */
 describe('a clause the split lost is found from the player’s own text', () => {
     const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
-    const reads = async (clause: string): Promise<ActionName> =>
-        clause.includes('take') ? 'interact'
-            : clause.includes('press') ? 'give'
-                : 'move';
+    // The WHOLE reading, not the bare verb: `interact` alone is free and
+    // `interact/steal` is not, and pricing a lost theft off the verb name made
+    // it look like a free read that nobody needed to be told about.
+    const reads = async (clause: string): Promise<PlannedAction> =>
+        clause.includes('take') ? { action: 'interact', target: 'Cao Antao', intent: 'steal' }
+            : clause.includes('press') ? { action: 'give', target: 'Shen Liefeng' }
+                : { action: 'move', target: 'away' };
 
     it('names a costly clause no step accounts for', async () => {
         const plan = [step('interact', { target: 'Cao Antao', intent: 'steal' }), step('move')];
@@ -572,8 +575,9 @@ describe('a clause the split lost is found from the player’s own text', () => 
      */
     it('says nothing about a FREE clause, because nothing was taken', async () => {
         const asked = 'who is here, what am I carrying, and what do I know of them';
-        const freeReads = async (clause: string): Promise<ActionName> =>
-            clause.includes('carrying') ? 'inventory' : clause.includes('know') ? 'recall' : 'look';
+        const freeReads = async (clause: string): Promise<PlannedAction> =>
+            clause.includes('carrying') ? { action: 'inventory' }
+                : clause.includes('know') ? { action: 'recall' } : { action: 'look' };
         const plan = [step('look'), step('status'), step('recall')];
         expect(await theClausesNoStepAccountsFor(asked, plan, freeReads)).toHaveLength(0);
     });

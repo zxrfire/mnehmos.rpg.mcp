@@ -540,9 +540,83 @@ describe('the sentence composes even when the reader under-splits', () => {
         expect(routing.summary).toContain('read as a plan of 3');
         expect(routing.summary).toContain('interact -> give -> move');
         // And the reading is SHOWN rather than done quietly.
-        expect(routing.summary).toContain('came from the sentence itself');
+        expect(routing.summary).toContain('PUT BACK from the sentence itself');
 
         // Nothing is reported as lost any more, because nothing was lost.
         expect(turn.toolCalls.filter(row => row.name === 'engine.stepNotRun')).toHaveLength(0);
+    });
+});
+
+/**
+ * THE SPLIT CAN BE WRONG IN ANY OF THE THREE POSITIONS.
+ *
+ * Played twice on one build, the same sentence: once the model dropped the
+ * MIDDLE clause and once the FIRST. That variance is the strongest argument for
+ * the sentence being the authority, and it means the backfill has to hold
+ * wherever the gap falls - so all three are pinned, plus the two ways a reader's
+ * own labelling was able to defeat it.
+ */
+describe('the sentence composes wherever the reader’s split went wrong', () => {
+    const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
+    const THEFT = { action: 'interact', target: 'Cao Antao', intent: 'steal' };
+    const GIVE = { action: 'give', target: 'Shen Liefeng' };
+    const WALK = { action: 'move', target: 'Sixmile' };
+
+    async function planOf(steps: unknown[]) {
+        const provider = new ScriptedProvider({
+            plans: [JSON.stringify({ steps })], narrations: ['x']
+        });
+        const narrator = new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 });
+        return await narrator.plan(SAID, 'state');
+    }
+
+    it('puts back the FIRST clause when the reader loses it', async () => {
+        const plan = await planOf([GIVE, WALK]);
+        expect(plan.steps!.map(s => s.action.action)).toEqual(['interact', 'give', 'move']);
+        expect(plan.droppedClauses ?? []).toHaveLength(0);
+    });
+
+    it('puts back the MIDDLE clause when the reader loses it', async () => {
+        const plan = await planOf([THEFT, WALK]);
+        expect(plan.steps!.map(s => s.action.action)).toEqual(['interact', 'give', 'move']);
+    });
+
+    it('puts back the LAST clause when the reader loses it', async () => {
+        const plan = await planOf([THEFT, GIVE]);
+        expect(plan.steps!.map(s => s.action.action)).toEqual(['interact', 'give', 'move']);
+    });
+
+    /**
+     * The reader labelled its `give` with the THEFT'S words. That claimed the
+     * theft's clause, so the theft was never put back and the fill produced a
+     * second `give` for the clause that really was one - the act at the head of
+     * the owner's sentence gone, with nothing said about it.
+     */
+    it('is not defeated by a step labelled with another clause’s words', async () => {
+        const plan = await planOf([
+            { ...GIVE, said: "I take Cao Antao's purse" },
+            { ...WALK, said: 'walk away' }
+        ]);
+        expect(plan.steps!.map(s => s.action.action)).toEqual(['interact', 'give', 'move']);
+    });
+
+    /**
+     * And when a clause genuinely cannot be put back, it is REPORTED. This is
+     * the half that was silently dead: the lost-clause check rebuilt a plan from
+     * a bare verb name, and `interact` with no intent is free while `interact`
+     * with `steal` is not - so a lost theft priced itself as a free read and
+     * nobody was told.
+     */
+    it('prices a lost clause by its whole reading, not by its bare verb', async () => {
+        const { theClausesNoStepAccountsFor } =
+            await import('../../src/web/a-sentence-can-be-more-than-one-call.js');
+        const { parseIntent } = await import('../../src/web/actions.js');
+
+        const lost = await theClausesNoStepAccountsFor(
+            SAID, [{ action: { action: 'give' } }, { action: { action: 'move' } }],
+            async clause => parseIntent(clause)
+        );
+        expect(lost.map(s => s.action.action)).toEqual(['interact']);
+        expect(lost[0]!.action.intent).toBe('steal');
     });
 });
