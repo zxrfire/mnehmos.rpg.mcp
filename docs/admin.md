@@ -225,6 +225,41 @@ a precondition must be a state the world has a meaning for. A generator produces
 case by construction, so validating against what a generator would have produced would refuse
 every scenario worth arranging - which is the feature.
 
+### A span is lived, and a body cannot live a century sitting still
+
+`advance_days` is the action people reach for to stand a world up, and what it can actually
+reach is smaller than it looks. **Idle focus means no cultivation progress and nothing else
+taken away** - the body ages, the belly empties, the stagnation clock runs, the death checks
+fire, **and the qi deviation check still rolls every thirty days.** That last one was missing
+from every sentence this surface printed about idle, and it was the one stopping the span.
+
+Measured on the current tree, `set_realm ordinal=20` then `advance_days years=120`, identical
+on four world seeds because the spirit root comes off the RUN seed:
+
+| | Simulated | Stopped by |
+|---|---|---|
+| Before | 780 of 43800 days (2.14 of 120 years) | `lethal_injury_threshold`, three untreated `qi_deviation` wounds |
+| Now, unprovisioned | 1865 days (5.1 years) | `starvation_begun` |
+| Now, provisioned | 2220 days (6.1 years), 14 wounds | `death:qi_deviation` |
+
+**The wall is the world rather than the surface.** An idle body accumulates untreated
+meridian wounds at better than one a year, each wound raises the risk of the next deviation
+(`RISK_PER_UNTREATED_INJURY`), and nothing in a span at idle focus treats any of them - so the
+cascade `engine/cultivation/README.md` describes runs to its end. Somebody who is actually
+CULTIVATING survives it, which `walking-up-the-terraces.test.ts` measured at forty-four years
+and eleven rungs, because rungs buy body faster than the wounds take it.
+
+So: **`advance_days` spends a life, and a life spent doing nothing is short.** For a long span,
+provision it and expect a decade, not a century; to reach a state further out, arrange it
+directly rather than living to it. Driving the deviation roll out of idle focus would fix the
+symptom and break two things - `work` in `cultivation-mortal.ts` fixes `focus: 'idle'` and is
+the mortal economy's whole loop, so a safe idle makes the root cliff escapable by taking a job,
+and `deviation.ts` is explicit that a conflicting root "is not a situation you can leave".
+
+What the surface owes an operator here is the truth in a place they will read it, which is why
+the receipt now prints the span stretch by stretch, names every interrupt it carried on past,
+and prices the provisioning line against the purse that would have to pay for it.
+
 ---
 
 ## ADMIN &lt;verb&gt; - forcing an attempt to land
@@ -392,7 +427,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `grant_item` | **Gives an OBJECT.** A catalog pill, herb or rated artifact into the real pouch. | `itemId`, `name`, `ordinal`, `kind`, `quantity` |
 | `set_location` | Moves the player to a place really on the map. No travel time, nothing on the road. | `location` |
 | `set_ambient` | Finds a place near the player the engine genuinely derives the requested band for, for this 30-day block. **Found, never declared.** | `band` |
-| `advance_days` | Real time through `simulateTimeSkip` at idle focus: real aging, hunger, stagnation, death. Says how much ran and what stopped it. | `days`, `months`, `years`, `rations` |
+| `advance_days` | Real time through `simulateTimeSkip` at idle focus: real aging, hunger, stagnation, death, **and the real qi deviation roll every thirty days**. Idle grants no cultivation progress and takes nothing else away - a deviating root does not stop deviating because nobody is cultivating. Drives on past the interrupts that only hand a *player* control back, and says stretch by stretch how much ran and what stopped it. | `days`, `months`, `years`, `rations` |
 | `grant_progress` | Fills the qi-unit accumulator so a crossing can be **attempted**. Rolls nothing. | `amount`, `fill` |
 | `set_realm` | Moves the player on the ladder through `advanceRealm`: peak stamped, progress cleared, stagnation clock restarted. | `ordinal` |
 | `set_age` | Moves the age through the repository's own delta path, up or down. **No life was lived** - the clock does not move and nothing happened in between; `advance_days` is the action that spends a life. Refuses an age past the rung's lifespan, because that is a death the survival check has not been asked about yet, and names the two routes. | `age` |
