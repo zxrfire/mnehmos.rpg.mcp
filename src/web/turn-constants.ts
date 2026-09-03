@@ -17,6 +17,7 @@
  * these and a constant that lives in the module one caller happens to sit in
  * becomes a circular import the moment a second caller moves out.
  */
+import type { Wrong } from '../engine/social-leverage/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CHARACTER CREATION
@@ -110,3 +111,31 @@ export const DELIBERATE_PREPARATION = 0.25;
 export const SEALED_PREPARATION = 0.75;
 /** Below this, a crossing counts as hurried: too little time to sit properly. */
 export const HURRIED_BELOW_DAYS = 30;
+
+/**
+ * Which interact intents are WRONGS, and what the wronged party calls them.
+ *
+ * Three of the ten. A threat, a lie and answers taken under pressure are
+ * things a person answers; a bribe, a courtship, a recruitment pitch and a
+ * refused request are not, however badly they land. `an-attempt-to-move-
+ * somebody.ts` prices all ten identically and reads none of them, which is the
+ * design - this table is downstream of the pricing and decides only what
+ * happens NEXT, the same division `what-a-house-will-do-about-it.ts` makes.
+ *
+ * A closed table rather than a string test, so a verb added to the parser does
+ * not silently acquire consequences nobody chose for it. An intent absent from
+ * here produces no reprisal at all.
+ */
+export const WRONG_BEHIND_INTENT: Readonly<Partial<Record<string, Wrong>>> = {
+    threaten: 'threatened',
+    // A theft attempted to somebody's face is a lie about what your hand is
+    // doing, so a model that labels one `deceive` still lands on a wrong.
+    deceive: 'deceived',
+    interrogate: 'interrogated',
+    // And the verb itself, now that the deterministic parser can produce it.
+    // `robbed` was the one member of `Wrong` nothing reached: the engine has
+    // resolved a theft off a person since the pressure model was wired, and
+    // only a MODEL could route a sentence to it - the parser answered every
+    // phrasing with `unclear`. See the `steal` row in `INTERACT_INTENT_PATTERNS`.
+    steal: 'robbed'
+};
