@@ -109,10 +109,17 @@ web/tier/ort/
 models/**/verb-corpus.json
 web/tier/**/verb-corpus.json
 
-# The local launcher. Ports, model names and database paths are per-machine,
-# and a committed one becomes somebody else's ports. `README.md` says what it
-# does and how to write your own if it is not here.
+# The local launcher and the run it saves. Ports, model names and database
+# paths are per-machine, and a committed launcher becomes somebody else's
+# ports. `README.md` says what it does and how to write your own if it is not
+# in your checkout.
+#
+# Every spelling of it, because the launcher is the file people rewrite: a
+# .cmd or .bat wrapper is the usual second attempt when a .ps1 will not run,
+# and it would be the one thing here that is not ignored.
 play.ps1
+play.cmd
+play.bat
 play.db
 play.db-shm
 play.db-wal
