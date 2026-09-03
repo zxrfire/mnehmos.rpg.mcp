@@ -2106,20 +2106,11 @@ who. **Sitting still keeps you from giving anybody a reason. It does not keep an
 having one.** Idle is not a shield - it is the absence of an act of your own, and other people
 still act.
 
-Measured, and the first two attempts at this paragraph were both wrong, which is why the
-measurement is written down instead of the guess. `randomEvents: true` on the mortal-work path
-does **not** mean a labourer is meeting people. There are two encounter systems and only one of
-them contains anybody:
-
-- `simulateTimeSkip`'s internal grid - what `work` and `advance_days` get - raises a
-  `major_encounter` interrupt and materialises **nobody**. The file says so itself.
-- `encounters.ts` - real occurrences, with hp and stone deltas, knowledge grants and
-  relationship rows - is reached through **one caller in the repo**, the seclusion verb.
-
-So the true statement is sharper than the guess it replaces: **the only span in which a real
-person can reach you is the one where you chose to sit down and cultivate.** Sitting still is
-currently a perfect shield, and not because idle was designed to be safe - the arrival
-machinery was only ever wired to the one verb that is not idle.
+**There are two encounter systems and only one of them contains anybody.**
+`simulateTimeSkip`'s internal grid raises a `major_encounter` interrupt and materialises
+nobody; `encounters.ts` carries the real occurrences, with hp and stone deltas, knowledge
+grants and relationship rows. `randomEvents: true` on a path buys the first, not the second.
+Check which one you are wiring to before concluding that a span can cost somebody anything.
 
 The far end of that range is what makes it worth having. A purse taken on the road is one
 thing; a demonic cultivator taking somebody's core and leaving them to start again is the same
@@ -2139,18 +2130,16 @@ state **raises what an act costs** rather than going off on its own. Somebody wi
 wounds who crosses a barrier pays more for the crossing. Somebody with three open wounds who
 sits in a room and does nothing is somebody with three open wounds.
 
-**Nothing is ever hurt by scenery, and a category named after a place is the tell.** An
-`InjurySource` called `ground` was written, committed and withdrawn inside a day, and it was
-withdrawn for the reason the section above already gives: *"torn by ground deeper than they
-were"* names a cause and no author, and those are not the same thing. **A ruin does not injure
-you. A sealed automaton in the ruin injures you, or a trap does, or a formation does** - and
-each of those is a thing with a rung, which means it is an ordinary exchange with a
-non-person attacker rather than a new category. Granularity is what fixes vagueness here;
-a better word for the vague category would only have hidden it.
+**Nothing is ever hurt by scenery, and an injury category named after a place is the tell.**
+*"Torn by ground deeper than they were"* names a cause and no author, and those are not the
+same thing. **A ruin does not injure you. A sealed automaton in the ruin injures you, or a
+trap does, or a formation does** - each a thing with a rung, which makes it an ordinary
+exchange with a non-person attacker rather than a category of its own. Granularity is what
+fixes a vague source; a better word for the vague category only hides it.
 
-The same test catches the version of this that arrives inside a time skip. An arrival that
-hurts the player must be **a thing that arrived**. A digest that can say *"you were injured
-during those four years"* without naming who or what has reinvented `ground` in a costume.
+The same test catches the version that arrives inside a time skip. Something that hurts the
+player must be **a thing that arrived**. A digest saying *"you were injured during those four
+years"* without naming what has rebuilt the vague category in a costume.
 
 The tell is the sentence the game can say afterwards. *"The barrier tore two meridians"*,
 *"the fifth month of hauling opened the old wound"* and *"somebody took your purse on the road
@@ -2259,12 +2248,25 @@ that takes guest disciples during a war and refuses them after has not changed a
 deciders' priorities shifted. A family that will sell a daughter and a family that will not are
 not two configurations; they are two sets of people.
 
-This has to fall out **for free**, from people who already exist. The per-person half is built:
-NPCs carry goals with priorities, and there is a personal-alignment axis. Elders carry
-followings whose size is a real number, which is a weight already computed and already derived
-- a voice with more people behind it counts for more.
+This has to fall out **for free**, from people who already exist. A family and a sect are the
+same shape of input - a family is a faction whose intake route is adoption, on the same rank
+ladder, with the same seniors - so anything built here is built once and pointed at both.
 
-**The tell that this has gone wrong is a flag.** A field on a family row saying whether it sells
-daughters, or a stance arrived at by looking up a pair of faction ids, is the thing this rule
-forbids: it makes the house the author of a preference no person in it holds, and it goes stale
-against its own members the moment one of them dies.
+**Two tells that it has gone wrong.** The first is a flag: a field on a family row saying
+whether it sells daughters, or a stance arrived at by looking up a pair of faction ids, makes
+the house the author of a preference no person in it holds. The second is subtler and is the
+failure in the other direction: an aggregate keyed on a field **nobody senior actually
+carries** returns the same answer for every house and reviews as a feature. Before aggregating
+anything, count how many of the people who decide have the field you are reading - the seeder
+fills goal rows bottom-up and stops before the ranks that decide anything, so an aggregation
+over goal priorities is uniform across every house in the world.
+
+**Prefer an input derived from the person rather than written onto them.**
+`openHandednessOf(personId)` is drawn from the id alone: present for everybody, stable
+forever, no seeder pass. And the weight already exists - `distributeFollowing` sizes a seat's
+following by `(rankIndex+1)²`, so a voice with more people behind it counts for more without
+anybody inventing a scale.
+
+**Check which population you are reading.** A house's seniors can be enumerated from the
+catalog or from the world roster, and those are not the same people; a reading taken from one
+while another verb reads the other disagrees invisibly.
