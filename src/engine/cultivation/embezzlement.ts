@@ -27,20 +27,39 @@
  *   skill is in stopping.
  */
 
+import { isElderRank } from './leadership.js';
+
 /**
- * The fraction of a sect's rank ladder that can reach the reserves at all.
+ * The fraction that used to decide who could reach the reserves.
  *
- * The top third, so a five-rung sect opens them at rung 3 and a six-rung sect
- * at rung 4. Expressed as a fraction rather than an index because the houses
- * have ladders of different lengths and "the senior ranks" has to mean the same
- * thing in a five-rung company and a six-rung pavilion.
+ * SUPERSEDED. Reserve access is now DEFINED AS ELDER STANDING rather than as a
+ * fraction of the ladder, and the constant survives only so that an importer
+ * does not break. Do not re-derive a rung from it.
+ *
+ * @deprecated Reserve access is `isElderRank`. This number decides nothing.
  */
 export const RESERVE_ACCESS_FRACTION = 2 / 3;
 
-/** Whether this rank can reach the reserves at all. */
+/**
+ * Whether this rank can reach the reserves at all.
+ *
+ * RESERVE ACCESS IS ELDER STANDING. Not a fraction that happens to agree with
+ * it - the same question, asked once, in one place. The two were always the
+ * same idea: `leadership.ts` documented its two thirds as "the same two thirds
+ * `canReachReserves` uses", and both files then computed it separately from
+ * the same magic number.
+ *
+ * That coincidence held only while every ladder had the same shape. When the
+ * grand elder landed and `elderRungOf` started counting from the top, the two
+ * fractions came apart, and the fix is to make the dependency explicit rather
+ * than to preserve the number: somebody senior enough to run a room is
+ * somebody senior enough to reach the treasury, and if that ever stops being
+ * true it should be a ruling about who may spend, made here, and not a silent
+ * disagreement between two roundings.
+ */
 export function canReachReserves(rankIndex: number, rankCount: number): boolean {
     if (rankCount <= 0) return false;
-    return rankIndex >= Math.ceil((rankCount - 1) * RESERVE_ACCESS_FRACTION);
+    return isElderRank(rankIndex, rankCount);
 }
 
 /**

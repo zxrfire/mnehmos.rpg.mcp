@@ -1031,9 +1031,15 @@ describe('the Azure Cloud intake', () => {
     it('has a probationary rank that is expressible and deliberately not spliced in', () => {
         expect(AZURE_CLOUD_INTAKE.theRank.title).toBe('Probationer');
         expect(AZURE_CLOUD_INTAKE.theRank.notSplicedIntoTheRankArray).toMatch(/rankRealmBand/);
-        // The sect ladder is untouched, which is the whole point of that note.
+        // The bottom of the ladder is untouched, which is the whole point of
+        // that note: the probationary standing is NOT a rung, so nothing was
+        // inserted below Sword Servant and no rank is called Probationer.
+        //
+        // Asserted as a property rather than a length. The length was pinned
+        // at 6 here and went stale the moment the grand elder landed at the
+        // TOP of the ladder - which this test was never about.
         expect(sect.ranks[0]).toBe('Sword Servant');
-        expect(sect.ranks.length).toBe(6);
+        expect(sect.ranks).not.toContain('Probationer');
     });
 
     it('keeps the door at the bottom without moving the membership bar', () => {

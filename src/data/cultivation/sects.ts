@@ -39,6 +39,28 @@
  *   Disciples"; it has people it has not spent yet.
  * - `stipend[i]` pairs with `ranks[i]`, so both arrays are the same length and
  *   the stipend never falls as rank rises.
+ * - THIRTY-ONE OF THE THIRTY-FIVE CARRY A GRAND ELDER, one rung below the
+ *   head, named in the house's own idiom like every other rung: Grand Sword
+ *   Elder, Grand Quiet Elder, First Among the Nameless, Senior Council Seat.
+ *   It is first among equals of the elders, one spot only, and it is where a
+ *   head retires to - he stops leading and does not stop being the deepest
+ *   person in the house.
+ *
+ *   FOUR BODIES DO NOT HAVE ONE, AND THIS IS DELIBERATE. Do not "complete"
+ *   them. `sect-sixmile-wardens`, `sect-standing-grove` and
+ *   `sect-kiln-wardens` are wardens' offices rather than sects with elders - a
+ *   Grand Road Warden is padding on a body whose whole ladder is four posts on
+ *   a road. `sect-hollow-court` runs `Outer Disciple / Inner Disciple / Elder /
+ *   Seat`, which is a deliberate peculiarity that has survived every other
+ *   pass and should survive this one. A body with no recognisable elder rung
+ *   does not get a grand one.
+ *
+ *   `elderRungOf` reads this shape: the elders are the top three rungs, floored
+ *   at index 2 so the four above keep the elder rung they already had. Nothing
+ *   should re-derive it from a fraction.
+ * - The protector's chair is `protector`, and it is NOT in `ranks`. It sits
+ *   beside the ladder because an office is not a position in an order of
+ *   precedence - see `THE_OFFICE.whatItIsNot` in `false-immortals.ts`.
  * - `teaches` is the sect's entire *working* library. Anything a sect once held
  *   and can no longer read is not here; it is in a ruin, waiting for a digger.
  *   Consequently no sect teaches a ruin- or grave-provenance art.
@@ -432,14 +454,14 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         alignment: 'righteous',
         // The third apex, and the only one with a front gate. See APEX_INSTITUTIONS.
         powerOrdinal: 41,
-        ranks: ['Sword Servant', 'Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Sword Elder', 'Pavilion Master'],
+        ranks: ['Sword Servant', 'Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Sword Elder', 'Grand Sword Elder', 'Pavilion Master'],
         // The membership bar, and it is not the door. The Pavilion takes
         // uncultivated mortals onto probation at ordinal 0 and converts almost
         // none of them; `SECT_ADMISSION.guestFromOrdinal` carries that floor,
         // because `rankRealmBand` derives every band here from this number and
         // moving it to 0 would demote the entire ladder. See AZURE_CLOUD_INTAKE.
         admissionOrdinal: 3,
-        stipend: [4, 12, 35, 110, 380, 1_100],
+        stipend: [4, 12, 35, 110, 380, 650, 1_100],
         teaches: [
             'iron-thread-finger',
             'hundred-cut-flying-blade',
@@ -494,9 +516,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Verdant Spring Hall',
         alignment: 'righteous',
         powerOrdinal: 26,
-        ranks: ['Herb Boy', 'Outer Physician', 'Inner Physician', 'Hall Physician', 'Life Elder', 'Hall Sovereign'],
+        ranks: ['Herb Boy', 'Outer Physician', 'Inner Physician', 'Hall Physician', 'Life Elder', 'Grand Life Elder', 'Hall Sovereign'],
         admissionOrdinal: 2,
-        stipend: [5, 14, 40, 130, 420, 1_200],
+        stipend: [5, 14, 40, 130, 420, 710, 1_200],
         teaches: [
             'green-sprout-lash',
             'green-mercy-mending-palm',
@@ -563,9 +585,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Nine Peaks Ascetic Order',
         alignment: 'righteous',
         powerOrdinal: 28,
-        ranks: ['Stone Bearer', 'Ascetic', 'Inner Ascetic', 'Peak Warden', 'Mountain Elder', 'Order Patriarch'],
+        ranks: ['Stone Bearer', 'Ascetic', 'Inner Ascetic', 'Peak Warden', 'Mountain Elder', 'Grand Mountain Elder', 'Order Patriarch'],
         admissionOrdinal: 5,
-        stipend: [3, 10, 30, 100, 400, 1_400],
+        stipend: [3, 10, 30, 100, 400, 750, 1_400],
         teaches: [
             'loam-crusher-fist',
             'stone-hide-mantle',
@@ -624,9 +646,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Clear River Fordhall',
         alignment: 'righteous',
         powerOrdinal: 24,
-        ranks: ['Boat Hand', 'River Disciple', 'Current Disciple', 'Ford Master', 'River Elder', 'Alliance Head'],
+        ranks: ['Boat Hand', 'River Disciple', 'Current Disciple', 'Ford Master', 'River Elder', 'Grand River Elder', 'Alliance Head'],
         admissionOrdinal: 1,
-        stipend: [3, 9, 26, 85, 300, 900],
+        stipend: [3, 9, 26, 85, 300, 520, 900],
         teaches: [
             'gutter-rain-palm',
             'reed-crossing-qinggong',
@@ -679,9 +701,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Sweptground Temple',
         alignment: 'righteous',
         powerOrdinal: 30,
-        ranks: ['Lamp Novice', 'Temple Monk', 'Inner Monk', 'Hall Warden', 'Quiet Elder', 'Abbot'],
+        ranks: ['Lamp Novice', 'Temple Monk', 'Inner Monk', 'Hall Warden', 'Quiet Elder', 'Grand Quiet Elder', 'Abbot'],
         admissionOrdinal: 0,
-        stipend: [2, 8, 24, 90, 360, 1_300],
+        stipend: [2, 8, 24, 90, 360, 680, 1_300],
         teaches: [
             'cross-meridian-strike',
             'iron-shirt-tempering',
@@ -714,9 +736,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Lantern Hall',
         alignment: 'righteous',
         powerOrdinal: 31,
-        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Names', 'Senior Keeper', 'Hall Warden-General'],
+        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Names', 'Senior Keeper', 'Grand Keeper', 'Hall Warden-General'],
         admissionOrdinal: 2,
-        stipend: [6, 16, 44, 140, 460, 1_500],
+        stipend: [6, 16, 44, 140, 460, 830, 1_500],
         teaches: [
             'five-breath-circulation-scripture',
             'warm-current-qi-transfer',
@@ -764,9 +786,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Azure Mist Court',
         alignment: 'righteous',
         powerOrdinal: 37,
-        ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Court Warden'],
+        ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Grand Mist Elder', 'Court Warden'],
         admissionOrdinal: 1,
-        stipend: [3, 10, 30, 95, 300],
+        stipend: [3, 10, 30, 95, 170, 300],
         // ── WHY THE HEAD STANDS TWENTY RUNGS ABOVE THE SHELF ─────────────
         //
         // The Court's `powerOrdinal` is 37 and its best cultivation manual
@@ -830,9 +852,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Azure Dew Sect',
         alignment: 'righteous',
         powerOrdinal: 24,
-        ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Sect Warden'],
+        ranks: ['Dew Servant', 'Outer Disciple', 'Inner Disciple', 'Dew Elder', 'Grand Dew Elder', 'Sect Warden'],
         admissionOrdinal: 0,
-        stipend: [2, 8, 26, 85, 260],
+        stipend: [2, 8, 26, 85, 150, 260],
         // Its own gathering canon rather than the market primer, which is what
         // "teaches two manuals and no more" below has always meant: the Dew's
         // trade is finding people, and the thing it hands a find is the four
@@ -872,9 +894,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Stonewright Consortium',
         alignment: 'neutral',
         powerOrdinal: 33,
-        ranks: ['Weigher', 'Refiner', 'Factor', 'House Factor', 'Rate-Setter', 'Consortium Principal'],
+        ranks: ['Weigher', 'Refiner', 'Factor', 'House Factor', 'Rate-Setter', 'Grand Rate-Setter', 'Consortium Principal'],
         admissionOrdinal: 6,
-        stipend: [10, 30, 90, 300, 1_000, 3_000],
+        stipend: [10, 30, 90, 300, 1_000, 1_700, 3_000],
         teaches: [
             // A metal road at Core Formation, and the reason there is now more than
             // one: the fire canon was the only continuation at 17-20 in the
@@ -923,9 +945,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Thousand Treasure Pavilion',
         alignment: 'neutral',
         powerOrdinal: 27,
-        ranks: ['Runner', 'Clerk', 'Appraiser', 'Hall Steward', 'Council Seat', 'Grand Steward'],
+        ranks: ['Runner', 'Clerk', 'Appraiser', 'Hall Steward', 'Council Seat', 'Senior Council Seat', 'Grand Steward'],
         admissionOrdinal: 4,
-        stipend: [8, 25, 70, 220, 700, 2_000],
+        stipend: [8, 25, 70, 220, 700, 1_200, 2_000],
         teaches: [
             'lesser-qi-gathering-manual',
             'shadow-splitting-gait',
@@ -961,9 +983,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Cinnabar Crucible Guild',
         alignment: 'neutral',
         powerOrdinal: 25,
-        ranks: ['Bellows Hand', 'Apprentice Alchemist', 'Journeyman Alchemist', 'Cauldron Master', 'Furnace Elder', 'Guild Grandmaster'],
+        ranks: ['Bellows Hand', 'Apprentice Alchemist', 'Journeyman Alchemist', 'Cauldron Master', 'Furnace Elder', 'Grand Furnace Elder', 'Guild Grandmaster'],
         admissionOrdinal: 6,
-        stipend: [6, 18, 55, 180, 560, 1_600],
+        stipend: [6, 18, 55, 180, 560, 950, 1_600],
         teaches: [
             'clear-spring-detoxification',
             'five-breath-circulation-scripture',
@@ -1003,9 +1025,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Ashen Forge Clan',
         alignment: 'neutral',
         powerOrdinal: 23,
-        ranks: ['Coal Hand', 'Smith', 'Forge Disciple', 'Hammer Master', 'Cinder Elder', 'Clan Chief'],
+        ranks: ['Coal Hand', 'Smith', 'Forge Disciple', 'Hammer Master', 'Cinder Elder', 'Grand Cinder Elder', 'Clan Chief'],
         admissionOrdinal: 5,
-        stipend: [6, 20, 60, 190, 600, 1_500],
+        stipend: [6, 20, 60, 190, 600, 950, 1_500],
         teaches: [
             // The forge's own road, taught the way the Consortium does not: slowly,
             // and to people who already work metal.
@@ -1050,9 +1072,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Hollow Bell Wanderers',
         alignment: 'neutral',
         powerOrdinal: 20,
-        ranks: ['Stray', 'Bellringer', 'Wanderer', 'Road Elder', 'Bell Keeper'],
+        ranks: ['Stray', 'Bellringer', 'Wanderer', 'Road Elder', 'Grand Road Elder', 'Bell Keeper'],
         admissionOrdinal: 0,
-        stipend: [1, 4, 12, 45, 160],
+        stipend: [1, 4, 12, 45, 85, 160],
         teaches: [
             'cross-meridian-strike',
             'swallow-skimming-step',
@@ -1184,9 +1206,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Frostmirror Court',
         alignment: 'neutral',
         powerOrdinal: 36,
-        ranks: ['Snow Servant', 'Mirror Disciple', 'Rime Disciple', 'Court Warden', 'Frost Elder', 'Court Sovereign'],
+        ranks: ['Snow Servant', 'Mirror Disciple', 'Rime Disciple', 'Court Warden', 'Frost Elder', 'Grand Frost Elder', 'Court Sovereign'],
         admissionOrdinal: 13,
-        stipend: [10, 30, 90, 300, 1_000, 3_000],
+        stipend: [10, 30, 90, 300, 1_000, 1_700, 3_000],
         teaches: [
             'bitter-frost-needle',
             'glacial-tomb-slash',
@@ -1354,9 +1376,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // facts` in AGENTS.md - and this is the smallest clean instance of it
         // in the catalog.
         powerOrdinal: 38,
-        ranks: ['Bound', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'The Severed Themselves'],
+        ranks: ['Bound', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'First Among the Nameless', 'The Severed Themselves'],
         admissionOrdinal: 5,
-        stipend: [15, 50, 170, 550, 1_800, 6_000],
+        stipend: [15, 50, 170, 550, 1_800, 3_300, 6_000],
         teaches: [
             // The only house in the region whose record supports teaching a Body
             // Integration manual, and the only alternative anywhere to an ice
@@ -1406,9 +1428,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Crimson Abyss Hall',
         alignment: 'demonic',
         powerOrdinal: 29,
-        ranks: ['Blood Offering', 'Crimson Servant', 'Chosen', 'Hall Master', 'Left Envoy', 'Abyss Lord'],
+        ranks: ['Blood Offering', 'Crimson Servant', 'Chosen', 'Hall Master', 'Left Envoy', 'First Envoy', 'Abyss Lord'],
         admissionOrdinal: 3,
-        stipend: [10, 35, 120, 400, 1_200, 3_500],
+        stipend: [10, 35, 120, 400, 1_200, 2_000, 3_500],
         teaches: [
             'scarlet-ember-palm',
             'loam-crusher-fist',
@@ -1454,9 +1476,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Bone Lantern Cult',
         alignment: 'demonic',
         powerOrdinal: 26,
-        ranks: ['Grave Digger', 'Lantern Bearer', 'Bone Disciple', 'Corpse Warden', 'Pale Elder', 'Cult Ancestor'],
+        ranks: ['Grave Digger', 'Lantern Bearer', 'Bone Disciple', 'Corpse Warden', 'Pale Elder', 'Grand Pale Elder', 'Cult Ancestor'],
         admissionOrdinal: 2,
-        stipend: [7, 22, 75, 260, 800, 2_400],
+        stipend: [7, 22, 75, 260, 800, 1_400, 2_400],
         teaches: [
             // The house's cultivation manual. NOT its ceiling - the cult delivers short of what this book can carry, which makes it resource-limited rather than manual-limited, and the corpse work is what it does with people afterwards.
             'lesser-qi-gathering-manual',
@@ -1500,9 +1522,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Nine Abyss Flame Sect',
         alignment: 'demonic',
         powerOrdinal: 34,
-        ranks: ['Kindling', 'Flame Servant', 'Abyss Disciple', 'Flame Hall Master', 'Nine Abyss Elder', 'Flame Sovereign'],
+        ranks: ['Kindling', 'Flame Servant', 'Abyss Disciple', 'Flame Hall Master', 'Nine Abyss Elder', 'Grand Abyss Elder', 'Flame Sovereign'],
         admissionOrdinal: 8,
-        stipend: [12, 40, 140, 480, 1_500, 4_500],
+        stipend: [12, 40, 140, 480, 1_500, 2_600, 4_500],
         teaches: [
             'ashfall-crescent',
             // Kindling is taken on at 8 and the sect's own transformation
@@ -1555,9 +1577,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Storm Tyrant Court',
         alignment: 'demonic',
         powerOrdinal: 34,
-        ranks: ['Rod Bearer', 'Storm Servant', 'Arc Disciple', 'Thunder Warden', 'Storm Elder', 'Storm Tyrant'],
+        ranks: ['Rod Bearer', 'Storm Servant', 'Arc Disciple', 'Thunder Warden', 'Storm Elder', 'Grand Storm Elder', 'Storm Tyrant'],
         admissionOrdinal: 9,
-        stipend: [14, 45, 150, 500, 1_600, 5_000],
+        stipend: [14, 45, 150, 500, 1_600, 2_800, 5_000],
         teaches: [
             // The house's cultivation manual. NOT its ceiling - the Court delivers short of what this book can carry, which is a statement about what it can source rather than about what it can teach. The court climbs on storm work and this is the gathering canon underneath it.
             // And the road up to it, which the Court did not list. It admits
@@ -1668,9 +1690,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'The Weir Office',
         alignment: 'neutral',
         powerOrdinal: 21,
-        ranks: ['Applicant', 'Ticketed', 'Standing Grant', 'Under-Warden of the Weir', 'Office Warden', 'Weir Master'],
+        ranks: ['Applicant', 'Ticketed', 'Standing Grant', 'Under-Warden of the Weir', 'Office Warden', 'Senior Office Warden', 'Weir Master'],
         admissionOrdinal: 2,
-        stipend: [2, 6, 20, 70, 240, 800],
+        stipend: [2, 6, 20, 70, 240, 440, 800],
         teaches: [
             'lesser-qi-gathering-manual',
             'iron-shirt-tempering',
@@ -1745,9 +1767,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'The Gleaners\' Company',
         alignment: 'neutral',
         powerOrdinal: 17,
-        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Company Factor', 'Company Master'],
+        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Company Factor', 'First Factor', 'Company Master'],
         admissionOrdinal: 0,
-        stipend: [2, 7, 26, 90, 300],
+        stipend: [2, 7, 26, 90, 160, 300],
         teaches: [
             'cross-meridian-strike',
             'shadow-splitting-gait',
@@ -1836,9 +1858,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // word: somebody who cannot be quietly made to disappear by a buyer
         // who did not like a price. See `seam` in the description.
         powerOrdinal: 21,
-        ranks: ['Rail Hand', 'Watch', 'Weigher', 'Rail Factor', 'Rail Master'],
+        ranks: ['Rail Hand', 'Watch', 'Weigher', 'Rail Factor', 'First Rail Factor', 'Rail Master'],
         admissionOrdinal: 0,
-        stipend: [4, 14, 45, 150, 520],
+        stipend: [4, 14, 45, 150, 280, 520],
         teaches: [
             'cross-meridian-strike',
             'iron-shirt-tempering',
@@ -1885,9 +1907,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'The Sink Carriers',
         alignment: 'neutral',
         powerOrdinal: 19,
-        ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Waterman'],
+        ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],
         admissionOrdinal: 0,
-        stipend: [2, 6, 22, 75, 260],
+        stipend: [2, 6, 22, 75, 140, 260],
         teaches: [
             'cross-meridian-strike',
             'iron-shirt-tempering',
@@ -1929,9 +1951,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The Ninefold Ledger',
         alignment: 'neutral',
         powerOrdinal: 32,
-        ranks: ['Tallyhand', 'Reader of Threads', 'Auditor', 'Circuit Arbiter', 'Ledger Elder', 'Keeper of the Ninefold Book'],
+        ranks: ['Tallyhand', 'Reader of Threads', 'Auditor', 'Circuit Arbiter', 'Ledger Elder', 'Grand Ledger Elder', 'Keeper of the Ninefold Book'],
         admissionOrdinal: 4,
-        stipend: [12, 36, 110, 340, 1_100, 3_400],
+        stipend: [12, 36, 110, 340, 1_100, 1_900, 3_400],
         teaches: [
             'thread-reading-stance',
             'five-breath-circulation-scripture',
@@ -2056,9 +2078,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The House of the Narrow Hour',
         alignment: 'neutral',
         powerOrdinal: 30,
-        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Hours', 'Convergence Master', 'Elder of the Narrow Hour', 'First Sighting'],
+        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Hours', 'Convergence Master', 'Elder of the Narrow Hour', 'First Elder of the Narrow Hour', 'First Sighting'],
         admissionOrdinal: 6,
-        stipend: [14, 42, 130, 400, 1_300, 3_800],
+        stipend: [14, 42, 130, 400, 1_300, 2_200, 3_800],
         teaches: [
             'convergence-sighting',
             'five-breath-circulation-scripture',
@@ -2159,9 +2181,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The House of the Bound Word',
         alignment: 'righteous',
         powerOrdinal: 31,
-        ranks: ['Witness', 'Sworn Clerk', 'Oathwright', 'Warden of Terms', 'Elder Oathwright', 'Keeper of the Standing Word'],
+        ranks: ['Witness', 'Sworn Clerk', 'Oathwright', 'Warden of Terms', 'Elder Oathwright', 'Grand Oathwright', 'Keeper of the Standing Word'],
         admissionOrdinal: 5,
-        stipend: [11, 34, 105, 330, 1_050, 3_200],
+        stipend: [11, 34, 105, 330, 1_050, 1_800, 3_200],
         teaches: [
             'binding-word-seal',
             'iron-shirt-tempering',
@@ -2264,9 +2286,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The House of the Quiet Cut',
         alignment: 'demonic',
         powerOrdinal: 33,
-        ranks: ['Holder of the Blade', 'Cutter', 'Quiet Hand', 'Master of Removal', 'Elder of the Cut', 'The Last Cut'],
+        ranks: ['Holder of the Blade', 'Cutter', 'Quiet Hand', 'Master of Removal', 'Elder of the Cut', 'First Elder of the Cut', 'The Last Cut'],
         admissionOrdinal: 7,
-        stipend: [20, 60, 190, 620, 2_000, 6_500],
+        stipend: [20, 60, 190, 620, 2_000, 3_600, 6_500],
         teaches: [
             // The house's cultivation manual. NOT its ceiling - the house delivers short of what this book can carry, which on a body that cuts its own records is a figure it cannot audit either. A house of removal still has to raise the people doing the removing.
             'lesser-qi-gathering-manual',
@@ -2371,9 +2393,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The House of Held Names',
         alignment: 'neutral',
         powerOrdinal: 29,
-        ranks: ['Register Hand', 'Namekeeper', 'Holder', 'Warden of the Register', 'Elder Holder', 'First Register'],
+        ranks: ['Register Hand', 'Namekeeper', 'Holder', 'Warden of the Register', 'Elder Holder', 'Grand Holder', 'First Register'],
         admissionOrdinal: 3,
-        stipend: [9, 28, 88, 280, 900, 2_800],
+        stipend: [9, 28, 88, 280, 900, 1_600, 2_800],
         teaches: [
             'name-holding-recitation',
             'five-breath-circulation-scripture',
@@ -2473,9 +2495,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The House of the Measured Span',
         alignment: 'neutral',
         powerOrdinal: 34,
-        ranks: ['Chain Bearer', 'Surveyor', 'Span Master', 'Gate Warden', 'Elder Surveyor', 'Keeper of the Long Measure'],
+        ranks: ['Chain Bearer', 'Surveyor', 'Span Master', 'Gate Warden', 'Elder Surveyor', 'Grand Surveyor', 'Keeper of the Long Measure'],
         admissionOrdinal: 8,
-        stipend: [16, 48, 150, 470, 1_500, 4_600],
+        stipend: [16, 48, 150, 470, 1_500, 2_600, 4_600],
         teaches: [
             // The house's cultivation manual. NOT its ceiling - the Anchorhold delivers short of what this book can carry, which is unusual on a house whose method and whose duty are the same activity. Surveyors walk the veins they draw on, which is what this canon is for.
             // Four ordinary books beneath it, none of them the Anchorhold's.
@@ -2600,9 +2622,9 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'The Anchorhold',
         alignment: 'righteous',
         powerOrdinal: 35,
-        ranks: ['Peg', 'Holder', 'Nail Warden', 'Warden of the Survey', 'Elder of the Fixed Ground', 'The Standing Anchor'],
+        ranks: ['Peg', 'Holder', 'Nail Warden', 'Warden of the Survey', 'Elder of the Fixed Ground', 'First Elder of the Fixed Ground', 'The Standing Anchor'],
         admissionOrdinal: 10,
-        stipend: [15, 46, 145, 460, 1_450, 4_400],
+        stipend: [15, 46, 145, 460, 1_450, 2_500, 4_400],
         teaches: [
             'anchor-stance-of-fixed-ground',
             'iron-shirt-tempering',

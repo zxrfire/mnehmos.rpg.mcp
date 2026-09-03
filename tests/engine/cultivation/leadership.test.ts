@@ -119,7 +119,10 @@ describe('authority is the rank index', () => {
     it('walks the Azure Dew ladder exactly as the house describes itself', () => {
         const ranks = getSect(DEW)!.ranks;
         const tiers = ranks.map((_, i) => authorityTier(i, ranks.length));
-        expect(tiers).toEqual(['ordered', 'ordering', 'ordering', 'elder', 'head']);
+        // Two elder rungs, because the grand elder is an elder one rung up
+        // rather than a tier of its own: Dew Servant, Outer, Inner, Dew Elder,
+        // Grand Dew Elder, Sect Warden.
+        expect(tiers).toEqual(['ordered', 'ordering', 'ordering', 'elder', 'elder', 'head']);
     });
 
     it('is cumulative: every tier holds what the tier below holds', () => {
@@ -137,17 +140,38 @@ describe('authority is the rank index', () => {
 
 describe('the elder rung is derived from the ladder, not hardcoded', () => {
     it('lands on the rung every house in the catalog calls its elders', () => {
-        // Ladders run four rungs to six here, and the elder sits at a different
-        // index in each. A fraction is the only thing that gets all of them.
+        // Ladders run four rungs to seven here and the elder sits at a
+        // different index in each. Counting three from the top gets all of
+        // them, floored at 2 for the four bodies with no grand elder.
         for (const sect of SECTS) {
             const rung = elderRungOf(sect.ranks.length);
             expect(rung, sect.id).toBeGreaterThan(0);
             expect(rung, sect.id).toBeLessThanOrEqual(sect.ranks.length - 1);
         }
-        expect(getSect(DEW)!.ranks[elderRungOf(5)]).toBe('Dew Elder');
-        expect(getSect('sect-azure-cloud-pavilion')!.ranks[elderRungOf(6)]).toBe('Sword Elder');
-        expect(getSect('sect-hollow-bell-wanderers')!.ranks[elderRungOf(5)]).toBe('Road Elder');
-        expect(getSect('sect-hollow-court')!.ranks[elderRungOf(4)]).toBe('Elder');
+        // Read the length off the house rather than pinning it. These broke
+        // when the grand elder landed precisely because the number was
+        // written out, and the assertion that matters is which RUNG it finds.
+        const at = (id: string) => getSect(id)!.ranks[elderRungOf(getSect(id)!.ranks.length)];
+        expect(at(DEW)).toBe('Dew Elder');
+        expect(at('sect-azure-cloud-pavilion')).toBe('Sword Elder');
+        expect(at('sect-hollow-bell-wanderers')).toBe('Road Elder');
+        // No grand elder here, so the floor at 2 keeps the rung it always had.
+        expect(at('sect-hollow-court')).toBe('Elder');
+        expect(at('sect-sixmile-wardens')).toBe('Road Warden');
+    });
+
+    it('makes the grand elder an elder, and the rung below it the plain elder', () => {
+        // The seat is one spot only and sits directly under the head.
+        for (const sect of SECTS) {
+            const n = sect.ranks.length;
+            const grand = sect.ranks[n - 2];
+            const hasGrand = /^(Grand|First|Senior)\b/.test(grand);
+            if (!hasGrand) continue;
+            expect(isElderRank(n - 2, n), `${sect.id} grand elder is an elder`).toBe(true);
+            expect(isElderRank(n - 3, n), `${sect.id} plain elder is an elder`).toBe(true);
+            expect(isElderRank(n - 4, n), `${sect.id} rung below is not`).toBe(false);
+            expect(isHeadOfHouse(n - 2, n), `${sect.id} grand elder is not the head`).toBe(false);
+        }
     });
 
     it('sits at the same relative height whatever the ladder length', () => {

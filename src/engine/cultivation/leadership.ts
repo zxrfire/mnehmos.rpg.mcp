@@ -107,17 +107,52 @@
 /**
  * The fraction of a house's ladder above which a rung runs something.
  *
- * Two thirds, matching the rung the reserves open at, and expressed as a
- * fraction because "the elders" has to mean the same thing in a four-rung court
- * and a six-rung pavilion.
+ * SUPERSEDED, and kept only because other files still import the constant.
+ * Two thirds was an approximation of "the top few rungs" that happened to land
+ * correctly on the ladders as they were shaped before the grand elder existed.
+ * It is no longer how the elder rung is found - see {@link elderRungOf} - and
+ * nothing should re-derive a rung from it.
+ *
+ * @deprecated Read `elderRungOf`. This number no longer defines anything.
  */
 export const ELDER_RUNG_FRACTION = 2 / 3;
 
-/** Lowest rung index that counts as an elder in a ladder of this length. */
+/**
+ * The elders are the top three rungs, and never the bottom two.
+ *
+ * Counted from the top rather than taken as a fraction of the ladder, which is
+ * the first time this function has actually delivered what its old docstring
+ * promised: "the elders" now means the same thing in every house exactly,
+ * rather than approximately. Every house that has a grand elder is shaped
+ *
+ *     ... disciples, ELDER, GRAND ELDER, HEAD
+ *
+ * so the elder rung is three from the top wherever that shape holds.
+ *
+ * THE FLOOR AT 2 IS LOAD-BEARING AND IS NOT A GUARD AGAINST SMALL NUMBERS.
+ * Four bodies have no grand elder - see the exclusions in `sects.ts` - and are
+ * shaped `... ELDER, HEAD`, two from the top. A bare `rankCount - 3` makes the
+ * Hollow Court's INNER DISCIPLE an elder, which is both wrong and the sort of
+ * wrong that reads as correct in a diff. Two is the floor because the only
+ * rank words every house shares are outer disciple and inner disciple, and
+ * neither of those is ever an elder anywhere.
+ *
+ * Measured across the catalog when this landed: unchanged for the four
+ * four-rung bodies, and correct for all thirty-one that took a grand elder.
+ */
 export function elderRungOf(rankCount: number): number {
     if (rankCount <= 0) return 0;
-    return Math.ceil((rankCount - 1) * ELDER_RUNG_FRACTION);
+    return Math.max(ELDER_RUNG_FLOOR, rankCount - RUNGS_THAT_RUN_SOMETHING);
 }
+
+/** Elder, grand elder, head. The three seats that run a house. */
+const RUNGS_THAT_RUN_SOMETHING = 3;
+
+/**
+ * No house makes an elder of its outer or inner disciples, whatever it calls
+ * them, so the elder rung never sits below index 2.
+ */
+const ELDER_RUNG_FLOOR = 2;
 
 /** Whether this rung is an elder rung. The top rung is one too. */
 export function isElderRank(rankIndex: number, rankCount: number): boolean {

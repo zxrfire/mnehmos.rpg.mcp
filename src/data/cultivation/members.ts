@@ -463,7 +463,15 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-azure-cloud-pavilion',
         rankIndex: 4,
         rank: 'Sword Elder',
-        realmOrdinal: 24,
+        // 24 before the grand elder landed, and the change is arithmetic
+        // rather than a revision of who she is. `rankRealmBand` reads
+        // `rankIndex / (ranks.length - 1)`, so a longer ladder makes each rung
+        // a smaller share of the climb: the Sword Elder band ran 13-25 on a
+        // six-rung ladder and runs 10-23 on a seven-rung one. She was one over
+        // the new ceiling and is now at the top of it, which is where she
+        // already was - the most senior plain elder in the house, below the
+        // man who stepped aside and the woman he stepped aside for.
+        realmOrdinal: 23,
         role: 'senior',
         wants: 'a decision, in either direction, from four people who have not been able to reach one in eleven years',
         fears: 'that she will be asked to keep holding until she is old enough that the arithmetic answers itself',
@@ -492,24 +500,50 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // among equals of the elders, one spot only, and it is where a head
     // retires to.
     //
-    // WHY `rankIndex: 4` AND NOT A NEW RUNG. The Pavilion's `ranks` array is a
-    // contract - `governance-and-water-rights.ts` spells it out: every member
-    // is pinned to an index, the stipend array is parallel to it, and
-    // `rankRealmBand` derives every band from position in it, so inserting a
-    // rung would silently move every Azure Cloud member and change every band.
-    // It costs nothing to leave it out, because grand elder IS "first among
-    // equals of the elders" - the elder rank with one man at the top of it, not
-    // a seventh rung.
+    // WHY `rankIndex: 4` TODAY, AND WHERE HE IS GOING. **This is a holding
+    // position and it is scheduled to move.** The rung was chosen because the
+    // Pavilion's `ranks` array is a contract - `governance-and-water-rights.ts`
+    // spells it out: every member is pinned to an index, the stipend array is
+    // parallel to it, and `rankRealmBand` derives every band from position in
+    // it, so inserting a rung silently moves every Azure Cloud member and
+    // re-bands every rank in every house through `t = rankIndex / (len - 1)`.
+    //
+    // That reasoning about the contract is right and the conclusion was not the
+    // design owner's, who overruled it: *"let the grand elder be above the
+    // elders. grand is not an office, it is a title. just with elder in it."*
+    // **Grand modifies the title the way it modifies any title** - a Grand
+    // Elder is an Elder one rung up - so it belongs IN the array, above the
+    // elder rung and below the head, and this row moves to it.
+    //
+    // THE INSERT HAS NOW LANDED, and this row moved with it. The Pavilion's
+    // ladder carries `Grand Sword Elder` at index 5, between `Sword Elder` and
+    // `Pavilion Master`, and he sits in it. The rest of the blast radius went
+    // in the same commit - `elderRungOf` counting from the top instead of by
+    // two thirds, `canReachReserves` defined as elder standing, the thirty-four
+    // head-pinned members, and the pyramid in both arms.
+    //
+    // WHAT THE MOVER NEEDS TO KNOW ABOUT HIS SEEDING, because it is worth
+    // keeping and is easy to lose: `grantBooksToMembers` hands him the
+    // **Heaven-Conversing Primordial Canon**, which no shelf in the world
+    // holds. Nobody arranged that. `roadThatCarriedThemHere` picks an unowned
+    // book when a house's shelf cannot reach its own person, and the Pavilion's
+    // stops far below 39 - so the mechanism independently produces the thing
+    // `outlierReason: 'arrived'` claims. It survives the move as long as he
+    // stays above what the shelf teaches, which the new rung does not change.
+    // If it ever stops happening, that is a real finding rather than a detail.
     //
     // UNNAMED, which this catalog already supports and the Hollow Court's four
     // seats already do. It gives the Pavilion depth without another authored
     // figure to keep true.
     {
         id: 'member-azure-cloud-grand-elder',
-        name: 'The Grand Elder',
+        // The Pavilion's own word for the seat. Not "Grand Elder" - no house
+        // in the catalog uses the generic phrase, and this one names it for
+        // the blade the way it names every other rung it has.
+        name: 'The Grand Sword Elder',
         factionId: 'sect-azure-cloud-pavilion',
-        rankIndex: 4,
-        rank: 'Sword Elder',
+        rankIndex: 5,
+        rank: 'Grand Sword Elder',
         realmOrdinal: 39,
         // Not `master`. Whether he will teach is the ordinary question about a
         // person rather than a property of the seat, and a man who stepped
@@ -558,7 +592,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-azure-cloud-pavilion',
         rankIndex: 3,
         rank: 'Core Disciple',
-        realmOrdinal: 20,
+        // 20 before the grand elder landed. Same arithmetic as Xiang Yuwei:
+        // the Core Disciple band ran 9-21 on a six-rung ladder and runs 6-19
+        // on a seven-rung one, and she was one over. Nothing about her
+        // changed - she is still the Pavilion's most advanced Core Disciple
+        // and still the one people mistake for her cousin.
+        realmOrdinal: 19,
         role: 'peer',
         wants: 'to be asked something that is not about her health, by somebody who does not already know the answer',
         fears: 'the arithmetic everybody senior has done and nobody has said to her',
@@ -923,7 +962,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-hua-jueming',
         name: 'Hua Jueming',
         factionId: 'sect-sweptground-temple',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Abbot',
         realmOrdinal: 20,
         role: 'senior',
@@ -1449,7 +1488,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-hollow-bell-wanderers',
         rankIndex: 2,
         rank: 'Wanderer',
-        realmOrdinal: 11,
+        // 11 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 10,
         role: 'rival',
         wants: 'to be the one who brings the Thousand Treasure Pavilion something worth a floor lot',
         fears: 'dying in a hole for a fragment worth eleven stones',
@@ -1469,7 +1512,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-hollow-bell-wanderers',
         rankIndex: 3,
         rank: 'Road Elder',
-        realmOrdinal: 14,
+        // 14 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 13,
         role: 'master',
         wants: 'to teach one person to dig without dying of it',
         fears: 'that anyone she trains to Foundation Establishment is recruited away within the year, because they always are',
@@ -1488,7 +1535,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-xun-zhenning',
         name: 'Xun Zhenning',
         factionId: 'sect-hollow-bell-wanderers',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Bell Keeper',
         realmOrdinal: 13,
         role: 'senior',
@@ -2121,7 +2168,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Storm Tyrant Court ------------------------------------------------
+    // --- Storm Tyrant Court ------------------------------------------------    // --- Storm Tyrant Court ------------------------------------------------
     {
         id: 'member-tian-changgeng',
         name: 'Tian Changgeng',
@@ -2319,7 +2366,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'house-narrow-hour',
         rankIndex: 2,
         rank: 'Reader of Hours',
-        realmOrdinal: 19,
+        // 19 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 18,
         role: 'master',
         wants: 'an apprentice who will still be here in forty years',
         fears: 'the discipline dying with the eleven',
@@ -2723,7 +2774,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-gapwater-yun',
         name: 'Gapwater Yun',
         factionId: 'sect-weir-office',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Weir Master',
         realmOrdinal: 17,
         role: 'senior',
@@ -2886,7 +2937,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-gleaners-company',
         rankIndex: 2,
         rank: 'Deep Gleaner',
-        realmOrdinal: 11,
+        // 11 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 10,
         role: 'rival',
         wants: 'the Bone Lantern Cult off the border sites for a single season',
         fears: 'Yu Ziyan, by name, and says the name',
@@ -2906,7 +2961,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-gleaners-company',
         rankIndex: 3,
         rank: 'Company Factor',
-        realmOrdinal: 14,
+        // 14 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 13,
         role: 'master',
         wants: 'the sealed part of the sorting-yard ruin opened, and argues himself out of it weekly',
         fears: 'that it was sealed for a reason',
@@ -2953,7 +3012,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-halfwater-rail',
         rankIndex: 1,
         rank: 'Watch',
-        realmOrdinal: 10,
+        // 10 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 9,
         role: 'rival',
         wants: 'the Pavilion\'s buyers off the quay, or paying for the watch that keeps them upright on it',
         fears: 'the seam, which is the word the port uses to avoid saying it cannot help her above her own rung',
@@ -2973,7 +3036,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-halfwater-rail',
         rankIndex: 2,
         rank: 'Weigher',
-        realmOrdinal: 14,
+        // 14 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 13,
         role: 'master',
         wants: 'the book handed to somebody who will keep it the same way, and has not found them in eleven years',
         fears: 'the year the rate breaks, and her own name being on the page it breaks under',
@@ -2994,7 +3061,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-halfwater-rail',
         rankIndex: 3,
         rank: 'Rail Factor',
-        realmOrdinal: 18,
+        // 18 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 17,
         role: 'senior',
         wants: 'the northern anchorage carried before the Rail Master can put the question a third time',
         fears: 'being asked at the table, in front of the other three, whose name the salt flats are in',
@@ -3052,7 +3123,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-sink-carriers',
         rankIndex: 1,
         rank: 'Carrier',
-        realmOrdinal: 6,
+        // 6 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 5,
         role: 'rival',
         wants: 'the top name off the fourth board, which means finding who was standing over him',
         fears: 'being carried in upright through an eastern gate for the posted rate',
@@ -3121,7 +3196,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-ru-anwei',
         name: 'Ru Anwei',
         factionId: 'sect-azure-cloud-pavilion',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Pavilion Master',
         realmOrdinal: 41,
         role: 'senior',
@@ -3138,7 +3213,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-ji-wanniang',
         name: 'Ji Wanniang',
         factionId: 'sect-verdant-spring-hall',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Hall Sovereign',
         realmOrdinal: 26,
         role: 'senior',
@@ -3155,7 +3230,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-duan-shiyin',
         name: 'Duan Shiyin',
         factionId: 'sect-nine-peaks-ascetic-order',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Order Patriarch',
         realmOrdinal: 28,
         role: 'senior',
@@ -3172,7 +3247,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-old-ge-of-the-ninth-ford',
         name: 'Old Ge of the Ninth Ford',
         factionId: 'sect-clear-river-alliance',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Alliance Head',
         realmOrdinal: 24,
         role: 'senior',
@@ -3189,7 +3264,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-the-abbot',
         name: 'The Abbot',
         factionId: 'sect-sweptground-temple',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Abbot',
         realmOrdinal: 30,
         role: 'senior',
@@ -3206,7 +3281,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-warden-general-mo-ai',
         name: 'Warden-General Mo Ai',
         factionId: 'sect-lantern-hall',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Hall Warden-General',
         realmOrdinal: 31,
         role: 'senior',
@@ -3223,7 +3298,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-principal-hou-sanyi',
         name: 'Principal Hou Sanyi',
         factionId: 'sect-stonewright-consortium',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Consortium Principal',
         realmOrdinal: 33,
         role: 'senior',
@@ -3240,7 +3315,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-grand-steward-lei-fu',
         name: 'Grand Steward Lei Fu',
         factionId: 'sect-thousand-treasure-pavilion',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Grand Steward',
         realmOrdinal: 27,
         role: 'senior',
@@ -3257,7 +3332,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-grandmaster-xie-ruo',
         name: 'Grandmaster Xie Ruo',
         factionId: 'sect-cinnabar-crucible-guild',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Guild Grandmaster',
         realmOrdinal: 25,
         role: 'senior',
@@ -3274,7 +3349,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-clan-chief-duan-wu',
         name: 'Clan Chief Duan Wu',
         factionId: 'sect-ashen-forge-clan',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Clan Chief',
         realmOrdinal: 23,
         role: 'senior',
@@ -3291,7 +3366,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-bell-keeper-ji',
         name: 'Bell Keeper Ji',
         factionId: 'sect-hollow-bell-wanderers',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Bell Keeper',
         realmOrdinal: 20,
         role: 'senior',
@@ -3308,7 +3383,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-court-sovereign-yan-shu',
         name: 'Court Sovereign Yan Shu',
         factionId: 'sect-frostmirror-court',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Court Sovereign',
         realmOrdinal: 36,
         role: 'senior',
@@ -3347,7 +3422,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-the-one-who-introduces-herself-as-four-bonds-and-a-name',
         name: 'The one who introduces herself as four bonds and a name',
         factionId: 'sect-the-severed',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'The Severed Themselves',
         realmOrdinal: 38,
         role: 'senior',
@@ -3364,7 +3439,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-abyss-lord-wen-qiao',
         name: 'Abyss Lord Wen Qiao',
         factionId: 'sect-crimson-abyss-hall',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Abyss Lord',
         realmOrdinal: 29,
         role: 'senior',
@@ -3381,7 +3456,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-the-cult-ancestor',
         name: 'The Cult Ancestor',
         factionId: 'sect-bone-lantern-cult',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Cult Ancestor',
         realmOrdinal: 26,
         role: 'senior',
@@ -3398,7 +3473,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-flame-sovereign-rong-yi',
         name: 'Flame Sovereign Rong Yi',
         factionId: 'sect-nine-abyss-flame-sect',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Flame Sovereign',
         realmOrdinal: 34,
         role: 'senior',
@@ -3415,7 +3490,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-the-storm-tyrant',
         name: 'The Storm Tyrant',
         factionId: 'sect-storm-tyrant-court',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Storm Tyrant',
         realmOrdinal: 34,
         role: 'senior',
@@ -3449,7 +3524,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-weir-master-tan-zhu',
         name: 'Weir Master Tan Zhu',
         factionId: 'sect-weir-office',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Weir Master',
         realmOrdinal: 21,
         role: 'senior',
@@ -3483,7 +3558,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-company-master-xun-erlang',
         name: 'Company Master Xun Erlang',
         factionId: 'sect-gleaners-company',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Company Master',
         realmOrdinal: 17,
         role: 'senior',
@@ -3506,7 +3581,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-halfwater-yue',
         name: 'Halfwater Yue',
         factionId: 'sect-halfwater-rail',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Rail Master',
         realmOrdinal: 21,
         role: 'senior',
@@ -3528,7 +3603,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-nine-boards-qiu',
         name: 'Nine Boards Qiu',
         factionId: 'sect-sink-carriers',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Waterman',
         realmOrdinal: 19,
         role: 'senior',
@@ -3545,7 +3620,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-cao-duan',
         name: 'Cao Duan',
         factionId: 'house-ninefold-ledger',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Keeper of the Ninefold Book',
         realmOrdinal: 32,
         role: 'senior',
@@ -3562,7 +3637,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-cao-yulian',
         name: 'Cao Yulian',
         factionId: 'house-narrow-hour',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'First Sighting',
         realmOrdinal: 30,
         role: 'senior',
@@ -3579,7 +3654,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-lin-anren',
         name: 'Lin Anren',
         factionId: 'house-bound-word',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Keeper of the Standing Word',
         realmOrdinal: 31,
         role: 'senior',
@@ -3596,7 +3671,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-chu-jueyi',
         name: 'Chu Jueyi',
         factionId: 'house-quiet-cut',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'The Last Cut',
         realmOrdinal: 33,
         role: 'senior',
@@ -3613,7 +3688,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-gu-baiyun',
         name: 'Gu Baiyun',
         factionId: 'house-held-names',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'First Register',
         realmOrdinal: 29,
         role: 'senior',
@@ -3630,7 +3705,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-fu-nianzhi',
         name: 'Fu Nianzhi',
         factionId: 'house-measured-span',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'Keeper of the Long Measure',
         realmOrdinal: 34,
         role: 'senior',
@@ -3647,7 +3722,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-xu-zhenshan',
         name: 'Xu Zhenshan',
         factionId: 'house-anchorhold',
-        rankIndex: 5,
+        rankIndex: 6,
         rank: 'The Standing Anchor',
         realmOrdinal: 35,
         role: 'senior',
@@ -3728,7 +3803,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-pei-hanzhang',
         name: 'Pei Hanzhang',
         factionId: 'sect-azure-mist-court',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Court Warden',
         realmOrdinal: 37,
         role: 'senior',
@@ -3800,7 +3875,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         id: 'member-shu-wanping',
         name: 'Shu Wanping',
         factionId: 'sect-azure-dew-sect',
-        rankIndex: 4,
+        rankIndex: 5,
         rank: 'Sect Warden',
         realmOrdinal: 24,
         role: 'senior',
