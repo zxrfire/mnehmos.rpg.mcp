@@ -228,7 +228,7 @@ one source, so they cannot drift:
 | every unparseable sentence | the `unclear` refusal now names two or three things that WOULD work |
 | `derived.standingHere` on the wire | for a client to offer beside the standing controls |
 
-Four rules it must keep, and each of them is a way this could go wrong:
+Five rules it must keep, and each of them is a way this could go wrong:
 
 - **Prompts, never a menu.** The whole character of this game is that you say
   what you do in your own words. A fixed command list would flatten it, so the
@@ -242,6 +242,28 @@ Four rules it must keep, and each of them is a way this could go wrong:
   they conclude the game is broken.
 - **Nothing changes an outcome.** No price, no probability, no unlock. Dying
   becomes a decision rather than a failure to guess vocabulary.
+- **It names what is here, and the CALLER does the gating.** The read varied by
+  place for a long time while naming nothing in it, and a row of category labels
+  teaches a player that categories exist. So `whatIsLiveHere` hands in names it
+  has already run a gate over - `isAwareOf` for a face, `canPointAt` for a road,
+  nothing at all for the ground underfoot - and this module composes sentences
+  from them and never widens what it was given. A stranger stays a count, which
+  is what the file's older *a count and never a name* was always protecting.
+  `namesSomething` marks the entries where a gated name reached the sentence,
+  and it is a sort key: with the client's row capped at five, what gets cut
+  matters more than what gets generated, so a named line takes the tie off the
+  category above it and never climbs an urgency band.
+
+Two tests, and they answer different questions.
+[`what-is-worth-doing.test.ts`](../../tests/web/what-is-worth-doing.test.ts) drives
+the pure function through every corner of the state space.
+[`the-strip-names-what-is-standing-here.test.ts`](../../tests/web/the-strip-names-what-is-standing-here.test.ts)
+drives the GAME, because a composed sentence carries a world name and a name is
+the part a parser can fail on - and because the way this feature dies is a
+caller that quietly stops writing the fields, which reads on screen exactly like
+the row that was reported. It is a census rather than a sample: every settlement
+in the catalog, on three pinned worlds, measured after the client's own cut to
+five. **97 of 102 squares carry a name.**
 
 ### A refusal is finished when it names the thing that would work
 
