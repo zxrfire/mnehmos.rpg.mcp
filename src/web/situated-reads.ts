@@ -62,6 +62,7 @@ import {
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { thereIsACounterAt } from '../engine/world/where-the-measured-span-still-answers.js';
 import {
+    AMBIENT_QI_RATE_MULTIPLIER,
     type AmbientQi,
     type Cultivator,
     type Run,
@@ -913,7 +914,40 @@ export const situatedReads = {
             peopleHereWithSomethingToSell: new Set(
                 readWhatIsOnOfferHere(cultivator, this.atHand).offers.map(o => o.sellerId)
             ).size,
-            thinGround: ambient === 'thin',
+            // The band itself rather than a `thinGround` boolean. A boolean can
+            // say the ground is bad and cannot say it is worth four ordinary
+            // years for one, which is the sentence somebody standing on a vein
+            // needs and was never shown.
+            ambient,
+            // ── THE NAMES, ALREADY GATED ─────────────────────────────────
+            //
+            // Every name below has passed the gate the read it points at
+            // enforces - `isAwareOf` for a face, `canPointAt` for a road, and
+            // nothing at all for the ground under their own feet. The
+            // affordance module never widens what it is handed; see the header
+            // on `namesSomething` for where that line actually falls.
+            peopleHereByName: roster
+                .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
+                .map(row => ({
+                    name: row.name,
+                    realmOrdinal: row.realmOrdinal,
+                    standsAbove: row.realmOrdinal > cultivator.realmOrdinal,
+                    rungsApart: Math.abs(row.realmOrdinal - cultivator.realmOrdinal)
+                }))
+                // Deepest first: in a square, the person you notice is the one
+                // the others are being careful around.
+                .sort((a, b) => b.realmOrdinal - a.realmOrdinal),
+            thickerGroundWithinReach: this.thickerGroundTheyCouldReach(cultivator, ambient),
+            // The read half. `readWhatIsOnOfferHere` is already being run for
+            // the seller count above; this is the same rows, named. The THING
+            // is named and the seller is not - `learnTheSeller` is what writes
+            // a knowledge row for a person, and it wants somebody to have
+            // walked over.
+            goodsOnOfferHere: readWhatIsOnOfferHere(cultivator, this.atHand).offers
+                .map(offer => ({ name: offer.name, askStones: offer.askStones }))
+                .sort((a, b) => a.askStones - b.askStones),
+            roadUnderfoot: this.groundTheyCanPointAt(cultivator)
+                .find(row => row.underfoot)?.name ?? null,
             aboveTheLid: canExistBeyondTheLid(cultivator),
             // The one entry here that is gone next turn whatever happens. See
             // the field's note in the affordance module for why it is offered
@@ -932,6 +966,87 @@ export const situatedReads = {
             groundThatTeachesARoad: this.groundTheyCanPointAt(cultivator).length
                 + this.thingsTheyHoldThatTeach(cultivator).length
         };
+    },
+
+    /**
+     * Places they could set out for whose ground beats the ground underfoot.
+     *
+     * ── Why this is not `whereCouldTheyGo` ───────────────────────────────
+     *
+     * Because that read prices roads, counts occupancy, resolves provinces and
+     * folds in ruins and quiet ground, and it runs when somebody ASKS. This
+     * runs on every state read, and all it needs is the one column the
+     * destinations read has that nothing else does: a band, against a name the
+     * player has already earned a road to.
+     *
+     * ── The gate is `canPointAt`, and it is the whole safety of it ───────
+     *
+     * The same predicate `destinations` prints under and the `move` verb
+     * enforces. A name that arrives here is a name the player could already
+     * type at the travel verb and be honoured, which is the bar a suggested
+     * sentence has to clear: a chip that reaches a refusal teaches the player
+     * that the row lies. A place they have only heard whispered fails
+     * `canPointAt` and is not on this list.
+     *
+     * Empty where nothing known is better, which is the ordinary case and the
+     * right answer. Somebody standing on the best ground they have a name for
+     * should not be told to walk.
+     */
+    thickerGroundTheyCouldReach(
+        this: GameService,
+        cultivator: Cultivator,
+        here: AmbientQi
+    ): { name: string; ambient: AmbientQi; travelDays: number | null }[] {
+        const rateHere = AMBIENT_QI_RATE_MULTIPLIER[here];
+        const from = requireRegion(standingOf(cultivator).regionId);
+
+        // What it costs to reach each other province, off this region's own
+        // `connections`. Absent means no stated road, which is a real state and
+        // is never printed as a zero - see `Destination.travelDays`.
+        const cost = new Map<string, number>();
+        for (const link of from.connections) {
+            const known = cost.get(link.otherRegionId);
+            if (known === undefined || link.travelDays < known) {
+                cost.set(link.otherRegionId, link.travelDays);
+            }
+        }
+
+        const standing = loosePlaceKey(cultivator.location ?? '');
+        const better: { name: string; ambient: AmbientQi; travelDays: number | null }[] = [];
+        const seen = new Set<string>();
+
+        for (const row of this.knowledge.awareness(cultivator.id, 'place')) {
+            if (!this.knowledge.canPointAt(cultivator.id, 'place', row.id)) continue;
+            const wanted = loosePlaceKey(row.name);
+            if (wanted === standing || seen.has(wanted)) continue;
+
+            // A settlement, because a settlement is the only scale that carries
+            // a band. A province's `ambientProfile` is a distribution over the
+            // places inside it and flattening it would state a fact about
+            // ground nobody has stood on - the same refusal `destinations`
+            // makes, for the same reason.
+            const found = REGIONS
+                .flatMap(region => region.places.map(place => ({ region, place })))
+                .find(candidate => loosePlaceKey(candidate.place.name) === wanted);
+            if (!found) continue;
+            if (AMBIENT_QI_RATE_MULTIPLIER[found.place.ambient] <= rateHere) continue;
+
+            seen.add(wanted);
+            better.push({
+                name: found.place.name,
+                ambient: found.place.ambient,
+                travelDays: found.region.id === from.id
+                    ? null
+                    : cost.get(found.region.id) ?? null
+            });
+        }
+
+        // Best band first, then the shorter walk. A stated road beats an
+        // unpriced one at equal band only because the number is worth saying.
+        return better.sort((a, b) =>
+            AMBIENT_QI_RATE_MULTIPLIER[b.ambient] - AMBIENT_QI_RATE_MULTIPLIER[a.ambient]
+            || (a.travelDays ?? 0) - (b.travelDays ?? 0)
+            || (a.name < b.name ? -1 : 1));
     },
 
     /**
