@@ -494,8 +494,10 @@ Worked examples, all found by playing:
   with their province's average, so Nine Peaks - "the deepest vein anyone has kept" - was
   arithmetically identical to a thin ford town, and rolled thin thirty-four months out of
   thirty-six.
-- **Wounds.** `NpcCultivation.untreatedInjuries` is an integer, so no NPC can carry a
-  typed wound the player can carry.
+- **Arrivals.** Nothing ever comes to an NPC. The encounter layer has no caller in
+  `src/engine/world/` at all, so what reaches somebody in the world is a venue they
+  attended, a war their house entered, or a crossing they chose. **The player can be
+  found and an NPC cannot** - which is the asymmetry, rather than NPCs being safe.
 
 When you finish a world system, ask what the player's path through it is, and go and play
 it. If the answer is "the player does not have one", the system is half-built.
@@ -2270,3 +2272,40 @@ anybody inventing a scale.
 **Check which population you are reading.** A house's seniors can be enumerated from the
 catalog or from the world roster, and those are not the same people; a reading taken from one
 while another verb reads the other disagrees invisibly.
+
+### Two tiers of test, and the second one catches what this repo actually gets wrong
+
+**A unit test says what happens when an event happens. A rate test says the event happens
+at all, at a sane rate.** The first asks whether the outcome makes sense; the second asks
+whether anybody will ever see it.
+
+The second tier exists because **this repo's dominant defect passes the first tier
+forever.** A finished module nobody calls, a field computed and never printed, a list
+populated correctly and empty for exactly the case that matters - each of those is correct
+in isolation and invisible in play, and no unit test will ever say so.
+
+**Measure at the point the player would notice, not at the point the code fires.** This is
+the whole difference between a rate test that catches a dead system and one that certifies
+it. *"`encountersFor` returned an occurrence"* passes while nothing reaches the player;
+*"the turn told the player somebody arrived, by name"* does not. Assert the observable
+consequence and the tier does both jobs at once.
+
+**Assert a band, not a floor.** A floor catches the system that never fires; the other
+direction - a thing that now fires constantly - is how a rate regression usually arrives,
+and it passes every floor. Both edges, and say which edge failed.
+
+**Pin the worlds and pool the seeds.** A rate assertion on one unpinned world is a
+coincidence assertion, and rate tests are statistical, so they are the likeliest of all
+tests to flake. That matters more than it sounds: **a flaky bar gets widened until it
+asserts nothing**, and the test stays green forever while measuring nothing at all. Use
+`makeGameInWorld` with fixed seeds, pool across several, and put the pooling in the
+assertion rather than retrying until it passes.
+
+**Carry the bar's provenance.** Seeds, span, and population size beside the number, so the
+next person can tell whether their change moved the world or moved the measurement. A bar
+with no provenance cannot be re-derived and will be widened by whoever it fails.
+
+**The bars move, and that is the point.** They are a statement about how the world
+currently behaves, not a contract. Moving one deliberately, with the new measurement
+written beside it, is the tier working; widening one to make a red test green is the tier
+being defeated.
