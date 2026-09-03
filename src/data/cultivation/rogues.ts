@@ -60,6 +60,7 @@
 import { z } from 'zod';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { STARTING_SPIRIT_STONES } from '../../schema/cultivation.js';
+import { PLACE } from './place-names.js';
 import {
     CASH_PER_STONE,
     OccupationSchema,
@@ -645,7 +646,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine', 'talisman', 'material'],
         side: 'sells',
         regionId: 'region-low-fall',
-        places: ['Scarwater', 'Nine Peaks'],
+        places: [PLACE.SCARWATER, PLACE.NINE_PEAKS],
         trust: 'mixed',
         stock: 'A mule, a fixed loop of eleven villages walked twice a year, and whatever the last market town had cheap.',
         catch: 'He will be back in six months, which is the only guarantee on offer and is genuinely worth something. It is also six months.',
@@ -657,7 +658,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine'],
         side: 'sells',
         regionId: 'region-low-fall',
-        places: ['Low Fall', 'Scarwater'],
+        places: [PLACE.LOW_FALL, PLACE.SCARWATER],
         trust: 'sound',
         stock: 'Genuine refinements, made by somebody who spent nine years on a bellows and was never let near a cauldron officially.',
         catch: 'No guild seal, so the pills are real and unprovable. Anybody caught reselling them into a sect town is the Guild\'s problem and then his.',
@@ -669,7 +670,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine', 'material'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: ['Scarwater'],
+        places: [PLACE.SCARWATER],
         trust: 'sound',
         stock: 'Her husband\'s stock, sold down over nine years, plus what she buys off diggers coming out of the Marches at a price they accept because it is cash today.',
         catch: 'The good half of the stock went first. What is left is the part nobody wanted in year one and she will tell you that if you ask.',
@@ -681,7 +682,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['material', 'manual'],
         side: 'buys',
         regionId: 'region-quiet-marches',
-        places: ['Hollowmarket', 'Kettle'],
+        places: [PLACE.HOLLOWMARKET, PLACE.KETTLE],
         trust: 'mixed',
         stock: 'Buys by weight, sorts, and sells onward to the Low Fall at four times what he paid, which is public knowledge and changes nothing.',
         catch: 'He is the only buyer within four days\' walk and everybody selling to him knows the onward price. That is the trade, and the resentment is part of the price.',
@@ -693,7 +694,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['manual', 'material', 'talisman'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: ['Low Fall'],
+        places: [PLACE.LOW_FALL],
         trust: 'mixed',
         stock: 'Nothing. He values what you are holding, for cash, in a back room, and knows exactly which floor would take it and at what reserve.',
         catch: 'His valuations are honest and his other customer is the Pavilion. Twice a year something he valued turns up in a catalogue before the owner meant to sell it.',
@@ -705,7 +706,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['stones'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: ['Scarwater', 'Sweptground'],
+        places: [PLACE.SCARWATER, PLACE.SWEPTGROUND],
         trust: 'bad',
         stock: 'Cash for stones and stones for cash, at a rate that is always a little worse than the market-town rate and always defensible.',
         catch: 'The rate is fine. The weighing is not, and a Consortium assay hall four days away would find it, which is four days away.',
@@ -742,7 +743,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The public floor at Low Fall',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
-        places: ['Low Fall'],
+        places: [PLACE.LOW_FALL],
         cadence: 'Quarterly, with a preview two days before, and the preview has not been open to the public in eight years.',
         entryBondStones: 20,
         protections: [
@@ -759,7 +760,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The reserved floor',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
-        places: ['Low Fall'],
+        places: [PLACE.LOW_FALL],
         cadence: 'The same day, after the public floor closes, in a room off it.',
         entryBondStones: 300,
         protections: [
@@ -775,7 +776,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The Scarwater kerb',
         runByFactionId: null,
         regionId: 'region-low-fall',
-        places: ['Scarwater'],
+        places: [PLACE.SCARWATER],
         cadence: 'The evening after the Pavilion\'s factor has taken his pick, on the street, until it is dark.',
         entryBondStones: 0,
         protections: [
@@ -789,7 +790,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The Kettle assay yard disposal',
         runByFactionId: 'sect-weir-office',
         regionId: 'region-quiet-marches',
-        places: ['Kettle'],
+        places: [PLACE.KETTLE],
         cadence: 'Once a season, when forfeited grants and unclaimed salvage are cleared.',
         entryBondStones: 5,
         protections: [
@@ -804,7 +805,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The Hollowmarket manifest sale',
         runByFactionId: 'sect-gleaners-company',
         regionId: 'region-quiet-marches',
-        places: ['Hollowmarket'],
+        places: [PLACE.HOLLOWMARKET],
         cadence: 'Whenever the sorting yard is full, which is about every six weeks.',
         entryBondStones: 0,
         protections: [

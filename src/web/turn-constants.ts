@@ -18,6 +18,7 @@
  * becomes a circular import the moment a second caller moves out.
  */
 import type { Wrong } from '../engine/social-leverage/index.js';
+import { PLACE } from '../data/cultivation/place-names.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CHARACTER CREATION
@@ -28,7 +29,7 @@ import type { Wrong } from '../engine/social-leverage/index.js';
 // ─────────────────────────────────────────────────────────────────────────
 
 export const STARTING_AGE = 16;
-export const STARTING_LOCATION = 'Sweptground';
+export const STARTING_LOCATION = PLACE.SWEPTGROUND;
 /** Base HP plus ten per point of Might: 30 to 50 at creation. */
 export const BASE_HP = 20;
 export const HP_PER_MIGHT = 10;
