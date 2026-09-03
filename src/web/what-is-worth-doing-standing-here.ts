@@ -350,6 +350,19 @@ export interface Affordance {
  * of the state space without standing up a database.
  */
 export interface StandingHere {
+    /**
+     * Somebody who has just knelt to this cultivator and is still in the room.
+     *
+     * A scenario rather than a situation, and that distinction is the whole of
+     * why it is here: a submission opens acts that are closed at every other
+     * moment, and the strip went on offering travel and a reading list to
+     * somebody standing over a person who had just yielded.
+     *
+     * Null is the ordinary case. What makes it lapse is presence - somebody
+     * who yielded and then walked off is not yielding to anybody - so there is
+     * no timer here and must not be one.
+     */
+    yielding?: { name: string } | null;
     // ── FIVE OF THESE ARE OPTIONAL, AND IT IS TEMPORARY ──────────────────
     //
     // `pillsCarried`, `peopleHere`, `paperOnTheWall`, `spanCounterHere` and
@@ -1146,6 +1159,31 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             add(at(SAY.sell, closeToIt ? 'now' : 'soon',
                 `${here.sellableGoods} thing${here.sellableGoods === 1 ? '' : 's'} in the pouch that `
                 + 'somebody would put a price on, and a buyer pays less than list.'));
+        }
+
+        // -- somebody on their knees ---------------------------------------
+        //
+        // First, because it is the most immediate thing in the room and it
+        // does not keep: a person who has yielded is standing there deciding
+        // whether anybody is going to do anything about it.
+        //
+        // NAMED, like the medicine below and for the same reason: `coerce`
+        // needs a target, and a sentence that says "them" makes the player
+        // supply the referent the strip already has.
+        if (here.yielding) {
+            add({
+                id: 'hand_over',
+                say: `I make ${here.yielding.name} hand over what they carry`,
+                routesTo: 'coerce',
+                urgency: 'now',
+                because:
+                    `${here.yielding.name} has yielded and is still standing there. `
+                    + 'Somebody who has just knelt can be made to turn out what they are '
+                    + 'carrying, and the room stops allowing it the moment they are up.',
+                whatItIsAbout: 'here',
+                namesSomething: true,
+                canHurtYou: true
+            });
         }
 
         // ── wounds ────────────────────────────────────────────────────────

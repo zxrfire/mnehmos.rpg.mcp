@@ -82,6 +82,8 @@ import { rosterFor, sectBoardFor } from './encounters.js';
 import { resolveTechnique, worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
+import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
+import { readFlag } from '../server/consolidated/cultivation-support.js';
 import {
     whatBeingAMemberTellsYou,
     whatStandingAmongYourOwnShows
@@ -1102,6 +1104,20 @@ export const situatedReads = {
                 // figure `buy` will charge rather than the board's base.
                 standingOf(cultivator).regionId
             ),
+            // -- AND WHOEVER IS ON THEIR KNEES IN FRONT OF THEM -----------
+            //
+            // A submission ends the fight, so the fact that somebody yielded
+            // lives on a flag rather than on a fight row. Presence is what
+            // makes it lapse: the id is only worth anything while that person
+            // is still in the square, so this is a join between the note and
+            // the room rather than a countdown.
+            yielding: (() => {
+                const noted = readFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
+                if (!noted) return null;
+                const who = noted.split(':')[0];
+                const stillHere = roster.find(row => row.id === who);
+                return stillHere ? { name: stillHere.name } : null;
+            })(),
             battered: cultivator.hp < cultivator.maxHp,
             practisesAMethod: road.state !== 'no_method',
             methodExhausted: road.state === 'exhausted',

@@ -2676,6 +2676,14 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['tame', /\b(?:tame|tames|taming|break(?:s|ing)?(?:\s+\S+){0,3}\s+in\b|bring (?:it|him|her|them) to heel|subjugate)\b/],
     ['talk', /\b(?:beat (?:it|the truth|an answer|the location|the name) out of|wring (?:it|the truth|an answer) (?:out )?(?:of|from)|make (?:him|her|them) talk|force (?:him|her|them) to talk|torture)\b/],
     ['hand_over', /\b(?:force|forces|forcing|strong-?arm|strong-?arms|strong-?arming|extort|extorts|extorting|shake down|shakes down)\b[^.!?]*\b(?:into (?:handing|giving|paying|opening)|to hand|to give|to pay|to open|out of (?:him|her|them))\b/],
+    // `make` is how somebody says this and the pattern had only `force`,
+    // `strong-arm`, `extort` and `shake down` - so `hand_over` was a declared
+    // intent with no phrasing that reached it, and the sentence a strip would
+    // offer somebody standing over a person who had just knelt landed on
+    // `unclear`. Above the `submit` rows, and told apart from them by WHAT
+    // the making is for: kneeling and yielding are a submission, handing
+    // things over is this.
+    ['hand_over', /\b(?:make|makes|making|force|forces|forcing)\b[^.!?]*\b(?:hand(?:s|ing)? (?:it |them |everything |the lot )?over|hand over|give (?:me |up )(?:everything|what|it|all|the lot)|turn out (?:his|her|their|the) (?:pockets|purse|pouch)|empty (?:his|her|their) (?:pockets|purse|pouch))\b/],
     ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
     ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
     ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
