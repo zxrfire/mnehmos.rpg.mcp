@@ -135,6 +135,8 @@ import {
     theStageAWitnessReaches
 } from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
 import { whatTheHouseDoesAboutIt } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
+import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
+import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { quoteSale } from '../engine/cultivation/market.js';
@@ -700,7 +702,7 @@ import {
     type RosterRowView,
     type RunView
 } from './view.js';
-import type { ObligationDb } from '../storage/repos/obligation.repo.js';
+import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
 
 // ── TURNING A RESULT INTO SENTENCES MOVED OUT ────────────────────────────
@@ -5303,11 +5305,63 @@ ${noticed}`;
                 ));
             }
 
+            // ── AND WHAT THE HOUSE MAKES OF THEM ─────────────────────────
+            //
+            // The offer rule has read the house's own roster since it was
+            // written and had nothing to say about the PERSON, because neither
+            // door could reach a council: `sect-manage.ts` has no world handle
+            // and `worldForRun` calls `catchUp`, which can advance time and is
+            // therefore not a read. So a probationer the house had watched for
+            // twenty years and a stranger off the road got identical offers -
+            // the renown half of the design built, tested, and reachable by
+            // nobody, which is this repo's most-repeated defect.
+            //
+            // This is the caller that has the state. `whatTheBodyWants` is the
+            // same aggregate `match-verbs.ts` already runs on the same two
+            // inputs: the house's roll off the world, and every open row naming
+            // the player. Nothing new decides anything - the leaning comes back
+            // and `entryOfferFor` bands it.
+            //
+            // THE LEDGER IS WHERE THE DIFFERENCE COMES FROM, and it is the
+            // honest source rather than a bonus. Somebody the house carried on
+            // probation has rows with its deciders - favours done, wrongs held,
+            // a sponsor who staked something - and a stranger has none. Nobody
+            // is given anything for having been a probationer; what they have
+            // is a history, and the history is what the room reads.
+            // AND THE READING HAS TO BE SUPPLIED, WHICH IS THE WHOLE TRAP.
+            //
+            // `whatTheBodyWants` defaults `readingOf` to `openHandednessOf` -
+            // how freely a person parts with what they have, drawn off their
+            // id. That is the right default for the barter and match callers
+            // and it is the WRONG QUESTION here, and it does not fail loudly:
+            // measured on a four-person roll, an indifferent council read
+            // +0.37 purely because the head's id happened to draw high, which
+            // bands as `level_with_their_own` - so every walk-up would have
+            // been seated at their peers' rank and the whole 299/140/3
+            // correction would have been silently undone by wiring it.
+            //
+            // Renown is the reading this door wants, and an unknown stranger
+            // reads exactly 0 on it, which is the ordinary offer. Empty today:
+            // `whatIsSaidAbout` needs tellings per decider, and the rumour
+            // shape in `what-people-are-saying.ts` is a different `Told` that
+            // wants an adapter. Passing it empty is honest - nobody has heard
+            // of them - and it is what keeps the default from creeping in.
+            const world = this.atHand ?? await this.loadWorld();
+            const council = whatTheBodyWants({
+                readingOf: renownReading([]),
+                roll: (world?.npcs ?? [])
+                    .filter(n => n.factionId === named.id && n.status === 'alive')
+                    .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+                rankCount: getSect(named.id)?.ranks.length ?? 0,
+                asking: cultivator.id,
+                ledger: ledgerAbout(this.repos.db as unknown as ObligationDb, cultivator.id),
+                asOfDay: Math.floor(run.elapsedDays)
+            });
             const result = await handleJoin({
                 action: 'join',
                 sectId: named.id,
                 cultivatorId: cultivator.id
-            });
+            }, { leaning: council.leaning });
             return this.fromToolResult('sect_manage.join', 'sect', result, named.name);
         }
 
