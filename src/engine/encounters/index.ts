@@ -30,6 +30,13 @@ export {
 export { valenceOf, valenceWeights } from './valence.js';
 
 export {
+    locatabilityFrom,
+    theArrivalReadFor,
+    type ArrivalReadInput,
+    type GroundAsFoundOn
+} from './arrival-exposure-read.js';
+
+export {
     CONTACT_SPAN_CHANCE,
     CONTACT_STRENGTH_STEP,
     CONTACT_TURN_CHANCE,

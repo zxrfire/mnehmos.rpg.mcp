@@ -45,6 +45,7 @@ import {
     rollEncounters,
     arrivableFromUnheard,
     assessFit,
+    locatabilityFrom,
     boardRefusals,
     commissionBoard,
     type Find,
@@ -224,27 +225,21 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
  * Read off columns the world layer already maintains - `controllingFactionId`,
  * `discovered`, and the location's kind - so a new place inherits an answer
  * without anybody deciding one for it.
+ *
+ * ── THE RULE ITSELF MOVED DOWN, AND THIS IS THE DOOR TO IT ───────────────
+ *
+ * `locatabilityFrom` in `engine/encounters/arrival-exposure-read.ts` holds the
+ * five branches now, unchanged, because the assess read needs the same answer
+ * and lives BELOW this file - a server handler importing `src/web` would be a
+ * cycle, and a second copy of these branches in it is the drift this repository
+ * keeps finding. This stays as the entry point that knows how to get a location
+ * record and a membership out of the deps, which is the half that is genuinely
+ * about the web layer's plumbing. No importer moved.
  */
 export function locatabilityFor(deps: EncounterDeps, cultivator: Cultivator): Locatability {
     const record = deps.world ? worldLocationFor(deps.world, cultivator.location) : null;
     if (!record) return 'private';
-
-    // Undiscovered ground is ground nobody has a name for.
-    if (record.discovered === false) return 'hidden';
-
-    const membership = deps.repos.sects.getMembership(cultivator.id);
-    if (membership && record.controllingFactionId === membership.sectId) return 'known';
-
-    // Somewhere people live is somewhere people notice who is about.
-    if (record.kind === 'settlement' || record.kind === 'sect_seat') return 'known';
-
-    // Deep wilds and sealed places are where somebody goes not to be found.
-    if (record.kind === 'wilds' || record.kind === 'sealed_domain' ||
-        record.kind === 'forbidden_zone' || record.kind === 'secret_realm') {
-        return 'hidden';
-    }
-
-    return 'private';
+    return locatabilityFrom(record, deps.repos.sects.getMembership(cultivator.id)?.sectId ?? null);
 }
 
 /**
