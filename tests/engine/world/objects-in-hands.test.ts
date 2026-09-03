@@ -29,6 +29,9 @@ import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { combatantOf } from '../../../src/engine/world/gatherings.js';
 import { assessPower } from '../../../src/engine/cultivation/combat.js';
+import { worldIdForCatalogPerson } from '../../../src/engine/world/a-catalog-person-and-their-world-row.js';
+import { APEX_INSTITUTIONS } from '../../../src/data/cultivation/governance-and-water-rights.js';
+import { NAMED_FIGURES } from '../../../src/data/cultivation/named-figures.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import type { WorldCatalog } from '../../../src/engine/world/catalog.js';
 
@@ -107,6 +110,105 @@ describe('a rated object reaches the person the catalog says is holding it', () 
             const object = byId.get(id);
             expect(object?.power).toBe(46);
             expect(npcIds.has(object!.possessorId!)).toBe(false);
+        }
+    });
+});
+
+/**
+ * ── COUNT THE COLUMN, DO NOT TRUST WHAT IS COMPUTED FROM IT ──────────────
+ *
+ * `AGENTS.md`: count the column in a seeded world before trusting anything
+ * computed from it, because a distribution of one value is the signature. That
+ * is exactly how this defect was found and exactly what the assertions above
+ * would NOT have caught on their own - they name ids, and an id-shaped
+ * assertion goes green while the column beside it is uniformly wrong.
+ *
+ * So this classifies EVERY rated object into one of four buckets and pins the
+ * whole distribution. The buckets are the four real states a holder can be in,
+ * and three of them are correct answers rather than degrees of failure:
+ *
+ *   A PERSON      the fix. `bestObjectHeldBy` compares `possessorId` against
+ *                 `npc.id`, so this is the only bucket that ever arms anybody.
+ *   A HOUSE       in its owner's hold. `war-melee.ts` excludes a house's stores
+ *                 from breakage on exactly this test.
+ *   NOBODY        moored, mounted, or lying where it was left.
+ *   NEITHER TABLE correct in kind, and only for the two reasons named below.
+ *                 Anything else appearing here is the original defect back.
+ */
+describe('the possessor column, counted', () => {
+    it('accounts for every rated object, and only two kinds resolve to nothing', () => {
+        for (const seed of ['pyr-a', 'pyr-b']) {
+            const state = world(seed);
+            const npcIds = new Set(state.npcs.map(n => n.id));
+            const factionIds = new Set(state.factions.map(f => f.id));
+            const rated = state.objects.filter(o => o.power !== null);
+
+            const onAPerson = rated.filter(o => o.possessorId !== null && npcIds.has(o.possessorId));
+            const inAHold = rated.filter(o =>
+                o.possessorId !== null && !npcIds.has(o.possessorId) && factionIds.has(o.possessorId));
+            const heldByNobody = rated.filter(o => o.possessorId === null);
+            const neither = rated.filter(o =>
+                o.possessorId !== null && !npcIds.has(o.possessorId) && !factionIds.has(o.possessorId));
+
+            // The buckets are exhaustive and disjoint. If this ever fails, a
+            // fifth state has appeared and the reasoning below is stale.
+            expect(onAPerson.length + inAHold.length + heldByNobody.length + neither.length)
+                .toBe(rated.length);
+
+            // THE COUNT THAT MATTERS. It was zero, on every seed, and a world
+            // where no NPC holds anything is a world where no fight the
+            // simulation runs can ever price or break a weapon.
+            expect(onAPerson.length, `${seed}: nobody is holding anything`).toBeGreaterThan(0);
+
+            // ── AND EVERY ROW THAT RESOLVES TO NEITHER TABLE, BY NAME ────
+            //
+            // Two kinds and no others, both correct and both unresolvable on
+            // purpose. This is asserted as a SET rather than a count, because a
+            // count would go green if a genuine mapping failure replaced one of
+            // these - which is precisely the shape of the original bug.
+            for (const object of neither) {
+                const holder = object.possessorId!;
+                const apex = APEX_INSTITUTIONS.find(a => a.id === holder);
+                const ancestor = NAMED_FIGURES.find(f => f.id === holder);
+
+                expect(
+                    apex !== undefined || ancestor !== undefined,
+                    `${object.name} is held by ${holder}, which is neither a body the governance `
+                    + 'catalog names nor an ancestor above the Lid. That is a mapping failure, '
+                    + 'not a designed absence.'
+                ).toBe(true);
+
+                if (apex) {
+                    // A body nobody can join. `factionId: null` in the
+                    // governance catalog is why the world mints no faction row
+                    // for it, and holding its own property is the hold state.
+                    expect(apex.factionId, `${apex.name} would have a faction row`).toBeNull();
+                    expect(object.ownerId).toBe(holder);
+                }
+                if (ancestor) {
+                    // Above the Lid. NOTHING_AT_FORTY_SIX_IS_EVER_LEFT requires
+                    // that no party down here can reach, ask, rob or inherit
+                    // from them, so a world row for one would be the bug.
+                    expect(ancestor.kind).toBe('immortal_ancestor');
+                    expect(npcIds.has(worldIdForCatalogPerson(holder))).toBe(false);
+                }
+            }
+        }
+    });
+
+    it('arms the people it says it arms, through the call a fight actually makes', () => {
+        // Not `possessorId` read back a second way. `combatantOf` is what a
+        // gathering bout and a war melee both build their sides with, so this
+        // asks the question in the words the consumer asks it in.
+        const state = world('pyr-a');
+        const armed = state.npcs
+            .filter(n => n.status === 'alive')
+            .map(n => ({ id: n.id, weapon: combatantOf(n, state).weapon }))
+            .filter(row => row.weapon !== null);
+
+        expect(armed.length).toBeGreaterThan(0);
+        for (const row of armed) {
+            expect(row.weapon!.power).toBeGreaterThan(0);
         }
     });
 });
