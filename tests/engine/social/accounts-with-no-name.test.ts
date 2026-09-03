@@ -12,9 +12,10 @@
  * reading has it - it is the window before anybody notices, not the whole span
  * between the deed and the telling.
  *
- * These pin that at the deed layer, where the volume is: `whatADeedLeaves`
- * routes a wrong to the kin of the person it was done to, and until this it
- * gave a relative who could not name the actor NOTHING AT ALL.
+ * These pin it on both of the routes a wrong takes to somebody's kin, because
+ * there are two and they do not share code: `whatADeedLeaves` for a deed, and
+ * `theAccountsAFightOpens` for a killing. Until this, both gave a relative who
+ * could not name the actor NOTHING AT ALL, off the same `knownTo` gate.
  */
 
 import {
@@ -30,6 +31,9 @@ import {
     theSearchItOpens
 } from '../../../src/engine/social/accounts-with-no-name';
 import { createObligation } from '../../../src/engine/social/grudges';
+import {
+    theAccountsAFightOpens
+} from '../../../src/engine/social-leverage/going-further-than-an-agreed-bout-allowed';
 
 const KILLER: Party = {
     id: 'killer', name: 'The one who did it',
@@ -165,5 +169,97 @@ describe('and it gives its holder something to do about it', () => {
         const slight = theSearchItOpens(
             { ...held, severity: 'slight' }, { lost: 'what happened to him' });
         expect(search!.priority).toBeGreaterThan(slight!.priority);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND ON THE PATH THE VOLUME IS ACTUALLY ON
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * `theAccountsAFightOpens` is where killings land, played and simulated alike.
+ *
+ * It is a different route from `whatADeedLeaves` - `war-melee.ts` and
+ * `combat-verbs.ts` both reach it through `whatTheConfrontationDidToThem` - and
+ * it carried the same `knownTo` gate with the same defect behind it: a kinsman
+ * off the list got nothing. Its own comment recorded the objection that stopped
+ * it being closed, which was that gating it would produce *a world at war in
+ * which nobody holds anything*. The correction dissolves that: they hold it,
+ * they just cannot aim it.
+ */
+describe('a killing reaches kin who cannot name who did it', () => {
+    const followed = {
+        howFar: 'past what was agreed' as const,
+        against: {
+            kind: 'grudge' as const,
+            cause: 'killed_kin' as const,
+            severity: 'grave' as const,
+            description: 'He went further than the terms allowed.',
+            tags: ['bout']
+        },
+        heldBy: [
+            { id: 'brother', as: 'sibling' as const },
+            { id: 'the-house', as: 'house' as const }
+        ],
+        brokenPromise: false,
+        note: ''
+    };
+    const parties = {
+        actor: { id: 'killer', name: 'The one who did it' },
+        loser: { id: 'the-dead', name: 'The dead man' },
+        houseId: 'the-house',
+        houseName: 'The house'
+    };
+
+    it('gives them an unnamed account rather than nothing', () => {
+        const rows = theAccountsAFightOpens({
+            followed, parties, onDay: 400, triggeringEventId: 'f7',
+            // Only the people who were actually standing there.
+            knownTo: ['killer', 'the-dead']
+        });
+        const theirs = rows.find(r => r.holderId === 'brother')!;
+        expect(theirs, 'the brother is not skipped').toBeDefined();
+        expect(hasANameOnIt({ subjectId: theirs.subjectId })).toBe(false);
+        expect(theirs.severity).toBe('grave');
+        expect(theirs.tags).toContain(NO_NAME_TAG);
+    });
+
+    it('does not name the killer in the participants of a row that cannot name them', () => {
+        // Otherwise the answer is in the record, and the account is findable
+        // from the very person its holder cannot identify.
+        const rows = theAccountsAFightOpens({
+            followed, parties, onDay: 400, triggeringEventId: 'f7',
+            knownTo: ['killer', 'the-dead']
+        });
+        const theirs = rows.find(r => r.holderId === 'brother')!;
+        expect(theirs.participants).not.toContain('killer');
+        expect(theirs.participants).toContain('the-dead');
+    });
+
+    it('still names everybody when no list is passed, which is the war case', () => {
+        // A pitched battle is the least deniable event in this world: both
+        // houses know exactly who they lost and the survivors walked home.
+        const rows = theAccountsAFightOpens({
+            followed, parties, onDay: 400, triggeringEventId: 'f7'
+        });
+        expect(rows).toHaveLength(2);
+        for (const row of rows) {
+            expect(hasANameOnIt({ subjectId: row.subjectId })).toBe(true);
+            expect(row.subjectId).toBe('killer');
+        }
+    });
+
+    it('lets the house be told when the family was not, and the other way round', () => {
+        const rows = theAccountsAFightOpens({
+            followed, parties, onDay: 400, triggeringEventId: 'f7',
+            knownTo: ['the-house']
+        });
+        const house = rows.find(r => r.holderId === 'the-house')!;
+        const brother = rows.find(r => r.holderId === 'brother')!;
+        expect(hasANameOnIt({ subjectId: house.subjectId })).toBe(true);
+        expect(hasANameOnIt({ subjectId: brother.subjectId })).toBe(false);
+        // And both carry the same weight, because knowing who is not what
+        // decides how heavy a thing was.
+        expect(house.severity).toBe(brother.severity);
     });
 });

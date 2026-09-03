@@ -35,6 +35,10 @@ import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { whatTheConfrontationDidToThem } from '../../../src/engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import type { Injury } from '../../../src/schema/cultivation.js';
+import {
+    NO_NAME_TAG,
+    hasANameOnIt
+} from '../../../src/engine/social/accounts-with-no-name.js';
 
 const DAY = 4_000;
 
@@ -399,16 +403,47 @@ describe('the accounts it hands back', () => {
 
     /**
      * The seam for AGENTS.md's *a fact reaches a person, and reaching them is
-     * an event*. Nobody who can be told is nobody who holds anything - and the
-     * death is still in the world, still true, still findable the day somebody
-     * works it out.
+     * an event* - corrected by the design owner, and this test used to assert
+     * the reading he corrected.
+     *
+     *   > "also the ledger is not empty before being told, it is there, they
+     *   > just don't have an outlet for their anger, right?"
+     *
+     * It asserted that a party nobody had told opened NOTHING. That is wrong: a
+     * brother who is dead is dead, and the people who loved him do not need a
+     * teller to start grieving. **What being told supplies is not the wrong, it
+     * is the target.** So the account opens at the same weight on the same day
+     * with no subject on the row, and `hearing-of-a-wrong.ts` puts a name on
+     * that same row when word arrives.
+     *
+     * The death is still in the world either way - still true, still findable
+     * the day somebody works it out - which was the half the old test had right.
      */
-    it('opens nothing for a party nobody has told', () => {
+    it('opens an account with no name on it for a party nobody has told', () => {
         const did = fought(withPeople().state, {
             outcome: 'lethal', finished: true, knownTo: ['somebody-who-was-not-there']
         });
         expect(did.died).toBe(true);
         expect(did.facts.some(f => f.kind === 'death')).toBe(true);
-        expect(did.opens).toEqual([]);
+
+        expect(did.opens.length, 'they hold it, they just cannot aim it')
+            .toBeGreaterThan(0);
+        for (const row of did.opens) {
+            expect(hasANameOnIt({ subjectId: row.subjectId })).toBe(false);
+            expect(row.tags).toContain(NO_NAME_TAG);
+            // Undiscounted. Not knowing who did a thing does not make it
+            // lighter, or being told would be an escalation rather than the
+            // arrival of a target.
+            expect(row.severity).toBeDefined();
+        }
+    });
+
+    it('names them when the list says they were there', () => {
+        const state = withPeople().state;
+        const named = fought(state, { outcome: 'lethal', finished: true });
+        expect(named.opens.length).toBeGreaterThan(0);
+        for (const row of named.opens) {
+            expect(hasANameOnIt({ subjectId: row.subjectId })).toBe(true);
+        }
     });
 });

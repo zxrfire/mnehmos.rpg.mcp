@@ -71,6 +71,7 @@ import type {
 } from '../social/grudges.js';
 import type { DayIndex } from '../social/common.js';
 import { severityWithHouse } from './what-a-house-will-do-about-it.js';
+import { NO_NAME_ON_IT, NO_NAME_TAG } from '../social/accounts-with-no-name.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT THE TWO OF THEM SAID IT WAS
@@ -584,17 +585,23 @@ export function theAccountsAFightOpens(input: {
      * on the list opens no account, because a grudge is held against somebody
      * and they have no name to put on it.
      *
-     * It is left defaulting to *everybody named knows* rather than gated shut,
-     * and the reason is measured rather than lazy: a pitched battle between two
-     * houses is the least deniable event in this world. Both houses know
-     * exactly who they lost and the survivors walked home. Gating it now, with
-     * nothing yet writing the telling, would produce a world at war in which
-     * nobody holds anything - the field-nothing-writes defect, arrived at while
-     * fixing a different one.
+     * It defaults to *everybody named knows*, and a party who is off the list
+     * now opens AN ACCOUNT WITH NO NAME ON IT rather than nothing.
      *
-     * Where it bites is the QUIET killing, and that is what this field is for
-     * when the telling layer lands: pass the people who were actually there and
-     * the kin two provinces away open nothing until somebody carries the news.
+     * That is the design owner's correction and it dissolves the objection this
+     * comment used to record - that gating the field would produce a world at
+     * war in which nobody holds anything: *the ledger is not empty before being
+     * told, it is there, they just don't have an outlet for their anger.* A
+     * brother who is dead is dead. **What being told supplies is not the wrong,
+     * it is the target**, so a kinsman two provinces away holds the same weight
+     * on the same day with no subject on the row, and
+     * `hearing-of-a-wrong.ts` puts a name on that same row when word arrives.
+     *
+     * Both halves therefore stay honest. A pitched battle between two houses is
+     * the least deniable event in this world - both sides know exactly who they
+     * lost and the survivors walked home - and passing no list keeps every row
+     * named. A QUIET killing passes the people who were actually there, and the
+     * kin hold a grudge they cannot yet aim.
      */
     knownTo?: readonly string[];
 }): ObligationInput[] {
@@ -608,11 +615,14 @@ export function theAccountsAFightOpens(input: {
     for (const holder of followed.heldBy) {
         const isTheHouse = holder.as === 'house';
         const holderId = isTheHouse ? parties.houseId : holder.id;
-        if (!holderId || !knows(holderId)) continue;
+        if (!holderId) continue;
+        // Not "do they hold anything" but "can they put a name to it". Somebody
+        // off the list still lost what they lost.
+        const named = knows(holderId);
         rows.push({
             kind: followed.against.kind,
             holderId,
-            subjectId: parties.actor.id,
+            subjectId: named ? parties.actor.id : NO_NAME_ON_IT,
             cause: followed.against.cause,
             // Decided once, upstream. Not adjusted per holder, on `grudges.ts`'s
             // own rule that inheritance does not discount: the brother holds
@@ -624,16 +634,27 @@ export function theAccountsAFightOpens(input: {
                 `${followed.against.description} `
                 + (isTheHouse
                     ? `${parties.loser.name} was ${parties.houseName ?? 'the house'}'s, and `
-                      + `${parties.actor.name} is the name on it.`
-                    : `${parties.loser.name} was theirs, and ${parties.actor.name} is the `
-                      + 'name on it.'),
-            participants: [parties.actor.id, parties.loser.id],
+                      + (named
+                          ? `${parties.actor.name} is the name on it.`
+                          : 'nobody has put a name to it.')
+                    : `${parties.loser.name} was theirs, and `
+                      + (named
+                          ? `${parties.actor.name} is the name on it.`
+                          : 'nobody has put a name to it.')),
+            // The person who did it is not a participant on a row that cannot
+            // name them. Naming them here would put the answer in the record
+            // and make the account findable from the very person its holder
+            // cannot identify.
+            participants: named
+                ? [parties.actor.id, parties.loser.id]
+                : [parties.loser.id],
             tags: [
                 ...followed.against.tags,
                 // How this party comes to be holding it, in the ledger's own
                 // word for the connection, so a reader can tell the
                 // institution's row from the family's without guessing.
-                isTheHouse ? 'institutional' : `carried:${holder.as}`
+                isTheHouse ? 'institutional' : `carried:${holder.as}`,
+                ...(named ? [] : [NO_NAME_TAG])
             ]
         });
     }
