@@ -529,6 +529,16 @@ function describeStanding(cultivator: Cultivator, standing: Standing): Record<st
         : undefined;
     return {
         place: standing.placeName ?? cultivator.location,
+        // THE PROVINCE, BESIDE THE PLACE, BECAUSE HALF THIS BODY IS ABOUT THE
+        // PROVINCE AND NOT ABOUT THE PLACE.
+        //
+        // `groundHereStillGives` below is `canAdvanceHere(regionId, ...)` - a
+        // fact about the region's `localCeilingOrdinal` - and the renderer had
+        // only `place` to say it with, so it said neither and wrote "the ground
+        // here". Both halves of the sentence are already resolved in `standing`;
+        // one of them just was not being handed over. See the ceiling branch in
+        // `web/tool-result-prose.ts`.
+        region: standing.regionName,
         settlement: settlement
             ? {
                 kind: settlement.kind,
@@ -859,6 +869,16 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         // Observable consequence, not a category: what this ground has left to
         // give somebody standing at this rank.
         groundHereStillGives: canAdvanceHere(standing.regionId, cultivator.realmOrdinal),
+        // And WHERE it stops, said as a rung rather than left to be inferred.
+        //
+        // The boolean above is `ordinal < localCeilingOrdinal`, so a renderer
+        // holding only the boolean can say no more than "not past where you are
+        // standing" - which is exact for somebody sitting on the ceiling and an
+        // understatement for anybody above it. The rung is the fact the boolean
+        // is derived from and is the same figure `why-progress-has-stopped.ts`
+        // prints for the identical ruling, off the same `localCeilingOrdinal`,
+        // so the two reads cannot drift into telling a player different numbers.
+        groundCarriesNobodyPast: rankName(region.localCeilingOrdinal),
         settlements: SETTLEMENTS.map(s => ({
             kind: s.kind,
             typicalPopulation: s.typicalPopulation,

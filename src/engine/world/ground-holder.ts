@@ -177,6 +177,14 @@ export function whoHoldsTheGround(
         const holder = step.controllingFactionId;
         if (!holder) continue;
         const holderName = nameOf(holder);
+        // Whether saying the holder's name a second time would be saying
+        // anything. Most ground that carries a holder on its own row is a
+        // compound, a precinct or a vault, and those are named for the house
+        // that holds them - so "Ashen Forge Clan holds Ashen Forge Clan
+        // grounds" is the "X is in X" sentence the prefecture branch below has
+        // always refused, and it is what naming the place naively produces.
+        const groundCarriesTheirName = holderName !== null
+            && here.name.toLowerCase().includes(holderName.toLowerCase());
         return {
             ...base,
             holding: 'held',
@@ -184,8 +192,23 @@ export function whoHoldsTheGround(
             holderFactionId: holder,
             holderName,
             alignment: alignmentOf(holder),
+            // THE ONE BRANCH THAT KNEW BOTH NAMES AND NAMED NO PLACE.
+            //
+            // Every other reading below names the ground it is about - the
+            // district, the containing hall, the province that declares nobody
+            // holds it, the place the record is silent about. This one, the case
+            // where the world has the most to say, read "X holds this ground",
+            // and `holding.why` is the first clause of `theGroundUnderYou`'s
+            // `why`, which is the whole of what `whoAnswersHere` puts on
+            // `facts.lines`. So the answer to "who holds this ground" named the
+            // house and left the ground anonymous, with `here.name` in scope and
+            // already copied into `base.placeName` on the line above. The
+            // headline said the place and the line - the only channel a narrator
+            // is ever sent - did not.
             why: step.id === here.id
-                ? `${holderName ?? holder} holds this ground.`
+                ? groundCarriesTheirName
+                    ? `${here.name} is held by the house it is named for.`
+                    : `${holderName ?? holder} holds ${here.name}.`
                 : `This is inside ${step.name}, which ${holderName ?? holder} holds.`
         };
     }
