@@ -130,3 +130,68 @@ describe('but it may not be why the turn became dangerous', () => {
         }
     }, 120_000);
 });
+
+/**
+ * AND IT MAY NOT BE THE REASON SOMEBODY JOINED A HOUSE.
+ *
+ * The third axis, and it was the hole the worst reading came through. The cost
+ * rule is gated on `TIME_CONSUMING_ACTIONS`, and `sect` is on neither that list
+ * nor `READ_ONLY_ACTIONS` - so a model answering `sect` was waved through at the
+ * cheap exit and its reading was never compared against the sentence's own.
+ *
+ * Played, and reproduced here with a scripted provider at ordinal 25:
+ *
+ *   > if they'll have me, I'll join
+ *   sect_manage.join: "Taken on by Azure Dew Sect, ranked Dew Elder."
+ *
+ * The player stated a policy contingent on a fact they did not have and was
+ * enrolled at the house's elder tier. It cost no days at all, which is exactly
+ * why the cost rule could not see it - and being taken on is the single most
+ * consequential thing a turn can do to somebody.
+ *
+ * THE RANK IS NOT UNDER TEST AND MUST NOT CHANGE. Seating a cultivator at
+ * ordinal 25 near the top of a ladder admitting from far below is the system
+ * working, ruled by the design owner. The commitment case below asserts the
+ * enrolment still happens AND still lands at the elder rung.
+ */
+describe('a model may not be the reason somebody joined a house', () => {
+    const joining = () => new ProviderNarrator(
+        new ScriptedProvider({ plans: ['{"action":"sect","intent":"join","target":"Azure Dew Sect"}'] }),
+        { model: 'test' }
+    );
+
+    it('declines a join the sentence does not ask for, and says why', async () => {
+        const plan = await joining().plan("if they'll have me, I'll join", '');
+
+        // The verb survives; the HOUSE does not, and the house is what the
+        // dispatch joins on. No target is the listing.
+        expect(plan.action.action).toBe('sect');
+        expect((plan.action.target ?? '').trim()).toBe('');
+        expect(plan.source).toBe('fallback');
+        expect(plan.note ?? '').toMatch(/joining a house/i);
+    }, 120_000);
+
+    it('takes the model\'s join when the sentence plainly asks for one', async () => {
+        const plan = await joining().plan('I join the Azure Dew Sect', '');
+
+        expect(plan.action.action).toBe('sect');
+        expect(plan.action.target ?? '').toMatch(/Azure Dew Sect/i);
+        expect(plan.source).toBe('model');
+    }, 120_000);
+
+    /**
+     * Leaving is the same act with the sign flipped, and INSTANCE 3 in
+     * `asking-is-not-doing.ts` is a played run where "can I leave my sect"
+     * permanently left it. That fix guards the deterministic reading; this
+     * guards a model asserting the same thing.
+     */
+    it('declines a departure the sentence does not ask for', async () => {
+        const leaving = new ProviderNarrator(
+            new ScriptedProvider({ plans: ['{"action":"sect","intent":"leave"}'] }),
+            { model: 'test' }
+        );
+        const plan = await leaving.plan('can I leave my sect', '');
+
+        expect(plan.action.intent).not.toBe('leave');
+    }, 120_000);
+});

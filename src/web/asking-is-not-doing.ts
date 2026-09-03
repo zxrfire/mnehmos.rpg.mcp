@@ -301,6 +301,40 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bwhat\s+(?:am|are)\s+i\s+[a-z]+ing\b/,
     /\bwhat\s+(?:is|are)\s+(?:there\s+|left\s+)?(?:here\s+)?to\s+[a-z]+\b/,
     /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/,
+    // ── AND A CONDITIONAL IS NOT A COMMITMENT ───────────────────────────
+    //
+    // The third face, and the only one so far that did not spend a day - it
+    // changed who the player WAS. Played, standing on Azure Cloud Pavilion
+    // grounds:
+    //
+    //   > if they'll have me, I'll join
+    //   "You are now on the rolls of the Azure Cloud Pavilion, a Sword Elder."
+    //
+    // No decline, no refusal, no admission process. "If X, I'll Y" states a
+    // POLICY: the player is saying what they would do and waiting to hear
+    // whether X holds. They did not know whether the house would have them -
+    // that is the whole content of the sentence - and the game answered by
+    // enrolling them.
+    //
+    // NOTE THIS IS NOT THE `if i` SHAPE ABOVE. That branch anchors on an
+    // interrogative opening with the condition about the asker - "will someone
+    // bother me if I sit here". This one is a DECLARATIVE with a LEADING `if`
+    // clause and no interrogative and no mark anywhere, so nothing above it
+    // reaches it.
+    //
+    // The discriminator is position plus subject, and both halves are needed:
+    //
+    //   LEADING, because a trailing `if` is a trigger on a decision already
+    //   taken. "I fight him if he draws" and "I will cultivate here if I can"
+    //   are commitments and must keep working - the actor comes first in both,
+    //   so neither can ever match an expression anchored at `^if`.
+    //
+    //   NOT ABOUT THE ASKER, because "if I can, I'll cultivate here" is
+    //   somebody telling the engine to go ahead where possible, which is a
+    //   decision. `(?!i\b)` keeps it out. What makes the played sentence a
+    //   question is that its condition is a fact about SOMEBODY ELSE that the
+    //   player does not have - "if they'll have me" is the asking.
+    /^\s*if\s+(?!i\b)[^,.?!]{2,60},?\s*(?:then\s+)?i(?:'ll|'d|\s+will|\s+would|\s+shall)?\b/,
     // ── AND THE ONE THE PLAYER TYPED ON PURPOSE ─────────────────────────
     //
     // Last in the list because it is the widest, and it subsumes every branch
