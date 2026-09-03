@@ -753,6 +753,7 @@ import {
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
+import { recordPerception } from './shown-this-turn.js';
 import {
     howStandingHerePutIt,
     whoBeingHereIntroducesYouTo
@@ -2422,6 +2423,32 @@ export class GameService {
             await saveWorldForRun(run);
         }
 
+        // ── EVERYTHING THIS TURN SHOWED, WRITTEN DOWN ────────────────────
+        //
+        // THE ONE WRITER. Producers declare what they put in front of the
+        // player on `execution.perceived`; this is where it becomes a row, in
+        // phase 2, before anything is narrated and before phase 3 is handed a
+        // licence to mention any of it.
+        //
+        // It replaces remembering. Knowledge used to be written by whoever
+        // happened to be holding the player - fourteen `noteEncounter` call
+        // sites across six files - and a verb that forgot was indistinguishable
+        // from a verb that decided not to. That is how a house named to the
+        // player three times in one session was still `unaware` when they tried
+        // to ask it for something.
+        //
+        // It widens nothing. Every gate upstream still rules; this records what
+        // they let through, at a stage the source has already clamped.
+        for (const perceived of execution.perceived ?? []) {
+            const learned = recordPerception(this.knowledge, after.cultivator, after.run, perceived);
+            if (learned.length > 0) {
+                execution.facts.structure.push(
+                    `shown this turn: ${learned.map(name => name.name).join(', ')} `
+                    + `(${perceived.sourceKind}). ${perceived.note}`
+                );
+            }
+        }
+
         const scene = {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -3795,28 +3822,29 @@ ${line}`;
                     //
                     // `named` and no further: `being-on-their-ground.ts`
                     // says why it grants below its own source ceiling.
+                    // DECLARED, NOT WRITTEN. This was the first producer to
+                    // move onto the seam, and it is the one that proved the
+                    // gap: it used to call `learnIfNew` here, which worked and
+                    // meant every future perception had to remember to do the
+                    // same. The rule it grants is unchanged - `named` from
+                    // `witnessed`, deliberately below the source ceiling,
+                    // because being somewhere tells you whose ground it is and
+                    // nothing about their politics.
                     const introduced = whoBeingHereIntroducesYouTo(
                         this.atHand.locations, groundHere
                     );
-                    if (introduced) {
-                        const wrote = this.knowledge.learnIfNew({
-                            holderId: cultivator.id,
-                            kind: 'sect',
-                            id: introduced.factionId,
-                            name: introduced.factionName ?? introduced.factionId,
-                            onDay: Math.floor(run.elapsedDays),
-                            sourceKind: 'witnessed',
-                            sourceNote: 'They hold the ground this cultivator was standing on.',
-                            stage: 'named',
-                            statement: howStandingHerePutIt(introduced)
+                    if (introduced && introduced.factionName) {
+                        (looking.perceived ??= []).push({
+                            names: [{
+                                kind: 'sect',
+                                id: introduced.factionId,
+                                name: introduced.factionName,
+                                stage: 'named',
+                                statement: howStandingHerePutIt(introduced)
+                            }],
+                            note: 'They hold the ground this cultivator was standing on.',
+                            sourceKind: 'witnessed'
                         });
-                        if (wrote) {
-                            looking.facts.structure.push(
-                                `being on their ground: ${introduced.factionName} named at ` +
-                                '`named` from `witnessed`, below the source ceiling. A name to ' +
-                                'say, not an introduction.'
-                            );
-                        }
                     }
                 }
                 // And the wall, but only where it has something the player has

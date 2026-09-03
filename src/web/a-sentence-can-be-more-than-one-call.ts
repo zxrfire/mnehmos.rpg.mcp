@@ -1755,7 +1755,9 @@ const NOISE: ReadonlySet<string> = new Set([
  * does not have to export one. TypeScript's structural typing does the rest;
  * `ToolCallRecord` is imported for its type alone, so there is no runtime cycle.
  */
-export interface OneCall<Event = unknown, Skip = unknown, Break = unknown, Heard = unknown> {
+export interface OneCall<
+    Event = unknown, Skip = unknown, Break = unknown, Heard = unknown, Seen = unknown
+> {
     facts: EngineFacts;
     events: Event[];
     timeSkip: Skip | null;
@@ -1763,6 +1765,13 @@ export interface OneCall<Event = unknown, Skip = unknown, Break = unknown, Heard
     outcome: 'executed' | 'refused';
     calls: ToolCallRecordish[];
     hearing?: Heard | null;
+    /**
+     * What each step showed the player, kept generic for the same reason
+     * `Heard` is: this module folds executions without knowing what a
+     * perception is, and importing the type would tie the folder to the web
+     * layer it is deliberately independent of.
+     */
+    perceived?: Seen[];
 }
 
 /**
@@ -2008,10 +2017,10 @@ export function theRowThatSaysWhereItStopped(
  * refused and the costly act landed is not a refused turn, and the refusal is
  * still in `calls` with `ok: false` on it, which is where a refusal belongs.
  */
-export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard>(
-    calls: readonly OneCall<Event, Skip, Break, Heard>[],
+export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard, Seen>(
+    calls: readonly OneCall<Event, Skip, Break, Heard, Seen>[],
     headline?: string
-): OneCall<Event, Skip, Break, Heard> {
+): OneCall<Event, Skip, Break, Heard, Seen> {
     if (calls.length === 1 && headline === undefined) return calls[0]!;
 
     const first = calls[0];
@@ -2037,7 +2046,13 @@ export function foldTheCallsIntoOneTurn<Event, Skip, Break, Heard>(
         breakthrough: calls.map(call => call.breakthrough).find(result => result !== null) ?? null,
         outcome: calls.some(call => call.outcome === 'executed') ? 'executed' : 'refused',
         calls: calls.flatMap(call => call.calls),
-        hearing: calls.map(call => call.hearing).find(heard => heard != null) ?? null
+        hearing: calls.map(call => call.hearing).find(heard => heard != null) ?? null,
+        // CONCATENATED, unlike the hearing above, and the difference is not an
+        // inconsistency. A turn has at most one thing somebody SAID to render,
+        // and every step of a plan can show the player something - so taking
+        // the first would silently drop what the later steps put in front of
+        // them, which is the defect this seam exists to end.
+        perceived: calls.flatMap(call => call.perceived ?? [])
     };
 }
 
