@@ -228,7 +228,10 @@ describe('flight on one\'s own blade', () => {
         expect(SWORD_ARTS.length).toBeGreaterThanOrEqual(3);
         expect(isSwordArt('gale-riding-sword-flight')).toBe(true);
         expect(isSwordArt('lesser-qi-gathering-manual')).toBe(false);
-        for (const art of SWORD_ARTS) expect(art.subject).toBe('sword');
+        // Sword is the PRIMARY road on every one of them, which is what makes
+        // `primaryRoadOf` safe for the flight gate now that an art may be on
+        // more than one road: two of these also carry 'formation', after it.
+        for (const art of SWORD_ARTS) expect(art.subjects[0]).toBe('sword');
     });
 
     /**
@@ -258,7 +261,7 @@ describe('flight on one\'s own blade', () => {
             }]
         };
         const flight = getTechnique('gale-riding-sword-flight')!;
-        const art = { element: flight.element, subject: flight.subject, mastery: 1 };
+        const art = { element: flight.element, subjects: flight.subjects, mastery: 1 };
         const withIt = techniqueEffectiveness(understandsTheSword as never, art);
         const without = techniqueEffectiveness(
             { spiritRoot: 'single_metal', insights: [] } as never,

@@ -69,6 +69,7 @@ import {
     routeTo
 } from '../engine/world/where-the-measured-span-still-answers.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
+import { primaryRoadOf } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import {
     listCarriedArtifacts,
@@ -333,7 +334,10 @@ export const travelVerbs = {
             const known = cultivator.knownTechniques
                 .map(id => TECHNIQUES.find(t => t.id === id))
                 .filter((t): t is NonNullable<typeof t> => t !== undefined)
-                .map(t => ({ id: t.id, subject: t.subject ?? null }));
+                // `HeldArt.subject` is a scalar and the flight gate reads one
+                // road, so this is `primaryRoadOf`. Sword is written first on
+                // every sword row, so the gate sees exactly what it saw before.
+                .map(t => ({ id: t.id, subject: primaryRoadOf(t) }));
             const gate = couldFlyOnTheirOwnBlade({
                 realmOrdinal: cultivator.realmOrdinal,
                 known,

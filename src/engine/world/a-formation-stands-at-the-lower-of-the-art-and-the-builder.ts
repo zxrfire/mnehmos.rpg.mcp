@@ -16,6 +16,12 @@
  * of the two halves was the binding one. Everything else in this file is the
  * row that number goes onto.
  *
+ * A THIRD TERM, RULED SEPARATELY: how well the builder knows the art. It is a
+ * PENALTY OFF THE `min` and never a multiplier on the cap - see
+ * {@link whatImperfectMasteryCosts}, which carries the owner's anchor and the
+ * reasoning. At full mastery it costs nothing, so the paragraphs below describe
+ * the whole of the answer for anybody who has their art.
+ *
  * ─── WHY THE LOWER AND NOT THE HIGHER ────────────────────────────────────
  *
  * Stated in full because the higher number is the one that LOOKS authoritative
@@ -119,37 +125,44 @@
 
 import { makeObject, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
+import { isOnRoad } from '../../schema/cultivation.js';
 
 // ═════════════════════════════════════════════════════════════════════════
 // WHICH ARTS RAISE ONE
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
- * The value of `Technique.subject` that says an art raises formations.
+ * The road that says an art raises formations.
  *
- * ── THE FIELD EXISTS AND NOTHING WRITES IT ───────────────────────────────
+ * ── IT IS ONE ROAD AMONG SEVERAL, AND THAT WAS THE WHOLE FIX ─────────────
  *
- * `TechniqueSchema.subject` is documented in `schema/cultivation.ts` as *the
- * road this art is on: 'sword', 'formation', 'body'* - this exact string is one
- * of the three examples in the schema's own comment, and `understanding.ts`
- * already pairs `{ domain: 'formation', subject: 'formation' }`. So the column
- * is the right one and it is not being invented here.
+ * `Technique.subjects` is documented in `schema/cultivation.ts` as *the roads
+ * this art is on: 'sword', 'formation', 'body'*, and `understanding.ts` already
+ * pairs `{ domain: 'formation', subject: 'formation' }`. So the column is the
+ * right one and it is not being invented here.
  *
- * MEASURED: of 138 technique rows in the catalog, 6 carry a `subject` and all
- * six say `'sword'`. NOT ONE says `'formation'`. So today this predicate is
- * false for every art in the world and nobody can raise anything, which is the
- * honest answer and is left honest deliberately.
+ * It used to be a single string, and that cardinality was the bug. Ruled by the
+ * design owner: *"some techniques both teach you fighting and formation ... and
+ * obviously sword formations exist so techniques can have more than one."*
+ * Raising an array is AN ABILITY AN ART HAPPENS TO GRANT - the way a sword art
+ * also teaches you to fly - so it hangs off arts that already do something
+ * else. It is not a category of art to be authored beside the others, and there
+ * is deliberately no `category: 'formation'` anywhere.
  *
- * Two things follow and both are somebody's authoring job rather than code:
+ * ── AND IT IS UNCOMMON ON PURPOSE ────────────────────────────────────────
  *
- *   The catalog has to say which arts do this. That is a catalog saying what a
- *   technique does, which is the catalog doing its job - it is not an
- *   institutional flag and there is no reason to be shy of it.
+ * Ruled, after the first draft assumed every sword art would qualify: *"NOT
+ * ALWAYS RIGHT? not every sword art is also a formation art."* If all of them
+ * had it, raising formations would be what BEING a sword art means, and the
+ * ability would be worth nothing. Two of the five sword rows carry it, chosen
+ * on the rows' own descriptions - both are arts whose sword intent STANDS
+ * somewhere instead of travelling - and the reasons are written beside them in
+ * `techniques.ts`.
  *
- *   NOTHING HERE DEFAULTS TO YES. A permissive fallback would make every art in
- *   the world a formation art the moment somebody called this, which is a much
- *   worse failure than a refusal, and it is the exact shape AGENTS.md warns
- *   about when it says a field nothing writes still reads as a value.
+ * NOTHING DEFAULTS TO YES. `SUBJECT_BY_CATEGORY` supplies the ONE road an art
+ * is on when its row is silent; a second road is always explicit. A permissive
+ * fallback here would make every art in the world a formation art, which is a
+ * far worse failure than a refusal.
  */
 export const FORMATION_ROAD = 'formation';
 
@@ -164,8 +177,8 @@ export const FORMATION_ROAD = 'formation';
 export interface ArtAsFarAsThisMatters {
     id: string;
     name: string;
-    /** The road it is on. {@link FORMATION_ROAD} is the one that counts here. */
-    subject: string | null;
+    /** The roads it is on. {@link FORMATION_ROAD} is the one that counts here. */
+    subjects: readonly string[];
     /** The rung it is pitched at. The floor for working it at all. */
     requiredOrdinal: number;
     /** The rung it is written to, or null for an art with no written ceiling. */
@@ -183,7 +196,7 @@ export interface ArtAsFarAsThisMatters {
  * {@link whereAFormationStands} has thrown away the builder.
  */
 export function whatAnArtCanRaiseTo(art: ArtAsFarAsThisMatters): number | null {
-    if (art.subject !== FORMATION_ROAD) return null;
+    if (!isOnRoad(art, FORMATION_ROAD)) return null;
     const reach = art.cap ?? art.requiredOrdinal;
     return clamp(reach);
 }
@@ -192,12 +205,30 @@ export function whatAnArtCanRaiseTo(art: ArtAsFarAsThisMatters): number | null {
 // THE ONE NUMBER
 // ═════════════════════════════════════════════════════════════════════════
 
+/**
+ * The stretch of ladder one grade of art covers, and the unit imperfect
+ * mastery is charged in.
+ *
+ * DERIVED, not chosen. `GRADE_ORDINAL_BANDS` in the technique catalog runs
+ * earth 13-20, heaven 21-28, immortal 29-36: eight rungs each. That is how much
+ * ladder one grade of manual is written across, so it is the natural size of
+ * "a whole art's worth of ladder" - and the question mastery asks is what
+ * fraction of an art you are missing.
+ *
+ * Not imported, because `data/cultivation/techniques.ts` imports FROM this
+ * layer and the dependency cannot run both ways. If the bands are ever
+ * re-cut, this is the one number to follow them.
+ */
+export const A_GRADE_OF_LADDER = 8;
+
 /** Which half of the `min` was the binding one. */
 export type WhatLimitedIt = 'the art' | 'the builder' | 'neither, they are level';
 
 export interface WhereAFormationStands {
-    /** The rung it is raised at. The `min`, and the only number that persists. */
+    /** The rung it is raised at. The only number that persists. */
     standsAt: number;
+    /** The `min` before mastery took anything off it. */
+    theLowerOfTheTwo: number;
     /** How far the art described. */
     artReachedTo: number;
     /** Where the person raising it stood on the day. */
@@ -205,8 +236,68 @@ export interface WhereAFormationStands {
     limitedBy: WhatLimitedIt;
     /** How many rungs the art could have reached and the builder could not. */
     rungsTheArtHadSpare: number;
+    /** How well the builder knew the art, 0..1. */
+    mastery: number;
+    /** Rungs imperfect mastery cost, off the `min`. Zero at full mastery. */
+    rungsMasteryCost: number;
     /** Engine-authored, and it names both halves in both directions. */
     account: string;
+}
+
+/**
+ * What imperfect mastery costs, in rungs, off the lower of the two.
+ *
+ * ── THE RULING, AND WHAT IT RULES OUT ────────────────────────────────────
+ *
+ * The design owner:
+ *
+ *   > also yes, scaling, but scaling has to do with your power level too
+ *   > like 0.5 on a 44 cap art, when you are 29, builds something like a 28 or
+ *   > a 27? the math has to make sense, i fudged the numbers, you get what i'm
+ *   > saying
+ *
+ * The numbers are fudged and the SHAPE is the ruling, so this is derived and
+ * then checked against the anchor rather than fitted to it.
+ *
+ * IT IS A PENALTY OFF THE `min`, NEVER A MULTIPLIER ON THE CAP. `cap x mastery`
+ * gives 22 at the anchor, which is wrong by six rungs, and it is wrong for a
+ * reason worth keeping: it lets a book's ceiling dominate a builder who is
+ * nowhere near it. A half-learned art in a strong cultivator's hands still
+ * expresses most of what that cultivator is, because THEY are the one raising
+ * it and the qi is theirs. Mastery decides how much of themselves they can get
+ * through the method, not how much method there is.
+ *
+ * AND THE COST SCALES WITH THE BUILDER'S OWN RUNG - the owner's *"has to do
+ * with your power level too"*. Proportional in relative terms and larger in
+ * absolute ones the higher you stand, because there is more to lose up there:
+ * fumbling a method at Qi Condensation wastes almost nothing, and fumbling one
+ * at the last crossing wastes several rungs of an enormous body.
+ *
+ * ── WHAT IT PRODUCES ─────────────────────────────────────────────────────
+ *
+ * One rung for every {@link A_GRADE_OF_LADDER} you stand on, times the fraction
+ * of the art you have not got. Measured, and the anchor is the first line:
+ *
+ *   art 44, mastery 0.5, builder 29   ->  29 - 2  =  27     the owner's case
+ *   art 44, mastery 0.5, builder  5   ->   5 - 0  =   5     a fraction of one
+ *   art 44, mastery 0.5, builder 44   ->  44 - 3  =  41     rather more
+ *   anything,  mastery 1, any builder ->  no change at all
+ *
+ * FULL MASTERY COSTS EXACTLY NOTHING, so this term is provably additive: at
+ * `mastery: 1` the answer is byte-identical to the plain `min`, which is what
+ * keeps every test written before mastery existed valid.
+ *
+ * It only ever SUBTRACTS. Nothing mastery does can push a formation above
+ * `min(art, builder)`, so a 10-cap art in a 44's hands is a 10 at any mastery.
+ */
+export function whatImperfectMasteryCosts(input: {
+    lowerOfTheTwo: number;
+    mastery: number;
+}): number {
+    const mastery = Math.max(0, Math.min(1, input.mastery));
+    const missing = 1 - mastery;
+    if (missing <= 0) return 0;
+    return Math.round((missing * Math.max(0, input.lowerOfTheTwo)) / A_GRADE_OF_LADDER);
 }
 
 /**
@@ -224,13 +315,37 @@ export interface WhereAFormationStands {
 export function whereAFormationStands(input: {
     art: ArtAsFarAsThisMatters;
     builderOrdinal: number;
+    /**
+     * How well the builder knows the art, 0..1. Omitted means fully mastered,
+     * which costs nothing - so a caller that does not know about mastery gets
+     * the plain `min` and cannot be silently penalised for not asking.
+     */
+    mastery?: number;
 }): WhereAFormationStands | null {
     const artReachedTo = whatAnArtCanRaiseTo(input.art);
     if (artReachedTo === null) return null;
 
+    const mastery = Math.max(0, Math.min(1, input.mastery ?? 1));
+    // ── mastery 0 IS A REFUSAL, NOT A FEEBLE FORMATION ────────────────────
+    //
+    // The catalog's own authoring helper sets every entry to `mastery: 0`
+    // because mastery is per-cultivator state - so zero is precisely the state
+    // of an art somebody has just been handed and has never practised. They
+    // have seen the diagram and done none of the work, and there is no rung of
+    // anything to put on the ground. Refusing here rather than returning a rung
+    // is also what stops the commonest caller bug - passing a freshly acquired
+    // art through - from silently producing a real object.
+    if (mastery <= 0) return null;
+
     const builderStoodAt = clamp(input.builderOrdinal);
-    const standsAt = Math.min(artReachedTo, builderStoodAt);
+    const theLowerOfTheTwo = Math.min(artReachedTo, builderStoodAt);
     const spare = Math.max(0, artReachedTo - builderStoodAt);
+    const rungsMasteryCost = whatImperfectMasteryCosts({
+        lowerOfTheTwo: theLowerOfTheTwo,
+        mastery
+    });
+    // Only ever subtracts, and never below the bottom of the ladder.
+    const standsAt = Math.max(0, theLowerOfTheTwo - rungsMasteryCost);
 
     const limitedBy: WhatLimitedIt =
         artReachedTo < builderStoodAt ? 'the art'
@@ -239,22 +354,33 @@ export function whereAFormationStands(input: {
 
     return {
         standsAt,
+        theLowerOfTheTwo,
         artReachedTo,
         builderStoodAt,
         limitedBy,
         rungsTheArtHadSpare: spare,
+        mastery,
+        rungsMasteryCost,
         account:
             `${input.art.name} describes work to ${artReachedTo} and was laid by somebody standing `
-            + `at ${builderStoodAt}, so what is on the ground stands at ${standsAt}. `
+            + `at ${builderStoodAt}, so the most that could have gone into the ground is `
+            + `${theLowerOfTheTwo}. `
             + (limitedBy === 'the art'
                 ? 'The book ran out before the hand did. The rungs the builder had over it went '
-                  + 'into nothing, because a method is what you know and not what you have.'
+                  + 'into nothing, because a method is what you know and not what you have. '
                 : limitedBy === 'the builder'
                     ? `The ${spare} rung${spare === 1 ? '' : 's'} the book had spare `
                       + 'went nowhere: the qi in a formation is the builder\'s, and a page '
-                      + 'describing work above them does not supply any of it.'
+                      + 'describing work above them does not supply any of it. '
                     : 'The book and the hand ran out together, which is the only case where '
-                      + 'nothing was wasted.')
+                      + 'nothing was wasted. ')
+            + (rungsMasteryCost > 0
+                ? `They know it ${Math.round(mastery * 100)}% through, and at this height that `
+                  + `costs ${rungsMasteryCost} rung${rungsMasteryCost === 1 ? '' : 's'}: what is `
+                  + `standing there is a ${standsAt}. The higher somebody stands the more an `
+                  + 'imperfectly held method wastes, because there is more of them to waste.'
+                : `They have the art whole, so nothing was lost in the laying and it stands at `
+                  + `${standsAt}.`)
     };
 }
 
@@ -278,6 +404,8 @@ export interface RaisingAFormation {
     name: string;
     art: ArtAsFarAsThisMatters;
     builderOrdinal: number;
+    /** 0..1. Omitted means whole. Zero is a refusal - see the note in `where`. */
+    mastery?: number;
     builderId: string | null;
     builderName: string;
     /** Where it stands. Required: standing somewhere is what a formation is. */
@@ -319,17 +447,25 @@ export interface FormationRaised {
 export function raiseFormation(input: RaisingAFormation): FormationRaised {
     const stands = whereAFormationStands({
         art: input.art,
-        builderOrdinal: input.builderOrdinal
+        builderOrdinal: input.builderOrdinal,
+        mastery: input.mastery
     });
 
     if (stands === null) {
+        // Two refusals, and they are different facts about the situation: the
+        // art cannot do this at all, or this person has not learned it yet.
+        const notARaiser = whatAnArtCanRaiseTo(input.art) === null;
         return {
             row: null,
             stands: null,
-            account:
-                `${input.art.name} is not an art that raises formations, so nothing was laid. `
-                + 'What a technique does is a fact about the technique, and this one does not '
-                + 'say it does this.'
+            account: notARaiser
+                ? `${input.art.name} is not an art that raises formations, so nothing was laid. `
+                  + 'What a technique does is a fact about the technique, and this one does not '
+                  + 'say it does this.'
+                : `${input.builderName} has ${input.art.name} and has never practised it, so `
+                  + 'nothing was laid. The diagram is not the work: an art at no mastery is a '
+                  + 'thing somebody has been shown, and there is no rung of it to put on the '
+                  + 'ground.'
         };
     }
 
@@ -354,6 +490,8 @@ export function raiseFormation(input: RaisingAFormation): FormationRaised {
             raisedFromArtName: input.art.name,
             artReachedTo: stands.artReachedTo,
             builderStoodAt: stands.builderStoodAt,
+            builtAtMastery: stands.mastery,
+            rungsMasteryCost: stands.rungsMasteryCost,
             builderId: input.builderId,
             builderName: input.builderName,
             raisedOnDay: input.onDay,
@@ -429,6 +567,19 @@ export function formationsStandingAt(
  * they were - and because the rung only ever moves DOWN, a holed formation
  * understates its builder rather than overstating them, which is the safe
  * direction for an inference somebody is going to draw about a dead house.
+ *
+ * ── AND MASTERY MAKES IT WEAKER, NEVER WRONG. DO NOT INVERT IT ───────────
+ *
+ * Imperfect mastery also subtracts, so an observed formation now implies a
+ * builder AT LEAST this high with more slack than before. That is still a
+ * floor, and it is still sound.
+ *
+ * Somebody will be tempted to divide the mastery term back out to sharpen the
+ * estimate. THEY CANNOT. The observer is standing in front of a stone; they do
+ * not know how well the builder knew their art, and there is nothing on the
+ * ground that could tell them. A sharpened estimate would be reading a number
+ * off a field only the engine can see, which is the same error as narrating an
+ * outcome nobody resolved.
  *
  * Reads `ratedWhole` where it is there, because that is the number before any
  * holes, and falls back to `power` for a row nothing has touched.

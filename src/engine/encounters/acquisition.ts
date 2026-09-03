@@ -81,7 +81,8 @@ export interface ManualLike {
     cap: number | null;
     grade: 'mortal' | 'earth' | 'heaven' | 'immortal' | 'chaos';
     element?: string | null;
-    subject?: string | null;
+    /** Every road the art is on, not just its primary. See `isOnRoad`. */
+    subjects?: readonly string[] | null;
     category?: string | null;
     rootGrades?: readonly string[];
     domain?: string | null;
@@ -214,7 +215,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
         volumes: manual.volumes ?? null,
         grade: manual.grade,
         element: manual.element ?? null,
-        subject: manual.subject ?? null,
+        subjects: manual.subjects ?? [],
         category: manual.category ?? null,
         // Passed through so the span curve stands down where the catalog has
         // stated its own comprehension gate - the `comprehension` axis of
@@ -525,7 +526,7 @@ export function extensionOption(
         volumes: manual.volumes ?? null,
         grade: manual.grade,
         element: manual.element ?? null,
-        subject: manual.subject ?? null,
+        subjects: manual.subjects ?? [],
         category: manual.category ?? null,
         notExtendableReason: manual.notDerivableReason ?? null
     };

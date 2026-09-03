@@ -87,7 +87,7 @@ const SCATTERED: GatedManual & ExtendableManual = {
     volumes: ['vol-one', 'vol-two', 'vol-three'],
     grade: 'chaos',
     element: 'fire',
-    subject: 'fire',
+    subjects: ['fire'],
     category: 'cultivation',
     notExtendableReason: null
 };
@@ -661,7 +661,7 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
 
     it('a road that is not an element extends the manual on that road', () => {
         const bodyRoad = daoIn('the meridians', 'body');
-        const source: ExtendableManual = { ...SCATTERED, element: null, subject: 'the meridians' };
+        const source: ExtendableManual = { ...SCATTERED, element: null, subjects: ['the meridians'] };
         const result = writeNextStage({ ...request, source, dao: bodyRoad });
         expect(result.written).toBe(true);
         if (!result.written) return;

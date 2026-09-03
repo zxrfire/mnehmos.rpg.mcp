@@ -103,9 +103,11 @@ const ACTIONS = ['list_available', 'learn', 'practise', 'use', 'forget'] as cons
  * What an art is about, for the Dao gate. Content carries `subject` on some
  * arts and not others, so this stays defensive rather than assuming a column.
  */
-function techniqueSubject(technique: object): string | null {
-    const subject = (technique as { subject?: unknown }).subject;
-    return typeof subject === 'string' && subject.length > 0 ? subject : null;
+function techniqueSubject(technique: object): string[] {
+    const subjects = (technique as { subjects?: unknown }).subjects;
+    return Array.isArray(subjects)
+        ? subjects.filter((s): s is string => typeof s === 'string' && s.length > 0)
+        : [];
 }
 type TechniqueAction = typeof ACTIONS[number];
 
@@ -451,7 +453,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
     const gate = daoGate(dao, {
         grade: technique.grade,
         element: technique.element,
-        subject: techniqueSubject(technique),
+        subjects: techniqueSubject(technique),
         category: technique.category
     });
     if (!gate.permitted) {
