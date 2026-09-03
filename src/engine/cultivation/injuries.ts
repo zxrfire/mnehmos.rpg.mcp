@@ -144,6 +144,7 @@ const SOURCE_PHRASES: Record<InjurySource, string> = {
     tribulation: 'burned by heavenly tribulation',
     poison: 'eroded by poison',
     backlash: 'torn by technique backlash',
+    ground: 'torn by ground deeper than they were',
     other: 'sustained'
 };
 

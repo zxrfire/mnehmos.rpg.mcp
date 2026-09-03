@@ -55,6 +55,7 @@ import {
     type Cultivator,
     type Injury,
     type InjurySeverity,
+    type InjurySource,
     type Technique,
     type TechniqueReach
 } from '../../schema/cultivation.js';
@@ -1080,6 +1081,23 @@ export interface ExchangeContext {
      */
     attackerPosture?: number;
     defenderPosture?: number;
+    /**
+     * What to call a wound this exchange leaves, when the thing that dealt it
+     * is not a person.
+     *
+     * `resolveExchange` is the shared resolver for anything that trades force,
+     * and one of its callers is not a fight at all: `site-verbs.ts` runs it
+     * with the GROUND as the attacker, so somebody standing below a ruin's
+     * floor was taking wounds the record called `combat`. Nobody hit them, and
+     * a wound has to be a cause the game can name afterwards.
+     *
+     * Omitted keeps the old behaviour exactly - poison where the attacker
+     * brought it, `combat` otherwise - so every existing caller's record and
+     * seeded sequence are unchanged. A caller that IS a person should leave
+     * this alone rather than passing `combat` explicitly; the default is the
+     * statement that somebody swung.
+     */
+    injurySource?: InjurySource;
 }
 
 export interface ExchangeResult {
@@ -1240,7 +1258,12 @@ export function resolveExchange(
     const injuryThreshold = injuryChance(advantage, fraction);
     if (ctx.rng.next() < injuryThreshold) {
         const severity = exchangeInjurySeverity(advantage, ctx.rng);
-        const source = ctx.attackerEdges?.includes('poison') ? 'poison' : 'combat';
+        // Poison is a property of what the attacker BROUGHT and so outranks a
+        // caller's label; past that, the caller may say what dealt this when it
+        // was not a person, and the default is that somebody swung.
+        const source: InjurySource = ctx.attackerEdges?.includes('poison')
+            ? 'poison'
+            : ctx.injurySource ?? 'combat';
         injury = createInjury(
             { severity, source, turn: ctx.turn, woundType: ordinaryWoundFor(source, severity) },
             ctx.rng
