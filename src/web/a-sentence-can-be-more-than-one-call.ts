@@ -1498,6 +1498,56 @@ function theSameClause(a: PlanStep, b: PlanStep): boolean {
  * or whatever it is pointed at - which is always enough to tell two acts apart,
  * since two acts on the same verb and the same target are one act.
  */
+/**
+ * The names that already end in the word that joins them to an object.
+ *
+ * Computed rather than listed, because it is a property of the words: "the
+ * journey to", "the approach to", "the fight with", "carrying the news to" are
+ * all written to have something put after them, and a name that is not is not.
+ */
+const JOINS_TO_AN_OBJECT = /\b(?:to|with|at|on|for|of|into|from)$/i;
+
+/**
+ * THE OBJECT FORM, FOR NAMES THAT ARE COMPLETE ON THEIR OWN.
+ *
+ * -- WHAT THIS FIXES, AND IT IS WRONG ON CORRECT TURNS TOO ----------------
+ *
+ * Played:
+ *
+ *   Which comes first? "the purchase a physician's visit" or "I find a doctor"
+ *
+ * **"the purchase a physician's visit" is not English.** `PLAINLY` holds two
+ * kinds of name and the code glued the target onto both: the object-taking ones
+ * read correctly - "the journey to Halfwater", "the approach to Bai Xuping" -
+ * and the self-contained ones did not. "the sale a manual", "the hunt a boar"
+ * and "the gathering herbs" were all one played turn away.
+ *
+ * This is worth fixing independently of the splitting, because it reads badly on
+ * every turn the question fires INCLUDING the turns where the split is right.
+ *
+ * -- AND THE TARGET IS NOT DROPPED WHERE IT IS DOING WORK -----------------
+ *
+ * `whatThisStepIsCalled` carries the target so two acts can be told apart, and
+ * two acts on one verb and one target are already one act. So the fix is a
+ * joining word rather than a deletion: only where a verb has neither a joining
+ * name nor an object form does the name stand alone, which is the honest
+ * fallback and reads as English.
+ */
+const PLAINLY_WITH_AN_OBJECT: Partial<Record<ActionName, string>> = {
+    buy: 'the purchase of',
+    sell: 'the sale of',
+    hunt: 'the hunt for',
+    gather: 'the gathering of',
+    refine: 'the refining of',
+    offer: 'the offering of',
+    consume_pill: 'taking',
+    learn_technique: 'taking up',
+    site: 'going into',
+    seal: 'what is under',
+    sect: 'the business with',
+    propose: 'the match with'
+};
+
 export function whatThisStepIsCalled(step: PlanStep): string {
     const said = (step.said ?? '').trim();
     if (said.length > 0) return said;
@@ -1510,7 +1560,13 @@ export function whatThisStepIsCalled(step: PlanStep): string {
     if (at !== undefined && /^(?:away|off|out|elsewhere|somewhere else)$/i.test(at)) {
         return step.action.action === 'move' ? 'walking away' : `${verb} away`;
     }
-    return at ? `${verb} ${at}` : verb;
+    if (!at) return verb;
+    // A name written to take an object takes it. One that is complete on its
+    // own gets its object form, and one with neither stands alone rather than
+    // being glued to a noun it does not join to.
+    if (JOINS_TO_AN_OBJECT.test(verb)) return `${verb} ${at}`;
+    const joined = PLAINLY_WITH_AN_OBJECT[step.action.action];
+    return joined ? `${joined} ${at}` : verb;
 }
 
 /**
