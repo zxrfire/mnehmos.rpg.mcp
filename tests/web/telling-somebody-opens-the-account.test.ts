@@ -53,6 +53,18 @@
  * arranges its deed. What that absence means for the verb in play is a finding
  * about the world rather than about this file.
  *
+ * ── AND THE WORLD SUPPLIES BOTH OF THEM NOW ──────────────────────────────
+ *
+ * The measurement above was correct when it was taken and is no longer true.
+ * `the-families-a-world-opens-holding.ts` and
+ * `the-wrongs-a-world-opens-holding.ts` run at world creation, so a fresh world
+ * holds households and open killings, and about a third of the living carry a
+ * blood tie. The arrangements below are kept deliberately - a unit test wants a
+ * situation it controls, and pinning one against a world's own draw would make
+ * every assertion here hostage to a change in the seeder. What the world
+ * actually produces, played and unarranged, is
+ * `a-fresh-world-has-somebody-to-tell.test.ts`.
+ *
  * `worldEnabled: true` throughout, and the world is pinned: the roster, who is
  * standing where and the history are all drawn from it.
  */

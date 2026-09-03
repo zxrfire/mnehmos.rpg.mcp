@@ -109,6 +109,14 @@ import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
+    seedTheFamiliesStandingInAPlace,
+    type FamiliesSeeded
+} from './the-families-a-world-opens-holding.js';
+import {
+    seedTheWrongsStillOpen,
+    type WrongsSeeded
+} from './the-wrongs-a-world-opens-holding.js';
+import {
     createWorld,
     makeFaction,
     type FactionRecord,
@@ -145,6 +153,10 @@ export interface SeedStats {
     opportunities: number;
     scheduledEffects: number;
     priorFacts: number;
+    /** Households the world opens holding. See `the-families-a-world-opens-holding.ts`. */
+    families: FamiliesSeeded;
+    /** Wrongs still open on day one. See `the-wrongs-a-world-opens-holding.ts`. */
+    wrongs: WrongsSeeded;
     /** Living NPCs by realm tier, lowest first. The shape of the population. */
     realmHistogram: number[];
 }
@@ -255,6 +267,16 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const everybody = [...npcs, ...line];
     state.populationTarget = everybody.length;
     const lineages = seedLineages(state, everybody, presentDay);
+    // And the families the RELATIONSHIP layer has to be able to see, which is
+    // not the same claim the lineage record makes and must not be read off it -
+    // see `the-families-a-world-opens-holding.ts` for the measurement. Until
+    // this ran, a fresh world held 133 ties, all of them `ally` or `rival`, and
+    // the six kinds `whoTheyCarryFor` reads were all at zero: nobody on turn one
+    // had a brother for anything to be done to.
+    const families = seedTheFamiliesStandingInAPlace(state, presentDay);
+    // And the wrongs, AFTER the families, because a wrong nobody carries for is
+    // a wrong nobody can be told about.
+    const wrongs = seedTheWrongsStillOpen(state, presentDay);
     const opportunities = seedOpportunities(state, opts.catalog, regionLocations, presentDay);
     const effects = seedGrantSchedule(state, opts.catalog, presentDay);
 
@@ -317,6 +339,8 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
             opportunities: opportunities.length,
             scheduledEffects: effects.length,
             priorFacts,
+            families,
+            wrongs,
             realmHistogram: histogram(state)
         }
     };
