@@ -63,7 +63,11 @@ async function opening(seed: string) {
  */
 async function readyToSit(seed: string) {
     const harness = await opening(seed);
-    await harness.game.act('what books are for sale');
+    // Said the way the pattern table reads it with nothing behind it. The
+    // sentence-model tier is not present in a fresh checkout - its vectors are
+    // gitignored by design - and a played test that only passes on a machine
+    // where somebody has run `npm run verbs:embed` is measuring the checkout.
+    await harness.game.act('what is for sale here');
     await harness.game.act('I buy the cheaper one');
     await harness.game.act('I read the Lesser Qi-Gathering Manual');
     return harness;
@@ -168,7 +172,7 @@ describe('the thing the last turn named', () => {
      */
     it('resolves "the cheaper one" with no model in the room', async () => {
         const { game } = await opening('cheaper-deterministic');
-        const board = await game.act('what books are for sale');
+        const board = await game.act('what is for sale here');
         const before = board.state.cultivator.spiritStones;
 
         const bought = await game.act('I buy the cheaper one');
