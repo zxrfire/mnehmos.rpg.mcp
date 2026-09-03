@@ -3197,7 +3197,14 @@ export class GameService {
         const { run, cultivator } = this.requireLiveRun();
         const eligibility = canAttemptBreakthrough(cultivator);
         if (!eligibility.eligible) {
-            throw new GameError(refusalText(eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired));
+            // The fourth argument is the dao gate's own figures. Without it
+            // `insufficient_dao` - the gate that stops most of the upper half of
+            // the ladder - falls to a default that reads like a sentence and says
+            // nothing: "The barrier does not move." See `refusalText`.
+            throw new GameError(refusalText(
+                eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired,
+                { held: eligibility.daoHeld, required: eligibility.daoRequired }
+            ));
         }
 
         const ambient = this.ambientFor(cultivator, run);
@@ -3622,7 +3629,11 @@ export class GameService {
                 if (!eligibility.eligible) {
                     return refused('engine.canAttemptBreakthrough', 'breakthrough', factsForRefusal(
                         'The barrier does not move.',
-                        refusalText(eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired)
+                        refusalText(
+                            eligibility.reason, eligibility.progressAvailable,
+                            eligibility.progressRequired,
+                            { held: eligibility.daoHeld, required: eligibility.daoRequired }
+                        )
                     ));
                 }
                 return this.strikeBarrier(run, cultivator, ambient);

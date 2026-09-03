@@ -2376,8 +2376,11 @@ kbd {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--ink-800);
-  padding: 2px 0 6px;
+  /* Opaque, and painted past the panel's own padding. On `var(--ink-800)` and
+     with no side bleed, rows scrolled visibly THROUGH the trail. */
+  background: var(--ink-900, var(--ink-850));
+  margin: 0 -20px;
+  padding: 6px 20px 7px;
   border-bottom: 1px solid var(--line);
 }
 .crumb {
@@ -2524,7 +2527,11 @@ kbd {
 .ncard--go:hover { background: rgba(255, 255, 255, 0.03); border-color: var(--line-strong); }
 .ncard--go:focus-visible { outline: 2px solid var(--jade-400); outline-offset: -2px; }
 .ncard--go:hover .ngo { opacity: 1; }
-.ncard--go .ngo::after { content: " 92"; }
+/* The arrow was written as a CSS numeric escape and went through a heredoc,
+   which ate the backslash and left a DC1 control character and two digits - the
+   failure AGENTS.md records under escapes dying on the way through a
+   heredoc. Written as the character itself so it cannot happen again. */
+.ncard--go .ngo::after { content: " →"; }
 
 .nhead { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
 .nname { font-family: var(--font-read); font-size: 15.5px; line-height: 1.25; }
@@ -2583,6 +2590,10 @@ kbd {
   color: var(--paper-far);
 }
 .dens b { font-weight: 400; color: var(--paper-mut); }
+/* The band and the figure disagree. Marked rather than smoothed: a rich vein
+   under ground that gives nothing back is a real state of the record, and
+   averaging the two would be the map inventing a third number. */
+.dens__split { font-style: normal; color: var(--amber-400); margin-left: 3px; }
 .dens[data-qi-band="normal"]      { color: var(--jade-700); }
 .dens[data-qi-band="dense"]       { color: var(--jade-500); }
 .dens[data-qi-band="spirit_tide"] { color: var(--jade-300); }
@@ -2598,6 +2609,123 @@ kbd {
 .chip--inside { border-color: var(--line-strong); color: var(--paper-mut); }
 .chip--hazard { border-color: rgba(226, 104, 92, 0.35); color: var(--blood-300); background: var(--blood-dim); }
 .chip--seam   { border-color: rgba(226, 104, 92, 0.45); color: var(--blood-300); }
+
+/* What is TRUE of a place, as against what it is: a famine, a war, a beast
+   tide, a district worked out. Loud, because it is usually why an operator
+   opened the panel, and dimmer where it is inherited from a province rather
+   than true of this ground. */
+.chip--status { border-color: rgba(226, 104, 92, 0.5); color: var(--blood-300); background: var(--blood-dim); }
+.chip--status-above { opacity: 0.7; border-style: dashed; }
+/* Where the cultivator is standing. */
+.chip--here { border-color: var(--jade-500); color: var(--jade-300); background: var(--jade-glow); }
+
+/* ── where the cultivator is ── */
+
+.maphere {
+  font-family: var(--font-read);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--paper-mut);
+  border-left: 3px solid var(--jade-600);
+  padding: 2px 0 2px 11px;
+}
+.maphere b { color: var(--jade-300); font-weight: 400; }
+.maphere--adrift { border-left-color: var(--amber-400); }
+.maphere--adrift b { color: var(--amber-400); }
+
+/* The one row the player is standing on, wherever it turns up in the tree. */
+.ncard.is-here { box-shadow: inset 0 0 0 1px var(--jade-700); }
+
+/* ── the legend, said once ── */
+
+.maplegend > summary {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-400);
+  cursor: pointer;
+  list-style: none;
+  padding: 2px 0;
+}
+.maplegend > summary::-webkit-details-marker { display: none; }
+.maplegend > summary::after { content: " ▾"; }
+.maplegend[open] > summary::after { content: " ▴"; }
+.maplegend[open] { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.maplegend .mapfacts dt { white-space: normal; }
+
+/* ── several places that are one fact ── */
+
+/* Rows identical in every field but the name are not rows. The group says the
+   shared sentence once, summarises what varies as a range, and opens onto the
+   individual records. Bordered differently from a place, because it is not
+   one. */
+.ncard--flock {
+  border-left-color: var(--brass-600);
+  border-style: dashed;
+  background: transparent;
+}
+.ncard--flock > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 12px;
+  display: grid;
+  gap: 3px;
+}
+.ncard--flock > summary::-webkit-details-marker { display: none; }
+.ncard--flock > summary:hover { background: rgba(255, 255, 255, 0.03); }
+.ncard--flock > summary:focus-visible { outline: 2px solid var(--jade-400); outline-offset: -2px; }
+.ncard--flock > summary .nname { font-size: 14px; color: var(--paper-mut); }
+.ncard--flock > summary .nwant { font-style: italic; }
+.ncard--flock:hover .ngo, .ncard--flock > summary:focus-visible .ngo { opacity: 1; }
+.ncard--flock[open] .ngo::after { content: " (naming them)"; }
+.nflock { display: grid; gap: 5px; padding: 0 10px 10px 10px; }
+.nflock:empty { display: none; }
+
+/* Who runs it, on the row rather than one click inside it. */
+.nheld {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--brass-300);
+}
+
+/* ── what is going on here ── */
+
+.stats { display: grid; gap: 8px; margin: 4px 0 10px; padding: 0; list-style: none; }
+.stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid rgba(226, 104, 92, 0.28);
+  border-radius: var(--r-sm);
+  background: var(--blood-dim);
+  padding: 9px 11px;
+}
+.stat--above { border-style: dashed; opacity: 0.82; }
+.stat__kind {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blood-300);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.stat__body { display: grid; gap: 3px; min-width: 0; }
+.stat__body b { font-family: var(--font-read); font-size: 13.5px; font-weight: 400; color: var(--paper); line-height: 1.45; }
+.stat__where,
+.stat__why,
+.stat__signs,
+.stat__does {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--paper-far);
+}
+.stat__does { color: var(--brass-300); }
+
 .chip--key    { border-color: var(--brass-600); color: var(--brass-300); background: var(--brass-dim); }
 .chip--oneway { border-color: var(--line-strong); color: var(--paper-far); }
 .chip--style  { font-family: var(--font-read); font-style: italic; color: var(--paper-mut); }
