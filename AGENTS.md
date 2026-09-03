@@ -2450,6 +2450,36 @@ function can return either, `== null` covers both and says so on purpose.
 would still let the tests pass, the tests are pinning the other half only - which is exactly
 what happened here.
 
+### A worktree lives under `.claude/`, never beside the repository
+
+**A control arm goes in `.claude/worktrees/<name>`, and comes out when you are done.**
+Not `../rpg-wt-control`, not `../_wt-people`, not anywhere else on the parent directory.
+
+Two of those were found sitting as siblings of the repository holding 46 MB between them,
+weeks stale, and neither was a worktree at all - `git worktree list` knew about
+neither, so `git worktree prune` could never have reclaimed them. They were plain copies
+somebody made for a two-arm measurement and walked away from.
+
+**Why it has to be inside.** A sibling directory is invisible from every tool that knows
+about this project: it is not in `git status`, not in `git worktree list`, not in
+`.gitignore`, and not in any sweep anybody would think to run. The owner found these by
+looking at the parent folder with their own eyes, which is the only way they could have
+been found. Under `.claude/` they are one `ls` from the thing that made them.
+
+```bash
+git worktree add .claude/worktrees/<name> <commit>     # registered, prunable
+# ... measure ...
+git worktree remove .claude/worktrees/<name>           # or prune if it is gone
+```
+
+**Use `git worktree`, not `cp -r`.** A registered worktree shares the object store, so it
+costs almost nothing and `git worktree list` can find it. A copy costs the whole tree,
+holds a `node_modules`, and is indistinguishable from a project.
+
+**And it is a temporary, not an output.** Whatever you measured belongs in your report as
+numbers. A directory left behind so somebody can go and look at the evidence later is a
+directory nobody will ever look at, and it will still be there in a month.
+
 ### The scratchpad is shared between agents in a session
 
 **Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.
