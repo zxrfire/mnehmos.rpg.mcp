@@ -13837,10 +13837,26 @@ ${fit.line}`;
                 ? `${carried} ration${carried === 1 ? '' : 's'} came out of the pack` +
                   `${toBuy > 0 ? `, and ${toBuy} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
                 : `${rations} ration${rations === 1 ? '' : 's'} bought for ${cost} spirit stones. `)
+                // ── AND WHAT IS LEFT, ON BOTH BRANCHES ───────────────────
+                //
+                // The remainder used to be printed only when the food covered
+                // the stretch, so the SHORT branch - the one where somebody is
+                // about to starve and most needs to know whether they can buy
+                // more - stated a price and no balance.
+                //
+                // Played: the engine ruled "bought for 8 spirit stones" and the
+                // narration said "leaving you with eight spirit stones". The
+                // purse held 16. The model reached for a number the facts did
+                // not carry and used the price as the remainder - which is one
+                // of the four failures whose output-side check was withdrawn on
+                // the ruling that this class is fixed in what the turn TELLS the
+                // narrator. This is that fix: there is no number to invent when
+                // the number is there.
                 + (covered >= days
                     ? `That covers the whole stretch. ${updated.spiritStones} stones left.`
                     : `That is food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. ` +
-                      'After that the belly is empty and five turns later it is fatal.')
+                      'After that the belly is empty and five turns later it is fatal. ' +
+                      `${updated.spiritStones} stones left.`)
         };
     }
 
