@@ -50,6 +50,7 @@ import { rankName } from '../engine/cultivation/realms.js';
 import { turnsUntilStarvation } from '../engine/cultivation/survival.js';
 import { brokenStatusesOn } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { medicineReaches } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
+import { noticesThatTheyAreThere } from '../engine/social/presence-recognition.js';
 import { grantsHeldWith } from '../engine/world/capability.js';
 import { billsOnTheWall } from '../engine/world/houses-that-have-to-advertise-for-disciples.js';
 import {
@@ -277,7 +278,11 @@ export const situatedReads = {
             if (!noticesThatTheyAreThere({
                 theirOrdinal: person.realmOrdinal,
                 yourOrdinal: cultivator.realmOrdinal,
-                known: person.known
+                // A roster row with no `known` field at all has not been
+                // resolved against the knowledge table, and the safe reading
+                // of "unresolved" is "not known" - the other way round would
+                // reopen the leak on exactly the rows nobody checked.
+                known: person.known === true
             })) {
                 // Marked counted anyway, so the room half below does not
                 // re-introduce the same person through the other door.
@@ -308,10 +313,20 @@ export const situatedReads = {
         for (const [id, row] of inTheRoom) {
             if (counted.has(id)) continue;
             if (row.realmOrdinal <= cultivator.realmOrdinal) continue;
+            const known = this.knowledge.isAwareOf(cultivator.id, 'cultivator', id);
+            // Standing in the same square is not being seen either. Somebody
+            // this far above does not register on you unless they mean to, and
+            // meaning to leaves a knowledge row like everything else does.
+            if (!noticesThatTheyAreThere({
+                theirOrdinal: row.realmOrdinal,
+                yourOrdinal: cultivator.realmOrdinal,
+                known
+            })) {
+                unnoticed++;
+                continue;
+            }
             above.push({
-                name: this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
-                    ? row.name
-                    : null,
+                name: known ? row.name : null,
                 realmOrdinal: row.realmOrdinal,
                 rankTitle: null,
                 // Nothing on the roster row says they teach, and this layer
@@ -351,7 +366,11 @@ export const situatedReads = {
             summary:
                 `${above.length} above this cultivator, ${read.nameable} of them nameable. `
                 + `Every name gated on isAwareOf; the rest reported as a count and an `
-                + `altitude. Teaching limits read from members.ts, never composed.`,
+                + `altitude. Teaching limits read from members.ts, never composed. `
+                + `${unnoticed} further ${unnoticed === 1 ? 'person stands' : 'people stand'} `
+                + `above them and ${unnoticed === 1 ? 'was' : 'were'} not counted at all: `
+                + `nine or more rungs up with no knowledge row, which REGARD_BANDS calls `
+                + `unreachable and this read therefore never mentions.`,
             ok: true
         }];
         return execution;
