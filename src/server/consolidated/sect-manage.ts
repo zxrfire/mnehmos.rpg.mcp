@@ -85,6 +85,8 @@ import {
     requiredOrdinalForRank,
     STIPEND_PERIOD_DAYS
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
+import { getMembersOf } from '../../data/cultivation/members.js';
+import { entryOfferFor } from '../../engine/social-leverage/entry-offer.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 import {
     servantBarOf,
@@ -331,6 +333,31 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 admissionRank: rankName(sect.admissionOrdinal),
                 admissible:
                     ordinal === null ? null : recruits && ordinal >= sect.admissionOrdinal,
+                // ── AND WHERE THEY WOULD PUT YOU, WHICH IS THE TERMS ─────
+                //
+                // `admissible` answers "would they have me" and nothing
+                // answered "on what footing". Both halves are required, in the
+                // design owner's own words for the reply this listing owes:
+                // *"they would, at Outer Disciple. Do you want to"*. A player
+                // told only that they would be taken has to ask again; the rung
+                // is what makes the answer worth having, because entering a
+                // house at its floor and entering it near its top are different
+                // decisions.
+                //
+                // `entryRankIndexFor` is the SAME function `handleJoin` seats
+                // by, so what this read promises and what the door actually
+                // gives can never disagree - the property that function's own
+                // docstring exists to keep, now holding across the read as well
+                // as across entry and promotion.
+                //
+                // Null when they would not be taken: there is no rung to name,
+                // and naming one would read as an offer.
+                wouldEnterAtRank:
+                    ordinal === null || !recruits || ordinal < sect.admissionOrdinal
+                        ? null
+                        : sect.ranks[
+                            whatTheyWouldBeOffered(sect, ordinal).offered ?? -1
+                        ] ?? null,
                 // The second door, where the house has one. Separate from
                 // `admissible` on purpose: this is not membership and saying
                 // it was would be exactly the collapse the catalog spends
@@ -352,6 +379,40 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 ? 'No sects in this campaign. The catalog seeds on first touch; an empty list means the sects table was cleared.'
                 : undefined
     };
+}
+
+/**
+ * What this house would seat this cultivator at, read once for both callers.
+ *
+ * THE PROPERTY THIS EXISTS TO KEEP is the one `entryRankIndexFor`'s docstring
+ * already cared about: what the read PROMISES and what the door actually GIVES
+ * can never disagree. Both go through here, so a change to the rule moves both
+ * or neither.
+ *
+ * The roll is the catalog roster rather than live world rows, and that is a
+ * stated limitation rather than a preference: this module has no world handle,
+ * and `getMembersOf` is the house's authored roll - which is what the ruling
+ * refers to ("what their own cultivators have at 29") and what the 234/98/5
+ * measurement was taken against. A caller that HAS a world and a ledger should
+ * pass a leaning as well; see `entry-offer.ts` for what that adds.
+ *
+ * No leaning is supplied here, so the answer is always the ordinary offer -
+ * one rung under the house's own people. The door never closes on this path,
+ * which keeps this change to the rank and to nothing else.
+ */
+function whatTheyWouldBeOffered(
+    sect: { id: string; ranks: readonly string[]; admissionOrdinal: number },
+    ordinal: number
+) {
+    return entryOfferFor({
+        ranks: sect.ranks,
+        admissionOrdinal: sect.admissionOrdinal,
+        roll: getMembersOf(sect.id).map(m => ({
+            rankIndex: m.rankIndex,
+            realmOrdinal: m.realmOrdinal
+        })),
+        askerOrdinal: ordinal
+    });
 }
 
 export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<object> {
@@ -666,9 +727,22 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // A rule the world enforces on everybody else and not on the player is the
     // oldest defect in this codebase. Entry stops one below the top; the
     // headship changes hands by succession or not at all.
-    let entryIndex = entryRankIndexFor(
-        sect.ranks, sect.admissionOrdinal, cultivator.realmOrdinal
-    );
+    // ── AND WHAT THE HOUSE'S OWN PEOPLE AT THAT RUNG HOLD ────────────────
+    //
+    // Everything above is right and is not the whole rule. The lookup reads the
+    // asker's rung and nothing else, which seated a cultivator at ordinal 25 as
+    // a Sword Elder over a house whose own Core Disciple stands at 20 and
+    // earned it by years inside. Measured across the catalog it runs a mean
+    // 0.89 ranks high - above the house's own standard in 234 cases against 5
+    // below. An outsider has the cultivation and not the standing, so they are
+    // seated one under their peers. See `entry-offer.ts`.
+    let entryIndex = whatTheyWouldBeOffered(sect, cultivator.realmOrdinal).offered
+        // Unreachable on this path - no leaning is read here, so the door never
+        // closes - and written out rather than asserted because the day a
+        // caller does pass a council, a silent `?? 0` would seat somebody the
+        // house had refused at the bottom of its ladder instead of refusing
+        // them.
+        ?? entryRankIndexFor(sect.ranks, sect.admissionOrdinal, cultivator.realmOrdinal);
 
     // ── AND A RETURNING MEMBER IS NOT A STRANGER ─────────────────────────
     //
