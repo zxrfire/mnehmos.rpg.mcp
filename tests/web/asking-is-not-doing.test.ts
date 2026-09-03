@@ -61,6 +61,7 @@ import {
     costsTheAskerNothing,
     parseIntent
 } from '../../src/web/actions';
+import { theClauseThisTurnDidNotRun } from '../../src/web/the-part-of-the-sentence-that-was-not-run';
 import {
     isSoldAtAStall,
     manualsAStallCarries,
@@ -746,4 +747,164 @@ describe('a house takes somebody on, or it does not', () => {
         expect(taken, 'every stranger who asked was taken, with nobody speaking for them')
             .toBeLessThan(seeds);
     }, 300_000);
+});
+
+/**
+ * INSTANCE 4: the act sits in the `if` clause, and the question is about what
+ * follows from it.
+ *
+ * The three at the top of this file are questions ABOUT an act - "can I leave",
+ * "can I cultivate here". This is the same person asking the same thing about
+ * the CONSEQUENCE instead, and the pattern table reads the verb in the `if`
+ * clause as a plain command. `what happens if I cultivate here` was already
+ * covered; every other way of asking it was not.
+ *
+ * It is the most expensive face found so far, and it is worse than the three
+ * above for a reason worth keeping: those cost a month, a membership and a
+ * sect. This one is unbounded, because the duration in the sentence is real -
+ * "will someone come for me if I seclude for ten years" sat the cultivator down
+ * for ten years against a hundred-year lifespan, on a sentence in which nobody
+ * had decided anything.
+ *
+ * Measured on the DETERMINISTIC tier, which `AGENTS.md` holds is a shipping
+ * mode, so none of this needed a model to be wrong.
+ */
+describe('a question about what would follow is not the act it names', () => {
+    /**
+     * The whole family, and it is PLAYED rather than classified.
+     *
+     * The first draft of this asserted `costsTheAskerNothing(parseIntent(said))`
+     * and went red on two of the family. Chasing that found something worth more
+     * than the test: **`costsTheAskerNothing` is answered at the ACTION and is
+     * wrong for six verbs.** It asks {@link READ_ONLY_ACTIONS} by name, and
+     * `sect`, `site`, `posture`, `offer`, `oath` and `passage` are all absent
+     * from it while `theReadThatAnswersIt` routes every one of them to a read by
+     * dropping the intent. So the predicate calls those reads costly.
+     *
+     * The proof that the predicate and not the guard is what is wrong:
+     * `can I leave my sect` - INSTANCE 3 at the top of this file, the sentence
+     * that permanently left a house and the reason this module exists - resolves
+     * to `{sect, standing, leaving}`, spends nothing, and `costsTheAskerNothing`
+     * returns FALSE for it. An instrument that fails the canonical case is the
+     * instrument, not the finding.
+     *
+     * That is the `interact` shape in six more verbs, and this file's own
+     * docstring already argues why it cannot be a list. Not fixed here: widening
+     * that predicate changes what every consumer believes, including the
+     * dropped-clause reporter whose measured corpus was calibrated against it,
+     * and it wants its own change with its own arms. Recorded so the next person
+     * does not read the `false` as a finding about the mood guard.
+     *
+     * So the bar is what the player would actually notice: one pinned world, one
+     * run, every sentence in the family put to it, and the clock and the purse
+     * unmoved by any of them. Nothing here can be satisfied by a classification.
+     */
+    it('spends nothing on any of them, measured', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-question-is-not-a-decade' });
+        await game.newRun('Shen Wuyou');
+
+        for (const said of [
+            // The played instance, and the family around it.
+            'will someone bother me if I sit and cultivate here?',
+            'will anyone bother me if I cultivate here',
+            'will someone come for me if I seclude for ten years',
+            'will I be interrupted if I sit here for a year',
+            'does anybody care if I gather here',
+            'is it a problem if I cultivate here',
+            'would anyone stop me if I took the manual',
+            'am I in danger if I stay here',
+            'do I lose anything if I leave the sect',
+            'can they find me if I seal the door',
+            // The ground asked about by name rather than by pronoun.
+            'is this cave safe to seclude in or will someone find me',
+            'is that road safe to travel',
+            'is this place safe to sleep in',
+            'is this ground worth cultivating on',
+            'is the valley dangerous'
+        ]) {
+            const before = await game.state();
+            await game.act(said);
+            const after = await game.state();
+
+            expect(after.run!.elapsedDays, `"${said}" spent days`)
+                .toBe(before.run!.elapsedDays);
+            expect(after.cultivator!.spiritStones, `"${said}" spent stones`)
+                .toBe(before.cultivator!.spiritStones);
+            expect(after.cultivator!.age, `"${said}" aged them`)
+                .toBe(before.cultivator!.age);
+        }
+    }, 300_000);
+
+    it('names the ten-year one on its own, because it is the reason for the rule', () => {
+        // Not folded into the loop above. A regression here is not "a guard got
+        // narrower", it is a decade of somebody's life spent on a question - and
+        // the routing claim is worth pinning separately from the spend, because
+        // the two could break independently.
+        const plan = parseIntent('will someone come for me if I seclude for ten years');
+        expect(plan.action).not.toBe('seclude');
+        expect(parseIntent('will someone bother me if I sit and cultivate here?').action)
+            .not.toBe('cultivate');
+        expect(parseIntent('does anybody care if I gather here').action).not.toBe('gather');
+        expect(parseIntent('is that road safe to travel').action).not.toBe('move');
+    });
+
+    /**
+     * The other direction, and it is the half that proves the widening did not
+     * eat the composition path.
+     *
+     * Every sentence here contains `if` or a demonstrative and is a COMMAND.
+     * The anchor is what separates them: somebody who has decided puts
+     * themselves first, so the interrogative can never be opening the utterance.
+     */
+    it('leaves a command that merely contains a condition alone', () => {
+        for (const [said, action] of [
+            ['I will cultivate here if I can', 'cultivate'],
+            ['I seclude for ten years', 'seclude'],
+            ['I sit and cultivate here', 'cultivate'],
+            ['I cultivate for ten years', 'cultivate'],
+            ['I gather herbs here', 'gather'],
+            ['I fight him if he draws', 'attack'],
+            ['I travel to Kettle', 'move']
+        ] as const) {
+            const plan = parseIntent(said);
+            expect(plan.action, said).toBe(action);
+            expect(costsTheAskerNothing(plan), `"${said}" stopped costing anything`).toBe(false);
+        }
+    });
+
+    /**
+     * And the reporter still reports, which is the third direction and the one
+     * a widening would break silently.
+     *
+     * `theWholeSentenceIsAQuestion` ORs this regex, so every branch added here
+     * also silences the dropped-clause report. That is right for a question and
+     * is the whole defect for a plan, so the six mirror cases have to survive
+     * every widening of the mood test. See
+     * `the-part-of-the-sentence-that-was-not-run.test.ts` for the rule itself.
+     */
+    it('and a genuine two-act sentence is still reported', () => {
+        for (const [said, action] of [
+            ['I buy a month of rations and eat', 'eat'],
+            ['I gather herbs and go to the market', 'gather'],
+            ['I cultivate and eat when I am hungry', 'cultivate'],
+            ['I go to Nine Peaks and look for a teacher', 'move'],
+            ['I eat and then cultivate for a year', 'cultivate'],
+            ['I sell the herbs and buy a pill', 'buy']
+        ] as const) {
+            const found = theClauseThisTurnDidNotRun(said, parseIntent(said).action);
+            expect(found?.action, said).toBe(action);
+        }
+    });
+
+    it('played, the ten-year seclusion question passes no time at all', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-question-is-not-a-decade' });
+        await game.newRun('Shen Wuyou');
+
+        const before = await game.state();
+        await game.act('will someone come for me if I seclude for ten years');
+        const after = await game.state();
+
+        expect(after.run!.elapsedDays).toBe(before.run!.elapsedDays);
+        expect(after.cultivator!.age).toBe(before.cultivator!.age);
+    }, 120_000);
 });
