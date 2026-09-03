@@ -70,6 +70,12 @@ import {
     HOW_A_PLAYER_SAYS_EACH_SECT_ASK
 } from '../../src/web/how-a-player-says-each-intent.js';
 import {
+    onlyWhatTheWordsCanDecide,
+    QUESTIONS_A_SENTENCE_CANNOT_CARRY,
+    theSentenceMayDecide
+} from '../../src/web/questions-a-sentence-cannot-carry.js';
+import { WHAT_EACH_VERB_IS_FOR } from '../../src/web/what-each-verb-is-for-in-the-players-words.js';
+import {
     embed,
     loadTheModel,
     MODEL_DIRECTORY,
@@ -347,4 +353,114 @@ describe('object-distinguished and purpose-distinguished intents fail differentl
             + inversions.join('\n')
         ).toBeGreaterThanOrEqual(4);
     }, 180_000);
+});
+
+/**
+ * THE ABSTAIN GUARD.
+ *
+ * The measurement's conclusion turned into a declaration: which intents no
+ * reading of the words may choose between, and therefore which questions a
+ * meaning tier has to hand back unanswered.
+ *
+ * Nothing is wired to it yet, deliberately. An unwired corpus that measures
+ * something honest is worth more than a wired one that returns confident
+ * opposites, and the guard has to exist before the tier does or the tier will
+ * ship with the failure in it.
+ */
+describe('the questions a sentence cannot carry', () => {
+    it('declares only real intents of the verbs it names', () => {
+        for (const row of QUESTIONS_A_SENTENCE_CANNOT_CARRY) {
+            expect(row.intents.length, `${row.verb} declared a set of one`).toBeGreaterThan(1);
+            const declared = WHAT_EACH_VERB_IS_FOR[row.verb as keyof typeof WHAT_EACH_VERB_IS_FOR];
+            expect(declared, `${row.verb} is not a verb`).toBeDefined();
+            for (const intent of row.intents) {
+                expect(
+                    (declared as { intents?: readonly string[] }).intents,
+                    `${row.verb}/${intent}`
+                ).toContain(intent);
+            }
+        }
+    });
+
+    it('refuses the declared intents and permits the rest', () => {
+        expect(theSentenceMayDecide('sect', 'join')).toBe(false);
+        expect(theSentenceMayDecide('sect', 'recruit')).toBe(false);
+        expect(theSentenceMayDecide('coerce', 'hand_over')).toBe(false);
+
+        // `move` fails by adjacency, which is a near miss rather than an
+        // opposite, so none of it is declared and all of it stays askable.
+        for (const intent of ['travel', 'flee', 'approach', 'enter', 'follow']) {
+            expect(theSentenceMayDecide('move', intent), intent).toBe(true);
+        }
+        // And a verb nobody has measured is not silently restricted.
+        expect(theSentenceMayDecide('sect', 'standing')).toBe(true);
+    });
+
+    /**
+     * THE ONE THAT TIES THE DECLARATION TO THE EVIDENCE.
+     *
+     * Every inversion the measurement actually produced must fall inside a
+     * declared set - otherwise the declaration is a plausible list rather than
+     * a reading of what happened, which is the difference between a guard and
+     * a guess about where guards are needed.
+     */
+    it('would have caught every inversion that was measured', async () => {
+        const built: Record<string, { said: string; vector: Float32Array }[]> = {};
+        for (const label of Object.keys(HOW_A_PLAYER_SAYS_EACH_SECT_ASK)) {
+            built[label] = [];
+            for (const said of HOW_A_PLAYER_SAYS_EACH_SECT_ASK[label]) {
+                built[label].push({ said, vector: await embed(said) });
+            }
+        }
+        const nearest = (vector: Float32Array, skip: string) => Object.keys(built)
+            .map(label => {
+                let best = -1;
+                for (const ex of built[label]) {
+                    if (ex.said === skip) continue;
+                    best = Math.max(best, similarity(vector, ex.vector));
+                }
+                return { label, score: best };
+            })
+            .sort((a, b) => b.score - a.score)[0];
+
+        const opposites: Record<string, string> = {
+            join: 'recruit', recruit: 'join',
+            leave: 'expel', expel: 'leave',
+            donate: 'siphon', siphon: 'donate'
+        };
+
+        const inversions: string[] = [];
+        for (const label of Object.keys(opposites)) {
+            for (const ex of built[label]) {
+                if (nearest(ex.vector, ex.said).label === opposites[label]) {
+                    inversions.push(`${label} -> ${opposites[label]}  "${ex.said}"`);
+                    // The guard's job: neither side of the pair is the
+                    // sentence's to decide, so the tier never gets to be wrong.
+                    expect(theSentenceMayDecide('sect', label), label).toBe(false);
+                    expect(theSentenceMayDecide('sect', opposites[label])).toBe(false);
+                }
+            }
+        }
+        expect(inversions.length, 'no inversions measured at all').toBeGreaterThanOrEqual(4);
+    }, 180_000);
+
+    /**
+     * AND THE ABSTAIN ITSELF: when every candidate is unaskable the filter
+     * returns nothing, which is the signal a caller needs in order to go and
+     * ask the situation instead of picking a winner.
+     */
+    it('returns nothing rather than a best guess', () => {
+        const ranked = [
+            { label: 'hand_over', score: 0.81 },
+            { label: 'submit', score: 0.79 },
+            { label: 'talk', score: 0.77 }
+        ];
+        expect(onlyWhatTheWordsCanDecide('coerce', ranked)).toEqual([]);
+
+        // `tame` and `swallow` separated, so they survive the filter and the
+        // guard is not a blanket refusal to read `coerce` at all.
+        const withAnObject = [{ label: 'swallow', score: 0.9 }, ...ranked];
+        expect(onlyWhatTheWordsCanDecide('coerce', withAnObject).map(r => r.label))
+            .toEqual(['swallow']);
+    });
 });
