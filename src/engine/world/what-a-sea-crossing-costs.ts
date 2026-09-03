@@ -144,7 +144,7 @@ export interface SeaLane {
     openMonthsPerYear: number;
     /**
      * Landfalls in the middle, in days from `fromPlace`. Empty means there is
-     * nowhere to stop, which is what `Dryrun` and `The Long Middle` are named
+     * nowhere to stop, which is what `The Bitter Crossing` and `The Boundless` are named
      * for and is what makes a lane frightening rather than merely long.
      */
     intermediateLandfallDays: readonly number[];

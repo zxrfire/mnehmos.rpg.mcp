@@ -3,8 +3,8 @@
  *
  * Played against ollama, and the survivability half came back well:
  *
- *   "Coming out of The Sounding alive: certain. Grand Ascension Rising Dao can
- *    survive The Sounding."
+ *   "Coming out of Dragonvein Rock alive: certain. Grand Ascension Rising Dao can
+ *    survive Dragonvein Rock."
  *
  * Nothing answered the second half. Not badly - at all, and it could not have:
  * arrivals into an idle span were built on the ruling that sitting still keeps
@@ -35,7 +35,7 @@ describe('assess answers being reached as well as surviving', () => {
      * separate defect worth naming.
      *
      * With ollama in the room the played sentence routes to
-     * `assess(target="The Sounding")` and reaches the place read, which is where
+     * `assess(target="Dragonvein Rock")` and reaches the place read, which is where
      * this feature lands. On the DETERMINISTIC tier the same sentence reaches
      * `assess(target="sit")` - the target extractor takes a verb out of the
      * infinitive - and `findKnownLocation` correctly refuses a place called

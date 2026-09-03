@@ -207,7 +207,7 @@ describe('asking who would take you reaches the register of who would', () => {
         expect(namesNoHouse('the intake in two days')).toBe(true);
         expect(namesNoHouse('Gleaners Company')).toBe(false);
         expect(namesNoHouse('Azure Dew Sect')).toBe(false);
-        expect(namesNoHouse('The Halfwater Rail')).toBe(false);
+        expect(namesNoHouse('The Thousand Sail Harbour Rail')).toBe(false);
     });
 });
 
@@ -235,9 +235,9 @@ describe('taking an intake is being taken on, not opening a treasury', () => {
     });
 
     it.each([
-        ['I take the intake at the Halfwater Rail', 'Halfwater Rail'],
-        ['I take the Halfwater Rail intake', 'Halfwater Rail'],
-        ['I sign up for the intake at Halfwater', 'Halfwater'],
+        ['I take the intake at the Thousand Sail Harbour Rail', 'Thousand Sail Harbour Rail'],
+        ['I take the Thousand Sail Harbour Rail intake', 'Thousand Sail Harbour Rail'],
+        ['I sign up for the intake at Thousand Sail Harbour', 'Thousand Sail Harbour'],
         ['I present myself at the Hollow Bell Wanderers intake', 'Hollow Bell Wanderers']
     ])('%s carries the house the paper named', (said, house) => {
         expect(whoseIntakeItIs(said), said).toBe(house);

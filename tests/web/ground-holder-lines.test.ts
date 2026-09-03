@@ -42,7 +42,7 @@ const GROUNDS = {
     ],
     no_authority: [
         DROWNED,
-        makeLocation({ id: 'g', name: 'Bellhead', kind: 'settlement', parentId: 'sea' })
+        makeLocation({ id: 'g', name: 'Bronze Bell Cape', kind: 'settlement', parentId: 'sea' })
     ],
     no_holder_of_record: [
         LOW_FALL,

@@ -165,7 +165,7 @@ export const THE_WIDE_FIELD: Region = {
             kind: 'sea_crossing',
             otherRegionId: SOUTH_REGION_ID,
             description:
-                'Twenty-one days from the eastern shore to Watering, three seasons in four, and every hull of it is provisioned against a passage with no landfall in the middle. It is how salt reaches nine cities and how what comes off drowned ground reaches an auction floor.',
+                'Twenty-one days from the eastern shore to Sweetspring Isle, three seasons in four, and every hull of it is provisioned against a passage with no landfall in the middle. It is how salt reaches nine cities and how what comes off drowned ground reaches an auction floor.',
             travelDays: 21
         }
     ],

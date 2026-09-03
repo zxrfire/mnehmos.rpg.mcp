@@ -6,7 +6,7 @@
  *   Which comes first? "the purchase a physician's visit" or "I find a doctor"
  *
  * `PLAINLY` holds two kinds of name and the code glued the target onto both.
- * The object-taking ones read correctly - "the journey to Halfwater", "the
+ * The object-taking ones read correctly - "the journey to Thousand Sail Harbour", "the
  * approach to Bai Xuping" - and the self-contained ones did not. "the sale a
  * manual", "the hunt a boar" and "the gathering herbs" were all one played turn
  * away.
@@ -33,7 +33,7 @@ describe('naming an act with something to point at', () => {
     });
 
     it('leaves the names that were already written to take one', () => {
-        expect(named('move', 'Halfwater')).toBe('the journey to Halfwater');
+        expect(named('move', 'Thousand Sail Harbour')).toBe('the journey to Thousand Sail Harbour');
         expect(named('interact', 'Bai Xuping')).toBe('the approach to Bai Xuping');
         expect(named('attack', 'the bandit')).toBe('the fight with the bandit');
     });

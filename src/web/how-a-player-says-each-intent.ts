@@ -78,7 +78,7 @@
 
 export const HOW_A_PLAYER_SAYS_EACH_MOVE: Readonly<Record<string, readonly string[]>> = {
     travel: [
-        'I set out for Halfwater',
+        'I set out for Thousand Sail Harbour',
         'I make the journey to the capital',
         'I take the road east',
         'I walk to the next town'

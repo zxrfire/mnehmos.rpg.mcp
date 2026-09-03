@@ -229,7 +229,7 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `BOUNTIES`, `DEALERS`, `ROGUE_TRADES`
 
-### The Halfwater Rail
+### The Thousand Sail Harbour Rail
 
 `sect-halfwater-rail` · its entry: [`sects.ts:1673`](../../src/data/cultivation/sects.ts)
 

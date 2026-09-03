@@ -94,7 +94,7 @@
  *   something a player can play against; a house that will not say is.
  *
  * - AND AN UNBACKED BODY IS NOT AN UNSTAFFED ONE. The last two rosters written
- *   were the Halfwater Rail's and the Sink Carriers', which had between them
+ *   were the Thousand Sail Harbour Rail's and the Sink Carriers', which had between them
  *   nine ranks, two published figures, a rate book with ninety-one years in it,
  *   a wall of tally boards, and nobody. Both recruit, both take anybody, and a
  *   player could join either and meet not one person - which is the same defect
@@ -2981,17 +2981,17 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The Halfwater Rail ---------------------------------------------------
+    // --- The Thousand Sail Harbour Rail ---------------------------------------------------
     //
     // The port had a rate book, a watch, a seam nobody has solved and nobody
     // standing at the rail. Names follow the Drowned Reach's own custom - a
     // person at sea is named for where they came aboard and nobody asks past
     // that - which at a port everybody passes through produces a roll of
     // landfalls rather than a roll of clans, and says something true: there is
-    // no such thing as a Halfwater family.
+    // no such thing as a Thousand Sail Harbour family.
     {
         id: 'member-dryrun-ping',
-        name: 'Dryrun Ping',
+        name: 'The Bitter Crossing Ping',
         factionId: 'sect-halfwater-rail',
         rankIndex: 0,
         rank: 'Rail Hand',
@@ -3008,7 +3008,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-sui-out-of-bellhead',
-        name: 'Sui out of Bellhead',
+        name: 'Sui out of Bronze Bell Cape',
         factionId: 'sect-halfwater-rail',
         rankIndex: 1,
         rank: 'Watch',
@@ -3020,7 +3020,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'rival',
         wants: 'the Pavilion\'s buyers off the quay, or paying for the watch that keeps them upright on it',
         fears: 'the seam, which is the word the port uses to avoid saying it cannot help her above her own rung',
-        detail: 'Checks the Watering Floor\'s papers line by line at the rail, which is legal, slow, and the only thing she has.',
+        detail: 'Checks the Sweetspring Isle Floor\'s papers line by line at the rail, which is legal, slow, and the only thing she has.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -3032,7 +3032,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-farside-wen',
-        name: 'Farside Wen',
+        name: 'The Far Shore Wen',
         factionId: 'sect-halfwater-rail',
         rankIndex: 2,
         rank: 'Weigher',
@@ -3057,7 +3057,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-nie-out-of-salt-reach',
-        name: 'Nie out of Salt Reach',
+        name: 'Nie out of The Salt Fields',
         factionId: 'sect-halfwater-rail',
         rankIndex: 3,
         rank: 'Rail Factor',
@@ -3579,7 +3579,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // its production line is a straight function of its wage bill.
     {
         id: 'member-halfwater-yue',
-        name: 'Halfwater Yue',
+        name: 'Thousand Sail Harbour Yue',
         factionId: 'sect-halfwater-rail',
         rankIndex: 5,
         rank: 'Rail Master',
