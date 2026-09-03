@@ -43,6 +43,7 @@ import { describe, it, expect } from 'vitest';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import { AMBIENT_QI_RATE_MULTIPLIER } from '../../src/schema/cultivation.js';
 import { parseIntent } from '../../src/web/actions.js';
+import { whatTheySaidInTheFight } from '../../src/web/fight-answers.js';
 import type { Affordance } from '../../src/web/what-is-worth-doing-standing-here.js';
 import { makeGameInWorld } from './harness.js';
 
@@ -253,4 +254,81 @@ describe('three places, played', () => {
             if (crowd) expect(crowd.say, row.where).toBe('who is here');
         }
     }, 300000);
+});
+
+describe('the strip changes when a fight opens, and every entry the fight can answer', () => {
+    /**
+     * Open a real fight by attacking somebody, and hand back the strip.
+     *
+     * Pinned world and pinned run, so the opponent, the ground and the odds are
+     * the same every time. `I attack someone` resolves against whoever is
+     * actually standing there rather than a fixture.
+     */
+    async function intoAFight() {
+        const { game } = await makeGameInWorld({ seed: 'fight', worldSeed: 'strip-a' });
+        await game.newRun('Fighter');
+        const before = whatThePlayerSees(game.state().derived.standingHere as Affordance[]);
+        const opened = await game.act('I attack someone') as { narration?: string };
+        const during = whatThePlayerSees(game.state().derived.standingHere as Affordance[]);
+        return { game, before, during, opened: opened.narration ?? '' };
+    }
+
+    it('stops offering the notice board to somebody being hit', async () => {
+        const { before, during, opened } = await intoAFight();
+        // The engine is pricing the way out in the same breath - this is the
+        // half that was always working.
+        expect(opened).toMatch(/Breaking off would come off at \d+%/);
+
+        // And the strip used to be byte-identical to the turn before. That is
+        // the defect, stated as the thing that must never be true again.
+        expect(during.map(a => a.say)).not.toEqual(before.map(a => a.say));
+        for (const a of during) {
+            expect(a.id, a.say).toMatch(/^fight_/);
+        }
+        // Specifically: not one entry about the square, and above all not the
+        // offer to be taught by the person swinging at you.
+        expect(during.some(a => /teach me/.test(a.say))).toBe(false);
+        expect(during.some(a => /posted here|for sale|travel to/.test(a.say))).toBe(false);
+    }, 300000);
+
+    it('offers only sentences the fight actually has an answer for', async () => {
+        // The hard constraint, against the RIGHT reader. While a fight stands
+        // `GameService.act` reads the sentence with `whatTheySaidInTheFight`
+        // before phase 1 ever runs, so driving these through `parseIntent`
+        // would be testing a router that never sees them.
+        const { during } = await intoAFight();
+        expect(during.length).toBeGreaterThan(0);
+        for (const a of during) {
+            const answer = whatTheySaidInTheFight(a.say);
+            expect(answer, `${a.say} is not a sentence the fight can answer`).not.toBeNull();
+            expect(answer!.kind, a.say).toBe(a.routesTo);
+        }
+    }, 300000);
+
+    it('carries the flight odds the engine computed, not a number of its own', async () => {
+        const { during, opened } = await intoAFight();
+        const priced = opened.match(/come off at (\d+)%/)![1];
+        const out = during.find(a => a.id === 'fight_break_off')!;
+        // The row and the prose above it quote one number, because both read
+        // `whereThisFightStands`. Two opinions about the odds would be worse
+        // than one hidden one.
+        expect(out.because).toContain(`${priced}%`);
+    }, 300000);
+
+    it('plays every entry it offers, each into a fresh fight', async () => {
+        // One fight per entry: answering spends the round and can end the
+        // fight, so driving five answers through one fight would be testing
+        // four of them against a fight that had already closed.
+        const { during } = await intoAFight();
+        for (const chip of during) {
+            const { game } = await makeGameInWorld({ seed: 'fight', worldSeed: 'strip-a' });
+            await game.newRun('Fighter');
+            await game.act('I attack someone');
+            const answer = await game.act(chip.say) as { narration?: string; error?: string };
+            expect(answer.error, chip.say).toBeUndefined();
+            expect(answer.narration ?? '', chip.say).not.toMatch(
+                /does not resolve into anything|thought over and it does not/i);
+            expect((answer.narration ?? '').length, chip.say).toBeGreaterThan(20);
+        }
+    }, 600000);
 });

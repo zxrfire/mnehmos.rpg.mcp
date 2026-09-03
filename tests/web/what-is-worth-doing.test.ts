@@ -105,6 +105,7 @@ const WELL: StandingHere = {
     dutiesGoing: 0,
     groundThatTeachesARoad: 0,
     brokenSeclusion: null,
+    fight: null,
     aboveTheLid: false
 };
 
@@ -961,5 +962,131 @@ describe('the row names what is here rather than what kind of thing is here', ()
                 expect(handed.some(name => name.includes(word)), a.id + ': ' + word).toBe(true);
             }
         }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// SITUATION BEATS PLACE
+//
+// Found by playing. Mid-exchange, with the engine's own words directly above
+// the strip:
+//
+//   ATTACK -> You are on 41 of 50; Yun Keqing is on 63 of 67. 7 rounds before
+//   neither of you can finish it. Breaking off would come off at 41%, and
+//   turning your back costs something either way.
+//
+//   WHAT IS LIVE HERE
+//   I travel to Nine Peaks | I ask Yun Keqing to teach me | what is posted here
+//   | what arts can I learn | I look at Duan Zhaokuan
+//
+// Byte-identical to the strip one turn earlier, before the fight opened. It
+// offered to ask the person currently hitting the player to teach them.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('a fight is what is happening, and the square stops being the subject', () => {
+    const FIGHT: StandingHere['fight'] = {
+        them: 'Yun Keqing',
+        yourHp: 41,
+        yourMaxHp: 50,
+        theirHp: 63,
+        theirMaxHp: 67,
+        roundsLeft: 7,
+        flightChance: 0.41,
+        wayOut: { name: 'Nine Peaks', days: 2 }
+    };
+    const inAFight = (over: Partial<StandingHere> = {}): StandingHere => ({
+        ...WELL,
+        // Deliberately a loud square: everything the place register could
+        // possibly want to say is true at once, and none of it may survive.
+        peopleHere: 4,
+        peopleAboveHere: 2,
+        peopleHereByName: [
+            { name: 'Yun Keqing', realmOrdinal: 9, standsAbove: true, rungsApart: 9 }
+        ],
+        goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
+        thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'dense', travelDays: 6 }],
+        paperOnTheWall: { bills: 3, withinReach: 2, daysToTheSoonest: 9 },
+        spanCounterHere: true,
+        dutiesGoing: 4,
+        fight: FIGHT,
+        ...over
+    });
+
+    it('answers the fight and nothing else', () => {
+        const out = whatIsWorthDoingStandingHere(inAFight());
+        expect(out.map(a => a.id).sort()).toEqual([
+            'fight_break_off', 'fight_guard', 'fight_press', 'fight_shout', 'fight_strike'
+        ].sort());
+        // Not one entry about the square survives, and that is the rule rather
+        // than a side effect: the market stall, the wall and the road out of
+        // the province are all still true and none of them is what is happening.
+        for (const gone of ['buy_on_offer', 'better_ground', 'bills', 'passage', 'duties',
+            'room', 'ask_to_teach', 'look_at_somebody', 'cultivate']) {
+            expect(out.map(a => a.id), gone).not.toContain(gone);
+        }
+    });
+
+    it('offers every one of the five, so the other four are discoverable at all', () => {
+        // The whole point. A player who only knows `attack` has been given one
+        // option and told it is a turn - `guard`, `press`, `break_off` and
+        // `call_for_help` were reachable by guessing and by nothing else.
+        expect(whatIsWorthDoingStandingHere(inAFight())).toHaveLength(5);
+    });
+
+    it('puts the price on the way out rather than a mood word', () => {
+        const out = whatIsWorthDoingStandingHere(inAFight())
+            .find(a => a.id === 'fight_break_off')!;
+        expect(out.because).toMatch(/41%/);
+        expect(out.because).toMatch(/41 of 50/);
+        expect(out.because).toMatch(/7 rounds/);
+        // Never rounded into "you could probably get away".
+        expect(out.because).not.toMatch(/probably|likely|good chance|risky/i);
+    });
+
+    it('names the road out when there is one and admits it when there is not', () => {
+        const named = whatIsWorthDoingStandingHere(inAFight())
+            .find(a => a.id === 'fight_break_off')!;
+        expect(named.say).toBe('I back off toward Nine Peaks');
+        expect(named.namesSomething).toBe(true);
+
+        // A fight in the middle of nowhere is a real state and the honest
+        // answer is away from them. `wayOut()` returns null and this layer does
+        // not invent a direction to fill the sentence out.
+        const nowhere = whatIsWorthDoingStandingHere(
+            inAFight({ fight: { ...FIGHT, wayOut: null } }))
+            .find(a => a.id === 'fight_break_off')!;
+        expect(nowhere.say).toBe('I back off');
+        expect(nowhere.namesSomething).toBe(false);
+        expect(nowhere.because).toMatch(/away from them/i);
+    });
+
+    it('is a fight even in a safe town, and even above the Lid', () => {
+        // The ordering somebody will get wrong later. A fight is not "very
+        // dangerous ground" - it is a state with its own verbs - so nothing
+        // about the place, including the one place-fact that switches this
+        // whole file off, may take the row back.
+        expect(whatIsWorthDoingStandingHere(inAFight({ ambient: 'dense' })))
+            .toHaveLength(5);
+        expect(whatIsWorthDoingStandingHere(inAFight({ aboveTheLid: true })))
+            .toHaveLength(5);
+    });
+
+    it('outranks even a body that is starving, because a round does not wait', () => {
+        // The one place this file lets something past the body. Starvation
+        // kills in `STARVATION_TURNS`; the person swinging does not wait that
+        // long, and a meal is not an answer to a round.
+        const dying = whatIsWorthDoingStandingHere(inAFight({
+            satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1,
+            spiritStones: 0, treatableWounds: 2
+        }));
+        expect(dying.map(a => a.id)).not.toContain('eat');
+        expect(dying.every(a => a.urgency === 'now')).toBe(true);
+    });
+
+    it('leaves every ordinary turn exactly as it was', () => {
+        // `fight` is null on nearly every turn, and a register that leaked into
+        // the ordinary case would be the worse bug of the two.
+        expect(whatIsWorthDoingStandingHere({ ...WELL, fight: null })
+            .some(a => a.id.startsWith('fight_'))).toBe(false);
     });
 });
