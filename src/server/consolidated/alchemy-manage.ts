@@ -67,9 +67,24 @@ import { getHerb } from '../../data/cultivation/herbs.js';
 // at boot. See `where-a-cultivator-is-standing.ts`.
 import { standingOf } from './where-a-cultivator-is-standing.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
+import { REALM_TIERS } from '../../engine/cultivation/realms.js';
+import { pillBandOrdinal, whatACrossingTakesFrom } from '../../engine/cultivation/breakthrough.js';
+import { formInsight, recordAchievement } from '../../engine/cultivation/understanding.js';
+// The one place a grade's spread lives. Nothing here branches on a grade name.
+import {
+    drawGradeOutcome,
+    isSettledOnUse,
+    whatItDoesToTheSheet,
+    whatTheBlastTakesFrom,
+    whatTheRecordsSay
+} from '../../engine/cultivation/grade-spread.js';
 import {
     FLAG_GRAIN_ABSTINENCE_UNTIL,
     FLAG_BREAKTHROUGH_PILLS_TAKEN,
+    FLAG_BLOODLINE_SPECIES,
+    FLAG_BLOODLINE_TIER,
+    FLAG_OVERDRAWN_RUNGS,
+    FLAG_OVERDRAWN_UNTIL,
     FLAG_PENDING_PILL,
     FLAG_PILL_TOXICITY,
     addToPouch,
@@ -463,14 +478,48 @@ export async function handleConsumePill(
 
     const day = Math.floor(run.elapsedDays);
     const nextTurn = run.turn + 1;
+
+    // ── WHAT THIS ONE TURNS OUT TO DO ────────────────────────────────────
+    //
+    // Drawn HERE, at the moment it is swallowed, because that is what the
+    // grade means: an object whose effect was settled when it was made returns
+    // its single row and nothing changes, and an object whose effect is settled
+    // at use gets it decided now, once, by the engine.
+    //
+    // ON ITS OWN STREAM, and that is not a formality. A new draw dropped into
+    // an existing stream shifts every later draw off it - so `pill_outcome` is
+    // separate from `pill_toxicity`, every other seeded roll in the game is
+    // byte-identical to what it was, and this one is reproducible from the run
+    // seed like everything else.
+    //
+    // NO BRANCH ON THE GRADE'S NAME anywhere below. `drawGradeOutcome` is total
+    // over every grade and the four reliable ones are one-row tables.
+    const outcomeRng = forStream(run.seed, 'pill_outcome', run.turn, pill.id);
+    const outcome = drawGradeOutcome(pill.grade, outcomeRng);
+    const change = whatItDoesToTheSheet(
+        outcome,
+        {
+            spiritRoot: cultivator.spiritRoot,
+            insights: cultivator.insights,
+            realmOrdinal: cultivator.realmOrdinal
+        },
+        { sourceOrdinal: pillBandOrdinal(pill.grade) },
+        outcomeRng
+    );
+
+    // The dose that actually arrived, which is not always the dose printed on
+    // it. Everything downstream reads THIS pill, so the effect resolver keeps
+    // its one rule - the catalog row decides what happens - and never learns
+    // that a spread exists.
+    const dosed: Pill = { ...pill, potency: pill.potency * outcome.potencyMultiplier };
     const effect = resolvePillEffect(
-        cultivator, pill, day,
+        cultivator, dosed, day,
         readNumberFlag(repos.db, cultivator.id, FLAG_BREAKTHROUGH_PILLS_TAKEN, 0)
     );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
     const toxicityBefore = readNumberFlag(repos.db, cultivator.id, FLAG_PILL_TOXICITY, 0);
-    const toxicityAfterRaw = toxicityBefore + pill.toxicity;
+    const toxicityAfterRaw = toxicityBefore + pill.toxicity * outcome.toxicityMultiplier;
     const poisoned = toxicityAfterRaw >= TOXICITY_TOLERANCE;
     const toxicityAfter = poisoned ? toxicityAfterRaw - TOXICITY_TOLERANCE : toxicityAfterRaw;
     const toxicityRng = forStream(run.seed, 'pill_toxicity', run.turn, pill.id);
@@ -517,13 +566,95 @@ export async function handleConsumePill(
         }
         writeFlag(repos.db, cultivator.id, FLAG_PILL_TOXICITY, String(round4(toxicityAfter)));
 
+        // ── AND WHATEVER ELSE THE DRAW DID ───────────────────────────────
+        //
+        // Every one of these is irreversible and none of them is softened. A
+        // chaos object that cannot actually ruin somebody is not a chaos
+        // object, and quietly protecting a player who chose to swallow one is
+        // exactly the softening AGENTS.md forbids.
+        //
+        // Field-presence, not a switch on the outcome's key: adding a row to
+        // the spread that sets a field already handled here needs no edit, and
+        // a row that sets a NEW field is the only thing that does.
+        if (change.spiritRoot) {
+            repos.cultivators.update(cultivator.id, { spiritRoot: change.spiritRoot });
+        }
+        if (change.losesAccumulation) {
+            // Accumulation is accumulation IN a root, and that root is gone.
+            const standing = repos.cultivators.getById(cultivator.id)!;
+            repos.cultivators.applyDeltas(cultivator.id, {
+                cultivationProgress: -standing.cultivationProgress
+            });
+        }
+        if (change.comprehension) {
+            // Through the ONE constructor, so the insight carries a provenance
+            // that names the event. An insight nothing can trace is
+            // unrepresentable here by design and this path is no exception.
+            const standing = repos.cultivators.getById(cultivator.id)!;
+            const achievement = recordAchievement({
+                kind: 'unusual_opportunity',
+                onDay: day,
+                turn: nextTurn,
+                summary: `Swallowed a ${pill.name} and understood something nobody chose.`,
+                detail: { pillId: pill.id, outcome: outcome.key }
+            }, outcomeRng);
+            const insight = formInsight(
+                {
+                    domain: change.comprehension.domain,
+                    subject: change.comprehension.subject,
+                    access: { kind: 'inheritance', id: pill.id, label: pill.name },
+                    opening: 'it arrived with the medicine and nobody sent for it'
+                },
+                change.comprehension.degree,
+                achievement
+            );
+            repos.cultivators.update(cultivator.id, {
+                achievements: [...standing.achievements, achievement],
+                insights: [...standing.insights, insight]
+            });
+        }
+        if (change.bloodline) {
+            writeFlag(repos.db, cultivator.id, FLAG_BLOODLINE_SPECIES, change.bloodline.speciesId);
+            writeFlag(repos.db, cultivator.id, FLAG_BLOODLINE_TIER, change.bloodline.tier);
+        }
+        if (change.overdraw) {
+            const { rungs, days, residueRungs, foundation, bodyCost } = change.overdraw;
+            writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_UNTIL, String(day + days));
+            writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_RUNGS, String(rungs));
+            // THE RESIDUE IS BOTH THINGS AT ONCE and both are written now: a
+            // real rung, kept, and a body that is not what it was. The rung
+            // goes through `advanceRealm` - the neutral door, the same one the
+            // Unearned Step uses - because there was no crossing under it.
+            repos.cultivators.advanceRealm(cultivator.id, residueRungs);
+            // `establishFoundation` refuses to overwrite one already laid,
+            // which is correct: this cannot upgrade a cracked foundation and
+            // cannot damage a finished one it had no business touching.
+            repos.cultivators.establishFoundation(cultivator.id, foundation);
+            const standing = repos.cultivators.getById(cultivator.id)!;
+            const taken = whatACrossingTakesFrom(standing.hp, standing.maxHp, bodyCost);
+            if (taken > 0) repos.cultivators.applyDeltas(cultivator.id, { hp: -taken });
+        }
+
         repos.runs.incrementTurn(run.id, 1);
 
         const after = repos.cultivators.getById(cultivator.id)!;
-        const cause = evaluateDeathConditions(after);
-        if (cause) {
-            death = { cause, description: describeDeath(cause, after) };
-            repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
+        // ── THE ONE DETONATION ───────────────────────────────────────────
+        //
+        // Priced by `whatTheBlastTakesFrom`, which wraps the existing reprisal
+        // pricing and reads the power off the OBJECT rather than the body - so
+        // a nobody who swallows the wrong pill takes out what a nobody never
+        // could. There is no version of this the taker walks away from, and
+        // `obviously_fatal_choice` is the honest cause: they swallowed it.
+        if (change.detonation) {
+            const line = `${pill.name} went off. ${change.line}`;
+            death = { cause: 'obviously_fatal_choice', description: line };
+            repos.cultivators.markDead(cultivator.id, 'obviously_fatal_choice', nextTurn, line);
+        } else {
+            const cause = evaluateDeathConditions(after);
+            if (cause) {
+                death = { cause, description: describeDeath(cause, after) };
+                repos.cultivators.markDead(cultivator.id, cause, nextTurn, death.description);
+            }
         }
     });
     persist();
@@ -540,6 +671,43 @@ export async function handleConsumePill(
             effect: pill.effect,
             potency: pill.potency,
             toxicity: pill.toxicity
+        },
+        // ── WHAT THIS ONE TURNED OUT TO BE ───────────────────────────────
+        //
+        // Reported for every pill, because "it did what it said" is a real
+        // answer and a surface that only speaks up on the strange ones teaches
+        // a player to read silence as safety.
+        //
+        // `dose` is the number that actually arrived against the number printed
+        // on the row. Where they differ the player is told, rather than being
+        // handed an effect summary that quietly used a different figure.
+        turnedOutTo: {
+            outcome: outcome.key,
+            settledOnUse: isSettledOnUse(pill.grade),
+            account: outcome.account,
+            line: change.line,
+            dose: { printed: pill.potency, arrived: round2(dosed.potency) },
+            overdraw: change.overdraw ?? null,
+            detonation: change.detonation
+                ? {
+                    ...change.detonation,
+                    // What it takes off somebody standing at each realm, as a
+                    // fraction of their pool. THE PILL PATH HAS NO ROSTER OF
+                    // WHO WAS IN THE ROOM - this is the pricing, computed and
+                    // ready for a caller that has one, and the gap is reported
+                    // rather than papered over with an empty list.
+                    takesFromSomebodyAt: REALM_TIERS.map(tier => ({
+                        realm: tier.name,
+                        fractionOfPool: round4(whatTheBlastTakesFrom(
+                            change.detonation!.poweredFromOrdinal,
+                            tier.ordinalStart
+                        ))
+                    }))
+                }
+                : null,
+            rootRedrawnTo: change.spiritRoot ?? null,
+            comprehension: change.comprehension ?? null,
+            bloodline: change.bloodline ?? null
         },
         applied: effect.summary,
         deltas: effect.deltas ?? {},
@@ -832,7 +1000,21 @@ function projectPouch(db: ReturnType<typeof ensureCultivationDb>['db'], cultivat
                 potency: pill?.potency ?? null,
                 toxicity: pill?.toxicity ?? null,
                 value: pill?.value ?? null,
-                quantity: entry.quantity
+                quantity: entry.quantity,
+                // ── WHAT IT SAYS ON THE TIN IS NOT ALWAYS THE ANSWER ─────
+                //
+                // For a grade whose effect is settled at use, `effect` and
+                // `potency` above are what this pill is FOR, not what it will
+                // do - and a pouch listing that presents the two identically
+                // has lied to the player about the most important property the
+                // object has. `whatIsKnown` is the honest version.
+                //
+                // The reach is 2: what somebody carrying the thing has picked
+                // up in passing. A house archive answers a research verb and
+                // would pass a larger number. Note there is no denominator
+                // anywhere in the result - the set of outcomes is open and "2
+                // of 9" would be a lie the data cannot support.
+                whatIsKnown: pill ? whatTheRecordsSay(pill.grade, 2) : null
             };
         }
         const herb = getHerb(entry.itemId);

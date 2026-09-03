@@ -131,11 +131,12 @@ import {
  * Read as realm KEYS rather than as rung numbers so the ladder can move without
  * this table lying, the same discipline `PILL_GRADE_REALM` keeps next door.
  *
- * `chaos` sits with `immortal` rather than getting a row of its own. The ruling
- * names four grades and stops, and chaos is the band ABOVE immortal in every
- * catalog that orders them - so whatever puts immortal grade out of reach puts
- * chaos further out. Reading it any other way would make the rarest medicine in
- * the world the only one an ordinary cultivator could refine.
+ * `chaos` sits with `immortal` rather than getting a row of its own, and that
+ * is now the ladder saying what `GRADE_POWER` says: **the two are peers.** The
+ * same cauldron at the same rung produces both, because a cauldron works a
+ * magnitude of material and has no way to know what the thing will turn out to
+ * do when somebody swallows it - that is settled at use, in `grade-spread.ts`,
+ * and not at refinement.
  */
 export const REFINING_REALM_BY_GRADE: Readonly<Record<TechniqueGrade, RealmKey>> = {
     mortal: 'qi_condensation',
@@ -200,10 +201,16 @@ export function canRefineGrade(grade: TechniqueGrade, realmOrdinal: number): boo
  */
 export function highestGradeRefinableAt(realmOrdinal: number): TechniqueGrade | null {
     let best: TechniqueGrade | null = null;
-    // The table is written in ascending grade order and `>=` keeps the LATER of
-    // two grades that share a rung. That matters for exactly one pair: immortal
-    // and chaos both ask for the True Immortal rung, and the honest answer for
-    // a hand that clears it is the higher of the two.
+    // The table is written in listing order and `>=` keeps the LATER of two
+    // grades that share a rung. That matters for exactly one pair: immortal and
+    // chaos both ask for the True Immortal rung.
+    //
+    // THIS IS THE ONE PLACE A TOTAL ORDER IS FORCED ON A TIE, AND IT IS
+    // DELIBERATE. The two grades are peers, so "the best grade this hand can
+    // work" has two correct answers and this function's signature can return
+    // only one. It returns chaos, on the reasoning that a hand which can work
+    // either should be told about the harder object rather than the safer one.
+    // Any caller that needs both must ask `canRefineGrade` per grade instead.
     for (const grade of Object.keys(REFINING_REALM_BY_GRADE) as TechniqueGrade[]) {
         if (!canRefineGrade(grade, realmOrdinal)) continue;
         if (best === null || refiningOrdinalFor(grade) >= refiningOrdinalFor(best)) best = grade;

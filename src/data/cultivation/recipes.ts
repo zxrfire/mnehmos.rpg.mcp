@@ -91,16 +91,28 @@ const RECIPE_SOURCE_NOTES: Record<RecipeProvenance, string> = {
 } as const;
 
 /**
- * Base success-rate window per produced-pill grade. Disjoint and descending.
- * A mortal pill fails roughly one time in eight; a chaos pill succeeds roughly
- * one time in ten, which is why so few of them exist.
+ * Base success-rate window per produced-pill grade. Descending, and level
+ * across the peers.
+ *
+ * A mortal pill fails roughly one time in eight. The two top grades share a
+ * window because **what it takes to make one is the same work**: chaos and
+ * immortal are peers in power (`GRADE_POWER` in `techniques.ts`), the same
+ * cauldron at the same rung produces both - `REFINING_REALM_BY_GRADE` has said
+ * so since it was written - and a cauldron does not know what the thing will
+ * turn out to do when somebody swallows it. That is settled at use, not at
+ * refinement.
+ *
+ * So the chaos floor was raised to the immortal floor rather than left as a
+ * step down. Nothing in the catalog moved: the chaos recipes sit at the bottom
+ * of the shared window, which is a fact about those formulas rather than about
+ * the grade.
  */
 export const RECIPE_SUCCESS_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 0.75, max: 0.9 },
     earth: { min: 0.55, max: 0.7 },
     heaven: { min: 0.35, max: 0.5 },
-    immortal: { min: 0.18, max: 0.3 },
-    chaos: { min: 0.05, max: 0.15 }
+    immortal: { min: 0.05, max: 0.3 },
+    chaos: { min: 0.05, max: 0.3 }
 } as const;
 
 const RECIPE_DATA: readonly Recipe[] = [

@@ -85,16 +85,32 @@ export const HerbSchema = z.object({
 });
 export type Herb = z.infer<typeof HerbSchema>;
 
-/** Value window per grade. Disjoint and ascending, asserted in the tests. */
+/**
+ * Value window per grade. Ascending and disjoint up to the peers, which
+ * overlap.
+ *
+ * The same reconciliation `PILL_VALUE_BANDS` carries and for the same reason:
+ * chaos and immortal are peers in power (`GRADE_POWER`), so grade does not move
+ * the floor. A chaos herb opens where an immortal herb opens. The higher
+ * ceiling is scarcity, not rank.
+ */
 export const HERB_VALUE_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 1, max: 49 },
     earth: { min: 50, max: 499 },
     heaven: { min: 500, max: 4_999 },
     immortal: { min: 5_000, max: 49_999 },
-    chaos: { min: 50_000, max: 500_000 }
+    chaos: { min: 5_000, max: 500_000 }
 } as const;
 
-/** Commonest a herb of each grade may be. Strictly falling, asserted in tests. */
+/**
+ * Commonest a herb of each grade may be. Strictly falling, asserted in tests.
+ *
+ * DELIBERATELY NOT LEVELLED ACROSS THE PEERS, unlike the value band above.
+ * Rarity is a population statement and has nothing to do with power: the two
+ * top grades are equally strong and there is still less chaos-grade material in
+ * the world than immortal-grade. Eating one is where they differ, and that is
+ * not a number on this axis.
+ */
 export const HERB_RARITY_CEILING: Record<TechniqueGrade, number> = {
     mortal: 400,
     earth: 90,
