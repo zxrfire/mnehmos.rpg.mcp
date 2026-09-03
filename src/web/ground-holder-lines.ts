@@ -57,6 +57,7 @@ import {
     whoHoldsTheGround,
     type GroundHolding
 } from '../engine/world/ground-holder.js';
+import { TOLD_THE_NAME_AT } from '../engine/world/ruin-gatekeepers.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 
 export interface GroundHolderInput {
@@ -65,6 +66,31 @@ export interface GroundHolderInput {
     locationId: string;
     /** True when this is the ground under their feet rather than somewhere asked after. */
     standingHere: boolean;
+    /**
+     * The rung of whoever is asking, which decides whether they may be told the
+     * NAME. Omitted means "do not gate" - the world asking about itself.
+     *
+     * ── THE BYPASS THIS CLOSES ───────────────────────────────────────────
+     *
+     * `whoTurnsYouAwayFrom` withholds the holder's name below
+     * {@link TOLD_THE_NAME_AT}, on the design owner's ruling that *"you are low,
+     * and you know nothing"*. Measured on a live world, at ordinal 8: for
+     * **220 of 220** barred held locations the door answered "somebody holds
+     * this and nobody is going to tell you who", and this read - free, from
+     * outside, at the same rung - named the house. **220 of 220.** The middle
+     * `GroundClaim` value exists precisely because it is the reading that keeps
+     * somebody alive, and the cheaper path handed the answer over every time.
+     *
+     * ONE MECHANISM, ONE NUMBER. The threshold is imported rather than restated,
+     * so moving it moves both doors at once.
+     *
+     * ── AND IT ONLY EVER LOWERS ──────────────────────────────────────────
+     *
+     * `ruin-gatekeepers.ts` states the rule for callers holding knowledge it
+     * cannot see: a caller may lower the reading and may never raise it. This is
+     * that rule applied to itself.
+     */
+    readerOrdinal?: number;
 }
 
 export interface GroundHolderReading {
@@ -120,7 +146,25 @@ const VOLUNTEERED: ReadonlySet<GroundHolding> = new Set<GroundHolding>([
 
 /** Who answers for this ground, and what a person standing on it could say. */
 export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderReading {
-    const holding = whoHoldsTheGround(input.locations, input.locationId);
+    const read = whoHoldsTheGround(input.locations, input.locationId);
+
+    // Lowered, never raised. An absent ordinal is the world asking about its own
+    // records rather than a person asking, and gets the ungated answer.
+    const mayBeToldTheName =
+        input.readerOrdinal === undefined || input.readerOrdinal >= TOLD_THE_NAME_AT;
+
+    // `why` is the sentence `ground-holder.ts` composed, and for a held reading
+    // it has the house's name in it - so withholding the field and printing the
+    // sentence would hand the name over anyway. Replaced rather than edited: a
+    // regex over somebody else's prose is a second template.
+    const holding = mayBeToldTheName
+        ? read
+        : {
+            ...read,
+            holderName: null,
+            why: 'Somebody holds this ground, and nobody here is going to say who to '
+                + 'somebody standing where you are standing.'
+        };
     const ground = theGroundUnderYou(holding);
     const route = WHAT_TO_DO_ABOUT_IT[ground.recourse];
 
@@ -132,10 +176,13 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
         placeName: holding.placeName,
         lines: volunteers ? [holding.why, route] : [],
         answer: `${ground.why} ${route}`,
+        // The mechanical channel keeps the world's own answer. What is gated is
+        // what the player is TOLD, exactly as it is at the door.
         structure:
-            `whoHoldsTheGround: ${holding.holding}`
-            + (holding.holderName ? ` by ${holding.holderName}` : '')
-            + (holding.answeredAtId ? `, answered at ${holding.answeredAtId}` : '')
+            `whoHoldsTheGround: ${read.holding}`
+            + (read.holderName ? ` by ${read.holderName}` : '')
+            + (mayBeToldTheName ? '' : ' (name withheld from the player: below the naming bar)')
+            + (read.answeredAtId ? `, answered at ${read.answeredAtId}` : '')
             + `. Recourse ${ground.recourse}.`
     };
 }
