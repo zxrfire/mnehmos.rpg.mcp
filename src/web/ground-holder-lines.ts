@@ -150,8 +150,21 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
 
     // Lowered, never raised. An absent ordinal is the world asking about its own
     // records rather than a person asking, and gets the ungated answer.
+    //
+    // AND THERE HAS TO BE A NAME TO WITHHOLD. What is gated is a HOLDER'S name,
+    // so the gate can only bite on a `held` reading. Without that condition the
+    // replacement below fired on all four, and the two readings `look`
+    // volunteers are precisely the two where nobody holds the ground - so a
+    // player below the bar standing on The Blown Ground, which is where a fresh
+    // run opens, was about to be told "somebody holds this ground and nobody is
+    // going to say who" over the top of "nobody holds The Drowned Reach, and
+    // everybody has noticed", with the route line still telling them to take it
+    // to whoever keeps the place running. Withholding a name the world does not
+    // have is not discretion, it is a different world.
     const mayBeToldTheName =
-        input.readerOrdinal === undefined || input.readerOrdinal >= TOLD_THE_NAME_AT;
+        read.holding !== 'held'
+        || input.readerOrdinal === undefined
+        || input.readerOrdinal >= TOLD_THE_NAME_AT;
 
     // `why` is the sentence `ground-holder.ts` composed, and for a held reading
     // it has the house's name in it - so withholding the field and printing the

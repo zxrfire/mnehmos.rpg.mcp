@@ -3756,7 +3756,14 @@ ${line}`;
                     const holder = whoAnswersForThisGround({
                         locations: this.atHand.locations,
                         locationId: groundHere,
-                        standingHere: true
+                        standingHere: true,
+                        // The second caller, and the one that was bypassing the
+                        // gate. `whoAnswersHere` in `situated-reads.ts` has
+                        // passed this since the gate landed; this did not, so
+                        // walking to a door refused the holder's name while
+                        // looking round from outside handed it over - measured
+                        // at 220 of 220 barred held locations.
+                        readerOrdinal: cultivator.realmOrdinal
                     });
                     for (const line of holder.lines) {
                         looking.facts.lines.push(line);
@@ -5094,11 +5101,20 @@ ${noticed}`;
                 // already returned and says what happens to it.
                 const held = positionIn(this.repos, cultivator.id);
                 if (topic === 'leaving') {
+                    // "Seat" was the Hollow Court's own word for a rung, swept
+                    // out of generic code by `652a66e` everywhere except this
+                    // file, which was dirty at the time. Note WHICH sense this
+                    // one was: not the head of the house, because the person
+                    // asking is any member at any rung - it is the RANK sense
+                    // that commit separated out, and the house's own word for
+                    // the rank is already in hand as `rankTitle`. Saying it
+                    // once and referring back is what removes the repetition
+                    // the old sentence had.
                     const line = held
                         ? `Walking out is a thing you say out loud and it is done the day you say `
-                          + `it. What it costs is the seat and the ${held.contribution} `
+                          + `it. What it costs is ${held.rankTitle} and the ${held.contribution} `
                           + `contribution: neither travels, and coming back later does not come `
-                          + `back above ${held.rankTitle}.`
+                          + `back above it.`
                         : 'You belong to nothing, so there is nothing to walk out of.';
                     read.facts.lines.push(line);
                     read.facts.prose = `${read.facts.prose}\n\n${line}`;
@@ -7515,11 +7531,36 @@ ${line}`;
 
         // Whether they can name the house is the discovery layer's question,
         // asked here rather than assumed - the same rule the site verb keeps.
+        //
+        // ── AND BOTH SENTENCES NAME THE GROUND ───────────────────────────
+        //
+        // `461535a`'s rule, applied to the two lines it did not reach: name the
+        // place whenever the game knows it. `here` is the place name, it is two
+        // statements above on the deed as `place: here`, and it is in the
+        // summary of every call this method pushes - so the operator's record
+        // named the ground and the player's sentence said "this ground".
+        // Played on Azure Cloud Pavilion grounds, which the same paragraph had
+        // just named, both branches.
+        //
+        // The two silences stay apart, exactly as that commit left them. "X
+        // holds it" is information and "somebody holds it and you have no name
+        // for them" is a warning; only the place name was missing from each.
         if (left.knownTo.length > 0) {
             const known = this.knowledge.isAwareOf(cultivator.id, 'sect', holder!.id);
+            // The guard from `ground-holder.ts`, and here it is the ordinary
+            // case rather than the edge one: of the 34 held locations in a
+            // seeded world with the holder's own people standing on them, ALL
+            // 34 are named after the house that holds them. Naming both naively
+            // would print "Azure Cloud Pavilion holds Azure Cloud Pavilion
+            // grounds" on every single one.
+            const groundCarriesTheirName =
+                here.toLowerCase().includes(holder!.name.toLowerCase());
             lines.push(known
-                ? `${holder!.name} holds this ground, and they keep a count of what is on it.`
-                : 'Somebody holds this ground and keeps a count of what is on it. You have no '
+                ? groundCarriesTheirName
+                    ? `${here} is held by the house it is named for, and they keep a count of `
+                      + 'what is on it.'
+                    : `${holder!.name} holds ${here}, and they keep a count of what is on it.`
+                : `Somebody holds ${here} and keeps a count of what is on it. You have no `
                   + 'name for them, which does not make the count any shorter.');
         }
         void run;
@@ -7560,8 +7601,13 @@ ${line}`;
             );
             if (ground.line) lines.push(ground.line);
             if (ground.taken <= 0) {
+                // Named, for the same reason as the two lines in
+                // `whoAnswersForTheKill`: `here` is the place, it is already on
+                // the object record three statements down as `place: here`, and
+                // a sentence about ground that is worked out is exactly the one
+                // a player needs to be able to attach to somewhere.
                 lines.push(
-                    `The ${material.name} is what this ground used to give up, and it has none `
+                    `The ${material.name} is what ${here} used to give up, and it has none `
                     + 'left to give.'
                 );
                 calls.push({
