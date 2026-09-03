@@ -28,6 +28,7 @@ import type { CrossroadsView } from './choosing-what-to-do-when-a-seclusion-is-b
 import type { EngineFacts } from './facts.js';
 import type { FightView } from './fight-answers.js';
 import type { Hearing } from './hearsay.js';
+import type { Perception } from './shown-this-turn.js';
 import type { LogEntry } from './log.js';
 import type { Narrator } from './narrator.js';
 import type { DerivedView, RunView } from './view.js';
@@ -177,4 +178,22 @@ export interface Execution {
      * only ever receives a licence to mention what is already true.
      */
     hearing?: Hearing | null;
+    /**
+     * Everything else this turn put in front of the player, to be written down.
+     *
+     * The general form of `hearing`, and the reason both exist: a hearing has a
+     * speaker and words, so phase 3 needs it whole; a perception that is not
+     * somebody talking - the holder of the ground, the people the presence gate
+     * admitted, the face of a site - has nothing to render and only needs
+     * recording.
+     *
+     * DECLARED HERE, WRITTEN AT THE BOUNDARY. A producer says what it showed and
+     * does not also have to remember to write it. That is the whole point:
+     * knowledge used to be written by whoever happened to be holding the player,
+     * fourteen call sites across six files, and a verb that forgot was
+     * indistinguishable from a verb that decided not to.
+     *
+     * `shown-this-turn.ts` holds the rule and the one writer.
+     */
+    perceived?: Perception[];
 }

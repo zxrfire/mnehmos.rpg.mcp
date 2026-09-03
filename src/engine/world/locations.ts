@@ -574,6 +574,24 @@ export interface LocationRecord {
     discovered: boolean;
     discoveredOnDay: number | null;
 
+    /**
+     * The house whose name is on THIS row, and null is not "nobody holds it".
+     *
+     * A trap worth stating where the field is, because reading it as the whole
+     * answer is the obvious mistake and it produces a confident wrong one.
+     * `whoHoldsTheGround` walks the containment chain AND the prefecture
+     * register, so a settlement carrying nothing here can still be held by the
+     * house that holds its district - and walking into the district IS standing
+     * on their ground.
+     *
+     * Found by a negative test going red for the right reason: a case picked as
+     * "unheld" on `controllingFactionId === null` was held on the register, and
+     * the writer that fires on held ground fired correctly.
+     *
+     * So ask `whoHoldsTheGround` whenever the question is whose ground this is.
+     * Read this field directly only when the question is genuinely about what
+     * this row itself records.
+     */
     controllingFactionId: string | null;
     originFactId: string | null;
 

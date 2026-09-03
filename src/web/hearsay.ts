@@ -71,6 +71,7 @@ import {
     type Traveller,
     type TravellerPlace
 } from '../engine/social/travellers.js';
+import { recordPerception } from './shown-this-turn.js';
 import {
     COMMON_CURRENCY_ORDINAL,
     OVERHEARD_BAND_WEIGHTS,
@@ -921,24 +922,16 @@ export function recordHearing(
     run: Run,
     hearing: Hearing
 ): SpeakableName[] {
-    const learned: SpeakableName[] = [];
-    for (const name of hearing.names) {
-        const stage = name.stage ?? hearing.stage ?? 'whisper';
-        const isNew = gate.learnIfNew({
-            holderId: cultivator.id,
-            kind: name.kind,
-            id: name.id,
-            name: name.name,
-            onDay: Math.floor(run.elapsedDays),
-            sourceKind: hearing.sourceKind,
-            sourceNote: hearing.note,
-            stage,
-            confidence: hearing.confidence,
-            statement:
-                name.statement
-                ?? `${name.name} is a name that got said. What it is remains unknown.`
-        });
-        if (isNew) learned.push(name);
-    }
-    return learned;
+    // ── ONE WRITER, AND HEARING IS ONE OF ITS CALLERS ────────────────────
+    //
+    // This body moved to `recordPerception` unchanged. A `Hearing` is a
+    // `Perception` plus the two fields only a spoken one needs - who said it,
+    // and the words - so the hearsay channel keeps its own shape and the row it
+    // writes is byte-identical to the row anything else writes.
+    //
+    // That identity is what makes the migration safe: a producer that still
+    // calls `noteEncounter` and a producer that has moved to declaring cannot
+    // disagree about what a row means, because both end at `learnIfNew` with a
+    // stage the source has already clamped.
+    return recordPerception(gate, cultivator, run, hearing);
 }
