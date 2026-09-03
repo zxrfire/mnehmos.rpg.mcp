@@ -125,7 +125,7 @@ the world rather than in this surface.
 **A fourth, found the same way and fixed here rather than reported:** `spawn_encounter` wrote
 a correct row, at the player's exact location, alive, in the right run - and `who is here` did
 not mention them. `othersPresent` *did* return them; what was missing is that `company()` in
-`game.ts` splits the people present on whether the player holds a knowledge record, so an
+`turn-engine.ts` splits the people present on whether the player holds a knowledge record, so an
 opponent nobody had heard of rendered as an anonymous band reading. **`spawn_site` had already
 solved this for places and `spawn_encounter` had never solved it for people.** It writes the
 knowledge record now, and the person is named, addressable and attackable.
@@ -398,7 +398,7 @@ action with none leaves the prose alone and refuses in its own words.
 | `set_age` | Moves the age through the repository's own delta path, up or down. **No life was lived** - the clock does not move and nothing happened in between; `advance_days` is the action that spends a life. Refuses an age past the rung's lifespan, because that is a death the survival check has not been asked about yet, and names the two routes. | `age` |
 | `force` | **Runs an ORDINARY VERB with the attempt landing.** Typed at the game as `ADMIN <verb> <sentence>`. Decides an uncertain outcome; never makes an illegal action legal. Refuses on this tool's own path, because a playable verb needs a run. | `verb` |
 | `grant_knowledge` | **Lifts the awareness gate wide.** Makes every place, every house, or one named either, nameable by this cultivator. They already exist; what changes is whether their names can be said. | `kind`, `name` |
-| `reset` | **Ends this run and begins another.** Closes the current run with no death cause - it did not die - flags it admin so it never reaches the ledger, and opens a fresh birth in the SAME world. Handled in `game.ts` rather than here: runs are written there and nowhere else, and a tool handler ending one would be a second writer. | a name, optional |
+| `reset` | **Ends this run and begins another.** Closes the current run with no death cause - it did not die - flags it admin so it never reaches the ledger, and opens a fresh birth in the SAME world. Handled in `turn-engine.ts` rather than here: runs are written there and nowhere else, and a tool handler ending one would be a second writer. | a name, optional |
 
 ### Which of the two `spawn`s
 
@@ -521,7 +521,7 @@ which answers as a neutral.
 
 The rule lives in `engine/social-leverage/what-somebody-does-about-being-wronged.ts`, which
 owns the ordering and is the file to read for the current thresholds. Which verbs are wrongs
-at all is a separate closed table in `game.ts`, so a verb added to the parser does not
+at all is a separate closed table in `turn-engine.ts`, so a verb added to the parser does not
 silently acquire consequences nobody chose for it.
 
 `ADMIN reset` is read BEFORE the live-run guard, and is the only admin verb that is: every
@@ -728,8 +728,8 @@ And the banner under every admin response stays exactly as it is:
 | The law, the actions, the handlers | [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
 | Reading a typed sentence | [`src/server/consolidated/admin-said-as-a-sentence.ts`](../src/server/consolidated/admin-said-as-a-sentence.ts) |
 | The suggestion floor | `SUGGESTION_NOISE_FLOOR` in [`src/utils/fuzzy-enum.ts`](../src/utils/fuzzy-enum.ts) |
-| Where `ADMIN` is intercepted in play | the ADMIN branch of `act` in `src/web/game.ts`, which routes a named playable verb to the forced path and everything else to `adminAct` |
+| Where `ADMIN` is intercepted in play | the ADMIN branch of `act` in `src/web/turn-engine.ts`, which routes a named playable verb to the forced path and everything else to `adminAct` |
 | Forcing an attempt to land: the law, the decisions, the routes | [`src/server/consolidated/forcing-an-attempt-to-land.ts`](../src/server/consolidated/forcing-an-attempt-to-land.ts) |
 | Reading `ADMIN <verb>` | `readAForcedVerb` in [`src/server/consolidated/admin-manage.ts`](../src/server/consolidated/admin-manage.ts) |
-| Where a forced verb is dispatched, and its receipt written | `act` and `receiptForAForcedVerb` in `src/web/game.ts` |
+| Where a forced verb is dispatched, and its receipt written | `act` and `receiptForAForcedVerb` in `src/web/turn-engine.ts` |
 | The ladder, the ceiling, the breaths | [`src/engine/cultivation/realms.ts`](../src/engine/cultivation/realms.ts) |

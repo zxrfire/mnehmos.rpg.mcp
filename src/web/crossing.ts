@@ -53,7 +53,7 @@ import { factsForBreakthrough } from './facts.js';
 import { tollCalls } from './tool-result-prose.js';
 import { DELIBERATE_PREPARATION } from './turn-constants.js';
 import { type Execution, GameError, type ToolCallRecord } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 export const crossingVerb = {
     /**

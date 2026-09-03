@@ -39,7 +39,7 @@ describe('the ADMIN prefix is made of the characters it appears to be made of', 
     // a review: a control character sits where an escape was meant to be and the
     // line still reads correctly to a human.
     it('carries no control characters anywhere in the web layer', () => {
-        const files = ['src/web/game.ts', 'src/web/actions.ts', 'src/web/hearsay.ts'];
+        const files = ['src/web/turn-engine.ts', 'src/web/actions.ts', 'src/web/hearsay.ts'];
         for (const file of files) {
             const text = readFileSync(file, 'utf8');
             // Tab, newline and carriage return are the only ones that belong.

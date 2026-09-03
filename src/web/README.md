@@ -19,7 +19,7 @@ narrates, the engine decides.
 
 ```text
 PHASE 1   intent -> action    narrator.plan()      a classifier
-PHASE 2   action -> state     game.ts              the engine, and the only writer
+PHASE 2   action -> state     turn-engine.ts       the engine, and the only writer
 PHASE 3   result -> prose     narrator.narrate()   a stylist
 ```
 
@@ -29,7 +29,7 @@ routine runs, and how the result is described, and nothing in between.**
 - **Phase 1** sees the player's sentence and a state summary, and must answer with one
   verb from a closed list as strict JSON. Its output is parsed by `actions.ts` and
   discarded if it does not fit.
-- **Phase 2** lives in `game.ts` and touches no narrator at all. Phase 2 is the engine,
+- **Phase 2** lives in `turn-engine.ts` and touches no narrator at all. Phase 2 is the engine,
   and the engine does not take instructions. There is no phase-2 prompt.
 - **Phase 3** sees only what the engine already decided, expressed as flat statements by
   `facts.ts`, and turns those statements into paragraphs. Its output is **never parsed**.
@@ -38,15 +38,17 @@ routine runs, and how the result is described, and nothing in between.**
 The state returned to the client is re-read from the database after phase 2 and is not
 touched by phase 3.
 
-Read the method bodies in `game.ts` with one question in mind: *where does a value from a
-model response become a row?* The answer is nowhere.
+Read the method bodies in `turn-engine.ts` and the verb families beside it with one
+question in mind: *where does a value from a model response become a row?* The answer is
+nowhere.
 
 ### Phase 2 is one class spread across several files
 
-`GameService` is being split by subject, because at 24,000 lines it had a dozen reasons to
-change and only one file to change them in. A family of verbs - travel, so far - is an
-object of methods in its own module, merged onto the prototype at the bottom of `game.ts`
-with its signatures merged into the class declaration. `this.move(...)` resolves and
+`GameService` was split by subject, because at 24,746 lines it had a dozen reasons to
+change and only one file to change them in. A family of verbs - travel, combat,
+investigate, asking, the situated reads, seclusion, the crossing, matches, sites and the
+institutional verbs - is an object of methods in its own module, merged onto the prototype
+at the bottom of `turn-engine.ts` with its signatures merged into the class declaration. `this.move(...)` resolves and
 typechecks exactly as it did when the body sat in the class, and the split is invisible at
 every call site.
 
@@ -61,7 +63,7 @@ Two things about the shape, because both look wrong on first reading:
   changes and nothing becomes reachable that `(service as any)` could not already reach.
   Do not "tidy" the keyword back on - it breaks the build.
 
-**`execute` stays in `game.ts` and is not a family.** It is the switch whose whole job is
+**`execute` stays in `turn-engine.ts` and is not a family.** It is the switch whose whole job is
 to reach every one of them, so it can never be a module with a small surface, and it
 changes for the same reason `act` does.
 

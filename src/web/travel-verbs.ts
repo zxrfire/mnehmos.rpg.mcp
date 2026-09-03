@@ -82,7 +82,7 @@ import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 export const travelVerbs = {
     /**

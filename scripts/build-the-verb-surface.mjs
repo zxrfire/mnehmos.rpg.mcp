@@ -52,7 +52,7 @@ const SOURCE = {
     surface: 'src/web/what-each-verb-is-for-in-the-players-words.ts',
     actions: 'src/web/action-set.ts',
     days: 'src/web/verb-day-costs.ts',
-    game: 'src/web/game.ts'
+    game: 'src/web/turn-engine.ts'
 };
 
 /**

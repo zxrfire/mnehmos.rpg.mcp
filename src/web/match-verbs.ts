@@ -83,7 +83,7 @@ import {
     whatIsBeingPutDown
 } from './what-a-holder-would-take-for-it.js';
 import type { KnowledgeScope } from './entities.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * A fraction of a lifespan, as somebody would say it out loud.

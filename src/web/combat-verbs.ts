@@ -82,7 +82,7 @@ import { loosePlaceKey } from './knowledge.js';
 import { creditIn, positionIn, spendStanding } from './standing.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * Priority at which a want is the whole of why somebody is standing there.

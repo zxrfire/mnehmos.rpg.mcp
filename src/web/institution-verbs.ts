@@ -85,7 +85,7 @@ import {
 } from './standing.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * What a house's declaration would actually require, said to somebody who has

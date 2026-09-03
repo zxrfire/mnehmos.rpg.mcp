@@ -141,7 +141,7 @@ import {
     factsForSomebodyWithNoOpenBusiness,
     factsForWhatTheyAreAfter
 } from './what-somebody-is-after.js';
-import type { GameService } from './game.js';
+import type { GameService } from './turn-engine.js';
 
 /**
  * How heavy the thing being asked for is, from the player's own sentence.
