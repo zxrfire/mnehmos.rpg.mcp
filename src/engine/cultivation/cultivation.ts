@@ -522,6 +522,21 @@ export function techniqueCeiling(
     // necessarily an unlearned one and the caller does not have to diff two
     // lists to know it. The parameter defaults false, which keeps every caller
     // that cannot see the pouch saying exactly what it said before.
+    //
+    // ── AND THE PHRASE IS SHARED, SO IT IS NOT FREE TO REWORD ────────────
+    //
+    // The false half was "without a manual", which claims something about the
+    // bag. "no road for the qi to take" is the true half and it is SHARED:
+    // `seclusion-verbs.ts` renders the same fact with the same words, and
+    // three assertions in `narrator-output-authority.test.ts` match on it
+    // because the required-line channel exists to guarantee this exact
+    // sentence reaches a player who is about to spend fifty years for nothing.
+    //
+    // Rewording it split the two renderings apart and reddened those three -
+    // the feature was fine and the words had drifted, which is precisely what
+    // NARRATOR-CORE's do-not-paraphrase rule is for. So: drop the claim about
+    // the bag, keep the phrase. If this sentence ever changes again, change
+    // `seclusion-verbs.ts` in the same commit or they will disagree.
     const nothingLeftToAccumulateFor = progressRequiredForOrdinal(realmOrdinal) === null;
 
     if (techniqueCap === NO_MANUAL_CEILING) {
@@ -538,8 +553,8 @@ export function techniqueCeiling(
                   'carry them to and nothing for the sitting to accumulate. What is left is ' +
                   'not a book. It is what they understand.'
                 : 'This cultivator is practising no cultivation method at all. Sitting in a ' +
-                  'quiet room and breathing is not cultivation: without a road the qi has ' +
-                  'nowhere to go, so nothing accumulates and nothing ever will. ' +
+                  'quiet room and breathing is not cultivation: there is no road for the ' +
+                  'qi to take, so nothing accumulates and nothing ever will. ' +
                   `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
                   'What is missing is not years and not discipline. ' +
                   (holdsAnUnlearnedCopy

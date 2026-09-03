@@ -122,8 +122,8 @@ export interface EngineFacts {
      * adds nothing. What it defends against is OMISSION.
      *
      * The measurement that made it necessary: the engine files a
-     * `method_ceiling` event saying, in full, "without a manual there is no
-     * road for the qi to take, so nothing accumulates and nothing ever will."
+     * `method_ceiling` event saying, in full, "there is no road for the qi to
+     * take, so nothing accumulates and nothing ever will."
      * The model receives that whole sentence inside a long digest and drops it,
      * so a cultivator sits for fifty years gaining nothing and is never told
      * why. With the deterministic narrator it reaches the player on every seed.
