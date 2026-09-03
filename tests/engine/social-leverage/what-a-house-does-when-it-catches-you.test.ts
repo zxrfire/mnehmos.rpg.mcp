@@ -24,6 +24,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    AGAINST_THEIR_OWN,
+    ifCaughtAtSomethingTheHousePunishes,
+    isYourOwnHouseHoldingIt,
+    whatYourOwnHouseOpensAboutYou,
     bandAfterWorth,
     canTheyBeMadeToPayForActing,
     hasSomethingToLose,
@@ -379,5 +383,74 @@ describe('a reprisal is a deed, and the loop closes with no rule for it', () => 
         // The person it was done to holds a record about the house afterwards.
         expect(leaves.opens[0].holderId).toBe('them');
         expect(leaves.opens[0].subjectId).toBe('elder');
+    });
+});
+
+describe('a house catching one of its own', () => {
+    it('is the same switch ifCaughtPractising always ran', () => {
+        expect(ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true, alignment: 'demonic'
+        })).toBe('killed');
+        expect(ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true, alignment: 'righteous'
+        })).toBe('questioned_about_the_source');
+        expect(ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true, alignment: 'neutral'
+        })).toBe('priced');
+    });
+
+    it('punishes nothing the house has no claim on, whatever it thinks of you', () => {
+        expect(ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: false, alignment: 'demonic'
+        })).toBe('nothing');
+    });
+
+    it('does NOT let a demonic house shrug at what was done to one of its own', () => {
+        // The design owner: a demonic sect punishes you anyway, because you did
+        // it to one of theirs. Demonic is a position about who you may hurt
+        // OUTSIDE the house; it has never meant the house is lawless inside.
+        const demonic = ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true, alignment: 'demonic'
+        });
+        const righteous = ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true, alignment: 'righteous'
+        });
+        expect(demonic).toBe('killed');
+        // Less forgiving, not more.
+        expect(demonic).not.toBe(righteous);
+        expect(demonic).not.toBe('nothing');
+    });
+
+    it('opens the record with the house as holder and the member as subject', () => {
+        const row = whatYourOwnHouseOpensAboutYou({
+            houseId: 'sect-somewhere',
+            memberId: 'their-own-member',
+            cause: 'betrayal',
+            severity: 'unforgivable',
+            onDay: 40,
+            description: 'They arranged the death of somebody on this roll.',
+            doing: 'killed'
+        });
+        expect(row).not.toBeNull();
+        // The party with a claim on you is the party you serve.
+        expect(row!.holderId).toBe('sect-somewhere');
+        expect(row!.subjectId).toBe('their-own-member');
+        expect(isYourOwnHouseHoldingIt(row!)).toBe(true);
+    });
+
+    it('reads differently from an ordinary grudge at a glance', () => {
+        const own = whatYourOwnHouseOpensAboutYou({
+            houseId: 'sect-somewhere', memberId: 'them', cause: 'betrayal',
+            severity: 'grave', onDay: 1, description: 'x', doing: 'priced'
+        });
+        expect(own!.tags).toContain(AGAINST_THEIR_OWN);
+        expect(isYourOwnHouseHoldingIt({ tags: ['ordinary'] })).toBe(false);
+    });
+
+    it('opens nothing where the house has no claim - disapproval is not a record', () => {
+        expect(whatYourOwnHouseOpensAboutYou({
+            houseId: 'h', memberId: 'm', cause: 'betrayal', severity: 'grave',
+            onDay: 1, description: 'x', doing: 'nothing'
+        })).toBeNull();
     });
 });

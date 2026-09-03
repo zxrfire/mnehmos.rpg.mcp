@@ -101,6 +101,11 @@ import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
 import { getTechnique, TECHNIQUES } from '../../data/cultivation/techniques.js';
+import {
+    ifCaughtAtSomethingTheHousePunishes,
+    type IfCaught
+} from '../social-leverage/what-a-house-does-when-it-catches-you.js';
+import type { SectAlignment } from '../../schema/cultivation.js';
 import { SECTS } from '../../data/cultivation/sects.js';
 import type { SpiritRootKey } from '../../schema/cultivation.js';
 
@@ -1327,22 +1332,44 @@ export function unauthorisedPractice(
  * a rational choice from where they are standing, and it is why the demonic
  * arts stay in circulation no matter how many people are killed over them.
  */
-export type IfCaught = 'killed' | 'questioned_about_the_source' | 'priced' | 'nothing';
+/**
+ * Retained here because this is where every caller imports it from, and moved
+ * because the switch behind it turned out not to be about manuals at all.
+ */
+export type { IfCaught };
 
+/**
+ * What a house does about somebody practising an art off its shelf.
+ *
+ * THE SWITCH THIS FUNCTION USED TO CONTAIN NOW LIVES IN
+ * `social-leverage/what-a-house-does-when-it-catches-you.ts`, because it was
+ * never about manuals: it is what a house does about anything it punishes, and
+ * it was answering only one offence. What is left here is the half that IS
+ * about manuals - the property question - and it is unchanged.
+ *
+ * Same three answers, same alignment reading, same results for every input. A
+ * tenth thing a house punishes is now a second caller rather than a second
+ * table.
+ */
 export function ifCaughtPractising(
     techniqueId: string,
     ownerFactionId: string | null
 ): IfCaught {
     // The property question, not the market one. See `isCommonlyHeld`.
-    if (noHouseCanCallItTheirs(techniqueId)) return 'nothing';
-    if (!ownerFactionId) return 'nothing';
-    const owner = (SECTS as readonly { id: string; alignment?: string }[])
-        .find(s => s.id === ownerFactionId);
-    switch (owner?.alignment) {
-        case 'demonic': return 'killed';
-        case 'righteous': return 'questioned_about_the_source';
-        default: return 'priced';
-    }
+    const theirs = !noHouseCanCallItTheirs(techniqueId) && Boolean(ownerFactionId);
+    const owner = ownerFactionId
+        ? (SECTS as readonly { id: string; alignment?: string }[])
+            .find(s => s.id === ownerFactionId)
+        : undefined;
+    return ifCaughtAtSomethingTheHousePunishes({
+        theirsToPunish: theirs,
+        // A house the catalog does not carry is not a house that punishes, and
+        // an alignment it does not declare reads as the ordinary case, exactly
+        // as the `default` arm did before this moved.
+        alignment: theirs
+            ? ((owner?.alignment as SectAlignment | undefined) ?? 'neutral')
+            : null
+    });
 }
 
 /**

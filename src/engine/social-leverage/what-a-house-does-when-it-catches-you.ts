@@ -718,3 +718,115 @@ export function theComplaintYourHouseReceives(
         backing: 'none'
     };
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHEN THE PERSON CAUGHT IS ONE OF YOUR OWN
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a house does about somebody it has caught at something it punishes.
+ *
+ * ── THIS IS `ifCaughtPractising` GENERALISED, NOT A SECOND FUNCTION ──────
+ *
+ * `world/manuals.ts` has answered this since long before portfolios existed,
+ * scoped to exactly one offence - practising an art off somebody's shelf - and
+ * the answer was already the right shape: one switch on alignment turning into
+ * three genuinely different situations, with no branch on any faction's name.
+ * What was wrong with it was only its reach.
+ *
+ * So the switch is lifted here unchanged and the offence-specific half becomes
+ * a parameter. `ifCaughtPractising` now calls this and supplies the property
+ * question it always asked; anything else a house punishes supplies its own.
+ * **There is no second punishment table and there must not be one** - a tenth
+ * offence is a caller, not a case.
+ *
+ * The three readings, in the words `manuals.ts` wrote for them:
+ *
+ *   A DEMONIC HOUSE     may simply kill you. There is no process to fail and
+ *                       nobody to explain yourself to.
+ *   A RIGHTEOUS HOUSE   asks where you got it. There is a conversation, it has
+ *                       a right answer, and you may walk away having given up
+ *                       somebody else.
+ *   A NEUTRAL HOUSE     prices it. Which of a loss and a lever it becomes
+ *                       depends on what you are worth to them.
+ *
+ * `theirsToPunish` is the whole of the offence-specific half, and it is a
+ * PROPERTY question rather than a moral one: does this house have a claim on
+ * the thing at all. A house does not punish somebody for a thing that was never
+ * its business, whatever it thinks of them.
+ */
+export type IfCaught = 'killed' | 'questioned_about_the_source' | 'priced' | 'nothing';
+
+export function ifCaughtAtSomethingTheHousePunishes(input: {
+    /** Whether this house has any claim on what was done. */
+    theirsToPunish: boolean;
+    alignment: SectAlignment | null;
+}): IfCaught {
+    if (!input.theirsToPunish) return 'nothing';
+    switch (input.alignment) {
+        case 'demonic': return 'killed';
+        case 'righteous': return 'questioned_about_the_source';
+        case 'neutral': return 'priced';
+        // No house is no punisher. A wrong against nobody's claim is nobody's
+        // to answer, which is the same answer the property question gives.
+        default: return 'nothing';
+    }
+}
+
+/**
+ * The record a house opens about one of its OWN, as the offender.
+ *
+ * ── THE DIRECTION IS THE WHOLE OF THIS ───────────────────────────────────
+ *
+ * `what-a-deed-leaves.ts` already makes a house a holder - `holderId:
+ * subject.houseId` - but only in one direction: the house is aggrieved when its
+ * member is the VICTIM, and it takes their part. Nothing anywhere wrote the
+ * mirror, where the house holds a record about its member as the one who did
+ * it. Both are two strings and nothing guarded either.
+ *
+ * What makes it a different thing from an ordinary grudge is not the weight and
+ * not the cause. It is that **the party with a claim on you is the party you
+ * serve**, and a player has to be able to tell that at a glance - so the row
+ * carries `AGAINST_THEIR_OWN` and the holder is the house rather than a person.
+ * `theComplaintYourHouseReceives` above already says why it is worse: your own
+ * house is not deterred by your own house, there is nothing standing between it
+ * and you, and that is the whole of why a complaint beats a beating.
+ *
+ * Severity is the caller's, exactly as `grudges.ts` requires - it is decided
+ * once, by whoever knows what was done. Nothing is scored here.
+ */
+export const AGAINST_THEIR_OWN = 'against_their_own';
+
+export function whatYourOwnHouseOpensAboutYou(input: {
+    /** The house. It is the holder, which is the point. */
+    houseId: string;
+    /** Their own member, who did it. */
+    memberId: string;
+    cause: ObligationInput['cause'];
+    severity: Severity;
+    onDay: DayIndex;
+    description: string;
+    /** What the house would do about it, from the switch above. */
+    doing: IfCaught;
+    knownTo?: readonly string[];
+}): ObligationInput | null {
+    // A house with no claim opens nothing. Being disapproved of is not a record.
+    if (input.doing === 'nothing') return null;
+    return {
+        kind: 'grudge',
+        holderId: input.houseId,
+        subjectId: input.memberId,
+        cause: input.cause,
+        severity: input.severity,
+        onDay: input.onDay,
+        description: input.description,
+        participants: [input.houseId],
+        ...(input.knownTo === undefined ? {} : { knownTo: [...input.knownTo] }),
+        tags: [AGAINST_THEIR_OWN, `house_does:${input.doing}`]
+    };
+}
+
+/** Whether this row is a house holding something against somebody it houses. */
+export function isYourOwnHouseHoldingIt(record: { tags?: readonly string[] }): boolean {
+    return (record.tags ?? []).includes(AGAINST_THEIR_OWN);
+}
