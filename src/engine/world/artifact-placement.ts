@@ -23,11 +23,33 @@
  * an id: ledger rubble that costs storage and answers no question. The catalog
  * keeps all of them, because the ordering top to bottom is the argument; the
  * world seats the individuals.
+ *
+ * -- AND A HOLDER IS A PERSON, UNDER THE ID THE WORLD KNOWS THEM BY --------
+ *
+ * A catalog row names its holder with the catalog's own id for them, and the
+ * seeder instantiates a catalog person as `npc-` plus that id
+ * (`a-catalog-person-and-their-world-row.ts`). Until those two were joined,
+ * every artifact a PERSON holds was seated under a key no world row answers to,
+ * and `bestObjectHeldBy` in `gatherings.ts` - which compares `possessorId`
+ * against `npc.id` - returned null for everybody in the world. Measured at
+ * seeding, identical across seeds: of eighteen rated objects, zero were
+ * possessed by an `NpcRecord`, so the weapon slot in every fight the world
+ * simulation runs was empty and always had been.
+ *
+ * Which holders are people is the catalog's statement, not this file's. What
+ * this does is translate the ones that are, and leave everything else exactly
+ * where the catalog put it - so a house's vault stays a vault, an object lying
+ * in a ruin stays there, and the three rows held above the Lid keep a possessor
+ * nobody down here can reach, which is what
+ * `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT` requires. Those three are named in
+ * `named-figures.ts` rather than on anybody's roll, so they are not catalog
+ * people by this test and the rule excludes them without naming them.
  */
 
 import type { WorldState } from './world-state.js';
 import type { ObjectRecord } from './possessions.js';
 import { ARTIFACTS } from '../../data/cultivation/artifacts.js';
+import { isCatalogPerson, worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 
 /**
  * Put the artifact catalog into the world.
@@ -39,6 +61,9 @@ import { ARTIFACTS } from '../../data/cultivation/artifacts.js';
  * which is the correct answer and not a gap: `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT`
  * is a rule about the world, and quietly handing those three rows to a sect
  * because their owner is unreachable would break it.
+ *
+ * A holder the world DOES contain is translated to the id it contains them
+ * under. See the banner: that is a join, and the only one here.
  */
 export function seedArtifacts(state: WorldState): ObjectRecord[] {
     const factions = new Set(state.factions.map(f => f.id));
@@ -53,7 +78,13 @@ export function seedArtifacts(state: WorldState): ObjectRecord[] {
         const locationId = row.ownerId && factions.has(row.ownerId)
             ? seats.get(row.ownerId) ?? row.locationId
             : row.locationId;
-        out.push({ ...row, locationId, tags: [...row.tags, 'seeded'] });
+        // Ownership is not touched. Holding a thing and owning it are two
+        // facts (`docs/world/things/items.md`), and only the holder is a body
+        // that has to be findable in `state.npcs`.
+        const possessorId = row.possessorId !== null && isCatalogPerson(row.possessorId)
+            ? worldIdForCatalogPerson(row.possessorId)
+            : row.possessorId;
+        out.push({ ...row, possessorId, locationId, tags: [...row.tags, 'seeded'] });
     }
     return out;
 }

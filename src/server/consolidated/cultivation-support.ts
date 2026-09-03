@@ -552,19 +552,19 @@ export function addToPouch(
  * is documented as A SINGLE object priced as a second body of that rank, and
  * summing two of them would be inventing a rule the catalog does not have.
  *
- * ── WHAT READS THIS, AND WHAT DOES NOT ───────────────────────────────────
+ * ── WHAT READS THIS ──────────────────────────────────────────────────────
  *
- * `combatantFromCultivator` in `combat-manage.ts` is the one place the played
- * game prices the player for a fight, and at the time of writing it passes no
- * `artifactOrdinal` at all. Nor does anything else: `grep -rn artifactOrdinal
- * src/` finds the field's definition and its use inside `assessPower`, and no
- * producer anywhere - not for the player, and not for an NPC through
- * `gatherings.ts` either. So a rated object is currently worth nothing in a
- * confrontation to ANYBODY, which makes this the shape AGENTS.md records under
- * "a module nothing calls is not a feature" rather than the player-versus-NPC
- * one. It is stated here rather than left to be discovered, because an absence
- * nobody wrote down gets mistaken for a design decision, and
- * `admin_manage.grant_item` says the same thing in its own response.
+ * `combatantFromCultivator` in `combat-manage.ts`, which is the one place the
+ * played game prices the player for a fight. It goes into
+ * `CombatantInput.weapon`, and `assessPower` reads `weapon.power` as the rated
+ * ordinal when the caller states no explicit `artifactOrdinal` - so there is
+ * one statement of what an object is worth rather than two.
+ *
+ * THE WORLD'S HALF IS `bestObjectHeldBy` IN `gatherings.ts`, filling the same
+ * field off `state.objects`. Two readers because a player's holdings and an
+ * NPC's are written down in different tables; ONE resolver, because a player's
+ * blade and an NPC's blade must not be priced by different code. If a second
+ * price for either ever appears, the softer one will be the player's.
  */
 export function carriedArtifact(
     db: Database.Database,

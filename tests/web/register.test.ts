@@ -22,6 +22,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildRegister, renderRegisterHtml, type WorldRegister } from '../../src/web/register';
 import { ARTIFACTS, artifactsOwnedBy } from '../../src/data/cultivation/artifacts';
+import { MEMBERS } from '../../src/data/cultivation/members';
 import {
     APEX_INSTITUTIONS,
     COURTS,
@@ -176,15 +177,25 @@ describe('the artifact catalog', () => {
         for (const a of vaulted) expect(a.possessorId).toBe(a.ownerId);
     });
 
-    it('resolves a seat id to the seat that is carrying it', () => {
-        const seated = reg.artifacts.filter(a => a.possessorId?.startsWith('seat-'));
-        expect(seated.length).toBeGreaterThan(0);
-        for (const a of seated) {
-            expect(a.possessorName, `${a.id} left an unresolved seat id`).not.toBe(a.possessorId);
-            expect(a.possessorName).toMatch(/Seat$/);
-            expect(a.possessorOrdinal).toBeGreaterThan(0);
+    it('resolves a holder who is a person to the person carrying it', () => {
+        // A holder id is only ever the catalog's own id for a body, so a row
+        // whose holder is on the roll must come back as that person and never
+        // as the raw key. The four withdrawn Seats are the case that matters -
+        // they carry the strongest objects anybody down here can reach - and
+        // they are checked by NAME rather than by the shape of an id, because
+        // an id shape is what the register used to resolve against and it went
+        // on reading correctly while nothing in the world answered to it.
+        const onTheRoll = reg.artifacts.filter(
+            a => a.possessorId !== null && !a.inVault && MEMBERS.some(m => m.id === a.possessorId)
+        );
+        expect(onTheRoll.length).toBeGreaterThan(0);
+        for (const a of onTheRoll) {
+            const person = MEMBERS.find(m => m.id === a.possessorId)!;
+            expect(a.possessorName, `${a.id} left an unresolved holder id`).toBe(person.name);
+            expect(a.possessorOrdinal).toBe(person.realmOrdinal);
             expect(flat).toContain(a.possessorName);
         }
+        expect(onTheRoll.filter(a => /Seat$/.test(a.possessorName))).toHaveLength(4);
     });
 
     it('says so when an owner id does not resolve, instead of dropping the row', () => {

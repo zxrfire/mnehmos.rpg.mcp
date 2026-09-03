@@ -75,6 +75,7 @@ import { getAgentRuntime, buildAgentRuntime } from '../../agent/runtime/deps.js'
 import { invokeAgent } from '../../agent/runtime/invoke.js';
 import { ProviderFactory } from '../../agent/provider/factory.js';
 import {
+    carriedArtifact,
     currentAmbient,
     describeCultivator,
     ensureCultivationDb,
@@ -293,9 +294,28 @@ export function opponentRollIdentity(opponent: CombatantInput): string {
 /**
  * Build the engine's view of the acting cultivator from real persisted state.
  *
- * Nothing is invented here. Artifact grade is deliberately absent because this
- * engine has no artifact catalog yet, and the honest value for "what are they
- * carrying that helps" is zero rather than a guess.
+ * Nothing is invented here.
+ *
+ * ── WHAT THEY ARE CARRYING ───────────────────────────────────────────────
+ *
+ * The single rated object out of their own pouch, through `carriedArtifact`,
+ * which was written for this and had no caller. `assessPower` prices
+ * `weapon.power` as the rated ordinal when no explicit `artifactOrdinal` is
+ * given, so there is one statement of what the thing is worth and not two.
+ *
+ * This is the player's half of the same seam `bestObjectHeldBy` is the world's
+ * half of, and it must stay that way: an NPC's blade and a player's blade are
+ * priced by the same line in the same resolver, and a second answer for the
+ * player is the softening AGENTS.md forbids. What differs is only where the
+ * holding is written down - `state.objects` for the world, `cultivator_pouch`
+ * for the player - and neither of those is a claim on the other. A pouch row is
+ * not a claim on the world's register: the world can go on holding that a house
+ * owns a thing while the player carries it, which is what a stolen artifact IS
+ * (`docs/world/things/items.md`, "holding a thing and owning it are two facts").
+ * So nothing here writes ownership anywhere, and it must not start.
+ *
+ * A fight can end the object, which is the point of passing the identity rather
+ * than only the number: `resolveExchange` reports it by id in `brokenObjects`.
  */
 export function combatantFromCultivator(
     cultivator: Cultivator,
@@ -345,6 +365,7 @@ export function combatantFromCultivator(
         qi: cultivator.qi,
         maxQi: cultivator.maxQi,
         battlesSurvived: cultivator.battlesSurvived,
+        weapon: carriedArtifact(repos.db, cultivator.id),
         technique: art,
         techniqueMastery: known?.mastery ?? 0
     };
