@@ -1236,6 +1236,29 @@ export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
     /\bhow did (?:this|the)\b.*\b(?:end up|come to be|get like this|get this way|happen)\b/
 ];
 
+/**
+ * Asking who holds the ground somebody is standing on.
+ *
+ * One constant, because it is read twice: as the rule that routes the question,
+ * and as a veto in the asking branch - which requires a person and had been
+ * finding one inside "who holds this ground", so the commonest phrasing of all,
+ * "I ask who holds this ground", was put to whoever happened to be nearest and
+ * came back "a sentence with a hole in it".
+ *
+ * The known cost, and it is the one `GROUND_TIME_QUESTION` already accepts: a
+ * sentence that DOES name somebody - "I ask the elder who holds this ground" -
+ * is vetoed too, and answers the question rather than performing the social
+ * act. That is a better failure than the one it replaces, and narrowing it
+ * further needs `parseAsk` to be able to say whether it found a real person.
+ */
+export const WHO_ANSWERS_FOR_THIS_GROUND = new RegExp(
+    [
+        String.raw`\b(?:who (?:holds|owns|answers for)|whose)\b[^.?]*\b(?:this |the )?(?:ground|land|territory|patch)\b`,
+        String.raw`\bwho (?:is|'s) in charge (?:around |round )?(?:here|of this (?:ground|land|territory))\b`,
+        String.raw`\bwho (?:do|would|can|could) i (?:complain|report|appeal) to\b`
+    ].join('|')
+);
+
 /** Where such a question names a place rather than meaning the ground underfoot. */
 export const PLACE_HISTORY_SUBJECT =
     'happened to|happened at|became of|history of|story of|stories of|said about|said of';
@@ -3348,6 +3371,10 @@ function planIntent(input: string): PlannedAction {
     const asked = /\b(?:ask|asking|asks|enquire|inquire|put it to|question|press)\b/.test(text)
         && !GROUND_TIME_QUESTION.test(text)
         && !PUTTING_IT_INTO_THEIR_HANDS.test(text)
+        // "I ask who holds this ground" is a question about the ground, and
+        // `parseAsk` was finding a person inside it. See
+        // {@link WHO_ANSWERS_FOR_THIS_GROUND}.
+        && !WHO_ANSWERS_FOR_THIS_GROUND.test(text)
         ? parseAsk(input)
         : null;
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
@@ -4027,6 +4054,26 @@ function planIntent(input: string): PlannedAction {
     // standing read one command later happily names the head and their title.
     // Same shape as the curriculum question: reading a house is not being sent
     // to find one.
+    // ── who answers for this ground ──
+    //
+    // Ahead of the sect standing rule below, which took "who is in charge here"
+    // and answered about the PLAYER's own affiliation ("Unaffiliated. No
+    // stipend, no array, no elder"), because `here` is in that rule's noun
+    // list. Ahead of `destinations`, which took "who holds this ground" and
+    // answered with the province's realm ceiling. Both measured on a fresh run
+    // standing on The Blown Ground - the one province in the world where the
+    // answer is nobody, and where a run opens.
+    //
+    // Deliberately narrow, and the narrowness is the point. "who is in charge"
+    // needs `here` or the ground named after it, because "who is in charge of
+    // my sect" is a different question and this must not swallow it - and the
+    // ground nouns stop at `ground`, `land`, `territory` and `patch` rather
+    // than reaching `place`, because "who runs this place" is what somebody
+    // says about a shop, a stall or an inn.
+    if (WHO_ANSWERS_FOR_THIS_GROUND.test(text)) {
+        return { action: 'look', intent: 'holder' };
+    }
+
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
         && /\b(?:sect|house|clan|school|order|here|it|this|my|our)\b/.test(text)) {
         return { action: 'sect', intent: 'standing' };

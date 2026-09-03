@@ -21,6 +21,7 @@
 
 import { describe, it, expect } from 'vitest';
 
+import { parseIntent } from '../../src/web/actions';
 import { whoAnswersForThisGround } from '../../src/web/ground-holder-lines';
 import { makeLocation } from '../../src/engine/world/locations';
 
@@ -101,5 +102,55 @@ describe('who answers for this ground', () => {
         expect(read('held').structure).toMatch(/whoHoldsTheGround: held by /);
         expect(read('held').structure).toMatch(/Recourse taken_up/);
         expect(read('unrecorded').structure).toMatch(/Recourse the_record_does_not_say/);
+    });
+});
+
+/**
+ * And the sentence a person types reaches it.
+ *
+ * Measured on a fresh run standing on The Blown Ground, before this: five
+ * phrasings, five wrong answers. Two of them are the interesting ones and both
+ * were ORDERING rather than a missing pattern - "I ask ..." was swallowed by
+ * the asking branch, which requires a person and was finding one inside "who
+ * holds this ground"; "who is in charge here" was swallowed by the sect
+ * standing rule, whose noun list contains `here`.
+ */
+describe('asking who holds this ground', () => {
+    const routed = (line: string) => {
+        const action = parseIntent(line) as { action: string; intent?: string };
+        return `${action.action}${action.intent ? `/${action.intent}` : ''}`;
+    };
+
+    it('reaches the read from the ways a person would ask', () => {
+        for (const line of [
+            'I ask who holds this ground',
+            'who holds this ground',
+            'whose ground is this',
+            'whose land is this',
+            'who owns this land',
+            'who is in charge here',
+            'who do I complain to',
+            'who answers for this ground'
+        ]) {
+            expect(routed(line), line).toBe('look/holder');
+        }
+    });
+
+    /**
+     * AND IT TAKES NOTHING FROM THE VERBS NEXT DOOR.
+     *
+     * The ground nouns stop at `ground`, `land`, `territory` and `patch` and do
+     * not reach `place`, because "who runs this place" is what somebody says
+     * about a shop; and "who is in charge" needs `here` or the ground named
+     * after it, because "who is in charge of my sect" is a different question.
+     */
+    it('does not swallow the question about a house, a shop or a crowd', () => {
+        expect(routed('who is in charge of my sect')).toBe('sect/standing');
+        expect(routed('who leads this house')).toBe('sect/standing');
+        expect(routed('who runs this place')).toBe('sect/standing');
+        expect(routed('who is selling here')).toBe('market');
+        expect(routed('who else is here')).toBe('look/crowding');
+        // The asking branch still owns a question put to a named person.
+        expect(routed('I ask the elder about the manual')).not.toBe('look/holder');
     });
 });

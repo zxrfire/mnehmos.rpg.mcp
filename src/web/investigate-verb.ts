@@ -18,14 +18,13 @@
  * warning about the `private` keyword.
  */
 
-import { type KnowingStage, stageRank } from '../engine/social/discovery.js';
 import {
     whatALookAtSomebodyReaches
 } from '../engine/social/what-a-look-at-somebody-reaches.js';
 import { howTheGroundReads } from '../engine/world/what-a-place-still-has-in-the-ground.js';
-import { whatIsGoingOnHere } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { resolveAnything, worldLocationFor } from './entities.js';
+import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -147,57 +146,39 @@ export const investigateVerb = {
 
                 // ── AND WHETHER ANYTHING IS WRONG WITH IT ────────────────
                 //
-                // The area-status layer, reached. A famine, a shut pass, a war
-                // or a district worked out is a fact about a PLACE that the
-                // whole of `what-is-true-of-a-place-right-now.ts` models -
-                // price multipliers, stopped passage, danger, the signs, the
-                // cause - and nothing in `src/web` imported it, so a place
-                // where something was wrong said so nowhere and simply
-                // returned different numbers.
+                // The area-status layer, reached through the module that owns
+                // the read. `ground-status-lines.ts` IS this block, lifted out
+                // so that `look` and `investigate` cannot answer one question
+                // two ways - and it had sat there with no caller in `src/` ever
+                // since, while this file went on carrying the copy verbatim.
+                // Two readings of one layer disagree the day either changes,
+                // which is the whole reason that file exists.
                 //
-                // WHAT SOMEBODY MAY SAY ABOUT IT IS THEIR OWN STAGE, and the
-                // stage comes off the knowledge row they already hold for this
-                // place rather than from a second register. Capped at
-                // `encountered`: being in a thing gives you the signs, and the
-                // CAUSE is `known`, which has to be found out from somebody who
-                // has it. Walking into a famine does not tell you why.
-                const stageHere = this.knowledge.stageOf(cultivator.id, 'place', row.id);
-                // ── AND STANDING IN A THING IS ENCOUNTERING IT ───────────
+                // The stage rule is argued out over there and is not restated
+                // here: capped at `encountered`, because being in a thing gives
+                // you the signs and the CAUSE has to be got from somebody who
+                // has it; floored at `encountered`, because somebody looking at
+                // the ground under their own feet has been in it.
                 //
-                // The cap above was right and half of a rule. `encountered`
-                // is the ladder's own word for *they have been in it, so they
-                // have the signs*, and somebody looking at the ground under
-                // their own feet has been in it - so the stage is FLOORED
-                // there as well as capped there, for the place they are
-                // actually standing on.
-                //
-                // Without the floor the read was gated on a knowledge row
-                // nothing grants for standing still, so a player could walk
-                // into a famine, examine the province, and be told nothing was
-                // wrong - over a status that was stopping the food,
-                // quadrupling the prices and adding to the danger the whole
-                // time. What a status DOES has never depended on anybody
-                // knowing about it; what this fixes is the half that does.
-                //
-                // Only where they are. Asking after somewhere else is asking,
-                // and asking is what the ordinary ladder is for.
+                // `standingHere` stays a caller's fact on purpose. Asking after
+                // somewhere else is asking, and only this file knows which of
+                // the two the player did.
                 const standingHere = placeName(cultivator) === row.name
                     || this.worldPlaceOf(cultivator) === row.id;
-                const floored: KnowingStage = standingHere
-                    && stageRank(stageHere) < stageRank('encountered')
-                    ? 'encountered'
-                    : stageHere;
-                const capped: KnowingStage =
-                    stageRank(floored) > stageRank('encountered') ? 'encountered' : floored;
-                const wrong = whatIsGoingOnHere(
-                    this.atHand.statuses, this.atHand.locations, row.id, day, () => capped
-                ).flatMap(reading => reading.lines);
-                if (wrong.length > 0) {
-                    facts.lines.push(...wrong);
-                    facts.prose = `${facts.prose}\n\n${wrong.join(' ')}`;
+                const wrong = whatIsWrongWithThisGround({
+                    statuses: this.atHand.statuses,
+                    locations: this.atHand.locations,
+                    locationId: row.id,
+                    day,
+                    heldStage: this.knowledge.stageOf(cultivator.id, 'place', row.id),
+                    standingHere
+                });
+                if (wrong.lines.length > 0) {
+                    facts.lines.push(...wrong.lines);
+                    facts.prose = `${facts.prose}\n\n${wrong.lines.join(' ')}`;
                 }
                 facts.structure.push(
-                    `whatIsGoingOnHere: ${wrong.length} line(s) at stage ${capped} over `
+                    `whatIsGoingOnHere: ${wrong.lines.length} line(s) at stage ${wrong.stage} over `
                     + `${this.atHand.statuses.length} area status(es) in the world.`
                 );
             }

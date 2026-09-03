@@ -154,8 +154,14 @@ describe('the sum on the table reaches the odds', () => {
         // off` because "in a hundred" is deliberately the odds and nothing
         // else, and on the term's own name because the terms are named rather
         // than keyed.
+        //
+        // BOTH of the renderer's phrasings, which is what this missed. Long
+        // odds read "about one time in 8 (13 in a hundred)" and ordinary ones
+        // read "42 TIMES in a hundred", and only the first was covered - so the
+        // test passed for exactly as long as both arms happened to be long
+        // shots, and reported "no odds in:" the moment one was not.
         const odds = Number(
-            /comes off (?:about one time in \d+ \()?(\d+) in a hundred/
+            /comes off (?:about one time in \d+ \()?(\d+) (?:times )?in a hundred/
                 .exec(call!.summary)?.[1] ?? NaN
         );
         const purse = /Nothing came from[^.]*the money put down/.test(call!.summary)

@@ -126,7 +126,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`seal`](#seal) | `target` `intent` | varies | yes | - | [2](#seal) |
 | [`offer`](#offer) | `target` `intent` `topic` | varies | yes | - | [3](#offer) |
 | [`descend`](#descend) | `target` | time | yes | - | - |
-| [`look`](#look) | `intent` | nothing | yes | yes | [5](#look) |
+| [`look`](#look) | `intent` | nothing | yes | yes | [6](#look) |
 | [`status`](#status) | - | nothing | yes | yes | - |
 | [`assess`](#assess) | `target` | nothing | yes | yes | - |
 | [`recall`](#recall) | `target` `intent` | nothing | yes | yes | [2](#recall) |
@@ -501,13 +501,13 @@ Takes `target`.
 
 ### `look`
 
-observe the surroundings. Passes no time. "intent" narrows what is being looked at: "history" for what people say has happened HERE (not news, which is elsewhere), "ground_time" for how long this ground would take somebody, "crowding" for how many are already drawing on it, "bills" for what is posted on the wall, "company" for who else is standing here. Omit it for the plain read.
+observe the surroundings. Passes no time. "intent" narrows what is being looked at: "history" for what people say has happened HERE (not news, which is elsewhere), "ground_time" for how long this ground would take somebody, "crowding" for how many are already drawing on it, "bills" for what is posted on the wall, "company" for who else is standing here, "holder" for who holds this ground and what there is to complain to if you are wronged on it. Omit it for the plain read.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'look'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · passes no time.
 
 Takes `intent`.
 
-Intents: `history`, `ground_time`, `crowding`, `bills`, `company`.
+Intents: `history`, `ground_time`, `crowding`, `bills`, `company`, `holder`.
 
 ### `status`
 
