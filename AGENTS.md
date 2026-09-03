@@ -2131,3 +2131,36 @@ and several things fall out of it that are worth having:
 
 The general rule: **where the world already models who knows a thing, the consequence should
 fire when they learn it and not when it happened.**
+
+#### And there are three states, not two
+
+The middle one is where the content is:
+
+1. **Nothing known.** No account.
+2. **Something is wrong and nobody knows who.** The brother has not heard from him in two
+   years. **He holds a grudge with no subject on it** - a real, open account against an
+   unknown party, inferred from absence rather than from being told.
+3. **Told who.** The account attaches to a name.
+
+**An account can be open with no subject**, and that is the shape worth building: a wrong, a
+severity, a holder, and a party that may be `null`. Everything downstream already copes with a
+party it cannot reach; what is new is one it cannot name.
+
+Three things follow, and the third is why it is worth the trouble:
+
+- **A wrong with no witness still has a consequence.** Nobody informs the brother; he works it
+  out because the letters stopped, which the world can already notice, because it knows who is
+  dead and who has ties to whom.
+- **So silencing a witness buys time and a wrong name, not escape.** Killing the only person
+  who saw converts an attributed account into an unattributed one that hunts. That is a far
+  better bargain to offer somebody than getting away with it.
+- **And an unattributed account is a motive.** The holder acting on it is a person asking
+  questions, following a name, paying somebody who might know - so it derives their own
+  behaviour rather than sitting in a table.
+
+**It extends past killings**, and the rule rather than a list: a wrong can be held anonymously
+wherever the wronged party can tell that *something* happened without being able to tell who.
+A theft in the dark can; a betrayal cannot, because betrayal names its subject by definition.
+
+And it composes with the fidelity the news layer already carries, so the chain is **unknown ->
+suspected -> named**, and a wrong name can be held with complete conviction and acted on.
