@@ -1385,7 +1385,30 @@ function resolveTheAskerThemselves(
 const SELF_AS_A_SUBJECT = new RegExp(
     '^(?:the\\s+)?(?:'
     + 'me|myself|my\\s*self|self'
-    + '|my\\s+(?:'
+
+    // -- AND THE DEICTIC, WHICH IS HOW SOMEBODY POINTS AT THEMSELVES ------
+    //
+    // FOUND BY PLAYING, wounded, 25 of 50, with `I see a physician` in the
+    // live strip at that moment:
+    //
+    //   I need someone to look at this wound
+    //   -> "You go over Ninewatch, searching for the place the name implies,
+    //      but nothing here answers to it."
+    //
+    // It looked for a town called "this wound". The engine was holding that
+    // wound - the grade, the untreated status, the 25 of 50, and that a month
+    // under a physician closes it - and the resolver read the phrase as a
+    // proper noun to look up in the gazetteer.
+    //
+    // The pattern already had `wound`. It required the POSSESSIVE, so `my
+    // wound` answered with the body read and `this wound` fell through to
+    // the place refusal. Measured on one run, two lines apart.
+    //
+    // `this` and `these` only. A person can point at their own body and at
+    // nobody else's, which is what makes the deixis safe here - `that wound`
+    // and `the wound` are things you say about somebody else, and they stay
+    // exactly where they are.
+    + '|(?:my|this|these)\\s+(?:'
         + 'body|condition|state|health|standing|situation|sheet'
         + '|injur(?:y|ies)|wound|wounds|meridian|meridians|channels?'
         + '|cultivation|progress|realm|rank|rung|level'
