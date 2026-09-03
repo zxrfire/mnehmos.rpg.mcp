@@ -22537,6 +22537,32 @@ ${done.lines.join(' ')}`;
         const plan = whatFeedingThisStretchCosts(
             cultivator, this.rationsHeld(cultivator) + alsoAtTheCaveMouth, days
         );
+        // NOTHING TO BUY IS NOT NOTHING AFFORDABLE, AND THEY USED TO PRINT THE
+        // SAME SENTENCE.
+        //
+        // A cultivator from Deity Transformation up has stopped eating -
+        // `SATIETY_BURN_BY_REALM` is zero there and `burnSatiety` burns nothing
+        // - so there is no purchase to make and no clock to warn about. Priced
+        // flat, the same body was charged 730 stones for a year of rations it
+        // could not open, and when the purse was empty it was told the belly
+        // covered fifty days and then starvation began. Both were false: the
+        // measured run sat 1320 days at satiety 100 with the starvation counter
+        // never leaving zero, and was interrupted by wounds.
+        //
+        // Nothing comes off the pack and nothing comes out of the purse. What is
+        // carried stays carried, because the time skip will not eat it either.
+        if (plan.hungerHasStopped) {
+            return {
+                cultivator,
+                rations: 0,
+                covered: plan.covered,
+                line:
+                    'The pack is not opened and nothing is bought. At this rung the body has ' +
+                    'stopped taking meals, and the pantry is not what stands between you and ' +
+                    'the far end of this.'
+            };
+        }
+
         const { carried, toBuy, cost } = plan;
         const rations = carried + toBuy;
         // The unopened ones are already at the cave mouth and were never in the
