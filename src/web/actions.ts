@@ -3146,9 +3146,22 @@ export const NEWS_AND_RUMOUR =
  * people say about this place" is deliberately NOT here - that is the ground's
  * history and belongs to `look`, and the whole rule for widening a pattern is
  * to check the sentence next door has not been swallowed.
+ *
+ * -- "WHAT DO PEOPLE AROUND HERE TALK ABOUT" ------------------------------
+ *
+ * Typed in play, and the word `about` was read as somebody's NAME: *"'about'
+ * matched nobody: no knowledge record for that name and nobody standing here
+ * it could have meant"*, and the words were then put to whoever was nearest.
+ * It is the plainest way there is of asking this question and it reached a
+ * person who does not exist.
+ *
+ * The end-anchor below is the whole of the boundary the paragraph above draws.
+ * `talk about` with nothing after it is the general question; `talk about the
+ * ruins` names a topic and has to go on reaching the topic. So it matches only
+ * where the sentence stops there.
  */
 export const ASKING_AFTER_THE_WORLD =
-    /\b(?:what(?:'s| is) the (?:word|talk)|any word from|what have you heard|what do they say (?:out there|elsewhere|in the world)|ask(?:ing)? around for (?:news|word|talk)|gossip|hear anything|heard anything)\b/;
+    /\b(?:what(?:'s| is) the (?:word|talk)|any word from|what have you heard|what do they say (?:out there|elsewhere|in the world)|ask(?:ing)? around for (?:news|word|talk)|gossip|hear anything|heard anything|what (?:do|are) (?:people|they|folk|everyone|the locals)(?: around here| round here| here| in this place)? (?:talk|talking) about(?=\s*[?.!]*$))\b/;
 
 /**
  * The same question asked of the ground underfoot, which is a different verb.
