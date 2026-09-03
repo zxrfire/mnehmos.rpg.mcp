@@ -143,6 +143,44 @@ person happens to be - and it is damped by whatever tie the subject already hold
 the ruling is about a *stranger*. Somebody who has known you thirty years reads you the
 same in a market town and in a demonic house's forecourt.
 
+### And the same ground reads the other way for a threat
+
+<!-- tier: 2 trigger="somebody threatens somebody where there is nobody to complain to" -->
+
+The design owner, asked whether the sign should flip:
+
+> I agree, the more lawless somewhere is, the more credible the threat.
+
+**It is one property read two ways rather than two properties.** Recourse is the axis in
+both, and what changes is who it would protect. Trust asks *if this person lies to me, is
+there anybody who would make them pay?* - nobody, so their word is worth less. A threat asks
+*if this person does what they are promising, is there anybody who would make them pay?* -
+nobody, so the promise is worth more.
+
+So the worst ground in the world to be believed on is the best ground in the world to be
+threatened on, and both facts come from the same sentence: there is nobody to complain to.
+
+**What decides which reading applies is what is on the table, never the verb.** An attempt
+backed by force is a promise of harm; an attempt backed by coin, a name, a favour, a debt or
+the asker themselves is a claim to be believed. That is a field the engine already carries for
+every manoeuvre anybody in the world runs, so the rule is the same one for a player and for a
+stranger on a road.
+
+**And the threat reading is not the trust table with a minus sign in front of it.** Two places
+come out somewhere a mirror would not have put them:
+
+- **A demonic house's ground still deters a threat.** What that house declines to do is avenge
+  a member who was *outwitted*, and being outwitted is not what a threat is. It holds ground,
+  it keeps an address, and it is dangerous to cross - so for somebody weighing violence it is
+  much like any other house, and nothing like an empty province.
+- **Scarwater is worth less to a threatener than it costs a stranger.** The people who keep an
+  unheld ford working were never appointed to, but open violence on the road is precisely what
+  stops it working. They have more reason to move against a threat than to speak for somebody
+  they have never met.
+
+And ground the survey simply does not describe is worth nothing in either direction, because a
+missing record is not evidence about the world.
+
 **And a place having a bad year counts too** - a war, a beast tide, a famine, a district
 closed to gathering. This is the one place this document has been overruled: [checking costs
 time](#checking-costs-time-and-time-is-what-nobody-has) argues that pressure makes deception

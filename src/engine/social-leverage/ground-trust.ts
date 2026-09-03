@@ -1,5 +1,11 @@
 /**
- * What the ground under two people does to whether one believes the other.
+ * What the ground under two people does to whether one moves the other.
+ *
+ * **The subject is RECOURSE**, and the file is named for the half of it that
+ * came first. What a piece of ground supplies is the answer to *is there
+ * anybody here who would make somebody pay for this* - and that one fact is
+ * read twice, in opposite directions, depending on who it would protect. See
+ * WHETHER RECOURSE PROTECTS THE ASKER OR THE TARGET, below.
  *
  * The design owner's ruling, and the whole of why this file exists:
  *
@@ -105,8 +111,13 @@
  * ceiling in `an-attempt-to-move-somebody.ts` are untouched, so the answer
  * everywhere is still *yes, and here is what it costs*.
  *
+ * **And that holds in the other direction too.** Lawless ground makes a threat
+ * more credible; it never makes one certain, and it is worth the same 0.12 at
+ * most. `GROUND_MAX` is one number for both readings on purpose - the ground is
+ * a term whichever way it is read, and two caps would be two designs.
+ *
  * ═════════════════════════════════════════════════════════════════════════
- * IT IS ABOUT STRANGERS, AND SAYS SO IN THE ARITHMETIC
+ * THE TRUST READING IS ABOUT STRANGERS, AND SAYS SO IN THE ARITHMETIC
  * ═════════════════════════════════════════════════════════════════════════
  *
  * The ruling is about *the same stranger, saying the same thing*. Where the
@@ -116,6 +127,11 @@
  * house's forecourt. That falls out of one multiplication rather than out of a
  * rule about strangers, and it is what stops the ground from quietly becoming
  * a modifier on every relationship in the world.
+ *
+ * **The damper is trust's alone.** What makes a threat credible is what would
+ * happen to the person making it, and thirty years of acquaintance does not
+ * change that: a friend on ground nobody holds is exactly as unanswerable for
+ * as a stranger on it.
  *
  * ═════════════════════════════════════════════════════════════════════════
  * A PLACE THAT IS HAVING A BAD YEAR
@@ -144,6 +160,7 @@
 
 import type { WhoHoldsThisGround } from '../world/ground-holder.js';
 import type { AreaStatus } from '../world/what-is-true-of-a-place-right-now.js';
+import type { ApproachLeverage } from '../../schema/cultivation.js';
 import type { AskWeight } from './an-attempt-to-move-somebody.js';
 import { whenItIsDoneToOneOfOurs, type HouseResponse } from './what-a-house-will-do-about-it.js';
 
@@ -368,6 +385,95 @@ const RECOURSE: Readonly<Record<GroundRecourse, number>> = {
 };
 
 /**
+ * WHETHER RECOURSE PROTECTS THE ASKER OR THE TARGET.
+ *
+ * The design owner, asked whether the sign should flip for a threat:
+ *
+ *   > I agree, the more lawless somewhere is, the more credible the threat.
+ *
+ * **It is one property read two ways, not two properties.** Recourse is the
+ * axis in both cases, and what changes is who it protects:
+ *
+ *   TRUST     if this person lies to me, is there anybody who would make them
+ *             pay for it? Nobody, so their word is worth less.
+ *   A THREAT  if this person does what they are promising, is there anybody who
+ *             would make them pay for it? Nobody, so the promise is worth more.
+ *
+ * **It keys on the LEVERAGE and never on a verb**, which is what stops it being
+ * a special case for one action. `force` is the enum member that means *the
+ * credible ability to take it*, and it is the same field the world simulation
+ * fills for every manoeuvre any NPC runs - so this is one rule through one
+ * resolver, for the player and for everybody else. A verb added tomorrow that
+ * puts force on the table gets this with no code.
+ *
+ * ── AND IT IS NOT THE TRUST READING NEGATED ──────────────────────────────
+ *
+ * Each row is read for what it means to the TARGET, and two of them come out
+ * somewhere a mirror would not have put them.
+ *
+ * **The alignment distinction largely collapses.** `the_member_is_priced` is a
+ * ruling about a house that will not avenge a member who was *outwitted*, and
+ * being outwitted is not what a threat is - `what-a-house-will-do-about-it.ts`
+ * says in the same breath that a demonic house is "dangerous to belong to and
+ * not only to cross". A body that holds ground and can be crossed deters force
+ * about as well as any other body that holds ground, so it sits beside
+ * `collected` instead of near the floor. What matters to somebody weighing a
+ * threat is whether anybody holds this ground at all.
+ *
+ * **And Scarwater is not the mirror of Scarwater.** For trust it is -0.25,
+ * because a body under no obligation will not bother to vouch for a stranger.
+ * The same fact does not free a threatener by as much: the people who keep an
+ * unheld ford working were never appointed, but open violence on the road is
+ * precisely what stops it working, so they have MORE reason to move against a
+ * threat than to speak for a stranger. It is worth less to a threatener than it
+ * costs a stranger.
+ *
+ * `the_record_does_not_say` stays at zero in both directions, for the same
+ * reason in both: a missing row is not evidence either way.
+ */
+const RECOURSE_AGAINST_A_THREAT: Readonly<Record<GroundRecourse, number>> = {
+    // A house that treats a wrong done to one of its own as a wrong done to
+    // itself, and writes the name somewhere it will be read again. The most
+    // any ground deters.
+    taken_up: -1,
+    // An authority that records and does not act. A record can be produced at a
+    // bench later, which deters; it is not a pursuit.
+    collected: -0.25,
+    // A body that holds this ground and is dangerous to cross. Declining to
+    // avenge a member who was worked is a statement about deception, not about
+    // force. A hair more permissive than a court and no more.
+    the_member_is_priced: -0.2,
+    the_record_does_not_say: 0,
+    // Nobody's ground, and a bench several days off that is under no
+    // obligation - but people here with an interest in the place going on
+    // working, and violence is what stops it working. SMALLER than the 0.25 it
+    // costs a stranger, which is the asymmetry argued above: the un-appointed
+    // keepers of an unheld ford have more reason to move against a threat than
+    // to speak for somebody they do not know.
+    unheld_inside_a_province: 0.15,
+    // No house, no court, no register, no certified datum and no oath that
+    // binds. Nothing whatever happens to you, which is why this row stands well
+    // clear of the others rather than one step above them.
+    none: 1
+};
+
+/**
+ * Whether what is on the table is a promise of harm rather than a claim to be
+ * believed.
+ *
+ * `force` and nothing else, for now. **`secret` is the open question** and is
+ * deliberately left on the trust side rather than guessed at. Blackmail is a
+ * promise to speak, so lawless ground should make it more credible - and the
+ * counter-argument is real, because what a secret is worth is the damage
+ * disclosure does to standing, and on ground where nobody is on a register and
+ * everybody was refused at a gate somewhere there is less standing to damage.
+ * Those pull opposite ways and the owner has not been asked.
+ */
+function isAPromiseOfHarm(leverage: ApproachLeverage | undefined): boolean {
+    return leverage === 'force';
+}
+
+/**
  * How far the ground reaches into what is being asked.
  *
  * Read next to `PURSE_REACH` and `DISPOSITION_REACH`, which are the same kind
@@ -396,33 +502,55 @@ function clamp(n: number, lo: number, hi: number): number {
  * probe that cannot price the term without resolving an attempt cannot tell a
  * tuning problem from a bug.
  */
-export function groundTrustWeight(input: {
+export function groundWeight(input: {
     ground: TheGroundUnderYou | null | undefined;
     ask: AskWeight;
     /**
      * How strong the SUBJECT's existing view of the asker is, 0..1.
      *
-     * The damper. Somebody who already knows you does not need the town to
-     * tell them what to make of you.
+     * The damper, and it applies to TRUST only. Somebody who already knows you
+     * does not need the town to tell them what to make of you - but what makes
+     * a THREAT credible is what would happen to the person making it, and
+     * thirty years of acquaintance does not change that. A friend on ground
+     * nobody holds is exactly as unanswerable for as a stranger on it.
      */
     theirTieStrength?: number;
+    /**
+     * What the attempt is made with.
+     *
+     * The discriminator, and it is the leverage rather than the verb. See
+     * {@link RECOURSE_AGAINST_A_THREAT}.
+     */
+    leverage?: ApproachLeverage;
 }): number {
     if (!input.ground) return 0;
-    const stranger = 1 - clamp(input.theirTieStrength ?? 0, 0, 1);
+    const threat = isAPromiseOfHarm(input.leverage);
     const reach = GROUND_REACH[input.ask];
-    const recourse = RECOURSE[input.ground.recourse] * GROUND_MAX;
+    const stranger = threat ? 1 : 1 - clamp(input.theirTieStrength ?? 0, 0, 1);
+    const recourse = (threat ? RECOURSE_AGAINST_A_THREAT : RECOURSE)[input.ground.recourse]
+        * GROUND_MAX;
+    // A place having a bad year is not when anybody is at their most trusting,
+    // and it is not when anybody is at their most willing to be leaned on
+    // either. So it comes off what the ground is worth to the ASKER in both
+    // readings, which for a threat means it comes off a positive number.
     const duress = input.ground.underDuress ? -GROUND_UNDER_DURESS : 0;
-    return clamp(
+    const worth = clamp(
         (recourse + duress) * reach * stranger,
         -(GROUND_MAX + GROUND_UNDER_DURESS),
         GROUND_MAX
     );
+    // Normalised, because a damped term reaches negative zero and this number
+    // is printed: the mechanical channel would carry "-0 points" and a JSON
+    // payload would carry `-0`, both of which read as a defect.
+    return worth === 0 ? 0 : worth;
 }
+
 
 /** Exported so a probe can print the bars without restating them. */
 export const GROUND_CONSTANTS = Object.freeze({
     GROUND_MAX,
     GROUND_UNDER_DURESS,
     RECOURSE,
+    RECOURSE_AGAINST_A_THREAT,
     GROUND_REACH
 });

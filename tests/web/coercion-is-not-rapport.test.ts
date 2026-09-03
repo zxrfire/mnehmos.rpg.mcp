@@ -49,11 +49,16 @@ const ledgerAbout = (db: Database.Database, playerId: string): LedgerRow[] =>
  * hundred people every execution.
  *
  * AND THE SEEDS ARE CHOSEN SO THE ATTEMPT LANDS, which is worth saying out
- * loud because it is the weak part of this file. What is being measured is what
- * happens WHEN a wrong lands; the landing itself is scaffolding, and it is a
- * roll at roughly even odds - swept across six seeds it came out 34, 54, 56,
- * 65, 78 and 79 in a hundred. So these seeds are pinned to two that land with
- * room to spare rather than to two that happened to.
+ * loud because it is the weak part of this file. What is measured here is what
+ * happens WHEN a wrong lands; the landing itself is scaffolding and it is a
+ * roll. Swept across six seeds it ranged from 34 to 79 in a hundred, so these
+ * are pinned to seeds that land with room - 79 and 62 as this was written -
+ * rather than to seeds that happened to.
+ *
+ * The ground the run opens on varies by seed and is part of that spread, which
+ * is the other reason not to leave it to chance: these two verbs put FORCE on
+ * the table, and `ground-trust.ts` reads force the opposite way round from a
+ * request. Lawless ground makes a threat likelier to land, not less.
  *
  * It should be FORCED instead, and cannot be yet. `ADMIN <verb> <sentence>`
  * takes the whole remaining line as the target - "coerce I threaten the nearest

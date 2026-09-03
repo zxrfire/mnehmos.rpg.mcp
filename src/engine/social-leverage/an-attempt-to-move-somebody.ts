@@ -134,7 +134,7 @@ import type {
     Significance
 } from '../social/relationships.js';
 import type { DayIndex } from '../social/common.js';
-import { groundTrustWeight, type TheGroundUnderYou } from './ground-trust.js';
+import { groundWeight, type TheGroundUnderYou } from './ground-trust.js';
 import { openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -810,14 +810,25 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         purse: round4(purseWeight(input)),
         room: round4(room),
         disposition: round4(dispositionWeight(input)),
-        // WHERE THIS IS HAPPENING. Damped by the tie the subject already holds,
-        // because the ruling is about the same STRANGER saying the same thing:
-        // somebody who has known you thirty years reads you the same in a
-        // market town and in a demonic house's forecourt.
-        ground: round4(groundTrustWeight({
+        // WHERE THIS IS HAPPENING, and which way it is read.
+        //
+        // Damped by the tie the subject already holds, because the trust
+        // ruling is about the same STRANGER saying the same thing: somebody
+        // who has known you thirty years reads you the same in a market town
+        // and in a demonic house's forecourt.
+        //
+        // AND THE SIGN FLIPS WHERE THE LEVERAGE IS FORCE. The owner's ruling -
+        // "the more lawless somewhere is, the more credible the threat" - is
+        // the same property read from the other end: recourse protecting the
+        // asker's target, or protecting the threat's target. `leverage` is
+        // already what this resolver reads and `intent` is already what it
+        // never reads, so the discriminator costs nothing and no verb is named
+        // anywhere. See `RECOURSE_AGAINST_A_THREAT`.
+        ground: round4(groundWeight({
             ground: input.where ?? null,
             ask: input.ask,
-            theirTieStrength: input.theirTie?.active ? input.theirTie.strength : 0
+            theirTieStrength: input.theirTie?.active ? input.theirTie.strength : 0,
+            ...(input.approach?.leverage ? { leverage: input.approach.leverage } : {})
         }))
     };
 
