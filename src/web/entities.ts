@@ -57,6 +57,7 @@ import { PRICES, type Price } from '../data/cultivation/mortal-world.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
+import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
     readALineageOffAName,
@@ -72,6 +73,14 @@ export type EntityKind =
     | 'herb'
     | 'recipe'
     | 'place'
+    /**
+     * A ruin, a trial or a grave, resolved to its PRE-ENTRY FACE.
+     *
+     * Distinct from `place` because a site is not somewhere anybody lives
+     * and, today, is not anywhere at all - the catalog carries no locational
+     * field on either half of `SiteSchema`. See `resolveNameableSite`.
+     */
+    | 'site'
     /**
      * A thing in the world, resolved off its own row.
      *
@@ -1390,6 +1399,18 @@ export function resolveAnything(
         resolveTheAskerThemselves(query, self) ??
         resolveCultivator(repos, query, self.id, scope, self.realmOrdinal) ??
         resolveSect(repos, query, scope, self.sectId) ??
+        // AHEAD OF THE ORDINARY PLACE, and that ordering is the fix rather
+        // than a preference. Measured: `tell me about The Tended Tomb` with
+        // this branch behind `resolveKnownPlace` came back *"The Tended Tomb,
+        // which is a name and a road and not much else that anyone here can
+        // tell you"* - the generic place fallback, about a grave whose marker
+        // the engine can read out in full.
+        //
+        // It steals nothing, because `nameableSites` can only ever return the
+        // authored sites: no settlement, province or road is in that set, so a
+        // place keeps its own name in every case where it has one. What this
+        // wins is exactly the names where a site is the more specific answer.
+        resolveNameableSite(query, scope) ??
         resolveKnownPlace(query, self, scope) ??
         resolveTechnique(repos, query, self.id) ??
         // After the person, so a bare name is still a person, and after the
@@ -1401,6 +1422,82 @@ export function resolveAnything(
         resolvePill(query) ??
         resolveHerb(query)
     );
+}
+
+/**
+ * A ruin, a trial or a grave the holder could put a name to.
+ *
+ * ── THE DEFECT THIS EXISTS FOR ───────────────────────────────────────────
+ *
+ * The suggestion strip offers `I go into <site>`, and typing **"what is <that
+ * site>?"** came back *"Nothing here answers to it. Unresolved subject: no
+ * knowledge record and nothing co-located."* **The strip offered a thing the
+ * inspect path denied existed**, and the refusal then listed six things it
+ * could see, all of them people and houses.
+ *
+ * `resolveAnything` walked asker, cultivator, sect, known place, technique,
+ * object, recipe, pill, herb. No site, ever.
+ *
+ * ── THE ACTUAL BUG IS THE TWO GATES, NOT THE MISSING BRANCH ──────────────
+ *
+ * `go into` resolves through `siteMeant`, which filters on `nameableSites` and
+ * the awareness record. `what is` resolved through a chain that could not see a
+ * site at all. Two surfaces answering the same noun from different gates can
+ * disagree, and did. So this calls the SAME `nameableSites` with the SAME
+ * awareness predicate and hands the query to the SAME `resolveSite` matcher -
+ * which scores on the display name and on the id slug, because "the eighth
+ * stone" is the whole of `trial-the-eighth-stone` and none of "The Chamber Under
+ * the Eighth Stone". Sharing all three makes the two verbs agree by
+ * construction rather than by both being written correctly.
+ *
+ * ── AND IT STOPS AT THE THRESHOLD ────────────────────────────────────────
+ *
+ * `faceOf` returns a type with no `interior` key, so the compiler refuses the
+ * leak before a test has to catch it. What comes back is the marker, and the
+ * rumour and the attribution where awareness permits them - the same pre-entry
+ * face the `site` verb shows, at the same awareness. Asking what a place is has
+ * never been the same act as going into it, and this does not make it one.
+ */
+export function resolveNameableSite(
+    query: string,
+    scope?: KnowledgeScope
+): ResolvedEntity | null {
+    const wanted = query.trim();
+    if (wanted.length < 3 || !scope) return null;
+
+    const permitted = nameableSites(
+        siteId => scope.gate.isAwareOf(scope.holderId, 'place', siteId)
+    );
+    const site = resolveSite(wanted, permitted);
+    if (!site) return null;
+
+    const view = faceOf(site, awarenessOfSite(
+        site, scope.gate.isAwareOf(scope.holderId, 'place', site.id)
+    ));
+    // `nameableSites` has already required a nameable awareness, so a view that
+    // does not come back is a catalog that changed under us rather than a
+    // reading. Answering null is right either way: nothing to say is nothing.
+    if (!view) return null;
+
+    const facts = [view.outside.marker];
+    if (view.outside.rumour) facts.push(view.outside.rumour);
+    if (view.outside.attributedTo) facts.push(`It is put down to ${view.outside.attributedTo}.`);
+    facts.push(
+        'That is what it looks like from outside. Going in is a different sentence.'
+    );
+
+    return {
+        kind: 'site',
+        id: site.id,
+        name: view.name ?? (site.kind === 'grave' ? 'A grave nobody has attributed' : 'An unattributed site'),
+        facts,
+        structure: [
+            `${site.id}: a ${site.kind}, ${site.character} at ${site.scale}, origin ${site.origin}. `
+            + `Resolved through nameableSites and resolveSite - the same gate and the same matcher `
+            + `\`site\` uses, so the two cannot disagree about what exists.`,
+            'Pre-entry face only. `faceOf` returns a type with no interior key.'
+        ]
+    };
 }
 
 /**
@@ -1483,13 +1580,39 @@ export function nearbyNames(
             .map(row => row.name)
         : [];
 
+    // ── AND THE GROUND, WHICH THIS COULD NEVER MENTION ───────────────
+    //
+    // The awareness filter above admits `cultivator` and `sect` and nothing
+    // else, so a refusal listing what the player could have meant printed six
+    // people and houses however many ruins and graves they could name. That
+    // read as *the parser only knows people*, and it was the line an agent used
+    // to conclude that `resolveAnything` could not see a site - correctly, at
+    // the time, and it would have gone on saying so after the branch landed.
+    //
+    // The same gate the resolver uses, so the two say the same thing.
+    const sites = scope
+        ? nameableSites(id => scope.gate.isAwareOf(scope.holderId, 'place', id))
+            .map(site => site.name)
+        : [];
+
+    // ROUND-ROBIN ACROSS THE THREE GROUPS rather than in order.
+    // Concatenated, people fill the whole allowance every time and the ground
+    // is never reached - which is the defect above with an extra step in it.
+    const groups = [colocated, heardOf, sites];
     const seen = new Set<string>();
     const out: string[] = [];
-    for (const name of [...colocated, ...heardOf]) {
-        if (seen.has(name)) continue;
-        seen.add(name);
-        out.push(name);
-        if (out.length >= limit) break;
+    for (let i = 0; out.length < limit; i++) {
+        let tookAny = false;
+        for (const group of groups) {
+            if (i >= group.length) continue;
+            tookAny = true;
+            const name = group[i];
+            if (seen.has(name)) continue;
+            seen.add(name);
+            out.push(name);
+            if (out.length >= limit) break;
+        }
+        if (!tookAny) break;
     }
     return out;
 }
