@@ -459,6 +459,25 @@ in the room, somebody with no office and many disciples can outweigh somebody wi
 room and none. It is strictly the worse seat, since an office-holder takes disciples too, and
 it is still enough to matter.
 
+**And a scarce office is a motive.** A room somebody else holds, who is not dying soon, is a
+problem with an obvious and terrible solution. Arranging that a seat comes open is a thing
+people in this world do, and demonic houses do it more readily because they have fewer
+inhibitions about who they are willing to hurt.
+
+**But a demonic house punishes you for it anyway, and possibly harder.** Not despite being
+demonic - **because you did it to one of their own.** Demonic is a position about who a house
+is willing to hurt *outside* itself. It has never meant a house is lawless *inside* itself: a
+member who kills another member has attacked the body they belong to, and every house alive
+punishes that. `ifCaughtPractising`'s alignment switch is the shape - a demonic house
+returning `killed` where a righteous one returns `questioned` is that switch answering the
+same question about a different house, and the demonic answer is the harsher one.
+
+**"If they find out" is the whole of it.** The crime is not automatically detected. A wrong
+nobody can attribute opens an account with no name on it; a wrong with a witness opens one with
+a name. So the risk is not a die roll on punishment - it is whether what you did reaches the
+people who would act on it, which is the same knowledge layer everything else in this world
+runs through.
+
 **The narrowing runs the whole way up, and the top of it is a person rather than a rung.**
 Five inner disciples worth watching; three of them reach conclave; and of those, **one - or all
 three, depending on the patriarch - become personal disciples.** How many is the head's choice
