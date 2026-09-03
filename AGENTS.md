@@ -2102,8 +2102,20 @@ calendar.
 
 **The author is usually the player and does not have to be.** Being robbed is not a decision;
 what makes it legitimate is that somebody did it, at a time, in a place, and the game can say
-who. So being idle is not a shield - it is the absence of an act of your own, and other people
+who. **Sitting still keeps you from giving anybody a reason. It does not keep anybody from
+having one.** Idle is not a shield - it is the absence of an act of your own, and other people
 still act.
+
+Measured, and it is more true than it looks: encounters are already rolled on the same
+absolute-day grid a time skip runs on, and the mortal-work path already passes
+`randomEvents: true`. **A labourer working four years is already meeting people.** What has
+never happened is the meeting costing anything unless the player elected to fight it.
+
+The far end of that range is what makes it worth having. A purse taken on the road is one
+thing; a demonic cultivator taking somebody's core and leaving them to start again is the same
+sentence with everything at stake - **an author, a motive, and a loss that is not death.** It
+is also exactly what this world's catalog already says demonic means, which is *who pays, and
+did they agree* rather than cruelty or power.
 
 Measured, on the operator surface, before this was written down: a body doing **nothing** ran
 the wound-to-deviation cascade to its end and died inside a decade, whatever it paid for food,
