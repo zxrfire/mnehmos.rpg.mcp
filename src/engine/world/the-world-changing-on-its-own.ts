@@ -161,7 +161,11 @@ import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
-import { whatAWarBreaks } from './war-breakage.js';
+import {
+    fightTheWarsThisYear,
+    highestRankAlive,
+    whatAHouseCanPutOut
+} from './war-melee.js';
 import {
     postingFor,
     reasonsOpenTo,
@@ -270,14 +274,19 @@ export type PressureKind =
     | 'war_opened'
     | 'war_settled'
     /**
-     * A war reached something one of the sides owned.
+     * A year of a war was fought, and the resolver said what happened.
      *
-     * Not in TEMPLATES, for the same reason `gathering` is not: what a war
-     * costs a house physically is a property of the war rather than of how
-     * eventful the year happened to be. `war-breakage.ts` owns all of it, and
+     * Not in TEMPLATES, for the same reason `gathering` is not: whether two
+     * houses at war met this year is a property of the war rather than of how
+     * eventful the year happened to be. `war-melee.ts` owns all of it - a war
+     * is `resolveMelee` over the parties the two sides put in the field, and
      * this module only calls it on the same yearly line the settlement runs on.
+     *
+     * It replaces `thing_broken`, which was a raid party standing in for a
+     * fight nobody was simulating. Things still break in a war; they break in
+     * the fighting now, off the melee's own strike record.
      */
-    | 'thing_broken'
+    | 'war_fought'
     /**
      * A war ended and the losing side's hold changed hands.
      *
@@ -446,28 +455,30 @@ export function applyPressure(
         // span, so mortal stock could not fall by any actor and a thousand
         // world-years produced no worked-out band anywhere.
         applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
-        // And what a war did to the things the two sides own, on its own
-        // seeded stream so no existing draw anywhere moves. BEFORE the
-        // settlement, so a war ending this year still had this year - and it
-        // is the only pass anywhere that costs a house something physical for
-        // being at war. See `war-breakage.ts`, which does the whole of it and
-        // is deliberately ignorant of what any of the things are.
-        const war = whatAWarBreaks(
+        // And the wars themselves, fought. A war is a group fight between the
+        // parties the two houses put in the field, and `war-melee.ts` is the
+        // whole of it: it decides nothing and only puts the two rosters in
+        // front of `resolveMelee`. On its own seeded stream so no existing draw
+        // anywhere moves.
+        //
+        // BEFORE the settlement, so a war ending this year still had this year,
+        // and the settlement reads the rosters this year's fighting left.
+        const war = fightTheWarsThisYear(
             state,
             withinSpan(year * 365 + 61, fromDay, toDay),
-            forStream(state.seed, 'war-breakage', year)
+            forStream(state.seed, 'war-melee', year)
         );
-        for (const lost of war.broken) {
+        for (const engagement of war.fought) {
             events.push({
-                kind: 'thing_broken',
-                onDay: lost.fact.day,
-                fact: lost.fact,
+                kind: 'war_fought',
+                onDay: engagement.fact.day,
+                fact: engagement.fact,
                 touched: {
-                    factions: [lost.ownerId, lost.breakerHouseId],
-                    locations: lost.fact.locationId ? [lost.fact.locationId] : [],
-                    npcs: [lost.breakerId]
+                    factions: [engagement.aId, engagement.bId],
+                    locations: engagement.fact.locationId ? [engagement.fact.locationId] : [],
+                    npcs: engagement.fact.actors.map(a => a.id)
                 },
-                deaths: []
+                deaths: engagement.deaths
             });
         }
         // And what the ENDING of one did, which is where a house's things
@@ -475,7 +486,7 @@ export function applyPressure(
         // war*, so the fighting breaks the few things somebody carried out and
         // the settlement moves everything that stayed in the hold. One event
         // per settlement, never per object.
-        for (const settled of war.spoils) {
+        for (const settled of war.settled) {
             events.push({
                 kind: 'spoils_taken',
                 onDay: settled.fact.day,
@@ -4205,7 +4216,30 @@ const TEMPLATES: Template[] = [
                 chance: 1,
                 fired: false,
                 firedOnDay: null,
-                data: { kind: 'war_resolution', sideA: a.id, sideB: b.id, magnitude: 0.7, openedOnDay: day }
+                // THE BASELINE, AND WHY IT IS STORED RATHER THAN DERIVED.
+                // How badly a house is losing is what it can put out now
+                // against what it could put out on the day the fighting
+                // started, and that second figure stops being recoverable the
+                // moment somebody dies. It is a fact about ONE DAY, so it
+                // cannot go stale - which is the case where storing is right
+                // and deriving is impossible. Everything computed from it is
+                // derived on demand: see `howAHouseIsFaring` in `war-melee.ts`.
+                //
+                // `led` is the highest rank either house had anybody standing
+                // at. A house whose war takes everybody it was led by has
+                // living members and nobody to hold them, which is the one
+                // input `war-spoils.ts`'s third fate was waiting for.
+                data: {
+                    kind: 'war_resolution',
+                    sideA: a.id,
+                    sideB: b.id,
+                    magnitude: 0.7,
+                    openedOnDay: day,
+                    musteredA: whatAHouseCanPutOut(state, a.id).summed,
+                    musteredB: whatAHouseCanPutOut(state, b.id).summed,
+                    ledA: highestRankAlive(state, a.id),
+                    ledB: highestRankAlive(state, b.id)
+                }
             };
             state.schedule.push(effect);
 

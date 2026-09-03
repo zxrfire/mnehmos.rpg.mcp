@@ -1849,13 +1849,22 @@ sheltering.ts    what being inside something is worth, and it is not a bonus.
                  about `how-far-gone-a-formation-is.ts`, which prices somebody
                  WORKING AT a door over time; this is force put through a thing
                  now, and the two answer different acts
-war-breakage.ts  the live caller: what a war between two houses does to the
-                 things they own. Draws by one predicate that names no kind -
-                 the house owns it, it is rated, and somebody carried it out of
-                 the gate - and puts every loss on the record through
-                 `aDeedEntersTheWorld`, priced against what the owner had. Also
-                 where a war's SETTLEMENT is handled, which is where the things
-                 actually move
+war-melee.ts     the live caller: a war between two houses, which is a group
+                 fight and nothing else. Ruled by the design owner - *this can
+                 be easily simulated as a group fight, not bespoke* - so it
+                 designs nothing: it draws the party each side put in the field
+                 (`HANDS_IN_THE_FIELD`, drawn and not chosen), hands both to
+                 `resolveMelee`, and writes back the wounds, the dead and the
+                 objects that came apart. Breakages come off
+                 `MeleeResult.exchanges` and nowhere else, which is why
+                 `war-breakage.ts` was deleted rather than left running beside
+                 it - a war with both broke a house's things twice a year by two
+                 routes. What it EXPOSES is `howAHouseIsFaring`: `losing`, a
+                 quantity from -1 to 1 that moves every year the war runs,
+                 measured against what the house could put out on the day the
+                 war opened rather than against the other side's size. Three
+                 queued features read it - the guest-disciple economy, a losing
+                 house grabbing its vault, and the sealed compounds that leaves
 war-spoils.ts    and what the ending does, which is mostly to change hands.
                  *Typically left as spoils of war*: a settlement moves the
                  loser's whole hold through `transferPossession` with the war in
@@ -1863,14 +1872,13 @@ war-spoils.ts    and what the ending does, which is mostly to change hands.
                  five hundred years: 312 single-use materials before, 312 after,
                  none ruined - wars redistribute the scarcest things in the
                  world rather than consuming them. The third fate, a house that
-                 grabs its vault and disbands, is built and has no producer:
-                 whether a body breaks up is a reading over who is left standing
-                 after a war, and a war is `resolveMelee` entered with a roster
-                 on each side, which lists the survivors by name. There is
-                 deliberately no `willFlee` field and no stored loser. NOTE that
-                 the day a war is a melee, `war-breakage.ts` is a second way
-                 things break in one and has to go; this file is about the
-                 settlement and is not a fight
+                 grabs its vault and disbands, now has a producer:
+                 `HowAHouseIsFaring.ledStill` in `war-melee.ts` is false when
+                 the war took everybody the house was led by, which is a body
+                 with living members and nobody to hold them. There is
+                 deliberately no `willFlee` field and no stored loser, and
+                 `holdsTogether` stays a boolean - this file has no business
+                 knowing how the answer was reached
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
                  what a surname is worth against a house's roll. Corroboration

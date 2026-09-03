@@ -15,8 +15,7 @@ import {
     settleTheSpoils,
     takenAsSpoils,
     whatABreachedVaultTakesWithIt,
-    whatIsLeftInTheHold,
-    whoLost
+    whatIsLeftInTheHold
 } from '../../../src/engine/world/war-spoils.js';
 import { isRuined, makeObject, type ObjectRecord } from '../../../src/engine/world/possessions.js';
 import { isInert } from '../../../src/engine/world/object-damage.js';
@@ -211,24 +210,21 @@ describe('what is in a vault is behind the vault', () => {
     });
 });
 
-describe('which side lost', () => {
-    it('is what each could put out - the strongest, never an average', () => {
-        const state = twoHouses();
-        const sides = whoLost(state, state.factions[0], state.factions[1]);
-        expect(sides?.loser.id).toBe('loser');
-        expect(sides?.winner.id).toBe('winner');
-    });
-
-    it('two houses that could put the same thing out have settled nothing', () => {
-        const state = twoHouses();
-        state.npcs[0] = { ...state.npcs[0], cultivation: { realmOrdinal: 22 } } as never;
-        state.npcs.push({
-            id: 'npc-w2', name: 'A second', status: 'alive', factionId: 'winner',
-            cultivation: { realmOrdinal: 8 }
-        } as never);
-        expect(whoLost(state, state.factions[0], state.factions[1])).toBeNull();
-    });
-
+/**
+ * WHICH SIDE LOST IS NOT ASKED HERE ANY MORE, AND THAT IS THE POINT.
+ *
+ * Two tests used to pin an interim reading in this file - the highest rung
+ * standing under each banner, tie-broken on headcount - written before a war was
+ * anything. The design owner ruled that a war *can be easily simulated as a
+ * group fight, not bespoke*, so the answer is now the accumulation of the
+ * melees a war is made of, and it lives with them in `war-melee.ts`. The two
+ * assertions moved with it: see `war-melee.test.ts`, "moves the hold of the side
+ * the war cost more" and "a war that cost both sides the same moves nothing".
+ *
+ * They were deleted rather than kept as a second opinion, which is what the
+ * function's own header asked for. What stays here is the half this file owns.
+ */
+describe('whether a losing house has anybody left at all', () => {
     it('a house with nobody alive in it does not hold together', () => {
         const state = twoHouses({ loserHasPeople: false });
         expect(holdsTogetherAsFarAsAnybodyKnows(state, 'loser')).toBe(false);
