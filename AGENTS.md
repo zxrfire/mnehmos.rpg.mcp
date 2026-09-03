@@ -1675,12 +1675,23 @@ Several agents work in this tree at once and it is dirty almost all the time.
 - **`git commit` with no pathspec commits the WHOLE INDEX**, including files another agent has
   already staged. `git add` of your own paths does not protect you. Stage explicit paths and
   check `git status --short` before committing.
-- **`git commit -- <your paths>` is the protection, and it is the habit to have.** It takes
-  those paths and nothing else, whatever else is sitting in the index. Checking the index and
-  then running a bare commit is not enough on its own: chaining the check into the same command
-  as the commit means you read the file list *after* the commit was composed, which is how two
-  of somebody else's files landed under a message about duration parsing in this session. Name
-  the paths on the commit, or check in a separate call first and then commit.
+- **`git commit -- <your paths>` is not the protection either, and believing it was cost
+  twenty minutes of a branch that did not build.** A pathspec limits *which paths* go in - and
+  then commits the **working tree** at those paths, index and all, including another agent's
+  unstaged edits to the same file. Measured: an agent mid-refactor of `game.ts` had their
+  half-finished extraction committed under somebody else's message, and because the new module
+  was still untracked, the branch imported a file that did not exist in it.
+
+  **So neither form is safe on its own, and the only thing that is safe is looking.** Before you
+  commit, run `git status --short` **in a call of its own** and read it. If a path you are about
+  to commit is dirty with somebody else's work, stop - do not commit it, tell them. Chaining the
+  check into the same command as the commit is not checking: it prints the file list *after* the
+  commit has been composed, which is how two of somebody else's files landed under a message
+  about duration parsing in this session.
+
+  Where you must take your own hunks out of a file somebody else is live in, build the blob
+  deliberately - reverse-apply their hunks to a copy that compiles, stage that, and verify with
+  `git diff --cached` before committing.
 - **Never `git apply --cached --unidiff-zero`** to stage a partial hunk selection. With zero
   context git applies by line number and verifies nothing, so dropping hunks invalidates the
   offsets of the rest. That committed syntactically invalid TypeScript that took three commits
