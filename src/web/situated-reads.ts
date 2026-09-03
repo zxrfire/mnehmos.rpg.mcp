@@ -1576,10 +1576,31 @@ export const situatedReads = {
         const standing =
             `${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}. `
             + 'What is live for you here:';
+
+        // ── THE STATE GOES ON `lines`, NOT ONLY ON `structure` ───────────
+        //
+        // Phase 3 is shown `lines` and never `structure`, so a state summary
+        // that lives only on the mechanical channel describes a player the
+        // narrator cannot see. Asked to write "you stand there", a model then
+        // has no figure for the purse except the one in the player's own
+        // sentence - and that sentence is a CLAIM, which a player who is
+        // describing themselves from memory will get wrong.
+        //
+        // The same three numbers as the structure line below, in the register
+        // `lines` speaks. One sentence rather than a column: what the dump rule
+        // forbids is a paragraph of figures, not the figures.
+        const theirState =
+            `On them: ${here.spiritStones} spirit stone${here.spiritStones === 1 ? '' : 's'}, `
+            + `satiety ${here.satiety} of 100`
+            + (here.treatableWounds > 0
+                ? `, and ${here.treatableWounds} wound${here.treatableWounds === 1 ? '' : 's'} a `
+                  + 'physician could still close'
+                : ', and nothing a physician would need to close')
+            + '.';
         const facts = factsForToolResult(
             `${placeName(cultivator)} at ${rankName(cultivator.realmOrdinal)}: `
             + `${live.length} thing(s) live.`,
-            [standing, ...linesFor(live)],
+            [standing, theirState, ...linesFor(live)],
             // The closing line is not decoration. It is the difference between
             // a prompt and a menu, and a player who reads this as the list of
             // accepted commands has learned the wrong game.
