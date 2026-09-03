@@ -1289,3 +1289,416 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      */
     'work'
 ] as const;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AND THE OTHER AXIS: WHETHER IT CAN HURT YOU
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// THE GAP THIS CLOSES, MEASURED. The web layer's suggestion strip was swept
+// across three pinned worlds and 102 squares and every square scored 1.000 on
+// `costsTheAskerNothing`: city 12/12, market_town 15/15, village 9/9,
+// site 42/42. A cut flat at the ceiling carries no information, and the reason
+// is the instrument rather than the world. **Costly in this file has always
+// meant SPENDS - a turn, a day, or the purse. It has never meant CAN HURT
+// YOU.** `I buy a Lesser Qi-Gathering Manual` scores costly. So does
+// `I travel to Mudsummer`. The design owner's complaint that started it -
+// everything reads as safe - is about harm, and until now nothing in `src/`
+// split safe from dangerous at all.
+//
+// THE CLASSIFICATION WAS ALREADY HERE, WEARING THE COST LIST'S CLOTHES. Read
+// {@link TIME_CONSUMING_ACTIONS} again: its own first line is "Actions that
+// spend in-world time, AND CAN THEREFORE KILL", and five of its members are on
+// it for the second half alone, each saying so in its own comment -
+//
+//   attack         "Not because it spends days. Because it can end the run
+//                  inside one turn, which is the thing this list is actually
+//                  protecting against."
+//   coerce         the same resolver, the same wounds, the same
+//                  `evaluateDeathConditions` on the far side
+//   consume_pill   "Swallowing a pill spends no day at all" - and toxicity
+//                  past `TOXICITY_TOLERANCE` mints a real poison injury
+//   learn_technique an art that FIGHTS the spirit root routes through the qi
+//                  deviation engine on the spot
+//   descend        nine strikes of the heaviest tribulation in the game
+//
+// - and the list says three separate times that it is "a floor on what a
+// MISPARSE may reach, not a description of what each action costs". So the
+// harm axis has been in this file the whole time as PROSE, folded into a list
+// whose name says something else, and readable by nothing. That is
+// `AGENTS.md`'s *a field nothing writes* one size up: the knowledge exists, it
+// is correct, and no consumer can ask for it.
+//
+// This section is that prose promoted to a value. Nothing below is a new
+// judgement about any verb; every entry cites the code path that already
+// decides it.
+//
+// ── WHAT THIS IS NOT ─────────────────────────────────────────────────────
+//
+// **NOT A SECOND MISPARSE FLOOR.** {@link TIME_CONSUMING_ACTIONS} is that, it
+// stays that, and it must go on being the thing asserted against, because it
+// is deliberately WIDER than the truth in the conservative direction. This
+// table is deliberately ACCURATE, which is the opposite obligation - a
+// suggestion strip that flags everything is the same failure as one that flags
+// nothing, and the owner is already looking at one of those. Never gate a
+// misparse on this.
+//
+// **NOT A SEVERITY SCALE.** A closed union and a set over it. A number here
+// would invite tuning and nobody has ruled on what the numbers would mean.
+//
+// **NOT ABOUT WHAT IT COSTS.** The two axes are orthogonal and both cells off
+// the diagonal are occupied: `buy` spends the purse and cannot hurt anybody,
+// `attack` spends no day and can end the run in one turn.
+
+/**
+ * The ways an act reaches this cultivator's body, as a closed set.
+ *
+ * Five, because five is how many code paths in `src/` can take HP off the
+ * player or call `evaluateDeathConditions` on them. Derived by following the
+ * callers rather than by deciding what ought to be dangerous, which is why
+ * there is no `social` member: being caught stealing writes a row that a house
+ * acts on LATER (`being-hunted.ts`, `what-a-house-does-when-it-catches-you.ts`)
+ * and takes nothing off anybody in the turn that produced it. What is here is
+ * what can happen to you before the answer comes back.
+ */
+export type HowAnActCanEndBadly =
+    /**
+     * `resolveExchange` runs with this cultivator's body on one side of it.
+     * The one channel that needs no time at all: a single turn, HP off a
+     * fraction of the defender's own maximum, wounds that persist, and
+     * `evaluateDeathConditions` on the far side.
+     *
+     * Callers in `src/`: `combat-manage.ts` (attack, coerce),
+     * `site-verbs.ts#forceAtOrdinal` (a gate, and then the ground behind it),
+     * `turn-engine.ts#hunt` through `assessPower`.
+     */
+    | 'force'
+    /**
+     * A stretch of days passes over this body, which is the broadest channel
+     * and the one the Late Age actually kills people with.
+     *
+     * `simulateTimeSkip` runs starvation against `SATIETY_BURN_BY_REALM`,
+     * untreated injuries against the deviation odds, deviation against the
+     * meridians, and then `evaluateDeathConditions`. The encounter window rolls
+     * over the same span - `encountersFor` in `web/encounters.ts`, where
+     * `VERB_ACTIVITY` coarsens the verb to one of seven exposures and an entry
+     * at `stance: 'engaged'` is handed to the combat resolver.
+     *
+     * So this member covers being worn out AND being found. They are one
+     * channel because they are one span: cut the days and you cut both.
+     */
+    | 'a_span_of_days'
+    /**
+     * Heavenly tribulation strikes, which is the one thing in this game that is
+     * supposed to be able to kill somebody who did everything right.
+     * `triggersHeavenlyTribulation` decides where, and it is one of the three
+     * realm capabilities `AGENTS.md` records as genuinely enforced.
+     */
+    | 'the_crossing'
+    /**
+     * Qi deviation on the spot, from an art that fights the spirit root. Torn
+     * meridians, lost progress, and `evaluateDeathConditions` immediately -
+     * `technique-manage.ts` calls it on both the learning path and the practice
+     * path.
+     */
+    | 'the_art'
+    /**
+     * Accumulated toxicity crossing `TOXICITY_TOLERANCE` and minting a poison
+     * injury through the same path every other wound takes.
+     * `alchemy-manage.ts#handleConsumePill`.
+     */
+    | 'the_dose';
+
+/**
+ * How each verb can end badly, and the empty array where it cannot.
+ *
+ * A full `Record<ActionName, …>` rather than a list of the dangerous ones, on
+ * the {@link WHAT_EACH_VERB_IS_FOR} precedent: a verb added to
+ * {@link ACTION_NAMES} does not compile until somebody has said whether it can
+ * hurt the person who types it. The check is `tsc` rather than a reviewer's
+ * memory, and the alternative - a `readonly ActionName[]` - is silently
+ * complete the moment a new verb is left off it.
+ *
+ * ── WHY THE ENTRIES ARE NOT ARGUED HERE ONE BY ONE ───────────────────────
+ *
+ * Most of them are already argued somewhere in this file, and the ones that
+ * are not are a single lookup: does the handler reach `simulateTimeSkip`,
+ * `resolveExchange`, a tribulation, the deviation engine, or the toxicity
+ * ledger. Comments below carry only the entries where the answer surprised
+ * somebody who went looking, because those are the ones that will be
+ * re-litigated.
+ */
+export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly HowAnActCanEndBadly[]>> = {
+    /**
+     * Eight of its ten intents run their days through `GameService.shortSkip`,
+     * which is a real span with a real encounter window over it. The other two
+     * -- `talk`, `trade`, `apologise` -- settle nothing and pass no time.
+     *
+     * The action-level answer is therefore the pressing one, and
+     * {@link canEndBadly} narrows it by intent. This is the same verb that
+     * forced {@link costsTheAskerNothing} to be a function rather than a list,
+     * for the same reason and at the same seam: the action alone cannot answer
+     * either question about `interact`.
+     */
+    interact: ['a_span_of_days'],
+    investigate: [],
+    move: ['a_span_of_days'],
+    ride: ['a_span_of_days'],
+    fold: ['a_span_of_days'],
+    passage: ['a_span_of_days'],
+    /**
+     * Giving your word takes nothing off the body. What it writes is a
+     * permanent row with a penalty clause and a witnessing house, and every
+     * consequence of that arrives later through somebody else's decision -
+     * which is a real risk and is not this channel. See the note on
+     * {@link HowAnActCanEndBadly} for why there is no `social` member.
+     */
+    oath: [],
+    attack: ['force'],
+    coerce: ['force'],
+    cultivate: ['a_span_of_days'],
+    seclude: ['a_span_of_days'],
+    /**
+     * The crossing itself, and only above `triggersHeavenlyTribulation`'s
+     * floor. Below it a failed attempt costs progress and a wound, which is the
+     * same body cost the span channel already carries - so this entry names the
+     * thing that is different about a breakthrough rather than the thing it
+     * shares with everything else.
+     */
+    breakthrough: ['the_crossing'],
+    /**
+     * Both channels, and the second is the one nobody expects. Practice spends
+     * days; practising an art that fights the root routes through the deviation
+     * engine on the spot, and `technique-manage.ts` calls
+     * `evaluateDeathConditions` on the far side of the practice path as well as
+     * the learning path.
+     */
+    train_technique: ['a_span_of_days', 'the_art'],
+    /**
+     * On {@link TIME_CONSUMING_ACTIONS} and it reaches no time skip at all -
+     * `GameService.refine` neither advances days nor calls one. Refining makes
+     * a pill; the toxicity is charged when somebody swallows it, which is
+     * `consume_pill`. The classification difference is not a contradiction: one
+     * list is a floor on a misparse and this one is a description.
+     */
+    refine: [],
+    gather: ['a_span_of_days'],
+    /**
+     * The only verb on the strip that carries both, and it is the honest shape
+     * of what hunting is: ten days of walking, and then something at an ordinal
+     * on the other side of them, priced by `assessPower`.
+     */
+    hunt: ['force', 'a_span_of_days'],
+    /**
+     * A meal, and `GameService.eat` is synchronous - no skip, no day, nothing
+     * rolled. It sits on {@link TIME_CONSUMING_ACTIONS} in the conservative
+     * direction; it belongs on neither side of this one.
+     */
+    eat: [],
+    provision: [],
+    treat: ['a_span_of_days'],
+    buy: [],
+    /**
+     * The counter takes nothing off anybody. The one branch that spends is
+     * `sellACopyOfAnArt`, which is MONTHS with a brush - and it is named here
+     * rather than folded in, because what spends there is the copying and not
+     * the sale, the player has to name an art to reach it, and flagging every
+     * `I sell my herbs` as dangerous is the cry-wolf failure this table exists
+     * to avoid. If a consumer ever needs that branch it should ask about the
+     * copying, which is a separate act with a separate price.
+     */
+    sell: [],
+    give: [],
+    inventory: [],
+    consume_pill: ['the_dose'],
+    list_techniques: [],
+    learn_technique: ['the_art'],
+    acquisition: [],
+    ceiling: [],
+    teacher: [],
+    destinations: [],
+    roads: [],
+    /**
+     * SITTING STILL IS NOT SAFE, and this is the entry that says so. `wait`
+     * runs `shortSkip` with the label `Waiting`, which `activityForVerb` does
+     * not recognise and therefore defaults to `labour` - a real, non-zero
+     * exposure row. The world can reach somebody who is doing nothing at all,
+     * which is exactly the asymmetry `AGENTS.md` records under arrivals: the
+     * player can be found.
+     */
+    wait: ['a_span_of_days'],
+    work: ['a_span_of_days'],
+    market: [],
+    sect: [],
+    /**
+     * Approaching one and reading it from outside pass no time. Going in spends
+     * days and then stands a body in front of a thing set at an ordinal, and
+     * `site-verbs.ts#forceAtOrdinal` resolves that through `resolveExchange`
+     * twice - once at the gate, once on the ground behind it.
+     *
+     * Taken whole rather than by intent, which is the ruling this file already
+     * made for `site` on {@link TIME_CONSUMING_ACTIONS}. It is a different
+     * ruling from `interact`'s and both are right: `site` is only ever reached
+     * by a sentence about a site, so the coarse label costs nothing, while
+     * `interact` is this parser's broadest catch for anything involving a
+     * person and coarse-labelling it would call three inert sentences lethal.
+     */
+    site: ['force', 'a_span_of_days'],
+    legacy: ['a_span_of_days'],
+    petition: [],
+    /**
+     * Declaring war commits a house to something it cannot undo, and what
+     * follows lands on the house rather than on the body in the turn that
+     * declared it. Same reading as `oath`.
+     */
+    posture: [],
+    /**
+     * ── AN ABSENCE, WRITTEN DOWN WHERE THE AFFECTED MATERIAL LIVES ───────
+     *
+     * Six houses hold a sealed ancestor with a written `wakeCondition` and
+     * `wakeCost`, and the strongest of them stands at forty-four. Waking one
+     * ought to be the single most dangerous sentence a player can type, and
+     * **it is empty here because nothing in `src/` resolves force against the
+     * person who woke it.** `institution-verbs.ts` charges the `wakeCost` and
+     * nothing calls `resolveExchange`, `assessPower` or
+     * `evaluateDeathConditions` on that path.
+     *
+     * This entry is `[]` because that is what the code does, not because it is
+     * what the world should do. `AGENTS.md`: "The engine has no answer for this
+     * yet" is a legitimate and useful sentence, and a table that quietly
+     * flagged this as dangerous would be asserting a mechanic that does not
+     * exist - which is how a no-op reviews as a feature.
+     */
+    seal: [],
+    offer: [],
+    descend: ['the_crossing'],
+    look: [],
+    status: [],
+    assess: [],
+    recall: [],
+    recognise: [],
+    news: [],
+    tell: [],
+    /**
+     * Putting something to somebody costs a day for a courtesy and a season and
+     * a half for a betrayal, and `ASK_DAYS` spends every one of them through
+     * `shortSkip`. The span is the channel; nothing about the asking itself
+     * touches the body.
+     */
+    request: ['a_span_of_days'],
+    propose: ['a_span_of_days'],
+    decline: ['a_span_of_days'],
+    /**
+     * Years, and the food clock runs through every one of them. The longest
+     * span any verb in this set can spend, and therefore the largest exposure.
+     */
+    child: ['a_span_of_days'],
+    /**
+     * Inert by construction, and it has to stay that way: this is where every
+     * sentence the parser did not understand lands.
+     */
+    unclear: []
+} as const;
+
+/**
+ * The three `interact` intents that settle nothing.
+ *
+ * The complement of `PRESSING_SOMEBODY`, which lives in
+ * `asking-is-not-doing.ts` and cannot be imported here - that module already
+ * imports {@link READ_ONLY_ACTIONS} from this one, and reversing the arrow
+ * would put a cycle between the classification and the rule that reads it.
+ *
+ * A second copy of a set is a drift risk and `AGENTS.md` is explicit that the
+ * answer is not a comment asking people to be careful. So this is guarded the
+ * way `PRESSING_SOMEBODY`'s other copy - `ATTEMPT_INTENTS` in `game.ts` - is
+ * guarded: by a test that goes red when either side moves.
+ * `tests/web/coercion-is-not-rapport.test.ts` and
+ * `tests/web/asking-is-not-doing.test.ts` between them play all ten intents and
+ * measure what each spent, and the exact-complement assertion sits beside this
+ * table's own tests.
+ *
+ * Stated as the FREE three rather than the pressing eight on purpose: it is the
+ * shorter list, it is the one that has never changed, and a ninth way of
+ * leaning on somebody added tomorrow is dangerous by default here rather than
+ * safe by omission.
+ */
+export const INTERACT_SETTLES_NOTHING: ReadonlySet<string> = new Set([
+    'talk', 'trade', 'apologise'
+]);
+
+/**
+ * How this act can end badly, given the verb and - where the verb alone cannot
+ * say - the intent.
+ *
+ * ── ACTION, OR ACTION PLUS CONTEXT? ──────────────────────────────────────
+ *
+ * This takes the ACT and not the situation, and the argument is worth having
+ * out because the obvious objection is a good one: travelling to a market town
+ * and walking into a ruin below its floor are not the same risk, so surely
+ * harm is a property of the act plus where it points.
+ *
+ * Three things decided it the other way.
+ *
+ * **The two examples are two different verbs.** Walking into a ruin is `site`
+ * at intent `enter`, which is on this table with `force`. `move` cannot reach a
+ * ruin's gate at all - the destination resolver refuses a name that is not a
+ * place, and the thing behind the gate is only ever met through `site`. The
+ * case that looks like it needs context turns out to be the verb list already
+ * doing the work.
+ *
+ * **What context changes here is the RATE, never the possibility.** Every span
+ * rolls an encounter window; `EncounterPlace.danger`, the sitting-to-standing
+ * ratio and `Locatability` multiply how often something happens and never
+ * whether it can. A boolean about possibility is exactly the shape that is
+ * invariant to all of it - and the moment this returns a likelihood instead, it
+ * is the severity scale nobody has ruled on.
+ *
+ * **A predicate that reads the world cannot be checked.** The value of this
+ * table is that every entry cites a code path a reader can follow. A function
+ * taking a place, a rung and a destination would be a second opinion about
+ * danger sitting outside the resolvers that own it, and this repo has spent a
+ * day removing second opinions.
+ *
+ * So: the act says WHETHER, and the world - which already models it, in
+ * `encounters/` and in `assessPower` - says how often and how badly. Where a
+ * consumer needs how-badly it should ask those, not widen this.
+ *
+ * ── AND WHY IT TAKES AN INTENT ANYWAY ────────────────────────────────────
+ *
+ * `interact` and nothing else. Not because intent is context - it is part of
+ * the act, and it is the same seam {@link costsTheAskerNothing} already needs a
+ * function for. Every other verb whose intents disagree takes the coarse label,
+ * on the reasoning written beside `site`.
+ */
+export function canEndBadly(action: ActionName, intent?: string): readonly HowAnActCanEndBadly[] {
+    if (action === 'interact' && INTERACT_SETTLES_NOTHING.has(intent ?? 'talk')) return [];
+    return HOW_EACH_VERB_CAN_END_BADLY[action];
+}
+
+/**
+ * Whether this act can hurt the person who takes it. The boolean over
+ * {@link canEndBadly}, which is what a caller ranking sentences wants.
+ *
+ * The sibling of {@link costsTheAskerNothing} and deliberately shaped like it,
+ * so the two read as the pair of axes they are:
+ *
+ *                      costs nothing            costs something
+ *   cannot hurt you    reading a board          buying a manual
+ *   can hurt you       (nothing reaches here)   walking into a ruin
+ *
+ * The empty cell is a real finding rather than an oversight, and it is worth
+ * recording because it looks like it should be occupied. Every verb that can
+ * reach the body reaches it through a span, a resolver, a tribulation, the
+ * deviation engine or the toxicity ledger, and each of those is behind a verb
+ * that spends. `wait` looks like the counterexample - sitting still and being
+ * found - and is not, because waiting spends its days like anything else.
+ *
+ * The one thing that genuinely lands in that cell is not a `PlannedAction` at
+ * all: inside a live fight, `I block` and `I keep swinging` are answered by
+ * `fight-answers.ts` before the pattern table is reached, spend no day, and can
+ * end the run in the round they are typed. A consumer that ranks sentences
+ * rather than plans has to handle those separately, and it should - they are
+ * the most dangerous five strings in the game.
+ */
+export function canHurtYou(action: ActionName, intent?: string): boolean {
+    return canEndBadly(action, intent).length > 0;
+}
