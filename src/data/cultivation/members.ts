@@ -474,6 +474,62 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: null
     },
+    // ── THE GRAND ELDER, WHO STEPPED ASIDE ───────────────────────────────
+    //
+    // Ordinal 39, unnamed, and both of those are the point.
+    //
+    // WHY HE EXISTS. A house with somebody at 41 leading and nobody between 24
+    // and 41 is a house whose entire route past Grand Ascension runs through
+    // one woman, and it was one death away from having none. Measured: six
+    // people in the world could carry a cultivator at 38 any further, five of
+    // them Hollow Court and the sixth Ru Anwei. He is the seventh, and he makes
+    // the Pavilion two deep rather than one.
+    //
+    // AND HE EXPLAINS HER RATHER THAN MERELY STANDING NEXT TO HER. A house
+    // holding a 39 and a 41 needs a reason the 41 leads, and the reason is a
+    // succession rather than an arrangement of numbers: he stepped aside. See
+    // `docs/world/houses/offices-and-succession.md` - grand elder is first
+    // among equals of the elders, one spot only, and it is where a head
+    // retires to.
+    //
+    // WHY `rankIndex: 4` AND NOT A NEW RUNG. The Pavilion's `ranks` array is a
+    // contract - `governance-and-water-rights.ts` spells it out: every member
+    // is pinned to an index, the stipend array is parallel to it, and
+    // `rankRealmBand` derives every band from position in it, so inserting a
+    // rung would silently move every Azure Cloud member and change every band.
+    // It costs nothing to leave it out, because grand elder IS "first among
+    // equals of the elders" - the elder rank with one man at the top of it, not
+    // a seventh rung.
+    //
+    // UNNAMED, which this catalog already supports and the Hollow Court's four
+    // seats already do. It gives the Pavilion depth without another authored
+    // figure to keep true.
+    {
+        id: 'member-azure-cloud-grand-elder',
+        name: 'The Grand Elder',
+        factionId: 'sect-azure-cloud-pavilion',
+        rankIndex: 4,
+        rank: 'Sword Elder',
+        realmOrdinal: 39,
+        // Not `master`. Whether he will teach is the ordinary question about a
+        // person rather than a property of the seat, and a man who stepped
+        // aside for the woman who leads may or may not be generous with what he
+        // knows. `carriesTo` says he COULD take somebody to 39; nothing here
+        // says he will.
+        role: 'senior',
+        wants: 'nothing he is willing to say out loud, which the hall reads as contentment and the two people who were there read as something else',
+        fears: 'being asked whether he was right, by somebody young enough to think it is a simple question',
+        detail: 'Stood down for Ru Anwei and stayed, which is what the seat is for. He is not the deepest person in the Pavilion and he is the second, and the gap between those two facts is the whole of his position. He has not been named in a Pavilion record since the season he stepped aside, and it is not a slight - he asked.',
+        // Above what the Pavilion's shelf teaches and below the woman who
+        // leads it. `arrived` rather than `inherited`: the house's books stop
+        // long before 39, so wherever he got the last stretch, it was not off
+        // the shelf.
+        outlier: true,
+        outlierReason: 'arrived',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
     // THE PERSON THE PAVILION'S WHOLE POSITION RESTS ON, WHO HAS NO POSITION.
     //
     // `crossings.ts` carries her inside a prose field on somebody else's

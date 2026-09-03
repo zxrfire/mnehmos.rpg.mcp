@@ -80,13 +80,11 @@ import {
 } from './sect-politics.js';
 import { GuestSchema, handleGuest } from './sect-guest.js';
 import {
-    entryRankIndexFor,
     requiredContributionForRank,
     requiredOrdinalForRank,
     STIPEND_PERIOD_DAYS
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
-import { getMembersOf } from '../../data/cultivation/members.js';
-import { entryOfferFor } from '../../engine/social-leverage/entry-offer.js';
+import { offerAtTheDoorOf } from '../../engine/social-leverage/entry-offer.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 import {
     servantBarOf,
@@ -344,11 +342,13 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 // house at its floor and entering it near its top are different
                 // decisions.
                 //
-                // `entryRankIndexFor` is the SAME function `handleJoin` seats
-                // by, so what this read promises and what the door actually
-                // gives can never disagree - the property that function's own
-                // docstring exists to keep, now holding across the read as well
-                // as across entry and promotion.
+                // `offerAtTheDoorOf` is the SAME call `handleJoin` and
+                // `applyProbation` seat by, so what this read promises and what
+                // either door actually gives can never disagree. That property
+                // is the reason it is one shared helper in the engine rather
+                // than a rule each caller reimplements: the last time they held
+                // separate copies of the call, the walk-up moved to the roster
+                // rule and the probation placement silently did not.
                 //
                 // Null when they would not be taken: there is no rung to name,
                 // and naming one would read as an offer.
@@ -356,7 +356,7 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                     ordinal === null || !recruits || ordinal < sect.admissionOrdinal
                         ? null
                         : sect.ranks[
-                            whatTheyWouldBeOffered(sect, ordinal).offered ?? -1
+                            offerAtTheDoorOf(sect.id, ordinal)?.offered ?? -1
                         ] ?? null,
                 // The second door, where the house has one. Separate from
                 // `admissible` on purpose: this is not membership and saying
@@ -379,40 +379,6 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 ? 'No sects in this campaign. The catalog seeds on first touch; an empty list means the sects table was cleared.'
                 : undefined
     };
-}
-
-/**
- * What this house would seat this cultivator at, read once for both callers.
- *
- * THE PROPERTY THIS EXISTS TO KEEP is the one `entryRankIndexFor`'s docstring
- * already cared about: what the read PROMISES and what the door actually GIVES
- * can never disagree. Both go through here, so a change to the rule moves both
- * or neither.
- *
- * The roll is the catalog roster rather than live world rows, and that is a
- * stated limitation rather than a preference: this module has no world handle,
- * and `getMembersOf` is the house's authored roll - which is what the ruling
- * refers to ("what their own cultivators have at 29") and what the 234/98/5
- * measurement was taken against. A caller that HAS a world and a ledger should
- * pass a leaning as well; see `entry-offer.ts` for what that adds.
- *
- * No leaning is supplied here, so the answer is always the ordinary offer -
- * one rung under the house's own people. The door never closes on this path,
- * which keeps this change to the rank and to nothing else.
- */
-function whatTheyWouldBeOffered(
-    sect: { id: string; ranks: readonly string[]; admissionOrdinal: number },
-    ordinal: number
-) {
-    return entryOfferFor({
-        ranks: sect.ranks,
-        admissionOrdinal: sect.admissionOrdinal,
-        roll: getMembersOf(sect.id).map(m => ({
-            rankIndex: m.rankIndex,
-            realmOrdinal: m.realmOrdinal
-        })),
-        askerOrdinal: ordinal
-    });
 }
 
 export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<object> {
@@ -736,13 +702,47 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // 0.89 ranks high - above the house's own standard in 234 cases against 5
     // below. An outsider has the cultivation and not the standing, so they are
     // seated one under their peers. See `entry-offer.ts`.
-    let entryIndex = whatTheyWouldBeOffered(sect, cultivator.realmOrdinal).offered
-        // Unreachable on this path - no leaning is read here, so the door never
-        // closes - and written out rather than asserted because the day a
-        // caller does pass a council, a silent `?? 0` would seat somebody the
-        // house had refused at the bottom of its ladder instead of refusing
-        // them.
-        ?? entryRankIndexFor(sect.ranks, sect.admissionOrdinal, cultivator.realmOrdinal);
+    const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal);
+
+    // ── AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK ─────────────────
+    //
+    // This branch was drafted as `?? entryRankIndexFor(...)` and that is the
+    // exact shape that hides a regression: a fallback to the over-generous
+    // answer fires precisely when the new path declines to give one, so the
+    // one case nobody has measured silently gets the number the whole change
+    // exists to stop using.
+    //
+    // It is unreachable TODAY - no council is read at this door, so the band is
+    // always the ordinary offer - and it is written as a refusal anyway,
+    // because the day a caller does pass a leaning, the alternatives are a
+    // house seating somebody it just refused or a house saying so.
+    //
+    // `offerAtTheDoorOf` returning null at all is a different fact again: the
+    // faction is not in the catalog. `sect` came out of the repository, so a
+    // row can exist that the catalog has no entry for, and that is an
+    // incoherent world rather than a house with an opinion.
+    if (!offer) {
+        return guidingError(
+            'unknown_sect',
+            `${sect.name} has a row in this world and no entry in the catalog, so there is `
+            + 'no roll to seat anybody against.',
+            { hint: 'sect_manage({ action: "list" }) shows the sects the catalog knows.' }
+        );
+    }
+    if (offer.offered === null) {
+        return guidingError(
+            'not_taken',
+            `${sect.name} hears ${cultivator.name} out and does not open the door. `
+            + offer.line,
+            {
+                hint: 'A house that will not have you is not a house that has refused you '
+                    + 'forever. What moves it is what the people who decide in it think of '
+                    + 'you, so the way in is through them.',
+                band: offer.band
+            }
+        );
+    }
+    let entryIndex = offer.offered;
 
     // ── AND A RETURNING MEMBER IS NOT A STRANGER ─────────────────────────
     //

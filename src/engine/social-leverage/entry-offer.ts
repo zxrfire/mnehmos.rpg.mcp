@@ -234,6 +234,8 @@
  * Pure. Roster in, an offer out. No repository, no I/O, no RNG.
  */
 
+import { getMembersOf } from '../../data/cultivation/members.js';
+import { getSect } from '../../data/cultivation/sects.js';
 import { entryRankIndexFor } from '../cultivation/what-each-rung-of-a-house-ladder-requires.js';
 import { heightAloneWouldHideThem } from '../social/presence-recognition.js';
 import type { Standing } from '../social/what-is-said-about-somebody.js';
@@ -518,4 +520,56 @@ export function entryOfferFor(input: {
                 ? ' and the door does not open.'
                 : `, seating them at ${offered} (${input.ranks[offered] ?? '?'}).`}`
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ONE DOOR BOTH ENTRANCES GO THROUGH
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What this house would seat this cultivator at, off the catalog roster.
+ *
+ * THE ONLY THING IN THIS FILE THAT READS A CATALOG, and it exists because
+ * there are two doors into a house and they were answering differently.
+ * `handleJoin` seats a walk-up; `applyProbation` seats somebody the house has
+ * already been carrying. Both were meant to use one rule - the probation
+ * branch says so in its own comment, *"seated by the same rule a walk-up is
+ * seated by... a placement that used its own arithmetic would drift from
+ * `handleJoin`"* - and when the walk-up moved to the roster rule, probation
+ * did not, because it holds its own copy of the call rather than a shared
+ * helper. So placements went on being seated a mean 0.99 ranks high by the
+ * lookup everything else had stopped using.
+ *
+ * This is that shared helper, and it lives in the engine rather than in either
+ * tool module for a concrete reason: `sect-probation.ts` cannot import from
+ * `sect-manage.ts` without closing the cycle through `sect-guest.ts` that
+ * `what-each-rung-of-a-house-ladder-requires.ts` was extracted to break.
+ *
+ * The roll is the catalog roster, which is the house's authored roll - what
+ * the ruling refers to ("what their own cultivators have at 29") and what the
+ * 299/140/3 measurement was taken against. A caller holding a world and a
+ * ledger should read a council and pass `leaning`; without one the answer is
+ * the ordinary offer and the door never closes.
+ *
+ * Returns null for a faction that is not in the catalog at all, which is a
+ * different fact from a house declining somebody and must not be collapsed
+ * into one - see the `offered === null` refusal at each call site.
+ */
+export function offerAtTheDoorOf(
+    factionId: string,
+    askerOrdinal: number,
+    leaning?: number | null
+): EntryOffer | null {
+    const sect = getSect(factionId);
+    if (!sect) return null;
+    return entryOfferFor({
+        ranks: sect.ranks,
+        admissionOrdinal: sect.admissionOrdinal,
+        roll: getMembersOf(factionId).map(m => ({
+            rankIndex: m.rankIndex,
+            realmOrdinal: m.realmOrdinal
+        })),
+        askerOrdinal,
+        leaning
+    });
 }

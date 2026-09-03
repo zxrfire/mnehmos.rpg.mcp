@@ -1136,6 +1136,11 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // ── Nascent Soul and above. No `crude` past here, by the rule above. ──
     'nascent-lotus-canon': 'refined',
     'mountain-vein-devouring-canon': 'sound',
+    // A terrace method rewritten by one man for water the terraces had
+    // finished with, and never revised by anybody since. `sound` is what one
+    // careful pass produces: it works, it is his, and nobody has taken it
+    // further because the Azure Mist has never held anybody who could.
+    'mist-runoff-canon': 'sound',
     'held-under-canon': 'sound',
     'interred-soul-canon': 'sound',
     'grafted-form-canon': 'sound',
