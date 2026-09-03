@@ -2977,8 +2977,8 @@ describe('a site can be named the way the game named it', () => {
      * Found by playing, and it was a closed loop the player could not solve.
      *
      * "what ruins are near" prints the places by NAME - "The ones you have
-     * names for are The Outer Gate of a Sect That No Longer Exists, The Bench
-     * at the Burned Seat, The Gate Frame With No Gate In It..." - and the
+     * names for are Handworn Gate, The Bench
+     * at the Burned Seat, The Empty Frame..." - and the
      * parser accepted only the id slug, which is never shown anywhere. So
      * typing back a name the game had just printed reached nothing at all,
      * while `trial-the-swept-frame` answered to "swept frame".
@@ -3014,8 +3014,8 @@ describe('a site can be named the way the game named it', () => {
 
     /** And the whole sentence still routes, not just the name lookup. */
     it('routes an approach to a named site to the site verb', () => {
-        expect(parseIntent('I approach The Cave That Checks the Work').action).toBe('site');
-        expect(parseIntent('I go into The Gate Frame With No Gate In It').action).toBe('site');
+        expect(parseIntent('I approach The Slow Door').action).toBe('site');
+        expect(parseIntent('I go into The Empty Frame').action).toBe('site');
     });
 });
 

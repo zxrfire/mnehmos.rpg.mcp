@@ -688,7 +688,7 @@ function accessForFind(
 // NAMING
 //
 // A name has to be what somebody would actually call the place. The authored
-// catalog sets the standard - "The Gate Frame With No Gate In It", "The Cave
+// catalog sets the standard - "The Empty Frame", "The Cave
 // That Checks the Work" - and what those have in common is that they are what a
 // person standing nearby says, not a label. So the templates below all name a
 // physical thing and a fact about it, and none of them contains an adjective

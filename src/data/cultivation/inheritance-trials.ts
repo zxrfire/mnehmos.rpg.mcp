@@ -896,7 +896,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-outer-gate-that-does-not-adjust',
         kind: 'trial',
-        name: 'The Outer Gate of a Sect That No Longer Exists',
+        name: 'Handworn Gate',
         character: 'compound',
         origin: 'abandoned_by_a_house',
         scale: 'a_mountain',
@@ -945,7 +945,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-eighth-stone',
         kind: 'trial',
-        name: 'The Chamber Under the Eighth Stone',
+        name: 'The Eighth Stone',
         character: 'array_anchor',
         origin: 'abandoned_by_a_house',
         scale: 'a_compound',
@@ -996,7 +996,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-nine-hundred-year-strike',
         kind: 'trial',
-        name: 'The Hall That Has Been Winding Up',
+        name: 'The Indrawn Hall',
         character: 'workshop',
         origin: 'overrun_at_work',
         scale: 'a_building',
@@ -1047,7 +1047,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-audit-bench',
         kind: 'trial',
-        name: 'The Bench at the Burned Seat',
+        name: 'The Burned Bench',
         character: 'open_ground',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1120,7 +1120,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-swept-frame',
         kind: 'trial',
-        name: 'The Gate Frame With No Gate In It',
+        name: 'The Empty Frame',
         character: 'waystation',
         origin: 'abandoned_by_a_house',
         scale: 'a_compound',
@@ -1206,7 +1206,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-cold-curriculum',
         kind: 'trial',
-        name: 'The Curriculum Cut Above the Ice Field',
+        name: 'The Written Ledge',
         character: 'teaching_hall',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',
@@ -1271,7 +1271,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-foundation-that-was-not-finished',
         kind: 'trial',
-        name: 'The Cave That Checks the Work',
+        name: 'The Slow Door',
         character: 'dwelling',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1335,7 +1335,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-witness-door',
         kind: 'trial',
-        name: 'The Door That Wants Somebody Not In the Record',
+        name: 'The Seamless Door',
         character: 'compound',
         origin: 'left_addressed',
         scale: 'a_building',
@@ -1411,7 +1411,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-oath-with-no-party',
         kind: 'trial',
-        name: 'The Oath Room Under a Dyer\'s Yard',
+        name: 'The Dyer\'s Vault',
         character: 'archive',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',
@@ -1465,7 +1465,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-door-that-wants-a-refusal',
         kind: 'trial',
-        name: 'The Step That Was Put Down Again',
+        name: 'The Unlocked Box',
         character: 'vault',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1521,7 +1521,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-ground-that-wants-the-wrong-claimant',
         kind: 'trial',
-        name: 'The Ground That Is Waiting For Somebody It Should Not Want',
+        name: 'The Unwalked Circle',
         character: 'scar',
         origin: 'what_the_catastrophe_made',
         scale: 'a_compound',
@@ -1590,7 +1590,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-fourth-branch-station',
         kind: 'trial',
-        name: 'The Station At the Bottom of the Fourth Branch',
+        name: 'The Counted Stair',
         character: 'cut',
         origin: 'abandoned_by_a_house',
         scale: 'a_compound',
@@ -1665,7 +1665,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-four-inward-faces',
         kind: 'trial',
-        name: 'The Four Stones That Face the Standing Ground',
+        name: 'The Inward Faces',
         character: 'array_anchor',
         origin: 'left_addressed',
         scale: 'a_compound',
@@ -1745,7 +1745,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-beds-that-read-weight',
         kind: 'trial',
-        name: 'The Garden That Takes Everything Heavy For a Deer',
+        name: 'The Eleven Beds',
         character: 'physic_garden',
         origin: 'overrun_at_work',
         scale: 'a_building',
@@ -1808,7 +1808,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-floor-over-the-old-cut',
         kind: 'trial',
-        name: 'The Working Floor With Nothing Under It',
+        name: 'The Long Rope',
         character: 'cut',
         origin: 'overrun_at_work',
         scale: 'a_building',
@@ -1871,7 +1871,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-door-that-only-knows-tokens',
         kind: 'trial',
-        name: 'The Store Door That Never Heard of Elders',
+        name: 'The Low Slot',
         character: 'vault',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',
@@ -1941,7 +1941,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-reading-room-that-was-not-shut',
         kind: 'trial',
-        name: 'The Reading Room They Left the Lamps In',
+        name: 'The Steady Draught',
         character: 'archive',
         origin: 'overrun_at_work',
         scale: 'a_compound',
@@ -2020,7 +2020,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-shen-guyi',
         kind: 'grave',
-        name: 'The Interment of Shen Guyi',
+        name: 'The Tended Tomb',
         character: 'ossuary',
         origin: 'left_addressed',
         scale: 'a_building',
@@ -2144,7 +2144,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-yun-baiheng',
         kind: 'grave',
-        name: 'Eleven Li of Ground In the High Marches',
+        name: 'The Stopped Ground',
         character: 'scar',
         origin: 'what_the_catastrophe_made',
         scale: 'a_mountain',
@@ -2216,7 +2216,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-forty-first-boundary',
         kind: 'grave',
-        name: 'The One Who Was Struck At the Boundary',
+        name: 'Struck Stone',
         character: 'scar',
         origin: 'what_the_catastrophe_made',
         scale: 'a_compound',
@@ -2287,7 +2287,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-forge-clan-vault',
         kind: 'grave',
-        name: 'The Clan Undercroft That Opens For Blood',
+        name: 'The Worn Leaf',
         character: 'vault',
         origin: 'left_addressed',
         scale: 'a_building',
@@ -2395,7 +2395,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-channel-physician',
         kind: 'grave',
-        name: 'The Physician Who Was Working On the Channels',
+        name: 'The Longer Stone',
         character: 'ossuary',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -2505,7 +2505,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-deep-gleaner-xun',
         kind: 'grave',
-        name: 'The Man Behind the Company\'s Own Wall',
+        name: 'The Resealed Wall',
         character: 'workshop',
         origin: 'overrun_at_work',
         scale: 'a_compound',
@@ -2604,7 +2604,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-remote-carrier',
         kind: 'grave',
-        name: 'Somebody Who Came Down and Stopped Somewhere',
+        name: 'The Dry Overhang',
         character: 'open_ground',
         origin: 'a_door_nobody_opened_again',
         scale: 'one_room',
@@ -2713,7 +2713,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-survey-line-duel',
         kind: 'grave',
-        name: 'Two Graves On a Survey Line',
+        name: 'The Two Cairns',
         character: 'battlefield',
         origin: 'fought_over_and_left',
         scale: 'one_room',
@@ -2803,7 +2803,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-culler-nobody-buried',
         kind: 'grave',
-        name: 'A Culler On the Kettle Circuit',
+        name: 'The Ditch Culler',
         character: 'open_ground',
         origin: 'a_door_nobody_opened_again',
         scale: 'one_room',
@@ -2886,7 +2886,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-collector-in-arrears',
         kind: 'grave',
-        name: 'The Collector Who Was Made to Settle',
+        name: 'The Cut Brand',
         character: 'open_ground',
         origin: 'fought_over_and_left',
         scale: 'one_room',
@@ -2978,7 +2978,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-count-that-outlived-him',
         kind: 'grave',
-        name: 'The Glass Where the Count Stopped',
+        name: 'The Green Glass',
         character: 'scar',
         origin: 'what_the_catastrophe_made',
         scale: 'a_compound',
@@ -3057,7 +3057,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-post-at-the-upper-ford',
         kind: 'grave',
-        name: 'The Border Post Above the Upper Ford',
+        name: 'The Chalked Board',
         character: 'waystation',
         origin: 'overrun_at_work',
         scale: 'a_building',
@@ -3132,7 +3132,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-field-where-both-of-them-stopped',
         kind: 'grave',
-        name: 'The Field Where Both Houses Stopped',
+        name: 'The Slow Field',
         character: 'battlefield',
         origin: 'fought_over_and_left',
         scale: 'a_mountain',

@@ -255,7 +255,7 @@ export function extractDestination(input: string): string | undefined {
  * Nothing in the CATALOGS contains a comma, and no art, place, person or item
  * in this world is named "... for a year" or "... again". A name that genuinely
  * contains one of these words keeps it: the cuts are anchored to the END of the
- * phrase, so "Nine Peaks" and "The Gate Frame With No Gate In It" are untouched.
+ * phrase, so "Nine Peaks" and "The Empty Frame" are untouched.
  */
 export function theNounPhrase(raw: string): string {
     let said = raw.trim();

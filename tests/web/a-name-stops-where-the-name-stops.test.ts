@@ -65,8 +65,8 @@ describe('a name stops where the name stops', () => {
     it('leaves a name that contains one of the cut words alone', () => {
         // The cuts are anchored to the end of the phrase, so a word that is
         // part of a name survives being one of them.
-        expect(theNounPhrase('The Gate Frame With No Gate In It'))
-            .toBe('The Gate Frame With No Gate In It');
+        expect(theNounPhrase('The Empty Frame'))
+            .toBe('The Empty Frame');
         expect(theNounPhrase('Nine Peaks')).toBe('Nine Peaks');
         expect(theNounPhrase('Formation hand')).toBe('Formation hand');
     });
