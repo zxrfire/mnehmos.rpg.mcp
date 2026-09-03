@@ -99,7 +99,8 @@ const HANDLERS = [
     'src/web/travel-verbs.ts',
     'src/web/combat-verbs.ts',
     'src/web/investigate-verb.ts',
-    'src/web/asking-verbs.ts'
+    'src/web/asking-verbs.ts',
+    'src/web/situated-reads.ts'
 ];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
