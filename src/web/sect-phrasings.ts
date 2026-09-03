@@ -571,16 +571,34 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
     // asker holds. The verdict rides on the topic and the person on the target;
     // with neither, it is a read of what is outstanding, which is the cheap
     // branch every committing verb in this file falls through to.
+    //
+    // ── `matchIntent` RETURNS `undefined`, NOT `null` ────────────────────
+    //
+    // The guard below read `matchIntent(...) !== null` for one commit, which is
+    // TRUE for every sentence in the language, so the verdict half never ran and
+    // the branch was the bare noun test. "I put my case to the elders" - which
+    // is a petition, asking a body to decide for you - came here, and so did
+    // "my case" on its own. The corpus guard caught it.
+    //
+    // Recorded rather than quietly fixed because the shape is the one that
+    // keeps costing this repo: a condition that reads as a check, passes review
+    // as a check, and is a constant. Compare against what the function actually
+    // returns, and hold the value once rather than calling it twice.
+    const verdict = matchIntent(text, COMPLAINT_VERDICTS);
+    // `charge` is deliberately NOT a complaint noun. "who is in charge here" is
+    // a question about who runs the room and it belongs to `look/holder`, which
+    // had it first - the word is a preposition there rather than a noun.
+    // Measured: including it stole that sentence, which is the failure
+    // `verb-pattern-table.ts` warns about in its own header, committed inside
+    // the file that quotes the warning.
+    //
+    // And a complaint noun ALONE is not enough either, for the same reason:
+    // `case` is an ordinary English word and "I put my case" is somebody
+    // petitioning. A verdict has to actually be present for this branch to be
+    // about deciding one.
     if (COMPLAINTS_BROUGHT_TO_ME.test(text)
-        // `charge` is deliberately NOT in this list. "who is in charge here" is
-        // a question about who runs the room and it belongs to `look/holder`,
-        // which had it first - and the word appears in that phrase as a
-        // preposition rather than as a noun. Measured: including it stole that
-        // sentence, which is the failure `verb-pattern-table.ts` warns about in
-        // its own header, committed inside the file that quotes the warning.
-        || (matchIntent(text, COMPLAINT_VERDICTS) !== null
-            && /\b(?:complaints?|reports?|charges|the charge|case|accusation)\b/.test(text))) {
-        const verdict = matchIntent(text, COMPLAINT_VERDICTS);
+        || (verdict !== undefined
+            && /\b(?:complaints?|reports?|charges|the charge|accusation)\b/.test(text))) {
         const who = namedAfter(input, 'against|about|concerning');
         return {
             action: 'sect',
