@@ -49,6 +49,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseIntent, type ActionName } from '../../src/web/actions';
+import {
+    readyTheTier,
+    verbForASentenceThePatternsMissed
+} from '../../src/web/reaching-a-verb-the-pattern-table-has-no-line-for';
 import { HOW_A_PLAYER_SAYS_EACH_VERB } from '../../src/web/how-a-player-says-each-verb';
 
 interface Misroute {
@@ -147,4 +151,66 @@ describe('working at a thing is not working for wages', () => {
     ] as ReadonlyArray<readonly [string, ActionName]>)('%s -> %s', (said, want) => {
         expect(parseIntent(said).action).toBe(want);
     });
+});
+
+/**
+ * THE WHOLE READER AGAINST THE CORPUS, WHICH IS WHAT A PLAYER MEETS.
+ *
+ * The sweep above measures the TABLE, and its bar is deliberately loose because
+ * `unclear` is a legitimate answer there: a phrasing the table declines is
+ * answered by the tier below it, and a table entry that guesses at context is
+ * worse than no entry.
+ *
+ * That leaves a hole the aggregate cannot show. Measured per verb, the table
+ * answers 194 of 296 - comfortably past its bar - while `roads`, `posture` and
+ * `seal` reach NONE of their own five phrasings, and six more reach one. An
+ * average hides a verb rotting.
+ *
+ * Through the whole reader the same corpus answers 294 of 296, so those verbs
+ * are not broken: the tier is doing exactly the job the table's looseness
+ * assumes. Which means the number worth guarding is this one, not the table's.
+ *
+ * -- AND IT IS THE ALARM FOR THE TIER GOING MISSING -----------------------
+ *
+ * The corpus vectors and the model live on disk and can simply be absent. When
+ * they are, every phrasing the table declines falls to `unclear`, the reader
+ * drops from 99% to 65%, and nothing says so - the failures surface as
+ * unrelated verbs behaving oddly on the page, and cost a great deal of time to
+ * trace back. This fails loudly instead, and says which of the two it is.
+ */
+describe('the whole reader against the corpus', () => {
+    it('answers almost all of it, and says so plainly when it does not', async () => {
+        let tierUp = true;
+        try {
+            await readyTheTier();
+        } catch {
+            tierUp = false;
+        }
+
+        let right = 0;
+        let total = 0;
+        for (const [meant, phrasings] of Object.entries(HOW_A_PLAYER_SAYS_EACH_VERB)) {
+            for (const said of phrasings as readonly string[]) {
+                const fromTable = parseIntent(said);
+                let reached = fromTable.action;
+                try {
+                    reached = (await verbForASentenceThePatternsMissed(said, fromTable)).action;
+                } catch {
+                    tierUp = false;
+                }
+                if (reached === meant) right += 1;
+                total += 1;
+            }
+        }
+
+        expect(
+            right / total,
+            tierUp
+                ? 'the reader stopped answering phrasings the corpus lists for its own verbs'
+                : 'THE SENTENCE MODEL DID NOT LOAD. Without it the table answers alone and the '
+                  + 'corpus drops from about 99% to about 65%, because every phrasing the table '
+                  + 'declines falls to `unclear`. Check `models/` before reading anything else '
+                  + 'here as a parser fault.'
+        ).toBeGreaterThan(0.97);
+    }, 300_000);
 });
