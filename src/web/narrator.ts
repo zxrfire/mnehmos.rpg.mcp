@@ -678,6 +678,15 @@ export interface FiledOutcome {
     breakthroughAttempted?: boolean;
     /** Whether the run is over. */
     died?: boolean;
+    /**
+     * The name of the cultivator whose run this is.
+     *
+     * Only the death check reads it, and only to decide WHOSE death the
+     * prose is describing. Optional like everything else here: absent, the
+     * check falls back to the second person, which under-reports rather than
+     * blaming the player for an NPC dying.
+     */
+    who?: string;
 }
 
 export interface NarrationViolation {
@@ -689,9 +698,63 @@ export interface NarrationViolation {
 const CLAIMS_ADVANCEMENT =
     /\b(?:breakthrough succeeded|broke through(?! (?:to nothing|and failed))|broken through|advanced to|rose to|ascended to|stepped up to|climbed to|attained|reached)\b[^.!?]{0,60}\b(?:layer|rank|realm|stage|condensation|foundation|core|nascent|deity|void|tribulation)\b/i;
 
-/** Prose that says the cultivator is dead. */
-const CLAIMS_DEATH =
-    /\b(?:is dead|died|was killed|did not survive|breathed (?:his|her|their) last|the run is over|will not wake)\b/i;
+/**
+ * Ways of saying somebody died, without the somebody.
+ *
+ * The subject is supplied by {@link claimsThePlayerDied} and is the whole of
+ * what makes this safe to use - see there.
+ */
+const DIED_PREDICATE =
+    '(?:is|are|was|were)\\s+dead|died|(?:is|are|was|were)\\s+killed|did\\s+not\\s+survive'
+    + '|will\\s+not\\s+wake|breathed?\\s+(?:his|her|their|your)\\s+last';
+
+function forRegExp(literal: string): string {
+    return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Prose that says THE PERSON WHOSE RUN THIS IS died.
+ *
+ * ── THE SUBJECT IS THE CHECK. DO NOT WIDEN IT ────────────────────────
+ *
+ * This used to match any death in the sentence, and `filed.died` means the
+ * RUN ENDED - so prose naming an NPC's death was reported as the player's
+ * own invented death, and the turn was replaced with a true objection and a
+ * false reason. Measured:
+ *
+ *     "Han Liebo is dead."   ->  CAUGHT as invented_death
+ *
+ * Nothing about that narration was wrong. That is the same sin as the prose
+ * this function exists to police, committed by the police, and it is latent
+ * in the worst way: it needs no new bug to fire, it fires rarely, and when it
+ * fires it looks like evidence of something that did not happen.
+ *
+ * So the question is not "did somebody die" but "did the narrator kill the
+ * person whose run this is". Anybody widening this back to any-death to
+ * improve coverage will reintroduce the wrong verdict, which is worse than
+ * the missing one: people in this world die constantly and the narrator is
+ * meant to say so.
+ *
+ * Both ways the player is named. Prose is second person, and the engine's own
+ * account and the deterministic fallback use the cultivator's NAME - the
+ * fixture in `narrator-output-authority.test.ts` is "Wen Shu is dead", which
+ * a second-person-only test would miss. With no name supplied it falls back
+ * to the second person alone, which can under-report and can never blame the
+ * player for somebody else's death.
+ *
+ * Coverage past this is deliberately absent. "You cut him down" and "you
+ * killed him" do not match, and were measured at 0 of 12 against a validated
+ * classifier on the read most likely to produce them, so there is no
+ * demonstrated defect to catch - and a check built for a hypothetical is how
+ * the four withdrawn ones got written.
+ */
+function claimsThePlayerDied(text: string, who: string | undefined): boolean {
+    // Unambiguous whoever is named: a run is the player's and nobody else's.
+    if (/\bthe run is over\b/i.test(text)) return true;
+
+    const subjects = ['you', ...(who && who.trim() ? [forRegExp(who.trim())] : [])];
+    return new RegExp(`\\b(?:${subjects.join('|')})\\s+(?:${DIED_PREDICATE})`, 'i').test(text);
+}
 
 /**
  * Compare prose against the engine's account.
@@ -800,6 +863,27 @@ const CLAIMS_DEATH =
  * `unresolved-attempt-denials.ts` holds one for every member of
  * `INTERACT_INTENTS`, because all eleven reach the unresolved branch and only
  * `steal` is getting a resolver.
+ *
+ * ── AND WHICH READS WILL FAIL, WHICH THIS PREDICTS ──────────────────────
+ *
+ * The sharper form of the rule, and it is worth having because it says where
+ * to look next rather than only what to do:
+ *
+ * > **A read that already talks about the same stakes as the sentence
+ * > collides with it on its own. A read that lists things and prices has
+ * > nothing to collide with.**
+ *
+ * Measured, on the two reads that stand in for the most act-shaped verbs.
+ * `assess` answers survivability - it is already about danger and
+ * consequence - and a killing sentence put through it came back "you have
+ * CLAIMED to cut Han Liebo down" and "you MOVE TO kill him": 0 of 12 narrated
+ * the blow landing, against a classifier checked on five positives and three
+ * negatives. The market listing answers what is on a stall and what it costs,
+ * and a taking sentence put through it narrated the taking 1 turn in 10.
+ *
+ * So the reads at risk are the ones whose content is orthogonal to the act:
+ * the price lists, the inventories, the destination tables. That is where a
+ * denial has to be supplied, and it is why `assess` needed none.
  */
 export function auditNarration(
     text: string,
@@ -819,10 +903,10 @@ export function auditNarration(
         });
     }
 
-    if (filed.died !== true && CLAIMS_DEATH.test(text)) {
+    if (filed.died !== true && claimsThePlayerDied(text, filed.who)) {
         found.push({
             kind: 'invented_death',
-            detail: 'prose reports a death the engine did not record'
+            detail: 'prose reports the death of the cultivator whose run this is; the engine did not record one'
         });
     }
 

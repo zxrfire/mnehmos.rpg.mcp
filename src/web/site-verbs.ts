@@ -1221,6 +1221,7 @@ export const siteVerbs = {
             breakthroughAttempted: execution.breakthrough !== null,
             // Read off the row rather than off anybody's sentence, which is the
             // whole point of this object.
+            who: this.currentRun().cultivator.name,
             died: execution.timeSkip?.died === true
                 || execution.breakthrough?.outcome === 'death'
                 || !this.currentRun().cultivator.alive
