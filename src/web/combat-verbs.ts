@@ -60,6 +60,7 @@ import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import { isRuined, revealOwnership, ruin } from '../engine/world/possessions.js';
+import { theNameTheVerbDropped } from './the-name-the-verb-dropped.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -371,10 +372,36 @@ export const combatVerbs = {
          * record and the narrator can state what was wanted rather than having
          * to guess it from the outcome.
          */
-        wanted?: string
+        wanted?: string,
+        /**
+         * The player's own sentence, for the case where phase 1 picked the verb
+         * and dropped the object. Read ONLY when `target` is missing, and only
+         * to find a name the player themselves wrote. See
+         * `the-name-the-verb-dropped.ts` for why that is not a discovery leak.
+         */
+        said?: string
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
-        const query = (target ?? '').trim();
+        let query = (target ?? '').trim();
+
+        // ── THE NAME THE VERB DROPPED ────────────────────────────────────
+        //
+        // Reported from play, with the target standing in the square: "I
+        // coerce claire to hand over her stuff, all of it" arrived as
+        // `coerce()` with an empty target and was refused for naming nobody.
+        // From a chair that reads as people not persisting between turns.
+        //
+        // Recovered before the refusal rather than inside it, so everything
+        // below - the faction branch, the resolution, the whole bout - runs on
+        // the recovered name exactly as it would on a typed one.
+        // The recovered name is not announced separately: it becomes `query`,
+        // so every ruling below names the person it resolved to exactly as it
+        // would have if the player's target had survived phase 1. The player
+        // sees who was fought, which is the fact that matters.
+        if (query.length < 2) {
+            const who = theNameTheVerbDropped(said, this.present(cultivator));
+            if (who) query = who.name;
+        }
 
         if (query.length < 2) {
             return refused('engine.resolveParty', 'attack', factsForRefusal(

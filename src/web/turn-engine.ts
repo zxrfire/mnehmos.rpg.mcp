@@ -3332,7 +3332,9 @@ export class GameService {
                 // round; it decides nothing about what a blow does to a body.
                 return this.attack(
                     run, cultivator, ambient, action.target, action.intent ?? 'drive_off',
-                    action.terms ?? 'open', action.opening ?? 'open'
+                    action.terms ?? 'open', action.opening ?? 'open',
+                    // Only read when the target is missing. See `attack`.
+                    undefined, rawInput
                 );
 
             case 'coerce':
@@ -3343,7 +3345,7 @@ export class GameService {
                 // second door onto `threaten`.
                 return this.attack(
                     run, cultivator, ambient, action.target, 'coerce', 'open',
-                    action.opening ?? 'open', action.intent ?? 'submit'
+                    action.opening ?? 'open', action.intent ?? 'submit', rawInput
                 );
 
             case 'interact':
