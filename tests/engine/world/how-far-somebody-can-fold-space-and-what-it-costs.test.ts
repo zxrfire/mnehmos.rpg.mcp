@@ -41,14 +41,31 @@ import {
     isGrantAvailableAt
 } from '../../../src/engine/world/capability.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
-import { REGIONS } from '../../../src/data/cultivation/regions.js';
+import { SPINE_REGIONS } from '../../../src/data/cultivation/regions.js';
 import { horizonInDays } from '../../../src/web/what-you-can-see-from-up-there.js';
 import type { LocationRecord } from '../../../src/engine/world/locations.js';
 
-/** Every stated road in the world, in walking days. */
-const ROADS: number[] = REGIONS.flatMap(region =>
-    region.connections.map(connection => connection.travelDays)
-);
+/**
+ * Every stated road BETWEEN TWO PROVINCES, in walking days.
+ *
+ * Province to province, because that is what the anchor this file checks
+ * actually says: `FOLD_RANGE_AT_THE_FLOOR`'s own comment reads *"the shortest
+ * stated road between any two provinces is six days"*, and somebody at the
+ * floor "can step to the province next door and nowhere else".
+ *
+ * This read every connection on `REGIONS` while `REGIONS` and the five
+ * provinces were the same list. They are not any more - the map now carries
+ * the ungoverned wedge between the arms, and the two roads onto it are four
+ * and five days. Counting those made the shortest stated road four, so the
+ * anchor read as broken when what had actually happened is that a road onto
+ * ground nobody holds is not a road to the province next door.
+ */
+const ROADS: number[] = SPINE_REGIONS.flatMap(region => {
+    const provinceIds = new Set(SPINE_REGIONS.map(r => r.id));
+    return region.connections
+        .filter(connection => provinceIds.has(connection.otherRegionId))
+        .map(connection => connection.travelDays);
+});
 const SHORTEST_ROAD = Math.min(...ROADS);
 const WIDEST_ROAD = Math.max(...ROADS);
 
