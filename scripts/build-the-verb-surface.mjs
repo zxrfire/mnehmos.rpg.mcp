@@ -98,7 +98,8 @@ const HANDLERS = [
     SOURCE.game,
     'src/web/travel-verbs.ts',
     'src/web/combat-verbs.ts',
-    'src/web/investigate-verb.ts'
+    'src/web/investigate-verb.ts',
+    'src/web/asking-verbs.ts'
 ];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
