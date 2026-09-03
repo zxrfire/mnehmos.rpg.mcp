@@ -38,6 +38,7 @@ import {
 import { placeFor } from '../../src/web/encounters';
 import { subjectFromLocation } from '../../src/engine/world/capability';
 import { whatIsWrongWithThisGround } from '../../src/web/ground-status-lines';
+import { factsForLook } from '../../src/web/facts';
 import { handleMarket } from '../../src/server/consolidated/cultivation-mortal';
 import type { LocationRecord } from '../../src/engine/world/locations';
 
@@ -207,4 +208,77 @@ describe('what a war does to the ground it is fought on', () => {
         expect(capped.stage).toBe('encountered');
         expect(capped.lines).toEqual(standing.lines);
     }, 300_000);
+
+    /**
+     * AND THE VERB A PLAYER ACTUALLY TYPES.
+     *
+     * The case above proves the module answers. This proves somebody reaches
+     * it. `ground-status-lines.ts` was extracted so `look` and `investigate`
+     * could not answer one question two ways, and then had NO CALLER IN `src/`
+     * at all, while `investigate` went on carrying a verbatim copy. Measured
+     * before this, standing on the seat of a live war with passage stopped,
+     * prices doubled and the danger up by half:
+     *
+     *     "It is an ordinary day and it intends to stay one."
+     *
+     * A control arm on the same world and the same day, because a look that
+     * reports a war everywhere is not reading anything either.
+     */
+    it('says so when somebody standing on it just looks around', async () => {
+        const { db, game, cultivator, quiet } = await standingOnAWarSeat();
+
+        const onTheSeat = await game.act('I look around');
+        expect(onTheSeat.narration).toMatch(/fighting/i);
+        expect(logOf(onTheSeat)).toMatch(/whatIsWrongWithThisGround: [1-9]/);
+
+        // The same sentence, the same day, somewhere nothing is true of.
+        db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
+            .run(quiet.name, cultivator.id);
+        const elsewhere = await game.act('I look around');
+        expect(elsewhere.narration).not.toMatch(/fighting/i);
+        expect(logOf(elsewhere)).toMatch(/whatIsWrongWithThisGround: 0 line/);
+    }, 300_000);
+
+    /**
+     * AND IT DOES NOT SAY BOTH THINGS AT ONCE.
+     *
+     * Wiring the read exposed the other half. `selfNoticing` closes a look by
+     * saying nothing is wrong when the PERSON is fine - which is a claim about
+     * the GROUND, made by a function that has never read it. So the first
+     * build of the case above printed, in one paragraph:
+     *
+     *     It is an ordinary day and it intends to stay one.
+     *     The Weir Office is fighting The Sixmile Wardens...
+     *
+     * "Nothing lies or contradicts itself" is a floor at every reading tier,
+     * and this is the deterministic one: no model is involved in the defect or
+     * in the fix.
+     */
+    it('does not call the day ordinary in the same breath as the war', async () => {
+        const { game, repos, cultivator } = await standingOnAWarSeat();
+
+        const onTheSeat = await game.act('I look around');
+        expect(onTheSeat.narration).not.toMatch(QUIET_DAY_LINE);
+
+        // THE CONTROL, and it is a differential rather than a second square:
+        // somebody who has been advanced forty years carries stagnation notes
+        // of their own, and those suppress the fallback everywhere. The claim
+        // is that the GROUND is what suppresses it, so the arms are the same
+        // person on the same day with only `groundIsQuiet` moved.
+        const sheet = repos.cultivators.getById(cultivator.id)!;
+        const rested = { ...sheet, yearsAtCurrentRealm: 0, hp: sheet.maxHp, injuries: [] };
+        expect(factsForLook(rested, 'normal', undefined, null, true).prose)
+            .toMatch(QUIET_DAY_LINE);
+        expect(factsForLook(rested, 'normal', undefined, null, false).prose)
+            .not.toMatch(QUIET_DAY_LINE);
+    }, 300_000);
 });
+
+/** The five ways `selfNoticing` says nothing is wrong. */
+const QUIET_DAY_LINE =
+    /ordinary day|Nothing about the day is urgent|day asks nothing|going wrong at any speed|Nothing is pressing/i;
+
+/** Every engine row this turn wrote, which is where `structure` lands. */
+function logOf(result: { state: { log: Array<{ role: string; text: string }> } }): string {
+    return result.state.log.filter(e => e.role === 'engine').map(e => e.text).join('\n');
+}

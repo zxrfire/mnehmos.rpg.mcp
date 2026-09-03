@@ -749,7 +749,17 @@ describe('every intent DECLARED is a door somebody can find', () => {
         ],
         'coerce/talk': ['I beat the truth out of him', 'I make him talk'],
         // An animal made to submit is a tamed animal. Same verb, same resolver.
-        'coerce/tame': ['I tame the beast', 'I break the wolf in']
+        'coerce/tame': ['I tame the beast', 'I break the wolf in'],
+        // Who answers for the ground under you. Four phrasings, and the
+        // first two are the ones measured routing WRONG on a fresh run:
+        // "I ask" put it to whoever was nearest, and "who is in charge
+        // here" was answered with the player's own sect standing.
+        'look/holder': [
+            'I ask who holds this ground',
+            'who is in charge here',
+            'who holds this ground',
+            'whose land is this'
+        ]
     };
 
     /**

@@ -50,6 +50,10 @@ import {
 } from '../engine/social-leverage/index.js';
 import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
 import {
+    theGroundUnderYou,
+    type TheGroundUnderYou
+} from '../engine/social-leverage/ground-trust.js';
+import {
     type OnTheTable,
     howHeavyThisAskIs,
     howTheyAreHoldingIt,
@@ -64,7 +68,9 @@ import {
     catalogPersonBehind,
     theOneIdAPersonIsKnownBy
 } from '../engine/world/a-catalog-person-and-their-world-row.js';
+import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+import { statusesInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import { transferPossession } from '../engine/world/possessions.js';
 import {
     type SomebodyWithGoals,
@@ -194,6 +200,37 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
  * earlier, and the fix is the same: let the text know what the state knows.
  */
 const askedBeforeKey = (personId: string, kind: string): string => `asked:${kind}:${personId}`;
+
+/**
+ * The ground the two of them are standing on, priced for whether a stranger is
+ * believed on it.
+ *
+ * The design owner's ruling that trust depends on WHERE YOU ARE. The world
+ * simulation has filled `AttemptInput.where` at both of its `resolveAttempt`
+ * calls since the term landed, and the PLAYED calls did not - so every
+ * manoeuvre any NPC ran on any other was priced on its ground and every
+ * manoeuvre the player ran was priced nowhere. That is this repository's
+ * commonest defect with the arms reversed, and it is one function rather than
+ * three copies for the obvious reason.
+ *
+ * Null is a real answer and weighs nothing: it means the caller does not know
+ * where this is happening, which is not the same as ground nobody holds. See
+ * `GroundHolding`, where the four ways of having no holder are four rows.
+ *
+ * The statuses are read on the WORLD clock rather than the run's, because a
+ * famine is dated in the world and `run.elapsedDays` is a different number.
+ */
+function theGroundBetweenThem(
+    world: { locations: Parameters<typeof whoHoldsTheGround>[0]; statuses: Parameters<typeof statusesInArea>[0]; currentDay: number } | null,
+    locationId: string | null
+): TheGroundUnderYou | null {
+    if (!world || !locationId) return null;
+    const day = Math.floor(world.currentDay);
+    return theGroundUnderYou(
+        whoHoldsTheGround(world.locations, locationId),
+        statusesInArea(world.statuses, world.locations, locationId, day)
+    );
+}
 
 export const askingVerbs = {
     /**
@@ -414,6 +451,18 @@ export const askingVerbs = {
             theirTie: tieFrom(this.repos, party.id, cultivator.id),
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
+            // whatever tie the subject already holds, because the ruling is
+            // about the same STRANGER saying the same thing.
+            //
+            // The world simulation reads the SUBJECT's ground, because the
+            // approach goes to them. Here it is the player's, and the two are
+            // the same square by construction - somebody has to be present to
+            // be pressed - so this is the same rule and not a second one.
+            // Resolving the subject's own world row instead would be the
+            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
+            // presence belongs to the play layer.
+            where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
             // And the fourth, which was the last term with no caller at all.
             theyWantSomethingFromYou: this.whatTheyWantOfYou(cultivator, party.id) !== null,
             ask: asked,
@@ -1357,6 +1406,18 @@ ${unnamed}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
+            // whatever tie the subject already holds, because the ruling is
+            // about the same STRANGER saying the same thing.
+            //
+            // The world simulation reads the SUBJECT's ground, because the
+            // approach goes to them. Here it is the player's, and the two are
+            // the same square by construction - somebody has to be present to
+            // be pressed - so this is the same rule and not a second one.
+            // Resolving the subject's own world row instead would be the
+            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
+            // presence belongs to the play layer.
+            where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
             // ── AND WHAT THEY WANT THAT YOU ARE PART OF ──────────────────
             //
             // The last of the seven with no caller anywhere in this layer.
@@ -1961,6 +2022,18 @@ ${done.lines.join(' ')}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
+            // whatever tie the subject already holds, because the ruling is
+            // about the same STRANGER saying the same thing.
+            //
+            // The world simulation reads the SUBJECT's ground, because the
+            // approach goes to them. Here it is the player's, and the two are
+            // the same square by construction - somebody has to be present to
+            // be pressed - so this is the same rule and not a second one.
+            // Resolving the subject's own world row instead would be the
+            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
+            // presence belongs to the play layer.
+            where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
             // A trade whose price is met is an ordinary favour. One whose price
             // is not met asks them to end up worse off and see it while
             // agreeing, which is what `against_their_interest` means.

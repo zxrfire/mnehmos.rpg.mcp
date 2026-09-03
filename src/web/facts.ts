@@ -1170,11 +1170,20 @@ export function factsForLook(
      * consequential thing a low cultivator can acquire and the world never
      * mentioned it again.
      */
-    standing: string | null = null
+    standing: string | null = null,
+    /**
+     * Whether the ground under them has nothing wrong with it.
+     *
+     * False suppresses the nothing-is-wrong fallback, and only that: every
+     * line about the PERSON still prints. Only the caller can answer it,
+     * because only the caller has read the area-status layer.
+     */
+    groundIsQuiet = true
 ): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
     const who = describeCompany(company, cultivator.realmOrdinal);
+    const noticed = selfNoticing(cultivator, groundIsQuiet);
 
     if (standing) lines.push(standing);
     if (who) lines.push(who);
@@ -1183,7 +1192,7 @@ export function factsForLook(
         `${where}. ${describeAmbientPerceived(ambient)}`,
         ...(standing ? [standing] : []),
         ...(who ? [who] : []),
-        selfNoticing(cultivator)
+        ...(noticed ? [noticed] : [])
     ].join('\n\n');
 
     return observable(`${where}.`, lines, prose, [
@@ -1377,7 +1386,7 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
  * empty purse, a wound that has not closed and a year that went nowhere are all
  * things somebody notices about themselves; none of them are things they count.
  */
-function selfNoticing(cultivator: Cultivator): string {
+function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
     const notes: string[] = [];
     const untreated = untreatedInjuryCount(cultivator.injuries);
 
@@ -1425,6 +1434,24 @@ function selfNoticing(cultivator: Cultivator): string {
     }
 
     if (notes.length > 0) return notes.join(' ');
+
+    // AND THE DAY IS ONLY QUIET IF THE GROUND AGREES.
+    //
+    // Everything above is about the PERSON. The fallback is about the WORLD,
+    // and the world has its own reader - `ground-status-lines.ts` - which knows
+    // about the war, the famine, the beast tide and the shut road. Saying the
+    // day intends to stay ordinary directly above four sentences describing a
+    // siege is the one thing a turn may never do at any tier.
+    //
+    // Measured the moment `look` was wired to the status layer, standing on
+    // the seat of a live war with the caravans stopped:
+    //
+    //     It is an ordinary day and it intends to stay one.
+    //     The Weir Office is fighting The Sixmile Wardens...
+    //
+    // The caller says whether the ground is quiet, because only the caller has
+    // read it. Defaulting to true leaves every other caller as it was.
+    if (!groundIsQuiet) return '';
 
     // Nothing is wrong, which still has to be said differently in different
     // places. This line is a constant on a quiet day, so a player walking

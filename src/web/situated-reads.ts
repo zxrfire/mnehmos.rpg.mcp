@@ -78,6 +78,7 @@ import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js
 import { rosterFor, sectBoardFor } from './encounters.js';
 import { resolveTechnique, worldLocationFor } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
+import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import {
     type GroundNearby,
     type ThingThatTeaches,
@@ -989,6 +990,54 @@ export const situatedReads = {
             withinReach,
             daysToTheSoonest: Math.max(0, Math.round(soonest - onDay))
         };
+    },
+
+    /**
+     * Who answers for the ground under them, asked for deliberately.
+     *
+     * The trust term in `ground-trust.ts` has been moving the player's odds off
+     * this since it landed, and the played game would not say it:
+     * `whoHoldsTheGround` had two callers in `src/` and both were inside the
+     * NPC simulation. Measured on a fresh run, which opens at the Meet on The
+     * Blown Ground - so a player stands on the one province nobody holds, on
+     * turn one, and could not find out. Five phrasings, five wrong answers:
+     *
+     *   "I ask who holds this ground"  an NPC, and the resolve failed
+     *   "who holds this ground"        `destinations`, answering with the
+     *                                  province's realm ceiling
+     *   "whose ground is this"         the same
+     *   "who is in charge here"        `sect`, answering about the PLAYER
+     *   "who do I complain to here"    unclear
+     *
+     * Somebody who ASKED is answered whichever of the four readings it is,
+     * including "the record does not say" - which is the one the old fold
+     * priced as a vacuum. The volunteer is narrower and lives with the look
+     * itself; see `ground-holder-lines.ts` for why.
+     *
+     * Free. Asking whose ground you are standing on costs nothing anywhere.
+     */
+    whoAnswersHere(this: GameService, run: Run, cultivator: Cultivator): Execution {
+        const where = this.worldPlaceOf(cultivator);
+        if (!this.atHand || !where) {
+            return this.freeAction(run, 'look', factsForRefusal(
+                'There is no place on the record to ask the question of.',
+                'You look for whose ground this is, and there is no record here to read it '
+                + 'off. Somewhere the world keeps a survey of would have an answer.'
+            ));
+        }
+        const holder = whoAnswersForThisGround({
+            locations: this.atHand.locations,
+            locationId: where,
+            standingHere: true
+        });
+        const facts = factsForToolResult(
+            holder.holderName
+                ? `${holder.holderName} holds ${holder.placeName ?? 'this ground'}.`
+                : `Nobody's name is against ${holder.placeName ?? 'this ground'}.`,
+            [holder.answer]
+        );
+        facts.structure.push(holder.structure);
+        return this.freeAction(run, 'look', facts);
     },
 
     /**

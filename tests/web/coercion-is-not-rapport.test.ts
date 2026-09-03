@@ -24,7 +24,7 @@
  * pinned here.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import type Database from 'better-sqlite3';
 
 import { makeGameInWorld, engineCalls } from './harness';
@@ -47,6 +47,20 @@ const ledgerAbout = (db: Database.Database, playerId: string): LedgerRow[] =>
  * not a world is pinning a coincidence: `createWorld` mints `randomUUID()` when
  * the installation has none, so the same run seed meets a different several
  * hundred people every execution.
+ *
+ * AND THE SEEDS ARE CHOSEN SO THE ATTEMPT LANDS, which is worth saying out
+ * loud because it is the weak part of this file. What is being measured is what
+ * happens WHEN a wrong lands; the landing itself is scaffolding, and it is a
+ * roll at roughly even odds - swept across six seeds it came out 34, 54, 56,
+ * 65, 78 and 79 in a hundred. So these seeds are pinned to two that land with
+ * room to spare rather than to two that happened to.
+ *
+ * It should be FORCED instead, and cannot be yet. `ADMIN <verb> <sentence>`
+ * takes the whole remaining line as the target - "coerce I threaten the nearest
+ * cultivator" resolves nobody - so forcing cannot currently carry the player's
+ * own sentence into a verb that needs a target out of it. That is a gap in the
+ * admin surface rather than in this file, and when it closes these seeds stop
+ * mattering.
  */
 async function standingOverEverybody(seed: string) {
     const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
@@ -61,10 +75,10 @@ async function standingOverEverybody(seed: string) {
 
 describe('a wrong that lands is not an arrangement', () => {
     it.each([
-        ['I threaten the nearest cultivator', 'humiliation'],
-        ['I steal from the nearest cultivator', 'robbery']
-    ])('%s writes a grudge and no tie', async (said, cause) => {
-        const { db, game, id } = await standingOverEverybody(`wrong-${cause}`);
+        ['I threaten the nearest cultivator', 'humiliation', 'wrong-humiliation-e'],
+        ['I steal from the nearest cultivator', 'robbery', 'wrong-robbery-e']
+    ])('%s writes a grudge and no tie', async (said, cause, seed) => {
+        const { db, game, id } = await standingOverEverybody(seed);
 
         const acted = await game.act(said);
 
@@ -94,7 +108,7 @@ describe('a wrong that lands is not an arrangement', () => {
      * declined, which is the only place a future reader can find out.
      */
     it('says on the engine channel what it declined to write', async () => {
-        const { game } = await standingOverEverybody('wrong-says-so');
+        const { game } = await standingOverEverybody('wrong-says-so-e');
         const acted = await game.act('I threaten the nearest cultivator');
 
         const tie = engineCalls(acted).find(c => c.name === 'social.recordTie');

@@ -737,6 +737,8 @@ import {
     FLAG_STEP_TAKEN
 } from './flag-keys.js';
 import { wholeWorkVolumes } from './manual-volumes.js';
+import { whatIsWrongWithThisGround } from './ground-status-lines.js';
+import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { situatedReads } from './situated-reads.js';
 import { seclusionVerbs } from './seclusion-verbs.js';
 import { crossingVerb } from './crossing.js';
@@ -3602,6 +3604,18 @@ ${noticedWaiting}`;
                     ));
                 }
 
+                // WHO ANSWERS FOR THIS GROUND, ASKED FOR DELIBERATELY.
+                //
+                // The volunteer at the foot of this case speaks only where
+                // nobody holds the ground. Somebody who ASKED is owed the
+                // answer whichever of the four readings it is - including "the
+                // record does not say", which is the one that used to be priced
+                // as a vacuum.
+                if (action.intent === 'holder') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.whoAnswersHere(run, cultivator);
+                }
+
                 if (action.intent === 'crowding') {
                     this.atHand = this.atHand ?? await this.loadWorld();
                     const crowding = this.crowdingHere(cultivator);
@@ -3642,12 +3656,86 @@ ${noticedWaiting}`;
 
                 const company = this.company(cultivator);
                 const standing = this.standingHere(cultivator);
+                // ── AND WHETHER ANYTHING IS WRONG WITH THIS GROUND ───────
+                //
+                // The second caller `ground-status-lines.ts` was extracted for,
+                // and it had never been wired: the module sat with no caller in
+                // `src/` while `investigate` carried a verbatim copy. Its own
+                // header holds the measurement - standing on the seat of a live
+                // war, with `stops: ['passage']`, `priceMultiplier: 2` and
+                // `dangerDelta: 0.5` all running, `I look around` ended "It is
+                // an ordinary day and it intends to stay one."
+                //
+                // Both verbs read the identical module now, which is the point:
+                // a famine must not be something a player learns only by
+                // guessing the other verb.
+                //
+                // `standingHere` is true by construction here. Looking round IS
+                // the ground under your own feet, and that is the floor case
+                // the stage rule exists for.
+                const groundHere = this.worldPlaceOf(cultivator);
+                const wrong = this.atHand && groundHere
+                    ? whatIsWrongWithThisGround({
+                        statuses: this.atHand.statuses,
+                        locations: this.atHand.locations,
+                        locationId: groundHere,
+                        day: Math.floor(this.atHand.currentDay),
+                        heldStage: this.knowledge.stageOf(cultivator.id, 'place', groundHere),
+                        standingHere: true
+                    })
+                    : null;
+                // And the quiet-day fallback is a claim about the GROUND, so
+                // it does not get to stand above a war. Everything `look` says
+                // about the person is untouched; `factsForLook` drops only the
+                // nothing-is-wrong line, and only when the ground contradicts
+                // it.
+                const groundIsQuiet = !wrong || wrong.lines.length === 0;
                 const looking = this.freeAction(
                     run, 'look',
                     action.intent === 'company'
                         ? factsForCompany(cultivator, company, standing)
-                        : factsForLook(cultivator, ambient, company, standing)
+                        : factsForLook(cultivator, ambient, company, standing, groundIsQuiet)
                 );
+                if (wrong) {
+                    for (const line of wrong.lines) {
+                        looking.facts.lines.push(line);
+                        looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                    }
+                    looking.facts.structure.push(
+                        `whatIsWrongWithThisGround: ${wrong.lines.length} line(s) at stage `
+                        + `${wrong.stage} over ${wrong.running} status(es) running here.`
+                    );
+                }
+                // ── AND WHO ANSWERS FOR IT, WHERE NOBODY DOES ────────────
+                //
+                // The trust term has been moving the player's odds off this
+                // since it landed and the game would not say it: both callers
+                // of `whoHoldsTheGround` were inside the NPC simulation. A
+                // fresh run opens at the Meet on The Blown Ground, so this is
+                // turn-one ground.
+                //
+                // Volunteered only where nobody holds it. An absent register is
+                // a fact about paper, not about the world, and it would print
+                // over most of the map: measured on a seeded world, 113 of 435
+                // people stand on ground the record does not describe. Asked
+                // for deliberately, all four readings answer - `whoAnswersHere`
+                // in `situated-reads.ts`.
+                if (this.atHand && groundHere) {
+                    const holder = whoAnswersForThisGround({
+                        locations: this.atHand.locations,
+                        locationId: groundHere,
+                        standingHere: true
+                    });
+                    for (const line of holder.lines) {
+                        looking.facts.lines.push(line);
+                        looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                    }
+                    looking.facts.structure.push(holder.structure);
+                }
                 // And the wall, but only where it has something the player has
                 // not already read. Looking round a market town every day for a
                 // season must not reprint the same two posters; a bill whose

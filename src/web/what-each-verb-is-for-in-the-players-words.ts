@@ -469,12 +469,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     look: {
         takes: ['intent'],
-        intents: ['history', 'ground_time', 'crowding', 'bills', 'company'],
+        intents: ['history', 'ground_time', 'crowding', 'bills', 'company', 'holder'],
         says: `observe the surroundings. Passes no time. "intent" narrows what is being looked
             at: "history" for what people say has happened HERE (not news, which is elsewhere),
             "ground_time" for how long this ground would take somebody, "crowding" for how many
             are already drawing on it, "bills" for what is posted on the wall, "company" for
-            who else is standing here. Omit it for the plain read.`
+            who else is standing here, "holder" for who holds this ground and what there is to
+            complain to if you are wronged on it. Omit it for the plain read.`
     },
     status: {
         takes: [],
