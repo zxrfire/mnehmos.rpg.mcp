@@ -1082,20 +1082,28 @@ export interface ExchangeContext {
     attackerPosture?: number;
     defenderPosture?: number;
     /**
-     * What to call a wound this exchange leaves, when the thing that dealt it
-     * is not a person.
+     * What to call a wound this exchange leaves, when the attacker is not a
+     * person.
      *
      * `resolveExchange` is the shared resolver for anything that trades force,
-     * and one of its callers is not a fight at all: `site-verbs.ts` runs it
-     * with the GROUND as the attacker, so somebody standing below a ruin's
-     * floor was taking wounds the record called `combat`. Nobody hit them, and
-     * a wound has to be a cause the game can name afterwards.
+     * and some of its callers are not people: `site-verbs.ts` runs it with a
+     * ruin's own rung as the attacker. Those wounds stay `combat`, which is the
+     * correct answer and the reason there is no enum member for scenery - **a
+     * wound has an AUTHOR, and an exchange is what having one looks like.**
      *
-     * Omitted keeps the old behaviour exactly - poison where the attacker
-     * brought it, `combat` otherwise - so every existing caller's record and
-     * seeded sequence are unchanged. A caller that IS a person should leave
-     * this alone rather than passing `combat` explicitly; the default is the
-     * statement that somebody swung.
+     * A `ground` member was added here and withdrawn within the hour, ruled by
+     * the design owner: *"ground is too vague... when you go into ruins a
+     * specific thing hurts you. some sort of sealed automaton, traps,
+     * formations."* Naming the room names the place a fight happened instead of
+     * naming what was fought, and "torn by ground deeper than they were" points
+     * at no author at all. It is the same defect as a die rolled against the
+     * calendar, wearing a location instead of a clock.
+     *
+     * So this field is for a caller that can name a SPECIFIC non-person
+     * attacker and needs the record to say which - not for labelling a place.
+     * Poison stays a property of what the attacker BROUGHT and outranks it.
+     * Omitted is the old behaviour exactly, so every existing caller's record
+     * and seeded sequence are byte-identical.
      */
     injurySource?: InjurySource;
 }
