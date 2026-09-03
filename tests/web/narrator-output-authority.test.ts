@@ -171,3 +171,64 @@ describe('the ceiling is answerable without spending the decade', () => {
         expect(status.narration).not.toMatch(/no road for the qi/i);
     });
 });
+
+
+/**
+ * WHOSE death the prose is describing.
+ *
+ * `filed.died` means THE RUN ENDED. The check used to match any death in the
+ * sentence, so prose naming an NPC dying was reported as the player's own
+ * invented death and the turn was replaced - a true objection with a false
+ * reason, which is the same sin as the narration this exists to police.
+ *
+ * Measured before the fix: "Han Liebo is dead." came back CAUGHT as
+ * invented_death. Nothing about that narration was wrong.
+ */
+describe('the death check is about the player and nobody else', () => {
+    const who = 'Mo Qianshu';
+
+    it('does not report an NPC death as the player inventing one', () => {
+        for (const prose of [
+            'Han Liebo is dead.',
+            'The bandit died where he stood.',
+            'You cut Han Liebo down and he is dead.',
+            // Another cultivator sharing nothing but the grammar.
+            'Wen Shu is dead.'
+        ]) {
+            expect(auditNarration(prose, { died: false, who }), prose).toEqual([]);
+        }
+    });
+
+    it('still catches the player dying, named either way', () => {
+        for (const prose of [
+            'You are dead.',
+            'You died in the dark.',
+            'You were killed.',
+            'You did not survive.',
+            // The engine's own account and the deterministic fallback use the
+            // name rather than the second person, so both have to match.
+            'Mo Qianshu is dead.',
+            // A run is the player's and nobody else's, whoever is named.
+            'He starved in the dark and the run is over.'
+        ]) {
+            expect(
+                auditNarration(prose, { died: false, who }).map(v => v.kind),
+                prose
+            ).toEqual(['invented_death']);
+        }
+    });
+
+    it('says nothing when the engine did record the death', () => {
+        expect(auditNarration('You are dead.', { died: true, who })).toEqual([]);
+    });
+
+    /**
+     * With no name supplied the check narrows rather than widens: it can miss
+     * a by-name death and it can never blame the player for somebody else's.
+     */
+    it('under-reports rather than misattributing when no name is given', () => {
+        expect(auditNarration('Mo Qianshu is dead.', { died: false })).toEqual([]);
+        expect(auditNarration('You are dead.', { died: false }).map(v => v.kind))
+            .toEqual(['invented_death']);
+    });
+});
