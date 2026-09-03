@@ -288,6 +288,15 @@ export function resolveActiveRun(
  */
 export const FLAG_SOUL_ENDED = 'soul_ended';
 
+/**
+ * That this body is still walking and there is nobody in it.
+ *
+ * The player's side of what `identityContinuity: 0` records for everybody
+ * else. Distinct from {@link FLAG_SOUL_ENDED}, which is a soul put out along
+ * with the body; this one leaves the body.
+ */
+export const FLAG_SOUL_HOLLOWED = 'soul_hollowed';
+
 export const FLAG_GRAIN_ABSTINENCE_UNTIL = 'grain_abstinence_until_day';
 export const FLAG_PENDING_PILL = 'pending_pill';
 export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';

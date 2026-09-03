@@ -1809,7 +1809,20 @@ export const PillEffectSchema = z.enum([
      * nothing. This is the difference between being killed and taking it with
      * you.
      */
-    'end_the_soul'
+    'end_the_soul',
+    /**
+     * Breaks the soul open and leaves the body walking.
+     *
+     * The far end of the axis `end_the_soul` sits on, and the pair is the
+     * point: one puts a soul out, the other hollows one and keeps it. Same
+     * field, same direction, different setting.
+     *
+     * The pill hollows and appoints nobody. Whose hand the body is under is a
+     * separate fact written by whoever put it in them - see
+     * `a-body-under-somebody-elses-hand.ts` - so swallowing one alone leaves
+     * somebody emptied and belonging to no one.
+     */
+    'hollow_the_soul'
 ]);
 export type PillEffect = z.infer<typeof PillEffectSchema>;
 

@@ -30,7 +30,7 @@
  */
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
-import { getSect, getTechnique } from '../data/cultivation/index.js';
+import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
 import { requireRegion } from '../data/cultivation/regions.js';
 import { sectThreat } from '../data/cultivation/sects.js';
 import {
@@ -85,7 +85,15 @@ import {
     settleAFight
 } from '../server/consolidated/combat-manage.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
-import { isGuidingErrorBody, removeFromPouch } from '../server/consolidated/cultivation-support.js';
+import {
+    isGuidingErrorBody,
+    listPouch,
+    removeFromPouch
+} from '../server/consolidated/cultivation-support.js';
+import {
+    whatBeingMadeIntoAThingOpens,
+    whatTheHandLeaves
+} from '../engine/social/a-body-under-somebody-elses-hand.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
@@ -1059,6 +1067,9 @@ export const combatVerbs = {
             if (held.wanted === 'hand_over') {
                 this.whatAYieldingHandedOver(run, cultivator, held, execution);
             }
+            if (held.wanted === 'swallow') {
+                this.whatWasPutDownTheirThroat(run, cultivator, held, execution);
+            }
         }
 
         return this.afterAFight(run, cultivator, held, settled, execution);
@@ -1374,6 +1385,150 @@ export const combatVerbs = {
                 `${held.party.name} yielded and was stripped, and holds a ${opened.severity} `
                 + `grudge about it against ${cultivator.name}. It costs points on every later `
                 + 'approach to them.',
+            ok: true
+        });
+    },
+
+    /**
+     * What somebody who has yielded is made to swallow.
+     *
+     * The other thing a submission opens, and the one the design owner named
+     * beside it. Same shape as the strip: the outcome is already decided, this
+     * is what the compliance was FOR, and it runs where the sentence lands.
+     *
+     * -- IT TAKES A PILL OUT OF YOUR POUCH ---------------------------------
+     *
+     * There is no forcing somebody to swallow a thing you are not carrying, so
+     * the row is spent off the player and the refusal names that when there is
+     * nothing to spend. One pill or a named one: where several are carried and
+     * the sentence named none, the act does not guess which, because guessing
+     * between a healing pill and a hollowing pill is not a thing to be wrong
+     * about quietly.
+     *
+     * -- AND THE EFFECT LANDS ON THEM, NOT ON YOU --------------------------
+     *
+     * `handleConsumePill` applies a pill to a stored cultivator and a world
+     * NPC has no such row, so this does not route through it. What it does
+     * instead is set the state the two soul modules already define - a poison
+     * ends, a hollowing empties - and leave every other pill as a thing that
+     * was swallowed and did nothing anybody can see from outside. That is
+     * honest rather than lazy: the engine has no model for an NPC's hit points
+     * being restored, and inventing one to make a healing pill legible would
+     * be a second body model for one verb.
+     *
+     * -- THE LEDGER IS THE POINT ------------------------------------------
+     *
+     * A hollowing opens the largest row this system writes, held by them and
+     * outliving both the freeing and the holder. Everything else here is
+     * bookkeeping around that.
+     */
+    whatWasPutDownTheirThroat(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        execution: Execution
+    ): void {
+        const onDay = Math.floor(run.elapsedDays);
+        const carried = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
+
+        if (carried.length === 0) {
+            const line = `${held.party.name} is on their knees with their mouth open and you `
+                + 'have nothing to put in it.';
+            execution.facts.lines.push(line);
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.structure.push(
+                'coerce/swallow: no pill in the pouch. Nothing spent and nothing applied.'
+            );
+            return;
+        }
+
+        // The only one they are carrying, or nothing. Never guessed.
+        //
+        // A player holding one pill has said which by carrying it. A player
+        // holding four has not, and the difference between a healing pill and
+        // a hollowing pill is not something to be wrong about quietly - so
+        // this asks rather than picking, which is the same shape every other
+        // ambiguous naming in this layer takes.
+        const named = carried.length === 1 ? carried[0] : null;
+
+        if (!named) {
+            const names = carried.map(row => getPill(row.itemId)?.name ?? row.itemId).join(', ');
+            const line = `You are carrying ${carried.length} different pills and did not say `
+                + `which one. ${held.party.name} waits, which is the only thing left to them.`;
+            execution.facts.lines.push(line);
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.structure.push(
+                `coerce/swallow: ${carried.length} pills carried (${names}) and none named. `
+                + 'Nothing spent. The act does not choose between a healing pill and a '
+                + 'hollowing pill on the player\'s behalf.'
+            );
+            return;
+        }
+
+        const pill = getPill(named.itemId);
+        const pillName = getPill(named.itemId)?.name ?? named.itemId;
+        removeFromPouch(this.db, cultivator.id, named.itemId, 1);
+        this.worldDirty = true;
+
+        const world = this.atHand;
+        const row = (world?.npcs ?? []).find(npc => npc.id === held.party.id) ?? null;
+        const effect = pill?.effect ?? null;
+
+        let line: string;
+        if (row && effect === 'end_the_soul') {
+            row.soulState = 'fading';
+            row.identityContinuity = 0;
+            line = `${pillName} goes down, and ${held.party.name} is still looking at you when `
+                + 'whatever was behind their eyes stops being there.';
+        } else if (row && effect === 'hollow_the_soul') {
+            const after = whatTheHandLeaves(
+                { soulState: row.soulState, identityContinuity: row.identityContinuity, tags: row.tags },
+                cultivator.id
+            );
+            row.soulState = after.soulState;
+            row.identityContinuity = after.identityContinuity;
+            row.tags = [...after.tags];
+            writeObligation(this.db as unknown as DatabaseHandle, createObligation(
+                whatBeingMadeIntoAThingOpens({
+                    victimId: held.party.id,
+                    holderId: cultivator.id,
+                    holderName: cultivator.name,
+                    victimName: held.party.name,
+                    onDay,
+                    knownTo: this.present(cultivator)
+                        .filter(who => who.id !== held.party.id && who.id !== cultivator.id)
+                        .map(who => who.id)
+                })
+            ));
+            line = `${pillName} goes down. ${held.party.name} stops resisting, and then stops `
+                + 'doing anything else that was theirs. What is standing there is in good '
+                + 'repair and is yours.';
+            execution.calls.push({
+                name: 'social.createObligation',
+                action: 'coerce',
+                summary:
+                    `${held.party.name} holds an unforgivable account against ${cultivator.name} `
+                    + 'for being made into a thing. Taking the hand off does not settle it and '
+                    + 'neither does dying: it passes to whoever holds it next.',
+                ok: true
+            });
+        } else {
+            line = `${pillName} goes down. ${held.party.name} swallows because there is nothing `
+                + 'else left to do, and whatever it was for was not for them.';
+        }
+
+        execution.facts.lines.push(line);
+        execution.facts.prose = [execution.facts.prose, line].join('\n');
+        execution.facts.structure.push(
+            `coerce/swallow: ${named.itemId} (${effect ?? 'no catalog row'}) spent off `
+            + `${cultivator.name} and applied to ${held.party.id}`
+            + `${row === null ? ', who has no world row, so only the pouch moved' : ''}.`
+        );
+        execution.calls.push({
+            name: 'alchemy.forced',
+            action: 'coerce',
+            summary: line,
             ok: true
         });
     },
