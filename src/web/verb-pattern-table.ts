@@ -2052,6 +2052,56 @@ export const BUYING_VERBS =
     + 'book|books|hire|hires|acquire|acquires|take passage|pay the';
 
 /**
+ * An OFFER to buy, which is how English speakers actually buy things.
+ *
+ * -- THE TURN THIS WAS FOUND ON -------------------------------------------
+ *
+ * Played in Watering with thirty stones and a stall the game had just listed,
+ * one turn apart, same item, same purse:
+ *
+ *   buy the Lesser Qi-Gathering Manual      bought, off Bai Xuping, 4 stones
+ *   I'll take the Lesser Qi-Gathering Manual   "The thought does not resolve."
+ *
+ * **"I'll take it" is the single most common way an English speaker buys
+ * something**, and a market stall that does not understand it is not a market
+ * stall. The verb behind it was finished and excellent; only the English was
+ * unreachable.
+ *
+ * -- IT IS A MISSING LINE, NOT A RANKING FAULT ----------------------------
+ *
+ * Worth recording because the opposite was the working hypothesis. Measured
+ * over fourteen ordinary ways of buying: 3 reached `buy`, and every failure
+ * came back `unclear` with **`target: null`** - so nothing outranked anything.
+ * `BUYING_VERBS` simply has no `take`, no `have` and no `get`, and the sentence
+ * matched nothing at all. A noun beating a verb would have left the noun
+ * behind; there was no noun.
+ *
+ * -- AND `take` IS NOT ADDED TO `BUYING_VERBS` ----------------------------
+ *
+ * Deliberately, because the bare phrasing is already owned: the branch below
+ * says in as many words that taking a thing off somebody full stop is the
+ * `steal` intent. So this matches the OFFER forms - a future, a request, a
+ * politeness - and never the bare `I take the manual`, which stays where it is.
+ * `I'll take` is a sentence somebody says across a counter; `I take` is not.
+ *
+ * `give me` is left alone here and reported instead: "give me the cheaper one"
+ * is a purchase, and the same two words in front of a person's possession are
+ * a demand, so it wants a narrower home than this pattern.
+ */
+export const OFFERING_TO_BUY = new RegExp([
+    // A future, which is the offer form. "I'll take it", "we will take two".
+    String.raw`\b(?:i|we)(?:'ll|ll| will| shall)\s+take\b`,
+    // A request across a counter.
+    String.raw`\blet me have\b`,
+    // Polite, and it carries a buying word that the interact table was taking
+    // first on the word "like".
+    String.raw`\bi(?:'d| would)\s+like\s+to\s+(?:buy|take|have|purchase)\b`,
+    // "get me that book". Scoped to a determiner so it cannot reach "get me
+    // out of here", which is not a purchase and not this verb.
+    String.raw`\bget me (?:the|that|a|an|one|two|another)\b`
+].join('|'), 'i');
+
+/**
  * Paying somebody off, which is `interact` and not a line on a board.
  *
  * Vetoed rather than ordered around, because the sentence that needs it
@@ -2126,6 +2176,84 @@ const LEVERAGE_BEHIND_INTENT: Readonly<Partial<Record<string, z.infer<typeof App
  * the branches they already have and only a sentence with an object in it
  * produces one.
  */
+/**
+ * "TELL" HAS TWO MEANINGS AND THE PARSER ONLY KNEW ONE.
+ *
+ * -- THE TURN THIS WAS FOUND ON -------------------------------------------
+ *
+ * Played, with `I look at Bai Xuping` sitting in the live strip at the time:
+ *
+ *   what can I tell about Bai Xuping just by looking at him?
+ *   -> Bai Xuping, approached. Stated intent: talk.
+ *   -> "No words were exchanged. Nobody greeted Lin Yuzhen."
+ *
+ * The only action word in the sentence is LOOKING. It routed to speech, and the
+ * target came back as `"Bai Xuping just by looking at him"` - the whole trailing
+ * clause swallowed, which is the tell that the wrong verb had claimed it.
+ *
+ * -- AND THIS ONE REALLY IS A RANKING FAULT -------------------------------
+ *
+ * Worth saying, because six earlier reports were diagnosed as one and were not:
+ * four were a model overriding a correct table reading, one was a missing line
+ * with `target: null`, one was a manner clause counted as an act. **This is the
+ * one where a word genuinely outranked a better one in the same sentence.**
+ *
+ * `tell` is in the `talk` intent's verb list and in `INTERACT_SUBJECT_VERBS`,
+ * and it belongs in both - "I tell him about the vein" is speech. What was
+ * missing is that *to tell* also means *to discern*, and the two are told apart
+ * by whether there is anybody being told: **speech has an indirect object and
+ * discernment does not.** "tell me about X" and "tell the elder about X" are
+ * somebody talking; "what can I tell about X" is somebody looking.
+ *
+ * -- IT ROUTES TO `investigate`, WHICH IS WHERE ITS SIBLING ALREADY GOES ---
+ *
+ * `whatIsBeingAskedAbout` sits immediately below this and sends "tell me about
+ * X" to `investigate` for the reason given there: it is already the verb that
+ * reads a named subject and is already free. The discern sense wants the same
+ * destination, so this is placed beside it rather than given a verb of its own.
+ *
+ * The trailing clause is stripped rather than carried. "just by looking at him"
+ * is the player saying HOW they are reading somebody, which is the manner and
+ * not the subject - the same class of thing as "I sit down and read it", one
+ * clause smaller.
+ */
+export const TELLING_APART_RATHER_THAN_TELLING_SOMEBODY =
+    // THE PREPOSITION IS REQUIRED, and it is what separates the two senses.
+    // Discernment takes one - *tell ABOUT him* - and speech takes an indirect
+    // object instead: `what can I tell him` is somebody asking what they are
+    // permitted to say, and it went to `investigate` until this was mandatory.
+    /^\s*(?:so\s+)?what\s+(?:can|could|do|would)\s+(?:i|you|we|anyone|anybody|somebody)\s+(?:(?:tell|read|gather|glean)\s+(?:about|of|from)|make\s+of)\s+(.{2,80}?)\s*[.!?]*\s*$/i;
+
+/** And the same question with the manner in front of the subject. */
+export const WHAT_A_LOOK_ALONE_TELLS =
+    /\b(?:can|could)\s+(?:i|you|we)\s+tell\s+(?:anything\s+)?(?:about\s+)?(.{2,60}?)\s+(?:just\s+)?(?:by|from)\s+(?:just\s+)?look/i;
+
+/**
+ * The manner clause a reading question trails, which is not the subject.
+ *
+ * "just by looking at him", "from a distance", "at a glance" - all of them say
+ * HOW somebody is reading, and every one of them ended up inside the target.
+ */
+const HOW_THEY_ARE_LOOKING =
+    /\s*(?:,\s*)?(?:just\s+)?(?:by|from|on|at)\s+(?:just\s+)?(?:look\w*|watch\w*|a\s+glance|a\s+distance|sight|the\s+look\s+of\s+\w+)\b.*$/i;
+
+/**
+ * What a sentence is asking to be read off somebody, or null.
+ *
+ * Null rather than a guess: this only fires on the two shapes above, and every
+ * other use of `tell` stays with speech where it belongs.
+ */
+export function whatALookIsBeingAskedTo(input: string): string | null {
+    const manner = WHAT_A_LOOK_ALONE_TELLS.exec(input);
+    const plain = TELLING_APART_RATHER_THAN_TELLING_SOMEBODY.exec(input);
+    const raw = (manner?.[1] ?? plain?.[1] ?? '').trim();
+    if (raw.length < 2) return null;
+    const subject = raw.replace(HOW_THEY_ARE_LOOKING, '').trim();
+    // A sentence whose whole subject WAS the manner names nobody, and a read
+    // with no subject is the room read, which owns its own phrasings.
+    return subject.length >= 2 ? subject : null;
+}
+
 const LOOKED_AT = /\blooks?(?:ing)?\s+(?:at|over|upon)\s+(.{2,80}?)\s*[.!?]?$/i;
 
 /**
@@ -3770,6 +3898,9 @@ function planIntent(input: string): PlannedAction {
     // be reached past it, so the veto is here, and it is exactly the pattern
     // that branch already keys on rather than a second list of conveyances.
     if ((usedAsVerb(text, BUYING_VERBS)
+        // The offer forms, which carry no buying word at all. See
+        // {@link OFFERING_TO_BUY} for the turn that found them.
+        || OFFERING_TO_BUY.test(text)
         // ── A PURCHASE SAID POLITELY ─────────────────────────────────────
         //
         // "I would like to take that off him for the price" is this verb's own
@@ -3783,7 +3914,12 @@ function planIntent(input: string): PlannedAction {
         && !BUYING_A_PERSON_OFF.test(text) && !RIDING.test(text)) {
         return {
             action: 'buy',
-            target: extractSubject(input, /buy|purchase|pay for|order|book|hire|acquire|take passage on|pay the/)
+            // The offer forms are in the splitter too, or the sentence
+            // resolves to the right verb and hands it nothing to buy.
+            target: extractSubject(
+                input,
+                /buy|purchase|pay for|order|book|hire|acquire|take passage on|pay the|take|have|get me/
+            )
         };
     }
 
@@ -4327,6 +4463,17 @@ function planIntent(input: string): PlannedAction {
     const told = whatIsBeingTold(input);
     if (told) {
         return { action: 'tell', target: told.person, topic: told.claim };
+    }
+
+    // ── WHAT A LOOK ALONE WOULD TELL ─────────────────────────────────────
+    //
+    // Above the asking read and well above `interact`, because `tell` is in
+    // both of their verb lists and the discern sense has to be taken out of the
+    // sentence before either of them sees it. See
+    // {@link TELLING_APART_RATHER_THAN_TELLING_SOMEBODY}.
+    const readOffThem = whatALookIsBeingAskedTo(input);
+    if (readOffThem) {
+        return { action: 'investigate', target: readOffThem };
     }
 
     // ── ASKING ABOUT A NAMED THING ───────────────────────────────────────

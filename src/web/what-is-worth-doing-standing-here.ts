@@ -140,8 +140,41 @@ import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wou
  * verbs behind them, so the anchors require the ask to be the WHOLE sentence
  * rather than a phrase inside one.
  */
+/**
+ * Somebody stepping outside the fiction to ask what there is to do.
+ *
+ * Answered at `case 'unclear'` rather than by a verb, which is why the table
+ * returning `unclear` for these is the route to the answer and not a failure to
+ * find one. `theTableMeantIt` in
+ * `reaching-a-verb-the-pattern-table-has-no-line-for.ts` is the same predicate
+ * read from the other side: the embedding tier is forbidden to re-route a
+ * sentence that got to `unclear` on purpose.
+ *
+ * -- THE DIRECTION FAMILY, AND WHY IT WAS MISSING -------------------------
+ *
+ * Played by a fresh nobody in Watering: **"I've got thirty stones and no idea
+ * what I'm doing. Where should I start?"** came back as a gazetteer - nine
+ * places Watering could be left for, each with its qi rate. The player was not
+ * asking for a destination. "Where should I start" is a direction-asking
+ * question wearing the word `where`, and so are "where do I begin", "how do I
+ * get started" and "what is worth doing here".
+ *
+ * Measured over twelve ways of asking it: 0 of 12 reached this surface before,
+ * and two of them reached `ceiling` - the read about how far a MANUAL goes -
+ * which is a plausible-looking answer to a question nobody asked.
+ *
+ * -- AND IT NOW TOLERATES A PREAMBLE --------------------------------------
+ *
+ * The anchors are the narrowness and they stay. What is new is that the anchor
+ * may sit after a FINISHED sentence, because a person who is lost says so
+ * before they ask: the played line is two sentences and the question is the
+ * second. Requiring the preamble to have ended in punctuation is what keeps
+ * this from widening - "what can I do about my torn meridian" still does not
+ * match, because there is no completed sentence in front of it and the tail
+ * does not fit the alternation.
+ */
 export const ASKING_WHAT_IS_POSSIBLE =
-    /^\s*(?:\/)?(?:help|help me|halp|\?|what (?:can|could|might) i do(?: (?:here|now|next))?|what (?:can|could) i (?:say|type|try)|what (?:do|should) i do(?: (?:here|now|next))?|what now|what next|what are (?:my|the) (?:options|choices)|what(?:'s| is) (?:my|the) (?:options|choices)|my options|i (?:don'?t|do not) know what to do|what commands are there|what are the commands|how do i play|what is there to do(?: here)?|what can be done(?: here)?)\s*[.?!]*\s*$/i;
+    /^\s*(?:\/)?(?:.*[.?!]\s+)?(?:help|help me|halp|\\?|what (?:can|could|might) i do(?: (?:here|now|next))?|what (?:can|could) i (?:say|type|try)|what (?:do|should) i do(?: (?:here|now|next))?|what now|what next|what are (?:my|the) (?:options|choices)|what(?:'s| is) (?:my|the) (?:options|choices)|my options|i (?:don'?t|do not) know what to do|what commands are there|what are the commands|how do i play|what is there to do(?: here)?|what can be done(?: here)?|where (?:should|do|would|can) i (?:start|begin)(?: (?:here|now))?|(?:how|where) do i (?:get )?start(?:ed)?(?: (?:here|now))?|where do i go from here|what(?:'s| is)? worth doing(?: (?:here|now))?|what should i be doing(?: (?:here|now))?|i have no idea what i(?:'m| am) doing|i(?:'ve| have) no idea what i(?:'m| am) doing)\s*[.?!]*\s*$/i;
 
 /**
  * A BARE ask after options, with nothing in it about a book.
