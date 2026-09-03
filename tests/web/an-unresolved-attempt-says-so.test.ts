@@ -41,6 +41,7 @@ import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld } from './harness';
 import { INTERACT_INTENTS } from '../../src/web/actions';
+import { whatDidNotHappen } from '../../src/web/unresolved-attempt-denials';
 import type { LLMProvider } from '../../src/agent/provider/types';
 
 /** A provider that records the phase-3 message and writes nothing useful. */
@@ -75,8 +76,12 @@ describe('an attempt nothing resolved says so', () => {
 
         // The negation is about the ACT, not about settlement. "Nothing is
         // settled" was already there and was read as an open question.
+        // The denial is of the ACT, and it names the physical thing that did
+        // not move. "Nothing is settled" was already there and a model can
+        // narrate the hand closing against it without contradicting itself.
         expect(facts).toMatch(/[Nn]othing was taken/);
-        expect(facts).toMatch(/approach is the whole of what happened/i);
+        expect(facts).toMatch(/still exactly where it was/i);
+        expect(facts).toMatch(/[Nn]othing left a shelf, a purse or a hand/i);
 
         // And the intent label still does not reach phase 3. `structure` is
         // withheld by construction, and this asserts the construction holds:
@@ -100,6 +105,7 @@ describe('an attempt nothing resolved says so', () => {
         // Without it the player reads a paragraph about still air and is left
         // believing the manual is in their hands.
         expect(result.narration).toMatch(/[Nn]othing was taken/);
+        expect(result.narration).toMatch(/still exactly where it was/i);
     }, 120_000);
 
     it('takes nothing, whatever the sentence said', async () => {
@@ -141,8 +147,10 @@ describe('an attempt nothing resolved says so', () => {
                 c => (c.summary ?? '').includes('read by no cond')
             );
             if (fellThrough) {
+                // Each intent's OWN denial, not a shared one: the collision only
+                // works when the fact names what that act would have moved.
                 expect(result.narration, `"${intent}" fell through and said nothing`)
-                    .toMatch(/[Nn]othing was taken/);
+                    .toContain(whatDidNotHappen(intent, 'Mo Qianshu'));
             }
         }
     }, 600_000);
