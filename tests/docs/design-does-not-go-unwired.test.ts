@@ -66,8 +66,23 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * direction is what the ratchet is for, and 502 to 496 is the direction.
  * Re-measure and bring it down when nothing is in flight.
  */
+/**
+ * 496 -> 497 IS ONE EXPORT AND IT IS THE SECOND KIND, NOT THE FIRST.
+ *
+ * `canHurtYou` in `src/web/action-set.ts`: the harm axis beside
+ * `costsTheAskerNothing`, landed contract-first because the consumer that will
+ * import it - the web layer's suggestion strip - is a different agent's change
+ * and putting the rule inside it would make it a second opinion about danger.
+ * Measured before and after in one command: exactly this one export moved the
+ * count, and every other name the change adds is read inside its own module.
+ *
+ * **Bring this back to 496 the moment the strip imports it.** This slot has a
+ * name on it, which is the only thing that separates a seam held open on
+ * purpose from the defect this ratchet exists to catch - and the difference
+ * stops being visible the day nobody remembers which export the extra row was.
+ */
 const DEAD = 171;
-const TEST_ONLY = 496;
+const TEST_ONLY = 497;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;

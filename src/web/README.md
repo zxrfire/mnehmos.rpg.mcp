@@ -192,6 +192,57 @@ it labels lethal, says the state will not resolve itself, and offers no verb has
 the run.** When adding a mechanic, the question is not whether it is implemented and tested.
 It is whether a sentence reaches it.
 
+### Two axes over the enum, and they are orthogonal
+
+`action-set.ts` carries the classification lists over `ACTION_NAMES`, and until recently
+every one of them was about the same question: **does this act SPEND?**
+`READ_ONLY_ACTIONS` and `TIME_CONSUMING_ACTIONS` split free from costly, and
+`costsTheAskerNothing` in `asking-is-not-doing.ts` asks it of a whole plan because
+`interact` is free on three intents and costly on the other eight.
+
+**Nothing answered whether an act can HURT you**, and that is a different question with a
+different answer for most verbs:
+
+|  | costs nothing | costs something |
+|---|---|---|
+| **cannot hurt you** | reading a board | buying a manual |
+| **can hurt you** | *(empty - see below)* | walking into a ruin below its floor |
+
+`HOW_EACH_VERB_CAN_END_BADLY` is that second axis. It is a full
+`Record<ActionName, readonly HowAnActCanEndBadly[]>`, so a verb added to the enum does not
+compile until somebody has said whether it can hurt the person who types it - the same
+guarantee `WHAT_EACH_VERB_IS_FOR` gives for the glossary.
+
+**The classification was already in the tree as prose.** `TIME_CONSUMING_ACTIONS` opens
+"Actions that spend in-world time, **and can therefore kill**", and five of its members are
+on it for the second half alone - `attack`, `coerce`, `consume_pill`, `learn_technique` and
+`descend`, each saying so in its own comment, three of them saying outright that the list is
+"a floor on what a MISPARSE may reach, not a description of what each action costs". The
+knowledge existed, it was correct, and no consumer could ask for it. Promoting it to a value
+is the whole of the change; no verb was reclassified in the doing.
+
+**The two lists have opposite obligations and must not be confused.**
+`TIME_CONSUMING_ACTIONS` is deliberately WIDER than the truth, because being wrong in the
+conservative direction is what protects a misparse - and it stays the thing asserted against.
+`HOW_EACH_VERB_CAN_END_BADLY` is deliberately ACCURATE, because it exists to be shown to a
+player, and a strip that flags everything teaches exactly as little as one that flags
+nothing. **Never gate a misparse on the harm table.**
+
+**Whether, never how often.** The act says whether it can reach the body; the world says how
+badly and how likely, and it already models that - `EncounterPlace.danger`, the
+sitting-to-standing ratio, `Locatability` and `assessPower`. Context multiplies the rate and
+never the possibility, which is what makes a boolean the right shape and a number the wrong
+one. A predicate that read the world would be a second opinion about danger sitting outside
+the resolvers that own it.
+
+**The empty cell is a finding, not an oversight.** Every channel is behind a verb that
+spends, so no `PlannedAction` costs nothing and can still hurt you. `wait` looks like the
+counterexample - sitting still, and the world can still find you, because `shortSkip` rolls
+an encounter window over the days - and is not one, because waiting spends those days. What
+genuinely lands there is not a plan at all: inside a live fight, `I block` and
+`I keep swinging` are read by `fight-answers.ts` before the pattern table, spend no day, and
+can end the run in the round they are typed.
+
 ### A verb space nobody can find is a verb space nobody has
 
 The table above is the story of mechanics no sentence could reach. This is the
