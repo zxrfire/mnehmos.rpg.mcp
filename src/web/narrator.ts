@@ -35,6 +35,7 @@
 import type { AmbientQi } from '../schema/cultivation.js';
 import type { LLMProvider } from '../agent/provider/types.js';
 import {
+    FALLBACK_ACTION,
     TIME_CONSUMING_ACTIONS,
     carryWhatOnlyTheSentenceKnows,
     extractJsonObject,
@@ -52,6 +53,7 @@ import {
 } from './prompt.js';
 import {
     readyTheTier,
+    theTableMeantIt,
     verbForASentenceThePatternsMissed
 } from './reaching-a-verb-the-pattern-table-has-no-line-for.js';
 import {
@@ -394,6 +396,123 @@ export interface ReadingCheck {
     readonly tierFailure: string | null;
 }
 
+
+/**
+ * THE THIRD THING A MODEL'S READING MAY NOT DO: RE-ROUTE A DELIBERATE `unclear`.
+ *
+ * -- THE FAMILY THIS IS ABOUT ---------------------------------------------
+ *
+ * Some of what reaches `unclear` got there ON PURPOSE. `ASKING_WHAT_IS_POSSIBLE`
+ * is somebody stepping outside the fiction to ask what there is to do, and
+ * `turn-engine.ts` answers it at `case 'unclear'` with the live-affordances
+ * read - so the table returning `unclear` is HOW that answer is reached rather
+ * than a failure to reach one.
+ *
+ * The embedding tier has been forbidden to touch that family since it landed:
+ * `theTableMeantIt` is checked before it is allowed to move anything. **The
+ * model was held to no such rule**, so with a model running, the sentence never
+ * reached the surface written for it.
+ *
+ * Measured on the page, by the design owner:
+ *
+ *   "I've got thirty stones and no idea what I'm doing. Where should I start?"
+ *   -> nine towns, each with its qi rate
+ *
+ * and through the deterministic ladder the same sentence reaches the
+ * worth-doing read. Counted over twelve ways of asking: 4 of 12 before the
+ * pattern was widened, 12 of 12 after - and every one of those twelve is a
+ * sentence a model can still overturn until this exists.
+ *
+ * -- IT IS NOT "THE MODEL MUST AGREE" -------------------------------------
+ *
+ * The standing rule of this file is that a model reading a sentence differently
+ * is the entire point of having one, and none of that is touched. What is
+ * claimed here is one closed family, identified by a predicate that already
+ * exists for exactly this purpose, whose answer is not a verb at all. There is
+ * nothing situational for a model to add to "what can I do here"; there is no
+ * second reading of it that a room could make true.
+ *
+ * -- AND IT CANNOT ESCALATE ------------------------------------------------
+ *
+ * What runs instead is `unclear`, which is the cheapest outcome the engine has.
+ * This rule can never be the reason a turn became expensive, which is the one
+ * direction the whole file is one-directional about.
+ */
+function theTableAnsweredItOnPurpose(
+    fromModel: PlannedAction,
+    input: string
+): ReadingCheck | null {
+    if (!theTableMeantIt(input)) return null;
+    if (fromModel.action === FALLBACK_ACTION) return null;
+
+    return {
+        action: { action: FALLBACK_ACTION },
+        declined:
+            `the model read this as ${labelFor(fromModel)}; the sentence is somebody asking `
+            + 'what there is to do, which the engine answers directly rather than with a verb. '
+            + 'A model may read a sentence any way it likes; it may not answer a question about '
+            + 'what is possible with an act.',
+        tierFailure: null
+    };
+}
+
+/**
+ * THE FOURTH: EARNING AND SPENDING ARE NEVER EACH OTHER'S FALLBACK.
+ *
+ * -- THE TURN THIS WAS FOUND ON -------------------------------------------
+ *
+ *   I need to earn some stones. Is there work going here?
+ *   -> undyed cloth for 1.21 spirit stones a bolt... a bowl of millet for 2
+ *      cash... a plot of ground for a grave is 13.2 spirit stones.
+ *
+ * **The player said EARN and the engine answered SPEND.** Those are opposite
+ * directions across the same counter, and a person cannot be confused about
+ * which one they asked for.
+ *
+ * The same shape as the giving-and-taking rule above, one counter over, and it
+ * needs the same treatment for the same reason: the cost rule cannot see it.
+ * `work` is time-consuming and `market` is free, so the model chose the CHEAPER
+ * verb - a de-escalation, which the guard waves through by design. Cost is not
+ * the axis this is about.
+ *
+ * -- THE DEGRADE IS SAFE, AND ONLY BECAUSE OF THE LABEL -------------------
+ *
+ * Correcting toward `work` would normally be forbidden: it is the one direction
+ * this file refuses, and `any work going?` once spent NINETY DAYS as a
+ * Shipmaster, which is the incident `board` exists because of.
+ *
+ * So this degrades ONLY to `work` with the `board` intent, whose entire purpose
+ * is to make the QUESTION free - `action-set.ts` says so in as many words, and
+ * says that the label is the only thing that tells the question apart from the
+ * taking. A table reading of bare `work` is the taking, and this refuses to
+ * hand it back rather than risk being the reason a season disappeared.
+ */
+function readsAsSpending(plan: PlannedAction): boolean {
+    return plan.action === 'market' || plan.action === 'buy';
+}
+
+async function earningIsNotSpending(
+    fromModel: PlannedAction,
+    input: string
+): Promise<ReadingCheck | null> {
+    if (!readsAsSpending(fromModel)) return null;
+
+    const withoutAModel = await readTheSentence(input);
+    const table = withoutAModel.action;
+    // The QUESTION, and never the taking. See the note above on the ninety days.
+    if (table.action !== 'work' || table.intent !== 'board') return null;
+
+    return {
+        action: table,
+        declined:
+            `the model read this as ${labelFor(fromModel)}; reading the same sentence without a `
+            + 'model reaches the work going here. Earning and spending are opposite directions '
+            + 'across one counter, and a model may not answer a question about one with the '
+            + 'other. What ran is the board, which costs nothing to read.',
+        tierFailure: withoutAModel.tierFailure
+    };
+}
+
 /**
  * The one thing a model's reading of a sentence may not do.
  *
@@ -449,6 +568,16 @@ async function theModelIsNotWhyThisTurnIsDangerous(
     // because cost is not the axis it is about.
     const droppedTheObject = theObjectWasDropped(fromModel, input);
     if (droppedTheObject) return droppedTheObject;
+
+    // Both asked before the cheap exit and for the reason it gives: the exit
+    // waves through anything free, and both of these live entirely on that
+    // side of it. `market`, `destinations` and `unclear` are all free, and
+    // being free is not the same as being right.
+    const meantTheUnclear = theTableAnsweredItOnPurpose(fromModel, input);
+    if (meantTheUnclear) return meantTheUnclear;
+
+    const spentInsteadOfEarned = await earningIsNotSpending(fromModel, input);
+    if (spentInsteadOfEarned) return spentInsteadOfEarned;
 
     // The identity axis, asked with the other two and before the cheap exit,
     // because `sect` is on neither cost list and the exit would wave it through.
