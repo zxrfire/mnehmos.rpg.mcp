@@ -2073,6 +2073,33 @@ export const WORKING_AT_A_PRACTICE = new RegExp([
     /\bwork(?:s|ing)? (?:at|on|the) (?:my |the |a |this |that |her |his |their )?(?:cultivation|method|methods|art|arts|technique|techniques|manual|manuals|form|forms|stance|stances|canon|scripture|dao|road|practice|training|breathing)\b/
 ].map(r => r.source).join('|'));
 
+/**
+ * Somebody else is to do the looking, which makes it a request for care.
+ *
+ * The distinction the whole pattern turns on: "I look at this wound" is an
+ * examination and "I need SOMEONE to look at this wound" names another party
+ * who is to do it. A sentence with an outside party in it is asking to be
+ * treated, whatever verb it uses for the treating.
+ *
+ * {@link HAVING_IT_SEEN_TO} covers the other word order - the injury named
+ * before the participle, "get my wounds looked at" - and cannot reach this one,
+ * where the care verb comes first and the body after it.
+ */
+export const SOMEBODY_ELSE_TO_SEE_TO_IT =
+    /\b(?:someone|somebody|anyone|anybody)\b[^.!?]*\b(?:look at|looks at|looking at|see to|sees to|treat|treats|close|closes|mend|mends|patch|patches|bind|binds|bandage|bandages|attend to|fix|fixes)\b[^.!?]*\b(?:injur\w*|wound\w*|meridians?|me|myself|this|these|it)\b/;
+
+/**
+ * Having it done to you, said in the passive.
+ *
+ * "I get patched up" names no injury and no healer and is unmistakable anyway:
+ * a body is the only thing that gets patched up. The participle carries the
+ * whole sentence, which is why this is its own pattern rather than another verb
+ * in {@link TREATMENT_VERBS} - `usedAsVerb` wants the care word in verb
+ * position and here it never is.
+ */
+export const HAVING_IT_DONE_TO_YOU =
+    /\b(?:get|gets|getting|got)\s+(?:myself\s+)?(?:patched up|seen to|treated|looked at|fixed up|bandaged|mended|stitched up)\b/;
+
 export const HAVING_IT_SEEN_TO =
     /\b(?:get|gets|getting|have|has|having|want|wants|wanting|need|needs|needing|would like|ask for|asking for)\b[^.!?]*\b(?:injur\w*|wounds?|meridians?|myself|me)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|set)\b/;
 
@@ -3358,6 +3385,11 @@ function planIntent(input: string): PlannedAction {
     // still a question put to people, and it stays one, because none of the
     // asking verbs are in `SEEKING_CARE_VERBS`.
     if (HAVING_IT_SEEN_TO.test(text)
+        // Another party named as the one who is to do it, and the passive form
+        // where nobody is named at all. See both patterns for the word orders
+        // `HAVING_IT_SEEN_TO` cannot reach.
+        || SOMEBODY_ELSE_TO_SEE_TO_IT.test(text)
+        || HAVING_IT_DONE_TO_YOU.test(text)
         || (usedAsVerb(text, TREATMENT_VERBS)
             && (INJURY_NOUNS.test(text) || /\b(?:me|myself)\b/.test(text)))
         || (HEALER_NOUNS.test(text) && usedAsVerb(text, SEEKING_CARE_VERBS))
