@@ -107,10 +107,14 @@ function main() {
     const lines = source.split('\n');
     const cut = lines.findIndex(l => l.startsWith('import type { GameService }'));
     if (cut < 0) throw new Error(`${modulePath} does not import the GameService type`);
-    const arrived = lines.slice(cut + 1)
-        .filter(l => l.trim())
-        // the object wrapper is the module's own scaffolding, not moved content
-        .filter(l => !/^export const \w+ = \{$/.test(l) && l !== '};');
+    // The object wrapper is the module's own scaffolding, not moved content.
+    // Strip its opening line and only the LAST `};` - a hoisted constant that
+    // is itself an object also ends in `};` at column zero, and filtering
+    // those out too reported a faithful move as two lines short.
+    const body = lines.slice(cut + 1).filter(l => l.trim());
+    const open = body.findIndex(l => /^export const \w+ = \{$/.test(l));
+    const close = body.lastIndexOf('};');
+    const arrived = body.filter((l, i) => i !== open && i !== close);
 
     const a = inside.map(normalise).filter(x => x !== null).sort();
     const b = arrived.map(normalise).filter(x => x !== null).sort();

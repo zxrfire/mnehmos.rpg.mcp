@@ -104,7 +104,8 @@ const HANDLERS = [
     'src/web/seclusion-verbs.ts',
     'src/web/crossing.ts',
     'src/web/match-verbs.ts',
-    'src/web/site-verbs.ts'
+    'src/web/site-verbs.ts',
+    'src/web/institution-verbs.ts'
 ];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
