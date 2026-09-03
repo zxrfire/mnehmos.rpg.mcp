@@ -56,41 +56,16 @@ import {
     respellForTheVerbTable
 } from './repairing-a-misspelt-word-before-the-verb-table-sees-it.js';
 
-/** Longest stretch of seclusion that may be requested in one call: 100 years. */
-export const MAX_CULTIVATION_DAYS = 36_500;
-
-/** Days of seclusion assumed when the player says "cultivate" with no duration. */
-export const DEFAULT_CULTIVATION_DAYS = 30;
-
-/** Days a stretch of technique practice consumes. */
-export const TRAINING_DAYS = 7;
-
-/** Days a stretch of foraging consumes. */
-export const GATHERING_DAYS = 7;
-
-/**
- * Days a stretch of hunting consumes.
- *
- * Longer than foraging because the thing being looked for moves and most of
- * the work is finding it. `ESTIMATING_A_BEAST` in the catalog says the
- * reliable tell is absence - how far out the ordinary animals have gone -
- * and reading that is walking, not digging.
- */
-export const HUNTING_DAYS = 10;
-
-/** Days a burial takes when no duration is named. A week with a spade. */
-export const DEFAULT_BURIAL_DAYS = 7;
-
-/** Days sealed closed-door seclusion runs for when no duration is named. */
-export const DEFAULT_SECLUSION_DAYS = 365;
-
-/**
- * Days of work assumed when the player says "take work" with no duration.
- *
- * A season. Long enough to be worth the walk and short enough that a hungry
- * cultivator is not committing the rest of their life to a granary.
- */
-export const DEFAULT_WORK_DAYS = 90;
+// The day counts each verb spends. Re-exported so the module namespace this
+// file self-imports - and therefore the spelling repair's vocabulary - is
+// unchanged by the move. See the header of `verb-day-costs.ts`.
+export * from './verb-day-costs.js';
+import {
+    MAX_CULTIVATION_DAYS,
+    DEFAULT_CULTIVATION_DAYS,
+    DEFAULT_SECLUSION_DAYS,
+    DEFAULT_WORK_DAYS
+} from './verb-day-costs.js';
 
 /**
  * Every action the engine can execute. Closed, and short on purpose.
