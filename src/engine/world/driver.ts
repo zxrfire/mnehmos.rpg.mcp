@@ -60,6 +60,7 @@ import {
     type AbsenceConsequence
 } from './when-somebody-does-not-come-back.js';
 import type { KnowledgeRecord } from '../social/knowledge.js';
+import type { ObligationInput } from '../social/grudges.js';
 import type { WorldState } from './world-state.js';
 
 export interface AdvanceForPlayOptions {
@@ -112,6 +113,19 @@ export interface PlayAdvanceResult {
     born: number;
     time: TimeAdvanceResult;
     deaths: DeathHandoff[];
+    /**
+     * Accounts the span opened, ready for the ledger.
+     *
+     * The world cannot write these - there is no obligation ledger in
+     * `WorldState` - so they come out with the deaths and the estates for
+     * whoever holds a database. Today it is a war's dead; anything else that
+     * decides an account inside a tick lands here beside them.
+     *
+     * The rows carry `triggeringEventId`, so the same death arriving twice is
+     * the same row: `createObligation` derives its id from the pair, the cause
+     * and that event, and the write path is INSERT OR REPLACE.
+     */
+    accounts: ObligationInput[];
 
     /**
      * What happened on the far side of the Lid in the same span.
@@ -235,6 +249,7 @@ export function advanceWorldForPlay(
     const events = state.history.facts.slice(factsBefore);
     const deaths = timeSlices.flatMap(t => t.deathHandoffs)
         .concat(pressureEvents.flatMap(e => e.deaths));
+    const accounts = pressureEvents.flatMap(e => e.opens ?? []);
     const pressure = { events: pressureEvents, born };
 
     // What of it reached the player.
@@ -255,6 +270,7 @@ export function advanceWorldForPlay(
         born,
         time,
         deaths,
+        accounts,
         immortalPerils,
         immortalDeaths,
         digest,

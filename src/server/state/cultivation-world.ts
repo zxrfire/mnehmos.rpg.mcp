@@ -105,6 +105,8 @@ import {
     type WorldState
 } from '../../engine/world/index.js';
 import { WorldStateRepository } from '../../storage/repos/world-state.repo.js';
+import { writeObligations } from '../../storage/repos/obligation.repo.js';
+import { createObligation } from '../../engine/social/grudges.js';
 import type { Cultivator, Run } from '../../schema/cultivation.js';
 import { KnowledgeGate, placeKey } from '../../web/knowledge.js';
 
@@ -559,6 +561,35 @@ export async function advanceWorldForCultivator(
     // bulk below its high-water mark, which is the difference between a
     // five-century soak costing one write and costing five hundred.
     repo().appendWorld(handle.state);
+
+    // ── AND WHAT THE SPAN PUT ON THE LEDGER ──────────────────────────────
+    //
+    // The design owner, on a war leaving nothing where a played killing left a
+    // grudge: *this is bespoke. a war death is still a grudge. fix it.*
+    //
+    // A world tick cannot write one. There is no obligation ledger in
+    // `WorldState` - the layer hands social rows to its caller the way it
+    // already hands back estates and heirs - so the rows come out of
+    // `advanceWorldForPlay` with the deaths, and this is the first place that
+    // holds both a span's answer and a database.
+    //
+    // IT IS HERE AND NOT IN `GameService`, and that is the whole of why it
+    // works. Two front doors advance a world: the played turn, and
+    // `cultivation-manage.ts` on the MCP surface - which is what `ADMIN
+    // advance_days` runs through. Writing it in the web layer left the operator
+    // surface silently not writing, which is exactly how this was found.
+    //
+    // Measured before wiring, over five hundred years on two seeds: 118 and 105
+    // war dead, leaving 154 and 148 rows. The ledger holds a world's worth of
+    // war dead without noticing.
+    //
+    // Idempotent. `createObligation` derives its id from the pair, the cause,
+    // the day and the triggering event, and the write is INSERT OR REPLACE, so
+    // a span replayed after a restart writes the same rows over themselves.
+    writeObligations(
+        getDb(),
+        result.accounts.map(row => createObligation(row))
+    );
 
     return { result, fromDay, toDay: handle.state.currentDay, worldId: handle.id };
 }

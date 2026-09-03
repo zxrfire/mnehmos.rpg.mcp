@@ -131,6 +131,7 @@ import { combatantOf } from './gatherings.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import type { NpcRecord } from './npc-state.js';
 import { isRuined, ruin } from './possessions.js';
+import type { ObligationInput } from '../social/grudges.js';
 import { whatTheConfrontationDidToThem } from './what-a-confrontation-does-to-somebody-the-world-holds.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
@@ -349,6 +350,16 @@ export interface WarEngagement {
     /** Objects that did not survive being swung, off `exchanges`. */
     thingsBroken: { objectId: string; objectName: string; carrierId: string }[];
     deaths: DeathHandoff[];
+    /**
+     * The accounts the year's fighting opened, ready for the ledger.
+     *
+     * Handed back rather than written, exactly as `deaths` is and for the same
+     * reason: there is no obligation ledger in `WorldState`. The design owner's
+     * ruling is that a war death is a grudge like any other, and this is the
+     * half of that a world tick can honestly do - decide the rows and pass them
+     * to whoever holds a database.
+     */
+    opens: ObligationInput[];
     fact: HistoricalFact;
     line: string;
 }
@@ -447,6 +458,10 @@ function fightOneYear(
     // finer and truer than a side-wide verdict. `finished` is the resolver's own
     // flag and there is no second death gate.
     const deaths: DeathHandoff[] = [];
+    // What anybody is now owed. One list for the whole engagement, because a
+    // battle is one event and each death in it is one deed - the same shape the
+    // played killing already writes, through the same decider.
+    const opens: ObligationInput[] = [];
     for (const c of result.combatants) {
         if (c.felledBy === null && c.injuries.length === 0) continue;
         const felledBy = c.felledBy === null ? null : byId.get(c.felledBy) ?? null;
@@ -458,9 +473,17 @@ function fightOneYear(
             wounds: c.injuries,
             outcome: result.outcome,
             lost: c.felledBy !== null,
-            finished: c.finished
+            finished: c.finished,
+            // A war is the absence of an arrangement, not a declaration of
+            // hostility. Nobody promised anybody anything, so it is `open` and
+            // priced by the same table a brawl in a square is.
+            terms: 'open',
+            // Everybody else who was in it. A battle is not a private thing and
+            // the room is what a house has to have a position on.
+            witnesses: Math.max(0, result.combatants.length - 2)
         });
         if (did.handoff) deaths.push(did.handoff);
+        opens.push(...did.opens);
     }
 
     // ── THE THINGS ───────────────────────────────────────────────────────
@@ -518,6 +541,7 @@ function fightOneYear(
         brokeOff,
         thingsBroken,
         deaths,
+        opens,
         fact,
         line
     };

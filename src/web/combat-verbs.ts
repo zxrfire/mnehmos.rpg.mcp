@@ -49,12 +49,17 @@ import {
     takeAFightTurn,
     whereThisFightStands
 } from '../engine/cultivation/unfinished-fight.js';
-import { type BoutTerms, whatFollowsFromTheBout } from '../engine/social-leverage/index.js';
-import { createBloodFeud, createGrudge } from '../engine/social/grudges.js';
-import type { InheritanceRelation } from '../engine/social/grudges.js';
+import {
+    theAccountsAFightOpens,
+    whatFollowsFromTheBout,
+    type BoutTerms
+} from '../engine/social-leverage/index.js';
+import { createObligation } from '../engine/social/grudges.js';
+import type { InheritanceRelation, ObligationInput } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
-import { isRuined, ruin } from '../engine/world/possessions.js';
+import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
+import { isRuined, revealOwnership, ruin } from '../engine/world/possessions.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -681,14 +686,132 @@ export const combatVerbs = {
         // exactly as they always did, through the same conclusion.
         if (opened.settled) {
             this.fight = null;
-            return this.concludeTheFight(run, cultivator, held, opened.settled);
+            return this.whatTheySawYouCarrying(
+                cultivator, held, this.concludeTheFight(run, cultivator, held, opened.settled)
+            );
         }
 
         this.fight = held;
         // The opening round happens on the turn the player swung, because they
         // swung. A verb that opened a fight and then spent the turn describing
         // it would be the player's own action costing them a round.
-        return await this.answerTheFight(run, cultivator, ambient, held, { kind: 'strike' });
+        return this.whatTheySawYouCarrying(
+            cultivator, held,
+            await this.answerTheFight(run, cultivator, ambient, held, { kind: 'strike' })
+        );
+    },
+
+    /**
+     * What the person in front of them made of the thing in their hand.
+     *
+     * ── THE RULING ───────────────────────────────────────────────────────
+     *
+     * `docs/world/things/items.md`: **a famous thing is recognised the way a
+     * famous art is** - unevenly, by people with reason to know it. Carrying
+     * one is a statement, and not always one you want to make; somebody who
+     * recognises it knows something you did not tell them.
+     *
+     * The check is `artifact-recognition.ts`, which is the art check pointed at
+     * an object and imports its two axes rather than restating them. Nothing is
+     * decided here.
+     *
+     * ── WHY A FIGHT IS WHERE THIS LANDS FIRST ────────────────────────────
+     *
+     * All three of the ruling's consequences are about being SEEN carrying
+     * something, and a fight is where a carried object is unambiguously on
+     * show: held up, swung, at arm's length, at somebody with every reason to
+     * look at it. A blade in a pouch is not a statement. A blade in your hand
+     * is.
+     *
+     * It is also the one place the turn has already established what they are
+     * holding - `CombatantInput.weapon`, priced two methods up - so this reads
+     * a fact the turn already has rather than going to look for one.
+     *
+     * A player walking into a room is the WIDER consumer and this is not it.
+     * That read belongs beside `look`, and it wants the same call.
+     *
+     * ── AND RECOGNISING IT IS AN EVENT, NOT A SENTENCE ───────────────────
+     *
+     * `AGENTS.md`: a fact reaches a person, and reaching them is an event. So
+     * where the reading lands, `revealOwnership` writes it down - this is that
+     * function's first caller, and its field `knownOwnershipBy` was already the
+     * check's own strongest input. Somebody who has seen your stolen blade goes
+     * on knowing tomorrow, which is the whole of why carrying one is dangerous.
+     *
+     * ── WHAT DOES NOT REACH IT, AND CORRECTLY ────────────────────────────
+     *
+     * A counted thing has no row and no history, so there is nothing to know. A
+     * granted copy has no row either - `items.md` says a granted thing is a
+     * copy and nothing in the world should read as though a register moved -
+     * and it falls out of the same lookup with no branch saying so. Neither is
+     * a gap; both are the object having nothing to be recognised as.
+     */
+    whatTheySawYouCarrying(
+        this: GameService,
+        cultivator: Cultivator,
+        held: StandingFight,
+        execution: Execution
+    ): Execution {
+        const carried = held.self.weapon;
+        const them = held.theirRecord;
+        // Nobody real is looking, or there is nothing in the hand. A described
+        // opponent has no record to learn anything onto, and inventing one
+        // would be writing a fact nobody established.
+        if (!carried || !them || !this.atHand) return execution;
+
+        const at = this.atHand.objects.findIndex(object => object.id === carried.id);
+        if (at < 0) return execution;
+        const thing = this.atHand.objects[at];
+
+        // WHO IS HOLDING IT UP, not what the register says. The player's
+        // holding lives in their pouch and the world row goes on saying nobody
+        // has it, which is the coherent state a stolen thing is in - so the
+        // check is told what is actually in front of the observer. Reading the
+        // row's own possessor here made a recognised theft read as somebody
+        // merely knowing the object, which is how this was found.
+        const read = whatTheyRecogniseAboutIt({ ...thing, possessorId: cultivator.id }, {
+            id: them.id,
+            factionId: them.factionId,
+            realmOrdinal: them.cultivation.realmOrdinal,
+            referenceFor: (factionId: string) => this.knowledge.stageOf(them.id, 'sect', factionId)
+        });
+        if (read.reading === 'nothing') return execution;
+
+        // They know now, and they go on knowing. Written before the line is
+        // composed, so a narration that never runs cannot lose the fact.
+        if (!thing.knownOwnershipBy.includes(them.id)) {
+            this.atHand.objects[at] = revealOwnership(thing, them.id);
+            this.worldDirty = true;
+        }
+
+        const line = read.inTheWrongHands
+            ? `${held.party.name} looks at ${thing.name} in your hand and knows what it is. `
+                + `It is ${read.ownerName || 'somebody else'}'s, and you are not them.`
+            : `${held.party.name} knows ${thing.name} on sight.`;
+
+        // `required`, and `prose` as well as `lines`. What somebody has learned
+        // about you is not decoration - it is the whole consequence of carrying
+        // the thing, and a narrator that drops it leaves the player believing
+        // they walked in unread.
+        execution.facts.lines.push(line);
+        execution.facts.required = [...(execution.facts.required ?? []), line];
+        execution.facts.prose = [execution.facts.prose, line].join('\n');
+        execution.facts.structure.push(
+            `${thing.id} read by ${them.id}: realm afforded ${read.fromRealm}, reference `
+            + `afforded ${read.fromReference} at stage ${read.reference}; the reading is the `
+            + `lower of the two, ${read.reading}. Owner ${thing.ownerId ?? 'nobody'}, holder `
+            + `${cultivator.id}. ${read.toldWhereItCameFrom ? 'They had been told.' : 'Read off the two axes.'}`
+        );
+        execution.calls.push({
+            name: 'world.revealOwnership',
+            action: held.verb,
+            summary:
+                `${them.name} recognised ${thing.name} (${read.reading}) and is now on its `
+                + `knownOwnershipBy. inTheWrongHands=${read.inTheWrongHands}. Ownership itself was `
+                + 'not touched: recognising a thing does not move it.',
+            ok: true
+        });
+        return execution;
     },
 
     /**
@@ -1099,7 +1222,15 @@ export const combatVerbs = {
         // carries the findings it already made to the record that holds them.
         // Nothing is re-decided - see the module header - and it runs after the
         // resolve for the same reason the fallout does.
-        const inTheWorld = this.whatItDidToThem(cultivator, held.theirRecord, result);
+        // Everybody standing here who is not one of the two of them. Computed
+        // ONCE and handed to both halves, because both ask
+        // `whatFollowsFromTheBout` the same question and two different witness
+        // counts would be two different answers to it.
+        const room = this.present(cultivator)
+            .filter(row => row.id !== party.id && row.id !== cultivator.id).length;
+        const inTheWorld = this.whatItDidToThem(
+            cultivator, held.theirRecord, result, terms, room
+        );
         execution.calls.push(...inTheWorld.calls);
 
         // ── AND WHAT THE ROOM MAKES OF IT ────────────────────────────────
@@ -1110,7 +1241,7 @@ export const combatVerbs = {
         // something about it.
         const fallout = this.whatFollowedTheBout(
             run, cultivator, party, standing ?? null, terms, result,
-            inTheWorld.died, inTheWorld.theirPeople
+            inTheWorld.died, inTheWorld.theirPeople, inTheWorld.opens, room
         );
         fallout.lines.unshift(...inTheWorld.lines);
         if (fallout.lines.length > 0) {
@@ -1174,7 +1305,11 @@ export const combatVerbs = {
         this: GameService,
         cultivator: Cultivator,
         theirRecord: NpcRecord | null,
-        result: object
+        result: object,
+        /** What the two of them said it was. Carried through, never inferred. */
+        terms: BoutTerms = 'open',
+        /** How many others were standing there. Priced by the bout module. */
+        witnesses = 0
     ): {
         died: boolean;
         /**
@@ -1187,12 +1322,24 @@ export const combatVerbs = {
          * Empty for anybody who lived and for anybody who left nobody.
          */
         theirPeople: readonly { id: string; relation: InheritanceRelation }[];
+        /**
+         * The accounts the world decided this fight opened.
+         *
+         * Decided THERE and not here, which is the whole of the design owner's
+         * ruling that a war death is a grudge like any other: `war-melee.ts`
+         * and this path both write their dead through
+         * `whatTheConfrontationDidToThem`, so the rows come out of the one
+         * place both of them already meet. Empty for an opponent the world does
+         * not hold - see `whatFollowedTheBout`, which covers that half.
+         */
+        opens: readonly ObligationInput[];
         lines: string[];
         calls: ToolCallRecord[];
     } {
         const nothing = {
             died: false,
             theirPeople: [] as { id: string; relation: InheritanceRelation }[],
+            opens: [] as ObligationInput[],
             lines: [] as string[],
             calls: [] as ToolCallRecord[]
         };
@@ -1225,7 +1372,9 @@ export const combatVerbs = {
             wounds,
             outcome: outcome as ConfrontationOutcome,
             lost: loserId !== null && theirRollId !== null && loserId === theirRollId,
-            finished: body.finished === true
+            finished: body.finished === true,
+            terms,
+            witnesses
         });
         if (!wrote.wrote) return nothing;
 
@@ -1265,6 +1414,7 @@ export const combatVerbs = {
         return {
             died: wrote.died,
             theirPeople: wrote.handoff?.heirs ?? [],
+            opens: wrote.opens,
             lines: wrote.lines,
             calls
         };
@@ -1353,7 +1503,23 @@ export const combatVerbs = {
          * arriving where the bout is priced so the severity is still decided
          * exactly once, in the module that owns the table.
          */
-        theirPeople: readonly { id: string; relation: InheritanceRelation }[] = []
+        theirPeople: readonly { id: string; relation: InheritanceRelation }[] = [],
+        /**
+         * The rows the world already decided, for an opponent it holds.
+         *
+         * Used verbatim where there are any. The world path is the one both a
+         * war and a played killing come through, so taking its answer here is
+         * what makes the two the same event - and re-deciding it would be the
+         * second opinion the whole ledger is built to prevent.
+         *
+         * Empty for an opponent with a `cultivators` row and no world record,
+         * and that half is written below through the SAME builder. Two callers,
+         * one decider; the branch is on where the person is stored, which is a
+         * fact this file has always had to know.
+         */
+        worldOpens: readonly ObligationInput[] = [],
+        /** The room, computed once by the caller and shared with the world half. */
+        roomSize: number | null = null
     ): { lines: string[]; calls: ToolCallRecord[] } {
         const nothing = { lines: [] as string[], calls: [] as ToolCallRecord[] };
         if (isGuidingErrorBody(result)) return nothing;
@@ -1390,8 +1556,10 @@ export const combatVerbs = {
 
         // Everybody standing here who is not one of the two of them. The room
         // is what `look` already lists, so this claims no witness the player
-        // could not have seen for themselves.
-        const witnesses = this.present(cultivator)
+        // could not have seen for themselves. Supplied by the caller where the
+        // world half was asked the same question, so the two agree by
+        // construction rather than by both counting the same way.
+        const witnesses = roomSize ?? this.present(cultivator)
             .filter(row => row.id !== party.id && row.id !== cultivator.id).length;
 
         const theirHouseId = loserIsThePlayer
@@ -1503,64 +1671,49 @@ export const combatVerbs = {
             });
         }
 
-        if (followed.against && followed.heldBy.length > 0) {
-            // `blood_feud` is a different KIND and not a heavier grudge -
-            // `grudges.ts` keeps them apart because a feud runs between lines,
-            // is expected to be inherited, and everybody involved knows it is
-            // running. Calling `createGrudge` for both wrote every killing into
-            // the ledger as a grudge whatever the engine had decided, which is
-            // the caller overruling the decision it just asked for.
-            const write = followed.against.kind === 'blood_feud'
-                ? createBloodFeud : createGrudge;
+        // ── AND WHAT ANYBODY IS NOW OWED ─────────────────────────────────
+        //
+        // One decider, two sources, and the branch is on where the person is
+        // stored rather than on what kind of fight it was. The world holds most
+        // of the people a player swings at and has already decided their rows -
+        // through the same function `war-melee.ts` writes its dead with, which
+        // is the whole of the ruling that a war death is a grudge like any
+        // other. The handful of opponents who exist only as a `cultivators` row
+        // are built here, through the identical builder.
+        const opens = worldOpens.length > 0
+            ? worldOpens
+            : theAccountsAFightOpens({
+                followed,
+                parties: {
+                    actor: { id: actorId, name: actorName },
+                    loser: {
+                        id: loserIsThePlayer ? cultivator.id : party.id,
+                        name: hurtName
+                    },
+                    houseId: theirHouseId,
+                    houseName: theirHouse?.name ?? null
+                },
+                onDay,
+                // The ground-truth row this account rests on, so a reader in
+                // forty years can get from the claim to the event and back.
+                triggeringEventId: deed?.fact.id ?? null
+            });
 
-            // ── ONE ROW PER PARTY, AT THE ONE WEIGHT ─────────────────────
-            //
-            // The engine decided who and how heavy; this substitutes the house
-            // id it was not given and writes what it was told. Severity is not
-            // adjusted per holder, on `grudges.ts`'s own rule that inheritance
-            // does not discount - the brother holds what the brother holds.
-            for (const holder of followed.heldBy) {
-                const isTheHouse = holder.as === 'house';
-                const holderId = isTheHouse ? theirHouseId : holder.id;
-                if (!holderId) continue;
-                const record = write({
-                    holderId,
-                    subjectId: actorId,
-                    cause: followed.against.cause,
-                    severity: followed.against.severity,
-                    onDay,
-                    // The ground-truth row this account rests on, so a reader in
-                    // forty years can get from the claim to the event and back.
-                    triggeringEventId: deed?.fact.id ?? null,
-                    description:
-                        `${followed.against.description} `
-                        + (isTheHouse
-                            ? `${hurtName} was ${theirHouse?.name ?? 'the house'}'s, and `
-                              + `${actorName} is the name on it.`
-                            : `${hurtName} was theirs, and ${actorName} is the name on it.`),
-                    terms: null,
-                    dueOnDay: null,
-                    participants: [cultivator.id, party.id],
-                    tags: [
-                        ...followed.against.tags,
-                        // How this party comes to be holding it, in the ledger's
-                        // own word for the connection, so a reader can tell the
-                        // institution's row from the family's without guessing.
-                        isTheHouse ? 'institutional' : `carried:${holder.as}`
-                    ]
-                });
-                writeObligation(this.db as unknown as DatabaseHandle, record);
-
+        if (opens.length > 0) {
+            for (const row of opens) {
+                writeObligation(this.db as unknown as DatabaseHandle, createObligation(row));
                 calls.push({
-                    name: followed.against.kind === 'blood_feud'
+                    name: row.kind === 'blood_feud'
                         ? 'social.createBloodFeud' : 'social.createGrudge',
                     action: 'attack',
                     summary:
-                        `${holderId} now holds a ${followed.against.severity} `
-                        + `${followed.against.kind} about ${actorId} `
-                        + `(${followed.against.cause}), as ${holder.as}. `
-                        + `terms=${terms}; outcome=${outcome}; witnesses=${witnesses}. Written to `
-                        + 'obligations; permanent until settled, and inheritable.',
+                        `${row.holderId} now holds a ${row.severity} ${row.kind} about `
+                        + `${row.subjectId} (${row.cause}), `
+                        + `${(row.tags ?? []).includes('institutional') ? 'as house' : 'as kin'}. `
+                        + `terms=${terms}; outcome=${outcome}; witnesses=${witnesses}. `
+                        + `Decided ${worldOpens.length > 0 ? 'in the world layer' : 'here'}, `
+                        + 'the same way a war death is. Written to obligations; permanent '
+                        + 'until settled, and inheritable.',
                     ok: true
                 });
             }
@@ -1570,7 +1723,7 @@ export const combatVerbs = {
             // itself the fact, and the discovery layer owns that rule.
             const known = theirHouseId !== null
                 && this.knowledge.isAwareOf(cultivator.id, 'sect', theirHouseId);
-            const family = followed.heldBy.filter(h => h.as !== 'house').length;
+            const family = opens.filter(row => !(row.tags ?? []).includes('institutional')).length;
             lines.push(
                 theirHouseId && theirHouse
                     ? known

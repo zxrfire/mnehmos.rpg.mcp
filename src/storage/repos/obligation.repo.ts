@@ -146,3 +146,74 @@ function parseInheritance(json: string): ObligationRecord['inheritance'] {
         return [];
     }
 }
+
+/**
+ * Write obligation rows.
+ *
+ * The write half of the file `src/web/encounters.ts` asked for by name. It
+ * arrived when the world started deciding accounts a tick could not persist -
+ * a war's dead - because that path has no business importing a web module to
+ * get at a row writer.
+ *
+ * `INSERT OR REPLACE`, and that is what makes a replayed span safe rather than
+ * doubled: `createObligation` derives its id from the pair, the cause, the day
+ * and the triggering event, so the same death arriving twice is the same row
+ * written over itself. The severity is whatever was decided when the record was
+ * made and nothing here recomputes it.
+ *
+ * `encounters.ts` still holds its own copy of this insert. The two are the same
+ * statement and the older one wants deleting in favour of this when its file is
+ * free; until then, both write the same columns from the same record type.
+ */
+export function writeObligations(
+    db: ObligationWriteDb,
+    records: readonly ObligationRecord[]
+): number {
+    if (records.length === 0) return 0;
+    const statement = db.prepare(`
+        INSERT OR REPLACE INTO obligations (
+            id, kind, holder_id, subject_id, cause, severity, incurred_on_day,
+            triggering_event_id, description, participants, tags, terms, due_on_day,
+            status, settlement_resolution, settled_on_day, settled_by_id, settlement_note,
+            inheritance, generation, origin_holder_id, from_belief, recorded_on_day
+        ) VALUES (
+            @id, @kind, @holderId, @subjectId, @cause, @severity, @incurredOnDay,
+            @triggeringEventId, @description, @participants, @tags, @terms, @dueOnDay,
+            @status, @settlementResolution, @settledOnDay, @settledById, @settlementNote,
+            @inheritance, @generation, @originHolderId, @fromBelief, @recordedOnDay
+        )
+    `);
+    for (const record of records) {
+        statement.run({
+            id: record.id,
+            kind: record.kind,
+            holderId: record.holderId,
+            subjectId: record.subjectId,
+            cause: record.cause,
+            severity: record.severity,
+            incurredOnDay: record.incurredOnDay,
+            triggeringEventId: record.triggeringEventId,
+            description: record.description,
+            participants: JSON.stringify(record.participants),
+            tags: JSON.stringify(record.tags),
+            terms: record.terms,
+            dueOnDay: record.dueOnDay,
+            status: record.status,
+            settlementResolution: record.settlement?.resolution ?? null,
+            settledOnDay: record.settlement?.onDay ?? null,
+            settledById: record.settlement?.byId ?? null,
+            settlementNote: record.settlement?.note ?? null,
+            inheritance: JSON.stringify(record.inheritance),
+            generation: record.generation,
+            originHolderId: record.originHolderId,
+            fromBelief: record.fromBelief ? 1 : 0,
+            recordedOnDay: record.recordedOnDay
+        });
+    }
+    return records.length;
+}
+
+/** The handle a write needs. Separate from the read one so neither widens. */
+export interface ObligationWriteDb {
+    prepare(sql: string): { run(params: Record<string, unknown>): unknown };
+}

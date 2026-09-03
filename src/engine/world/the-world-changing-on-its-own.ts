@@ -166,6 +166,7 @@ import {
     highestRankAlive,
     whatAHouseCanPutOut
 } from './war-melee.js';
+import type { ObligationInput } from '../social/grudges.js';
 import {
     postingFor,
     reasonsOpenTo,
@@ -325,6 +326,16 @@ export interface PressureEvent {
     /** Ids of anything whose state this actually moved. */
     touched: { factions: string[]; locations: string[]; npcs: string[] };
     deaths: DeathHandoff[];
+    /**
+     * Accounts this event opened, ready for the ledger. Usually none.
+     *
+     * Handed up rather than written, exactly as `deaths` is: there is no
+     * obligation ledger in `WorldState`, so a tick decides the rows and
+     * whoever holds a database persists them. A war's dead are the first
+     * things to use it - see `war-melee.ts` and the design owner's ruling that
+     * a war death is a grudge like any other.
+     */
+    opens?: ObligationInput[];
 }
 
 export interface PressureResult {
@@ -478,7 +489,8 @@ export function applyPressure(
                     locations: engagement.fact.locationId ? [engagement.fact.locationId] : [],
                     npcs: engagement.fact.actors.map(a => a.id)
                 },
-                deaths: engagement.deaths
+                deaths: engagement.deaths,
+                opens: engagement.opens
             });
         }
         // And what the ENDING of one did, which is where a house's things

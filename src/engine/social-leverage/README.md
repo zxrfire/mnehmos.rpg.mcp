@@ -490,14 +490,53 @@ same weight*. Four rules:
   the cheapest killing in the world and it is a fact about who they were rather
   than a discount to whoever did it.
 
-**What this does NOT reach: a war.** `war-melee.ts` writes its deaths through
-`whatTheConfrontationDidToThem`, which is the same path a played killing takes
-into the world - and neither of them writes an obligation row on its own. What a
-war death leaves is an inherited `NpcRelationship` on the heir, in `WorldState`,
-because *there is no obligation ledger in `WorldState`*. So the two memories of
-the same kind of fact are split by which layer wrote it, and only the played
-half reaches the reading in `personal-alignment.ts`. That is an absence rather
-than a decision and it is written down here rather than left to be found.
+### And a war death is the same event, because it goes the same way
+
+This was written down here as an absence first - *a war death leaves an
+inherited tie in `WorldState` and never an obligation row* - and the design
+owner's ruling on the absence was the right one:
+
+> this is bespoke. a war death is still a grudge. fix it.
+
+**And the reason it was bespoke is the reason to read this paragraph.** Both
+paths already met: `war-melee.ts` and the played killing both write their dead
+through `whatTheConfrontationDidToThem`. What differed is that **each caller
+assembled the ledger rows itself**, so only the one somebody had got round to
+writing had any. A world could fight for five hundred years and the ledger would
+not contain one of its dead - which meant the world was full of killers no
+record knew about, and the reading in `personal-alignment.ts` was measuring the
+player alone.
+
+So the assembly moved into {@link theAccountsAFightOpens}, beside the decision
+it renders, and both callers hand it the same `WhatFollows`. **A war is
+`terms: 'open'` and needs no special case to be so**, because this directory's
+own definition is that open is *the absence of an arrangement, not a declaration
+of hostility* - and two houses at war have promised each other nothing. Every
+rule above applies unchanged: only where the loser died, no floor from a family,
+house and kin at one weight, and somebody who left nobody leaves nothing.
+
+**The rows come out rather than going in**, because there is no obligation
+ledger in `WorldState` - the layer hands social rows to its caller the way it
+already hands back estates and heirs. They travel on `PressureEvent.opens`, out
+through `PlayAdvanceResult.accounts`, and are written in
+`advanceWorldForCultivator`, which is where they must be: **two front doors
+advance a world**, the played turn and the MCP tool that `ADMIN advance_days`
+runs through, and writing it in the web layer left the operator surface silently
+not writing. That is exactly how the first attempt was found to be wrong.
+
+**Measured before it was wired**, because a tick writes at scale: over five
+hundred years on two seeds, 118 and 105 war dead leaving 154 and 148 rows. The
+ledger holds a world's worth of war dead without noticing. Played over three
+hundred years afterwards: **202 rows off 111 deeds** - 1.8 rows per death, which
+is the dedupe working - 160 `grave` and 42 `serious`, and **39 people on the
+ledger as killers of whom 20 read demonic**.
+
+**One consequence worth watching.** A war now ends with a generation of people
+holding something against each other's houses, which is either the best thing in
+this directory or unmanageable, and only a long soak will say which. What it is
+NOT is free: a house that fights for a century is a house a great many people
+have an account with, and `whenItIsDoneToOneOfOurs` already routes those to the
+institution.
 
 ## Reading order
 
