@@ -48,6 +48,7 @@ import {
     GRADE_ORDINAL_BANDS,
     GRADE_QI_BANDS,
     GRADE_ORDER,
+    gradeRank,
     getTechnique,
     isWideSpan,
     findTechniquesForOrdinal,
@@ -148,14 +149,55 @@ function expectUniqueIds(entries: readonly { id: string }[], label: string): voi
     expect(seen.size).toBe(entries.length);
 }
 
-/** Every value in `values` must be strictly increasing along the grade ladder. */
-function expectStrictlyAscendingByGrade(values: Record<TechniqueGrade, number>, label: string): void {
+// ─────────────────────────────────────────────────────────────────────────
+// THE LADDER HAS A TIE AT THE TOP, AND THESE HELPERS ARE WHERE IT LANDS
+//
+// `chaos` used to outrank `immortal` and no longer does. The ruling:
+//
+//   > chaos grade is equal to immortal grade but it's got random effects which
+//   > may be bad (whereas immortal ones are uniformly positive). but chaos is
+//   > powerful.
+//
+// So `GRADE_ORDER` is a LISTING order and `gradeRank` is the power order, and
+// every band assertion below had to decide which of the two it was making a
+// claim about. A band that steps up per rung of POWER must not step up between
+// two grades that are equal in power - asserting it did is asserting the
+// ordering this correction removed.
+//
+// Both helpers walk the listing order and split on `gradeRank`, so if a sixth
+// grade is added as a peer of something, the split follows it with no edit.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Adjacent listing pairs that are a real step UP in power. Peers skipped. */
+function eachStepUp(fn: (lower: TechniqueGrade, higher: TechniqueGrade) => void): void {
     for (let i = 1; i < GRADES.length; i++) {
-        expect(
-            values[GRADES[i]],
-            `${label}: ${GRADES[i]} must exceed ${GRADES[i - 1]}`
-        ).toBeGreaterThan(values[GRADES[i - 1]]);
+        if (gradeRank(GRADES[i]) === gradeRank(GRADES[i - 1])) continue;
+        fn(GRADES[i - 1], GRADES[i]);
     }
+}
+
+/** Adjacent listing pairs that are PEERS. Currently exactly one: immortal/chaos. */
+function eachPeerPair(fn: (a: TechniqueGrade, b: TechniqueGrade) => void): void {
+    for (let i = 1; i < GRADES.length; i++) {
+        if (gradeRank(GRADES[i]) !== gradeRank(GRADES[i - 1])) continue;
+        fn(GRADES[i - 1], GRADES[i]);
+    }
+}
+
+/** Every value in `values` rises at a step up in power and ties between peers. */
+function expectRisingWithPower(values: Record<TechniqueGrade, number>, label: string): void {
+    eachStepUp((lower, higher) => {
+        expect(
+            values[higher],
+            `${label}: ${higher} must exceed ${lower}`
+        ).toBeGreaterThan(values[lower]);
+    });
+    eachPeerPair((a, b) => {
+        expect(
+            values[b],
+            `${label}: ${a} and ${b} are peers in power and must not differ on this axis`
+        ).toBe(values[a]);
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -233,18 +275,27 @@ describe('techniques', () => {
     });
 
     // ── balance invariants ────────────────────────────────────────────
-    it('grade ordinal bands are disjoint, ascending and cover the playable ladder', () => {
+    it('grade ordinal bands step up with POWER, and the two peers share a floor', () => {
         expect(GRADE_ORDINAL_BANDS.mortal.min).toBe(0);
         // Content stops at the last crossing. True Immortal is not a rank
         // anyone reads a manual at, and MAX_ORDINAL may move again.
         expect(GRADE_ORDINAL_BANDS.chaos.max).toBe(CONTENT_MAX_ORDINAL);
         expect(CONTENT_MAX_ORDINAL).toBeLessThanOrEqual(MAX_ORDINAL);
-        for (let i = 1; i < GRADES.length; i++) {
-            const prev = GRADE_ORDINAL_BANDS[GRADES[i - 1]];
-            const next = GRADE_ORDINAL_BANDS[GRADES[i]];
-            expect(next.min).toBe(prev.max + 1);
-            expect(next.max).toBeGreaterThan(next.min);
-        }
+        eachStepUp((lower, higher) => {
+            expect(GRADE_ORDINAL_BANDS[higher].min).toBe(GRADE_ORDINAL_BANDS[lower].max + 1);
+            expect(GRADE_ORDINAL_BANDS[higher].max).toBeGreaterThan(GRADE_ORDINAL_BANDS[higher].min);
+        });
+        // A DECISION, PINNED HERE BECAUSE IT LIVES ONLY AS A NUMBER. Peers open
+        // at the same rung: grade is not what puts one of them further up the
+        // ladder than the other. Every chaos art in the catalog happens to sit
+        // at 37 or above all the same, which is a fact about those arts and not
+        // about the band - see `GRADE_ORDINAL_BANDS`.
+        eachPeerPair((a, b) => {
+            expect(
+                GRADE_ORDINAL_BANDS[b].min,
+                `${a} and ${b} are peers; a peer grade may not open higher`
+            ).toBe(GRADE_ORDINAL_BANDS[a].min);
+        });
     });
 
     it('required ordinal rises with grade: every art sits inside its grade band', () => {
@@ -262,10 +313,14 @@ describe('techniques', () => {
         }
     });
 
-    it('higher grades cost more qi: every art sits inside its grade qi band', () => {
-        for (let i = 1; i < GRADES.length; i++) {
-            expect(GRADE_QI_BANDS[GRADES[i]].min).toBeGreaterThan(GRADE_QI_BANDS[GRADES[i - 1]].max);
-        }
+    it('more powerful grades cost more qi, and peers cost the same to fire', () => {
+        eachStepUp((lower, higher) => {
+            expect(GRADE_QI_BANDS[higher].min).toBeGreaterThan(GRADE_QI_BANDS[lower].max);
+        });
+        // Firing a chaos art is not dearer for being unpredictable.
+        eachPeerPair((a, b) => {
+            expect(GRADE_QI_BANDS[b].min).toBe(GRADE_QI_BANDS[a].min);
+        });
         for (const t of TECHNIQUES) {
             const band = GRADE_QI_BANDS[t.grade];
             expect(t.qiCost, `${t.id} qiCost`).toBeGreaterThanOrEqual(band.min);
@@ -350,10 +405,23 @@ describe('techniques', () => {
         expect(elementless.every(t => t.element === null)).toBe(true);
     });
 
-    it('findBestTechniquesForOrdinal returns only the top reachable grade', () => {
+    it('findBestTechniquesForOrdinal returns the top reachable POWER, which at the summit is two grades', () => {
+        // THIS TEST USED TO ASSERT `every(t => t.grade === 'chaos')`, which was
+        // a copy of the old ladder where chaos outranked immortal. It no longer
+        // does: the two are peers, so the best a summit cultivator can reach is
+        // both of them and a shelf offering only one is answering a question
+        // nobody asked. What the function actually promises is a single POWER
+        // rank, and that is what is asserted now.
         const best = findBestTechniquesForOrdinal(MAX_ORDINAL);
         expect(best.length).toBeGreaterThan(0);
-        expect(best.every(t => t.grade === 'chaos')).toBe(true);
+        const ranks = new Set(best.map(t => gradeRank(t.grade)));
+        expect(ranks.size, 'best should be one power rank, however many grades share it').toBe(1);
+        expect(gradeRank([...best][0].grade)).toBe(gradeRank('chaos'));
+        expect(gradeRank('immortal')).toBe(gradeRank('chaos'));
+        expect(
+            new Set(best.map(t => t.grade)).size,
+            'both peer grades should be on offer at the summit'
+        ).toBeGreaterThan(1);
 
         // At ordinal five the best ORDINARY art is mortal grade. The one
         // wide-span treasure that opens down here is chaos grade and is
@@ -408,10 +476,16 @@ describe('pills', () => {
         }
     });
 
-    it('value rises with grade: bands are disjoint, ascending, and respected', () => {
-        for (let i = 1; i < GRADES.length; i++) {
-            expect(PILL_VALUE_BANDS[GRADES[i]].min).toBeGreaterThan(PILL_VALUE_BANDS[GRADES[i - 1]].max);
-        }
+    it('value rises with POWER, peers share a floor, and every pill is in band', () => {
+        eachStepUp((lower, higher) => {
+            expect(PILL_VALUE_BANDS[higher].min).toBeGreaterThan(PILL_VALUE_BANDS[lower].max);
+        });
+        // Grade does not move the window between peers. A chaos pill opens
+        // where an immortal pill opens; what carries the dearest of them past
+        // the immortal ceiling is scarcity, which is not a power claim.
+        eachPeerPair((a, b) => {
+            expect(PILL_VALUE_BANDS[b].min).toBe(PILL_VALUE_BANDS[a].min);
+        });
         for (const p of PILLS) {
             const band = PILL_VALUE_BANDS[p.grade];
             expect(p.value, `${p.id} value`).toBeGreaterThanOrEqual(band.min);
@@ -419,8 +493,11 @@ describe('pills', () => {
         }
     });
 
-    it('toxicity ceilings rise with grade and are respected', () => {
-        expectStrictlyAscendingByGrade(PILL_TOXICITY_CEILING, 'pill toxicity ceiling');
+    it('toxicity ceilings rise with power, tie between peers, and are respected', () => {
+        // Toxicity is the KNOWN price, printed on the tin. A peer-magnitude
+        // medicine loads the body the same amount whoever refined it, and what
+        // separates the two top grades is not on this axis at all.
+        expectRisingWithPower(PILL_TOXICITY_CEILING, 'pill toxicity ceiling');
         for (const p of PILLS) {
             expect(p.toxicity, `${p.id} toxicity`).toBeGreaterThanOrEqual(0);
             expect(p.toxicity, `${p.id} toxicity`).toBeLessThanOrEqual(PILL_TOXICITY_CEILING[p.grade]);
@@ -491,9 +568,21 @@ describe('herbs', () => {
         expectUniqueIds(HERBS, 'herb');
     });
 
-    it('value rises and rarity falls with grade', () => {
+    it('value rises with power and peers share a floor; rarity keeps falling', () => {
+        eachStepUp((lower, higher) => {
+            expect(HERB_VALUE_BANDS[higher].min).toBeGreaterThan(HERB_VALUE_BANDS[lower].max);
+        });
+        eachPeerPair((a, b) => {
+            expect(HERB_VALUE_BANDS[b].min).toBe(HERB_VALUE_BANDS[a].min);
+        });
+        // ── AND RARITY IS DELIBERATELY NOT LEVELLED ACROSS THE PEERS ─────
+        //
+        // Pinned because it looks like an oversight next to the line above and
+        // is not: rarity is a population statement and has nothing to do with
+        // power. The two top grades are equally strong and there is still less
+        // chaos-grade material in the world. If somebody later "fixes" this to
+        // match the value band, they have confused scarcity with rank.
         for (let i = 1; i < GRADES.length; i++) {
-            expect(HERB_VALUE_BANDS[GRADES[i]].min).toBeGreaterThan(HERB_VALUE_BANDS[GRADES[i - 1]].max);
             expect(HERB_RARITY_CEILING[GRADES[i]]).toBeLessThan(HERB_RARITY_CEILING[GRADES[i - 1]]);
         }
         for (const h of HERBS) {
@@ -561,10 +650,17 @@ describe('recipes', () => {
         }
     });
 
-    it('success rate falls as grade rises: bands are disjoint and respected', () => {
-        for (let i = 1; i < GRADES.length; i++) {
-            expect(RECIPE_SUCCESS_BANDS[GRADES[i]].max).toBeLessThan(RECIPE_SUCCESS_BANDS[GRADES[i - 1]].min);
-        }
+    it('success rate falls as power rises, and peers are the same work', () => {
+        eachStepUp((lower, higher) => {
+            expect(RECIPE_SUCCESS_BANDS[higher].max).toBeLessThan(RECIPE_SUCCESS_BANDS[lower].min);
+        });
+        // The same cauldron at the same rung produces both, and a cauldron
+        // cannot know what the thing will turn out to do when swallowed. So
+        // the two top grades share a window rather than chaos being harder.
+        eachPeerPair((a, b) => {
+            expect(RECIPE_SUCCESS_BANDS[b].min).toBe(RECIPE_SUCCESS_BANDS[a].min);
+            expect(RECIPE_SUCCESS_BANDS[b].max).toBe(RECIPE_SUCCESS_BANDS[a].max);
+        });
         for (const r of RECIPES) {
             const grade = getPill(r.producesPillId)!.grade;
             const band = RECIPE_SUCCESS_BANDS[grade];
@@ -588,7 +684,10 @@ describe('recipes', () => {
     });
 
     it('never demands an ingredient of a higher grade than the pill', () => {
-        const rank = (g: TechniqueGrade): number => GRADES.indexOf(g);
+        // `gradeRank` and not `GRADES.indexOf`: the question is power, and a
+        // chaos herb in an immortal formula is a peer ingredient rather than an
+        // over-reach. Indexing the listing order here would refuse it.
+        const rank = gradeRank;
         for (const r of RECIPES) {
             const pillGrade = getPill(r.producesPillId)!.grade;
             for (const ing of r.ingredients) {

@@ -800,18 +800,31 @@ export const ABOVE_THE_LID_TRANSMISSION = {
  * exemption without actually reaching past its own realm geometry, and the
  * content suite checks that the exempt set stays tiny.
  */
+// ── AND THE TOP TWO BANDS OVERLAP, BECAUSE THE GRADES ARE PEERS ──────────
+//
+// The chaos floor is immortal's floor, not a rung above it. `GRADE_POWER` says
+// the two grades are equal in force, so grade cannot be what puts one of them
+// further up the ladder than the other: a chaos art opens where an immortal
+// art opens.
+//
+// Every chaos art currently in the catalog sits at 37 or above all the same,
+// and that is a fact about those particular arts rather than about the band -
+// they came down from over the Lid, which is where the arts up there came from.
+// The band is what the grade PERMITS; where the entries sit is what the world
+// happens to hold.
 export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 0, max: 12 },
     earth: { min: 13, max: 20 },
     heaven: { min: 21, max: 28 },
     immortal: { min: 29, max: 36 },
-    chaos: { min: 37, max: CONTENT_MAX_ORDINAL }
+    chaos: { min: 29, max: CONTENT_MAX_ORDINAL }
 } as const;
 
 /**
- * Qi cost window per grade. Bands do not overlap, so a chaos art is never
- * cheaper than an immortal one, and the qi pool a cultivator has at a given
- * realm is what gates how often the art is usable.
+ * Qi cost window per grade. The top two overlap, because the grades are peers:
+ * a chaos art may cost what an immortal art costs, and firing one is not
+ * dearer for being unpredictable. The qi pool a cultivator has at a given realm
+ * is what gates how often any of them is usable.
  *
  * The chaos ceiling was 900, which was the whole band when the band stopped at
  * the last crossing. It was widened rather than reused when the catalog took in
@@ -827,15 +840,74 @@ export const GRADE_QI_BANDS: Record<TechniqueGrade, Band> = {
     earth: { min: 15, max: 49 },
     heaven: { min: 50, max: 129 },
     immortal: { min: 130, max: 349 },
-    chaos: { min: 350, max: 1500 }
+    chaos: { min: 130, max: 1500 }
 } as const;
 
-/** Grades in ascending order. Used by lookups and by the balance tests. */
+// ─────────────────────────────────────────────────────────────────────────
+// THE LADDER, AND THE TIE AT THE TOP OF IT
+//
+// `GRADE_ORDER` is a LISTING order. It is the order the bands below are
+// written in, the order a catalog is displayed in, and the order tests iterate
+// in. It is total because a list has to be, and it is NOT a statement about
+// power.
+//
+// `GRADE_POWER` is the power ladder, and it has a tie at the top:
+//
+//   > chaos grade is equal to immortal grade but it's got random effects which
+//   > may be bad (whereas immortal ones are uniformly positive). but chaos is
+//   > powerful.
+//
+// A chaos-grade thing is not a step above an immortal-grade thing. It is the
+// same magnitude of force, held in an object whose effect is settled when it
+// is USED rather than when it was made - `engine/cultivation/grade-spread.ts`
+// owns what that means and is the only place the difference lives.
+//
+// SO: ANYTHING COMPARING TWO GRADES BY POWER GOES THROUGH `gradeRank`, WHICH
+// RETURNS THE SAME NUMBER FOR BOTH, and a consumer that sorts on it gets a tie
+// rather than a fabricated preference. Nothing may reach for
+// `GRADE_ORDER.indexOf` to rank, because that is the ordering this correction
+// removed. Where a consumer genuinely needs a total order - a stable display
+// sequence, a band table that has to be written down in some order -
+// `GRADE_ORDER` is that order and the reason is that it is arbitrary and
+// stable, not that it is meaningful.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Grades in listing order. Enumeration and display; NOT a power ordering. */
 export const GRADE_ORDER: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
 
-/** Index of a grade in the ladder, for comparisons. */
+/**
+ * Where each grade stands in POWER. Immortal and chaos are peers.
+ *
+ * The numbers are positions on a ladder rather than magnitudes, so the only
+ * meaningful operations on them are comparison and equality.
+ */
+export const GRADE_POWER: Readonly<Record<TechniqueGrade, number>> = {
+    mortal: 0,
+    earth: 1,
+    heaven: 2,
+    immortal: 3,
+    chaos: 3
+} as const;
+
+/**
+ * Rank of a grade by power, for comparisons.
+ *
+ * Returns the SAME value for `immortal` and `chaos`. A caller that needs them
+ * ordered has to decide on some other axis and say which, because on this one
+ * they are equal.
+ */
 export function gradeRank(grade: TechniqueGrade): number {
-    return GRADE_ORDER.indexOf(grade);
+    return GRADE_POWER[grade];
+}
+
+/**
+ * Which of two grades is stronger: -1, 0 or 1, with 0 meaning peers.
+ *
+ * Exists so a consumer can be explicit about a tie instead of discovering one
+ * by subtracting two ranks and getting zero.
+ */
+export function compareGrades(a: TechniqueGrade, b: TechniqueGrade): number {
+    return Math.sign(gradeRank(a) - gradeRank(b));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -3905,6 +3977,13 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
 /**
  * The highest-grade arts a cultivator can currently reach, which is what a
  * shop, a sect library, or an inheritance should actually be offering.
+ *
+ * AT THE TOP THIS RETURNS TWO GRADES AND THAT IS THE ANSWER, not a bug to
+ * flatten. `gradeRank` ties immortal and chaos, so "the best you can reach"
+ * up there is the immortal arts AND the chaos arts, and a shelf that offered
+ * only one of them would be answering a question nobody asked. Which of the
+ * two somebody wants is exactly the decision the grades exist to pose: the
+ * reliable one, or the one that is as strong and might do something else.
  */
 export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
     const eligible = findTechniquesForOrdinal(ordinal, opts);

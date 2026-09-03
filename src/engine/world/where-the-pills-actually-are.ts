@@ -49,6 +49,7 @@ import { whyNotSold } from './single-use-dao-comprehension-materials.js';
 import { forStream } from '../cultivation/rng.js';
 import { PILLS } from '../../data/cultivation/pills.js';
 import { pillStorageModel, pillTradeTier } from '../cultivation/buying-and-bartering-pills.js';
+import { isSettledOnUse } from '../cultivation/grade-spread.js';
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
 import type { Pill } from '../../schema/cultivation.js';
 
@@ -80,7 +81,14 @@ function stockFor(reach: number, pill: Pill, rng: ReturnType<typeof forStream>):
  */
 export function significanceOfPill(pill: Pill): ObjectSignificance {
     if (pillTradeTier(pill) === 'commodity') return 'mundane';
-    return pill.grade === 'chaos' ? 'legendary' : 'significant';
+    // READ THE PROPERTY, NOT THE GRADE'S NAME. This used to ask whether the
+    // grade was called `chaos`, which was a bespoke branch on one word. What
+    // actually earns a legendary row is that the object's effect is not settled
+    // until somebody uses it: nobody can say what this particular one will do,
+    // so which one it is matters more than any other pill in the catalog, and
+    // that is exactly what `legendary` is for. A grade added tomorrow with a
+    // spread of its own gets the same treatment without an edit here.
+    return isSettledOnUse(pill.grade) ? 'legendary' : 'significant';
 }
 
 /**
@@ -121,7 +129,28 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
                 name: pill.name,
                 kind: 'pill',
                 significance: significanceOfPill(pill),
-                power: band,
+                // ── NULL, AND THE RUNG LIVES IN `data.forOrdinal` ────────
+                //
+                // `power` is what a thing contributes to FORCE, and the design
+                // owner has ruled on what that means for medicine:
+                //
+                //   > the pill itself also doesn't make you stronger, it stores
+                //   > hp, so from the power pov it doesn't help either. only
+                //   > weapons and spirit boats do
+                //
+                // A pill is stored health, not a raised ceiling, and the
+                // instinct to write the rung here is the mistake to resist -
+                // the rung a thing is PITCHED AT is a different quantity and it
+                // already has a home two lines down. Writing it into `power`
+                // made a barter pill read to every consumer as a rung-41
+                // combat object, which is how a war came to be smashing
+                // medicine: `ratedThingsOwnedBy` filters on `power !== null`.
+                //
+                // AND MEDICINE IS NOT WORTHLESS. It is worth a great deal in a
+                // war, and worth something in a fight if you have the time to
+                // swallow it and are not interrupted. Neither of those is this
+                // field, and neither wants the number preserved here.
+                power: null,
                 description: pill.description,
                 possessorId: house.id,
                 ownerId: house.id,

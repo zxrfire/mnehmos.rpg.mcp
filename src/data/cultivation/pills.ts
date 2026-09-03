@@ -60,21 +60,47 @@ export const POTENCY_UNITS: Record<PillEffect, string> = {
     cleanse_deviation: 'deviation severity levels'
 } as const;
 
-/** Spirit-stone value window per grade. Disjoint and ascending. */
+/**
+ * Spirit-stone value window per grade. Ascending and disjoint UP TO THE PEERS,
+ * where the two windows deliberately overlap.
+ *
+ * Chaos and immortal are the same magnitude of power (`GRADE_POWER` in
+ * `techniques.ts`), so grade does not move the window: **a chaos pill opens
+ * where an immortal pill opens.** What moves an individual row inside the
+ * shared window is scarcity and what the object turns out to be worth, and
+ * those are facts about the row rather than about the grade.
+ *
+ * The chaos ceiling is higher and the reason is not power. It is that the
+ * objects up there are singular, and a singular thing prices at what the only
+ * market that matters will pay. Read the band as "a chaos pill may cost
+ * anything an immortal pill may cost, and the rarest of them cost more than
+ * anything else in the world" - never as "chaos outranks immortal".
+ */
 export const PILL_VALUE_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 5, max: 99 },
     earth: { min: 100, max: 999 },
     heaven: { min: 1_000, max: 9_999 },
     immortal: { min: 10_000, max: 99_999 },
-    chaos: { min: 100_000, max: 1_000_000 }
+    chaos: { min: 10_000, max: 1_000_000 }
 } as const;
 
-/** Most toxic a pill of each grade may be. Strictly rising. */
+/**
+ * Most toxic a pill of each grade may be. Rising, and level across the peers.
+ *
+ * Toxicity is the KNOWN price, printed on the tin, and a peer-magnitude
+ * medicine puts a peer-magnitude load on the body whoever refined it - so the
+ * two top grades share a ceiling rather than chaos getting a higher one.
+ *
+ * What separates them is not on this axis at all. An immortal pill's cost is
+ * the number below and nothing else; a chaos pill charges the same number and
+ * then does whatever `grade-spread.ts` draws, which is the unknown part and is
+ * not expressible as a ceiling.
+ */
 export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
     mortal: 1.5,
     earth: 4,
     heaven: 9,
-    immortal: 18,
+    immortal: 40,
     chaos: 40
 } as const;
 

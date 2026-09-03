@@ -291,6 +291,23 @@ export const FLAG_PILL_TOXICITY = 'pill_toxicity';
  */
 export const FLAG_BREAKTHROUGH_PILLS_TAKEN = 'breakthrough_pills_taken';
 export const FLAG_STIPEND_PAID_DAY = 'stipend_paid_day';
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT AN OBJECT WHOSE EFFECT IS SETTLED AT USE CAN LEAVE ON A PERSON
+//
+// `engine/cultivation/grade-spread.ts` draws these; the pill path writes them.
+// They are flags rather than columns because two of the three are things the
+// world already stores for NPCs and has never had a column for on a PLAYER -
+// see the report on `world_npcs.bloodline_species`, which is the same fact one
+// table over.
+// ─────────────────────────────────────────────────────────────────────────
+/** A `Beast` id. What the line IS is read from `beasts.ts`, never copied here. */
+export const FLAG_BLOODLINE_SPECIES = 'bloodline_species';
+/** `latent` | `grown` | `final`. `final` is a person who is also a beast. */
+export const FLAG_BLOODLINE_TIER = 'bloodline_tier';
+/** Day the overdraw window closes. Everything after it is the residue. */
+export const FLAG_OVERDRAWN_UNTIL = 'overdrawn_until_day';
+/** How many rungs above themselves the window puts them. */
+export const FLAG_OVERDRAWN_RUNGS = 'overdrawn_rungs';
 /** The crossing took the name. People have to be told it, every time. */
 export const FLAG_NAME_TAKEN = 'name_taken';
 

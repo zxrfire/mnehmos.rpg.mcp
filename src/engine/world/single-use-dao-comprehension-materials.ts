@@ -161,7 +161,18 @@ export function seedComprehensionMaterials(state: WorldState): ObjectRecord[] {
                 // where a single-use object came from is most of what it is.
                 significance: band.forOrdinal >= 32 ? 'legendary'
                     : band.forOrdinal >= 24 ? 'significant' : 'notable',
-                power: band.forOrdinal,
+                // ── NULL. THE RUNG IS `data.forOrdinal`, NOT `power` ────────
+                //
+                // `power` is what a thing contributes to force, and a material
+                // contributes none: it is understood once, in a vault, by
+                // somebody sitting still. The owner's ruling is that only
+                // weapons and spirit boats have any, and that these "should
+                // probably be worth nothing in a fight" - which is also why
+                // they are typically left as spoils rather than carried into
+                // one. `band.forOrdinal` is the rung it is PITCHED at, a
+                // different quantity entirely, and it is already written onto
+                // `data` below where every reader of it looks.
+                power: null,
                 description: source === 'made_above'
                     ? `Made above the Lid and sent down. Understanding it opens the road of `
                       + `${band.domain.replace(/_/g, ' and ')} to somebody standing at ordinal `
