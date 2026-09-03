@@ -117,30 +117,10 @@ functional - *third-grade Meridian Knitting Pill*, *Blood-Replenishing Pill*, *S
 Pill*; a healing pill must never become an elixir of nine heavens. Herbs run from the vivid
 (*Corpse Silver Flower*) to the flat (*Qi Grass*), and both ends are correct.
 
-**A ruin has two names, and which one you get is a fact about the reader.** The colloquial
-name is what people who only ever saw it call it - *Nothing Standing*, *Half a Roof*, *The
-Burn* - generated from what somebody saw, what happened there, or a name that is simply wrong.
-It carries no type noun and no poetry, **because a person naming something they are afraid of
-reaches for neither.** Do not formalise these.
-
-The **true name** is what the place actually was: whose seat it was, what it was built to hold,
-what sealed it. Both are real and both are in use at once - the way a site can be "the old
-ruins" to everyone nearby and have a name in the record that scholars use and locals
-eventually learn. **Sometimes the true name is common knowledge**; sometimes only the
-colloquial one has survived.
-
-So a ruin is not an exception to the naming rules - it is two entries under them, and the
-choice between them runs on the same axes as every other reading in this world: what the
-reader can reach, and whether they hold any reference for it. Somebody with neither gets *The
-Burn*. Somebody with both gets the house, the age, and what happened.
-
-**And the true name is worth something, which is what stops this being decoration.** Knowing
-whose seat a ruin was tells you its rung, what it was built to hold, what it kept out and
-what it is likely to still be keeping. That is preparation: what to bring, what will refuse
-you, and whether you can survive the ground at all. A cultivator who only has the colloquial
-name knows a dangerous place exists. One who has the true name knows what to do about it - and what is
-likely to be in there, **in both directions**: what a house of that kind kept, and what it
-kept it behind. The reward and the thing guarding the reward come out of the same fact.
+**One deliberate exception: what frightened people call a ruin.** Ruin and scar names are
+generated from what somebody saw, what happened, or a name that is simply wrong - *Nothing
+Standing*, *Half a Roof*, *The Burn*. They carry no type noun and no poetry **because a person
+naming something they are afraid of does not reach for either.** Do not formalise them.
 
 ---
 
