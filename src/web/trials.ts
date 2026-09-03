@@ -147,21 +147,32 @@ export function phraseOf(siteId: string): string {
  *
  * Built from ids AND from whole names, and the distinction matters.
  *
- * This was ids only, on the reasoning that site names are English sentences -
- * "Two Graves On a Survey Line", "A Culler On the Kettle Circuit" - and that
- * matching a player's prose against the WORDS in those would fire on half the
- * sentences in the game. That reasoning is correct about words and does not
- * apply to whole names, because `siteNamed` tests `text.includes(phrase)`: a
- * complete name is one long specific substring, not a bag of common words.
+ * This was ids only, on the reasoning that site names were English sentences -
+ * the catalog then read "The Gate Frame With No Gate In It" and "A Culler On
+ * the Kettle Circuit" - and that matching a player's prose against the WORDS
+ * in those would fire on half the sentences in the game. That reasoning is
+ * correct about words and does not apply to whole names, because `siteNamed`
+ * tests `text.includes(phrase)`: a complete name is one specific substring,
+ * not a bag of common words.
  *
  * The gap it left was closed-loop and unwinnable. The game lists these places
- * by NAME - "The ones you have names for are The Outer Gate of a Sect That No
- * Longer Exists, The Bench at the Burned Seat, The Gate Frame With No Gate In
- * It..." - and then accepted only the id slug, which is never shown anywhere.
- * Found by playing: asking what ruins were near, typing back one of the names
- * the game had just printed, and getting nothing. `trial-the-swept-frame`
- * answers to "swept frame", and the player had been told "The Gate Frame With
- * No Gate In It".
+ * by NAME - "The ones you have names for are Handworn Gate, The Burned Bench,
+ * The Empty Frame..." - and then accepted only the id slug, which is never
+ * shown anywhere. Found by playing: asking what ruins were near, typing back
+ * one of the names the game had just printed, and getting nothing.
+ * `trial-the-swept-frame` answers to "swept frame", and the player had been
+ * told "The Empty Frame".
+ *
+ * ── AND THE NAMES ARE NOW SHORT, WHICH MOVES THE RISK ────────────────────
+ *
+ * Those sentence-length names were themselves a defect - a name nobody would
+ * say out loud is a caption - and the catalog has been cut to two and three
+ * words throughout. That is better prose and it makes this lookup LESS safe,
+ * not more: the argument above rests on a whole name being one long specific
+ * substring, and "The Green Glass" is a good deal less specific than "The
+ * Glass Where the Count Stopped". The length floor in `siteNamed` is now the
+ * thing doing the work rather than a backstop, so a name short enough to
+ * appear inside an ordinary sentence is the failure to watch for here.
  *
  * The leading article is dropped so that "I approach the Gate Frame..." and
  * "I approach Gate Frame..." both land, and the length floor in `siteNamed`
