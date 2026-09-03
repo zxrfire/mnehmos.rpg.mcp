@@ -77,7 +77,8 @@ import { combatPowerForOrdinal } from '../cultivation/combat.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import type { Deed, Party, WhatADeedLeaves } from '../social-leverage/what-a-deed-leaves.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
-import type { HistoricalFact } from './history.js';
+import { makeFact, type HistoricalFact } from './history.js';
+import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { upsertRelationship, type NpcRecord } from './npc-state.js';
 import {
     describeTheLoss,
@@ -90,6 +91,12 @@ import {
     type ThingHarmed
 } from './object-damage.js';
 import { isRuined, type ObjectRecord } from './possessions.js';
+import {
+    holdsTogetherAsFarAsAnybodyKnows,
+    settleTheSpoils,
+    whoLost,
+    type ThingChangedHands
+} from './war-spoils.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -175,12 +182,40 @@ export interface ThingLost {
  * existing draw anywhere moves. Mutates `state.objects`, `state.npcs` and the
  * history ledger, and returns what it did.
  */
+export interface WhatAWarDid {
+    /** Things the fighting reached, one at a time, over the years it ran. */
+    broken: ThingLost[];
+    /** Holds that changed hands when a war reached its settlement. */
+    spoils: SpoilsTaken[];
+}
+
+/**
+ * A war ended and a house's hold moved.
+ *
+ * One row per SETTLEMENT rather than per object: a hold of twenty things
+ * changing hands is one event that a house remembers, and twenty facts saying
+ * the same thing on the same day is the ledger the fold in
+ * `a-fact-that-keeps-happening-is-one-row.ts` exists to prevent.
+ */
+export interface SpoilsTaken {
+    loserId: string;
+    loserName: string;
+    winnerId: string;
+    winnerName: string;
+    /** Whether the losing body broke up rather than merely losing its things. */
+    scattered: boolean;
+    moved: ThingChangedHands[];
+    fact: HistoricalFact;
+    line: string;
+}
+
 export function whatAWarBreaks(
     state: WorldState,
     day: number,
     rng: CultivationRNG
-): ThingLost[] {
+): WhatAWarDid {
     const lost: ThingLost[] = [];
+    const spoils: SpoilsTaken[] = [];
     const byId = new Map(state.factions.map(f => [f.id, f]));
     // A settled war leaves its schedule entry behind, and the same two houses
     // can go to war again - so a pair can match twice and would otherwise get
@@ -190,8 +225,6 @@ export function whatAWarBreaks(
 
     for (const effect of state.schedule) {
         if (effect.data.kind !== 'war_resolution') continue;
-        // Not yet, and not any more. A war due to end today has had its years.
-        if (effect.dueOnDay <= day) continue;
         const a = byId.get(String(effect.data.sideA ?? ''));
         const b = byId.get(String(effect.data.sideB ?? ''));
         if (!a || !b) continue;
@@ -200,13 +233,109 @@ export function whatAWarBreaks(
         if (seen.has(pair)) continue;
         seen.add(pair);
 
+        // ── THE END OF IT, WHICH IS WHERE THE THINGS ACTUALLY MOVE ───────
+        //
+        // A war due to end today has had its years of fighting and now has its
+        // settlement. Handled HERE rather than as another line in the world
+        // tick, because this pass already walks exactly the wars that are live
+        // and this is the same event seen one day later - `settleWarsThatAreOver`
+        // takes the tags off at day+62 and this runs at day+61, so a war that
+        // ends this year is settled before it is declared over.
+        //
+        // And it is the ordinary ending. The design owner: single-use materials
+        // are *typically left as spoils of war*, so the fighting breaks the few
+        // things somebody carried out and the SETTLEMENT moves everything that
+        // stayed in the hold. See `war-spoils.ts`.
+        if (effect.dueOnDay <= day) {
+            const settled = settleOneWar(state, a, b, day, rng);
+            if (settled) spoils.push(settled);
+            continue;
+        }
+
         // Both ways round. A war is not something one side has done to the
         // other, and a pass that only ever broke the loser's things would be
         // deciding the war before it was fought.
         lost.push(...oneSidePutsItsHandOnTheOthersThings(state, a, b, day, rng));
         lost.push(...oneSidePutsItsHandOnTheOthersThings(state, b, a, day, rng));
     }
-    return lost;
+    return { broken: lost, spoils };
+}
+
+/**
+ * A war reached the day it was scheduled to end, and the hold changes hands.
+ *
+ * Everything about which side lost, whether the body holds together and what
+ * that does to each row is `war-spoils.ts`'s; this decides nothing and only
+ * puts the two houses in front of it.
+ */
+function settleOneWar(
+    state: WorldState,
+    a: FactionRecord,
+    b: FactionRecord,
+    day: number,
+    rng: CultivationRNG
+): SpoilsTaken | null {
+    const sides = whoLost(state, a, b);
+    // A war neither side lost moves nothing, which is a real answer rather
+    // than a gap: two houses that could put the same thing out have not
+    // settled anything by stopping.
+    if (!sides) return null;
+    const war = `the war between the ${sides.loser.name} and the ${sides.winner.name}`;
+    const moved = settleTheSpoils(state, {
+        loser: {
+            id: sides.loser.id,
+            name: sides.loser.name,
+            holdsTogether: holdsTogetherAsFarAsAnybodyKnows(state, sides.loser.id)
+        },
+        winner: sides.winner,
+        war,
+        onDay: day
+    }, rng);
+    if (moved.length === 0) return null;
+
+    // READ OFF WHAT HAPPENED, NEVER OFF WHAT WAS EXPECTED TO. `settleTheSpoils`
+    // falls back to capture when a scattering house has nobody left to carry
+    // anything, and a summary written from the INPUT said a house had broken up
+    // and its things had gone out in its members' arms while the code had just
+    // handed the whole hold to the winner. Measured: eight seeds, five hundred
+    // years, twenty-two facts saying that and zero objects in anybody's hands.
+    // A fact that misdescribes its own event is worse than no fact.
+    const scattered = moved.some(m => m.fate === 'carried off');
+
+    const line = scattered
+        ? `The ${sides.loser.name} broke up at the end of ${war}, and ${moved.length} `
+          + `thing${moved.length === 1 ? '' : 's'} went out of its hold in its members' arms.`
+        : `The ${sides.winner.name} took ${moved.length} thing`
+          + `${moved.length === 1 ? '' : 's'} off the ${sides.loser.name} at the end of ${war}.`;
+
+    const fact = appendWorldFact(state, makeFact({
+        day,
+        kind: 'war',
+        scale: 'local',
+        summary: line,
+        actors: [],
+        locationId: sides.loser.seatLocationId ?? null,
+        factionIds: [sides.loser.id, sides.winner.id],
+        visibility: 'public',
+        magnitude: 0.6,
+        data: {
+            unattributed: 'Carts went out of one gate and in at another, and nobody at either '
+                + 'is answering questions about what was on them.',
+            movedCount: moved.length,
+            scattered
+        }
+    }), { recur: false });
+
+    return {
+        loserId: sides.loser.id,
+        loserName: sides.loser.name,
+        winnerId: sides.winner.id,
+        winnerName: sides.winner.name,
+        scattered,
+        moved,
+        fact,
+        line
+    };
 }
 
 /**

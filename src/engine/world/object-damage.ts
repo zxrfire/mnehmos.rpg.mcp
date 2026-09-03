@@ -67,6 +67,32 @@
  * already carrying - and by one property of the row: whether there is a row.
  *
  * ═════════════════════════════════════════════════════════════════════════
+ * WHAT `power` MEANS, BECAUSE EVERYTHING HERE IS READ OFF IT
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * `ObjectRecord.power` is WHAT A THING CONTRIBUTES TO FORCE, on the same ladder
+ * a person stands on. Ruled by the design owner, and it is narrower than it
+ * looks:
+ *
+ *   A WEAPON has one. It lets whoever holds it strike at its rung, which is the
+ *   artifact catalog's founding claim.
+ *   A HULL has one. Being inside it puts a rated thing between you and what is
+ *   coming - see `sheltering.ts`, where that is `canUnmake` and not a bonus.
+ *   A MEDICINE HAS NONE. *The pill itself doesn't make you stronger, it stores
+ *   hp* - and taking one is an ACT, worth a round you were not guarding in,
+ *   which is the fight's business and not this column's.
+ *   A SINGLE-USE DAO MATERIAL HAS NONE. It is worth an enormous amount and none
+ *   of it is worth anything in a fight.
+ *
+ * So a row whose `power` is really *the rung this thing is FOR* is writing a
+ * different quantity into the column, and everything in this file, in
+ * `sheltering.ts` and in the confrontation will read it as force. `data.forOrdinal`
+ * is where that number belongs and two catalogs already carry it there as well.
+ * Nothing here compensates for the confusion, deliberately: this module reads
+ * the field as documented, and a row that means something else by it is the
+ * row's defect.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
  * COUNTED THINGS CANNOT BE DAMAGED, AND THAT IS NOT A SIMPLIFICATION
  * ═════════════════════════════════════════════════════════════════════════
  *

@@ -144,7 +144,7 @@ describe('two sects battle, and the things they own are in it', () => {
         for (let year = 0; year < 40; year++) {
             lost.push(...whatAWarBreaks(
                 state, year * 365, forStream('boat-war', 'war-breakage', year)
-            ));
+            ).broken);
         }
         // Not a rule about hulls. `canUnmake` is absolute: your rung must reach
         // the thing's rung, and a party drawn off an ordinary roster does not.
@@ -164,7 +164,7 @@ describe('two sects battle, and the things they own are in it', () => {
         for (let year = 0; year < 40 && lost.length === 0; year++) {
             lost.push(...whatAWarBreaks(
                 state, year * 365, forStream('boat-war', 'war-breakage', year)
-            ));
+            ).broken);
         }
 
         expect(lost.length).toBeGreaterThan(0);
@@ -220,7 +220,7 @@ describe('a war does not empty a treasury', () => {
     it('it reaches at most one thing a side owns per year', async () => {
         const { state, holder } = await twoHousesAtWar();
         const before = ratedThingsOwnedBy(state, holder).length;
-        const lost = whatAWarBreaks(state, 3650, forStream('boat-war', 'war-breakage', 10));
+        const lost = whatAWarBreaks(state, 3650, forStream('boat-war', 'war-breakage', 10)).broken;
         const mine = lost.filter(l => l.ownerId === holder);
         expect(mine.length).toBeLessThanOrEqual(1);
         expect(ratedThingsOwnedBy(state, holder).length).toBeGreaterThanOrEqual(before - 1);
@@ -233,7 +233,7 @@ describe('a war does not empty a treasury', () => {
                 f.tags = f.tags.filter(t => t !== 'at_war');
             }
         }
-        expect(whatAWarBreaks(state, 3650, forStream('boat-war', 'war-breakage', 10))).toHaveLength(0);
+        expect(whatAWarBreaks(state, 3650, forStream('boat-war', 'war-breakage', 10)).broken).toHaveLength(0);
     });
 });
 

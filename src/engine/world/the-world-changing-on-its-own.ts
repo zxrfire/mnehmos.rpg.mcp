@@ -278,6 +278,14 @@ export type PressureKind =
      * this module only calls it on the same yearly line the settlement runs on.
      */
     | 'thing_broken'
+    /**
+     * A war ended and the losing side's hold changed hands.
+     *
+     * Also not in TEMPLATES. `war-spoils.ts` owns it, and it fires off the same
+     * yearly line as the breakage above because a settlement is the last day of
+     * a war rather than an event of its own.
+     */
+    | 'spoils_taken'
     | 'zone_forbidden'
     | 'migration'
     | 'disappearance'
@@ -444,11 +452,12 @@ export function applyPressure(
         // is the only pass anywhere that costs a house something physical for
         // being at war. See `war-breakage.ts`, which does the whole of it and
         // is deliberately ignorant of what any of the things are.
-        for (const lost of whatAWarBreaks(
+        const war = whatAWarBreaks(
             state,
             withinSpan(year * 365 + 61, fromDay, toDay),
             forStream(state.seed, 'war-breakage', year)
-        )) {
+        );
+        for (const lost of war.broken) {
             events.push({
                 kind: 'thing_broken',
                 onDay: lost.fact.day,
@@ -457,6 +466,26 @@ export function applyPressure(
                     factions: [lost.ownerId, lost.breakerHouseId],
                     locations: lost.fact.locationId ? [lost.fact.locationId] : [],
                     npcs: [lost.breakerId]
+                },
+                deaths: []
+            });
+        }
+        // And what the ENDING of one did, which is where a house's things
+        // mostly go. The design owner: they are *typically left as spoils of
+        // war*, so the fighting breaks the few things somebody carried out and
+        // the settlement moves everything that stayed in the hold. One event
+        // per settlement, never per object.
+        for (const settled of war.spoils) {
+            events.push({
+                kind: 'spoils_taken',
+                onDay: settled.fact.day,
+                fact: settled.fact,
+                touched: {
+                    factions: [settled.loserId, settled.winnerId],
+                    locations: settled.fact.locationId ? [settled.fact.locationId] : [],
+                    npcs: settled.moved
+                        .map(m => m.toId)
+                        .filter((id): id is string => id !== null && id !== settled.winnerId)
                 },
                 deaths: []
             });
