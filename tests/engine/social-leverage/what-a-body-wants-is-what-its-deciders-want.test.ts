@@ -267,6 +267,29 @@ describe('tier three - all the elders, over a head who is alone', () => {
         expect(answer.settledBy).not.toBe('the elders, unanimous against the seat');
     });
 
+    it('takes a room, so one elder alone does not outvote the head', () => {
+        const answer = whatTheBodyWants({
+            roll: roll(['head', 5], ['elder-a', 4]),
+            rankCount: RANKS,
+            readingOf: readingsFrom({ head: -0.9, 'elder-a': 0.9 })
+        });
+        // A deputy contradicting a principal is not a house refusing its head.
+        expect(answer.settledBy).toBe('the seat');
+        expect(answer.leaning).toBe(-0.9);
+        expect(answer.against.map(p => p.id)).toEqual(['elder-a']);
+    });
+
+    it('fires the moment there are two of them, on the same numbers', () => {
+        const answer = whatTheBodyWants({
+            roll: roll(['head', 5], ['elder-a', 4], ['elder-b', 4]),
+            rankCount: RANKS,
+            readingOf: readingsFrom({ head: -0.9, 'elder-a': 0.9, 'elder-b': 0.9 })
+        });
+        expect(answer.settledBy).toBe('the elders, unanimous against the seat');
+        expect(answer.leaning).toBeCloseTo(0.9, 4);
+        expect(answer.against.map(p => p.id)).toEqual(['head']);
+    });
+
     it('does not fire on a disagreement too small to have been mentioned', () => {
         const justUnder = A_REAL_DISAGREEMENT - 0.01;
         const answer = whatTheBodyWants({
@@ -440,12 +463,15 @@ describe('a family and a sect are the same call', () => {
         // the same two positions a sect's elders are. Same call, same tiers,
         // no second aggregation anywhere.
         const family = whatTheBodyWants({
-            roll: roll(['head', 3], ['senior', 2], ['cousin', 0]),
+            roll: roll(['head', 3], ['senior-a', 2], ['senior-b', 2], ['cousin', 0]),
             rankCount: 4,
-            readingOf: readingsFrom({ head: -0.9, senior: 0.6, cousin: 0.9 })
+            readingOf: readingsFrom({
+                head: -0.9, 'senior-a': 0.6, 'senior-b': 0.6, cousin: 0.9
+            })
         });
         // The cousin is on the roll and does not decide anything.
-        expect(family.theRoom.map(p => p.id)).toEqual(['head', 'senior']);
+        expect(family.theRoom.map(p => p.id).sort())
+            .toEqual(['head', 'senior-a', 'senior-b']);
         expect(family.settledBy).toBe('the elders, unanimous against the seat');
         expect(family.leaning).toBeCloseTo(0.6, 4);
         expect(family.against.map(p => p.id)).toEqual(['head']);

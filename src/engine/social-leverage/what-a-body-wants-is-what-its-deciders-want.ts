@@ -505,21 +505,46 @@ export interface WhereTheBodyLands {
 export const A_REAL_DISAGREEMENT = DISPOSITION_BANDS.WORTH_SAYING;
 
 /**
+ * How many people it takes before a room can overrule the person at the top of
+ * it.
+ *
+ * **A body can overrule its own head only when it is a body**, and one person
+ * is not a quorum. With a single elder, "all the elders disagree" is one person
+ * disagreeing, which is a deputy contradicting a principal rather than a house
+ * refusing its head - so the head wins outright, and the elder is left with
+ * exactly what tier two says they have: a disagreement that costs the head
+ * standing and does not change the answer.
+ *
+ * The design owner, ruling on it:
+ *
+ *   > well in the case of 1 elder and 1 seat the seat wins. 2 or more elders,
+ *   > and the patriarch can be overruled. that's how it works irl too?
+ *
+ * Named for the rule rather than the number so the number can move without the
+ * name lying. Note for the vocabulary sweep now in flight: the identifiers in
+ * this file say "seat", which is one house's private word for its head rather
+ * than the general one, and this constant deliberately does not repeat it.
+ */
+export const ENOUGH_TO_BE_A_BODY = 2;
+
+/**
  * What a body wants, from the people who decide in it.
  *
- * ── UNANIMITY IS LITERAL ─────────────────────────────────────────────────
+ * ── UNANIMITY IS LITERAL, AND IT TAKES A ROOM ────────────────────────────
  *
  * Tier three fires when EVERY elder stands more than {@link A_REAL_DISAGREEMENT}
- * from the seat and ALL ON THE SAME SIDE of them. Both halves are needed: a
- * room split hard in both directions is not a room that agrees about anything,
- * and letting it overrule would make disagreement itself the winning move.
+ * from the seat, ALL ON THE SAME SIDE of them, and there are at least
+ * {@link ENOUGH_TO_BE_A_BODY} of them. All three are needed: a room split hard
+ * in both directions is not a room that agrees about anything - letting it
+ * overrule would make disagreement itself the winning move - and one elder
+ * alone is a deputy contradicting a principal rather than a house refusing its
+ * head.
  *
- * There is no quorum minimum, because the owner's words are "all the elders"
- * and a minimum would be a rule this file invented. It does mean a body with
- * one elder can have its head overruled by that one person, which reads oddly
- * against tier two's rationale until you notice they are the same situation: a
- * house of two, where the seat is alone in the room. If that ever wants a
- * floor, it is a constant here and not a branch.
+ * The quorum is what stops tier two and tier three collapsing into each other.
+ * With one elder they are the identical condition, and since three is asked
+ * first it used to win every time: measured over 400 rooms of two, the head
+ * could not overrule anybody, ever. That is not a hierarchy with a loop in it,
+ * it is a hierarchy upside down.
  */
 export function whatTheBodyWants(input: {
     /** The body's roll. Only the ranks that decide are read. */
@@ -590,7 +615,7 @@ export function whatTheBodyWants(input: {
     // question is whether the seat's overrule survives, not whether it happens.
     const allBelow = apart.every(d => d <= -A_REAL_DISAGREEMENT);
     const allAbove = apart.every(d => d >= A_REAL_DISAGREEMENT);
-    if (allBelow || allAbove) {
+    if (elders.length >= ENOUGH_TO_BE_A_BODY && (allBelow || allAbove)) {
         return {
             leaning: elderMean,
             settledBy: 'the elders, unanimous against the seat',
