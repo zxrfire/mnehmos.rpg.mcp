@@ -101,6 +101,7 @@ import type {
 import { SEVERITY_ORDER } from '../social/grudges.js';
 import type { ShameInput } from '../social/shame.js';
 import { severityWithHouse, whenItIsDoneToOneOfOurs } from './what-a-house-will-do-about-it.js';
+import { NO_NAME_ON_IT, NO_NAME_TAG } from '../social/accounts-with-no-name.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT A DEED IS
@@ -239,6 +240,29 @@ export interface Deed {
      * modelling behaviour rather than listing it.
      */
     knownTo?: readonly string[];
+    /**
+     * True when what happened reads as something other than a deed at all.
+     *
+     * THE OTHER HALF OF {@link knownTo}, and the design owner's correction to
+     * the reading that had only one: *the ledger is not empty before being
+     * told, it is there, they just don't have an outlet for their anger.*
+     *
+     * The two questions are different and were being answered by one field.
+     * `knownTo` is who can put a NAME to it. This is whether anybody can tell a
+     * deed was done at all - and for most wrongs they can. A body, a burned
+     * compound, an emptied vault: nobody needs a teller to know something
+     * happened, and the people it touches hold a real account with a real
+     * weight and no subject on it from that day.
+     *
+     * Deniable is the narrower case and the one the field is named for: a
+     * cultivation quietly poisoned reads as a qi deviation, a junior left
+     * somewhere dangerous reads as bad luck, a false pill reads as a body that
+     * could not take the medicine. There the harm is real and nothing about it
+     * says anybody did it, so nobody outside `knownTo` holds anything.
+     *
+     * Defaults false, because most deeds leave something visible.
+     */
+    deniable?: boolean;
     /** How many people could see it. Carried as a tag, never as a weight. */
     witnesses?: number;
     /** Anybody else the event touched, so the record is findable from them. */
@@ -487,20 +511,46 @@ export function whatADeedLeaves(input: {
     if (heavy || carriedForThem) {
         for (const relative of kin) {
             if (relative.id === other.id) continue;
-            if (!knows(relative.id)) continue;
+            // ── AND SOMEBODY WHO CANNOT NAME IT STILL HOLDS IT ───────────
+            //
+            // The design owner, correcting the reading that had them holding
+            // nothing: *the ledger is not empty before being told, it is there,
+            // they just don't have an outlet for their anger.* A brother who is
+            // dead is dead, and the people who loved him do not need a teller to
+            // start grieving. **What being told supplies is not the wrong, it is
+            // the target.**
+            //
+            // So the account opens either way and the only difference is whether
+            // there is a name on it. `accounts-with-no-name.ts` owns that state
+            // and `hearing-of-a-wrong.ts` is how a name arrives later, onto the
+            // same row rather than beside it.
+            //
+            // Except where the deed was deniable, which is the case `knownTo`
+            // was written for: nothing about a poisoning that reads as a
+            // deviation tells anybody a deed was done, so there is nothing to
+            // hold and no anger to have an outlet for.
+            const named = knows(relative.id);
+            if (!named && (aKindness || deed.deniable)) continue;
             opens.push({
                 ...commonToAll,
                 kind: kindFor(aKindness, willDescend),
                 holderId: relative.id,
-                subjectId: other.id,
+                subjectId: named ? other.id : NO_NAME_ON_IT,
                 severity: weight,
-                description: `${deed.description} ${principal.name} was theirs.`,
+                description: named
+                    ? `${deed.description} ${principal.name} was theirs.`
+                    : `${deed.description} ${principal.name} was theirs, and nobody has put a `
+                      + 'name to it.',
                 participants: dedupe([
                     principal.id,
                     ...(deed.participants ?? []),
                     ...(houseIsAParty && subject.houseId ? [subject.houseId] : [])
                 ]),
-                tags: [...baseTags, `carried:${relative.relation}`]
+                tags: [
+                    ...baseTags,
+                    `carried:${relative.relation}`,
+                    ...(named ? [] : [NO_NAME_TAG])
+                ]
             });
         }
     }

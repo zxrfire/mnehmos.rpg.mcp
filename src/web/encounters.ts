@@ -1244,24 +1244,40 @@ export function openLedgerBetween(
  * house it is owed to is the subject. An oath somebody else swore about them is
  * a different fact and is deliberately not returned here.
  */
+/**
+ * An oath is sworn TO somebody, so its subject is never absent.
+ *
+ * Narrowed here rather than asserted at each reader. `subject_id` is nullable
+ * since `optional-obligation-subject.ts` - an account nobody can put a name to
+ * is a real state - but that state belongs to a GRUDGE, where somebody knows
+ * they were wronged and cannot say by whom. There is no equivalent for a word
+ * given: you cannot swear to nobody, and a row that managed it is corrupt
+ * rather than nameless.
+ */
+export type OathHeld = ObligationRecord & { subjectId: string };
+
 export function openOathsHeldBy(
     repos: CultivationRepos,
     holderId: string
-): ObligationRecord[] {
+): OathHeld[] {
     const db = repos.db as unknown as DatabaseHandle;
     const rows = db.prepare(`
         SELECT * FROM obligations
         WHERE status = 'open' AND kind = 'oath' AND holder_id = ?
         ORDER BY incurred_on_day ASC, id ASC
     `).all(holderId) as ObligationRow[];
-    return rows.map(obligationFromRow);
+    // Dropped rather than defaulted. A nameless oath is not an oath to nobody,
+    // it is a row that should not exist, and handing it on as one with an empty
+    // name is how the two states stop being distinguishable.
+    return rows.map(obligationFromRow)
+        .filter((record): record is OathHeld => record.subjectId !== null);
 }
 
 interface ObligationRow {
     id: string;
     kind: string;
     holder_id: string;
-    subject_id: string;
+    subject_id: string | null;
     cause: string;
     severity: string;
     incurred_on_day: number;

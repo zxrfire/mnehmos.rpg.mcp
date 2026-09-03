@@ -257,8 +257,16 @@ export interface ObligationRecord {
     kind: ObligationKind;
     /** Who carries it: the aggrieved party, the debtor, the oath-taker. */
     holderId: string;
-    /** Who it is about: the offender, the creditor, the oath's beneficiary. */
-    subjectId: string;
+    /**
+     * Who it is about: the offender, the creditor, the oath's beneficiary.
+     *
+     * NULL for an account nobody can put a name to - somebody who knows they
+     * were wronged and cannot say by whom. `accounts-with-no-name.ts` owns that
+     * state and `hasANameOnIt` is the read: nothing else should compare this to
+     * null directly, because there was briefly a second way of saying it and
+     * one stored representation is the whole point.
+     */
+    subjectId: string | null;
     cause: ObligationCause;
     severity: Severity;
     /** Absolute day index. The whole point is that this stays comparable forever. */
@@ -303,7 +311,8 @@ export interface ObligationRecord {
 export interface ObligationInput {
     kind: ObligationKind;
     holderId: string;
-    subjectId: string;
+    /** Null for an account with no name on it. See `ObligationRecord.subjectId`. */
+    subjectId: string | null;
     cause: ObligationCause;
     severity: Severity;
     onDay: DayIndex;
@@ -332,7 +341,11 @@ export function createObligation(input: ObligationInput): ObligationRecord {
             stableId(
                 input.kind,
                 input.holderId,
-                input.subjectId,
+                // Empty rather than 'null' for a nameless account, so an id
+                // derived before the column was nullable still resolves to the
+                // same row. `aNameAttaches` carries the id explicitly, so a
+                // name arriving later never re-derives it.
+                input.subjectId ?? '',
                 input.cause,
                 input.onDay,
                 input.triggeringEventId ?? ''
@@ -542,7 +555,10 @@ export class ObligationLedger {
     put(record: ObligationRecord): ObligationRecord {
         this.records.set(record.id, record);
         index(this.byHolder, record.holderId, record.id);
-        index(this.bySubject, record.subjectId, record.id);
+        // A nameless account is not filed against anybody, which is the
+        // truthful index: "who is carrying something about this person" must
+        // not return a record that names nobody.
+        if (record.subjectId !== null) index(this.bySubject, record.subjectId, record.id);
         for (const participant of record.participants) {
             index(this.byParticipant, participant, record.id);
         }

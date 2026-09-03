@@ -49,7 +49,7 @@ export interface ObligationRow {
     id: string;
     kind: string;
     holder_id: string;
-    subject_id: string;
+    subject_id: string | null;
     cause: string;
     severity: string;
     incurred_on_day: number;

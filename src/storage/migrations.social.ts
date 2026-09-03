@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 
 import { foldPersonKnowledgeKeys } from './folding-a-persons-two-knowledge-keys-into-one.js';
+import { makeTheObligationSubjectOptional } from './optional-obligation-subject.js';
 
 /**
  * Social memory persistence: relationships, obligations, knowledge, secrets.
@@ -141,11 +142,31 @@ export function migrateSocial(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       kind TEXT NOT NULL,                            -- grudge, debt, favor, oath, blood_feud, leverage
       holder_id TEXT NOT NULL,                       -- the aggrieved party / debtor / oath-taker
-      subject_id TEXT NOT NULL,                      -- the offender / creditor / beneficiary
+      -- The offender / creditor / beneficiary, or NULL for an account nobody can
+      -- put a name to. See engine/social/accounts-with-no-name.ts: somebody who
+      -- knows they were wronged and cannot say by whom holds a real record with
+      -- a real weight and no subject, which is what makes a killing with no
+      -- witness have a consequence. Existing databases are relaxed to this
+      -- shape by makeTheObligationSubjectOptional, below.
+      subject_id TEXT,
       cause TEXT NOT NULL,                           -- killed_kin | saved_life | sworn_brotherhood | ...
       severity TEXT NOT NULL,                        -- slight | serious | grave | unforgivable
       incurred_on_day INTEGER NOT NULL,              -- stays comparable across any span of world time
-      triggering_event_id TEXT,                      -- world_facts.id: the thing that actually happened
+      -- world_chronicle.id: the thing that actually happened.
+      --
+      -- NOT world_facts.id, which is what this said and is a different
+      -- subsystem - see migrations.world.ts's own header on the collision. A
+      -- foreign key written to the old comment would have orphaned every row:
+      -- measured on a played database, world_facts held 0 rows and the
+      -- chronicle held 102, with every obligation resolving against the
+      -- chronicle and none against world_facts.
+      --
+      -- Unconstrained, and it cannot be constrained as it stands: the
+      -- chronicle's key is (world_id, id) because fact ids are per-world
+      -- sequential text, so a single-column REFERENCES is rejected outright.
+      -- makeTheObligationSubjectOptional sweeps rows naming an event nothing
+      -- holds on every startup, and says there what the real constraint needs.
+      triggering_event_id TEXT,
       description TEXT NOT NULL DEFAULT '',          -- prose; what happened, for the narrator
       participants TEXT NOT NULL DEFAULT '[]',       -- JSON array of everyone else involved
       tags TEXT NOT NULL DEFAULT '[]',               -- JSON array
@@ -384,4 +405,11 @@ export function migrateSocial(db: Database.Database): void {
   // A catalog person has two ids and this table was filed under both; the
   // module says why the rows have to be rewritten rather than left to rot.
   foldPersonKnowledgeKeys(db);
+
+  // A shape one, and it has to be a rebuild: SQLite cannot relax a NOT NULL
+  // with an ALTER, so the CREATE TABLE above only reaches fresh databases and
+  // every existing one would go on refusing NULL. Also sweeps accounts resting
+  // on an event the chronicle does not hold, which is the enforcement available
+  // while the reference cannot carry a foreign key.
+  makeTheObligationSubjectOptional(db);
 }
