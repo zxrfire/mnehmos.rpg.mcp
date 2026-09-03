@@ -2375,3 +2375,25 @@ The shape that made this worth a section: a per-house rank title, read at **sixt
 ### The scratchpad is shared between agents in a session
 
 **Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.
+
+### Build a commit from a temporary index, because the real one is shared
+
+**Staging and committing are two moments, and another agent commits in between.** This is not
+a sequencing mistake you can drill your way out of - `git add <your file>` followed by a bare
+`git commit` will take everything anybody else has staged in the gap, and it happened twice in
+one hour, in both directions, between people who both knew the rule.
+
+`git commit -- <paths>` is not the fix either: a pathspec commits the **working tree** at those
+paths, sweeping in another agent's unstaged edits to any file you name.
+
+**The safe pattern is a private index.** Point `GIT_INDEX_FILE` at a scratch file, stage only
+what is yours into it, and commit from it. The shared index is never touched, nothing anybody
+else staged can be picked up, and their work stays exactly where they left it. One agent used
+this to land a change in a file that was dirty with somebody else's work and verified the
+staged blob byte-for-byte afterwards; that is the standard.
+
+**Whatever you do, verify after rather than only before.** `git show --stat HEAD` is the check
+that catches this, and it is the only one that runs late enough to see the race. If you swept
+somebody, say so to them immediately and **do not rewrite the commit** - a pushed commit that
+other agents are pulling against is worse to rewrite than to mislabel. Their work is not lost;
+it is under the wrong title, and that is a cheap thing to say and an expensive thing to fix.
