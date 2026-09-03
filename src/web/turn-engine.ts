@@ -262,8 +262,21 @@ import { DAO_GROUND_TAG } from '../engine/world/how-a-cultivator-comes-by-a-road
 import { FOUND_BY_PROSPECTING_TAG } from '../engine/world/how-the-world-keeps-finding-more-ruins.js';
 import {
     positionIn,
-    rankAndIndex
+    rankAndIndex,
+    spendStanding
 } from './standing.js';
+// Saying no to what the house asked. `pending-summons.ts` keeps the ask and
+// prices the refusal; `resolveAct` is the one procedure that spends the
+// standing and reports the escalation, the same one every leadership verb runs
+// through. Nothing about a refusal is resolved here - this file chooses which
+// branch and composes the sentence.
+import { resolveAct } from '../engine/cultivation/leadership.js';
+import {
+    clearPendingSummons,
+    priceOfRefusing,
+    readPendingSummons,
+    summonsIsOverdue
+} from './pending-summons.js';
 import {
     knownTechniqueNames,
     nearbyNames,
@@ -4961,6 +4974,23 @@ ${noticed}`;
         switch (intent) {
             case 'duty':
                 return this.duty(run, cultivator, ambient, target);
+
+            // Answering the house, or not.
+            //
+            // Split from `duty` because the board is a wall anybody may read and
+            // this is a thing that was said to one person by name: no target is
+            // meaningful, and there is at most one ask standing.
+            //
+            // Two intents rather than one with a topic, which is the same read
+            // versus act split every other committing verb in this file uses.
+            // `summons` asks what is outstanding and what saying no would cost,
+            // and is free; `refuse` spends it. A model answering with the
+            // cheaper of the two gets the price rather than the grudge.
+            case 'summons':
+                return this.refuseWhatTheHouseAsked(run, cultivator, true);
+
+            case 'refuse':
+                return this.refuseWhatTheHouseAsked(run, cultivator, false);
 
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
@@ -10844,6 +10874,260 @@ ${fit.line}`;
                 ok: fit.fit === 'suited' || fit.fit === 'partly'
             });
         }
+        return execution;
+    }
+
+    /**
+     * Being asked by your own house, and saying no.
+     *
+     * ── WHAT WAS MISSING ─────────────────────────────────────────────────
+     *
+     * `encounters/duties.ts` promises this in its own opening lines - "the
+     * house calls on you. You may refuse, and refusing is a row in the
+     * obligations ledger rather than a shrug" - and every piece of it was built
+     * except the answer. `recordEncounters` discarded `occurrence.duty`, so a
+     * summons interrupted a span, printed a sentence and was gone; `refuseDuty`
+     * was called exactly once in the repository, with `'failed'`, on the branch
+     * where the cultivator had died. `'refused'` and `'lapsed'` had no caller.
+     *
+     * `pending-summons.ts` keeps the ask. This chooses which of three things
+     * the player is doing with it and composes the sentence; the outcome is
+     * `resolveAct`'s and the ledger row is `refuseDuty`'s.
+     *
+     * ── THE PRICE IS SHOWN BEFORE IT IS SPENT ────────────────────────────
+     *
+     * Ruled by the design owner: *a player should be able to see what saying no
+     * will cost - otherwise it is a trap rather than a decision.* So the free
+     * branch is not a fallback, it is half the verb, and it is `affordable`'s
+     * figures verbatim. Nothing here recomputes a curve.
+     *
+     * ── AND IT IS THE ONE ACT THE BOTTOM RUNG CAN PERFORM ────────────────
+     *
+     * `POWERS_BY_TIER.ordered` is empty, so before this an ordinary member could
+     * spend no standing and their credit with the house only ever recovered.
+     * Refusing runs through the same `resolveAct` as every leadership act, which
+     * lights the non-head branch of an escalation ladder that was written and
+     * unreachable: obstruction, then their own line walking, then
+     * `dismissedFromTheHouse`. A member being thrown out by their own house is
+     * that existing branch finally having an input, not a new mechanic.
+     */
+    private async refuseWhatTheHouseAsked(
+        run: Run,
+        cultivator: Cultivator,
+        pricingOnly: boolean
+    ): Promise<Execution> {
+        const today = Math.floor(run.elapsedDays);
+        const pending = readPendingSummons(this.repos, cultivator.id);
+
+        // ── NOBODY ASKED ─────────────────────────────────────────────────
+        //
+        // A refusal with nothing to refuse is not an error and must not be
+        // answered like one. `positionIn` separates the two reasons, because
+        // they want opposite things from the player: somebody in no house is
+        // told what would have to be true for anybody to send for them, and a
+        // member is told that nothing is outstanding, which is a fact about
+        // their house rather than about their sentence.
+        if (!pending) {
+            const held = positionIn(this.repos, cultivator.id);
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'Nothing is being asked of you.',
+                held
+                    ? `Nothing is outstanding. ${held.sectName} has not sent for you, and a `
+                      + 'refusal is an answer to somebody who asked - you cannot get out in '
+                      + 'front of it.'
+                    : 'You belong to nothing. Nobody sends for somebody they have no claim on, '
+                      + 'which is the other half of what a house is: being findable is the cost '
+                      + 'and being worth sending for is the benefit.',
+                `No ${'summons'} flag for ${cultivator.id}`
+                + `${held ? ` at ${held.sectId}` : '; no membership'}. `
+                + 'Read only, nothing written, no turn spent.'
+            ));
+        }
+
+        const price = priceOfRefusing(this.repos, cultivator, pending, run.elapsedDays);
+        if (!price) {
+            // The membership went while the ask was standing. `readPendingSummons`
+            // clears the flag in that case, so this is unreachable in ordinary
+            // play and is here because a null is a null.
+            clearPendingSummons(this.repos, cultivator.id);
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'There is no house to answer.',
+                'Whoever sent for you is not somebody you belong to any more.',
+                'priceOfRefusing returned null: membership gone under a standing summons.'
+            ));
+        }
+
+        const duty = pending.duty;
+        const overdue = summonsIsOverdue(pending, today);
+        const whoAsked = duty.spokenBy ? duty.spokenBy.name : duty.factionName ?? 'the house';
+
+        // ── WHAT IT WOULD COST, WITHOUT SPENDING IT ──────────────────────
+        if (pricingOnly) {
+            const lines = [
+                `${whoAsked} asked, and it is still standing: ${pending.what}`,
+                `${duty.days} days, ${duty.contribution} contribution and ${duty.stones} spirit `
+                + `stone${duty.stones === 1 ? '' : 's'} on completion`
+                + (duty.cohort > 0 ? `, with ${duty.cohort} of the house alongside` : '')
+                + `. Due by day ${duty.dueOnDay}`
+                + (overdue ? `, which has gone.` : '.'),
+                `Saying no costs ${price.spends} standing and would leave you at `
+                + `${Math.round(price.wouldLandAt)} with ${price.position.sectName}. `
+                + `The house writes it down as ${duty.refusal.severity}.`
+            ];
+            if (price.wouldBeDismissed) {
+                lines.push(
+                    'That is past the point a house keeps somebody. Refuse this and you are '
+                    + `out of ${price.position.sectName}, and what you have earned there does `
+                    + 'not travel.'
+                );
+            } else if (!price.safe) {
+                lines.push(
+                    'That is past the point where the house does what you ask of it. You would '
+                    + 'still be a member, and you would start finding things take longer than '
+                    + 'they take other people.'
+                );
+            }
+
+            const facts = factsForToolResult(`Refusing costs ${price.spends} standing.`, lines);
+            facts.structure.push(
+                `leadership.affordable: act=refuse severity=${duty.refusal.severity} `
+                + `raw=${price.cost.standingCost} shielded=${price.spends} `
+                + `from=${Math.round(price.credit.standing)} to=${Math.round(price.wouldLandAt)} `
+                + `level=${price.wouldTrigger} dismissed=${price.wouldBeDismissed}. `
+                + 'Priced only: no flag cleared, no standing spent, no obligation written.'
+            );
+            return this.freeAction(run, 'sect', facts);
+        }
+
+        // ── SAYING IT ────────────────────────────────────────────────────
+        //
+        // The order matters and is the same order `completeDuty` uses: the
+        // house's answer is resolved, the standing is spent, and the ledger row
+        // is written, before anything is narrated. A refusal the player reads
+        // about that is not in the database is the failure mode the whole
+        // authority rule exists to prevent.
+        const outcome = resolveAct(
+            {
+                standing: price.credit.standing,
+                elders: [],
+                houseSize: price.credit.houseSize,
+                ownFollowing: price.credit.ownFollowing,
+                hasPatron: false,
+                isHead: price.position.head
+            },
+            price.cost
+        );
+        spendStanding(
+            this.repos, cultivator.id, price.position, price.credit,
+            price.cost.standingCost, run.elapsedDays
+        );
+
+        // `'lapsed'` where the day it had to be answered by has already gone,
+        // and `'refused'` where they are answering in time. The ledger keeps the
+        // difference because it is a real one - one of them is a decision and
+        // the other is what happens to somebody who made none - and this is the
+        // first caller either has ever had.
+        const walked = refuseDuty({
+            repos: this.repos,
+            cultivator,
+            duty,
+            onDay: today,
+            entryId: pending.entryId,
+            what: pending.what,
+            outcome: overdue ? 'lapsed' : 'refused'
+        });
+        clearPendingSummons(this.repos, cultivator.id);
+
+        // ── THE DISMISSAL HAPPENS BEFORE IT IS SAID ──────────────────────
+        //
+        // `resolveAct` decides it; the row has to go for it to be true.
+        // Narrating a dismissal off an `ActOutcome` field while the membership
+        // sat untouched would be the engine asserting an outcome with no state
+        // change behind it, which is the one thing the authority rule forbids
+        // outright - and it would have read perfectly in the prose.
+        //
+        // `removeMember` is `handleLeave`'s own call, so being thrown out and
+        // walking out forfeit identically. The contribution is read off the
+        // position taken before the removal, because after it there is no row
+        // to read it from.
+        const forfeited = price.position.contribution;
+        if (outcome.dismissedFromTheHouse) {
+            this.repos.sects.removeMember(price.position.sectId, cultivator.id);
+        }
+
+        const lines = [
+            overdue
+                ? `The day it had to be answered by has gone. ${walked.line}`
+                : `You tell ${whoAsked} no. ${walked.line}`,
+            `${price.spends} standing spent with ${price.position.sectName}; you stand at `
+            + `${Math.round(outcome.standingAfter)} with them now.`
+        ];
+        if (outcome.dismissedFromTheHouse) {
+            lines.push(
+                `${price.position.sectName} does not keep a ${price.position.rankTitle} nobody `
+                + 'below will work for. You are off the roll'
+                // "the 0 contribution stays with the house" is a sentence about
+                // nothing. Somebody thrown out on their first month has no
+                // ledger to forfeit, and saying so as though they did makes the
+                // loss sound larger than it was.
+                + (forfeited > 0
+                    ? `, and the ${forfeited} contribution stays with the house.`
+                    : ', and there was nothing on the ledger to lose.')
+            );
+        } else if (outcome.ownFollowingLost > 0) {
+            lines.push(
+                `${outcome.ownFollowingLost} of the people who came in under your name have `
+                + 'gone elsewhere.'
+            );
+        } else if (outcome.obstructionChance > 0) {
+            lines.push(
+                'Nothing is said. Things simply take longer than they take other people, and '
+                + 'they will go on doing so until this is a while ago.'
+            );
+        }
+
+        const facts = factsForToolResult(
+            overdue ? 'It lapsed.' : 'You refused.', lines
+        );
+        // ── REQUIRED, WITHOUT BEING SAID TWICE ───────────────────────────
+        //
+        // Set directly rather than through `sayThisWhateverTheNarratorDoes`,
+        // which PUSHES onto `lines` and `prose` as well - and these lines are
+        // already in both. Played, that helper printed the refusal, then
+        // printed it again underneath itself. `combat-verbs.ts` assigns this
+        // field the same way and for the same reason: the line is already
+        // narrated, and what `required` adds is that it survives a model that
+        // would otherwise summarise it away.
+        //
+        // Kept to two. `README.md` is explicit that this channel is for what a
+        // player cannot play without, and that a line stapled to the end of
+        // good prose is a cost - so the outcome and the dismissal qualify, and
+        // the obstruction flavour does not.
+        facts.required = [
+            lines[0],
+            ...(outcome.dismissedFromTheHouse ? [lines[lines.length - 1]] : [])
+        ];
+        facts.structure.push(
+            `leadership.resolveAct: act=refuse spent=${outcome.standingSpent} `
+            + `${Math.round(outcome.standingBefore)} -> ${Math.round(outcome.standingAfter)}, `
+            + `level=${outcome.level}, obstruction=${outcome.obstructionChance.toFixed(2)}, `
+            + `ownFollowingLost=${outcome.ownFollowingLost}, `
+            + `dismissed=${outcome.dismissedFromTheHouse}.`
+        );
+        facts.structure.push(
+            `encounters.refuseDuty: obligation ${walked.obligation.id} written as `
+            + `${overdue ? 'lapsed' : 'refused'}, cause ${duty.refusal.cause}, severity `
+            + `${duty.refusal.severity}, held by ${duty.factionId} against ${cultivator.id}. `
+            + 'The summons flag is cleared.'
+        );
+
+        const execution = this.freeAction(run, 'sect', facts);
+        execution.calls.push({
+            name: 'encounters.refuseDuty',
+            action: 'sect',
+            summary: `${pending.entryId} ${overdue ? 'lapsed' : 'refused'}. ${walked.line}`,
+            ok: false
+        });
         return execution;
     }
 

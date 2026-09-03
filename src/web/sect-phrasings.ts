@@ -57,7 +57,33 @@ export type SectIntent =
      * not require a favour from an apex or a decade of contribution. See
      * `src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.ts`.
      */
-    | 'guest';
+    | 'guest'
+    /**
+     * What the house has asked of you, and what saying no would cost.
+     *
+     * The read half of a summons. `duty` is the WALL - anybody standing in
+     * front of it sees the same lines - and this is the thing that was said to
+     * one person by name, which is a different question with a different
+     * answer.
+     *
+     * Free, and that is load-bearing rather than incidental. The design owner's
+     * ruling on the refusal was that the cost has to be legible before it is
+     * paid, "otherwise it is a trap rather than a decision" - so being shown the
+     * price is the sentence before the one that spends it, exactly as it is for
+     * `recruit`, `admission`, `curriculum` and `expel`.
+     */
+    | 'summons'
+    /**
+     * Saying no to it.
+     *
+     * `encounters/duties.ts` has promised this in its opening lines the whole
+     * time - "you may refuse, and refusing is a row in the obligations ledger
+     * rather than a shrug" - and `refuseDuty` has taken `'refused'` and
+     * `'lapsed'` outcomes that nothing in the repository ever passed. The only
+     * caller anywhere passed `'failed'`, on the branch where the cultivator had
+     * died, so the sole way to not finish a duty was to be killed doing it.
+     */
+    | 'refuse';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -89,7 +115,31 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // what I am owed" - was answered with the collection, so the ask never
     // happened and the refusal that is the whole point of a petition was never
     // written. Bare "what am I owed" is untouched and still reaches the read.
-    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/]
+    ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/],
+    // ── ANSWERING A SUMMONS, AND SAYING NO TO ONE ────────────────────────
+    //
+    // Both sit here rather than beside `SECT_DUTY_PATTERN` in the table for the
+    // reason this file exists: they need nothing from the table's
+    // neighbourhood, and the consumer at the `SECT_INTENT_UNAMBIGUOUS` site
+    // iterates this array generically. Adding a member is a row here.
+    //
+    // ORDER: the price question is tested BEFORE the act, because "what would
+    // refusing cost me" contains the word "refusing" and must not be answered
+    // by refusing. Same rule `SIPHON_PACE_PATTERNS` follows for "careful"
+    // before "greedy" - the qualified reading is checked first.
+    //
+    // A MATCH IS ALREADY GONE BY HERE. `familyStep` runs at the top of the
+    // table and claims every declining verb that carries a match noun, so
+    // "I refuse the betrothal" never reaches this. The two are separated by
+    // their nouns, which is the table's own way of keeping verbs apart, and
+    // that is why a bare "I refuse" is safe to take: anything about a marriage
+    // has already been answered.
+    ['summons', /\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does the (?:house|sect|order|clan|school) want (?:of|from) me)\b/],
+    // `turn ... down` takes its object in the middle - "I turn them down" is how
+    // a person says it and "I turn down them" is not - so the particle has to be
+    // reachable across a short object. Bounded at two words so it cannot span a
+    // clause and catch a `down` belonging to something else.
+    ['refuse', /\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/]
 ];
 
 /**

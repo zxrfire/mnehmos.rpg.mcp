@@ -86,6 +86,11 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { ObligationRecord } from '../engine/social/grudges.js';
 import { othersPresent } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
+// One direction only. `pending-summons.ts` imports the flag helpers, the house
+// arithmetic and the leadership prices, and imports nothing from this file -
+// which is what keeps the ledger writers below and the ask above it out of a
+// cycle. The refusal itself is composed in `turn-engine.ts`, which has both.
+import { rememberSummons } from './pending-summons.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT A VERB IS, AS FAR AS THE WORLD IS CONCERNED
@@ -585,6 +590,33 @@ export function recordEncounters(
         if (repos && occurrence.contact) {
             recordContact(repos, cultivator, Math.floor(onDay), occurrence.contact);
             met.push(occurrence.contact.person.name);
+        }
+        // ── THE ASK IS KEPT, WHICH IS WHAT MAKES IT AN ASK ───────────────
+        //
+        // `occurrence.duty` had no reader anywhere in `src/web`. A summons
+        // interrupted the span, printed its sentence, and was gone by the next
+        // turn - so there was nothing to answer and nothing to refuse, and
+        // `refuseDuty`'s `'refused'` and `'lapsed'` outcomes had no caller in
+        // the repository. `resolveOccurrence` says what that made it: "a
+        // summons that a cultivator sat through without noticing is a
+        // notification, and the point of the whole mechanism is that it is
+        // not one."
+        //
+        // Written here rather than in the callers for the reason the contact
+        // above is: this is the one place a roll's occurrences are consumed,
+        // and both player paths through `seclusion-verbs.ts` come through it.
+        if (repos && occurrence.duty) {
+            rememberSummons(repos, cultivator.id, {
+                duty: occurrence.duty,
+                // `entryId` is nullable for the occurrences that are not read
+                // off a catalog row at all. One carrying a duty always is -
+                // `resolveOccurrence` sets `id` and `entryId` from the same
+                // `entry.id` - so the fallback is the same value rather than a
+                // guess, and it is here to satisfy the type honestly.
+                entryId: occurrence.entryId ?? occurrence.id,
+                what: occurrence.event.summary,
+                spokenOnDay: Math.floor(onDay) + occurrence.dayOffset
+            });
         }
         for (const grant of occurrence.grants) {
             const isNew = knowledge.learnIfNew({
