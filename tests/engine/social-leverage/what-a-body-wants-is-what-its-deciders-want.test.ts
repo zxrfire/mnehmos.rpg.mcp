@@ -21,7 +21,7 @@ import {
 } from '../../../src/engine/social-leverage/what-a-body-wants-is-what-its-deciders-want';
 
 /**
- * A six-rung ladder, which puts the elder rung at 4 and the seat at 5.
+ * A six-rung ladder, which puts the elder rung at 4 and the head at 5.
  * `elderRungOf(6)` is `ceil(5 * 2/3)` = 4, and that is not restated - the
  * fixtures below simply use rungs the engine's own answer includes.
  */
@@ -68,14 +68,14 @@ function wrongHeldBy(who: string, severity: Severity, event?: string): Obligatio
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('who is in the room', () => {
-    it('is the elder rungs and the seat, and nobody else', () => {
+    it('is the elder rungs and the head, and nobody else', () => {
         const room = whoDecidesIn({
             roll: roll(['outer', 0], ['inner', 2], ['elder', 4], ['head', 5]),
             rankCount: RANKS
         });
         expect(room.map(p => p.id).sort()).toEqual(['elder', 'head']);
-        expect(room.find(p => p.id === 'head')!.holdsTheSeat).toBe(true);
-        expect(room.find(p => p.id === 'elder')!.holdsTheSeat).toBe(false);
+        expect(room.find(p => p.id === 'head')!.isHead).toBe(true);
+        expect(room.find(p => p.id === 'elder')!.isHead).toBe(false);
     });
 
     it('weighs a senior voice more, by the weight the world already shares followings with', () => {
@@ -120,14 +120,14 @@ describe('the player sits in the room', () => {
         );
     });
 
-    it('gives the seat to whoever holds the top rung, player or not', () => {
+    it('gives the head to whoever holds the top rung, player or not', () => {
         const answer = whatTheBodyWants({
             roll: roll(['the-player', 5], ['elder-a', 4], ['elder-b', 4]),
             rankCount: RANKS,
             readingOf: readingsFrom({ 'the-player': 0.9, 'elder-a': -0.9, 'elder-b': 0.7 })
         });
-        // Not unanimous - elder-b is inside the bar - so the seat's overrule stands.
-        expect(answer.settledBy).toBe('the seat');
+        // Not unanimous - elder-b is inside the bar - so the head's overrule stands.
+        expect(answer.settledBy).toBe('the head');
         expect(answer.leaning).toBe(0.9);
         expect(answer.whoMovedIt!.id).toBe('the-player');
     });
@@ -163,13 +163,13 @@ describe('tier one - the elders', () => {
             rankCount: RANKS,
             readingOf: readingsFrom({ head: 0.5, 'elder-a': 0.5, 'elder-b': -0.5 })
         });
-        // elder-b is a full unit from the seat and does not stop the house.
+        // elder-b is a full unit from the head and does not stop the house.
         expect(answer.leaning!).toBeGreaterThan(0);
-        expect(answer.settledBy).not.toBe('the elders, unanimous against the seat');
+        expect(answer.settledBy).not.toBe('the elders, unanimous against the head');
     });
 });
 
-describe('tier two - the seat overrules', () => {
+describe('tier two - the head overrules', () => {
     it('takes the head\'s own answer over the room\'s', () => {
         const answer = whatTheBodyWants({
             roll: roll(['head', 5], ['elder-a', 4], ['elder-b', 4], ['elder-c', 4]),
@@ -180,7 +180,7 @@ describe('tier two - the seat overrules', () => {
                 head: -0.8, 'elder-a': 0.6, 'elder-b': 0.5, 'elder-c': -0.7
             })
         });
-        expect(answer.settledBy).toBe('the seat');
+        expect(answer.settledBy).toBe('the head');
         expect(answer.leaning).toBe(-0.8);
         expect(answer.whoMovedIt!.id).toBe('head');
     });
@@ -193,7 +193,7 @@ describe('tier two - the seat overrules', () => {
                 head: -0.8, 'elder-a': 0.6, 'elder-b': 0.5, 'elder-c': -0.7
             })
         });
-        expect(answer.settledBy).toBe('the seat');
+        expect(answer.settledBy).toBe('the head');
         // elder-c is within the bar of the head and is not on the losing side.
         expect(answer.against.map(p => p.id).sort()).toEqual(['elder-a', 'elder-b']);
     });
@@ -207,7 +207,7 @@ describe('tier two - the seat overrules', () => {
         // elder-b stands with the head, so this is an overrule rather than a
         // room taking the house back - and every field of the answer is a
         // reading rather than a charge.
-        expect(answer.settledBy).toBe('the seat');
+        expect(answer.settledBy).toBe('the head');
         expect(Object.keys(answer)).not.toContain('standingCost');
     });
 
@@ -230,19 +230,19 @@ describe('tier three - all the elders, over a head who is alone', () => {
                 head: -0.9, 'elder-a': 0.6, 'elder-b': 0.5, 'elder-c': 0.4
             })
         });
-        expect(answer.settledBy).toBe('the elders, unanimous against the seat');
+        expect(answer.settledBy).toBe('the elders, unanimous against the head');
         // The elders' own weighted mean, not the whole room's.
         expect(answer.leaning).toBeCloseTo(0.5, 4);
         expect(answer.against.map(p => p.id)).toEqual(['head']);
     });
 
-    it('names the elder standing furthest from the seat', () => {
+    it('names the elder standing furthest from the head', () => {
         const answer = whatTheBodyWants({
             roll: roll(['head', 5], ['elder-a', 4], ['elder-b', 4]),
             rankCount: RANKS,
             readingOf: readingsFrom({ head: -0.9, 'elder-a': 0.2, 'elder-b': 0.7 })
         });
-        expect(answer.settledBy).toBe('the elders, unanimous against the seat');
+        expect(answer.settledBy).toBe('the elders, unanimous against the head');
         expect(answer.whoMovedIt!.id).toBe('elder-b');
     });
 
@@ -255,7 +255,7 @@ describe('tier three - all the elders, over a head who is alone', () => {
             })
         });
         // Two of three would have it and the third stands with the head.
-        expect(answer.settledBy).toBe('the seat');
+        expect(answer.settledBy).toBe('the head');
     });
 
     it('needs them on the SAME side - a room split both ways agrees about nothing', () => {
@@ -264,7 +264,7 @@ describe('tier three - all the elders, over a head who is alone', () => {
             rankCount: RANKS,
             readingOf: readingsFrom({ head: 0.0, 'elder-a': 0.9, 'elder-b': -0.9 })
         });
-        expect(answer.settledBy).not.toBe('the elders, unanimous against the seat');
+        expect(answer.settledBy).not.toBe('the elders, unanimous against the head');
     });
 
     it('takes a room, so one elder alone does not outvote the head', () => {
@@ -274,7 +274,7 @@ describe('tier three - all the elders, over a head who is alone', () => {
             readingOf: readingsFrom({ head: -0.9, 'elder-a': 0.9 })
         });
         // A deputy contradicting a principal is not a house refusing its head.
-        expect(answer.settledBy).toBe('the seat');
+        expect(answer.settledBy).toBe('the head');
         expect(answer.leaning).toBe(-0.9);
         expect(answer.against.map(p => p.id)).toEqual(['elder-a']);
     });
@@ -285,7 +285,7 @@ describe('tier three - all the elders, over a head who is alone', () => {
             rankCount: RANKS,
             readingOf: readingsFrom({ head: -0.9, 'elder-a': 0.9, 'elder-b': 0.9 })
         });
-        expect(answer.settledBy).toBe('the elders, unanimous against the seat');
+        expect(answer.settledBy).toBe('the elders, unanimous against the head');
         expect(answer.leaning).toBeCloseTo(0.9, 4);
         expect(answer.against.map(p => p.id)).toEqual(['head']);
     });
@@ -425,7 +425,7 @@ describe('what has been done to them', () => {
                 favourOwedBy('elder-b', 'unforgivable', 'ev-6')
             ]
         });
-        expect(warm.settledBy).toBe('the elders, unanimous against the seat');
+        expect(warm.settledBy).toBe('the elders, unanimous against the head');
         expect(warm.leaning!).toBeGreaterThan(cold.leaning!);
         expect(warm.against.map(p => p.id)).toEqual(['head']);
     });
@@ -459,7 +459,7 @@ describe('what has been done to them', () => {
 
 describe('a family and a sect are the same call', () => {
     it('answers a four-rung family exactly as it answers a six-rung sect', () => {
-        // `elderRungOf(4)` is 2 and the seat is 3, so a family's seniors are
+        // `elderRungOf(4)` is 2 and the head is 3, so a family's seniors are
         // the same two positions a sect's elders are. Same call, same tiers,
         // no second aggregation anywhere.
         const family = whatTheBodyWants({
@@ -472,7 +472,7 @@ describe('a family and a sect are the same call', () => {
         // The cousin is on the roll and does not decide anything.
         expect(family.theRoom.map(p => p.id).sort())
             .toEqual(['head', 'senior-a', 'senior-b']);
-        expect(family.settledBy).toBe('the elders, unanimous against the seat');
+        expect(family.settledBy).toBe('the elders, unanimous against the head');
         expect(family.leaning).toBeCloseTo(0.6, 4);
         expect(family.against.map(p => p.id)).toEqual(['head']);
     });

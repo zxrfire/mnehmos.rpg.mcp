@@ -148,7 +148,7 @@ function whatWouldReachIt(goal: NpcGoal, them: SomebodyWithGoals): string {
         case 'status':
             return 'A rank inside a house that is not theirs would reach it. Standing above '
                 + 'them does not: what they are short of is somebody placed to speak for them, '
-                + 'and that is a seat rather than a rung.';
+                + 'and that is a position rather than a rung.';
         default:
             return 'Nothing you are carrying reaches it, and nothing about your rung would. '
                 + 'What moves this one is being the person it is about.';

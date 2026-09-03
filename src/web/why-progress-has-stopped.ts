@@ -25,7 +25,7 @@
  *                     it and adds the two numbers the sentence implies.
  *   the region axis   is `canAdvanceHere(regionId, ordinal)` and the region's
  *                     own `localCeilingOrdinal`.
- *   the seat axis     is `requiredOrdinalForRank` / `requiredContributionForRank`,
+ *   the rank axis     is `requiredOrdinalForRank` / `requiredContributionForRank`,
  *                     which is what `handlePromote` ITSELF gates on - so the
  *                     answer and the gate cannot drift apart.
  *   the qi axis       is the ambient band already rolled for where they stand.
@@ -39,12 +39,12 @@
  * ── WHY NOT `blockedAt` ──────────────────────────────────────────────────
  *
  * `promotion-inside-a-house.ts` exports `blockedAt(state, npc)`, which is the
- * right read for the seat axis and takes an `NpcRecord` out of `WorldState`.
+ * right read for the rank axis and takes an `NpcRecord` out of `WorldState`.
  * The player is not one: they are a row in the `cultivators` table with a
  * membership in `sect_members`, and they never enter `state.npcs`. Reaching
  * `blockedAt` for them would mean synthesising an NpcRecord to hand it, which
  * is manufacturing state to read it back - exactly the move the authority rule
- * forbids. So the seat axis reads the player's own gate instead, which is the
+ * forbids. So the rank axis reads the player's own gate instead, which is the
  * one `handlePromote` enforces. The two answer different populations on
  * purpose and neither is a copy of the other.
  *
@@ -79,7 +79,7 @@ export type GateKind =
     | 'manual_exhausted'
     | 'region_ceiling'
     | 'thin_qi'
-    | 'seat'
+    | 'rank'
     | 'progress'
     | 'clock'
     | 'open';
@@ -120,8 +120,8 @@ export interface CeilingRead {
 // WHAT THE CALLER HAS TO HAVE READ ALREADY
 // ─────────────────────────────────────────────────────────────────────────
 
-/** The player's seat, when they hold one. Every figure is the sect gate's own. */
-export interface SeatStanding {
+/** The player's rank, when they hold one. Every figure is the sect gate's own. */
+export interface RankStanding {
     sectName: string;
     rankTitle: string;
     /** Null when they are on the top rung and there is nothing above it. */
@@ -151,7 +151,7 @@ export interface CeilingInput {
     /** The band rolled for where they are standing. */
     ambient: AmbientQi;
 
-    seat: SeatStanding | null;
+    rank: RankStanding | null;
 
     /** `canAttemptBreakthrough(...)`. Null required means nothing above is priced in qi. */
     progressRequired: number | null;
@@ -247,44 +247,44 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
         });
     }
 
-    // ── the seat. Read off the same two functions promotion itself gates on.
-    if (input.seat && input.seat.nextRankTitle !== null) {
-        const seat = input.seat;
+    // ── the rank. Read off the same two functions promotion itself gates on.
+    if (input.rank && input.rank.nextRankTitle !== null) {
+        const rank = input.rank;
         const unmet: string[] = [];
-        if (input.ordinal < seat.requiredOrdinal) {
+        if (input.ordinal < rank.requiredOrdinal) {
             unmet.push(
-                `${seat.nextRankTitle} wants ${rankName(seat.requiredOrdinal)} and you stand `
+                `${rank.nextRankTitle} wants ${rankName(rank.requiredOrdinal)} and you stand `
                 + `at ${standing}`
             );
         }
-        if (seat.contribution < seat.requiredContribution) {
+        if (rank.contribution < rank.requiredContribution) {
             unmet.push(
-                `it wants ${seat.requiredContribution} contribution and you have `
-                + `${seat.contribution}`
+                `it wants ${rank.requiredContribution} contribution and you have `
+                + `${rank.contribution}`
             );
         }
         if (unmet.length > 0) {
             gates.push({
-                kind: 'seat',
+                kind: 'rank',
                 hard: false,
                 line:
-                    `${seat.sectName} has you at ${seat.rankTitle}. To raise you to `
-                    + `${seat.nextRankTitle}, ${unmet.join('; and ')}.`,
+                    `${rank.sectName} has you at ${rank.rankTitle}. To raise you to `
+                    + `${rank.nextRankTitle}, ${unmet.join('; and ')}.`,
                 structure:
-                    `${seat.nextRankTitle} wants ${rungAndOrdinal(seat.requiredOrdinal)} `
+                    `${rank.nextRankTitle} wants ${rungAndOrdinal(rank.requiredOrdinal)} `
                     + `against ${rungAndOrdinal(input.ordinal)} held, and `
-                    + `${seat.requiredContribution} contribution against ${seat.contribution} `
+                    + `${rank.requiredContribution} contribution against ${rank.contribution} `
                     + 'held.'
             });
         }
-    } else if (input.seat) {
+    } else if (input.rank) {
         gates.push({
-            kind: 'seat',
+            kind: 'rank',
             hard: false,
             line:
-                `${input.seat.sectName} has you at ${input.seat.rankTitle}, which is the top `
+                `${input.rank.sectName} has you at ${input.rank.rankTitle}, which is the top `
                 + `of this house. There is nowhere further inside these walls.`,
-            structure: 'This is the highest rank the house has; there is no seat above it.'
+            structure: 'This is the highest rank the house has; there is no rank above it.'
         });
     }
 
@@ -371,7 +371,7 @@ function headlineFor(kind: GateKind): string {
         case 'manual_exhausted': return 'the manual has ended';
         case 'region_ceiling': return 'the province has no more to give';
         case 'thin_qi': return 'the qi here is thin';
-        case 'seat': return 'the seat above is not theirs yet';
+        case 'rank': return 'the rank above is not theirs yet';
         case 'progress': return 'there is not enough qi gathered yet';
         case 'clock': return 'the years have run out';
         case 'open': return 'nothing';

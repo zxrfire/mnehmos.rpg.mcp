@@ -146,12 +146,12 @@ function whatTheRoomSays(
     const forThePlayer: string[] = [];
 
     forThePlayer.push(
-        council.settledBy === 'the seat'
-            ? `The room did not want it and ${who}, who holds the seat, settled it anyway - `
+        council.settledBy === 'the head'
+            ? `The room did not want it and ${who}, who heads the house, settled it anyway - `
               + `over ${council.against.length} of them who were far enough away to mind.`
-            : council.settledBy === 'the elders, unanimous against the seat'
+            : council.settledBy === 'the elders, unanimous against the head'
                 ? `${who} and every other elder are on the same side of the head of the house, `
-                  + 'and a head who is alone in the room does not hold it. The seat was '
+                  + 'and a head who is alone in the room does not hold it. The head was '
                   + 'overruled.'
                 : `${who} is the one the room turned on. Take them out of it and the answer `
                   + 'moves further than for anybody else in there.'
@@ -319,7 +319,7 @@ export const matchVerbs = {
         // The whole roll goes in and the module decides who among them counts,
         // so there is one answer to "who are the elders here" rather than one
         // per caller. The player's own row is on that roll under the same id
-        // as their sheet, so a cultivator who has climbed into a seat is in
+        // as their sheet, so a cultivator who has climbed into a rank is in
         // the room they are negotiating with, at their own weight.
         const council = whatTheBodyWants({
             roll: (world?.npcs ?? [])
@@ -399,7 +399,7 @@ export const matchVerbs = {
 
         // ── AND WHETHER THE FAMILY'S ANSWER EVEN MATTERS ─────────────────
         //
-        // The reprisal layer's own question with the parties in the seats a
+        // The reprisal layer's own question with the parties in the places a
         // match puts them in. No rung is read here: what decides it is whether
         // anything of the family's would be cost by acting, and whether the
         // suitor is simply past what they could reach.

@@ -46,7 +46,7 @@ import {
     errandCost,
     expulsionCost,
     externalElderCost,
-    holdsTheSeat,
+    isHeadOfHouse,
     impliedHouseSize,
     isElderRank,
     obstructionChance,
@@ -84,7 +84,7 @@ function dewHouse(overrides: Partial<HouseState> = {}): HouseState {
         houseSize: size,
         ownFollowing: 0,
         hasPatron: true,
-        holdsTheSeat: true,
+        isHead: true,
         ...overrides
     };
 }
@@ -119,7 +119,7 @@ describe('authority is the rank index', () => {
     it('walks the Azure Dew ladder exactly as the house describes itself', () => {
         const ranks = getSect(DEW)!.ranks;
         const tiers = ranks.map((_, i) => authorityTier(i, ranks.length));
-        expect(tiers).toEqual(['ordered', 'ordering', 'ordering', 'elder', 'seat']);
+        expect(tiers).toEqual(['ordered', 'ordering', 'ordering', 'elder', 'head']);
     });
 
     it('is cumulative: every tier holds what the tier below holds', () => {
@@ -158,16 +158,16 @@ describe('the elder rung is derived from the ladder, not hardcoded', () => {
         }
     });
 
-    it('gives the seat every power and reserves four of them to it', () => {
+    it('gives the head of the house every power and reserves four of them to it', () => {
         for (const sect of SECTS) {
             const top = sect.ranks.length - 1;
-            expect(holdsTheSeat(top, sect.ranks.length), sect.id).toBe(true);
+            expect(isHeadOfHouse(top, sect.ranks.length), sect.id).toBe(true);
             expect(isElderRank(top, sect.ranks.length), sect.id).toBe(true);
-            const seat = powersAt(top, sect.ranks.length);
-            expect(seat, sect.id).toContain('set_admission');
-            expect(seat, sect.id).toContain('set_curriculum');
-            expect(seat, sect.id).toContain('expel_elder');
-            expect(seat, sect.id).toContain('grow');
+            const head = powersAt(top, sect.ranks.length);
+            expect(head, sect.id).toContain('set_admission');
+            expect(head, sect.id).toContain('set_curriculum');
+            expect(head, sect.id).toContain('expel_elder');
+            expect(head, sect.id).toContain('grow');
             expect(powersAt(top - 1, sect.ranks.length), sect.id).not.toContain('expel_elder');
         }
     });
@@ -198,10 +198,10 @@ describe('a house is a pyramid, which is why authority is worth anything', () =>
         const size = impliedHouseSize(5);
         const outer = commandableHands(1, 0, size, 5);
         const inner = commandableHands(2, 0, size, 5);
-        const seat = commandableHands(4, 0, size, 5);
+        const head = commandableHands(4, 0, size, 5);
         expect(outer).toBeGreaterThan(0);
         expect(inner).toBeGreaterThan(outer);
-        expect(seat).toBeGreaterThan(inner);
+        expect(head).toBeGreaterThan(inner);
     });
 
     it('gives nobody hands from a rung at or above their own', () => {
@@ -242,7 +242,7 @@ describe('an order spends somebody else\'s days and a little of their goodwill',
         // The bottom of the escalation, and it is the same escalation the head
         // of the house is on. An unpopular Inner Disciple finds the outer
         // disciples have become slow.
-        let house = dewHouse({ holdsTheSeat: false, ownFollowing: 0 });
+        let house = dewHouse({ isHead: false, ownFollowing: 0 });
         let outcome = resolveAct(house, errandCost('gather', resolveErrand(
             { errand: 'gather', hands: 8, days: 30, toRankIndex: 0 }
         )));
@@ -385,16 +385,16 @@ describe('backlash is graduated and escalates in one order', () => {
         const head = resolveAct(dewHouse({ standing: 0 }), cost);
         expect(head.eldersLeaving.length).toBeGreaterThan(0);
         expect(head.ownFollowingLost).toBe(0);
-        expect(head.seatChallenged).toBe(true);
+        expect(head.headChallenged).toBe(true);
         expect(head.dismissedFromTheHouse).toBe(false);
 
         const disciple = resolveAct(
-            dewHouse({ standing: 0, holdsTheSeat: false, ownFollowing: 12 }),
+            dewHouse({ standing: 0, isHead: false, ownFollowing: 12 }),
             cost
         );
         expect(disciple.eldersLeaving).toHaveLength(0);
         expect(disciple.ownFollowingLost).toBeGreaterThan(0);
-        expect(disciple.seatChallenged).toBe(false);
+        expect(disciple.headChallenged).toBe(false);
         expect(disciple.dismissedFromTheHouse).toBe(true);
     });
 
@@ -417,7 +417,7 @@ describe('backlash is graduated and escalates in one order', () => {
         expect(resolveAct(dewHouse(), ruinous).standingAfter).toBe(STANDING_FLOOR);
     });
 
-    it('settles a challenge off state, so a leader who also cultivated keeps the seat', () => {
+    it('settles a challenge off state, so a leader who also cultivated keeps the house', () => {
         expect(challengeOutcome(30, 24).held).toBe(true);
         expect(challengeOutcome(20, 24).held).toBe(false);
         expect(challengeOutcome(24, 24).held).toBe(false);
@@ -490,14 +490,14 @@ describe('the foundational methods', () => {
 
 describe('growing the house is the only act that earns credit', () => {
     it('earns rather than spends', () => {
-        const plan = planGrowth(64, 2, 2, 3, 'seat');
+        const plan = planGrowth(64, 2, 2, 3, 'head');
         expect(plan.standingEarned).toBeGreaterThan(0);
         expect(plan.intake).toBeGreaterThan(0);
     });
 
     it('is slow and expensive, and compounds', () => {
-        const one = planGrowth(64, 2, 2, 1, 'seat');
-        const five = planGrowth(64, 2, 2, 5, 'seat');
+        const one = planGrowth(64, 2, 2, 1, 'head');
+        const five = planGrowth(64, 2, 2, 5, 'head');
         expect(one.years).toBe(10);
         expect(five.years).toBe(50);
         expect(five.intake).toBeGreaterThan(one.intake * 5);
@@ -505,17 +505,17 @@ describe('growing the house is the only act that earns credit', () => {
     });
 
     it('makes delegation the interesting decision: faster, cheaper in credit, theirs', () => {
-        const seat = planGrowth(64, 2, 2, 3, 'seat');
+        const head = planGrowth(64, 2, 2, 3, 'head');
         const elders = planGrowth(64, 2, 2, 3, 'elders');
-        expect(elders.intake).toBeGreaterThan(seat.intake);
-        expect(elders.standingEarned).toBeLessThan(seat.standingEarned);
-        expect(seat.attachesTo).toBe('the leader');
+        expect(elders.intake).toBeGreaterThan(head.intake);
+        expect(elders.standingEarned).toBeLessThan(head.standingEarned);
+        expect(head.attachesTo).toBe('the leader');
         expect(elders.attachesTo).toBe('the elders');
     });
 
     it('draws more intake to a house with a wider working library', () => {
-        const narrow = planGrowth(64, 2, 2, 5, 'seat');
-        const wide = planGrowth(64, 2, 9, 5, 'seat');
+        const narrow = planGrowth(64, 2, 2, 5, 'head');
+        const wide = planGrowth(64, 2, 9, 5, 'head');
         expect(wide.intake).toBeGreaterThan(narrow.intake);
     });
 
@@ -533,7 +533,7 @@ describe('growing the house is the only act that earns credit', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The head of a house, doing all four things the seat can do.
+ * The head of a house, doing all four things the head can do.
  *
  * `waitYears` is the whole difference between the two runs below. A leader who
  * lets the house forget between fights can have everything; one who does not
@@ -560,7 +560,7 @@ function reign(
     let current = house;
     let years = 0;
     let landed = 0;
-    let ended = 'held the seat';
+    let ended = 'held the house';
 
     for (const act of acts) {
         // A patient leader waits for the house to forget; an impatient one does
@@ -587,7 +587,7 @@ function reign(
             };
         }
         if (outcome.removedByPatron) { ended = 'removed by the patron'; break; }
-        if (outcome.seatChallenged) { ended = 'the seat was challenged'; break; }
+        if (outcome.headChallenged) { ended = 'the head was challenged'; break; }
         if (outcome.obstructionChance > 0) { ended = 'obstructed'; }
         landed++;
     }
@@ -596,12 +596,12 @@ function reign(
 }
 
 describe('a patient leader can eventually do all of it', () => {
-    it('does every act, keeps the seat, and never spends past obstruction', () => {
+    it('does every act, keeps the house, and never spends past obstruction', () => {
         // Not a trap. A head who spends credit well ends up with the standard
         // they wanted, the library they wanted, and elders who are theirs.
         const run = reign(dewHouse({ ownFollowing: 0 }), 5);
         expect(run.landed).toBe(6);
-        expect(run.ended).toBe('held the seat');
+        expect(run.ended).toBe('held the house');
         // Long, because none of it is instant, and well inside a cultivator's life.
         expect(run.years).toBeGreaterThan(100);
         expect(run.years).toBeLessThan(1_000);
@@ -619,12 +619,12 @@ describe('an impatient leader loses the house', () => {
     it('runs out of credit and is removed by the patron', () => {
         const run = reign(dewHouse({ ownFollowing: 0 }), 0);
         expect(run.landed).toBeLessThan(6);
-        expect(['removed by the patron', 'the seat was challenged']).toContain(run.ended);
+        expect(['removed by the patron', 'the head was challenged']).toContain(run.ended);
     });
 
     it('gets a challenge rather than a letter when nobody stands above the house', () => {
         const run = reign(dewHouse({ ownFollowing: 0, hasPatron: false }), 0);
-        expect(run.ended).toBe('the seat was challenged');
+        expect(run.ended).toBe('the head was challenged');
     });
 
     it('shrinks the house it was trying to grow', () => {

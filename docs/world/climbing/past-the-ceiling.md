@@ -470,9 +470,9 @@ stopping you. The Azure Dew Sect's entire library ends at cap 17. Robbing it bli
 
 <!-- tier: 2 trigger="somebody near the top of the ladder changes what may be taught" -->
 
-**What.** Take the seat and change what the house teaches. `sect-leadership`'s `curriculum`
+**What.** Take the head of the house and change what it teaches. `sect-leadership`'s `curriculum`
 action already exists, is gated on the `set_curriculum` power, is priced by
-`curriculumChangeCost`, and can be obstructed or cost you the seat.
+`curriculumChangeCost`, and can be obstructed or cost you the house.
 
 **Cost.** Standing, and the risk in `resolveAct`. Also generational: `cost.years` prices the
 fact that what a house hands its intake is the single most consequential thing about it over
@@ -481,7 +481,7 @@ a century.
 **Suits.** The politician. It is the only route that changes the world for people other than
 the player, which makes it the one that shows up in a 500-year soak.
 
-**Fails.** You can be obstructed, and you can lose the seat doing it.
+**Fails.** You can be obstructed, and you can lose the house doing it.
 
 **And it currently fails an invariant.** `sects.ts` states that `teaches` is a house's entire
 working library and that consequently no sect teaches a ruin- or grave-provenance art.
@@ -504,7 +504,7 @@ were nearly identical to each other, and the reason is that they all had the sam
 | The player is | Their doors | Closed to them |
 |---|---|---|
 | The thief | 8 (siphon), 3 (bodies), 1b (buy a volume) | 5 and 9 need standing they have burned; 6 will not adopt a marked thief |
-| The heir | 5 (the shelf), 9 (the seat), 1 (bought volumes) | 2's `fate` gates, which are indifferent to everything they were given |
+| The heir | 5 (the shelf), 9 (the head of the house), 1 (bought volumes) | 2's `fate` gates, which are indifferent to everything they were given |
 | The favourite | 5, 4 (somebody takes an interest), 6 | 8 costs them the thing they are |
 | The scholar | 6 (adoption), 7 (deduction), 2's talent gates | 3 and 8 need a fight they will lose |
 | The soldier | 3 (bodies), 8 (war and spoils), 2's strength gates | 7 needs a depth the years went elsewhere |
@@ -855,7 +855,7 @@ options are *stay* and *defect* is missing most of the board.
 | **Rise inside your apex** | nothing | almost always, if the bloc has a deeper shelf |
 | **Swear and cross out** | your value on arrival, permanently | the road that fits you is outside, and you cannot afford enemies |
 | **Cross out unsworn** | an enemy that waits for you to weaken | the road you carry is worth more than the peace |
-| **Take the seat above you** | it is held by a person, not a rule | the shelf is reachable by rank and somebody is in the way |
+| **Take the rank above you** | it is held by a person, not a rule | the shelf is reachable by rank and somebody is in the way |
 | **Be seconded to an ally** | you owe the term, and you come back | your house cannot teach you and does not want to lose you |
 | **Marry or be adopted in** | you become *of* them; your old loyalties are the price | the receiving house is a family before it is an institution |
 | **Be transferred for a fee** | your old house is paid, so no grudge forms | both houses would rather have the receipt than the fight |
@@ -865,7 +865,7 @@ options are *stay* and *defect* is missing most of the board.
 | **Defect to a neutral apex** | nothing, and they reward you for coming | you are qualified, blocked, and worth something to a body that large |
 | **Disband the house and leave** | it ends; you answer to nobody afterwards | you are senior enough to end it, and there is nothing left worth holding |
 | **Be named heir** | you become the thing others are measured against | the house has a successor posting and you can be the one demonstrably worth it |
-| **Contest the seat** | you have to win, and losing is not neutral | the person in the way will not move and the gap is small enough to be a fight |
+| **Contest the rank** | you have to win, and losing is not neutral | the person in the way will not move and the gap is small enough to be a fight |
 | **Be expelled** | chosen for you, and it takes your standing with it | you became a problem, which a blocked person eventually does |
 | **Your house is destroyed** | everything except what you carry and what you know | war or disaster ended it, and you are free because there is nobody left to owe |
 | **Go rogue** | no shelf, no backing, no materials | every door above is shut, or you want none of them |
@@ -885,7 +885,7 @@ Three exits sidestep the queue rather than joining it:
   they have waited, and `seatsAtRank` already says the top seat changes hands by succession
   rather than by promotion. Who holds that posting, and who resents it, is one of the better
   political situations this world can produce.
-- **Contesting the seat** is the direct version. The person in the way is a person, not a
+- **Contesting the rank** is the direct version. The person in the way is a person, not a
   rule. The engine already prices a fight across a rung gap and already refuses lopsided ones
   outright, so the arithmetic for this exists - what is missing is anybody reaching for it.
 - **Being expelled** is the involuntary one, and it belongs in the list because it is what
@@ -919,7 +919,7 @@ to lose and centuries of reasons to spend itself on the people it raised.
 **But a blow does not decide this - the bench does.** Whether a house ends is a question about
 who is left standing, not about how large the thing that hit it was. A house whose second is a
 Deity Transformation elder does not end when its head dies, however spectacularly: the number
-two takes the seat, the house continues wounded, and nobody is freed of anything. A house whose
+two takes the house, the house continues wounded, and nobody is freed of anything. A house whose
 strength was entirely its head ends with them.
 
 So the same event produces completely different worlds depending on succession depth, and that

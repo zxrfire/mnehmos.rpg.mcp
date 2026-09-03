@@ -59,12 +59,12 @@
  *
  *   AN ELDER'S WEIGHT AGAINST YOU IS THEIR FOLLOWING. A house where one elder
  *   recruited half the roster has a head who cannot touch them. That is a
- *   genuinely interesting seat to inherit and it needed no new state to say.
+ *   genuinely interesting house to inherit and it needed no new state to say.
  *
  *   YOUR OWN FOLLOWING IS YOUR ARMOUR. Every cost here is discounted by the
  *   share of the house you personally brought in, which is the whole reason to
- *   spend decades as an elder recruiting before making a bid for the seat.
- *   Growth can be done from the seat, slowly and to your own credit, or handed
+ *   spend decades as an elder recruiting before making a bid for the top.
+ *   Growth can be done from the head, slowly and to your own credit, or handed
  *   to the elders, which is faster and builds exactly the power base that will
  *   later refuse you. That trade is the best decision in this file.
  *
@@ -80,7 +80,7 @@
  *                 state: the elders with the largest followings go first,
  *                 because an elder with somewhere to go is the one who can
  *                 afford to walk.
- *   challenge     the seat is challenged. Deterministic at its threshold.
+ *   challenge     the head is challenged. Deterministic at its threshold.
  *   removal       the patron replaces you, and there is no fight to win.
  *
  * The last rung is why the governance stack matters. A head who answers to
@@ -125,10 +125,25 @@ export function isElderRank(rankIndex: number, rankCount: number): boolean {
     return rankIndex >= elderRungOf(rankCount);
 }
 
-/** Whether this rung is the head of the house. */
-export function holdsTheSeat(rankIndex: number, rankCount: number): boolean {
+/**
+ * Whether this rung is the head of the house.
+ *
+ * Named for the position, not for anybody's title for it. What a house CALLS
+ * the person standing here is that house's own business and is already
+ * authored: `ranks[rankCount - 1]` is Clan Chief in the Cinder Clan, Abbot in
+ * the Quiet Hall, Order Patriarch on the mountain, and Seat at the Hollow
+ * Court - which is the whole reason this predicate must not be called
+ * `holdsTheSeat`. One house's word was standing in for all of them.
+ */
+export function isHeadOfHouse(rankIndex: number, rankCount: number): boolean {
     return rankCount > 0 && rankIndex === rankCount - 1;
 }
+
+/**
+ * The old name, kept so importers migrate as they come free rather than in
+ * one sweep through other agents' open files. Prefer `isHeadOfHouse`.
+ */
+export const holdsTheSeat = isHeadOfHouse;
 
 /**
  * What a rung is, in one word, for the narrator.
@@ -136,12 +151,15 @@ export function holdsTheSeat(rankIndex: number, rankCount: number): boolean {
  *   ordered   the bottom rung. Everybody above can send you somewhere.
  *   ordering  can send the rungs below and nothing more.
  *   elder     the above, and takes disciples in under their own line.
- *   seat      the above, and the standard, the methods, and who is an elder.
+ *   head      the above, and the standard, the methods, and who is an elder.
+ *
+ * `head` is the POSITION. The narrator says the house's own title for it -
+ * see `headTitleOf` in `web/standing.ts` - and never this word.
  */
-export type AuthorityTier = 'ordered' | 'ordering' | 'elder' | 'seat';
+export type AuthorityTier = 'ordered' | 'ordering' | 'elder' | 'head';
 
 export function authorityTier(rankIndex: number, rankCount: number): AuthorityTier {
-    if (holdsTheSeat(rankIndex, rankCount)) return 'seat';
+    if (isHeadOfHouse(rankIndex, rankCount)) return 'head';
     if (isElderRank(rankIndex, rankCount)) return 'elder';
     return rankIndex >= 1 ? 'ordering' : 'ordered';
 }
@@ -160,7 +178,7 @@ export const POWERS_BY_TIER: Readonly<Record<AuthorityTier, readonly LeadershipP
     ordered: [],
     ordering: ['order'],
     elder: ['order', 'recruit_disciples'],
-    seat: [
+    head: [
         'order',
         'recruit_disciples',
         'recruit_elders',
@@ -208,7 +226,7 @@ export function rosterByRung(houseSize: number, rankCount: number): number[] {
     const raw = weights.map(w => (houseSize * w) / total);
 
     // Everybody has to stand somewhere, and the top rung is one person, not
-    // three tenths of one. Round down, seat the head, and hand the remainder to
+    // three tenths of one. Round down, place the head, and hand the remainder to
     // the bottom, which is where a house that cannot afford another elder puts
     // people.
     const out = raw.map(r => Math.floor(r));
@@ -573,7 +591,7 @@ export function curriculumChangeCost(
 export const COST_PER_EXTERNAL_ELDER = 18;
 /** Multiplier per elder already bought in. The insult compounds. */
 export const EXTERNAL_ELDER_ESCALATION = 1.5;
-/** Years to find one, negotiate, and seat them. */
+/** Years to find one, negotiate, and install them. */
 export const EXTERNAL_ELDER_YEARS = 2;
 
 /**
@@ -594,7 +612,7 @@ export function externalElderCost(count: number, alreadyRecruited: number): ActC
         standingEarned: 0,
         years: wanted * EXTERNAL_ELDER_YEARS,
         insult:
-            'There was somebody inside who had waited thirty years for that seat, and the house has been told in public what the waiting was worth.'
+            'There was somebody inside who had waited thirty years for that place, and the house has been told in public what the waiting was worth.'
     };
 }
 
@@ -632,7 +650,7 @@ export function expulsionCost(
         insult:
             share > 0.25
                 ? 'A third of the yard answers to that man, and the yard has just watched him walk out of the gate with a letter.'
-                : 'Every elder left standing has just learned the terms on which they hold their own seat.'
+                : 'Every elder left standing has just learned the terms on which they hold their own place.'
     };
 }
 
@@ -641,21 +659,27 @@ export function expulsionCost(
 // The one act that earns standing, which is why it is slow and expensive.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Who does the recruiting, which is the best decision available to a leader. */
-export type GrowthChannel = 'seat' | 'elders';
+/**
+ * Who does the recruiting, which is the best decision available to a leader.
+ *
+ * `head` is the person at the top of the house, whatever that house calls
+ * them. It was `seat` until somebody noticed that is the Hollow Court's word
+ * and no other house's.
+ */
+export type GrowthChannel = 'head' | 'elders';
 
 /** Share of the house one leader can add per decade, recruiting alone. */
-export const INTAKE_PER_DECADE_SEAT = 0.08;
+export const INTAKE_PER_DECADE_HEAD = 0.08;
 /** Share the elders can add per decade when it is handed to them. */
 export const INTAKE_PER_DECADE_ELDERS = 0.22;
 /** Months of entry stipend a new intake is carried before they are worth anything. */
 export const GROWTH_MONTHS_CARRIED = 120;
 /** Extra intake per method in the working library. A wider door draws more people. */
 export const INTAKE_PER_METHOD = 0.02;
-/** Standing earned per head brought in personally. */
-export const STANDING_PER_HEAD_SEAT = 1.2;
-/** Standing earned per head when the elders did it and everybody knows. */
-export const STANDING_PER_HEAD_ELDERS = 0.4;
+/** Standing earned per recruit brought in personally. */
+export const STANDING_PER_RECRUIT_BY_HEAD = 1.2;
+/** Standing earned per recruit when the elders did it and everybody knows. */
+export const STANDING_PER_RECRUIT_BY_ELDERS = 0.4;
 
 export interface GrowthPlan {
     channel: GrowthChannel;
@@ -688,7 +712,7 @@ export function planGrowth(
     channel: GrowthChannel
 ): GrowthPlan {
     const periods = Math.max(0, Math.floor(decades));
-    const base = channel === 'seat' ? INTAKE_PER_DECADE_SEAT : INTAKE_PER_DECADE_ELDERS;
+    const base = channel === 'head' ? INTAKE_PER_DECADE_HEAD : INTAKE_PER_DECADE_ELDERS;
     const rate = base + Math.max(0, methodCount) * INTAKE_PER_METHOD;
 
     let size = Math.max(0, houseSize);
@@ -706,12 +730,12 @@ export function planGrowth(
         years: periods * 10,
         standingEarned:
             intake *
-            (channel === 'seat' ? STANDING_PER_HEAD_SEAT : STANDING_PER_HEAD_ELDERS),
-        attachesTo: channel === 'seat' ? 'the leader' : 'the elders'
+            (channel === 'head' ? STANDING_PER_RECRUIT_BY_HEAD : STANDING_PER_RECRUIT_BY_ELDERS),
+        attachesTo: channel === 'head' ? 'the leader' : 'the elders'
     };
 }
 
-/** Years to find, vet and seat one disciple in a house that admits at nothing. */
+/** Years to find, vet and place one disciple in a house that admits at nothing. */
 export const RECRUIT_BASE_YEARS = 1;
 /**
  * Additional years per ordinal of the house's own admission bar.
@@ -735,7 +759,7 @@ export interface IntakePlan {
  *
  * Priced per head rather than as a share of the house, because this is one
  * person going out and finding people, and it is how a player builds the
- * following that will later make a bid for the seat survivable.
+ * following that will later make a bid for the top of the house survivable.
  */
 export function planDiscipleIntake(
     count: number,
@@ -754,12 +778,12 @@ export function planDiscipleIntake(
 }
 
 /**
- * Whether the seat is held when it is challenged.
+ * Whether the head of the house holds it when they are challenged.
  *
  * Read off state rather than rolled, because a challenge for the leadership of
  * a cultivation sect is not a negotiation: the strongest elder in the house
  * stands up, and either the head is above them or they are not. A leader who
- * spent a century governing and no time cultivating loses the seat to arithmetic
+ * spent a century governing and no time cultivating loses the house to arithmetic
  * they could have checked at any point.
  */
 export function challengeOutcome(
@@ -823,7 +847,7 @@ export const REMOVAL_AT = -90;
  * Where the house currently is, read straight off standing.
  *
  * `hasPatron` is the governance stack doing real work: an unbacked house or an
- * apex tops out at a challenge to the seat, which is a fight and can be won. A
+ * apex tops out at a challenge to the head, which is a fight and can be won. A
  * house that holds its ground from somebody else has one more rung above that,
  * and it is a letter rather than a fight.
  */
@@ -906,12 +930,12 @@ export interface HouseState {
      * Whether this cultivator is the head of the house.
      *
      * The escalation runs the same numbers either way and lands on different
-     * people. A head who has spent their credit loses elders and then the seat.
+     * people. A head who has spent their credit loses elders and then the house.
      * An Inner Disciple who has spent theirs loses the disciples they brought in
      * and then their place, because a house does not keep a rung nobody below it
      * will work for. Same ladder, same thresholds, different thing at the end.
      */
-    holdsTheSeat: boolean;
+    isHead: boolean;
 }
 
 export interface ActOutcome {
@@ -929,7 +953,7 @@ export interface ActOutcome {
     disciplesLeaving: number;
     /** Disciples of the cultivator's own line who walk. The lower-rung version. */
     ownFollowingLost: number;
-    seatChallenged: boolean;
+    headChallenged: boolean;
     removedByPatron: boolean;
     /** The house dismisses a rung nobody below it will work for. */
     dismissedFromTheHouse: boolean;
@@ -951,8 +975,8 @@ export function resolveAct(house: HouseState, cost: ActCost): ActOutcome {
     const standingAfter = clampStanding(
         house.standing - spent + Math.max(0, cost.standingEarned)
     );
-    const level = backlashLevel(standingAfter, house.hasPatron && house.holdsTheSeat);
-    const departures = house.holdsTheSeat
+    const level = backlashLevel(standingAfter, house.hasPatron && house.isHead);
+    const departures = house.isHead
         ? departuresAt(standingAfter, house.elders)
         : { leaving: [], disciplesLost: 0 };
 
@@ -966,13 +990,13 @@ export function resolveAct(house: HouseState, cost: ActCost): ActOutcome {
         obstructionChance: obstructionChance(standingAfter),
         eldersLeaving: departures.leaving,
         disciplesLeaving: departures.disciplesLost,
-        ownFollowingLost: house.holdsTheSeat
+        ownFollowingLost: house.isHead
             ? 0
             : Math.floor(Math.max(0, house.ownFollowing) * departureDepth(standingAfter)),
-        seatChallenged: house.holdsTheSeat && standingAfter <= CHALLENGE_AT,
+        headChallenged: house.isHead && standingAfter <= CHALLENGE_AT,
         removedByPatron:
-            house.holdsTheSeat && house.hasPatron && standingAfter <= REMOVAL_AT,
-        dismissedFromTheHouse: !house.holdsTheSeat && standingAfter <= CHALLENGE_AT,
+            house.isHead && house.hasPatron && standingAfter <= REMOVAL_AT,
+        dismissedFromTheHouse: !house.isHead && standingAfter <= CHALLENGE_AT,
         years: Math.max(0, cost.years),
         insult: cost.insult
     };
@@ -1008,7 +1032,7 @@ export function affordable(house: HouseState, cost: ActCost): {
     const wouldLandAt = clampStanding(
         house.standing - spends + Math.max(0, cost.standingEarned)
     );
-    const wouldTrigger = backlashLevel(wouldLandAt, house.hasPatron && house.holdsTheSeat);
+    const wouldTrigger = backlashLevel(wouldLandAt, house.hasPatron && house.isHead);
     return {
         spends,
         wouldLandAt,
