@@ -656,6 +656,42 @@ const CLAIMS_DEATH =
  * irreversibly act on, and they stay narrow for the reason above the banner: a
  * false positive throws away good writing, and a discarded narration is now
  * something the player is told about.
+ *
+ * ── THE THIRD FACE, AND THE ONE THE RULING ABOVE DOES NOT REACH ──────────
+ *
+ * Both faces above are about SILENCE: the turn did not say what it declined, so
+ * the model filled the gap. The fix for both is to make the turn say it, and it
+ * works. This one is different in kind, and it was found by playing:
+ *
+ *   > is it safe to sit and cultivate here, or will someone bother me?
+ *   "You begin to settle into your meditation, drawing the ambient energy into
+ *    yourself."
+ *
+ * The engine had declined the cultivate. Every defence above was working. The
+ * Tier 1 text was loaded from disk and the phase-3 system prompt carried "only
+ * the acts the turn ran happened" verbatim; the declined clause reached
+ * `facts.lines` explicitly marked, in the player's own words. The model was
+ * obedient. **The FACT LINE was false.**
+ *
+ * `theClauseThisTurnDidNotRun` had split the sentence on the `and` inside "sit
+ * and cultivate" - one verb phrase, not two acts - and then reported, in the
+ * engine's own voice, that "only the FIRST of them was done". The player's first
+ * half is "is it safe to sit and cultivate here". So the turn told phase 3 that
+ * the sitting had run, and phase 3 narrated it.
+ *
+ * **A narrator cannot be prompted out of a fact line that lies to it**, and that
+ * is the boundary of the ruling above rather than a counterexample to it. Making
+ * the turn speak fixes silence; nothing in the prompt can fix a turn that speaks
+ * falsely, because the prose is CORRECT with respect to what it was given. The
+ * check that would have caught it does not belong here either - it would have
+ * had to know which half of the player's sentence ran, which is precisely the
+ * thing the reporter got wrong.
+ *
+ * So the fix was upstream, in the reporter, and the lesson for anybody tempted
+ * to add a third check here: when phase 3 narrates something that did not
+ * happen, read the fact lines it was handed BEFORE reading the prose. Twice now
+ * the answer has been in what the turn said rather than in how the model read
+ * it. See `the-part-of-the-sentence-that-was-not-run.ts`.
  */
 export function auditNarration(
     text: string,
