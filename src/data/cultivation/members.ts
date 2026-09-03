@@ -492,36 +492,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // among equals of the elders, one spot only, and it is where a head
     // retires to.
     //
-    // WHY `rankIndex: 4` TODAY, AND WHERE HE IS GOING. **This is a holding
-    // position and it is scheduled to move.** The rung was chosen because the
-    // Pavilion's `ranks` array is a contract - `governance-and-water-rights.ts`
-    // spells it out: every member is pinned to an index, the stipend array is
-    // parallel to it, and `rankRealmBand` derives every band from position in
-    // it, so inserting a rung silently moves every Azure Cloud member and
-    // re-bands every rank in every house through `t = rankIndex / (len - 1)`.
-    //
-    // That reasoning about the contract is right and the conclusion was not the
-    // design owner's, who overruled it: *"let the grand elder be above the
-    // elders. grand is not an office, it is a title. just with elder in it."*
-    // **Grand modifies the title the way it modifies any title** - a Grand
-    // Elder is an Elder one rung up - so it belongs IN the array, above the
-    // elder rung and below the head, and this row moves to it.
-    //
-    // The insert is deliberately not done here. It lands with the rest of its
-    // blast radius in one commit - `elderRungOf` for the short ladders,
-    // `requiredOrdinalForRank` rising by four, the head-pinned members, the
-    // head's following weight, and the pyramid in both arms - because two
-    // agents editing ladders at once is how this goes wrong.
-    //
-    // WHAT THE MOVER NEEDS TO KNOW ABOUT HIS SEEDING, because it is worth
-    // keeping and is easy to lose: `grantBooksToMembers` hands him the
-    // **Heaven-Conversing Primordial Canon**, which no shelf in the world
-    // holds. Nobody arranged that. `roadThatCarriedThemHere` picks an unowned
-    // book when a house's shelf cannot reach its own person, and the Pavilion's
-    // stops far below 39 - so the mechanism independently produces the thing
-    // `outlierReason: 'arrived'` claims. It survives the move as long as he
-    // stays above what the shelf teaches, which the new rung does not change.
-    // If it ever stops happening, that is a real finding rather than a detail.
+    // WHY `rankIndex: 4` AND NOT A NEW RUNG. The Pavilion's `ranks` array is a
+    // contract - `governance-and-water-rights.ts` spells it out: every member
+    // is pinned to an index, the stipend array is parallel to it, and
+    // `rankRealmBand` derives every band from position in it, so inserting a
+    // rung would silently move every Azure Cloud member and change every band.
+    // It costs nothing to leave it out, because grand elder IS "first among
+    // equals of the elders" - the elder rank with one man at the top of it, not
+    // a seventh rung.
     //
     // UNNAMED, which this catalog already supports and the Hollow Court's four
     // seats already do. It gives the Pavilion depth without another authored
