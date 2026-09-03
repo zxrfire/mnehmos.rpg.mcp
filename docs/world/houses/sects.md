@@ -459,6 +459,18 @@ in the room, somebody with no office and many disciples can outweigh somebody wi
 room and none. It is strictly the worse seat, since an office-holder takes disciples too, and
 it is still enough to matter.
 
+**A head can force an elder out of their room, and it costs him.** Not a veto he needs
+permission for - he can simply do it, and doing it spends his standing in the house the way
+overruling the room does. That is what stops offices being reshuffled at whim: removal is
+available, expensive, and visible. `spendStanding`, `backlashLevel`, `obstructionChance` and
+`departuresAt` are already the machinery for what a leadership act costs and what it provokes;
+turning somebody out of their office is one.
+
+**The elders have no formal protection and a real one.** Nothing in the rules stops a head
+removing them. What stops him is that each removal buys resentment he has to keep paying for,
+and a head who has spent enough of it is a head the room can overrule - which is the tier that
+already exists, arriving as a consequence rather than as a rule about offices.
+
 **And a scarce office is a motive.** A room somebody else holds, who is not dying soon, is a
 problem with an obvious and terrible solution. Arranging that a seat comes open is a thing
 people in this world do, and demonic houses do it more readily because they have fewer
