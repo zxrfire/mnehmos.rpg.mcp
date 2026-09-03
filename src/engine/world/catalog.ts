@@ -26,6 +26,7 @@
 import type { AmbientQi } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX, clampQiDensity } from './qi-scale.js';
+import type { LinkKind } from './locations.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHAPES
@@ -156,6 +157,29 @@ export interface CatalogPlace {
     kind: 'hamlet' | 'village' | 'market_town' | 'sect_town' | 'city' | 'waystation' | 'site';
     ambient: AmbientQi;
     note: string;
+    /**
+     * Places inside the same province this one is next to, in walking days.
+     *
+     * The same shape as `CatalogConnection` one level up and deliberately in
+     * the same unit, so nothing here is a second opinion about how far apart
+     * two places are. Declared on one end only - `seeding.ts` hands each row
+     * to `linkLocations`, which writes both directions - and sparse, so an
+     * absent entry means "no stated road", never "unreachable".
+     *
+     * OPTIONAL, and it has to be. A `WorldCatalog` is not always built by
+     * `mapRegion` - tests and probes assemble one by hand, and several dozen
+     * of them do - so a required array here made every hand-built place a
+     * crash in the seeder rather than a place with no neighbours. Sparse is
+     * the whole design of this field, and undefined is the sparsest it gets.
+     */
+    connections?: PlaceConnection[];
+}
+
+export interface PlaceConnection {
+    otherPlaceName: string;
+    /** A `LinkKind`. Passed to `linkLocations` untranslated. */
+    kind: LinkKind;
+    travelDays: number;
 }
 
 export interface CatalogConnection {
@@ -370,7 +394,13 @@ interface RawRegion {
     };
     politics?: string;
     factionIds?: string[];
-    places?: { name: string; kind: string; ambient: AmbientQi; note: string }[];
+    places?: {
+        name: string;
+        kind: string;
+        ambient: AmbientQi;
+        note: string;
+        connections?: { otherPlaceName: string; kind: string; travelDays: number }[];
+    }[];
     connections?: { otherRegionId: string; kind: string; travelDays: number }[];
     exports?: string[];
     veinStatus?: string;
@@ -442,7 +472,12 @@ function mapRegion(raw: RawRegion): CatalogRegion {
             name: p.name,
             kind: p.kind as CatalogPlace['kind'],
             ambient: p.ambient,
-            note: p.note
+            note: p.note,
+            connections: (p.connections ?? []).map(c => ({
+                otherPlaceName: c.otherPlaceName,
+                kind: c.kind as LinkKind,
+                travelDays: c.travelDays
+            }))
         })),
         connections: (raw.connections ?? []).map(c => ({
             otherRegionId: c.otherRegionId,

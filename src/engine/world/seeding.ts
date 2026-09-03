@@ -467,6 +467,50 @@ function seedRegions(
         }
     }
 
+    // ── AND ROADS BETWEEN PLACES OF ONE REGION ───────────────────────────
+    //
+    // Until this existed a place had no links at all: places hang off their
+    // province by `parentId` and regions link to regions, so `travelOptions`
+    // at a settlement returned an empty list and nothing in the world could
+    // say that two towns were near each other.
+    //
+    // The catalog states each road on ONE of its two ends and `linkLocations`
+    // writes both directions, so the runtime graph is symmetric by
+    // construction from a single row - which is why the catalog does not
+    // carry a second row that could disagree with the first.
+    //
+    // `conn.kind` is a `LinkKind` and goes through untranslated, unlike the
+    // region loop above, which flattens six social relations to 'road'
+    // because a province connection is a relationship rather than a way. A
+    // sea crossing arriving as a road is the defect `what-a-sea-crossing-
+    // costs.ts` records against that line; this loop does not repeat it.
+    const byLocationId = new Map(state.locations.map(l => [l.id, l]));
+    for (const region of catalog.regions) {
+        // Resolved per province rather than in one global table, because a
+        // place road is a road inside ONE province. Same-province-only is
+        // what keeps this from becoming a second opinion about a distance the
+        // province connections already price: the two layers' domains are
+        // disjoint, and a catalog test asserts it.
+        const here = new Map<string, LocationRecord>();
+        for (const place of region.places) {
+            const record = byLocationId.get(placeLocationId(region.id, place.name));
+            if (record) here.set(place.name.trim().toLowerCase(), record);
+        }
+        for (const place of region.places) {
+            const from = here.get(place.name.trim().toLowerCase());
+            if (!from) continue;
+            // `?? []` because a hand-built catalog - a test, a probe, a
+            // scripted world - has no `connections` on its places at all, and
+            // a place with no neighbours is the ordinary case rather than an
+            // error. Found by 112 seeder crashes across `tests/engine/world`.
+            for (const conn of place.connections ?? []) {
+                const to = here.get(conn.otherPlaceName.trim().toLowerCase());
+                if (!to) continue;
+                linkLocations(from, to, conn.kind, Math.max(1, conn.travelDays));
+            }
+        }
+    }
+
     return byRegion;
 }
 
