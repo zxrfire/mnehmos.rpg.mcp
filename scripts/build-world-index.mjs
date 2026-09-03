@@ -111,10 +111,31 @@ function anchor(heading) {
  * one-line description of what design question the file answers; where it does
  * not, the blank row is itself a finding.
  */
+/**
+ * Every `.ts` under the catalog, subdirectories included, as a path relative
+ * to the catalog root.
+ *
+ * Do not make this a bare `readdirSync` again. `regions/` holds sixteen files
+ * and a non-recursive read indexed none of them, so the sixteen regional
+ * catalogs were absent from the one table that exists to say where design is
+ * written down. This is the same defect the doc walker above records fixing.
+ */
+function catalogFiles() {
+    const out = [];
+    const walk = (dir, prefix) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+            const rel = prefix ? `${prefix}/${e.name}` : e.name;
+            if (e.isDirectory()) walk(path.join(dir, e.name), rel);
+            else if (e.name.endsWith('.ts')) out.push(rel);
+        }
+    };
+    walk(CATALOG, '');
+    return out;
+}
+
 export function readCatalogHeaders() {
     const rows = [];
-    for (const file of fs.readdirSync(CATALOG).sort()) {
-        if (!file.endsWith('.ts')) continue;
+    for (const file of catalogFiles()) {
         const src = fs.readFileSync(path.join(CATALOG, file), 'utf8');
         const block = src.match(/^\/\*\*([\s\S]*?)\*\//);
         let summary = '';
@@ -135,8 +156,15 @@ export function readCatalogHeaders() {
             if (stop > 40) summary = summary.slice(0, stop + 1);
         }
         const lines = src.split(/\r?\n/).length;
+        // The `/` in the character class is load-bearing. docs/world used to be
+        // flat and every reference in the catalog now carries a folder -
+        // `docs/world/things/items.md` - so the flat pattern matched none of
+        // them and this column reported 0 catalogs naming a doc when twelve do.
+        // The legend under the table reads an empty column as "this file is the
+        // only written record", so the bug did not merely lose information, it
+        // asserted the opposite of the truth for every row.
         const docLinks = [...new Set(
-            (src.match(/docs\/world\/[a-z0-9-]+\.md/g) ?? [])
+            (src.match(/docs\/world\/[a-z0-9/-]+\.md/g) ?? [])
         )].sort();
         rows.push({ file, lines, summary, docLinks });
     }
@@ -176,8 +204,11 @@ function renderCatalog(rows) {
     ];
     for (const r of rows) {
         const link = `[\`${r.file}\`](../../src/data/cultivation/${r.file})`;
+        // INDEX.md sits at docs/world/, so the href is the path with that
+        // prefix removed - a bare basename pointed at a file that has not been
+        // at the top of docs/world since the folder split.
         const also = r.docLinks.length
-            ? r.docLinks.map(d => `[\`${path.basename(d)}\`](${path.basename(d)})`).join(' ')
+            ? r.docLinks.map(d => `[\`${path.basename(d)}\`](${d.replace(/^docs\/world\//, '')})`).join(' ')
             : '-';
         out.push(`| ${link} | ${esc(r.summary || '_(no header comment)_')} | ${r.lines} | ${also} |`);
     }
@@ -221,7 +252,7 @@ function allSources() {
 function readDesignExports() {
     const sources = allSources();
     const rows = [];
-    for (const file of fs.readdirSync(CATALOG).filter(f => f.endsWith('.ts'))) {
+    for (const file of catalogFiles()) {
         const text = fs.readFileSync(path.join(CATALOG, file), 'utf8');
         const here = `src/data/cultivation/${file}`;
         for (const m of text.matchAll(DESIGN_EXPORT)) {
