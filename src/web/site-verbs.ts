@@ -1346,8 +1346,13 @@ export const siteVerbs = {
             // question, and it is asked here rather than assumed.
             const known = this.knowledge.isAwareOf(cultivator.id, 'sect', factionId);
             if (known) {
+                // Both names, because both are known here. The obligation
+                // written three lines above says "${site.name} was emptied" and
+                // this sentence - the one the player actually reads - said "this
+                // ground", so the operator's record named the place and the
+                // player's did not.
                 lines.push(
-                    `${house.name} holds this ground, and what came off it did not come off it `
+                    `${house.name} holds ${site.name}, and what came off it did not come off it `
                     + 'quietly.'
                 );
             } else {

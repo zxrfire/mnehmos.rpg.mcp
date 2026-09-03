@@ -944,10 +944,59 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
 
         // Whether this ground can still take them anywhere is the one thing a
         // price board actually decides, and it is why leaving is a goal.
+        //
+        // ── NAME THE PLACE, AND NAME THE PROVINCE ────────────────────────
+        //
+        // This read, verbatim, for as long as it has existed:
+        //
+        //     Whatever else is true of this place, the ground here has nothing
+        //     further to give somebody at this rank.
+        //
+        // Played at The Sounding - a named rock, on a named vein head, in the
+        // Drowned Reach - and reported by the design owner as a sentence about
+        // nothing. It is not the narrator's doing: `composeNarrationUser` sends
+        // `Place: The Sounding` in the SCENE header and then orders the model to
+        // narrate the facts EXACTLY, so an anonymous fact narrates anonymously,
+        // and the model has no licence to go and fetch the name back. The
+        // anonymity entered here, on `lines`, with both names sitting two fields
+        // away in the same body.
+        //
+        // The province is named as well as the place because THE FACT IS THE
+        // PROVINCE'S. `groundHereStillGives` is `canAdvanceHere(regionId, …)`,
+        // read off the region's `localCeilingOrdinal` - so what is exhausted is
+        // the Drowned Reach, and The Sounding is the one place in it the catalog
+        // calls "the best ground in the province". The same turn told the player
+        // the air was dense. Both were true and the sentence made them look like
+        // a contradiction, purely by refusing to say which one it was about.
+        //
+        // `why-progress-has-stopped.ts` has rendered this identical fact as
+        // "${regionName} carries nobody past ${rank}" since it was written. This
+        // was that ruling with the names taken out, and the fix is to stop
+        // taking them out rather than to invent a second way of saying it.
+        //
+        // The last branch keeps the old sentence and is not a leftover. A road,
+        // a hillside and a cave are real answers from `standingOf`, which
+        // resolves nothing and reports `placeName: null` rather than guessing -
+        // and saying "the ground here" about ground the gazetteer genuinely does
+        // not name is honest. Saying it INSTEAD of looking is the defect.
         if (body.groundHereStillGives === false) {
+            const where = body.standing as { place?: unknown; region?: unknown } | undefined;
+            const place = typeof where?.place === 'string' ? where.place.trim() : '';
+            const region = typeof where?.region === 'string' ? where.region.trim() : '';
+            const stops = typeof body.groundCarriesNobodyPast === 'string'
+                ? body.groundCarriesNobodyPast
+                : '';
+            const inside = place && region && place !== region;
             lines.push(
-                'Whatever else is true of this place, the ground here has nothing further to give ' +
-                'somebody at this rank.'
+                region
+                    ? `${region} carries nobody past `
+                      + `${stops || 'where you already stand'}`
+                      + `${inside ? `, and ${place} is in it` : ''}. Whatever else is on this `
+                      + 'board, nothing on it is a way further up.'
+                    : place
+                        ? `${place} has nothing further to give somebody at this rank.`
+                        : 'Whatever else is true of this place, the ground here has nothing '
+                          + 'further to give somebody at this rank.'
             );
         }
     }
