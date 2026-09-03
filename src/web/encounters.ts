@@ -69,6 +69,7 @@ import { rungAndOrdinal } from './facts.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import { dangerDeltaInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { KnowledgeGate } from './knowledge.js';
 import { createGrudge, createOath, settleObligation } from '../engine/social/grudges.js';
@@ -253,6 +254,24 @@ export function locatabilityFor(deps: EncounterDeps, cultivator: Cultivator): Lo
  * loaded. A place with no record is `wilds` at middling danger, which is a
  * guess and is honest about being one - it never invents a kind that would
  * bias the pool toward anything in particular.
+ *
+ * ── AND WHAT IS TRUE OF THE GROUND TODAY IS PART OF HOW DANGEROUS IT IS ──
+ *
+ * `LocationRecord.environment.danger` is what a place is LIKE. It is a
+ * standing property and it does not move, so a war on the ground somebody is
+ * standing on changed nothing about what could happen to them: measured on the
+ * seat of a live war, `dangerDelta` 0.5 over a base of 0.15, and the encounter
+ * window rolled at 0.15 exactly as it did in peacetime.
+ *
+ * So the area-status layer's own term is added here, which is the one place
+ * risk is assessed for a played turn - `encounterRateFor` in
+ * `engine/encounters/activity.ts` reads this single number and nothing else.
+ * The sum is clamped into 0..1 because `danger` is a share and the engine
+ * multiplies by it; a beast tide over a war is still not certainty.
+ *
+ * It takes no `KnowingStage` and must not. What a status DOES has never
+ * depended on anybody knowing about it, and a war is dangerous to a traveller
+ * who has never heard of it.
  */
 export function placeFor(world: WorldState | null, cultivator: Cultivator): EncounterPlace {
     const name = (cultivator.location ?? 'somewhere').trim() || 'somewhere';
@@ -260,11 +279,13 @@ export function placeFor(world: WorldState | null, cultivator: Cultivator): Enco
     if (!record) {
         return { id: name.toLowerCase(), name, kind: 'wilds', danger: 0.25 };
     }
+    const today = Math.floor(world!.currentDay);
+    const wrongHere = dangerDeltaInArea(world!.statuses, world!.locations, record.id, today);
     return {
         id: record.id,
         name: record.name,
         kind: record.kind,
-        danger: record.environment.danger,
+        danger: Math.max(0, Math.min(1, record.environment.danger + wrongHere)),
         qiDensity: record.qiDensity,
         hazards: record.hazards,
         controllingFactionId: record.controllingFactionId,

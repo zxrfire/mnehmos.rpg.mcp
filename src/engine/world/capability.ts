@@ -59,6 +59,10 @@ import {
     type LocationRecord,
     type ThresholdModifier
 } from './locations.js';
+import {
+    passageStoppedInArea,
+    type AreaStatus
+} from './what-is-true-of-a-place-right-now.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PREDICATES
@@ -998,11 +1002,52 @@ export function requirementsFromLocation(location: LocationRecord): CapabilityRe
     });
 }
 
-/** A location as a capability subject, including its seal and its cycle. */
+/**
+ * The world as much of it as this function needs to know whether the road in
+ * is shut today.
+ *
+ * A structural argument rather than `WorldState`, for the same reason
+ * `GroundAsItStands` is one: nothing here should be able to reach for anything
+ * the caller did not hand over, and a test should be able to drive it with two
+ * arrays.
+ */
+export interface GroundAroundALocation {
+    statuses: readonly AreaStatus[];
+    locations: readonly LocationRecord[];
+}
+
+/**
+ * A location as a capability subject, including its seal and its cycle.
+ *
+ * ── WHY THE STATUSES ARE HERE AND NOT IN A SECOND PREDICATE ──────────────
+ *
+ * `windowClosed` was `!isOpenOn(location, onDay)`, which is the SEASON'S half
+ * of "the road in is shut today" and only that half. The other half is
+ * `stops: ['passage']` on an area status - a blockade, a siege, a war holding
+ * the ground - and `passageStoppedInArea` was written to answer both together,
+ * consulting `isOpenOn` itself rather than restating it. It had no caller
+ * anywhere in `src/`, so a house at war held its seat and the engine went on
+ * answering that anybody could walk onto it.
+ *
+ * So this reads the fuller predicate where it read the narrower one. The two
+ * reasons stay distinct in `PassageReading` for anybody who needs to tell a
+ * shut pass from somebody's decision; what `attempt` needs is the disjunction,
+ * which is what `stopped` is.
+ *
+ * `ground` is optional because `onDay` already is: a caller not asking about a
+ * day is not asking about what is true on one. Where a day IS given and the
+ * ground is not, the answer is the season alone, exactly as before.
+ */
 export function subjectFromLocation(
     location: LocationRecord,
-    onDay: number | null = null
+    onDay: number | null = null,
+    ground: GroundAroundALocation | null = null
 ): CapabilitySubject {
+    const shut = onDay === null
+        ? false
+        : ground === null
+            ? !isOpenOn(location, onDay)
+            : passageStoppedInArea(ground.statuses, ground.locations, location, onDay).stopped;
     const subject = makeSubject({
         kind: 'location',
         id: location.id,
@@ -1012,7 +1057,7 @@ export function subjectFromLocation(
         tags: location.tags.slice(),
         sealed: location.sealed,
         keyId: location.data.keyId == null ? null : String(location.data.keyId),
-        windowClosed: onDay === null ? false : !isOpenOn(location, onDay),
+        windowClosed: shut,
         comprehensionKeys:
             location.data.comprehensionKey == null ? [] : [String(location.data.comprehensionKey)]
     });
