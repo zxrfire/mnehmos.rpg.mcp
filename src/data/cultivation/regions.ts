@@ -2948,6 +2948,53 @@ export const UngovernedGroundSchema = z.object({
 });
 export type UngovernedGround = z.infer<typeof UngovernedGroundSchema>;
 
+/**
+ * NONE OF THE BELOW IS SOMEWHERE ANYBODY CAN STAND. Measured, and written here
+ * rather than in a report, because an absence nobody has written down gets
+ * mistaken for a design decision.
+ *
+ * `THE_BLOWN_GROUND` is not in `REGIONS`, and `REGIONS` is the only thing
+ * `cultivationCatalog` reads - so `seedRegions` mints no location for it, none
+ * of its `places` becomes a settlement, no road links it to anything, nobody
+ * is born on it and nobody stands on it. On a seeded world: 944 locations,
+ * five of them regions, and not one of them this. Typing
+ * `ADMIN set_location location=The Blown Ground` comes back *"is not a place.
+ * The map has no entry for it under that name or anything close enough to be
+ * sure of."*
+ *
+ * Nothing in `src/` reads `THE_BLOWN_GROUND`, `UNGOVERNED_GROUND`,
+ * `ungovernedGroundBordering`, `leakageInto` or `canAdvanceOnUngoverned`
+ * either. The only readers are two catalog tests. So the eleven days of sand,
+ * the shows, the Meet, the finders, the six parties working it and the
+ * argument about why the Low Fall's whole position rests on it are, mechanically,
+ * a very good page of prose - the exact defect `AGENTS.md` calls *a module
+ * nothing calls*, at the scale of a province.
+ *
+ * What making it real would take, in the order the dependencies run:
+ *
+ *   1. A `Region` row. `UngovernedGround` is a richer shape than `Region` and
+ *      does not satisfy it - no `localRankNames`, no `connections`, no
+ *      `localCeilingOrdinal` by that name - so this is either a projection
+ *      into `REGIONS` or a second arm in `cultivationCatalog`. The projection
+ *      is smaller and keeps one seeder.
+ *   2. `connections` to the four bordering arms, at `theRouteNobodyTakes`'s
+ *      own `directDays`. Without an edge the travel graph cannot reach it and
+ *      the shorter fifth road stays a sentence.
+ *   3. `politics: 'no_authority'`. That one field is what
+ *      `ground-holder.ts` reads to answer "nobody holds this", which is the
+ *      floor of the trust term and the only mechanical consequence of being
+ *      ungoverned that currently exists.
+ *   4. A decision about the shows, which is the part that is genuinely new
+ *      work rather than wiring: a surfacing is dense ground with a life of a
+ *      season to nine years, and `LocationRecord` has no expiry. The nearest
+ *      existing machinery is `OpportunityWindow` in `opportunities.ts` and
+ *      `AreaStatus` in `what-is-true-of-a-place-right-now.ts`, and which of
+ *      the two owns a patch of ground that closes is a design question rather
+ *      than a port.
+ *
+ * Steps 1 to 3 are an afternoon and would make it ground a player can walk to
+ * and be disbelieved on. Step 4 is the province's actual subject.
+ */
 export const BLOWN_GROUND_ID = 'ungoverned-blown-ground';
 
 export const THE_BLOWN_GROUND: UngovernedGround = {

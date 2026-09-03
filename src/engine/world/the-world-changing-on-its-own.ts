@@ -102,9 +102,11 @@ import {
 import {
     haveTheyWorkedItOut,
     resolveAttempt,
+    theGroundUnderYou,
     whatTheyDoAboutIt,
     type AskWeight
 } from '../social-leverage/index.js';
+import { whoHoldsTheGround } from './ground-holder.js';
 import { addLineageEdge, createLineageRecord } from './lineage.js';
 import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { bloodlineForChild } from './hunting-a-spirit-beast.js';
@@ -159,6 +161,7 @@ import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
 import { applyGatherings } from './gatherings.js';
+import { whatAWarBreaks } from './war-breakage.js';
 import {
     postingFor,
     reasonsOpenTo,
@@ -206,6 +209,7 @@ import {
     extendStatus,
     liftStatus,
     makeAreaStatus,
+    statusesInArea,
     type AreaStatus
 } from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
@@ -265,6 +269,15 @@ export type PressureKind =
     | 'market_shifted'
     | 'war_opened'
     | 'war_settled'
+    /**
+     * A war reached something one of the sides owned.
+     *
+     * Not in TEMPLATES, for the same reason `gathering` is not: what a war
+     * costs a house physically is a property of the war rather than of how
+     * eventful the year happened to be. `war-breakage.ts` owns all of it, and
+     * this module only calls it on the same yearly line the settlement runs on.
+     */
+    | 'thing_broken'
     | 'zone_forbidden'
     | 'migration'
     | 'disappearance'
@@ -425,6 +438,29 @@ export function applyPressure(
         // span, so mortal stock could not fall by any actor and a thousand
         // world-years produced no worked-out band anywhere.
         applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
+        // And what a war did to the things the two sides own, on its own
+        // seeded stream so no existing draw anywhere moves. BEFORE the
+        // settlement, so a war ending this year still had this year - and it
+        // is the only pass anywhere that costs a house something physical for
+        // being at war. See `war-breakage.ts`, which does the whole of it and
+        // is deliberately ignorant of what any of the things are.
+        for (const lost of whatAWarBreaks(
+            state,
+            withinSpan(year * 365 + 61, fromDay, toDay),
+            forStream(state.seed, 'war-breakage', year)
+        )) {
+            events.push({
+                kind: 'thing_broken',
+                onDay: lost.fact.day,
+                fact: lost.fact,
+                touched: {
+                    factions: [lost.ownerId, lost.breakerHouseId],
+                    locations: lost.fact.locationId ? [lost.fact.locationId] : [],
+                    npcs: [lost.breakerId]
+                },
+                deaths: []
+            });
+        }
         // Wars that reached the day they were scheduled to end. BEFORE the
         // statuses, so a war that ended this year is a road open this year.
         events.push(...settleWarsThatAreOver(state, withinSpan(year * 365 + 62, fromDay, toDay)));
@@ -4441,6 +4477,20 @@ const TEMPLATES: Template[] = [
                     : built >= 0.25 ? 'a_real_favour'
                         : 'a_courtesy';
 
+            // ── AND WHERE THIS IS HAPPENING. ────────────────────────────
+            //
+            // The design owner's ruling that trust depends on where you are
+            // standing. Read off the subject's ground, because the approach
+            // goes to them: `whoHoldsTheGround` walks the containment chain
+            // and the prefecture register, and `theGroundUnderYou` prices it
+            // on whether anybody here answers for what is done. Computed once
+            // and reused across the campaign's visits - a year of calling on
+            // the same person is a year in the same town.
+            const ground = theGroundUnderYou(
+                whoHoldsTheGround(state.locations, subject.locationId),
+                statusesInArea(state.statuses, state.locations, subject.locationId, day)
+            );
+
             const result = resolveAttempt({
                 actor: {
                     id: actor.id, name: actor.name,
@@ -4449,6 +4499,7 @@ const TEMPLATES: Template[] = [
                     factionId: actor.factionId,
                     alignment: actorFaction?.alignment ?? null
                 },
+                where: ground,
                 subject: {
                     id: subject.id, name: subject.name,
                     ordinal: subject.cultivation.realmOrdinal,
@@ -4514,6 +4565,7 @@ const TEMPLATES: Template[] = [
                             factionId: actor.factionId,
                             alignment: actorFaction?.alignment ?? null
                         },
+                        where: ground,
                         subject: {
                             id: subject.id, name: subject.name,
                             ordinal: subject.cultivation.realmOrdinal,

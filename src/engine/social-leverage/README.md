@@ -138,6 +138,70 @@ The `purse` term is three constraints and no fourth:
 `PURSE_MAX` is 0.2, deliberately under one realm of standing and under a tie at
 full strength. Money is a term and it is never **the** term.
 
+## The ground is a term too, and it is the one that is only half wired
+
+The design owner's ruling:
+
+> And the trust system, it should also depend on WHERE YOU ARE. a righteous sect's town
+> is much easier for you to trust in than a demonic sect town.
+
+`ground-trust.ts` is that term. Measured before it existed, with one sentence put to three
+people on one seed: the odds breakdown was term-for-term identical on a righteous house's
+ground, on a demonic house's ground and in a town the register carries with nobody's name
+against it. **The same stranger saying the same thing was worth the same everywhere in the
+world.**
+
+**It is not an alignment table**, and that is the whole of the design. The question asked is
+not what kind of house holds the ground - it is what that house DOES when somebody is
+wronged on it, which is `whenItIsDoneToOneOfOurs` and is called rather than copied. So the
+axis is recourse, the reach table is keyed on `HouseResponse` and not on an alignment, and a
+fourth alignment tomorrow changes that one function and this one inherits it.
+
+That also settles the ordering, and it is the catalog's rather than anybody's taste:
+
+```text
+taken_up              somebody answers for what happens here          +GROUND_MAX
+collected             there is an authority; its interest is its own  +a quarter of it
+the_member_is_priced  the house does not answer for its own people    -0.6 of it
+none                  nobody answers for anything. The floor          -GROUND_MAX
+```
+
+**Unheld ground sits below a demonic house**, because `THE_BLOWN_GROUND.whatItMakesTrue`
+argues it at length: the neighbours tolerate houses that eat their own disciples because
+those houses answer a letter, keep a compound at a fixed address and can be arbitrated
+against. Recourse is the axis and a demonic house is a correspondent.
+
+`GROUND_MAX` is 0.12 - under a realm of standing, under a tie, under a purse and under a
+disposition - and the term is damped by whatever tie the subject already holds, because the
+ruling is about a STRANGER. Somebody who has known you thirty years reads you the same in a
+market town and in a demonic house's forecourt.
+
+Where it comes from is `engine/world/ground-holder.ts`: the `controllingFactionId` column
+walked up the containment chain, then `PREFECTURES` in the region catalog - which carries
+`seat`, `places` and a `heldByFactionId` documented in place as *"null is a real answer...
+ground the record carries with no name against it"*, and which **nothing in `src/` had ever
+read** - then the region's own `politics`.
+
+### It binds the world and not yet the player, which is half a feature
+
+`the-world-changing-on-its-own.ts` fills `AttemptInput.where` at both of its
+`resolveAttempt` calls, so every manoeuvre any NPC runs on any other is now priced on the
+ground it happens on. **`GameService.pressSomebody` in `web/game.ts` does not**, and until it
+does this is the repo's commonest defect with the arms reversed: a rule that binds NPCs and
+not the player. The file was held by another agent when this landed. What it needs is two
+lines beside the `theirTie`/`ledger` block already there:
+
+```ts
+where: theGroundUnderYou(
+    whoHoldsTheGround(world.state.locations, effectiveLocationId(...)),
+    statusesInArea(world.state.statuses, world.state.locations, locationId, day)
+),
+```
+
+and, for the sentence rather than only the number, `theGround: ground.why` on the
+`whatTheAskCameTo` call - `saying-what-an-ask-cost-and-how-likely-it-was.ts` already names
+the term in the mechanical channel without it.
+
 ## Two people at the same rung of the same house are not the same door
 
 The design owner's ruling:

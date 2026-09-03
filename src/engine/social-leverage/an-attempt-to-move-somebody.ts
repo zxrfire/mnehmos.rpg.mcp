@@ -49,6 +49,20 @@
  *     the room   discreet leverage does not survive an audience.
  *     who they   how freely THIS PARTICULAR PERSON parts with things, which is
  *      are       a fact about them and not about their house. See DISPOSITION.
+ *     the ground where the two of them are standing, priced by whether anybody
+ *                answers for what is done here. Supplied by the caller and
+ *                weighing nothing when it is not. See `./ground-trust.ts`.
+ *
+ * AND THE GROUND IS NOT A HOLE IN "CHARM WORKS EVERYWHERE"
+ * -------------------------------------------------------
+ * The ruling this module is built around is that no house anywhere makes
+ * somebody unaskable, and it is unchanged: nothing here reads `subject.faction-
+ * Id` or `subject.alignment`, and the two tests that pin it still pass, because
+ * they vary the person being asked. What the ground term varies is the PLACE,
+ * which is a different fact about a different party - and the design owner
+ * ruled on it separately: *"a righteous sect's town is much easier for you to
+ * trust in than a demonic sect town."* A demonic elder is exactly as reachable
+ * as anybody else; standing on their house's ground is what has changed.
  *
  * FIVE OUTCOMES, BECAUSE TWO IS NOT PLAY
  * --------------------------------------
@@ -120,6 +134,7 @@ import type {
     Significance
 } from '../social/relationships.js';
 import type { DayIndex } from '../social/common.js';
+import { groundTrustWeight, type TheGroundUnderYou } from './ground-trust.js';
 import { openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -433,6 +448,23 @@ export interface AttemptInput {
      * `regard.ts` for the standing term. It never reads `intent`.
      */
     approach?: Approach;
+    /**
+     * The ground the two of them are standing on.
+     *
+     * The design owner's ruling that trust depends on WHERE YOU ARE, and it is
+     * an explicit input for the same reason `theAttemptLands` is: this resolver
+     * is pure, and a term that reached out for the world's locations would make
+     * its answer depend on something its seed does not carry. The impure caller
+     * reads the place and fills it - `whoHoldsTheGround` in
+     * `engine/world/ground-holder.ts`, then `theGroundUnderYou` in
+     * `./ground-trust.ts`, which is where the whole of the judgement lives.
+     *
+     * Absent is a real answer and means the caller does not know where this is
+     * happening, which weighs nothing. It must not be confused with ground
+     * nobody holds, which weighs a great deal - see `GroundHolding`, where the
+     * two are deliberately different rows.
+     */
+    where?: TheGroundUnderYou | null;
     /**
      * The subject's view of the actor, if there already is one.
      *
@@ -777,7 +809,16 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         ask: round4(ask),
         purse: round4(purseWeight(input)),
         room: round4(room),
-        disposition: round4(dispositionWeight(input))
+        disposition: round4(dispositionWeight(input)),
+        // WHERE THIS IS HAPPENING. Damped by the tie the subject already holds,
+        // because the ruling is about the same STRANGER saying the same thing:
+        // somebody who has known you thirty years reads you the same in a
+        // market town and in a demonic house's forecourt.
+        ground: round4(groundTrustWeight({
+            ground: input.where ?? null,
+            ask: input.ask,
+            theirTieStrength: input.theirTie?.active ? input.theirTie.strength : 0
+        }))
     };
 
     const raw = Object.values(terms).reduce((sum, n) => sum + n, 0);

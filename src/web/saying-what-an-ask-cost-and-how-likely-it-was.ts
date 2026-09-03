@@ -189,7 +189,11 @@ const WHAT_EACH_TERM_IS: Readonly<Record<string, string>> = {
     // Named as a fact about the PERSON and never about their house, because the
     // ruling behind the term is that the two do not predict each other: kind
     // elders exist exactly as grasping demonic cultivators do.
-    disposition: 'how freely this particular person parts with things'
+    disposition: 'how freely this particular person parts with things',
+    // Named as the GROUND and never as the house that holds it, because the
+    // term is priced on whether anybody answers for what is done here rather
+    // than on what kind of house is standing over it. See `ground-trust.ts`.
+    ground: 'the ground this is happening on'
 };
 
 const points = (value: number): string => {
@@ -298,6 +302,18 @@ export interface AnAskThatWasPut {
      * Absent where the term read zero, which is the ordinary case.
      */
     theNeed?: string;
+    /**
+     * Why the ground weighed what it did, in the words `ground-trust.ts` owns.
+     *
+     * A whole sentence rather than a fragment, so it is said as its own
+     * sentence rather than spliced into the term clause the way `theNeed` is -
+     * *"Nobody holds The Drowned Reach, and everybody has noticed"* is not a
+     * phrase that fits inside "the ground this is happening on cost 12 points".
+     *
+     * Absent is the ordinary case and costs nothing: the term still appears in
+     * the breakdown with its own name, and this is the route attached to it.
+     */
+    theGround?: string;
     /** True once the caller has actually written the records down. */
     wroteToTheLedger?: boolean;
     reachedTheHouse?: boolean;
@@ -317,12 +333,16 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
     const attempt = put.priorAsks > 0
         ? ` This was attempt ${put.priorAsks + 1} at it.`
         : '';
+    // The route the ground term names, said once wherever the caller supplied
+    // it. A term with a number and no reason is the thing this file exists to
+    // stop being printed.
+    const ground = put.theGround ? ` ${put.theGround}` : '';
 
     if (put.outcome === undefined) {
         return `${put.subject}, asked ${what} with ${table}: not put, only weighed. `
             + `It is ${weight}, and it would come off ${howOftenThisLands(put.odds)}. `
-            + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${attempt} No day passed and nothing `
-            + 'changed hands.';
+            + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${ground}${attempt} No day passed `
+            + 'and nothing changed hands.';
     }
 
     // The stones are said even at zero, for the same reason the unmoved terms
@@ -349,7 +369,7 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
     return `${put.subject}, asked ${what} with ${table}: `
         + `${resolved(HOW_IT_WENT, put.outcome)}. It is ${weight}, and it comes off `
         + `${howOftenThisLands(put.odds)}.${attempt} `
-        + `${theTermsInWords(put.terms, put.odds, put.theNeed)} `
+        + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${ground} `
         + `${spent}. ${after}.`;
 }
 
