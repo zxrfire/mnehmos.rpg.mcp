@@ -603,6 +603,17 @@ export type RoomPurpose =
     | 'ancestral_hall'
     | 'under_hall'
     | 'treasury'
+    /**
+     * Where a house holds one of its own.
+     *
+     * The only room in this list that seals a PERSON rather than a thing, and
+     * that is the whole of why it is not `under_hall`: an under hall keeps
+     * something asleep and a punishment hall keeps somebody awake. It exists
+     * because a portfolio has to be a room somebody is in charge of, and the
+     * design owner's own example - *"punishment elder (you control the
+     * jails)"* - was the one office in the world with nowhere to be.
+     */
+    | 'punishment_hall'
     | 'residence'
     | 'formation_node';
 
@@ -651,6 +662,16 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // ── The inner end. Where the house keeps what it will not spend. ─────
     ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, capacityPer: 0.1, hazards: [] },
     under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
+    // THE ONE ROOM CUT TO BE BAD GROUND, and the negative lift is the whole
+    // mechanism rather than decoration. Every other room in this table either
+    // leaves the ground alone or improves it; this one is built to take the
+    // vein away from whoever is in it, so time spent here is time off the
+    // ladder. That is what makes holding somebody a punishment instead of an
+    // inconvenience, and it is read by anything that prices a stay rather than
+    // being asserted anywhere. Obvious enough that everybody in the house knows
+    // where it is - a discipline hall nobody can find deters nobody - and
+    // sealed, because what it holds can walk.
+    punishment_hall: { kind: 'vault', depth: 0.65, obviousness: 0.5, qiLift: -10, sealed: true, capacityPer: 0.04, hazards: ['formation'] },
     treasury: { kind: 'vault', depth: 0.9, obviousness: 0.25, qiLift: 0, sealed: true, capacityPer: 0.03, hazards: ['formation'] },
     // No qi lift. What seniority buys here is space and privacy, not a better
     // vein - a residence is a room and the ground under it is the ground under
@@ -663,6 +684,26 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
 };
 
 export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
+
+/**
+ * Whether a room is one somebody is in charge of, and how far in it sits.
+ *
+ * Two fields off the private table rather than the table itself, because the
+ * only question anybody outside this file has about a purpose is whether it has
+ * a bar on it. **Sealed is the whole of the criterion**: nobody is Elder of the
+ * Forecourt, and a room people walk through is not an office. Measured across
+ * the catalog when this was written, the sealed rooms per house came out at
+ * almost exactly the deciders per house, which is why no threshold is applied
+ * here - the model was already in the table.
+ *
+ * `depth` comes with it so a caller handing several rooms to several people can
+ * put the deepest one in the most senior hands without a second opinion about
+ * which room that is.
+ */
+export function roomAuthorityOf(purpose: RoomPurpose): { sealed: boolean; depth: number } {
+    const spec = PURPOSE[purpose];
+    return { sealed: spec.sealed, depth: spec.depth };
+}
 
 /** The purpose a location was built for, or null when it was not built by us. */
 export function purposeOf(location: LocationRecord): RoomPurpose | null {
@@ -700,6 +741,7 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'vein_chamber': return 'the vein chamber';
         case 'ancestral_hall': return 'the ancestral hall';
         case 'under_hall': return 'the chamber under the ancestral hall';
+        case 'punishment_hall': return inward ? 'the held cuts' : 'the discipline hall';
         case 'treasury': return 'the treasury';
         case 'residence': return `the ${precinct.rank.toLowerCase()}'s residence`;
         case 'formation_node': return 'a formation node';
@@ -910,6 +952,13 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     if (input.governance === 'deference' || input.governance === 'administered') out.push('audience_hall');
     if (input.tributeStonesPerYear > 0) out.push('tribute_room');
     if (input.holdsVein) out.push('vein_chamber');
+    // Somewhere to hold one of your own, and it takes both columns. A house
+    // that takes nobody in has nobody to discipline - what an apex does about
+    // an offence is not done in a cell - and a house whose arrays have gone
+    // dark cannot hold a cultivator anyway, which is the same
+    // `formationIntegrity` bar the shelf line above already reads rather than
+    // a second opinion about when a house's formations still work.
+    if (input.recruits && input.formationIntegrity >= 0.35) out.push('punishment_hall');
     out.push('meditation_cell');
     if (input.production >= 0.4 || input.powerOrdinal >= 25) out.push('treasury');
     out.push('residence');
