@@ -2425,6 +2425,31 @@ The shape that made this worth a section: a per-house rank title, read at **sixt
 
 **This is not the unwired-system defect and the existing entries will not catch it.** Nothing was uncalled and no field was unwritten - the array was read constantly. What was missing was anybody noticing that one index meant something the others did not. So it needs its own tell, and the tell is cheap: **grep for `?? '` and ask, for each hit, whether the literal is a real default or a stand-in for a lookup somebody did not finish.**
 
+### Compare against what the function actually returns, or the check is a constant
+
+**`matchIntent(...) !== null` is always true when `matchIntent` returns `undefined`.** The
+guard reads as a check, reviews as a check, and is a constant - so the half of the condition
+behind it never runs, and the branch quietly collapses to whatever else it was testing.
+
+The shape that made this worth a section: a sect handler gated on a verdict being present
+**and** a complaint noun being in the sentence. The verdict half was dead, `case` is an
+ordinary English word, and so *"I put my case to the elders"* was answered as somebody
+deciding a complaint - as was *"my case"* on its own. A corpus guard caught it only because
+the phrasing belonged to another verb; nothing about the call site looked wrong.
+
+**It is the `?? '` defect's twin and the same grep will not find it.** There the fallback
+fires and carries a wrong answer; here the condition never fires and carries none. Both read
+as defensive code, both survive review, and neither shows up as an uncalled system.
+
+**The tell:** for every `!== null`, `=== null`, `!= undefined` and truthiness test on a call,
+check the callee's return type rather than the variable's name. `null` and `undefined` are
+different values and TypeScript will not object to comparing against the wrong one. Where a
+function can return either, `== null` covers both and says so on purpose.
+
+**And a two-part condition wants both parts exercised.** If one half being permanently true
+would still let the tests pass, the tests are pinning the other half only - which is exactly
+what happened here.
+
 ### The scratchpad is shared between agents in a session
 
 **Two agents will overwrite each other's scratch files.** Name yours after your task rather than after what it does - `census-seat-uses.mjs`, not `probe.mjs` - and do not assume a file you wrote is still yours when you come back to it. If a measurement matters, capture the numbers into your report rather than leaving them in a file.
