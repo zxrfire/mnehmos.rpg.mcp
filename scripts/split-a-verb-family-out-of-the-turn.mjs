@@ -224,12 +224,23 @@ function stripCode(s) {
     return out.join('');
 }
 
+/**
+ * Names the text uses that something else has to provide.
+ *
+ * Member access is stripped POSITIONALLY rather than by name, and that
+ * distinction is the whole of a bug that cost a family. `refused` is a free
+ * function here and also a property - `outcome.refused ? ... : ...` - and
+ * deleting the NAME from the set on account of the property use dropped its
+ * import too. The module was written calling a function it had not imported.
+ *
+ * So the property occurrences are removed from the text first, leaving any
+ * free occurrence of the same name to be found normally. A dot not preceded by
+ * another dot is member access; `...x` is a spread, not a property.
+ */
 function freeIdentifiers(text) {
-    const code = stripCode(text);
-    const used = new Set(code.match(/\b[A-Za-z_][A-Za-z0-9_$]*\b/g) ?? []);
-    // A dot NOT preceded by another dot is member access; `...x` is a spread.
-    for (const m of code.matchAll(/(?<!\.)\.\s*([A-Za-z_][A-Za-z0-9_]*)/g)) used.delete(m[1]);
-    return used;
+    const code = stripCode(text)
+        .replace(/(?<!\.)\.\s*[A-Za-z_][A-Za-z0-9_]*/g, '.');
+    return new Set(code.match(/\b[A-Za-z_][A-Za-z0-9_$]*\b/g) ?? []);
 }
 
 // ─── rebuilding an import block off the source file's own imports ─────────
