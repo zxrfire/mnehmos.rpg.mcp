@@ -2325,10 +2325,23 @@ being defeated.
 
 ### World state regenerates from a seed. Do not write code to preserve it
 
-**A migration that would be delicate against real records is not delicate here.** The houses,
-the people, the ground and everything the world derived from them come back identically from
-the same world seed, so a database in a bad state is a database to rebuild rather than a
-dataset to rescue.
+**A migration that would be delicate against real records is not delicate here**, and for two
+separate reasons worth keeping apart:
+
+- **The catalog is source, and the database is a projection of it.** Ru Anjing, her sister,
+  the named houses, the rated objects and the arts all live in `src/data/cultivation/` as
+  TypeScript. They are in the repo. **They are always here**, in every world, whatever the
+  seed, and no migration can lose them because no migration is where they are kept.
+- **What the world rolled comes back from the same seed.** The generated roster, the ground,
+  the ties - identical inputs, identical output.
+
+So a database in a bad state is a database to rebuild, not a dataset to rescue. **What is
+irreplaceable is what somebody authored, and that is in git, not in SQLite.**
+
+**And a fresh database is immediately playable**, which is what makes this cheap in practice
+rather than only in principle. The catalog seeds enough named people, houses and ground to
+play against on the first turn, so wiping and re-seeding is a routine step while working -
+not a disruption to plan around, and not a reason to keep a broken schema alive.
 
 The practical consequence is about **where the effort goes**. When a schema change collides
 with existing rows - a constraint that will not apply, a column that must change type, a
