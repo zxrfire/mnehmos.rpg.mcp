@@ -483,7 +483,26 @@ export type LeadershipAct =
     | 'set_admission'
     | 'set_curriculum'
     | 'expel_elder'
-    | 'grow';
+    | 'grow'
+    /**
+     * Being asked and saying no, which is the only act on this list that the
+     * bottom rung can perform.
+     *
+     * Every other member of this type is something a rank BUYS - `POWERS_BY_TIER`
+     * gates all seven, and `ordered` holds none of them. That asymmetry was the
+     * whole shape of the defect: standing is spent by people who run things and
+     * recovers at `STANDING_PER_YEAR` for everybody else, so an ordinary member's
+     * credit with their house only ever went up, and `backlashLevel`,
+     * `obstructionChance` and `dismissedFromTheHouse` were unreachable for the
+     * people the house actually holds.
+     *
+     * Refusing is not gated, because being asked is not gated. It runs through
+     * `resolveAct` beside the seven so that a house's answer to being turned down
+     * is the same escalation as its answer to anything else - and the non-head
+     * branch of that ladder, which nothing could previously reach, is what a
+     * member being thrown out of their own house IS.
+     */
+    | 'refuse';
 
 export interface ActCost {
     act: LeadershipAct;
@@ -999,6 +1018,101 @@ export function resolveAct(house: HouseState, cost: ActCost): ActOutcome {
         dismissedFromTheHouse: !house.isHead && standingAfter <= CHALLENGE_AT,
         years: Math.max(0, cost.years),
         insult: cost.insult
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAYING NO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * How bad the house wrote it down as.
+ *
+ * Structurally the `Severity` of `engine/social/grudges.ts`, declared rather
+ * than imported because this module has no imports at all and is worth keeping
+ * that way. The caller passes `duty.refusal.severity`, which `refusalFor` in
+ * `encounters/duties.ts` has already derived from the scale and the tags - so
+ * the band is decided once, where the duty is priced, and read here.
+ */
+export type RefusalSeverity = 'slight' | 'serious' | 'grave' | 'unforgivable';
+
+/**
+ * What being turned down costs the person who did it, by the band the house
+ * itself wrote on the ask.
+ *
+ * ── WHY A TABLE AND NOT A FORMULA ────────────────────────────────────────
+ *
+ * The other six costs in this file multiply a named constant by a quantity the
+ * world already carries - ordinals moved, methods retired, elders hired,
+ * hand-days spent. A refusal has no such quantity. What is available on a
+ * `Duty` is `contribution` and `stones`, which are LEDGER units, and turning
+ * either of them into standing would be inventing a conversion between two
+ * currencies the game has deliberately kept apart. `cohort` is available too
+ * and runs the wrong way: it falls with rank, so pricing on it would make a
+ * senior's refusal cheaper than a servant's.
+ *
+ * So the quantity is the band, and the band is derived rather than authored -
+ * `refusalFor` reads `scale` and the catalog's own tags and never the house.
+ * A fifth band is a row here and nothing else, which is the test this file
+ * applies to everything else in it.
+ *
+ * ── THE CALIBRATION, AGAINST THE LADDER THAT ALREADY EXISTS ──────────────
+ *
+ * A member joins at `STANDING_ON_JOINING` (50) and recovers `STANDING_PER_YEAR`.
+ * `OBSTRUCTION_AT` is 0 and `CHALLENGE_AT` is -60, which for somebody who is not
+ * the head is `dismissedFromTheHouse`. So the distance from a fresh membership to
+ * being thrown out is 110, and these four numbers are chosen to divide it into a
+ * legible count of refusals:
+ *
+ *     slight        6   an errand on a local road. ~18 of them to be dismissed
+ *     serious      14   something with a threat in it, or somebody needing help
+ *     grave        30   a tide, a recall, an obligation the house is under
+ *     unforgivable 60   desertion from a war. The first puts a new member past
+ *                       obstruction; the second puts them out of the house
+ *
+ * None of it is free and none of it is instant, which is the two things the
+ * design owner asked for: standing must move down, and one bad day must not be
+ * the end of a membership. `shieldedCost` still applies on top, so somebody with
+ * a following of their own survives longer than somebody without one - the
+ * existing model doing its own work rather than a special case for refusal.
+ */
+export const REFUSAL_COST_BY_SEVERITY: Readonly<Record<RefusalSeverity, number>> = {
+    slight: 6,
+    serious: 14,
+    grave: 30,
+    unforgivable: 60
+};
+
+/**
+ * Price a refusal as an act, so being turned down and being obeyed run on one
+ * spine - the same reason {@link errandCost} exists.
+ *
+ * `years` is zero on purpose. Saying no takes an afternoon; what takes years is
+ * what the house does about it afterwards, and that is the escalation ladder's
+ * to spend rather than this function's to charge.
+ */
+export function refusalCost(
+    severity: RefusalSeverity,
+    /**
+     * Whether the house asked for this person by name, or they signed for it
+     * off a wall.
+     *
+     * It changes only the sentence. A summons refused and a commission dropped
+     * are the same size of thing to the ledger - `refusalFor` has already
+     * folded the difference into the band - but they are not the same act to
+     * the person who has to write it down, and the narrator should not have to
+     * guess which happened.
+     */
+    origin: 'summons' | 'commission'
+): ActCost {
+    return {
+        act: 'refuse',
+        standingCost: REFUSAL_COST_BY_SEVERITY[severity],
+        standingEarned: 0,
+        years: 0,
+        insult: origin === 'summons'
+            ? 'Somebody was sent to ask you by name, went back without you, and had to say so out loud to the person who sent them.'
+            : 'You put your name to it and the work went undone, which the people who covered it will know about before you are back through the gate.'
     };
 }
 

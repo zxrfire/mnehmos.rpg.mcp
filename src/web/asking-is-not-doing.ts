@@ -518,6 +518,23 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             }
             return plan.intent === undefined || plan.intent === 'join'
                 ? { action: 'sect' }
+                // ── ASKING WHAT REFUSING COSTS MUST NEVER REFUSE ─────────
+                //
+                // `summons` IS the read - what the house has asked and what
+                // saying no would take - so it is kept rather than coarsened,
+                // for the same reason `duty` and `siphon` are. And `refuse`
+                // asked as a question is that read: this is the one branch in
+                // this file where the costly act writes a grudge held by the
+                // player's own house against them, and answering "what happens
+                // if I refuse" by refusing is the exact shape this whole module
+                // was written to prevent.
+                //
+                // Falling through to `standing` was not harmless either. It
+                // answered a question about a standing summons with a rank and
+                // a contribution figure and never mentioned the ask at all -
+                // the deflection failure, which reads like an answer.
+                : plan.intent === 'summons' || plan.intent === 'refuse'
+                    ? { action: 'sect', intent: 'summons' }
                 : plan.intent === 'duty' || plan.intent === 'siphon'
                     // Both of these have a READ mode reached by naming nothing
                     // further: the wall, and the position of the reserves.
