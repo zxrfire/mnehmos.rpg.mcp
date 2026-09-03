@@ -25,7 +25,17 @@
 
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
-import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
+import {
+    PLAYER_ROLL_IDENTITY,
+    cutTo,
+    daysActuallySpent,
+    encountersFor,
+    recordEncounters,
+    withEncounterDeltas
+} from '../../web/encounters.js';
+import { KnowledgeGate } from '../../web/knowledge.js';
+import { worldForRun } from '../state/cultivation-world.js';
+import type { EncounterActivity } from '../../engine/encounters/types.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -636,8 +646,85 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         });
     }
 
+    // ══ WHO REACHES THEM WHILE THE SPAN RUNS ═════════════════════════════
+    //
+    // ── THE DEFECT THIS CLOSES ───────────────────────────────────────────
+    //
+    // The encounter pipeline - `encountersFor` -> `withEncounterDeltas` ->
+    // `recordEncounters` - had exactly ONE caller in the repository:
+    // `seclusion-verbs.ts`. So the only span in which a real person could
+    // reach the player was the one where they had chosen to sit down and
+    // cultivate. Every other span - `work`, and anything else routed through
+    // this handler - went through `simulateTimeSkip`'s own internal grid,
+    // which raises a `major_encounter` interrupt and nothing else. That file
+    // says so in its own words: nothing there materialises anybody.
+    //
+    // Sitting still was therefore a perfect shield, not because idle is safe
+    // but because the arrival machinery was wired only to the verb that is not
+    // idle. The design owner's ruling is the opposite - somebody can try to rob
+    // you while you are idle, and being idle stops you annoying people, not
+    // people from harming you.
+    //
+    // ── AND IT IS THE SAME SEQUENCE, NOT A SECOND ONE ────────────────────
+    //
+    // Deliberately the four steps in the order `encounters.ts` documents, with
+    // the same truncations, because a second arrival system built for this
+    // handler is exactly the fork that made the two paths disagree in the first
+    // place. Where the two spans differ is the ACTIVITY, which is a parameter
+    // the table already carries: `ARRIVAL_EXPOSURE` prices `labour` at 1.1 and
+    // `seclusion` at 0.55, so somebody earning among people is MORE exposed
+    // than somebody meditating. That ordering is the ruling, already written
+    // down, and it needed a caller rather than a number.
+    //
+    // `randomEvents: false` means no arrivals at all. That is what an operator
+    // standing a world up passes through `advance_days`, and being robbed while
+    // arranging a precondition is not a thing they asked for.
+    const activity: EncounterActivity = focus === 'travelling'
+        ? 'travel'
+        // Not cultivating is the whole of what `idle` says, and `labour` is the
+        // table's own row for spending a span earning rather than gathering qi.
+        // `activityForVerb` defaults to it for the same reason.
+        : focus === 'idle' ? 'labour' : 'seclusion';
+
+    let arrivals: ReturnType<typeof encountersFor> | null = null;
+    let lived = days;
+    let arrivingCultivator = cultivator;
+    if (args.randomEvents ?? true) {
+        try {
+            arrivals = encountersFor(
+                {
+                    repos,
+                    knowledge: new KnowledgeGate(repos.db),
+                    world: await worldForRun(run)
+                },
+                {
+                    seed: run.seed,
+                    startDay,
+                    days,
+                    activity,
+                    cultivator,
+                    // The row id is a randomUUID and would make the run
+                    // irreproducible from its seed. Same reason as the skip's
+                    // own `rollIdentity` below.
+                    rollIdentity: PLAYER_ROLL_IDENTITY
+                }
+            );
+            // Cut at the first thing that interrupts. THIS IS THE TURN: an
+            // arrival stops the span and hands control back, which is what
+            // separates being robbed from a die deciding you lost something.
+            lived = daysActuallySpent(arrivals, startDay, days);
+            arrivingCultivator = withEncounterDeltas(cultivator, arrivals);
+        } catch {
+            // A world that cannot be built is not a reason to lose the span.
+            // The cultivator's own time still passes; nobody arrives in it.
+            arrivals = null;
+            lived = days;
+            arrivingCultivator = cultivator;
+        }
+    }
+
     // ── THE SIMULATION. One call, however long the duration. ──
-    const result = simulateTimeSkip(cultivator, days, {
+    const result = simulateTimeSkip(arrivingCultivator, lived, {
         seed: run.seed,
         // Judged rather than copied, because the field defaults to the row id
         // and a caller with a stable id should pass nothing.
@@ -788,6 +875,28 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const after = repos.cultivators.getById(before.id)!;
     const runAfter = repos.runs.getById(run.id)!;
 
+    // ── STEP 4: what the arrivals left behind, AFTER the skip. ───────────
+    //
+    // After, because a knowledge record is a write and phase 3 only ever gets a
+    // licence to mention something that is already true.
+    //
+    // `cutTo` first, and it is not optional. The encounter layer cut its window
+    // at ITS first interrupt; the skip then stopped wherever it liked - a wound,
+    // a threshold, a death - and everything between those two days is a span the
+    // cultivator never reached. Without this, a run that ended on day 5 records
+    // the people it would have met on day 2995. `encounters.ts` carries three
+    // playtests that found exactly that.
+    //
+    // `repos` is passed, so ordinary contact accumulates into a real tie rather
+    // than every meeting being another first.
+    let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = null;
+    if (arrivals) {
+        const reached = cutTo(arrivals, startDay, result.simulatedDays);
+        arrivalsRecorded = recordEncounters(
+            new KnowledgeGate(repos.db), after, startDay + result.simulatedDays, reached, repos
+        );
+    }
+
     // ── THE WORLD MOVED TOO. ──
     // A ten-year seclusion is ten years of somebody else's decisions. The world
     // advances by exactly the span that was LIVED, not the span that was asked
@@ -813,10 +922,62 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         options
     );
 
+    // ── WHAT WAS ASKED FOR, NOT WHAT THE ARRIVAL LEFT OF IT ─────────────
+    //
+    // The skip was handed `lived`, so `result.requestedDays` is the span AFTER
+    // an arrival cut it, and reporting that would tell a caller who asked for
+    // ten years and got two hundred days that the whole span ran. That is the
+    // exact invisible-truncation defect `advance_days` was carrying, one layer
+    // down, and it would have arrived with this change.
+    const cutShortByAnArrival = lived < days;
+    // The one that stopped it. There is at most one, by construction: the
+    // window is cut at its first interrupting occurrence.
+    const interrupting = arrivals?.occurrences.find(o => o.interrupts) ?? null;
     return {
         cultivated: true,
-        requestedDays: result.requestedDays,
+        requestedDays: days,
         simulatedDays: result.simulatedDays,
+        // Somebody turned up and the span stopped so it could be answered.
+        // Null is the ordinary case and the honest one.
+        interruptedByAnArrival: cutShortByAnArrival
+            ? {
+                daysLived: result.simulatedDays,
+                daysUnspent: days - result.simulatedDays,
+                // ── IT HAS TO NAME WHAT ARRIVED ──────────────────────────
+                //
+                // Read off the interrupting OCCURRENCE, not off
+                // `RecordedEncounters.met`. `met` holds people whose standing
+                // moved - a relationship contact - and is empty for precisely
+                // the arrivals that stop a span: measured, four worlds out of
+                // four cut at day 120 by "8 bandits block the road at Kettle,
+                // strongest is Qi Condensation Layer 3", with `met` empty every
+                // time. Reporting that as an unnamed somebody would have been
+                // the withdrawn `ground` member in a different costume - a span
+                // that went badly rather than a thing that arrived.
+                what: interrupting?.kind ?? null,
+                account: interrupting?.event?.summary ?? null,
+                // Whether it can be answered rather than only suffered. A
+                // confrontation is the turn being handed back, which is the
+                // whole difference between being robbed and a die deciding it.
+                canBeAnswered: interrupting?.confrontation !== undefined
+                    && interrupting?.confrontation !== null,
+                note:
+                    'The span stopped because something reached them, not because the days ran ' +
+                    'out. Being idle is not a shield; what it buys is that nobody acquires a ' +
+                    'grievance with you, which is a different thing.'
+            }
+            : null,
+        // Everything the arrivals left. Engine-authored: `lines` is safe for a
+        // narrator, `structure` is the operator channel and is never narrated.
+        arrivals: arrivalsRecorded
+            ? {
+                met: arrivalsRecorded.met,
+                learned: arrivalsRecorded.learned,
+                lines: arrivalsRecorded.lines,
+                structure: arrivalsRecorded.structure,
+                activity
+            }
+            : null,
         simulatedYears: round2(result.simulatedDays / DAYS_PER_YEAR),
         stoppedEarly: result.interrupted,
         interruptReason: result.interruptReason,
@@ -894,7 +1055,9 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         // Set only when the world pass itself failed. The cultivation result
         // above still stands and was written; nothing about it is in doubt.
         worldUnavailable: worldError,
-        events: result.events.map(e => ({
+        events: [...result.events, ...(arrivalsRecorded?.events ?? [])]
+            .sort((a, b) => a.dayOffset - b.dayOffset)
+            .map(e => ({
             kind: e.kind,
             dayOffset: e.dayOffset,
             yearOffset: round2(e.dayOffset / DAYS_PER_YEAR),
