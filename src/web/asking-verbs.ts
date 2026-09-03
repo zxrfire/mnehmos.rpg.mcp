@@ -748,7 +748,10 @@ ${unnamed}`;
     whatALiftTook(
         this: GameService,
         cultivator: Cultivator,
-        party: ResolvedEntity
+        // An id and a name is all this reads, and widening it to that is what
+        // lets the coercion path take a purse without a second lift. A
+        // `ResolvedEntity` still satisfies it.
+        party: { id: string; name: string }
     ): { taken: number; hadBefore: number; loose: number } | null {
         // ── TWO PLACES A PERSON CAN LIVE, AND BOTH HAVE TO BE ROBBABLE ───
         //

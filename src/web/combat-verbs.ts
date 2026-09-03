@@ -30,7 +30,7 @@
  */
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
-import { getTechnique } from '../data/cultivation/index.js';
+import { getSect, getTechnique } from '../data/cultivation/index.js';
 import { requireRegion } from '../data/cultivation/regions.js';
 import { sectThreat } from '../data/cultivation/sects.js';
 import {
@@ -54,12 +54,20 @@ import {
     whatFollowsFromTheBout,
     type BoutTerms
 } from '../engine/social-leverage/index.js';
-import { createObligation } from '../engine/social/grudges.js';
+import { createObligation, severityRank } from '../engine/social/grudges.js';
+import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
+import { whatTheyDoAboutBeingWronged } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import type { InheritanceRelation, ObligationInput } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
-import { isRuined, revealOwnership, ruin } from '../engine/world/possessions.js';
+import {
+    isRuined,
+    isTracked,
+    revealOwnership,
+    ruin,
+    transferPossession
+} from '../engine/world/possessions.js';
 import { theNameTheVerbDropped } from './the-name-the-verb-dropped.js';
 import {
     whatTheConfrontationDidToThem
@@ -1061,6 +1069,16 @@ export const combatVerbs = {
                 this.db, cultivator.id, FLAG_YIELDING_TO_YOU,
                 `${held.party.id}:${run.turn}`
             );
+
+            // -- AND WHAT THEY WERE MADE TO KNEEL FOR --------------------
+            //
+            // Beside the flag rather than in `afterAFight`, because this is
+            // the one place the outcome is still typed as a submission. The
+            // strip offers this sentence, so the act has to run where the
+            // sentence lands.
+            if (held.wanted === 'hand_over') {
+                this.whatAYieldingHandedOver(run, cultivator, held, execution);
+            }
         }
 
         return this.afterAFight(run, cultivator, held, settled, execution);
@@ -1192,6 +1210,192 @@ export const combatVerbs = {
                 ok: true
             });
         }
+    },
+
+    /**
+     * What somebody hands over once they have yielded and been told to.
+     *
+     * -- A ROW THAT PROMISES A ROBBERY HAS TO PERFORM ONE -----------------
+     *
+     * `wanted` is a label, and `afterAFight` says so out loud: nothing in the
+     * engine branches on it. That is honest while a label is all anybody sees.
+     * It stops being honest the moment a strip OFFERS `hand_over` as a
+     * sentence to type, because the turn then reports success - the prose says
+     * they yielded - and nothing has moved. A player has no way to tell that
+     * from a robbery that worked, which makes it worse than a sentence that
+     * fails to parse.
+     *
+     * -- WHAT COMES ACROSS ------------------------------------------------
+     *
+     * The purse and the tracked things they are carrying, on the counted
+     * versus tracked line `items.md` draws and `siphon` and the library theft
+     * already use. Not their techniques and not their standing: neither is a
+     * thing a hand closes around.
+     *
+     * Both halves go through machinery that exists. The purse is
+     * `whatALiftTook`, which is the one function that moves stones off a
+     * person and already knows the two places a person can live. The objects
+     * are `transferPossession`, which is the one function that moves a row. A
+     * second transfer is how a world starts manufacturing its scarcest
+     * objects out of nothing, so there is not one here.
+     *
+     * -- OWNERSHIP DOES NOT MOVE ------------------------------------------
+     *
+     * `transfersOwnership` is left false. Taking a thing at knifepoint does
+     * not make it yours: `ownerId` still names them, `knownOwnershipBy` still
+     * says who could recognise it on sight, and the provenance link says
+     * `stolen` for as long as the object exists.
+     *
+     * -- AND THEY HAVE BEEN WRONGED TWICE ---------------------------------
+     *
+     * The beating is one wrong and the robbery is another, so the ledger
+     * carries both. Severity is not decided here:
+     * `whatTheyDoAboutBeingWronged` weighs the deed and `whatItWasWorth`
+     * weighs what it cost them relative to what they had, exactly as the lift
+     * path pairs them, and the heavier stands. The grudge id is keyed on the
+     * CAUSE, so this row sits beside the fight's rather than overwriting it.
+     *
+     * The reprisal is deliberately NOT run. Somebody who has just knelt is not
+     * also striking back in the same breath, and the fight's own fallout has
+     * already said what the room did. What lasts is the ledger, and that is
+     * the half this writes.
+     */
+    whatAYieldingHandedOver(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        execution: Execution
+    ): void {
+        const onDay = Math.floor(run.elapsedDays);
+        const stored = this.repos.cultivators.getById(held.party.id);
+        const npc = stored
+            ? null
+            : (this.atHand?.npcs ?? []).find(row => row.id === held.party.id);
+        const factionId = stored ? stored.sectId : (npc?.factionId ?? null);
+
+        // -- THE PURSE ----------------------------------------------------
+        const lifted = this.whatALiftTook(cultivator, held.party);
+
+        // -- AND THE THINGS -----------------------------------------------
+        //
+        // `isTracked` is the same single answer to which tier a row is in that
+        // the library theft uses, so what a coercion takes and what a siphon
+        // takes cannot start disagreeing.
+        const world = this.atHand;
+        const carried = world
+            ? world.objects.filter(row =>
+                row.possessorId === held.party.id && isTracked(row) && !isRuined(row))
+            : [];
+        for (const object of carried) {
+            const moved = transferPossession(object, {
+                onDay,
+                toHolderId: cultivator.id,
+                toHolderName: cultivator.name,
+                how: 'stolen',
+                source: held.party.name,
+                note: `Handed over by ${held.party.name}, who had been beaten into `
+                    + `submission by ${cultivator.name} and was standing there while it `
+                    + 'changed hands.'
+            });
+            const at = world!.objects.findIndex(row => row.id === object.id);
+            if (at >= 0) world!.objects[at] = moved;
+        }
+        if (carried.length > 0 || (lifted !== null && lifted.taken > 0)) this.worldDirty = true;
+
+        // -- WHAT ACTUALLY CAME ACROSS, IN ONE SENTENCE -------------------
+        //
+        // Named rather than summarised, because the defect this closes was a
+        // turn that read as a success and moved nothing. A player has to be
+        // able to see the difference from the prose alone.
+        const took = lifted?.taken ?? 0;
+        const parts: string[] = [];
+        if (took > 0) parts.push(`${took} spirit stone${took === 1 ? '' : 's'}`);
+        if (carried.length > 0) parts.push(carried.map(row => row.name).join(', '));
+        const line = parts.length === 0
+            ? `${held.party.name} turns out their sleeves. There is nothing on them worth `
+              + 'taking, and they knew it before you did.'
+            : `${held.party.name} hands over ${parts.join(' and ')}. They do not look up while `
+              + 'they do it.';
+        execution.facts.lines.push(line);
+        execution.facts.prose = [execution.facts.prose, line].join('\n');
+        execution.facts.structure.push(
+            `coerce/hand_over: ${took} stones moved off ${held.party.id}`
+            + `${lifted === null ? ' (no row to take from)' : ''}, and ${carried.length} `
+            + 'tracked object(s) reassigned by `transferPossession` with `how: stolen`. '
+            + 'Ownership did not move, so `knownOwnershipBy` still names them.'
+        );
+        execution.calls.push({
+            name: 'world.transferPossession',
+            action: 'coerce',
+            summary: line,
+            ok: true
+        });
+
+        // Nothing was taken, so nothing was stolen. A person made to kneel has
+        // been wronged and the fight already wrote that; opening a robbery on
+        // an empty purse would be a second row about an event that did not
+        // happen.
+        if (parts.length === 0) return;
+
+        // -- AND THE LEDGER -----------------------------------------------
+        const verdict = whatTheyDoAboutBeingWronged({
+            wrong: 'robbed',
+            landed: true,
+            inPublic: this.company(cultivator).total > 0,
+            theirOrdinal: held.standingOrdinal ?? cultivator.realmOrdinal,
+            yourOrdinal: cultivator.realmOrdinal,
+            alignment: factionId ? (getSect(factionId)?.alignment ?? null) : null,
+            theirName: held.party.name,
+            yourName: cultivator.name
+        });
+        const cost = lifted !== null && lifted.hadBefore > 0
+            ? lifted.taken / lifted.hadBefore
+            : 0;
+        const worthOfTheLoss = whatItWasWorth({
+            cause: verdict.grudge.cause,
+            paidBy: 'subject',
+            cost,
+            onDay,
+            description: verdict.line
+        });
+        const severity = severityRank(worthOfTheLoss) > severityRank(verdict.grudge.severity)
+            ? worthOfTheLoss
+            : verdict.grudge.severity;
+        const opened = createObligation({
+            kind: 'grudge',
+            id: `grudge_${held.party.id}_${cultivator.id}_${verdict.grudge.cause}`,
+            holderId: held.party.id,
+            subjectId: cultivator.id,
+            cause: verdict.grudge.cause,
+            severity,
+            onDay,
+            description: verdict.line,
+            participants: [],
+            tags: [
+                'wrong:robbed',
+                'under:coercion',
+                'landed',
+                `took:${took}`,
+                ...carried.map(row => `object:${row.id}`)
+            ]
+        });
+        writeObligation(this.db as unknown as DatabaseHandle, opened);
+        execution.facts.structure.push(
+            `${held.party.name} now holds a ${opened.severity} grudge about `
+            + `${verdict.grudge.cause}, open until somebody settles it. Weighed as `
+            + `${verdict.grudge.severity} by the deed and ${worthOfTheLoss} by what it cost `
+            + `them (${Math.round(cost * 100)}% of what they had); the heavier stands.`
+        );
+        execution.calls.push({
+            name: 'social.createObligation',
+            action: 'coerce',
+            summary:
+                `${held.party.name} yielded and was stripped, and holds a ${opened.severity} `
+                + `grudge about it against ${cultivator.name}. It costs points on every later `
+                + 'approach to them.',
+            ok: true
+        });
     },
 
     /**
