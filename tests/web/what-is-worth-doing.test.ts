@@ -92,7 +92,14 @@ const WELL: StandingHere = {
     peopleAboveHere: 0,
     peopleHere: 0,
     peopleHereWithSomethingToSell: 0,
-    thinGround: false,
+    ambient: 'normal',
+    // The four name-carrying inputs, empty on the baseline for the same reason
+    // every other field here is quiet: what each test asserts is the difference
+    // the one field it moved actually made.
+    peopleHereByName: [],
+    thickerGroundWithinReach: [],
+    goodsOnOfferHere: [],
+    roadUnderfoot: null,
     paperOnTheWall: null,
     spanCounterHere: false,
     dutiesGoing: 0,
@@ -116,7 +123,7 @@ describe('every sentence offered is a sentence the parser understands', () => {
         for (const state of [
             WELL,
             { ...WELL, satiety: 0, starvationTurns: 2, turnsUntilStarvation: 3, spiritStones: 0 },
-            { ...WELL, practisesAMethod: false, inASect: false, thinGround: true },
+            { ...WELL, practisesAMethod: false, inASect: false, ambient: 'thin' },
             { ...WELL, methodExhausted: true, breakthroughReady: true },
             { ...WELL, treatableWounds: 2, woundsPastMortalCare: 1, battered: true, cure: CURE_IN_REACH },
             { ...WELL, sellableGoods: 3, spiritStones: 0, peopleAboveHere: 4 },
@@ -473,7 +480,7 @@ describe('the read is bounded, ordered and never empty', () => {
         // has to fit on a screen next to the thing that caused it.
         for (const state of [
             WELL,
-            { ...WELL, satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1, spiritStones: 0, treatableWounds: 3, woundsPastMortalCare: 2, sellableGoods: 4, practisesAMethod: false, methodExhausted: false, inASect: false, thinGround: true, peopleAboveHere: 6, battered: true }
+            { ...WELL, satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1, spiritStones: 0, treatableWounds: 3, woundsPastMortalCare: 2, sellableGoods: 4, practisesAMethod: false, methodExhausted: false, inASect: false, ambient: 'thin', peopleAboveHere: 6, battered: true }
         ]) {
             expect(whatIsWorthDoingStandingHere(state).length).toBeLessThanOrEqual(8);
         }
@@ -490,7 +497,7 @@ describe('the read is bounded, ordered and never empty', () => {
     it('puts what is killing them first', () => {
         const dying = {
             ...WELL, satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1,
-            spiritStones: 0, thinGround: true, peopleAboveHere: 2
+            spiritStones: 0, ambient: 'thin', peopleAboveHere: 2
         };
         const order = whatIsWorthDoingStandingHere(dying);
         expect(order[0].urgency).toBe('now');
@@ -727,7 +734,7 @@ describe('above the Lid is a different world, and is not offered a market stall'
         battered: true,
         sellableGoods: 5,
         pillsCarried: 3,
-        thinGround: true,
+        ambient: 'thin',
         peopleAboveHere: 1,
         peopleHere: 4,
         paperOnTheWall: { bills: 3, withinReach: 3, daysToTheSoonest: 2 },
@@ -746,5 +753,213 @@ describe('above the Lid is a different world, and is not offered a market stall'
 
     it('still answers rather than going silent', () => {
         expect(whatIsWorthDoingStandingHere(immortal).length).toBeGreaterThan(0);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT IS ACTUALLY HERE, RATHER THAN WHAT KIND OF THING IS HERE
+//
+// Reported by the design owner after playing two places at once - a thin
+// market town and worked ground over a vein - and getting a row of category
+// labels in both: "where can I go", "what is posted here", "I see a
+// physician", "what is stopping me", "how can I go further".
+//
+//   "This is extremely generic ... like imagine if you're in a cultivation
+//    cave above and your master is teaching you - this should be filled with
+//    options specific to that ... its a discoverability thing."
+//
+// The row already varied by location. What it never did was NAME anything: not
+// the person an arm's length away, not the thing they would sell, not the band
+// underfoot, not the ground two days off that runs at four times the rate. The
+// engine knew all four.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('the row names what is here rather than what kind of thing is here', () => {
+    const CROWD: StandingHere = {
+        ...WELL,
+        peopleHere: 3,
+        peopleAboveHere: 2,
+        peopleHereByName: [
+            { name: 'Cao Fukuan', realmOrdinal: 9, standsAbove: true, rungsApart: 9 },
+            { name: 'Wei Lanya', realmOrdinal: 7, standsAbove: true, rungsApart: 7 }
+        ]
+    };
+
+    it('looks at the deepest person present and asks the shallowest one above', () => {
+        // Two different people out of one roster, and the split is the whole
+        // reason both entries exist. The person worth LOOKING at is the one
+        // the others are being careful around; the person worth ASKING is the
+        // one close enough to have a reason to answer.
+        expect(byId(CROWD, 'look_at_somebody')?.say).toBe('I look at Cao Fukuan');
+        expect(byId(CROWD, 'ask_to_teach')?.say).toBe('I ask Wei Lanya to teach me');
+    });
+
+    it('claims nothing about whether they teach, because nothing knows', () => {
+        // Measured over all 952 locations of a pinned world: zero catalog
+        // members stand anywhere a player can be, and a world NPC record
+        // carries no teaching marker. A sentence promising an arrangement
+        // would be promising one nothing in this world can hold.
+        const because = byId(CROWD, 'ask_to_teach')!.because;
+        expect(because).toMatch(/nothing on the record marks them a teacher/i);
+        expect(because).toMatch(/usually says no/i);
+    });
+
+    it('offers nobody by name when nobody present has been named', () => {
+        // The gate, and it is the caller's. `peopleHere` is a count and stays
+        // one; a face in a square is permission to see somebody and never
+        // permission to know who they are.
+        const strangers = { ...WELL, peopleHere: 4, peopleAboveHere: 3 };
+        expect(ids(strangers)).not.toContain('look_at_somebody');
+        expect(ids(strangers)).not.toContain('ask_to_teach');
+        expect(ids(strangers)).toContain('room');
+    });
+
+    it('asks nobody below to teach, and still offers a look at them', () => {
+        const below: StandingHere = {
+            ...WELL,
+            peopleHere: 1,
+            peopleHereByName: [
+                { name: 'Mo Peilin', realmOrdinal: 2, standsAbove: false, rungsApart: 4 }
+            ]
+        };
+        expect(ids(below)).toContain('look_at_somebody');
+        expect(ids(below)).not.toContain('ask_to_teach');
+    });
+
+    it('prices the ground it is standing on instead of flagging a boolean', () => {
+        // `thinGround` could say the ground was bad and could not say it was
+        // worth four ordinary years for one, which is the sentence somebody
+        // standing on a vein needs and had never been shown.
+        const onAVein = byId({ ...WELL, ambient: 'dense' }, 'cultivate')!;
+        expect(onAVein.because).toMatch(/2x the rate of ordinary ground/);
+        expect(onAVein.whatItIsAbout).toBe('here');
+        // A tide is temporary and a vein is not, and that is the only thing
+        // that separates their urgency. Neither is a recommendation.
+        expect(byId({ ...WELL, ambient: 'spirit_tide' }, 'cultivate')!.urgency).toBe('soon');
+        expect(onAVein.urgency).toBe('open');
+        // Ordinary ground says nothing about itself, which is correct: there
+        // is nothing about it to say.
+        expect(byId({ ...WELL, ambient: 'normal' }, 'cultivate')!.because)
+            .not.toMatch(/rate of ordinary ground/);
+    });
+
+    it('names the road out instead of offering the idea of roads', () => {
+        const thin: StandingHere = {
+            ...WELL,
+            ambient: 'thin',
+            thickerGroundWithinReach: [
+                { name: 'Mudsummer', ambient: 'normal', travelDays: 6 }
+            ]
+        };
+        expect(byId(thin, 'better_ground')?.say).toBe('I travel to Mudsummer');
+        expect(byId(thin, 'better_ground')?.because).toMatch(/2\.0x what this square gives back/);
+        // And the category it replaces is gone rather than sitting beside it.
+        // Played on thin ground with a better town six days off, the row
+        // carried both, which is one piece of advice in two of its five slots.
+        // The floor's own copy stays - it is on the floor precisely so that it
+        // never competes for a live slot - so what must be gone is the SQUARE's.
+        expect(byId(thin, 'destinations')?.whatItIsAbout).toBe('always');
+        // Somebody who knows nowhere better still needs telling, and for them
+        // it is a fact about this square rather than a standing option.
+        expect(byId({ ...WELL, ambient: 'thin' }, 'destinations')?.whatItIsAbout).toBe('here');
+    });
+
+    it('does not send somebody off the best ground they know of', () => {
+        // The caller filters, and the filter is the whole honesty of the line:
+        // an empty list is a real answer and not a missing one.
+        expect(ids({ ...WELL, ambient: 'dense', thickerGroundWithinReach: [] }))
+            .not.toContain('better_ground');
+    });
+
+    it('names the thing on offer and what it costs against the purse', () => {
+        const stall: StandingHere = {
+            ...WELL,
+            spiritStones: 30,
+            peopleHereWithSomethingToSell: 2,
+            goodsOnOfferHere: [
+                { name: 'Lesser Qi-Gathering Manual', askStones: 5 },
+                { name: 'Five-Breath Circulation Scripture', askStones: 7 }
+            ]
+        };
+        // The cheapest the purse covers, because that is the one a thin purse
+        // can actually take up.
+        expect(byId(stall, 'buy_on_offer')?.say).toBe('I buy a Lesser Qi-Gathering Manual');
+        expect(byId(stall, 'buy_on_offer')?.because).toMatch(/5 spirit stones.*purse holds 30/);
+
+        // Nothing affordable still names the cheapest, because the price is
+        // what makes the work line mean anything. This is the design question
+        // the row raises, and it is answered SHOW: a chip out of reach teaches
+        // the shape of the game, and hiding it teaches nothing at all.
+        const broke = { ...stall, spiritStones: 1 };
+        expect(byId(broke, 'buy_on_offer')?.say).toBe('I buy a Lesser Qi-Gathering Manual');
+        expect(byId(broke, 'buy_on_offer')?.because).toMatch(/short/i);
+    });
+
+    it('says which ground it is standing on rather than counting it', () => {
+        const on = { ...WELL, groundThatTeachesARoad: 1, roadUnderfoot: 'The Gapwater face' };
+        expect(byId(on, 'roads')?.because).toMatch(/standing on The Gapwater face/);
+        // A record for ground somewhere else stays a count: being told about a
+        // place is not being told where it is.
+        expect(byId({ ...WELL, groundThatTeachesARoad: 2 }, 'roads')?.because)
+            .toMatch(/2 things within your reach/);
+    });
+
+    it('lets a named line take the tie off the category above it', () => {
+        // `MOST_BUTTONS` is five and a busy square produces eight, so what is
+        // cut decides the row. Inside one urgency band and one whatItIsAbout
+        // band, the sentence that says something specific wins.
+        const busy = whatIsWorthDoingStandingHere({
+            ...CROWD,
+            ambient: 'thin',
+            spiritStones: 30,
+            peopleHereWithSomethingToSell: 1,
+            goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
+            thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'normal', travelDays: 6 }],
+            spanCounterHere: true,
+            dutiesGoing: 3
+        });
+        for (const band of ['now', 'soon', 'open'] as const) {
+            for (const about of ['here', 'you', 'always'] as const) {
+                const cell = busy
+                    .filter(a => a.urgency === band && a.whatItIsAbout === about)
+                    .map(a => (a.namesSomething ? 0 : 1));
+                expect([...cell].sort((x, y) => x - y), band + '/' + about).toEqual(cell);
+            }
+        }
+        // And it does NOT climb over a band. A named convenience must never
+        // outrank an unnamed fact about a body that is more pressing.
+        const starving = whatIsWorthDoingStandingHere({
+            ...CROWD,
+            satiety: 0,
+            starvationTurns: 2,
+            turnsUntilStarvation: 1,
+            spiritStones: 0,
+            goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }]
+        });
+        expect(starving[0].urgency).toBe('now');
+        expect(starving[0].id).toBe('eat');
+    });
+
+    it('invents no name it was not handed', () => {
+        // The old discipline, restated where it actually falls. Every name in
+        // a sentence below was passed in by a caller that had already run the
+        // gate; nothing here may compose one out of a count.
+        const handed = ['Cao Fukuan', 'Wei Lanya', 'Mudsummer', 'Lesser Qi-Gathering Manual'];
+        const out = whatIsWorthDoingStandingHere({
+            ...CROWD,
+            ambient: 'thin',
+            paperOnTheWall: { bills: 3, withinReach: 2, daysToTheSoonest: 9 },
+            peopleHereWithSomethingToSell: 4,
+            dutiesGoing: 2,
+            goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
+            thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'normal', travelDays: 6 }]
+        });
+        for (const a of out) {
+            if (!a.namesSomething) continue;
+            const proper = a.say.match(/\b[A-Z][a-z]{2,}(?:[- ][A-Z][a-z]+)*\b/g) ?? [];
+            for (const word of proper) {
+                expect(handed.some(name => name.includes(word)), a.id + ': ' + word).toBe(true);
+            }
+        }
     });
 });

@@ -111,7 +111,11 @@
  * it appears on.
  */
 
-import { STARVATION_TURNS } from '../schema/cultivation.js';
+import {
+    AMBIENT_QI_RATE_MULTIPLIER,
+    STARVATION_TURNS,
+    type AmbientQi
+} from '../schema/cultivation.js';
 import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wound.js';
 
 /**
@@ -225,6 +229,49 @@ export interface Affordance {
      */
     because: string;
     urgency: Urgency;
+    /**
+     * The sentence has a name in it that came out of the world.
+     *
+     * ── The report this field exists to answer ───────────────────────────
+     *
+     * Played in two places at once, and the row was the same shape in both:
+     * *"where can I go", "what is posted here", "I see a physician", "what is
+     * stopping me", "how can I go further"* in a thin market town, and *"what
+     * is for sale", "who is here"* on worked ground over a vein. The design
+     * owner: *"this is extremely generic ... imagine if you're in a cultivation
+     * cave above and your master is teaching you - this should be filled with
+     * options specific to that."*
+     *
+     * Every one of those entries is a CATEGORY. Not one of them names the
+     * person standing an arm's length away, the thing they would sell, the band
+     * underfoot, or the ground two days' walk off that runs at four times the
+     * rate. The engine knew all four and the row said none of them.
+     *
+     * ── What "named" is allowed to mean, and what it is not ──────────────
+     *
+     * This file's older discipline is *A COUNT AND NEVER A NAME*, written five
+     * times, and it is right about the case it was written for: this surface
+     * renders on every state read, and a panel that hands over four strangers'
+     * names every time it draws is a discovery bypass wearing a user interface.
+     *
+     * The distinction the old rule was reaching for is not counts-against-names.
+     * It is **who did the gating**. A name that arrives here having already
+     * passed `isAwareOf` or `canPointAt` is a name the player holds a record
+     * for - the read it routes to would print it, and the sentence they are
+     * being handed is one they could already have typed. A name this module
+     * derived from a count would be a leak. So the caller gates, this module
+     * never widens, and `namesSomething` marks the entries where a gated name
+     * actually made it into `say`.
+     *
+     * ── And it is a SORT KEY, which is the point ─────────────────────────
+     *
+     * `MOST_BUTTONS` caps the row at five, so what is cut matters more than
+     * what is generated. Inside one urgency band and one `whatItIsAbout` band,
+     * a line that names something beats a line that does not: "I ask Yun Shi to
+     * teach me" is strictly more informative than "who can teach me", and it is
+     * the one that will not be true in the next square.
+     */
+    namesSomething: boolean;
 }
 
 /**
@@ -363,8 +410,105 @@ export interface StandingHere {
      * nothing enforces.
      */
     peopleHereWithSomethingToSell?: number;
-    /** The ground gives back less than ordinary: half rate, and a penalty. */
-    thinGround: boolean;
+    /**
+     * The band underfoot, as a surveyor would write it down.
+     *
+     * Replaced a `thinGround` boolean, which was the whole of what this file
+     * knew about the largest multiplier a cultivator with no money can change.
+     * A boolean can say "the ground here is bad" and cannot say "the ground
+     * here is worth four ordinary years for one", which is the sentence
+     * somebody standing on a vein needs and was never shown.
+     *
+     * The rate comes from `AMBIENT_QI_RATE_MULTIPLIER` and is never retyped
+     * here. There is one table of what a band is worth and this file is not a
+     * second one.
+     */
+    ambient: AmbientQi;
+    /**
+     * People standing here whose names this cultivator already holds.
+     *
+     * ── NAMES, AND THE GATE IS THE CALLER'S ──────────────────────────────
+     *
+     * The one place this file takes names, and the reason it is safe is that
+     * the caller has already run `isAwareOf` over every row: this is
+     * `company().named`, the same split the `look` read prints from. Somebody
+     * whose face the player cannot put a name to arrives in `peopleHere` as a
+     * count and stays one.
+     *
+     * Deepest first, which is the order a square is read in: the person you
+     * notice is the one the others are being careful around.
+     *
+     * ── AND THERE IS NO `willTeach` HERE, WHICH IS A FINDING ─────────────
+     *
+     * This field carried one for a draft. `members.ts` marks 32 people a
+     * master, `teacher()` reads that role, and the whole point of a master is
+     * that you can stand next to one. So the caller sourced it the way the
+     * teacher read does - `getMember(id)?.role === 'master'` over the people in
+     * the room - and it was false for everybody.
+     *
+     * Measured before believing it: a sweep of all 952 world locations on a
+     * pinned world, standing in each and reading the roster, found **zero**
+     * catalog members present anywhere. The room is world NPCs, whose ids are
+     * `npc-N` and whose records carry no teaching marker at all; the catalog's
+     * masters are reachable only through `rosterFor`, which reads the player's
+     * own house roll rather than the square. `teacher()` has the same hole and
+     * documents half of it already - its second loop says *"nothing on the
+     * roster row says they teach, and this layer will not guess"* - and its
+     * first loop sets `here` off the same empty intersection.
+     *
+     * So a master standing in front of you is not a state this world reaches,
+     * and a `willTeach` sourced from the room would have been a field nothing
+     * writes reading as a value, which is the defect `AGENTS.md` gives its own
+     * section to. It is left out until somebody can be found holding it.
+     */
+    peopleHereByName: readonly {
+        name: string;
+        realmOrdinal: number;
+        /** Above this cultivator on the ladder. The caller compares. */
+        standsAbove: boolean;
+        /** How far above or below, in rungs. Signed, and a look would say it. */
+        rungsApart: number;
+    }[];
+    /**
+     * Places this cultivator could set out for whose ground beats the ground
+     * they are standing on, best band first.
+     *
+     * Gated on `canPointAt` - the same predicate `destinations` prints under
+     * and the `move` verb enforces - so a name here is a name the player has
+     * already earned a road to, and the sentence built from it is one the move
+     * verb will honour rather than refuse.
+     *
+     * Empty where nothing known is better, which is the ordinary case and is a
+     * real answer: somebody standing on the best ground they know of should not
+     * be told to walk.
+     */
+    thickerGroundWithinReach: readonly {
+        name: string;
+        ambient: AmbientQi;
+        /** Days, from the province's own `connections`. Null where unpriced. */
+        travelDays: number | null;
+    }[];
+    /**
+     * What people standing here would let go of, named and priced.
+     *
+     * The THING is named; the seller is not. That is not a compromise, it is
+     * where the two gates actually fall: `market` is a free read that prints
+     * every one of these, so naming the goods spends nothing a player could not
+     * have had for a sentence - and `learnTheSeller` is what writes a knowledge
+     * row for the person, which only happens when somebody walks over.
+     *
+     * Cheapest ask first, so the entry built from it is the one a thin purse
+     * can actually take up.
+     */
+    goodsOnOfferHere: readonly { name: string; askStones: number }[];
+    /**
+     * The dao ground under their feet, by name, when they are standing on one.
+     *
+     * No gate needed and none applied: you are standing on it. `placeOrShape`
+     * makes the same exemption for the same reason - a place the holder is in
+     * is a place they can name, whatever the awareness table says.
+     */
+    roadUnderfoot: string | null;
     /**
      * Ground this cultivator can point at where a road can be walked, plus the
      * things bound to them that carry one.
@@ -542,7 +686,7 @@ type Line = typeof SAY[keyof typeof SAY];
  * carrying them.
  */
 const at = (line: Line, urgency: Urgency, because: string): Affordance =>
-    ({ ...line, urgency, because, whatItIsAbout: 'you' });
+    ({ ...line, urgency, because, whatItIsAbout: 'you', namesSomething: false });
 
 /**
  * A line that fired on a fact about the square they are standing in.
@@ -554,7 +698,28 @@ const at = (line: Line, urgency: Urgency, because: string): Affordance =>
  * chance at and the thing they cannot know without being told.
  */
 const inTheSquare = (line: Line, urgency: Urgency, because: string): Affordance =>
-    ({ ...line, urgency, because, whatItIsAbout: 'here' });
+    ({ ...line, urgency, because, whatItIsAbout: 'here', namesSomething: false });
+
+/**
+ * A line built around a name the world actually holds.
+ *
+ * Always `here`, and that is a property of the shape rather than a choice: the
+ * only names this module is handed are a person in this square, a thing being
+ * carried in this square, the ground under these feet, and a road out of this
+ * province. Walk out and every one of them stops being the answer.
+ *
+ * `id` is passed rather than taken from `SAY`, because these sentences are
+ * composed and there is no fixed row for them - but the id must still be
+ * stable, since `dedupe` is keyed on it and the client is not.
+ */
+const naming = (
+    id: string,
+    say: string,
+    routesTo: string,
+    urgency: Urgency,
+    because: string
+): Affordance =>
+    ({ id, say, routesTo, urgency, because, whatItIsAbout: 'here', namesSomething: true });
 
 /**
  * A line that is true of everybody, everywhere, forever.
@@ -565,7 +730,22 @@ const inTheSquare = (line: Line, urgency: Urgency, because: string): Affordance 
  * owner ruled against, and it is what made the row read as static.
  */
 const always = (line: Line, because: string): Affordance =>
-    ({ ...line, urgency: 'open', because, whatItIsAbout: 'always' });
+    ({ ...line, urgency: 'open', because, whatItIsAbout: 'always', namesSomething: false });
+
+/**
+ * What a band is worth against ordinary ground, in words, from the one table.
+ *
+ * Never a second prose map of the bands - `where-this-cultivator-could-go.ts`
+ * has one and two would drift. The multiplier is the fact; the band name is
+ * the label the schema already carries, with the underscore taken out because
+ * nobody says "spirit_tide".
+ */
+function whatTheGroundIsWorth(band: AmbientQi): string {
+    const rate = AMBIENT_QI_RATE_MULTIPLIER[band];
+    const named = band.replace(/_/g, ' ');
+    if (rate === 1) return `${named} qi, ordinary rate`;
+    return `${named} qi, ${rate}x the rate of ordinary ground`;
+}
 
 /**
  * What is worth doing standing here, most pressing first.
@@ -697,7 +877,12 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
                     routesTo: 'buy',
                     urgency: cure.affordable ? 'now' : 'soon',
                     because: whatToSayAboutTheCure(cure),
-                    whatItIsAbout: 'you'
+                    // About the BODY and not the square - a torn meridian
+                    // travels - and it was the only named sentence in this file
+                    // for as long as this file has existed. `naming` cannot
+                    // build it for that reason: that helper is for the square.
+                    whatItIsAbout: 'you',
+                    namesSomething: true
                 });
                 // Named for the shortfall rather than for hunger, because a
                 // player who cannot afford the cure needs the same two verbs
@@ -763,10 +948,69 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             + 'whole thing is for.'));
     }
 
-    if (here.thinGround && !here.aboveTheLid) {
+    // ── THE GROUND UNDERFOOT, NAMED AND PRICED ────────────────────────────
+    //
+    // This used to be one line firing off a `thinGround` boolean, and the
+    // boolean was the whole of what the row could say about the largest
+    // multiplier a cultivator with no money can change. So the two places the
+    // owner played read identically on the axis that most distinguished them:
+    // a thin market town and worked ground over a vein both got a row with
+    // nothing in it about the ground.
+    //
+    // Two halves, and they are different sentences. Bad ground is a reason to
+    // LEAVE and the answer is a road. Good ground is a reason to SIT and the
+    // answer is the verb the whole game is for - and it is the half that did
+    // not exist, because nothing was gated on the ground being good.
+    const rateHere = AMBIENT_QI_RATE_MULTIPLIER[here.ambient];
+    const somewhereBetter = here.thickerGroundWithinReach[0] ?? null;
+    // The generic road out, and ONLY where the named one below cannot be built.
+    // Played on thin ground with a better town two days off, the row carried
+    // "I travel to Mudsummer" and "where can I go" side by side - the same
+    // advice twice, one slot of five each, out of a row whose whole complaint
+    // was that it wasted its slots on categories.
+    if (!here.aboveTheLid && rateHere < 1 && somewhereBetter === null) {
         add(inTheSquare(SAY.destinations, 'soon',
-            'The ground here is thin: half rate, and a penalty at the bottleneck. Ground is the '
-            + 'largest multiplier a cultivator with no money can change.'));
+            `The ground here is ${whatTheGroundIsWorth(here.ambient)}, and a penalty at the `
+            + 'bottleneck on top. Ground is the largest multiplier a cultivator with no money '
+            + 'can change, and you have no name yet for anywhere better.'));
+    }
+    if (!here.aboveTheLid && rateHere > 1) {
+        // `soon` for a tide and `open` for a vein, because that is the honest
+        // difference and not a nudge: a spirit tide is a season turning over
+        // and it stops, so the years are genuinely leaving. Dense ground will
+        // be dense next decade, and calling it pressing would be this file
+        // recommending something, which is the one thing urgency may not do.
+        add(inTheSquare(SAY.cultivate, here.ambient === 'spirit_tide' ? 'soon' : 'open',
+            `The ground here is ${whatTheGroundIsWorth(here.ambient)}. That is the same year `
+            + 'spent as anywhere else and a different amount of it arriving, and it is the one '
+            + 'multiplier you are standing in rather than paying for.'
+            + (here.ambient === 'spirit_tide'
+                ? ' A tide is a season turning over and it will stop.'
+                : '')));
+    }
+
+    // ── AND SOMEWHERE BETTER THAT YOU CAN ALREADY POINT AT ────────────────
+    //
+    // The road out, BY NAME, rather than "where can I go". Every row handed in
+    // has passed `canPointAt`, which is the predicate `move` enforces - so the
+    // sentence this builds is one the verb will honour. A destination the
+    // player has only heard whispered is not on this list and must not be: it
+    // would be a button that refuses.
+    //
+    // Only offered where the ground is genuinely better than what is underfoot.
+    // Somebody standing on the best ground they know of is not being told to
+    // walk, which is the sentence the old boolean could not decline to say.
+    if (!here.aboveTheLid && somewhereBetter !== null) {
+        const best = somewhereBetter;
+        const gain = AMBIENT_QI_RATE_MULTIPLIER[best.ambient] / rateHere;
+        const walk = best.travelDays === null
+            ? 'The catalog prices no road to it, which means it is inside this province.'
+            : `It is ${best.travelDays} day${best.travelDays === 1 ? '' : 's'} off.`;
+        add(naming('better_ground', `I travel to ${best.name}`, 'move',
+            rateHere < 1 ? 'soon' : 'open',
+            `${best.name} is ${whatTheGroundIsWorth(best.ambient)} against `
+            + `${whatTheGroundIsWorth(here.ambient)} here - ${gain.toFixed(1)}x what this square `
+            + `gives back for the same year. ${walk}`));
     }
 
     if (here.peopleAboveHere > 0 && !here.aboveTheLid) {
@@ -786,6 +1030,58 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             + 'different sentence from this one, and it has an outcome. A stranger will '
             + 'usually say no; "buy <them> a drink" or "sit with <them>" costs a day and no '
             + 'stones, and it is what turns a stranger into somebody who might not.'));
+    }
+
+    // ── AND WHEN YOU CAN PUT A NAME TO ONE OF THEM ────────────────────────
+    //
+    // The line above says "a different sentence from this one" and then leaves
+    // the player to compose it. For a stranger that is correct - the game will
+    // not hand over a name nobody has said in front of them. For somebody they
+    // already hold a record for it is a refusal to finish the sentence, and it
+    // is the exact case the design owner named: *"imagine if you're in a
+    // cultivation cave above and your master is teaching you - this should be
+    // filled with options specific to that."* A master in the room is the most
+    // place-specific fact this game produces, and the row said "who can teach
+    // me".
+    //
+    // Both entries are ATTEMPTS. `look at` is a thing you do and `ask ... to
+    // teach me` is a thing you ask; neither claims what comes back, which is
+    // the rule the whole `SAY` table is written to.
+    if (!here.aboveTheLid && here.peopleHereByName.length > 0) {
+        // Deepest first is the caller's order, and the deepest person present
+        // is the one worth a look: the standing you cannot read off a name is
+        // what a look is for.
+        const notable = here.peopleHereByName[0];
+        add(naming('look_at_somebody', `I look at ${notable.name}`, 'investigate', 'open',
+            `${notable.name} is standing here. What they are carrying, how far above or below `
+            + 'you they stand and what their own record makes them is a look, and it costs '
+            + 'nothing.'));
+
+        // The SHALLOWEST person still above them, and that is on purpose. The
+        // deepest is the one worth looking at and the worst one to ask: a
+        // stranger twenty rungs up has no reason to hear you out, and somebody
+        // two rungs up is the ask that can land. `whoWouldTeach` sorts its own
+        // named rows the same way and for the same reason.
+        //
+        // No claim that they teach. See the field's note: nothing a player can
+        // stand next to carries a teaching marker, so this is an ask and the
+        // sentence says so rather than promising an arrangement.
+        const above = here.peopleHereByName.filter(p => p.standsAbove);
+        const teacher = above.length > 0 ? above[above.length - 1] : null;
+        if (teacher) {
+            const stuck = !here.practisesAMethod || here.methodExhausted;
+            add(naming('ask_to_teach', `I ask ${teacher.name} to teach me`, 'request',
+                stuck ? 'soon' : 'open',
+                `${teacher.name} is standing here, ${teacher.rungsApart} `
+                + `rung${teacher.rungsApart === 1 ? '' : 's'} above you. Nothing on the record `
+                + 'marks them a teacher, so this is an ask rather than an arrangement, and a '
+                + 'stranger usually says no. '
+                + (stuck
+                    ? 'Nothing is accumulating for you at present, which is what makes being '
+                      + 'taught the difference rather than an improvement.'
+                    : 'Being taught reaches past what a book gives, and what it costs them is '
+                      + 'the part they would tell you about.')));
+        }
     }
 
     // ── WHAT THIS PLACE IS ASKING FOR THINGS ──────────────────────────────
@@ -811,6 +1107,33 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             add(at(SAY.market, 'open',
                 'A stall beside the cooking pots copies out the common books. The stones go on '
                 + 'a book or they go on food, and that is the first real decision there is.'));
+        }
+
+        // ── AND WHAT ONE OF THEM IS ACTUALLY HOLDING ──────────────────────
+        //
+        // "what is for sale" is a category. The thing on the stall is the
+        // decision. Played in a market town: a stall forty paces away was
+        // asking eight stones for the primer that would have ended the whole
+        // no-method trap, and the row's best offer was the word "market".
+        //
+        // The cheapest thing the purse covers, and where nothing is affordable
+        // the cheapest thing there is - because being shown the price of the
+        // thing you cannot afford is what makes the work line mean something.
+        // See the note on `goodsOnOfferHere`: the THING is named and the seller
+        // is not, which is where the two gates actually fall.
+        const affordable = here.goodsOnOfferHere.filter(g => g.askStones <= here.spiritStones);
+        const pick = affordable[0] ?? here.goodsOnOfferHere[0];
+        if (pick) {
+            const covered = pick.askStones <= here.spiritStones;
+            add(naming('buy_on_offer', `I buy a ${pick.name}`, 'buy', 'open',
+                `Somebody standing here would let a copy of ${pick.name} go for `
+                + `${pick.askStones} spirit stone${pick.askStones === 1 ? '' : 's'}, and the `
+                + `purse holds ${here.spiritStones}. `
+                + (covered
+                    ? 'What a person asks and what a stall asks are different numbers, and the '
+                      + 'reason they are selling is a thing a stall cannot have.'
+                    : 'That is short, which makes it a figure to work towards rather than a '
+                      + 'refusal - and the ask moves with what they need.')));
         }
     }
 
@@ -933,12 +1256,26 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // offering it to somebody holding no records would tell them such places
     // exist, which is a discovery the world is supposed to hand over.
     if (here.groundThatTeachesARoad > 0) {
-        add(inTheSquare(SAY.roads, 'open',
-            `${here.groundThatTeachesARoad === 1 ? 'One thing' : here.groundThatTeachesARoad + ' things'} `
-            + 'within your reach '
-            + `${here.groundThatTeachesARoad === 1 ? 'is' : 'are'} ground a road can be walked on `
-            + 'or something that carries one. Whether any of it will say anything to you is a '
-            + 'different question.'));
+        // ── AND WHEN ONE OF THEM IS UNDER YOUR FEET, SAY WHICH ────────────
+        //
+        // The count is the honest answer for ground somebody merely holds a
+        // record for. It is a strange thing to say about the ground you are
+        // standing on: `placeOrShape` makes the same exemption for the same
+        // reason - being somewhere is knowing where you are - and "one thing
+        // within your reach is ground a road can be walked on" is what the
+        // player was told while standing on it.
+        add(here.roadUnderfoot !== null
+            ? naming('roads', SAY.roads.say, SAY.roads.routesTo, 'open',
+                `You are standing on ${here.roadUnderfoot}, which is ground a road can be `
+                + 'walked on rather than ground that is merely thick. Understanding comes from '
+                + 'what you are exposed to; whether it will say anything to you is a different '
+                + 'question, and the read is free.')
+            : inTheSquare(SAY.roads, 'open',
+                `${here.groundThatTeachesARoad === 1 ? 'One thing' : here.groundThatTeachesARoad + ' things'} `
+                + 'within your reach '
+                + `${here.groundThatTeachesARoad === 1 ? 'is' : 'are'} ground a road can be walked on `
+                + 'or something that carries one. Whether any of it will say anything to you is a '
+                + 'different question.'));
     }
     // The other half of the ground, and the one nobody finds on their own.
     //
@@ -998,9 +1335,30 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
  */
 const ABOUT_ORDER: Record<Affordance['whatItIsAbout'], number> = { here: 0, you: 1, always: 2 };
 
+/**
+ * The third key: a sentence with a name in it beats the category above it.
+ *
+ * ── Why a third key and not a fourth `whatItIsAbout` value ───────────────
+ *
+ * Because it is a different question, in exactly the way that field's own
+ * header says urgency and permanence are different questions. `whatItIsAbout`
+ * asks how long a line will go on being true. This asks how much of what is
+ * true it actually says. "I ask Yun Shi to teach me" and "who can teach me"
+ * are both perishable facts about this square; one of them teaches the player
+ * that there is a person here who might, and the other teaches them that
+ * teachers are a concept.
+ *
+ * It sorts BELOW `whatItIsAbout` rather than above it, and that ordering is
+ * load-bearing: a named line is still a line about this square, and a named
+ * convenience must never climb over an unnamed fact about the body that is
+ * more pressing. What it wins is the tie, which - with `MOST_BUTTONS` at five
+ * and a busy square producing eight - is the whole of what decides the row.
+ */
 function dedupe(all: readonly Affordance[]): Affordance[] {
     const rank = (a: Affordance): number =>
-        URGENCY_ORDER[a.urgency] * 3 + ABOUT_ORDER[a.whatItIsAbout];
+        URGENCY_ORDER[a.urgency] * 6
+        + ABOUT_ORDER[a.whatItIsAbout] * 2
+        + (a.namesSomething ? 0 : 1);
     const best = new Map<string, Affordance>();
     for (const a of all) {
         const held = best.get(a.id);
