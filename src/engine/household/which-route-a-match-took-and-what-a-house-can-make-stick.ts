@@ -95,6 +95,7 @@ import {
     type Backing,
     type SomethingToLose
 } from '../social-leverage/what-a-house-does-when-it-catches-you.js';
+import { bandForGap } from '../cultivation/regard.js';
 import { DEFINING_STANDING } from '../world/when-somebody-does-not-come-back.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -215,11 +216,40 @@ export interface TheStandingBetweenThem {
     /**
      * Whether the suitor is above the family in a way nothing they do reaches.
      *
-     * Supplied by the caller off `regardFor` rather than computed here, because
-     * how far apart two parties are has one answer in this engine and it is not
-     * in this file.
+     * Read with {@link theSuitorIsPastWhatTheyCouldReach}, which asks the one
+     * band function this engine has. It is still the caller's to supply,
+     * because it is a fact about two people rather than about a match - but it
+     * has a right answer and there is now one way to get it.
+     *
+     * ── THE DIRECTION IS THE WHOLE OF IT ─────────────────────────────────
+     *
+     * This asks whether the FAMILY can reach the SUITOR, so the gap is read
+     * from the family's side. A caller that reads it from the suitor's side is
+     * asking a different question and will get a different answer: measured in
+     * play, a rung-44 cultivator putting a match to a house whose people stand
+     * at 29 read `beneath` looking down (`dismissed` wants seventeen rungs) and
+     * `unreachable` looking up (which wants nine), and the code took the
+     * looking-down reading and told an immortal to elope or give up. The two
+     * bands are not mirror images, so which way round the gap is measured
+     * decides the answer, and only one of the two is the question being asked.
      */
     theSuitorIsOutOfTheirReach: boolean;
+}
+
+/**
+ * Whether nothing this family does reaches the person they are refusing.
+ *
+ * `bandForGap` is the engine's one answer to how far apart two parties stand
+ * and it is called rather than restated. `unreachable` is `REGARD_BANDS`' own
+ * word for a gap where the party looking up is not dealt with at all - the row
+ * carries `offered: false, refused: true, yieldMultiplier: 0` - which is
+ * exactly "their no follows from nothing".
+ */
+export function theSuitorIsPastWhatTheyCouldReach(
+    theFamilyReachesTo: number,
+    theSuitorReachesTo: number
+): boolean {
+    return bandForGap(theFamilyReachesTo - theSuitorReachesTo) === 'unreachable';
 }
 
 export interface WhatTheHousesNoIsWorth {

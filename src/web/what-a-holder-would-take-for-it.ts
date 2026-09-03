@@ -24,12 +24,18 @@
  * ── HOW WHAT THE PLAYER PUTS DOWN IS PRICED, WITHOUT A LIST ──────────────
  *
  * One question, asked of whatever was named: **how high does it carry the
- * person receiving it?** Three readings answer it and the third is the one that
- * keeps the medium open:
+ * person receiving it?** Every reading below is the same question put to a
+ * different catalog, and the last one is what keeps the medium open:
  *
  *   AN ART THEY LACK       the rung its grade is pitched at. A road is worth
  *                          where it goes.
- *   A THING                the same, off the catalog or off the object row.
+ *   A MEDICINE             the same, off its grade.
+ *   A THING THAT CAME DOWN the ceiling its grade permits, off the engine that
+ *                          spends one. Read the grade and ask the ladder - the
+ *                          same rule as everything above it, and the reason
+ *                          there is no branch anywhere on what the object is
+ *                          called.
+ *   A RATED OBJECT         `power`, the one hierarchy of force in this world.
  *   ANYTHING ELSE          **what the person offering it is worth.** An oath, a
  *                          service, a name, a placement, information, a favour
  *                          owed - the engine cannot price any of those from a
@@ -39,11 +45,27 @@
  *                          height your house cannot reach is worth more than
  *                          any price."*
  *
- * That third reading is the reason there is no table of media anywhere in
+ * That last reading is the reason there is no table of media anywhere in
  * either module. A tenth medium needs no code: it is priced at the offerer's
  * own height, which is the truthful answer for anything the world has no row
  * for, and it has the shape the setting wants - a nobody's promise is worth
  * nothing and an immortal's is worth everything, with no rule about promises.
+ *
+ * **And it is only truthful where there is no row.** Everything above it was
+ * once falling through to it, so a rated-45 blade and an Unearned Step both
+ * priced at the offerer's own rung - measured at 4, which is what *my
+ * protection* also came to. A fallback that catches things the catalog does
+ * answer for is the quiet kind of wrong: nothing fails, the offer is simply
+ * worth what the person putting it down happens to be worth.
+ *
+ * ── AND THE ANSWER DEPENDS ON WHO IS RECEIVING IT ────────────────────────
+ *
+ * The field says *the person receiving it* and only the arts branch was
+ * honouring that. A road somebody already walks carries them nowhere; a
+ * medicine whose grade tops out beneath them carries them nowhere either, and
+ * a better one carries them across their own wall. Same reading, one catalog
+ * over - which is how *who they are decides what enough means* comes out of
+ * rows rather than out of a branch on somebody's house.
  *
  * ── AND MONEY IS PRICED AT NOTHING, WHICH IS NOT THE SAME AS REFUSED ─────
  *
@@ -56,9 +78,17 @@
  * the same line in two places without either being a special case.
  */
 
+import { ARTIFACTS } from '../data/cultivation/artifacts.js';
+import {
+    IMMORTAL_ITEMS,
+    ImmortalGradeSchema,
+    type ImmortalGrade
+} from '../data/cultivation/immortal-items.js';
 import { PILLS } from '../data/cultivation/pills.js';
 import { TECHNIQUES } from '../data/cultivation/techniques.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
+import { REALM_TIERS, type RealmKey } from '../engine/cultivation/realms.js';
+import { STEP_CEILING_BY_GRADE } from '../engine/cultivation/taking-the-unearned-step.js';
 import { pillTradeTier } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { significanceOfPill } from '../engine/world/where-the-pills-actually-are.js';
 import type { ObjectRecord } from '../engine/world/possessions.js';
@@ -163,6 +193,28 @@ export function howHighTheirHouseReaches(
 const A_SUM_OF_STONES = /^\s*(?:about\s+|around\s+)?\d[\d,]*\s*(?:spirit\s+)?stones?\s*$/i;
 
 /**
+ * Which grade of an immortal medicine was named, out of the words used.
+ *
+ * The catalog holds ONE row and three grades on it, and the pouch convention
+ * `theUnearnedStepIn` reads is `immortal-unearned-step:lower`. A sentence has
+ * neither, so the grade is read off the words the way `resolvePill` reads a
+ * pill's name, and the default is the same default that convention takes: the
+ * lower grade, which is nine of the thirteen in the world.
+ */
+function gradeNamedIn(what: string): ImmortalGrade {
+    const said = what.toLowerCase();
+    const parsed = ImmortalGradeSchema.safeParse(
+        /\bhigher\b/.test(said) ? 'higher' : /\bmiddle\b/.test(said) ? 'middle' : 'lower'
+    );
+    return parsed.success ? parsed.data : 'lower';
+}
+
+/** The first rung of a realm, which is where anything that gives a crossing lands somebody. */
+function firstRungOf(key: RealmKey): number {
+    return REALM_TIERS.find(t => t.key === key)?.ordinalStart ?? 0;
+}
+
+/**
  * What one named offer is worth to the person it is being made to.
  *
  * THE WHOLE OF THE PRICING, AND THERE IS NO TABLE IN IT. See the header: an
@@ -173,11 +225,25 @@ const A_SUM_OF_STONES = /^\s*(?:about\s+|around\s+)?\d[\d,]*\s*(?:spirit\s+)?sto
  * them - which is a fact about the trade and not a rule about arts, and it is
  * the same reading `whatTheyWantThatYouCouldReach` does when it asks whether
  * the asker holds a road they have not.
+ *
+ * ── AND THE FIELD SAYS "THE PERSON RECEIVING IT", SO ASK ABOUT THEM ──────
+ *
+ * `receiverOrdinal` completes a contract `OnTheTable.carriesThemTo` has stated
+ * since it was written - *how high does it carry THE PERSON RECEIVING IT* - and
+ * which only the arts branch was honouring. Without it every offer is priced in
+ * the abstract, so the same object is worth the same to a village headman and
+ * to somebody standing at the top of a realm, and the one question that decides
+ * a barter-tier trade cannot tell them apart.
+ *
+ * It is optional because a caller that does not know who is receiving is still
+ * entitled to the object's own height, which is the truthful answer to a
+ * narrower question.
  */
 export function whatIsBeingPutDown(
     named: string,
     offererOrdinal: number,
-    theirs: readonly string[]
+    theirs: readonly string[],
+    receiverOrdinal?: number
 ): OnTheTable {
     const what = named.trim().slice(0, 100);
 
@@ -209,11 +275,79 @@ export function whatIsBeingPutDown(
         return { what: pill.name, carriesThemTo: pillBandOrdinal(pill.grade), singular: true };
     }
 
+    // ── A THING THAT CAME DOWN, PRICED THE WAY EVERY OTHER THING IS ──────
+    //
+    // Read the grade and ask the ladder, which is the same rule the pill and
+    // the art take and the same rule that decides what a shattered blade is
+    // worth. There is no branch on the object's name and no figure written
+    // beside it: what an immortal medicine carries somebody to is the ceiling
+    // its own grade permits, and the ceiling is `STEP_CEILING_BY_GRADE` in the
+    // engine that spends one - read, never restated.
+    //
+    // Before this, `The Unearned Step` fell through to the clause below and
+    // priced at the offerer's own rung. Measured at a rung-4 offerer: 4, which
+    // is what `my protection` also came to. The most valuable object in the
+    // world and a vague promise were the same offer, so no offer of one could
+    // ever move a refusal - which is the whole of what an immortal medicine is
+    // for in a negotiation.
+    // Matched on the name without its article, because the grade is said in
+    // front of it - "a higher Unearned Step" is how anybody names one, and the
+    // catalog row is called "The Unearned Step".
+    const fromAbove = IMMORTAL_ITEMS.find(i => {
+        const bare = i.name.replace(/^the\s+/i, '').toLowerCase();
+        return what.toLowerCase().includes(bare) || bare.includes(what.toLowerCase());
+    });
+    if (fromAbove && fromAbove.effect === 'promote_realm') {
+        const ceiling = firstRungOf(STEP_CEILING_BY_GRADE[gradeNamedIn(what)]);
+        // What it does is one crossing, so the most it can put anybody on is
+        // the first rung of the realm above theirs - and never past what the
+        // grade allows. Somebody already standing at or above that ceiling is
+        // being offered something that cannot move them, which is a fact about
+        // this trade rather than about the object, and is the same reading as
+        // an art they already walk.
+        const reachable = receiverOrdinal === undefined
+            ? ceiling
+            : Math.min(ceiling, firstRungOf(realmAbove(receiverOrdinal)));
+        return {
+            what: fromAbove.name,
+            carriesThemTo: receiverOrdinal !== undefined && reachable <= receiverOrdinal
+                ? 0
+                : Math.max(0, reachable),
+            singular: true
+        };
+    }
+
+    // ── A RATED OBJECT, OFF THE FIELD EVERY RATED OBJECT ALREADY CARRIES ──
+    //
+    // `power` is the one hierarchy of force in this world, and a blade rated 45
+    // put on a table was reading as the offerer's own rung for the same reason
+    // the Step was: nothing looked in the object catalog. A weapon lets its
+    // holder strike at its own rung, so that rung is exactly how high it
+    // carries whoever ends up with it.
+    const object = ARTIFACTS.find(o =>
+        o.name.toLowerCase() === what.toLowerCase()
+        || o.name.toLowerCase().includes(what.toLowerCase()));
+    if (object) {
+        return {
+            what: object.name,
+            carriesThemTo: Math.max(0, object.power ?? 0),
+            singular: true
+        };
+    }
+
     // ── EVERYTHING ELSE, WHICH IS WHERE THE MEDIUM STAYS OPEN ────────────
     //
-    // An oath, a service, a placement, a name, information, a favour owed. The
-    // engine has no row for any of them and does not need one: what backs an
-    // undertaking is the person making it, so it is worth exactly what they
-    // are worth. A tenth medium needs no code here.
+    // An oath, a service, a placement, a name, information, a favour owed - and
+    // a Second Dealing, which changes an aperture rather than a rung and which
+    // this world therefore has no unit for. What backs an undertaking is the
+    // person making it, so it is worth exactly what they are worth. A tenth
+    // medium needs no code here.
     return { what, carriesThemTo: Math.max(0, offererOrdinal), singular: true };
+}
+
+/** The realm on the far side of the wall above somebody. Theirs, at the top. */
+function realmAbove(ordinal: number): RealmKey {
+    const here = REALM_TIERS.findIndex(t => ordinal >= t.ordinalStart && ordinal <= t.ordinalEnd);
+    if (here < 0) return REALM_TIERS[0].key;
+    return (REALM_TIERS[here + 1] ?? REALM_TIERS[here]).key;
 }

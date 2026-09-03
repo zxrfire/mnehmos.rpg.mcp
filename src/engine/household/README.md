@@ -156,6 +156,15 @@ The same axis the reprisal layer is built on, arrived at from the other side, an
 family in the aggrieved seat and the suitor's own backing as what it would be
 acting against.
 
+**The gap is read from the family's side, because that is whose reach is in
+question.** `theSuitorIsPastWhatTheyCouldReach` is the one way to get it, and it
+asks `bandForGap` for `unreachable`. The two readings of one gap are not mirror
+images - `dismissed` wants seventeen rungs looking down and `unreachable` wants
+nine looking up - so measuring it the wrong way round hands the family power it
+has not got. Measured in play: a cultivator at rung 44 putting a match to
+somebody on a house that reaches 29 read `beneath` looking down and was told to
+elope or give up.
+
 |  | family that cannot act | family that can act |
 |---|---|---|
 | **suitor backed / out of reach** | the refusal changes nothing | they can be pressed |

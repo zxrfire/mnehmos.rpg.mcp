@@ -20,11 +20,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
     aRefusalOpensAnAccount,
+    theSuitorIsPastWhatTheyCouldReach,
     whatRefusingAMatchTheyAlreadyMadeLeaves,
     whatTheHousesNoIsWorth,
     whetherTheyGoAlongWithIt,
     type TheRoute
 } from '../../../src/engine/household/which-route-a-match-took-and-what-a-house-can-make-stick.js';
+import { bandForGap } from '../../../src/engine/cultivation/regard.js';
 import { DEFINING_STANDING } from '../../../src/engine/world/when-somebody-does-not-come-back.js';
 import type { Party } from '../../../src/engine/social-leverage/what-a-deed-leaves.js';
 
@@ -218,5 +220,68 @@ describe('whether the person goes along with it', () => {
             wantsItServes: 0, wantsItForecloses: 0, standingTowardSomebodyElse: 0
         });
         expect(keys).toEqual(['wantsItServes', 'wantsItForecloses', 'standingTowardSomebodyElse']);
+    });
+});
+
+/**
+ * WHICH WAY ROUND THE GAP IS MEASURED, WHICH IS THE ANSWER ITSELF.
+ *
+ * `theSuitorIsOutOfTheirReach` asks whether the FAMILY can reach the SUITOR,
+ * and the two REGARD_BANDS readings of one gap are not mirror images:
+ * `dismissed` wants seventeen rungs looking down and `unreachable` wants nine
+ * looking up. Measured in play at 8844: a cultivator at rung 44 put a match to
+ * somebody on a house that reaches 29, and the caller read the gap looking
+ * down - `beneath`, seventeen rungs short of `dismissed` - so the engine
+ * answered `elope, or give up` and told an immortal that a mortal-band house
+ * could act against them.
+ */
+describe('whether a family can reach the person they are refusing', () => {
+    it('reads the gap from the family side, where the question is asked', () => {
+        expect(theSuitorIsPastWhatTheyCouldReach(29, 44)).toBe(true);
+        // And the two are not the same reading. A gap this size is `beneath`
+        // looking down and `unreachable` looking up; only one of them is this
+        // question, and taking the other one hands the family power it has not
+        // got.
+        expect(bandForGap(44 - 29)).not.toBe('dismissed');
+        expect(bandForGap(29 - 44)).toBe('unreachable');
+    });
+
+    it('leaves an ordinary gap as an ordinary negotiation', () => {
+        // A house that can be dealt with is still a house that can be dealt
+        // with. The fix must not make every suitor untouchable.
+        expect(theSuitorIsPastWhatTheyCouldReach(29, 31)).toBe(false);
+        expect(theSuitorIsPastWhatTheyCouldReach(29, 20)).toBe(false);
+    });
+
+    it('turns eloping into pressing, which is what the situation actually is', () => {
+        // The played case. A family with a house of its own can still start
+        // something, and cannot finish it against somebody this far above -
+        // so what is left is leaning on them, and a match agreed that way is a
+        // match AND a wrong, both written down. Read the gap the other way and
+        // the same call answers `elope, or give up`, which tells a rung-44
+        // cultivator to run from a house that could not touch them.
+        const standing = {
+            theFamily: { houseId: 'house-held-names' },
+            theSuitorsBacking: 'none' as const
+        };
+        expect(whatTheHousesNoIsWorth({
+            ...standing,
+            theSuitorIsOutOfTheirReach: theSuitorIsPastWhatTheyCouldReach(29, 44)
+        }).is).toBe('they can be pressed');
+        expect(whatTheHousesNoIsWorth({
+            ...standing,
+            theSuitorIsOutOfTheirReach: bandForGap(44 - 29) === 'dismissed'
+        }).is).toBe('elope, or give up');
+    });
+
+    it('still lets a backed suitor walk away from a no that reaches nothing', () => {
+        // The other half of the same grid, unchanged: where the family would
+        // have to deal with somebody first and cannot reach the suitor either,
+        // their answer follows from nothing at all.
+        expect(whatTheHousesNoIsWorth({
+            theFamily: { houseId: 'house-held-names' },
+            theSuitorsBacking: 'backed',
+            theSuitorIsOutOfTheirReach: theSuitorIsPastWhatTheyCouldReach(29, 44)
+        }).is).toBe('the refusal changes nothing');
     });
 });
