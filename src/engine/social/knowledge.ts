@@ -141,6 +141,21 @@ export type SourceKind =
     | 'assumed'
     | 'divined'
     | 'confessed'
+    /**
+     * Read out of somebody's mind without their agreement.
+     *
+     * Its own kind rather than `confessed`, which means somebody dealing with
+     * you about their own business and would be a lie about how this was got.
+     * Every other kind is capped below `known`, so filing a soul search under
+     * one of them would silently degrade what was taken out of a mind into
+     * hearsay.
+     *
+     * ADDING A KIND MEANS EDITING `stageCeilingFor` IN THE SAME BREATH. Its
+     * switch ends in `default: 'whisper'`, so a kind added here and forgotten
+     * there does not fail - it caps at the bottom of the ladder and the
+     * mechanic quietly stops working.
+     */
+    | 'taken'
     | 'fabricated';
 
 export interface KnowledgeSource {
