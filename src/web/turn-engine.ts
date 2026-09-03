@@ -3260,7 +3260,7 @@ export class GameService {
             return this.aboveTheLid(run, cultivator, action.action);
         }
 
-        // -- THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT -
+        // ── THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT ─
         //
         // `attack` used to do this for itself and no other verb did it at all.
         // The recovery now lives in `carryWhatOnlyTheSentenceKnows`, and this
