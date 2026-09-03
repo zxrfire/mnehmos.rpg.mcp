@@ -308,7 +308,18 @@ describe('the Azure intake, walked from the floor', () => {
         expect(before.recall).toBeNull();
 
         // Past what the Mist can teach, and the roll the Mist keeps says so.
-        await standAt(id, 20);
+        //
+        // THIRTY RATHER THAN TWENTY, AND THE NUMBER MOVED FOR A REASON. The
+        // Azure Mist's shelf used to stop at ordinal 17 - a court standing at
+        // 37 whose best cultivation manual could not carry anybody out of
+        // Foundation - and the design owner ruled it up to 29 at minimum, on
+        // the ground that its Warden was dispatched from the Pavilion and
+        // arrived already high, so where the head stands was never a fact about
+        // the shelf. `recallFrom` reads `shelfTopOf` and its own docstring
+        // anticipates this exactly: *a house that acquires a deeper book keeps
+        // its people longer with no edit here*. So the recall still fires; it
+        // fires later, which is the deeper shelf being worth something.
+        await standAt(id, 30);
         const due = await sect({ action: 'standing', cultivatorId: id });
         expect(due.recall).not.toBeNull();
         expect(due.recall.toFactionId).toBe(PAVILION);
