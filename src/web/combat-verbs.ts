@@ -68,7 +68,6 @@ import {
     ruin,
     transferPossession
 } from '../engine/world/possessions.js';
-import { theNameTheVerbDropped } from './the-name-the-verb-dropped.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -367,36 +366,17 @@ export const combatVerbs = {
          * record and the narrator can state what was wanted rather than having
          * to guess it from the outcome.
          */
-        wanted?: string,
-        /**
-         * The player's own sentence, for the case where phase 1 picked the verb
-         * and dropped the object. Read ONLY when `target` is missing, and only
-         * to find a name the player themselves wrote. See
-         * `the-name-the-verb-dropped.ts` for why that is not a discovery leak.
-         */
-        said?: string
+        wanted?: string
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
-        let query = (target ?? '').trim();
-
-        // ── THE NAME THE VERB DROPPED ────────────────────────────────────
+        // ── A NAME PHASE 1 DROPPED HAS ALREADY BEEN PUT BACK ─────────────
         //
-        // Reported from play, with the target standing in the square: "I
-        // coerce claire to hand over her stuff, all of it" arrived as
-        // `coerce()` with an empty target and was refused for naming nobody.
-        // From a chair that reads as people not persisting between turns.
-        //
-        // Recovered before the refusal rather than inside it, so everything
-        // below - the faction branch, the resolution, the whole bout - runs on
-        // the recovered name exactly as it would on a typed one.
-        // The recovered name is not announced separately: it becomes `query`,
-        // so every ruling below names the person it resolved to exactly as it
-        // would have if the player's target had survived phase 1. The player
-        // sees who was fought, which is the fact that matters.
-        if (query.length < 2) {
-            const who = theNameTheVerbDropped(said, this.present(cultivator));
-            if (who) query = who.name;
-        }
+        // This used to recover it here, from the player's own sentence, and
+        // that recovery now lives in `carryWhatOnlyTheSentenceKnows` where it
+        // serves every verb rather than confrontations. Same matcher, same
+        // roster, one home - so `target` is what a player named whether they
+        // typed it into the plan or only into the sentence.
+        const query = (target ?? '').trim();
 
         if (query.length < 2) {
             return refused('engine.resolveParty', 'attack', factsForRefusal(
