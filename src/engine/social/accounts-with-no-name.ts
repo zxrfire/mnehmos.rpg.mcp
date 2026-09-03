@@ -56,19 +56,15 @@
  * HOW A ROW SAYS IT HAS NO NAME ON IT
  * ═════════════════════════════════════════════════════════════════════════
  *
- * `obligations.subject_id` is `TEXT NOT NULL` in `migrations.social.ts`, which
- * is a shared registry, and relaxing a NOT NULL in SQLite is a table rebuild
- * rather than an idempotent ALTER - so an existing world would keep rejecting
- * the value while a fresh one accepted it, which is worse than either.
+ * NULL, and there is exactly one stored representation of it.
+ * `optional-obligation-subject.ts` relaxed the column and converted the empty
+ * strings that briefly stood in for it, because two ways of saying no-name is
+ * the defect worth the most care here - the next reader finds one and not the
+ * other, and the query that misses it answers with total confidence.
  *
- * **The honest column is `subject_id TEXT`, and that change is worth making.**
- * Until it is, the empty string carries it: no id anywhere in this world is
- * empty, both indexes on the column keep working, and old and new databases
- * behave identically.
- *
- * Nothing outside this file may compare to it. {@link hasANameOnIt} and
- * {@link NO_NAME_ON_IT} are the whole interface, precisely so that the day the
- * column changes there is one place to change.
+ * Nothing outside this file compares to it. {@link hasANameOnIt} and
+ * {@link NO_NAME_ON_IT} are the whole interface, so there is one place to
+ * change if the storage ever moves again.
  *
  * Pure. No state, no rolls, no I/O.
  */
@@ -83,14 +79,14 @@ import type { ObligationInput, ObligationRecord } from './grudges.js';
 /**
  * The subject of an account nobody can put a name to.
  *
- * Read the header before touching this. It is the empty string because the
- * column is NOT NULL on a shared registry, and it is behind an exported name
- * because nothing else should ever know that.
+ * Exported rather than written out at each site so that a change of storage is
+ * one edit, and so that a reader who meets a null subject somewhere has a name
+ * to search for.
  */
-export const NO_NAME_ON_IT = '';
+export const NO_NAME_ON_IT = null;
 
 /** Whether this account is against somebody, or against whoever it was. */
-export function hasANameOnIt(record: { subjectId: string }): boolean {
+export function hasANameOnIt(record: { subjectId: string | null }): boolean {
     return record.subjectId !== NO_NAME_ON_IT;
 }
 

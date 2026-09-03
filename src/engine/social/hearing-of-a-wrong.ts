@@ -31,28 +31,39 @@
  * discoverable later, which is the whole point of doing it this way.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * THREE STATES, AND THE MIDDLE ONE IS THE DESIGN
+ * THREE STATES, AND THE MIDDLE ONE IS WHERE MOST PEOPLE LIVE
  * ═════════════════════════════════════════════════════════════════════════
  *
- *   1  NOTHING KNOWN         No account.
+ *   1  NOBODY HAS NOTICED    No account. Brief, and often skipped entirely.
  *   2  SOMETHING IS WRONG    An open account with no name on it.
  *      AND NOBODY KNOWS WHO
  *   3  TOLD WHO              The account attaches to a name.
  *
- * *Nothing happens until somebody is told* is too coarse, and the state it
- * skips is the one worth having: somebody who knows they were wronged, cannot
- * say by whom, and is therefore looking. `accounts-with-no-name.ts` owns what
- * such an account is and what it makes its holder want; this file owns the two
- * transitions a TELLING can produce.
+ * **State 1 is not "they hold nothing about it".** The design owner, correcting
+ * exactly that reading: *the ledger is not empty before being told, it is
+ * there, they just don't have an outlet for their anger.* A brother who is dead
+ * is dead, and the people who loved him do not need a teller to start grieving.
+ * **What being told supplies is not the wrong, it is the target.**
  *
- *   1 -> 2   a telling that names what was lost and nobody for it. The
- *            consequence arrived with no author attached, which is
- *            `discovery.md`'s "the world may act on a player who cannot name
- *            what acted", stated in the ledger.
- *   1 -> 3   a telling that names both. The ordinary case.
- *   2 -> 3   a telling that supplies the name they were missing. ONE account
- *            acquiring a subject, at the same id and the same weight, never a
- *            second account about the same wrong.
+ * So state 1 is the window before anybody NOTICES, not the whole span between
+ * the deed and the telling - and it is rarer and shorter than a first reading
+ * has it. You get out of it by noticing, which for a killing is immediate and
+ * for a disappearance is `when-somebody-does-not-come-back.ts`'s yearly pass.
+ * `what-a-deed-leaves.ts` is where that lands for the deed itself: a relative
+ * who cannot name the actor opens an unnamed account rather than nothing.
+ *
+ * `accounts-with-no-name.ts` owns what such an account is and what it makes its
+ * holder want. This file owns the transitions a TELLING can produce, and after
+ * the correction the important one is 2 -> 3.
+ *
+ *   1 -> 2   a telling that names what was lost and nobody for it, reaching
+ *            somebody who had not yet noticed. `discovery.md`'s "the world may
+ *            act on a player who cannot name what acted", stated in the ledger.
+ *   1 -> 3   a telling that names both, to somebody who had not noticed.
+ *   2 -> 3   **the one the correction makes ordinary.** A telling that supplies
+ *            the name they were missing: ONE account acquiring a subject, at
+ *            the same id and the same weight, never a second account about the
+ *            same wrong.
  *
  * Whether state 2 is reachable at all is a property of the ACT rather than of
  * this file: a wrong the wronged party could only have suffered at the hands of

@@ -291,8 +291,15 @@ export function whatLeavingAMatchCosts(input: {
     rollsTheyWereOn: readonly string[];
     onDay: DayIndex;
 }): WhatLeavingCosts {
-    const onTheLedger = input.binding === null ? null : whatWalkingOutOfItCosts({
-        binding: input.binding,
+    // A binding with no beneficiary is a corrupt row rather than a nameless
+    // account - a word is always given TO somebody - so it is treated as no
+    // binding at all. `subject_id` became nullable for grudges, where not
+    // knowing who did it is a real state; there is no such state for an oath.
+    const bound = input.binding !== null && input.binding.subjectId !== null
+        ? (input.binding as typeof input.binding & { subjectId: string })
+        : null;
+    const onTheLedger = bound === null ? null : whatWalkingOutOfItCosts({
+        binding: bound,
         closed: input.closed ?? null,
         leaverId: input.leaverId,
         leaverName: input.leaverName,

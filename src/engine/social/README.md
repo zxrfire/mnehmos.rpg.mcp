@@ -108,13 +108,24 @@ could act on it, and being told supplies exactly that - so **a wrong nobody witn
 stays true, stays findable, and opens nothing.** That is what makes doing a thing quietly
 worth doing.
 
-There are **three states, not two**, and the middle one is the design:
+There are **three states, not two**, and the middle one is where most people live:
 
 | | what they hold | the row |
 |---|---|---|
-| 1 | nothing | none |
-| 2 | it was done, and they cannot say by whom | open, no subject on it |
-| 3 | who did it | the subject attaches |
+| 1 | nobody has noticed yet | none |
+| 2 | it was done, and they cannot say by whom | open, `subject_id` NULL |
+| 3 | who did it | the subject attaches, same row id |
+
+**State 1 is not "they hold nothing about it."** From the design owner: *the ledger is not
+empty before being told, it is there, they just don't have an outlet for their anger.* A
+brother who is dead is dead, and the people who loved him do not need a teller to start
+grieving - so **what being told supplies is not the wrong, it is the target.** State 1 is
+the window before anybody NOTICES, and you leave it by noticing rather than by being told.
+
+That is why `whatADeedLeaves` opens an unnamed account for a relative who cannot name the
+actor, instead of nothing. The one exception is a **deniable** deed - a poisoning that
+reads as a qi deviation, a junior left somewhere that reads as bad luck - where nothing
+says a deed was done at all, and `Deed.deniable` is that field.
 
 State 2 is why a killing with no witness still has a consequence, and it is what changes
 what silencing a witness buys: **killing the only person who could name you converts a
@@ -143,11 +154,18 @@ provenance holds it whatever anybody knows. What is conditional is who holds an 
 about it, and conflating the two deletes the thread that makes a quiet wrong discoverable
 later.
 
-An account with no name on it currently carries the empty string as its subject, because
-`obligations.subject_id` is `NOT NULL` and relaxing that in SQLite is a table rebuild on a
-shared registry rather than an idempotent ALTER. **The honest column is `subject_id
-TEXT`.** Until it is, `NO_NAME_ON_IT` and `hasANameOnIt` are the whole interface and
-nothing else may compare to it.
+An account with no name on it stores NULL, and there is exactly one stored representation
+of it: `optional-obligation-subject.ts` relaxed the column and converted the empty strings
+that briefly stood in. `NO_NAME_ON_IT` and `hasANameOnIt` are the read path, so nothing
+else compares to either form.
+
+**`triggering_event_id` names `world_chronicle.id`, not `world_facts.id`,** whatever the
+schema comment used to say - measured on a played database, `world_facts` held 0 rows and
+the chronicle 102, with every obligation resolving against the chronicle. It carries no
+foreign key and cannot: the chronicle's key is `(world_id, id)` because fact ids are
+per-world sequential text, so a single-column reference is rejected outright and the
+composite form needs a `world_id` on `obligations`. Until that exists the migration sweeps
+rows naming an event nothing holds, on every startup.
 
 ### Karma is a relationship graph, not a score
 

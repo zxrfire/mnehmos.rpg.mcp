@@ -265,7 +265,12 @@ export function settleItWithABinding(input: {
                 + 'not either of their idea.',
             terms,
             dueOnDay: null,
-            participants: [input.toId, input.record.holderId, input.record.subjectId],
+            // A nameless account has no subject to name here. `subject_id` is
+            // nullable since `optional-obligation-subject.ts`: somebody who
+            // knows they were wronged and cannot say by whom holds one, and a
+            // participants list is a list of people rather than of slots.
+            participants: [input.toId, input.record.holderId, input.record.subjectId]
+                .filter((id): id is string => id !== null),
             tags: ['binding', 'settlement', `closed:${input.record.id}`],
             triggeringEventId: input.record.triggeringEventId
         },
@@ -330,7 +335,15 @@ export interface WalkingOut {
  */
 export function whatWalkingOutOfItCosts(input: {
     /** The oath being broken. */
-    binding: ObligationRecord;
+    /**
+     * The oath being walked out of.
+     *
+     * Its subject is the house that was owed the word, and a word is always
+     * given TO somebody - so unlike a grudge, this one is never nameless. Stated
+     * in the type rather than checked, because a binding with no beneficiary is
+     * a corrupt row and not a state the fiction has.
+     */
+    binding: ObligationRecord & { subjectId: string };
     /**
      * The account it was closing, when it was closing one.
      *
