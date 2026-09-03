@@ -407,6 +407,7 @@ import {
     type FightTurn,
     type WayOut
 } from '../engine/cultivation/unfinished-fight.js';
+import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import {
     fightView,
     theFightStillStands,
@@ -6270,6 +6271,32 @@ ${noticed}`;
         const execution = this.fromToolResult(
             'combat_manage.resolve', held.verb, settled, held.party.name
         );
+
+        // ── A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL ──────────────
+        //
+        // `summariseToolBody` already put these on `lines` and therefore on
+        // `prose`, which is enough for the deterministic narrator. `required` is
+        // what stops a MODEL narrator from writing a well-turned paragraph about
+        // being outclassed and dropping the four sentences that say what to do
+        // instead - which is the same fact-written-and-never-shown failure the
+        // fight's own state line is on `required` for.
+        //
+        // Only on a no-contest. After a fight somebody actually had, the options
+        // are not what the turn was about and printing them would read as the
+        // engine lecturing somebody who just won.
+        if (result.outcome === 'no_contest' && result.gap.options.length > 0) {
+            const routes = sayingWhatWouldWork(
+                routesOutOfAGap(result.gap.options), held.party.name
+            );
+            execution.facts.required = [...(execution.facts.required ?? []), ...routes];
+            execution.facts.structure.push(
+                `Gap: ${result.gap.verdict}, ${result.gap.realmGap} major realms, power ratio `
+                + `${result.gap.powerRatio.toFixed(1)}. The engine offered `
+                + `${result.gap.options.length} real options and ${routes.length === 0 ? 0 : routes.length - 1} `
+                + 'of them have a verb a player can type. The rest are recorded in '
+                + '`gap-routes.ts` as unreachable rather than printed.'
+            );
+        }
 
         // What the last round did, said before what the fight came to. Without
         // it a player who broke off reads the outcome and never the attempt.
@@ -23716,6 +23743,27 @@ function summariseToolBody(body: Record<string, unknown>): string[] {
     // turn, and the injury threshold is the fastest way to die in the game.
     if (typeof body.outcome === 'string' && Array.isArray(body.exchanges)) {
         const them = body.opponent as { id?: string; name?: string } | undefined;
+
+        // ── AND WHAT WOULD HAVE WORKED ───────────────────────────────────
+        //
+        // `assessGap` computes `REAL_OPTIONS` alongside the refusal and puts
+        // them on `gap.options`, which rides all the way here and was never
+        // printed. Measured in play: six identical no-contests against somebody
+        // seven realms up, and not one word about what would have worked - a
+        // refusal with the route already in the payload and thrown away by the
+        // last hop.
+        //
+        // `gap-routes.ts` maps them to what a player would actually type and
+        // drops the five that have no verb behind them, because printing those
+        // would be the narrator inventing affordances at the exact moment
+        // somebody is desperate enough to try every line in the paragraph.
+        const gap = body.gap as { options?: unknown } | undefined;
+        if (Array.isArray(gap?.options) && gap.options.length > 0) {
+            lines.push(...sayingWhatWouldWork(
+                routesOutOfAGap(gap.options as string[]),
+                them?.name ?? 'somebody that far above you'
+            ));
+        }
         const exchanges = body.exchanges as Array<{
             damage?: number; defenderId?: string;
         }>;

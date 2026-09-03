@@ -21,7 +21,7 @@ import {
     sayingWhatWouldWork
 } from '../../src/web/gap-routes';
 import { parseIntent } from '../../src/web/actions';
-
+import { makeGameInWorld } from './harness';
 
 describe('every option is accounted for', () => {
     it('is either carried by a verb or written down as unreachable', () => {
@@ -87,4 +87,43 @@ describe('what it offers is a thing the player can actually say', () => {
             expect(REAL_OPTIONS).toContain(route.option);
         }
     });
+});
+
+describe('played, against somebody seven realms up', () => {
+    async function withAdminMode<T>(fn: () => Promise<T>): Promise<T> {
+        const before = process.env.ADMIN_MODE;
+        process.env.ADMIN_MODE = 'true';
+        try {
+            return await fn();
+        } finally {
+            if (before === undefined) delete process.env.ADMIN_MODE;
+            else process.env.ADMIN_MODE = before;
+        }
+    }
+
+    it('the refusal names the route, in the sentences a player would type', async () => {
+        await withAdminMode(async () => {
+            const { game } = await makeGameInWorld({
+                seed: 'hopeless', worldSeed: 'w-hopeless'
+            });
+            await game.newRun('Doomed');
+            await game.act('I look around');
+            await game.act('ADMIN spawn_encounter ordinal=40 disposition=hostile');
+
+            const refused = await game.act('I attack the Grand Ascension cultivator');
+
+            // The refusal itself is unchanged and still correct.
+            expect(refused.narration).toMatch(/is not a fight/);
+            // And now it says what would have worked. Read off the narration
+            // rather than the log, because the whole defect was that the engine
+            // computed this and the last hop dropped it.
+            expect(refused.narration).toMatch(/What works against .* is not a better swing/);
+            expect(refused.narration).toContain('"I get out of here"');
+            expect(refused.narration).toContain('"I go and cultivate"');
+            // And it never offers what it cannot carry out.
+            for (const unreachable of ['hide', 'exploit terrain', 'avoid detection']) {
+                expect(refused.narration?.toLowerCase()).not.toContain(unreachable);
+            }
+        });
+    }, 300_000);
 });
