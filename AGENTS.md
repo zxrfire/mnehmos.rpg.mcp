@@ -1894,10 +1894,19 @@ of them can be held by one agent without blocking anybody else.
 
 Two things the rule does **not** say, because both are cases where a broad name is correct:
 
-- **A catalog named for what it lists is fine.** `sects.ts` holds the sects; that is a complete
+- **A catalog named for ONE list is fine.** `sects.ts` holds the sects; that is a complete
   answer to what it is for, and it has one reason to change - the world gained a house. Length
-  is not the test. `regions.ts`, `beasts.ts` and `techniques.ts` are long because the world is
-  large, not because they are doing several jobs.
+  is not the test. `beasts.ts` and `techniques.ts` are long because the world is large, not
+  because they are doing several jobs.
+
+  **The test is how many KINDS of thing are in it, and contention is how you notice.**
+  `regions.ts` looked like this exemption and was not: it held regions, provinces, prefectures,
+  arterials and two generated-name tables - six subjects - and three separate pieces of work
+  needed it at once while only one could have it. **A catalog file mirrors the structure of what
+  it describes**, so that two people working on two parts of the world are working on two files.
+  Split it by re-export like any other rename, and **prove it changed nothing**: serialise the
+  catalog before and after and diff it, because a data refactor that drops a row is far harder
+  to notice than a code one that fails to compile.
 - **A barrel is a barrel.** An `index.ts` that only re-exports is not a subject and should not
   pretend to be one. It stops being fine the moment logic moves into it.
 
