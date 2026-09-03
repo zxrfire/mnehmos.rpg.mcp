@@ -896,6 +896,7 @@ import {
     theRowForAChoice,
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
+    theRowForAStatedReason,
     theRowForAStepOverTheBound,
     theRowForSomethingStillToCome,
     theRowThatAsksWhichFirst,
@@ -3620,6 +3621,20 @@ export class GameService {
                 + 'One clause is one act, so this was not counted as a second thing to do.';
             folded.facts.structure.push(line);
             folded.calls.push({ name: 'engine.step', action: taken.action.action, summary: line, ok: true });
+        }
+
+        // A clause that said WHY rather than naming an act. Shown for the same
+        // reason a second reading is - it is a judgement about the sentence and
+        // the player is owed the chance to see it - and in the engine channel
+        // only, because nothing was declined and nothing was spent. Without
+        // this the reason is discounted correctly and silently, which is the
+        // half of the rule that the rest of this file exists to refuse.
+        for (const reason of budget.statedReasons) {
+            folded.calls.push(theRowForAStatedReason(reason));
+            folded.facts.structure.push(
+                `"${reason.said ?? ''}" was read as the reason for the act beside it rather than `
+                + `as a second act. Said on its own it is a request to ${reason.action.action}.`
+            );
         }
 
         for (const over of budget.overTheBound) {
