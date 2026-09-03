@@ -105,15 +105,57 @@ describe('beginAbsence', () => {
         expect(absence.ties.find(t => t.holderId === 'enemy')!.waiting).toBe(false);
     });
 
-    it('nobody waits for somebody who told nobody where they were going', () => {
+    // ── THIS TEST USED TO ASSERT THE OPPOSITE, AND WHY IT CHANGED ────────
+    //
+    // It read `nobody waits for somebody who told nobody where they were
+    // going`, which was the rule while `waiting` required having been
+    // informed. That rule made every road the WORLD has into somebody going
+    // missing inert: `markMissing` has no witness list and no told list -
+    // nobody saw, that is what missing MEANS - so an absence opened off the
+    // `disappearance` event had zero waiting ties and the yearly pass had
+    // nothing to do. The module's own header wanted the opposite of that: the
+    // disappearance event's chronicle line is "treated as dead by everyone
+    // except one person", and that one person is a waiting tie.
+    //
+    // It also said a wife waits for a husband who filed his intentions and
+    // does not wait for one who simply never came home, which is backwards.
+    // Being told is still the lever; it is priced as PATIENCE, not as
+    // permission to wait at all.
+    it('a household waits for somebody who vanished with no explanation', () => {
         const { state, day } = withCast('abs-silent');
         const { absence } = beginAbsence(state, {
             absenteeId: 'him',
             absenteeName: 'him',
             onDay: day
         });
-        expect(absence.ties.every(t => !t.waiting)).toBe(true);
-        expect(state.npcs.flatMap(n => n.goals)).toHaveLength(0);
+
+        const her = absence.ties.find(t => t.holderId === 'her')!;
+        expect(her.waiting).toBe(true);
+        expect(her.informed).toBe(false);
+        expect(state.npcs.find(n => n.id === 'her')!.goals[0].note)
+            .toBe('Nobody ever said what happened.');
+
+        // And the enemy still does not: an enemy is not a waiting kind, which
+        // is a fact about what they were to him and not about who knew what.
+        expect(absence.ties.find(t => t.holderId === 'enemy')!.waiting).toBe(false);
+    });
+
+    it('an explained absence is waited for only by the people who were told', () => {
+        const { state, day } = withCast('abs-explained');
+        person(state, 'cousin');
+        tie(state, 'cousin', 'him', 'kin', 0.7);
+
+        const { absence } = beginAbsence(state, {
+            absenteeId: 'him',
+            absenteeName: 'him',
+            onDay: day,
+            toldIds: ['her']
+        });
+
+        // The cousin holds a waiting-kind tie above the friendship standing and
+        // does not sit up, because the man is known to be in a cave.
+        expect(absence.ties.find(t => t.holderId === 'her')!.waiting).toBe(true);
+        expect(absence.ties.find(t => t.holderId === 'cousin')!.waiting).toBe(false);
     });
 
     it('a witness reaches the top of the knowing ladder and a told party does not', () => {

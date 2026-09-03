@@ -15,6 +15,7 @@ import type { LineageEdge, LineageRecord } from '../../engine/world/lineage.js';
 import type { OpportunityWindow } from '../../engine/world/opportunities.js';
 import type { AreaStatus } from '../../engine/world/what-is-true-of-a-place-right-now.js';
 import type { ObjectRecord, OwnershipClaim, ProvenanceEntry } from '../../engine/world/possessions.js';
+import type { Absence, TieAtDeparture } from '../../engine/world/when-somebody-does-not-come-back.js';
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
 import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../engine/world/layers.js';
@@ -96,6 +97,7 @@ export class WorldStateRepository {
     private readonly insertObjectStmt: Database.Statement;
     private readonly insertClaimStmt: Database.Statement;
     private readonly insertProvenanceStmt: Database.Statement;
+    private readonly insertAbsenceStmt: Database.Statement;
 
     private readonly selectErasStmt: Database.Statement;
     private readonly selectFactsStmt: Database.Statement;
@@ -119,6 +121,7 @@ export class WorldStateRepository {
     private readonly selectObjectsStmt: Database.Statement;
     private readonly selectClaimsStmt: Database.Statement;
     private readonly selectProvenanceStmt: Database.Statement;
+    private readonly selectAbsencesStmt: Database.Statement;
 
     private readonly deadNpcIdsStmt: Database.Statement;
     private readonly maxFactSeqStmt: Database.Statement;
@@ -438,6 +441,23 @@ export class WorldStateRepository {
             )
         `);
 
+        // An absence is keyed on the absentee rather than on an id of its own,
+        // because a person can be unaccounted for once at a time and the pass
+        // that opens them relies on exactly that to stay idempotent.
+        this.insertAbsenceStmt = db.prepare(`
+            INSERT OR REPLACE INTO world_absences (
+                world_id, absentee_id, absentee_name, left_on_day,
+                location_id, faction_id, faction_rank_index,
+                witness_ids, told_ids, ties,
+                settled_through_day, written_off_on_day, truth_fact_id, claim_key
+            ) VALUES (
+                @worldId, @absenteeId, @absenteeName, @leftOnDay,
+                @locationId, @factionId, @factionRankIndex,
+                @witnessIds, @toldIds, @ties,
+                @settledThroughDay, @writtenOffOnDay, @truthFactId, @claimKey
+            )
+        `);
+
         // Reads. Ordering is explicit everywhere a list round-trips, because
         // "identical after reload" is a test this repo has to pass and SQLite
         // makes no promise about unordered row order.
@@ -470,6 +490,9 @@ export class WorldStateRepository {
         this.selectClaimsStmt = db.prepare('SELECT * FROM world_object_claims WHERE world_id = ? ORDER BY rowid ASC');
         this.selectProvenanceStmt = db.prepare(
             'SELECT * FROM world_object_provenance WHERE world_id = ? ORDER BY object_id ASC, seq ASC'
+        );
+        this.selectAbsencesStmt = db.prepare(
+            'SELECT * FROM world_absences WHERE world_id = ? ORDER BY left_on_day ASC, absentee_id ASC'
         );
 
         // The no-resurrection guard reads only ids and needs no row bodies.
@@ -554,6 +577,11 @@ export class WorldStateRepository {
             this.writeOpportunities(s);
             this.writeAreaStatuses(s);
             this.writeObjects(s);
+            // Upserted rather than skipped like the append-only bulk: an
+            // absence's settled-through day and tie snapshot move every year,
+            // and a tick that did not write them would replay the same decade
+            // of giving-up after a restart.
+            this.writeAbsences(s);
         });
         write(state);
     }
@@ -637,6 +665,7 @@ export class WorldStateRepository {
             ),
             runs: (this.selectRunsStmt.all(worldId) as RunRow[]).map(rowToRun),
             ascensions: (this.selectAscensionsStmt.all(worldId) as AscensionRow[]).map(rowToAscension),
+            absences: (this.selectAbsencesStmt.all(worldId) as AbsenceRow[]).map(rowToAbsence),
             history,
             memories,
             populationTarget: runtime.population_target,
@@ -713,7 +742,7 @@ export class WorldStateRepository {
             'world_lineage_edges', 'world_lineages',
             'world_opportunities', 'world_area_statuses',
             'world_object_claims', 'world_object_provenance', 'world_objects',
-            'world_factions', 'world_runs', 'world_ascensions'
+            'world_factions', 'world_runs', 'world_ascensions', 'world_absences'
         ]) {
             this.db.prepare(`DELETE FROM ${table} WHERE world_id = ?`).run(worldId);
         }
@@ -735,6 +764,7 @@ export class WorldStateRepository {
         this.writeOpportunities(s);
         this.writeAreaStatuses(s);
         this.writeObjects(s);
+        this.writeAbsences(s);
     }
 
     private writeEras(s: WorldState): void {
@@ -1206,6 +1236,27 @@ export class WorldStateRepository {
                     factId: entry.factId,
                     note: entry.note
                 });
+            });
+        }
+    }
+
+    private writeAbsences(s: WorldState): void {
+        for (const absence of s.absences ?? []) {
+            this.insertAbsenceStmt.run({
+                worldId: s.id,
+                absenteeId: absence.absenteeId,
+                absenteeName: absence.absenteeName,
+                leftOnDay: absence.leftOnDay,
+                locationId: absence.locationId,
+                factionId: absence.factionId,
+                factionRankIndex: absence.factionRankIndex,
+                witnessIds: JSON.stringify(absence.witnessIds),
+                toldIds: JSON.stringify(absence.toldIds),
+                ties: JSON.stringify(absence.ties),
+                settledThroughDay: absence.settledThroughDay,
+                writtenOffOnDay: absence.writtenOffOnDay,
+                truthFactId: absence.truthFactId,
+                claimKey: absence.claimKey
             });
         }
     }
@@ -1766,6 +1817,31 @@ function rowToAscension(row: AscensionRow): AscensionRecord {
     });
 }
 
+/**
+ * One absence, tie snapshot included.
+ *
+ * The ties come back as a parsed blob rather than as rows; the migration says
+ * why, and the short version is that the far-end question - who is still
+ * waiting - is a `reunion` goal on the person and already has a table.
+ */
+function rowToAbsence(row: AbsenceRow): Absence {
+    return {
+        absenteeId: row.absentee_id,
+        absenteeName: row.absentee_name,
+        leftOnDay: row.left_on_day,
+        locationId: row.location_id,
+        factionId: row.faction_id,
+        factionRankIndex: row.faction_rank_index,
+        witnessIds: parseArray<string>(row.witness_ids),
+        toldIds: parseArray<string>(row.told_ids),
+        ties: parseArray<TieAtDeparture>(row.ties),
+        settledThroughDay: row.settled_through_day,
+        writtenOffOnDay: row.written_off_on_day,
+        truthFactId: row.truth_fact_id,
+        claimKey: row.claim_key
+    };
+}
+
 function rowToOpportunity(row: OpportunityRow): OpportunityWindow {
     return {
         id: row.id,
@@ -1981,6 +2057,22 @@ interface AscensionRow {
     end_note_above: string;
     inheritance_location_id: string | null;
     parting_gift_object_id: string | null;
+}
+
+interface AbsenceRow {
+    absentee_id: string;
+    absentee_name: string;
+    left_on_day: number;
+    location_id: string | null;
+    faction_id: string | null;
+    faction_rank_index: number;
+    witness_ids: string;
+    told_ids: string;
+    ties: string;
+    settled_through_day: number;
+    written_off_on_day: number | null;
+    truth_fact_id: string;
+    claim_key: string;
 }
 
 interface LocationRow {

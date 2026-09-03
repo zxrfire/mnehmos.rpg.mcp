@@ -28,6 +28,16 @@ still cares. Records change when an **event** changes them, and events are writt
 A record leaves the open ledger exactly one way: something happens and somebody writes a
 settlement saying what.
 
+**And most never do.** The design owner, on the accounts an absence opens for people who
+never find out what happened - *you can die never knowing and then it just dies, that's
+fine too*. So a five-century ledger holds several hundred `open` rows whose holders are
+dead, and that is not a backlog: it is several hundred people who went to their graves not
+knowing. **The holder dying is a DERIVED reading and never a second status** - a status
+would break `inheritOnDeath`, which refuses a record that is not open and is called
+*because* the holder died, and it would copy a fact that lives in `NpcRecord.status` and
+moves. Ask the world whether anybody is still carrying it; do not ask the row. The full
+argument is in the header of [`grudges.ts`](grudges.ts).
+
 ## Nothing ranks people by cultivation
 
 No query in this directory orders, filters or prioritises people by realm ordinal. A

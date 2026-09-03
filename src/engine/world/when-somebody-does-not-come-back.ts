@@ -21,6 +21,32 @@
  *   3. it reports, on return, what is materially different and where the
  *      surviving accounts of the absence DISAGREE.
  *
+ * ── Where the list lives, and who puts things on it ───────────────────────
+ *
+ * `WorldState.absences`, persisted in `world_absences`. The world owns them
+ * because the world is what cannot account for somebody, and because a play
+ * loop that had to carry the list beside the world would lose it at the first
+ * restart - which is what happened for as long as the list was an argument to
+ * `driver.ts` that nothing in `src/` ever filled.
+ *
+ * Two writers, and the split is on one question - can anybody say where they
+ * went?
+ *
+ *   NO   {@link openAbsencesForTheUnaccountedFor} sweeps everybody the world
+ *        has marked `missing` or `unknown` and opens one, once, per person.
+ *        `driver.ts` runs it on the same yearly line as everything else, so
+ *        every road into `markMissing` reaches this pass, present and future.
+ *   YES  whoever explained it calls {@link beginAbsence} directly with the
+ *        witness and told lists, because only they know who was standing
+ *        there. That is the seclusion road, and it is the player's.
+ *
+ * ── And an unexplained absence leaves an account with nobody's name on it ──
+ *
+ * The middle state of `accounts-with-no-name.ts` - *something is wrong and
+ * nobody knows who* - and this is the road most people take into it. See
+ * {@link openTheAccountItLeaves}. Most of those never resolve, which is the
+ * design owner's ruling and not a loose end.
+ *
  * ── The product is the disagreement ───────────────────────────────────────
  *
  * Every account this module writes is somebody's, dated, sourced, and allowed
@@ -91,6 +117,8 @@ import {
     type KnowledgeRecord,
     type SourceKind
 } from '../social/knowledge.js';
+import { createObligation, type GrudgeCause, type ObligationInput, type Severity } from '../social/grudges.js';
+import { NO_NAME_ON_IT, theSearchItOpens, withNoNameOnIt } from '../social/accounts-with-no-name.js';
 import { FRIENDSHIP_STANDING } from './gatherings.js';
 import { makeFact, yearOfDay, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
@@ -98,6 +126,7 @@ import {
     addGoal,
     closeGoal,
     isActing,
+    isUnadjudicated,
     setFaction,
     upsertRelationship,
     type NpcRecord,
@@ -186,6 +215,53 @@ const WAITING_KINDS = new Set<RelationshipKind>([
 
 /** Ties where a household actually ended, and could be replaced by another. */
 const HOUSEHOLD_KINDS = new Set<RelationshipKind>(['spouse', 'kin']);
+
+/**
+ * What the person holding the tie thinks was done, when nobody can say.
+ *
+ * The word is the HOLDER'S reading and not the engine's finding - the row is
+ * written `fromBelief`, and `grudges.ts` keeps that flag precisely so a record
+ * founded on an inference can be settled as `proven_false` if the truth ever
+ * surfaces. The engine knows only that it cannot account for somebody.
+ *
+ * `RelationshipKind` names what the TARGET is to the holder, so `master` here
+ * is a tie whose far end was this person's teacher. A disciple and an ally are
+ * both people of your house rather than of your blood, which is the whole of
+ * why they share a row.
+ */
+const WHAT_THEY_THINK_WAS_DONE: Readonly<Partial<Record<RelationshipKind, GrudgeCause>>> =
+    Object.freeze({
+        spouse: 'killed_kin',
+        kin: 'killed_kin',
+        parent: 'killed_kin',
+        child: 'killed_kin',
+        master: 'killed_master',
+        disciple: 'killed_sectmate',
+        ally: 'killed_sectmate'
+    });
+
+/**
+ * Whether anybody at all can say where the absentee went.
+ *
+ * The one fact that decides both halves of what an absence does, and it is
+ * read off the lists rather than stored: an absence somebody witnessed or was
+ * told about is EXPLAINED, and an absence nobody can account for is not.
+ *
+ * An explained absence is a seclusion. The people who were told wait; the rest
+ * of the province knows perfectly well the man is in a cave and has no reason
+ * to sit up, and nobody holds a wrong, because the person chose to go.
+ *
+ * An unexplained one is somebody who did not come home. Everybody whose life
+ * they were in waits - not because they were told anything, but because that
+ * is what a household does - and when one of them finally gives up, what they
+ * are left holding is a wrong with nobody's name on it.
+ */
+function nobodyCanSayWhereTheyWent(absence: {
+    witnessIds: readonly string[];
+    toldIds: readonly string[];
+}): boolean {
+    return absence.witnessIds.length === 0 && absence.toldIds.length === 0;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE ABSENCE
@@ -316,6 +392,7 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
     const witnessIds = [...new Set(input.witnessIds ?? [])].sort();
     const toldIds = [...new Set(input.toldIds ?? [])].sort();
     const informed = new Set([...witnessIds, ...toldIds]);
+    const unexplained = nobodyCanSayWhereTheyWent({ witnessIds, toldIds });
 
     const truth = recordTruth({
         claimKey,
@@ -346,8 +423,34 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
         if (!isActing(npc.status)) continue;
 
         const isInformed = informed.has(npc.id);
+        // ── WHO SITS UP ──────────────────────────────────────────────────
+        //
+        // Two roads to expecting somebody back, and the second one is what
+        // makes this module reachable at all.
+        //
+        // The first is being told. That is the seclusion case, and the gate is
+        // right there: a man announces a forty-year retreat, the people he told
+        // wait, and the rest of the province gets on with its life.
+        //
+        // The second is that nobody said anything and he simply did not come
+        // home. This used to fall through the same gate and produce nothing -
+        // an absence with no witnesses and nobody told had no waiting ties at
+        // all, so the yearly pass had nothing to do and every road the WORLD
+        // has into somebody going missing was inert. That is the wrong shape
+        // twice over: it reads as a value, and it says a wife waits for a
+        // husband who filed his intentions and does not wait for one who
+        // vanished. This module's own header wanted the opposite - the
+        // `disappearance` event's chronicle line is "treated as dead by
+        // everyone except one person", and that one person is a waiting tie.
+        //
+        // Being told is still the lever, and it is priced where it belongs:
+        // `INFORMED_PATIENCE` halves the give-up rate for somebody who was
+        // told. Not being told does not stop you waiting - it costs you the
+        // patience of knowing.
         const waiting =
-            isInformed && rel.standing >= FRIENDSHIP_STANDING && WAITING_KINDS.has(rel.kind);
+            (isInformed || unexplained) &&
+            rel.standing >= FRIENDSHIP_STANDING &&
+            WAITING_KINDS.has(rel.kind);
 
         let goalId: string | null = null;
         if (waiting) {
@@ -363,7 +466,9 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
                     obstacles: ['No word.'],
                     note: witnessIds.includes(npc.id)
                         ? 'Saw them go.'
-                        : 'Was told where they were going.'
+                        : toldIds.includes(npc.id)
+                            ? 'Was told where they were going.'
+                            : 'Nobody ever said what happened.'
                 },
                 input.onDay
             );
@@ -445,6 +550,98 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHO OPENS ONE, AND WHERE THE LIST LIVES
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Open an absence for everybody the world cannot account for and has not
+ * opened one for yet.
+ *
+ * ── WHY A SWEEP AND NOT A CALL AT EACH `markMissing` ─────────────────────
+ *
+ * `markMissing` is reached from four places today - the `disappearance`
+ * event, `technique_lost`, a party that went out and did not come back, and
+ * the pressure layer - and the number only goes up. Calling `beginAbsence`
+ * beside each of them is four call sites that have to be kept in step, and
+ * the fifth road somebody adds next month silently costs nothing again, which
+ * is the exact defect this whole module was found by. One sweep binds every
+ * road into `missing`, including the ones nobody has written.
+ *
+ * It is keyed on `isUnadjudicated`, which is `npc-state.ts`'s own name for
+ * "the engine genuinely does not know what happened" - so this pass follows
+ * that definition rather than keeping a second copy of it.
+ *
+ * ── EVERY ABSENCE THIS OPENS IS UNEXPLAINED, BY CONSTRUCTION ─────────────
+ *
+ * No witnesses and nobody told, because that is the truth of it: the world
+ * has no idea. An absence somebody CAN account for is opened by whoever can -
+ * the person sealing the door, who knows who they told - through
+ * `beginAbsence` directly. That split is the whole ownership rule here, and
+ * it is why this function takes no witness list and offers no way to pass one.
+ *
+ * Idempotent. An absentee already on `state.absences` is skipped, so running
+ * this every year for five centuries opens one absence per person and not
+ * five hundred.
+ */
+export function openAbsencesForTheUnaccountedFor(
+    state: WorldState,
+    onDay: number
+): AbsenceOpening[] {
+    // A world saved before this column existed loads with nothing here. One
+    // normalisation, at the only place that appends, rather than a `?? []` at
+    // every read - see AGENTS.md on what a scattered fallback hides.
+    if (!state.absences) state.absences = [];
+    const alreadyOpen = new Set(state.absences.map(a => a.absenteeId));
+    const opened: AbsenceOpening[] = [];
+
+    // Snapshot the roster first: `beginAbsence` writes goals onto `state.npcs`,
+    // and iterating a list something is replacing entries in is how a person
+    // gets skipped for reasons nobody can reproduce.
+    const unaccountedFor = state.npcs
+        .filter(npc => isUnadjudicated(npc.status) && !alreadyOpen.has(npc.id))
+        // Sorted so the list this appends to comes back off SQLite in the
+        // order it is held in memory: the repo reads absences ordered by day
+        // and then by id, and roster order is neither.
+        .sort((a, b) => a.updatedOnDay - b.updatedOnDay || (a.id < b.id ? -1 : 1))
+        .map(npc => ({
+            id: npc.id,
+            name: npc.name,
+            // `markMissing` stamps `updatedOnDay`, and nothing else moves
+            // somebody the world has stopped being able to see, so this is the
+            // day they stopped being accounted for rather than the day this
+            // sweep happened to notice.
+            leftOnDay: Math.min(npc.updatedOnDay, onDay),
+            locationId: npc.locationId,
+            factionId: npc.factionId,
+            factionRankIndex: npc.factionRankIndex,
+            endNote: npc.endNote
+        }));
+
+    for (const person of unaccountedFor) {
+        opened.push(
+            beginAbsence(state, {
+                absenteeId: person.id,
+                absenteeName: person.name,
+                onDay: person.leftOnDay,
+                locationId: person.locationId,
+                factionId: person.factionId,
+                factionRankIndex: person.factionRankIndex,
+                // The engine's own row, and it says what the engine actually
+                // knows rather than asserting an outcome it has not got. A
+                // missing person is not a person in seclusion, and the default
+                // sentence would have claimed they were alive.
+                truth:
+                    `The world cannot account for ${person.name}. ` +
+                    (person.endNote || 'Nobody saw what happened.')
+            })
+        );
+    }
+
+    state.absences.push(...opened.map(o => o.absence));
+    return opened;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE YEARLY PASS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -454,6 +651,17 @@ export interface AbsencePass {
     facts: HistoricalFact[];
     /** Knowledge rows to file. Every one is dated, sourced and possibly wrong. */
     accounts: KnowledgeRecord[];
+    /**
+     * Ledger rows the pass decided, for whoever holds a database.
+     *
+     * Named and shaped exactly as `PressureEvent.opens` is, and handed back for
+     * the same reason: there is no obligation ledger in `WorldState`, so the
+     * world layer decides an account and its caller writes it.
+     *
+     * Every row here has NO NAME ON IT - `subjectId` is null. See
+     * `openTheAccountItLeaves`.
+     */
+    opens: ObligationInput[];
     /** Absence-years actually processed. */
     yearsStepped: number;
 }
@@ -475,19 +683,20 @@ export function applyAbsence(state: WorldState, absence: Absence, toDay: number)
     const consequences: AbsenceConsequence[] = [];
     const facts: HistoricalFact[] = [];
     const accounts: KnowledgeRecord[] = [];
+    const opens: ObligationInput[] = [];
 
     const elapsed = Math.floor((toDay - absence.leftOnDay) / DAYS_PER_YEAR);
     const done = Math.floor((absence.settledThroughDay - absence.leftOnDay) / DAYS_PER_YEAR);
-    if (elapsed <= done) return { consequences, facts, accounts, yearsStepped: 0 };
+    if (elapsed <= done) return { consequences, facts, accounts, opens, yearsStepped: 0 };
 
     for (let n = done + 1; n <= elapsed; n++) {
         const day = absence.leftOnDay + n * DAYS_PER_YEAR;
-        stepTies(state, absence, n, day, consequences, facts, accounts);
+        stepTies(state, absence, n, day, consequences, facts, accounts, opens);
         stepWriteOff(state, absence, n, day, consequences, facts, accounts);
     }
 
     absence.settledThroughDay = absence.leftOnDay + elapsed * DAYS_PER_YEAR;
-    return { consequences, facts, accounts, yearsStepped: elapsed - done };
+    return { consequences, facts, accounts, opens, yearsStepped: elapsed - done };
 }
 
 function stepTies(
@@ -497,7 +706,8 @@ function stepTies(
     day: number,
     consequences: AbsenceConsequence[],
     facts: HistoricalFact[],
-    accounts: KnowledgeRecord[]
+    accounts: KnowledgeRecord[],
+    opens: ObligationInput[]
 ): void {
     for (const tie of absence.ties) {
         if (tie.settledOnDay !== null) continue;
@@ -653,8 +863,107 @@ function stepTies(
             accountIds: [belief.id]
         });
 
+        openTheAccountItLeaves(state, absence, tie, n, day, opens);
         maybeNewHousehold(state, absence, tie, n, day, consequences, facts);
     }
+}
+
+/**
+ * What somebody is left holding when they finally stop waiting.
+ *
+ * ── THE OTHER ROAD INTO AN ACCOUNT WITH NO NAME ON IT ────────────────────
+ *
+ * `accounts-with-no-name.ts` describes three states, of which the middle one
+ * is the design: *something is wrong and nobody knows who*. The obvious road
+ * into it is a killing with no witness, where the wronged party works it out
+ * because the letters stopped. THIS is that road, and it is the one most
+ * people take: you do not learn your brother is dead because somebody tells
+ * you, you learn it because he never came back and one day you stop expecting
+ * him.
+ *
+ * Three rules, and each of them is a fact the module already had:
+ *
+ * **Only an unexplained absence opens one.** Somebody who was told he was
+ * sitting down for forty years and did not come out has not been wronged by
+ * anybody - he chose to go, and if there is an account it has his name on it.
+ * An absence nobody can account for is the other thing, and the disappearance
+ * event's own claimed outcomes already include *was killed over an old
+ * account*. `nobodyCanSayWhereTheyWent` is the whole test.
+ *
+ * **It has no subject and never acquires one here.** `withNoNameOnIt` is the
+ * shared shape - null subject, `NO_NAME_TAG` - and a name arriving later is
+ * `aNameAttaches` on the same row at the same id, which is somebody else's
+ * moment. Nothing in this file guesses at who.
+ *
+ * **And it makes them do something.** `theSearchItOpens` turns the row into
+ * the `revenge` goal of a person who is asking questions and has no name to
+ * ask about, and it had no caller until this one. Note what that buys for
+ * free: goals INHERIT, so a search opened here can outlive the searcher and
+ * the grandchild is still looking.
+ *
+ * ── MOST OF THESE NEVER RESOLVE, AND THAT IS THE POINT ───────────────────
+ *
+ * Ruled by the design owner: *you can die never knowing and then it just
+ * dies, that's fine too.* There is deliberately no mechanism anywhere that
+ * tries to close one, and a world holding several hundred open rows is not a
+ * backlog - it is several hundred people who went to their graves not knowing.
+ * See `grudges.ts` on why the holder dying is a DERIVED reading rather than a
+ * second status.
+ */
+function openTheAccountItLeaves(
+    state: WorldState,
+    absence: Absence,
+    tie: TieAtDeparture,
+    n: number,
+    day: number,
+    opens: ObligationInput[]
+): void {
+    if (!nobodyCanSayWhereTheyWent(absence)) return;
+    const cause = WHAT_THEY_THINK_WAS_DONE[tie.kind];
+    if (!cause) return;
+
+    // Two words rather than four, off the threshold the module already uses to
+    // decide who waits twice as long. What a wrong is worth is a judgement
+    // about the size of the loss, and the only thing the engine honestly knows
+    // about the size of this one is what the tie was.
+    const severity: Severity = tie.standing >= DEFINING_STANDING ? 'grave' : 'serious';
+
+    const row = withNoNameOnIt({
+        kind: 'grudge',
+        holderId: tie.holderId,
+        // There is no name to put here and there never was one. It goes
+        // through `withNoNameOnIt` anyway, because that is the one place that
+        // knows how a row says so - the null AND the tag the ledger queries on.
+        subjectId: NO_NAME_ON_IT,
+        cause,
+        severity,
+        // The day they were wronged, not the day they worked it out. Same
+        // treatment `aNameAttaches` gives it: the wrong happened when the
+        // person stopped coming back, and finding out is a separate date that
+        // lands in the description and the tags.
+        onDay: absence.leftOnDay,
+        triggeringEventId: absence.truthFactId,
+        description:
+            `${absence.absenteeName} did not come back, and nobody could say what became of ` +
+            `them. ${tie.holderName} waited ${n} years before allowing that something had been ` +
+            'done. There is no name on it.',
+        participants: [absence.absenteeId],
+        tags: ['absence', `gave-up:${yearOfDay(day)}`],
+        // It rests on an inference from silence, which is exactly what the flag
+        // is for: if the truth ever surfaces the row can be settled as
+        // `proven_false`, and the man walking back through the door is the
+        // commonest way that happens.
+        fromBelief: true
+    });
+    opens.push(row);
+
+    // And what it makes them do. `targetId` is null and that is the content.
+    const at = state.npcs.findIndex(npc => npc.id === tie.holderId);
+    if (at < 0) return;
+    const search = theSearchItOpens(createObligation(row), {
+        lost: `what happened to ${absence.absenteeName}`
+    });
+    if (search) state.npcs[at] = addGoal(state.npcs[at], search, day);
 }
 
 /**

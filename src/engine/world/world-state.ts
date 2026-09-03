@@ -72,6 +72,7 @@ import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
 import type { ObjectRecord } from './possessions.js';
 import type { AreaStatus } from './what-is-true-of-a-place-right-now.js';
+import type { Absence } from './when-somebody-does-not-come-back.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FACTIONS
@@ -345,6 +346,21 @@ export interface WorldState {
      * Nothing that renders to a player may read `afterCrossing`.
      */
     ascensions: AscensionRecord[];
+    /**
+     * People the world cannot currently account for, and what their being gone
+     * is costing the people who held ties to them.
+     *
+     * Open ones and closed ones alike: an absence is never removed, because
+     * the snapshot of who was waiting on the day somebody vanished is the only
+     * thing that can answer "what did it cost me" two hundred years later, and
+     * a homecoming is a question asked against it.
+     *
+     * It lives here rather than being carried beside the world because the
+     * world is what fails to account for somebody, and because a list passed
+     * as an argument does not survive a restart. `driver.ts` advances it on
+     * the yearly line; `when-somebody-does-not-come-back.ts` owns the shape.
+     */
+    absences: Absence[];
 
     history: HistoryLedger;
     memories: MemoryStore;
@@ -443,6 +459,7 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         statuses: [],
         runs: [],
         ascensions: [],
+        absences: [],
         populationTarget: 0,
         history,
         memories: createMemoryStore(),
@@ -1110,6 +1127,12 @@ export function cloneWorld(state: WorldState): WorldState {
         })),
         runs: state.runs.map(r => ({ ...r })),
         ascensions: state.ascensions.map(a => ({ ...a })),
+        absences: (state.absences ?? []).map(a => ({
+            ...a,
+            witnessIds: a.witnessIds.slice(),
+            toldIds: a.toldIds.slice(),
+            ties: a.ties.map(t => ({ ...t }))
+        })),
         objects: state.objects.map(o => ({
             ...o,
             claims: o.claims.map(c => ({

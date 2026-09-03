@@ -56,6 +56,7 @@ import {
 } from './time.js';
 import {
     applyAbsence,
+    openAbsencesForTheUnaccountedFor,
     type Absence,
     type AbsenceConsequence
 } from './when-somebody-does-not-come-back.js';
@@ -82,16 +83,16 @@ export interface AdvanceForPlayOptions {
     /** Wired to the social layer's `inheritLedgerOnDeath`. */
     onDeath?: (handoff: DeathHandoff) => void;
     /**
-     * People the world currently cannot account for, advanced on the same
-     * yearly line as everything else.
+     * Absences to advance that are not on the world's own list.
      *
-     * The list is open absences, mutated in place. It is passed rather than
-     * stored on the world for the same reason `onDeath` is a callback: the
-     * accounts an absence produces are social-layer rows, and this layer hands
-     * them back instead of owning a ledger it would then have to persist.
+     * `state.absences` is where they live, and this pass sweeps up everybody
+     * the world has marked missing and opens one for them - so an NPC needs
+     * nothing here. What this is for is an absentee the WORLD does not hold a
+     * record of: a played cultivator sealing a door, who is an actor and not
+     * an NPC, and whose caller knows who they told.
      *
-     * The absentee does not have to be the player. The ordinary `disappearance`
-     * pressure event produces exactly the same object.
+     * Mutated in place, and advanced exactly once even if the same object is
+     * also on the world's list.
      */
     absences?: Absence[];
 }
@@ -118,7 +119,9 @@ export interface PlayAdvanceResult {
      *
      * The world cannot write these - there is no obligation ledger in
      * `WorldState` - so they come out with the deaths and the estates for
-     * whoever holds a database. Today it is a war's dead; anything else that
+     * whoever holds a database. Today it is a war's dead and the people who
+     * gave up waiting for somebody who never came back - the second lot with
+     * NO NAME on the row, which is the point of them - and anything else that
      * decides an account inside a tick lands here beside them.
      *
      * The rows carry `triggeringEventId`, so the same death arriving twice is
@@ -193,6 +196,7 @@ export function advanceWorldForPlay(
     const immortalDeaths: string[] = [];
     const absenceConsequences: AbsenceConsequence[] = [];
     const absenceAccounts: KnowledgeRecord[] = [];
+    const absenceOpens: ObligationInput[] = [];
     let born = 0;
     let remaining = requested;
     let interrupted = false;
@@ -227,11 +231,21 @@ export function advanceWorldForPlay(
 
         // After the deaths and the politics of the slice, not before: somebody
         // who died this year has to be dead by the time the absence pass asks
-        // whether they are still waiting, or they die waiting a year late.
-        for (const absence of opts.absences ?? []) {
+        // whether they are still waiting, or they die waiting a year late. It
+        // is also after the pressure layer, which is what MARKS people missing
+        // - so somebody who walked into the hills this year has an absence
+        // opened for them this year rather than next.
+        //
+        // Opening first and advancing second is deliberate and costs nothing:
+        // a brand-new absence has elapsed zero years and the pass is a no-op
+        // on it. Doing it the other way round would date every absence a year
+        // after the world stopped being able to see the person.
+        openAbsencesForTheUnaccountedFor(state, state.currentDay);
+        for (const absence of absencesToAdvance(state, opts)) {
             const pass = applyAbsence(state, absence, state.currentDay);
             absenceConsequences.push(...pass.consequences);
             absenceAccounts.push(...pass.accounts);
+            absenceOpens.push(...pass.opens);
         }
 
         remaining -= time.daysAdvanced;
@@ -249,7 +263,9 @@ export function advanceWorldForPlay(
     const events = state.history.facts.slice(factsBefore);
     const deaths = timeSlices.flatMap(t => t.deathHandoffs)
         .concat(pressureEvents.flatMap(e => e.deaths));
-    const accounts = pressureEvents.flatMap(e => e.opens ?? []);
+    // The war dead, and now the people who stopped waiting. Both are rows the
+    // world decided and cannot write, and they leave by the same door.
+    const accounts = pressureEvents.flatMap(e => e.opens ?? []).concat(absenceOpens);
     const pressure = { events: pressureEvents, born };
 
     // What of it reached the player.
@@ -277,6 +293,20 @@ export function advanceWorldForPlay(
         absenceConsequences,
         absenceAccounts
     };
+}
+
+/**
+ * The world's own absences, plus whatever the caller is carrying separately.
+ *
+ * Identity, not id: an absence is mutated in place and advancing the same
+ * object twice in one slice would step it two years for one year of world. A
+ * caller that passes an object already on `state.absences` - the natural thing
+ * to do while migrating - gets it advanced once.
+ */
+function absencesToAdvance(state: WorldState, opts: AdvanceForPlayOptions): Absence[] {
+    const own = state.absences ?? [];
+    const extra = (opts.absences ?? []).filter(a => !own.includes(a));
+    return own.concat(extra);
 }
 
 /** The same, phrased in years. */

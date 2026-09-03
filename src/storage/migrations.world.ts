@@ -912,6 +912,55 @@ export function migrateWorld(db: Database.Database): void {
       ON world_object_provenance(world_id, how);
     CREATE INDEX IF NOT EXISTS idx_world_provenance_holder
       ON world_object_provenance(world_id, holder_id);
+
+    -- ── PEOPLE THE WORLD CANNOT ACCOUNT FOR ──────────────────────────────
+    -- One row per absence, opened when somebody is marked missing or when
+    -- somebody seals a door behind them, and NEVER deleted. A closed absence
+    -- is still the only record of who was waiting on the day it opened, which
+    -- is what a homecoming two hundred years later is a question against.
+    --
+    -- 'settled_through_day' is the idempotence key: the yearly pass runs from
+    -- there to now, so ten years and then thirty produce the same world as
+    -- forty, across a restart as well as within one process.
+    --
+    -- WHY THE TIE SNAPSHOT IS JSON AND NOT A CHILD TABLE. Header note 1 says
+    -- location history is its own table because it is asked about from the far
+    -- end - "what happened at Blackwater Valley". The far-end question here is
+    -- "who is still waiting for somebody", and that is ALREADY a row in
+    -- world_npc_goals: waiting is a 'reunion' goal on the person, by design,
+    -- so it inherits. This column is the snapshot of what the ties WERE on the
+    -- day of departure, it is only ever read together with its absence, and it
+    -- is written back whole every time the pass settles one of them. A child
+    -- table would be a second place to answer a question that already has an
+    -- owner.
+    CREATE TABLE IF NOT EXISTS world_absences (
+      world_id TEXT NOT NULL,
+      absentee_id TEXT NOT NULL,                     -- one open absence per person
+      absentee_name TEXT NOT NULL DEFAULT '',
+      left_on_day INTEGER NOT NULL,
+      location_id TEXT,                              -- where they went, when anybody could say
+      faction_id TEXT,
+      faction_rank_index INTEGER NOT NULL DEFAULT -1,
+      -- Both empty is a real and common state, and it is the one that matters:
+      -- an absence nobody can account for is what leaves a wrong with no name
+      -- on it. See when-somebody-does-not-come-back.ts.
+      witness_ids TEXT NOT NULL DEFAULT '[]',        -- JSON: who watched them go
+      told_ids TEXT NOT NULL DEFAULT '[]',           -- JSON: who was told where
+      ties TEXT NOT NULL DEFAULT '[]',               -- JSON: the snapshot; see above
+      settled_through_day INTEGER NOT NULL,
+      written_off_on_day INTEGER,                    -- NULL while nobody has concluded it
+      truth_fact_id TEXT NOT NULL DEFAULT '',        -- the engine's own row in world_facts
+      claim_key TEXT NOT NULL,                       -- 'fate:<id>'; every account files here
+      PRIMARY KEY (world_id, absentee_id),
+      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
+    );
+
+    -- "Who has this world stopped being able to see, and is anybody still
+    -- expecting them" - the two queries the narrator and the pass both open on.
+    CREATE INDEX IF NOT EXISTS idx_world_absences_open
+      ON world_absences(world_id, written_off_on_day);
+    CREATE INDEX IF NOT EXISTS idx_world_absences_claim
+      ON world_absences(world_id, claim_key);
   `);
 
     addWorldColumns(db);
