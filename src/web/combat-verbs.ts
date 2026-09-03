@@ -51,6 +51,7 @@ import {
 } from '../engine/cultivation/unfinished-fight.js';
 import { type BoutTerms, whatFollowsFromTheBout } from '../engine/social-leverage/index.js';
 import { createBloodFeud, createGrudge } from '../engine/social/grudges.js';
+import type { InheritanceRelation } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import { isRuined, ruin } from '../engine/world/possessions.js';
@@ -1108,7 +1109,8 @@ export const combatVerbs = {
         // layer and is already written down; this only says who else now holds
         // something about it.
         const fallout = this.whatFollowedTheBout(
-            run, cultivator, party, standing ?? null, terms, result, inTheWorld.died
+            run, cultivator, party, standing ?? null, terms, result,
+            inTheWorld.died, inTheWorld.theirPeople
         );
         fallout.lines.unshift(...inTheWorld.lines);
         if (fallout.lines.length > 0) {
@@ -1173,8 +1175,27 @@ export const combatVerbs = {
         cultivator: Cultivator,
         theirRecord: NpcRecord | null,
         result: object
-    ): { died: boolean; lines: string[]; calls: ToolCallRecord[] } {
-        const nothing = { died: false, lines: [] as string[], calls: [] as ToolCallRecord[] };
+    ): {
+        died: boolean;
+        /**
+         * Who the dead left, in the world's own inheritance order.
+         *
+         * Carried out of here rather than re-derived downstream because
+         * `settleNpcDeath` has already answered it - on the record as it stood
+         * at death, which is the only moment the answer is right - and a second
+         * walk of the lineage after `markDead` would be asking about a corpse.
+         * Empty for anybody who lived and for anybody who left nobody.
+         */
+        theirPeople: readonly { id: string; relation: InheritanceRelation }[];
+        lines: string[];
+        calls: ToolCallRecord[];
+    } {
+        const nothing = {
+            died: false,
+            theirPeople: [] as { id: string; relation: InheritanceRelation }[],
+            lines: [] as string[],
+            calls: [] as ToolCallRecord[]
+        };
         if (!theirRecord || !this.atHand || isGuidingErrorBody(result)) return nothing;
 
         const body = result as Record<string, unknown>;
@@ -1241,7 +1262,12 @@ export const combatVerbs = {
             });
         }
 
-        return { died: wrote.died, lines: wrote.lines, calls };
+        return {
+            died: wrote.died,
+            theirPeople: wrote.handoff?.heirs ?? [],
+            lines: wrote.lines,
+            calls
+        };
     },
 
     /**
@@ -1303,7 +1329,31 @@ export const combatVerbs = {
          * the survival layer's answer about the same person reaching this by
          * different routes, because the person is stored in different places.
          */
-        diedInTheWorld = false
+        diedInTheWorld = false,
+        /**
+         * Who the dead left, from `whatItDidToThem`.
+         *
+         * ── THE HOLE THIS CLOSES, MEASURED ───────────────────────────────
+         *
+         * Played, on a pinned world: a cultivator killed two people in front of
+         * eight witnesses and `obligations` held ZERO rows afterwards. The
+         * killings were in the world - `aDeedEntersTheWorld` wrote both facts -
+         * and the world's own report named an heir on the way past
+         * (`heir=npc-232`). Nobody held an account against the player for
+         * either, because `whatFollowsFromTheBout` had only ever been asked
+         * about the loser's HOUSE, and neither of them had one.
+         *
+         * So the heaviest thing a player could do to somebody was the one thing
+         * that opened no account, while robbing them opened one reliably. That
+         * is the agency rule's softening in its most invisible form.
+         *
+         * `whatADeedLeaves` has always said what should happen - *heavy, and
+         * they have people: their family carries it at the same weight* - and
+         * its field for it is `principalCannotHoldIt`. This is that field,
+         * arriving where the bout is priced so the severity is still decided
+         * exactly once, in the module that owns the table.
+         */
+        theirPeople: readonly { id: string; relation: InheritanceRelation }[] = []
     ): { lines: string[]; calls: ToolCallRecord[] } {
         const nothing = { lines: [] as string[], calls: [] as ToolCallRecord[] };
         if (isGuidingErrorBody(result)) return nothing;
@@ -1364,7 +1414,11 @@ export const combatVerbs = {
                         ? positionIn(this.repos, cultivator.id) !== null
                         : (theirRow?.sectRank ?? null) !== null
                 }
-                : null
+                : null,
+            // Only where the OPPONENT is the one who died. A player's own heirs
+            // are not a thing this layer holds - a run ends, and what it leaves
+            // is `enshrineRun`'s question and the estate's, not this one's.
+            theirPeople: loserIsThePlayer ? [] : theirPeople
         });
 
         if (followed.howFar === 'kept') return nothing;
@@ -1449,7 +1503,7 @@ export const combatVerbs = {
             });
         }
 
-        if (followed.against && theirHouseId && theirHouse) {
+        if (followed.against && followed.heldBy.length > 0) {
             // `blood_feud` is a different KIND and not a heavier grudge -
             // `grudges.ts` keeps them apart because a feud runs between lines,
             // is expected to be inherited, and everybody involved knows it is
@@ -1458,46 +1512,77 @@ export const combatVerbs = {
             // the caller overruling the decision it just asked for.
             const write = followed.against.kind === 'blood_feud'
                 ? createBloodFeud : createGrudge;
-            const record = write({
-                holderId: theirHouseId,
-                subjectId: actorId,
-                cause: followed.against.cause,
-                severity: followed.against.severity,
-                onDay,
-                // The ground-truth row this account rests on, so a reader in
-                // forty years can get from the claim to the event and back.
-                triggeringEventId: deed?.fact.id ?? null,
-                description:
-                    `${followed.against.description} ${hurtName} was ${theirHouse.name}'s, and `
-                    + `${actorName} is the name on it.`,
-                terms: null,
-                dueOnDay: null,
-                participants: [cultivator.id, party.id],
-                tags: [...followed.against.tags]
-            });
-            writeObligation(this.db as unknown as DatabaseHandle, record);
 
-            calls.push({
-                name: followed.against.kind === 'blood_feud'
-                    ? 'social.createBloodFeud' : 'social.createGrudge',
-                action: 'attack',
-                summary:
-                    `${theirHouseId} now holds a ${followed.against.severity} `
-                    + `${followed.against.kind} about ${actorId} (${followed.against.cause}). `
-                    + `terms=${terms}; outcome=${outcome}; witnesses=${witnesses}. Written to `
-                    + 'obligations; permanent until settled, and inheritable.',
-                ok: true
-            });
+            // ── ONE ROW PER PARTY, AT THE ONE WEIGHT ─────────────────────
+            //
+            // The engine decided who and how heavy; this substitutes the house
+            // id it was not given and writes what it was told. Severity is not
+            // adjusted per holder, on `grudges.ts`'s own rule that inheritance
+            // does not discount - the brother holds what the brother holds.
+            for (const holder of followed.heldBy) {
+                const isTheHouse = holder.as === 'house';
+                const holderId = isTheHouse ? theirHouseId : holder.id;
+                if (!holderId) continue;
+                const record = write({
+                    holderId,
+                    subjectId: actorId,
+                    cause: followed.against.cause,
+                    severity: followed.against.severity,
+                    onDay,
+                    // The ground-truth row this account rests on, so a reader in
+                    // forty years can get from the claim to the event and back.
+                    triggeringEventId: deed?.fact.id ?? null,
+                    description:
+                        `${followed.against.description} `
+                        + (isTheHouse
+                            ? `${hurtName} was ${theirHouse?.name ?? 'the house'}'s, and `
+                              + `${actorName} is the name on it.`
+                            : `${hurtName} was theirs, and ${actorName} is the name on it.`),
+                    terms: null,
+                    dueOnDay: null,
+                    participants: [cultivator.id, party.id],
+                    tags: [
+                        ...followed.against.tags,
+                        // How this party comes to be holding it, in the ledger's
+                        // own word for the connection, so a reader can tell the
+                        // institution's row from the family's without guessing.
+                        isTheHouse ? 'institutional' : `carried:${holder.as}`
+                    ]
+                });
+                writeObligation(this.db as unknown as DatabaseHandle, record);
+
+                calls.push({
+                    name: followed.against.kind === 'blood_feud'
+                        ? 'social.createBloodFeud' : 'social.createGrudge',
+                    action: 'attack',
+                    summary:
+                        `${holderId} now holds a ${followed.against.severity} `
+                        + `${followed.against.kind} about ${actorId} `
+                        + `(${followed.against.cause}), as ${holder.as}. `
+                        + `terms=${terms}; outcome=${outcome}; witnesses=${witnesses}. Written to `
+                        + 'obligations; permanent until settled, and inheritable.',
+                    ok: true
+                });
+            }
 
             // Said as a fact about the world rather than as a warning, and only
             // where the player can name the house. Not knowing who is coming is
             // itself the fact, and the discovery layer owns that rule.
-            const known = this.knowledge.isAwareOf(cultivator.id, 'sect', theirHouseId);
+            const known = theirHouseId !== null
+                && this.knowledge.isAwareOf(cultivator.id, 'sect', theirHouseId);
+            const family = followed.heldBy.filter(h => h.as !== 'house').length;
             lines.push(
-                known
-                    ? `${hurtName} was ${theirHouse.name}'s. ${followed.note}`
-                    : `${hurtName} answered to somebody, and you do not know who. They will be `
-                      + 'told what was agreed and what happened instead.'
+                theirHouseId && theirHouse
+                    ? known
+                        ? `${hurtName} was ${theirHouse.name}'s. ${followed.note}`
+                        : `${hurtName} answered to somebody, and you do not know who. They will `
+                          + 'be told what was agreed and what happened instead.'
+                    // Nobody to complain to and somebody to come asking, which is
+                    // the harder of the two and the one that had no sentence.
+                    : `${hurtName} answered to nobody and left ${family === 1
+                        ? 'somebody' : 'people'}. There is no house to petition and no house to `
+                      + 'call it off, and what is written down is written down against you by '
+                      + 'name.'
             );
         } else if (followed.brokenPromise) {
             lines.push(

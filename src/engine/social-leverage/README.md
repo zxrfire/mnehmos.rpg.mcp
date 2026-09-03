@@ -399,6 +399,48 @@ Three things about it are load-bearing:
   For a killing it correctly writes nothing - the dead hold nothing - and the
   mistake was that nobody else was ever asked.
 
+### And "their people" means their family as well as their house
+
+The mistake above was half-fixed for a while, and the half that was missing was
+the commonest case in the world. `theirHouse` was the only party this function
+was ever told about, so a killing outside a ranked house opened **no account
+with anybody**. Measured by playing, on a pinned world: a cultivator killed two
+people in front of eight witnesses and the `obligations` table held **zero
+rows**, while `interact` opened one for a robbery every single time. The world's
+own report of the same killing named an heir on the way past.
+
+So the heaviest thing a player could do to somebody was the one thing that left
+nothing on the ledger. That is the agency rule's *softening* in its most
+invisible form, and it is worse than the visible kind: the player believes they
+made a choice and the world silently declined to charge them.
+
+`theirPeople` is the fix and it is `whatADeedLeaves`'s own field arriving one
+module earlier - *heavy, and they have people: their family carries it at the
+same weight*. Four rules:
+
+- **Only where the loser died.** That is exactly `principalCannotHoldIt`: the
+  dead hold nothing, so an account that would have been theirs has nowhere else
+  to go. Somebody ruined and living already holds their own from the resolver,
+  and whether their brothers hold one too is a separate ruling.
+- **The family imposes no floor.** `severityWithHouse` raises a floor an
+  INSTITUTION imposes. What the brother holds is exactly what the table said the
+  deed was worth, and the table is still the only place severity is decided.
+- **Both kinds of party at once.** `heldBy` names the house and the people
+  together, at one weight, because `grudges.ts` is explicit that inheritance
+  does not discount.
+- **Somebody with nobody still leaves nothing**, and that stays reachable. It is
+  the cheapest killing in the world and it is a fact about who they were rather
+  than a discount to whoever did it.
+
+**What this does NOT reach: a war.** `war-melee.ts` writes its deaths through
+`whatTheConfrontationDidToThem`, which is the same path a played killing takes
+into the world - and neither of them writes an obligation row on its own. What a
+war death leaves is an inherited `NpcRelationship` on the heir, in `WorldState`,
+because *there is no obligation ledger in `WorldState`*. So the two memories of
+the same kind of fact are split by which layer wrote it, and only the played
+half reaches the reading in `personal-alignment.ts`. That is an absence rather
+than a decision and it is written down here rather than left to be found.
+
 ## Reading order
 
 ```text

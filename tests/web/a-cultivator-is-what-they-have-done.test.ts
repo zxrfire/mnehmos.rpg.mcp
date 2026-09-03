@@ -26,6 +26,7 @@
 import { SECTS } from '../../src/data/cultivation/sects';
 import { TECHNIQUES } from '../../src/data/cultivation/techniques';
 import { ifCaughtPractising, whoseArt } from '../../src/engine/world/manuals';
+import { whatFollowsFromTheBout } from '../../src/engine/social-leverage/going-further-than-an-agreed-bout-allowed';
 import { activeWorld } from '../../src/server/state/cultivation-world';
 import type { AHolder } from '../../src/engine/social-leverage/being-hunted';
 import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
@@ -320,5 +321,142 @@ describe('and it binds anybody', () => {
             lookUpHolder
         });
         expect(mine.is.wrongs).toBeGreaterThan(0);
+    }, 300_000);
+});
+
+describe('the dead hold nothing, so the people they left do', () => {
+    withAdmin();
+
+    /**
+     * THE HOLE, MEASURED BEFORE IT WAS CLOSED. A cultivator killed two people
+     * in front of eight witnesses and `obligations` held ZERO rows afterwards,
+     * while `interact` opened one for a robbery every single time. So the
+     * heaviest thing a player could do to somebody was the one thing that left
+     * nothing on the ledger - the agency rule's softening in its most invisible
+     * form - and the world's own report of the same killing had named an heir
+     * on the way past.
+     */
+    it('opens an account against the killer, held by the people the dead left', async () => {
+        const { db, game } = await makeGameInWorld({
+            seed: 'record', worldSeed: 'world-align', adminMode: true
+        });
+        const { cultivator } = await game.newRun('Taker');
+        // Far enough above them that the killing is not in doubt. Arranging.
+        await game.act('ADMIN set_realm 30');
+        const standingHere = await whoIsHere(game);
+        expect(standingHere.length).toBeGreaterThanOrEqual(3);
+
+        for (const who of standingHere) await game.act(`I kill ${who}`);
+
+        const lookUpHolder = await rosterLookup();
+        const read = whatTheWorldHoldsAbout({
+            db: db as never,
+            person: { id: cultivator.id, ordinal: 30, backing: 'none' },
+            lookUpHolder
+        });
+
+        // Somebody holds it, and it is at the weight the bout table decided for
+        // a killing on open terms rather than at a floor.
+        const killings = read.ledger.filter(
+            row => row.subjectId === cultivator.id && row.cause === 'killed_kin'
+        );
+        expect(killings.length).toBeGreaterThan(0);
+        for (const row of killings) {
+            expect(row.severity).toBe('grave');
+            expect(row.status).toBe('open');
+            expect(row.holderId).not.toBe(cultivator.id);
+            // Every row says how its holder comes to be holding it, in the
+            // ledger's own word for the connection.
+            expect(row.tags.some(t => t === 'institutional' || t.startsWith('carried:')))
+                .toBe(true);
+        }
+
+        // Three killings is a method, and it does not matter that one victim
+        // had two sons: the copies collapse onto the deed behind them.
+        expect(read.is.alignment).toBe('demonic');
+        expect(read.is.wrongs).toBe(standingHere.length);
+    }, 300_000);
+
+    /**
+     * The other half of the same defect: the world held the killing at the
+     * lowest band it has, because the weight fell through to a floor meant for
+     * an event nobody was owed anything for. A killing is not `slight` to
+     * anybody.
+     */
+    it('puts the killing into the world at what it was worth', async () => {
+        const { game } = await makeGameInWorld({
+            seed: 'record', worldSeed: 'world-align', adminMode: true
+        });
+        await game.newRun('Taker');
+        await game.act('ADMIN set_realm 30');
+        const [first] = await whoIsHere(game);
+        await game.act(`I kill ${first}`);
+
+        const world = await activeWorld();
+        const killings = world.state.history.facts.filter(
+            fact => fact.data?.howFar === 'killed'
+        );
+        expect(killings.length, 'the killing is not in the world').toBeGreaterThan(0);
+        for (const fact of killings) {
+            expect(fact.data?.deedWeight).not.toBe('slight');
+            // And it travels. `circulating` and the digest both filter on this.
+            expect(fact.magnitude).toBeGreaterThan(0.5);
+        }
+    }, 300_000);
+
+    /**
+     * Somebody with nobody stays the cheapest killing in the world, and that
+     * has to stay reachable or the ledger stops meaning anything. Asserted on
+     * the engine rather than by hunting for a friendless NPC in a seed.
+     */
+    it('still leaves nothing where the dead left nobody', () => {
+        const followed = whatFollowsFromTheBout({
+            terms: 'open',
+            outcome: 'lethal',
+            loserDied: true,
+            witnesses: 4,
+            theirHouse: null
+        });
+        expect(followed.against).toBeNull();
+        expect(followed.heldBy).toEqual([]);
+    });
+});
+
+describe('the sheet finally says something true', () => {
+    withAdmin();
+
+    /**
+     * `Cultivator.feuds` has one writer in all of `src/`, on the MCP path, so
+     * the panel has said *"No one is currently hunting you"* for the whole life
+     * of this game whatever the player did. This is the acceptance for the
+     * reading: the line changes because the player acted, and changes back
+     * because they climbed past everybody holding it.
+     */
+    it('names who is hunting, and stops when nobody can reach them', async () => {
+        const { game } = await makeGameInWorld({
+            seed: 'record', worldSeed: 'world-align', adminMode: true
+        });
+        await game.newRun('Taker');
+        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+
+        expect(game.state().cultivator.feuds).toEqual([]);
+
+        for (const who of await whoIsHere(game)) {
+            for (const verb of WHAT_THEY_DID) {
+                await game.act(`ADMIN interact I ${verb} ${who}`);
+                await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+            }
+        }
+
+        const hunting = game.state().cultivator.feuds;
+        expect(hunting.length).toBeGreaterThan(0);
+        // People, not records. Somebody holding three accounts is one person on
+        // the road behind you.
+        expect(new Set(hunting).size).toBe(hunting.length);
+
+        // And it is not a stored list: climbing past everybody who holds
+        // something empties it, without a single row being settled or deleted.
+        await game.act(`ADMIN set_realm ${PAST_ANYBODY_HERE}`);
+        expect(game.state().cultivator.feuds).toEqual([]);
     }, 300_000);
 });

@@ -673,6 +673,8 @@ import {
     type RosterRowView,
     type RunView
 } from './view.js';
+import type { ObligationDb } from '../storage/repos/obligation.repo.js';
+import { whatTheWorldHoldsAbout } from './personal-record.js';
 
 // ── TURNING A RESULT INTO SENTENCES MOVED OUT ────────────────────────────
 //
@@ -13034,10 +13036,87 @@ ${fit.line}`;
         return cultivator.knownTechniques.map(id => getTechnique(id)?.name ?? id);
     }
 
+    /**
+     * Who is actually holding something against this cultivator, derived.
+     *
+     * ── THE FIELD THAT NOTHING WROTE ─────────────────────────────────────
+     *
+     * `Cultivator.feuds` is a stored JSON array with exactly ONE writer in the
+     * whole of `src/` - `combat-manage.ts`, on the MCP tool path - so the
+     * played game has never written one. The sheet's Feuds panel therefore said
+     * *"No one is currently hunting you"* for the entire life of this game,
+     * whatever the player did to anybody. AGENTS.md's *a field nothing writes*
+     * in its purest form: not inert, reading as a value, and the value is a lie
+     * with a straight face.
+     *
+     * The same entry prescribes the fix - *prefer deriving to storing where the
+     * answer moves* - and the answer moves constantly, because whether somebody
+     * can come for you changes every time either of you crosses a rung.
+     *
+     * ── WHAT IS ON THE PANEL, AND WHAT IS NOT ────────────────────────────
+     *
+     * Only the people who may act AND think it worth doing. Somebody holding a
+     * grave account who cannot reach you is not hunting you, and putting them
+     * on a panel headed Feuds would say they were. `whoIsComingForYou` keeps
+     * the two apart and the second list is on the same return value for
+     * whenever the sheet grows a place to say *they have written your name down
+     * and there is nothing behind it*, which is the better half of the fact.
+     *
+     * The stored array is not read and not written. Its one MCP writer is left
+     * alone rather than deleted, because deleting a column somebody else's
+     * front door writes to is a different change with a different owner.
+     */
+    private whoIsHuntingThisCultivator(cultivator: Cultivator): string[] {
+        const npcs = this.atHand?.npcs ?? [];
+        return [...whatTheWorldHoldsAbout({
+            db: this.db as unknown as ObligationDb,
+            person: {
+                id: cultivator.id,
+                ordinal: cultivator.realmOrdinal,
+                // `Backing`'s own three values, read off the roll: a house that
+                // would have to be dealt with, a roll whose house would not put
+                // its weight behind you, and nobody at all.
+                backing: cultivator.sectId === null
+                    ? 'none'
+                    : cultivator.sectRank ? 'backed' : 'unclaimable'
+            },
+            lookUpHolder: id => {
+                const npc = npcs.find(row => row.id === id);
+                if (npc) {
+                    return {
+                        id: npc.id,
+                        name: npc.name,
+                        ordinal: npc.cultivation.realmOrdinal,
+                        houseId: npc.factionId
+                    };
+                }
+                const row = this.repos.cultivators.getById(id);
+                if (row) {
+                    return {
+                        id: row.id,
+                        name: row.name,
+                        ordinal: row.realmOrdinal,
+                        houseId: row.sectId ?? null
+                    };
+                }
+                const house = this.repos.sects.getById(id);
+                // A house is a holder like any other and has a rung: whoever
+                // answers for it. Without this every institutional account read
+                // as a holder nobody could place and was silently dropped.
+                return house
+                    ? { id: house.id, name: house.name, ordinal: house.powerOrdinal, houseId: house.id }
+                    : null;
+            }
+        }).feuds];
+    }
+
     private stateView(run: Run, cultivator: Cultivator): StateView {
         return {
             run: runView(run),
-            cultivator: cultivatorView(cultivator),
+            cultivator: {
+                ...cultivatorView(cultivator),
+                feuds: this.whoIsHuntingThisCultivator(cultivator)
+            },
             ambient: this.ambientFor(cultivator, run),
             derived: derivedView(cultivator, {
                 sectName: this.sectNameFor(cultivator),
