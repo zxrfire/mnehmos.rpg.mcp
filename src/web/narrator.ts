@@ -764,6 +764,42 @@ const CLAIMS_DEATH =
  * happen, read the fact lines it was handed BEFORE reading the prose. Twice now
  * the answer has been in what the turn said rather than in how the model read
  * it. See `the-part-of-the-sentence-that-was-not-run.ts`.
+ *
+ * ── AND THE FOURTH FACE: DENY THE ACT, DO NOT REPORT A CONDITION ─────────
+ *
+ * A third check was proposed here and refused, and the refusal is the useful
+ * part. Played: *"I take a manual from the sect library without asking"* came
+ * back as *"your hand closing around a manual. You take it without asking."*
+ * Nothing was stolen - the intent reaches no resolver at all for a faction
+ * target, and `intent` never even reaches phase 3: it is on `structure`, which
+ * `composeNarrationUser` does not send, and captured off a recording provider
+ * the word "steal" appears nowhere in the message.
+ *
+ * **The player's own sentence was doing the narrating**, out of
+ * `THE PLAYER SAID, WORD FOR WORD` - which has to be in the prompt, because
+ * asking in this game turns on what was said. An audit check would catch the
+ * OUTPUT of that and delete it, and it would fail the way the four withdrawn
+ * checks failed: it can tell that a sentence was written, never that the
+ * sentence was wrong.
+ *
+ * What worked was upstream again, one degree sharper than "make the turn
+ * speak". The turn was already speaking - it said *"nothing is settled by it,
+ * nothing changed hands"* - and that is a sentence about SETTLEMENT. A model
+ * holding it beside *"I take a manual"* has no contradiction to resolve: it can
+ * write the hand closing and the outcome pending, which is what it did.
+ *
+ * > **Give the sentence a fact it collides with.** Not "nothing was settled" -
+ * > *the taking did not occur; it is still on the shelf.* A model cannot write
+ * > "you pull it from its place" against "it is still in its place" without
+ * > writing a flat contradiction, which is far harder for a model than a hedge.
+ * > It is not being asked to omit anything.
+ *
+ * Measured as two played turns of one build: given a denial of the act, "the
+ * declaration hangs between you and the world, unanswered"; given a report of
+ * the condition, the hand closing and then a hedge.
+ * `unresolved-attempt-denials.ts` holds one for every member of
+ * `INTERACT_INTENTS`, because all eleven reach the unresolved branch and only
+ * `steal` is getting a resolver.
  */
 export function auditNarration(
     text: string,

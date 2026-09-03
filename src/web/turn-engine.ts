@@ -570,6 +570,7 @@ import type { LocationRecord } from '../engine/world/locations.js';
 // tokens is how an encounter line and the sheet beside it came to disagree
 // about the same ground; this read is not going to be the third.
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
+import { whatDidNotHappen } from './unresolved-attempt-denials.js';
 import {
     factsForEat,
     factsForGather,
@@ -4575,16 +4576,21 @@ ${noticed}`;
         // it. Stealing from your own house is getting a real resolver
         // elsewhere; until it has one, the prose may not claim it happened.
         //
+        // AND IT DENIES THE ACT RATHER THAN REPORTING A CONDITION, which is
+        // the whole of why it works. The first version of this line said the
+        // approach was all that happened and nothing had been settled - true,
+        // and a model can narrate the hand closing and the outcome pending
+        // against it without contradicting itself, which is exactly what it
+        // did. `whatDidNotHappen` names the shelf, the purse, the unsaid word:
+        // a fact the player's own sentence collides with. See
+        // `unresolved-attempt-denials.ts` for the measurement behind that, and
+        // for why all eleven intents get one rather than `steal` alone.
+        //
         // On `required` rather than on `lines`: `lines` is a licence and
         // `withRequiredLines` is a duty, so a model that omits this gets it
         // appended verbatim instead of leaving the player believing they took
         // something.
-        sayThisWhateverTheNarratorDoes(
-            facts,
-            `The approach is the whole of what happened. Nothing was taken, nothing was handed `
-            + `over and nobody was moved - what ${cultivator.name} meant by it has not been `
-            + 'answered yet.'
-        );
+        sayThisWhateverTheNarratorDoes(facts, whatDidNotHappen(intent, cultivator.name));
 
         if (spoken) addHearing(facts, spoken);
 
