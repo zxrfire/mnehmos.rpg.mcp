@@ -295,12 +295,16 @@ export function discipleBarOf(factionId: string): number | undefined {
  * ── AND WHAT IS STILL MISSING ───────────────────────────────────────────
  *
  * A second Court, taking the other sex, which the design owner asked for as a
- * NEW house built around flowers. It is not here, and the honest reason is that
- * a house in this catalog is seven files rather than one - its own entry, a
- * character entry, a history entry, standing with the others, a parent in the
- * grant chain, a roll, and ground - each with its own guard. **A half-built
- * house is worse than none**, so this table has one row until that one is
- * written properly.
+ * NEW house built around flowers. It is not here. This section used to give
+ * the reason as "a house in this catalog is seven files rather than one", and
+ * that reason was right about the shape and wrong about the size - see
+ * {@link A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT}, which was written by
+ * building it, running the catalog against it, and taking it back out again.
+ * The house is not blocked on authoring effort. It is blocked on two rulings
+ * that are already in the repo and that a new closed Court has to satisfy at
+ * the same time, and only the design owner can say which of them moves.
+ *
+ * **A half-built house is worse than none**, so this table still has one row.
  */
 export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.freeze({
     /**
@@ -323,6 +327,45 @@ export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.
      */
     'sect-storm-tyrant-court': 'male'
 });
+
+/**
+ * Why the second closed Court is not in the table above, recorded rather than
+ * quietly left - the same posture as `FOLD_TRAVEL_ENGINE_GAP`.
+ *
+ * It was built to find this out: a full entry in `sects.ts`, an admission
+ * record, a governance record, a character record, a prefecture, a seat and
+ * this row. The catalog was then run against it, and the two things below are
+ * what came back. Neither is an authoring problem and neither can be settled
+ * here, so it was taken back out rather than left half-standing.
+ *
+ * WHAT IS ALREADY DESIGNED, so nobody has to do it twice. The Flower Court is
+ * a house whose gate is worth passing because of GROUND rather than a
+ * curriculum, which is the deliberate difference from the Storm Tyrant Court:
+ * a north-facing side valley the gorge fog settles into and never leaves, with
+ * frost on the floor every night of the year, and a vein under it no survey
+ * has ever sighted through. That single fact carries the rest of it - the
+ * province's whole political order runs on a grant book, a grant book runs on
+ * surveyed veins, so the one vein nobody has put a figure to is the one piece
+ * of ground nobody has a page to take. Its shelf is ordinary market stock and
+ * stops at Nascent Soul; its Matriarch stands nine rungs above the top of it
+ * and the house has never claimed to have taught her. It is `unbacked` /
+ * `unaffiliated` with `unbackedReason: 'nothing_there_a_document_could_hold'`,
+ * which is the reason that file already carries for ground rather than for a
+ * body. What it is afraid of is a clear year.
+ */
+export const A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT = {
+    what: 'A women-only Court cannot be added to the catalog today without breaking one of two standing rulings, and the choice between them is the design owner\'s.',
+    theFirstRuling:
+        '"Court" is a TIER MARKER, not a name. `cultivation-courts.test.ts` requires every body called a Court to stand at powerOrdinal 34 or above, and when that rule was written the Azure Mist Court was RAISED from 27 rather than renamed. Combined with this file\'s own ruling that a closed door has to be a Court - a gate is only interesting if what is behind it is worth wanting - a new closed house cannot be small. It has to be a genuine power.',
+    theSecondRuling:
+        'A power of that size needs a province that supports one, and the only province whose physics and politics do is the Low Fall: it is the one place in the world where ground alone carries somebody to the top of the ladder, and the only one with a grant book for an ungranted vein to be an exception to. But `the-map-by-bearing-and-what-crosses-the-water.test.ts` caps the centre at half the map, and the centre is sitting exactly on that cap. Measured: centre 17, everywhere else 17. An eighteenth Low Fall house fails it at 18 against 17.',
+    whyTheOtherProvincesDoNotWork:
+        'Each contradicts the house at its own governing fact rather than at a number. The White Stair is "two institutions and nothing else" in five places and its whole politics is a two-body quarrel. The Wide Field\'s thesis is that no institution holds a foot of land. The Quiet Marches has a localCeilingOrdinal of 6 and no client sects at all. The Drowned Reach has no vein within reach of anybody. The Blown Ground is at bearing `interior`, which the compass test excludes by construction.',
+    whatWouldUnblockIt:
+        'One sentence from the design owner, and there are three shapes it could take: move an existing body out of the Low Fall\'s seating and let the Court take the seat; rule that the centre cap counts something other than raw house count; or rule that this one house may be named something other than a Court, which means re-opening whether a closed door has to sit on a power.',
+    whatMustNotBeDoneInstead:
+        'Widening the compass guard. It is a structural claim about the shape of the world rather than a threshold on a noisy measurement, and AGENTS.md names the sentence that precedes this mistake: "it is only just under, and my change is obviously fine."'
+} as const;
 
 /**
  * Whom this house will admit, or null where it admits anybody.
