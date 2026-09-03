@@ -88,6 +88,10 @@ run-game.ps1
 # Machine-specific browser-preview launcher (ports, local paths)
 .claude/launch.json
 
+# Control arms and measurement worktrees. AGENTS.md requires they live here
+# rather than beside the repository, where nothing can see them.
+.claude/worktrees/
+
 # The sentence models the two no-model tiers run on, and the runtime that
 # executes them. Fetched once by `npm run models:fetch`, never committed:
 # this repository is a fork, and a fork on GitHub cannot hold its own large
@@ -104,3 +108,11 @@ web/tier/ort/
 *.f32
 models/**/verb-corpus.json
 web/tier/**/verb-corpus.json
+
+# The local launcher. Ports, model names and database paths are per-machine,
+# and a committed one becomes somebody else's ports. `README.md` says what it
+# does and how to write your own if it is not here.
+play.ps1
+play.db
+play.db-shm
+play.db-wal
