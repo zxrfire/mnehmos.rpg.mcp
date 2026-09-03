@@ -476,6 +476,11 @@ Rules, and they are enforced whatever you write:
 - AT MOST ONE THAT SPENDS. Free reads chain; a turn does one costly act. If the sentence
   genuinely contains two, still list both - the engine will stop and ask the player which
   comes first, which is the right answer and is not your call to make.
+- EVERY CLAUSE THAT NAMES AN ACT GETS A STEP. Count the acts in the sentence before you
+  answer, and answer with that many. A sentence with three commas in it and two steps in
+  your reply has lost one, and the middle of a sentence is where it goes: measured, "I take
+  his purse, press it into her hand, and walk away" came back as the taking and the walking
+  with the handover missing, which is the one clause the other two were for.
 - AT MOST ${MOST_CALLS_IN_ONE_TURN} STEPS.
 
 ${whichVerbsSpendSomething()}`;
