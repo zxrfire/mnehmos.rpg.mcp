@@ -276,3 +276,82 @@ describe('history: seeding prior ages', () => {
         expect(unexplainedFacts(prior.ledger).length).toBeGreaterThan(0);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// ONE OF THEM IS ALREADY OPEN
+//
+// Ruled by the design owner after a run was measured opening with nothing to
+// aim at - twelve ruins, twelve of them sealed and undiscovered:
+//
+//   "it should open, you should know about it, and you should not go at
+//    ordinal 0. a player can hear gossip above their realm and that's okay"
+//
+// The long-run rate stays with the discovery pass at 4-5 openings per century.
+// What is pinned here is the first day, and WHICH one - because a choice made
+// on an index does not survive somebody re-rolling the world, and a choice made
+// on a property does.
+// ─────────────────────────────────────────────────────────────────────────
+describe('a world opens with exactly one ruin already open', () => {
+    const seeds = ['seed-alpha', 'seed-beta', 'seed-gamma', 'seed-delta', 'seed-epsilon'];
+
+    it('opens one and only one, whatever the seed', () => {
+        for (const seed of seeds) {
+            const open = seedPriorAges(seed, { presentYear: 0 }).ruins.filter(r => r.opened);
+            expect(open, seed).toHaveLength(1);
+        }
+    });
+
+    /**
+     * THE SHALLOWEST, and the reason is causal rather than mechanical: it is the
+     * only one anybody could plausibly have got into. These are calibrated for
+     * the disciples of houses that no longer exist, and a Late Age province
+     * cannot field the people the deep ones were built to stop.
+     */
+    it('opens the shallowest one, which is the one anybody could have got into', () => {
+        for (const seed of seeds) {
+            const ruins = seedPriorAges(seed, { presentYear: 0 }).ruins;
+            const shallowest = [...ruins].sort(
+                (a, b) => a.dangerOrdinal - b.dangerOrdinal || (a.id < b.id ? -1 : 1)
+            )[0];
+            expect(ruins.find(r => r.opened)?.id, seed).toBe(shallowest.id);
+        }
+    });
+
+    /**
+     * A REFUSAL NAMES ITS AUTHOR, and so does an opening. Somebody got in, on a
+     * date, and the fact is on the ledger for the news layer to carry.
+     */
+    it('names who got in and when, and puts it on the ledger', () => {
+        const prior = seedPriorAges('seed-alpha', { presentYear: 0 });
+        const open = prior.ruins.find(r => r.opened)!;
+        expect(open.openedByName).toBeTruthy();
+        expect(open.openedYear).not.toBeNull();
+
+        const fact = prior.ledger.facts.find(f => f.kind === 'ruin_opened');
+        expect(fact).toBeTruthy();
+        expect(fact!.summary).toContain(open.openedByName!);
+        expect(fact!.visibility).toBe('public');
+        // It caused nothing to be forgotten: the sealing is still its cause.
+        expect(fact!.causes).toContain(open.originFactId);
+    });
+
+    /**
+     * Within living memory. The news layer decays a fact over four centuries,
+     * so a lifetime ago costs it almost nothing and being older than the
+     * province's memory would cost it everything.
+     */
+    it('happened recently enough that people alive now grew up with it', () => {
+        for (const seed of seeds) {
+            const open = seedPriorAges(seed, { presentYear: 0 }).ruins.find(r => r.opened)!;
+            expect(open.openedYear!, seed).toBeLessThan(0);
+            expect(open.openedYear!, seed).toBeGreaterThanOrEqual(-120);
+        }
+    });
+
+    /** Same seed, same answer. The choice is a property, not a draw order. */
+    it('is deterministic in the seed', () => {
+        const a = seedPriorAges('seed-alpha', { presentYear: 0 }).ruins.find(r => r.opened);
+        const b = seedPriorAges('seed-alpha', { presentYear: 0 }).ruins.find(r => r.opened);
+        expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    });
+});

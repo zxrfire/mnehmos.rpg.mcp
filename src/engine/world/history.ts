@@ -1348,5 +1348,111 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
         }
     }
 
+    openTheShallowestRuin(seed, o.presentYear, ledger, ruins);
+
     return { ledger, ruins, scars, lostTechniques, buriedTreasures, deadFactionNames };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ONE OF THEM IS ALREADY OPEN
+//
+// A world used to be created with every ruin sealed and undiscovered, so a run
+// began with nothing to aim at: measured on a live world, twelve ruins, twelve
+// of them shut, and *"what ruins are there around here"* answered with nothing
+// on turn one. The discovery pass produces 4-5 openings per century and that is
+// the right long-run rate; what was wrong was the first day.
+//
+// Three things have to be true at once and only the third is counter-intuitive:
+//
+//   IT IS OPEN            somewhere got into, a long time ago, by somebody with
+//                         a name and a date.
+//   YOU KNOW ABOUT IT     it is in the county, and the county has known about it
+//                         all your life. That is not a discovery, it is
+//                         geography, and `ground-the-world-found.ts` says why the
+//                         two are gated differently.
+//   AND YOU CANNOT TAKE IT
+//                         at the bottom of the ladder it kills you. Knowing a
+//                         thing exists and being able to survive it are separate
+//                         facts, and gossip outrunning capability is the point:
+//                         it turns a ruin into something aimed at for twenty
+//                         rungs instead of a door that says no.
+//
+// ── WHICH ONE, AND WHY THAT ONE ──────────────────────────────────────────
+//
+// THE SHALLOWEST, by `dangerOrdinal`, tie-broken on id so a re-rolled world
+// answers the same way twice. Not an index, and the reason is causal rather
+// than mechanical: **the shallowest is the only one anybody could plausibly have
+// got into.** These places are calibrated for the disciples of houses that no
+// longer exist, and a Late Age province cannot field the people the deep ones
+// were built to stop. Whichever one a province did open, it was the one nearest
+// its own reach - so the choice survives somebody re-rolling the world, because
+// it is a statement about the world rather than about the array.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How long ago somebody got in.
+ *
+ * Far enough back that anybody now alive grew up with it as an ordinary fact
+ * about the county, and near enough that the story is still repeated. The news
+ * layer decays a fact over four centuries, so a lifetime ago costs it almost
+ * nothing and being older than the province's memory would cost it everything.
+ */
+const OPENED_WITHIN_LIVING_MEMORY_YEARS = { min: 40, max: 120 } as const;
+
+function openTheShallowestRuin(
+    seed: string,
+    presentYear: number,
+    ledger: HistoryLedger,
+    ruins: Ruin[]
+): void {
+    if (ruins.length === 0) return;
+
+    const shallowest = ruins.reduce((best, ruin) =>
+        ruin.dangerOrdinal < best.dangerOrdinal
+        || (ruin.dangerOrdinal === best.dangerOrdinal && ruin.id < best.id)
+            ? ruin
+            : best);
+
+    // Its own stream. A draw added to an existing one shifts every draw after
+    // it, and every prior-age stream is keyed to an age or a faction anyway.
+    const rng = forStream(seed, 'ruin-already-open');
+    const openedYear = presentYear - rng.int(
+        OPENED_WITHIN_LIVING_MEMORY_YEARS.min,
+        OPENED_WITHIN_LIVING_MEMORY_YEARS.max
+    );
+    const who = personName(rng);
+
+    shallowest.opened = true;
+    shallowest.openedYear = openedYear;
+    shallowest.openedByName = who;
+
+    // The last era, because this happened in the age the world is standing in
+    // rather than in the one that sealed the place.
+    const era = ledger.eras[ledger.eras.length - 1];
+    appendFact(ledger, makeFact({
+        day: dayOfYear(openedYear),
+        eraId: era?.id ?? null,
+        kind: 'ruin_opened',
+        // Regional rather than local: this is the thing the province tells
+        // strangers about, and a name that never leaves the county is a name
+        // nobody can aim at.
+        scale: 'regional',
+        place: shallowest.location,
+        // The house that sealed it, so the opening and the sealing are one
+        // story rather than two facts about the same field.
+        factionIds: shallowest.formerFactionId ? [shallowest.formerFactionId] : [],
+        causes: [shallowest.originFactId],
+        summary:
+            `${who} got into ${shallowest.name} and came back out. `
+            + 'The way in has been open ever since, and what is down there has not '
+            + 'moved: it was cut for people nobody in this province can field.',
+        visibility: 'public',
+        fidelity: 'partial',
+        causeKnown: false,
+        // High on purpose. This is the one piece of closed ground anybody local
+        // can point at, and the news layer weights a fact by how big the world
+        // thought it was.
+        magnitude: 0.9,
+        data: { ruinId: shallowest.id, openedByName: who, openedYear }
+    }));
 }

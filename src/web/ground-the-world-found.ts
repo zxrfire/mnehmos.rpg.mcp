@@ -73,10 +73,44 @@ export interface FoundGround {
     discoveredOnDay: number | null;
     /** What the ground does to a body, in the same three shapes the catalog uses. */
     access: RuinAccess | null;
+    /**
+     * True where being able to name this needs no source, because everybody
+     * from here can.
+     *
+     * See {@link foundGroundIn} for the rule and why it is not a discovery leak.
+     */
+    countyKnowledge: boolean;
 }
 
-/** Whether a world location is a ruin the prospecting pass turned up. */
+/**
+ * Ground that stood open before this life started, rather than during it.
+ *
+ * The tag `locationFromRuin` puts on the twelve compounds the prior ages left.
+ * They are the world's OWN history rather than anybody's find, and that is the
+ * distinction the county rule in {@link foundGroundIn} turns on.
+ */
+const LEFT_BY_THE_PRIOR_AGES_TAG = 'late_age';
+
+/** An opened prior-age ruin: sealed centuries ago, and got into since. */
+function isOpenedPriorAgeRuin(location: LocationRecord): boolean {
+    return location.kind === 'ruin'
+        && (location.tags ?? []).includes(LEFT_BY_THE_PRIOR_AGES_TAG)
+        && !location.sealed
+        && location.discovered !== false;
+}
+
+/**
+ * Whether a world location is open ground a player could be standing outside.
+ *
+ * Two sources and they are not the same kind of thing. The prospecting pass
+ * uncovers ground DURING a run; the prior ages left twelve sealed compounds
+ * that the world may since have got into. Both are a discovered ruin with an
+ * access rule, which is all this surface needs - and the second was invisible
+ * here, so a run could open with an open ruin in the next valley and no verb
+ * that would ever mention it.
+ */
 export function isFoundGround(location: LocationRecord): boolean {
+    if (isOpenedPriorAgeRuin(location)) return true;
     return (location.tags ?? []).includes(FOUND_BY_PROSPECTING_TAG)
         && location.discovered !== false;
 }
@@ -136,6 +170,28 @@ function numberOr(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+/**
+ * What a prior-age ruin does to a body, off the bars the world already holds.
+ *
+ * Those twelve carry no `admits` in `data` - `locationFromRuin` writes a seal
+ * year and a former house, not an access rule - and the answer is not missing,
+ * it is one column over. `survival` IS the floor: nothing forbids the entry now
+ * that the seal is off and nobody is left to refuse anybody, and whether it was
+ * a good idea is settled on the way out. The same conversion the prospecting
+ * pass makes for a dead house's seat.
+ *
+ * Derived rather than stored, so a ruin whose bars move does not go on
+ * advertising the old ones.
+ */
+function accessFromTheBars(location: LocationRecord): RuinAccess {
+    return {
+        admits: 'anyone_who_survives_it',
+        floorOrdinal: location.thresholds.survival,
+        whatIsDownThere: '',
+        whatItDoesToSomebodyShortOfIt: ''
+    };
+}
+
 /** One find, read off the world row. */
 export function foundGroundOf(location: LocationRecord): FoundGround {
     const data = (location.data ?? {}) as Record<string, unknown>;
@@ -150,7 +206,15 @@ export function foundGroundOf(location: LocationRecord): FoundGround {
         setByOrdinal: numberOr(data.setByOrdinal),
         wardIntegrity: numberOr(data.wardIntegrity),
         discoveredOnDay: numberOr(location.discoveredOnDay),
+        // What the prospecting pass recorded, and where it recorded nothing,
+        // what the bars on the row already say. Still null for a find nobody
+        // has read - that is a real answer and stays one.
         access: accessOf(data)
+            ?? (isOpenedPriorAgeRuin(location) ? accessFromTheBars(location) : null),
+        // A ruin the province got into a lifetime ago is a different kind of
+        // thing from one uncovered last spring, and the difference decides
+        // whether knowing about it needs a source. See `foundGroundIn`.
+        countyKnowledge: isOpenedPriorAgeRuin(location)
     };
 }
 
@@ -165,6 +229,37 @@ export function foundGroundOf(location: LocationRecord): FoundGround {
  * Province-scoped for the same reason `quietGroundIn` is - this is local
  * geography, and a ruin four provinces away is a name somebody has to say to
  * you.
+ *
+ * ── AND ONE THING IS NOT A DISCOVERY ─────────────────────────────────────
+ *
+ * A ruin the province got into a lifetime ago, in the county you were born in,
+ * is not somebody's find. It is the county, and `seedStartingAwareness` already
+ * hands the whole county out unconditionally on the argument that *"a child in
+ * a temple town can name the market town two days off, because everybody around
+ * them could before that child could walk."* It reads `REGIONS` for that, and
+ * these compounds are not in `REGIONS` - the world made them - so the floor
+ * everybody has stopped at the edge of the static catalog and a run opened with
+ * nothing to aim at.
+ *
+ * So the gate is asked for everything the world UNCOVERED and skipped for
+ * ground that stood open before this life began. That is the same line, drawn
+ * in the same place, over a place the catalog could not list. Prospected finds
+ * are unchanged: those are discoveries and are spent by whoever made them.
+ *
+ * ── AND THE PROVINCE FILTER CANNOT REACH THEM EITHER ─────────────────────
+ *
+ * `locationFromRuin` sets no `parentId`, so **a seeded ruin is in the world and
+ * in no province** - which `findUndiscoveredUnder` in
+ * `how-the-world-keeps-finding-more-ruins.ts` had already found and documented,
+ * for the same reason: it made the whole seeded stock unreachable to a pass that
+ * filtered by region. Its answer was that a party from anywhere may claim one,
+ * and this is the same answer from the player's side.
+ *
+ * A site that is in no province is not four provinces away - it is unplaced,
+ * which is exactly the sort of ground somebody stumbles onto. So the province
+ * filter is asked of everything that HAS a province and skipped for what does
+ * not. If the seeding pass ever parents these, this stops firing on its own and
+ * the ordinary rule takes over.
  */
 export function foundGroundIn(
     world: WorldState | null,
@@ -174,8 +269,8 @@ export function foundGroundIn(
     if (!world) return [];
     return world.locations
         .filter(isFoundGround)
-        .filter(row => regionId === null || row.parentId === regionId)
-        .filter(row => holdsRecordFor(row.id))
+        .filter(row => regionId === null || row.parentId === null || row.parentId === regionId)
+        .filter(row => isOpenedPriorAgeRuin(row) || holdsRecordFor(row.id))
         .map(foundGroundOf)
         .sort((a, b) => (b.setByOrdinal ?? 0) - (a.setByOrdinal ?? 0) || (a.name < b.name ? -1 : 1));
 }

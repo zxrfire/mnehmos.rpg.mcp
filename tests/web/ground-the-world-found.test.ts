@@ -183,3 +183,93 @@ describe('the account it gives', () => {
             .toMatch(/not keeping them out any more/);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE TWELVE THE PRIOR AGES LEFT
+//
+// A run used to open with nothing to aim at: twelve ruins, twelve of them
+// sealed and undiscovered, and *"what ruins are there around here"* answering
+// with nothing on turn one. One of them is now already open, and these are the
+// three things that have to be true about it at once - it is open, you can name
+// it without being told, and it kills you at the bottom of the ladder.
+//
+// The third is not a failure of the design. Knowing a thing exists and being
+// able to survive it are separate facts, and knowledge running ahead of
+// capability is what turns a ruin into something aimed at for twenty rungs
+// instead of a door that says no.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A prior-age compound, shaped exactly as `locationFromRuin` writes one. */
+function priorAgeRuin(over: Record<string, unknown> = {}) {
+    return {
+        id: 'loc-ruin-2-3',
+        name: 'Threestone',
+        kind: 'ruin',
+        // `locationFromRuin` sets no parentId. That is the seeding pass, and it
+        // is what `findUndiscoveredUnder` documents from the other side.
+        parentId: null,
+        discovered: true,
+        discoveredOnDay: null,
+        sealed: false,
+        thresholds: { entry: 2, survival: 6, operational: 10, mastery: 12 },
+        tags: ['ruin', 'late_age'],
+        data: { sealedYear: -1400, formerFactionId: 'dead-faction-2-3' },
+        ...over
+    } as never;
+}
+
+describe('a ruin the province got into a lifetime ago', () => {
+    it('is ground a player can be standing outside, and a sealed one is not', () => {
+        expect(isFoundGround(priorAgeRuin())).toBe(true);
+        expect(isFoundGround(priorAgeRuin({ sealed: true }))).toBe(false);
+        expect(isFoundGround(priorAgeRuin({ discovered: false }))).toBe(false);
+    });
+
+    /**
+     * These carry no `admits` in `data` - `locationFromRuin` writes a seal year
+     * and a former house, not an access rule - and the answer is one column
+     * over. `survival` IS the floor now that the seal is off and nobody is left
+     * to refuse anybody.
+     */
+    it('is priced off the bars on its own row', () => {
+        const ground = foundGroundOf(priorAgeRuin());
+        expect(ground.access?.admits).toBe('anyone_who_survives_it');
+        expect(ground.access?.floorOrdinal).toBe(6);
+        // And a body at the bottom does not clear it. That is the design.
+        expect(readFoundGroundAccess(ground, 0)?.survives).toBe(false);
+        expect(readFoundGroundAccess(ground, 0)?.admitted).toBe(true);
+        expect(readFoundGroundAccess(ground, 6)?.survives).toBe(true);
+    });
+
+    /**
+     * Naming it needs no source. `seedStartingAwareness` already hands out the
+     * whole county on the argument that everybody from here can point at it; it
+     * reads `REGIONS`, and the world made these, so the floor everybody has
+     * stopped at the edge of the static catalog.
+     */
+    it('is nameable with no knowledge record at all', () => {
+        const world = { locations: [priorAgeRuin()] } as never;
+        expect(foundGroundIn(world, null, () => false)).toHaveLength(1);
+        expect(foundGroundOf(priorAgeRuin()).countyKnowledge).toBe(true);
+    });
+
+    /** And a prospected find is still a discovery, spent by whoever made it. */
+    it('does not open the gate on ground the world uncovered during the run', () => {
+        const world = { locations: [find()] } as never;
+        expect(foundGroundIn(world, null, () => false)).toHaveLength(0);
+        expect(foundGroundOf(find()).countyKnowledge).toBe(false);
+    });
+
+    /**
+     * A site in no province is not four provinces away - it is unplaced, which
+     * is exactly the sort of ground somebody stumbles onto. If the seeding pass
+     * ever parents these, this stops firing and the ordinary rule takes over.
+     */
+    it('is not filtered out of a province it was never put in', () => {
+        const world = { locations: [priorAgeRuin()] } as never;
+        expect(foundGroundIn(world, 'loc-region-low-fall', () => true)).toHaveLength(1);
+        // A parented one is scoped exactly as before.
+        const parented = { locations: [priorAgeRuin({ parentId: 'loc-region-elsewhere' })] } as never;
+        expect(foundGroundIn(parented, 'loc-region-low-fall', () => true)).toHaveLength(0);
+    });
+});
