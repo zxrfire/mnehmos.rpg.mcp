@@ -34,6 +34,49 @@
  * `ThingUnderForce` is why it cannot be.
  *
  * ═════════════════════════════════════════════════════════════════════════
+ * WHEN A WAR BECOMES A GROUP FIGHT, THIS PASS MUST GO
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * READ THIS BEFORE BUILDING THE WAR FIGHT. Ruled by the design owner, a war
+ * *can be easily simulated as a group fight*, and `resolveMelee` in
+ * `engine/cultivation/combat.ts` already resolves one between any number of
+ * sides. The day something enters it with a roster on each side, THIS PASS IS A
+ * SECOND WAY THINGS BREAK IN A WAR AND HAS TO BE DELETED RATHER THAN LEFT
+ * RUNNING BESIDE IT.
+ *
+ * It will not announce itself, which is why it is written here rather than
+ * hoped about. `MeleeResult.exchanges` already carries `result.weapon` on every
+ * strike - its own header says a caller reads breakages off that list rather
+ * than off a second field - so a melee ALREADY breaks the things the people in
+ * it are carrying, through the same `object-damage.ts` call this file makes. A
+ * war that ran both would break a house's things twice a year by two routes,
+ * and the second route is this one: a party drawn off a roster, standing in for
+ * a fight nobody was simulating.
+ *
+ * THAT IS THE WHOLE REASON THIS FILE EXISTS AND IT IS AN INTERIM. Nothing in
+ * the world fought a war, so nothing in the world could break anything in one,
+ * and a raid drawn once a year was the honest floor under that absence. It is
+ * not a model of a war. Delete it when there is one, keep `war-spoils.ts`,
+ * which is about the SETTLEMENT and is not a fight at all.
+ *
+ * One thing to carry across when you do: `MeleeResult` says *no caller in `src/`
+ * builds a melee with a weapon in it yet*, so the war fight would be the first,
+ * and the re-pricing that happens when somebody's object goes mid-fight has
+ * never run in play. Check it against `ratedThingsOwnedBy` below - what a person
+ * carries out of the gate is exactly what should be in their hands in the melee.
+ *
+ * And one trap, because it is the shape a fight invites. WRITE THE SUMMARY FROM
+ * WHAT THE RESOLVER RETURNED, NEVER FROM WHAT YOU EXPECTED IT TO. A melee has
+ * three endings the caller does not choose - `stalemate` when nobody broke
+ * inside the budget, `no_contest` when the gap made it not a fight, and a
+ * winner - and a house's summary composed from the inputs will confidently
+ * narrate a defeat that did not happen. That exact defect went onto the
+ * permanent record from this file: see `settleOneWar`, where twenty-two facts
+ * said a house had broken up while the code had handed its hold to the winner
+ * intact, and only a pooled count over eight seeds found it. Nothing in a test
+ * catches it, because the fact is well-formed and reads like a sentence.
+ *
+ * ═════════════════════════════════════════════════════════════════════════
  * WHAT THE FORCE IS, AND WHY IT IS THE BODY ALONE
  * ═════════════════════════════════════════════════════════════════════════
  *

@@ -80,13 +80,14 @@
  * nothing in the engine produces that.
  *
  * WHETHER A HOUSE BREAKS UP IS NOT DECIDED HERE AND THERE IS NO `willFlee`
- * FIELD. It is a reading of what the people at the top of a house want at the
- * worst moment, derived from the roster; a body whose leadership is dead or
- * divided scatters and one whose elders hold together does not. That reading
- * belongs to whoever owns a house's priorities, and this file takes its answer
- * as an argument ({@link TheLosingSide.holdsTogether}) rather than inventing a
- * second one. Until something supplies it, `carried off` is machinery with no
- * producer, and that is a gap with an owner rather than a gap nobody noticed.
+ * FIELD. Ruled by the design owner, a war *can be easily simulated as a group
+ * fight*, so it is a reading over who is left standing after one - and
+ * `resolveMelee` already lists exactly that, by name, along with who fell. A
+ * body whose seniors are all on the second list scatters and one whose elders
+ * came out of it does not. This file takes the answer as an argument
+ * ({@link TheLosingSide.holdsTogether}) rather than inventing a second one.
+ * Until something supplies it, `carried off` is machinery with no producer, and
+ * that is a gap with an owner rather than a gap nobody noticed.
  *
  * ── AND DISBANDING IS NOT BEING DESTROYED ────────────────────────────────
  *
@@ -393,10 +394,28 @@ export function settleTheSpoils(
  * averaging lets a crowd of juniors outweigh somebody they could not touch -
  * read across a whole roster instead of a party.
  *
- * It is deliberately thin. A war's outcome should be a reading of what the two
- * bodies wanted, what they spent and who came to help, and that belongs with
- * whoever owns a house's priorities. Replace this the day that exists; nothing
- * else reads it.
+ * ── AND WHAT REPLACES IT IS ALREADY WRITTEN. RULED BY THE DESIGN OWNER ───
+ *
+ *   > obviously this can be easily simulated as a group fight, right? not
+ *   > bespoke.
+ *
+ * So who is losing is not a subsystem anybody has to design. A war is two
+ * groups fighting, and `resolveMelee` in `engine/cultivation/combat.ts` already
+ * resolves a fight between any number of sides made of any number of people.
+ * Enter it with a roster on each side and it hands back every question this
+ * file and the two above it have been working around:
+ *
+ *   WHO LOST            `winningSideId`, and `MeleeSideOutcome.defeated`.
+ *   HOW BADLY           `strength`, and `fallen` against `standing`, and it is
+ *                       a quantity that MOVES as the thing runs rather than a
+ *                       verdict stamped at the end.
+ *   WHO IS LEFT         `standing` and `withdrawn`, by name. Which is the one
+ *                       input the third fate needs - see
+ *                       {@link holdsTogetherAsFarAsAnybodyKnows}.
+ *
+ * Replace this function the day something builds that; it has one caller and
+ * nothing else reads it. What it must NOT become is a second answer standing
+ * beside the melee's, so delete it rather than keeping it as a fallback.
  *
  * Null when the two are indistinguishable, which is a real answer: a war that
  * neither side lost moves nothing.
@@ -428,9 +447,22 @@ export function whoLost(
  *
  * THE OWNER'S WORD IS *TYPICALLY*, so capture is the ordinary ending and this
  * answers true wherever there is anybody left to hold together. What it does
- * NOT do is read the roster's leadership, which is what would make it sometimes
- * answer false - and that reading is somebody else's. Grep this function to
- * find the seam; it is the only place the third fate is decided.
+ * NOT do is read who came out of the fighting still standing, which is what
+ * would make it sometimes answer false. Grep this function to find the seam; it
+ * is the only place the third fate is decided.
+ *
+ * ── THE INPUT IT WANTS IS `MeleeSideOutcome.standing` ────────────────────
+ *
+ * Run the war as a group fight - `resolveMelee`, see {@link whoLost} - and the
+ * losing side comes back with its survivors listed by name, its fallen listed
+ * by name, and whether it was `defeated` at all. Whether a body breaks up is a
+ * reading over those survivors and nothing else, and it is a reading somebody
+ * can make honestly because the people it is about are named.
+ *
+ * Note the shape it should keep: this takes a BOOLEAN and should carry on
+ * taking one. `settleTheSpoils` has no business knowing how the answer was
+ * reached, and the day a melee decides it, what changes is who computes the
+ * boolean rather than anything downstream of it.
  *
  * A house with nobody alive in it does not hold together and does not scatter
  * either. It has already ended, and its things are simply there to be taken -
@@ -443,8 +475,8 @@ export function whoLost(
  * nobody left to carry anything. Eight seeds and five hundred years: 241
  * settlements, 1737 things moved, and NOT ONE object in a private pair of
  * hands. The third fate is machinery with no producer until a reading exists
- * that can say a house with living members still breaks up - which is the
- * roster reading named in the header, and is somebody else's.
+ * that can say a house with living members still breaks up - which is a reading
+ * over a group fight's survivors, and is somebody else's.
  *
  * Recorded here rather than left to be discovered, because a state nothing
  * produces reads exactly like a state that never fires.

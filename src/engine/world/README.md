@@ -1864,8 +1864,13 @@ war-spoils.ts    and what the ending does, which is mostly to change hands.
                  none ruined - wars redistribute the scarcest things in the
                  world rather than consuming them. The third fate, a house that
                  grabs its vault and disbands, is built and has no producer:
-                 whether a body breaks up is a roster reading owned elsewhere,
-                 and there is deliberately no `willFlee` field
+                 whether a body breaks up is a reading over who is left standing
+                 after a war, and a war is `resolveMelee` entered with a roster
+                 on each side, which lists the survivors by name. There is
+                 deliberately no `willFlee` field and no stored loser. NOTE that
+                 the day a war is a melee, `war-breakage.ts` is a second way
+                 things break in one and has to go; this file is about the
+                 settlement and is not a fight
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
                  what a surname is worth against a house's roll. Corroboration
