@@ -156,7 +156,14 @@ export const MANUAL_QUALITY_TIERS: Record<ManualQuality, ManualQualityTier> = {
 export const MANUAL_QUALITY_ORDER: readonly ManualQuality[] =
     ['corrupt', 'crude', 'sound', 'refined', 'pristine'] as const;
 
-/** Index on that ladder, for comparisons. Mirrors `gradeRank`. */
+/**
+ * Index on that ladder, for comparisons.
+ *
+ * A TOTAL ORDER, AND NOT THE SAME SHAPE AS `gradeRank` ANY MORE. This used to
+ * say it mirrored it. It does not: the grade ladder has a tie at the top -
+ * immortal and chaos are peers - and this one has no ties at all, because how
+ * good a copy is admits no equals. A book is worse, the same, or better.
+ */
 export function manualQualityRank(quality: ManualQuality): number {
     return MANUAL_QUALITY_ORDER.indexOf(quality);
 }
