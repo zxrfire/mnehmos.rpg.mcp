@@ -1141,6 +1141,45 @@ run once a year off `applyOrdinaryLifeTies`.
 
 ---
 
+## What a world opens holding
+
+**All of the above runs on the YEARLY pass, and a world that has just been created has run
+no years.** So the measurement the section above was written against was still exactly true
+of the only world most players ever see. Three fresh worlds, 595 living people each:
+
+|  | census-a | census-b | census-c |
+|---|---|---|---|
+| ties in the whole world | 133 | 134 | 134 |
+| of which `ally` ("Serves under") | 99 | 100 | 100 |
+| of which `rival` ("Was the other candidate") | 34 | 34 | 34 |
+| `kin` / `spouse` / `parent` / `child` / `master` / `disciple` | 0 | 0 | 0 |
+| historical facts | 108 | 106 | 96 |
+| of which carry a `deedWeight` | 0 | 0 | 0 |
+
+Every one of those 133 rows comes from seven lines in `seedFactions`. The six kinds
+`whoTheyCarryFor` reads were all at zero, and `aPricedWrongDoneTo` matched nothing - so on
+turn one the `tell` verb, the inherited grudge, the unnamed account, the absence layer and
+every house-acts-for-its-own path reached a population of nought.
+
+Two passes fix it, both at creation, and neither invents a mechanism:
+
+| | What it does | The rate, and the unit it is stated in |
+|---|---|---|
+| `the-families-a-world-opens-holding.ts` | Households out of people standing in the same settlement, through `couldParent` and `bindNewbornToHousehold` unchanged, so a seeded tie is byte-identical to one a birth writes | `BORN_TO_SOMEBODY_STANDING_HERE` is the chance for somebody who HAS an eligible parent beside them. Realised: **34-41% of the living hold a blood tie**, in households of two to four |
+| `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **4-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
+
+**Do not read the families off `state.lineages`.** `seedLineages` writes 440-446 parent/child
+edges at creation by chaining a shared surname, and nine tenths of its pairs have never stood
+in the same settlement, its tail contains parents three centuries older than their children,
+nobody in it has two parents, and it swallows the one family the catalog authors - `lin-duan`
+carries ~29 edges over the ~30 people in a world named Duan, of whom nine are
+`THE_LINE_AT_MILLRUN` and the rest drew a common surname.
+`a-family-that-came-down-from-a-changed-beast.ts` says outright that this must not happen:
+*"a stranger with the same name proves nothing at all."* The relationship layer's families and
+the lineage layer's families are two different claims today, and only the first is fixed.
+
+---
+
 ## A child their own house will not keep
 
 `a-child-their-own-house-will-not-keep.ts`. Fostering, and the first consumer of every one
