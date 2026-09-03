@@ -339,7 +339,21 @@ export const InjurySeveritySchema = z.enum(['minor', 'serious', 'crippling']);
 export type InjurySeverity = z.infer<typeof InjurySeveritySchema>;
 
 export const InjurySourceSchema = z.enum([
-    'combat', 'qi_deviation', 'failed_breakthrough', 'tribulation', 'poison', 'backlash', 'other'
+    'combat', 'qi_deviation', 'failed_breakthrough', 'tribulation', 'poison', 'backlash',
+    /**
+     * The place did it. Ground rated deeper than the body standing in it.
+     *
+     * Added because the principle was failing its own test here: a wound has a
+     * cause you can point at, and somebody torn by a ruin's floor carried a
+     * record that read `combat` - a real cause the game could not name
+     * afterwards. `site-verbs.ts` runs the exchange against the ground's own
+     * rung and it is not a person, so nobody hit them.
+     *
+     * The line is who or what delivered it, not how much it hurt. A theft on
+     * the road stays `combat`, correctly, because somebody swung.
+     */
+    'ground',
+    'other'
 ]);
 export type InjurySource = z.infer<typeof InjurySourceSchema>;
 
