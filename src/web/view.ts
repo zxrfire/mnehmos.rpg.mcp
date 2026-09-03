@@ -363,7 +363,12 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         breakthroughReady: eligibility.eligible,
         breakthroughBlockedReason: eligibility.eligible
             ? null
-            : refusalText(eligibility.reason, eligibility.progressAvailable, eligibility.progressRequired),
+            : refusalText(
+                eligibility.reason,
+                eligibility.progressAvailable,
+                eligibility.progressRequired,
+                { held: eligibility.daoHeld, required: eligibility.daoRequired }
+            ),
         lifespanRemaining:
             effectiveLifespanYears(ordinal, cultivator.immortalStatus) - cultivator.age,
         lifespanYears: effectiveLifespanYears(ordinal, cultivator.immortalStatus),
@@ -425,8 +430,26 @@ export function daoView(cultivator: Cultivator): DaoView {
 export function refusalText(
     reason: string | null,
     available: number,
-    required: number | null
+    required: number | null,
+    /**
+     * `daoHeld` and `daoRequired` off the same {@link EligibilityCheck}.
+     *
+     * Optional so the three-argument callers keep compiling while they are
+     * migrated. The route is named either way - what this buys is the two
+     * figures, and a refusal that names the bar without a number is still a
+     * refusal that names a route.
+     */
+    dao?: { held: number; required: number }
 ): string {
+    // `barred:<status>` carries the structural break in the reason string, so
+    // it cannot be a `case`. Read before the switch rather than in `default`,
+    // where it would sit behind the shrug it exists to replace.
+    const structural = reason?.startsWith('barred:') === true
+        && reason !== 'barred:the_lid_opened_once'
+        ? reason.slice('barred:'.length)
+        : null;
+    if (structural !== null) return structuralRefusalText(structural);
+
     switch (reason) {
         case 'insufficient_progress':
             // Above the Lid the refusal is the same one, and quoting a figure
@@ -445,11 +468,59 @@ export function refusalText(
             return 'There is no rung above this one.';
         case 'rank_cap_reached_this_turn':
             return 'One rank a turn. Bottlenecks are meant to be lived through.';
+        case 'insufficient_dao':
+            // `canAttemptBreakthrough` checks progress BEFORE this and says why
+            // in its own comment: somebody short of both should hear about the
+            // qi first, because that is the one sitting still fixes. So by the
+            // time this reason exists the accumulation is already there, and
+            // "the qi is there" is read off the ordering rather than guessed.
+            //
+            // This was the shrug the whole case exists to replace. Measured by
+            // playing: at ordinal 40 with the accumulator full, the attempt came
+            // back "The engine refused the attempt." and the sheet's
+            // `breakthroughBlockedReason` carried the same eleven words - no
+            // bar, no figure, and no route, over the gate that stops most of
+            // the upper half of the ladder.
+            return 'The qi is there and the understanding is not. '
+                + (dao
+                    ? `This crossing asks for ${dao.required} road${dao.required === 1 ? '' : 's'} `
+                      + `besides your own, and you have walked ${dao.held}. `
+                    : 'A realm boundary asks for roads besides your own, and you have not walked '
+                      + 'enough of them. ')
+                + 'A road is not bought and not waited out: it comes of an art practised, ground '
+                + 'that teaches one, a ruin opened, or something spent once on you. Ask what arts '
+                + 'you could learn, who would teach you, and where you could go.';
         case 'dead':
             return 'The cultivator is dead.';
         default:
             return 'The engine refused the attempt.';
     }
+}
+
+/**
+ * What a cracked structure says, and what is left to do about it.
+ *
+ * The reason code is `barred:<status>` and the status is one of
+ * `BROKEN_STATUSES` - a broken foundation, a cracked core, a crippled nascent
+ * soul, and so on. It is a REALM CROSSING that is refused; the sub-rank steps
+ * inside the realm are not gated, and `canAttemptBreakthrough` says so where it
+ * sets the gate. That distinction is the whole of the route, so it is what this
+ * sentence leads with.
+ *
+ * The break is named rather than described because the engine's own key already
+ * reads as a diagnosis - `crippled-nascent-soul` is a sentence with the hyphens
+ * taken out. Nothing here decides anything: no repair is priced and no
+ * reachability is claimed, because `what-structural-repair-medicine-can-reach.ts`
+ * owns both and a second opinion here would drift from it.
+ */
+function structuralRefusalText(status: string): string {
+    const named = status.replace(/-/g, ' ');
+    return `The crossing will not build on a ${named}. That is mechanical rather than punitive: `
+        + 'each realm is built on the last one, and the next thing does not form on a broken '
+        + 'version of the thing under it. The rungs inside this realm are still open - it is the '
+        + 'realm boundary that is shut. What reopens it is a structural repair, which is a thing '
+        + 'a house spends on somebody rather than a thing anybody buys for themselves: ask what '
+        + 'would treat it, and who could.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────

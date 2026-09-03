@@ -480,29 +480,64 @@ export function techniqueCeiling(
     // which is one or more at every rung on the ladder. Zero is therefore not a
     // book that teaches nothing; it is the absence of a book, and it is
     // reserved for exactly that.
+    // ── ABOVE THE LID, A BOOK IS NOT THE ANSWER AND SAYING SO IS A LIE ───
+    //
+    // Both sentences below name a route - find a book, find the next volume -
+    // and above the Lid neither route leads anywhere, because
+    // `progressRequiredForOrdinal` is null there: what is above is not bought
+    // with qi and no amount of it would do. The multiplier is still 0 and that
+    // is still correct; what was wrong was the reason given for it.
+    //
+    // Found by playing at ordinal 46. One status read said both "there is
+    // nothing above this rung that qi buys, so there is no figure to report"
+    // AND "what is missing is not years and not discipline, it is a book" -
+    // the sheet contradicting itself inside four lines, and pointing a True
+    // Immortal at a search that cannot pay. `DaoView.theOnlyAxisLeft` is the
+    // same predicate reading the same fact and already says the right thing.
+    //
+    // The STATE is deliberately unchanged. A fourth member of
+    // `TechniqueCeilingState` would be the honest model and it is not free: the
+    // value is passed into a separately-declared `manualState` union in
+    // `who-would-teach-this-cultivator.ts`, so widening it here breaks a caller
+    // rather than teaching it something. They hold no book, which is what the
+    // state says; only the advice was wrong.
+    const nothingLeftToAccumulateFor = progressRequiredForOrdinal(realmOrdinal) === null;
+
     if (techniqueCap === NO_MANUAL_CEILING) {
         return {
             state: 'no_method',
             multiplier: 0,
-            label: 'No cultivation method: there is no book',
-            line:
-                'This cultivator is practising no cultivation method at all. Sitting in a ' +
-                'quiet room and breathing is not cultivation: without a manual there is no ' +
-                'road for the qi to take, so nothing accumulates and nothing ever will. ' +
-                `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
-                'What is missing is not years and not discipline. It is a book, or somebody ' +
-                'willing to teach them one.'
+            label: nothingLeftToAccumulateFor
+                ? 'No cultivation method, and nothing left for one to carry them to'
+                : 'No cultivation method: there is no book',
+            line: nothingLeftToAccumulateFor
+                ? 'This cultivator is practising no cultivation method, and at ' +
+                  `${rankName(realmOrdinal)} it would not matter if they were. There is no ` +
+                  'rung above this one that qi buys, so there is nothing for a manual to ' +
+                  'carry them to and nothing for the sitting to accumulate. What is left is ' +
+                  'not a book. It is what they understand.'
+                : 'This cultivator is practising no cultivation method at all. Sitting in a ' +
+                  'quiet room and breathing is not cultivation: without a manual there is no ' +
+                  'road for the qi to take, so nothing accumulates and nothing ever will. ' +
+                  `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
+                  'What is missing is not years and not discipline. It is a book, or somebody ' +
+                  'willing to teach them one.'
         };
     }
 
     return {
         state: 'exhausted',
         multiplier: 0,
-        label: `The manual ends at ${rankName(techniqueCap ?? 0)}`,
-        line:
-            `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and that is ` +
-            'where they are standing. It is not slower here; it is stopped, and no amount ' +
-            'of sitting with it changes that. What is missing is the next volume.'
+        label: nothingLeftToAccumulateFor
+            ? `The manual ends at ${rankName(techniqueCap ?? 0)}, and so does the ladder`
+            : `The manual ends at ${rankName(techniqueCap ?? 0)}`,
+        line: nothingLeftToAccumulateFor
+            ? `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and so does ` +
+              'everything else: there is no rung above this one that qi buys, so there is no ' +
+              'next volume to want. What is left is not a book. It is what they understand.'
+            : `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and that is ` +
+              'where they are standing. It is not slower here; it is stopped, and no amount ' +
+              'of sitting with it changes that. What is missing is the next volume.'
     };
 }
 
