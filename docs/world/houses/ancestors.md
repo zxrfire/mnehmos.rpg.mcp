@@ -7,6 +7,10 @@ house's prestige decays as its crossing recedes.
 
 Part of [`sects.md`](./sects.md).
 
+The catalog is
+[`the-ancestors-a-house-still-names.ts`](../../../src/data/cultivation/the-ancestors-a-house-still-names.ts) -
+who each house still names, and what is actually left of them.
+
 ## Ancestral records and the millennial offering
 
 <!-- tier: 2 trigger="a sect's standing, prestige, ancestry, or vault is in question" -->
