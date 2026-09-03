@@ -922,7 +922,7 @@ export class ProviderNarrator implements Narrator {
         // downstream could know it had existed. Checked against the player's own
         // text rather than against what the model said about it.
         dropped.push(...await theClausesNoStepAccountsFor(
-            input, checked, async clause => (await readTheSentence(clause)).action.action
+            input, checked, async clause => (await readTheSentence(clause)).action
         ));
 
         const costly = checked.filter(spendsSomething);
@@ -935,12 +935,12 @@ export class ProviderNarrator implements Narrator {
             // Said out loud, because a step nobody sent is exactly the kind of
             // reading AGENTS.md asks to be shown: the player can see that their
             // sentence put an act back that the reader had not.
-            ...(whole.backfilled.length > 0
-                ? [`The reader answered with ${fromTheReader.length} of them; `
-                    + `${whole.backfilled.map(step => step.action.action).join(', ')} `
-                    + 'came from the sentence itself, read without a model and put back where '
-                    + 'it was written.']
-                : []),
+            // How the sentence was split, and what became of every clause -
+            // including the ones nothing was done about, because a clause that
+            // vanishes without saying why is the defect this whole layer exists
+            // to remove, and it cost a played round trip to find once already.
+            `The reader answered with ${fromTheReader.length}. Clause by clause: `
+            + whole.why.join('; ') + '.',
             ...declined
         ].join(' ');
 
