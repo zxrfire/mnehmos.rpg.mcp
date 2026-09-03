@@ -937,7 +937,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         },
         sentDown: {
             id: 'sent-datum-lamp',
-            name: 'The Datum Lamp',
+            name: 'The Fixed Star Lamp',
             description:
                 'A survey instrument, in the sense that a sword is a length of metal. The founder of the Survey sent it back down after her crossing, and it does the one thing nothing on this side does: it holds a fixed reference that is not local. Everything the Survey measures is measured against it in the end.',
             uses: [

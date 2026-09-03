@@ -114,7 +114,7 @@ export const NOTHING_AT_FORTY_SIX_IS_EVER_LEFT = {
 // The rule for whether a row gets one is written in the row's own description
 // and nowhere else. The Ninth Nail is a place that cannot be folded, so it is
 // legible as formation. The Standing Edge settles who somebody is without
-// appeal, so it is karma. The Cold Arterial Key is explicitly "the strongest
+// appeal, so it is karma. The Key of the Long Cold is explicitly "the strongest
 // thing anybody has built out of a CURRICULUM instead of out of a dao" - so it
 // has no road in it and never will, and the Storm Tally is a lightning
 // curriculum for the same reason. A curriculum teaches a method; a dao does
@@ -141,7 +141,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // filters on a non-null `ownerId` and there is not one on this band.
     makeObject({
         id: 'carried-the-first-course',
-        name: 'The First Course',
+        name: 'The First Chisel',
         kind: 'artifact',
         significance: 'legendary',
         power: 46,
@@ -167,7 +167,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'carried-the-first-datum',
-        name: 'The First Datum',
+        name: 'The Fixed Star',
         kind: 'artifact',
         significance: 'legendary',
         power: 46,
@@ -175,14 +175,39 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: '',
         possessorId: 'figure-tao-jingwei',
         description:
-            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Datum Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
+            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Fixed Star Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     // ── 45: three of them, and no two are held by allies ──────────────────
+    //
+    // WHY THE HOLLOW COURT'S FOUR ARE NAMED UNLIKE EVERYTHING ELSE HERE
+    // -----------------------------------------------------------------
+    // The Unwritten Span, The Second Silence, The Turned Leaf and The Fourth
+    // Refusal are abstractions where the rest of this catalog is images, and
+    // that is deliberate rather than an older draft nobody has got to.
+    //
+    // Every one of them is tagged `undeclared`: nobody outside the Court has
+    // seen one and the Court has never said they exist. So there is no name
+    // for them IN the world - no house calls them anything, no register lists
+    // them, and no seller has ever quoted one. What these rows carry is this
+    // catalog DESCRIBING four objects, which is a different act from reporting
+    // what people call a thing, and it should read differently.
+    //
+    // Contrast the sent-down band above and the forged band below, every one
+    // of which is `known-to-exist`. Those have public names because the world
+    // has had to talk about them, and they are images accordingly - the Ninth
+    // Nail, the Fixed Star Lamp, the Chained Stone.
+    //
+    // So: do not "fix" these four into treasure names. Naming them would be
+    // asserting that somebody below the Lid knows them well enough to have
+    // named them, and the whole point of the Court is that nobody does.
+    // `tone.md`'s rule against a definite article plus an abstract noun holds
+    // everywhere the world is doing the naming; this is the one band where it
+    // is not.
     makeObject({
         id: 'hollow-unwritten-length',
         data: { daoDomain: 'life_death' },
-        name: 'The Unwritten Length',
+        name: 'The Unwritten Span',
         kind: 'artifact',
         significance: 'legendary',
         power: 45,
@@ -265,7 +290,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'sent-datum-lamp',
         data: { daoDomain: 'void' },
-        name: 'The Datum Lamp',
+        name: 'The Fixed Star Lamp',
         kind: 'artifact',
         significance: 'legendary',
         power: 43,
@@ -290,7 +315,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-standing-weight',
         data: { daoDomain: 'formation' },
-        name: 'The Standing Weight',
+        name: 'The Chained Stone',
         kind: 'artifact',
         significance: 'legendary',
         power: 41,
@@ -305,7 +330,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-ninth-volume-case',
         data: { daoDomain: 'karma' },
-        name: 'The Ninth Volume Case',
+        name: 'The Oath-Binding Case',
         kind: 'artifact',
         significance: 'legendary',
         power: 38,
@@ -318,7 +343,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-the-cold-arterial-key',
-        name: 'The Cold Arterial Key',
+        name: 'The Key of the Long Cold',
         kind: 'artifact',
         significance: 'significant',
         power: 34,
@@ -332,7 +357,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-severed-ledger-blade',
         data: { daoDomain: 'karma' },
-        name: 'The Severed Ledger',
+        name: 'The Book of Severings',
         kind: 'artifact',
         significance: 'significant',
         power: 29,
@@ -345,7 +370,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-the-storm-tally',
-        name: 'The Storm Tally',
+        name: 'The Thunder-Struck Rod',
         kind: 'artifact',
         significance: 'significant',
         power: 26,
