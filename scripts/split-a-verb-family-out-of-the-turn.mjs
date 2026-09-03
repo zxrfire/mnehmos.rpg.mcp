@@ -277,6 +277,40 @@ function importBlock(names, index) {
     return out.join('\n');
 }
 
+/**
+ * Attach the new object to the class: import, declaration merge, prototype.
+ *
+ * Done here rather than by hand because it is the same four edits every time
+ * and the only interesting thing about them is getting all four. Missing the
+ * `Object.assign` compiles perfectly and fails at runtime with "is not a
+ * function"; missing the interface fails to compile at every call site.
+ */
+function wire(src, cfg) {
+    const type = cfg.object[0].toUpperCase() + cfg.object.slice(1);
+    const line = `import { ${cfg.object} } from './${cfg.out.split('/').pop().replace(/\.ts$/, '.js')}';`;
+    if (src.includes(line)) return src;
+
+    const imports = [...src.matchAll(/^import \{ \w+ \} from '\.\/[a-z-]+\.js';$/gm)];
+    const last = imports[imports.length - 1];
+    if (!last) throw new Error('no verb-family import to anchor to; wire the first one by hand');
+    src = src.slice(0, last.index + last[0].length) + '\n' + line + src.slice(last.index + last[0].length);
+
+    const iface = /^export interface GameService extends (.+) \{\}$/m;
+    if (!iface.test(src)) throw new Error('no `export interface GameService extends ...` to extend');
+    src = src.replace(iface, (m, list) => `export interface GameService extends ${list}, ${type} {}`);
+
+    const types = [...src.matchAll(/^type \w+ = typeof \w+;$/gm)];
+    const lastType = types[types.length - 1];
+    src = src.slice(0, lastType.index + lastType[0].length)
+        + `\ntype ${type} = typeof ${cfg.object};`
+        + src.slice(lastType.index + lastType[0].length);
+
+    const assign = /^Object\.assign\(GameService\.prototype, (.+)\);$/m;
+    if (!assign.test(src)) throw new Error('no `Object.assign(GameService.prototype, ...)` to extend');
+    return src.replace(assign, (m, args) =>
+        `Object.assign(GameService.prototype, ${args}, ${cfg.object});`);
+}
+
 // ─── the move ────────────────────────────────────────────────────────────
 
 function build(cfg) {
@@ -375,6 +409,7 @@ function build(cfg) {
         if (!re.test(src)) throw new Error(`${n}: nothing private by that name to widen`);
         src = src.replace(re, '$1$2');
     }
+    src = wire(src, cfg);
     write(cfg.file, src.split('\n'), crlf);
     console.log(`${cfg.out} written | ${cfg.file} now ${src.split('\n').length} lines`);
     console.log('now: prune-imports-that-went-dead.mjs, then prove-a-move-changed-nothing.mjs,');
