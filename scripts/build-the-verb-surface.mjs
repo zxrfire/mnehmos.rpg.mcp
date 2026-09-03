@@ -15,8 +15,8 @@
  * hand-written nowhere:
  *
  *   what-each-verb-is-for-in-the-players-words.ts   what a player is asking for
- *   actions.ts                                      the closed set, and the
- *                                                   deterministic parser's routes
+ *   action-set.ts                                   the closed set
+ *   verb-pattern-table.ts and its siblings          the parser's routes
  *   game.ts                                         where each verb resolves
  *
  * The first of those is also what `prompt.ts` composes the phase-1 glossary
@@ -41,12 +41,13 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOC = path.join(ROOT, 'docs', 'verbs.md');
 
-// `actions.ts` was split by subject, so the four things this script used to
-// scrape out of one file now sit in three. Each entry is named for what is
-// read from it rather than for the module, because that is the thing that goes
-// stale: the closed set and its classification lists, the day counts a
-// description interpolates, and the pattern table whose `action:` literals say
-// which verbs the deterministic reader can actually reach.
+// `actions.ts` was split by subject and is now a re-export barrel, so the four
+// things this script used to scrape out of one file are spread across several.
+// It reads the SOURCE modules rather than the barrel on purpose: a barrel has
+// no text in it to scrape, and naming each entry for what is read from it -
+// the closed set and its classification lists, the day counts a description
+// interpolates, the pattern table whose `action:` literals say which verbs the
+// deterministic reader can reach - is what stops an entry going stale silently.
 const SOURCE = {
     surface: 'src/web/what-each-verb-is-for-in-the-players-words.ts',
     actions: 'src/web/action-set.ts',
@@ -70,7 +71,7 @@ const SOURCE = {
  * number measures, which is not a thing to do inside a move.
  */
 const TABLE = [
-    'src/web/actions.ts',
+    'src/web/verb-pattern-table.ts',
     'src/web/asking-is-not-doing.ts',
     'src/web/match-phrasings.ts',
     'src/web/site-phrasings.ts',
