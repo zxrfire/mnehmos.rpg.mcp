@@ -2283,6 +2283,240 @@ export const SECT_INTENT_PATTERNS: ReadonlyArray<[SectIntent, RegExp]> = [
     ['standing', /\b(?:standing|where do i stand|my rank|what rank|my position|my contribution|how (?:am i|do i) (?:doing|rate))\b/]
 ];
 
+// ─── WHICH HOUSES WOULD TAKE SOMEBODY LIKE ME ─────────────────────────────
+//
+// The commonest ambition in the genre, and it had no sentence. Measured, in a
+// played run, deterministic reader:
+//
+//   "I want to get into a sect. Which ones would even look at someone like
+//    me?"                              -> sect(target="get into a sect")
+//                                      -> "You have said a name and it is not
+//                                         one anybody has said to you."
+//   "who would take someone like me"   -> unclear
+//
+// Note what the first one is. The sentence's whole POINT is that it names no
+// house - it is asking which ones there are - and `extractSubject` manufactured
+// one out of the words around the verb, which the engine then correctly refused
+// as a name nobody had said. A subject invented from a sentence that named
+// nothing is the shape of most of this parser's bugs, and here it turned the
+// one question the listing exists to answer into a refusal.
+//
+// THE READ IT IS OWED ALREADY EXISTS AND IS THE RIGHT ONE. `sect` with no
+// target reaches `sect_manage.list` with `admissibleOnly`, which filters the
+// register by the bar this cultivator actually clears, gates it on the names
+// they hold, and says of each one whether it would take them as a disciple,
+// as a guest, or not at all. Nothing had to be built; the sentences simply
+// never arrived.
+//
+// AND IT IS DELIBERATELY NOT THE ASK-ABOUT-A-NAMED-THING ROUTE BELOW. This
+// question names no thing. It asks about a SET, filtered by the asker, and
+// handing it to a resolver that looks names up is exactly the failure that was
+// measured. The two are next-door neighbours and they must stay two routes.
+
+/**
+ * Words that can appear in a joining sentence and are not part of a house's
+ * name.
+ *
+ * The parser-side twin of `GENERIC_HOUSE_PHRASE` in `game.ts`, and it exists
+ * because that one is anchored at the start: it catches "a sect" and "sect
+ * that will take me" and cannot catch "get into a sect", where the category
+ * noun is at the END of the phrase the extractor pulled out.
+ *
+ * Filler, not a blocklist of names. Every word here is a category noun, an
+ * article, a pronoun or a verb somebody uses to say they want to be taken on.
+ * If anything survives the sieve, the phrase named something and the name is
+ * carried through.
+ */
+const NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE = new Set([
+    'a', 'an', 'the', 'any', 'some', 'one', 'ones', 'another', 'other', 'new',
+    'good', 'strong', 'decent', 'nearby', 'local', 'nearest', 'best', 'soonest',
+    'sect', 'sects', 'order', 'orders', 'school', 'schools', 'clan', 'clans',
+    'house', 'houses', 'cult', 'cults', 'place', 'places', 'somewhere',
+    'anywhere', 'here', 'there', 'near', 'around', 'about', 'else',
+    'get', 'gets', 'getting', 'got', 'into', 'in', 'to', 'of', 'on', 'at',
+    'for', 'with', 'and', 'or', 'that', 'which', 'what', 'who', 'whose',
+    'join', 'joins', 'joining', 'joined', 'enter', 'entering', 'apply',
+    'applying', 'enrol', 'enroll', 'want', 'wants', 'wanting', 'would', 'will',
+    'could', 'might', 'should', 'can', 'am', 'is', 'are', 'was', 'were', 'be',
+    'being', 'been',
+    'take', 'takes', 'taking', 'taken', 'have', 'has', 'admit', 'admits',
+    'accept', 'accepts', 'look', 'looking', 'looks', 'find', 'finding',
+    'hear', 'hears', 'even', 'ever', 'still', 'me', 'us', 'my', 'our', 'myself',
+    'i', 'it', 'its', 'their', 'them', 'they', 'like', 'someone', 'somebody',
+    'anyone', 'anybody', 'people', 'nobody',
+    'up', 'out', 'over', 'go', 'going',
+    // ── AND THE WORDS A POSTED NOTICE IS POINTED AT BY ───────────────────
+    //
+    // "I take the intake at the house that posted the notice" is a sentence
+    // that names no house: every word of it is a pointer at a row on a wall.
+    // Without these the sieve let `posted` and `notice` through, read the
+    // phrase as a name, and the sect surface refused a house that does not
+    // exist. No house in the catalog is called any of them.
+    'intake', 'intakes', 'notice', 'notices', 'bill', 'bills', 'poster',
+    'posters', 'paper', 'wall', 'post', 'posts', 'posted', 'posting',
+    'advertised', 'advertising', 'recruiting', 'recruitment', 'held',
+    'holding', 'days', 'weeks', 'months', 'two', 'three', 'four', 'five',
+    'six', 'seven', 'eight', 'nine', 'ten',
+    // The verbs of turning up to one, for the same reason: "I present myself
+    // at the Hollow Bell Wanderers intake" put four of them in front of the
+    // name, and a capture anchored on the noun takes all of them.
+    'attend', 'attends', 'attending', 'present', 'presents', 'presenting',
+    'sign', 'signs', 'signed', 'signing', 'turn', 'turns', 'turned', 'show',
+    'shows', 'showed', 'shown', 'walk', 'walks', 'walked', 'put', 'puts',
+    'putting', 'forward', 'front', 'make', 'makes', 'made'
+]);
+
+/**
+ * Whether a phrase pulled out of a joining sentence actually names a house.
+ *
+ * True when nothing distinctive survives the sieve above. The caller then
+ * carries no target, and the sect surface answers with the listing - which is
+ * what a sentence naming no house was asking for.
+ */
+export function namesNoHouse(phrase: string | undefined): boolean {
+    if (!phrase) return true;
+    return phrase
+        .toLowerCase()
+        .replace(/[^a-z0-9' -]+/g, ' ')
+        .split(/[\s-]+/)
+        .filter(word => word.length > 0
+            && !/^\d+$/.test(word)
+            && !NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE.has(word.replace(/'s$/, '')))
+        .length === 0;
+}
+
+/**
+ * The house inside a phrase that also carries the words around it.
+ *
+ * The same shift-from-the-left that `houseClaimedIn` does for a possessive, and
+ * for the same reason: a lazy capture anchored before a noun takes the whole
+ * clause, so "I take the Hollow Bell intake" hands back "I take the Hollow
+ * Bell", which resolves to nobody.
+ */
+function theHouseInside(phrase: string | undefined): string | undefined {
+    if (!phrase) return undefined;
+    const words = phrase.trim().split(/\s+/);
+    while (words.length > 0 && NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE.has(
+        words[0].toLowerCase().replace(/[^a-z']/g, '').replace(/'s$/, ''))) {
+        words.shift();
+    }
+    const name = words.join(' ').trim();
+    return name.length >= 3 && !namesNoHouse(name) ? name.slice(0, 80) : undefined;
+}
+
+// ─── TAKING AN INTAKE THE GAME ITSELF JUST POSTED ─────────────────────────
+//
+// FOUND BY PLAYING, standing in Halfwater. The wall volunteered three bills
+// unprompted - *"Three bills are tacked to the wall. Three of them state a bar
+// you already clear. The soonest intake listed opens in seventeen days."* - and
+// named all three with their houses, their places and their dates. Then:
+//
+//   > I take the intake at the house that posted the notice
+//   The reserves: refused. The engine declined, and the reason it filed is
+//   not a member.
+//
+// A sentence about being taken on by a house reached a read of that house's
+// TREASURY and was refused for not belonging to it. `SECT_THEFT_PATTERN`
+// carries `take (?:a little|some|the|...)`, which is right for "I take the
+// treasury" and catches "I take the intake" on the way past; the sect-noun
+// block it sits in fires because the sentence contains the word `house`.
+//
+// So the game advertised three open doors, told the player they cleared the bar
+// for all three, gave the dates, and then answered the sentence that accepts
+// one with a members-only read.
+//
+// ── TAKING AN INTAKE IS NOT JOINING, AND THIS DOES NOT MAKE IT ONE ───────
+//
+// An intake is an EVENT ON A DATE. The sentence is a decision to be somewhere
+// when it happens, and the house still decides - so this routes to whatever
+// `sect` already does about being taken on and lets that accept or refuse. It
+// resolves nothing itself and writes nothing.
+//
+// Where the sentence names a house, the name is carried and the ordinary door
+// answers. Where it points at the paper instead - "the house that posted the
+// notice", "the soonest one" - {@link namesNoHouse} drops the pointer and the
+// admissible listing answers, which names every door open to this cultivator
+// rather than refusing about a house that does not exist. Resolving WHICH ROW
+// of the posted wall was meant needs the wall, and the wall needs the run's
+// day and seed, which live a layer above this file.
+
+/** The nouns a posted intake is pointed at by. No house is named any of them. */
+const A_POSTED_INTAKE =
+    '(?:intakes?|recruiting (?:events?|days?|drives?)|admission days?|open days?'
+    + '|recruit(?:ing|ment) (?:bills?|notices?|posters?))';
+
+/**
+ * Going to one, as opposed to reading about it.
+ *
+ * The same split `SIPHON_TAKING_VERBS` draws between standing in front of the
+ * vault and opening it: a question about what is posted is
+ * {@link RECRUITING_BILL_PATTERN} and stays the wall read, and a sentence with
+ * one of these in verb position is somebody deciding to turn up.
+ */
+const GOING_TO_AN_INTAKE =
+    'take|takes|taking|go to|goes to|going to|attend|attends|attending|'
+    + 'sign up (?:at|for|with)|signs up (?:at|for|with)|signing up (?:at|for|with)|'
+    + 'put myself (?:forward|in front of)|present myself (?:at|to|for)|'
+    + 'turn up (?:at|to|for)|show up (?:at|to|for)|apply at|be there for|'
+    + 'walk in at|walk into';
+
+export const TAKING_A_POSTED_INTAKE = new RegExp(
+    `\\b(?:${GOING_TO_AN_INTAKE})\\b[^.!?]{0,40}?\\b${A_POSTED_INTAKE}\\b`,
+    'i'
+);
+
+/**
+ * Which house's intake the sentence means, where it says.
+ *
+ * Three shapes, because a poster gets pointed at three ways: "the intake at the
+ * Halfwater Rail", "the Halfwater Rail's intake", "the Hollow Bell intake".
+ * Undefined is the ordinary answer and is not a failure - it means the sentence
+ * pointed at the paper rather than at a name, and the listing answers it.
+ */
+export function whoseIntakeItIs(input: string): string | undefined {
+    const after = new RegExp(
+        `\\b${A_POSTED_INTAKE}\\s+(?:at|with|for|held by|run by|being held by)\\s+(.{3,60}?)\\s*[.!?]?$`,
+        'i'
+    ).exec(input);
+    const before = new RegExp(
+        `\\b(.{3,60}?)(?:'s|s')?\\s+${A_POSTED_INTAKE}\\b`,
+        'i'
+    ).exec(input);
+    return theHouseInside(after?.[1]) ?? theHouseInside(before?.[1]);
+}
+
+/**
+ * Asking who would have you, in a sentence that names no house at all.
+ *
+ * ── WHAT IT DELIBERATELY DOES NOT COVER ──────────────────────────────────
+ *
+ * Everything with a house noun in it. The join branch below already fires on a
+ * house noun beside any question word, so "which sects would take me" and "what
+ * houses would have me" were reaching the sect surface the whole time and only
+ * the manufactured target was wrong - see {@link namesNoHouse}. Widening this
+ * pattern to cover them too would buy nothing and cost a great deal: a first
+ * draft did, and it took two sentences out of the corpus on the way past -
+ * *"what things do I have on me"* and *"what road takes me there"*, both of
+ * which put `me` a few words behind a verb this pattern was reading as
+ * admission.
+ *
+ * So it covers exactly the two shapes that carry no noun at all:
+ *
+ *   the idiom      "who would take somebody like me", "which ones would even
+ *                  look at someone like me". `<taking verb> somebody like me`
+ *                  has no reading that is not about being taken on.
+ *   the modal      "would anyone take me", "would anybody have me".
+ *
+ * Both pin the asker as the object, which is what says the question is about
+ * admission rather than about anybody else.
+ */
+export const WHO_WOULD_TAKE_SOMEBODY_LIKE_ME = new RegExp(
+    '\\b(?:take|takes|have|admit|admits|accept|accepts|look at|looks at|touch|want|wants)\\s+'
+    + '(?:a\\s+)?(?:nobody|somebody|someone|anybody|anyone|people|rogue|stranger)\\s+like\\s+(?:me|us)\\b'
+    + '|\\bwould\\s+(?:anyone|anybody|any\\s+of\\s+them|they)\\s+(?:even\\s+)?'
+    + '(?:take|have|admit|accept|look at)\\s+(?:me|us)\\b'
+);
+
 // ─── WHY THE GROUND IS LIKE THIS ──────────────────────────────────────────
 //
 // `engine/world/locations.ts` has carried the whole of this from the start: a
@@ -3225,6 +3459,165 @@ export const RECALL_SUBJECT =
     'know of|know about|remember of|remember about|recall of|recall about|'
     + 'heard of|heard about|been told of|been told about|learned of|learned about|'
     + 'learnt of|learnt about|have on|got on|remind me of|remind me about';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ASKING ABOUT A NAMED THING
+//
+// "tell me about <anything>" is the plainest sentence in the language for the
+// commonest thing a player wants, and it reached nothing. Measured against a
+// house, a place, a person and an art, deterministic reader:
+//
+//   tell me about the Gleaners' Company    -> interact(target="me about the …")
+//   tell me about Halfwater                -> interact(target="me about …")
+//   tell me about Shen Wanshi              -> interact(target="me about …")
+//   tell me about the Lesser Qi-Gathering  -> interact(target="me about …")
+//   what do you know about Shen Wanshi     -> unclear
+//   who is Shen Wanshi                     -> unclear
+//
+// The first four all produced the same turn: *"You put the words to <whoever
+// was nearest>. They look at you the way people look at a sentence with a hole
+// in it."* `tell` is in the `talk` intent's verb list and in
+// `INTERACT_SUBJECT_VERBS`, so the verb was swallowed and everything after it -
+// `me about <X>` - became a person's name. It then fuzzy-matched the real
+// subject often enough to reach the right ROW and put it to them as a
+// conversation, which is worse than failing: the read printed, the interaction
+// settled nothing, and the player could not tell which of the two had happened.
+//
+// ── WHY THIS IS NOT A NEW VERB ───────────────────────────────────────────
+//
+// Because the verb exists. `investigate` is free, is in
+// {@link READ_ONLY_ACTIONS}, and its own glossary line says *examine a place, a
+// PERSON, a record, an inscription, an object*; it resolves its subject through
+// `resolveAnything`, which walks what the player holds, who is standing here,
+// the houses and places they have heard of, and then the catalogs. That IS the
+// general "ask about a named thing" route, and it has been the whole time. What
+// was missing is a sentence that reaches it. A second verb onto one resolver is
+// the duplication `AGENTS.md` forbids by name, and it would have bought a
+// glossary entry, a coverage row and a regenerated `docs/verbs.md` for nothing.
+//
+// ── WHERE THE BOUNDARY IS, AND IT IS TIGHT ON BOTH SIDES ─────────────────
+//
+// `tell` is a wide word and `about` is wider, so every pattern here requires
+// the indirect object to be the ASKER. "tell me about X" is a question; "I tell
+// him I am from the Azure Dew Sect" and "I tell the elder my name" are things
+// said TO somebody and stay with `interact`. The branch that reads these sits
+// below `status` (which owns "tell me about myself"), below the sect listing
+// (which owns "tell me about the houses near here"), below `look/history`
+// (which owns "what do people say about this place") and below `news` - so
+// every neighbour keeps its own sentence. `ASKING_AFTER_THE_WORLD` is not
+// touched: its end-anchor is what keeps "what do people around here talk about"
+// away from a topic, and "what have you heard about X" is deliberately left
+// where it already goes.
+//
+// ── AND WHY "WHAT IS X" IS NOT HERE ──────────────────────────────────────
+//
+// "who is X" is a question about somebody, and it belongs to a name lookup.
+// "what is X" is the DEFINITION question - "what is a spirit root", "what is qi
+// deviation" - and this world's tone rule is that nobody explains how anything
+// works. Routing it here would answer it by searching the roster, which is the
+// deflection this whole block exists to remove. It stays unrouted, on purpose.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Where "tell me about" stops asking and starts naming.
+ *
+ * Every branch pins the asker as the one being told, which is the entire guard
+ * against eating the sentences that are spoken TO somebody.
+ */
+const ASKED_ABOUT_PIVOT = new RegExp(
+    '(?:'
+    + 'tell me (?:more |a bit more |a little more |something |anything |what you know )?(?:about|of)'
+    + '|tell me what (?:you|they) know (?:about|of)'
+    + '|what can (?:you|anyone|anybody) tell me about'
+    + '|what do(?:es)? (?:you|they|anyone|anybody) know (?:about|of)'
+    + ')\\s+',
+    'i'
+);
+
+/** "who is X" - the same question with the name in the subject position. */
+const WHO_IS_THIS = /\bwho(?:'s|s| is| was| are| were)\s+/i;
+
+/**
+ * Words that are not a name, whatever position they turn up in.
+ *
+ * A pivot with one of these behind it is a sentence about nobody in
+ * particular, and handing one to the resolver is how "about" once became a
+ * person the engine went looking for.
+ */
+const NOT_A_NAME_AT_ALL = new RegExp(
+    '^(?:'
+    + 'me|myself|you|yourself|him|her|them|it|they|he|she|us|we'
+    + '|this|that|these|those|here|there|anything|something|nothing|everything'
+    + '|anyone|anybody|someone|somebody|everyone|everybody|nobody|no one'
+    + '|people|folk|the locals|the people|things|stuff|it all|all of it'
+    + '|what|which|who|where|when|why|how'
+    + ')$',
+    'i'
+);
+
+/**
+ * The thing a sentence is asking about, or nothing.
+ *
+ * `raw` and not the lowercased text, because what comes back is handed to a
+ * name matcher and a matcher scores an exact name above a lowercased one - the
+ * same reason `houseClaimedIn` reads the original input.
+ */
+export function whatIsBeingAskedAbout(raw: string): string | undefined {
+    const pivot = ASKED_ABOUT_PIVOT.exec(raw);
+    if (pivot) {
+        return aNameOrNothing(raw.slice(pivot.index + pivot[0].length));
+    }
+    const who = WHO_IS_THIS.exec(raw);
+    if (!who) return undefined;
+    const tail = raw.slice(who.index + who[0].length).replace(/[.!?]+\s*$/, '').trim();
+    // ── A NAME IS EITHER WRITTEN AS ONE OR IS MORE THAN ONE WORD ─────────
+    //
+    // "who is" is the one pivot here with no `about` in it, so it is the one
+    // that can be a bare question about the situation rather than about a
+    // name - "who is left", "who is watching". Everything genuinely dangerous
+    // is claimed higher up the table (`who is here`, `who is recruiting`,
+    // `who leads`, `who is in charge`, `who am I`), and this is the guard for
+    // the residue: a single lowercase word is not somebody's name.
+    if (!/\s/.test(tail) && !/^[A-Z]/.test(tail)) return undefined;
+    // And the two-word half of that rule needs its own floor, because a
+    // preposition makes two words out of anything: "who is in charge" came out
+    // of here as somebody called "in charge". Nothing in this world is named
+    // after a preposition or a bare participle.
+    if (A_TAIL_THAT_IS_NOT_A_NAME.test(tail)) return undefined;
+    return aNameOrNothing(tail);
+}
+
+/**
+ * Openings that mean the sentence is asking after a situation, not a name.
+ *
+ * Anchored at the start, so a name that merely contains one of these words is
+ * untouched. Only reached by "who is", which is the one pivot here with no
+ * `about` in it to say that a name is coming.
+ */
+const A_TAIL_THAT_IS_NOT_A_NAME = new RegExp(
+    '^(?:'
+    + 'in|on|at|to|for|with|from|by|of|about|after|before|over|under|behind'
+    + '|still|left|next|last|out|up|down|around|about to|going|doing|coming'
+    + '|watching|following|talking|standing|waiting|running|selling|buying'
+    // ── AND THE DEICTICS, WHICH ARE THE FACES READ AND NOT A NAME ────────
+    //
+    // "who is the one who is out of reach" is the question the room's own
+    // description invites - `describeStanding` writes that sentence - and it
+    // belongs to `look/company`, which answers it honestly by not being able to
+    // name a stranger either. It is two words, so the name-shape rule above
+    // lets it through, and this is what stops it. Bare `the` is deliberately
+    // absent: "who is the Storm Tyrant" is a name with an article on it.
+    + '|the one|the other|the ones|that|this|these|those|he|she|they|them'
+    + ')\\b',
+    'i'
+);
+
+/** The tail of an asking sentence, cleaned, or nothing if it named nobody. */
+function aNameOrNothing(tail: string): string | undefined {
+    const cleaned = cleanPlace(tail.replace(/[.!?]+\s*$/, '').trim());
+    if (!cleaned || cleaned.length < 3) return undefined;
+    return NOT_A_NAME_AT_ALL.test(cleaned) ? undefined : cleaned;
+}
 
 // ─── GETTING A WOUND SEEN TO ──────────────────────────────────────────────
 //
@@ -6252,6 +6645,17 @@ function planIntent(input: string): PlannedAction {
     // refusal. `SECT_DUTY_PATTERN` still owns every phrasing that names a
     // board, a duty, a commission or contribution, so the sentences it was
     // written for are untouched - this only catches the ones it never had.
+    // ── AND TAKING WHAT IS NAILED THERE, WHICH IS AN ACT AND NOT A READ ──
+    //
+    // Ahead of the wall read, and ahead of the sect-noun block far below, which
+    // was answering "I take the intake at the house that posted the notice"
+    // with the house's TREASURY. The whole argument is on
+    // {@link TAKING_A_POSTED_INTAKE}; the split here is the one the reserves
+    // already draw, between asking what is there and going to it.
+    if (TAKING_A_POSTED_INTAKE.test(text)) {
+        const house = whoseIntakeItIs(input);
+        return { action: 'sect', ...(house ? { target: house } : {}) };
+    }
     if (RECRUITING_BILL_PATTERN.test(text)) {
         return { action: 'look', intent: 'bills' };
     }
@@ -7064,8 +7468,23 @@ function planIntent(input: string): PlannedAction {
         // was answered by walking the player over to talk to somebody called
         // "me about the houses near here"; the other reached nothing at all. A
         // word boundary after `house` does not fall before an `s`.
-        || (/\b(?:sects?|orders?|schools?|clans?|houses?)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who|tell me about)\b/.test(text))) {
-        return { action: 'sect', target: extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/) };
+        || (/\b(?:sects?|orders?|schools?|clans?|houses?)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who|tell me about)\b/.test(text))
+        // Asking who would have you, in a sentence with no house noun in it at
+        // all: "who would take someone like me". See
+        // {@link WHO_WOULD_TAKE_SOMEBODY_LIKE_ME}.
+        || WHO_WOULD_TAKE_SOMEBODY_LIKE_ME.test(text)) {
+        // ── A SENTENCE THAT NAMES NO HOUSE MUST NOT ARRIVE CARRYING ONE ──
+        //
+        // `extractSubject` reads whatever follows the verb, and for the
+        // commonest phrasing of this question that is not a name: "I want to
+        // get into a sect. Which ones would even look at someone like me?"
+        // arrived as `target="get into a sect"`, which the sect surface then
+        // correctly refused as a name nobody had said to this cultivator. The
+        // one question the admissible listing exists to answer was answered
+        // with a refusal, and the refusal was about a house that does not
+        // exist. See {@link namesNoHouse}.
+        const said = extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/);
+        return { action: 'sect', ...(namesNoHouse(said) ? {} : { target: said }) };
     }
 
     // ── who else is drawing on this ground ──
@@ -7170,6 +7589,26 @@ function planIntent(input: string): PlannedAction {
     if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)
         || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)) {
         return { action: 'status' };
+    }
+
+    // ── ASKING ABOUT A NAMED THING ───────────────────────────────────────
+    //
+    // "tell me about <anything>" - the plainest sentence in the language for
+    // the commonest thing a player wants, and it reached a stranger being
+    // spoken at. The whole argument, the measurements and the boundary on both
+    // sides are on {@link whatIsBeingAskedAbout} and the block above it.
+    //
+    // It routes to `investigate` rather than to a verb of its own, because
+    // `investigate` is already the verb that reads a named subject through
+    // `resolveAnything` and is already free. Placed HERE and nowhere else: below
+    // `status`, which owns "tell me about myself"; below the sect listing, which
+    // owns "tell me about the houses near here"; below the place-history read,
+    // which owns "what do people say about this place"; below `news`, `recall`
+    // and the asking branch, all of which own a question that only looks like
+    // this one. Above `interact`, which is what was eating it.
+    const askedAfter = whatIsBeingAskedAbout(input);
+    if (askedAfter) {
+        return { action: 'investigate', target: askedAfter };
     }
 
     // ── interact: everything done to or with a person or a faction ──
