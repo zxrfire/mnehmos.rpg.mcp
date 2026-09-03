@@ -2087,3 +2087,47 @@ this makes the player's fight a second system with its own answers - a player st
 inside a resolution is entering the same machine at a different door. Two combat systems
 would be the same defect as two answers to how big a body is, and it would break the rule
 that a player can do everything an NPC can in the place where that rule matters most.
+
+### A wound has a cause you can point at
+
+**Injuries come from what somebody DID.** An event: a crossing struck, a fight opened, a
+season of hauling, an art practised that fights the root it is drawn through. Never a die
+rolled against the calendar.
+
+Measured, on the operator surface, before this was written down: a body doing **nothing** ran
+the wound-to-deviation cascade to its end and died inside a decade, whatever it paid for food,
+because sitting still grants no rungs to outrun it. Somebody actually cultivating survived
+forty-four years and eleven rungs. That is not a hard world - it is a world where the clock is
+the enemy, in a game whose whole subject is spending centuries.
+
+**The useful distinction is between an event and a condition, and only one of them fires.** A
+conflicting root, untreated channels, qi standing past a bottleneck: those are states, and a
+state **raises what an act costs** rather than going off on its own. Somebody with three open
+wounds who crosses a barrier pays more for the crossing. Somebody with three open wounds who
+sits in a room and does nothing is somebody with three open wounds.
+
+The tell is the sentence the game can say afterwards. *"The barrier tore two meridians"* and
+*"the fifth month of hauling opened the old wound"* both name what did it. *"A year passed and
+you are hurt"* names nothing, and a player cannot act on it, avoid it, or learn from it.
+
+### A fact reaches a person, and reaching them is an event
+
+**Somebody finding out is a thing that happens, with a date and a teller.** Telling a man who
+killed his brother creates the grudge - not the killing, which he did not know about, and could
+not hold an account for. The deed was already true; **what was missing was somebody who could
+act on it**, and the telling supplies exactly that.
+
+That makes knowledge a live part of the consequence layer rather than a display filter over it,
+and several things fall out of it that are worth having:
+
+- **A wrong nobody witnessed is a wrong nobody holds.** It stays true, it stays on the record,
+  and it opens nothing until somebody learns it. That is what makes doing it quietly worth
+  doing, and what makes a witness worth silencing.
+- **Carrying the news is an act with consequences for the carrier.** The person who tells the
+  brother has done something - to the brother, to the killer, and to their own standing with
+  both.
+- **And it can arrive wrong.** The knowledge layer already carries `partial` and `unattributed`
+  forms, so a grudge can open against the wrong name, and be held with complete conviction.
+
+The general rule: **where the world already models who knows a thing, the consequence should
+fire when they learn it and not when it happened.**
