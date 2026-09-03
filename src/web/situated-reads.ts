@@ -1143,7 +1143,11 @@ export const situatedReads = {
         const holder = whoAnswersForThisGround({
             locations: this.atHand.locations,
             locationId: where,
-            standingHere: true
+            standingHere: true,
+            // What the asker may be TOLD, on the same bar the gate at a door
+            // uses. Without it this read named the holder for 220 of 220 barred
+            // held locations at a rung the door itself withheld it at.
+            readerOrdinal: cultivator.realmOrdinal
         });
         const facts = factsForToolResult(
             holder.holderName

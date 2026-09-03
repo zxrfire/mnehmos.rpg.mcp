@@ -155,7 +155,7 @@ const NOBODY_IS_HERE: RuinGatekeeper = Object.freeze({
  * the people a house does not explain itself to, and it is already the boundary
  * the ladder is cut at.
  */
-const TOLD_THE_NAME_AT = FOUNDATION_ORDINAL;
+export const TOLD_THE_NAME_AT = FOUNDATION_ORDINAL;
 
 /**
  * And the rung at which they are told what stands behind it.
@@ -164,7 +164,7 @@ const TOLD_THE_NAME_AT = FOUNDATION_ORDINAL;
  * person is sent into somebody else's business rather than their own, which is
  * the same population that gets told whose gift a holding is in.
  */
-const TOLD_THE_AUTHORITY_AT = ELDER_FLOOR_ORDINAL;
+export const TOLD_THE_AUTHORITY_AT = ELDER_FLOOR_ORDINAL;
 
 /** The display name for anything in the three registers, or null. */
 function nameOfBody(id: string): string | null {

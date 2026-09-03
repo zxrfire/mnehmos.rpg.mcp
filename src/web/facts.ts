@@ -33,6 +33,11 @@ import {
 } from '../schema/cultivation.js';
 import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import {
+    headstoneStructure,
+    whatTheStoneSays,
+    type HeadstoneFacts
+} from './headstone-reading.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
@@ -2382,13 +2387,15 @@ export interface SiteFace {
     whatAnIgnorantPartyConcludes: string;
     /** The number in the rumour, which is not the number in the room. */
     advertisedOrdinal: number | null;
-    /** Graves only. Legible from the marker, and the whole of the useful read. */
-    grave: {
-        mannerOfDeath: string;
-        burial: string;
-        occupantOrdinal: number;
-        yearsDead: number;
-    } | null;
+    /**
+     * Graves only. Legible from the marker, and the whole of the useful read.
+     *
+     * The two enums are their own types rather than `string`, because
+     * `headstone-reading.ts` maps both onto what a person would actually say
+     * and a widened type there would let a new manner of death ship with no
+     * sentence for it.
+     */
+    grave: HeadstoneFacts | null;
 }
 
 /** How a site is referred to when the player cannot name it. */
@@ -2417,13 +2424,14 @@ export function factsForSiteFace(
         face.marker
     ];
 
-    if (face.grave) {
-        lines.push(
-            `The manner of death is legible off the marker: ${face.grave.mannerOfDeath.replace(/_/g, ' ')}, `
-            + `${face.grave.yearsDead} years ago, at ordinal ${face.grave.occupantOrdinal}. `
-            + `${face.grave.burial.replace(/_/g, ' ')}.`
-        );
-    }
+    // ── WHAT CULTIVATION LEVEL IS THE EXPERT ─────────────────────────────
+    //
+    // The load-bearing fact about a tomb, and it used to print as "at ordinal
+    // 44" - a database column three lines under authored prose that says it
+    // properly. `headstone-reading.ts` owns the sentences, and owns the rule
+    // the catalog had written and nothing had ever read: what the manner of
+    // death did to what the occupant was carrying.
+    if (face.grave) lines.push(...whatTheStoneSays(face.grave));
     if (face.rumour) lines.push(face.rumour);
     if (face.attributedTo) lines.push(`It is put down to ${face.attributedTo}.`);
     if (face.lastPartySaid) lines.push(face.lastPartySaid);
@@ -2444,7 +2452,10 @@ export function factsForSiteFace(
                 : `It is advertised as built for ${rungAndOrdinal(face.advertisedOrdinal)}, `
                   + 'which is the rumour\'s number and not the room\'s - three entries in the '
                   + 'catalog disagree with their own interior on purpose.'),
-            'Pre-entry view only. The interior was not read: this renderer has no field that could hold it.'
+            'Pre-entry view only. The interior was not read: this renderer has no field that could hold it.',
+            // The band the marker implies, by name and by number, off the same
+            // table the entries were authored from. Nothing had ever read it.
+            ...(face.grave ? [headstoneStructure(face.grave)] : [])
         ],
         lines,
         prose: lines.join('\n\n')

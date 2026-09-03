@@ -23,6 +23,7 @@ import { describe, it, expect } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
 import { whoAnswersForThisGround } from '../../src/web/ground-holder-lines';
+import { TOLD_THE_NAME_AT } from '../../src/engine/world/ruin-gatekeepers';
 import { makeLocation } from '../../src/engine/world/locations';
 
 const LOW_FALL = makeLocation({ id: 'r', name: 'The Low Fall', kind: 'region' });
@@ -167,5 +168,61 @@ describe('asking who holds this ground', () => {
         expect(routed('who else is here')).toBe('look/crowding');
         // The asking branch still owns a question put to a named person.
         expect(routed('I ask the elder about the manual')).not.toBe('look/holder');
+    });
+});
+
+/**
+ * THE FREE READ MUST NOT BE CHEAPER THAN THE DOOR.
+ *
+ * Measured by the place-naming agent on a live world, at ordinal 8: for 220 of
+ * 220 barred held locations, `whoTurnsYouAwayFrom` answered "somebody holds this
+ * and nobody is going to tell you who" and this read - free, from outside, at
+ * the same rung - named the house. The middle `GroundClaim` value exists because
+ * it is the reading that keeps somebody alive, and the cheaper path handed the
+ * answer over every time.
+ *
+ * One mechanism and one number: the bar is imported from `ruin-gatekeepers.ts`
+ * rather than restated, so moving it moves both doors at once.
+ */
+describe('what a reader is told about who holds this', () => {
+    const at = (readerOrdinal: number | undefined) => whoAnswersForThisGround({
+        locations: [{
+            id: 'loc-precinct', name: 'the outer precinct', kind: 'precinct',
+            parentId: null, controllingFactionId: 'sect-azure-cloud-pavilion',
+            data: {}, tags: []
+        }] as never,
+        locationId: 'loc-precinct',
+        standingHere: true,
+        readerOrdinal
+    });
+
+    it('names the house to somebody at the bar and above it', () => {
+        expect(at(TOLD_THE_NAME_AT).holderName).toBe('Azure Cloud Pavilion');
+        expect(at(TOLD_THE_NAME_AT + 12).holderName).toBe('Azure Cloud Pavilion');
+    });
+
+    it('withholds it below the bar, in the answer as well as in the field', () => {
+        const low = at(TOLD_THE_NAME_AT - 1);
+        expect(low.holderName).toBeNull();
+        // `why` carries the name for a held reading, so withholding the field
+        // and printing the sentence would hand it over anyway.
+        expect(low.answer).not.toContain('Azure Cloud Pavilion');
+        expect(low.lines.join(' ')).not.toContain('Azure Cloud Pavilion');
+        // And it still says the thing that matters: somebody is there.
+        expect(low.answer).toMatch(/Somebody holds this ground/);
+        // The holding itself is unchanged. What is gated is what is TOLD.
+        expect(low.holding).toBe('held');
+    });
+
+    /** The mechanical channel keeps the world's own answer, and says it gated. */
+    it('keeps the true answer in the structure line', () => {
+        const low = at(TOLD_THE_NAME_AT - 1);
+        expect(low.structure).toContain('Azure Cloud Pavilion');
+        expect(low.structure).toContain('name withheld');
+    });
+
+    /** An absent ordinal is the world asking about its own records. */
+    it('does not gate a caller that named no reader', () => {
+        expect(at(undefined).holderName).toBe('Azure Cloud Pavilion');
     });
 });
