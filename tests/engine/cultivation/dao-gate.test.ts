@@ -19,6 +19,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { gradeRank } from '../../../src/data/cultivation/techniques.js';
 import {
     DAO_GATE_ENFORCED,
     DAO_GATE_FROM_ORDINAL,
@@ -75,7 +76,21 @@ describe('a pill multiplies and never adds', () => {
         // dearer and buys LESS. Catalogued values ascend 75 -> 750,000 while
         // this descends, and that opposition is the design statement.
         const order = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
+        // DESCENDING PER BAND, AND LEVEL BETWEEN THE TWO GRADES THAT SHARE
+        // ONE. The descent is about where a pill is PITCHED - a pill aimed
+        // higher lifts a smaller share, because the odds it is lifting are
+        // worse - so it steps only where the pitch steps. Immortal and chaos
+        // are peers pitched at the same rung, and a step between them would be
+        // chaos being strictly worse at the one thing both grades are for.
         for (let i = 1; i < order.length; i++) {
+            const samePitch = pillBandOrdinal(order[i]) === pillBandOrdinal(order[i - 1]);
+            if (samePitch) {
+                expect(
+                    PILL_GRADE_FACTOR[order[i]],
+                    `${order[i]} and ${order[i - 1]} share a band and must give the same`
+                ).toBe(PILL_GRADE_FACTOR[order[i - 1]]);
+                continue;
+            }
             expect(
                 PILL_GRADE_FACTOR[order[i]],
                 `${order[i]} should give less than ${order[i - 1]}`
@@ -115,10 +130,19 @@ describe('a pill multiplies and never adds', () => {
     });
 
     it('reads each grade off the ladder rather than a written-down rung', () => {
-        // Ascending, and every one of them a realm start.
-        const rungs = (['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const)
-            .map(pillBandOrdinal);
+        // Ascending per POWER, and every one of them a realm start. The top
+        // two are peers and share a pitch: both grades are for 29 and up, so
+        // asserting a step there would be asserting the ordering the peer
+        // ruling removed - and it was the last place chaos still outranked
+        // immortal after `GRADE_POWER` tied them.
+        const order = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
+        const rungs = order.map(pillBandOrdinal);
         for (let i = 1; i < rungs.length; i++) {
+            if (gradeRank(order[i]) === gradeRank(order[i - 1])) {
+                expect(rungs[i], `${order[i]} and ${order[i - 1]} are peers`)
+                    .toBe(rungs[i - 1]);
+                continue;
+            }
             expect(rungs[i]).toBeGreaterThan(rungs[i - 1]);
         }
         expect(rungs[0]).toBe(FOUNDATION_ORDINAL);

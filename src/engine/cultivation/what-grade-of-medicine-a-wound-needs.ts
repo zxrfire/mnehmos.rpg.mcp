@@ -41,15 +41,25 @@
  */
 
 import { pillBandOrdinal } from './breakthrough.js';
+import { gradeRank } from '../../data/cultivation/techniques.js';
 import type { InjurySeverity, TechniqueGrade } from '../../schema/cultivation.js';
 
-/** Ascending, so a higher index is a rarer medicine. The catalog's own order. */
+/** The grades, in listing order. Ranking goes through `gradeRank`, never this. */
 export const MEDICINE_GRADES: readonly TechniqueGrade[] =
     ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
 
-/** Where a grade sits on that ladder. -1 for anything not on it. */
+/**
+ * Where a grade sits on the medicine ladder.
+ *
+ * `gradeRank`, and NOT this array's index. The two stopped agreeing when
+ * immortal and chaos became peers, and the disagreement was not cosmetic:
+ * indexing put chaos above immortal, so once chaos moved down to the same band
+ * a Void Refinement body would have been told it needed chaos-grade medicine
+ * and an immortal-grade pill would have stopped reaching it. Two peer grades
+ * are interchangeable as medicine, which is what a tie here means.
+ */
 export function medicineRank(grade: TechniqueGrade): number {
-    return MEDICINE_GRADES.indexOf(grade);
+    return gradeRank(grade);
 }
 
 /**
@@ -84,7 +94,14 @@ export function severityFloor(severity: InjurySeverity): TechniqueGrade {
 export function realmFloor(realmOrdinal: number): TechniqueGrade {
     let floor: TechniqueGrade = 'mortal';
     for (const grade of MEDICINE_GRADES) {
-        if (realmOrdinal >= pillBandOrdinal(grade)) floor = grade;
+        if (realmOrdinal < pillBandOrdinal(grade)) continue;
+        // STRICTLY greater, so a tie keeps the EARLIER of two peer grades.
+        // Immortal and chaos are peers pitched at the same band, so both reach
+        // the wound and `medicineReaches` says so either way - but this value
+        // is also the one quoted in a refusal, and the sentence a player is
+        // sent away with should name the medicine that does what it says on
+        // the tin rather than the one that might turn them into something.
+        if (gradeRank(grade) > gradeRank(floor)) floor = grade;
     }
     return floor;
 }

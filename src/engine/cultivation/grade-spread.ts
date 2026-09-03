@@ -138,9 +138,17 @@ import {
     type SpiritRootKey
 } from './spirit-roots.js';
 import { LEANING_DEGREE } from './dao.js';
-import { REALM_TIERS } from './realms.js';
+import {
+    MAX_ORDINAL,
+    REALM_TIERS,
+    bodyMultiplierForOrdinal,
+    rankName
+} from './realms.js';
 import { BODY_COST_OF_A_CROSSING } from './breakthrough.js';
-import { FOUNDATION_A_GIVEN_CROSSING_LEAVES } from './taking-the-unearned-step.js';
+import {
+    FOUNDATION_A_GIVEN_CROSSING_LEAVES,
+    NOTHING_IS_GIVEN_AT_OR_ABOVE
+} from './taking-the-unearned-step.js';
 import { BEASTS, BEAST_CORE_ORDINAL } from '../../data/cultivation/beasts.js';
 // THE ONE DETONATION. `what-somebody-does-about-being-wronged.ts` already owns
 // what spending yourself reaches and what it costs by distance; a second way to
@@ -175,8 +183,14 @@ export interface OutcomeContext {
 }
 
 export interface Overdraw {
-    /** How many rungs the body is pulled up to, for the window. */
-    rungs: number;
+    /** The rung the OBJECT is pitched at: where its stored energy came from. */
+    pitchOrdinal: number;
+    /** The rung this body reads as while it is carrying that. Fractional. */
+    standsAt: number;
+    /** That as a whole rung, for anything that needs one. */
+    standsAtRung: number;
+    /** How much bigger the body reads than its own. 1 is no change at all. */
+    bodyMultiplier: number;
     /** How long the window lasts, in days. */
     days: number;
     /** What is still there when it ends. Kept, permanently. */
@@ -298,6 +312,30 @@ export interface GradeOutcome {
      */
     blamedOn?: string;
     /**
+     * Extra weight this row gains per rung the body is UNDER the pitch.
+     *
+     * ── A WEIGHTING, NOT A GATE, AND IT MOVES ONE ROW ────────────────────
+     *
+     *   > anyone lesser taking a chaos pill is again very risky (and they
+     *   > increase the odds of self detonation)
+     *
+     * The owner names one outcome, and this field is on one row. A body too far
+     * under what it swallowed does not get a subtly worse version of the good
+     * result - it cannot hold what is in the thing and the thing lets go. So
+     * nothing here scales "bad outcomes"; every other row keeps its weight
+     * unchanged and therefore its proportion to every other row unchanged, and
+     * only the detonation's share of the total grows.
+     *
+     * A weak drinker can still get the root redraw or the line. There is no
+     * floor anywhere and there must not be one: the spread is the spread, and
+     * the gap moves the weights.
+     *
+     * Absent on every row that is not about a body failing to hold what is in
+     * it - which is what keeps the table open, because a future row that also
+     * answers to being under-pitched sets this and needs nothing else.
+     */
+    underweightPerRung?: number;
+    /**
      * What this row does to the sheet it lands on.
      *
      * Optional: a row that only moves the multipliers needs none. Present, it
@@ -363,12 +401,100 @@ export function theRoadTheyWalk(sheet: SheetForOutcome): Element | null {
 /** Beasts with a core, which is the bar for there being anything to carry down. */
 const LINES_THAT_COULD_START = BEASTS.filter(b => b.ordinal >= BEAST_CORE_ORDINAL);
 
-/** Rungs the overdraw pulls a body up by. A realm, briefly. */
-export const OVERDRAW_RUNGS = 4;
+// ─────────────────────────────────────────────────────────────────────────
+// THE THING IS A BATTERY, AND THAT ONE FACT EXPLAINS ALL OF IT
+//
+//   > that means that a grade 5 swallowing it is not 2x grade 5, but a 29 + a
+//   > 5 (anyone over 29 is 2x their own realm). that makes sense, cuz the
+//   > chaos pill stores energy
+//
+//   > ANYONE ABOVE A 29 GETS A BONUS A FEW ORDINALS UP. CUZ TO A 41, A 29 IS
+//   > NOTHING. BUT IF A 5 WERE TO SWALLOW IT AND SURVIVE THEY'D GET A 29
+//
+// **A chaos-grade object holds a FIXED quantity of stored energy - what a body
+// at the rung it is pitched at is worth - and that quantity does not scale to
+// whoever drinks it.** Everything else here is arithmetic on that sentence.
+//
+// ── WHY THERE IS NO `29` ANYWHERE BELOW, AND MUST NOT BE ─────────────────
+//
+// The pitch comes from `PILL_GRADE_REALM` through the caller, so it is a value
+// rather than a number written down twice. And the two halves of the ruling
+// are not two rules: they are one addition on the body curve, which is
+// exponential, so a sum on it collapses to its largest term.
+//
+//   a 5 drinks it     1.4 of body plus 32 of body is 33.4, which is a 29.
+//                     Their own 5 is a rounding error next to what they drank,
+//                     and the "max wins" half falls out with no comparison.
+//   a 29 drinks it    32 plus 32 is 64, which is exactly one realm up -
+//                     `BODY_REALM_MULTIPLIER` is 2, so a doubling IS a realm,
+//                     which is why "2x their own realm" and "a few ordinals
+//                     up" were always the same sentence.
+//   a 41 drinks it    256 plus 32 is 288. An eighth. To a 41, a 29 is nothing.
+//
+// One derivation, three answers, no branch - and a chaos pill pitched at some
+// other rung tomorrow behaves correctly without an edit.
+//
+// ── AND IT IS THE SAME NUMBER THE BLAST IS PRICED FROM ───────────────────
+//
+// `ctx.sourceOrdinal` feeds the overdraw and the detonation both, because they
+// are the same stored energy let go two different ways. That is also the whole
+// explanation of why a weak drinker goes off: a 5 who survives BECOMES a 29 -
+// a body built for 5 holding what a 29 holds - and the ones who do not survive
+// are the crater. One quantity explains the boost, the risk and the blast.
+// ─────────────────────────────────────────────────────────────────────────
+
 /** How long the window lasts. Long enough to spend, short enough to be a window. */
 export const OVERDRAW_DAYS = 30;
 /** What is still there when it ends. */
 export const OVERDRAW_RESIDUE_RUNGS = 1;
+
+/**
+ * How much body this person is holding while they carry the thing's worth too.
+ *
+ * The addition, and the only place it happens. `bodyMultiplierForOrdinal` and
+ * not the combat curve, because the body curve is the one the ruling is stated
+ * in: `BODY_REALM_MULTIPLIER` is the 2 in "2x their own realm".
+ */
+export function bodyWhileCarrying(ordinal: number, pitchOrdinal: number): number {
+    return bodyMultiplierForOrdinal(ordinal) + bodyMultiplierForOrdinal(pitchOrdinal);
+}
+
+/**
+ * How much larger than their own body they read. 1 is no change at all.
+ *
+ * The honest quantity, and the one every effect should scale by, because at the
+ * top of the ladder the gain is real and smaller than a rung - a body that has
+ * to be reported as a whole number reports a 41 as having drunk nothing.
+ */
+export function liftFromCarrying(ordinal: number, pitchOrdinal: number): number {
+    const own = bodyMultiplierForOrdinal(ordinal);
+    return own <= 0 ? 1 : bodyWhileCarrying(ordinal, pitchOrdinal) / own;
+}
+
+/**
+ * The rung a body of `ordinal` reads as while it carries `pitchOrdinal`'s worth.
+ *
+ * The addition above, inverted back onto the ladder and interpolated BETWEEN
+ * the whole rungs it falls between. `bodyMultiplierForOrdinal` floors its
+ * argument, so it is a staircase on integers and inverting it naively would
+ * round every answer up to the next rung - which reads as the battery being
+ * worth more than it is, in the direction that flatters the drinker.
+ */
+export function standingWhileCarrying(ordinal: number, pitchOrdinal: number): number {
+    const carried = bodyWhileCarrying(ordinal, pitchOrdinal);
+    // The last whole rung whose body is inside what they are holding: that is
+    // the rung they ARE. Anything past it is the remainder, and the remainder
+    // is what the interpolation is for.
+    let rung = 0;
+    for (let o = MAX_ORDINAL; o >= 0; o--) {
+        if (bodyMultiplierForOrdinal(o) <= carried) { rung = o; break; }
+    }
+    if (rung >= MAX_ORDINAL) return MAX_ORDINAL;
+    const here = bodyMultiplierForOrdinal(rung);
+    const next = bodyMultiplierForOrdinal(rung + 1);
+    if (next <= here) return rung;
+    return rung + (carried - here) / (next - here);
+}
 
 function beginsALine(tier: AbilityTier) {
     return (_sheet: SheetForOutcome, _ctx: OutcomeContext, rng: CultivationRNG): SheetChange => {
@@ -550,21 +676,51 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
                 + 'did not climb, a structure that was never formed under it, and a body that '
                 + 'is not what it was. Every account of this is somebody explaining what they '
                 + 'did during the month.',
-            consequence: (_sheet, _ctx): SheetChange => ({
-                overdraw: {
-                    rungs: OVERDRAW_RUNGS,
-                    days: OVERDRAW_DAYS,
-                    residueRungs: OVERDRAW_RESIDUE_RUNGS,
-                    foundation: FOUNDATION_A_GIVEN_CROSSING_LEAVES,
-                    halfMad: true,
-                    bodyCost: BODY_COST_OF_A_CROSSING
-                },
-                losesAccumulation: false,
-                line: `Overdrawn: ${OVERDRAW_RUNGS} rungs above themselves for ${OVERDRAW_DAYS} `
-                    + `days, and not entirely the one deciding. When it lets go they keep `
-                    + `${OVERDRAW_RESIDUE_RUNGS}, on nothing, and the body pays the price of a `
-                    + 'crossing for a crossing that never happened.'
-            })
+            consequence: (sheet, ctx): SheetChange => {
+                const stands = standingWhileCarrying(sheet.realmOrdinal, ctx.sourceOrdinal);
+                const lift = liftFromCarrying(sheet.realmOrdinal, ctx.sourceOrdinal);
+                // ── THE RESIDUE OBEYS THE LADDER'S OWN RULE ABOUT GIFTS ──
+                //
+                // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Unearned Step's bound
+                // and it is not about pills: nothing hands anybody a rung up
+                // there, whatever it is. Reusing the constant rather than
+                // writing a bound of my own is what stops this becoming a
+                // second opinion about the top of the ladder - and it makes the
+                // object what it should be, which is worth most to the people
+                // who have furthest to go.
+                const residueRungs = sheet.realmOrdinal >= NOTHING_IS_GIVEN_AT_OR_ABOVE
+                    ? 0
+                    : OVERDRAW_RESIDUE_RUNGS;
+                return {
+                    overdraw: {
+                        pitchOrdinal: ctx.sourceOrdinal,
+                        standsAt: stands,
+                        standsAtRung: Math.round(stands),
+                        bodyMultiplier: lift,
+                        days: OVERDRAW_DAYS,
+                        residueRungs,
+                        foundation: FOUNDATION_A_GIVEN_CROSSING_LEAVES,
+                        halfMad: true,
+                        bodyCost: BODY_COST_OF_A_CROSSING
+                    },
+                    losesAccumulation: false,
+                    // What they read as, said as a rung and as a ratio, because
+                    // one of the two is uninformative at each end of the ladder:
+                    // near the top the gain is real and smaller than a rung, and
+                    // far below the pitch the ratio is enormous and the rung is
+                    // the only thing that means anything.
+                    line: `Overdrawn: standing at ${rankName(Math.round(stands))} for `
+                        + `${OVERDRAW_DAYS} days, ${lift.toFixed(2)} times the body they own, `
+                        + 'and not entirely the one deciding what to do with it. '
+                        + (residueRungs > 0
+                            ? `When it lets go they keep ${residueRungs}, on nothing, and the `
+                              + 'body pays the price of a crossing for a crossing that never '
+                              + 'happened.'
+                            : 'When it lets go they keep nothing - nothing is given a rung this '
+                              + 'high, by anything - and the body pays the price of a crossing '
+                              + 'it did not make.')
+                };
+            }
         },
         {
             key: 'it_goes_off',
@@ -578,6 +734,19 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
             // researcher gets a real entry to follow rather than a gap - and
             // gets it under whatever explanation the annalist reached for.
             recordedAs: 'unattributed',
+            // ── HOW STEEP, AND WHY THAT NUMBER ───────────────────────────
+            //
+            // The base weights total 100, so a rung under the pitch is worth
+            // eight points of a hundred. Against a pitch of 29 that produces
+            // the two cases the owner described, and the middle is a curve
+            // rather than a cliff:
+            //
+            //   at the pitch    4 in 100. A genuine gamble across the spread.
+            //   nine under      44 in 172. A serious one.
+            //   twenty-four under   196 in 292, about two in three. Mostly
+            //                   holding a bomb - and still one chance in three
+            //                   of something else, because it is a weighting.
+            underweightPerRung: 8,
             account:
                 'In such a year the compound went up. A date, a place, a count of the dead, '
                 + 'and no cause anybody has ever settled.',
@@ -608,18 +777,43 @@ export function isSettledOnUse(grade: TechniqueGrade): boolean {
 }
 
 /**
+ * How far under the thing's own rung this body is. Zero at or above it.
+ *
+ * The one input the drinker contributes to the draw, and it reads the pitch off
+ * the object rather than off any number written down here.
+ */
+export function rungsUnderThePitch(ordinal: number, pitchOrdinal: number): number {
+    return Math.max(0, Math.round(pitchOrdinal) - Math.round(ordinal));
+}
+
+/** The weight a row carries for a body this far under the thing's own rung. */
+export function weightOf(outcome: GradeOutcome, rungsUnder: number): number {
+    return outcome.weight + (outcome.underweightPerRung ?? 0) * Math.max(0, rungsUnder);
+}
+
+/**
  * Draw what this thing turns out to do.
  *
  * Total over every grade. A grade with a point-mass spread returns its single
  * row and consumes exactly one sample, so the call site needs no branch and the
  * stream advances identically whatever is being swallowed.
+ *
+ * `rungsUnder` defaults to 0, which is a body standing at or above the rung the
+ * thing is pitched at - the base table. It is a default rather than a required
+ * argument because a reliable grade's point mass cannot be moved by it, and a
+ * caller that has no rung to hand should get the honest base spread rather than
+ * be forced to invent one.
  */
-export function drawGradeOutcome(grade: TechniqueGrade, rng: CultivationRNG): GradeOutcome {
+export function drawGradeOutcome(
+    grade: TechniqueGrade,
+    rng: CultivationRNG,
+    rungsUnder = 0
+): GradeOutcome {
     const spread = GRADE_SPREAD[grade];
-    const total = spread.reduce((sum, o) => sum + o.weight, 0);
+    const total = spread.reduce((sum, o) => sum + weightOf(o, rungsUnder), 0);
     let roll = rng.next() * total;
     for (const outcome of spread) {
-        roll -= outcome.weight;
+        roll -= weightOf(outcome, rungsUnder);
         if (roll < 0) return outcome;
     }
     return spread[spread.length - 1];
