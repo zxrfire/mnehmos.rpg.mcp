@@ -175,6 +175,51 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bhow\s+much\s+(?:would|will|does)\s+it\s+cost\b/,
     /\bwhat\s+happens?\s+(?:if|when)\s+i\b/,
     /\bwhat\s+would\s+happen\s+(?:if|when)\s+i\b/,
+    // ── AND THE CONDITIONAL, WHICH IS THE SAME QUESTION WITHOUT "WHAT" ───
+    //
+    // The fourth face of the defect at the bottom of this file, and the most
+    // expensive one found so far. `what happens if I cultivate here` was
+    // already a question; the same question asked about its CONSEQUENCE rather
+    // than about itself was not, and the act sits in the `if` clause where the
+    // pattern table reads it as a plain command. Measured on the deterministic
+    // tier, which `AGENTS.md` holds is a shipping mode:
+    //
+    //   "will someone bother me if I sit and cultivate here"   -> 30 days
+    //   "will someone come for me if I seclude for ten years"  -> TEN YEARS
+    //   "does anybody care if I gather here"                   -> 7 days
+    //   "will I be interrupted if I sit here for a year"        -> 30 days
+    //   "is it a problem if I cultivate here"                   -> 30 days
+    //
+    // Nobody in any of those sentences has decided anything. They are all one
+    // person working out what would follow, which is this block's own test.
+    //
+    // The interrogative has to OPEN the utterance, and that anchor is the whole
+    // of what keeps it off commands: a sentence that commits to something puts
+    // the actor first - "I will cultivate here if I can", "I stay here if the
+    // ground is good", "tell him I will pay if I must" - and none of those can
+    // ever match. Nothing here fires on a bare `if`, either; the condition has
+    // to be about the ASKER, which is what `if i` says and what "I fight him if
+    // he draws" does not.
+    /^\s*(?:will|would|does|do|can|could|should|might|is|are|am|has|have)\b[^.?!]{0,80}\bif\s+i\b/,
+    // ── AND THE GROUND ASKED ABOUT BY NAME ──────────────────────────────
+    //
+    // The `is it <adjective>` branch above with the pronoun filled in. A player
+    // looking at a place says "is THIS GROUND safe", not "is it safe", and the
+    // two were routed differently - which is the near-synonym rule again, one
+    // line below where it was fixed for `safe` itself.
+    //
+    //   "is this cave safe to seclude in or will someone find me" -> seclude
+    //   "is that road safe to travel"                             -> TRAVELLED
+    //   "is this place safe to sleep in"                          -> waited
+    //
+    // `worth <verb>ing` is here with the adjectives because "is this ground
+    // worth cultivating on" is the same question in the gerund, and a player
+    // who found one phrasing and not the other cannot tell why.
+    //
+    // Requires the demonstrative, so "the road is safe" - somebody being TOLD
+    // something rather than asking - never matches: this branch reads
+    // `is <this|that|the> <noun> <adjective>` and that word order is a question.
+    /\b(?:is|are|was|were)\s+(?:this|that|the)\s+(?:\w+\s+)?(?:safe|dangerous|risky|wise|any\s+use|a\s+good\s+idea|worth\s+it|worth\s+\w+ing)\b/,
     // The plainest form, and the one a player reaches for first.
     /\bwhat\s+(?:are|is)\s+the\s+(?:terms|price|cost)\s+(?:of|for)\b/,
     // ── AND THE METHOD QUESTIONS, WHICH ARE NOT INTERROGATIVE AT ALL ─────
@@ -344,6 +389,26 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
                     topic: plan.topic
                 }
                 : { action: 'investigate', ...(plan.target ? { target: plan.target } : {}) };
+
+        case 'work':
+            /**
+             * A QUESTION ABOUT WORK IS THE BOARD, NEVER A SEASON OF IT.
+             *
+             * Measured on a fresh run before this case existed: `any work
+             * going?` spent NINETY DAYS as a Shipmaster. The table now routes
+             * the question forms with `intent: 'board'`, and without an entry
+             * here they fell to this switch's `assess` default and were
+             * answered with the weather where the player was standing - the
+             * deflection failure, one door along from the one it replaced.
+             *
+             * `board` rather than `assess` because the answer already exists
+             * and is already free: `handleWork` lists what is going here when
+             * no occupation reaches it. The trade is dropped on purpose. "Could
+             * I work as a porter" is a question about the board and not a
+             * porter's season, and keeping the name would have put the costly
+             * branch back within reach of a sentence ending in a question mark.
+             */
+            return { action: 'work', intent: 'board' };
 
         case 'sect':
             // Asking to get in is the listing; asking about the seat you hold
