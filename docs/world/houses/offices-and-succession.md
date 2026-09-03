@@ -139,3 +139,45 @@ ever one or three places.
 
 **This is also where the world's existing rivalries come from.** The seeded `rival` tie whose
 note reads *"Was the other candidate"* is exactly this: the person who did not get the office.
+
+## The Protector
+
+<!-- tier: 2 -->
+
+**One office, and the bar is what moves.** A house's Protector stands for it when something
+comes for it - that duty is the office, and it is what separates the post from an honorary
+title. A guest owes nothing; a Protector owes defence.
+
+**A lesser sect fills it.** With an ordinary strong person: a retired patriarch, a veteran who
+does not travel, somebody whose whole function is to be in the compound when something
+arrives. Filled, unremarkable, and **not a False Immortal**.
+
+**A qualifying house reserves it**, will accept nobody who is not a False Immortal, and it is
+therefore empty - and has been everywhere in the world for eight hundred years. **That is why
+the emptiness means something: the strong people are right there.** They would fill the post at
+a lesser house. The refusal is the house declining to pretend a strong person is the same
+thing.
+
+**Which houses may reserve it is two facts, not one.** The house produced a False Immortal -
+somebody who **came back**, not somebody who **got through**, because a person who went all the
+way left and there is nobody a chair could be for. **And the house knows it.** A crossing is
+attempted where nobody is told, so not knowing is the ordinary outcome; a house that knows is
+the exception, and the chair is the visible form of that. The reserved post is vacant and not
+abolished - nobody struck it off a roll, and the tense matters.
+
+**A house can be in neither state.** The Sweptground Temple has no Protector at all: their
+abbot does not retire, so no retired head exists to fill it, and their only immortal succeeded
+and left, so there is nothing to reserve one for.
+
+**And a member is not told whether their house has one, or who.** You are told who is on the
+ladder. The Protector sits beside it, and finding out is something a player does rather than
+something joining gives them.
+
+**Do not confuse it with a dao protector**, which is the act of standing guard over somebody's
+crossing while they are helpless. Eight centuries of vacancy drifted the phrase, so a
+cultivator today hears "dao protector" and understands the crossing guard, with no idea the
+words also named a seat held for two thousand years at a stretch. The world's usage is
+ambiguous; ours is not.
+
+`src/data/cultivation/false-immortals.ts` carries the ruling in full - `THE_OFFICE`,
+`theChairIsAPieceOfKnowledge`, `itIsVacantAndNotAbolished`.
