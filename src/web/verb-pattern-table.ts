@@ -2755,6 +2755,25 @@ const COERCE_SUBJECT_VERBS =
  * target for the same reason the fight's manner clause is: "I force the
  * merchant to hand over the ledger" names a merchant, not a merchant-to-hand-
  * over-the-ledger.
+ *
+ * ── THIS LIST IS ALWAYS ONE WORD SHORT ───────────────────────────────────
+ *
+ * It enumerates compliance verbs, and English has more of them than anybody
+ * will finish typing here. So the failure mode is structural rather than
+ * occasional: a word missing from this list does not throw, it produces a
+ * TARGET THAT READS AS A SENTENCE, and everything downstream then resolves
+ * against a person who does not exist.
+ *
+ * THE TELL IS A TARGET WITH A VERB IN IT. `empty` and `turn` were missing for
+ * as long as `hand_over` has existed, so "I force her to empty her pockets"
+ * named a person called "her to empty her pockets" and the strip aimed at
+ * nobody. It was found while adding `swallow` - the neighbouring verb, in this
+ * same table - rather than by anybody playing the verb that was broken.
+ *
+ * So: when a coercion intent is added, add its compliance verbs HERE in the
+ * same edit, and check the target the parser returns rather than only the
+ * intent. The intent routing being right is what makes this easy to miss - the
+ * sentence reaches the correct verb and aims it at nobody.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
     /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn)\b.*$/i;
