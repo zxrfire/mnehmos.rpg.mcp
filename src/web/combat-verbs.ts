@@ -228,21 +228,6 @@ export const combatVerbs = {
      */
     /**
      * The art this cultivator is actually fighting with.
-     *
-     * ── THE DEFECT THIS CLOSES ───────────────────────────────────────────
-     *
-     * Played, before this existed: a cultivator who had learned an art and
-     * drilled it to sixty per cent mastery walked into every fight priced by
-     * `assessPower` as *"Fighting bare, with no art at all"* - the 0.85 factor -
-     * because `attack` never told `combat_manage` which art. The technique
-     * layer bound every NPC and did not reach the played fight at all, which is
-     * AGENTS.md's commonest defect by name.
-     *
-     * It also made the whole of what a fight TEACHES unreachable. Comprehension
-     * from a fight is comprehension of the art that was swung, so a fight with
-     * no art in it teaches nothing about any art - correctly - and every played
-     * fight was one.
-     *
      * ── WHAT IT PICKS, AND WHY IT IS NOT A CHOICE TAKEN FROM THE PLAYER ──
      *
      * The best-mastered art they are permitted to use, ties broken on id so the

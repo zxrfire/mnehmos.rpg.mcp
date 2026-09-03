@@ -2,33 +2,6 @@
  * Whether somebody's presence registers on you at all.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Played at the Azure Cloud Pavilion, at ordinal 25, asking who could teach:
- *
- *   1 stand above Deity Transformation First Turn (ordinal 25) on the roll and
- *   in the room. 0 can be named, 0 of those teach, and 1 are counted without a
- *   name because this cultivator has never met them.
- *
- * and the narrator rendered it as *"the presence of someone standing far above
- * ..., a height sixteen rungs beyond the deepest person you have ever
- * encountered."* The person is Ru Anwei, at ordinal 41, who has not left her
- * inner hall in three hundred and eighty years.
- *
- * THE GATE WITHHELD THE NAME AND HANDED OVER THE COUNT. A player who can name
- * nobody was still told there is exactly one person above them, and measured
- * exactly how far. The design owner:
- *
- *   > "this you shouldn't even know btw"
- *   > "you can only count those you know about (even if you don't know their
- *   >  names)"
- *   > "a DT wouldn't even make himself visible to you for no reason"
- *
- * So a name gate is not enough. Somebody you have never met and could not have
- * noticed is not *counted without a name* - they are **not counted**.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * AND IT IS DERIVED, NOT A NEW RULE
  * ═══════════════════════════════════════════════════════════════════════════
  *

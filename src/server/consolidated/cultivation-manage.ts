@@ -647,24 +647,6 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     }
 
     // ══ WHO REACHES THEM WHILE THE SPAN RUNS ═════════════════════════════
-    //
-    // ── THE DEFECT THIS CLOSES ───────────────────────────────────────────
-    //
-    // The encounter pipeline - `encountersFor` -> `withEncounterDeltas` ->
-    // `recordEncounters` - had exactly ONE caller in the repository:
-    // `seclusion-verbs.ts`. So the only span in which a real person could
-    // reach the player was the one where they had chosen to sit down and
-    // cultivate. Every other span - `work`, and anything else routed through
-    // this handler - went through `simulateTimeSkip`'s own internal grid,
-    // which raises a `major_encounter` interrupt and nothing else. That file
-    // says so in its own words: nothing there materialises anybody.
-    //
-    // Sitting still was therefore a perfect shield, not because idle is safe
-    // but because the arrival machinery was wired only to the verb that is not
-    // idle. The design owner's ruling is the opposite - somebody can try to rob
-    // you while you are idle, and being idle stops you annoying people, not
-    // people from harming you.
-    //
     // ── AND IT IS THE SAME SEQUENCE, NOT A SECOND ONE ────────────────────
     //
     // Deliberately the four steps in the order `encounters.ts` documents, with

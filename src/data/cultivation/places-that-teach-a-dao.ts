@@ -3,27 +3,6 @@
  * walked, and who is standing on the door.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * WHAT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `breakthrough.ts` has carried a structural gate for a long time: past Core
- * Formation a realm boundary asks for comprehension a cultivator's own body
- * cannot supply, counted as distinct `InsightDomain`s outside `element`. It
- * shipped switched off, and the reason it had to stay off was measured twice -
- * NOTHING IN THE WORLD SUPPLIED COMPREHENSION TO ANYBODY. A player picks it up
- * from ruins, phenomena, teachers and near-deaths; the world ran all four and
- * wrote none of them down, so switching the gate on stopped every NPC alive at
- * ordinal 21 and deleted the top four realms.
- *
- * The technique half was closed first - `roadsWalkedBy` reads the `domain` each
- * art declares, because the roads you have walked are the roads in your hands -
- * and it is not enough on its own: eight domains exist, the technique catalog
- * teaches seven of them, and `alchemy` is taught by no art in the world. A
- * cultivator's practice cannot get them past three roads.
- *
- * This file is the other supply, and it is GROUND. Somewhere you have to be.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * ACCESS PUTS A ROAD IN REACH, AND YEARS ARE WHAT WALK IT
  * ═══════════════════════════════════════════════════════════════════════════
  *

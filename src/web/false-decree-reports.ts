@@ -2,25 +2,6 @@
  * Somebody walking up the hill with your name, and the room they take it to.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * WHAT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `authority-for-an-order.ts` made a false decree cost the giver standing and
- * deliver nothing. Played, that read as a rounding error for an act that is, in
- * plain terms, forging a mandate - and the transcript ended with the servant
- * working it out and going back to what they were doing. The design owner's
- * answer was one clause:
- *
- *   > or rat him out to the punishment elder
- *
- * Everything it needs already existed and none of it was joined up.
- * `whoAnswersAbout(portfolios, 'punishment_hall')` is the door and the Azure Dew
- * transcript was already printing that the seat was filled.
- * `ifCaughtAtSomethingTheHousePunishes` decides what the house does about a
- * member who wronged it. `whatYourOwnHouseOpensAboutYou` writes the row. What
- * was missing was the person in the middle who decides to walk.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * NOTICE ORDERING, THE SAME AS THE THEFT
  * ═══════════════════════════════════════════════════════════════════════════
  *

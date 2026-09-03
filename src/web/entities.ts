@@ -1026,14 +1026,6 @@ export function resolvePill(query: string): ResolvedEntity | null {
 
 /**
  * A thing somebody is holding, or a thing with a name.
- *
- * ── THE DEFECT THIS CLOSES ───────────────────────────────────────────────
- *
- * `resolveAnything` walked self, cultivator, sect, place, technique, recipe,
- * pill, herb - and OBJECTS WERE NOT IN IT AT ALL, so `I examine the Unearned
- * Step`, `I look at the sword in his hand` and `I examine my sword` all reached
- * the generic refusal. Every ingredient of the answer existed; nothing asked.
- *
  * ── THE ROW, NEVER THE CATALOG ───────────────────────────────────────────
  *
  * Resolved out of `scope.objects`, which is the world's own table, and never

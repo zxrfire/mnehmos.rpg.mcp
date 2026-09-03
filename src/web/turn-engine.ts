@@ -9174,22 +9174,6 @@ ${opened.text}` : receipt,
 
     /**
      * Buying a copy of a manual, which is the first real decision in the game.
-     *
-     * ── WHAT THIS CLOSES ─────────────────────────────────────────────────
-     *
-     * Two defects that were each other's mirror image, both found by playing
-     * the opening. "buy a manual" was refused - the look people give somebody
-     * asking for a thing that is not sold, followed by a list of millet, inns
-     * and ferry crossings - while "I want to learn the Lesser Qi-Gathering
-     * Manual" simply handed the road over: technique held, thirty stones
-     * untouched, no teacher, no time, no house. The correct verb was blocked
-     * and the free one worked.
-     *
-     * `items.md` has always said what should happen instead: below the line,
-     * common manuals sell at a market stall next to the cooking pots, and a
-     * poor cultivator's first real decision is whether the money goes on a book
-     * or on food. That decision did not exist anywhere in the game.
-     *
      * ── THREE ANSWERS, AND THE MIDDLE ONE IS THE GOOD WRITING ────────────
      *
      * A name that is not a book at all falls through to the ordinary price
@@ -14269,20 +14253,6 @@ ${fit.line}`;
 
     /**
      * If this turn ended the life, put the death and the estate into the world.
-     *
-     * ── WHAT THIS CLOSES ─────────────────────────────────────────────────
-     *
-     * Measured by playing, before it existed, on a cultivator who starved
-     * holding two pills, three herbs, a rated object and thirty stones: every
-     * pouch row still on the corpse, the purse still at thirty, zero rows in
-     * `world_object_provenance` naming them, zero rows in
-     * `world_chronicle_actors` naming them, their own world row still reading
-     * `alive`, `world_runs` still `active`, and no grave anywhere.
-     *
-     * The cultivation layer had the death right - run closed, cause and
-     * description written, every later act 409 - and the WORLD was told none
-     * of it, because `enshrineRun` had no caller in `src/` at all.
-     *
      * ── WHY IT IS HERE AND NOT AT EACH DEATH SITE ────────────────────────
      *
      * This is the only line in the package that has, at once, the closed run,

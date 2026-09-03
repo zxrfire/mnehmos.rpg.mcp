@@ -2,24 +2,6 @@
  * The chosen of allied houses meet each other.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The world simulated deaths, births, goals, grudges, wars and disasters, and
- * its people never MET. A cultivator's relationships were written once at
- * seeding and thereafter only ended - by death, by a faction folding, by
- * somebody being killed by somebody else's house. Measured on the drift audit
- * before this module existed:
- *
- *   inherited grudges after 500 years   221
- *   of those, originating in two people who met and disliked each other   0
- *
- * Every account in the world descended from a corpse or a catastrophe. Nobody
- * had ever been beaten in front of an audience, come second to somebody they
- * had to keep seeing, been left off an invitation list, or owed anybody
- * anything from a hole in the ground.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * WHAT A GATHERING IS
  * ═══════════════════════════════════════════════════════════════════════════
  *

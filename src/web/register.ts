@@ -4392,24 +4392,22 @@ const STYLE = `
    is the same bar re-lit: the ink ramp inverts, the accents stay the same hue
    and darken enough to hold contrast on paper. */
 /* ── One hue, one job ────────────────────────────────────────────────────
-   THE DEFECT THIS CLOSES. Teal (--datum) is the sheet's structure: every
-   panel's left rule, every open card's border, every figure, every link. It
-   was ALSO the colour that meant "this body stands over that one" on a
-   relationship row - so inside a single open entry a reader met teal bars
-   that were structure and teal bars that were a direction, with nothing
-   distinguishing them. Neither could be read, which is exactly what the
-   design owner reported: the colour code and the border are the same blue.
+   Teal (--datum) is the sheet's structure: every panel's left rule, every
+   open card's border, every figure, every link. It must not ALSO carry
+   meaning on a relationship row, or a reader meets teal bars that are
+   structure and teal bars that are a direction inside one open entry, with
+   nothing to tell them apart.
 
    Teal keeps the structural job, because it holds it in a hundred places and
-   the sheet's whole identity is built on it. DIRECTION MOVES OFF IT, onto two
+   the sheet's whole identity is built on it. DIRECTION LIVES OFF IT, on two
    hues that appear NOWHERE ELSE on this page and mean nothing else when they
    do - a plum for a body standing over this one, a moss for a body answering
-   to it, grey for level. Burnt orange (--signal) was not available either: it
-   already means "look at this" on flags, seals and ambitions.
+   to it, grey for level. Burnt orange (--signal) is not available for it
+   either: it already means "look at this" on flags, seals and ambitions.
 
-   The bar tokens are not borrowed for this any more. --bar-brass is the game
-   bar's badge colour and it was doing duty as the "below" rule, which meant a
-   change to the top bar would silently restyle the relationship section. */
+   The bar tokens are not borrowed for this. --bar-brass is the game bar's
+   badge colour, and using it as the "below" rule means a change to the top
+   bar silently restyles the relationship section. */
 :root{--ground:#EDF0F1;--panel:#F7F9F9;--ink:#12181C;--quiet:#5C6E74;--faint:#8C9BA0;
 --rule:#C4D0D3;--strong:#9AAAAF;--datum:#14545F;--datum-soft:#DCE8EA;--signal:#9E4A16;--signal-soft:#F0E0D3;
 --rel-up:#5A3E86;--rel-up-soft:#E7E0F0;--rel-down:#42632C;--rel-down-soft:#E1EBD9;

@@ -7,34 +7,6 @@
  * declares somebody dead.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Measured by playing, on a pinned world, with a cultivator who starved
- * holding two pills, three herbs, a rated object and thirty stones:
- *
- *     cultivator_pouch after death        every row still on the corpse
- *     spirit stones on the corpse         30
- *     world_object_provenance naming them 0
- *     world_chronicle rows naming them    0
- *     the player's own world row          status 'alive'
- *     world_runs for the run              outcome 'active', no grave
- *     graves in the world                 0
- *
- * The cultivation layer handled the death correctly - the run closed, the cause
- * and description went on the row, every later act came back 409 - and the
- * WORLD was never told any of it. `enshrineRun` in `engine/world/legacy.ts` is
- * the function that tells it, and it had no caller anywhere in `src/`, which is
- * AGENTS.md's signature defect: a finished, tested module nothing in the
- * running world reaches.
- *
- * So all three of the reported symptoms are one root. The pouch goes nowhere
- * because nothing settles it; a player's things are never world objects
- * because a player's death never reaches the object layer; the next life
- * cannot ask about the last one because the death was never written down where
- * asking would find it.
- *
- * ═════════════════════════════════════════════════════════════════════════
  * WHY THE COUNTED HALF GOES INTO THE CACHE LEDGER
  * ═════════════════════════════════════════════════════════════════════════
  *

@@ -2,25 +2,6 @@
  * The bill nailed to a wall, and which houses are reduced to nailing one up.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Thirteen houses in the catalog admit at rung 2 or below. Eight fresh lives
- * were sampled and every one of them could name exactly one: the Azure Dew
- * Sect. Not because the others are hidden - because nothing in the world ever
- * says their names where a nobody is standing.
- *
- * The root of the single name is measured and reported in
- * `scripts/probe-what-one-house-a-new-life-can-name.ts`:
- * `commonlyNamedHouse` in `engine/birth/birth.ts` hands every unplaced life
- * the lowest bar among recruiters, tie-broken alphabetically on the id, so it
- * is the SAME house for every player in every run forever. This module does
- * not touch that. It attacks the other half of the problem, which is the half
- * that stays broken even if the seeding is fixed: **a name granted at birth is
- * a fixed list, and the world needs a channel that keeps producing names as
- * the player moves through it.**
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * THE RULING
  * ═══════════════════════════════════════════════════════════════════════════
  *

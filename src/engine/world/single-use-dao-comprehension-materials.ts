@@ -2,25 +2,6 @@
  * Comprehension materials: the objects that are spent by being understood.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * WHAT THIS CLOSES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `scripts/audit-alive-world.ts` tests the claim that the world should be
- * physicalised - "items, manuals (for both cultivation techniques and daos),
- * all that should exist to make the world feel alive" - and it was the one
- * claim of five that did not hold:
- *
- *     objects in the world: 47
- *     by kind: manual 47
- *     DOES NOT HOLD - only manual exists
- *
- * `artifacts.ts` has held a complete table of every artifact in the world for a
- * long time - already `ObjectRecord` rows, already ordered by `power` on the
- * same ladder a person stands on, already carrying their owners and holders -
- * and the seeder never put a single one into the world. The immortal weapon a
- * sect's whole standing rests on existed in a catalog nothing read.
- *
- * ═══════════════════════════════════════════════════════════════════════════
  * COMPREHENSION MATERIALS, AND WHY THEY ARE SPENT
  * ═══════════════════════════════════════════════════════════════════════════
  *
