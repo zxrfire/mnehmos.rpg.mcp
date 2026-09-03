@@ -1248,16 +1248,18 @@ height, and nothing is in decline - which is a different setting, and a much dul
   entry rung, nobody could ever have joined and got anywhere, and the roster is a fiction.
   That is a defect wherever it appears.
 
-  **It is a rule about beginners, and some bodies do not have any.** The Kiln Wardens and the
-  Root Sill Court hold no cultivation manuals, and they are not an exception to the rule -
-  the rule does not reach them. **You are posted to them.** You arrive already carrying a
-  road, you go on cultivating whatever you were cultivating, and when the posting ends **you
-  go back to your own sect.** Nobody ever stood on their entry rung with nothing, so there is
-  no entry rung to be carried off.
+  **It is a rule about beginners, and some bodies do not admit any.** The Kiln Wardens and the
+  Root Sill Court hold no cultivation manuals, and they are not an exception - the rule does
+  not reach them. **You are posted to them.** They have an entry rung like anybody else;
+  **it simply is not zero.** So everybody who arrives is already carrying a road, goes on
+  cultivating whatever they were cultivating, and when the posting ends **goes back to their
+  own sect.**
 
-  So the question to ask of an empty shelf is not *is this an exception* but **who was
-  supposed to arrive here, and with what?** A school takes people with nothing and owes them
-  a road. A posting takes people who already have one.
+  So the question to ask of an empty shelf is not *is this an exception* but **what does this
+  body admit at?** A house taking people off the floor owes them a road off it. A house whose
+  bar is well above the floor owes nobody a beginner's book, because it has no beginners -
+  and `admissionOrdinal` is where that is written down, so it is a question with an answer
+  rather than a judgement call.
 - **An absence produced by the machinery rather than by the world.** If a house's art demands a
   root its members are never dealt, then its shelf is dead every seed for a mechanical reason,
   and nobody inside the world could tell you when it stopped - because it never started. **The
