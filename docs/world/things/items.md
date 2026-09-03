@@ -24,6 +24,7 @@ Read alongside [`economy.md`](./economy.md), which covers price, ownership and p
 | [What money cannot buy](#what-money-cannot-buy) | Somebody tries to purchase something above the line |
 | [Why a holder keeps what they cannot use](#why-a-holder-keeps-what-they-cannot-use) | A house sits on something useless to it |
 | [Spent is not gone](#spent-is-not-gone) | An object is consumed, and somebody asks about it later |
+| [One thing breaks the way everything breaks](#one-thing-breaks-the-way-everything-breaks) | Anything somebody owns is broken, holed, worn out, or mended |
 | [Holding is a signature](#holding-is-a-signature) | Somebody is seen with a thing that is not theirs |
 | [Scarcity is measured, not authored](#scarcity-is-measured-not-authored) | Deciding how many of something exist |
 | [The almanac and the ledger](#the-almanac-and-the-ledger) | Deciding which surface a fact about an object belongs on |
@@ -319,6 +320,42 @@ The same applies to loss. A house that cannot account for something should have 
 says so, and the gap between what the record claims and what is in the room is one of the best
 things a world can hold. **An inventory read from a list rather than from the shelf is a house
 that has decided not to look.**
+
+---
+
+## One thing breaks the way everything breaks
+
+<!-- tier: 2 trigger="a spirit boat, a sword, a carriage, a formation plate or a spirit tool is broken, holed, worn out or mended; or somebody asks what a war costs a house physically" -->
+
+Asked how spirit boats come apart when two sects go to war, the design owner answered in one
+line: **no bespoke logic, the same way that a sword breaks.** There is one resolver -
+[`object-damage.ts`](../../../src/engine/world/object-damage.ts) - and its input type carries
+no kind of object at all, so a rule that applies to hulls and not to blades cannot be written
+without widening a signature somebody would have to argue for.
+
+What it reads is what any thing has: the rung it was made at, and the rung of whatever was put
+through it. The gap between the two is the whole answer, and it is
+[`whether-a-weapon-survives-being-used.ts`](../../../src/engine/cultivation/whether-a-weapon-survives-being-used.ts)'s
+arithmetic rather than a second copy of it - within a realm it holds, past two it is not a
+chance, and the band between is a roll.
+
+Two things follow that this file already believes:
+
+- **Breaking is not one outcome.** A thing can be *holed* - worth a rung less, carrying a dated
+  scar, and mendable by a hand that reaches its rung. A thing holed more often than anybody
+  mended it ends as *a spirit tool with the qi long gone out of it*, which is the Late Age's own
+  phrase and is the state a child's toy is in. Past that it is *ruined*, and only at the very top
+  of the ladder does it leave pieces.
+- **Counted things cannot be damaged.** They stop existing. There is nowhere to write the scar,
+  because a holder with three carriages does not have three carriages one of which has a hole in
+  it - which is [Does it have a history](#does-it-have-a-history) arriving at its own conclusion
+  rather than being set aside. A tracked hull carries the hole, the date and the cause, and
+  [Spent is not gone](#spent-is-not-gone) applies in full: the row outlives the object either way.
+
+And breaking somebody's thing is a wrong done to a person, priced by
+[`what-a-deed-leaves.ts`](../../../src/engine/social-leverage/what-a-deed-leaves.ts) from what it
+cost them against what they had - so an apex losing one of forty and a failing house losing its
+only hull are the same deed at very different weights.
 
 ---
 

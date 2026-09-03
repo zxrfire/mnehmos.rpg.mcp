@@ -1828,6 +1828,22 @@ what-is-true-of-a-place-right-now.ts
                  carries a cause, and a cause somebody chose differs from a
                  cause nothing chose by one field and no branch
 possessions.ts   possession / ownership / claim / knowledge, plus provenance
+object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
+                 hull, a sabre, a carriage, a plate and a manual all go through
+                 `whatBecomesOfIt`, whose input type carries NO `ObjectKind` -
+                 so a `breakSpiritBoat` is not a function that was left out, it
+                 is one the signature makes unwriteable. The arithmetic is
+                 `cultivation/whether-a-weapon-survives-being-used.ts`'s and is
+                 not repeated; what is added is that breaking is not binary -
+                 held / holed / inert / ruined / shattered / gone - and that a
+                 COUNTED thing can only be held or gone, because there is no
+                 row to write a scar onto. `mend` gives a rung back, gated by
+                 the same `canUnmake` that governs making and unmaking
+war-breakage.ts  the live caller: what a war between two houses does to the
+                 things they own. Draws by one predicate that names no kind -
+                 the house owns it, it is rated, and somebody carried it out of
+                 the gate - and puts every loss on the record through
+                 `aDeedEntersTheWorld`, priced against what the owner had
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
                  what a surname is worth against a house's roll. Corroboration
