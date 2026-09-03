@@ -74,7 +74,8 @@ const TABLE = [
     'src/web/asking-is-not-doing.ts',
     'src/web/match-phrasings.ts',
     'src/web/site-phrasings.ts',
-    'src/web/sect-phrasings.ts'
+    'src/web/sect-phrasings.ts',
+    'src/web/institution-phrasings.ts'
 ];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
