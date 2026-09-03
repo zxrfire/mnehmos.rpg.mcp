@@ -2294,12 +2294,25 @@ consequence and the tier does both jobs at once.
 direction - a thing that now fires constantly - is how a rate regression usually arrives,
 and it passes every floor. Both edges, and say which edge failed.
 
-**Pin the worlds and pool the seeds.** A rate assertion on one unpinned world is a
-coincidence assertion, and rate tests are statistical, so they are the likeliest of all
-tests to flake. That matters more than it sounds: **a flaky bar gets widened until it
-asserts nothing**, and the test stays green forever while measuring nothing at all. Use
-`makeGameInWorld` with fixed seeds, pool across several, and put the pooling in the
-assertion rather than retrying until it passes.
+**Derive the rate, do not sample it.** A rate test does not have to run the world a
+thousand times and count. Most of these rates are a product of things the code already
+states - a per-day chance, a span, an exposure multiplier, a count of ruins in a pinned
+world - so the expectation has a closed form, and the closed form is what to assert. It is
+exact, it cannot flake, it needs no seed pooling, and it fails the moment somebody edits
+the constant behind it, which is the moment you want to hear about it.
+
+**Assert the tail as well as the average, because an average hides shape.** Twelve arrivals
+per decade is a fine number and means nothing on its own: it is the same average whether
+every player gets twelve or nine in ten get none and the tenth gets a hundred and twenty.
+The number that usually matters is **the chance a player never sees this at all** - and at
+the other end, the chance of a run that is nothing but this. Bound both.
+
+**Sample only where the rate genuinely depends on the world**, and pin it when you do. A
+pinned world makes composition deterministic - the ruins are counted, not estimated - which
+usually collapses the sampling problem back into a closed form over known inputs. Where
+sampling is truly unavoidable, pool across fixed seeds inside the assertion, never retry
+until it passes: **a flaky bar gets widened until it asserts nothing**, and then stays green
+forever while measuring nothing at all.
 
 **Carry the bar's provenance.** Seeds, span, and population size beside the number, so the
 next person can tell whether their change moved the world or moved the measurement. A bar
