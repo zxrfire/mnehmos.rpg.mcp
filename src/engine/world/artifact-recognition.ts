@@ -13,20 +13,35 @@
  * THE TWO AXES, THE SAME TWO
  * ═════════════════════════════════════════════════════════════════════════
  *
- *   REALM is capability.   An object rated far above the reader is a thing they
- *                          cannot read. `power` is on the same ladder a person
- *                          stands on - the artifact catalog's first design
- *                          claim - so the gap between a reader and a rated
- *                          object is the same subtraction, in the same unit,
- *                          that the art check makes against a performance.
+ *   REALM is capability.   How much of the thing they can make out. `power` is
+ *                          on the same ladder a person stands on - the artifact
+ *                          catalog's first design claim - so the gap between a
+ *                          reader and a rated object is the same subtraction,
+ *                          in the same unit, that the art check makes against a
+ *                          performance.
  *   WORLDVIEW is reference. Whether they hold any idea of what the thing is
  *                          supposed to be. `KnowingStage`, held against the
  *                          HOUSE it belongs to, because a famous object is
  *                          famous as SOMEBODY'S.
  *
- * The reading is the lower of the two, as it is for an art, and for the same
- * reason: neither axis rescues the other, and a reader short on either gets an
- * honestly hedged answer rather than a confident wrong one.
+ * The IDENTIFICATION is the lower of the two, as it is for an art, and for the
+ * same reason: neither axis rescues the other, and a reader short on either
+ * gets an honestly hedged answer rather than a confident wrong one.
+ *
+ * ── AND THE TWO AXES DO NOT FAIL THE SAME WAY ────────────────────────────
+ *
+ * Ruled by the design owner: *"being unable to read something is itself a
+ * sign."* No reference fails blank - nothing is felt, so nothing is reported.
+ * A realm gap does not: THE GAP IS THE SIGNAL, and it gets louder the wider it
+ * is. Somebody far under an object cannot name it, cannot place it and cannot
+ * be told a thing about its provenance, and knows with no hedging at all that
+ * it is beyond them.
+ *
+ * So `outOfTheirDepth` is reported ALONGSIDE the identification and never
+ * folded into it - at the far end the two run in opposite directions. It is
+ * `whatTheGapItselfTells` next door rather than a second scale here, because a
+ * second scale is the exact thing this file was written not to grow: an art
+ * performed far above somebody has to answer the same way, and it does.
  *
  * That is what produces the unevenness the ruling is about. A village carter
  * does not know the Standing Edge from any other sword - no reference, and no
@@ -91,9 +106,11 @@ import { isAtLeast, type KnowingStage } from '../social/discovery.js';
 import { keptAs, type ObjectRecord } from './possessions.js';
 import {
     certaintyRank,
+    whatTheGapItselfTells,
     whatTheirRealmAffords,
     whatTheirReferenceAffords,
-    type Certainty
+    type Certainty,
+    type HowFarOutOfTheirDepth
 } from './recognising-whose-art-you-just-watched.js';
 
 /**
@@ -188,6 +205,17 @@ export interface ThingRecognised {
      * two are not interchangeable.
      */
     perceived: boolean;
+    /**
+     * What the gap told them regardless of what they could name.
+     *
+     * Reported alongside the identification rather than folded into it,
+     * because at the far end the two run in opposite directions - see the
+     * banner over `whatTheGapItselfTells`. A reader far below an object gets no
+     * name, no house and no provenance, and an unhedged statement that the
+     * thing is beyond them. That is the most useful sentence the game can give
+     * somebody deciding whether to touch it.
+     */
+    outOfTheirDepth: HowFarOutOfTheirDepth;
     /** What the rung afforded, on its own. */
     fromRealm: Certainty;
     /** What the reference afforded, on its own. */
@@ -240,10 +268,18 @@ export function whatTheyRecogniseAboutIt(
         ? 'unaware'
         : theirOwnHouse ? 'known' : observer.referenceFor(thing.ownerId);
 
+    // A thing worth nothing in a fight cannot be beyond anybody. Paper is not a
+    // rung, and neither is a case, a tally or a seal - so the gap is measured
+    // against a rating where there is one and is silent where there is not.
+    const outOfTheirDepth = whatTheGapItselfTells(
+        observer.realmOrdinal, thing.power ?? observer.realmOrdinal
+    );
+
     const blank: ThingRecognised = {
         objectId: thing.id,
         nothingToRecognise: false,
         perceived: false,
+        outOfTheirDepth,
         fromRealm: 'nothing',
         fromReference: 'nothing',
         reading: 'nothing',
@@ -303,6 +339,7 @@ export function whatTheyRecogniseAboutIt(
         objectId: thing.id,
         nothingToRecognise: false,
         perceived: fromRealm !== 'nothing',
+        outOfTheirDepth,
         fromRealm,
         fromReference,
         reading,

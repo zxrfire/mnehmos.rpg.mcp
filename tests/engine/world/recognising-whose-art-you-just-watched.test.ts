@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { KnowingStage } from '../../../src/engine/social/discovery.js';
 import { COMMON_HOUSE_COUNT, housesTeaching, isCommonlyHeld, whoseArt } from '../../../src/engine/world/manuals.js';
 import { getSect } from '../../../src/data/cultivation/sects.js';
+import { HELPLESS_REALM_GAP } from '../../../src/engine/cultivation/combat.js';
 import {
     couldTheyTellItIs,
     isFlat,
     whatTheirRealmAffords,
     whatTheirReferenceAffords,
+    whatTheGapItselfTells,
     whereThisArtWasLearned,
     type ArtObserver
 } from '../../../src/engine/world/recognising-whose-art-you-just-watched.js';
@@ -200,5 +202,72 @@ describe('an art says where somebody trained, not whom they serve', () => {
         // there is no branch anywhere on the Court's id.
         const anyCourtArt = whoseArt(PAVILION_ART);
         expect(anyCourtArt).not.toContain('sect-hollow-court');
+    });
+});
+
+/**
+ * ── THE TWO AXES DO NOT FAIL THE SAME WAY ────────────────────────────────
+ *
+ * Ruled by the design owner, correcting this module: *"they can tell that this
+ * is something that will fuck them up, right? being unable to read something is
+ * itself a sign."*
+ *
+ * `whatTheirRealmAffords` going to `nothing` used to be the whole of what a
+ * watcher far below came away with, and it read as a shrug - which is the
+ * genre's most basic beat rendered as an absence. What is under test here is
+ * that the two readings run in OPPOSITE directions at the far end: what they
+ * can name falls to nothing while what they can feel rises to certainty.
+ */
+describe('being unable to read something is itself a sign', () => {
+    it('reports certainty about being outclassed exactly where identification fails', () => {
+        // The same subtraction, asked twice. This is the pair that matters and
+        // it is asserted as a pair, because either one alone is half an answer.
+        const farBelow = whereThisArtWasLearned(
+            { techniqueId: PAVILION_ART, performedAtOrdinal: 40 },
+            reader(0, { [AZURE]: 'known' })
+        );
+
+        expect(farBelow.perceived).toBe(false);
+        expect(farBelow.best).toBe('nothing');
+        // And the thing they DID come away with, unhedged.
+        expect(farBelow.outOfTheirDepth.beyondThem).toBe(true);
+        expect(farBelow.outOfTheirDepth.certainty).toBe('certain');
+        expect(farBelow.outOfTheirDepth.realmsAbove).toBeGreaterThanOrEqual(HELPLESS_REALM_GAP);
+    });
+
+    it('feels nothing at all when the thing is level with them or under them', () => {
+        // Somebody standing over a thing their own size is not out of their
+        // depth and has nothing to feel. The axis is about being outclassed,
+        // not a general-purpose alarm.
+        const level = whereThisArtWasLearned(
+            { techniqueId: PAVILION_ART, performedAtOrdinal: 20 },
+            reader(20, { [AZURE]: 'known' })
+        );
+        expect(level.outOfTheirDepth.beyondThem).toBe(false);
+        expect(level.outOfTheirDepth.certainty).toBe('nothing');
+
+        const above = whereThisArtWasLearned(
+            { techniqueId: PAVILION_ART, performedAtOrdinal: 4 },
+            reader(40, { [AZURE]: 'known' })
+        );
+        expect(above.outOfTheirDepth.realmsAbove).toBeLessThan(0);
+        expect(above.outOfTheirDepth.certainty).toBe('nothing');
+    });
+
+    it('hedges at one realm under, which is the rung people get killed at', () => {
+        const oneUnder = whereThisArtWasLearned(
+            { techniqueId: PAVILION_ART, performedAtOrdinal: 24 },
+            reader(20, { [AZURE]: 'known' })
+        );
+        expect(oneUnder.outOfTheirDepth.realmsAbove).toBe(1);
+        expect(oneUnder.outOfTheirDepth.beyondThem).toBe(false);
+        expect(oneUnder.outOfTheirDepth.certainty).toBe('impression');
+    });
+
+    it('always says which direction it is, in both directions', () => {
+        for (const [at, by] of [[40, 0], [20, 20], [4, 40]] as const) {
+            const read = whatTheGapItselfTells(by, at);
+            expect(read.account.length).toBeGreaterThan(20);
+        }
     });
 });

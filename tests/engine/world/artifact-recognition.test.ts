@@ -120,6 +120,37 @@ describe('recognising a thing somebody is carrying', () => {
         expect(recluse.reading).toBe('nothing');
     });
 
+    it('tells somebody far below to back away from a thing they cannot name', () => {
+        // The design owner, correcting the realm axis: *"being unable to read
+        // something is itself a sign."* Identification and the sense of danger
+        // run in OPPOSITE directions at the far end, and this is the pair.
+        const edge = inTheHandOf('artifact-the-standing-edge', THIEF);
+        const nobody = looker({ id: 'npc-carter', realmOrdinal: 0, reference: 'known' });
+
+        const read = whatTheyRecogniseAboutIt(edge, nobody);
+        // No name, no house, no provenance.
+        expect(read.reading).toBe('nothing');
+        expect(read.ownerId).toBeNull();
+        expect(read.perceived).toBe(false);
+        // And one thing, unhedged, which is the sentence that keeps them alive.
+        expect(read.outOfTheirDepth.beyondThem).toBe(true);
+        expect(read.outOfTheirDepth.certainty).toBe('certain');
+    });
+
+    it('has nothing to feel about a thing that is worth nothing in a fight', () => {
+        // Paper is not a rung, and neither is a case or a tally. A book cannot
+        // be beyond anybody, so the gap is silent rather than guessed at.
+        const volume = getArtifact('volume-heaven-conversing-first')!;
+        expect(volume.power).toBeNull();
+
+        const read = whatTheyRecogniseAboutIt(
+            { ...volume, possessorId: THIEF },
+            looker({ id: 'npc-carter', realmOrdinal: 0 })
+        );
+        expect(read.outOfTheirDepth.beyondThem).toBe(false);
+        expect(read.outOfTheirDepth.certainty).toBe('nothing');
+    });
+
     it('does not gate somebody who already knows behind a rung', () => {
         // The ruling's own sentence, and the case that corrected the model. A
         // Sword Elder standing at twenty is four realms under the Pavilion's
