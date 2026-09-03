@@ -170,12 +170,20 @@ function spanOf(lines, name, kind) {
 
 // ─── the transformation ──────────────────────────────────────────────────
 
+/**
+ * `private` is OPTIONAL here, and that is not defensive coding.
+ *
+ * A member an earlier family reached has already had the keyword taken off, so
+ * by the fourth or fifth move a good number of the methods being carried are
+ * plain `async foo(`. Requiring `private` threw "0 signatures" on a method
+ * sitting in plain sight.
+ */
 function toObjectMethod(out, name) {
-    const re = new RegExp(`^    private (?:static )?(?:async )?${name}\\(`);
+    const re = new RegExp(`^    (?:private )?(?:static )?(?:async )?${name}\\(`);
     const hits = out.map((l, i) => (re.test(l) ? i : -1)).filter(i => i >= 0);
     if (hits.length !== 1) throw new Error(`${name}: ${hits.length} signatures in the moved block`);
     const i = hits[0];
-    const line = out[i].replace(/^    private (?:static )?/, '    ');
+    const line = out[i].replace(/^    (?:private )?(?:static )?/, '    ');
     if (line.trimEnd().endsWith('(')) {
         out[i] = line;
         out.splice(i + 1, 0, '        this: GameService,');
