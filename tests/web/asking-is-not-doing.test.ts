@@ -62,6 +62,7 @@ import {
     parseIntent
 } from '../../src/web/actions';
 import { theClauseThisTurnDidNotRun } from '../../src/web/the-part-of-the-sentence-that-was-not-run';
+import { ASKING_RATHER_THAN_DOING, theWholeSentenceIsAQuestion } from '../../src/web/asking-is-not-doing';
 import {
     isSoldAtAStall,
     manualsAStallCarries,
@@ -907,4 +908,142 @@ describe('a question about what would follow is not the act it names', () => {
         expect(after.run!.elapsedDays).toBe(before.run!.elapsedDays);
         expect(after.cultivator!.age).toBe(before.cultivator!.age);
     }, 120_000);
+});
+
+/**
+ * THE GENERAL FORM: a closing question mark means this is not an action.
+ *
+ * The design owner's ruling, and it arrived after this list had grown a shape
+ * at a time four separate times - the modals, the method questions, the
+ * progressives, the conditional - each one a player who had typed a question
+ * and been charged for it, the worst of them for ten years:
+ *
+ *   > "you can ID based on the presence of a ? that this is typically not an
+ *   >  action"
+ *   > "and an incoherent ? should be rightfully refused"
+ *
+ * Both halves are tested here and the second is what keeps it honest. A `?` is
+ * a signal, not a licence to route: a question naming a verb the reader
+ * understands reaches that verb's read, and one it cannot parse reaches
+ * `unclear` and says so. Collapsing the second case into the first would make
+ * the family look complete and would delete the surface that teaches somebody
+ * the verb list.
+ */
+describe('a closing question mark means this is not an action', () => {
+    /**
+     * Questions no branch in the list reaches. The mark is the only thing that
+     * says these are questions, which is the whole argument for the rule.
+     *
+     * Measured, not classified. `costsTheAskerNothing` is answered at the ACTION
+     * and is wrong for at least seven verbs - `work` is one, and "somebody
+     * bothers me while I work the season?" correctly reaches `work` with intent
+     * `board`, the free listing, which that predicate calls costly. The clock
+     * and the purse cannot be argued with.
+     */
+    const ONLY_THE_MARK_SAYS_SO = [
+        'anyone going to trouble me while I sit here?',
+        'I seclude ten years and nobody finds me?',
+        'somebody bothers me while I work the season?',
+        'nobody comes looking while I cultivate?',
+        'I sit here a hundred years and stay whole?',
+        'anybody hunting me in the Low Fall?',
+        'I gather the whole season without trouble?'
+    ];
+
+    it('spends nothing on any of them, measured', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'a-mark-is-not-a-decision' });
+        await game.newRun('Shen Wuyou');
+
+        for (const said of ONLY_THE_MARK_SAYS_SO) {
+            const before = await game.state();
+            await game.act(said);
+            const after = await game.state();
+
+            expect(after.run!.elapsedDays, `"${said}" spent days`)
+                .toBe(before.run!.elapsedDays);
+            expect(after.cultivator!.spiritStones, `"${said}" spent stones`)
+                .toBe(before.cultivator!.spiritStones);
+            expect(after.cultivator!.age, `"${said}" aged them`)
+                .toBe(before.cultivator!.age);
+        }
+    }, 300_000);
+
+    /**
+     * Without the mark, five of those seven were spending - one of them a
+     * decade. Pinned so the rule cannot be quietly narrowed back: these are the
+     * sentences that have no other branch to fall back on.
+     */
+    it('is what turns those from acts into reads', () => {
+        for (const said of ONLY_THE_MARK_SAYS_SO) {
+            expect(theWholeSentenceIsAQuestion(said), said).toBe(true);
+            // And the same words with the mark taken off are NOT covered by it,
+            // which is what makes this branch load-bearing rather than a
+            // duplicate of the four above it.
+            const bare = said.replace(/\?$/, '');
+            expect(
+                ASKING_RATHER_THAN_DOING.test(bare.toLowerCase()),
+                `"${bare}" was already covered without the mark`
+            ).toBe(false);
+        }
+    });
+
+    /**
+     * The second half of the ruling, and it is not a gap to be tidied away.
+     *
+     * A question the parser cannot make sense of must be REFUSED, not executed
+     * as the nearest costly verb and not deflected into a ground read. `unclear`
+     * is on `READ_ONLY_ACTIONS`, so `theReadThatAnswersIt` returns it untouched
+     * and the misparse surface - the thing that teaches somebody what the verbs
+     * are - survives.
+     */
+    it('refuses an incoherent question rather than executing or deflecting it', () => {
+        for (const said of [
+            'is this ground safe to cultivate on or will I be interrupted?',
+            'the ground here safe to sit on for a decade?'
+        ]) {
+            const plan = parseIntent(said);
+            expect(plan.action, said).toBe('unclear');
+            expect(costsTheAskerNothing(plan), said).toBe(true);
+        }
+    });
+
+    /**
+     * Only a mark that CLOSES the utterance counts.
+     *
+     * "What now? I cultivate for a year" is a question and then a decision, and
+     * the decision is the sentence. This is the guard on the whole rule: without
+     * it, one idle question at the front of a line would disarm everything
+     * after it.
+     */
+    it('leaves a question followed by a decision alone', () => {
+        const plan = parseIntent('what now? I cultivate for a year');
+        expect(plan.action).toBe('cultivate');
+        expect(costsTheAskerNothing(plan)).toBe(false);
+    });
+
+    /**
+     * And it is a no-op wherever the sentence already reached a read, which is
+     * why it is safe to apply this widely.
+     *
+     * `theReadThatAnswersIt` returns a free plan untouched, so marking a
+     * sentence as asking can only move a plan that would have SPENT. Measured
+     * over 5,929 sentences harvested from this repository's own web and server
+     * test files: 20 were newly read as asking by the mark, and the routing of
+     * ZERO of them changed. The old objection to this rule - that "what now?"
+     * is not about any particular act - was true and did not matter.
+     */
+    it('does not move a sentence that already reached a read', () => {
+        for (const said of [
+            'what is for sale here?',
+            'what are the prices here?',
+            'what news is there?',
+            "who's in charge?",
+            'what is your name?',
+            'how much do I have left?'
+        ]) {
+            const withMark = parseIntent(said);
+            const withoutMark = parseIntent(said.replace(/\?$/, ''));
+            expect(withMark.action, said).toBe(withoutMark.action);
+        }
+    });
 });

@@ -150,9 +150,53 @@ export const MALFORMED_QUANTITY =
  * settling" is not a question, and neither is "the elder said I should leave".
  * The subject has to be the asker and the mood has to be interrogative.
  *
- * Deliberately does not include a bare question mark. Half the questions a
- * player types have no punctuation at all, and half the sentences that end in
- * one - "what now?" - are not about any particular act.
+ * ── AND A CLOSING QUESTION MARK, WHICH IS THE GENERAL FORM OF ALL OF IT ──
+ *
+ * This block used to say the opposite, and the reversal is the design owner's:
+ *
+ *   > "you can ID based on the presence of a ? that this is typically not an
+ *   >  action"
+ *   > "and an incoherent ? should be rightfully refused"
+ *
+ * The old caution read: *deliberately does not include a bare question mark -
+ * half the questions a player types have no punctuation at all, and half the
+ * sentences that end in one, "what now?", are not about any particular act.*
+ * The first half is true and is why every branch above stays. The second half
+ * was the mistake, and it is worth being precise about why, because it looks
+ * like a real objection:
+ *
+ * **{@link theReadThatAnswersIt} is a no-op for anything already free.** Its
+ * first line returns the plan untouched when the plan costs nothing, so marking
+ * a sentence as asking can only change the routing of a sentence that would
+ * have SPENT something. "What now?" was never at risk; it reaches a read, and a
+ * read is returned unchanged. The set this rule can possibly affect is exactly
+ * the set it is for.
+ *
+ * That was worth four separate branches to learn. The list grew by a shape at a
+ * time - the modals, then the method questions, then the progressives, then the
+ * conditional - and every one of them was a player who had typed a question and
+ * been charged for it. The costliest reached TEN YEARS of seclusion. A closing
+ * `?` is the property all four shapes share, and it is the player saying
+ * plainly that they are asking.
+ *
+ * Two things keep it honest and neither is optional:
+ *
+ * - **Only a `?` that CLOSES the utterance.** "What now? I cultivate for a
+ *   year" is a question and then a decision, and the decision is the sentence.
+ *   The mark has to end the whole thing to be evidence about the whole thing.
+ * - **A `?` is a signal, not a licence to route.** A question naming a verb the
+ *   reader understands reaches THAT VERB'S read; one the reader cannot parse
+ *   reaches `unclear` and says so. That second case is not a gap to be tidied
+ *   away - an incoherent question SHOULD be refused, and the misparse surface
+ *   is what teaches somebody the verb list. What must never happen is a
+ *   question the parser did not understand being executed as the nearest
+ *   costly verb. `unclear` is on {@link READ_ONLY_ACTIONS}, so it is returned
+ *   untouched here and the refusal survives.
+ *
+ * The branches above are NOT redundant against this and were kept after
+ * measuring: they carry the unpunctuated half. "will someone come for me if I
+ * seclude for ten years" with no mark on the end is the ten-year sentence, and
+ * only its own branch catches it.
  */
 export const ASKING_RATHER_THAN_DOING = new RegExp([
     // The modals. "can I", "could I", "may I", "should I", "would I", "might I".
@@ -256,42 +300,51 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     // to <verb>` both say and no sentence that commits to anything says.
     /\bwhat\s+(?:am|are)\s+i\s+[a-z]+ing\b/,
     /\bwhat\s+(?:is|are)\s+(?:there\s+|left\s+)?(?:here\s+)?to\s+[a-z]+\b/,
-    /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/
+    /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/,
+    // ── AND THE ONE THE PLAYER TYPED ON PURPOSE ─────────────────────────
+    //
+    // Last in the list because it is the widest, and it subsumes every branch
+    // above for anybody who punctuates. See the block comment on this constant
+    // for the ruling and for why the four narrower shapes stay: they carry the
+    // half of the questions that arrive with no mark on the end.
+    //
+    // `\s*$` and not a bare `\?`, so the mark has to close the utterance.
+    /\?\s*$/
 ].map(r => r.source).join('|'), 'i');
 
 /**
  * Whether the WHOLE utterance is a question, asked of the sentence rather than
  * of any clause inside it.
  *
- * ── WHY THIS IS SEPARATE FROM THE ROUTING TEST ABOVE ─────────────────────
+ * ── IT USED TO BE A SECOND TEST, AND NOW IT IS A DOOR ONTO THE FIRST ─────
  *
- * {@link ASKING_RATHER_THAN_DOING} answers "which verb should run", and for
- * that job a bare question mark is deliberately excluded: half the questions a
- * player types carry no punctuation, and half the sentences that end in one -
- * "what now?" - are not about any particular act, so routing on the mark alone
- * would move verbs around for no reason.
+ * This was written wider than {@link ASKING_RATHER_THAN_DOING} on purpose: it
+ * added a closing question mark, which that constant then excluded. The
+ * argument was the asymmetry of the two failure modes - staying silent about a
+ * dropped clause costs the player a sentence they can retype next turn for
+ * nothing, while reporting a clause of a question tells them half of what they
+ * said was an act and then tells the NARRATOR that the other half ran.
  *
- * This answers a different and much cheaper question: "may a clause of this
- * sentence be REPORTED to the player as an act they asked for and did not get?"
- * The two failure modes there are not symmetrical, and that asymmetry is the
- * whole argument for a wider test:
+ * The design owner has since ruled the mark in for ROUTING as well, so the two
+ * tests answer the same question and this is now one line delegating to the one
+ * that does the work. **Two mechanisms for one rule is a defect** - the reason
+ * to collapse them is not tidiness, it is that a branch added to one and not
+ * the other is a silent disagreement about whether a sentence is a question.
  *
- *   - staying silent about a clause costs the player a sentence they can retype
- *     next turn for nothing. `the-part-of-the-sentence-that-was-not-run` already
- *     made exactly this trade once and wrote it down;
- *   - reporting a clause of a question tells the player that half of what they
- *     said was an act - and then tells the NARRATOR that the other half ran.
+ * The reasoning above kept rather than deleted, because it is the argument that
+ * turned out to generalise: the cost of a false positive here is small and the
+ * cost of a false negative is a lie, and that is even more true on the routing
+ * side, where a false negative spends the clock. See the header of
+ * `the-part-of-the-sentence-that-was-not-run.ts` for the played transcript that
+ * produced it.
  *
- * The second one is what was found by playing. See the header of
- * `the-part-of-the-sentence-that-was-not-run.ts` for the played transcript.
- *
- * A question mark is only ever accepted at the END, so "what now? I cultivate
- * for a year" is untouched: the mark has to close the utterance to be evidence
- * about it.
+ * Kept as a named function rather than inlined at the call site because the
+ * NAME is what makes the reporter's guard readable - `if the whole sentence is
+ * a question, no clause of it proposed anything` - and because the reporter
+ * asks a genuinely different question of the same answer.
  */
 export function theWholeSentenceIsAQuestion(input: string): boolean {
-    const said = input.trim().toLowerCase();
-    return said.endsWith('?') || ASKING_RATHER_THAN_DOING.test(said);
+    return ASKING_RATHER_THAN_DOING.test(input.trim().toLowerCase());
 }
 
 /**
