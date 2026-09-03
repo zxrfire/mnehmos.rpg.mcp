@@ -871,3 +871,61 @@ describe('a pronoun the table dropped is still a pronoun', () => {
         expect(carryingTheReferentForward(asking, 'Yu Lanyin').action.target).toBe('Cao Antao');
     });
 });
+
+/**
+ * A PLACE NAMED BY A PROPERTY IS A SELECTION TOO. Played at ordinal 40, one
+ * turn after the read had listed ten places with the band printed on every one:
+ *
+ *   > I find out where I can go, take the road to whichever of them has the
+ *   > best air, and sit down there for a year
+ *
+ *   The Giving ... a spirit tide, triple rate.   Bellhead ... thin qi, half rate.
+ *   Which comes first? "the journey to unspecified" or "sitting down to cultivate"?
+ *
+ * The rows were in hand, on the same turn, with the field on every one of them,
+ * and the selection still came out `unspecified`. Two things this pins: the
+ * comparison is not always a superlative word, and "whichever of them" is the
+ * strongest signal there is that a choice is meant.
+ */
+describe('ground is the fifth field, and the comparison is not always an -est', () => {
+    it('reads "whichever of them has the best air" as a choice over ground', () => {
+        const chosen = theSelectionInThisClause('take the road to whichever of them has the best air');
+        expect(chosen).not.toBeNull();
+        expect(chosen!.field).toBe('ambient');
+        expect(chosen!.want).toBe('most');
+    });
+
+    it('reads the same selection said four other ways', () => {
+        for (const clause of [
+            'go somewhere the air is thick enough to matter',
+            'pick the one with the thickest air',
+            'go wherever the qi is densest',
+            'choose whichever has the most qi'
+        ]) {
+            const chosen = theSelectionInThisClause(clause);
+            expect(chosen, clause).not.toBeNull();
+            expect(chosen!.field, clause).toBe('ambient');
+        }
+    });
+
+    /**
+     * Pointing at the set is stronger than the superlative: it says outright
+     * that the choice is being made out of something already in hand, so it
+     * needs no choosing verb and no "somewhere" frame.
+     */
+    it('takes a back-reference to the set as licence on its own', () => {
+        expect(theSelectionInThisClause('the road to whichever of them has the best air'))
+            .not.toBeNull();
+    });
+
+    it('still refuses a comparison that is only describing something', () => {
+        // No frame saying a choice is being made: these are acts with
+        // comparative targets and belong to their own verbs.
+        expect(theSelectionInThisClause('I walk to the town with thin air')).toBeNull();
+        expect(theSelectionInThisClause('the air here is thick')).toBeNull();
+    });
+
+    it('and a bare "best" names no field, so it is not guessed at', () => {
+        expect(theSelectionInThisClause('pick the best one')).toBeNull();
+    });
+});
