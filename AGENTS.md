@@ -2095,9 +2095,15 @@ that a player can do everything an NPC can in the place where that rule matters 
 
 ### A wound has a cause you can point at
 
-**Injuries come from what somebody DID.** An event: a crossing struck, a fight opened, a
-season of hauling, an art practised that fights the root it is drawn through. Never a die
-rolled against the calendar.
+**Every injury is an event with an author.** A crossing struck, a fight opened, a ruin walked
+into, a comprehension gone wrong, a tribulation stepped into for somebody else - and equally,
+somebody robbing you on the road, or a madman met on it. Never a die rolled against the
+calendar.
+
+**The author is usually the player and does not have to be.** Being robbed is not a decision;
+what makes it legitimate is that somebody did it, at a time, in a place, and the game can say
+who. So being idle is not a shield - it is the absence of an act of your own, and other people
+still act.
 
 Measured, on the operator surface, before this was written down: a body doing **nothing** ran
 the wound-to-deviation cascade to its end and died inside a decade, whatever it paid for food,
@@ -2111,9 +2117,16 @@ state **raises what an act costs** rather than going off on its own. Somebody wi
 wounds who crosses a barrier pays more for the crossing. Somebody with three open wounds who
 sits in a room and does nothing is somebody with three open wounds.
 
-The tell is the sentence the game can say afterwards. *"The barrier tore two meridians"* and
-*"the fifth month of hauling opened the old wound"* both name what did it. *"A year passed and
-you are hurt"* names nothing, and a player cannot act on it, avoid it, or learn from it.
+The tell is the sentence the game can say afterwards. *"The barrier tore two meridians"*,
+*"the fifth month of hauling opened the old wound"* and *"somebody took your purse on the road
+out of Halfwater and put a knife through your shoulder doing it"* all name what did it. *"A
+year passed and you are hurt"* names nothing, and a player cannot act on it, avoid it, or learn
+from it.
+
+**And a wrong done to the player is a wrong.** Somebody who robs you is somebody you hold an
+account against. The ledger, the grudge and the reprisal layer all exist and all currently fire
+in one direction only; harm arriving without leaving the player holding anything is this repo's
+commonest defect with the arms reversed.
 
 ### A fact reaches a person, and reaching them is an event
 
