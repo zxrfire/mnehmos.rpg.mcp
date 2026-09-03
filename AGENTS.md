@@ -1300,6 +1300,18 @@ With one, a sentence carrying a plan is carried out. **That difference is the re
 model at all**, and it is a larger one than better prose: the writing gets nicer, and the game
 gets easier to say things to.
 
+**So a plan can only be tested with a model attached.** Composition is the model's half of the
+pipeline - what a sentence splits into is decided there, and the deterministic rungs answer a
+multi-act sentence with one act *by design*. Measuring one through `parseIntent`, the harness,
+or any of the offline tiers therefore tells you nothing about whether a plan works; it tells
+you what the fallback does, which is already known and already correct. **Play it against
+ollama.** Several findings this session were about the model dropping a clause, and not one of
+them was reachable without one.
+
+That cuts both ways, and the second half is the more useful: **a defect you can reproduce in
+the deterministic reader is not a composition defect.** It is a table defect, a target defect
+or a routing defect, and it will still be there after every model in the world is fixed.
+
 **More reach is never more authority.** The reader may understand more of a sentence; it may
 never decide more of the outcome. The engine rules, exactly as before, and a reader that
 resolves an act it merely inferred has stopped reading and started playing.
