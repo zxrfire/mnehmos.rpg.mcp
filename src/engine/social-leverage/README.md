@@ -160,16 +160,36 @@ fourth alignment tomorrow changes that one function and this one inherits it.
 That also settles the ordering, and it is the catalog's rather than anybody's taste:
 
 ```text
-taken_up              somebody answers for what happens here          +GROUND_MAX
-collected             there is an authority; its interest is its own  +a quarter of it
-the_member_is_priced  the house does not answer for its own people    -0.6 of it
-none                  nobody answers for anything. The floor          -GROUND_MAX
+taken_up                  a house, and it answers for you             +GROUND_MAX
+collected                 a house, and it records                     +a quarter of it
+the_record_does_not_say   the record leaves it open                   nothing at all
+unheld_inside_a_province  no address for this ground; the apparatus
+                          that makes addresses is a few days away     -a quarter of it
+the_member_is_priced      an address that will not answer             -0.6 of it
+none                      nobody answers for anything. The floor      -GROUND_MAX
 ```
 
-**Unheld ground sits below a demonic house**, because `THE_BLOWN_GROUND.whatItMakesTrue`
+**A VACUUM sits below a demonic house**, because `THE_BLOWN_GROUND.whatItMakesTrue`
 argues it at length: the neighbours tolerate houses that eat their own disciples because
 those houses answer a letter, keep a compound at a fixed address and can be arbitrated
 against. Recourse is the axis and a demonic house is a correspondent.
+
+**But that argument is about a vacuum, not about unheld ground generally**, and reading it
+as the latter was a real defect. `GroundHolding` resolves FOUR answers and its own docstring
+says they are not interchangeable - *"`unrecorded` ... is NOT the same as unheld, and a
+caller that treats it as such has invented a vacuum out of a missing row"*. `theGroundUnderYou`
+passed only `ranked: holding === 'held'`, so three of the four collapsed onto the floor:
+The Blown Ground and Scarwater produced a byte-identical `why` and identical weights, and
+Scarwater is a ford town inside a province with a survey, a bench, a Ledger and an assay
+house. **Measured on a seeded world: of 435 people alive, 204 stood on ground that is not
+held and every one of them was priced as eleven days of sand - 113 of them on ground the
+record merely does not describe.**
+
+The ordering extends the catalog's own argument rather than inventing a scale beside it.
+What a piece of ground buys a stranger is *an address that can be made to answer*, and the
+six rows are how much of one there is. `the_record_does_not_say` is not on that scale and
+prices at **zero**, because a missing row is not evidence - the same ruling `AttemptInput.where`
+already makes one level up, where a caller that does not know where it is weighs nothing.
 
 `GROUND_MAX` is 0.12 - under a realm of standing, under a tie, under a purse and under a
 disposition - and the term is damped by whatever tie the subject already holds, because the
@@ -201,6 +221,29 @@ where: theGroundUnderYou(
 and, for the sentence rather than only the number, `theGround: ground.why` on the
 `whatTheAskCameTo` call - `saying-what-an-ask-cost-and-how-likely-it-was.ts` already names
 the term in the mechanical channel without it.
+
+### And the player is never told which ground they are standing on
+
+The other half, and the worse one, because the term is already moving the player's odds off
+a fact the game will not say. `whoHoldsTheGround` has two callers in `src/` and both are in
+the NPC simulation; the played `look` never asks it and `ask` does not route to it. Measured
+on a fresh run, which opens at the Meet on **The Blown Ground** - so a player stands on the
+one province in the world nobody holds, on turn one, and cannot find out:
+
+```text
+"I ask who holds this ground"   an NPC, and the resolve failed: "a sentence with a hole in it"
+"who holds this ground"         `destinations`, which answered with the realm ceiling
+"whose ground is this"          the same
+"who is in charge here"         `sect`, which answered about the PLAYER's affiliation
+"who do I complain to here"     unclear
+```
+
+[`web/ground-holder-lines.ts`](../../web/ground-holder-lines.ts) is the answer, built to the
+shape of `ground-status-lines.ts` beside it: it volunteers where nobody holds the ground and
+answers whichever of the four it is when asked, and every reading names a route out of being
+wronged rather than only carrying a lower number. **It has no caller yet** - the two it needs
+are in `game.ts` and `actions.ts`, both held elsewhere - and the hunks are with the
+coordinator.
 
 ## Two people at the same rung of the same house are not the same door
 
