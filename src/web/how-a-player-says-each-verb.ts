@@ -435,6 +435,17 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'has anything happened in the world',
         'what rumours are going about'
     ],
+    // The other direction of the same word, and the exemplars have to keep it
+    // apart from `news` above and from `interact`'s ordinary conversation. Every
+    // one of them names a second person AND says something was done to somebody:
+    // a sentence with only one of those halves is one of the neighbours.
+    tell: [
+        'I tell him that Cao Antao killed his brother',
+        'I let her know who killed her master',
+        'I tell the elder what happened to his disciple',
+        'I inform him that his brother is dead',
+        'I tell him that I killed his brother'
+    ],
     request: [
         'I ask him to teach me',
         'I beg her to take me as a disciple',

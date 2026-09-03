@@ -507,6 +507,18 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'have I seen this technique before',
         'do I know this form',
         'whose technique is this'
+    ],
+    // Carrying news of a wrong TO somebody, which is the half of the word
+    // `tell` that had no route. Every one of these needs a second party AND a
+    // clause saying something was done, which is what keeps them apart from
+    // "tell me about X" and from ordinary conversation - both of which are
+    // pinned in `telling-somebody-opens-the-account.test.ts`.
+    tell: [
+        'I tell him that Cao Antao killed his brother',
+        'I let He Peiyi know who killed his brother',
+        'I inform the elder that his disciple is dead',
+        'I tell her what happened to her master',
+        'I tell him that I killed his brother'
     ]
 };
 
@@ -865,10 +877,16 @@ describe('every verb is priced as well as reachable', () => {
     /**
      * Verbs whose cost is decided at execution rather than by the verb.
      *
-     * Each one carries both a read and a commitment behind an intent label, so
-     * neither list is true of it. Every row here is protected by a DEFAULT
-     * INTENT that lands on the free branch - which is the thing that makes the
-     * third state safe, and the thing an accidental member would not have.
+     * Most of them carry both a read and a commitment behind an intent label,
+     * so neither list is true of it, and are protected by a DEFAULT INTENT that
+     * lands on the free branch.
+     *
+     * `give` and `tell` are the two that are not shaped that way and they are
+     * the sharper case for the third state: neither has an intent at all, and
+     * neither ever spends a day. What is wrong about calling them reads is that
+     * each writes something permanent in somebody ELSE's name that only that
+     * person can close. What protects them instead is structural - each needs
+     * two real halves at once, and a misread sentence supplies neither.
      *
      * ONLY SHRINK IT, on the same terms as `UNTESTED_DOORS` above: the number
      * is asserted so a verb cannot join this list without somebody editing it.
@@ -891,7 +909,19 @@ describe('every verb is priced as well as reachable', () => {
         // is being asked for anything - and it moves the thing permanently and
         // opens a favour nobody can close but them. Free is as wrong for it as
         // slow is, which is exactly the case this list exists for.
-        'give'
+        'give',
+        // And telling somebody a wrong was done to them, which is `give`'s case
+        // exactly. It spends no day and nothing can fail against the hearer,
+        // and it writes a permanent account in somebody else's name with the
+        // teller's own name on it as the person who told them - which nobody
+        // but the holder can close. A read it is not.
+        //
+        // What makes it safe on this list is the same thing that makes `give`
+        // safe, and it is structural rather than an intent default: it needs
+        // BOTH halves. A person who is actually standing here and can be named,
+        // and a wrong the world already priced that this cultivator could point
+        // at. No misread sentence supplies either, let alone both.
+        'tell'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -922,7 +952,13 @@ describe('every verb is priced as well as reachable', () => {
         // recipient can close. Free is as wrong for it as slow is. Raising this
         // number is how a verb joins the list, and it is meant to be an edit
         // somebody has to make on purpose.
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(12);
+        //
+        // 12 -> 13 for `tell`, on `give`'s reasoning applied to a heavier
+        // write: telling somebody a wrong was done to them costs the teller no
+        // day and opens a grudge in the hearer's name, against whoever was
+        // named, with the teller's own name on the row. Neither list is true of
+        // that either.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(13);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

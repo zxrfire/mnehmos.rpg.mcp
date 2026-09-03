@@ -333,6 +333,15 @@ import {
     type HearingIntent
 } from './hearsay.js';
 import { askAround, factsForNews } from './asking-what-people-are-saying.js';
+// The other direction of the same act: the player carrying news of a wrong TO
+// somebody, rather than a square repeating one in front of them. Same join,
+// same ledger, same rule that the account opens against whoever was named.
+import { whoTheClaimBlames } from './telling-a-wrong.js';
+import {
+    couldPointAtIt,
+    factsForTelling,
+    whatATellingLandsOn
+} from './what-a-telling-lands-on.js';
 import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
 // What a year of somebody's life earns, which is what bounds a purse-lift.
@@ -3375,7 +3384,9 @@ ${noticedWaiting}`;
             }
 
             case 'work':
-                return this.work(cultivator, action.days ?? DEFAULT_WORK_DAYS, action.target);
+                return this.work(
+                    cultivator, action.days ?? DEFAULT_WORK_DAYS, action.target, action.intent
+                );
 
             case 'market':
                 return this.market(run, cultivator, action.target);
@@ -3391,6 +3402,16 @@ ${noticedWaiting}`;
 
             case 'news':
                 return this.news(run, cultivator);
+
+            // Carrying the news the other way. `news` is the player finding out;
+            // this is the player being the person somebody else finds out from,
+            // through the same join and into the same ledger.
+            case 'tell': {
+                // The telling is read against the world's own history, so the
+                // world has to be in hand. Loaded the way `roads` loads it.
+                this.atHand = this.atHand ?? await this.loadWorld();
+                return this.tellSomebody(run, cultivator, action.target, action.topic);
+            }
 
             // ── institutions acting on each other, and on the dead ──
             //
@@ -4465,8 +4486,26 @@ ${noticed}`;
     private async work(
         cultivator: Cultivator,
         days: number,
-        target: string | undefined
+        target: string | undefined,
+        /**
+         * `board` reads what is going and takes nothing. Anything else takes.
+         *
+         * The label exists because a QUESTION about work was buying a season.
+         * Measured, on a fresh run: `any work going?` spent ninety days as a
+         * Shipmaster, because naming no trade is deliberately read as *take any
+         * work* so that "I take whatever the village will give me" is not
+         * answered with a menu. Both readings are right and they are different
+         * sentences; this is what tells them apart, and it is the only thing it
+         * does. See `ASKING_AFTER_WORK` for which phrasings set it.
+         *
+         * The default is the COSTLY branch, which inverts the rule every other
+         * intent-carrying verb follows, and deliberately: the bare form is what
+         * somebody types when they are out of stones, and answering that with a
+         * listing costs them a turn they may not have.
+         */
+        intent?: string
     ): Promise<Execution> {
+        const readingTheBoard = intent === 'board';
         // A named trade has to become a catalog id, or the tool reads it as
         // "no occupation named" and lists the board instead of doing the work.
         // Matched against what is going HERE, at this realm: naming a trade the
@@ -4511,7 +4550,12 @@ ${noticed}`;
         // `findWorkForOrdinal`'s own answer narrowed by its own regard and by
         // the settlement. A tie is broken by id so the choice is reproducible.
         const anyWork = named === undefined && GameService.WORK_UNSPECIFIED.test(wanted);
-        const occupation = named ?? (anyWork
+        // Reading the board is not taking anything off it, so no occupation
+        // reaches `handleWork` - which is the branch that already answers
+        // "What is going, for somebody standing where they are standing", and
+        // already spends nothing. One line rather than a second routine,
+        // because there is nothing about the listing that differs.
+        const occupation = readingTheBoard ? undefined : named ?? (anyWork
             ? [...offered].sort((a, b) =>
                 b.cashPerMonth - a.cashPerMonth || (a.id < b.id ? -1 : 1))[0]
             : undefined);
@@ -5304,6 +5348,142 @@ ${noticed}`;
                 + 'stage "whisper" with the speaker attached. No fact was taken as read.',
             ok: asked.heard.length > 0
         }, ...opened];
+        return execution;
+    }
+
+    /**
+     * Telling somebody that a wrong was done to them, and putting a name on it.
+     *
+     * ── THE SAME JOIN, ENTERED AT THE OTHER DOOR ─────────────────────────
+     *
+     * `news` is this cultivator finding something out. This is them being the
+     * person somebody else finds out from, and it deliberately runs through
+     * `whatBeingToldOpens` rather than writing a second path into the ledger:
+     * the date, the weight, the three states and the rule that the account opens
+     * against whoever was NAMED are all decided there and are not re-decided
+     * here. What this method contributes is the two things the join cannot know
+     * - who the player meant, and whether they had any business saying it.
+     *
+     * ── BOTH HALVES HAVE TO BE REAL, WHICH IS WHAT MAKES IT FREE ─────────
+     *
+     * A person who is actually standing here, and a wrong the world priced that
+     * this cultivator could point at. Neither is supplied by a sentence the
+     * parser guessed at, which is the same protection `give` has and the reason
+     * this verb spends no day. It can still be wrong about everything else, and
+     * that is the design: the name the player used is carried through untouched
+     * whether or not that person did it.
+     */
+    private tellSomebody(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        claim: string | undefined
+    ): Execution {
+        const scope = this.scopeFor(cultivator);
+        const query = (target ?? '').trim();
+        const said = (claim ?? '').trim();
+
+        if (query.length < 2 || said.length < 3) {
+            return refused('engine.resolveParty', 'tell', factsForRefusal(
+                'Nobody to say it to.',
+                this.whoIsAbout(cultivator),
+                'tell: no addressee or no claim. Both halves are required - a telling with '
+                + 'nobody at the end of it opens nothing for anybody.'
+            ));
+        }
+
+        // ── WHO IS BEING TOLD, AND THEY HAVE TO BE HERE ──────────────────
+        //
+        // The same resolution every verb aimed at a person uses, and then the
+        // co-location check on top of it: a name that resolves to somebody four
+        // provinces away is a person this cultivator cannot speak to, and news
+        // does not travel because somebody said it into the air. `interact`'s
+        // demand path makes the identical check for the identical reason.
+        const pointedAt = this.somebodyAtHand(query, cultivator);
+        const party = this.partyPutTo(cultivator, query, scope, pointedAt);
+        const here = this.present(cultivator);
+        const hearer = party && party.kind === 'cultivator'
+            ? here.find(row => row.id === party.id) ?? null
+            : null;
+        if (hearer === null) {
+            return this.nobodyByThatName(cultivator, query, scope, 'tell');
+        }
+
+        // ── AND WHO THEY ARE PUTTING IT ON ───────────────────────────────
+        //
+        // Read out of the claim and resolved through the same knowledge-gated
+        // lookup, so a name this cultivator has never heard reaches nothing here
+        // exactly as it reaches nothing anywhere else. THE RESOLUTION IS THE
+        // ONLY CHECK: nothing compares the name against who actually did it, and
+        // nothing may - see `hearing-of-a-wrong.ts`.
+        //
+        // A name that resolves to nobody does not throw the turn away. It leaves
+        // the telling with no name in it, which is a true description of what
+        // the hearer received, and the middle state is a real state rather than
+        // a failure.
+        const named = whoTheClaimBlames(said);
+        const blamed = named === null
+            ? null
+            : /^i$/i.test(named)
+                ? { id: cultivator.id, name: cultivator.name }
+                : (found => found && found.kind === 'cultivator'
+                    ? { id: found.id, name: found.name }
+                    : null)(this.partyPutTo(cultivator, named, scope));
+
+        const landedOn = whatATellingLandsOn({
+            world: this.atHand,
+            hearerId: hearer.id,
+            hearer: this.atHand?.npcs.find(npc => npc.id === hearer.id) ?? null,
+            tellerId: cultivator.id,
+            blamedId: blamed?.id ?? null,
+            // The RUN's clock. Every obligation in this table is dated in it,
+            // and two clocks in one table is a row nobody can read.
+            onDay: Math.floor(run.elapsedDays),
+            canPointAt: fact => couldPointAtIt(fact, cultivator.id,
+                id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)),
+            heldAbout: factId => this.accountCarriedAbout(hearer.id, factId)
+        });
+
+        const calls: ToolCallRecord[] = [];
+        if (landedOn.opens !== null) {
+            const record = createObligation(landedOn.opens);
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            calls.push({
+                name: 'social.createObligation',
+                action: 'tell',
+                summary:
+                    `${record.holderId} now holds a ${record.severity} ${record.kind} about `
+                    + `${record.subjectId} (${record.cause}), opened on being told by `
+                    + `${cultivator.name} on day ${record.incurredOnDay}. `
+                    + `triggeringEventId=${record.triggeringEventId ?? 'none'}; `
+                    + `fromBelief=${record.fromBelief}. ${landedOn.note}`,
+                ok: true
+            });
+        }
+
+        const facts = factsForTelling({
+            landedOn,
+            hearer: hearer.name,
+            blamed: blamed?.name ?? named,
+            claim: said
+        });
+        const execution = this.freeAction(run, 'tell', facts);
+        // EXECUTED either way, and that is the ruling rather than an oversight.
+        // The words were said and the person heard them; whether anything came
+        // of it is a fact about the world and not a failure of the turn. Marking
+        // it refused would put it back in the class of answers a player reads as
+        // "the game did not understand me", which is the whole defect this verb
+        // was built to stop producing.
+        execution.outcome = 'executed';
+        execution.calls = [{
+            name: 'world.whatATellingLandsOn',
+            action: 'tell',
+            summary: landedOn.opens === null
+                ? `Nothing opened: ${landedOn.landed}. ${landedOn.note}`
+                : `${landedOn.did} against ${landedOn.againstAsTold ?? 'nobody'}, `
+                  + `off fact ${landedOn.factId}.`,
+            ok: true
+        }, ...calls];
         return execution;
     }
 
@@ -13014,6 +13194,21 @@ ${fit.line}`;
      * otherwise say plainly that nobody here answers to it. Seeing that
      * somebody is standing there is not knowing who they are - the same rule
      * `nobodyByThatName` applies to the list it appends after this.
+     *
+     * ── AND THE DELIVERY CLAIM WAS THE SAME DEFECT, ONE LINE LOWER ───────
+     *
+     * The gate above fixed WHICH name is printed and left the sentence around
+     * it saying `You put the words to X` - so the paragraph still told the
+     * player their sentence had been delivered to somebody they never named,
+     * which is the redirect this whole note forbids, surviving inside the fix
+     * for it.
+     *
+     * **Both branches now open with the fact this refusal is actually about:
+     * the NAME reached nobody.** A bystander may be named as somebody who heard
+     * a stranger say something, never as the person it was said to. That
+     * ordering also stops the paragraph reading as *I did not understand you* -
+     * which it is not, and must not imply, because the sentence that reaches
+     * here is often perfectly clear and simply names nobody who is here.
      */
     private blankLook(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -13032,8 +13227,9 @@ ${fit.line}`;
                 'back to what they were doing.';
         }
 
-        return `You put the words to ${witness.name}. They look at you the way people look ` +
-            'at a sentence with a hole in it, and then go back to what they were doing.';
+        return `Nobody in ${where} answers to that name. ${witness.name} hears you say it ` +
+            'and waits a moment, in case the rest of it is coming, and then goes back to ' +
+            'what they were doing.';
     }
 
     /**

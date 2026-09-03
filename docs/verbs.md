@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**53 verbs.** 17 of them take nothing from the player,
+**54 verbs.** 17 of them take nothing from the player,
 25 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -132,6 +132,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recall`](#recall) | `target` `intent` | nothing | yes | yes | [2](#recall) |
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
+| [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
 | [`request`](#request) | `target` `intent` `topic` | time | yes | - | [9](#request) |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
@@ -546,6 +547,14 @@ Takes `target`.
 what the people standing HERE say is happening somewhere else. No target and no intent. Passes no time. Use it for "what news is there", "what is happening in the world", "I listen for rumours", "what is the word" and "what have you heard". The opposite verb to recall: that one reads their own head, this one asks other people, and what comes back may be wrong. NOT for "what do people say about this place", which is the ground's own history and belongs to look.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'news'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.news` · the deterministic parser reaches it · passes no time.
+
+### `tell`
+
+TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The other direction of news: that one asks what people are saying, this one carries it to the person it is about. "target" is who is being told and they have to be here; "topic" is what is being said, in the player's own words, including the name of whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao Antao killed his brother", "I let her know who killed her master", "I tell him what happened to his brother" and "I tell him that I killed his brother". Passes no time. Route it whether or not the claim is true - naming the wrong person, or a killing that never happened, is an ordinary thing to say and the engine is what answers for it. NOT for "tell me about X", which is a question and belongs to investigate, and NOT for a threat, which is about something that has not happened yet.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'tell'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.loadWorld` · the deterministic parser reaches it.
+
+Takes `target`, `topic`.
 
 ### `request`
 

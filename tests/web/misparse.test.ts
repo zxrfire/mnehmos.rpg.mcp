@@ -262,7 +262,22 @@ describe('the fallback is inert', () => {
              * null unless the sentence names the thing, which is what keeps a
              * shrug from ever emptying somebody's purse.
              */
-            'give'
+            'give',
+            /**
+             * `tell` is `give`'s case with a heavier write on the far side.
+             * Telling somebody a wrong was done to them spends no day and
+             * nothing can fail against them - they are not being asked for
+             * anything - and it opens a grudge in their name against whoever
+             * the sentence named, with the teller's own name on the row.
+             *
+             * The protection is structural and it is the same one: BOTH halves
+             * have to resolve. A person actually standing here who can be
+             * named, and a wrong the world already priced that this cultivator
+             * could point at. `whatIsBeingTold` returns null unless the
+             * sentence names a second party AND says something was done, so a
+             * shrug cannot reach the ledger.
+             */
+            'tell'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -487,7 +502,12 @@ describe('every verb is reachable from plain English', () => {
         recognise: 'do I recognise this style',
         propose: 'I propose a match to Bai Jinglu',
         decline: 'I refuse the match',
-        child: 'I have a child with Bai Jinglu'
+        child: 'I have a child with Bai Jinglu',
+        // The other half of the word `tell`, which reached `interact/talk`
+        // with the whole proposition swallowed into the party name - and, on
+        // the phrasing naming a theft, reached `interact/steal` and pointed an
+        // attempt at the person being warned.
+        tell: 'I tell him that Cao Antao killed his brother'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

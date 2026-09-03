@@ -589,6 +589,51 @@ export const ACTION_NAMES = [
      */
     'news',
     /**
+     * CARRYING THE NEWS THE OTHER WAY: telling somebody that a wrong was done
+     * to them, and putting a name on it.
+     *
+     * ── THE ASYMMETRY IT CLOSES ──────────────────────────────────────────
+     *
+     * `hearing-of-a-wrong.ts` is the receiving half and it works. Being told is
+     * the event that opens the account - dated to the day you were told, at the
+     * deed's own weight, against whoever the telling named - and `news` is a
+     * live caller of it, so a square repeating something in front of the player
+     * already does all of this to them.
+     *
+     * Nothing could do it in the other direction. Measured on the deterministic
+     * reader: "I tell him that Cao Antao killed his brother" reached
+     * `interact/talk` with the whole proposition swallowed into the party name,
+     * and "I tell her that Cao Antao stole from her" reached `interact/steal` -
+     * the reader saw `stole`, decided the PLAYER was stealing, and pointed an
+     * attempt at the person being warned. The world could do this to a player
+     * and the player could not do it to anybody, which is AGENTS.md's *if an NPC
+     * can do it, you can* failing in the direction that is hardest to see.
+     *
+     * ── THREE PARTS, WHICH IS ONE MORE THAN MOST VERBS TAKE ──────────────
+     *
+     * `target` is who is being told and `topic` is what is being said, in the
+     * player's own words. The third part - who it is being put on - is read out
+     * of `topic` by `whoTheClaimBlames` and resolved by the engine against the
+     * same knowledge-gated party lookup every other approach uses. It is not a
+     * field of its own because it is not always there: a telling that names a
+     * loss and nobody for it is the middle state the whole design is about.
+     *
+     * ── FREE, AND FOR `give`'S REASON ────────────────────────────────────
+     *
+     * In neither {@link READ_ONLY_ACTIONS} nor {@link TIME_CONSUMING_ACTIONS},
+     * with `give`, `sect`, `posture`, `seal`, `offer` and `oath`. It spends no
+     * day and it commits the teller to something they cannot walk back: their
+     * name goes onto the row as `told-by:`, so *who told him* has an answer
+     * that a person in the world can reach, and whatever anybody does about
+     * that is an ordinary deed.
+     *
+     * What protects a misparse is that it needs both halves, exactly as `give`
+     * does - a person who is actually here, and a wrong the world has already
+     * priced that this cultivator can point at. Neither is supplied by a
+     * sentence the parser guessed at.
+     */
+    'tell',
+    /**
      * ASKING A PERSON FOR SOMETHING, which is the verb the design rests on and
      * which did not exist.
      *
@@ -780,6 +825,8 @@ export const READ_ONLY_ACTIONS: readonly ActionName[] = [
 //   site, legacy, refine, provision, treat, interact, request
 //             each either takes something or needs a target the bare word
 //             does not supply
+//   tell      needs a person AND a claim, and puts the teller's name on a row
+//             somebody else will act on. The bare word supplies neither half
 //
 // Every one of those is already argued for beside its own verb. This rule adds
 // no judgement of its own; it reads the classification the file already keeps.
@@ -1041,7 +1088,14 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      * and which of them the player could put it to - when it resolves to
      * nobody.
      */
-    'request'
+    'request',
+    /**
+     * Who is being told. Resolved through the same knowledge-gated party lookup
+     * `interact` and `request` use, and refused with the same guiding refusal
+     * when it reaches nobody - because a telling that reaches nobody is not a
+     * telling, and the person has to be somewhere the player can speak to them.
+     */
+    'tell'
 ] as const;
 
 /**
@@ -1106,7 +1160,18 @@ export const TOPIC_ACTIONS: readonly ActionName[] = [
      * is what somebody reads in eighty years when they are working out why
      * this person was standing where they were standing.
      */
-    'oath'
+    'oath',
+    /**
+     * `tell` uses it for WHAT IS BEING SAID, in the teller's own words - the
+     * whole proposition, not a label for it. Two things read it and neither
+     * decides an outcome: `whoTheClaimBlames` looks in it for a name, which the
+     * engine then resolves like any other party, and the answer echoes it back
+     * so the player is told what landed in the terms they said it in.
+     *
+     * Nothing checks whether it is TRUE, here or anywhere on the path. That is
+     * the design rather than an omission - see `hearing-of-a-wrong.ts`.
+     */
+    'tell'
 ] as const;
 
 /**
@@ -1191,5 +1256,36 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * already carries, which touches their own ledger rows and nothing else.
      * See {@link DEFAULT_PASSAGE_INTENT} and {@link DEFAULT_OATH_INTENT}.
      */
-    'passage', 'oath'
+    'passage', 'oath',
+    /**
+     * `work` carries exactly one label and it exists to make a QUESTION free.
+     *
+     * ── THE MEASUREMENT ──────────────────────────────────────────────────
+     *
+     * Found by playing. `any work going?` spent NINETY DAYS as a Shipmaster -
+     * a question, answered by taking a season of somebody else's fields. That
+     * is the class of defect `misparse.test.ts` exists for, stated in its own
+     * header as the sentence that killed a run, and it arrives here because
+     * naming no trade at all is deliberately read as *take any work*:
+     * `WORK_UNSPECIFIED` matches the empty string on purpose, so that "I take
+     * whatever the village will give me" is not answered with a menu.
+     *
+     * Both readings are right and they are different sentences. `board` is the
+     * label that tells them apart, and it is the ONLY thing it does - which of
+     * the two runs, never what either one produces.
+     *
+     * ── AND THE DEFAULT IS THE COSTLY ONE, WHICH IS THE EXCEPTION ────────
+     *
+     * Every other action on this list defaults to its read. `work` cannot,
+     * because its bare form is the sentence somebody types when they are out of
+     * stones and out of options, and answering that with a listing costs them a
+     * turn they may not have. So the default stays where it was and the LABEL
+     * is what buys the free branch, which inverts the usual protection.
+     *
+     * What keeps that safe is that nothing unparsed can reach the costly
+     * branch: `work` is in {@link TIME_CONSUMING_ACTIONS}, so the assertion
+     * that a misparse never reaches a slow verb already covers it, and the
+     * label is only ever set by a phrasing that is a question by construction.
+     */
+    'work'
 ] as const;

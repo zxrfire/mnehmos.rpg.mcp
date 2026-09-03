@@ -40,6 +40,11 @@ import { ApproachLeverageSchema } from '../schema/cultivation.js';
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
+// The other half of the word `tell`: carrying news of a wrong TO somebody,
+// rather than asking to be told about something. Imported and not re-exported,
+// like every other verb family's reader, so the harvested spelling vocabulary
+// is unmoved. See `telling-a-wrong.ts`.
+import { whatIsBeingTold } from './telling-a-wrong.js';
 import {
     A_TOPIC_ABOUT_THEMSELVES,
     whatIsBeingAskedAboutThem
@@ -2601,7 +2606,18 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 // `warn` is in the threaten intent and was not here, so "I warn him to stay
 // away from her" fell through to `extractTarget`, which reads whatever follows
 // `to` - and named a person "stay away from her".
-const INTERACT_SUBJECT_VERBS = /interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
+/**
+ * Asking what work is going, which is a question and must stay one.
+ *
+ * Three shapes, each needing a job noun of its own so none of them can reach an
+ * ordinary sentence about working ON something. Deliberately NOT "I need a job"
+ * or "I am looking for work": those are statements of intent, they belong to the
+ * taking branch, and they already reached it.
+ */
+const ASKING_AFTER_WORK =
+    /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
+
+const INTERACT_SUBJECT_VERBS =/interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
 
 /**
  * Turn free text into one action, with no model involved.
@@ -3306,6 +3322,30 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // ── ASKING WHETHER THERE IS WORK, WHICH IS NOT TAKING ANY ────────────
+    //
+    // FOUND BY PLAYING, twice over, and the second measurement is the one that
+    // decides where this block sits. With a model in front of it, `any work
+    // going?` was answered by the MARKET read - millet at one cash, manuals at
+    // six - and `is anyone hiring around here?` by a standing read about a bell
+    // at a crossroads. Both answered confidently, about something else: a player
+    // told the price of millet does not learn that the game misread them, they
+    // learn there is no work here, which is false.
+    //
+    // Routing them to `work` and stopping there is worse. Measured: `any work
+    // going?` typed at a fresh run spent NINETY DAYS as a Shipmaster, because
+    // `WORK_UNSPECIFIED` reads a missing trade as *take any work* - deliberately,
+    // so that "I take whatever the village will give me" is not answered with a
+    // menu. A question that buys a season is the sentence that killed a run.
+    //
+    // So the label carries the difference. `board` is the free listing `work`
+    // already has and nothing else changes; the taking branch keeps every
+    // sentence it had. ABOVE that branch, because these all contain the word
+    // `work` and it would otherwise take them first.
+    if (ASKING_AFTER_WORK.test(text)) {
+        return { action: 'work', intent: 'board' };
+    }
+
     // ── the mortal economy, before anything that spends time ──
     //
     // Deliberately ahead of `eat`, `trade` and `cultivate`. A player with no
@@ -3341,7 +3381,27 @@ function planIntent(input: string): PlannedAction {
         // whole sentence afterwards regardless.
         || /\btakes?\b[^.?!]{0,30}?\bwork\b/.test(text)
         || /\b(?:whatever|anything|something)\b[^.?!]{0,20}\bpays?\b/.test(text)
-        || /\bbest[- ]paying\b|\bpays? (?:the )?(?:best|most|fastest|quickest)\b/.test(text))
+        || /\bbest[- ]paying\b|\bpays? (?:the )?(?:best|most|fastest|quickest)\b/.test(text)
+        // ── SAYING PLAINLY THAT YOU NEED ONE ────────────────────────────
+        //
+        // FOUND BY PLAYING. On the deterministic reader, 13 of 18 ordinary ways
+        // of asking for a job reached nothing at all; every alternative above
+        // needs the word `work` inside a taking or seeking construction, and
+        // "I need a job" carries none.
+        //
+        // A statement of need, not a question - the question forms are handled
+        // ABOVE this branch and must not be here, because naming no trade is
+        // read as *take any work* and a question that buys a season is the
+        // sentence `misparse.test.ts` is named after. See `ASKING_AFTER_WORK`.
+        //
+        // Narrow on the job noun, because "I need a hand" is asking for help
+        // and "I need work" is asking for a wage, and the two go to opposite
+        // verbs. INSIDE the alternation's own parentheses, so the practice
+        // guard below still covers it: put one line outside them and `&&` binds
+        // to that term alone, which quietly unguards every alternative above -
+        // measured, and it sent both of the corpus's own `work at` phrasings to
+        // a season of hauling.
+        || /\bi (?:need|want|am after|could use|am looking for)\b[^.?!]{0,15}\b(?:a job|jobs|work|employment|wages?|paid work|paying work)\b/.test(text))
         // ── AND `work at` IS THE SAME WORD DOING THE SAME THING ──────────
         //
         // The guard above was written for `work on` and the alternation two
@@ -4236,6 +4296,32 @@ function planIntent(input: string): PlannedAction {
     if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)
         || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)) {
         return { action: 'status' };
+    }
+
+    // ── TELLING SOMEBODY THAT A WRONG WAS DONE ───────────────────────────
+    //
+    // The other direction of the same verb, and it had no route at all.
+    // Measured before this branch existed:
+    //
+    //   "I tell him that Cao Antao killed his brother"
+    //       -> interact(target="him that Cao Antao killed his brother", talk)
+    //   "I tell her that Cao Antao stole from her"
+    //       -> interact(..., intent=steal, leverage=force)
+    //
+    // The first swallowed the proposition into a party name. The second read
+    // `stole` as the PLAYER stealing and pointed an attempt intent at the person
+    // being warned - a day spent and `resolveAttempt` entered, off a sentence
+    // that took nothing from anybody.
+    //
+    // Placed here for the same reason the block below is placed where it is, and
+    // the two are the two halves of one word: below everything that owns a
+    // question, above `interact`, which is what was eating it. It cannot move
+    // "tell me about X" - every pattern in `whatIsBeingTold` requires an
+    // addressee who is not the asker - and it cannot move ordinary conversation,
+    // because the clause has to say that something was DONE.
+    const told = whatIsBeingTold(input);
+    if (told) {
+        return { action: 'tell', target: told.person, topic: told.claim };
     }
 
     // ── ASKING ABOUT A NAMED THING ───────────────────────────────────────
