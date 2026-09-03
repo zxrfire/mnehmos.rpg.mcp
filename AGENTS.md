@@ -1844,6 +1844,42 @@ takes a stranger's unfinished work with it.
 back a diff; deciding whose version of a contested file wins is a judgement
 about the whole tree, and it needs somebody who can see all of it.
 
+### A name that says nothing is a file with no single reason to change
+
+**If you cannot say what a file is for from its name, it is not one file.** That is the tell,
+and it is available before anybody counts a line: `game.ts`, `facts.ts`, `actions.ts`,
+`common.ts`, `utils.ts`, `state.ts`. Each of those names is a category rather than a subject,
+and a category has as many reasons to change as it has members.
+
+**Measured, on the file that got worst.** `src/web/game.ts` reached **24,759 lines**, and the
+cost was not that it was hard to read. It was that **six finished changes from six different
+agents were queued on it at once**, unable to land, because only one party can hold a file at a
+time in a shared tree - a trust term, an object-damage writeback, two hunks letting `look` read
+what `investigate` reads, a death settlement, a field on the state payload, and a refusal that
+names a route. Several agents had work swept into other people's commits waiting for it.
+**Contention is the real price of a bad seam**, and it is paid by everybody except the person
+who wrote the file.
+
+**A thing should have one reason to change.** Say that reason out loud in the name and the
+seams fall out of it. This repo is already full of files that do this well - `gap-routes.ts`,
+`fight-answers.ts`, `estate-settlement.ts`, `ground-status-lines.ts`,
+`a-sentence-can-be-more-than-one-call.ts`, `the-world-changing-on-its-own.ts` - and every one
+of them can be held by one agent without blocking anybody else.
+
+Two things the rule does **not** say, because both are cases where a broad name is correct:
+
+- **A catalog named for what it lists is fine.** `sects.ts` holds the sects; that is a complete
+  answer to what it is for, and it has one reason to change - the world gained a house. Length
+  is not the test. `regions.ts`, `beasts.ts` and `techniques.ts` are long because the world is
+  large, not because they are doing several jobs.
+- **A barrel is a barrel.** An `index.ts` that only re-exports is not a subject and should not
+  pretend to be one. It stops being fine the moment logic moves into it.
+
+**And splitting is a move, never a rewrite.** Behaviour identical, no renamed functions, no
+reordered logic, no fixes on the way past, the same suite numbers before and after on the same
+tree. A bug found while moving gets written down and left. A behaviour change hidden inside a
+large move is unreviewable and unbisectable, and it is how a split stops being safe to do.
+
 ### A flat folder is a context problem, not only a navigation one
 
 `docs/world` held twenty-eight files in one directory. The cost was not that it
