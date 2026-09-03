@@ -126,15 +126,18 @@ describe('GET /api/state', () => {
 
         const res = await http.get('/api/state');
         expect(res.status).toBe(200);
-        // `crossroads` is the fork a broken seclusion leaves open, and it is
-        // null on every ordinary read including this one. The KEY is always
-        // present all the same: `applyState` in the client only overwrites the
-        // field when the payload carries it, so a payload that omits it on the
-        // turn a fork is answered would leave a stale question on the screen.
+        // `crossroads` is the fork a broken seclusion leaves open and `fight` is
+        // the confrontation the player is standing in; both are null on every
+        // ordinary read including this one. The KEYS are always present all the
+        // same: `applyState` in the client only overwrites a field when the
+        // payload carries it, so a payload that omits one on the turn it is
+        // answered would leave a stale question, or a finished fight's controls,
+        // on the screen.
         expect(Object.keys(res.body).sort()).toEqual(
-            ['ambient', 'crossroads', 'cultivator', 'derived', 'log', 'run', 'tolls']
+            ['ambient', 'crossroads', 'cultivator', 'derived', 'fight', 'log', 'run', 'tolls']
         );
         expect(res.body.crossroads).toBeNull();
+        expect(res.body.fight).toBeNull();
 
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 

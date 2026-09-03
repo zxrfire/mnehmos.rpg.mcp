@@ -95,11 +95,16 @@ describe('who a peer phrase resolves to', () => {
         // three negatives below pass on an empty square - "nobody in front of
         // you" matches none of them - so with the cast drawn afresh every run
         // this could and sometimes did assert nothing at all. Against a fixed
-        // world there is a fixed answer, and the answer is a bout: twelve
-        // exchanges when this was written. The count itself is deliberately not
-        // pinned, because it moves with ordinary combat tuning and the claim
-        // here is that a fight HAPPENED.
-        expect(acted.narration).toMatch(/\d+ exchanges/);
+        // world there is a fixed answer, and the answer is a bout.
+        //
+        // WHAT THIS USED TO MATCH, AND WHY IT MOVED. It read `/\d+ exchanges/`,
+        // which was the one-call resolver's summary of a whole fight. A fight is
+        // held open across turns now, so one act is one ROUND and there is no
+        // exchange count to report yet - the claim the comment always made is
+        // that a fight HAPPENED, and what says so now is a blow landing and the
+        // state of the fight coming back with it.
+        expect(acted.narration).toMatch(/strikes at/);
+        expect(acted.narration).toMatch(/rounds? before neither of you can finish it/);
         expect(acted.narration).not.toMatch(/the moment goes past you/);
         expect(acted.narration).not.toMatch(/is not a fight/);
         expect(acted.narration).not.toMatch(/nobody in front of you/i);

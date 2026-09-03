@@ -196,3 +196,123 @@ export function whoTheyCalledFor(said: string): string | null {
     if (/^(?:help|aid|somebody|someone|anyone|anybody|it)$/i.test(named)) return null;
     return named;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE FIGHT THE SERVICE IS HOLDING
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A fight the played layer is standing in, and everything its ENDING will need.
+ *
+ * The engine's `UnfinishedFight` knows about two bodies and a patch of ground.
+ * It deliberately knows nothing about runs, rows, houses or what the player
+ * agreed to before the first blow - and all four of those are read when the
+ * fight ends, by `settleAFight`, `whatItDidToThem` and `whatFollowedTheBout`.
+ * A fight that opened on turn one and finishes on turn six has to still know
+ * them, so they are carried here rather than re-derived at the end: the person
+ * standing in front of you can walk away between turns, and re-resolving the
+ * party afterwards would settle the fight against whoever is there now.
+ *
+ * ── LIFETIME ─────────────────────────────────────────────────────────────
+ *
+ * In memory on the service, beside `crossroads` and for the same reason. A
+ * fight is happening NOW; persisting one would let a player walk out mid-swing,
+ * cultivate for ten years and come back to the same raised arm. Losing one to a
+ * restart costs the player nothing they were not already losing, because losing
+ * it is the fight ending where it stood.
+ */
+export interface StandingFight {
+    /** The engine's half. Replaced wholesale each round. */
+    state: import('../engine/cultivation/unfinished-fight.js').UnfinishedFight;
+    runId: string;
+    cultivatorId: string;
+    /** Who is being fought, resolved once when it opened. */
+    party: { id: string; name: string };
+    /** Their world row, when they have one rather than a cultivator row. */
+    theirRecord: import('../engine/world/npc-state.js').NpcRecord | null;
+    /** Their `cultivators` row id, when they have one. Most people do not. */
+    opponentIdOnRecord: string | null;
+    /** Their ordinal as the square reported it, for the fallout layer. */
+    standingOrdinal: number | null;
+    /** Both bodies as they were priced when it opened. */
+    self: import('../engine/cultivation/combat.js').CombatantInput;
+    opponent: import('../engine/cultivation/combat.js').CombatantInput;
+    /** The art actually being swung, for what the fight teaches. */
+    techniqueId: string | null;
+    /** What the two of them agreed to, which is what the fallout is priced off. */
+    terms: string;
+    /** `attack` or `coerce`, for the log and the record. */
+    verb: 'attack' | 'coerce';
+    /** What the compliance was for, when the verb was `coerce`. A label only. */
+    wanted?: string;
+}
+
+/** Whether a fight the service is holding is still this run's and this body's. */
+export function theFightStillStands(
+    held: StandingFight | null,
+    runId: string,
+    cultivatorId: string
+): held is StandingFight {
+    return held !== null && held.runId === runId && held.cultivatorId === cultivatorId;
+}
+
+/**
+ * The fight as the state payload carries it.
+ *
+ * The client draws five controls off this and sends back one of the five
+ * sentences, down the ordinary command path - the same shape `CrossroadsView`
+ * uses, so if one of them stops parsing it stops for everybody at once and
+ * `fight-answers.test.ts` catches it.
+ *
+ * NOTHING HERE IS THE INTERFACE. Typing anything at all still works, typing
+ * something the fight has no answer for is still an ordinary turn, and the
+ * controls exist because "you can find out what you could do" is a floor at
+ * every reading tier - a player at the bottom rung who cannot see that backing
+ * off is available is playing the one-call fight with extra steps.
+ */
+export interface FightView {
+    /** Who is swinging at them. */
+    them: string;
+    yourHp: number;
+    yourMaxHp: number;
+    theirHp: number;
+    theirMaxHp: number;
+    roundsLeft: number;
+    /** 0..1, what breaking off would come off at, before choosing it. */
+    flightChance: number;
+    /** The engine's own state line, verbatim. */
+    where: string;
+    /** What each control sends, verbatim. */
+    guardSays: string;
+    pressSays: string;
+    breakOffSays: string;
+    shoutSays: string;
+    keepSwingingSays: string;
+}
+
+export function fightView(
+    held: StandingFight,
+    where: {
+        yourHp: number; yourMaxHp: number;
+        theirHp: number; theirMaxHp: number;
+        roundsLeft: number;
+        flight: { chance: number };
+        line: string;
+    }
+): FightView {
+    return {
+        them: held.party.name,
+        yourHp: where.yourHp,
+        yourMaxHp: where.yourMaxHp,
+        theirHp: where.theirHp,
+        theirMaxHp: where.theirMaxHp,
+        roundsLeft: where.roundsLeft,
+        flightChance: where.flight.chance,
+        where: where.line,
+        guardSays: SAY_TO_GUARD,
+        pressSays: SAY_TO_PRESS,
+        breakOffSays: SAY_TO_BREAK_OFF,
+        shoutSays: SAY_TO_SHOUT,
+        keepSwingingSays: SAY_TO_KEEP_SWINGING
+    };
+}

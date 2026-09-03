@@ -38,6 +38,7 @@ import { describe, it, expect } from 'vitest';
 
 import { worldForRun, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGame, makeGameInWorld, cultivatorRow } from './harness';
+import { MAX_EXCHANGES } from '../../src/engine/cultivation/combat';
 
 /** Who is alive, at what rung, and where - the part a run meets. */
 async function population(game: { state(): { run: unknown } }): Promise<string[]> {
@@ -100,15 +101,38 @@ describe('a run is reproducible inside a world, not on its own', () => {
             const { db, game } = await makeGameInWorld({ seed: 'replay', worldSeed: 'pinned-fight' });
             const { cultivator } = await game.newRun('Duellist');
             await game.act('I look around');
-            const result = await game.act('I attack someone of my own rank');
+            // ── THE WHOLE FIGHT, NOT THE FIRST ROUND ─────────────────────
+            //
+            // A fight is held open across turns, so one act is one round and the
+            // guard below - which exists to stop this comparing two identical
+            // refusals - would never see the resolve. Playing it out asserts
+            // strictly more than it used to: every round of a multi-turn fight
+            // replays identically, not just the opening exchange.
+            const calls: string[] = [];
+            for (let round = 0; round <= MAX_EXCHANGES; round++) {
+                const result = await game.act(
+                    round === 0 ? 'I attack someone of my own rank' : 'I keep swinging'
+                );
+                calls.push(...result.toolCalls.map(
+                    // The player's own row id scrubbed, on this file's own rule,
+                    // stated two functions up: ids are `randomUUID()` everywhere
+                    // in this engine, are not a function of any seed, and are
+                    // therefore not what reproducibility means. `population`
+                    // strips them for the same reason. It bites here because a
+                    // fight now reaches `aDeedEntersTheWorld`, whose summary
+                    // names both parties - so the ONLY thing that differed
+                    // between two identical fights was that uuid.
+                    c => `${c.name}/${c.action}/${c.ok}/${
+                        c.summary.split(cultivator.id).join('<player>')}`
+                ));
+                if (calls.some(call => call.startsWith('combat_manage.'))) break;
+                if (!cultivatorRow(db, cultivator.id).alive) break;
+            }
             // Row ids are `randomUUID()` everywhere in this engine and the
             // timestamps are wall clock, so neither is a function of any seed
             // and neither is what reproducibility means.
             const { id, run_id, created_at, updated_at, ...state } = cultivatorRow(db, cultivator.id);
-            return {
-                calls: result.toolCalls.map(c => `${c.name}/${c.action}/${c.ok}/${c.summary}`),
-                state
-            };
+            return { calls, state };
         };
 
         const first = await run();
