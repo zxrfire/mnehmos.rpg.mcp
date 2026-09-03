@@ -345,7 +345,7 @@ describe('effects are relevant or they are nothing', () => {
             spiritRoot: 'single_fire',
             insights: [anInsight('weapon', 'sword', 5)]
         });
-        const art = { element: 'fire' as const, subject: 'sword', mastery: 1 };
+        const art = { element: 'fire' as const, subjects: ['sword'], mastery: 1 };
         const studentPower = techniqueEffectiveness(student, art);
         const masterPower = techniqueEffectiveness(master, art);
 

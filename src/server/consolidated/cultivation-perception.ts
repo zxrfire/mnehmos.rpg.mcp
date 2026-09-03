@@ -591,7 +591,9 @@ export async function handleUnderstanding(
         // label. This is why top-grade manuals sit in ruins unread.
         consequences: {
             grades: GRADES.map(grade => {
-                const gate = daoGate(dao, { grade, element: null, subject: dao.subject ?? null });
+                const gate = daoGate(dao, {
+                    grade, element: null, subjects: dao.subject ? [dao.subject] : []
+                });
                 return { grade, permitted: gate.permitted, detail: gate.detail };
             }),
             cultivationMultiplier: round4(effects.cultivationMultiplier),

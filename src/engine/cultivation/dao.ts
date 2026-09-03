@@ -40,7 +40,8 @@ import {
     type Insight,
     type InsightDegree,
     type InsightDomain,
-    type TechniqueGrade
+    type TechniqueGrade,
+    isOnRoad
 } from '../../schema/cultivation.js';
 import { isUniversalDomain } from './understanding.js';
 import { forStream, type CultivationRNG } from './rng.js';
@@ -196,7 +197,8 @@ const STANDING_ORDER: Record<DaoStanding, number> = { none: 0, leaning: 1, dao: 
 export interface GatedTechnique {
     grade: TechniqueGrade;
     element?: string | null;
-    subject?: string | null;
+    /** Every road the art is on, not just its primary. See `isOnRoad`. */
+    subjects?: readonly string[] | null;
     category?: string | null;
 }
 
@@ -266,9 +268,11 @@ export function daoGate(dao: DaoAssessment, technique: GatedTechnique): DaoGateR
 /** Whether a road and an art are about the same thing. */
 export function daoMatches(dao: DaoAssessment, technique: GatedTechnique): boolean {
     if (dao.subject === null || dao.domain === null) return false;
-    if (technique.subject !== null && technique.subject !== undefined) {
-        if (technique.subject === dao.subject) return true;
-    }
+    // ANY of the art's roads matching is a match, which is the widening
+    // arriving here: a sword-and-formation art is opened by sword
+    // comprehension AND by formation comprehension, and refusing the second
+    // would make the extra road decorative.
+    if (isOnRoad(technique, dao.subject)) return true;
     if (dao.domain === 'element' && technique.element === dao.subject) return true;
     // Forbidden arts are about existence rather than about a craft, so the
     // comprehensions that open them are the universal ones.

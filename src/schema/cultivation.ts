@@ -1557,22 +1557,46 @@ export const TechniqueSchema = z.object({
     /** Dice expression resolved by the existing dice engine, e.g. "2d6+4". */
     damage: z.string().nullable().default(null),
     /**
-     * The road this art is on: 'sword', 'formation', 'body'. Null for an art
+     * The roads this art is on: 'sword', 'formation', 'body'. Empty for an art
      * that is not on one.
+     *
+     * ── A SET, BECAUSE AN ART IS ROUTINELY ON MORE THAN ONE ROAD ─────────
+     *
+     * This was `subject: string | null` and the cardinality was the bug. Ruled
+     * by the design owner:
+     *
+     *   > some techniques both teach you fighting and formation, right?
+     *   > that's kind of the point, they happen to give you this ability like
+     *   > how sword cultivator techniques let you fly (except this one isn't
+     *   > limited to sword). and obviously sword formations exist so techniques
+     *   > can have more than one.
+     *
+     * A sword-and-formation art raises SWORD formations, which is the whole
+     * interesting case and was unrepresentable while this held one string: the
+     * five rows that say `'sword'` had no room left to say anything else.
+     *
+     * Widened rather than joined by a second field. A `subject` and a
+     * `subjects` living side by side is two sources of truth, one of them goes
+     * stale, and that is this repo's most-repeated defect.
+     *
+     * AND IT IS NOT A DEFAULT-BY-CATEGORY QUESTION. `SUBJECT_BY_CATEGORY` in
+     * the catalog still supplies the road an art is on when the row does not
+     * name one - so an attack art is on the weapon road without being told -
+     * but an EXTRA road is always explicit. Nothing infers a second one.
      *
      * On `Technique` rather than on `TechniqueEntry` deliberately, and the
      * split is real: `TechniqueEntry` carries what the CATALOG knows about a
      * row - provenance, surviving copies, opacity - and `Technique` is what a
      * cultivator HOLDS. A derived art has no catalog row at all, so anything
-     * that must survive onto a held instance has to live here. The subject is
-     * the thing that made a derived manual suited by construction, because it
-     * was taken from the deriver's own road; putting it on the entry would
-     * lose it at exactly the moment it matters.
+     * that must survive onto a held instance has to live here. The roads are
+     * the thing that made a derived manual suited by construction, because they
+     * were taken from the deriver's own road; putting them on the entry would
+     * lose them at exactly the moment it matters.
      *
-     * `CultivationOptions.techniqueSubject` has been reading this concept for
-     * a while and had to be told it by the caller. Now it can be asked.
+     * `CultivationOptions.techniqueSubject` is a scalar and stays one - it asks
+     * "which road is this, for a bonus" and {@link primaryRoadOf} answers it.
      */
-    subject: z.string().nullable().default(null),
+    subjects: z.array(z.string()).default([]),
     /** Mastery 0..1. Raised by practice, gates the technique's full effect. */
     mastery: z.number().min(0).max(1).default(0),
     description: z.string().default(''),
@@ -1715,6 +1739,37 @@ export const TechniqueSchema = z.object({
     }).nullable().default(null)
 });
 export type Technique = z.infer<typeof TechniqueSchema>;
+
+/**
+ * Whether this art is on a given road.
+ *
+ * The scalar-shaped read, and the only way anything should ask. Written here
+ * rather than in the catalog so the engine can ask without importing content,
+ * and defensive about a missing array because `GatedTechnique` and friends are
+ * `Pick`s that predate the widening.
+ */
+export function isOnRoad(
+    technique: { subjects?: readonly string[] | null },
+    road: string
+): boolean {
+    return (technique.subjects ?? []).includes(road);
+}
+
+/**
+ * The one road to name when only one may be named, or null for an art on none.
+ *
+ * FIRST, NOT BEST, and the ordering is the catalog's: the road an art is
+ * primarily on is written first and any extra ability it happens to grant comes
+ * after. `CultivationOptions.techniqueSubject` wants exactly this - a single
+ * road to match a comprehension against for a bonus - and giving it a set would
+ * make one art match several insights, which is a balance change nobody asked
+ * for rather than a widening.
+ */
+export function primaryRoadOf(
+    technique: { subjects?: readonly string[] | null }
+): string | null {
+    return (technique.subjects ?? [])[0] ?? null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // ALCHEMY

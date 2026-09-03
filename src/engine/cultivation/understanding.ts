@@ -52,7 +52,8 @@ import {
     type InsightDegree,
     type InsightDomain,
     type InsightProvenance,
-    type VisionSeed
+    type VisionSeed,
+    isOnRoad
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
@@ -256,7 +257,7 @@ export function understandingEffects(
  */
 export function techniqueEffectiveness(
     cultivator: Pick<Cultivator, 'spiritRoot'> & { insights?: readonly Insight[] },
-    technique: { element?: Element | null; subject?: string | null; mastery?: number }
+    technique: { element?: Element | null; subjects?: readonly string[] | null; mastery?: number }
 ): { multiplier: number; fromRoot: number; fromUnderstanding: number } {
     const root = getSpiritRoot(cultivator.spiritRoot);
     const element = technique.element ?? null;
@@ -266,10 +267,11 @@ export function techniqueEffectiveness(
     let understanding = 0;
     for (const insight of cultivator.insights ?? []) {
         const matchesElement = insight.domain === 'element' && insight.subject === element;
+        // Any road the art is on. An insight into formations helps with a
+        // sword-and-formation art exactly as sword insight does; picking one
+        // would be deciding which half of the art the reader is holding.
         const matchesSubject =
-            technique.subject !== null &&
-            technique.subject !== undefined &&
-            insight.subject === technique.subject;
+            insight.subject !== null && isOnRoad(technique, insight.subject);
         if (!matchesElement && !matchesSubject) continue;
         understanding += insight.degree * TECHNIQUE_PER_DEGREE;
     }

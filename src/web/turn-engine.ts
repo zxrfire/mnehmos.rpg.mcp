@@ -49,6 +49,7 @@ import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birt
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
+import { primaryRoadOf } from '../schema/cultivation.js';
  import {
     ACTIONS_PER_FULL_SATIETY,
     satietyBurnMultiplier,
@@ -10072,7 +10073,7 @@ ${opened.text}` : receipt,
                     volumes: manual.volumes ?? null,
                     grade: manual.grade,
                     element: manual.element ?? null,
-                    subject: manual.subject ?? null,
+                    subject: primaryRoadOf(manual),
                     category: manual.category,
                     domain: manual.domain ?? null,
                     domainDegree: manual.domainDegree,

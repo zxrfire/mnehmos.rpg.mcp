@@ -90,6 +90,7 @@ import {
 } from './cultivation-support.js';
 import { PLAYER_ROLL_IDENTITY } from '../../web/encounters.js';
 import type { Cultivator, Run, Technique } from '../../schema/cultivation.js';
+import { primaryRoadOf } from '../../schema/cultivation.js';
 
 const ACTIONS = [
     'assess', 'strike', 'resolve', 'flee', 'history',
@@ -349,7 +350,13 @@ export function combatantFromCultivator(
     const catalog = techniqueId ? getTechnique(techniqueId) ?? null : null;
     const art = known === null
         ? catalog
-        : { ...known, subject: known.subject ?? catalog?.subject ?? null };
+        : {
+            ...known,
+            // The roads a held art is on, falling back to the catalog row's.
+            // Widened from a scalar with the field; the fallback is unchanged
+            // in meaning - an empty set is what `null` used to be.
+            subjects: known.subjects?.length ? known.subjects : (catalog?.subjects ?? [])
+        };
 
     return {
         id: cultivator.id,
@@ -819,7 +826,9 @@ export function settleAFight(input: {
         // stored row: the row has no `subject` column and comes back null - see
         // the note in `combatantFromCultivator`, which is the one place that
         // repair is made so the two readings cannot disagree.
-        subject: self.technique?.subject ?? null,
+        // A scalar consumer: `techniqueSubject` matches ONE road for a bonus.
+        // `primaryRoadOf` is the documented scalar read of the widened field.
+        subject: self.technique ? primaryRoadOf(self.technique) : null,
         element: self.technique?.element ?? null,
         cultivationProgress: cultivator.cultivationProgress
     });

@@ -31,11 +31,13 @@ import { canUnmake } from '../../../src/engine/cultivation/whether-a-weapon-surv
 import { whatBecomesOfIt } from '../../../src/engine/world/object-damage.js';
 import { whatGettingPastItTakes } from '../../../src/engine/world/sheltering.js';
 import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
+import { seedWorld } from '../../../src/engine/world/seeding.js';
+import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 
 const anArtToFortyFour: ArtAsFarAsThisMatters = {
     id: 'art-to-44',
     name: 'a canon of standing lines',
-    subject: FORMATION_ROAD,
+    subjects: [FORMATION_ROAD],
     requiredOrdinal: 29,
     cap: 44
 };
@@ -43,7 +45,7 @@ const anArtToFortyFour: ArtAsFarAsThisMatters = {
 const aSwordArt: ArtAsFarAsThisMatters = {
     id: 'art-sword',
     name: 'a sword canon',
-    subject: 'sword',
+    subjects: ['sword'],
     requiredOrdinal: 21,
     cap: 33
 };
@@ -52,26 +54,52 @@ describe('which arts raise a formation at all', () => {
     it('reads the road off the art and refuses everything not on it', () => {
         expect(whatAnArtCanRaiseTo(anArtToFortyFour)).toBe(44);
         expect(whatAnArtCanRaiseTo(aSwordArt)).toBeNull();
-        expect(whatAnArtCanRaiseTo({ ...anArtToFortyFour, subject: null })).toBeNull();
+        expect(whatAnArtCanRaiseTo({ ...anArtToFortyFour, subjects: [] })).toBeNull();
     });
 
     it('falls back to the rung it is pitched at when the book has no ceiling', () => {
         expect(whatAnArtCanRaiseTo({ ...anArtToFortyFour, cap: null })).toBe(29);
     });
 
-    it('nothing defaults to yes: no art in the live catalog raises one', () => {
-        // The finding, asserted so it cannot regress into a permissive default.
-        // When the catalog starts authoring formation arts this assertion is the
-        // one to change, deliberately, in the same commit as the rows.
-        const raisers = TECHNIQUES.filter(t => whatAnArtCanRaiseTo({
-            id: t.id,
-            name: t.name,
-            subject: t.subject ?? null,
-            requiredOrdinal: t.requiredOrdinal,
-            cap: t.cap ?? null
-        }) !== null);
-        expect(raisers).toHaveLength(0);
+    it('raising arrays is UNCOMMON: two arts in the whole catalog, not a category', () => {
+        // Ruled: "not every sword art is also a formation art. maybe one or two
+        // is". If this count ever climbs toward the number of sword arts, the
+        // ability has become a property of being a sword art, which is the exact
+        // thing the widening exists to prevent. Change it deliberately, with the
+        // rows, never as a side effect.
+        const raisers = TECHNIQUES.filter(t => whatAnArtCanRaiseTo(t) !== null);
+        expect(raisers.map(t => t.id).sort()).toEqual([
+            'star-quenching-blade-domain',
+            'void-piercing-sword-domain'
+        ]);
         expect(TECHNIQUES.length).toBeGreaterThan(100);
+    });
+
+    it('both of them are on the sword road first, so what they raise is a sword formation', () => {
+        for (const t of TECHNIQUES.filter(t => whatAnArtCanRaiseTo(t) !== null)) {
+            expect(t.subjects[0]).toBe('sword');
+            expect(t.subjects).toContain(FORMATION_ROAD);
+        }
+    });
+
+    it('the other three sword arts were passed over and stay passed over', () => {
+        for (const id of [
+            'hundred-cut-flying-blade', 'nine-rivers-sword-chant', 'gale-riding-sword-flight'
+        ]) {
+            const art = TECHNIQUES.find(t => t.id === id)!;
+            expect(art.subjects).toEqual(['sword']);
+            expect(whatAnArtCanRaiseTo(art)).toBeNull();
+        }
+    });
+
+    it('a category default supplies one road and never a second', () => {
+        // An attack art that names no road is on the weapon road and nothing
+        // else. If a default ever produced two, every art in a category would
+        // gain an incidental ability nobody authored.
+        for (const t of TECHNIQUES) expect(t.subjects.length).toBeLessThanOrEqual(2);
+        const defaulted = TECHNIQUES.filter(t => t.category === 'attack' && t.subjects[0] === 'weapon');
+        expect(defaulted.length).toBeGreaterThan(20);
+        for (const t of defaulted) expect(t.subjects).toHaveLength(1);
     });
 });
 
@@ -113,6 +141,82 @@ describe('the min, in both directions', () => {
         expect(whereAFormationStands({ art: aSwordArt, builderOrdinal: 44 })).toBeNull();
     });
 
+    it('lands on the anchor: a 44-cap art at half mastery in a 29 builds 27', () => {
+        // The owner's own case, and the numbers were explicitly fudged - "27 or
+        // 28" - so this asserts the band rather than pretending to a precision
+        // nobody claimed.
+        const stands = whereAFormationStands({
+            art: anArtToFortyFour, builderOrdinal: 29, mastery: 0.5
+        });
+        expect(stands!.standsAt).toBeGreaterThanOrEqual(27);
+        expect(stands!.standsAt).toBeLessThanOrEqual(28);
+        expect(stands!.theLowerOfTheTwo).toBe(29);
+        expect(stands!.rungsMasteryCost).toBe(2);
+        // What it must NOT be: cap x mastery is 22, six rungs adrift, and it
+        // lets the book's ceiling dominate a builder nowhere near it.
+        expect(stands!.standsAt).not.toBe(22);
+    });
+
+    it('full mastery costs exactly nothing, so the term is provably additive', () => {
+        for (const builder of [1, 5, 13, 21, 29, 37, 44, 46]) {
+            const whole = whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: builder, mastery: 1 });
+            const unstated = whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: builder });
+            expect(whole!.rungsMasteryCost).toBe(0);
+            expect(whole!.standsAt).toBe(Math.min(44, builder));
+            expect(unstated!.standsAt).toBe(whole!.standsAt);
+        }
+    });
+
+    it('costs a low builder a fraction of a rung and a high one rather more', () => {
+        const low = whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: 5, mastery: 0.5 });
+        const high = whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: 44, mastery: 0.5 });
+        expect(low!.rungsMasteryCost).toBe(0);
+        expect(low!.standsAt).toBe(5);
+        expect(high!.rungsMasteryCost).toBe(3);
+        expect(high!.standsAt).toBe(41);
+        expect(high!.rungsMasteryCost).toBeGreaterThan(low!.rungsMasteryCost);
+    });
+
+    it('only ever subtracts: the hard ceilings still bind at any mastery', () => {
+        for (const mastery of [0.01, 0.25, 0.5, 0.75, 0.99, 1]) {
+            const tightCap = whereAFormationStands({
+                art: { ...anArtToFortyFour, requiredOrdinal: 0, cap: 10 },
+                builderOrdinal: 44, mastery
+            });
+            expect(tightCap!.standsAt).toBeLessThanOrEqual(10);
+            const tightBuilder = whereAFormationStands({
+                art: anArtToFortyFour, builderOrdinal: 30, mastery
+            });
+            expect(tightBuilder!.standsAt).toBeLessThanOrEqual(30);
+        }
+    });
+
+    it('is monotone in mastery and never goes below the bottom of the ladder', () => {
+        let previous = -1;
+        for (const mastery of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
+            const stands = whereAFormationStands({
+                art: anArtToFortyFour, builderOrdinal: 44, mastery
+            })!;
+            expect(stands.standsAt).toBeGreaterThanOrEqual(previous);
+            expect(stands.standsAt).toBeGreaterThanOrEqual(0);
+            previous = stands.standsAt;
+        }
+    });
+
+    it('mastery zero is a refusal, not a feeble formation', () => {
+        expect(whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: 44, mastery: 0 }))
+            .toBeNull();
+        const refused = raiseFormation({
+            id: 'f0', name: 'nothing', art: anArtToFortyFour, builderOrdinal: 44, mastery: 0,
+            builderId: null, builderName: 'Elder Shen', locationId: 'loc',
+            stance: 'defensive', onDay: 0
+        });
+        expect(refused.row).toBeNull();
+        // The two refusals are distinguishable, because they are different facts.
+        expect(refused.account).toMatch(/never practised it/);
+        expect(refused.account).not.toMatch(/not an art that raises formations/);
+    });
+
     it('says which half bound it, in words, in all three cases', () => {
         const byBuilder = whereAFormationStands({ art: anArtToFortyFour, builderOrdinal: 42 });
         const byArt = whereAFormationStands({
@@ -122,6 +226,39 @@ describe('the min, in both directions', () => {
         expect(byBuilder?.account).toMatch(/went nowhere/);
         expect(byArt?.account).toMatch(/book ran out/);
         expect(level?.limitedBy).toBe('neither, they are level');
+    });
+});
+
+describe('somebody in a generated world can actually reach one', () => {
+    /**
+     * The check AGENTS.md's "a module nothing calls" section asks for, applied
+     * to content rather than code: two arts in a 138-row catalog could easily
+     * be held by nobody, and then the system is unreachable in play for a
+     * reason that has nothing to do with the engine.
+     *
+     * POOLED over five worlds rather than asserted per seed. Measured: 1 to 2
+     * holders per world, 8 across five - a per-seed bar would go red the first
+     * time a world drew zero, and the claim being made is about the catalog,
+     * not about any one world.
+     */
+    it('holds at roughly one or two people per world, which is what uncommon means', async () => {
+        const catalog = await loadCultivationCatalog();
+        const raisers = TECHNIQUES.filter(t => whatAnArtCanRaiseTo(t) !== null).map(t => t.id);
+        let holders = 0;
+        let npcs = 0;
+        for (const seed of ['probe-a', 'probe-b', 'probe-c', 'probe-d', 'probe-e']) {
+            const { state } = seedWorld({ seed, catalog });
+            const people = state.npcs ?? [];
+            npcs += people.length;
+            holders += people.filter(
+                n => (n.cultivation?.techniqueIds ?? []).some(id => raisers.includes(id))
+            ).length;
+        }
+        // Reachable at all - the thing actually worth knowing.
+        expect(holders).toBeGreaterThan(0);
+        // And still rare. If this ever approaches the population, the ability
+        // has stopped being incidental and the catalog has drifted.
+        expect(holders).toBeLessThan(npcs * 0.01);
     });
 });
 

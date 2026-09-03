@@ -46,6 +46,7 @@ import type {
     TechniqueCategory,
     Element
 } from '../../schema/cultivation.js';
+import { isOnRoad } from '../../schema/cultivation.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
     LAST_CROSSING_ORDINAL,
@@ -1190,6 +1191,25 @@ const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
 };
 
 /**
+ * The default road, as the one-element set the row now stores.
+ *
+ * ── A DEFAULT SUPPLIES ONE ROAD AND NEVER A SECOND ───────────────────────
+ *
+ * The whole point of an art being on more than one road is that the extra road
+ * is UNCOMMON - an ability it happens to grant. Inferring a second one from the
+ * category would make it a property of the category instead, which is the exact
+ * thing the widening exists to avoid: if every sword art raised formations,
+ * raising formations would be what being a sword art means.
+ *
+ * So this stays one road wide forever. An extra road is authored, on the row,
+ * or it does not exist.
+ */
+function roadsFromCategory(category: string): string[] {
+    const road = SUBJECT_BY_CATEGORY[category] ?? null;
+    return road === null ? [] : [road];
+}
+
+/**
  * Authoring helper. Mastery is per-cultivator state, never catalog state, so
  * every entry starts at zero and the factory keeps that out of the literals.
  * Provenance is resolved from the id sets above rather than repeated on every
@@ -1198,7 +1218,7 @@ const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subject'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -1207,7 +1227,13 @@ function art(
             domain?: InsightDomain | null;
             domainDegree?: number;
             opening?: { rungs: number; rateMultiplier: number } | null;
-            subject?: string | null;
+            /**
+             * Roads this art is on, primary first. Omit and the category
+             * supplies the one road every art is on; name them and the first
+             * is that road, with anything after it an ability the art happens
+             * to grant as well.
+             */
+            subjects?: readonly string[];
         }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -1252,7 +1278,7 @@ function art(
         // The road the art is on. Defaults from the category, so the ninety
         // entries that never named one still answer the question, and an
         // entry that wants to be specific overrides it.
-        subject: t.subject ?? SUBJECT_BY_CATEGORY[t.category] ?? null,
+        subjects: t.subjects ? [...t.subjects] : roadsFromCategory(t.category),
         notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }
@@ -1343,10 +1369,13 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hundred-cut-flying-blade',
-        // `subject` is what an art is ABOUT, and the sword arts are the only
-        // rows in this catalog that carry one. See the note beside
+        // `subjects` is what an art is ABOUT, and the sword arts are the only
+        // rows in this catalog that name one. See the note beside
         // `SWORD_SUBJECT` below for why these five and nothing else.
-        subject: 'sword',
+        //
+        // One sliver of metal steered by intent for ten paces. A moving edge,
+        // and nothing that stands anywhere - so the sword road and no other.
+        subjects: ['sword'],
         name: 'Hundred-Cut Flying Blade',
         category: 'attack',
         grade: 'mortal',
@@ -1412,7 +1441,9 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'nine-rivers-sword-chant',
-        subject: 'sword',
+        // Nine consecutive cuts, and the art is the interval between them.
+        // About timing rather than about ground. Sword road only.
+        subjects: ['sword'],
         name: 'Nine Rivers Sword Chant',
         category: 'attack',
         grade: 'earth',
@@ -1525,7 +1556,23 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'void-piercing-sword-domain',
-        subject: 'sword',
+        // ── ONE OF THE TWO ARTS IN THE CATALOG THAT ALSO RAISES FORMATIONS ──
+        //
+        // The line is the row's own description and not a judgement about
+        // sword arts: *"sword intent is spread as a STANDING FIELD rather
+        // than thrown as a strike. Inside it, distance stops protecting
+        // anyone."* That is a formation described without the word - intent
+        // that occupies ground, that keeps standing, and whose whole mechanic
+        // is being inside it. The other three sword arts are a thrown sliver,
+        // a count of cuts, and a way to stand on your own blade.
+        //
+        // It is also the first rung at which an art may address a PLACE at all
+        // (`ADDRESS_OPENS_AT.place` is 21, and this art requires 21), so the
+        // ladder already agreed with the prose before anybody read it.
+        //
+        // Sword first: the formation road is the ability it happens to grant,
+        // and what it raises is a sword formation.
+        subjects: ['sword', 'formation'],
         name: 'Void-Piercing Sword Domain',
         category: 'attack',
         grade: 'heaven',
@@ -1616,7 +1663,14 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'star-quenching-blade-domain',
         // A domain that comes down as a lattice of falling edges. It is named for the volume it occupies.
         reach: 'field',
-        subject: 'sword',
+        // ── THE SECOND, AND THE ROW ALREADY SAID SO IN THREE PLACES ────────
+        //
+        // `reach: 'field'`; a comment that calls it *named for the volume it
+        // occupies*; and a description of a lattice cast upward that comes
+        // down over an area. A lattice over a volume is an array, and this is
+        // the immortal-grade end of the same idea the Void-Piercing Domain
+        // opens at Nascent Soul.
+        subjects: ['sword', 'formation'],
         name: 'Star-Quenching Blade Domain',
         category: 'attack',
         grade: 'immortal',
@@ -1945,7 +1999,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'gale-riding-sword-flight',
-        subject: 'sword',
+        // The design owner named flight as the ANALOGY for what an incidental
+        // ability looks like - *"like how sword cultivator techniques let you
+        // fly"* - so this row is the example rather than a case. Standing on
+        // your own blade is transport; nothing about it stands on ground.
+        // Taking it would be mistaking the illustration for the thing.
+        subjects: ['sword'],
         name: 'Gale-Riding Sword Flight',
         category: 'movement',
         grade: 'earth',
@@ -3879,13 +3938,14 @@ export const SWORD_SUBJECT = 'sword';
 
 /** Every art whose subject is the blade, strongest requirement last. */
 export const SWORD_ARTS: readonly TechniqueEntry[] = TECHNIQUES
-    .filter(t => t.subject === SWORD_SUBJECT)
+    .filter(t => isOnRoad(t, SWORD_SUBJECT))
     .slice()
     .sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || (a.id < b.id ? -1 : 1));
 
 /** Whether this art is one of the school's. Read off the row, never a list. */
 export function isSwordArt(techniqueId: string): boolean {
-    return getTechnique(techniqueId)?.subject === SWORD_SUBJECT;
+    const t = getTechnique(techniqueId);
+    return t !== undefined && isOnRoad(t, SWORD_SUBJECT);
 }
 
 /** Throwing variant, for engine paths where a missing id is a bug, not input. */

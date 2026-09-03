@@ -131,7 +131,7 @@ describe('it gates the highest arts', () => {
     });
 
     it('refuses a top-grade art to someone who has walked no road', () => {
-        const refused = daoGate(none, { grade: 'chaos', subject: 'sword' });
+        const refused = daoGate(none, { grade: 'chaos', subjects: ['sword'] });
         expect(refused.permitted).toBe(false);
         expect(refused.reason).toBe('no_matching_dao');
         // The manual is legible. That is the point.
@@ -139,13 +139,13 @@ describe('it gates the highest arts', () => {
     });
 
     it('refuses a top-grade art to someone who walked a DIFFERENT road', () => {
-        const refused = daoGate(swordDao, { grade: 'chaos', subject: 'formation' });
+        const refused = daoGate(swordDao, { grade: 'chaos', subjects: ['formation'] });
         expect(refused.permitted).toBe(false);
         expect(refused.reason).toBe('wrong_dao');
     });
 
     it('opens it to the matching road', () => {
-        expect(daoGate(swordDao, { grade: 'chaos', subject: 'sword' }).permitted).toBe(true);
+        expect(daoGate(swordDao, { grade: 'chaos', subjects: ['sword'] }).permitted).toBe(true);
     });
 
     it('matches an elemental Dao against an art of that element', () => {
@@ -168,7 +168,7 @@ describe('it gates the highest arts', () => {
     });
 
     it('does not tell the refused reader which road would have opened it', () => {
-        const refused = daoGate(swordDao, { grade: 'chaos', subject: 'formation' });
+        const refused = daoGate(swordDao, { grade: 'chaos', subjects: ['formation'] });
         expect(refused.detail).not.toMatch(/formation/i);
         expect(JSON.stringify(refused)).not.toMatch(/should|suited|instead|try/i);
     });
