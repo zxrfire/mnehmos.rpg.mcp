@@ -53,6 +53,7 @@ import { type BoutTerms, whatFollowsFromTheBout } from '../engine/social-leverag
 import { createBloodFeud, createGrudge } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
+import { isRuined, ruin } from '../engine/world/possessions.js';
 import {
     whatTheConfrontationDidToThem
 } from '../engine/world/what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -70,7 +71,7 @@ import {
     settleAFight
 } from '../server/consolidated/combat-manage.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
-import { isGuidingErrorBody } from '../server/consolidated/cultivation-support.js';
+import { isGuidingErrorBody, removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
@@ -859,6 +860,8 @@ export const combatVerbs = {
             'combat_manage.resolve', held.verb, settled, held.party.name
         );
 
+        this.whatTheFightBroke(cultivator, held, result, execution);
+
         // ── A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL ──────────────
         //
         // `summariseToolBody` already put these on `lines` and therefore on
@@ -907,6 +910,134 @@ export const combatVerbs = {
         }
 
         return this.afterAFight(run, cultivator, held, settled, execution);
+    },
+
+    /**
+     * What the fight did to what the player was carrying.
+     *
+     * ── THE GAP THIS CLOSES ──────────────────────────────────────────────
+     *
+     * `result.brokenObjects` is filled by the same resolver that fills it for
+     * an NPC bout, and nothing in the played game read it. A player's blade
+     * came apart inside the resolution - the fight was even repriced without
+     * it, mid-round, which is the whole point of the mechanic - and it was
+     * still whole in their pouch when the turn ended. `applyBoutBreakages` in
+     * `gatherings.ts` and `writeBackWhatBroke` in `war-melee.ts` are the
+     * world's two halves of this writeback; the player had none.
+     *
+     * It lives here for the reason `whatItDidToThem` does: this is the only
+     * layer holding both stores. The resolver is pure with respect to
+     * equipment and says so, and `combat_manage` has no world handle.
+     *
+     * ── TWO WRITES, BECAUSE A HOLDING IS WRITTEN DOWN TWICE ──────────────
+     *
+     *   THE POUCH ROW  is what they are carrying, and it goes.
+     *   THE WORLD ROW  is the object, and it is RUINED rather than deleted.
+     *
+     * `docs/world/things/items.md`'s "spent is not gone": the row keeps its
+     * name, its owner, its claims and every link of its provenance, and gains
+     * one more saying where it ended and who was standing there. A house whose
+     * artifact a stranger broke should have a record that says so, and an
+     * object that vanishes cleanly from the record is one nobody can ever be
+     * asked about.
+     *
+     * ── AND THE SECOND WRITE IS ABSENT FOR SOME OBJECTS, ON PURPOSE ──────
+     *
+     * Only a tracked thing has a row. The catalog's ordinary weapons are
+     * `mundane` kinds standing in for several hundred of the thing, and
+     * `artifact-placement.ts` deliberately seats none of them - a tracked row
+     * per notched sabre is ledger rubble. A counted thing cannot be damaged;
+     * it stops existing, and there is nowhere to write the scar. So the pouch
+     * write is unconditional and the ruin is whatever the world happens to
+     * hold, which is the counted/tracked line arriving on its own rather than
+     * a branch anybody wrote. Do not add one.
+     *
+     * ── OWNERSHIP IS NOT TOUCHED ─────────────────────────────────────────
+     *
+     * Breaking somebody's thing does not transfer it, and `ruin` leaves
+     * `ownerId` exactly where it was. That is the same rule the acquisition
+     * side keeps: holding a thing and owning it are two facts, and a pouch row
+     * is not a claim on the world's register.
+     */
+    whatTheFightBroke(
+        this: GameService,
+        cultivator: Cultivator,
+        held: StandingFight,
+        result: ConfrontationResult,
+        execution: Execution
+    ): void {
+        for (const loss of result.brokenObjects) {
+            // Theirs is the world's to write, and `whatItDidToThem` is where
+            // an opponent's row is reached. This is the player's half only.
+            if (loss.carrierId !== cultivator.id) continue;
+
+            removeFromPouch(this.db, cultivator.id, loss.broke.objectId, 1);
+
+            const at = this.atHand
+                ? this.atHand.objects.findIndex(o => o.id === loss.broke.objectId)
+                : -1;
+            if (this.atHand && at >= 0 && !isRuined(this.atHand.objects[at])) {
+                this.atHand.objects[at] = ruin(this.atHand.objects[at], {
+                    onDay: Math.floor(this.atHand.currentDay),
+                    source:
+                        `Swung at ${held.party.name} by ${cultivator.name}, and did not survive it.`,
+                    note: loss.broke.exposure.cause
+                });
+                // `act` persists on this flag before anything is narrated, so a
+                // restart cannot lose the loss - the same guarantee a killing
+                // gets one method down.
+                this.worldDirty = true;
+            }
+
+            // ── AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED ──────────
+            //
+            // The round the object went in already narrated it coming apart -
+            // `resolveExchange` puts it in its own `narrationHint` and
+            // `takeAFightTurn` composes the round's line out of those. Saying
+            // it again here would be the same fact twice in one turn, which
+            // reads as a dump.
+            //
+            // What is new is what the player is holding now and what the record
+            // says. An empty hand is a fact they have to play the next fight
+            // with, and who still owns the pieces is the thread somebody could
+            // follow - which is the whole reason the row is kept rather than
+            // deleted, and it is invisible unless it is said.
+            //
+            // Into `prose` and `required` as well as `lines`, and this is not
+            // belt and braces. `lines` is what a model MAY know and `prose` is
+            // what the deterministic narrator ships, so a fact written to only
+            // the first is computed and shown to nobody playing without a model
+            // attached. A player who is not told they are unarmed goes on
+            // playing as though they are not.
+            const owner = at >= 0 ? this.atHand!.objects[at].ownerName : '';
+            const line = `You are not carrying ${loss.broke.objectName} any more.`
+                + (owner
+                    ? ` What is left of it is a record, and ${owner} still owns that.`
+                    : '');
+            execution.facts.lines.push(line);
+            execution.facts.required = [...(execution.facts.required ?? []), line];
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.structure.push(
+                `${loss.broke.objectName} (${loss.broke.objectId}) rated `
+                + `${loss.broke.exposure.weaponPower}, swung into `
+                + `${loss.broke.exposure.realmsInFull.toFixed(2)} realms above it at `
+                + `${(loss.broke.exposure.chance * 100).toFixed(0)}%`
+                + (loss.broke.roll === null
+                    ? ' - certain, so nothing was rolled'
+                    : ` against a roll of ${loss.broke.roll.toFixed(3)}`)
+                + `. Pouch row removed; world row ${at >= 0 ? 'ruined and kept' : 'absent - a counted thing has none'}.`
+            );
+            execution.calls.push({
+                name: 'world.ruin',
+                action: held.verb,
+                summary:
+                    `${loss.broke.objectId} broke in ${cultivator.name}'s hand. Pouch row removed. `
+                    + (at >= 0
+                        ? 'World row ruined, keeping its owner, its claims and its whole provenance chain.'
+                        : 'No world row: a counted thing has none, and there is nowhere to write the scar.'),
+                ok: true
+            });
+        }
     },
 
     /**
