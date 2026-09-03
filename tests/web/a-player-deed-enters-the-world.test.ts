@@ -256,9 +256,12 @@ describe('a bout that went past what was agreed', () => {
 
             for (let bouts = 0; bouts < 20 && !found; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
+                // HEALED, NOT INFLATED. A fight is held open across turns now,
+                // and damage is a fraction of the MAXIMUM - so a 5000 pool takes
+                // 1000-point blows and the fixture that used to keep somebody
+                // alive through one call kills them in five rounds instead.
                 db.prepare(
-                    'UPDATE cultivators SET hp = 5000, max_hp = 5000, battles_survived = 400 '
-                    + 'WHERE id = ?'
+                    'UPDATE cultivators SET hp = max_hp, battles_survived = 400 WHERE id = ?'
                 ).run(cultivator.id);
                 db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
                     .run(cultivator.id);
@@ -321,9 +324,12 @@ describe('a bout that went past what was agreed', () => {
 
             for (let bouts = 0; bouts < 20 && !said; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
+                // HEALED, NOT INFLATED. A fight is held open across turns now,
+                // and damage is a fraction of the MAXIMUM - so a 5000 pool takes
+                // 1000-point blows and the fixture that used to keep somebody
+                // alive through one call kills them in five rounds instead.
                 db.prepare(
-                    'UPDATE cultivators SET hp = 5000, max_hp = 5000, battles_survived = 400 '
-                    + 'WHERE id = ?'
+                    'UPDATE cultivators SET hp = max_hp, battles_survived = 400 WHERE id = ?'
                 ).run(cultivator.id);
                 db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
                     .run(cultivator.id);

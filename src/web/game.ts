@@ -211,7 +211,12 @@ import {
     handlePetition,
     handleWake
 } from '../server/consolidated/sect-politics.js';
-import { handleResolve } from '../server/consolidated/combat-manage.js';
+import {
+    combatantFromCultivator,
+    combatantFromOpponent,
+    handleResolve,
+    settleAFight
+} from '../server/consolidated/combat-manage.js';
 import {
     copiesHeldBy,
     handleLearn,
@@ -392,6 +397,23 @@ import {
     combatPowerForOrdinal,
     resolveExchange
 } from '../engine/cultivation/combat.js';
+import {
+    openFight,
+    takeAFightTurn,
+    whereThisFightStands,
+    type CouldBeCalled,
+    type FightAnswer,
+    type FightGround,
+    type FightTurn,
+    type WayOut
+} from '../engine/cultivation/unfinished-fight.js';
+import {
+    fightView,
+    theFightStillStands,
+    whatTheySaidInTheFight,
+    type FightView,
+    type StandingFight
+} from './fight-answers.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
 import { getHerb, type Herb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
@@ -680,7 +702,8 @@ import {
     type BoutTerms,
     type Wrong
 } from '../engine/social-leverage/index.js';
-import type { ConfrontationOutcome } from '../engine/cultivation/combat.js';
+import type { ConfrontationOutcome, ConfrontationResult } from '../engine/cultivation/combat.js';
+import type { Technique } from '../schema/cultivation.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
 // The board's own word for a tier. `who-goes-out-for-a-house-and-what-comes-back.ts`
@@ -701,6 +724,7 @@ import type { ApproachLeverage } from '../schema/cultivation.js';
 import type { GroundConditions } from '../engine/cultivation/cultivation.js';
 import { locationHistory } from '../engine/world/locations.js';
 import { npcsAt, npcsInFaction } from '../engine/world/world-state.js';
+import { bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
 // The seventh term of the attempt resolver, and the last one no caller here
 // had ever supplied. See `what-they-want-that-you-could-reach.ts` for what it
@@ -1956,6 +1980,12 @@ export interface StateView {
      * back down is going.
      */
     crossroads: CrossroadsView | null;
+    /**
+     * The fight, when one is standing. Same shape and same rules as the fork
+     * above: the client draws controls off it, and free text is still the whole
+     * game. Re-checked against this run and this body on every read.
+     */
+    fight: FightView | null;
 }
 
 /**
@@ -2269,6 +2299,23 @@ export class GameService {
      * going is what the engine did unasked before any of this existed.
      */
     private crossroads: SeclusionCrossroads | null = null;
+    /**
+     * A fight that has started and has not ended.
+     *
+     * Beside `crossroads` and for the same reason, and it is the one piece of
+     * turn-in-flight state that is NOT owed an answer: the crossroads stands for
+     * exactly one turn and this stands until somebody is down, somebody is out,
+     * or the round budget runs out. What the two share is the lifetime - in
+     * memory, this run, this body - and the argument for it is in
+     * `unfinished-fight.ts`: a persisted fight would let a player walk out
+     * mid-swing, cultivate for a decade and come back to the same raised arm.
+     *
+     * UNLIKE the crossroads, an ordinary sentence does not end it. A player who
+     * types "I cultivate" with somebody swinging at them takes the round and
+     * then does what they asked - see `takeTheRoundFirst`. A fight is a
+     * situation, not a mode you are trapped in.
+     */
+    private fight: StandingFight | null = null;
     /**
      * Two costly acts in one sentence, with the choice still owed.
      *
@@ -2725,11 +2772,32 @@ export class GameService {
         // would hand the player back the years they had just been asked to
         // choose about and charge them for a new stretch on top - the exact
         // double-count the clock rule forbids.
+        // ── AND SO IS SOMEBODY WHO IS SWINGING AT YOU ────────────────────
+        //
+        // A fight the service is holding takes the sentence before phase 1, for
+        // the same reason the crossroads does: these are not verbs. "I block his
+        // sword" means nothing standing in an empty road and everything with a
+        // blade coming at you, so it is read against the situation rather than
+        // added to a table that has no situation in it.
+        //
+        // ── AND A SENTENCE THE FIGHT HAS NO ANSWER FOR IS NOT A REFUSAL ──
+        //
+        // This is the more important half. `whatTheySaidInTheFight` returns null
+        // for "I cultivate", "I look around", "I buy a pill" - and the answer is
+        // NOT to tell the player no. The round lands on them, and then the thing
+        // they asked for happens. Anything else is banning: a player may attempt
+        // anything, and standing in a fight does not make that untrue. It is
+        // simply a very poor moment to read a wall.
+        const inAFight = theFightStillStands(this.fight, run.id, cultivator.id)
+            ? this.fight
+            : null;
+        const fightAnswer = inAFight === null ? null : whatTheySaidInTheFight(trimmed);
+
         const standing = stillStands(this.crossroads, run.id, cultivator)
             ? this.crossroads
             : null;
         const clockOnEntry = run.elapsedDays;
-        const answered = standing === null
+        const answered = standing === null || inAFight !== null
             ? null
             : THE_ANSWER_IS_TO_KEEP_SITTING.test(trimmed)
                 ? 'stay' as const
@@ -2757,7 +2825,18 @@ export class GameService {
         // the intent, the topic and the duration are read the way they are read
         // for anybody - what the operator settled is WHICH VERB, and that is
         // the one thing phase 1 exists to answer.
-        const plan: PlanWithSteps = picked !== null
+        const plan: PlanWithSteps = fightAnswer !== null
+            ? {
+                // No model reads a sentence said inside a fight, and that is
+                // deliberate rather than a saving. A fight answer is one of five
+                // things and it was already read deterministically; sending it
+                // to phase 1 could only turn "I back off" into `move` and walk
+                // the player calmly out of a fight they are still in.
+                action: { action: 'attack' },
+                source: 'fallback',
+                note: `a fight is standing and the sentence answered it: ${fightAnswer.kind}.`
+            }
+            : picked !== null
             ? {
                 action: picked.action,
                 steps: [picked],
@@ -2795,11 +2874,17 @@ export class GameService {
             );
 
         // ── phase 2 ──
-        const execution = answered === 'stay'
+        const execution = fightAnswer !== null
+            ? await this.answerTheFight(run, cultivator, ambient, inAFight!, fightAnswer)
+            : answered === 'stay'
             ? await this.sitBackDown(run, cultivator, ambient, standing!)
             : answered === 'go'
                 ? this.getUpAndGo(run, standing!)
-                : await this.carryOutThePlan(plan, run, cultivator, ambient, trimmed);
+                : await this.takeTheRoundFirst(
+                    inAFight,
+                    () => this.carryOutThePlan(plan, run, cultivator, ambient, trimmed),
+                    run, cultivator, ambient, plan.action.action
+                );
 
         // Doing something else with a day in it is going, and going says what
         // it cost. Before phase 3, so the sentence is in the facts the narrator
@@ -3572,7 +3657,7 @@ export class GameService {
                 // `opening` reaches the resolver and decides who gets the first
                 // round; it decides nothing about what a blow does to a body.
                 return this.attack(
-                    run, cultivator, action.target, action.intent ?? 'drive_off',
+                    run, cultivator, ambient, action.target, action.intent ?? 'drive_off',
                     action.terms ?? 'open', action.opening ?? 'open'
                 );
 
@@ -3583,7 +3668,7 @@ export class GameService {
                 // `coerce` in `actions.ts` for why it is its own verb and not a
                 // second door onto `threaten`.
                 return this.attack(
-                    run, cultivator, action.target, 'coerce', 'open',
+                    run, cultivator, ambient, action.target, 'coerce', 'open',
                     action.opening ?? 'open', action.intent ?? 'submit'
                 );
 
@@ -5527,6 +5612,88 @@ ${noticed}`;
      * taken from them is the opposite, which is what was happening: everybody
      * fought bare whatever they had spent decades on.
      */
+    /**
+     * The art they would actually run with, which is not the one they fight with.
+     *
+     * `attemptFlight` prices a movement art higher than anything else somebody
+     * can be carrying - up to 0.4 on a chance that starts at 0.45 - and it is
+     * the whole reason qinggong manuals sell. Read separately from
+     * `artTheyWouldFightWith` because that one sorts by mastery across every
+     * art and would hand a flight the player's best SWORD.
+     */
+    private artTheyWouldRunWith(cultivator: Cultivator): Technique | null {
+        return this.repos.techniques.listKnown(cultivator.id)
+            .filter(art => art.category === 'movement' && art.requiredOrdinal <= cultivator.realmOrdinal)
+            .sort((a, b) => b.mastery - a.mastery || (a.id < b.id ? -1 : 1))[0] ?? null;
+    }
+
+    /**
+     * The ground a fight is standing on, and the roads off it.
+     *
+     * Only this province's other places. A flight is a short thing - you get
+     * clear of the person in front of you and reach the next thing there is -
+     * and offering a province eleven days away as somewhere to run would be a
+     * road nobody could take with somebody's blade at their back.
+     *
+     * `travelDays` is deliberately not invented for these. Nothing in the
+     * catalog prices a road INSIDE a province, which `whereCouldTheyGo` already
+     * records having got wrong once with a fabricated zero, so the days here are
+     * the one honest thing available: `1`, said as what it is - the next place,
+     * not a measured road. An empty list is a legitimate state and the engine
+     * says so rather than inventing somewhere.
+     */
+    private groundUnderAFight(cultivator: Cultivator): FightGround {
+        const here = standingOf(cultivator);
+        const hereKey = loosePlaceKey(cultivator.location ?? '');
+        let waysOut: WayOut[] = [];
+        try {
+            const region = requireRegion(here.regionId);
+            waysOut = region.places
+                .filter(place => loosePlaceKey(place.name) !== hereKey)
+                .map(place => ({ id: place.name, name: place.name, days: 1 }));
+        } catch {
+            // No region for this location - a harness with the world off, or a
+            // place the gazetteer does not hold. Running is still running.
+            waysOut = [];
+        }
+        return {
+            locationId: cultivator.location ?? here.regionId,
+            locationName: placeName(cultivator),
+            waysOut
+        };
+    }
+
+    /**
+     * Who is standing close enough to hear somebody shout, and what they are.
+     *
+     * Read off records the world already keeps and nothing else: who is in the
+     * square, what the relationship row says, and whether this is a house's own
+     * ground. There is no would-they-come number anywhere and this does not
+     * invent one - `whoAnsweredTheShout` asks the categorical gap and the
+     * standing, both of which already exist.
+     */
+    private whoCouldHearAShout(cultivator: Cultivator, exceptId: string): CouldBeCalled[] {
+        const mine = this.repos.cultivators.getById(cultivator.id);
+        const myHouse = mine?.sectId ?? null;
+        return this.present(cultivator)
+            .filter(row => row.id !== cultivator.id && row.id !== exceptId)
+            .map(row => {
+                const npc = this.atHand?.npcs.find(n => n.id === row.id) ?? null;
+                const tie = npc?.relationships.find(r => r.targetId === cultivator.id) ?? null;
+                return {
+                    id: row.id,
+                    name: row.name,
+                    realmOrdinal: row.realmOrdinal,
+                    standing: tie?.standing ?? 0,
+                    // Somebody on the same roll standing on their own house's
+                    // ground answers because it is their ground, which is not
+                    // the same as answering you.
+                    answersForThisGround:
+                        myHouse !== null && npc?.factionId === myHouse
+                };
+            });
+    }
+
     private artTheyWouldFightWith(cultivator: Cultivator): string | undefined {
         const usable = this.repos.techniques.listKnown(cultivator.id)
             .filter(art => art.requiredOrdinal <= cultivator.realmOrdinal)
@@ -5574,6 +5741,15 @@ ${noticed}`;
     private async attack(
         run: Run,
         cultivator: Cultivator,
+        /**
+         * The band the ground is running at.
+         *
+         * Taken now that a fight is held across turns: `assessPower` reads
+         * ambient, and every round of a fight standing on a spirit tide has to
+         * be priced on the ground it is actually being fought on rather than on
+         * whatever the first round happened to see.
+         */
+        ambient: AmbientQi,
         target: string | undefined,
         goal: string,
         terms: BoutTerms = 'open',
@@ -5729,56 +5905,143 @@ ${noticed}`;
             ? this.atHand.npcs.find(npc => npc.id === party.id) ?? null
             : null;
 
-        const result = await handleResolve({
-            action: 'resolve',
-            cultivatorId: cultivator.id,
-            opponent: onRecord
-                ? { cultivatorId: party.id }
-                : {
-                    name: party.name,
-                    ...(standing ? { realmOrdinal: standing.realmOrdinal } : {}),
-                    ...(theirRecord
-                        ? {
-                            realmOrdinal: theirRecord.cultivation.realmOrdinal,
-                            // Clamped to the schema's bands rather than passed
-                            // raw: an out-of-range attribute is a validation
-                            // error, and a fight that fails to start is a worse
-                            // answer than one fought on the nearest legal body.
-                            might: Math.max(1, Math.min(3, theirRecord.cultivation.attributes.might)),
-                            insight: Math.max(1, Math.min(4, theirRecord.cultivation.attributes.insight)),
-                            untreatedInjuries: Math.max(0, Math.min(
-                                10, Math.floor(theirRecord.cultivation.untreatedInjuries)
-                            ))
-                        }
-                        : {})
-                },
-            goal: intent,
-            vector: 'body',
-            edges: [],
-            opponentEdges: [],
-            fightToTheEnd: false,
-            opening,
-            // What they are actually swinging. Absent until now, so every
-            // played fight was fought bare by somebody holding a manual - see
-            // `artTheyWouldFightWith`.
-            ...(() => {
-                const art = this.artTheyWouldFightWith(cultivator);
-                return art ? { techniqueId: art } : {};
-            })(),
-            // ── WHETHER THEY WOULD RATHER DIE ────────────────────────────
-            //
-            // Design owner: "depending on some character traits some would
-            // rather die." Read HERE rather than in the engine, and read off
-            // records the world already keeps, because there is no
-            // will-to-submit number anywhere and there must not be one - see
-            // `how-far-you-went-to-make-them-comply.ts`.
-            //
-            // Only asked when it can matter. A coercion is the one goal whose
-            // ending turns on it, and passing it on every fight would put a
-            // reading in the log of a fight it decided nothing about.
-            ...(intent === 'coerce' && theirRecord
-                ? { submission: GameService.wouldTheyKneel(theirRecord, cultivator.id) }
-                : {})
+        // ── SWINGING AT SOMEBODY YOU ARE ALREADY FIGHTING ────────────────
+        //
+        // "I hit him again", "I spar with him", "I keep at it" - all of them are
+        // an ordinary round of the fight that is already standing, and none of
+        // them opens a second one. Without this, a player attacking the same
+        // person twice got a FRESH fight each time: both sides back on full,
+        // the round count back to zero, and a fight that could never be won or
+        // lost because it restarted every turn.
+        //
+        // Checked here rather than in `whatTheySaidInTheFight`, because that
+        // reader answers on the words alone and "I spar with someone of my own
+        // rank" is a sentence about who to fight rather than about what to do
+        // this round. Which person it resolves to is this method's question and
+        // it has just answered it.
+        const alreadyFighting = theFightStillStands(this.fight, run.id, cultivator.id)
+            ? this.fight
+            : null;
+        if (alreadyFighting && alreadyFighting.party.id === party.id) {
+            return await this.answerTheFight(
+                run, cultivator, ambient, alreadyFighting, { kind: 'strike' }
+            );
+        }
+
+        // ── AND THE BODY THEY ARE ACTUALLY STANDING IN ───────────────────
+        //
+        // `bodyStandingOn` is what the world says is left in them today, mended
+        // forward from the day it was last true; `maxBodyOf` is the pool their
+        // rung buys. The world's OWN bouts have read both since NPCs were given
+        // a persisted body - `gatherings.ts`, at `BOUT_BODY` - and the played
+        // path did not, so a cultivator who paid a crossing toll last spring
+        // stood up whole for the player and worn for everybody else. That is the
+        // "a player can do everything an NPC can" rule running backwards: the
+        // toll made the world's fights honest and the player's harder than
+        // anybody else's.
+        //
+        // Both are passed rather than only `hp`, because `combatantFromOpponent`
+        // derives the maximum off the CLAMPED might below - so passing a wound
+        // count without the pool it belongs to would price the fraction against
+        // the wrong denominator.
+        const opponentSpec = onRecord
+            ? { cultivatorId: party.id }
+            : {
+                name: party.name,
+                ...(standing ? { realmOrdinal: standing.realmOrdinal } : {}),
+                ...(theirRecord
+                    ? {
+                        realmOrdinal: theirRecord.cultivation.realmOrdinal,
+                        // Clamped to the schema's bands rather than passed
+                        // raw: an out-of-range attribute is a validation
+                        // error, and a fight that fails to start is a worse
+                        // answer than one fought on the nearest legal body.
+                        might: Math.max(1, Math.min(3, theirRecord.cultivation.attributes.might)),
+                        insight: Math.max(1, Math.min(4, theirRecord.cultivation.attributes.insight)),
+                        untreatedInjuries: Math.max(0, Math.min(
+                            10, Math.floor(theirRecord.cultivation.untreatedInjuries)
+                        )),
+                        maxHp: Math.max(1, Math.round(maxBodyOf(theirRecord))),
+                        hp: Math.max(1, Math.round(
+                            bodyStandingOn(theirRecord, Math.floor(run.elapsedDays))
+                        ))
+                    }
+                    : {})
+            };
+
+        const opponentBody = combatantFromOpponent(opponentSpec, this.repos);
+        if (isGuidingErrorBody(opponentBody)) {
+            return this.fromToolResult(
+                'combat_manage.resolve', intent === 'coerce' ? 'coerce' : 'attack',
+                opponentBody, party.name
+            );
+        }
+
+        // What they are actually swinging. Absent until it was added, so every
+        // played fight was fought bare by somebody holding a manual - see
+        // `artTheyWouldFightWith`.
+        const techniqueId = this.artTheyWouldFightWith(cultivator) ?? null;
+        const selfBody = combatantFromCultivator(
+            cultivator, this.repos, techniqueId ?? undefined
+        );
+
+        // ── AND NOW IT IS A FIGHT RATHER THAN A RESULT ───────────────────
+        //
+        // Design owner: "combat should also of course resolve across multiple
+        // turns to give the player agency (fleeing, how, to where, using what
+        // ability, or item?). if you fought and it resolves in one turn and you
+        // died it would be unsatisfying cuz there's nothing you can do about
+        // it."
+        //
+        // So this opens a fight and holds it. The physics are unchanged and are
+        // the same function `resolveConfrontation` runs - see
+        // `unfinished-fight.ts` - and the ENDING still goes through
+        // `settleAFight`, which is the persistence path a one-call fight has
+        // always used. What changed is who decides each round.
+        const opened = openFight({
+            // Stable for the life of the fight and unique to it, so round four
+            // is round four however long the player took over it. Not the row
+            // ids: `PLAYER_ROLL_IDENTITY` exists because those are randomUUIDs
+            // and keying on them made the same seed produce a different fight.
+            id: `${run.turn + 1}:${PLAYER_ROLL_IDENTITY}:${opponentBody.realmOrdinal}`,
+            seed: run.seed,
+            aggressor: {
+                input: selfBody,
+                edges: [],
+                vector: 'body',
+                movement: this.artTheyWouldRunWith(cultivator),
+                movementMastery: this.artTheyWouldRunWith(cultivator)?.mastery ?? 0
+            },
+            defender: {
+                input: opponentBody, edges: [], vector: 'body',
+                movement: null, movementMastery: 0
+            },
+            intent: {
+                goal: intent,
+                willWithdraw: true,
+                opening,
+                // ── WHETHER THEY WOULD RATHER DIE ────────────────────────
+                //
+                // Design owner: "depending on some character traits some would
+                // rather die." Read HERE rather than in the engine, and read off
+                // records the world already keeps, because there is no
+                // will-to-submit number anywhere and there must not be one - see
+                // `how-far-you-went-to-make-them-comply.ts`.
+                //
+                // Only asked when it can matter. A coercion is the one goal
+                // whose ending turns on it, and passing it on every fight would
+                // put a reading in the log of a fight it decided nothing about.
+                ...(intent === 'coerce' && theirRecord
+                    ? (() => {
+                        const kneel = GameService.wouldTheyKneel(theirRecord, cultivator.id);
+                        return { yields: { willYield: kneel.yields, because: kneel.because } };
+                    })()
+                    : {})
+            },
+            playerId: cultivator.id,
+            ground: this.groundUnderAFight(cultivator),
+            turn: run.turn + 1,
+            ambient
         });
 
         // Seeing somebody well enough to fight them is seeing them.
@@ -5787,9 +6050,258 @@ ${noticed}`;
             `Fought at ${placeName(cultivator)}.`
         );
 
-        const execution = this.fromToolResult(
-            'combat_manage.resolve', intent === 'coerce' ? 'coerce' : 'attack', result, party.name
+        const held: StandingFight = {
+            state: opened.fight ?? {
+                // Never read when the gap settled it; the shape is filled so the
+                // conclusion below can be given one object rather than two.
+                id: '', seed: run.seed, roundsFought: 0, roundBudget: 0,
+                aggressor: { input: selfBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
+                defender: { input: opponentBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
+                hp: {}, injuries: {}, hpAtOpening: {}, exchanges: [], brokenObjects: [],
+                intent: { goal: intent }, playerId: cultivator.id,
+                ground: this.groundUnderAFight(cultivator), openedOnTurn: run.turn + 1
+            },
+            runId: run.id,
+            cultivatorId: cultivator.id,
+            party: { id: party.id, name: party.name },
+            theirRecord,
+            opponentIdOnRecord: onRecord ? party.id : null,
+            standingOrdinal: standing?.realmOrdinal ?? null,
+            self: selfBody,
+            opponent: opponentBody,
+            techniqueId,
+            terms,
+            verb: intent === 'coerce' ? 'coerce' : 'attack',
+            ...(wanted !== undefined ? { wanted } : {})
+        };
+
+        // ── THE GAP CAN STILL END IT BEFORE ANYBODY MOVES ────────────────
+        //
+        // `no_contest` and the one-sided path are not fights, so they are not
+        // held open for eight turns of the player typing at them. They settle
+        // exactly as they always did, through the same conclusion.
+        if (opened.settled) {
+            this.fight = null;
+            return this.concludeTheFight(run, cultivator, held, opened.settled);
+        }
+
+        this.fight = held;
+        // The opening round happens on the turn the player swung, because they
+        // swung. A verb that opened a fight and then spent the turn describing
+        // it would be the player's own action costing them a round.
+        return await this.answerTheFight(run, cultivator, ambient, held, { kind: 'strike' });
+    }
+
+    /**
+     * One round of a fight the service is holding, and what it left.
+     *
+     * Everything mechanical is `takeAFightTurn`'s. What this does is write the
+     * result where a player can read it, and hand a finished fight to the one
+     * conclusion both entrances use.
+     */
+    private async answerTheFight(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        held: StandingFight,
+        answer: FightAnswer
+    ): Promise<Execution> {
+        const turn = takeAFightTurn(held.state, answer, {
+            ambient,
+            turn: run.turn + 1,
+            couldBeCalled: answer.kind === 'call_for_help'
+                ? this.whoCouldHearAShout(cultivator, held.party.id)
+                : undefined,
+            priceThem: answer.kind === 'call_for_help'
+                ? (who: CouldBeCalled) => assessPower(
+                    { ...held.opponent, id: who.id, name: who.name, realmOrdinal: who.realmOrdinal },
+                    { ambient }
+                )
+                : undefined
+        });
+
+        if (turn.finished) {
+            this.fight = null;
+            return this.concludeTheFight(run, cultivator, held, turn.finished, turn);
+        }
+
+        this.fight = { ...held, state: turn.fight! };
+
+        // ── WHAT THE ROUND DID, AND WHERE THAT LEAVES THEM ───────────────
+        //
+        // Onto `lines` AND `prose` AND `required`, and none of the three is
+        // belt and braces. `composeNarrationUser` sends `lines` alone, so a
+        // fact written only to `structure` reaches an operator reading the log
+        // and nobody playing; `prose` is what the deterministic narrator ships;
+        // and `required` is for facts a player cannot play without. The state of
+        // a fight you are standing in is the definition of one - the whole of
+        // the ruling is that you can see you are losing before you have lost,
+        // and a fight whose state only an operator can read is the one-call
+        // fight again with extra turns.
+        const where = whereThisFightStands(this.fight.state, ambient);
+        const facts = factsForToolResult(
+            `${held.party.name}: the exchange goes on.`,
+            [turn.line, where.line]
         );
+        facts.required = [turn.line, where.line];
+        facts.structure.push(
+            `Fight ${held.state.id}, round ${this.fight.state.roundsFought} of `
+            + `${this.fight.state.roundBudget}. Player answered "${turn.playerAct}"; `
+            + `${held.party.name} answered "${turn.theirAct}". `
+            + turn.exchanges.map(x =>
+                `${x.attackerId} -> ${x.defenderId}: advantage ${x.result.advantage.toFixed(2)}, `
+                + `${x.result.damage} damage, ${x.defenderHpAfter} left`
+                + (x.result.injury ? `, a ${x.result.injury.severity} wound` : '')).join('. ')
+            + `. Breaking off prices at ${(where.flight.chance * 100).toFixed(0)}%: `
+            + where.flight.modifiers.map(m => `${m.source} ${m.delta >= 0 ? '+' : ''}`
+                + m.delta.toFixed(2)).join(', ')
+            + '. Nothing was persisted; a fight writes on the turn it ends.'
+        );
+        if (turn.shout) facts.structure.push(...turn.shout.heard.map(h => h.because));
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            // A round happened, so the turn executed. What it did NOT do is end
+            // the fight, and nothing on this execution says it did: there is no
+            // `combat_manage.resolve` row and no outcome line, so a narrator has
+            // no licence to write an ending that has not been resolved.
+            outcome: 'executed',
+            calls: [{
+                name: 'combat.round',
+                action: held.verb,
+                summary: `${turn.line} ${where.line}`,
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * A round happens to somebody who did something else with their turn.
+     *
+     * AGENTS.md: do not ban. A player who types "I cultivate" with a blade
+     * coming at them has attempted something, and the honest answer is that the
+     * blade arrives and then they do it - not a refusal telling them to answer
+     * the question first, which is the modal jail the crossroads header already
+     * rejects for its own fork.
+     *
+     * The round is taken as a `guard`, and that is the one judgement in here: a
+     * player who was not answering the fight was not swinging either, and
+     * charging them a full exchange they never chose would be the engine
+     * deciding they had attacked somebody.
+     */
+    private async takeTheRoundFirst(
+        held: StandingFight | null,
+        andThen: () => Promise<Execution>,
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        /** The verb the plan settled on, so a fighting verb is not charged twice. */
+        verb: ActionName
+    ): Promise<Execution> {
+        // `attack` and `coerce` ANSWER the fight - they continue the one that is
+        // standing rather than doing something else during it - so taking a
+        // round here as well would charge the player two rounds for one sentence
+        // and give the other side a free blow for swinging back.
+        if (held === null || verb === 'attack' || verb === 'coerce') return await andThen();
+
+        const round = await this.answerTheFight(run, cultivator, ambient, held, { kind: 'guard' });
+        // The world may have moved - a death, a withdrawal - so the thing they
+        // asked for runs against the run as it now stands.
+        const asked = await andThen();
+
+        asked.facts.lines.unshift(...round.facts.lines);
+        asked.facts.required = [...(round.facts.required ?? []), ...(asked.facts.required ?? [])];
+        asked.facts.prose = [round.facts.prose, asked.facts.prose].join('\n\n');
+        asked.facts.structure.unshift(
+            'A fight was standing and the sentence was not an answer to it, so the round landed '
+            + 'first and then the sentence ran. Nothing was refused.',
+            ...round.facts.structure
+        );
+        asked.calls.unshift(...round.calls);
+        return asked;
+    }
+
+    /**
+     * A fight is over, whoever ran the rounds.
+     *
+     * The one conclusion. `settleAFight` writes the wounds, the feud, the lesson
+     * and the death gate in a single transaction; `whatItDidToThem` carries the
+     * findings to the world row; `whatFollowedTheBout` says who else now holds
+     * something about it. All three ran before this method existed, in `attack`,
+     * against a fight settled in one call - and they run here unchanged, because
+     * what a fight left cannot depend on how many turns the player spent in it.
+     */
+    private concludeTheFight(
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        result: ConfrontationResult,
+        lastRound?: FightTurn
+    ): Execution {
+        const settled = settleAFight({
+            repos: this.repos,
+            run,
+            cultivator,
+            self: held.self,
+            opponent: held.opponent,
+            technique: held.techniqueId ? getTechnique(held.techniqueId) ?? null : null,
+            result,
+            nextTurn: run.turn + 1,
+            day: Math.floor(run.elapsedDays),
+            opponentIdOnRecord: held.opponentIdOnRecord,
+            edges: []
+        });
+
+        const execution = this.fromToolResult(
+            'combat_manage.resolve', held.verb, settled, held.party.name
+        );
+
+        // What the last round did, said before what the fight came to. Without
+        // it a player who broke off reads the outcome and never the attempt.
+        if (lastRound) {
+            execution.facts.lines.unshift(lastRound.line);
+            execution.facts.required = [lastRound.line, ...(execution.facts.required ?? [])];
+            execution.facts.prose = [lastRound.line, execution.facts.prose].join('\n\n');
+            if (lastRound.flight) {
+                execution.facts.structure.push(
+                    `Flight: ${(lastRound.flight.chance * 100).toFixed(0)}% against a roll of `
+                    + `${lastRound.flight.roll.toFixed(3)}; ${lastRound.flight.escaped
+                        ? 'clear' : 'caught'}, ${lastRound.flight.damage} paid either way`
+                    + (lastRound.fleeingToward
+                        ? `, making for ${lastRound.fleeingToward.name}` : ', nowhere named')
+                    + '.'
+                );
+            }
+            if (lastRound.shout) {
+                execution.facts.structure.push(...lastRound.shout.heard.map(h => h.because));
+            }
+        }
+
+        return this.afterAFight(run, cultivator, held, settled, execution);
+    }
+
+    /**
+     * The label, the world row and the room, for a fight that has ended.
+     *
+     * Split from `concludeTheFight` only for length; it is the tail of it.
+     */
+    private afterAFight(
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        result: object,
+        execution: Execution
+    ): Execution {
+        const party = { kind: 'cultivator' as const, id: held.party.id, name: held.party.name };
+        const wanted = held.wanted;
+        const intent = held.verb;
+        const standing = held.standingOrdinal === null
+            ? null
+            : this.present(cultivator).find(row => row.id === held.party.id) ?? null;
+        const terms = held.terms as BoutTerms;
 
         // ── WHAT THE COMPLIANCE WAS FOR ──────────────────────────────────
         //
@@ -5828,7 +6340,7 @@ ${noticed}`;
         // carries the findings it already made to the record that holds them.
         // Nothing is re-decided - see the module header - and it runs after the
         // resolve for the same reason the fallout does.
-        const inTheWorld = this.whatItDidToThem(cultivator, theirRecord, result);
+        const inTheWorld = this.whatItDidToThem(cultivator, held.theirRecord, result);
         execution.calls.push(...inTheWorld.calls);
 
         // ── AND WHAT THE ROOM MAKES OF IT ────────────────────────────────
@@ -5884,11 +6396,19 @@ ${noticed}`;
      *
      * ── WHAT IT DOES NOT CARRY ───────────────────────────────────────────
      *
-     * Hit points. The world does not store them and `gatherings.ts` explains at
-     * `BOUT_BODY` why it must not start: damage is a fraction of a maximum, so
-     * the absolute number is arbitrary, and a body model here would be a second
-     * one beside the cultivation engine's. What a fight leaves that the world
-     * can hold is wounds, and those are carried in full.
+     * Hit points, and that sentence used to end "because the world does not
+     * store them". It does now: `NpcCultivation.hp` with a `bodyOnDay` anchor,
+     * mended forward by `bodyStandingOn`, which is how a crossing toll is
+     * carried. The played path READS it - see the body block in `attack` - so a
+     * cultivator the world wore down is met worn down.
+     *
+     * Writing it back is the half that is still missing, and it is named here
+     * rather than left to be discovered: a player can wear somebody down inside
+     * a fight and the wear does not reach the world row afterwards, so the same
+     * person is whole again the next time anybody meets them. Wounds are carried
+     * in full and are the durable half; the bar is not. Closing it means
+     * deciding what a bout SHOULD leave on a body that heals in about five and a
+     * half years, which is a ruling rather than a patch.
      */
     private whatItDidToThem(
         cultivator: Cultivator,
@@ -5945,7 +6465,7 @@ ${noticed}`;
                       + `${wrote.handoff.goalsInherited.length} goals`
                     : '')
                 + `. outcome=${outcome}; finished=${body.finished === true}. No hit points are `
-                + 'written: the world stores wounds, not a bar.',
+                + 'written back: the world holds a body and this carries only the wounds. See the header.',
             ok: true
         }];
         if (!parsed.success && Array.isArray(reported) && reported.length > 0) {
@@ -22729,6 +23249,9 @@ ${done.lines.join(' ')}`;
             // game. Re-checked against this run and this cultivator on every
             // read rather than trusted, so a stale one cannot offer a decade
             // that no longer exists.
+            fight: theFightStillStands(this.fight, run.id, cultivator.id)
+                ? fightView(this.fight, whereThisFightStands(this.fight.state, this.ambientFor(cultivator, run)))
+                : null,
             crossroads: stillStands(this.crossroads, run.id, cultivator)
                 ? crossroadsView(this.crossroads, this.howToReferToThem(this.crossroads))
                 : null

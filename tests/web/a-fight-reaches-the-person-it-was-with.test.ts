@@ -163,9 +163,24 @@ describe('a confrontation with somebody only the world holds', () => {
             const { cultivator } = await game.newRun('Brawler');
             await game.act('I look around');
 
-            for (let fights = 0; fights < 8 && !checked; fights++) {
+            // ── A TURN IS A ROUND NOW, SO THIS COUNTS ROUNDS ─────────────
+            //
+            // A fight is held open across turns and a wound reaches the world
+            // when the fight ENDS - `concludeTheFight` is the only caller of
+            // `whatItDidToThem`, and that is right: the world should not be
+            // written to eight times for one fight. So this needs several turns
+            // per fight and several fights, where it used to need one act.
+            //
+            // The body is healed rather than inflated. Setting `max_hp` to 5000
+            // used to keep the player alive through one call; across rounds it
+            // does the opposite, because damage is a FRACTION of the maximum -
+            // a 5000 pool takes 1000-point blows and the player died in five
+            // rounds having been made ten times tougher on paper.
+            for (let fights = 0; fights < 40 && !checked; fights++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
-                db.prepare('UPDATE cultivators SET hp = 5000, max_hp = 5000 WHERE id = ?')
+                db.prepare('UPDATE cultivators SET hp = max_hp WHERE id = ?')
+                    .run(cultivator.id);
+                db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
                     .run(cultivator.id);
                 await game.act('I attack someone of my own rank');
 
