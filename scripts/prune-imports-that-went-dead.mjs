@@ -126,15 +126,33 @@ function prunePass(path, target) {
             else lines[i] = text.replace(/\{[^}]*\}/, `{ ${kept.join(', ')} }`);
             continue;
         }
-        // One name on its own line inside a braced import. If it is the ONLY
-        // name, deleting the line leaves a syntax error rather than an unused
-        // import, so the whole statement goes.
+        // A name inside a braced import that spans lines.
+        //
+        // COUNT NAMES, NOT LINES. An earlier version counted the lines between
+        // the braces and treated "one line" as "one name", so a wrapped list -
+        //     import {
+        //         localPrice, canAdvanceHere, requireRegion, REGIONS
+        //     } from '...';
+        // - looked like a single-name import and the whole statement was
+        // deleted because ONE of the four had gone unused. Three live imports
+        // vanished and the file stopped compiling somewhere else entirely.
         const open = statementStart(lines, i);
         const end = statementEnd(lines, i);
-        const names = lines.slice(open + 1, end)
+        const inside = lines.slice(open + 1, end)
             .filter(l => l.trim() && !l.trimStart().startsWith('//'));
-        if (lines[open].trimEnd().endsWith('{') && names.length === 1) {
+        const nameCount = inside.reduce(
+            (n, l) => n + l.split(',').filter(p => p.trim()).length, 0);
+        if (lines[open].trimEnd().endsWith('{') && nameCount === 1) {
             lines.splice(open, end - open + 1);
+            continue;
+        }
+        // Several names share this line: take out the one, leave the rest.
+        const parts = text.split(',').map(p => p.trim()).filter(Boolean);
+        if (parts.length > 1) {
+            const kept = parts.filter(p => p.split(/\s+/).pop() !== name);
+            const indent = text.slice(0, text.length - text.trimStart().length);
+            const trailing = text.trimEnd().endsWith(',') ? ',' : '';
+            lines[i] = indent + kept.join(', ') + trailing;
             continue;
         }
         const hadComma = text.trimEnd().endsWith(',');
