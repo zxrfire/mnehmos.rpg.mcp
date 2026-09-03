@@ -1185,7 +1185,8 @@ export const TechniqueCategorySchema = z.enum([
     'movement',    // qinggong, teleportation
     'support',     // healing, buffs
     'cultivation', // qi-gathering manuals that raise cultivation rate
-    'forbidden'    // powerful, corrupting, usually stolen
+    'forbidden',   // powerful, corrupting, usually stolen
+    'dual_cultivation' // requires an opposite-sex partner to function at all; see `furnace`
 ]);
 export type TechniqueCategory = z.infer<typeof TechniqueCategorySchema>;
 
@@ -1597,6 +1598,14 @@ export const TechniqueSchema = z.object({
      * "which road is this, for a bonus" and {@link primaryRoadOf} answers it.
      */
     subjects: z.array(z.string()).default([]),
+    /**
+     * True for an art of `category: 'dual_cultivation'` that only works between
+     * two people of different sex - the "furnace" trope. Read by
+     * `worksBetween` in `engine/social-leverage/a-furnace-only-works-on-what-it-doesnt-share.ts`,
+     * which is the single place that asks the question. Absent/false for every
+     * other art, which is what every art written before this field existed was.
+     */
+    furnace: z.boolean().default(false),
     /** Mastery 0..1. Raised by practice, gates the technique's full effect. */
     mastery: z.number().min(0).max(1).default(0),
     description: z.string().default(''),
