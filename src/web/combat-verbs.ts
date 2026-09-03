@@ -86,7 +86,7 @@ import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from '
 import { type StandingFight, theFightStillStands } from './fight-answers.js';
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import { loosePlaceKey } from './knowledge.js';
-import { creditIn, positionIn, spendStanding } from './standing.js';
+import { creditIn, headTitleOf, positionIn, spendStanding } from './standing.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
@@ -390,7 +390,7 @@ export const combatVerbs = {
         // `combat_manage.resolve` takes an opponent, and a faction is not one -
         // so "I attack the Nine Abyss Flame Sect" resolved to nothing and came
         // back `Unresolved party "Nine Abyss Flame Sect" for a confrontation`,
-        // identically at every rung from a rogue to an apex seat. That reads as
+        // identically at every rung from a rogue to an apex head. That reads as
         // a considered refusal and is not one: standing was never consulted,
         // because the noun never resolved.
         //
@@ -398,7 +398,7 @@ export const combatVerbs = {
         // resolver, and both halves of it are already modelled. You cannot
         // fight a house, because a house is not standing anywhere - you fight
         // somebody in it, which is the confrontation resolver, or you set your
-        // house against theirs, which is `posture` and opens at the seat. So
+        // house against theirs, which is `posture` and opens at the head. So
         // the refusal says that, names both routes, and prices the target out
         // of `sectThreat` where the player can name them.
         const asFaction = this.factionMeant(query, cultivator);
@@ -413,15 +413,15 @@ export const combatVerbs = {
                 `${asFaction.name} is a name, a roll and some ground. There is nobody called that `
                 + 'to swing at. What there is instead is people who answer to it - and any one of '
                 + 'them can be fought by somebody standing in the same place as them - or the '
-                + 'thing a house does to another house, which is a decision made by whoever holds '
-                + 'the seat and not by whoever is angry.'
+                + 'thing a house does to another house, which is a decision made by whoever heads '
+                + 'that house and not by whoever is angry.'
                 + (theirs === null
                     ? ''
                     : ` The strongest person they will actually put in a room stands at `
                       + `${rankName(theirs)}.`)
                 + (position
                     ? ''
-                    : ' You hold no seat anywhere, so the second route is not open to you either.'),
+                    : ' You serve no house anywhere, so the second route is not open to you either.'),
                 `"${query}" resolved to the faction ${asFaction.id}, and a faction is not a `
                 + 'combatant: the confrontation resolver takes a person. '
                 + (theirs === null
@@ -431,9 +431,10 @@ export const combatVerbs = {
                       + `${rungAndOrdinal(theirs)}.`)
                 + (position
                     ? ` This cultivator serves ${position.sectId}, so the other route is open to `
-                      + 'them: what a house does to a house is decided from the seat.'
+                      + `them: what a house does to a house is decided by its ${headTitleOf(position)}.`
                     : ' This cultivator holds no membership anywhere, so the other route - what a '
-                      + 'house does to a house, decided from the seat - is not open to them either.')
+                      + 'house does to a house, decided by whoever heads it - is not open to them '
+                      + 'either.')
                 + ' What is open is attacking a named member standing in the same place as them.'
             ));
         }

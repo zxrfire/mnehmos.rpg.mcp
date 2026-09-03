@@ -61,7 +61,7 @@ import {
     errandCost,
     expulsionCost,
     externalElderCost,
-    holdsTheSeat,
+    isHeadOfHouse,
     impliedHouseSize,
     obstructionChance,
     planDiscipleIntake,
@@ -71,7 +71,8 @@ import {
     resolveAct,
     resolveErrand,
     rosterByRung,
-    standingAfterYears
+    standingAfterYears,
+    type GrowthChannel
 } from '../../engine/cultivation/leadership.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import { getMembersOf, rankRealmBand } from '../../data/cultivation/members.js';
@@ -135,7 +136,7 @@ export interface HouseLedger {
     membersLost: number;
     /** Times an order or a decree was simply not carried out. */
     obstructions: number;
-    /** Whether the seat has been challenged, and whether it was held. */
+    /** Whether the head of the house has been challenged, and whether it was held. */
     challengedTimes: number;
 }
 
@@ -219,6 +220,18 @@ interface HouseView {
     hasPatron: boolean;
     entryStipend: number;
     house: HouseState;
+}
+
+/**
+ * What THIS house calls the person at the top of it.
+ *
+ * The same lookup as `headTitleOf` in `web/standing.ts`, against the view this
+ * file already assembles. "Seat" belongs to the Hollow Court and is the last
+ * entry in that house's own `ranks[]`; every other house has its own word and
+ * has carried it in the catalog all along.
+ */
+function headTitleOfHouse(view: HouseView): string {
+    return view.ranks[view.rankCount - 1] ?? 'the head of the house';
 }
 
 /**
@@ -322,7 +335,7 @@ function loadHouse(
             houseSize,
             ownFollowing: ledger.ownFollowing,
             hasPatron: houseHasPatron(sect.id),
-            holdsTheSeat: holdsTheSeat(membership.rankIndex, rankCount)
+            isHead: isHeadOfHouse(membership.rankIndex, rankCount)
         }
     };
 }
@@ -331,7 +344,7 @@ function loadHouse(
  * The elders of a house, named where the world named them.
  *
  * The elder rungs are everything from `elderRungOf` up to but not including the
- * seat, because the seat is whoever holds it. Catalog members fill their own
+ * head of the house, because the head is whoever holds it. Catalog members fill their own
  * rungs first; the rest of each rung's roster is unnamed, and is returned as
  * unnamed rather than invented, because inventing a person here would make the
  * engine authoritative over somebody the narrator has to keep consistent.
@@ -411,7 +424,7 @@ function seatElders(
 interface Applied {
     outcome: ActOutcome;
     obstructed: boolean;
-    lostTheSeat: boolean;
+    lostTheHouse: boolean;
     dismissed: boolean;
     challengeHeld: boolean | null;
     narration: string;
@@ -430,7 +443,7 @@ function applyOutcome(
     if (obstructed) ledger.obstructions += 1;
 
     // ── Departures. Read off state, and they take their lines with them. ──
-    let lostTheSeat = false;
+    let lostTheHouse = false;
     let dismissed = false;
     let challengeHeld: boolean | null = null;
     const parts: string[] = [];
@@ -457,15 +470,15 @@ function applyOutcome(
         );
     }
 
-    // ── The seat, or the place. ──
+    // ── The house, or the place. ──
     if (outcome.removedByPatron) {
-        lostTheSeat = true;
+        lostTheHouse = true;
         repos.sects.setRank(view.sectId, view.cultivator.id, Math.max(0, elderRungOf(view.rankCount)));
         parts.push(
             'A letter arrived from the house that holds this one\'s ground, naming a successor and ' +
             'thanking the outgoing holder for the years. There is nothing in it to answer and nobody to fight.'
         );
-    } else if (outcome.seatChallenged) {
+    } else if (outcome.headChallenged) {
         ledger.challengedTimes += 1;
         const strongest = view.elders.reduce(
             (best, e) => Math.max(best, e.realmOrdinal ?? 0),
@@ -474,17 +487,19 @@ function applyOutcome(
         const result = challengeOutcome(view.cultivator.realmOrdinal, strongest);
         challengeHeld = result.held;
         if (!result.held) {
-            lostTheSeat = true;
+            lostTheHouse = true;
             repos.sects.setRank(view.sectId, view.cultivator.id, Math.max(0, elderRungOf(view.rankCount)));
             parts.push(
-                `The strongest elder left standing is at ${rankName(strongest)} and the seat is at ` +
+                `The strongest elder left standing is at ${rankName(strongest)} and ` +
+                `${headTitleOfHouse(view)} is at ` +
                 `${rankName(view.cultivator.realmOrdinal)}. The challenge was made in the yard, in front of ` +
                 'everybody, and it did not take long. The rank goes to the winner because the rank was always the argument.'
             );
         } else {
             parts.push(
                 `The challenge was made and answered: ${rankName(view.cultivator.realmOrdinal)} against ` +
-                `${rankName(strongest)}, in the yard, in front of everybody. The seat holds. Nobody in the ` +
+                `${rankName(strongest)}, in the yard, in front of everybody. ${headTitleOfHouse(view)} holds. ` +
+                'Nobody in the ' +
                 'house has forgotten that it had to be defended, and the next one will be better prepared.'
             );
         }
@@ -510,7 +525,7 @@ function applyOutcome(
     return {
         outcome,
         obstructed,
-        lostTheSeat,
+        lostTheHouse,
         dismissed,
         challengeHeld,
         narration: parts.join(' ')
@@ -560,7 +575,7 @@ export const OrderSchema = z.object({
 export const RecruitSchema = z.object({
     action: z.literal('recruit'),
     kind: z.enum(['disciple', 'elder']).optional().default('disciple')
-        .describe('disciple: elder rungs and above. elder: the seat only, and it is the expensive one.'),
+        .describe('disciple: elder rungs and above. elder: the head of the house only, and it is the expensive one.'),
     count: z.number().int().min(1).max(50).optional().default(1),
     cultivatorId: z.string().optional()
 });
@@ -588,8 +603,8 @@ export const ExpelSchema = z.object({
 
 export const GrowSchema = z.object({
     action: z.literal('grow'),
-    through: z.enum(['seat', 'elders']).optional().default('seat')
-        .describe('seat: you recruit, slower, and they are yours. elders: faster, and they are theirs.'),
+    through: z.enum(['head', 'elders', 'seat']).optional().default('head')
+        .describe('head: you recruit personally, slower, and they are yours. elders: faster, and they are theirs. ("seat" is accepted as the old name for "head".)'),
     decades: z.number().int().min(1).max(20).optional().default(1),
     cultivatorId: z.string().optional()
 });
@@ -638,7 +653,7 @@ export async function handleAuthority(args: z.infer<typeof AuthoritySchema>): Pr
 
     const tier = authorityTier(view.rankIndex, view.rankCount);
     const powers = powersAt(view.rankIndex, view.rankCount);
-    const level = backlashLevel(view.ledger.standing, view.hasPatron && view.house.holdsTheSeat);
+    const level = backlashLevel(view.ledger.standing, view.hasPatron && view.house.isHead);
     const roster = rosterByRung(view.houseSize, view.rankCount);
 
     const canSend = view.ranks
@@ -681,7 +696,7 @@ export async function handleAuthority(args: z.infer<typeof AuthoritySchema>): Pr
         });
     }
     if (powers.includes('grow')) {
-        priced.growth = (['seat', 'elders'] as const).map(channel => {
+        priced.growth = (['head', 'elders'] as const).map(channel => {
             const plan = planGrowth(
                 view.houseSize, view.entryStipend, view.teaches.length, 1, channel
             );
@@ -728,7 +743,7 @@ export async function handleAuthority(args: z.infer<typeof AuthoritySchema>): Pr
                 : tier === 'ordering'
                     ? `Everything below this rung can be sent somewhere - ${canSend.reduce((n, r) => n + r.handsYouCanCall, 0)} pairs of hands, at most, and their days instead of yours.`
                     : tier === 'elder'
-                        ? 'An elder rung: the disciples below can be sent, and new ones can be taken in under this line. A following built here is the only thing that makes a later bid for the seat survivable.'
+                        ? 'An elder rung: the disciples below can be sent, and new ones can be taken in under this line. A following built here is the only thing that makes a later bid for the top of the house survivable.'
                         : 'The head of the house: the standard, the methods, who is an elder, and how large the place gets. Every one of those is an act against people who were here first.') +
             ' ' + moodLine(level, view.sectName),
         note:
@@ -941,7 +956,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
 }
 
 /**
- * Take people in. An elder takes disciples under their own line; only the seat
+ * Take people in. An elder takes disciples under their own line; only the head
  * buys an elder in from outside, and that is the expensive one.
  */
 export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promise<object> {
@@ -966,7 +981,7 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
         const applied = applyOutcome(repos, view, outcome, rng);
 
         const seated: string[] = [];
-        if (!applied.obstructed && !applied.lostTheSeat) {
+        if (!applied.obstructed && !applied.lostTheHouse) {
             const rung = Math.max(0, view.rankCount - 2);
             for (let i = 0; i < count; i++) {
                 const id = `elder:${view.sectId}:bought:${view.ledger.externalElders.length + i}`;
@@ -985,7 +1000,7 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
         const after = repos.cultivators.getById(view.cultivator.id)!;
         const runAfter = repos.runs.getById(view.run.id)!;
         return {
-            recruited: !applied.obstructed && !applied.lostTheSeat,
+            recruited: !applied.obstructed && !applied.lostTheHouse,
             kind: 'elder',
             obstructed: applied.obstructed,
             sect: { id: view.sectId, name: view.sectName },
@@ -999,10 +1014,10 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
             },
             eldersLeaving: outcome.eldersLeaving.length,
             disciplesLeaving: outcome.disciplesLeaving,
-            lostTheSeat: applied.lostTheSeat,
+            lostTheHouse: applied.lostTheHouse,
             narrationHint:
                 (applied.obstructed
-                    ? `The seat was offered and the paperwork went round the house and came back unsigned. ${applied.narration} `
+                    ? `The place was offered and the paperwork went round the house and came back unsigned. ${applied.narration} `
                     : `${count} elder${count === 1 ? '' : 's'} seated at ${view.sectName} from outside it, ` +
                       'with no line in the house and nobody in the yard who owes them anything - which is ' +
                       'exactly why the head bought them. ') +
@@ -1076,7 +1091,7 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
         // Taking disciples in costs no credit, but a cultivator who is already
         // past a threshold does not stop being past it because this act was free.
         dismissedFromTheHouse: applied.dismissed,
-        lostTheSeat: applied.lostTheSeat,
+        lostTheHouse: applied.lostTheHouse,
         narrationHint:
             (applied.narration ? `${applied.narration} ` : '') +
             `${plan.count} disciple${plan.count === 1 ? '' : 's'} taken into ${view.sectName} under ` +
@@ -1084,11 +1099,12 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
             `${plan.stonesRequired.toLocaleString()} spirit stones carried out of a private purse. ` +
             `The house admits from ${rankName(view.admissionOrdinal)}, which is why it took that long - ` +
             'the bar the head of the house sets is the bar every elder recruits against. ' +
-            `${view.ledger.ownFollowing} people in this house now answer to this name rather than to the seat.`,
+            `${view.ledger.ownFollowing} people in this house now answer to this name rather than to ` +
+            `${headTitleOfHouse(view)}.`,
         note:
             'A following is armour. Every act against the house costs less in proportion to the share of ' +
             'it you personally brought in, which is the whole reason to spend decades as an elder before ' +
-            'reaching for the seat.',
+            'reaching for the top of it.',
         cultivator: describeCultivator(repos, after, runAfter)
     };
 }
@@ -1154,7 +1170,7 @@ export async function handleAdmission(args: z.infer<typeof AdmissionSchema>): Pr
     );
     const applied = applyOutcome(repos, view, outcome, rng);
 
-    const landed = !applied.obstructed && !applied.lostTheSeat;
+    const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) view.ledger.admissionOrdinal = args.ordinal;
 
     repos.db.transaction(() => {
@@ -1186,8 +1202,8 @@ export async function handleAdmission(args: z.infer<typeof AdmissionSchema>): Pr
         },
         eldersLeaving: outcome.eldersLeaving.length,
         disciplesLeaving: outcome.disciplesLeaving,
-        lostTheSeat: applied.lostTheSeat,
-        seatChallenged: outcome.seatChallenged,
+        lostTheHouse: applied.lostTheHouse,
+        headChallenged: outcome.headChallenged,
         challengeHeld: applied.challengeHeld,
         narrationHint:
             (landed
@@ -1237,7 +1253,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
     //
     // So the gate moved below the read. Naming nothing is a question and is
     // free to any member; naming something is a decree and still needs the
-    // seat. Same split `site`, `petition`, `posture`, `seal` and `offer` all
+    // head. Same split `site`, `petition`, `posture`, `seal` and `offer` all
     // follow, and the same one this file's own `expel` already uses.
     const decreeing = teach.length > 0 || retire.length > 0;
     if (!decreeing) {
@@ -1274,7 +1290,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
 
     // ── A HOUSE MAY TEACH WHAT A HOUSE HOLDS ─────────────────────────────
     //
-    // The only check here was that the id existed, so a seat could decree a
+    // The only check here was that the id existed, so a head could decree a
     // RUIN- or GRAVE-provenance manual onto a taught shelf - which contradicts
     // the invariant `sects.ts` states in its own header: "no sect teaches a
     // ruin- or grave-provenance art". Not because those arts are forbidden,
@@ -1286,7 +1302,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
     //
     // This is not a new rule and it is not a faction rule. It is one generic
     // column, read the same way `transmissionModeOf` reads it everywhere else,
-    // and it applies to every house in the world including the seat that owns
+    // and it applies to every house in the world including the head that owns
     // the strongest thing in it.
     const notHeld = teach
         .map(id => getTechnique(id)!)
@@ -1343,7 +1359,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
     );
     const applied = applyOutcome(repos, view, outcome, rng);
 
-    const landed = !applied.obstructed && !applied.lostTheSeat;
+    const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) {
         view.ledger.teaches = next;
         view.ledger.curriculumSetOnDay = view.run.elapsedDays;
@@ -1378,8 +1394,8 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
         },
         eldersLeaving: outcome.eldersLeaving.length,
         disciplesLeaving: outcome.disciplesLeaving,
-        lostTheSeat: applied.lostTheSeat,
-        seatChallenged: outcome.seatChallenged,
+        lostTheHouse: applied.lostTheHouse,
+        headChallenged: outcome.headChallenged,
         challengeHeld: applied.challengeHeld,
         narrationHint:
             (landed
@@ -1454,7 +1470,7 @@ export async function handleExpel(args: z.infer<typeof ExpelSchema>): Promise<ob
     );
     const applied = applyOutcome(repos, view, outcome, rng);
 
-    const landed = !applied.obstructed && !applied.lostTheSeat;
+    const landed = !applied.obstructed && !applied.lostTheHouse;
     if (landed) {
         view.ledger.expelled.push(elder.id);
         view.ledger.membersLost += 1 + elder.following;
@@ -1492,8 +1508,8 @@ export async function handleExpel(args: z.infer<typeof ExpelSchema>): Promise<ob
         },
         eldersLeaving: outcome.eldersLeaving.length,
         disciplesLeaving: outcome.disciplesLeaving,
-        lostTheSeat: applied.lostTheSeat,
-        seatChallenged: outcome.seatChallenged,
+        lostTheHouse: applied.lostTheHouse,
+        headChallenged: outcome.headChallenged,
         challengeHeld: applied.challengeHeld,
         narrationHint:
             (landed
@@ -1506,7 +1522,7 @@ export async function handleExpel(args: z.infer<typeof ExpelSchema>): Promise<ob
             (applied.narration && landed ? ` ${applied.narration}` : ''),
         note:
             'An elder does not leave alone. The next dismissal costs more than this one, because every ' +
-            'elder left standing has now been told the terms on which they hold their own seat.',
+            'elder left standing has now been told the terms on which they hold their own place.',
         cultivator: describeCultivator(repos, after, runAfter)
     };
 }
@@ -1521,7 +1537,9 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
         return noAuthority('grow', view);
     }
 
-    const channel = args.through ?? 'seat';
+    // 'seat' was the old name for this channel and is still accepted on the
+    // wire, so a caller written against the previous schema keeps working.
+    const channel: GrowthChannel = args.through === 'elders' ? 'elders' : 'head';
     const decades = args.decades ?? 1;
     const plan = planGrowth(
         view.houseSize, view.entryStipend, view.teaches.length, decades, channel
@@ -1549,8 +1567,8 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
         standingEarned: plan.standingEarned,
         years: plan.years,
         insult:
-            channel === 'seat'
-                ? 'Nobody objects to a bigger house. They object to who the new people answer to, and these ones answer to the seat.'
+            channel === 'head'
+                ? 'Nobody objects to a bigger house. They object to who the new people answer to, and these ones answer to you.'
                 : 'The elders were handed the intake and they took it, and every one of the new names went into somebody else\'s line.'
     };
     const outcome = resolveAct(view.house, cost);
@@ -1560,7 +1578,7 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
     const applied = applyOutcome(repos, view, outcome, rng);
 
     view.ledger.membersAdded += plan.intake;
-    if (channel === 'seat') view.ledger.ownFollowing += plan.intake;
+    if (channel === 'head') view.ledger.ownFollowing += plan.intake;
 
     const sizeNow = Math.max(
         1, view.baseHouseSize + view.ledger.membersAdded - view.ledger.membersLost
@@ -1608,8 +1626,8 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
             `${plan.years} years of deliberate intake and ${view.sectName} is ${sizeNow} people where it ` +
             `was ${view.houseSize}, at ${plan.stonesRequired.toLocaleString()} spirit stones out of the ` +
             'head of the house\'s own purse. ' +
-            (channel === 'seat'
-                ? 'Every one of them was found by the seat and answers to the seat, which is slow and is the ' +
+            (channel === 'head'
+                ? 'Every one of them was found by you and answers to you, which is slow and is the ' +
                   'only kind of growth that makes the next argument cheaper. '
                 : 'The elders did the finding, which is roughly three times faster and means every one of the ' +
                   'new names went into somebody else\'s line. The house is bigger and the head of it is not. ') +

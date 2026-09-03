@@ -489,11 +489,11 @@ export const institutionVerbs = {
     /**
      * What one house is to another: war, alliance, defection - or the read.
      *
-     * The three that commit are the seat's, for one reason stated once: each of
+     * The three that commit are the head of the house's, for one reason stated once: each of
      * them binds the house to something it cannot quietly walk back, and there
      * is exactly one person in a house entitled to do that. A rogue is told what
      * a declaration would require; a junior is told the rung it opens at in
-     * their own house's title; the seat's declaration happens and is recorded.
+     * their own house's title; the head's declaration happens and is recorded.
      *
      * WHAT IT COSTS IS STATED AND NOT INVENTED. `DISASTER_RESPONSES` prices war
      * and aid in consequences rather than numbers, and `sectThreat` supplies the
@@ -562,7 +562,7 @@ export const institutionVerbs = {
             ));
         }
 
-        // Only now: the seat is entitled to declare, and the question is
+        // Only now: the head is entitled to declare, and the question is
         // whether they have named anybody they could actually have meant.
         if (!named) {
             return this.noPartyNamed(
@@ -660,7 +660,7 @@ export const institutionVerbs = {
         facts.structure.push(
             `The posture ${position.sectName} holds toward ${named.name} (${named.id}) is now `
             + `"${which}", recorded on day ${onDay} against the pair of them. Declared by `
-            + `${rankAndIndex(position)}, which is the seat.`
+            + `${rankAndIndex(position)}, which is the rung that heads the house.`
         );
         if (own && theirActing !== null) {
             facts.structure.push(
@@ -690,7 +690,7 @@ export const institutionVerbs = {
                 action: 'posture',
                 summary:
                     `${position.sectId} -> ${named.id}: ${which}, recorded on day ${onDay} by the `
-                    + 'seat. There is no verb anywhere that unsays it.',
+                    + 'head of the house. There is no verb anywhere that unsays it.',
                 ok: true
             }]
         };
@@ -768,7 +768,7 @@ export const institutionVerbs = {
         facts.structure.push(
             position
                 ? `${standingStructure(position, opensAtRung(position))} A declaration opens at `
-                  + `${position.ranks[opensAtRung(position)] ?? 'the seat'}.`
+                  + `${position.ranks[opensAtRung(position)] ?? 'the head of the house'}.`
                 : 'No membership row. Nothing to declare with; see the refusal on the acting intents.'
         );
         return this.freeAction(run, 'posture', facts);
@@ -903,7 +903,7 @@ export const institutionVerbs = {
     },
 
     /**
-     * The seat spends the house's last card.
+     * The head of the house spends the house's last card.
      *
      * The one method in this package that changes a `powerOrdinal`, and the
      * sharpest expression of what `sectThreat` has always modelled: `acting` is
@@ -928,7 +928,7 @@ export const institutionVerbs = {
 
         if (!dormant) {
             // Phrased the way `handleWake` phrases a house with nothing under
-            // it, because a seat being told "there is nothing" and a seat being
+            // it, because a head being told "there is nothing" and a head being
             // told "there is nothing you have been shown" must not be
             // distinguishable from outside this method.
             return refused('engine.wakeSeal', 'seal', factsForRefusal(
@@ -1005,7 +1005,7 @@ export const institutionVerbs = {
                 : 'kept at the end, because they were ending anyway')
             + ', and outsiders '
             + (dormant.publiclyKnown ? 'already knew there was something under the mountain.' : 'did not know there was anything under the mountain.')
-            + ` Decided by ${rankAndIndex(position)}, which is the seat.`
+            + ` Decided by ${rankAndIndex(position)}, which is the rung that heads the house.`
         );
         facts.structure.push(
             'The condition the house wrote down for waking this one was not met and was not '
@@ -1023,7 +1023,7 @@ export const institutionVerbs = {
                 name: 'engine.wakeSeal',
                 action: 'seal',
                 summary:
-                    `${position.sectId}: seal spent by the seat on day ${onDay}. power_ordinal `
+                    `${position.sectId}: seal spent by the head of the house on day ${onDay}. power_ordinal `
                     + `${before} -> ${dormant.realmOrdinal}, permanently, once.`,
                 ok: true
             }]
@@ -1109,7 +1109,7 @@ export const institutionVerbs = {
             return this.readTheChannel(run, sectId, sect, records, ascended, isOwn);
         }
 
-        // Your own house's line, and the seat's decision, for the reason every
+        // Your own house's line, and the head's decision, for the reason every
         // other commitment here is: it comes out of the principal, and one
         // person in a house signs for the principal.
         if (position && !mayCommitTheHouse(position)) {
@@ -1122,7 +1122,7 @@ export const institutionVerbs = {
             ));
         }
 
-        const seat = position as HousePosition;
+        const head = position as HousePosition;
         const stipend = sect?.stipend ?? [];
         const reserves = baseReservesFor(stipend);
         // The house's monthly payroll, defined EXACTLY as `baseReservesFor`
@@ -1221,7 +1221,7 @@ export const institutionVerbs = {
             `The offering is recorded at ${sectId} on day ${onDay}. It cost ${cost} stones, which `
             + `is ${OFFERING_MONTHS} months of payroll at ${monthly} a month, taken against `
             + `reserves of ${reserves} and leaving ${reserves - cost}. Decided by `
-            + `${rankAndIndex(seat)}, which is the seat.`
+            + `${rankAndIndex(head)}, which is the rung that heads the house.`
         );
         facts.structure.push(
             'Response is null and is not rolled. Nothing in this engine decides whether an '
@@ -1245,7 +1245,7 @@ export const institutionVerbs = {
                 name: 'engine.offering',
                 action: 'offer',
                 summary:
-                    `${sectId}: offering made by the seat on day ${onDay} at ${cost} stones. No `
+                    `${sectId}: offering made by the head of the house on day ${onDay} at ${cost} stones. No `
                     + 'response, and no response was rolled for.',
                 ok: true
             }]

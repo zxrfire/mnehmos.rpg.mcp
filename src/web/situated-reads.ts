@@ -117,7 +117,7 @@ import {
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
-import { type SeatStanding, whyProgressHasStopped } from './why-progress-has-stopped.js';
+import { type RankStanding, whyProgressHasStopped } from './why-progress-has-stopped.js';
 import type { GameService } from './turn-engine.js';
 
 export const situatedReads = {
@@ -126,7 +126,7 @@ export const situatedReads = {
      *
      * The pieces were all present and none of them was reachable. The manual
      * axis was on the STATUS read - forty lines down a sheet a player asks for
-     * when they want their hit points - and the province, the seat and the
+     * when they want their hit points - and the province, the rank and the
      * settling clock were reachable by no sentence at all.
      *
      * Free, and that is load-bearing: a player at a wall has to be able to ask
@@ -141,17 +141,17 @@ export const situatedReads = {
         const where = standingOf(cultivator);
         const region = requireRegion(where.regionId);
 
-        // The seat, read off the same two functions `handlePromote` gates on.
+        // The rank, read off the same two functions `handlePromote` gates on.
         // Absent for somebody who serves nobody, which is not a gate - it is
         // the ordinary condition of most people alive.
-        let seat: SeatStanding | null = null;
+        let rank: RankStanding | null = null;
         const membership = this.repos.sects.getMembership(cultivator.id);
         if (membership) {
             const sect = this.repos.sects.getById(membership.sectId);
             if (sect) {
                 const next = membership.rankIndex + 1;
                 const atTop = next >= sect.ranks.length;
-                seat = {
+                rank = {
                     sectName: sect.name,
                     rankTitle: membership.rankTitle,
                     nextRankTitle: atTop ? null : sect.ranks[next],
@@ -173,7 +173,7 @@ export const situatedReads = {
             localCeilingOrdinal: region.localCeilingOrdinal,
             canAdvanceHere: canAdvanceHere(where.regionId, cultivator.realmOrdinal),
             ambient,
-            seat,
+            rank,
             progressRequired: eligibility.progressRequired,
             progressAvailable: eligibility.progressAvailable,
             eligible: eligibility.eligible,
@@ -228,7 +228,7 @@ export const situatedReads = {
         const deps = { repos: this.repos, knowledge: this.knowledge, world: this.atHand };
         const membership = this.repos.sects.getMembership(cultivator.id);
         // The catalog rows behind the roster, indexed once. `rosterFor` carries
-        // the role and `teaching.knows`; the other two limits and the seat
+        // the role and `teaching.knows`; the other two limits and the rank
         // title are only on the catalog entry, and reading them per person
         // through `getMembersOf` was a scan of the whole house per member.
         const catalog = new Map(

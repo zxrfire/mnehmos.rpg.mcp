@@ -36,7 +36,7 @@
  *
  * ── NOTHING HERE IS BESPOKE ───────────────────────────────────────────────
  *
- * `authorityTier`, `holdsTheSeat` and `elderRungOf` are the engine's, derived
+ * `authorityTier`, `isHeadOfHouse` and `elderRungOf` are the engine's, derived
  * from the length of a house's own ladder, so a four-rung court and a six-rung
  * pavilion are handled by the same two lines. There is no faction named
  * anywhere in this file.
@@ -49,8 +49,8 @@ import {
     backlashLevel,
     clampStanding,
     elderRungOf,
-    holdsTheSeat,
     impliedHouseSize,
+    isHeadOfHouse,
     shieldedCost,
     standingAfterYears,
     STANDING_ON_JOINING,
@@ -89,7 +89,25 @@ export interface HousePosition {
     contribution: number;
     tier: AuthorityTier;
     /** True where this cultivator is the head of the house. */
-    seat: boolean;
+    head: boolean;
+}
+
+/**
+ * What THIS house calls the person at the top of it.
+ *
+ * "Seat" is the Hollow Court's word and nobody else's - it is literally the
+ * fourth entry in that house's own `ranks[]`. A clan has a patriarch, a hall
+ * has a hall master, an alliance has a head, a company has a master, and the
+ * catalog has said so all along: `ranks[rankCount - 1]` is the title, authored
+ * per house, and every one of the thirty-odd houses already carries it.
+ *
+ * So this is a lookup, not a vocabulary. The fallback is deliberately generic
+ * and deliberately not a title - a house with no ladder has nobody at the top
+ * of it to name, and "the head of the house" describes the position without
+ * borrowing anybody's word for it.
+ */
+export function headTitleOf(position: HousePosition): string {
+    return position.ranks[position.rankCount - 1] ?? 'the head of the house';
 }
 
 /**
@@ -116,7 +134,7 @@ export function positionIn(repos: CultivationRepos, cultivatorId: string): House
         rankTitle: membership.rankTitle || (sect.ranks[membership.rankIndex] ?? ''),
         contribution: membership.contribution,
         tier: authorityTier(membership.rankIndex, rankCount),
-        seat: holdsTheSeat(membership.rankIndex, rankCount)
+        head: isHeadOfHouse(membership.rankIndex, rankCount)
     };
 }
 
@@ -125,24 +143,24 @@ export function positionIn(repos: CultivationRepos, cultivatorId: string): House
  *
  * The four acts this file gates are not on `POWERS_BY_TIER`, and deliberately
  * so: that enum is what a rung may do to its own people, and these are what a
- * HOUSE does to somebody else. They are all the seat's, for one reason stated
+ * HOUSE does to somebody else. They are all the head of the house's, for one reason stated
  * once here rather than four times below - each of them commits the house to
  * something it cannot quietly walk back, and there is exactly one person in a
  * house entitled to do that.
  *
  * `elder` is carried as a separate answer rather than folded into the refusal
- * because an elder is not a bystander: they are the rung the seat consults, and
+ * because an elder is not a bystander: they are the rung the head consults, and
  * telling them so is more useful than telling them no.
  */
 export type HouseCommitment = 'posture' | 'seal' | 'offering';
 
-/** The rung a commitment opens at. Always the seat; stated once, derived once. */
+/** The rung a commitment opens at. Always the head; stated once, derived once. */
 export function opensAtRung(position: HousePosition): number {
     return Math.max(0, position.rankCount - 1);
 }
 
 export function mayCommitTheHouse(position: HousePosition): boolean {
-    return position.seat;
+    return position.head;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -182,13 +200,21 @@ export function rankDoesNotReach(position: HousePosition, opensAt: number): stri
  * `tier=elder` is a column value. "Takes disciples in under their own line" is
  * what the value is FOR, and it is the half a player can act on - so the
  * structure channel says both, once, on the row it applies to.
+ *
+ * The top tier takes the position rather than only the tier, for the reason
+ * stated at the head of this file: the refusal names the rung IN THAT HOUSE'S
+ * OWN TITLE. A player at the top of the Cinder Clan is its Clan Chief and a
+ * player at the top of the Quiet Hall is its Abbot; telling either of them
+ * they hold "the seat" hands them the Hollow Court's word for a house that
+ * has never used it.
  */
-function tierInWords(tier: AuthorityTier): string {
-    switch (tier) {
+function tierInWords(position: HousePosition): string {
+    switch (position.tier) {
         case 'ordered': return 'the bottom rung, and it sends nobody anywhere';
         case 'ordering': return 'a rung that can send the rungs below it and do nothing else';
         case 'elder': return 'an elder rung, which sends below it and takes disciples in under its own line';
-        case 'seat': return 'the seat, which does all of that and holds the standard, the methods, and who is an elder besides';
+        case 'head': return `${headTitleOf(position)}, which does all of that and holds the standard, `
+            + 'the methods, and who is an elder besides';
     }
 }
 
@@ -222,7 +248,7 @@ export function standingStructure(
         return 'This cultivator holds no membership in any house. Authority here is the rank '
             + 'index and there is no rank index. Nothing else grants it.';
     }
-    return `They stand as ${rankAndIndex(position)}, which is ${tierInWords(position.tier)}.`
+    return `They stand as ${rankAndIndex(position)}, which is ${tierInWords(position)}.`
         + (opensAt === null
             ? ''
             : ` The act opens at ${position.ranks[opensAt] ?? 'a rung this house does not have'}, `
@@ -231,7 +257,7 @@ export function standingStructure(
 
 /**
  * Where the elder rung sits in this house, for a refusal that wants to say who
- * the seat would have to be persuaded by.
+ * the head of the house would have to be persuaded by.
  */
 export function elderRungTitle(position: HousePosition): string | null {
     const rung = elderRungOf(position.rankCount);
@@ -303,7 +329,7 @@ export function creditIn(
         standing,
         houseSize,
         ownFollowing: ledger.ownFollowing,
-        level: backlashLevel(standing, hasPatron && position.seat)
+        level: backlashLevel(standing, hasPatron && position.head)
     };
 }
 
@@ -331,7 +357,7 @@ export function spendStanding(
         accruedToDay: elapsedDays
     };
     writeFlag(repos.db, cultivatorId, houseFlagKey(position.sectId), JSON.stringify(next));
-    return { spent, landedAt, level: backlashLevel(landedAt, position.seat) };
+    return { spent, landedAt, level: backlashLevel(landedAt, position.head) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

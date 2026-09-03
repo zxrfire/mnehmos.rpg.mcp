@@ -2794,7 +2794,10 @@ describe('attacking a house', () => {
         expect(result.narration).toMatch(/is a name, a roll and some ground/i);
         // Both routes, and they are the two the engine actually has.
         expect(result.narration).toMatch(/people who answer to it/i);
-        expect(result.narration).toMatch(/whoever holds the seat/i);
+        // "the seat" is the Hollow Court's own word for its head and no other
+        // house's, so the refusal names the position rather than borrowing it.
+        expect(result.narration).toMatch(/whoever heads that house/i);
+        expect(result.narration).not.toMatch(/\bthe seat\b/i);
         // Priced out of the catalog rather than asserted.
         expect(result.narration).toMatch(/strongest person they will actually put in a room/i);
         // And it is a refusal, not a fight: nothing was resolved, nothing spent.

@@ -96,7 +96,7 @@
  *
  * A decider is `{ id, rankIndex }` and there is no NPC type in this file, no
  * roster lookup, and no place to put one. That is load-bearing rather than
- * tidy: promotion into a seat is only gameplay if arriving there changes what
+ * tidy: promotion into the top rung is only gameplay if arriving there changes what
  * the house decides, so the player's own id goes in the same shape, their
  * `openHandednessOf` contributes at their own weight, and at the top rung they
  * get the overrule and become the person the unanimity tier can overrule. The
@@ -115,16 +115,16 @@
  *   THE ELDERS      the weighted mean. The ordinary answer. Elders can dislike
  *                   a thing and be outvoted; that is what a mean is for.
  *
- *   THE SEAT        the head of the house overrules the mean. Reserved to the
- *                   seat alone, because one elder must not be able to stop a
+ *   THE HEAD        the head of the house overrules the mean. Reserved to the
+ *                   head alone, because one elder must not be able to stop a
  *                   house. It is not free, and this module does not price it:
  *                   `leadership.ts` owns what an act against the room costs in
  *                   standing, and {@link WhereTheBodyLands.against} names who
  *                   was overruled so the caller can charge it there.
  *
- *   ALL THE ELDERS  and the seat loses it back when it is ALONE. Not a
+ *   ALL THE ELDERS  and the head loses it back when it is ALONE. Not a
  *                   majority, not the mean pointing the other way - every elder
- *                   in the room on the far side of them. The interesting seat
+ *                   in the room on the far side of them. The interesting head
  *                   to hold is not the strongest one, it is the one everybody
  *                   else has already agreed about.
  *
@@ -159,11 +159,11 @@
  * `distributeFollowing`'s own weight, imported rather than restated: a voice
  * with more people behind it counts for more, and the world had already worked
  * out how many that is. Who counts as a decider is `isElderRank` and
- * `holdsTheSeat`, so a four-rung court and a six-rung pavilion mean the same
+ * `isHeadOfHouse`, so a four-rung court and a six-rung pavilion mean the same
  * thing by "the elders" with no special case. What a ledger row is worth is
  * `WHAT_A_RECORD_COUNTS_FOR`, and what a run of them adds up to before it is
  * decisive is `WHAT_MAKES_IT_A_METHOD` - both `personal-alignment.ts`'s, both
- * imported. What counts as disagreeing with the seat is
+ * imported. What counts as disagreeing with the head is
  * `DISPOSITION_BANDS.WORTH_SAYING`, the bar the disposition module already sets
  * for a reading being worth a sentence: a disagreement big enough to take a
  * house off its patriarch should be one somebody would have mentioned.
@@ -177,7 +177,7 @@ import type { DayIndex } from '../social/common.js';
 import type { ObligationRecord, Severity } from '../social/grudges.js';
 import {
     FOLLOWING_SENIORITY_EXPONENT,
-    holdsTheSeat,
+    isHeadOfHouse,
     isElderRank
 } from '../cultivation/leadership.js';
 import {
@@ -235,7 +235,7 @@ export interface TheirSay {
     id: string;
     rankIndex: number;
     /** True for the head of the house. At most one person in a body. */
-    holdsTheSeat: boolean;
+    isHead: boolean;
     /** What they are, before anybody did anything to them. */
     baseline: number;
     /** What the asker has already done to them. Zero with no asker and no rows. */
@@ -249,7 +249,7 @@ export interface TheirSay {
      * the arithmetic that shares a house's disciples among its elders is the
      * arithmetic that decides whose opinion carries.
      *
-     * The seat is weighed like anybody else at tier one: a head who agrees with
+     * The head is weighed like anybody else at tier one: a head who agrees with
      * their elders has overruled nobody.
      */
     weight: number;
@@ -413,7 +413,7 @@ export function whoDecidesIn(input: {
         out.push({
             id: person.id,
             rankIndex: person.rankIndex,
-            holdsTheSeat: holdsTheSeat(person.rankIndex, input.rankCount),
+            isHead: isHeadOfHouse(person.rankIndex, input.rankCount),
             baseline: round4(baseline),
             moved: sway.moved,
             // Held to the axis: nobody is more than entirely willing. `moved`
@@ -440,9 +440,9 @@ export type SettledBy =
     /** The weighted mean of the room. The ordinary case. */
     | 'the elders'
     /** The head of the house, over a room that wanted something else. */
-    | 'the seat'
+    | 'the head'
     /** The room, unanimous, over a head who was alone in it. */
-    | 'the elders, unanimous against the seat';
+    | 'the elders, unanimous against the head';
 
 export interface WhereTheBodyLands {
     /**
@@ -471,8 +471,8 @@ export interface WhereTheBodyLands {
      *   the elders     the elder pulling hardest on the mean, by
      *                  `weight * |reading - leaning|`. Take them out of the
      *                  room and the answer moves further than for anybody else.
-     *   the seat       the head. They are the reason it is not the mean.
-     *   unanimous      the elder standing furthest from the seat: the one who
+     *   the head       the head of the house. They are the reason it is not the mean.
+     *   unanimous      the elder standing furthest from the head: the one who
      *                  most visibly would not have it, and the one somebody
      *                  asking around the house would be pointed at first.
      */
@@ -480,7 +480,7 @@ export interface WhereTheBodyLands {
     /**
      * Who is on the losing side of an overrule, or empty.
      *
-     * The elders the seat went against at tier two; the seat alone at tier
+     * The elders the head went against at tier two; the head alone at tier
      * three. **This is what a caller charges for.** Nothing here spends
      * anything - `leadership.ts` owns what an act against the room costs in
      * standing, and pricing it again here would be a second governance system.
@@ -495,7 +495,7 @@ export interface WhereTheBodyLands {
 }
 
 /**
- * How far from the seat an elder has to stand before they count as disagreeing.
+ * How far from the head an elder has to stand before they count as disagreeing.
  *
  * `DISPOSITION_BANDS.WORTH_SAYING` is the disposition module's own bar for a
  * reading being remarkable enough to say a sentence about, borrowed rather than
@@ -521,9 +521,9 @@ export const A_REAL_DISAGREEMENT = DISPOSITION_BANDS.WORTH_SAYING;
  *   > and the patriarch can be overruled. that's how it works irl too?
  *
  * Named for the rule rather than the number so the number can move without the
- * name lying. Note for the vocabulary sweep now in flight: the identifiers in
- * this file say "seat", which is one house's private word for its head rather
- * than the general one, and this constant deliberately does not repeat it.
+ * name lying. The identifiers in this file used to say "seat", which is the
+ * Hollow Court's private word for its head rather than the general one; the
+ * vocabulary sweep has since taken them, and this constant never repeated it.
  */
 export const ENOUGH_TO_BE_A_BODY = 2;
 
@@ -533,7 +533,7 @@ export const ENOUGH_TO_BE_A_BODY = 2;
  * ── UNANIMITY IS LITERAL, AND IT TAKES A ROOM ────────────────────────────
  *
  * Tier three fires when EVERY elder stands more than {@link A_REAL_DISAGREEMENT}
- * from the seat, ALL ON THE SAME SIDE of them, and there are at least
+ * from the head, ALL ON THE SAME SIDE of them, and there are at least
  * {@link ENOUGH_TO_BE_A_BODY} of them. All three are needed: a room split hard
  * in both directions is not a room that agrees about anything - letting it
  * overrule would make disagreement itself the winning move - and one elder
@@ -580,25 +580,25 @@ export function whatTheBodyWants(input: {
         };
     }
 
-    const seat = room.find(p => p.holdsTheSeat) ?? null;
-    const elders = room.filter(p => !p.holdsTheSeat);
+    const head = room.find(p => p.isHead) ?? null;
+    const elders = room.filter(p => !p.isHead);
 
-    // ── TIER ONE. The weighted mean, and the seat is counted in it ───────
+    // ── TIER ONE. The weighted mean, and the head is counted in it ───────
     //
     // A head who agrees with the room has overruled nobody, so they are one
     // more voice - the heaviest - and the answer is the room's.
     const mean = weightedMean(room);
 
-    // With no seat, or no elders, the mean is the whole of it. A body whose
+    // With no head, or no elders, the mean is the whole of it. A body whose
     // only decider is its head is a body whose head decides.
-    if (seat === null || elders.length === 0) {
+    if (head === null || elders.length === 0) {
         return {
             leaning: mean,
             settledBy: 'the elders',
             whoMovedIt: pullingHardest(room, mean),
             against: [],
             theRoom: room,
-            line: seat === null
+            line: head === null
                 ? `The elders answer and there is nobody seated above them. Weighted across `
                   + `${room.length}, the body lands at ${mean.toFixed(3)}.`
                 : 'Nobody stands at an elder rung, so the head of the house is the whole of the '
@@ -607,41 +607,41 @@ export function whatTheBodyWants(input: {
     }
 
     const elderMean = weightedMean(elders);
-    const apart = elders.map(e => e.reading - seat.reading);
+    const apart = elders.map(e => e.reading - head.reading);
 
     // ── TIER THREE, ASKED BEFORE TIER TWO ────────────────────────────────
     //
     // The narrower condition, and it is tier two that gets taken back - so the
-    // question is whether the seat's overrule survives, not whether it happens.
+    // question is whether the head's overrule survives, not whether it happens.
     const allBelow = apart.every(d => d <= -A_REAL_DISAGREEMENT);
     const allAbove = apart.every(d => d >= A_REAL_DISAGREEMENT);
     if (elders.length >= ENOUGH_TO_BE_A_BODY && (allBelow || allAbove)) {
         return {
             leaning: elderMean,
-            settledBy: 'the elders, unanimous against the seat',
-            whoMovedIt: furthestFrom(elders, seat.reading),
-            against: [seat],
+            settledBy: 'the elders, unanimous against the head',
+            whoMovedIt: furthestFrom(elders, head.reading),
+            against: [head],
             theRoom: room,
             line: `All ${elders.length} elders stand ${allAbove ? 'above' : 'below'} the head of `
-                + `the house by more than ${A_REAL_DISAGREEMENT}. The seat is overruled and the `
+                + `the house by more than ${A_REAL_DISAGREEMENT}. The head is overruled and the `
                 + `body lands at ${elderMean.toFixed(3)} rather than `
-                + `${seat.reading.toFixed(3)}. A head who is alone in the room does not hold it.`
+                + `${head.reading.toFixed(3)}. A head who is alone in the room does not hold it.`
         };
     }
 
-    // ── TIER TWO. The seat overrules, and somebody else charges for it ───
-    if (Math.abs(seat.reading - elderMean) >= A_REAL_DISAGREEMENT) {
+    // ── TIER TWO. The head overrules, and somebody else charges for it ───
+    if (Math.abs(head.reading - elderMean) >= A_REAL_DISAGREEMENT) {
         const overruled = elders.filter(
-            e => Math.abs(e.reading - seat.reading) >= A_REAL_DISAGREEMENT
+            e => Math.abs(e.reading - head.reading) >= A_REAL_DISAGREEMENT
         );
         return {
-            leaning: seat.reading,
-            settledBy: 'the seat',
-            whoMovedIt: seat,
+            leaning: head.reading,
+            settledBy: 'the head',
+            whoMovedIt: head,
             against: overruled,
             theRoom: room,
             line: `The room would have landed at ${elderMean.toFixed(3)} and the head of the `
-                + `house is at ${seat.reading.toFixed(3)}. They overrule it, over `
+                + `house is at ${head.reading.toFixed(3)}. They overrule it, over `
                 + `${overruled.length} of ${elders.length} elders far enough away to mind, and `
                 + 'what that costs them with those people is charged where standing is kept.'
         };

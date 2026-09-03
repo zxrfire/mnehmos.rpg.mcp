@@ -289,7 +289,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                     ? ` It cost ${body.contributionSpent} contribution, which is gone rather than met.`
                     : '')
                 + (typeof body.newStipendPerMonth === 'number'
-                    ? ` The seat draws ${body.newStipendPerMonth} spirit stones a month.`
+                    ? ` The rank draws ${body.newStipendPerMonth} spirit stones a month.`
                     : '')
             );
         }

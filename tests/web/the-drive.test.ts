@@ -59,7 +59,7 @@ const UNBLOCKED = {
     localCeilingOrdinal: 20,
     canAdvanceHere: true,
     ambient: 'normal' as const,
-    seat: null,
+    rank: null,
     progressRequired: 100,
     progressAvailable: 100,
     eligible: true,
@@ -123,7 +123,7 @@ describe('why progress has stopped', () => {
             ordinal: 0,
             manual: techniqueCeiling(0, NO_MANUAL_CEILING),
             manualCap: NO_MANUAL_CEILING,
-            seat: {
+            rank: {
                 sectName: 'Azure Dew Sect',
                 rankTitle: 'Dew Servant',
                 nextRankTitle: 'Dew Disciple',

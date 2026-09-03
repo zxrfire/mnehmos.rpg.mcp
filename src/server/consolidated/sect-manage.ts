@@ -120,7 +120,7 @@ const ACTIONS = [
     // catalog data that has had no verb attached to it until now.
     'prospect', 'patronage', 'verify_claim', 'denounce', 'petition', 'wake', 'above',
     // Authority. `order` opens at rung one and is the first thing membership
-    // actually buys; the rest is what the elder rungs and the seat can do.
+    // actually buys; the rest is what the elder rungs and the head can do.
     'authority', 'order', 'recruit', 'admission', 'curriculum', 'expel', 'grow',
     // The roll that is not the house roll. A house takes guest students because
     // it holds its best back, so showing an outsider the shallow end costs it
@@ -149,7 +149,7 @@ type SectAction = typeof ACTIONS[number];
  * house that publishes an `admissionOrdinal` and takes applicants is
  * ADVERTISING, and the bar is the filter. Somebody who clears a published bar
  * and walks up is usually taken - what the walk-up costs them is the bottom
- * seat and the absence of anybody vouching, both of which the engine already
+ * rank and the absence of anybody vouching, both of which the engine already
  * charges elsewhere. The minority of refusals here are the ordinary ones: the
  * intake is closed this season, the elder who does it is away, they did not
  * take to you.
@@ -174,7 +174,7 @@ const WATCHED_YOU_WALK_OUT = -0.3;
 
 // The ladder a house's own rungs are priced on lives in the engine, because it
 // is mechanics rather than tool plumbing - and because the probation placement
-// needs the same seat rule and importing it from here closed an init cycle
+// needs the same rank rule and importing it from here closed an init cycle
 // through `sect-guest.ts`. Re-exported so nothing that already imported it
 // from this file has to change.
 export {
@@ -201,7 +201,7 @@ export {
 // `look` said "The House of the Bound Word has you down as a member" while
 // `promote` said "Yu Wenshan serves no sect" in the next breath.
 //
-// The answer is not to write them a rank row - that would seat somebody at
+// The answer is not to write them a rank row - that would place somebody at
 // ordinal zero on a rung with a floor of five, which is the bar-skip the whole
 // design refuses. It is to say the true thing, which is more useful anyway:
 // you are on the roll, you are on no rung, and here is the rung's floor.
@@ -546,7 +546,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     //                          first impression and is locked at creation. This
     //                          is the moment it is for, and it had no consumer.
     //   WHETHER THEY WALKED    A house that watched somebody leave remembers.
-    //   OUT OF HERE BEFORE     The seat cap below already says a returning
+    //   OUT OF HERE BEFORE     The rank cap below already says a returning
     //                          member is not a stranger; this says the same
     //                          thing about the door itself.
     //
@@ -644,8 +644,8 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     //
     // The fix is the promotion ladder read backwards. `requiredOrdinalForRank`
     // already states what realm each rung is pitched at, and it is the same
-    // function `handlePromote` gates on, so the seat somebody is given on
-    // arrival and the seat they could be raised to afterwards can never
+    // function `handlePromote` gates on, so the rank somebody is given on
+    // arrival and the rank they could be raised to afterwards can never
     // disagree. Contribution is deliberately NOT read here: it is service
     // rendered to THIS house and a newcomer has none, which is exactly why
     // this is entry and not promotion - what a stranger is seated by is what
@@ -658,7 +658,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // Dew Sect, whose ladder is pitched from ordinal 0, that is anybody at
     // ordinal 16 becoming Sect Warden over a living head. The world already
     // refuses this to its own people and says why: `seatsAtRank` returns 0 for
-    // the top rank because "the top seat is not a promotion, it is a
+    // the top rank because "the top rank is not a promotion, it is a
     // succession, it happens when the person in it dies or leaves", and filling
     // it by the ordinary route "would quietly install a weaker head over a
     // living master, which is not a thing a house does".
@@ -679,13 +679,13 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
     // was a free promotion - measured in play, Dew Servant out and Dew Elder
     // back in on the same turn, three ranks for nothing, bypassing the entire
     // contribution economy that missions exist to feed. Worse in a world where
-    // 244 NPCs sit qualified-and-blocked behind seats while the player ranks up
+    // 244 NPCs sit qualified-and-blocked behind ranks while the player ranks up
     // by using the door twice.
     //
     // The entry rule is right and is untouched. What was wrong is that somebody
     // who walked out last week read as a stranger to the house they walked out
     // of, and the house knows exactly what they were. So: a returning member
-    // cannot re-enter above the seat they left. Their contribution was
+    // cannot re-enter above the rank they left. Their contribution was
     // forfeited on the way out - the game says so - and it has to be re-earned.
     //
     // This caps and never raises: somebody who left as a servant and has since
@@ -717,7 +717,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
             ...(sectCatalogFacts(sect.id) ?? {})
         },
         membership,
-        // What the seat was decided by, so a player can check it and a test can
+        // What the rank was decided by, so a player can check it and a test can
         // assert it without re-deriving the ladder.
         entryRankIndex: entryIndex,
         entryRankTitle: sect.ranks[entryIndex] ?? null,
@@ -736,7 +736,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
         entryRequiredOrdinal: requiredOrdinalForRank(sect.admissionOrdinal, entryIndex),
         seatedAboveTheDoor: entryIndex > 0,
         // ARRANGED, and it says so where anybody reading the result can see it.
-        // The bar was cleared for real and the seat is the seat the house would
+        // The bar was cleared for real and the rank is the rank the house would
         // have given; what an operator decided is the one thing the house was
         // uncertain about. A run whose history holds an arranged success is not
         // the same evidence as one that earned it.
@@ -749,7 +749,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
                 note:
                     'ADMIN decided the one uncertain question here - whether the house took '
                     + 'them - and decided nothing else. Every bar was cleared on the row as it '
-                    + 'stands, the seat is the seat the ladder gives, and the stipend clock '
+                    + 'stands, the rank is the rank the ladder gives, and the stipend clock '
                     + 'started the way it starts for anybody.'
             }
             : null,
@@ -762,7 +762,7 @@ export async function handleJoin(args: z.infer<typeof JoinSchema>): Promise<obje
             contributionForfeited: before.contribution,
             cappedByReturn,
             note: cappedByReturn
-                ? `${sect.name} has had ${cultivator.name} before, and takes them back at the seat `
+                ? `${sect.name} has had ${cultivator.name} before, and takes them back at the rank `
                   + `they left: ${before.rankTitle}. What a stranger is seated by is what they `
                   + 'visibly are; somebody who walked out last week is not a stranger. The '
                   + `${before.contribution} contribution they gave up on the way out is gone, and `
@@ -1384,7 +1384,7 @@ const definitions: Record<SectAction, ActionDefinition> = {
         schema: RecruitSchema,
         handler: handleRecruit,
         aliases: ['take_in', 'hire', 'enlist', 'take_disciples'],
-        description: 'Take disciples in under your own line (elder rungs), or buy an elder in from outside (the seat)'
+        description: 'Take disciples in under your own line (elder rungs), or buy an elder in from outside (the head of the house)'
     },
     admission: {
         schema: AdmissionSchema,
@@ -1441,7 +1441,7 @@ POLITICS - the half of a sect that is not a stipend:
             a road with nothing behind it is absent rather than difficult, and effort does not
             widen the set. This is what a house is mechanically selling.
 - patronage who backs this house, on what terms, and what independence costs the ones nobody
-            backs. seekGuestElder seats a cultivator STRONGER than the house as a guest: no rank,
+            backs. seekGuestElder places a cultivator STRONGER than the house as a guest: no rank,
             no contribution, and they may walk out during a siege with nothing to point at.
 - verify_claim  buy a certification of a faction's claimed living ancestor. Sold to the claimant
             or to a rival and PUBLISHED EITHER WAY, so the house learns somebody paid to check.
@@ -1465,7 +1465,7 @@ one number for the whole ladder and every act below spends it.
             (contribution). Opens at rung ONE, and it is the first thing membership actually
             buys - it spends their days instead of the caller's. Ordering upward fails.
 - recruit   elder rungs take disciples in under their own line, which costs years and stones and
-            builds the following that makes a later bid for the seat survivable. The seat may
+            builds the following that makes a later bid for the top of the house survivable. The head may
             also buy an elder in from OUTSIDE, which is the specific insult to whoever waited.
 - admission the realm the house admits from. Raising it insults everyone admitted under the old
             bar; lowering it insults everyone whose only distinction was clearing it. Enforced by
@@ -1474,13 +1474,13 @@ one number for the whole ladder and every act below spends it.
             is immediate and takes thirty years to be what the house is.
 - expel     dismiss an elder. They do not leave alone - the disciples in their line go too - and
             each dismissal costs more than the last.
-- grow      decades of deliberate intake. The ONLY act that earns standing. Through the seat is
+- grow      decades of deliberate intake. The ONLY act that earns standing. Through the head is
             slow and the new people are yours; through the elders is faster and they are theirs.
 
 BACKLASH escalates and is visible before it lands: grumbling, then obstruction (the order is
 simply not carried out - the one roll, and its odds come from accumulated standing), then
 departure (elders walk and take their followings, shrinking the house), then a challenge to the
-seat, and for a house that answers to a patron, removal by letter with no fight to win.
+head, and for a house that answers to a patron, removal by letter with no fight to win.
 
 Actions: ${ACTIONS.join(', ')}
 Aliases: enrol/apply->join, quit/defect->leave, pay/draw->stipend, membership->standing,
@@ -1506,7 +1506,7 @@ send/tell/delegate->order, dismiss/fire->expel, command/powers->authority`,
         teach: z.array(z.string()).optional(),
         retire: z.array(z.string()).optional(),
         elderId: z.string().optional(),
-        through: z.enum(['seat', 'elders']).optional(),
+        through: z.enum(['head', 'elders', 'seat']).optional(),
         decades: z.number().int().optional(),
         accept: z.boolean().optional(),
         depart: z.boolean().optional()
