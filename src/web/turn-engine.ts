@@ -216,6 +216,8 @@ import {
 } from '../server/consolidated/cultivation-support.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
 import { applyTimeSkip } from './apply.js';
+import { settleWhatTheyWereCarrying, type EstateOutcome } from './estate-settlement.js';
+import { somebodyDidThis } from '../engine/world/estate-at-death.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
     DEFAULT_ERRAND,
@@ -2358,6 +2360,36 @@ export class GameService {
         // gets stored, so a row read between turns or after a restart says what
         // the sheet says rather than what it said a turn ago.
         this.refreshThePlayerRow(after.cultivator);
+
+        // ── AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD ──────────────
+        //
+        // AFTER the refresh above, and that ordering is load-bearing rather
+        // than tidy: the refresh writes the world row from the sheet, and the
+        // settlement marks that row dead. The other way round, the refresh
+        // would resurrect it inside the same turn. `standInTheWorld` no longer
+        // writes `alive` over a dead sheet either, so this is belt and braces
+        // and both halves are wanted.
+        //
+        // ONE PLACE, at the end of the turn, because six separate lines in
+        // this package can end a life - the two skips, the crossing, the
+        // reprisal, the fight and the alchemy path - and a settlement per
+        // death site is six chances to forget the seventh. It runs at most
+        // once per run: `requireLiveRun` refuses every later act.
+        const died = this.settleTheEstateIfTheyDied();
+        if (died) {
+            execution.calls.push({
+                name: 'world.settleWhatTheyWereCarrying',
+                action: 'death',
+                summary: died.facts.structure.join(' '),
+                ok: true
+            });
+            // Required rather than offered. Where what somebody was carrying
+            // went is the last thing that happens to them and the narrator may
+            // not decline to mention it.
+            for (const line of died.facts.lines) {
+                sayThisWhateverTheNarratorDoes(execution.facts, line);
+            }
+        }
 
         // A world changed inside one turn is written before anything is
         // narrated, so a restart cannot lose an abode, a descent or a thing
@@ -7463,6 +7495,30 @@ ${line}`;
         // A read - `roster`, `audit_log`, `help` - changed nothing and gets
         // nothing, because describing an unchanged room after printing a list
         // is noise.
+        // ── AND AN ADMIN LINE CAN KILL SOMEBODY TOO ──────────────────────
+        //
+        // `adminAct` returns before the turn's own tail, so the settlement
+        // that runs at the end of `act` never reaches an operator's death -
+        // and `advance_days` at idle focus is the commonest way anybody in
+        // this project has ever seen a cultivator starve. An operator standing
+        // a world in a state and then killing somebody in it is a real death
+        // in a real world, exactly as `spawn_encounter` produces a real
+        // person, so the world hears about it on the same terms.
+        //
+        // BEFORE the look below, so the world the operator is shown afterwards
+        // is one that already knows. The world handle is loaded here because
+        // the admin branch returns above the line in `act` that loads it, so
+        // on an ADMIN-only turn there may be nothing in hand yet.
+        let estate: EstateOutcome | null = null;
+        if (!after.cultivator.alive && after.cultivator.deathCause) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            estate = this.settleTheEstateIfTheyDied();
+            if (this.worldDirty) {
+                this.worldDirty = false;
+                await saveWorldForRun(after.run);
+            }
+        }
+
         const told = response.changed
             ? await this.lookAfterAdmin(after.cultivator, after.run)
             : null;
@@ -7480,7 +7536,22 @@ ${line}`;
         return {
             narration: told ? `${text}\n\n${told.text}` : text,
             events: [],
-            toolCalls: told ? [narrationCall(told)] : [],
+            // The estate row goes in the ENGINE channel and not into the
+            // receipt's prose. An operator whose `advance_days` starved
+            // somebody needs to be able to see where what they were carrying
+            // went - it is exactly the post-state ADMIN exists to show - and
+            // it is a field report rather than something a character
+            // perceived, so it belongs in the inspector beside every other
+            // call this turn made.
+            toolCalls: [
+                ...(estate ? [{
+                    name: 'world.settleWhatTheyWereCarrying',
+                    action: 'death',
+                    summary: estate.facts.structure.join(' '),
+                    ok: true
+                }] : []),
+                ...(told ? [narrationCall(told)] : [])
+            ],
             state: this.stateView(after.run, after.cultivator)
         };
     }
@@ -12628,6 +12699,65 @@ ${fit.line}`;
             factionId: membership?.sectId ?? null,
             rankIndex: membership?.rankIndex ?? -1
         }, this.atHand.currentDay);
+    }
+
+    /**
+     * If this turn ended the life, put the death and the estate into the world.
+     *
+     * ── WHAT THIS CLOSES ─────────────────────────────────────────────────
+     *
+     * Measured by playing, before it existed, on a cultivator who starved
+     * holding two pills, three herbs, a rated object and thirty stones: every
+     * pouch row still on the corpse, the purse still at thirty, zero rows in
+     * `world_object_provenance` naming them, zero rows in
+     * `world_chronicle_actors` naming them, their own world row still reading
+     * `alive`, `world_runs` still `active`, and no grave anywhere.
+     *
+     * The cultivation layer had the death right - run closed, cause and
+     * description written, every later act 409 - and the WORLD was told none
+     * of it, because `enshrineRun` had no caller in `src/` at all.
+     *
+     * ── WHY IT IS HERE AND NOT AT EACH DEATH SITE ────────────────────────
+     *
+     * This is the only line in the package that has, at once, the closed run,
+     * the dead sheet, the loaded world, the ledger, who is standing here and
+     * the persist flag. Every place that can kill somebody has some of those
+     * and none has all of them.
+     *
+     * Idempotent, which is what makes the second call site below safe: the
+     * cache id is derived from the run and `LegacyLedger.write` upserts on it,
+     * and `enshrineRun` will not place a second grave for an id it has already
+     * placed. Returns null where nobody died, which is nearly every turn.
+     */
+    settleTheEstateIfTheyDied(): EstateOutcome | null {
+        const now = this.currentRun();
+        if (now.cultivator.alive || !now.cultivator.deathCause) return null;
+
+        const settled = settleWhatTheyWereCarrying({
+            db: this.db,
+            world: this.atHand,
+            ledger: this.legacy,
+            cultivator: now.cultivator,
+            runId: now.run.id,
+            // The engine's own sentence, written by `markDead` a moment ago.
+            // Never composed here: how somebody died is not this method's to
+            // phrase, and a second phrasing beside the stored one is two
+            // accounts of one death.
+            causeNote: now.run.deathDescription
+                ?? `Died of ${now.cultivator.deathCause}.`,
+            // Who is standing over the body is who ends up with what was on
+            // it - and `somebodyDidThis` is the ruling about who that is.
+            // Being in the same town when somebody starves is not standing
+            // over them; killing them is. Everything else goes into the
+            // ground, which is what the Late Age is made of.
+            standingOver: somebodyDidThis(now.cultivator.deathCause)
+                ? this.present(now.cultivator).map(row => ({ id: row.id, name: row.name }))
+                : [],
+            // A failed crossing leaves a scar and nothing to search.
+            leavesBody: now.cultivator.deathCause !== 'heavenly_tribulation'
+        });
+        if (settled.worldDirty) this.worldDirty = true;
+        return settled;
     }
 
     /**

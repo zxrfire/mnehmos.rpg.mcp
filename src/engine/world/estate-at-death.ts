@@ -35,6 +35,25 @@
  * a later cultivator and the goods is the hazard the cache route already
  * applies - somebody else may have got there first - and nothing else.
  *
+ * ── IT AGREES WITH `war-spoils.ts` ABOUT WHAT A LINK LOOKS LIKE ─────────
+ *
+ * Both paths write `how: 'looted'` with a source, a note and the day, which is
+ * the same link. They differ on ONE field and the difference is the field's
+ * whole reason for existing:
+ *
+ *   a war        `transfersOwnership: true`. A house that lost a war does not
+ *                still own what it lost, and conquest is a `ClaimBasis` the
+ *                world recognises.
+ *   a body       `transfersOwnership: false`, which is `transferPossession`'s
+ *                own default and its own stated rule for a taking. Going
+ *                through somebody's pockets does not confer title, and leaving
+ *                ownership where it was is what gives the dead cultivator's
+ *                house standing to want the thing back.
+ *
+ * So they are not two conventions. They are one convention, parameterised, and
+ * anything reading a chain can tell a conquest from a robbery without knowing
+ * which module wrote the link.
+ *
  * ── WHO GETS IT IS NOT ADJUDICATED HERE ──────────────────────────────────
  *
  * Where several people are standing over the body, the first of them takes it,
@@ -43,8 +62,12 @@
  * who wins a dispute, and this does not either. The caller knows who was there;
  * if the order should mean something, that is a decision for the layer that
  * builds the list.
+ *
+ * WHO COUNTS AS STANDING OVER SOMEBODY is the ruling that matters, and it is
+ * {@link somebodyDidThis}. Read it before passing a list.
  */
 
+import type { DeathCause } from '../../schema/cultivation.js';
 import {
     makeObject,
     ruin,
@@ -53,6 +76,47 @@ import {
     type ObjectRecord,
     type ObjectSignificance
 } from './possessions.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHO IS STANDING OVER SOMEBODY
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Whether somebody was doing this to them.
+ *
+ * ── WHY THIS IS NOT "IS ANYBODY HERE" ────────────────────────────────────
+ *
+ * It was, and it was wrong, and playing said so within one run. `present`
+ * means AT THE SAME NAMED PLACE, and a named place is a market town or a
+ * stretch of wild ground rather than a body's length of dirt. Measured on a
+ * seeded world: seven people at one stretch of wilds, four at another, four in
+ * the birth town, and nothing anywhere with nobody in it that a life could
+ * also be spent in. So "somebody is here" is true essentially always, every
+ * death was a robbery, and nothing was ever left in the ground.
+ *
+ * Which contradicts the setting outright. `docs/world/history/the-late-age.md`
+ * and `legacy.ts`'s own header rest on the world being full of what other
+ * people's failed runs left where they fell; a world where a bystander two
+ * streets away empties every corpse has no graves in it.
+ *
+ * So the ground is the default and being taken is the exception, and the thing
+ * that makes it an exception is that SOMEBODY WAS DOING IT TO THEM. A person
+ * who kills you is standing over you by definition. A person who happened to
+ * be in the same town when you starved in an alley is not, whatever
+ * `othersPresent` says, and the engine has no business pretending they went
+ * through your pockets.
+ *
+ * ── AND IT IS ONE CAUSE, NOT A LIST THAT WILL GROW ───────────────────────
+ *
+ * Every other way to die in this game is something that happened to a body:
+ * hunger, a lifespan running out, a rung that would not come, a channel that
+ * turned, lightning. Nobody is over you for any of them. If a future cause
+ * genuinely involves another party, it belongs here - and it should be added
+ * because of what the cause IS, never because a test wanted a looter.
+ */
+export function somebodyDidThis(cause: DeathCause): boolean {
+    return cause === 'combat_defeat';
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT WAS ON THE BODY

@@ -218,11 +218,20 @@ export function standInTheWorld(
         factionId: house.factionId,
         factionRankIndex: house.factionId === null ? -1 : Math.max(0, house.rankIndex),
         spiritStones: Math.max(0, Math.round(cultivator.spiritStones)),
-        // The player is alive for as long as there is a run. Death is the
-        // cultivation engine's to declare and it declares it on the sheet.
-        status: 'alive',
-        diedOnDay: null,
-        endNote: '',
+        // Death is the cultivation engine's to declare and it declares it on
+        // the sheet - so the sheet is read here in this direction as in every
+        // other, rather than `alive` being written unconditionally.
+        //
+        // It used to be. That was true for as long as nothing put a player's
+        // death into the world at all, and it became a resurrection the moment
+        // something did: `estate-settlement.ts` marks this row dead, and the
+        // refresh at the end of the same turn wrote `alive` straight back over
+        // it. Where the sheet says dead, whatever ended the row is left exactly
+        // as whoever ended it wrote it - the status, the day and the note are
+        // theirs, and a projection has no business editing an ending.
+        status: cultivator.alive ? 'alive' : base.status,
+        diedOnDay: cultivator.alive ? null : base.diedOnDay,
+        endNote: cultivator.alive ? '' : base.endNote,
         // The tag is what the two simulation guards read. It is never dropped,
         // and a house tagging this row `chosen` adds to it rather than
         // replacing it - which is how the player gets invited at all.
