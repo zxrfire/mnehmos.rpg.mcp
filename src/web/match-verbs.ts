@@ -56,9 +56,12 @@ import {
 } from '../engine/household/index.js';
 import {
     type AskWeight,
+    type WhereTheBodyLands,
     openHandednessOf,
-    resolveAttempt
+    resolveAttempt,
+    whatTheBodyWants
 } from '../engine/social-leverage/index.js';
+import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import type {
     OnTheTable
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
@@ -98,6 +101,111 @@ function shareOfALife(fraction: number): string {
     if (fraction >= 1) return 'more than the whole';
     const pct = fraction * 100;
     return pct < 1 ? 'under a hundredth' : `about ${Math.round(pct)} in a hundred`;
+}
+
+/**
+ * What the room said, in sentences a player can act on.
+ *
+ * ── THIS EXISTS BECAUSE A NUMBER NOBODY PRINTS IS A NUMBER NOBODY HAS ────
+ *
+ * AGENTS.md's most-repeated defect, one size down: `whatTheBodyWants` returns
+ * three things that are worth more than its scalar, and all three die at this
+ * boundary unless somebody writes them out.
+ *
+ *   whoMovedIt   the answer turned on ONE person. Under three tiers a player's
+ *                problem is not what the house thinks, it is WHICH ELDER - so
+ *                they get the name, and a name the game printed is a name the
+ *                game will accept back.
+ *   moved        what this asker has already done to that person, UNCLAMPED.
+ *                A reading is held to the axis and the sway is not, so a player
+ *                who has put down more than the axis can hold is told that the
+ *                next favour bought nothing. That is the difference between a
+ *                house that says no and a house whose no can be understood.
+ *   against      who was overruled. A costly disagreement that nobody is told
+ *                about is a free one.
+ *
+ * Prose only, and none of it decides anything - every number here was settled
+ * by the engine before this function was called.
+ */
+function whatTheRoomSays(
+    council: WhereTheBodyLands,
+    nameOf: (id: string) => string
+): { forThePlayer: string[]; forTheRecord: string[] } {
+    if (council.leaning === null || council.whoMovedIt === null) {
+        // Not silence. A body with nobody at a deciding rung is a body there is
+        // nobody in to ask, and saying so is the honest answer rather than
+        // letting the player read the absence as indifference.
+        return {
+            forThePlayer: [council.line],
+            forTheRecord: [`The room: ${council.line}`]
+        };
+    }
+
+    const mover = council.whoMovedIt;
+    const who = nameOf(mover.id);
+    const forThePlayer: string[] = [];
+
+    forThePlayer.push(
+        council.settledBy === 'the seat'
+            ? `The room did not want it and ${who}, who holds the seat, settled it anyway - `
+              + `over ${council.against.length} of them who were far enough away to mind.`
+            : council.settledBy === 'the elders, unanimous against the seat'
+                ? `${who} and every other elder are on the same side of the head of the house, `
+                  + 'and a head who is alone in the room does not hold it. The seat was '
+                  + 'overruled.'
+                : `${who} is the one the room turned on. Take them out of it and the answer `
+                  + 'moves further than for anybody else in there.'
+    );
+
+    // What this asker has already done to that person, which is the part they
+    // can still change.
+    if (mover.whatMovedThem.favoursOwed > 0 || mover.whatMovedThem.wrongsHeld > 0) {
+        const owed = mover.whatMovedThem.favoursOwed;
+        const held = mover.whatMovedThem.wrongsHeld;
+        const parts: string[] = [];
+        if (owed > 0) parts.push(`${owed} thing${owed === 1 ? '' : 's'} they owe you`);
+        if (held > 0) parts.push(`${held} they hold against you`);
+        forThePlayer.push(
+            `That is not only who they are: ${parts.join(' and ')} sits between you, and it `
+            + `moved them ${mover.moved > 0 ? 'toward' : 'away from'} you by `
+            + `${Math.abs(mover.moved).toFixed(2)}.`
+        );
+        // THE UNCLAMPED HALF. Past the end of the axis a further favour is a
+        // favour spent for nothing, and a player is owed that sentence before
+        // they spend it rather than after.
+        if (Math.abs(mover.baseline + mover.moved) > 1) {
+            forThePlayer.push(
+                'You are already past what that can buy with them. Whatever you put down next '
+                + 'moves this particular person no further, and would do more somewhere else.'
+            );
+        }
+    } else {
+        forThePlayer.push(
+            `Nothing stands between you and ${who} either way. They are answering on who they `
+            + 'are, which is the only thing they have to go on.'
+        );
+    }
+
+    if (council.against.length > 0) {
+        forThePlayer.push(
+            `Overruled, and they will remember it: ${council.against.map(p => nameOf(p.id))
+                .join(', ')}.`
+        );
+    }
+
+    return {
+        forThePlayer,
+        forTheRecord: [
+            `The room: ${council.theRoom.length} deciding, settled by ${council.settledBy}, `
+            + `landing at ${council.leaning.toFixed(3)}. ${council.line}`,
+            `Turned on ${mover.id} (rung ${mover.rankIndex}, weight ${mover.weight}, `
+            + `base ${mover.baseline.toFixed(3)}, moved ${mover.moved.toFixed(3)}, `
+            + `reading ${mover.reading.toFixed(3)}).`,
+            `Overruled: ${council.against.length === 0
+                ? 'nobody'
+                : council.against.map(p => `${p.id} (rung ${p.rankIndex})`).join(', ')}.`
+        ]
+    };
 }
 
 /**
@@ -198,6 +306,39 @@ export const matchVerbs = {
             // nothing writes a line onto anybody. See `asAPartyToAMatch`.
             othersCarryingTheLineAsWell: 0
         };
+
+        // ── AND WHO IN THAT HOUSE IS ACTUALLY DECIDING ───────────────────
+        //
+        // "some can pressure or sell off their daughter, some won't" - and it
+        // is not a field on the family. What a house will spend somebody for
+        // is what the people who decide in it will spend them for, plus what
+        // THIS asker has already done to each of them. Nothing is authored per
+        // house: the roll and the ladder are the world's, and both terms are
+        // read off rows that exist for other reasons.
+        //
+        // The whole roll goes in and the module decides who among them counts,
+        // so there is one answer to "who are the elders here" rather than one
+        // per caller. The player's own row is on that roll under the same id
+        // as their sheet, so a cultivator who has climbed into a seat is in
+        // the room they are negotiating with, at their own weight.
+        const council = whatTheBodyWants({
+            roll: (world?.npcs ?? [])
+                .filter(n => theirFaction !== null && n.factionId === theirFaction)
+                .map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+            rankCount: theirFaction ? getSect(theirFaction)?.ranks.length ?? 0 : 0,
+            asking: cultivator.id,
+            // Every open row naming the player, in any capacity. The module
+            // picks out what each decider owes them and what each holds about
+            // them; handing it a pair query would have asked only about the
+            // person being proposed for, who is usually not in the room.
+            ledger: ledgerAbout(this.repos.db as unknown as ObligationDb, cultivator.id),
+            asOfDay: Math.floor(run.elapsedDays)
+        });
+        const nameInTheRoom = (id: string): string =>
+            id === cultivator.id
+                ? cultivator.name
+                : (world?.npcs ?? []).find(n => n.id === id)?.name ?? 'somebody unnamed';
+        const roomLines = whatTheRoomSays(council, nameInTheRoom);
 
         // ── WHAT IS ON THE TABLE, AND THE LIST IS OPEN ───────────────────
         //
@@ -310,7 +451,8 @@ export const matchVerbs = {
                 `${s.party}: ${s.inFavour === null ? 'not this layer to answer' : s.inFavour}. `
                 + s.because),
             `Route: ${route}. What the house's no is worth: ${stick.is} (their reach `
-            + `${stick.theirReach}). The person themselves: ${theirOwnAnswer.answer}.`
+            + `${stick.theirReach}). The person themselves: ${theirOwnAnswer.answer}.`,
+            ...roomLines.forTheRecord
         ];
 
         // ── ASKING WHAT IT WOULD TAKE IS A QUESTION ──────────────────────
@@ -336,7 +478,12 @@ export const matchVerbs = {
                     stick.line,
                     // And the person themselves, in terms somebody who had
                     // asked about them would recognise.
-                    `${party.name}: ${theirOwnAnswer.because}`
+                    `${party.name}: ${theirOwnAnswer.because}`,
+                    // Who in that house actually settled it, what your own
+                    // history with them did to the answer, and who got
+                    // overruled. Asking the price is exactly the moment a
+                    // player needs the name.
+                    ...roomLines.forThePlayer
                 ]
             );
             facts.structure.push(...structure);
@@ -404,7 +551,11 @@ export const matchVerbs = {
 
         const lines = [
             `${intent === 'accept' ? 'You agree to it' : 'You put it to them'} and set down `
-            + `${answer.price.theBestPutDown ?? 'nothing anybody could hold'}. ${answer.line}`
+            + `${answer.price.theBestPutDown ?? 'nothing anybody could hold'}. ${answer.line}`,
+            // The room, on the turn something was actually put down. A player
+            // who has just spent a singular thing is owed the name of whoever
+            // it turned on, and owed being told when it bought nothing.
+            ...roomLines.forThePlayer
         ];
         const calls: ToolCallRecord[] = [];
 
