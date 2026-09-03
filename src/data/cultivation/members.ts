@@ -2010,6 +2010,117 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
+    // --- Orchid Court ------------------------------------------------------
+    //
+    // Six on the roster and five here, which is the whole house: it is a
+    // household before it is a school and has never been larger. Note what is
+    // NOT here - nobody between the Matriarch at 34 and the two on the last
+    // volume at 30 and 29, because the road stops at 33 and the gap above it
+    // is the point of the place.
+    {
+        id: 'member-shu-lianzhi',
+        name: 'Shu Lianzhi',
+        factionId: 'sect-orchid-court',
+        rankIndex: 0,
+        rank: 'Bed Hand',
+        realmOrdinal: 5,
+        role: 'peer',
+        wants: 'to be trusted with a bed of her own, which is the only promotion anybody here recognises',
+        fears: 'going back to look at a setting before morning, which she has done twice and been caught once',
+        detail: 'Came over the pass at eleven with a Cold Crucible carter and was set to work the same afternoon. Has never been told what the Court refused, and has worked out most of it.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-qiao-wanyin',
+        name: 'Qiao Wanyin',
+        factionId: 'sect-orchid-court',
+        rankIndex: 1,
+        rank: 'Frost Watch',
+        // 14 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 13,
+        role: 'peer',
+        wants: 'the forward selling stopped before somebody counts the seasons backwards',
+        fears: 'a warm year, and says so out loud, which nobody else here will',
+        detail: 'Walks the stair to the floor twice a night in the setting weeks and has done for nine years. Knows which seven channels are dark and exactly how far up the slope the beds have moved since her mother worked them.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-nie-shuang',
+        name: 'Nie Shuang',
+        factionId: 'sect-orchid-court',
+        rankIndex: 3,
+        rank: 'Terrace Elder',
+        // 24 before the grand elder lengthened this house's ladder.
+        // `rankRealmBand` spreads a house's ordinal span across its rungs,
+        // so one more rung moves every ceiling down. This row was authored at
+        // the top of its rung and still is.
+        realmOrdinal: 22,
+        role: 'master',
+        wants: 'somebody worth spending the road on, and has turned down four in eleven years',
+        fears: 'that she is the one who will have to explain the last rung to whoever gets to it',
+        detail: 'Teaches the whole road up to the last volume and refuses to open that one for anybody, on the stated ground that a book which cannot carry you should not be handed to somebody who has just been told it can.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: {
+            knows: 'The whole flower road up to the last volume - the three lower canons, the setting, the nine-night opening, the petal cut and the bed array - and she teaches all of it to anybody the Court has admitted.',
+            mayNotSay: 'What the Matriarch did to cross the rung above the road. She has not been forbidden it; she does not know, and she will say she does not know rather than let a bed hand think the answer is being kept from her.',
+            costsThem: 'A season of her own setting, every time, because she watches a new pair of hands instead of working her own beds - and the Court counts a bed unworked exactly the way it counts one lost.'
+        }
+    },
+    {
+        id: 'member-yin-cuo',
+        name: 'Yin Cuo',
+        factionId: 'sect-orchid-court',
+        rankIndex: 4,
+        rank: 'Valley Elder',
+        realmOrdinal: 26,
+        role: 'rival',
+        wants: 'the third bed taken off the market entirely, and has stopped losing the argument politely',
+        fears: 'that the Matriarch will die before anybody else reaches the top of the road',
+        detail: 'A rung short of the last volume of the road and closer to it than anybody in a generation. Argues with the Terrace Elders about the forward selling in front of the bed hands, which is new and which everybody has noticed.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: {
+            grievance: 'The Terrace Elders keep selling the third bed forward and she has stopped losing the argument politely, because every season sold is a season somebody can count backwards from.',
+            beatableBecause: 'She is right and she argues it in front of the bed hands, which is the one thing the Court has a rule about. Anybody who lets her make the argument publicly twice has already won it, because the house will side with the room over the point.'
+        },
+        teaching: null
+    },
+    {
+        id: 'member-ruan-heqing',
+        name: 'Ruan Heqing',
+        factionId: 'sect-orchid-court',
+        rankIndex: 6,
+        rank: 'Orchid Matriarch',
+        realmOrdinal: 34,
+        role: 'peer',
+        wants: 'nothing anybody has been able to identify, which the province finds more unsettling than a demand',
+        fears: 'being asked, in front of the younger two, how she did the last rung',
+        detail: 'One rung above the top of her own house\'s road and the only person who has ever crossed that stretch. Has never claimed the Court taught her and has never described what she did instead, beyond that she did not leave the valley.',
+        outlier: true,
+        // `arrived`, and it is the literal reading rather than a stretch: she
+        // is at a rung the house has no book for, so she did not come off its
+        // shelf. Everything else the roster has is inherited.
+        outlierReason: 'arrived',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+
     // --- Storm Tyrant Court ------------------------------------------------
     {
         id: 'member-tian-changgeng',

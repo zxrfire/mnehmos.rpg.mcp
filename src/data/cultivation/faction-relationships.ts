@@ -344,6 +344,41 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         }
     },
+    // ── THE REFUSAL, AND THE ONLY TWO BODIES IN A POSITION TO NOTICE IT ──
+    //
+    // `severed_patronage` is the wrong kind and `tolerated` is the wrong
+    // reading, so this is `two_bodies_nobody_joins`: the North has no
+    // arbitration, no register and no third party, so a quarrel here has
+    // nowhere to go and simply sits. That is the province working rather than
+    // this pair being unusual.
+    {
+        id: 'rel-the-court-that-went-down',
+        aId: 'sect-frostmirror-court',
+        bId: 'sect-orchid-court',
+        aStandsTo: 'above',
+        kind: 'two_bodies_nobody_joins',
+        what:
+            'A hundred and forty years ago the Frostmirror carried a grant offer down from the Survey to a household that had just lost two bands in a lifetime, on the same terms both northern courts hold on. It was refused in writing, and the household then went below the working face, onto ground the province had already given up under its own taboo. The Frostmirror kept the letter. It has never published it and has never been asked to, and the two bodies have not corresponded since.',
+        since:
+            'The refusal, which is the only thing in the North that two institutions can independently date, because each of them kept its half of it.',
+        a: {
+            warmth: 'cold',
+            howTheyPutIt:
+                'We carried an offer down a mountain for people who were about to have nothing, and we were sent back up it with a letter. What they have done since is their business and it is on ground nobody wanted.',
+            andSoTheyDo:
+                'Nothing at all, which in a province with no arbitration is the entire available response. It does not buy the crop, does not send anybody down the stair, and has never once put the valley on a figure it publishes.',
+            grievance:
+                'That the refusal is read across the pass as evidence the Frostmirror was refused something, rather than as somebody declining something it was generous enough to offer.'
+        },
+        b: {
+            warmth: 'distant',
+            howTheyPutIt:
+                'A grant is a band of altitude and a band of altitude has to be followed uphill. We were not able to say why we could not take one without saying what was in the valley, so we said no and did not explain, and that is still where the matter is.',
+            andSoTheyDo:
+                'Sells its crop through the Cold Crucible and the Fourhands station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
+            grievance: null
+        }
+    },
     {
         id: 'rel-the-kiln-and-the-court-raised-beside-it',
         aId: 'court-kiln',

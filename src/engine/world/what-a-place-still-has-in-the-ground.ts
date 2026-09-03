@@ -363,7 +363,47 @@ export interface GroundDrawRequest {
     /** What the draw upstream says the taker found. Never negative. */
     wanted: number;
     onDay: number;
+    /**
+     * Whether the taker is of the flower school.
+     *
+     * WHAT A ROAD BUYS, and the flower road's answer to what the sword road's
+     * flight is. `takesWithoutEndingTheStand` in
+     * `data/cultivation/techniques.ts` is the gate; this is its one consumer,
+     * and the pair is the whole reason the road is a road rather than a tag on
+     * twelve rows.
+     *
+     * NOTE WHAT IT DOES NOT CHANGE. `taken` is untouched - the same armful
+     * comes out of the bed. What changes is what the take WRITES: a cutting
+     * taken by somebody who knows how a stand is kept costs the stand less
+     * than the same cutting taken with a knife. That asymmetry is the entire
+     * grant, and it is why the Orchid Court has worked the same beds for
+     * centuries and they still set.
+     *
+     * It REDUCES AND NEVER ZEROES, which is `AGENTS.md`'s law about defences
+     * pointed at a bed rather than at a body: the ground still goes down, it
+     * goes down more slowly, and nothing here creates a herb that was not
+     * already growing. A valley worked hard enough by the school is still a
+     * valley that runs out.
+     *
+     * Absent means no, which is right for the overwhelming majority of takers
+     * and keeps every existing caller correct without an edit.
+     */
+    takenByTheSchool?: boolean;
 }
+
+/**
+ * What share of an ordinary take the school's hands actually cost the bed.
+ *
+ * A third, and the figure is doing one job: it has to be worth an art without
+ * being worth a subsistence. At a third, a school taker works a bed three
+ * times as long before it reads as worked out - which is the difference
+ * between a house that has held one valley for centuries and a house that
+ * moves on, and is the observable form of the claim `sects.ts` makes.
+ *
+ * Not zero, and the reason is a law rather than a taste. See
+ * `takenByTheSchool`.
+ */
+export const THE_SCHOOL_COSTS_THE_BED = 1 / 3;
 
 export interface GroundDraw extends GroundDrawRequest {
     /** What the ground could actually give up. At most `wanted`. */
@@ -399,7 +439,20 @@ export function drawFromTheGround(
     const capacity = capacityFor(place, kind, grade);
     const before = Math.max(0, capacity - shortfallOn(place, kind, grade, onDay));
     const taken = Math.min(wanted, Math.floor(before));
-    const after = before - taken;
+    // WHAT THE TAKER GETS AND WHAT THE BED PAYS ARE TWO NUMBERS, and this is
+    // the only place in the file where they differ. `taken` is the armful and
+    // is never touched by who is holding the knife; the cost to the stand is,
+    // because a cutting taken by somebody trained to keep a bed is a different
+    // wound from the same cutting taken by somebody who is not.
+    //
+    // `Math.ceil` rather than round or floor, and it is the law rather than a
+    // rounding preference: a take always costs the bed at least one. A defence
+    // reduces and never zeroes, so there is no amount of skill at which a
+    // valley stops being worked.
+    const costToTheBed = request.takenByTheSchool
+        ? Math.ceil(taken * THE_SCHOOL_COSTS_THE_BED)
+        : taken;
+    const after = before - costToTheBed;
     const share = capacity > 0 ? after / capacity : 0;
     const reading = readingFor(share);
 

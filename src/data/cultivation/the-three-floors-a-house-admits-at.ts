@@ -325,7 +325,25 @@ export const A_HOUSE_THAT_TAKES_ONE_SEX: Readonly<Record<string, Sex>> = Object.
      * what is behind it is worth wanting, and what is behind this one is the
      * world's only working lightning curriculum.
      */
-    'sect-storm-tyrant-court': 'male'
+    'sect-storm-tyrant-court': 'male',
+    /**
+     * A Court that is a household rather than a school, whose whole measure
+     * of standing is the beds it has kept and who it has kept them with.
+     *
+     * It reckons its line through the women who hold the valley and has done
+     * for as long as anybody can name, so the door states a condition and the
+     * condition is this one. It is the same KIND of fact as the Storm Tyrant
+     * Court's - an opinion a house has always had about who stands inside it,
+     * checked at the door and nowhere else - and the two are on opposite
+     * sides of it, which is the whole reason there are two.
+     *
+     * What is behind this gate is not a curriculum. Its road is the only
+     * complete flower road in the world and it still stops a rung below the
+     * woman at the top of the house; what it has that nobody else has is the
+     * one piece of ground in the North that has stopped moving, and the only
+     * thing growing anywhere north of the pass. See `sects.ts`.
+     */
+    'sect-orchid-court': 'female'
 });
 
 /**

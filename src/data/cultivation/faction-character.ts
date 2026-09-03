@@ -570,6 +570,30 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'A league whose members mark where they have been rather than where they are, and which loses every promising member to the sects that refused them first.'
     },
+    'sect-orchid-court': {
+        knownFor: {
+            outside: 'Flowers, and a door that does not open for men. Everybody north of the pass can tell you both of those and none of them can tell you the Matriarch\'s rung.',
+            actuallyGoodAt: 'Staying where they are. Every other holding in this province has to climb every year to remain what it is, and this one has not moved in a hundred and forty years, which is a harder trick than it sounds and is the only one the Court has ever needed.',
+            theGap: 'A crop is the most legible thing a house can sell and a fixed band is the least legible thing a house can hold. Everybody prices the flowers. Nobody has priced the ground.'
+        },
+        practice: 'Nobody here states a rung, their own or anybody else\'s, and a direct question about one is answered with what the asker would need the answer for. In a province where a name is the band you were born at, this reads as rudeness and is not.',
+        grievance: 'That the refusal is remembered as ingratitude by the only two bodies that were in a position to notice it, and that neither has ever asked what it was for.',
+        fear: 'A warm year. The fog is weather, weather is not a policy, and everything the Court has is on the far side of a season nobody controls.',
+        lateness: 'Nineteen of twenty-six nodes lit, which is high here and is the wrong reading: the seven dark ones are the lowest channels on the valley floor, the Court cannot cut a new one, and the beds are worked a little further up the slope every decade.',
+        disagreement: 'The Valley Elders want the forward selling stopped, on the argument that every season sold is a season somebody can work backwards from. The Terrace Elders point out that a house which stops selling is a house somebody comes and asks about.',
+        wrongAbout: 'The Court holds that its founders cut the frost channels. They are the same work as the stone channels in the spring valley four provinces away, which that house also did not lay, and both date their founders three centuries too late to have laid either.',
+        unitOfValue: 'Beds kept. Standing here is how much of the floor a woman is trusted with and for how long, and it is the only count the Court keeps of anything.',
+        production: {
+            // THE SHELF STOPS AT 33 AND THE HOUSE REACHES 34. That gap is the
+            // entry and it is not an error: the valley did it. A roster that
+            // outruns a shelf is a house with a reason to move, and this one
+            // has exactly one thing it wants.
+            reliableOrdinal: 22, currentCount: 6, peakOrdinal: 34, peakCount: 1, yearsSinceLastPeak: 40,
+            climbingToward: 33, waitingOn: 'time',
+            note: 'The rare case: it has the ground and the book and is short only the years. Its road runs the whole way to thirty-three and one woman is now within a rung of the last volume, which is closer than anybody has been since the Matriarch. What would end it: the crop pays for the years, and the crop is six weeks a year on a floor that needs the fog to keep setting.'
+        },
+        distinctSentence: 'Holds the one band in the North that has stopped moving, on ground the province wrote off under its own taboo, and was offered a grant by an apex and refused it in writing.'
+    },
     'sect-frostmirror-court': {
         knownFor: {
             outside: 'Refusal. Cold, arrogant, turns away everybody, leaves its floors unswept, and is unpleasant about all three.',
@@ -1121,6 +1145,14 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         ageNote: 'Within living memory, barely, which is why the sect believes the road is still open and behaves accordingly.',
         whyNobodyHasSince: 'The vent has thinned measurably and the last three sovereign-track candidates stalled at Deity Transformation. The sect blames the transformation contract rather than the caldera; its own tribute records show the yield falling in step.',
         settledBelief: 'Alone among the high factions, this one has not concluded that the road is shut - which reads as either the only clear sight in either province or the contract talking, and nobody outside the caldera can tell which.'
+    },
+    'sect-orchid-court': {
+        highestOrdinal: 34,
+        climbedYearsAgo: 110,
+        climbedWhere: 'The valley floor, in the fog, over a very long time and with nothing above the top of the Court\'s own road to do it on.',
+        ageNote: 'The most recent climb in the catalog by a wide margin, and inside the lifetime of people currently standing in the valley - which is the whole of why the Court is not simply another late house in decline.',
+        whyNobodyHasSince: 'The road stops at thirty-three and she is at thirty-four. Nobody has crossed that stretch since because there is no book for it here and never was - what she did instead was stay in the valley, and the woman closest to it now is doing the same thing and has been for eleven years.',
+        settledBelief: 'The Court holds, and teaches, that the last rung is neither open nor shut - that one woman did it, that it took her a very long time, and that the house will not put a number on anybody else\'s odds. It is the most careful position any house in the catalog takes about its own ceiling and it is not modesty: nobody here believes there is a second way up, and nobody here will say there is not.'
     },
     'sect-frostmirror-court': {
         highestOrdinal: 36,

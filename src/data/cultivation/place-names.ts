@@ -89,6 +89,27 @@ export const PLACE = {
     UNDERHANG: 'Underhang',
     UNDERSNOW: 'Undersnow',
     FOURHANDS: 'Fourhands',
+    // 空谷幽蘭 - the orchid in the empty valley, which is the classical image
+    // for worth that does not advertise itself and does not need to be seen to
+    // be worth something. It is the house rather than a description of the
+    // plant: a body that refused sponsorship and went where nobody looks, in
+    // the one province where nothing grows.
+    //
+    // The catalog already held the OTHER half of the idiom before this
+    // arrived, and that is a coincidence worth keeping rather than a
+    // duplication worth fixing: `herb-morning-dew-orchid` is common, forest,
+    // traded by the armful and worth about a fortnight of honest cultivation.
+    // That is the roadside orchid. This is the other one, and the contrast is
+    // the whole force of the image.
+    ORCHID_VALLEY: 'Orchid Valley',
+    // THE TERRACE IS NOT THE COURT, and the two were one name for an hour.
+    // `buildLore` dedupes every mentionable by name and places are built
+    // before houses, so a settlement called Orchid Court silently swallowed
+    // the house of that name: a body at ordinal 34 that a carter could not
+    // say, which `hearsay.ts` calls common currency and asserts. The world
+    // already had the pattern - Rimefall is the town and the Frostmirror
+    // Court is the house on it - and this now follows it.
+    ORCHID_TERRACE: 'Orchid Terrace',
 
     // ─── The Drowned Reach ───────────────────────────────────────────────
     WATERING: 'Watering',

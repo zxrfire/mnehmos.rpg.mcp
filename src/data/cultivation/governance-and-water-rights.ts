@@ -125,8 +125,22 @@ export const GovernanceModelSchema = z.enum([
 export type GovernanceModel = z.infer<typeof GovernanceModelSchema>;
 
 /**
- * Why an unbacked sect has not been absorbed. Each survivor gets exactly one,
- * and it must be specific: general resilience is not a reason.
+ * Why an unbacked sect is unbacked. Each survivor gets exactly one, and it
+ * must be specific: general resilience is not a reason.
+ *
+ * THIS USED TO READ "why an unbacked sect has NOT BEEN ABSORBED", and the
+ * wording was doing real damage. Every one of the seven reasons below it said
+ * why nobody had taken a body - too poor, too far, too useful, nothing a
+ * document could hold - so the field presupposed that being unbacked was
+ * never the house's own decision, and there was no way in this catalog to
+ * say that a house had been offered a patron and refused. The design owner's
+ * ruling on the Orchid Court is exactly that distinction - unsupported BY
+ * CHOICE - and a house that could be sponsored and is not, deliberately,
+ * reads entirely differently from one that could not find a patron.
+ *
+ * `independenceStance: 'proud'` was never able to carry it: that is how a
+ * body FEELS about being unbacked, and the question here is how it got that
+ * way.
  */
 export const UnbackedReasonSchema = z.enum([
     'too_poor_to_be_worth_taking',
@@ -148,7 +162,21 @@ export const UnbackedReasonSchema = z.enum([
      * `not_worth_the_trouble_yet` would say the opposite of that - it implies
      * a decision somebody could reverse.
      */
-    'nothing_there_a_document_could_hold'
+    'nothing_there_a_document_could_hold',
+    /**
+     * Added for the Orchid Court, and the seven above could not carry it.
+     *
+     * The only one that is about a DECISION the house took rather than about
+     * a decision nobody else took. It was offered, on the same terms its two
+     * neighbours hold on, and it said no in writing - so every other reason
+     * here would be a lie about it, and `not_worth_the_trouble_yet` would be
+     * the exact inversion of the truth.
+     *
+     * Use it only where a refusal actually happened and somebody could name
+     * the year. A house nobody has got round to offering anything is not
+     * refusing.
+     */
+    'refused_a_backer'
 ]);
 export type UnbackedReason = z.infer<typeof UnbackedReasonSchema>;
 
@@ -1768,6 +1796,41 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         unbackedReason: null,
         independenceStance: null,
         note: 'Moved under the Frostmirror when the Frostmirror was promoted, which the Guild was not consulted about and has not forgiven. It now buys cold from its own landlord.'
+    },
+    // ── THE ONLY BODY IN THE WORLD THAT WAS OFFERED A BACKER AND SAID NO ──
+    //
+    // Read it against the two above it. Both northern courts hold directly
+    // from the Deep Survey, on the one arterial with no administrator, and
+    // that is what pays for following the ice uphill every year. This house
+    // was offered the same, on the same terms, and declined - so it is
+    // `unbacked` for a reason no other row in this table carries.
+    //
+    // `unbackedReason` IS THE FIELD THAT COULD NOT SAY THIS. Its own docstring
+    // reads "the one specific reason nobody has taken them", and every one of
+    // the seven members it had said why nobody wanted a body: too poor, too
+    // remote, not worth the trouble, nothing a document could hold. The field
+    // presupposed that being unbacked was never the house's own decision.
+    // `refused_a_backer` is the eighth and it is the design owner's ruling
+    // stated in the schema - "unsupported by choice" - because a house that
+    // could be sponsored and is not, deliberately, reads entirely differently
+    // from one that could not find a patron, and the catalog now says which.
+    //
+    // `independenceStance: 'proud'` is how they feel about it and was never
+    // able to carry the fact by itself.
+    'sect-orchid-court': {
+        factionId: 'sect-orchid-court',
+        governance: 'unbacked',
+        relation: 'unaffiliated',
+        parentFactionId: null,
+        holds: 'The fog valley nine retreats below the working face and the terraces above it, outright, on no instrument of any kind - the only fixed band in a province where a holding is an elevation and every elevation moves.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'named',
+        costOfIndependence:
+            'No grant means no arbitration and nobody to appeal to, in a province that has none of those for anybody - so the cost is not the usual one. It is that the Court has to carry its own crop over a pass it does not control, to a Guild that holds from the body it refused, and it has no standing anywhere to complain about the price it is offered.',
+        unbackedReason: 'refused_a_backer',
+        independenceStance: 'proud',
+        note: 'The refusal is a hundred and forty years old, was put in writing once, and the Court has never repeated it or explained it. The Frostmirror keeps the letter.'
     },
     'sect-frostmirror-court': {
         factionId: 'sect-frostmirror-court',

@@ -629,6 +629,18 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'The bell practice is held to be two centuries old and originally a signal, which is what a practice looks like once it has been done long enough that nobody present remembers starting it. The oldest bells are forty years old. It was started by one person as a joke about being unwelcome, and the joke was good enough that it was copied before it was explained, which is how most customs of this kind actually begin.',
         sharedEvents: []
     },
+    'sect-orchid-court': {
+        factionId: 'sect-orchid-court',
+        origin:
+            'A household that followed the ice up like everybody else for four hundred years, lost two bands in one lifetime, and then went down instead - onto a valley floor below the working face that the province had already written off under its own taboo against cutting below the ice. It became a court when the fog turned out to hold the qi that came out of the ice a century ago, and when the beds turned out to be the only thing growing north of the pass.',
+        whyTheGapIs:
+            'Constrained by the door and by the road, in that order. It takes only women, which halves every generation before anything else is considered, and its road stops one rung below the woman at the top of the house - so what it produces is a steady handful who go the whole way up a short ladder and then wait. The gap is not a loss and cannot be bought: there is no book above it anywhere that a wood root could read.',
+        whatTheUnlitNodesWere:
+            'The lowest frost channels on the valley floor, seven of them, cut into rock by somebody who understood cold better than anybody now standing in it. They went dark as the floor silted and the Court cannot cut a new one, so the beds have been worked a little further up the slope every decade for as long as the record runs - which means the house is slowly climbing after all, at about a pace a century, and has never described it that way.',
+        whereTheWrongBeliefComesFrom:
+            'The province remembers the refusal as pride and the Court has never corrected it, because the correction is worse: it did not refuse a grant to be independent, it refused because accepting one would have obliged it to hold a band of altitude, and a band of altitude has to be followed uphill. It could not say that at the time without saying what was in the valley.',
+        sharedEvents: []
+    },
     'sect-frostmirror-court': {
         factionId: 'sect-frostmirror-court',
         origin:

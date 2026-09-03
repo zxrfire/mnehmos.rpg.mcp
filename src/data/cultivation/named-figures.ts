@@ -549,6 +549,21 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
         note: 'The Measured Span sweeps a gateless frame above him at a station where it has been failing to reopen the same span for six centuries.'
     },
     {
+        id: 'figure-the-woman-who-went-down',
+        name: 'The Woman Who Went Down',
+        alsoCalled: 'Xue Yinniang',
+        kind: 'sealed',
+        factionId: 'sect-orchid-court',
+        whatTheyWere: 'The Matriarch who took the household off the ice and onto the valley floor, and refused the grant that would have kept it up there.',
+        yearsAgo: 140,
+        attestation: 'secure',
+        attestationNote:
+            'The Court kept the refusal, in her hand, and the Frostmirror kept the letter it was a reply to - so this is one of the very few things in the North that two bodies can independently date, and neither of them enjoys it.',
+        answers: null,
+        juniority: null,
+        note: 'Remembered by everybody else in the province as a woman who was too proud to be helped, and by her own house as a woman who could not say why without saying what was in the valley.'
+    },
+    {
         id: 'figure-the-standing-storm-second',
         name: 'The Standing Storm, the second of that name',
         alsoCalled: null,

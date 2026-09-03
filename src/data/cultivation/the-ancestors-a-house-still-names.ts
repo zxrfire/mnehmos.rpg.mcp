@@ -601,6 +601,53 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         standingNote:
             'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Forge Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
     },
+    // THE HOUSE WITH NOTHING ABOVE IT AND NO CLAIM TO ONE.
+    //
+    // Every other unbacked body in the catalog either claims a living ancestor
+    // or has one. This one names three dead women, claims nothing, and has
+    // never held an offering - which is not modesty and is not poverty. An
+    // offering is a thing you send UP, and the whole of what this house did a
+    // hundred and forty years ago was decline to have anybody up there.
+    'sect-orchid-court': {
+        ancestors: [
+            {
+                name: 'Xue Yinniang, who went down',
+                fate: 'dead',
+                realmOrdinal: 31,
+                yearsAgo: 140,
+                afterCrossing: null,
+                rememberedFor: 'Took the household off the ice, refused the grant in writing, and died on the valley floor nine years later without having explained either decision to anybody outside it.'
+            },
+            {
+                name: 'Mu Zhaoying',
+                fate: 'dead',
+                realmOrdinal: 28,
+                yearsAgo: 300,
+                afterCrossing: null,
+                rememberedFor: 'Held the band the house was born at through two retreats and lost it twice, which is what made going down thinkable a lifetime later.'
+            },
+            {
+                name: 'The Frost Watch nobody named',
+                fate: 'dead',
+                realmOrdinal: null,
+                yearsAgo: 420,
+                afterCrossing: null,
+                rememberedFor: 'Cut the first bed below the face against her own house\'s instruction and was put out of it for a year. The Court reads her name at the setting and has never recovered what it was.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'recent',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        // Empty because the claim is honest. The Court names three dead women
+        // and claims nothing above them, so there is nothing for an auditor to
+        // find that does not match.
+        discoverableTraces: [],
+        standingNote:
+            'Nobody treats the Court as a house with a lineage, because it does not present as one: it names three dead women, none of them above Void Refinement, and stops. In a province with no register that costs it nothing, and two provinces away it is the reason nobody has ever thought the valley worth a second question. A house claiming nothing is a house nobody audits.',
+    },
     'sect-frostmirror-court': {
         ancestors: [
             // THE DEAD FORTY-SIX, AND THE ONLY ONE IN THE CATALOG.

@@ -197,10 +197,10 @@ export const THE_WHITE_STAIR: Region = {
         { name: PLACE.UNDERSNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
         { name: PLACE.FOURHANDS, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
         {
-            name: PLACE.ORCHID_COURT,
+            name: PLACE.ORCHID_TERRACE,
             kind: 'sect_town',
             ambient: 'normal',
-            note: 'Terraces cut into rock nine retreats below the face, and the Orchid Court on them, holding the one band in the province that has stopped moving.',
+            note: 'Terraces cut into rock nine retreats below the face, and the Orchid Court living on them, holding the one band in the province that has stopped moving.',
             // The place road this file could not state before
             // `RegionPlaceConnectionSchema` landed. It is a day down and the
             // Court walks it twice a day in the setting weeks, which is a fact
