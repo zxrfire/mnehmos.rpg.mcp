@@ -40,7 +40,11 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGameInWorld, engineCalls } from './harness';
 import { parseIntent } from '../../src/web/verb-pattern-table.js';
-import { carryWhatOnlyTheSentenceKnows } from '../../src/web/planned-action.js';
+import {
+    carryWhatOnlyTheSentenceKnows,
+    type PlannedAction,
+    validatePlan
+} from '../../src/web/planned-action.js';
 import { makeObject } from '../../src/engine/world/possessions.js';
 
 const SEED = 'a-yielding-hands-over';
@@ -151,11 +155,61 @@ describe('the sentence the strip offers reaches hand_over', () => {
         expect(carryWhatOnlyTheSentenceKnows(fromAModel, said).intent).toBe('hand_over');
     });
 
-    /** And never over the top of one it did answer. */
+    /**
+     * And never over the top of one it did answer - the backfill's rule for
+     * every field it carries.
+     *
+     * For `coerce` specifically this branch is unreachable through the real
+     * path, and deliberately so: see the test below.
+     */
     it('leaves an intent the model did name alone', () => {
         const said = 'I make Qiu Wanbo hand over what they carry';
         const fromAModel = { action: 'coerce' as const, target: 'Qiu Wanbo', intent: 'talk' };
         expect(carryWhatOnlyTheSentenceKnows(fromAModel, said).intent).toBe('talk');
+    });
+
+    /**
+     * THE TARGET USED TO BE DELETED, AND BY THE VALIDATOR RATHER THAN THE
+     * MODEL.
+     *
+     * `coerce` was absent from `TARGETED_ACTIONS`, and `validatePlan` keeps a
+     * field only for the actions that own it - so a model that named the
+     * person perfectly had the name thrown away, and the verb then refused for
+     * naming nobody. Measured as 8 of 16 bare targets across a played sample
+     * and misread as the model dropping objects.
+     */
+    it('keeps a target the model named', () => {
+        const checked = validatePlan({
+            action: 'coerce', target: 'Qiu Wanbo', intent: 'hand_over'
+        });
+        expect(checked.ok).toBe(true);
+        expect(checked.ok && checked.action.target).toBe('Qiu Wanbo');
+    });
+
+    /**
+     * AND A MODEL CANNOT CHOOSE THE ROBBERY.
+     *
+     * The other half, which must NOT be repaired the way the target was.
+     * `hand_over` moves a purse, so `coerce`'s intent is an outcome, and
+     * `INTENT_ACTIONS` is for labels that are never branched on for one -
+     * which is why `coerce` is not in it and must not be added.
+     *
+     * End to end and in the order the engine runs them: the validator strips
+     * the model's label, the sentence supplies the real one. A model asking to
+     * empty somebody's pockets over a sentence that says "kneel" gets the
+     * kneeling.
+     */
+    it('takes the intent off the sentence and never off the model', () => {
+        const checked = validatePlan({
+            action: 'coerce', target: 'Qiu Wanbo', intent: 'hand_over'
+        });
+        expect(checked.ok && checked.action.intent, 'the model chose the act').toBeUndefined();
+
+        const plan = carryWhatOnlyTheSentenceKnows(
+            (checked as { ok: true; action: PlannedAction }).action,
+            'I make Qiu Wanbo kneel'
+        );
+        expect(plan.intent).toBe('submit');
     });
 });
 

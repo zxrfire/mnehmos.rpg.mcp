@@ -1012,6 +1012,25 @@ export const TIMED_ACTIONS: readonly ActionName[] = [
 export const TARGETED_ACTIONS: readonly ActionName[] = [
     'interact', 'investigate', 'move', 'train_technique', 'refine', 'gather',
     'work', 'market', 'assess', 'sect', 'attack', 'hunt',
+    /**
+     * WHO IS BEING MADE TO DO IT. Absent from this list until it was measured,
+     * and the consequence was total: `validatePlan` keeps a field only for the
+     * actions that own it, so every model-planned coercion arrived with its
+     * target deleted -
+     *
+     *     {action:'coerce', target:'Qiu Wanbo', intent:'hand_over'}
+     *          -> {action:'coerce'}
+     *
+     * - and was then refused for naming nobody. `attack`, the same verb at a
+     * different goal, is two entries to the left and kept everything.
+     *
+     * A target is not an outcome. It says who the act is against, it is
+     * resolved against the roster like every other target, and a name nobody
+     * answers to still reaches nothing. See the note on `coerce` in
+     * `INTENT_ACTIONS` for the half of this that must NOT be repaired the same
+     * way.
+     */
+    'coerce',
     // WHO is being handed it. The thing itself rides on `topic`, because a
     // gift is the one verb in the set that needs both halves named and neither
     // substitutes: handing the wrong person the right thing is a different
@@ -1288,6 +1307,31 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      * label is only ever set by a phrasing that is a question by construction.
      */
     'work'
+    /**
+     * ── AND `coerce` IS DELIBERATELY NOT HERE ────────────────────────────
+     *
+     * Do not add it. Its absence looks like the same oversight that kept
+     * `coerce` out of {@link TARGETED_ACTIONS}, and it is the opposite: it is
+     * the rule at the top of this list doing its job.
+     *
+     * `coerce`'s intent is the one label in the game that MOVES PROPERTY.
+     * `hand_over` empties the target's purse, reassigns the tracked things
+     * they are carrying, and opens a robbery on the ledger. That is an
+     * outcome, and this list is for labels that are never branched on for one.
+     * Putting `coerce` here would let a model decide to rob somebody the
+     * player had only meant to make kneel.
+     *
+     * It was safe to omit while `wanted` was carried for the narrator and read
+     * by no conditional. It became load-bearing the moment the act was wired,
+     * and nothing said so - which is the whole reason for this note.
+     *
+     * The intent still reaches the verb, from the only place allowed to decide
+     * it: the sentence. `parseIntent` reads it off the words and
+     * `carryWhatOnlyTheSentenceKnows` puts it on the plan, filling only what is
+     * empty. Because this list strips a model's answer first, that field is
+     * always empty on the model path - so the table decides it every time, by
+     * construction rather than by luck.
+     */
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
