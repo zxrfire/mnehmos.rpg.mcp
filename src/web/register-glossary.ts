@@ -623,9 +623,27 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
             {
                 term: 'Grade',
                 meaning:
-                    `The band an art belongs to - ${GRADE_ORDER.join(', ')}, ascending. It is a real band `
-                    + 'in the catalog rather than a label: it sets the qi the art costs, the range of rungs '
-                    + 'it is written across, and how much of it is expected to survive being written down.'
+                    `The band an art belongs to - ${GRADE_ORDER.slice(0, -2).join(', ')}, then `
+                    + `${GRADE_ORDER.slice(-2).join(' and ')} - and the same five bands are the tier `
+                    + 'column on a pill, a herb, a dose of repair medicine and a thing that came down, '
+                    + 'so the word means one thing wherever it is printed. It is a real band in the '
+                    + 'catalog rather than a label: it sets the qi the art costs, the range of rungs it '
+                    + 'is written across, and how much of it is expected to survive being written down.'
+            },
+            {
+                // THE TOP OF THE LADDER IS A TIE, and the register has to be
+                // able to say so: a reader who takes the tier column for a
+                // ranking will read a chaos-grade thing as strictly better than
+                // an immortal-grade one, which is a claim about height that
+                // nobody is making. What separates them is variance.
+                term: 'immortal and chaos',
+                meaning:
+                    'Peers at the top of the tier column rather than a fourth and a fifth step. They are '
+                    + 'the same height and differ in what they do with it: an immortal-grade thing is '
+                    + 'reliable and uniformly good, and a chaos-grade one is as powerful with its effects '
+                    + 'drawn rather than chosen, so it can go badly. No table on this sheet is sorted on '
+                    + 'the tier: where the arts are grouped into bands the two of them are adjacent, and '
+                    + 'the order they are printed in is the catalog\'s rather than a ranking.'
             },
             {
                 term: 'Ord',

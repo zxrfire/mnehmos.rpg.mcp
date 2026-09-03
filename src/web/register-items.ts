@@ -64,9 +64,10 @@ import { PILLS, POTENCY_UNITS, NOT_REFINABLE_BELOW_THE_LID_PILL_IDS } from '../d
 import { HERBS } from '../data/cultivation/herbs.js';
 import { RECIPES } from '../data/cultivation/recipes.js';
 import { ARTIFACTS } from '../data/cultivation/artifacts.js';
-import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
+import { IMMORTAL_ITEMS, THE_LAST_REALM_IS_UNBUYABLE } from '../data/cultivation/immortal-items.js';
 import { TECHNIQUES } from '../data/cultivation/techniques.js';
 import { LOST_MATERIALS } from '../data/cultivation/lost-ages.js';
+import { SITES } from '../data/cultivation/inheritance-trials.js';
 import {
     STRUCTURAL_REPAIR_MEDICINES,
     STRUCTURAL_REPAIR_HOLDINGS
@@ -86,6 +87,16 @@ import { repairCashPrice } from '../engine/cultivation/what-structural-repair-me
 import { MATERIAL_BANDS } from '../engine/world/single-use-dao-comprehension-materials.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { OBJECT_CEILING_BELOW_THE_LID, rankName } from '../engine/cultivation/realms.js';
+import { TechniqueGradeSchema } from '../schema/cultivation.js';
+
+/**
+ * The tier vocabulary, read off the contract rather than retyped.
+ *
+ * IT IS A VOCABULARY AND NOT A TOTAL ORDER. The first bands ascend; the top two
+ * - immortal and chaos - are the same height and differ in variance, so nothing
+ * here may rank one over the other. Read the words, never the index.
+ */
+const TIERS: readonly string[] = TechniqueGradeSchema.options;
 
 /** A holder and a number, or a row with a history. The one line in `items.md`. */
 export type KeptAs = 'counted' | 'tracked';
@@ -122,17 +133,23 @@ export interface RegisterItemKind {
 /**
  * Which catalog a row was read out of.
  *
- * Carried explicitly rather than guessed back off the id, which is how the
- * first draft of this file put the extinct ingredients into the spirit-herb
- * table and rendered an empty one beside it: an extinct herb is still a row in
- * `herbs.ts`, so "is it in HERBS" cannot separate them. A row says where it
+ * Carried explicitly rather than guessed back off the id: several catalogs mint
+ * rows whose ids look alike, and a table that has to infer its own membership
+ * is a table that will one day render somebody else's rows. A row says where it
  * came from, and the tables filter on that.
+ *
+ * THERE IS NO GROUP FOR EXTINCTION, AND THAT IS THE POINT. An extinct herb is a
+ * herb with a property, so it is a row in the herb table carrying that property
+ * - not a listing of its own. Splitting a table on a field means a reader has
+ * to know the field exists before they can look in the right place, and it puts
+ * the thing they were comparing against on another part of the page. The same
+ * rule keeps the two objects that came down in the pill table rather than
+ * beside it.
  */
 export type ItemGroup =
     | 'pills'
     | 'repair medicine'
     | 'spirit herbs'
-    | 'extinct ingredients'
     | 'comprehension materials';
 
 /**
@@ -393,29 +410,97 @@ function repairRows(): RegisterItemRow[] {
     });
 }
 
-/** Every herb. The real cost of the alchemy system is its rarest ingredient. */
+/** The extinctions, by the herb they took away. */
+const EXTINCT_BY_HERB = new Map(LOST_MATERIALS.map(m => [m.herbId, m]));
+
+/**
+ * Every herb, extinct ones included and marked rather than filed elsewhere.
+ *
+ * An extinction is a property of a material, so it is columns on the material's
+ * own row: it stops having a price, it stops being a count and becomes jars
+ * somebody can name, and where it comes from stops being a biome and becomes
+ * whatever an older age left behind. What no cell can hold - the recipes it
+ * closed, the arts it fed, the object kinds nobody can make any more, and where
+ * the last units are sitting - travels with the row underneath the table, in
+ * {@link extinctionRecord}.
+ */
 function herbRows(): RegisterItemRow[] {
-    return HERBS.map(h => ({
-        kind: 'material' as const,
-        group: 'spirit herbs' as const,
-        id: h.id,
-        name: h.name,
-        grade: GRADE_WORD(h.grade),
-        pitchedAt: h.harvestOrdinal,
-        pitchNote: 'the rung below which the place it grows simply kills you',
-        // An ingredient is bought, picked and used by the handful. The world
-        // does not remember which stalk of qi grass went into which pill, and
-        // `mundane` is what `possessions.ts` calls a thing that gets no
-        // provenance at all.
-        significance: 'mundane' as ObjectSignificance,
-        keptAs: 'counted' as KeptAs,
-        price: h.value,
-        priceNote: '',
-        provenance: `grows on ${h.biome.replace(/_/g, ' ')}, draw weight ${h.rarityWeight}`,
-        // Not the description. The herb catalog carries a sentence on every
-        // row and forty-three of them turn this table into a wall - what a
-        // reader wants HERE is the index, and the flavour is one file away.
-        detail: `${h.rarityWeight >= 100 ? 'common' : h.rarityWeight >= 25 ? 'uncommon' : h.rarityWeight >= 6 ? 'rare' : 'all but unobtainable'}`
+    return HERBS.map(h => {
+        const gone = EXTINCT_BY_HERB.get(h.id);
+        const left = gone ? gone.remaining.inArchives + gone.remaining.unfound : 0;
+        return {
+            kind: 'material' as const,
+            group: 'spirit herbs' as const,
+            id: h.id,
+            name: h.name,
+            grade: GRADE_WORD(h.grade),
+            pitchedAt: h.harvestOrdinal,
+            pitchNote: 'the rung below which the place it grows simply kills you',
+            // An ingredient is bought, picked and used by the handful. The world
+            // does not remember which stalk of qi grass went into which pill, and
+            // `mundane` is what `possessions.ts` calls a thing that gets no
+            // provenance at all. An extinct one is the opposite case: what is
+            // left is a small number of named jars in named places, transfers of
+            // which the Ninefold Ledger has certified, so each unit has a past.
+            significance: (gone ? 'significant' : 'mundane') as ObjectSignificance,
+            keptAs: (gone ? 'tracked' : 'counted') as KeptAs,
+            price: gone ? null : h.value,
+            priceNote: gone ? 'nothing grows any more, so no market and no restock' : '',
+            provenance: gone
+                ? `extinct; it grew on ${h.biome.replace(/_/g, ' ')} and nothing grows any more, so `
+                    + 'what is left is what an older age put somewhere and did not come back for'
+                : `grows on ${h.biome.replace(/_/g, ' ')}, draw weight ${h.rarityWeight}`,
+            // Not the description. The herb catalog carries a sentence on every
+            // row and forty-three of them turn this table into a wall - what a
+            // reader wants HERE is the index, and the flavour is one file away.
+            detail: gone
+                ? `extinct - ${left} left, ${gone.remaining.inArchives} in archives and `
+                    + `${gone.remaining.unfound} unfound across ${gone.remaining.placements.length} `
+                    + `site${gone.remaining.placements.length === 1 ? '' : 's'}`
+                : `${h.rarityWeight >= 100 ? 'common' : h.rarityWeight >= 25 ? 'uncommon' : h.rarityWeight >= 6 ? 'rare' : 'all but unobtainable'}`
+        };
+    });
+}
+
+/**
+ * The two objects that came down, on the same columns as the pills.
+ *
+ * WHY THEY ARE IN THE PILL TABLE. `immortal` is a tier, and a tier is a column.
+ * These sat in a listing of their own, which meant a reader comparing what an
+ * object can do against what medicine can do had the two answers on different
+ * parts of the page - and it is the arrangement `AGENTS.md` names outright as
+ * the mistake to avoid: no parallel catalog for important things. The
+ * Unbroken Pattern Pill is the worked example already on the sheet - an
+ * immortal-grade dose sitting in the ordinary repair-medicine table with
+ * `immortal` in its grade cell and nothing else marking it out.
+ *
+ * `pitchedAt` is null on purpose rather than for want of a number. Grade caps
+ * the DESTINATION here, so each of these has three rungs and not one, and the
+ * catalog states them in prose rather than as fields. A single figure in that
+ * column would be the sheet inventing a comparison; the three are under the
+ * table, where the catalog's own words are.
+ */
+function immortalRows(): RegisterItemRow[] {
+    return IMMORTAL_ITEMS.map(i => ({
+        // The engine files these under `artifact` - see the KIND table above,
+        // which counts them there - and the form field says why one of them is
+        // a pill and the other is not. What puts both in the pill table is the
+        // tier, which is the column a reader is comparing on.
+        kind: 'artifact' as const,
+        group: 'pills' as const,
+        id: i.id,
+        name: i.name,
+        grade: 'immortal',
+        pitchedAt: null,
+        pitchNote: '',
+        significance: 'legendary' as ObjectSignificance,
+        keptAs: 'tracked' as KeptAs,
+        price: null,
+        priceNote: 'not for cash: no price, no catalogue and no assay anywhere',
+        provenance: 'sent down; nobody below the Lid can make one, so the count only ever falls',
+        detail: `${i.form.replace(/_/g, ' ')} · ${i.effect.replace(/_/g, ' ')} · `
+            + `${i.knownCount} of ${i.everKnown} ever known · higher ${i.knownByGrade.higher}, `
+            + `middle ${i.knownByGrade.middle}, lower ${i.knownByGrade.lower}`
     }));
 }
 
@@ -441,26 +526,6 @@ function materialRows(): RegisterItemRow[] {
         priceNote: 'not for cash: a favour owed, or another singular thing',
         provenance: 'made above the Lid and sent down, or out of a hole and made by nobody since',
         detail: `${b.inTheWorld} in the world at the start, single use`
-    }));
-}
-
-/** The ingredients an age worked out and can no longer be picked. */
-function lostMaterialRows(): RegisterItemRow[] {
-    return LOST_MATERIALS.map(m => ({
-        kind: 'material' as const,
-        group: 'extinct ingredients' as const,
-        id: m.herbId,
-        name: m.herbId.replace(/^herb-/, '').replace(/-/g, ' '),
-        grade: null,
-        pitchedAt: null,
-        pitchNote: '',
-        significance: 'significant' as ObjectSignificance,
-        keptAs: 'tracked' as KeptAs,
-        price: null,
-        priceNote: 'nothing grows any more, so no market and no restock',
-        provenance: 'extinct; what is left is what an older age put somewhere and did not return for',
-        detail: `${m.remaining.inArchives} in archives, ${m.remaining.unfound} unfound across `
-            + `${m.remaining.placements.length} site${m.remaining.placements.length === 1 ? '' : 's'}`
     }));
 }
 
@@ -500,12 +565,18 @@ function measureBoundaries(): ItemBoundary[] {
 
 /** Build the section. Pure; reads catalogs and derives, decides nothing. */
 export function buildItemsRegister(): RegisterItems {
+    // NO SORT ANYWHERE IN HERE, AND ESPECIALLY NOT ON GRADE. The five bands are
+    // not a total order at the top: `immortal` and `chaos` are peers - one
+    // reliable, one as powerful with its effects drawn rather than chosen - so
+    // anything that ranked them would be asserting a height difference that
+    // does not exist. Rows appear in catalog order, which is stable and makes
+    // no claim.
     const rows = [
         ...pillRows(),
+        ...immortalRows(),
         ...repairRows(),
         ...herbRows(),
-        ...materialRows(),
-        ...lostMaterialRows()
+        ...materialRows()
     ];
     const kinds: RegisterItemKind[] = KIND_ORDER.map(kind => {
         const f = KINDS[kind];
@@ -588,6 +659,81 @@ function itemTable(caption: string, rows: readonly RegisterItemRow[]): string {
 }
 
 /**
+ * An id resolved to what people call it. Falls back to the id, visibly.
+ *
+ * A register that prints a slug at a reader has stopped being a document. The
+ * extinction record used to print its site ids raw, which is the one column of
+ * it a player could act on.
+ */
+const techniqueNameOf = (id: string): string => TECHNIQUES.find(t => t.id === id)?.name ?? id;
+const recipeNameOf = (id: string): string => RECIPES.find(x => x.id === id)?.name ?? id;
+const siteNameOf = (id: string): string => SITES.find(s => s.id === id)?.name ?? id;
+
+/**
+ * What each grade of a thing that came down actually reaches.
+ *
+ * THIS IS THE HALF A CELL CANNOT CARRY. The row above says the tier, the count
+ * and where it came from; this says what a lower one does that a higher one
+ * does not, which is the whole reason anybody cares which grade a holder has.
+ * It sits directly under the table its rows are in rather than under a heading
+ * of its own, because it is detail belonging to two rows and not a listing.
+ */
+function immortalGradeDetail(): string {
+    return IMMORTAL_ITEMS.map(i => `<div class="objblk">
+    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} of ${i.everKnown} ever known</span></h3>
+    <p class="objcount">higher ${i.knownByGrade.higher} · middle ${i.knownByGrade.middle} · lower ${i.knownByGrade.lower}</p>
+    <dl class="grades">
+      <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
+      <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
+      <dt>Lower</dt><dd>${esc(i.grades.lower)}</dd>
+    </dl>
+  </div>`).join('');
+}
+
+/**
+ * What each extinction took with it, and where the last of the material is.
+ *
+ * THE ROW SAYS EXTINCT AND HOW MANY ARE LEFT. This says what went with it - an
+ * extinction is not one loss, it is a list - and where the unfound units are
+ * sitting, which is the difference between a wall and a search with an end.
+ * None of it fits in a table cell and none of it may be dropped, so it travels
+ * with the rows, immediately under the table they are in.
+ */
+function extinctionRecord(): string {
+    const total = LOST_MATERIALS.reduce((n, m) => n + m.remaining.inArchives + m.remaining.unfound, 0);
+    const unfound = LOST_MATERIALS.reduce((n, m) => n + m.remaining.unfound, 0);
+    const byId = new Map(HERBS.map(h => [h.id, h.name]));
+
+    const blocks = LOST_MATERIALS.map(m => {
+        const closed = [
+            m.closedRecipeIds.length
+                ? `recipes it closed: ${m.closedRecipeIds.map(id => esc(recipeNameOf(id))).join(', ')}`
+                : '',
+            m.gatesTechniqueIds.length
+                ? `arts it feeds: ${m.gatesTechniqueIds.map(id => esc(techniqueNameOf(id))).join(', ')}`
+                : '',
+            m.closedObjectKinds.length
+                ? `what can no longer be made with it: ${m.closedObjectKinds.map(k => esc(k)).join('; ')}`
+                : ''
+        ].filter(Boolean);
+        const where = m.remaining.placements.length
+            ? m.remaining.placements.map(p =>
+                `<li><strong>${p.units}</strong> at ${esc(siteNameOf(p.siteId))} - ${esc(p.note)}</li>`).join('')
+            : '<li><span class="dim">nowhere anybody has placed</span></li>';
+        return `<div class="objblk">
+    <h3>${esc(byId.get(m.herbId) ?? m.herbId)} <span class="objmeta">extinct · ${m.remaining.inArchives} in archives · ${m.remaining.unfound} unfound</span></h3>
+    <p class="objcount">${closed.length ? closed.join(' &middot; ') : 'nothing downstream is recorded against it'}</p>
+    <p>${esc(m.remaining.whatIsKnownOfTheCount)}</p>
+    <ul class="spendlist">${where}</ul>
+  </div>`;
+    }).join('');
+
+    return `<h3 class="bandhead">What each extinction took with it <span>${LOST_MATERIALS.length}</span></h3>
+  <p class="note"><strong>An extinction is not one loss, it is a list: the recipes it closed, the arts it fed, the object kinds nobody can make any more.</strong> ${total} units of the three exist in the world and ${unfound} of them are in ground nobody has opened. The figure is small on purpose - "nobody has any" is a wall, and a number with placements against it is a search with a destination and an end, where every unit somebody finds is one nobody else can ever have.</p>
+  ${blocks}`;
+}
+
+/**
  * The pane, as HTML. Splice into the sheet inside a `div.pane`; it depends on
  * nothing else on the page.
  */
@@ -660,11 +806,16 @@ export function renderItemsSection(): string {
 <section>
   <div class="sh"><h2>Every catalogued thing</h2><span class="r">${r.rows.length} rows &middot; by kind</span></div>
   <p class="note"><strong>The <em>pitched at</em> column is a rung, and it does not mean the same thing twice.</strong> ${esc(pitch.map(p => p.replace(/^the /, '')).join('; '))}. They are printed in one column because they are all positions on the one ladder and a reader wants them comparable, and they are annotated because flattening them silently would be the sheet inventing a comparison the engine does not make.</p>
-  ${itemTable(`Pills - ${rowsOf('pills').length} of them, the only reliable way to undo damage`, rowsOf('pills'))}
+  <p class="note"><strong>The tier column is one vocabulary and the top of it is a tie.</strong> ${TIERS.slice(0, -2).join(', ')}, then ${TIERS.slice(-2).join(' and ')} - the ones before them ascend, and the last two are peers rather than a further two steps. An immortal-grade thing is reliable and uniformly good; a chaos-grade one is as powerful and its effects are drawn rather than chosen, so it can go badly. Nothing on this page is sorted on the tier, because a sort would have to put one of those two above the other.</p>
+  ${itemTable(`Pills - ${rowsOf('pills').length} of them, the only reliable way to undo damage, and the ${IMMORTAL_ITEMS.length} things that came down that nobody here can make`, rowsOf('pills'))}
+  ${immortalGradeDetail()}
+  <p class="note"><strong>Grade caps the destination, not the distance.</strong> Every grade of the two objects above performs the same single crossing - the top rung of one realm to the first rung of the next - and what a higher grade buys is permission to perform it further up the ladder. That is why the <em>pitched at</em> column is empty on those two rows: each of them is pitched at three rungs, one per grade, and the catalog states them:</p>
+  <ul class="spendlist">${THE_LAST_REALM_IS_UNBUYABLE.theCeilings.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+  <p class="note">${esc(THE_LAST_REALM_IS_UNBUYABLE.theAbsolute)} Who is holding one is on the Items tab, and what each house holds altogether is on Holdings.</p>
   ${itemTable(`Structural repair medicine - ${rowsOf('repair medicine').length}, for a cultivator who crossed and arrived broken`, rowsOf('repair medicine'))}
   ${itemTable(`Comprehension materials - ${rowsOf('comprehension materials').length} bands, spent by being understood`, rowsOf('comprehension materials'))}
-  ${itemTable(`Extinct ingredients - ${rowsOf('extinct ingredients').length}, and what is left of each. Each is also a row in the herb table below, because an extinct herb is still a herb: what changed is that no quantity of it grows any more, so the count is what an older age left somewhere and did not come back for`, rowsOf('extinct ingredients'))}
-  ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the ingredient layer under all of it`, rowsOf('spirit herbs'))}
+  ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the ingredient layer under all of it, ${LOST_MATERIALS.length} of them extinct`, rowsOf('spirit herbs'))}
+  ${extinctionRecord()}
   <p class="note"><strong>A pill is only ever as obtainable as its rarest ingredient</strong>, which is where the real cost of the alchemy system lives. ${RECIPES.length} recipes turn the herbs above into the pills above; ${RECIPES.filter(x => x.provenance === 'recovered').length} of them exist only because somebody opened something that was sealed, and no recipe may name a herb this catalog does not hold.</p>
   <p class="note">Nothing on this side is rated above ${OBJECT_CEILING_BELOW_THE_LID} whatever kind it is, because an object rated at a rung lets whoever holds it strike at that rung. A manual is paper and is under no such rule, which is the one exception and the reason the arts have a sheet of their own. ${STRUCTURAL_REPAIR_HOLDINGS.length} opening holdings of repair medicine are recorded against named houses; who is holding what is on the Items tab, and what each house holds altogether is the Holdings tab.</p>
 </section>`;
