@@ -1859,24 +1859,79 @@ export type SectAlignment = z.infer<typeof SectAlignmentSchema>;
 // (`the-three-floors-a-house-admits-at.ts`), honorary and obligation-free in
 // both directions - which is why the Hollow Court can keep Lu Sheng and a
 // house cannot keep a protector. The duty is what separates them.
+//
+// AND A MEMBER DOES NOT KNOW WHETHER THEIR HOUSE HAS ONE, OR WHO IT IS.
+// Ruled by the design owner, and it is the second reason the office sits off
+// the ladder rather than on it: YOU ARE ONLY TOLD WHO IS ON THE LADDER. A rung
+// is public by construction - it is what a member is addressed as, what the
+// stipend paying them is indexed by, and what anybody in the house can recite.
+// An office is not, and this one least of all.
+//
+// So anything that shows a house's people to a player reads `ranks` and must
+// NOT read this field. A roster, a hall description, a "who is senior here"
+// answer: none of them may name the protector or say whether the chair is
+// filled. That is discretion rather than a secret with a lookup - there is no
+// hidden-knowledge check to pass, because the ordinary member genuinely does
+// not know, and neither does the narrator unless something in the world has
+// shown it to them.
+//
+// It also means an empty chair and a filled one look identical from inside the
+// house, which is the point: a house that would have to admit the chair is
+// empty is a house that has told you it has one.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Who a house will let stand in its protector's chair.
  *
- *   filled     Anybody the house can actually bind, which in practice means
- *              one of its own who has stopped leading: a retired head, or the
- *              grand elder he retired into. Ordinary, occupied, unremarkable.
- *              This is the end of the retirement path - a house's oldest and
- *              deepest person, no longer leading and no longer administering,
- *              standing in the compound so somebody is there when something
- *              arrives.
+ *   filled     Anybody the house can actually bind. The binding is the whole
+ *              qualification, and it has several roads into it:
+ *
+ *                - one of its own who has stopped leading - a retired head, or
+ *                  the grand elder he retired into. The end of the retirement
+ *                  path: the house's deepest person, no longer leading and no
+ *                  longer administering, standing in the compound so somebody
+ *                  is there when something arrives.
+ *                - a veteran who does not travel, whose whole function is to
+ *                  be here.
+ *                - somebody the house RAISED. A spirit beast the sect took at
+ *                  or above `BEAST_CHANGE_ORDINAL` and brought up is the
+ *                  strongest version of this there is, because everything they
+ *                  know as a person came from the house. A close relationship
+ *                  qualifies somebody the way a crossing does.
+ *
+ *              THIS IS NOT A LIST OF KINDS, AND THERE MUST BE NO BRANCH ON
+ *              WHICH ONE. A changed beast is a person with an ordinary row
+ *              holding what any cultivator holds - see
+ *              `a-family-that-came-down-from-a-changed-beast.ts`, which is
+ *              explicit that a branch on "is this a beast" anywhere near a
+ *              social question means the design has gone wrong. What the seat
+ *              reads is what somebody owes the house, and being raised by it
+ *              is one way to owe that much.
  *
  *   reserved   A False Immortal, and nobody else. The house declines to seat
  *              the retired heads who are right there and qualified by any
  *              normal standard, which is what makes the emptiness mean
  *              something: it is a refusal rather than a shortage of bodies.
  *              A reserved chair is therefore ALWAYS empty - see `heldBy`.
+ *
+ * THE TWO SILENCES ARE DIFFERENT AND THE ENGINE MUST NOT CONFLATE THEM.
+ * An empty chair says two entirely different things depending on the policy,
+ * and `policy` is what separates them:
+ *
+ *   reserved + heldBy null   "We will take nobody less." A statement about the
+ *                            house's history, eight hundred years old, and
+ *                            unchanged since before anybody living was born.
+ *   filled   + heldBy null   "Nobody is in it right now." This week's news -
+ *                            the last one died, nobody has been named yet, the
+ *                            house is between people. It says nothing at all
+ *                            about what the house would accept.
+ *
+ * So never render an empty chair without its policy, and never infer a
+ * reservation from a vacancy. One is a boast and the other is an admission.
+ *
+ * The same applies to the GRAND ELDER, which is a rung rather than an office:
+ * a house can simply have nobody standing there, and that is ordinary rather
+ * than meaningful. An empty rung is not a statement.
  */
 export const ProtectorPolicySchema = z.enum(['filled', 'reserved']);
 export type ProtectorPolicy = z.infer<typeof ProtectorPolicySchema>;

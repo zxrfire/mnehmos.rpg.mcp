@@ -649,6 +649,45 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             'Enormous in the short term and entirely contingent. A single channel with a person at the end of it produces more objects than three ancient ones combined, and stops completely when that person dies. The Pavilion has the deepest stock in the world and the shortest guarantee on it, and both halves of that are true at once.',
         behaviour:
             'One ancestor, light depletion and a rising stock produces the opposite of rationing: the Pavilion gives pills away more freely than any institution in history, because they are income rather than principal. That is also why its refusal doctrine is under strain, why eleven disciples petitioned inside a year of the last grant, and why the Master who authorises one is now named in a book that reads less like a confession every decade.'
+    },
+    // A CROSSING RECORD AND EXPLICITLY NOT A PROTECTOR QUALIFIER.
+    //
+    // The First Tyrant went ALL THE WAY. That makes him a True Immortal who
+    // left, which produces a departure and no chair - the same category as the
+    // Sweptground Temple's First Abbot, and the reason neither house has a
+    // protector's seat. See `THE_OFFICE.whatACrossingLeavesBehind`: only a
+    // crossing that STOPPED half way leaves somebody a house could seat, and
+    // the crossing record counts departures and vacancies together, which is
+    // exactly why it is the wrong instrument for the chair.
+    //
+    // This row exists because the crossing itself is real, is cited in
+    // `false-immortals.ts`, and had no entry. It says what came of it, which
+    // is nothing.
+    {
+        factionId: 'sect-storm-tyrant-court',
+        count: 1,
+        tier: 'supreme',
+        mostRecentCrossingYearsAgo: 3_400,
+        mostRecentCrossingName: 'The First Tyrant',
+        mostRecentCrossingNote:
+            'The founder, who took the storm and left the court that grew up around having done it. The Court keeps the name and has kept nothing else of him.',
+        roll: [
+            { title: 'The First Tyrant', yearsAgo: 3_400, was: 'the founder, and the only crossing this house has ever produced', afterCrossing: 'still_above' }
+        ],
+        // Nothing has come down. There is no entry in `IMMORTAL_CHANNELS` for
+        // this house, and that absence is the fact rather than a gap in the
+        // catalog: three and a half thousand years is long past the horizon at
+        // which anybody answers, and nobody here expects otherwise.
+        depletion: 'ended',
+        volume: 0,
+        gradeCeiling: 'none',
+        trend: 'flat',
+        whatDepletionLooksLike:
+            'An empty shelf and a very full hall. There is no stock to deplete and there has not been within any record the Court keeps - whatever the First Tyrant left was spent or lost in the first few centuries, and what remains is the storm itself, the ladder he founded, and a name that still moves rooms. A house at zero with nothing arriving is ordinarily a house in decline; this one is not, because it never organised itself around receiving anything and has spent thirty-four centuries not needing to.',
+        resilience:
+            'None of the kind this field measures, and a great deal of the kind it does not. The Court cannot survive a single silence, because there is no channel to fall silent - the question does not arise. What it has instead is that nobody has ever needed to ask: the name is three and a half thousand years old, it has never been tested in living memory, and an untested reputation of that age is its own kind of stock.',
+        behaviour:
+            'One ancestor, ended depletion and nothing coming down produces a house living entirely on reputation, and behaving exactly as one would expect: it never grants, because it has nothing to grant, and it has made that into doctrine rather than admitting it is empty. The Court is famous for refusing and the refusal costs it nothing, which is a comfortable position until somebody works out that the shelf behind it is bare. Nobody has, in thirty-four hundred years, because nobody has had a reason to look.'
     }
 ];
 
