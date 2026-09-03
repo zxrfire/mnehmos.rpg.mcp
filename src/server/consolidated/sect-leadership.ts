@@ -37,6 +37,15 @@ import { z } from 'zod';
 import { CultivationRNG } from '../../engine/cultivation/rng.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
+// On what authority an order is given. The ladder answers whether this rung
+// reaches that rung; this answers whether the person speaks for the part of the
+// house they said they did. Its header carries the hard rule about the two
+// fields called "office" - jurisdiction is a portfolio, and `Sect.office` is the
+// Protector's chair and is invisible to members by ruling.
+import {
+    portfoliosIn,
+    whetherTheyMayGiveThisOrder
+} from '../../engine/social-leverage/authority-for-an-order.js';
 import {
     ERRANDS,
     OBSTRUCTED_DELIVERY_FRACTION,
@@ -569,6 +578,17 @@ export const OrderSchema = z.object({
         .describe('How many people. Defaults to everyone this rank can call on.'),
     days: z.number().int().min(1).max(365).optional().default(7)
         .describe('How long they are out. Their time, not the caller\'s.'),
+    /**
+     * What the sentence CLAIMED, not what is true.
+     *
+     * `personal` is the default and is what an order is unless somebody reaches
+     * for something bigger - "I order you to" against "By order of the Sect".
+     * The engine tests the claim rather than consulting a legitimacy table,
+     * which is what lets the player's own words decide which question gets
+     * asked, and what gives "on what authority?" something real to answer.
+     */
+    authority: z.enum(['personal', 'delegated']).optional().default('personal')
+        .describe('personal: their own rank. delegated: claiming the house\'s own authority.'),
     cultivatorId: z.string().optional()
 });
 
@@ -827,6 +847,35 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
         );
     }
 
+    // ── AND ON WHAT AUTHORITY ────────────────────────────────────────────
+    //
+    // The second question, which the ladder cannot answer. `canOrder` above has
+    // settled that this rung reaches that rung; this settles whether the person
+    // speaks for the part of the house they said they did.
+    //
+    // The roll handed over is the house's own elders plus the caller, which is
+    // what `whoDecidesIn` reads to work out who has a voice. Rooms come from
+    // the compound the world actually built - see `theRoomsThisHouseHas`, and
+    // NOT from `Sect.office`, which is the Protector's chair and is invisible
+    // to members by ruling.
+    const world = await worldForRun(view.run).catch(() => null);
+    const portfolios = world
+        ? portfoliosIn({
+            locations: world.locations,
+            sectId: view.sectId,
+            roll: [
+                { id: view.cultivator.id, rankIndex: view.rankIndex },
+                ...view.elders.map(e => ({ id: e.id, rankIndex: e.rankIndex }))
+            ],
+            rankCount: view.rankCount
+        })
+        : [];
+    const authority = whetherTheyMayGiveThisOrder({
+        claim: args.authority ?? 'personal',
+        giverId: view.cultivator.id,
+        portfolios
+    });
+
     const hands = Math.min(args.hands ?? available, available);
     const days = args.days ?? 7;
     const errand = args.errand as Errand;
@@ -838,9 +887,21 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     );
     const applied = applyOutcome(repos, view, outcome, rng);
 
-    const delivered = applied.obstructed
-        ? Math.floor(result.delivered * OBSTRUCTED_DELIVERY_FRACTION)
-        : result.delivered;
+    // ── AN ORDER NOBODY RECOGNISES IS AN ORDER NOBODY CARRIES OUT ────────
+    //
+    // Nothing arrives, and the standing is still spent: `resolveAct` is
+    // explicit that "the standing is spent whether or not the act lands - an
+    // order that was ignored was still given, and the giving is what cost."
+    // Somebody who claimed the house's authority in front of people who could
+    // check has spent more than somebody who simply asked.
+    //
+    // And it costs the people who declined NOTHING. They were not refusing the
+    // house; there was no house in it to refuse.
+    const delivered = !authority.legitimate
+        ? 0
+        : applied.obstructed
+            ? Math.floor(result.delivered * OBSTRUCTED_DELIVERY_FRACTION)
+            : result.delivered;
 
     // ── What actually arrives. The rung sent decides how far they can go. ──
     const reachOrdinal = rankRealmBand(view.sectId, toRankIndex)?.minOrdinal ?? 0;
@@ -936,8 +997,31 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
             obstructionChanceNextTime: round2(obstructionChance(outcome.standingAfter))
         },
         dismissedFromTheHouse: applied.dismissed,
-        narrationHint:
-            `${hands} ${view.ranks[toRankIndex]?.toLowerCase() ?? 'hands'} went out for ${days} days on ` +
+        // ── ON WHAT AUTHORITY, REPORTED ──────────────────────────────────
+        //
+        // Carried on the result rather than folded into the delivered figure,
+        // because a nought that means "they went and found nothing" and a
+        // nought that means "nobody went" are different facts and the prose has
+        // to be able to tell them apart. Measured before this existed: an
+        // unrecognised decree narrated as twenty-four servants going out for a
+        // week and coming back with nothing, which reads like bad luck and is
+        // the fallback-in-plain-English defect exactly.
+        authority: {
+            claimed: authority.claim,
+            legitimate: authority.legitimate,
+            holds: authority.held,
+            line: authority.line
+        },
+        narrationHint: !authority.legitimate
+            ? `${view.cultivator.name} gave it in ${view.sectName}'s name. `
+              + `${authority.line} `
+              + `The ${view.ranks[toRankIndex]?.toLowerCase() ?? 'rung'} it was given to heard `
+              + `somebody at ${view.rankTitle} claiming to speak for the house, worked out that `
+              + 'they do not, and went back to what they were doing. Nothing was collected and nobody was '
+              + 'punished for declining, because there was no house in it to decline. '
+              + `What it cost is ${round2(outcome.standingSpent)} standing, which is what saying `
+              + 'it out loud cost - an order that was ignored was still given.'
+            : `${hands} ${view.ranks[toRankIndex]?.toLowerCase() ?? 'hands'} went out for ${days} days on ` +
             `${view.rankTitle}'s word, and ${view.cultivator.name} did not go with them - that is what the rank is for. ` +
             (applied.obstructed
                 ? `${applied.narration} `

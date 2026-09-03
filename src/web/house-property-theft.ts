@@ -273,3 +273,48 @@ export function takeFromYourOwnHouse(input: TakingInput): TakingResult {
 
     return { object: moved, doing, record, severity, seenBy };
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE BOOK OPENS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A manual this person is holding that they took rather than came by honestly.
+ *
+ * `handleLearn`'s upper gate refuses anything above the common shelf unless
+ * `provenance` says how it was got, and its own refusal already names the third
+ * road: *"Join a house that teaches it, be taught it by somebody who knows it,
+ * or find a copy. `provenance` records which of those it was."* A stolen copy
+ * IS that third road, and until the enum had a word for it the row moved and
+ * the book stayed shut.
+ *
+ * Read off the object table rather than off `holdsACopyOf`, which is a flag
+ * written by the market when somebody buys a copy - a different fact about a
+ * different transaction. Two sources for "do they have the book" is how they
+ * start disagreeing, so this one answers only about things that were taken and
+ * leaves the purchase record entirely alone.
+ *
+ * ── WHAT THIS DELIBERATELY DOES NOT DO ───────────────────────────────────
+ *
+ * It does not make the copy safe. `ownerId` still names the house,
+ * `knownOwnershipBy` still says who could recognise it, and the provenance link
+ * still says `stolen` forever. Being able to read a book you took is not the
+ * same as nobody being able to tell you took it, and the second of those is
+ * where the consequence lives.
+ */
+export function aTakenCopyOf(
+    world: WorldState | null,
+    holderId: string,
+    techniqueId: string
+): ObjectRecord | null {
+    if (!world) return null;
+    return world.objects.find(object =>
+        object.possessorId === holderId
+        && object.kind === 'manual'
+        && object.data?.techniqueId === techniqueId
+        // Taken, not bought and not inherited: the last link in the chain is
+        // what says how it came to be in this hand.
+        && object.provenance.some(entry =>
+            entry.holderId === holderId && (entry.how === 'stolen' || entry.how === 'looted'))
+    ) ?? null;
+}

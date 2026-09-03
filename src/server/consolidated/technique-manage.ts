@@ -204,7 +204,9 @@ const ListAvailableSchema = z.object({
     includeForbidden: z.boolean().optional().default(false)
 });
 
-const LearnSchema = z.object({
+// Exported so a test can assert what the gate will accept without standing up
+// a whole run. The other consolidated handlers export their schemas already.
+export const LearnSchema = z.object({
     action: z.literal('learn'),
     techniqueId: z.string().describe('Catalog id of the art'),
     cultivatorId: z.string().optional(),
@@ -223,7 +225,26 @@ const LearnSchema = z.object({
      * top of this rather than instead of it.
      */
     provenance: z
-        .enum(['found_in_place', 'taught_by_a_person', 'bought', 'inherited'])
+        /**
+         * `taken` is the fifth, and it is not a synonym for `found_in_place`.
+         *
+         * Ruled by the design owner when the theft verb landed. Routing a
+         * stolen copy through `found_in_place` would be the load-bearing kind
+         * of lie: the whole theft design rests on the provenance chain gaining
+         * a link that says what happened, and `knownOwnershipBy` in
+         * `possessions.ts` turns on the difference between a stolen thing
+         * nobody can identify and one the owning house can name on sight. A
+         * copy that reads as found is a copy nobody can ever be caught
+         * holding, which silently deletes the consequence the act exists for.
+         *
+         * The plain-English test is the one that settles it: `where did you
+         * get that book` has four honest answers here and the fifth is "I took
+         * it." Nobody asked that question says they found it in place.
+         *
+         * So a stolen manual opens. The risk is that somebody sees you
+         * carrying it, not that the pages refuse to turn.
+         */
+        .enum(['found_in_place', 'taught_by_a_person', 'bought', 'inherited', 'taken'])
         .optional()
         .describe('How the cultivator came by the manual, for arts above the common shelf')
 });
