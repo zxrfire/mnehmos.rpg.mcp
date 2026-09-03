@@ -29,6 +29,21 @@ import type Database from 'better-sqlite3';
 
 import { makeGameInWorld, engineCalls } from './harness';
 
+/**
+ * The forced landings below run through the operator surface, and that surface
+ * is gated on the process environment rather than on the harness flag alone.
+ * Read at call time, so it is set for this file and put back after it.
+ */
+let adminModeBefore: string | undefined;
+beforeAll(() => {
+    adminModeBefore = process.env.ADMIN_MODE;
+    process.env.ADMIN_MODE = 'true';
+});
+afterAll(() => {
+    if (adminModeBefore === undefined) delete process.env.ADMIN_MODE;
+    else process.env.ADMIN_MODE = adminModeBefore;
+});
+
 interface TieRow { type: string; strength: number; roles: string }
 interface LedgerRow { holder_id: string; subject_id: string; kind: string; cause: string; status: string }
 
@@ -48,27 +63,35 @@ const ledgerAbout = (db: Database.Database, playerId: string): LedgerRow[] =>
  * the installation has none, so the same run seed meets a different several
  * hundred people every execution.
  *
- * AND THE SEEDS ARE CHOSEN SO THE ATTEMPT LANDS, which is worth saying out
- * loud because it is the weak part of this file. What is measured here is what
- * happens WHEN a wrong lands; the landing itself is scaffolding and it is a
- * roll. Swept across six seeds it ranged from 34 to 79 in a hundred, so these
- * are pinned to seeds that land with room - 79 and 62 as this was written -
- * rather than to seeds that happened to.
+ * AND THE LANDING IS FORCED RATHER THAN SEEDED, which is the part of this file
+ * that used to be weak. What is measured here is what happens WHEN a wrong
+ * lands; the landing itself is scaffolding, and it was a roll - swept across six
+ * seeds it ranged from 34 to 79 in a hundred, so the seeds had to be picked for
+ * landing with room, and an unrelated change to any term moved them. Two agents
+ * pinned that coincidence in turn.
  *
- * The ground the run opens on varies by seed and is part of that spread, which
+ * The ground the run opens on varies by seed and was part of that spread, which
  * is the other reason not to leave it to chance: these two verbs put FORCE on
  * the table, and `ground-trust.ts` reads force the opposite way round from a
  * request. Lawless ground makes a threat likelier to land, not less.
  *
- * It should be FORCED instead, and cannot be yet. `ADMIN <verb> <sentence>`
- * takes the whole remaining line as the target - "coerce I threaten the nearest
- * cultivator" resolves nobody - so forcing cannot currently carry the player's
- * own sentence into a verb that needs a target out of it. That is a gap in the
- * admin surface rather than in this file, and when it closes these seeds stop
- * mattering.
+ * So {@link theWrongLands} says it in the sentence instead. `ADMIN interact
+ * <the player's own sentence>` runs the ordinary verb with the one uncertain
+ * question answered - `an_approach_to_somebody`, in
+ * `forcing-an-attempt-to-land.ts` - and nothing else about the turn is
+ * different: the days, the stones, the reprisal, the wound and the record are
+ * all the verb's own, because it is the same verb. `docs/admin.md` is the law.
+ *
+ * Measured, both arms in one command over six seeds nobody had chosen: the same
+ * sentence typed plainly landed on 4 of 6, and forced on 6 of 6.
+ *
+ * The seeds are still pinned, because the world has to hold still for a played
+ * test. What they no longer have to do is come up heads.
  */
 async function standingOverEverybody(seed: string) {
-    const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
+    const { db, game } = await makeGameInWorld({
+        seed, worldSeed: `world-${seed}`, adminMode: true
+    });
     const { cultivator } = await game.newRun('Lin Zhaoyi');
     db.prepare(
         'UPDATE cultivators SET realm_ordinal = 29, spirit_stones = 50000, hp = 9000, '
@@ -78,6 +101,17 @@ async function standingOverEverybody(seed: string) {
     return { db, game, id: cultivator.id };
 }
 
+/**
+ * The player's own sentence, with the attempt landing.
+ *
+ * `interact` is the verb every one of these sentences reaches on its own, and it
+ * is the verb that carries `an_approach_to_somebody` - so naming it settles
+ * WHICH VERB and forcing settles the one thing the engine was uncertain about.
+ * The sentence after it is read exactly as it is read for anybody.
+ */
+const theWrongLands = (game: { act: (s: string) => Promise<any> }, said: string) =>
+    game.act(`ADMIN interact ${said}`);
+
 describe('a wrong that lands is not an arrangement', () => {
     it.each([
         ['I threaten the nearest cultivator', 'humiliation', 'wrong-humiliation-e'],
@@ -85,12 +119,16 @@ describe('a wrong that lands is not an arrangement', () => {
     ])('%s writes a grudge and no tie', async (said, cause, seed) => {
         const { db, game, id } = await standingOverEverybody(seed);
 
-        const acted = await game.act(said);
+        const acted = await theWrongLands(game, said);
 
-        // It came off. If it had not, this would be measuring a refusal, which
-        // already wrote a grudge before any of this.
+        // It came off, and it came off because ADMIN said so rather than because
+        // this seed drew well. If it had not, this would be measuring a refusal,
+        // which already wrote a grudge before any of this.
         const attempt = engineCalls(acted).find(c => c.name === 'engine.resolveAttempt');
         expect(attempt?.summary, said).toMatch(/they agreed/);
+        // And forcing decided ONE thing. Everything below is the verb's own
+        // price, charged in full, which is what makes this evidence at all.
+        expect(acted.narration).toMatch(/Nothing was skipped and nothing was made cheaper/);
 
         // THE DEFECT. Nothing in the relationship table points at the player.
         expect(tiesTo(db, id), 'a wrong wrote a tie').toEqual([]);
@@ -114,7 +152,7 @@ describe('a wrong that lands is not an arrangement', () => {
      */
     it('says on the engine channel what it declined to write', async () => {
         const { game } = await standingOverEverybody('wrong-says-so-e');
-        const acted = await game.act('I threaten the nearest cultivator');
+        const acted = await theWrongLands(game, 'I threaten the nearest cultivator');
 
         const tie = engineCalls(acted).find(c => c.name === 'social.recordTie');
         expect(tie, 'the tie decision was not reported at all').toBeDefined();
@@ -140,7 +178,7 @@ describe('a wrong that lands is not an arrangement', () => {
     it('makes the next approach to that person harder, not easier', async () => {
         const { game } = await standingOverEverybody('wrong-costs');
 
-        const first = await game.act('I threaten the nearest cultivator');
+        const first = await theWrongLands(game, 'I threaten the nearest cultivator');
         const who = /^(.+?), asked /.exec(
             engineCalls(first).find(c => c.name === 'engine.resolveAttempt')!.summary
         )?.[1];
@@ -176,18 +214,15 @@ describe('an ordinary ask still leaves the tie it always left', () => {
         const who = /\.\s+(.+?) is here/.exec(met?.summary ?? '')?.[1] ?? null;
         expect(who, 'nobody nameable is standing here').not.toBeNull();
 
-        // Bribed until one lands rather than on a seed picked for landing on
-        // the first try. The odds are the resolver's and pinning them here
-        // would be pinning them; what is being measured is what a LANDING
-        // leaves, so the honest fixture is to keep asking until there is one.
-        let landed = false;
-        for (let tries = 0; tries < 8 && !landed; tries++) {
-            const acted = await game.act(`I bribe ${who} with 40 spirit stones`);
-            landed = /they agreed/.test(
-                engineCalls(acted).find(c => c.name === 'engine.resolveAttempt')?.summary ?? ''
-            );
-        }
-        expect(landed, 'no bribe landed in eight tries').toBe(true);
+        // Forced, like the wrongs above and for the same reason: what is being
+        // measured is what a LANDING leaves, and the landing is a roll. This
+        // used to ask up to eight times and take whichever try came off, which
+        // is a loop standing in for the thing admin exists to do.
+        const acted = await theWrongLands(game, `I bribe ${who} with 40 spirit stones`);
+        expect(
+            engineCalls(acted).find(c => c.name === 'engine.resolveAttempt')?.summary ?? '',
+            'the forced bribe did not land'
+        ).toMatch(/they agreed/);
 
         const tie = tiesTo(db, id);
         expect(tie, 'the tie a transaction leaves was deleted along with the wrongs')
