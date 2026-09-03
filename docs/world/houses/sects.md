@@ -510,6 +510,14 @@ was to a person, not to the house, so it does not survive that person leaving th
 and the next head takes their own. That is the risk carried by the best seat below the top:
 everything you have depends on somebody else keeping theirs.
 
+**They are demoted to wherever their skill puts them against the pool as it stands today** -
+which is usually conclave, since somebody the head was teaching is generally at least the equal
+of the conclave disciples. Not back to where they started, and not to a rank the position
+reserved for them. **This is the same instrument the house uses to place an outsider**: compare
+them to the people already there and put them where they actually stand. A member who has lost
+a position and a stranger at the gate are the same question asked twice, and the arts the head
+taught them are theirs and do not unhappen.
+
 So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
 shape: **more people who could than places to be.** A conclave disciple passed over for
 personal disciple has not failed at anything - somebody else was chosen, and there were only
