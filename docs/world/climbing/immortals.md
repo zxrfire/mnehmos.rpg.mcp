@@ -32,10 +32,11 @@ ordinary failure - are mechanics, and live in
 | [What a False Immortal is for](#what-a-false-immortal-is-for) | a False Immortal is encountered or asked about, or a cultivator reaches ordinal 44 |
 | &nbsp;&nbsp;[The years are not the same for everybody](#the-years-are-not-the-same-for-everybody) | a False Immortal's remaining years are counted, claimed, or bargained with |
 | [Going mad from age](#going-mad-from-age) | **Tier 3** - never injected |
-| [The dao protector](#the-dao-protector) | a sect's protector is mentioned, or a False Immortal is offered a post |
-| &nbsp;&nbsp;[Typically they are your own](#typically-they-are-your-own) | a house is looking for a dao protector, or a protector's loyalty to the house is in question |
-| &nbsp;&nbsp;[It obliges nothing](#it-obliges-nothing) | a house gives its protector an instruction, or expects one to act on its behalf |
-| &nbsp;&nbsp;[The post is vacant, not abolished](#the-post-is-vacant-not-abolished) | somebody asks who holds the protector's post, or why no house has one |
+| [The Protector](#the-protector) | a sect's Protector is mentioned, or a False Immortal is offered a post |
+| &nbsp;&nbsp;[What a cultivator today means by "dao protector"](#what-a-cultivator-today-means-by-dao-protector) | somebody says dao protector and it is unclear which of the two they mean |
+| &nbsp;&nbsp;[Typically they are your own](#typically-they-are-your-own) | a house is looking for a Protector, or a Protector's loyalty to the house is in question |
+| &nbsp;&nbsp;[It obliges nothing](#it-obliges-nothing) | a house gives its Protector an instruction, or expects one to act on its behalf |
+| &nbsp;&nbsp;[The post is vacant, not abolished](#the-post-is-vacant-not-abolished) | somebody asks who holds a reserved Protector's chair, or why no house has one |
 | &nbsp;&nbsp;[Carving](#carving) | **Tier 3** - never injected |
 | &nbsp;&nbsp;[And the one man who is doing it now](#and-the-one-man-who-is-doing-it-now) | the living False Immortal is met, named, or sought out |
 | [What immortals leave behind](#what-immortals-leave-behind) | the player finds a designed inheritance, or asks who built one |
@@ -314,62 +315,95 @@ Two things this must not become. It is **not a monster generator** - see
 **not on Lu Sheng's road**: 640 years in with 11,000 remaining, his whole existence ends
 inside the second band. He is young, he is entirely sane, and he stays that way.
 
-## The dao protector
+## The Protector
 
-<!-- tier: 2 trigger="a sect's protector is mentioned, or a False Immortal is offered a post" -->
+<!-- tier: 2 trigger="a sect's Protector is mentioned, or a False Immortal is offered a post" -->
 
-The phrase does two jobs and the two senses almost never meet.
+**The ruling is `THE_OFFICE` in
+[`../../src/data/cultivation/false-immortals.ts`](../../../src/data/cultivation/false-immortals.ts)** -
+who may hold the post, what it obliges, what a house gets and pays, and what a reserved
+chair proves about the house holding it. What is here is what the world says about it.
 
-**At an ordinary sect it is a job, and it is filled.** A Nascent Soul who does not travel, a
-Core Formation veteran of forty years, somebody whose whole function is to be in the
-compound when something arrives. Unremarkable, and most houses that have the position have
-somebody in it right now.
+**In a lesser sect it is a job, and it is filled** - by a retired patriarch, somebody who has
+stopped climbing and does not travel, whose whole function is to be in the compound when
+something arrives. Unremarkable, and most houses that have the position have somebody in it
+right now.
 
-**At the top of the world it is reserved for a False Immortal,** and those houses will not
-fill it with anyone else. That is why the emptiness means something: an apex with a vacant
-protector's chair is not short of strong people, it is declining to pretend a strong person
-is the same thing.
+**At the top of the world a handful of houses reserve it for a False Immortal,** and will
+not fill it with anyone else. That is why *that* emptiness means something: an apex with a
+vacant chair is not short of strong people, it is declining to pretend a strong person is
+the same thing.
+
+**It is one office everywhere. What moves is the bar.** A lesser sect will take an ordinary
+strong person; a qualifying house will take nobody who is not a False Immortal, and is
+therefore empty. That is the whole of the difference, and it is why the emptiness reads as a
+statement rather than a shortage - the strong people are right there, and would fill the
+chair at a lesser house.
+
+**And a house can be at neither bar.** No filled post and no reserved one is the ordinary
+condition of a temple: **an abbot does not retire**, so the path that fills the chair never
+runs there, and without a False Immortal of its own there is nothing to hold it open for.
+
+### What a cultivator today means by "dao protector"
+
+<!-- tier: 2 trigger="somebody says dao protector and it is unclear which of the two they mean" -->
+
+Not this office. Ask anybody in either province and they will describe **the guard at a
+crossing** - somebody who stands over a helpless attempt for its duration - and they will
+have no idea the words also name a seat that has been held for two thousand years at a
+stretch. Eight centuries of vacancy drifted the phrase, and the surviving sense is the only
+one anybody uses. The two are related the way a watchman and a wall are related.
+
+**So the world is ambiguous here and this bible is not.** The **Protector** is the office;
+the **dao protector** is the act of guarding a crossing, and that is `DAO_PROTECTOR` in
+`crossings.ts`. Do not restore the old heading to match how people talk - the in-world
+confusion above is the thing being described, not a naming we share.
 
 ### Typically they are your own
 
-<!-- tier: 2 trigger="a house is looking for a dao protector, or a protector's loyalty to the house is in question" -->
+<!-- tier: 2 trigger="a house is looking for a Protector, or a Protector's loyalty to the house is in question" -->
 
-A protector is not hired. **They are one of yours who crossed and came back** - which means
-only a house that has itself produced somebody who reached the last crossing can expect one
-at all. Recruitment from outside happens and is rare, and it carries an awkwardness the
+This is about the **reserved** post. A reserved chair is not hired for. **It is held open for
+one of yours who crossed and came back** - and the qualifying fact is *came back*, not *got
+through*. Recruitment from outside happens and is rare, and it carries an awkwardness the
 internal case never does: somebody else's existence on your ground, with no history there
-and no reason to die for the place.
+and no reason to die for the place. `onlyAHouseThatProducedOneCanHaveOne` and
+`whatACrossingLeavesBehind` in `false-immortals.ts` are the ruling, including the third and
+commonest outcome - that nobody below ever learns which of the three it was.
 
-Which produces the reading worth having, and it is the opposite of failure. **Every
-completed crossing in the records is a house that could have had a protector and got a True
-Immortal instead.** Azure Cloud sent Ru Anjing 380 years ago. Sweptground sent the First
-Abbot 2,600 years ago and is now four monks with a chair. The Storm Tyrant Court sent the
-First Tyrant 3,400 years ago. The Hollow Court has sent six. Those chairs are empty because
-those houses succeeded.
+**So the great crossings in the records did not leave empty chairs. They left no reserved
+chair at all**, and a house in that position is not holding a vacancy, it simply has no such
+post. Azure Cloud sent Ru Anjing 380 years ago. Sweptground sent the First Abbot 2,600 years
+ago. The Storm Tyrant Court sent the First Tyrant 3,400 years ago. The Hollow Court has sent
+six. Not one of those houses is short a Protector. Their people succeeded.
 
 ### It obliges nothing
 
-<!-- tier: 2 trigger="a house gives its protector an instruction, or expects one to act on its behalf" -->
+<!-- tier: 2 trigger="a house gives its Protector an instruction, or expects one to act on its behalf" -->
 
-Eleven instruments survive and the obligations in all eleven run one way: the house
-undertakes, and the guest is described. **Not one contains a sentence in which the guest
-agrees to anything.** The one thing a house cannot do is give an order - a house that gives
-a protector an instruction has a protector until the end of the sentence.
+Play it as the thing everybody in the house already knows and nobody says: **a house that
+gives its Protector an instruction has a Protector until the end of the sentence.** One of
+the seven in the record left on exactly that, the same afternoon, and the house has never
+written down that it happened. Nothing binds them in either direction, and everyone
+concerned behaves as though something does.
 
-And nobody has ever banked one. The seal band runs Void Refinement to Tribulation
-Transcendence, ordinal 29 to 44; a False Immortal is 45. **No sect has ever held one in
-reserve because no sect could**, and every protector in the record was there by choice and
-free to leave at any hour.
+Nor can one be banked. The seal band stops at Tribulation Transcendence, ordinal 44; a False
+Immortal is 45. **No sect has ever held one in reserve because no sect could.**
+
+`whatItObliges`, `whatItCannotAskFor`, `whatTheHouseGets` and `whatTheHousePays` in
+`false-immortals.ts` carry the instruments and what the arrangement is actually worth to
+each side.
 
 ### The post is vacant, not abolished
 
-<!-- tier: 2 trigger="somebody asks who holds the protector's post, or why no house has one" -->
+<!-- tier: 2 trigger="somebody asks who holds a reserved Protector's chair, or why no house has one" -->
 
-Nobody ended it. No house struck it off a roll and no age closed it. It has had no incumbent
-anywhere for **eight hundred years**, and the reason is **a lack of False Immortals** - no
-falling-out, no turning point, nobody at fault. What "a lack" consists of is worth being
-precise about: production has not fallen. Residence has. They go looking, or the trajectory
-takes them, and no seal can hold one to keep them.
+The **reserved** chairs, not the filled ones - lesser sects have somebody in the post right
+now. Nobody ended the reserved seat. No house struck it off a roll and no age closed it. It
+has had no incumbent anywhere for **eight hundred years**, and the reason is **a lack of
+False Immortals** - no falling-out, no turning point, nobody at fault. Production has not
+fallen; residence has. `itIsVacantAndNotAbolished` and `THE_VACANCY` in `false-immortals.ts`
+carry why, and the tense matters everywhere it comes up.
 
 What is left is residue that says "vacant" better than any statement: a stipend line carried
 forward at the same figure for eight centuries and never drawn against, quarters swept on a
@@ -435,7 +469,7 @@ longer belongs to them the way holding their office would require. He likes them
 back. He does not appear to mind.
 
 **And he gives them dao lectures**, on no schedule and under no obligation, which is the
-substantive half of what a protector was ever for, being performed right now by the only
+substantive half of what a Protector was ever for, being performed right now by the only
 False Immortal in the world. He wants no name for it.
 
 One Seat did say something to him once - in person, alone, in the course of an afternoon

@@ -107,14 +107,23 @@ Cap and fit are independent, deliberately. A perfectly suited manual still runs 
 ill-suited one teaches nothing at any height. A route that closes one gap does not close the
 other, and no route below is allowed to pretend otherwise.
 
-### 2. The gate is access, not effort
+### 2. Access puts a road in reach, and years are what walk it
 
-Somebody fully supplied - a house's treasury for pills, its library for manuals - and
-genuinely suited, and with the years left, can climb the whole ladder having done nothing
-else. That is not a hole. It is the specification. `discoverableInsights` is already
-access-shaped: it reads `readableManuals`, `teachers`, `artifacts`, `inheritances`,
-`tradition`, `locationTags` and `survived`, and a hermit with none of those reaches their
-own root and nothing else forever.
+The requirement names what must be **in reach**, never what must be done: there is no deed
+here and no quest, and nothing on any of these routes is earned by completing something.
+`discoverableInsights` is already access-shaped - it reads `readableManuals`, `teachers`,
+`artifacts`, `inheritances`, `tradition`, `locationTags` and `survived`, and a hermit with
+none of those reaches their own root and nothing else forever.
+
+**But access alone is not the whole answer, and this rule used to say it was.** Every kind
+of access now carries a price in years of practice, charged the same way to everybody, in
+[`../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.ts`](../../../src/engine/cultivation/what-a-road-in-reach-costs-to-walk.ts).
+A cliff is forty years. A carving is eight, because it is a text. **Nobody may be somewhere
+for an afternoon and leave with a road.** The banner on
+[`places-that-teach-a-dao.ts`](../../../src/data/cultivation/places-that-teach-a-dao.ts) is
+the ruling; the reason it changed is the one this repo keeps relearning - under the old
+reading an NPC held every road their access could supply from the day they were born, free,
+while a player standing on the same cliff held none.
 
 But that road only works if you are a heaven-defying prodigy perfectly suited to what the
 house in front of you happens to hold. The corridor table above is the proof: at three
