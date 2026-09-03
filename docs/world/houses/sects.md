@@ -466,6 +466,14 @@ available, expensive, and visible. `spendStanding`, `backlashLevel`, `obstructio
 `departuresAt` are already the machinery for what a leadership act costs and what it provokes;
 turning somebody out of their office is one.
 
+**And removal has two degrees.** He can take the room away, leaving an office-less elder -
+the rare, earned, strictly-worse seat, reached this time by being pushed rather than carried.
+Or he can **expel them from the house entirely.** Both cost him; the second costs more, and it
+buys something worse than resentment. An expelled elder walks out with **elder standing, their
+arts, and whatever following went with them** - a person with a grudge, resources and nothing
+left to lose inside the house that made them. Turning somebody out of a room leaves an enemy
+you still have to sit with. Turning them out of the house leaves one you cannot see.
+
 **The elders have no formal protection and a real one.** Nothing in the rules stops a head
 removing them. What stops him is that each removal buys resentment he has to keep paying for,
 and a head who has spent enough of it is a head the room can overrule - which is the tier that
