@@ -488,6 +488,16 @@ a personal disciple **gets the bulk of it** - and they are not the house's disci
 *theirs*. That is the difference between being taught in a house and being somebody's student,
 and it is the route by which anything the head personally holds reaches anybody at all.
 
+**The room may argue about it and the head decides.** Elders can have opinions about who is
+taken, and they have them - but this is the head's personal matter and the final say is theirs.
+It is the one choice in a house that is not the room's to settle.
+
+**And a personal disciple's place dies with their master's.** When a head dies, or **retires
+into being an elder because they are old**, their personal disciples **are demoted**. The tie
+was to a person, not to the house, so it does not survive that person leaving the position -
+and the next head takes their own. That is the risk carried by the best seat below the top:
+everything you have depends on somebody else keeping theirs.
+
 So the scarcity at the top is sharper than the scarcity at the elder rung, and it is the same
 shape: **more people who could than places to be.** A conclave disciple passed over for
 personal disciple has not failed at anything - somebody else was chosen, and there were only
