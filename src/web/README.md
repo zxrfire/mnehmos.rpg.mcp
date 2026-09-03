@@ -247,12 +247,46 @@ Five rules it must keep, and each of them is a way this could go wrong:
   teaches a player that categories exist. So `whatIsLiveHere` hands in names it
   has already run a gate over - `isAwareOf` for a face, `canPointAt` for a road,
   nothing at all for the ground underfoot - and this module composes sentences
-  from them and never widens what it was given. A stranger stays a count, which
-  is what the file's older *a count and never a name* was always protecting.
-  `namesSomething` marks the entries where a gated name reached the sentence,
-  and it is a sort key: with the client's row capped at five, what gets cut
-  matters more than what gets generated, so a named line takes the tie off the
-  category above it and never climbs an urgency band.
+  from them and never widens what it was given. `namesSomething` marks the
+  entries where a gated name reached the sentence, and it is a sort key: with
+  the client's row capped at five, what gets cut matters more than what gets
+  generated, so a named line takes the tie off the category above it and never
+  climbs an urgency band.
+
+  **This rule replaced a stricter one and it is not a relaxation. Read the next
+  three paragraphs before adding a name to anything here.**
+
+  The older rule was *A COUNT AND NEVER A NAME*, written five times in the
+  module, and it existed for a reason that has not gone away: **this surface
+  renders on every state read**, and the reads it points at are the things that
+  do the granting. `readTheWall` writes a knowledge row for every house on the
+  paper; `learnTheSeller` writes one for a person who turned round and addressed
+  you. A panel that named the houses on the wall, or the four people trading in
+  the square, would hand over those records every time it drew - to somebody
+  standing still, who had walked over to nothing. That is a discovery bypass
+  wearing a user interface, and it is worth more care than the row it improves.
+
+  What was wrong with it is that it was a **proxy** for the constraint rather
+  than the constraint. It forbade printing a name the player already holds a
+  record for - one the read it routes to would print on its own - and so the
+  square could never say *Wei Lanya is standing here* to somebody who has known
+  Wei Lanya since before either of them was anybody. The real constraint is
+  **who ran the gate**, and the test for any name you want to add is that
+  question and never *is a name allowed here*:
+
+  > A name may appear only because a caller that had the knowledge table in
+  > front of it decided this holder may have it. If this module could have
+  > worked the name out from what it was handed, that is widening, and it is
+  > forbidden however true the name is.
+
+  So the counts that are still counts are still counts **on purpose**, and none
+  of them may be promoted without moving the gate first: `paperOnTheWall` is
+  bills and days and no house name, `peopleHereWithSomethingToSell` and
+  `peopleHere` are headcounts, `dutiesGoing` is a number off a board, and
+  `groundThatTeachesARoad` counts ground the player holds records for while
+  naming only the one piece they are standing on. Each of those is one gate
+  short of being nameable, and the fix is always to gate it at the caller - not
+  to relax this rule, which has already been relaxed exactly as far as it goes.
 
 Two tests, and they answer different questions.
 [`what-is-worth-doing.test.ts`](../../tests/web/what-is-worth-doing.test.ts) drives
