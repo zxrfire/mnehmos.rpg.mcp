@@ -52,6 +52,32 @@
  * silence and the situation decides - the way a submission is what makes
  * `hand_over` the obvious thing to offer, rather than any word in the
  * sentence.
+ *
+ * ── AND THIS STAYS NARROW. DO NOT WIDEN IT ───────────────────────────────
+ *
+ * There is a second failure that looks like this one and is its opposite, and
+ * they must not be folded together.
+ *
+ *   HERE: the sentence does not contain the answer, so refuse to choose.
+ *   "I skim from the treasury" does not say which direction the stones went
+ *   in any word a reader could find.
+ *
+ *   THE OTHER: the sentence contains the answer plainly and the resolver has
+ *   no category for it. "who is the strongest person here" is unambiguous to
+ *   anybody who reads it; what fails is that the subject chain matches NAMES
+ *   and was handed a DESCRIPTION. That is a missing category, not an
+ *   unanswerable question, and it is fixed by reading the sentence better
+ *   rather than by declining to read it.
+ *
+ * One is refusing to read more than the words carry. The other is failing to
+ * read what the words plainly say. A guard admitting both stops being a claim
+ * about what sentences can carry and becomes a general-purpose fallback that
+ * hands out an answer - which is the shape this repo keeps having to unpick.
+ *
+ * What keeps the rows below safe is that each names a SPECIFIC pair or
+ * cluster and says why the words cannot separate it. Nothing is admitted here
+ * on the general ground that state ought to decide, because that ground would
+ * admit almost anything.
  */
 
 /** How a set of intents fails, which decides nothing here but explains it. */
