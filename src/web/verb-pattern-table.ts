@@ -2216,7 +2216,7 @@ export const SELLING_SUBJECT_VERBS = new RegExp(`${SELLING_VERBS}|offer|offers|o
  * `market` and does not become an attempt to empty the pouch.
  */
 export const SELLING_ASKED_AS_A_BOARD =
-    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading))\b/;
+    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading)|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/;
 
 export const BUYING_A_PERSON_OFF =
     /\b(?:bribe|bribes|bribing|pay off|pays off|grease|buy (?:his|her|their|the \w+'s) silence|pay (?:him|her|them) (?:off|to))\b/;
@@ -2548,6 +2548,28 @@ const AIMED_AT_THE_LADDER =
     /\b(?:the )?(?:barrier|bottleneck|blockage|realm boundary|wall|ceiling|next (?:rank|realm))\b/;
 
 const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip/;
+
+/**
+ * Phrases where an attack word is part of an idiom about something else.
+ *
+ * `strike up a conversation` is the whole reason this exists, and it is the
+ * worst shape a misroute can have: the sentence reaches `attack`, the target
+ * becomes the literal string "up a conversation with Bai Minping", and a
+ * player who meant to be friendly swings at somebody. It is not a refusal - it
+ * is a different act, reported as done.
+ *
+ * Same class as {@link AIMED_AT_THE_LADDER}, which keeps `hit` off "have I hit
+ * a wall". The difference is that a ladder noun is a thing the object model
+ * does not contain, and this is a VERB PARTICLE: `strike up` is never the
+ * striking verb, whatever follows it, so the exemption is on the phrase and
+ * not on what it is aimed at.
+ *
+ * Keep it to phrases where the attack reading is IMPOSSIBLE rather than merely
+ * unlikely. `strike a deal` and `strike camp` qualify; `strike first` does not
+ * and must not be added.
+ */
+const AN_ATTACK_WORD_INSIDE_AN_IDIOM =
+    /\bstrike(?:s|ing)? up\b|\bstrike(?:s|ing)? (?:a deal|a bargain|camp|it rich)\b|\bhit(?:s|ting)? it off\b/;
 
 /**
  * NOT EXPORTED, AND THAT IS LOAD-BEARING.
@@ -2883,7 +2905,12 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
     // Bowing is how somebody opens with an elder in this setting, and it was
     // the one courtesy with no line at all.
-    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|bows? to|bowing to|nods? to|pay my respects to|salutes?)\b/]
+    // `strike up a conversation` is here rather than left to `converse`,
+    // because the words a player uses for opening politely are the words the
+    // attack table also owns - see `AN_ATTACK_WORD_INSIDE_AN_IDIOM`, which
+    // stops it swinging. Exempting it there and not claiming it here would
+    // trade a wrong act for a refusal, which is better and is not the answer.
+    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|strike(?:s|ing)? up a conversation|bows? to|bowing to|nods? to|pay my respects to|salutes?)\b/]
 ];
 
 // `warn` is in the threaten intent and was not here, so "I warn him to stay
@@ -2900,7 +2927,7 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 const ASKING_AFTER_WORK =
     /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
 
-const INTERACT_SUBJECT_VERBS =/interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
+const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
 
 /**
  * Turn free text into one action, with no model involved.
@@ -3090,6 +3117,7 @@ function planIntent(input: string): PlannedAction {
     // First, because every sentence about a fight is full of other verbs' nouns.
     if (!AIMED_AT_THE_LADDER.test(text)
         && !GOING_FOR_CARE.test(text)
+        && !AN_ATTACK_WORD_INSIDE_AN_IDIOM.test(text)
         && (usedAsVerb(text, 'attack|attacks|strike|strikes|hit|hits|fight|fights|kill|kills|'
             + 'cut down|draw on|swing at|go for|set (?:on|upon)|jump|ambush|assault|'
             // The words a player uses when the killing is the point rather than
@@ -3941,7 +3969,7 @@ function planIntent(input: string): PlannedAction {
         // `buying` in verb position belong to the two rules above this one and
         // must keep doing so, which is why every alternative here is anchored
         // on an interrogative and a person-word rather than on a bare verb.
-        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling)\b/.test(text)) {
+        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/.test(text)) {
         return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
     }
 
