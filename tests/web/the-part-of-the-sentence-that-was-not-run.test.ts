@@ -22,12 +22,12 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame } from './harness';
+import { makeGame, makeGameInWorld } from './harness';
 import {
     theClauseThisTurnDidNotRun,
     sayingWhatWasNotDone
 } from '../../src/web/the-part-of-the-sentence-that-was-not-run';
-import { parseIntent } from '../../src/web/actions';
+import { parseIntent, theWholeSentenceIsAQuestion } from '../../src/web/actions';
 
 const dropped = (said: string) => theClauseThisTurnDidNotRun(said, parseIntent(said).action);
 
@@ -188,7 +188,117 @@ describe('an ordinary sentence that happens to contain "and"', () => {
     });
 });
 
+/**
+ * A question has no clauses that propose anything.
+ *
+ * Filed from a played run against ollama, standing on dense ground:
+ *
+ *   > is it safe to sit and cultivate here, or will someone bother me?
+ *
+ * The split lands on the `and` inside "sit and cultivate" - one verb phrase, not
+ * two acts - and the tail, "cultivate here, or will someone bother me", reads
+ * alone as a thirty-day cultivate. The turn declined it and then REPORTED it,
+ * which is where the damage is: the report's own sentence is *"You said two
+ * things, and only the first of them was done"*, and the player's first half is
+ * "is it safe to sit and cultivate here". That fact line went to phase 3, and
+ * the narrator wrote "You begin to settle into your meditation, drawing the
+ * ambient energy into yourself."
+ *
+ * So the narrator was not ignoring its constitution. It was told the sitting
+ * ran. This is the one shape `narrator.ts`'s ruling - the model stops lying when
+ * the turn tells it what was not done - does not cover, because here the turn
+ * told it something and the something was wrong.
+ *
+ * The family, not the instance. Every sentence below is one question with a
+ * verb inside it, and none of them proposes an act.
+ */
+describe('a question, and the clauses inside one', () => {
+    const QUESTIONS = [
+        'is it safe to sit and cultivate here, or will someone bother me?',
+        'is it safe to sit and cultivate here?',
+        'is it safe to stay and gather herbs here, or will someone stop me?',
+        'is it dangerous to sit and cultivate here, or will someone bother me?',
+        'can I sit and cultivate here, or will someone bother me?',
+        'can I rest and cultivate here, or is someone going to bother me?',
+        'should I sit and cultivate here or move on?',
+        'is it wise to sit and cultivate here, or will someone bother me?',
+        'is it worth it to stay and cultivate here or should I move on',
+        'how do I sit and cultivate here without someone bothering me?',
+        'where can I sit and cultivate without being disturbed?',
+        'what would it take to stay here and cultivate for a year?'
+    ];
+
+    it('reports no clause of any of them', () => {
+        for (const said of QUESTIONS) {
+            // Both the reading the sentence gets on its own AND the reading a
+            // model gave it in the played run, because the reporter is handed
+            // whatever actually ran and must be right either way.
+            expect(dropped(said), said).toBeNull();
+            expect(theClauseThisTurnDidNotRun(said, 'assess'), said).toBeNull();
+        }
+    });
+
+    it('is the mood of the SENTENCE, taken before it is cut up', () => {
+        // The demonstrated case in one assertion: the tail, read on its own,
+        // really is a costly cultivate - which is why reading each clause in
+        // isolation could never have caught this.
+        const tail = 'cultivate here, or will someone bother me';
+        expect(parseIntent(tail).action).toBe('cultivate');
+        expect(theWholeSentenceIsAQuestion(tail)).toBe(false);
+        expect(theWholeSentenceIsAQuestion(
+            'is it safe to sit and cultivate here, or will someone bother me?'
+        )).toBe(true);
+    });
+
+    it('and a command is still a command, however many verbs it holds', () => {
+        // The guard on the guard. Suppressing a report is cheap for a question
+        // and is the whole defect for a plan, so the six mirror cases the file
+        // was written for must still be caught.
+        for (const [said, action] of [
+            ['I buy a month of rations and eat', 'eat'],
+            ['I gather herbs and go to the market', 'gather'],
+            ['I cultivate and eat when I am hungry', 'cultivate'],
+            ['I go to Nine Peaks and look for a teacher', 'move'],
+            ['I eat and then cultivate for a year', 'cultivate'],
+            ['I sell the herbs and buy a pill', 'buy']
+        ] as const) {
+            expect(dropped(said)?.action, said).toBe(action);
+        }
+    });
+});
+
 describe('played', () => {
+    /**
+     * Measured where the player would notice it: the prose, and the fact line
+     * behind the prose.
+     *
+     * The world is pinned because an unpinned played test pins a coincidence.
+     * The narrator here is the deterministic one, which is the harder arm for
+     * this defect rather than the easier: it ships `facts.prose` verbatim, so
+     * the false report cannot be hidden by a model choosing not to mention it.
+     */
+    it('answers a question about cultivating without reporting a cultivate', async () => {
+        const { game } = await makeGameInWorld({ worldSeed: 'the-sounding-question' });
+        await game.newRun('Shen Wuyou');
+
+        const before = await game.state();
+        const result = await game.act('is it safe to sit and cultivate here, or will someone bother me?');
+
+        // Nothing was spent - it was a question.
+        expect(result.state.run.elapsedDays).toBe(before.run!.elapsedDays);
+        expect(result.state.cultivator.cultivationProgress)
+            .toBe(before.cultivator!.cultivationProgress);
+
+        // And nothing claims half the sentence was declined, in either of the
+        // two channels a player reads.
+        expect(result.narration).not.toContain('of them was done');
+        expect(result.narration).not.toContain('will someone bother me" was not');
+        const engineSaid = result.state.log
+            .filter(e => e.role === 'engine').map(e => e.text).join('\n');
+        expect(engineSaid).not.toContain('Not run:');
+        expect(result.toolCalls.some(c => c.name === 'engine.parseIntent')).toBe(false);
+    });
+
     it('buys the rations, does not eat, and says so', async () => {
         const { game } = makeGame({ worldEnabled: true });
         await game.newRun('Shen Wuyou');
