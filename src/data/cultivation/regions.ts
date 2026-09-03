@@ -295,11 +295,88 @@ export const RegionConnectionSchema = z.object({
 });
 export type RegionConnection = z.infer<typeof RegionConnectionSchema>;
 
+/**
+ * How two places INSIDE one province are joined. An adjacency list with a
+ * time, which is the shape one level up and deliberately the same one.
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * `connections` above is province-to-province. Inside a province the only
+ * containment was `Prefecture.places[]`, and prefectures exist in two of the
+ * provinces - so in the other three there was no way to say that two places
+ * are near each other at all, and the played game charged the same flat day
+ * for stepping across a valley as for crossing the world.
+ *
+ * IT IS NOT A SECOND DISTANCE, AND THAT IS THE WHOLE CONSTRAINT
+ * ------------------------------------------------------------
+ * `how-far-somebody-can-fold-space-and-what-it-costs.ts` states the rule this
+ * obeys: every road in this world is quoted in WALKING DAYS, on
+ * `travelDays`, and a second unit would be a second opinion about how far
+ * apart two places are. So this carries the same field, in the same unit,
+ * read by the same function - `daysOnTheRoadTo` in `src/web/travel-verbs.ts`
+ * is the single reader of what a journey costs and it is the single reader of
+ * this too.
+ *
+ * The two layers cannot quote different numbers for one pair because their
+ * domains are disjoint by rule: a province connection prices a crossing
+ * BETWEEN provinces, a place connection prices a road WITHIN one, and
+ * `bothEndsAreInOneProvince` below is asserted by a test. There is no pair of
+ * places for which both layers have an answer.
+ *
+ * STORED ONCE, READ BOTH WAYS
+ * ---------------------------
+ * A road is declared on exactly one of its two ends and
+ * {@link placeRoadDays} walks it in either direction. Province connections
+ * are stored twice - each region lists the other - and two rows that can
+ * disagree eventually will; there is nothing to gain from repeating that at a
+ * scale where a whole province's roads sit in one file, in front of one
+ * reader. `linkLocations` in `engine/world/locations.ts` already writes both
+ * directions into the runtime graph and calls a one-way road a bug, so the
+ * seeded world is symmetric by construction from a single catalog row.
+ *
+ * SPARSE, AND ABSENCE IS NOT UNREACHABILITY
+ * -----------------------------------------
+ * Most places have no neighbour here and should not. A pair with no row falls
+ * through to whatever priced the journey before - the flat `SHORT_ACTION_DAYS`
+ * inside a province - exactly as it did. Nothing becomes unreachable for
+ * lacking a row, and `daysOnTheRoadTo` returns null rather than a number,
+ * which it already documents as meaning "unpriced" and never "free".
+ *
+ * `kind` IS THE ENGINE'S OWN `LinkKind`, NOT A NEW VOCABULARY
+ * ----------------------------------------------------------
+ * The province-scale kinds are SOCIAL - a trade route, a refugee flow, a
+ * shared feud - because what two provinces have between them is a
+ * relationship. Two towns of one province do not have a refugee flow; what
+ * they have is a way, and how the way is made is what decides whether it is
+ * open, whether it needs a key, and what the map draws. That is exactly
+ * `LinkKind` in `engine/world/locations.ts`, which already carries all three
+ * behaviours, so this enum is that union restated rather than a second
+ * vocabulary beside it - and `seeding.ts` hands the value straight to
+ * `linkLocations` with no mapping table, which is what makes the typechecker
+ * the guard rather than a test.
+ */
+export const RegionPlaceConnectionSchema = z.object({
+    /** `LinkKind` in `engine/world/locations.ts`. Passed through untranslated. */
+    kind: z.enum(['road', 'path', 'tunnel', 'gate', 'portal', 'seam']),
+    /** The `name` of the other place, in the same province. */
+    otherPlaceName: z.string().min(1),
+    description: z.string().min(40),
+    /** Walking days. The same unit and the same field as a province road. */
+    travelDays: z.number().int().min(0)
+});
+export type RegionPlaceConnection = z.infer<typeof RegionPlaceConnectionSchema>;
+
 export const RegionPlaceSchema = z.object({
     name: z.string().min(1),
     kind: z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city', 'waystation', 'site']),
     ambient: AmbientQiSchema,
-    note: z.string().min(20)
+    note: z.string().min(20),
+    /**
+     * Places next to this one, declared on one end only. Sparse: absence
+     * means "no special adjacency", never "unreachable". See
+     * {@link RegionPlaceConnectionSchema}.
+     */
+    connections: z.array(RegionPlaceConnectionSchema).optional()
 });
 export type RegionPlace = z.infer<typeof RegionPlaceSchema>;
 
@@ -808,9 +885,43 @@ const THE_FIVE_PROVINCES: readonly Region[] = [
         ],
         places: [
             { name: PLACE.LOW_FALL, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
-            { name: PLACE.SCARWATER, kind: 'market_town', ambient: 'thin', note: 'The last ford before the border road, and where Marches goods are sold.' },
+            {
+                name: PLACE.SCARWATER,
+                kind: 'market_town',
+                ambient: 'thin',
+                note: 'The last ford before the border road, and where Marches goods are sold.',
+                // THE LEG THE PROVINCE ROAD DOES NOT COVER, and it is the
+                // reason this field exists rather than an illustration of it.
+                //
+                // The `trade_route` to the Quiet Marches below quotes its
+                // eleven days as "the border road from Scarwater to Kettle" -
+                // so the figure starts at the ford, and the stretch from the
+                // province town out to the ford has never been priced by
+                // anything. `daysOnTheRoadTo` charged a player one flat day
+                // for it, the same day it charged for stepping anywhere else
+                // inside a province, and the catalog had no way to say
+                // otherwise: `Prefecture.places[]` puts two names in one
+                // catchment without saying either is near the other.
+                //
+                // Two days, and it is authored here the way `travelDays: 11`
+                // is authored twenty lines down - a gazetteer is where a
+                // distance in this world comes from. What would have been the
+                // fabrication is the ENGINE picking a number where the catalog
+                // states none, which is the mistake `whereCouldTheyGo`
+                // records having made once and which the null return from
+                // `placeRoadDays` still prevents.
+                connections: [
+                    {
+                        kind: 'road',
+                        otherPlaceName: PLACE.LOW_FALL,
+                        description:
+                            'The gorge road down from the province town to the ford, worked by carts in both directions every day of the year, and the stretch every quoted figure for the western road silently leaves off the front of itself.',
+                        travelDays: 2
+                    }
+                ]
+            },
             { name: PLACE.SWEPTGROUND, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
-            { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' }
+            { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' },
         ],
         exports: [
             'refined pills and formulae, which the Marches cannot make at all',
@@ -1601,6 +1712,19 @@ interface RegionIndices {
     byFaction: ReadonlyMap<string, string>;
     ambientByPlaceName: ReadonlyMap<string, AmbientQi>;
     regionIdByPlaceName: ReadonlyMap<string, string>;
+    /**
+     * Every place road, filed under BOTH of its ends off one declared row.
+     *
+     * This is where "stored once, read both ways" is actually made true. The
+     * catalog states a road on one end; this index files it under both, so no
+     * reader anywhere has to know which end it was written on and there is
+     * never a second row to disagree with the first.
+     *
+     * Nested rather than keyed on a joined pair string, because place names
+     * have spaces in them and any separator a name can contain makes one
+     * pair's key a prefix of another's.
+     */
+    placeRoadsFrom: ReadonlyMap<string, ReadonlyMap<string, RegionPlaceConnection>>;
 }
 
 let INDICES: RegionIndices | null = null;
@@ -1611,12 +1735,29 @@ function indices(): RegionIndices {
     const byFaction = new Map<string, string>();
     const ambientByPlaceName = new Map<string, AmbientQi>();
     const regionIdByPlaceName = new Map<string, string>();
+    const placeRoadsFrom = new Map<string, Map<string, RegionPlaceConnection>>();
+    const fileRoad = (from: string, road: RegionPlaceConnection): void => {
+        const key = from.trim().toLowerCase();
+        let out = placeRoadsFrom.get(key);
+        if (!out) placeRoadsFrom.set(key, out = new Map());
+        const to = road.otherPlaceName.trim().toLowerCase();
+        // A shorter row wins where a province states two ways between one
+        // pair, which is the rule `daysOnTheRoadTo` already applies to
+        // province roads: a road is as long as the shortest road there is.
+        const seen = out.get(to);
+        if (!seen || road.travelDays < seen.travelDays) out.set(to, road);
+    };
     for (const region of REGIONS) {
         byId.set(region.id, region);
         for (const factionId of region.factionIds) byFaction.set(factionId, region.id);
         for (const place of region.places) {
             ambientByPlaceName.set(place.name.toLowerCase(), place.ambient);
             regionIdByPlaceName.set(place.name.toLowerCase(), region.id);
+            for (const road of place.connections ?? []) {
+                // The declared direction, and the mirror of it.
+                fileRoad(place.name, road);
+                fileRoad(road.otherPlaceName, { ...road, otherPlaceName: place.name });
+            }
         }
     }
     // A PROVINCE IS SOMEWHERE YOU CAN STAND, so its own name has to answer too.
@@ -1636,8 +1777,63 @@ function indices(): RegionIndices {
         const key = region.name.toLowerCase();
         if (!regionIdByPlaceName.has(key)) regionIdByPlaceName.set(key, region.id);
     }
-    INDICES = { byId, byFaction, ambientByPlaceName, regionIdByPlaceName };
+    INDICES = { byId, byFaction, ambientByPlaceName, regionIdByPlaceName, placeRoadsFrom };
     return INDICES;
+}
+
+/**
+ * The road between two named places of one province, or undefined.
+ *
+ * Undefined means UNPRICED and never unreachable - see
+ * {@link RegionPlaceConnectionSchema}. Direction does not matter: the road is
+ * declared on one end and indexed under both.
+ */
+export function placeRoadBetween(
+    fromPlaceName: string | null | undefined,
+    toPlaceName: string | null | undefined
+): RegionPlaceConnection | undefined {
+    if (!fromPlaceName || !toPlaceName) return undefined;
+    return indices().placeRoadsFrom
+        .get(fromPlaceName.trim().toLowerCase())
+        ?.get(toPlaceName.trim().toLowerCase());
+}
+
+/**
+ * What that road costs on foot, in walking days, or null where none is stated.
+ *
+ * The place-scale twin of the loop over `region.connections` in
+ * `daysOnTheRoadTo`, and it returns the same thing in the same unit so that
+ * the one function pricing a journey has one more source and still exactly
+ * one answer.
+ */
+export function placeRoadDays(
+    fromPlaceName: string | null | undefined,
+    toPlaceName: string | null | undefined
+): number | null {
+    return placeRoadBetween(fromPlaceName, toPlaceName)?.travelDays ?? null;
+}
+
+/**
+ * Everywhere the catalog says is next to this place, in walking days.
+ *
+ * Both the roads declared ON this place and the ones declared on its
+ * neighbours pointing back at it, because a caller asking what is next to
+ * somewhere should not have to know which end the author wrote it on.
+ */
+export function placesNextTo(
+    placeName: string | null | undefined
+): Array<{ name: string; travelDays: number; kind: RegionPlaceConnection['kind']; description: string }> {
+    if (!placeName) return [];
+    const roads = indices().placeRoadsFrom.get(placeName.trim().toLowerCase());
+    if (!roads) return [];
+    return [...roads.values()]
+        .map(road => ({
+            name: road.otherPlaceName,
+            travelDays: road.travelDays,
+            kind: road.kind,
+            description: road.description
+        }))
+        .sort((a, b) => a.travelDays - b.travelDays || a.name.localeCompare(b.name));
 }
 
 /**

@@ -30,6 +30,7 @@ import { cashToStones } from '../data/cultivation/mortal-world.js';
 import {
     REGIONS,
     localPrice,
+    placeRoadDays,
     regionIdOfPlace,
     requireRegion
 } from '../data/cultivation/regions.js';
@@ -187,10 +188,11 @@ export const travelVerbs = {
         // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
         // as the reason a fold could not be shown to save anybody anything.
         //
-        // Only where the catalog states a figure. Nothing anywhere prices a
-        // road between two settlements of one province, and inventing a number
-        // for one is the fabricated-zero mistake `whereCouldTheyGo` records
-        // having made once already - so inside a province the flat day stands.
+        // Only where the catalog states a figure, at either of the two scales
+        // it states one at - a province road, or a road between two named
+        // places of one province. Inventing a number where it states none is
+        // the fabricated-zero mistake `whereCouldTheyGo` records having made
+        // once already, so an unpriced journey still costs the flat day.
         const onTheRoad = this.daysOnTheRoadTo(cultivator, place.name) ?? SHORT_ACTION_DAYS;
 
         const startDay = Math.floor(run.elapsedDays);
@@ -279,24 +281,60 @@ export const travelVerbs = {
     // every verb here goes through it, `move` included - so a fold that saves
     // ten days saves ten days that were being spent.
     //
-    // What that does NOT change: a journey the catalog does not price. Nothing
-    // anywhere states a road between two settlements of one province, and a
+    // What that does NOT change: a journey the catalog does not price. A
     // fabricated number is the mistake `whereCouldTheyGo` records having made
-    // once already. Inside a province the flat day stands.
+    // once already, so an unpriced pair still costs the flat day. Since
+    // `RegionPlaceConnectionSchema` landed, the catalog can state a road
+    // between two named places of ONE province as well, and
+    // {@link daysOnTheRoadTo} reads that at the same scale in the same unit -
+    // so the set of unpriced journeys is smaller and the rule about them is
+    // exactly as it was.
     // ─────────────────────────────────────────────────────────────────────
 
     /**
      * What the catalog says this road costs on foot, or null where it says
      * nothing.
      *
-     * Null means "unpriced", never "free". Two settlements of one province
-     * have no stated road between them and never have had; so does a place the
-     * gazetteer does not contain, which is most of the ground a player can
+     * Null means "unpriced", never "free". A place the gazetteer does not
+     * contain has no stated road, and that is most of the ground a player can
      * legitimately stand on.
+     *
+     * ── TWO SOURCES, ONE ANSWER, AND NO SECOND DISTANCE ─────────────────
+     *
+     * There are two scales at which the catalog states a road and this is the
+     * only function that reads either, which is the whole of why they cannot
+     * disagree:
+     *
+     *   place road    `placeRoadDays`, between two named settlements INSIDE
+     *                 one province. Sparse - most pairs have none.
+     *   province road `region.connections`, BETWEEN two provinces.
+     *
+     * Their domains are disjoint by rule - a place road may not cross a
+     * province boundary, and `regions.ts` carries a test that asserts it - so
+     * no pair of places has an answer from both. This is not a fallback chain
+     * where a nearer number overrides a farther one; it is one question asked
+     * of whichever layer is the one that answers it.
+     *
+     * Both are quoted in WALKING DAYS, which is the unit
+     * `how-far-somebody-can-fold-space-and-what-it-costs.ts` insists on for
+     * exactly this reason: a second unit for distance would be a second
+     * opinion about how far apart two places are, and `priceFold` compares
+     * its reach against whatever comes out of here.
+     *
+     * A pair with no row anywhere still falls through to the flat
+     * `SHORT_ACTION_DAYS` at the call site, unchanged. Absence of an
+     * adjacency has never meant unreachable and does not start meaning it.
      */
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
         const from = requireRegion(standingOf(cultivator).regionId);
+
+        // The finer scale first, because it is the one that can answer at all
+        // when both ends are in one province. It reads both directions off a
+        // row the catalog states once.
+        const nextDoor = placeRoadDays(placeName(cultivator), destination);
+        if (nextDoor !== null) return nextDoor;
+
         const toRegionId = regionIdOfPlace(destination)
             ?? REGIONS.find(region => bare(region.name) === bare(destination))?.id
             ?? null;
