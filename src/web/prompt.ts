@@ -749,6 +749,27 @@ export function composeIntentUser(input: string, stateSummary: string): string {
         'CURRENT STATE',
         stateSummary,
         '',
+        // -- THE REMINDER GOES NEXT TO THE SENTENCE, NOT ONLY AT THE TOP --
+        //
+        // The system prompt carries the whole glossary and the plan rules, and
+        // a large model reads them. A small local one weights what is nearest
+        // the question, and measured on ollama/gemma4:26b the failure is always
+        // the same shape: a three-clause sentence comes back with two steps,
+        // and the clause it drops is the middle one - which is the clause the
+        // other two were for.
+        //
+        // So the rules that actually get violated are restated immediately
+        // above the player's words. Nothing new is said here; it is the same
+        // contract, at the distance the model is reading from. Kept to four
+        // lines on purpose - a second copy of the glossary would push the
+        // sentence itself further away, which is the problem rather than the
+        // fix.
+        'BEFORE YOU ANSWER',
+        '- Count the acts in the sentence. Answer with that many steps, in that order.',
+        '- Say what was ATTEMPTED, never what succeeded. The engine decides outcomes.',
+        '- Route a hostile act as the act it is: taking is steal, a blow is attack.',
+        '  Never soften one into something milder, and never decline to route one.',
+        '',
         'PLAYER SAID',
         input.slice(0, 1000),
         '',
