@@ -207,7 +207,7 @@ describe('counted and tracked are different answers and both are correct', () =>
             ownerId: 'sect-a', ownerName: 'Crimson Abyss Hall'
         });
         const out = whatBecomesOfIt(row, hand(34), always);
-        const back = writeBack(row, out, { onDay: 900, source: 'the war with the Ash Clan' });
+        const back = writeBack(row, out, { onDay: 900, source: 'the war with the Kiln Clan' });
         expect(back.row).not.toBeNull();
         expect(isRuined(back.row as ObjectRecord)).toBe(true);
         expect((back.row as ObjectRecord).ownerId).toBe('sect-a');
@@ -217,7 +217,7 @@ describe('counted and tracked are different answers and both are correct', () =>
 
 describe('being broken and being mended are events in the thing\'s history', () => {
     it('a hole is a link in the chain with a date and a cause on it', () => {
-        const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Ash Clan' });
+        const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Kiln Clan' });
         const out = whatBecomesOfIt(row, hand(30), never);
         const back = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Hall' });
         const marked = back.row as ObjectRecord;

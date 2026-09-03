@@ -1839,11 +1839,33 @@ object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
                  COUNTED thing can only be held or gone, because there is no
                  row to write a scar onto. `mend` gives a rung back, gated by
                  the same `canUnmake` that governs making and unmaking
+sheltering.ts    what being inside something is worth, and it is not a bonus.
+                 `canUnmake` read with the thing in the way: a hull rated 29
+                 stands between its passengers and everybody below 29,
+                 categorically. Covers a hull, a vault, a hall and a formation
+                 off the same field and knows about none of them, and the
+                 degradation is free - a holed hull is rated a rung lower, so
+                 it shelters a rung less with no code. NOT a second opinion
+                 about `how-far-gone-a-formation-is.ts`, which prices somebody
+                 WORKING AT a door over time; this is force put through a thing
+                 now, and the two answer different acts
 war-breakage.ts  the live caller: what a war between two houses does to the
                  things they own. Draws by one predicate that names no kind -
                  the house owns it, it is rated, and somebody carried it out of
                  the gate - and puts every loss on the record through
-                 `aDeedEntersTheWorld`, priced against what the owner had
+                 `aDeedEntersTheWorld`, priced against what the owner had. Also
+                 where a war's SETTLEMENT is handled, which is where the things
+                 actually move
+war-spoils.ts    and what the ending does, which is mostly to change hands.
+                 *Typically left as spoils of war*: a settlement moves the
+                 loser's whole hold through `transferPossession` with the war in
+                 the chain, and destroys nothing. Measured over eight seeds and
+                 five hundred years: 312 single-use materials before, 312 after,
+                 none ruined - wars redistribute the scarcest things in the
+                 world rather than consuming them. The third fate, a house that
+                 grabs its vault and disbands, is built and has no producer:
+                 whether a body breaks up is a roster reading owned elsewhere,
+                 and there is deliberately no `willFlee` field
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
                  what a surname is worth against a house's roll. Corroboration
