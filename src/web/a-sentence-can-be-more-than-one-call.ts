@@ -102,6 +102,7 @@
 
 import {
     ACTION_NAMES,
+    TARGETED_ACTIONS,
     carryWhatOnlyTheSentenceKnows,
     costsTheAskerNothing,
     validatePlan,
@@ -132,6 +133,18 @@ import type { EngineFacts } from './facts.js';
 export interface PlanStep {
     readonly action: PlannedAction;
     readonly said?: string;
+    /**
+     * This step CHOOSES from what the step before it found; it does not act.
+     *
+     * When present the executor runs no verb at all - it resolves a name out of
+     * the rows the turn is already holding, says who was picked, and spends
+     * nothing. `action` is carried only so every other reader of a step keeps
+     * working, and is always a read.
+     *
+     * See {@link theSelectionInThisClause} for why a selection must never
+     * price as an act.
+     */
+    readonly selects?: ASelection;
 }
 
 /**
@@ -188,6 +201,11 @@ export const MOST_CALLS_IN_ONE_TURN = 6;
 
 /** Whether this step spends a day, the purse or the body. */
 export function spendsSomething(step: PlanStep): boolean {
+    // A CHOICE IS NEVER AN ACT. Structural rather than a classification
+    // somebody has to remember: picking a person out of a group takes nothing
+    // from anybody, and a played turn that priced one as a verb turned a
+    // three-clause sentence into a question about a choice that spends nothing.
+    if (step.selects) return false;
     return !costsTheAskerNothing(step.action);
 }
 
@@ -406,6 +424,12 @@ export async function theClausesNoStepAccountsFor(
     const lost: PlanStep[] = [];
 
     for (const clause of theClausesOf(input)) {
+        // A clause that only CHOOSES is answered by a choice, not by a verb, so
+        // it is never lost and must never be reported as lost. Without this the
+        // superseded reader step came back to the player as "the reading layer
+        // declined gather" - naming the herb verb, over a clause that picks a
+        // person, on a turn where the picking had in fact happened.
+        if (theSelectionInThisClause(clause) !== null) continue;
         // THE WHOLE READING, NOT THE BARE VERB. This took an ActionName and
         // rebuilt a plan from it, which threw the intent away - and `interact`
         // with no intent is FREE, while `interact` with `steal` is not. So a
@@ -505,6 +529,15 @@ export async function theWholeSentenceAsAPlan(
 
     const readings = await Promise.all(clauses.map(read));
 
+    // ── A CLAUSE THAT CHOOSES IS A CHOICE, WHATEVER ANYBODY READ IT AS ──
+    //
+    // Decided from the clause and never from the reader, for the same reason
+    // everything else here is: the sentence is the authority on what its own
+    // clauses are. Played, "pick the strongest one" reached `gather` - the herb
+    // verb - and a choice that takes nothing from anybody became one of two
+    // costly acts the turn then asked the player to choose between.
+    const chooses = clauses.map(theSelectionInThisClause);
+
     // Which clause each of the reader's steps is answering. `said` when it
     // quoted the player; otherwise the first clause not yet spoken for whose
     // own reading reaches the same verb.
@@ -528,12 +561,20 @@ export async function theWholeSentenceAsAPlan(
         if (quoted !== null) {
             const at = clauses.findIndex((clause, i) =>
                 !spokenFor.has(i)
+                // A clause that only CHOOSES is never claimed, however the
+                // reader labelled it and whatever the table calls it. Played:
+                // "pick the strongest one" reads as `gather` to the table, so a
+                // reader step carrying `gather` and quoting that clause AGREED
+                // with it and claimed it - and the choice was priced as a
+                // seven-day herb gathering.
+                && chooses[i] === null
                 && forMatching(clause) === forMatching(quoted)
                 && readings[i]!.action === step.action.action);
             if (at !== -1) { spokenFor.add(at); return at; }
         }
         const at = readings.findIndex(
-            (reading, i) => !spokenFor.has(i) && reading.action === step.action.action
+            (reading, i) =>
+                !spokenFor.has(i) && chooses[i] === null && reading.action === step.action.action
         );
         if (at !== -1) { spokenFor.add(at); return at; }
         return null;
@@ -541,6 +582,7 @@ export async function theWholeSentenceAsAPlan(
 
     const steps: PlanStep[] = [];
     const backfilled: PlanStep[] = [];
+    const superseded: PlanStep[] = [];
     const why: string[] = clauses.map((clause, at) => {
         const answering = positionOf.indexOf(at);
         return `"${clause}" reads as ${readings[at]!.action}`
@@ -560,12 +602,60 @@ export async function theWholeSentenceAsAPlan(
             // Every reason a clause is passed over is SAID. A silent `continue`
             // here is a clause vanishing, which is the thing this whole file
             // exists to stop happening one layer up.
+            const choice = chooses[at]!;
+            if (choice !== null) {
+                // Always, and free. A choice the player wrote is a choice
+                // whether or not making it costs anything, so there is no cost
+                // guard on this branch - the guard exists to stop a FREE READ
+                // being re-run, and a choice is not a read of the world.
+                const picking: PlanStep = {
+                    action: { action: 'look' }, said: clauses[at]!, selects: choice
+                };
+                spokenFor.add(at);
+                backfilled.push(picking);
+                steps.push(picking);
+                why[at] += `; taken as a CHOICE of the ${choice.word} out of what the clause `
+                    + 'before it found, which takes nothing from anybody';
+                continue;
+            }
             if (reading.action === 'unclear') {
                 why[at] += '; not put back - nothing reads it';
                 continue;
             }
             if (costsTheAskerNothing(reading)) {
-                why[at] += '; not put back - it costs nothing, so nothing was taken';
+                // ── A FREE CLAUSE IS PUT BACK ONLY WHERE THE READER
+                //    PLAINLY UNDER-SPLIT ─────────────────────────────────
+                //
+                // The measured rule - never re-run a free read the reader
+                // routed to its neighbour - is about a reader that answered
+                // every clause and merely chose a different verb for one:
+                // "who is here, what am I carrying, and what do I know of them"
+                // ran look/status/recall, and the middle clause also reads as
+                // `inventory`. Re-running that is duplicate work over a
+                // sentence nobody lost anything from.
+                //
+                // It is a different thing when the reader answered with FEWER
+                // ACTS THAN THE SENTENCE HAS CLAUSES. Played: "I look over who
+                // is here, pick the strongest one of them, and ask them about
+                // their sect" came back with one step, and the looking and the
+                // asking - both free, both plainly asked for - simply did not
+                // happen. Nothing was taken from the player, and nothing was
+                // given to them either.
+                //
+                // So a free clause is put back exactly when the count says a
+                // clause was lost rather than merely read differently. It costs
+                // nothing either way, which is why the bar can be this low.
+                if (fromTheReader.length >= clauses.length) {
+                    why[at] += '; not put back - it costs nothing, and the reader answered '
+                        + 'every clause, so nothing was lost';
+                    continue;
+                }
+                spokenFor.add(at);
+                const free = { action: reading, said: clauses[at]! };
+                backfilled.push(free);
+                steps.push(free);
+                why[at] += '; PUT BACK from the sentence itself - it costs nothing, and the '
+                    + 'reader answered fewer acts than the sentence has clauses';
                 continue;
             }
             spokenFor.add(at);
@@ -583,7 +673,26 @@ export async function theWholeSentenceAsAPlan(
             fillBetween(next, at);
             next = at + 1;
         }
-        steps.push(step);
+        // A STEP KEEPS THE PLAYER'S WORDS EVEN WHERE THE READER SENT NONE.
+        //
+        // `said` is optional and a model may simply not send it, and three
+        // separate consumers then compare one clause against a reading of the
+        // whole sentence: the danger check, the dropped-clause report, and
+        // whether a clause merely said why. This fills the field only from the
+        // clause the step has just been POSITIONED at, which is the player's
+        // own text by construction, so it can invent nothing and override
+        // nothing - a step that quoted the player keeps its own quotation.
+        // A reader step that answers no clause AND whose words point at a
+        // clause that only CHOOSES is that clause's step, read as an act. The
+        // clause has its own step now, so this one is superseded rather than
+        // kept and priced. Every other unpositioned step is kept where it was.
+        if (at === null && theClauseThisStepAnswersIsAChoice(step, clauses, chooses, input)) {
+            superseded.push(step);
+            return;
+        }
+        steps.push(at !== null && step.said === undefined
+            ? { ...step, said: clauses[at]! }
+            : step);
     });
     fillBetween(next, clauses.length);
 
@@ -595,7 +704,42 @@ export async function theWholeSentenceAsAPlan(
         }
     }
 
+    for (const step of superseded) {
+        why.push(`the reader's ${step.action.action}`
+            + `${step.action.target ? `(${step.action.target})` : '()'}`
+            + ' was answering a clause that only CHOOSES, so it was superseded by the choice '
+            + 'and never priced as an act');
+    }
+
     return { steps, backfilled, why };
+}
+
+/**
+ * Whether a step the reader sent was really answering a clause that only
+ * chooses.
+ *
+ * Matched on the step's own words where it quoted the player, and otherwise on
+ * its target - `gather(strongest one)` points at "pick the strongest one" by
+ * carrying the words out of it. Narrow on purpose: a step matching neither is
+ * kept, because dropping a step nobody can place is the loss this whole file
+ * exists to prevent.
+ */
+function theClauseThisStepAnswersIsAChoice(
+    step: PlanStep,
+    clauses: readonly string[],
+    chooses: ReadonlyArray<ASelection | null>,
+    input: string
+): boolean {
+    const words = [theClauseThisStepQuotes(step, input), step.action.target]
+        .filter((it): it is string => typeof it === 'string' && it.trim().length > 0)
+        .map(forMatching);
+    if (words.length === 0) return false;
+
+    return clauses.some((clause, at) => {
+        if (chooses[at] === null) return false;
+        const whole = forMatching(clause);
+        return words.some(word => whole.includes(word) || word.includes(whole));
+    });
 }
 
 export async function anyClauseReadsAsThisVerb(
@@ -607,6 +751,98 @@ export async function anyClauseReadsAsThisVerb(
         if (await read(clause) === verb) return true;
     }
     return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PICKING ONE OUT OF WHAT THE LAST STEP FOUND
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A clause that CHOOSES from what the clause before it returned.
+ *
+ * ── THE CASE, PLAYED ─────────────────────────────────────────────────────
+ *
+ *   > I look over who is here, pick the strongest one, and tell them I want
+ *   > their sect to answer for something
+ *
+ *   read as 2: gather(strongest one), interact(unnamed cultivator)
+ *   Which comes first? "pick the strongest one" or "the approach to unnamed
+ *   cultivator"?
+ *
+ * Two things wrong and they are the same thing. The middle clause is a
+ * SELECTION FROM WHAT THE FIRST ONE RETURNED - the room read gives a set of
+ * people and *the strongest one* is a row in it - and nothing carried the set,
+ * so the third clause's target came out as the placeholder the reader invented.
+ * And because the selection landed as a costly verb, a three-clause sentence
+ * became a question about a choice that spends nothing.
+ *
+ * ── WHY THIS IS TRACTABLE AND NOT A QUERY LANGUAGE ───────────────────────
+ *
+ * **The superlative names the field.** Strongest is a rung, oldest is an age,
+ * nearest is a distance, cheapest is a price - each one a comparison the engine
+ * already makes, over rows the previous step already fetched. So this is a small
+ * closed vocabulary of superlatives over a set the turn is already holding, and
+ * it must not grow into anything more: a clause that does not name a field this
+ * way is not a selection and is left alone.
+ *
+ * ── AND A SELECTION IS NEVER AN ACT ──────────────────────────────────────
+ *
+ * Picking somebody out of a group costs nothing. It is choosing a target, not
+ * doing something to them, and the moment it prices as an act the sentence
+ * above turns into a question about a choice that spends nothing - which is
+ * exactly what a played turn did. `selects` on a step is what makes that
+ * structural rather than a classification somebody has to remember: the
+ * executor never runs a verb for it.
+ */
+export interface ASelection {
+    /** Which field of the rows is being compared. */
+    readonly field: 'rung' | 'age' | 'distance' | 'price';
+    /** Which end of it the player asked for. */
+    readonly want: 'most' | 'least';
+    /** The player's own word, for saying who was picked and why. */
+    readonly word: string;
+}
+
+/**
+ * The superlatives, and the field each one names.
+ *
+ * Closed, and deliberately small. Every entry is a comparison the engine
+ * already makes somewhere on data it already holds; a word that does not name
+ * a field the engine can compare has no business here, because the alternative
+ * to refusing it is guessing what the player meant about their own life.
+ */
+const WHAT_A_SUPERLATIVE_NAMES: ReadonlyArray<[RegExp, ASelection['field'], ASelection['want']]> = [
+    [/\b(?:strongest|toughest|mightiest|deepest|highest|most powerful|most dangerous)\b/i, 'rung', 'most'],
+    [/\b(?:weakest|lowest|least powerful|softest|most harmless)\b/i, 'rung', 'least'],
+    [/\b(?:oldest|eldest)\b/i, 'age', 'most'],
+    [/\b(?:youngest)\b/i, 'age', 'least'],
+    [/\b(?:nearest|closest)\b/i, 'distance', 'least'],
+    [/\b(?:furthest|farthest)\b/i, 'distance', 'most'],
+    [/\b(?:cheapest|least expensive)\b/i, 'price', 'least'],
+    [/\b(?:dearest|priciest|most expensive)\b/i, 'price', 'most']
+];
+
+/**
+ * The frames in which a superlative is a CHOICE rather than a description.
+ *
+ * Required, and it is the whole guard against this swallowing ordinary
+ * sentences. "I attack the strongest one" is an act with a superlative target
+ * and belongs to `attack`; "pick the strongest one" is a choice and belongs
+ * here. Without this, every sentence containing a superlative would become a
+ * free selection step and the act in it would be lost - the defect this file
+ * exists to prevent, caused by the fix for it.
+ */
+const CHOOSING_RATHER_THAN_DOING =
+    /\b(?:pick|picks|picking|choose|chooses|choosing|chose|select|selects|selecting|single out|singles out|settle on|settles on|go for|goes for|find|finds|identify|identifies|work out|works out|decide on|whichever|whoever)\b/i;
+
+/** The selection a clause makes, or null when it is not making one. */
+export function theSelectionInThisClause(clause: string): ASelection | null {
+    if (!CHOOSING_RATHER_THAN_DOING.test(clause)) return null;
+    for (const [pattern, field, want] of WHAT_A_SUPERLATIVE_NAMES) {
+        const found = pattern.exec(clause);
+        if (found) return { field, want, word: found[0].toLowerCase() };
+    }
+    return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -636,8 +872,54 @@ const A_PRONOUN_FOR_THE_LAST_THING: ReadonlySet<string> = new Set([
     'it', 'them', 'that', 'those', 'this', 'these', 'the same', 'the thing', 'the same thing'
 ]);
 
+/**
+ * What a reader writes when it knows a target is coming and has no name yet.
+ *
+ * Played, on "I look over who is here, pick the strongest one, and tell them I
+ * want their sect to answer for something": the third clause's target came back
+ * as the literal string `unnamed cultivator`. That is the reader saying "the
+ * one that was chosen" in the only way it can, and it means exactly what a
+ * pronoun means - so it resolves the same way, against whatever the choice
+ * before it landed on.
+ *
+ * A phrase naming the superlative itself - "the strongest one" - is here for
+ * the same reason: a clause that chose it has already turned it into a person,
+ * and the clauses after it are talking about that person.
+ */
+const A_PLACEHOLDER_FOR_WHOEVER_WAS_CHOSEN: ReadonlySet<string> = new Set([
+    'unnamed cultivator', 'the unnamed cultivator', 'that person', 'the person',
+    'whoever', 'whoever it is', 'the chosen one', 'the one'
+]);
+
 function standsForTheLastThing(value: string | undefined): boolean {
-    return value !== undefined && A_PRONOUN_FOR_THE_LAST_THING.has(forMatching(value));
+    if (value === undefined) return false;
+    const plain = forMatching(value);
+    return A_PRONOUN_FOR_THE_LAST_THING.has(plain)
+        || A_PLACEHOLDER_FOR_WHOEVER_WAS_CHOSEN.has(plain)
+        // "the strongest one", where a clause before it already chose them.
+        || aSuperlativeWithNoNounOnIt(plain);
+}
+
+/**
+ * A superlative standing on its own, as in "the strongest one".
+ *
+ * The head has to be a PRO-FORM - `one`, `ones`, or nothing at all. A
+ * superlative with a real noun after it names a real thing and is the
+ * resolvers' business: "the cheapest manual" is a manual, and rewriting it to
+ * whatever the last clause chose would be this rule reaching past what it
+ * knows. Caught by a test that had `buy the cheapest manual` in it already.
+ */
+function aSuperlativeWithNoNounOnIt(plain: string): boolean {
+    for (const [pattern] of WHAT_A_SUPERLATIVE_NAMES) {
+        const found = pattern.exec(plain);
+        if (!found) continue;
+        const rest = (plain.slice(0, found.index) + plain.slice(found.index + found[0].length))
+            .replace(/\s+/g, ' ').trim();
+        if (/^(?:the |a |an )?(?:one|ones|of them|of these|of those)?$/.test(rest)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -654,6 +936,18 @@ function standsForTheLastThing(value: string | undefined): boolean {
  * whatever was already carried stays carried.
  */
 export function theThingThisStepNamed(step: PlanStep): string | null {
+    // A READ THAT POINTS AT NOTHING NAMES NOTHING. "I look over who is here"
+    // is a read of the room rather than of a thing, and taking its clause apart
+    // yielded the phrase "over who is here", which then stood in for every
+    // later pronoun in the sentence. An act still names its object even where
+    // the step carries no target - "buy the cheapest manual" names a manual -
+    // so the guard is on the free, untargeted read and nothing wider.
+    if (!spendsSomething(step)
+        && step.action.target === undefined
+        && step.action.topic === undefined) {
+        return null;
+    }
+
     const said = (step.said ?? '').trim();
     if (said.length === 0) return null;
 
@@ -687,8 +981,29 @@ export function carryingTheReferentForward(step: PlanStep, lastThing: string | n
     if (standsForTheLastThing(action.target)) { action.target = lastThing; changed = true; }
     if (standsForTheLastThing(action.topic)) { action.topic = lastThing; changed = true; }
 
+    // ── A PRONOUN THE TABLE DROPPED IS STILL A PRONOUN ──────────────────
+    //
+    // Played: "ask them about their sect", after a clause that had chosen Yu
+    // Lanyin, reached the engine as `interact()` with NO target - the table
+    // read the topic and let the "them" go - and the approach landed on
+    // whoever happened to be nearest. The pronoun was in the player's sentence
+    // and meant somebody the turn had already named.
+    //
+    // Filled only where the verb takes a target, the step has none, and the
+    // player's own clause carries the pronoun. It overrides nothing, because
+    // there is nothing there to override.
+    if (action.target === undefined
+        && TARGETED_ACTIONS.includes(action.action)
+        && A_PRONOUN_FOR_SOMEBODY.test(step.said ?? '')) {
+        action.target = lastThing;
+        changed = true;
+    }
+
     return changed ? { ...step, action } : step;
 }
+
+/** A pronoun standing for a person, in the player's own clause. */
+const A_PRONOUN_FOR_SOMEBODY = /\b(?:them|him|her|they|that one|the same one)\b/i;
 
 /** The inspector row saying what a pronoun was taken to mean. */
 export function theRowForAResolvedPronoun(
@@ -764,6 +1079,77 @@ export interface WhatThisTurnMayRun {
      * question about itself, and why the losing reading still has to be visible.
      */
     readonly secondReadings: ReadonlyArray<{ taken: PlanStep; alsoRead: PlanStep }>;
+    /**
+     * Clauses that stated why, and were counted as reasons rather than as acts.
+     *
+     * Shown for the same reason `secondReadings` is: it is a judgement call
+     * about the sentence, and the player is owed the chance to see it and say
+     * otherwise. Engine channel only - nothing was declined and nothing was
+     * spent, so there is nothing here a player is owed in prose.
+     */
+    readonly statedReasons: readonly PlanStep[];
+}
+
+/**
+ * A clause that states a need rather than naming an act.
+ *
+ * ── FOUND BY PLAYING, AND IT IS A QUESTION WITH NO ANSWER IN IT ──────────
+ *
+ *   > I need to eat, so I take whatever work will feed me for a season
+ *
+ *   eat(), work(any)   -> "Which comes first? 'I need to eat' or 'taking the
+ *                         work any'?"
+ *
+ * **"I need to eat" is a reason, not an act.** The player is saying WHY they
+ * are doing the thing in the second half, and there is one act in that
+ * sentence. The player cannot answer that question because there is nothing in
+ * it to answer - the same shape as *"work the water until I have enough for the
+ * physician"*, which {@link THE_CLAUSE_THAT_SAYS_WHY} already settles from the
+ * other end.
+ *
+ * ── AND ON ITS OWN IT IS THE ACT, WHICH IS THE WHOLE OF THE CARE ─────────
+ *
+ * A hungry player typing *"I need to eat"* and nothing else is asking to be
+ * fed, and must be. So this never decides anything by itself: it says only that
+ * a clause is PHRASED as a need, and {@link whatThisTurnMayRun} discounts it
+ * only where a real act is standing beside it in the same sentence. Where the
+ * need is the only thing said, it is what the turn does.
+ *
+ * Two or more needs and no act keeps them all, for the same reason: somebody
+ * who says "I need to eat and I need to find work" has named two things and
+ * discounting both would leave a turn with nothing in it.
+ */
+const A_STATED_NEED =
+    /^\s*(?:(?:and|so|then|but|also)\s+)?(?:i\s+)?(?:really\s+|badly\s+|urgently\s+)?(?:need|want|must|should|ought to|have to|have got to|would like|am going to need)\b\s+\S/i;
+
+/** Whether this step's own clause is phrased as a need rather than as an act. */
+export function thisClauseIsAReasonNotAnAct(step: PlanStep): boolean {
+    const said = (step.said ?? '').trim();
+    return said.length > 0 && A_STATED_NEED.test(said);
+}
+
+/**
+ * Steps split into the acts and the clauses that merely said why.
+ *
+ * A reason is discounted only where an act survives it. Nothing is dropped
+ * silently: what comes back in `reasons` reaches the engine channel, and it
+ * cost nothing either way - a stated need that was really a request is one
+ * word away next turn and no day passed on it.
+ */
+function tellingReasonsFromActs(
+    steps: readonly PlanStep[]
+): { acts: PlanStep[]; reasons: PlanStep[] } {
+    const reasons = steps.filter(
+        step => spendsSomething(step) && thisClauseIsAReasonNotAnAct(step)
+    );
+    if (reasons.length === 0) return { acts: [...steps], reasons: [] };
+
+    const survives = steps.some(
+        step => spendsSomething(step) && !thisClauseIsAReasonNotAnAct(step)
+    );
+    if (!survives) return { acts: [...steps], reasons: [] };
+
+    return { acts: steps.filter(step => !reasons.includes(step)), reasons };
 }
 
 /**
@@ -810,15 +1196,21 @@ export function whatThisTurnMayRun(
     input = ''
 ): WhatThisTurnMayRun {
     const withoutDoubleReadings = oneClauseIsOneAct(steps);
-    const kept = withoutDoubleReadings.acts.slice(0, MOST_CALLS_IN_ONE_TURN);
-    const overTheBound = withoutDoubleReadings.acts.slice(MOST_CALLS_IN_ONE_TURN);
+    // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. Before the bound and
+    // before the count, because a reason was never one of the turn's calls -
+    // "I need to eat, so I take whatever work will feed me" is one act, and a
+    // question about which of the two comes first has nothing in it to answer.
+    const { acts: withoutReasons, reasons: statedReasons } =
+        tellingReasonsFromActs(withoutDoubleReadings.acts);
+    const kept = withoutReasons.slice(0, MOST_CALLS_IN_ONE_TURN);
+    const overTheBound = withoutReasons.slice(MOST_CALLS_IN_ONE_TURN);
     const secondReadings = withoutDoubleReadings.secondReadings;
 
     const costly = kept.filter(spendsSomething);
     if (costly.length < 2) {
         return {
             toRun: kept, askAbout: [], heldForTheQuestion: [], overTheBound,
-            theOrderWasGiven: false, secondReadings
+            theOrderWasGiven: false, secondReadings, statedReasons
         };
     }
 
@@ -833,7 +1225,8 @@ export function whatThisTurnMayRun(
             heldForTheQuestion: kept.slice(second),
             overTheBound,
             theOrderWasGiven: true,
-            secondReadings
+            secondReadings,
+            statedReasons
         };
     }
 
@@ -843,7 +1236,8 @@ export function whatThisTurnMayRun(
         heldForTheQuestion: kept.slice(first),
         overTheBound,
         theOrderWasGiven: false,
-        secondReadings
+        secondReadings,
+        statedReasons
     };
 }
 
@@ -938,9 +1332,25 @@ export function theSentenceSaysItsOwnOrder(input: string): boolean {
  * Kept to subordinators that genuinely bind one act to another. Bare `to` is
  * deliberately absent - "I go to Ninewatch" would match it, and an infinitive
  * of motion is not a purpose clause.
+ *
+ * ── AND A BARE `so` JOINING A REASON TO A CONSEQUENCE ────────────────────
+ *
+ * Found by playing, and it is the same pattern with its halves swapped:
+ *
+ *   > I need to eat, so I take whatever work will feed me for a season
+ *
+ * The forms above are all *act, then why*. This is *why, then act*, and it is
+ * how people talk when they are explaining themselves - which is what a player
+ * does before they have learned to be clipped. `so I`, `and so`, `because` and
+ * `since I` are one connective doing one job, and the order they fix is not in
+ * the least ambiguous: the reason cannot come after the thing it is the reason
+ * for.
+ *
+ * `so I` rather than bare `so`, because bare `so` is also an intensifier - "I
+ * do it so quietly" - and an intensifier says nothing about order.
  */
 const THE_CLAUSE_THAT_SAYS_WHY =
-    /\b(?:until|so (?:i|that i) (?:can|could|have|am)|in order to|so as to|to pay for|to afford|enough (?:for|to))\b/i;
+    /\b(?:until|so (?:i|that i) (?:can|could|have|am)|in order to|so as to|to pay for|to afford|enough (?:for|to)|so (?:i|we)\b|and so\b|because\b|since (?:i|we)\b)/i;
 
 /**
  * COUNT SPANS OF THE SENTENCE, NEVER PATTERN HITS.
@@ -1596,6 +2006,27 @@ export function theRowThatAsksWhichFirst(fork: WhichComesFirst): ToolCallRecordi
     };
 }
 
+/**
+ * The row that names a clause counted as a reason rather than as an act.
+ *
+ * `ok: true`, and for the same reason the question's own row is: nothing
+ * failed. The sentence was understood in full and one act came out of it, which
+ * is what the sentence contained. It reaches the engine channel only - there is
+ * nothing here a player is owed in prose, because nothing was declined and
+ * nothing was spent.
+ */
+export function theRowForAStatedReason(step: PlanStep): ToolCallRecordish {
+    return {
+        name: 'engine.step',
+        action: step.action.action,
+        summary: `"${step.said ?? ''}" states a need rather than naming an act, and a real act `
+            + `stands beside it in the same sentence - so it was read as the REASON for that `
+            + `act rather than as a second thing to do. Nothing was declined and nothing was `
+            + `spent. Said on its own it is a request to ${step.action.action}, and it runs.`,
+        ok: true
+    };
+}
+
 /** The row that names a step the bound cut off, because dropping it silently is the defect. */
 export function theRowForAStepOverTheBound(step: PlanStep): ToolCallRecordish {
     return {
@@ -1702,6 +2133,75 @@ export function theRowForADroppedClause(step: PlanStep, wasTheirs = true): ToolC
  */
 export function theseWereThePlayersOwnWords(step: PlanStep, input: string): boolean {
     return theClauseThisStepQuotes(step, input) !== null;
+}
+
+/**
+ * Who the choice landed on, said to the player.
+ *
+ * ── SAYING IT IS NOT DECORATION ──────────────────────────────────────────
+ *
+ * The engine resolving *the strongest one* to a named person is a judgement,
+ * and `AGENTS.md` asks for a judgement to be shown. It is also the difference
+ * between this working and this being spooky: a player who meant somebody else
+ * can only correct it if they are told who was chosen, and the field it was
+ * chosen on is what makes the correction possible - "strongest" and "oldest"
+ * pick different people out of the same room.
+ */
+export function whatTheChoiceLandedOn(
+    selection: ASelection,
+    name: string,
+    because: string
+): string {
+    return `Of the people here you can put a name to, the ${selection.word} is ${name} `
+        + `(${because}). That is who the rest of the sentence is about - say the name `
+        + 'yourself if you meant somebody else.';
+}
+
+/** The same, for the engine channel, with the field named. */
+export function whatTheChoiceLandedOnStructurally(
+    selection: ASelection,
+    picked: { name: string; because: string } | null
+): string {
+    const over = `Choice over ${selection.field}, taking the ${selection.want === 'most' ? 'highest' : 'lowest'}`;
+    return picked === null
+        ? `${over}, from the word "${selection.word}". No candidate: either nobody here has a `
+          + 'knowledge record, or this field has no rows on a turn like this one. Nothing was '
+          + 'spent and no name was invented.'
+        : `${over}, from the word "${selection.word}". Landed on ${picked.name} (${picked.because}). `
+          + 'Candidates are the faces this cultivator already has a record for and nobody else, '
+          + 'so a choice can never be what hands over a name.';
+}
+
+/**
+ * The refusal, when there is nobody to choose between.
+ *
+ * Names a route, like every refusal in this package: the reason it found
+ * nothing is either that the player knows nobody here or that this kind of
+ * comparison has no rows on this turn, and both are things they can act on.
+ */
+export function whatTheChoiceFoundNobody(selection: ASelection): string {
+    return selection.field === 'rung' || selection.field === 'age'
+        ? `There is nobody here you could put a name to, so there is no ${selection.word} one `
+          + 'to pick out. Looking at who is here, or asking after somebody, is what gives you '
+          + 'names to choose between.'
+        : `Picking the ${selection.word} one is a comparison this turn has nothing to make: `
+          + `${selection.field === 'price' ? 'a price board' : 'a set of places'} is what would `
+          + 'carry it, and nothing here is holding one. Ask for that first and then choose.';
+}
+
+/** The choice, as an inspector row: the field, the direction and who it landed on. */
+export function theRowForAChoice(
+    selection: ASelection,
+    picked: { name: string; because: string } | null
+): ToolCallRecordish {
+    return {
+        name: 'engine.chose',
+        action: 'look',
+        summary: whatTheChoiceLandedOnStructurally(selection, picked),
+        // A choice that found nobody is a refusal like any other, and an
+        // operator looking for what went wrong should find it.
+        ok: picked !== null
+    };
 }
 
 /** The sentence a player reads when the bound cut something off. */

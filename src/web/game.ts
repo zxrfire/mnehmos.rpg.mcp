@@ -37,10 +37,8 @@ import {
     // births in ten still draw about that figure. The constant stays exported
     // from the schema as the thin-county tier's own number.
     type AmbientQi,
-    type BreakthroughResult,
     type Cultivator,
     type Run,
-    type SimEvent,
     type TimeSkipResult
 } from '../schema/cultivation.js';
 import { ambientForBlock } from '../engine/cultivation/ambient.js';
@@ -251,8 +249,7 @@ import {
     writeFlag,
     tollConditionsFor,
     type CultivationRepos,
-    type PendingPill,
-    type TollLedgerEntry
+    type PendingPill
 } from '../server/consolidated/cultivation-support.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
 import { applyTimeSkip, tollLine } from './apply.js';
@@ -412,7 +409,6 @@ import {
     fightView,
     theFightStillStands,
     whatTheySaidInTheFight,
-    type FightView,
     type StandingFight
 } from './fight-answers.js';
 import { quotePouchSale, type SaleLot } from '../engine/cultivation/market.js';
@@ -436,7 +432,6 @@ import {
     whatStayingCommittedTo,
     whatTheForkAsks,
     whatTheForkAsksStructurally,
-    type CrossroadsView,
     type SeclusionCrossroads,
     type WhoIsClose
 } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
@@ -892,9 +887,13 @@ import {
     theQuestionStillStands,
     carryingTheReferentForward,
     howTheStepWent,
+    whatTheChoiceFoundNobody,
+    whatTheChoiceLandedOn,
+    whatTheChoiceLandedOnStructurally,
     sayingWhatIsStillToCome,
     sayingWhatItCostTheRest,
     sayingWhatTheReadingDropped,
+    theRowForAChoice,
     theRowForADroppedClause,
     theseWereThePlayersOwnWords,
     theRowForAStepOverTheBound,
@@ -908,6 +907,7 @@ import {
     whatTheQuestionAsksStructurally,
     whatThisTurnMayRun,
     whichOneTheyChose,
+    type ASelection,
     type PlanStep,
     type PlanWithSteps,
     type WhichComesFirst
@@ -956,11 +956,39 @@ import {
     runView,
     worldRosterRow,
     daoView,
-    type DerivedView,
     type LedgerRowView,
     type RosterRowView,
     type RunView
 } from './view.js';
+
+// ── THE WIRE SHAPES AND THE REFUSAL MOVED OUT ────────────────────────────
+//
+// `GameError`, `StateView`, `ToolCallRecord`, `ActResult`, `CultivateResult`,
+// `BreakthroughApiResult`, `GameServiceOptions` and `Execution` were declared
+// in this file. They are the contract between this service and the browser,
+// which is a different reason to change from anything a turn does, so they
+// live in `turn-wire-shapes.ts` now. Re-exported below, so this module's own
+// export surface is exactly what it was before the move.
+import { GameError } from './turn-wire-shapes.js';
+import type {
+    ActResult,
+    BreakthroughApiResult,
+    CultivateResult,
+    Execution,
+    GameServiceOptions,
+    StateView,
+    ToolCallRecord
+} from './turn-wire-shapes.js';
+
+export { GameError };
+export type {
+    ActResult,
+    BreakthroughApiResult,
+    CultivateResult,
+    GameServiceOptions,
+    StateView,
+    ToolCallRecord
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // CHARACTER CREATION
@@ -1972,66 +2000,6 @@ function elderNamed(listing: object, query: string | undefined): string | null {
 const ANY_ELDER_AT_ALL =
     /^(?:one of\s+)?(?:the|an?|any|some|my|our)?\s*elders?$/i;
 
-export class GameError extends Error {
-    constructor(message: string, readonly status = 400) {
-        super(message);
-        this.name = 'GameError';
-    }
-}
-
-export interface StateView {
-    run: RunView;
-    cultivator: Cultivator;
-    ambient: AmbientQi;
-    derived: DerivedView;
-    /** Everything the crossings have cut away from this cultivator, oldest first. */
-    tolls: TollLedgerEntry[];
-    log: LogEntry[];
-    /**
-     * A seclusion the engine stopped and has NOT resolved, waiting on an answer.
-     *
-     * Null on every ordinary turn. When it is set, the run is standing at a
-     * fork the engine deliberately did not take: somebody broke a long sitting
-     * and the two things that were always physically available - go, or sit
-     * back down - are both still open. See
-     * `choosing-what-to-do-when-a-seclusion-is-broken.ts`.
-     *
-     * The client renders two controls off this. It is emphatically not a modal
-     * jail: free text is still the whole game, and anything that is not sitting
-     * back down is going.
-     */
-    crossroads: CrossroadsView | null;
-    /**
-     * The fight, when one is standing. Same shape and same rules as the fork
-     * above: the client draws controls off it, and free text is still the whole
-     * game. Re-checked against this run and this body on every read.
-     */
-    fight: FightView | null;
-}
-
-/**
- * One step the engine actually took, for the client's inspector.
- *
- * This list is the visible proof of the project's central claim. A player who
- * suspects the narration of flattering them can open it and read the engine's
- * own one-line account of every routine that ran - `summary` is always sourced
- * from facts.ts or from a `SimEvent.summary`, never from narrator prose.
- */
-export interface ToolCallRecord {
-    /** The engine routine or repository call that ran. */
-    name: string;
-    /** What it was doing: the player-facing verb, or the kind of ruling. */
-    action: string;
-    /** The engine's factual one-liner. Never narration. */
-    summary: string;
-    /** False when the engine declined to act - an ineligible attempt, a refusal. */
-    ok: boolean;
-    /** Present on the routing step: whether the model or the parser chose. */
-    source?: PlanSource;
-    /** Present when a fallback ran, saying why. */
-    note?: string;
-}
-
 /**
  * Which interact intents are WRONGS, and what the wronged party calls them.
  *
@@ -2123,93 +2091,6 @@ const ADMIN_ACTIONS = [
  * end one would be the second writer this file exists to prevent.
  */
 const ADMIN_RESET = /^(?:reset|restart|regenerate|reroll|new_run|newrun)(?![a-z_])[:\s-]*/i;
-
-export interface ActResult {
-    narration: string;
-    events: SimEvent[];
-    toolCalls: ToolCallRecord[];
-    state: StateView;
-}
-
-export interface CultivateResult {
-    timeSkip: TimeSkipResult;
-    state: StateView;
-    /**
-     * EVERYTHING that happened in the span, merged and in order.
-     *
-     * `timeSkip.events` is only the cultivation engine's half. `runSeclusion`
-     * merges the encounter layer's occurrences into `Execution.events`, and
-     * only `act` was returning those - so a player who clicked the seclusion
-     * button in the GUI saw NO ENCOUNTERS AT ALL, while the same build reached
-     * through the typed endpoint produced 1.63 summonses a sect life and made
-     * `npc_event` the commonest event kind in the game. One design, two front
-     * doors, and the door with a button on it was showing half the world.
-     *
-     * Measured as zero summonses across 200 lives on this endpoint against
-     * 1.63 per sect life on the other, on the same build.
-     */
-    events: SimEvent[];
-    /**
-     * Why the span stopped short, when it did.
-     *
-     * Provisions ran out, a wound opened, something walked in. No endpoint
-     * returned it, so "the ten years you asked for were three" arrived with no
-     * reason attached.
-     */
-    interruptReason: string | null;
-    /**
-     * The same prose a typed command would have produced.
-     *
-     * This was always being written - narrated, and appended to the log -
-     * and then dropped on the floor before the response was built, so a
-     * player who clicked got a table of deltas and a player who typed got
-     * the game. One design, two front doors, and only one of them had it.
-     */
-    narration: string;
-}
-
-export interface BreakthroughApiResult {
-    result: BreakthroughResult;
-    state: StateView;
-    /** As above: the click path narrates the same way the typed path does. */
-    narration: string;
-}
-
-export interface GameServiceOptions {
-    db: Database.Database;
-    narrator: Narrator;
-    /**
-     * Whether the world advances alongside the cultivator.
-     *
-     * The world itself is owned by `src/server/state/cultivation-world.ts` and
-     * is addressed by run, not held here. This flag exists only so a test can
-     * run the cultivation engine on its own without paying to seed several
-     * hundred people it is not asserting anything about.
-     */
-    worldEnabled?: boolean;
-    adminMode?: boolean;
-    /** Injectable for tests that need a reproducible run. */
-    seedFactory?: () => string;
-}
-
-/** What an action did, before it is narrated. */
-interface Execution {
-    facts: EngineFacts;
-    events: SimEvent[];
-    timeSkip: TimeSkipResult | null;
-    breakthrough: BreakthroughResult | null;
-    outcome: 'executed' | 'refused';
-    /** Every engine call this action made, in the order it made them. */
-    calls: ToolCallRecord[];
-    /**
-     * A name somebody said in this scene, decided and recorded by the engine.
-     *
-     * Carried on the execution rather than fetched during narration so that the
-     * knowledge record is written in phase 2, where writes belong, and phase 3
-     * only ever receives a licence to mention what is already true.
-     */
-    hearing?: Hearing | null;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SERVICE
@@ -3590,6 +3471,31 @@ export class GameService {
         for (let i = 0; i < budget.toRun.length; i++) {
             const asPlanned = budget.toRun[i]!;
             const step = carryingTheReferentForward(asPlanned, lastThingNamed);
+
+            // ── A CLAUSE THAT ONLY CHOOSES RUNS NO VERB ─────────────────
+            //
+            // "pick the strongest one" is a selection from the rows the turn is
+            // already holding, not an act against anybody, so it resolves a
+            // NAME and spends nothing. What it picks becomes what the clauses
+            // after it are talking about, which is the whole reason the third
+            // clause of that sentence used to reach a placeholder.
+            if (step.selects) {
+                const picked = this.whoTheChoiceLandsOn(cultivator, step.selects);
+                if (picked !== null) lastThingNamed = picked.name;
+                done.push(this.freeAction(run, 'look', factsForRefusal(
+                    picked === null ? 'Nobody here to pick from.' : `You settle on ${picked.name}.`,
+                    picked === null
+                        ? whatTheChoiceFoundNobody(step.selects)
+                        : whatTheChoiceLandedOn(step.selects, picked.name, picked.because),
+                    whatTheChoiceLandedOnStructurally(step.selects, picked)
+                )));
+                done[done.length - 1]!.calls.unshift(
+                    theRowThatOpensAStep(step, i, steps.length),
+                    theRowForAChoice(step.selects, picked)
+                );
+                continue;
+            }
+
             lastThingNamed = theThingThisStepNamed(step) ?? lastThingNamed;
             // The world the last step left, re-read rather than remembered.
             const now = this.currentRun();
@@ -3752,6 +3658,51 @@ export class GameService {
         }
 
         return folded;
+    }
+
+    /**
+     * Who a choice like "the strongest one" lands on, out of the people here.
+     *
+     * ── IT NAMES ONLY PEOPLE THE PLAYER COULD ALREADY NAME ───────────────
+     *
+     * The discovery gate, applied to a comparison. The candidates are the faces
+     * this cultivator has a record for and nobody else, so a choice can never
+     * be the thing that hands over a name - which it would be, silently and
+     * every time, if it sorted the whole square. Where the deepest person
+     * present is a stranger the choice lands on the deepest person they can
+     * NAME, and the sentence says so, which is honest and discloses nothing.
+     *
+     * ── AND ONLY OVER FIELDS THIS TURN ACTUALLY HOLDS ROWS FOR ───────────
+     *
+     * A rung and an age are on the roster row. A distance and a price are not
+     * rows this method has, and it returns null for them rather than guessing -
+     * the refusal names what would work, which is the standard every other
+     * refusal in this package is held to.
+     */
+    private whoTheChoiceLandsOn(
+        cultivator: Cultivator,
+        selection: ASelection
+    ): { name: string; because: string } | null {
+        if (selection.field !== 'rung' && selection.field !== 'age') return null;
+
+        const nameable = this.present(cultivator).filter(
+            person => this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)
+        );
+        if (nameable.length === 0) return null;
+
+        const valueOf = (person: RosterEntry): number =>
+            selection.field === 'rung' ? person.realmOrdinal : person.age;
+        const best = nameable.reduce((held, person) =>
+            (selection.want === 'most' ? valueOf(person) > valueOf(held) : valueOf(person) < valueOf(held))
+                ? person
+                : held);
+
+        return {
+            name: best.name,
+            because: selection.field === 'rung'
+                ? rankName(best.realmOrdinal)
+                : `${Math.floor(best.age)} years old`
+        };
     }
 
     private async execute(
