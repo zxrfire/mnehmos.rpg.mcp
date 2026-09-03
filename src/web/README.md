@@ -1926,6 +1926,7 @@ verb](telling-a-wrong.ts).
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
 - [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`pending-summons.ts`](pending-summons.ts) - the ask a house has left standing, and what saying no to it costs before you say it
+- [`house-property-theft.ts`](house-property-theft.ts) - taking a thing your own house owns, and why possession moves while ownership does not
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`places.ts`](places.ts) - the world map view, and the rule against inventing geography
 - [`ground-that-teaches-a-road.ts`](ground-that-teaches-a-road.ts) - dao ground as a player meets it, and what a ground that will not teach says instead
