@@ -42,6 +42,7 @@
 
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
 import { stageFromSource, type KnowingStage } from './discovery.js';
+import type { SoulState } from '../world/npc-state.js';
 import type { SourceKind } from './knowledge.js';
 
 /** The realm the capability opens at. Everybody at or above it has it. */
@@ -158,6 +159,18 @@ function realmsBetween(searcher: number, subject: number): number {
 }
 
 /**
+ * The gap at which a search stops being a forcing.
+ *
+ * Below this the reader is barely able to open them and gets in by tearing.
+ * At or above it the engine's own reading of a one-sided event applies -
+ * "resolved in one action with nothing contested" - and nothing is contested
+ * because nothing had to be overcome. So the same number decides how much
+ * comes across AND what it costs them, which is deliberate: two functions
+ * reading the same gap through two tables is how they start disagreeing.
+ */
+const OPENS_WITHOUT_FORCING_AT = 3;
+
+/**
  * How much of somebody a search of this size opens.
  *
  * Deterministic on the rung gap, with no roll and no stream. The engine
@@ -176,6 +189,108 @@ function howMuchOpens(realmGap: number, heldInAll: number): number {
     if (realmGap === 1) return Math.min(heldInAll, 1);
     if (realmGap === 2) return Math.ceil(heldInAll / 2);
     return heldInAll;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHAT IT COSTS THE PERSON WHO WAS READ
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The four states a soul is in, worst last.
+ *
+ * `NpcRecord.soulState`'s own values, ordered here because the field is a set
+ * of names and the harm is a walk down them. Nothing else in the engine
+ * orders them, so this is the one place that says which way is down.
+ */
+export const SOUL_STATES_WORST_LAST: readonly SoulState[] =
+    ['intact', 'damaged', 'fragmented', 'fading'];
+
+/**
+ * What a search did to the person it read.
+ *
+ * ── THE DAMAGE IS INVERSE TO THE GAP, WHICH IS THE WHOLE MODEL ───────────
+ *
+ * A reader barely able to open somebody gets in by tearing. A reader four
+ * realms above does not have to: the engine's own account of a sufficiently
+ * one-sided event is "resolved in one action with nothing contested", and
+ * nothing is contested because nothing had to be overcome.
+ *
+ * So being read by a monster is survivable and being read by somebody near
+ * your own rung ruins you. That is not the intuitive way round and it is the
+ * one the rest of the engine already argues for - and it makes the middle of
+ * the range the dangerous part, which is where players actually live.
+ *
+ * It also means one axis does both jobs. The gap that decides how much comes
+ * across decides what it cost, and a second table priced off the same number
+ * would be two answers to one question waiting to disagree.
+ *
+ * ── AND SOMEBODY CAN BE READ UNTIL THERE IS NOTHING LEFT ─────────────────
+ *
+ * Three steps from `intact` to `fading`, so a person held and forced open
+ * three times ends where the poison pill puts them: a soul that is going, and
+ * a body a later search finds empty. The same axis at a different setting,
+ * arrived at by a different road, with no machinery either end had to know
+ * about. Nothing here is a special case for it.
+ *
+ * ── AND HEAVEN DOES NOT GRADE IT ─────────────────────────────────────────
+ *
+ * A rescuer reading a captive to find where the children were taken pays the
+ * same price out of the same soul as an inquisitor. The effects follow from
+ * what was done. What it was FOR is the ledger's business, not this
+ * function's.
+ */
+export interface WhatTheSearchCostThem {
+    readonly before: SoulState;
+    readonly after: SoulState;
+    /** 0 or 1. A single search never takes more than one step. */
+    readonly stepsDown: number;
+    /** Why it cost what it did, for the record rather than for a branch. */
+    readonly because:
+        | 'nothing_was_opened'
+        | 'forced'
+        | 'opened_without_forcing';
+}
+
+function stepDown(state: SoulState): SoulState {
+    const at = SOUL_STATES_WORST_LAST.indexOf(state);
+    // An unknown value must not silently become `intact`. A soul state this
+    // function has never heard of is a schema change, and answering anyway
+    // would hide it.
+    if (at < 0) {
+        throw new Error(
+            `Unknown soul state "${state}". SOUL_STATES_WORST_LAST is the one place that orders `
+            + 'them, so a value added to `SoulState` has to be added here in the same breath.'
+        );
+    }
+    return SOUL_STATES_WORST_LAST[Math.min(at + 1, SOUL_STATES_WORST_LAST.length - 1)];
+}
+
+/**
+ * Price the search against the body it was done to.
+ *
+ * Pure, and separate from `whatASoulSearchTakes` only because the caller
+ * writes them to two different places - the searcher's knowledge rows and the
+ * subject's record. Both read the same `realmGap` off the same search.
+ */
+export function whatASoulSearchCost(
+    search: ASoulSearch,
+    subject: TheStateOfASoul
+): WhatTheSearchCostThem {
+    const before = subject.soulState as SoulState;
+
+    // Nothing got in, so nothing was torn. That covers the floor, the empty
+    // soul and the one that held - including `they_held`, which is somebody
+    // keeping a reader out rather than surviving one.
+    if (!search.opened) {
+        return { before, after: before, stepsDown: 0, because: 'nothing_was_opened' };
+    }
+
+    if (search.realmGap >= OPENS_WITHOUT_FORCING_AT) {
+        return { before, after: before, stepsDown: 0, because: 'opened_without_forcing' };
+    }
+
+    const after = stepDown(before);
+    return { before, after, stepsDown: after === before ? 0 : 1, because: 'forced' };
 }
 
 /**
