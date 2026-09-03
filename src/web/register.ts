@@ -82,7 +82,6 @@ import {
     HOW_THE_COURT_IS_SEEN,
     getHollowCourtMember
 } from '../data/cultivation/hollow-court-roster.js';
-import { HERBS } from '../data/cultivation/herbs.js';
 import { ARTERIALS, PROVINCES } from '../data/cultivation/regions.js';
 import { getFactionCharacter } from '../data/cultivation/faction-character.js';
 import {
@@ -119,7 +118,6 @@ import {
 import {
     ANCIENT_ARTS,
     ARCHIVE_COPIES,
-    LOST_MATERIALS,
     MEDICINE_HOLDINGS
 } from '../data/cultivation/lost-ages.js';
 import type { TechniqueGrade } from '../schema/cultivation.js';
@@ -153,16 +151,13 @@ import {
 } from '../data/cultivation/roads-to-the-top-of-the-ladder.js';
 
 /**
- * The band this page is about, and the two rungs above it.
+ * The band this page is about: where the register starts naming people.
  *
- * Grand Ascension is where the register starts naming people; Tribulation
- * Transcendence is the approach to the Lid; Immortal is the pair of rungs the
- * crossing lands on. All three are read out of REALM_TIERS rather than written
- * down, because the ladder has been re-cut before and the numbers in this file
- * must not be a second, quieter copy of it.
+ * Read out of REALM_TIERS rather than written down, because the ladder has been
+ * re-cut before and the numbers in this file must not be a second, quieter copy
+ * of it.
  */
 const GRAND_ASCENSION = REALM_TIERS.find(t => t.key === 'grand_ascension')!;
-const TRIBULATION = REALM_TIERS.find(t => t.key === 'tribulation_transcendence')!;
 
 /** Inside Grand Ascension itself, rather than merely at or above its floor. */
 const inGrandAscension = (ordinal: number): boolean =>
@@ -5413,6 +5408,12 @@ function techniqueQuadrantSections(list: RegisterTechnique[]): string {
 }
 
 function techniqueTables(list: RegisterTechnique[]): string {
+    // THE BAND ORDER IS DISPLAY, NOT A RANKING, and the top two are the reason
+    // to say so. Immortal and chaos are peers - one reliable, one as powerful
+    // with its effects drawn rather than chosen - so whichever of them a
+    // reversed catalog order happens to put first is an artefact of how the
+    // list was declared and not a claim that it is above the other. Nothing
+    // downstream may read a position here as a height.
     return [...GRADE_ORDER].reverse().map(grade => {
         const rows = list.filter(t => t.grade === grade);
         if (!rows.length) return '';
@@ -5640,43 +5641,14 @@ function medicineTable(): string {
         : ''}</p>`;
 }
 
-/** What the extinctions closed downstream, and how much is left, and where. */
-function lostMaterialTable(): string {
-    const rows = LOST_MATERIALS;
-    const total = rows.reduce((n, r) => n + r.remaining.inArchives + r.remaining.unfound, 0);
-    const unfound = rows.reduce((n, r) => n + r.remaining.unfound, 0);
-
-    return `<div class="scroll"><table class="arts">
-    <caption>Materials nobody can gather, and what went with them &middot; ${rows.length}</caption>
-    <thead><tr><th>Material</th><th>Recipes</th><th>Arts it feeds</th><th class="pw">In archives</th><th class="pw">Unfound</th><th>Where the unfound are</th></tr></thead>
-    <tbody>${rows.map(r => '<tr>'
-        + `<td class="nm">${esc(herbNameOf(r.herbId))}</td>`
-        + `<td class="m">${r.closedRecipeIds.length
-            ? `${r.closedRecipeIds.length} closed`
-            : '<span class="dim">none</span>'}</td>`
-        + `<td class="q">${r.gatesTechniqueIds.length
-            ? r.gatesTechniqueIds.map(id => esc(techniqueNameOf(id))).join(', ')
-            : '<span class="dim">none</span>'}</td>`
-        + `<td class="pw">${r.remaining.inArchives}</td>`
-        + `<td class="pw">${r.remaining.unfound}</td>`
-        + `<td class="q">${r.remaining.placements.length === 0
-            ? '<span class="dim">nowhere anybody has placed</span>'
-            : r.remaining.placements.map(p =>
-                `<strong>${p.units}</strong> at ${esc(p.siteId)} &mdash; ${esc(p.note)}`).join('<br>')}</td></tr>`).join('')}</tbody></table></div>
-  <p class="note"><strong>${total} units of this material exist in the world, and ${unfound} of them are in ground nobody has opened.</strong> The figure is small on purpose. "Nobody has any" is a wall; a number with placements against it is a search with a destination and an end - and every unit somebody finds is one nobody else can ever have, which is a kind of consequence a world otherwise has to fake. What each row also closed is beside it: an extinction is not one loss, it is a list.</p>
-  ${rows.map(r => `<p class="note"><strong>${esc(herbNameOf(r.herbId))}.</strong> ${esc(r.remaining.whatIsKnownOfTheCount)}${r.closedObjectKinds.length
-        ? ` What can no longer be made with it: ${r.closedObjectKinds.map(k => esc(k)).join('; ')}.`
-        : ''}</p>`).join('')}`;
-}
+/* WHAT THE EXTINCTIONS CLOSED IS RENDERED WITH THE MATERIALS THEMSELVES, in
+   `register-items.ts`, under the herb table the extinct rows are in. It was a
+   table and a section of its own here, which put an extinct material and every
+   material it is compared against on different parts of the page. */
 
 /** A technique id resolved to what people call it. Falls back to the id, visibly. */
 function techniqueNameOf(id: string): string {
     return TECHNIQUES.find(t => t.id === id)?.name ?? id;
-}
-
-/** A herb id resolved the same way. */
-function herbNameOf(id: string): string {
-    return HERBS.find(h => h.id === id)?.name ?? id;
 }
 
 /**
@@ -8333,8 +8305,17 @@ function makeSectionsCollapsible(html: string): string {
  * Not a duplicate of Holdings and not a second source: both are rendered off
  * the same dossier holdings the sheet has already built, so they cannot
  * disagree, and neither says anything the other says in the same shape.
+ *
+ * IT CARRIES THE `items` PROSE BLOCK, because that block is commissioned as a
+ * paragraph on the distribution - who has most, who has none, and what that
+ * implies about what each holder wants - and this is the only place on the
+ * sheet where the distribution is. What each object IS is a row in the pill
+ * table now, at its tier, with the rest of the almanac.
  */
-function immortalObjectHolders(reg: WorldRegister): string {
+function immortalObjectHolders(
+    reg: WorldRegister,
+    blocks?: Record<string, { text: string; stale?: boolean }>
+): string {
     const byItem = new Map<string, { name: string; count: number; higher: number; middle: number; lower: number; ordinal: number; anchor: string }[]>();
     for (const d of reg.dossiers) {
         for (const h of d.holdings) {
@@ -8377,7 +8358,8 @@ function immortalObjectHolders(reg: WorldRegister): string {
 
     return `<section>
   <div class="sh"><h2>Who holds an immortal object</h2><span class="r">${byItem.size} kinds &middot; most first</span></div>
-  <p class="note">What each of these things <em>is</em> is on the Objects tab, with what every grade of it reaches. This is the other question: which bodies are holding one right now, how many, and of which grade. Nobody below the Lid can make another, so every figure here only ever falls.</p>
+  <p class="note">What each of these things <em>is</em> is on the Objects tab, in the pill table at its tier, with what every grade of it reaches underneath. This is the other question: which bodies are holding one right now, how many, and of which grade. Nobody below the Lid can make another, so every figure here only ever falls.</p>
+  ${prose(blocks, 'items')}
   ${tables}
 </section>`;
 }
@@ -8753,30 +8735,20 @@ ${renderItemsSection()}
 
 ${renderRepairMedicineSection()}
 
-<section>
-  <div class="sh"><h2>The immortal objects</h2><span class="r">Two kinds, three grades each</span></div>
-  <p class="note"><strong>Grade caps the destination, not the distance.</strong> Every grade performs the same single crossing - the top rung of one realm to the first rung of the next - and what a higher grade buys is permission to perform it further up the ladder. Lower reaches ordinal 25, middle 29, higher 37, <strong>and nothing reaches ${TRIBULATION.ordinalStart}</strong>: Tribulation Transcendence is walked to or it is not reached, and the two rungs above it are not reached at all except by surviving the crossing. Who is holding one is on the Items tab, and what each house holds altogether is on Holdings.</p>
-  ${reg.items.map(i => `<div class="objblk">
-    <h3>${esc(i.name)} <span class="objmeta">${esc(i.form.replace(/_/g, ' '))} · ${esc(i.effect.replace(/_/g, ' '))} · ${i.knownCount} of ${i.everKnown} ever known</span></h3>
-    <p class="objcount">higher ${i.knownByGrade.higher} · middle ${i.knownByGrade.middle} · lower ${i.knownByGrade.lower}</p>
-    <dl class="grades">
-      <dt>Higher</dt><dd>${esc(i.grades.higher)}</dd>
-      <dt>Middle</dt><dd>${esc(i.grades.middle)}</dd>
-      <dt>Lower</dt><dd>${esc(i.grades.lower)}</dd>
-    </dl>
-  </div>`).join('')}
-  ${prose(blocks, 'items')}
-</section>
+<!-- NEITHER THE IMMORTAL OBJECTS NOR THE EXTINCT MATERIALS HAVE A SECTION HERE,
+     AND THAT IS THE FIX RATHER THAN AN OMISSION. Both used to be a listing
+     split off the listing they belonged in, which is the arrangement this sheet
+     exists to avoid: a reader had to know the field existed before they could
+     look in the right place, and the thing they were comparing against was
+     somewhere else on the page. A property is a column.
 
-<!-- The almanac's question about a material: what it was, what it fed, and how
-     much is left. There is no holder on any row - an unfound unit is in ground
-     nobody has opened - so it is a description of a kind and belongs here
-     rather than in the ledger, and rather than on the arts sheet where it sat. -->
-<section>
-  <div class="sh"><h2>Materials nobody can gather</h2><span class="r">${LOST_MATERIALS.length} materials &middot; and what went with each</span></div>
-  <p class="note">An extinction is not one loss, it is a list: the recipes it closed, the arts it fed, the object kinds nobody can make any more. What is left of each is counted here because a number with placements against it is a search with a destination and an end, where "nobody has any" is only a wall.</p>
-  ${lostMaterialTable()}
-</section>
+     An immortal object is a thing at a tier, so it is a row in the pill table
+     with immortal in its tier cell, exactly as the Unbroken Pattern Pill is a
+     row in the repair-medicine table. An extinct material is a material with a
+     property, so it is a row in the herb table saying extinct. What no cell can
+     carry - what each grade of an immortal object reaches, and what each
+     extinction took with it - sits directly under the table its rows are in.
+     All of it is rendered by renderItemsSection, above. -->
 </div>
 
 <!-- ── THE LEDGER ─────────────────────────────────────────────────────────
@@ -8797,7 +8769,7 @@ ${renderRepairMedicineSection()}
   <p class="note">Owner and holder are separate columns because they are separate facts. ${reg.artifacts.filter(a => a.inVault).length} of the objects above sit in a vault their owner also is, ${reg.artifacts.filter(a => a.possessorId !== null && !a.inVault).length} are being carried by somebody - and where a holder is named the rung beside them is theirs rather than the object's, so the two numbers on that line can be read against each other. An owner marked <span class="chip">no entry</span> is an id this sheet could not resolve to a faction, which is a fault in the catalog rather than a kind of ownership.</p>
 </section>
 
-${immortalObjectHolders(reg)}
+${immortalObjectHolders(reg, blocks)}
 
 ${renderRepairMedicineHolders()}
 

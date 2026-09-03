@@ -12,6 +12,8 @@ import { renderRegister, buildRegister } from '../../src/web/register';
 import { ARCHIVE_COPIES, MEDICINE_HOLDINGS, LOST_MATERIALS, ANCIENT_ARTS } from '../../src/data/cultivation/lost-ages';
 import { ARTERIALS, PROVINCES } from '../../src/data/cultivation/regions';
 import { COURTS, APEX_INSTITUTIONS } from '../../src/data/cultivation/hierarchy';
+import { HERBS } from '../../src/data/cultivation/herbs';
+import { IMMORTAL_ITEMS } from '../../src/data/cultivation/immortal-items';
 
 const HTML = renderRegister();
 
@@ -122,10 +124,42 @@ describe('the medicine ledger renders the uncertainty rather than resolving it',
     });
 });
 
+/**
+ * AN EXTINCTION IS A PROPERTY OF A MATERIAL, NOT A LISTING OF ITS OWN.
+ *
+ * These assertions used to pin a heading - "Materials nobody can gather" - and
+ * a heading is exactly what the design ruled out: split a table on a field and
+ * a reader has to know the field exists before they can look in the right
+ * place, and the thing they were comparing against is on another part of the
+ * page. So what is asserted now is the rule. The extinct materials are rows in
+ * the ordinary herb table saying extinct, and everything an extinction closed
+ * still reaches the sheet, because folding a section in must not lose what it
+ * carried.
+ */
 describe('what cannot be made', () => {
-    it('lists every lost material with its downstream closures', () => {
-        expect(HTML).toContain('Materials nobody can gather');
+    it('marks every lost material extinct in the listing it belongs to', () => {
         expect(LOST_MATERIALS.length).toBeGreaterThan(0);
+        expect(HTML).not.toContain('Materials nobody can gather');
+        for (const m of LOST_MATERIALS) {
+            const herb = HERBS.find(h => h.id === m.herbId);
+            expect(herb, m.herbId).toBeTruthy();
+            expect(HTML, herb!.name).toContain(herb!.name);
+        }
+        // The word itself, once per extinct row, in the row's own description.
+        expect([...HTML.matchAll(/extinct - /g)].length).toBe(LOST_MATERIALS.length);
+    });
+
+    it('keeps everything the extinction closed, which is the point of it', () => {
+        for (const m of LOST_MATERIALS) {
+            for (const kind of m.closedObjectKinds) {
+                // Escaped for the page, so compare on the plain prefix.
+                expect(HTML, kind.slice(0, 40)).toContain(kind.slice(0, 40));
+            }
+            expect(HTML).toContain(m.remaining.whatIsKnownOfTheCount.slice(0, 60));
+            for (const p of m.remaining.placements) {
+                expect(HTML, p.note.slice(0, 40)).toContain(p.note.slice(0, 40));
+            }
+        }
     });
 
     it('resolves ids to names rather than printing ids at a reader', () => {
@@ -134,6 +168,46 @@ describe('what cannot be made', () => {
         // never by its slug. A register printing raw ids has stopped being a
         // document and become a dump.
         for (const id of gated) expect(HTML).not.toContain(`>${id}<`);
+        // The same rule for the sites the last units are sitting in, which is
+        // the one column of this record a player could act on.
+        for (const site of LOST_MATERIALS.flatMap(m => m.remaining.placements)) {
+            expect(HTML, site.siteId).not.toContain(site.siteId);
+        }
+    });
+});
+
+/**
+ * THE TWO OBJECTS THAT CAME DOWN ARE ROWS IN THE PILL TABLE.
+ *
+ * `immortal` is a tier, and a tier is a column. The Unbroken Pattern Pill is
+ * the worked example the design owner pointed at: an immortal-grade dose in the
+ * ordinary repair-medicine table with nothing but its grade cell marking it
+ * out. Nothing about what each grade reaches may be lost in the fold.
+ */
+describe('the immortal objects sit at their tier rather than beside the table', () => {
+    it('has no listing of its own', () => {
+        expect(HTML).not.toContain('<h2>The immortal objects</h2>');
+    });
+
+    it('names every one of them, at the immortal tier, with what each grade reaches', () => {
+        for (const item of IMMORTAL_ITEMS) {
+            expect(HTML, item.name).toContain(item.name);
+            for (const grade of [item.grades.higher, item.grades.middle, item.grades.lower]) {
+                expect(HTML, grade.slice(0, 40)).toContain(grade.slice(0, 40));
+            }
+        }
+        // The Unbroken Pattern Pill is the precedent, and it is still one row
+        // in its own table rather than a section: if that ever stops being
+        // true, the shape these were merged into has moved.
+        expect(HTML).toContain('Unbroken Pattern Pill');
+    });
+
+    it('never ranks the top two tiers against each other', () => {
+        // Immortal and chaos are peers - one reliable, one as powerful with its
+        // effects drawn rather than chosen. A sheet that sorted on the tier
+        // would have to assert a height difference nobody is claiming.
+        expect(HTML).toContain('peers');
+        expect(HTML).toMatch(/immortal and chaos|immortal-grade thing is reliable/);
     });
 });
 
