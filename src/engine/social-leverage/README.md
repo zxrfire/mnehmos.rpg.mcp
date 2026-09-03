@@ -377,7 +377,93 @@ what-would-settle-an-account-this-heavy.ts
 what-a-house-does-when-it-catches-you.ts
                                         the three axes of a reprisal, in the
                                         order that makes them separable
+personal-alignment.ts                   what a PERSON is, off the ledger of what
+                                        they have done rather than off whose
+                                        roll they are on
+being-hunted.ts                         which of the people holding something
+                                        against them can use it, and which have
+                                        only written the name down
 ```
+
+## A person's alignment is a question about their ledger, not a field on their house
+
+The design owner:
+
+> you should be able to get to 44 using plain english, as a neutral, righteous, or
+> demonic/evil cultivator.
+>
+> also note that these are independent of techniques - you could cultivate a righteous
+> sect's technique and be evil, you'd just be hunted down (or too powerful for them to
+> touch you)
+
+`SectAlignmentSchema` is a field **on a sect** and it stays there. What was missing is that
+a PERSON had no alignment anywhere at all: `web/game.ts` reads one in six places and every
+one of them is `mySect?.alignment ?? null` on a `Party` - all six correctly asking a
+question about a HOUSE, and none of them a statement about the person. So a cultivator was
+whatever their roll was, and a cultivator on no roll was nothing whatever.
+
+`personal-alignment.ts` is the second, different source for the same three words when the
+subject is a person, and **it is derived rather than stored**, on the same argument the
+shelf-against-roster reading makes about a house: *where a person sits is a question, not a
+property*, and what somebody IS changes every time they do something.
+
+**The axis is not this file's invention.**
+`data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts` already answers what
+makes a demonic body demonic, and its answer is **who pays, and did they agree** - stated in
+the same breath as *not cruelty, not power, and not how much the province dislikes them*.
+`docs/world/houses/asking.md` gives the other half: the axis is about **method and
+permission**, and is not about being nice. Both of those are already two fields on a deed -
+`Deed.paidBy`, and the fact that a thing taken out of a person is a thing they did not hand
+over - and the ledger has already written that direction down in a word:
+
+```text
+favor                 held BY the person who paid.  They bore it, for somebody else.
+grudge / blood_feud   held ABOUT the person who took.
+```
+
+So the reading is a kind and a severity and nothing else. It does not read a cause
+(`grudges.ts`: *if you ever find a switch on one of these values deciding an outcome, that
+switch is the bug*), and there is nowhere in the signature to put a faction, a rung, a realm
+or a technique - the same shape `how-freely-somebody-parts-with-what-they-have.ts` uses to
+keep an alignment out of a disposition, and the reason **practising a house's art makes you
+nothing**. `unauthorisedPractice` and `ifCaughtPractising` remain what they say they are:
+questions about permission, checked and unchanged.
+
+Four rules, and each of them was a decision:
+
+- **Righteous is not the absence of wrongs, and no virtue counter was invented.**
+  `what-a-deed-leaves.ts` already insists kindness and harm are one scoring function pointed
+  two ways *"or the good half quietly becomes decoration"*, so the good side was already
+  counted. Somebody with an empty record is **neutral**.
+- **It is an ordering, not a net.** Demonic is decided first on what was taken, alone;
+  righteous second on what was paid, alone. A murderer who also gives generously is demonic
+  and generous. Disposition is a separate axis and stays where it is.
+- **Open records only, which is also the road back.** A record leaves the open ledger exactly
+  one way - a `Settlement` - so avenged, repaid, compensated, forgiven and proven-false all
+  stop counting, and nothing ages, decays or forgives on its own.
+- **One deed is counted once.** A deed opens a record for the victim, one per kin, and one
+  for the house, and inheritance copies each again. Counting rows would price a victim's
+  family size as the actor's character, so rows collapse onto the deed behind them.
+
+`WHAT_MAKES_IT_A_METHOD` is 2 and is used for both directions, because there is one scoring
+function: one `unforgivable`, or two `grave`, or eight `serious`, or forty `slight`.
+
+### And being hunted is a state, derived, rather than a row nothing writes
+
+`being-hunted.ts` is the *"you'd just be hunted down"* half, and it is two of the three axes
+of `what-a-house-does-when-it-catches-you.ts` imported rather than restated - can the holder
+be made to pay for acting, and are you worth the trouble. Alignment is deliberately not
+asked: a righteous house hunts exactly as hard as a demonic one.
+
+**The other half is the interesting one.** A house that would move and cannot gets a
+sentence rather than silence - *they have written the name down and there is nothing behind
+it* - because a refusal names a route including in reverse, and the record is permanent and
+inheritable while the gap is not.
+
+What it replaces: `Cultivator.feuds` is a stored JSON array with exactly one writer in the
+whole of `src/`, on the MCP combat path. Nothing in the played game has ever written one, so
+the sheet said *"No one is currently hunting you"* to a cultivator with a province behind
+them. That is AGENTS.md's *a field nothing writes* exactly - not inert, reading as a value.
 
 ## A reprisal has three axes and crossing two of them ruins it
 
