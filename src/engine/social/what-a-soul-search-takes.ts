@@ -208,17 +208,36 @@ export const SOUL_STATES_WORST_LAST: readonly SoulState[] =
 /**
  * What a search did to the person it read.
  *
- * ── THE DAMAGE IS INVERSE TO THE GAP, WHICH IS THE WHOLE MODEL ───────────
+ * ── THE DAMAGE IS INVERSE TO THE GAP, AND IT HAS TO BE ───────────────────
  *
  * A reader barely able to open somebody gets in by tearing. A reader four
  * realms above does not have to: the engine's own account of a sufficiently
  * one-sided event is "resolved in one action with nothing contested", and
  * nothing is contested because nothing had to be overcome.
  *
- * So being read by a monster is survivable and being read by somebody near
- * your own rung ruins you. That is not the intuitive way round and it is the
- * one the rest of the engine already argues for - and it makes the middle of
- * the range the dangerous part, which is where players actually live.
+ * That is not the intuitive way round, and the reason for it is not balance.
+ * THE INTUITIVE MODEL WOULD MAKE THE POISON PILL POINTLESS.
+ *
+ * Under "more power, more damage" a high-realm captor reads you and the read
+ * kills you. The secret dies with you anyway, so the pill is a way of
+ * choosing the manner of a death that was coming regardless - a gesture.
+ *
+ * Under this one, somebody four realms above opens you like a book, takes all
+ * four of four, and you WALK AWAY WHOLE. You live, everything you knew is
+ * theirs, and you were no use to anybody who was counting on you. That is the
+ * situation the pill exists to prevent, and it is the reason a spy swallows
+ * one to avoid being searched rather than to avoid being killed.
+ *
+ * So the threat from far above is not death. It is total disclosure and
+ * survival, which is worse in the way this genre means it, and it is the only
+ * version where dying first is a rational act.
+ *
+ * It also prices near-peer searching correctly. At a gap of one you take one
+ * thing of four and tear them doing it, so reading your equal is expensive
+ * and unproductive - which is how it should feel.
+ *
+ * And it puts the dangerous band just below the reader, which is where
+ * players actually live.
  *
  * It also means one axis does both jobs. The gap that decides how much comes
  * across decides what it cost, and a second table priced off the same number
