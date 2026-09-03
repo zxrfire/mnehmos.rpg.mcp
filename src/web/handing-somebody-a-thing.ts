@@ -51,6 +51,7 @@
 import type { Cultivator } from '../schema/cultivation.js';
 import type { EngineFacts } from './facts.js';
 import type { ObligationInput } from '../engine/social/grudges.js';
+import { NAMES_STONES } from './inventory-phrasings.js';
 
 /** What the giver is carrying, as the pouch keeps it. */
 export interface GoodStackHeld {
@@ -114,8 +115,10 @@ function decline(headline: string, scene: string, mechanical: string): GiveOutco
     };
 }
 
-/** Whether the words name the purse rather than a thing in the pouch. */
-const NAMES_STONES = /\b(?:spirit\s+)?stones?\b|\bcoin\b|\bmoney\b|\bpurse\b|\bmy purse\b/i;
+// The money words live in `inventory-phrasings.ts` now, because the self-read
+// needs the same list and two enumerations of how people name money is the
+// duplication this repository repeats most. Unchanged, and still applied here
+// to the noun phrase the player named rather than to the whole sentence.
 
 /**
  * The lot in the pouch these words name, or nothing.

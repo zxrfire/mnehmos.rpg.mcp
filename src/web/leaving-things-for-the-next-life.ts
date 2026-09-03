@@ -220,6 +220,68 @@ export interface DepositRecord {
 
 export type LegacyRecord = CacheRecord | DepositRecord;
 
+/**
+ * What this run has put aside and could still get back, said in one line each.
+ *
+ * ── WHY THIS EXISTS, AND WHY IT IS HERE ──────────────────────────────────
+ *
+ * Ruled by the design owner against the obvious reading: **a human DM answers
+ * "what do I have" with "on you, this; in the vault, that."** They do not
+ * answer "nothing, technically" and wait to be asked a second question. So the
+ * pouch read reaches this, marked and separated - a true answer that misleads
+ * is the same defect as a confident wrong one, which is the worst thing the
+ * phrasing census found.
+ *
+ * `what am I carrying` deliberately does NOT reach it. That phrasing means
+ * something narrower and keeping the distinction is worth more than flattening
+ * it; `inventory-phrasings.ts` owns which question was asked.
+ *
+ * It renders rather than queries, and the query it renders is
+ * {@link LegacyLedger.leftByRun} - the module's one run-scoped read, which
+ * until now **had no caller anywhere in `src/`.** A read of what the player has
+ * put beyond their own reach, with nothing in the running game asking for it,
+ * is the defect AGENTS.md names as this project's most-repeated: every artefact
+ * of a finished feature present except the one that matters. This is its first
+ * consumer.
+ *
+ * ── WHAT IS LEFT OUT, AND WHY IT IS NOT A JUDGEMENT CALL ─────────────────
+ *
+ * A lifted cache, one the world got to first, a collected deposit and an entry
+ * whose attempts ran out. None of those is a thing the player still has, and
+ * each is already a fact in the row rather than something inferred here.
+ */
+export interface PutAside {
+    /** Where it is and what is in it. The line the player reads. */
+    line: string;
+    /** Ids and terms. Never narrated. */
+    structure: string;
+}
+
+export function whatThisRunHasPutAside(records: readonly LegacyRecord[]): PutAside[] {
+    const out: PutAside[] = [];
+    for (const record of records) {
+        if (record.kind === 'cache') {
+            if (record.liftedOnWorldDay !== null || record.goneOnWorldDay !== null) continue;
+            out.push({
+                line: `${describeGoods(record.goods)}, in the ground at ${record.place}`,
+                structure: `${record.id}: cache in ${record.ground.replace(/_/g, ' ')} ground at `
+                    + `'${record.place}', ${record.burial.anchored ? 'anchored' : 'unanchored'}, `
+                    + 'undiscovered. Not in the pouch and not in the purse.'
+            });
+            continue;
+        }
+        if (record.collectedOnWorldDay !== null || record.closed) continue;
+        const house = getSect(record.factionId)?.name ?? record.factionId;
+        out.push({
+            line: `${describeGoods(record.goods)}, lodged with ${house} against a form of words`,
+            structure: `${record.id}: deposit held by ${record.factionId}, ${record.termYears}-year `
+                + `term, ${record.wrongAttempts} wrong attempt(s) so far. Not in the pouch and not `
+                + 'in the purse.'
+        });
+    }
+    return out;
+}
+
 /** Years between two world days, or null where either is unknown. */
 export function elapsedYears(fromDay: number | null, toDay: number | null): number | null {
     if (fromDay === null || toDay === null) return null;
@@ -1068,7 +1130,23 @@ export const LEGACY_NOUNS =
     // those - my things, my goods, my stones, my estate - are all still here.
     // Measured: "what is in my pouch" was answered with the bequest-houses
     // lecture, which is the plainest inventory question in the game.
-    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|purse|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
+    //
+    // `my purse` went the same way afterwards, and the miss is instructive:
+    // the caution above was written about the pouch and the purse is the same
+    // word for the same object, one synonym over. Measured before it was
+    // taken out - "what is in my purse", "how much is in my purse", "what is
+    // left in my purse" and "how is my purse looking" ALL answered with the
+    // custody-counter listing, which is a confident answer to a question
+    // nobody asked. The purse is what the inventory read itself prints ("N
+    // spirit stones in the purse"), so the game was printing a word it then
+    // misread when it was typed back.
+    //
+    // `my stones` stays, and the line is the container against its contents:
+    // stones are a thing you might lodge with a house, and a purse is the
+    // thing you carry them in. The listing branch below needs a question word
+    // as well, so nothing that names a burial or a lodgement is affected
+    // either way.
+    /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
 export const LEGACY_BURY_VERBS_ALONE = 'bury|buries|burying|cache|caches|caching|inter|inters';
