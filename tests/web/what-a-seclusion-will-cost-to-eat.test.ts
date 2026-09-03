@@ -14,13 +14,14 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame, startHttp } from './harness';
+import { makeGame, makeGameInWorld, startHttp } from './harness';
 import {
     whatFeedingThisStretchCosts,
     PROVISION_COST_STONES,
     A_PURCHASE_BIG_ENOUGH_TO_ASK_ABOUT
 } from '../../src/web/what-feeding-a-stretch-of-seclusion-costs';
 import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
+import { SATIETY_MAX } from '../../src/schema/cultivation';
 
 describe('what feeding a stretch costs', () => {
     const full = { satiety: 100, spiritStones: 54 };
@@ -98,6 +99,108 @@ describe('played', () => {
         expect(after.run.elapsedDays).toBe(before.run.elapsedDays);
         expect(after.cultivator.satiety).toBe(before.cultivator.satiety);
     });
+
+    /**
+     * ── THE READER THAT TAKES THE MONEY DID NOT KNOW HIGH REALMS DO NOT EAT ──
+     *
+     * `SATIETY_BURN_BY_REALM` is zero from Deity Transformation up, and
+     * `assessProvisioning` has always handled that. This path did not: it
+     * divided the stretch by `ACTIONS_PER_FULL_SATIETY` flat, so a Void
+     * Refinement cultivator was billed 730 stones for a year of rations she
+     * cannot open, and an empty purse got her a starvation warning for a death
+     * that cannot occur.
+     *
+     * Both arms are played, at one ordinal either side of the line, and both
+     * assert state - stones, satiety, the starvation counter - rather than
+     * prose.
+     */
+    const WORLD = 'the-pantry-is-not-the-wall';
+    const TEN_YEARS = 3650;
+
+    it('sells a cultivator who still eats the food for the stretch', async () => {
+        const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'below-the-line' });
+        const opened = await h.game.newRun('Shen Wuyou');
+        // Qi Condensation: one full belly is 50 days, and the flat rate the
+        // module uses below the line is exactly right here.
+        h.repos.cultivators.update(opened.cultivator.id, {
+            realmOrdinal: 0, spiritStones: 1000
+        } as never);
+
+        const quoted = h.game.provisionsForAStretch(TEN_YEARS);
+        expect(quoted.hungerHasStopped, 'she eats').toBe(false);
+        expect(quoted.wanted).toBe(TEN_YEARS / ACTIONS_PER_FULL_SATIETY);
+        expect(quoted.cost).toBe(quoted.wanted * PROVISION_COST_STONES);
+
+        const before = h.game.state().cultivator.spiritStones;
+        const result = await h.game.cultivate(TEN_YEARS, { anyway: true });
+        const after = result.state.cultivator;
+        // Food is bought for the span actually LIVED, which an encounter can
+        // cut short - so the bill is re-derived from what the skip was handed
+        // rather than from the ten years asked for.
+        const ts = result.timeSkip!;
+        const rations = Math.ceil(ts.requestedDays / ACTIONS_PER_FULL_SATIETY);
+        expect(rations).toBeGreaterThan(0);
+        expect(after.spiritStones, 'the purse paid for every ration')
+            .toBe(before - rations * PROVISION_COST_STONES + ts.deltas.spiritStones);
+        // And the belly did what a belly does.
+        expect(after.satiety).toBeLessThan(SATIETY_MAX);
+    }, 120_000);
+
+    it('sells a cultivator who has stopped eating nothing at all', async () => {
+        const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'above-the-line' });
+        const opened = await h.game.newRun('Shen Wuyou');
+        // Void Refinement. `SATIETY_BURN_BY_REALM.void_refinement` is 0.
+        h.repos.cultivators.update(opened.cultivator.id, {
+            realmOrdinal: 30, spiritStones: 1000
+        } as never);
+
+        const quoted = h.game.provisionsForAStretch(TEN_YEARS);
+        expect(quoted.hungerHasStopped, 'she does not').toBe(true);
+        // Not "cheap" - there is no purchase. The old arithmetic wanted 73
+        // rations and 146 stones for this same stretch.
+        expect(quoted.wanted).toBe(0);
+        expect(quoted.cost).toBe(0);
+        expect(quoted.coversTheWholeStretch).toBe(true);
+        expect(quoted.covered).toBe(TEN_YEARS);
+        expect(quoted.worthAsking).toBe(false);
+
+        const before = h.game.state().cultivator.spiritStones;
+        const result = await h.game.cultivate(TEN_YEARS, { anyway: true });
+        const after = result.state.cultivator;
+
+        // Not one stone taken for food - the whole purse survives the decade,
+        // net of whatever the skip itself earned or spent. The belly never
+        // moved either, which is why the starvation warning this used to print
+        // was a warning about something that cannot happen.
+        const ts = result.timeSkip!;
+        expect(ts.requestedDays, 'the whole stretch was provisioned for').toBe(TEN_YEARS);
+        expect(after.spiritStones).toBe(before + ts.deltas.spiritStones);
+        expect(after.satiety).toBe(SATIETY_MAX);
+        expect(after.starvationTurns).toBe(0);
+        expect(after.alive, 'and hunger did not end her').toBe(true);
+    }, 120_000);
+
+    /**
+     * The state the fix had to keep telling apart. An empty purse below the
+     * line is still a real shortfall and still ends in starvation - the branch
+     * added above must not swallow it.
+     */
+    it('still warns the cultivator who eats and cannot pay', async () => {
+        const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'nothing-affordable' });
+        const opened = await h.game.newRun('Shen Wuyou');
+        h.repos.cultivators.update(opened.cultivator.id, {
+            realmOrdinal: 0, spiritStones: 0
+        } as never);
+
+        const quoted = h.game.provisionsForAStretch(TEN_YEARS);
+        expect(quoted.hungerHasStopped, 'nothing affordable is not nothing to buy').toBe(false);
+        expect(quoted.wanted).toBeGreaterThan(0);
+        expect(quoted.toBuy).toBe(0);
+        expect(quoted.short).toBe(quoted.wanted);
+        expect(quoted.coversTheWholeStretch).toBe(false);
+        // The belly alone, and no more.
+        expect(quoted.covered).toBe(ACTIONS_PER_FULL_SATIETY);
+    }, 120_000);
 
     it('is served over HTTP for the picker to read', async () => {
         const http = await startHttp(makeGame({ worldEnabled: true }).game);

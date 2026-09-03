@@ -21,7 +21,8 @@
  * and it would drift from the real one the first time either was touched.
  */
 
-import { ACTIONS_PER_FULL_SATIETY } from '../engine/cultivation/survival.js';
+import { ACTIONS_PER_FULL_SATIETY, stillNeedsToEat } from '../engine/cultivation/survival.js';
+import type { Injury } from '../schema/cultivation.js';
 
 /**
  * What one ration costs at any market in the world.
@@ -68,19 +69,68 @@ export interface ProvisioningPlan {
     shareOfThePurse: number;
     /** True when this is a purchase the picker should stop and ask about. */
     worthAsking: boolean;
+    /**
+     * The body has stopped taking meals, so there is nothing here to buy.
+     *
+     * A separate flag rather than something a caller infers from `wanted === 0`,
+     * because the two states that produce a zero purchase are opposites and
+     * used to print the same sentence. **Nothing to buy** is this one: hunger
+     * has stopped, the stretch is covered end to end, and the purse is
+     * irrelevant. **Nothing affordable** is `wanted > 0` with `toBuy === 0`,
+     * where the food exists, is needed, and cannot be paid for - and that one
+     * ends in starvation. A caller that cannot tell them apart tells somebody
+     * who does not eat that their belly covers fifty days.
+     */
+    hungerHasStopped: boolean;
 }
 
 /**
  * The provisioning arithmetic, and the only copy of it.
  *
- * Deliberately does NOT consult the realm's satiety burn: `buyProvisions` has
- * never done so - it buys one ration per {@link ACTIONS_PER_FULL_SATIETY} days
- * flat - and a preview that priced the stretch differently from the purchase
- * would be worse than no preview at all. If that flat rate is wrong it is wrong
- * in one place and should be fixed there, with both halves moving together.
+ * ── WHERE THE REALM COMES INTO IT, AND WHERE IT STILL DOES NOT ────────────
+ *
+ * This used to say it deliberately never consulted the realm at all, on the
+ * grounds that a preview which priced a stretch differently from the purchase
+ * is worse than no preview, and that if the flat rate was wrong it should be
+ * fixed in one place with both halves moving together. This is that fix, and
+ * it is narrowed to the one case where the flat rate was not merely coarse but
+ * false.
+ *
+ * `SATIETY_BURN_BY_REALM` is ZERO from Deity Transformation up: a cultivator
+ * that high has stopped eating, `burnSatiety` burns nothing, and starvation
+ * cannot occur. Priced flat, the same body was sold 365 rations for a year in
+ * a cave and warned that the belly covered fifty days - a bill for food that
+ * cannot be eaten, followed by a starvation warning for a death that cannot
+ * happen. {@link ProvisioningPlan.hungerHasStopped} is how a caller says the
+ * true thing instead.
+ *
+ * The predicate is {@link stillNeedsToEat}, imported rather than restated -
+ * one table, one reader. It is preferred over `daysPerRation` here because it
+ * takes the wound list, and a partial transformation takes the meals back
+ * (`satietyBurnMultiplier`); `feedFromPack` and `drawFromPack` in `game.ts`
+ * already read it that way, so all three agree about who eats.
+ *
+ * BELOW that line the rate is still flat, and that is still deliberate.
+ * `buyProvisions` has never scaled the purchase by realm, so a Foundation
+ * cultivator is sold roughly twenty-four times the food they will open. That
+ * is over-buying rather than a false statement, it costs stones and never a
+ * life, and moving it moves the early-game economy - a bigger change than the
+ * one this was for.
  */
 export function whatFeedingThisStretchCosts(
-    body: { satiety: number; spiritStones: number },
+    body: {
+        satiety: number;
+        spiritStones: number;
+        /**
+         * The rung, which decides whether there is anything to price at all.
+         * Optional and defaulting to the bottom of the ladder, where the flat
+         * rate is exactly right: every caller with a real body passes a whole
+         * `Cultivator` and gets the true answer.
+         */
+        realmOrdinal?: number;
+        /** Read only by `stillNeedsToEat`. See the note above. */
+        injuries?: readonly Injury[];
+    },
     rationsHeld: number,
     days: number
 ): ProvisioningPlan {
@@ -88,6 +138,27 @@ export function whatFeedingThisStretchCosts(
     const stonesBefore = Math.max(0, Math.floor(body.spiritStones));
     const held = Math.max(0, Math.floor(rationsHeld));
     const satiety = Math.max(0, Math.floor(body.satiety));
+
+    // Nothing to price. Not "cheap" and not "already covered by the pack":
+    // there is no purchase to make, the stretch is fed end to end by a body
+    // that does not draw on it, and the purse is not part of this decision.
+    if (!stillNeedsToEat(body.realmOrdinal ?? 0, body.injuries)) {
+        return {
+            days: stretch,
+            wanted: 0,
+            carried: 0,
+            toBuy: 0,
+            short: 0,
+            cost: 0,
+            stonesBefore,
+            stonesAfter: stonesBefore,
+            covered: stretch,
+            coversTheWholeStretch: true,
+            shareOfThePurse: 0,
+            worthAsking: false,
+            hungerHasStopped: true
+        };
+    }
 
     const wanted = Math.ceil(stretch / ACTIONS_PER_FULL_SATIETY);
     const carried = Math.min(wanted, held);
@@ -114,6 +185,7 @@ export function whatFeedingThisStretchCosts(
         covered,
         coversTheWholeStretch: covered >= stretch,
         shareOfThePurse,
-        worthAsking: cost > 0 && shareOfThePurse >= A_PURCHASE_BIG_ENOUGH_TO_ASK_ABOUT
+        worthAsking: cost > 0 && shareOfThePurse >= A_PURCHASE_BIG_ENOUGH_TO_ASK_ABOUT,
+        hungerHasStopped: false
     };
 }
