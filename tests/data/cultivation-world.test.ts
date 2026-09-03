@@ -24,6 +24,7 @@ import { getApexInstitution } from '../../src/data/cultivation/hierarchy.js';
 import { getPill, MINOR_HEALING_PILL_ID, GRAIN_ABSTINENCE_PILL_ID } from '../../src/data/cultivation/pills.js';
 import {
     REGIONS,
+    SPINE_REGIONS,
     RegionSchema,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
@@ -101,10 +102,14 @@ function expectUniqueIds(entries: readonly { id: string }[], label: string): voi
 // ─────────────────────────────────────────────────────────────────────────
 describe('regions', () => {
     it('holds the five of the spine, one of them home', () => {
-        expect(REGIONS.length).toBe(5);
+        // The spine is five. The MAP is six, and the sixth is the wedge
+        // between the arms - see the ungoverned describe below. Every
+        // assertion in this block is about a province and says so.
+        expect(SPINE_REGIONS.length).toBe(5);
+        expect(REGIONS.length).toBe(6);
         for (const r of REGIONS) expect(() => RegionSchema.parse(r), r.id).not.toThrow();
         expectUniqueIds(REGIONS, 'region');
-        expect(REGIONS.filter(r => r.role === 'home').length).toBe(1);
+        expect(SPINE_REGIONS.filter(r => r.role === 'home').length).toBe(1);
         for (const id of [HOME_REGION_ID, ADJACENT_REGION_ID, EAST_REGION_ID, NORTH_REGION_ID, SOUTH_REGION_ID]) {
             expect(getRegion(id), `${id} is not in the catalog`).toBeDefined();
         }
@@ -116,7 +121,7 @@ describe('regions', () => {
         // one, and territory, rivalry and distance had nothing to measure
         // against. No province may hold a majority of the catalog.
         const total = SECTS.length;
-        for (const r of REGIONS) {
+        for (const r of SPINE_REGIONS) {
             expect(r.factionIds.length, `${r.id} holds too much of the world`)
                 .toBeLessThanOrEqual(Math.ceil(total * 0.6));
             expect(r.factionIds.length, `${r.id} is seated by nobody`)
@@ -125,7 +130,7 @@ describe('regions', () => {
         // And the home province is still the densest, because it is the centre
         // and every road in the world runs through it.
         const home = getRegion(HOME_REGION_ID)!;
-        for (const r of REGIONS) {
+        for (const r of SPINE_REGIONS) {
             if (r.id === HOME_REGION_ID) continue;
             expect(r.factionIds.length).toBeLessThan(home.factionIds.length);
         }
@@ -135,10 +140,10 @@ describe('regions', () => {
         // `localCeilingOrdinal` caps NPC advancement in pressure.ts and sets
         // trial thresholds in seeding.ts, so a flat gradient is a flat world.
         const ceilings = REGIONS.map(r => r.localCeilingOrdinal);
-        expect(new Set(ceilings).size, 'two provinces share a ceiling').toBe(REGIONS.length);
+        expect(new Set(ceilings).size, 'two regions share a ceiling').toBe(REGIONS.length);
         // Exactly one province has no ceiling at all, and it is the one the
         // world's apex stands in. This is readable from the number alone.
-        const uncapped = REGIONS.filter(r => r.localCeilingOrdinal >= MAX_ORDINAL);
+        const uncapped = SPINE_REGIONS.filter(r => r.localCeilingOrdinal >= MAX_ORDINAL);
         expect(uncapped.length).toBe(1);
         expect(uncapped[0].id).toBe(HOME_REGION_ID);
         expect(uncapped[0].factionIds).toContain('sect-hollow-court');
@@ -234,20 +239,32 @@ describe('regions', () => {
         }
 
         // Every province reaches the home province directly, which is what
-        // makes it the centre rather than merely the first entry.
-        for (const r of REGIONS) {
+        // makes it the centre rather than merely the first entry. The wedge
+        // does NOT, and that is its whole position: a road from the centre
+        // onto it would make it a spoke, and a spoke is a suburb.
+        for (const r of SPINE_REGIONS) {
             if (r.id === HOME_REGION_ID) continue;
             expect(
                 r.connections.some(c => c.otherRegionId === HOME_REGION_ID),
                 `${r.id} cannot reach the centre`
             ).toBe(true);
         }
+        expect(
+            getRegion(BLOWN_GROUND_ID)!.connections.some(c => c.otherRegionId === HOME_REGION_ID),
+            'the centre has a road onto ground nobody holds'
+        ).toBe(false);
 
-        // And the only links that bypass the centre are by water. This is the
-        // whole reason the sea is in the catalog: it opens a route between two
-        // coasts that no road makes.
-        const bypasses = REGIONS.flatMap(r => r.connections
-            .filter(c => r.id !== HOME_REGION_ID && c.otherRegionId !== HOME_REGION_ID)
+        // And the only links between two PROVINCES that bypass the centre are
+        // by water. This is the whole reason the sea is in the catalog: it
+        // opens a route between two coasts that no road makes. The wedge is
+        // the other bypass and is deliberately not one of these - it is not a
+        // province, nothing runs on it, and the two roads onto it are asserted
+        // in the ungoverned describe below.
+        const spineIds = new Set(SPINE_REGIONS.map(r => r.id));
+        const bypasses = SPINE_REGIONS.flatMap(r => r.connections
+            .filter(c => r.id !== HOME_REGION_ID
+                && c.otherRegionId !== HOME_REGION_ID
+                && spineIds.has(c.otherRegionId))
             .map(c => ({ from: r.id, c })));
         expect(bypasses.length, 'nothing goes round the centre at all').toBeGreaterThan(0);
         for (const b of bypasses) {
@@ -304,9 +321,13 @@ describe('regions', () => {
                 .toBeLessThan(r.cultivation.ambientRateMultiplier);
             expect(sea.priceMultiplier).toBeGreaterThan(r.priceMultiplier);
         }
-        // Nobody holds it, and it is the only province where that is true.
+        // Nobody holds it, and it is the only PROVINCE where that is true. The
+        // wedge reads `no_authority` too and is not a province - the two
+        // places fail the same institution for opposite reasons, which is what
+        // `andWhyThatIsNotTheSeasReason` is for.
         expect(sea.politics).toBe('no_authority');
-        expect(REGIONS.filter(r => r.politics === 'no_authority').length).toBe(1);
+        expect(SPINE_REGIONS.filter(r => r.politics === 'no_authority').length).toBe(1);
+        expect(getRegion(BLOWN_GROUND_ID)!.politics).toBe('no_authority');
         // Only water carries a sea crossing, and it carries more than one.
         for (const r of REGIONS) {
             const crossings = r.connections.filter(c => c.kind === 'sea_crossing');
@@ -355,8 +376,13 @@ describe('ungoverned ground is not a sixth province', () => {
         for (const g of UNGOVERNED_GROUND) {
             expect(() => UngovernedGroundSchema.parse(g), g.id).not.toThrow();
             // It is between provinces and inside none of them.
-            expect(REGIONS.some(r => r.id === g.id), `${g.id} is in the spine`).toBe(false);
-            expect(getRegion(g.id), `${g.id} resolves as a region`).toBeUndefined();
+            //
+            // This used to assert that it resolved as no region at all, which
+            // was true and was the bug: nothing minted a location for it, no
+            // road reached it and nobody could stand on it. What it must stay
+            // out of is the SPINE - not the map.
+            expect(SPINE_REGIONS.some(r => r.id === g.id), `${g.id} is in the spine`).toBe(false);
+            expect(getRegion(g.id), `${g.id} is not on the map`).toBeDefined();
             for (const id of g.borderingRegionIds) {
                 expect(getRegion(id), `${g.id} borders unknown ${id}`).toBeDefined();
             }
@@ -370,7 +396,7 @@ describe('ungoverned ground is not a sixth province', () => {
             }
         }
         // The spine is still five, and the ground did not become one of them.
-        expect(REGIONS.length).toBe(5);
+        expect(SPINE_REGIONS.length).toBe(5);
         expect(ungovernedGroundBordering(HOME_REGION_ID).map(g => g.id))
             .toContain(BLOWN_GROUND_ID);
         expect(ungovernedGroundBordering('region-does-not-exist')).toEqual([]);
@@ -389,12 +415,12 @@ describe('ungoverned ground is not a sixth province', () => {
         // is wrong with it. The ceilings are 46, 38, 36, 6 and 2, so this is
         // two rather than three - the prose in `regions.ts` said three and was
         // corrected against this line.
-        expect(REGIONS.filter(r => r.localCeilingOrdinal < sand.ceilingOrdinal).length)
+        expect(SPINE_REGIONS.filter(r => r.localCeilingOrdinal < sand.ceilingOrdinal).length)
             .toBeGreaterThanOrEqual(2);
         expect(sand.ceilingOrdinal).toBeGreaterThan(getRegion(ADJACENT_REGION_ID)!.localCeilingOrdinal);
         // Rich ground, unowned. The best band in the world by share, and the
         // least ordinary ground of any land in the world.
-        for (const r of REGIONS) {
+        for (const r of SPINE_REGIONS) {
             expect(sand.ambientProfile.spirit_tide ?? 0,
                 `${r.id} has more tide than the unowned ground`)
                 .toBeGreaterThanOrEqual(r.ambientProfile.spirit_tide ?? 0);
@@ -402,7 +428,7 @@ describe('ungoverned ground is not a sixth province', () => {
         // No local method, so no modifier. The only other 1 in the world is
         // the Low Fall's, and the two places are nothing alike.
         expect(sand.ambientRateMultiplier).toBe(1);
-        const ones = REGIONS.filter(r => r.cultivation.ambientRateMultiplier === 1);
+        const ones = SPINE_REGIONS.filter(r => r.cultivation.ambientRateMultiplier === 1);
         expect(ones.length).toBe(1);
         expect(ones[0].id).toBe(HOME_REGION_ID);
         // The two accounts must actually be written and must differ.
@@ -471,7 +497,10 @@ describe('ungoverned ground is not a sixth province', () => {
         expect(sand.derivations.length).toBeGreaterThanOrEqual(4);
         // The register and customs must not be copied off a province, or the
         // place is scenery with a different colour.
-        for (const r of REGIONS) {
+        // Against the SPINE. The wedge's own projection is in `REGIONS` and
+        // carries these strings by reference, so comparing it with itself
+        // would fail on identity rather than on scenery.
+        for (const r of SPINE_REGIONS) {
             expect(sand.register.sound).not.toBe(r.register.sound);
             expect(sand.customs.death).not.toBe(r.customs.death);
             expect(sand.customs.threatModel).not.toBe(r.customs.threatModel);
@@ -479,10 +508,56 @@ describe('ungoverned ground is not a sixth province', () => {
         }
         // Place names must not collide with a province's, which would put two
         // different places in front of a narrator under one word.
-        const authored = new Set(REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())));
+        const authored = new Set(SPINE_REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())));
         for (const p of sand.places) expect(authored.has(p.name.toLowerCase()), p.name).toBe(false);
         const generated = new Set([...RUIN_NAMES, ...SCAR_NAMES].map(e => e.name.toLowerCase()));
         for (const p of sand.places) expect(generated.has(p.name.toLowerCase()), p.name).toBe(false);
+    });
+
+    it('is on the map, with two roads onto it and nobody holding it', () => {
+        // The three steps that turned a page of prose into ground. Before
+        // them `loadCultivationCatalog` read a list this was not in, so
+        // `seedRegions` minted no location, no road linked it, and
+        // `ADMIN set_location location=The Blown Ground` came back "is not a
+        // place".
+        const row = getRegion(BLOWN_GROUND_ID)!;
+        expect(row).toBeDefined();
+        expect(() => RegionSchema.parse(row)).not.toThrow();
+        expect(row.name).toBe(THE_BLOWN_GROUND.name);
+        expect(row.bearing).toBe('interior');
+
+        // Nobody is seated. Being present is not holding, so the nine parties
+        // on the ground arrive as branches - a presence that is not a seat -
+        // and every one of them is seated in some province instead.
+        expect(row.factionIds).toEqual([]);
+        expect(row.branches.length).toBeGreaterThanOrEqual(5);
+        for (const b of row.branches) {
+            expect(getSect(b.parentSectId), `unknown house ${b.parentSectId}`).toBeDefined();
+            expect(getRegionForFaction(b.parentSectId)!.id).not.toBe(row.id);
+        }
+
+        // The one road the catalog prices, in halves that sum back to it. A
+        // pair of invented numbers would quietly delete the eight days the
+        // whole of `theRouteNobodyTakes` and the centre's position turn on.
+        const route = THE_BLOWN_GROUND.theRouteNobodyTakes;
+        expect(row.connections.length).toBe(2);
+        const legs = new Map(row.connections.map(c => [c.otherRegionId, c.travelDays]));
+        expect(legs.get(route.fromRegionId)! + legs.get(route.toRegionId)!)
+            .toBe(route.directDays);
+        expect(route.directDays).toBeLessThan(route.throughTheCentreDays);
+        // And both ends agree, because `game.ts` prices a journey off the
+        // connections of the region somebody is STANDING in.
+        for (const [otherId, days] of legs) {
+            const back = getRegion(otherId)!.connections
+                .filter(c => c.otherRegionId === row.id);
+            expect(back.length, `${otherId} has no road back onto the sand`).toBe(1);
+            expect(back[0].travelDays).toBe(days);
+        }
+
+        // Step three: the one field `ground-holder.ts` reads to answer
+        // "nobody holds this", which the trust term already treats as worse
+        // than a demonic house.
+        expect(row.politics).toBe('no_authority');
     });
 
     it('reads its ceiling the same way a province does', () => {

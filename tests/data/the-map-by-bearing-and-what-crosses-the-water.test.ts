@@ -16,6 +16,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     REGIONS,
+    SPINE_REGIONS,
+    BLOWN_GROUND_ID,
     THE_BLOWN_GROUND,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
@@ -66,9 +68,18 @@ describe('the map has a compass on it', () => {
         // The Blown Ground is between the four arms and inside none of them.
         // Filing it north or east to complete a set would make a vacuum into
         // a suburb, which is the thing its own section comment argues against.
+        //
+        // This used to assert that the interior was EMPTY, which was true only
+        // because the ground was on no map at all. It is now on the map and
+        // still in none of the arms, which is the stronger form of the same
+        // claim: exactly one row at `interior`, and it is not a province.
         expect(THE_BLOWN_GROUND.bearing).toBe('interior');
-        expect(regionsByBearing().interior).toEqual([]);
-        expect(REGIONS.some(r => r.bearing === 'interior')).toBe(false);
+        expect(regionsByBearing().interior.map(r => r.id)).toEqual([BLOWN_GROUND_ID]);
+        expect(SPINE_REGIONS.some(r => r.bearing === 'interior')).toBe(false);
+        for (const bearing of ['centre', 'north', 'east', 'south', 'west'] as const) {
+            expect(regionsByBearing()[bearing].some(r => r.id === BLOWN_GROUND_ID),
+                `the wedge was filed ${bearing}`).toBe(false);
+        }
     });
 
     it('seats every house at a bearing, and the centre does not hold everything', () => {
@@ -144,8 +155,11 @@ describe('the south has ships in the middle of it', () => {
     });
 
     it('names no place twice across the whole map', () => {
+        // The spine's places plus the wedge's, counted from the two authored
+        // sources rather than from `REGIONS` - which now holds the wedge's
+        // projection as well and would count every one of its six twice.
         const all = [
-            ...REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())),
+            ...SPINE_REGIONS.flatMap(r => r.places.map(p => p.name.toLowerCase())),
             ...THE_BLOWN_GROUND.places.map(p => p.name.toLowerCase())
         ];
         expect(new Set(all).size, 'two places share a name').toBe(all.length);

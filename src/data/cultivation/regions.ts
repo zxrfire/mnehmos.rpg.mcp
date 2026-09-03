@@ -687,7 +687,27 @@ export const EAST_REGION_ID = 'region-wide-field';
 export const NORTH_REGION_ID = 'region-white-stair';
 export const SOUTH_REGION_ID = 'region-drowned-reach';
 
-export const REGIONS: readonly Region[] = [
+export const BLOWN_GROUND_ID = 'ungoverned-blown-ground';
+
+/**
+ * THE SPINE AS AUTHORED. Five provinces, and every province invariant is
+ * about these.
+ *
+ * Module-private, because it is not the whole map and a caller that took it
+ * for one would be reading a world with a hole in the middle. The two
+ * exported lists are at the foot of the file and mean different things:
+ *
+ *   SPINE_REGIONS  ground somebody holds, or could. Two seated houses each, a
+ *                  tradition seated on it, a road to the centre, a ceiling
+ *                  nobody else shares. Everything the catalog tests assert.
+ *   REGIONS        ground the map has a row for, which is what a seeder, a
+ *                  travel graph and a player standing somewhere need.
+ *
+ * Until the wedge was projected those were the same list, so "region" and
+ * "province" were the same word and the distinction had nowhere to live. See
+ * {@link THE_BLOWN_GROUND_AS_REGION}.
+ */
+const THE_FIVE_PROVINCES: readonly Region[] = [
     {
         id: HOME_REGION_ID,
         name: 'The Low Fall',
@@ -1546,15 +1566,78 @@ export const REGIONS: readonly Region[] = [
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
-const REGION_BY_ID: ReadonlyMap<string, Region> = new Map(REGIONS.map(r => [r.id, r]));
+/**
+ * BUILT ON FIRST USE, NOT AT THIS LINE, AND THE REASON IS ORDERING.
+ *
+ * `REGIONS` is assembled at the FOOT of this file, because it holds the
+ * projection of `THE_BLOWN_GROUND` and that object is declared down there
+ * beside the rest of the ungoverned material. An index built at this line
+ * would read a `const` that has not been initialised yet and throw on import.
+ *
+ * One memo for all four indices, so they cannot get out of step with each
+ * other, and so the file is walked once rather than four times.
+ *
+ * WHAT EACH IS FOR, kept from the four comments this replaced:
+ *
+ * `ambientByPlaceName` is the band a named settlement's ground ordinarily
+ * gives. Every place in `places` declares one, and until it was indexed
+ * nothing read them at the point a cultivator was standing there:
+ * `currentAmbient` fell through to `impliedDensityFor`, a hash of the run seed
+ * and the location STRING, so Nine Peaks - "the deepest vein anyone has kept" -
+ * rolled its qi off its own name and came out indistinguishable from a thin
+ * market town. Found by playing: two consecutive looks at the same square
+ * described the air as thick enough to notice on the first breath, and then as
+ * unremarkable.
+ *
+ * `regionIdByPlaceName` is the province a named settlement sits in. Built for
+ * the same reason: the engine holds no map, so anything that needs to know
+ * where a place IS has to ask the catalog that authored it. Both return
+ * undefined for a compound, a site or anything the catalog has never named,
+ * which is the honest answer rather than a guess at the nearest province.
+ */
+interface RegionIndices {
+    byId: ReadonlyMap<string, Region>;
+    byFaction: ReadonlyMap<string, string>;
+    ambientByPlaceName: ReadonlyMap<string, AmbientQi>;
+    regionIdByPlaceName: ReadonlyMap<string, string>;
+}
 
-const REGION_BY_FACTION: ReadonlyMap<string, string> = (() => {
-    const map = new Map<string, string>();
+let INDICES: RegionIndices | null = null;
+
+function indices(): RegionIndices {
+    if (INDICES) return INDICES;
+    const byId = new Map<string, Region>();
+    const byFaction = new Map<string, string>();
+    const ambientByPlaceName = new Map<string, AmbientQi>();
+    const regionIdByPlaceName = new Map<string, string>();
     for (const region of REGIONS) {
-        for (const factionId of region.factionIds) map.set(factionId, region.id);
+        byId.set(region.id, region);
+        for (const factionId of region.factionIds) byFaction.set(factionId, region.id);
+        for (const place of region.places) {
+            ambientByPlaceName.set(place.name.toLowerCase(), place.ambient);
+            regionIdByPlaceName.set(place.name.toLowerCase(), region.id);
+        }
     }
-    return map;
-})();
+    // A PROVINCE IS SOMEWHERE YOU CAN STAND, so its own name has to answer too.
+    //
+    // The world holds a row for each province and a player can travel to one -
+    // "I travel to The Quiet Marches" is an ordinary move and lands them on it.
+    // With only place names in this map, that arrival resolved to NO province,
+    // and every caller fell back to somewhere else: `where can I go` answered
+    // for the birth province, so it listed the wrong towns and could not name
+    // the gate of a house the player had just been told about, in the province
+    // they were standing in.
+    //
+    // Places win, and are therefore set first and never overwritten. A town
+    // named for its province is somewhere a person can walk to and a province
+    // is not, so the narrower answer is the more useful one.
+    for (const region of REGIONS) {
+        const key = region.name.toLowerCase();
+        if (!regionIdByPlaceName.has(key)) regionIdByPlaceName.set(key, region.id);
+    }
+    INDICES = { byId, byFaction, ambientByPlaceName, regionIdByPlaceName };
+    return INDICES;
+}
 
 /**
  * The band a named settlement's ground ordinarily gives.
@@ -1572,64 +1655,22 @@ const REGION_BY_FACTION: ReadonlyMap<string, string> = (() => {
  * admin alias - and that is the honest answer rather than a default. The
  * implied guess is correct exactly where the ground genuinely is not known.
  */
-const AMBIENT_BY_PLACE_NAME: ReadonlyMap<string, AmbientQi> = (() => {
-    const map = new Map<string, AmbientQi>();
-    for (const region of REGIONS) {
-        for (const place of region.places) map.set(place.name.toLowerCase(), place.ambient);
-    }
-    return map;
-})();
-
-/**
- * The province a named settlement sits in.
- *
- * Same index as the ambient lookup above and built for the same reason: the
- * engine holds no map, so anything that needs to know where a place IS has to
- * ask the catalog that authored it. Returns undefined for a compound, a site
- * or anything the catalog has never named, which is the honest answer rather
- * than a guess at the nearest province.
- */
-const REGION_BY_PLACE_NAME: ReadonlyMap<string, string> = (() => {
-    const map = new Map<string, string>();
-    for (const region of REGIONS) {
-        for (const place of region.places) map.set(place.name.toLowerCase(), region.id);
-    }
-    // A PROVINCE IS SOMEWHERE YOU CAN STAND, so its own name has to answer too.
-    //
-    // The world holds a row for each province and a player can travel to one -
-    // "I travel to The Quiet Marches" is an ordinary move and lands them on it.
-    // With only place names in this map, that arrival resolved to NO province,
-    // and every caller fell back to somewhere else: `where can I go` answered
-    // for the birth province, so it listed the wrong towns and could not name
-    // the gate of a house the player had just been told about, in the province
-    // they were standing in.
-    //
-    // Places win, and are therefore set first and never overwritten. A town
-    // named for its province is somewhere a person can walk to and a province
-    // is not, so the narrower answer is the more useful one.
-    for (const region of REGIONS) {
-        const key = region.name.toLowerCase();
-        if (!map.has(key)) map.set(key, region.id);
-    }
-    return map;
-})();
-
 export function regionIdOfPlace(placeName: string | null | undefined): string | undefined {
     if (!placeName) return undefined;
-    return REGION_BY_PLACE_NAME.get(placeName.trim().toLowerCase());
+    return indices().regionIdByPlaceName.get(placeName.trim().toLowerCase());
 }
 
 export function declaredAmbientAt(placeName: string | null | undefined): AmbientQi | undefined {
     if (!placeName) return undefined;
-    return AMBIENT_BY_PLACE_NAME.get(placeName.trim().toLowerCase());
+    return indices().ambientByPlaceName.get(placeName.trim().toLowerCase());
 }
 
 export function getRegion(id: string): Region | undefined {
-    return REGION_BY_ID.get(id);
+    return indices().byId.get(id);
 }
 
 export function requireRegion(id: string): Region {
-    const r = REGION_BY_ID.get(id);
+    const r = indices().byId.get(id);
     if (!r) throw new Error(`Unknown region: ${id}`);
     return r;
 }
@@ -1639,8 +1680,8 @@ export function getHomeRegion(): Region {
 }
 
 export function getRegionForFaction(factionId: string): Region | undefined {
-    const id = REGION_BY_FACTION.get(factionId);
-    return id ? REGION_BY_ID.get(id) : undefined;
+    const id = indices().byFaction.get(factionId);
+    return id ? indices().byId.get(id) : undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2949,54 +2990,41 @@ export const UngovernedGroundSchema = z.object({
 export type UngovernedGround = z.infer<typeof UngovernedGroundSchema>;
 
 /**
- * NONE OF THE BELOW IS SOMEWHERE ANYBODY CAN STAND. Measured, and written here
- * rather than in a report, because an absence nobody has written down gets
- * mistaken for a design decision.
+ * IT IS NOW SOMEWHERE SOMEBODY CAN STAND, AND HERE IS WHAT THAT COST.
  *
- * `THE_BLOWN_GROUND` is not in `REGIONS`, and `REGIONS` is the only thing
- * `cultivationCatalog` reads - so `seedRegions` mints no location for it, none
- * of its `places` becomes a settlement, no road links it to anything, nobody
- * is born on it and nobody stands on it. On a seeded world: 944 locations,
- * five of them regions, and not one of them this. Typing
- * `ADMIN set_location location=The Blown Ground` comes back *"is not a place.
+ * This block used to open by saying the opposite, and the measurement it
+ * recorded was correct: `THE_BLOWN_GROUND` was not in the list the catalog
+ * loader reads, so `seedRegions` minted no location for it, none of its
+ * `places` became a settlement, no road linked it, nobody stood on it, and
+ * `ADMIN set_location location=The Blown Ground` came back *"is not a place.
  * The map has no entry for it under that name or anything close enough to be
- * sure of."*
+ * sure of."* Nothing in `src/` read this object or any of its lookups. Eleven
+ * days of sand, the shows, the Meet, the finders and the six parties working
+ * it were a very good page of prose and nothing else - the defect `AGENTS.md`
+ * calls *a module nothing calls*, at the scale of a province.
  *
- * Nothing in `src/` reads `THE_BLOWN_GROUND`, `UNGOVERNED_GROUND`,
- * `ungovernedGroundBordering`, `leakageInto` or `canAdvanceOnUngoverned`
- * either. The only readers are two catalog tests. So the eleven days of sand,
- * the shows, the Meet, the finders, the six parties working it and the
- * argument about why the Low Fall's whole position rests on it are, mechanically,
- * a very good page of prose - the exact defect `AGENTS.md` calls *a module
- * nothing calls*, at the scale of a province.
+ * {@link THE_BLOWN_GROUND_AS_REGION} is the fix, and the three steps it took
+ * were the three the measurement predicted: a `Region` projection, edges on
+ * the travel graph, and `politics: 'no_authority'` so `ground-holder.ts` can
+ * answer *nobody holds this*.
  *
- * What making it real would take, in the order the dependencies run:
+ * WHAT THE MEASUREMENT GOT WRONG, because it matters to the next reader. It
+ * proposed "a projection into `REGIONS`" as though `REGIONS` were one thing.
+ * It was two things wearing one name: the spine of five provinces that every
+ * catalog invariant is written about, and the set of rows the map, the seeder
+ * and the travel graph need. Those are now `SPINE_REGIONS` and `REGIONS`, and
+ * that split is the whole of why this could be done without weakening any of the
+ * five clauses the section comment above defends. Nothing about a province
+ * became optional; "region" stopped meaning "province".
  *
- *   1. A `Region` row. `UngovernedGround` is a richer shape than `Region` and
- *      does not satisfy it - no `localRankNames`, no `connections`, no
- *      `localCeilingOrdinal` by that name - so this is either a projection
- *      into `REGIONS` or a second arm in `cultivationCatalog`. The projection
- *      is smaller and keeps one seeder.
- *   2. `connections` to the four bordering arms, at `theRouteNobodyTakes`'s
- *      own `directDays`. Without an edge the travel graph cannot reach it and
- *      the shorter fifth road stays a sentence.
- *   3. `politics: 'no_authority'`. That one field is what
- *      `ground-holder.ts` reads to answer "nobody holds this", which is the
- *      floor of the trust term and the only mechanical consequence of being
- *      ungoverned that currently exists.
- *   4. A decision about the shows, which is the part that is genuinely new
- *      work rather than wiring: a surfacing is dense ground with a life of a
- *      season to nine years, and `LocationRecord` has no expiry. The nearest
- *      existing machinery is `OpportunityWindow` in `opportunities.ts` and
- *      `AreaStatus` in `what-is-true-of-a-place-right-now.ts`, and which of
- *      the two owns a patch of ground that closes is a design question rather
- *      than a port.
- *
- * Steps 1 to 3 are an afternoon and would make it ground a player can walk to
- * and be disbelieved on. Step 4 is the province's actual subject.
+ * STILL OPEN: the shows. A surfacing is dense ground with a life of a season
+ * to nine years and `LocationRecord` has no expiry, so the six `places` below
+ * are seeded as permanent ground and Long Open will still be open in four
+ * hundred years. `OpportunityWindow` in `opportunities.ts` and `AreaStatus` in
+ * `what-is-true-of-a-place-right-now.ts` are the nearest machinery and which
+ * of them owns a patch of ground that closes is a design question rather than
+ * a port. It is the province's actual subject and it is not answered here.
  */
-export const BLOWN_GROUND_ID = 'ungoverned-blown-ground';
-
 export const THE_BLOWN_GROUND: UngovernedGround = {
     id: BLOWN_GROUND_ID,
     name: 'The Blown Ground',
@@ -3249,3 +3277,221 @@ export function canAdvanceOnUngoverned(groundId: string, ordinal: number): boole
     const ground = UNGOVERNED_GROUND.find(g => g.id === groundId);
     return ground !== undefined && ordinal < ground.ceilingOrdinal;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE MAP
+//
+// `SPINE_REGIONS` is the five arms. `REGIONS` is those plus the wedge between
+// them, and it is what the catalog loader, the seeder, the travel graph and
+// every "where am I standing" question read.
+//
+// WHY THE PROJECTION EXISTS AT ALL. The section comment above argues, at
+// length and correctly, that the Blown Ground is not a sixth PROVINCE: five
+// clauses of the `Region` contract presuppose a holder and every one of them
+// would have to be weakened. None of that is retracted and none of it has
+// been weakened - `SPINE_REGIONS` still holds exactly five rows and every
+// catalog invariant about a province is asserted over that list.
+//
+// What the argument did not cover is that `Region` is also the only shape the
+// engine can read. `loadCultivationCatalog` maps one list; `seedRegions`
+// mints one location per row and links the roads; `requireRegion` is what
+// `game.ts` calls to price a journey out of wherever somebody is standing. So
+// "not a province" and "not on the map" were the same sentence, and the
+// second half of it is what left eleven days of sand as a page of prose.
+//
+// The projection is therefore lossy ON PURPOSE and in one direction only.
+// `UngovernedGround` is the richer object and stays authoritative for
+// everything that has no `Region` field to go in - the shows, the Meet, the
+// finders, the leakage, why nobody fixes it. What crosses is the subset the
+// engine can act on.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The Blown Ground as a `Region`, so the map can hold it.
+ *
+ * THE THREE FIELDS THAT ARE NOT A COPY, because each is a decision:
+ *
+ * `traditionId` is the one place the projection has to say something the
+ * ground does not believe. Both traditions cross it and neither is seated on
+ * it, and the schema has no third value. `tradition-drawn` is taken for the
+ * same reason the Drowned Reach takes it - everybody here brought their
+ * vocabulary from somewhere else, and most of them were refused at a Drawn
+ * gate - but it is a default rather than a fact about the ground, and nothing
+ * here should be read as the Drawn Road holding anything.
+ *
+ * `factionIds` is empty and must stay empty. Nine parties work this ground and
+ * every one of them is seated in a province; putting any of them here would
+ * seat a house twice and would say the thing the whole object exists to deny.
+ * They arrive instead as `branches` - a presence that is not a seat, which is
+ * exactly what `RegionBranch` already means everywhere else in this file.
+ *
+ * `connections` is TWO, not four, and the catalog is what says so. The ground
+ * borders four provinces and carries one road: the direct line the world does
+ * not use, from the Marches to the Wide Field. The other two borders are
+ * described in `whatItCostsTheNeighbours` as borders WITHOUT a road - the Low
+ * Fall's row says the ground "sits behind the province rather than beside it",
+ * and giving the centre an edge onto it would make the wedge a spoke, which
+ * the section comment above names as the failure ("a spoke is not a vacuum, it
+ * is a suburb"). The South's row is twenty-one days of coast with no landfall
+ * on it, which is the opposite of a link. Two edges, from a catalog that
+ * prices one road.
+ */
+function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
+    const route = ground.theRouteNobodyTakes;
+    // THE HALVES OF THE ONE ROAD THE CATALOG PRICES.
+    //
+    // `directDays` is the whole line and the catalog states no figure for
+    // either half, so the only derivation that keeps the world's arithmetic
+    // true is one that sums back to it: nine days across, against seventeen
+    // through the gorge, which is the eight days `theRouteNobodyTakes` and
+    // `whyNobodyFixesIt.theInterestedReason` both turn on. A pair of invented
+    // numbers that summed to ten would quietly delete the shortcut.
+    const nearLeg = Math.floor(route.directDays / 2);
+    const farLeg = route.directDays - nearLeg;
+
+    return {
+        id: ground.id,
+        name: ground.name,
+        role: 'adjacent',
+        bearing: ground.bearing,
+        traditionId: 'tradition-drawn',
+        summary: ground.summary,
+        governingFact: ground.governingFact,
+        derivations: ground.derivations.slice(),
+        register: ground.register,
+        customs: ground.customs,
+        cultivation: {
+            method:
+                'None of its own. A cultivator here sits on a surfacing and draws, which is the ordinary method on ground nobody has taught anybody anything about, and it is the whole of the road: there is no local technique, no school and nobody to learn one from.',
+            ambientRateMultiplier: ground.ambientRateMultiplier,
+            // No local method, so there is nothing for a method multiplier to
+            // multiply and it is the ordinary rate. Not a bonus withheld - an
+            // absence, and the same absence `method` above states in words.
+            methodRateMultiplier: ground.ambientRateMultiplier,
+            deviationRiskModifier: 0,
+            harderBoundaries: [],
+            missingDisciplines: [
+                {
+                    discipline: 'alchemy',
+                    reason: 'A furnace is a fixed installation and nothing here is fixed. Every institution that has ever operated on this ground is a camp, and a camp that stops moving is buried or robbed, so what the sand produces leaves it raw and is refined four days away in Kettle by somebody else.'
+                },
+                {
+                    discipline: 'formations',
+                    reason: 'A formation is anchored to ground and the ground walks about a li a year. Tuo\'s Wall is what the province has instead of an argument about this: two hundred paces of it are above the sand, the rest is not, and nobody now living can name what it was called.'
+                }
+            ],
+            strongDisciplines: [
+                'reading ground, which is the one trade native to the sand and cannot be learned anywhere else',
+                'sitting on dense ground with nobody\'s permission, which every solitary in the world got here or did not get at all'
+            ],
+            costNote:
+                'Nothing, and that is the point: no grant, no tenancy, no tribute and nobody to be polite to. What it costs instead is water, four days of it between the Sink and anything else, and the ordinary cause of death here is a sum somebody did before setting out.',
+            localRankNames: standardBandsWith(
+                ground.howRankIsSpoken,
+                'Nobody here confers a band and nobody checks one. The words are the world\'s ordinary words for a person with no house, so they tile the shared ladder trivially and mean nothing more than that somebody has been asked whose they are and had no answer.'
+            )
+        },
+        ambientProfile: { ...ground.ambientProfile },
+        localCeilingOrdinal: ground.ceilingOrdinal,
+        ceilingNote: ground.ceilingNote,
+        veinStatus: ground.veinStatus,
+        // STEP THREE, AND THE ONLY MECHANICAL CONSEQUENCE THAT ALREADY EXISTS.
+        // `seedRegions` copies this onto the location record and
+        // `ground-holder.ts` reads it to answer "nobody holds this", which is
+        // the floor of the trust term in `ground-trust.ts` - and that term
+        // already puts unheld ground BELOW a demonic house, for the reason
+        // `whatItMakesTrue` gives.
+        politics: 'no_authority',
+        politicsNote: ground.whyItCannotBeHeld,
+        factionIds: [],
+        branches: ground.whoIsOnIt
+            .filter((p): p is typeof p & { factionId: string } => p.factionId !== null)
+            .map(p => ({
+                parentSectId: p.factionId,
+                localName: p.who,
+                doesHere: p.doesHere
+            })),
+        places: ground.places.map(p => ({ ...p })),
+        exports: [
+            'what comes out of a surfacing before it closes, sold once, at the finder\'s price, with no provenance that would survive being written down',
+            'intact dead, which the cover keeps and gives back a decade later with their possessions still on them',
+            'locations, which is the only thing a finder actually sells and the only export in the world that stops existing when it is used'
+        ],
+        imports: [
+            'water, in strings of forty to sixty skins, which is the binding constraint on everything anybody does here',
+            'food, since nothing grows on sand and nothing grows at all on a show',
+            'people, refused at a gate somewhere else, which is the whole of the population and everybody knows it about everybody'
+        ],
+        // Dearer than any land province and cheaper than the water. Everything
+        // is carried across four days with no well on them to a market that
+        // assembles for six weeks; a passage south is still provisioned in
+        // months, which is why the sea keeps the top of the scale.
+        priceMultiplier: 1.9,
+        hazards: ground.hazards.slice(),
+        connections: [
+            {
+                kind: 'unsettled_border',
+                otherRegionId: route.fromRegionId,
+                description:
+                    'The stakes stop. The Sixmile Wardens repaint nine hundred a year and the last of them is about a day short of the sand, and the Wardens will tell a visitor once, free, that they stop there for a reason.',
+                travelDays: nearLeg
+            },
+            {
+                kind: 'refugee_flow',
+                otherRegionId: route.toRegionId,
+                description:
+                    'The direct line, walked in both directions by people rather than by carts: the refused going west out of nine admission days, and the Crimson Abyss Hall\'s recruiters coming the other way with a cash box and the first month paid in advance.',
+                travelDays: farLeg
+            }
+        ],
+        trueHereFalseThere: ground.trueHereFalseThere.slice(),
+        crossingNotes: ground.crossingNotes.slice()
+    };
+}
+
+/** The Blown Ground, in the shape the engine can act on. */
+export const THE_BLOWN_GROUND_AS_REGION: Region = ungovernedGroundAsRegion(THE_BLOWN_GROUND);
+
+/**
+ * Every row the map has, spine and wedge, with the roads joined up.
+ *
+ * The back-links are derived rather than typed into the province rows, so
+ * there is exactly one place in this file that states what the fifth road
+ * costs and no way for the two ends to disagree about it. `game.ts` prices a
+ * journey off the connections of the region somebody is STANDING in, so
+ * without these the road would be walkable one way and unpriced the other.
+ */
+export const REGIONS: readonly Region[] = (() => {
+    const back = new Map<string, RegionConnection>();
+    for (const link of THE_BLOWN_GROUND_AS_REGION.connections) {
+        back.set(link.otherRegionId, {
+            kind: link.kind,
+            otherRegionId: THE_BLOWN_GROUND_AS_REGION.id,
+            description: link.description,
+            travelDays: link.travelDays
+        });
+    }
+    const spine = THE_FIVE_PROVINCES.map(province => {
+        const edge = back.get(province.id);
+        return edge
+            ? { ...province, connections: [...province.connections, edge] }
+            : province;
+    });
+    return [...spine, THE_BLOWN_GROUND_AS_REGION];
+})();
+
+/**
+ * The five arms, and the subject of every province invariant in the catalog
+ * tests: two seated houses, a tradition, a road to the centre, a ceiling
+ * nobody else shares.
+ *
+ * Named for the spine rather than for provinces because `PROVINCES` in this
+ * file is already the political layer - `Province`, with an apex over it and
+ * prefectures under it - and the two are different questions about the same
+ * five names.
+ *
+ * Filtered out of `REGIONS` rather than declared separately, so the rows in
+ * the two lists are the same objects and a road added to one is a road in the
+ * other.
+ */
+export const SPINE_REGIONS: readonly Region[] = REGIONS.filter(r => r.id !== BLOWN_GROUND_ID);

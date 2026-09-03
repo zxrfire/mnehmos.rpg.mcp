@@ -31,7 +31,7 @@ import {
 } from '../../src/data/cultivation/hollow-court-roster.js';
 import { mayBeNamed } from '../../src/data/cultivation/hierarchy.js';
 import {
-    REGIONS,
+    SPINE_REGIONS,
     HOME_REGION_ID,
     ADJACENT_REGION_ID,
     getRegionForFaction
@@ -387,7 +387,11 @@ describe('members catalog', () => {
     });
 
     it('gives each province a rival and a master', () => {
-        for (const region of REGIONS) {
+        // The spine, not the map. The Blown Ground has no members catalog and
+        // must not have one: nobody is seated there, nobody teaches there, and
+        // a rival on ground where nothing can be held is not a rival, it is
+        // whoever is standing over you today.
+        for (const region of SPINE_REGIONS) {
             const rivals = getRivalsIn(region.id);
             const masters = getMastersIn(region.id);
             expect(rivals.length, `${region.name} has no personal opposition`)
@@ -519,7 +523,7 @@ describe('members catalog', () => {
         expect(line).toContain('Outer Disciple');
         expect(describeMember('member-nobody-at-all')).toBeUndefined();
 
-        const everyRegionCovered = REGIONS.every(r => getMembersInRegion(r.id).length > 0);
+        const everyRegionCovered = SPINE_REGIONS.every(r => getMembersInRegion(r.id).length > 0);
         expect(everyRegionCovered).toBe(true);
     });
 
