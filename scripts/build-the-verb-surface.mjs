@@ -96,7 +96,8 @@ const TABLE = [
  */
 const HANDLERS = [
     SOURCE.game,
-    'src/web/travel-verbs.ts'
+    'src/web/travel-verbs.ts',
+    'src/web/combat-verbs.ts'
 ];
 
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
