@@ -17,7 +17,8 @@
  *
  * The register is the sheet that states plainly what the world spends enormous
  * effort keeping unstated, and this is one of the things it keeps most quiet.
- * Three questions it answers that nothing else in the register does:
+ * Two questions it answers that nothing else in the register does, and both of
+ * them name a body, which is why they are the ledger's:
  *
  *   HOW MANY SENT-DOWN DOSES ARE LEFT. The only medicine that reaches a break
  *   above Deity Transformation cannot be made on this side, so its supply is a
@@ -28,8 +29,11 @@
  *   two bureaucracies, one sect, one court, one guild and two houses, and
  *   nobody else in either province holds a single dose of anything.
  *
- *   WHERE EACH GRADE STOPS. The ceilings are the design, and they are the thing
- *   a reader is most likely to get wrong from prose alone.
+ * WHAT EACH MEDICINE IS is not here any more - it is a row in the almanac
+ * listing on the Objects tab, beside the pills and the materials, where a dose
+ * can be compared against them. `buildRepairMedicineRegister` still derives the
+ * ceilings and every reading, because both are read from here; what left is the
+ * second table that was printing four of the same six columns.
  */
 
 import {
@@ -193,53 +197,27 @@ function esc(value: string): string {
         .replace(/>/g, '&gt;');
 }
 
-const stones = (v: number) => v.toLocaleString('en-US');
-
-/**
- * WHAT THIS MEDICINE IS. The almanac half, for the Objects tab.
+/*
+ * WHAT THE MEDICINE IS HAS NO RENDERER HERE ANY MORE, AND THAT IS THE FIX.
  *
- * WHY THIS IS TWO FUNCTIONS AND NOT ONE. It was one section holding both
- * halves of the sheet's own dividing line - what a thing IS, and who has one -
- * and it sat on the Key tab, which is neither. So the register's most
- * irreplaceable consumable had its description filed under how-to-read-this and
- * its holder list filed under the same heading, and the Items tab that exists
- * to answer who-has-what pointed at the Key tab for the answer.
+ * There was one: a section of its own on the Objects tab, four rows, six
+ * columns - name, grade, what it reaches, its worth, its price and its terms.
+ * Four of those six were already being printed, for the same four rows, on the
+ * same tab, in the almanac listing that carries every catalogued thing. Two
+ * tables of one set of rows is two authorities on them, and the day one catalog
+ * edit moved only one of them is the day the sheet started disagreeing with
+ * itself.
  *
- * Split on the line docs/world/things/items.md draws: the kind is described here, and
- * the rows with holders are in the function below. Nothing was reworded.
+ * The listing won, because it is the one where a dose can be compared against a
+ * pill and a comprehension material - which is the whole argument for having a
+ * listing. `repairRows` in `register-items.ts` carries the worth and the terms
+ * now, so nothing was lost, and the ceilings that no cell could hold are the
+ * note above that table.
  *
- * The header shape, the table wrapper and the paragraph class are the sheet's
- * own now. This section was written with a bare h2 and bare tables, so it was
- * the one block on the page that did not look like the page - no rule under its
- * heading, no horizontal scroll on a table too wide for its column, and body
- * text set at a different size to the prose either side of it.
+ * The holder half below stays, because it answers the other question: who has
+ * one. That is the ledger's, it names a body on every row, and nothing else on
+ * the sheet says it.
  */
-export function renderRepairMedicineSection(): string {
-    const r = buildRepairMedicineRegister();
-    const rows = r.medicines.map(m => `<tr>
-      <td class="nm">${esc(m.name)}</td>
-      <td class="m">${esc(m.grade)}</td>
-      <td class="n">${m.reachesUpToOrdinal} <span class="dim">${esc(m.reachesUpToRealm)}</span></td>
-      <td class="n">${stones(m.weightInStones)}</td>
-      <td class="n">${m.cashPrice === null ? '<span class="dim">not for cash</span>' : stones(m.cashPrice)}</td>
-      <td class="q">${esc(m.terms.replace(/_/g, ' '))}</td>
-    </tr>`).join('\n');
-
-    return `
-<section id="structural-repair-medicine">
-  <div class="sh"><h2>Structural repair medicine</h2><span class="r">${r.medicines.length} medicines &middot; what each one reaches</span></div>
-  <p class="note">What mends a cultivator who crossed and arrived broken. Nothing refined below
-     the Lid reaches a break above ordinal ${r.ceilings.madeBelowTheLid}, and nothing
-     at all reaches above ordinal ${r.ceilings.anythingAtAll} - the crossing into the
-     last realm is your own effort, and medicine is barred at it by rule.</p>
-  <div class="scroll"><table class="itemtbl">
-    <colgroup><col style="width:26%"><col style="width:12%"><col style="width:16%"><col style="width:12%"><col style="width:12%"><col style="width:22%"></colgroup>
-    <thead><tr><th>Medicine</th><th>Grade</th><th>Reaches</th><th>Worth (stones)</th><th>Price</th><th>Terms</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table></div>
-  <p class="note">Who is holding a dose of any of these, and what has been spent on whom, is on the Items tab.</p>
-</section>`;
-}
 
 /**
  * WHO HAS A DOSE, AND WHAT HAS BEEN SPENT. The ledger half, for the Items tab.

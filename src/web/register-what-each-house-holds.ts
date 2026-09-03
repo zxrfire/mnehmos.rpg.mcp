@@ -329,9 +329,14 @@ function houseDetail(h: HouseHoldings): string {
         ).join('. ')}.</dd>`);
     }
     if (h.immortalObjects.length) {
+        // THE COUNTS ONLY. What the grades mean - that grade caps the
+        // destination rather than the distance - is a fact about the objects
+        // and not about this house, so it is said once in the section note
+        // above, and at length beside the objects themselves on the Objects
+        // tab. It was appended to every holder that has one.
         parts.push(`<dt>Immortal objects</dt><dd>${h.immortalObjects.map(i =>
             `${i.count} ${esc(i.item)} - higher ${i.higher}, middle ${i.middle}, lower ${i.lower}`
-        ).join('. ')}. Grade caps the destination rather than the distance: every grade performs one crossing, and a higher grade buys permission to perform it further up the ladder.</dd>`);
+        ).join('. ')}.</dd>`);
     }
     if (h.doses.length) {
         parts.push(`<dt>Repair medicine</dt><dd>${h.doses.map(x =>
@@ -351,19 +356,21 @@ function houseDetail(h: HouseHoldings): string {
         parts.push(`<dt>What it pays</dt><dd>${stones(h.topStipend)} spirit stones a month at ${esc(h.topRank)}, its top rank.</dd>`);
     }
     if (h.compound) {
-        // A house with no nodes at all is not a fraction. "0 of 0 formation
-        // nodes lit... that fraction is how much of its own inheritance it can
-        // still operate" says nothing, because nought over nought is not a
-        // proportion of anything - and it rendered four times on the sheet.
-        // What is true about such a house is that its compound was never
-        // formed, which is a different and more interesting fact than a house
-        // that has lost its lights.
+        // A house with no nodes at all is not a fraction. Nought over nought is
+        // not a proportion of anything, so those houses say what IS true of
+        // them - the compound was never formed - which is a different and more
+        // interesting fact than a house that has lost its lights.
+        //
+        // WHAT EITHER FIGURE MEANS IS THE SECTION NOTE'S. Every row here used
+        // to end "that fraction is how much of its own inheritance it can still
+        // operate", which is a gloss on the column, printed on thirty houses,
+        // under a note four paragraphs up that says it in the same words.
         const whose = h.compound.inherited
             ? 'a compound it did not build'
             : 'a compound it built itself';
         parts.push(h.compound.total === 0
-            ? `<dt>The building</dt><dd>No formation nodes at all, in ${whose}. Nothing here was ever lit, so there is nothing for it to have lost.</dd>`
-            : `<dt>The building</dt><dd>${h.compound.lit} of ${h.compound.total} formation nodes lit, in ${whose}. That fraction is how much of its own inheritance it can still operate.</dd>`);
+            ? `<dt>The building</dt><dd>No formation nodes at all, in ${whose}.</dd>`
+            : `<dt>The building</dt><dd>${h.compound.lit} of ${h.compound.total} formation nodes lit, in ${whose}.</dd>`);
     }
     if (h.holds) {
         parts.push(`<dt>The ground</dt><dd>${esc(h.holds)}${h.holdsFromName ? ` In the gift of ${esc(h.holdsFromName)}.` : ''}</dd>`);
@@ -435,7 +442,7 @@ export function renderHoldingsSection(dossiers: readonly SectDossier[]): string 
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>
-  <p class="note"><em>Ord</em> is the strongest acting member and a second figure beside it is what the body could field once, at cost. <em>Objects</em> counts the artifact catalog's own rows filed to this owner, with the strongest rating beside it. <em>Asleep</em> is the rung a sealed ancestor went under at, and a body marked <span class="chip">quiet</span> is one whose rivals have no reason to think it is there - which is the whole of what that asset is worth. <em>Nodes</em> is formation nodes lit over the total the compound has, and it is the honest measure of how much of its own inheritance a house can still operate. <em>Doses</em> is the opening holding rather than a live count: a running world spends them, and the record follows the dose rather than the number.</p>
+  <p class="note"><em>Ord</em> is the strongest acting member and a second figure beside it is what the body could field once, at cost. <em>Objects</em> counts the artifact catalog's own rows filed to this owner, with the strongest rating beside it. <em>Asleep</em> is the rung a sealed ancestor went under at, and a body marked <span class="chip">quiet</span> is one whose rivals have no reason to think it is there - which is the whole of what that asset is worth. <em>Nodes</em> is formation nodes lit over the total the compound has, and it is the honest measure of how much of its own inheritance a house can still operate - so a house with no nodes at all is not a low fraction, it is a compound that was never formed and has nothing to have lost. <em>Immortal</em> counts objects that came down, and their higher, middle and lower are a destination rather than a distance: every grade performs one crossing, and a higher grade buys permission to perform it further up the ladder. <em>Doses</em> is the opening holding rather than a live count: a running world spends them, and the record follows the dose rather than the number.</p>
   <p class="note">${c.holdingNothingAtAll} of the ${c.houses} hold nothing anybody could carry away - no object, no dose, nobody asleep, nothing left on the way out. That is not a gap in the data. It is a body whose entire standing is the people standing in it, and it is the ordinary case rather than the exceptional one.</p>
 </section>
 `;

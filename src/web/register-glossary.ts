@@ -624,11 +624,13 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                 term: 'Grade',
                 meaning:
                     `The band an art belongs to - ${GRADE_ORDER.slice(0, -2).join(', ')}, then `
-                    + `${GRADE_ORDER.slice(-2).join(' and ')} - and the same five bands are the tier `
-                    + 'column on a pill, a herb, a dose of repair medicine and a thing that came down, '
-                    + 'so the word means one thing wherever it is printed. It is a real band in the '
-                    + 'catalog rather than a label: it sets the qi the art costs, the range of rungs it '
-                    + 'is written across, and how much of it is expected to survive being written down.'
+                    + `${GRADE_ORDER.slice(-2).join(' and ')} - and the same ${GRADE_ORDER.length} bands `
+                    + 'are the tier column on a pill, a herb, a dose of repair medicine and a thing that '
+                    + 'came down, so the word means one thing wherever it is printed. It is a real band '
+                    + 'in the catalog rather than a label: it sets the qi the art costs, the range of '
+                    + 'rungs it is written across, and how much of it is expected to survive being '
+                    + 'written down. The sequence above is the order the catalog lists them in, which '
+                    + 'ascends until the last two and then stops ascending - see below.'
             },
             {
                 // THE TOP OF THE LADDER IS A TIE, and the register has to be
@@ -638,12 +640,27 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                 // nobody is making. What separates them is variance.
                 term: 'immortal and chaos',
                 meaning:
-                    'Peers at the top of the tier column rather than a fourth and a fifth step. They are '
-                    + 'the same height and differ in what they do with it: an immortal-grade thing is '
-                    + 'reliable and uniformly good, and a chaos-grade one is as powerful with its effects '
-                    + 'drawn rather than chosen, so it can go badly. No table on this sheet is sorted on '
-                    + 'the tier: where the arts are grouped into bands the two of them are adjacent, and '
-                    + 'the order they are printed in is the catalog\'s rather than a ranking.'
+                    'Peers at the top of the tier column rather than a fourth and a fifth step, and the '
+                    + 'difference between them is one property: when the effect is settled. An '
+                    + 'immortal-grade thing was settled when it was made and does what it says every '
+                    + 'time. A chaos-grade thing of the same magnitude is settled when it is USED, so '
+                    + 'what it does is drawn - a spirit root redrawn, a bloodline arrived from nowhere, '
+                    + 'a body that is a spirit beast afterwards, or the whole of it going off at once - '
+                    + 'and the set is open rather than a menu. No table on this sheet is sorted on the '
+                    + 'tier: where the arts are grouped into bands the two are adjacent, and the order '
+                    + 'they are printed in is the listing order rather than a ranking.'
+            },
+            {
+                term: 'settled on use',
+                meaning:
+                    'The marker on a row whose grade draws its effect at the moment somebody uses it. '
+                    + 'What is printed beside it is one outcome the material has been seen to have, '
+                    + 'assembled from people who were in a position to say so afterwards - so it is '
+                    + 'neither the whole set nor a fraction of it, and the sheet gives no total on '
+                    + 'purpose. A count with a denominator would be a claim the archives cannot carry, '
+                    + 'and the marker stays on every such row rather than being gathered into a note, '
+                    + 'because a reader looking at one line is exactly the person who must not take that '
+                    + 'line at its word.'
             },
             {
                 term: 'Ord',

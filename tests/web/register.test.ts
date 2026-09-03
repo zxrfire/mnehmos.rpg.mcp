@@ -30,7 +30,7 @@ import {
     strongestOfficerOf,
     FACTION_PARENTAGE
 } from '../../src/data/cultivation/hierarchy';
-import { TECHNIQUES, GRADE_ORDER } from '../../src/data/cultivation/techniques';
+import { TECHNIQUES, compareGrades } from '../../src/data/cultivation/techniques';
 import {
     SECTS,
     SECT_ANCESTRY,
@@ -1144,9 +1144,45 @@ describe('the arts', () => {
         }
     });
 
-    it('bands by grade, strongest band first', () => {
-        const ranks = reg.techniques.map(t => GRADE_ORDER.indexOf(t.grade));
-        expect([...ranks].sort((a, b) => b - a)).toEqual(ranks);
+    /**
+     * BY FORCE, THEN BY HOW HIGH IT IS WRITTEN, THEN BY NAME.
+     *
+     * This used to read the position in `GRADE_ORDER`, which the technique
+     * catalog now documents as a LISTING order whose only virtue is being
+     * arbitrary and stable - immortal and chaos are peers on the power ladder,
+     * and `compareGrades` returns 0 between them. So an assertion built on
+     * `indexOf` was asserting the ordering that correction removed.
+     *
+     * What the sort actually promises now is asserted instead, including the
+     * tie-break, because a tie resolved by accident is the thing worth pinning:
+     * a reader looking at two adjacent rows should be able to say why one is
+     * above the other.
+     */
+    it('orders arts by force, then by the rung written for, then by name', () => {
+        const list = reg.techniques;
+        for (let i = 1; i < list.length; i++) {
+            const [prev, next] = [list[i - 1], list[i]];
+            const byForce = compareGrades(next.grade, prev.grade);
+            expect(byForce, `${prev.name} then ${next.name}`).toBeLessThanOrEqual(0);
+            if (byForce !== 0) continue;
+            if (next.requiredOrdinal !== prev.requiredOrdinal) {
+                expect(next.requiredOrdinal, `${prev.name} then ${next.name}`)
+                    .toBeLessThan(prev.requiredOrdinal);
+                continue;
+            }
+            expect(prev.name.localeCompare(next.name), `${prev.name} then ${next.name}`)
+                .toBeLessThanOrEqual(0);
+        }
+    });
+
+    it('puts the two peer grades adjacent rather than one above the other', () => {
+        // The tie is real and it is the point. Immortal and chaos arts
+        // interleave by the rung they are written for, which is a reason a
+        // reader can see, rather than by whichever the catalog listed first.
+        const peers = reg.techniques.filter(t => compareGrades(t.grade, 'chaos') === 0);
+        expect(new Set(peers.map(t => t.grade)).size).toBe(2);
+        const ords = peers.map(t => t.requiredOrdinal);
+        expect([...ords].sort((a, b) => b - a)).toEqual(ords);
     });
 
     it('derives who teaches an art from the sect catalog and nowhere else', () => {
