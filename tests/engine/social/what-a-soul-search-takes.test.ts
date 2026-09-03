@@ -19,6 +19,7 @@ import {
     canSearchASoul,
     soulSearchOpensAt,
     TAKEN_OUT_OF_SOMEBODY,
+    whatASoulSearchCost,
     whatASoulSearchTakes
 } from '../../../src/engine/social/what-a-soul-search-takes.js';
 import { stageCeilingFor } from '../../../src/engine/social/discovery.js';
@@ -207,5 +208,134 @@ describe('and what the pill leaves', () => {
             held: FOUR
         });
         expect(search.opened).toBe(true);
+    });
+});
+
+
+/**
+ * WHAT IT COSTS THE PERSON WHO WAS READ.
+ *
+ * The damage is inverse to the gap. That is not the intuitive way round and
+ * it is the one the rest of the engine already argues for: a reader barely
+ * able to open somebody gets in by tearing, and a reader far above does not
+ * have to, because "resolved in one action with nothing contested" is what a
+ * sufficiently one-sided event already means here.
+ *
+ * Measured, for a Nascent Soul reader at ordinal 22:
+ *
+ *     subject at Core Formation   gap 1   took 1 of 4   forced
+ *     subject at Foundation       gap 2   took 2 of 4   forced
+ *     subject at Qi Condensation  gap 3   took 4 of 4   opened without forcing
+ *     subject at Nascent Soul     gap 0   nothing       they held
+ *
+ * So the dangerous band is the narrow one just below the reader, which is
+ * where players spend their lives. Somebody four realms down is opened like a
+ * book and walks away whole; their near-peer does not.
+ */
+describe('what a soul search cost the person it read', () => {
+    /** Core Formation - one realm under a Nascent Soul reader. Forced. */
+    const NEAR_PEER = 18;
+    /** Qi Condensation - three under. Opened without effort. */
+    const FAR_BELOW = 1;
+
+    const searchOf = (
+        subjectOrdinal: number,
+        subject: { soulState: string; identityContinuity: number } = WHOLE
+    ) => whatASoulSearchTakes({ searcherOrdinal: 22, subjectOrdinal, subject, held: FOUR });
+
+    it('tears when the reader is barely able to open them', () => {
+        const search = searchOf(NEAR_PEER);
+        const paid = whatASoulSearchCost(search, WHOLE);
+        expect(paid.because).toBe('forced');
+        expect(paid.stepsDown).toBe(1);
+        expect(paid.after).toBe('damaged');
+    });
+
+    it('leaves no mark when the reader is far enough above', () => {
+        const search = searchOf(FAR_BELOW);
+        const paid = whatASoulSearchCost(search, WHOLE);
+        expect(paid.because).toBe('opened_without_forcing');
+        expect(paid.stepsDown).toBe(0);
+        expect(paid.after).toBe('intact');
+    });
+
+    /**
+     * ONE AXIS, TWO CONSEQUENCES. Wherever it tears, the read was partial;
+     * wherever it did not, the read was whole. If those bands ever came apart
+     * somebody would be taking a full read at a price meant for a partial one.
+     */
+    it('stops tearing at exactly the gap where it stops taking partial reads', () => {
+        const forced: number[] = [];
+        const clean: number[] = [];
+        for (const subjectOrdinal of [18, 14, 10, 5, 1]) {
+            const search = searchOf(subjectOrdinal);
+            if (!search.opened) continue;
+            const paid = whatASoulSearchCost(search, WHOLE);
+            if (paid.because === 'forced') {
+                forced.push(search.realmGap);
+                expect(search.took.length, `gap ${search.realmGap}`).toBeLessThan(FOUR.length);
+            } else {
+                clean.push(search.realmGap);
+                expect(search.took.length, `gap ${search.realmGap}`).toBe(FOUR.length);
+            }
+        }
+        expect(forced.length).toBeGreaterThan(0);
+        expect(clean.length).toBeGreaterThan(0);
+        expect(Math.max(...forced)).toBeLessThan(Math.min(...clean));
+    });
+
+    /**
+     * Nothing got in, so nothing was torn. That covers the floor and it covers
+     * somebody who HELD - keeping a reader out is not surviving one.
+     */
+    it('costs nothing when nothing was opened', () => {
+        const below = whatASoulSearchTakes({
+            searcherOrdinal: soulSearchOpensAt() - 1,
+            subjectOrdinal: FAR_BELOW, subject: WHOLE, held: FOUR
+        });
+        expect(whatASoulSearchCost(below, WHOLE).because).toBe('nothing_was_opened');
+
+        const held = searchOf(23);
+        expect(held.why).toBe('they_held');
+        expect(whatASoulSearchCost(held, WHOLE).stepsDown).toBe(0);
+    });
+
+    /**
+     * READ UNTIL THERE IS NOTHING LEFT.
+     *
+     * Three forced searches walk somebody from `intact` to `fading` - exactly
+     * where the poison pill puts them. The same axis at a different setting,
+     * reached by a different road, with no special case at either end. A
+     * fourth reader then finds an empty body, through the branch the pill uses.
+     */
+    it('can be repeated until the soul is going, which is where the pill leads too', () => {
+        let state = { soulState: 'intact', identityContinuity: 1 };
+        const walked = [state.soulState];
+
+        for (let i = 0; i < 3; i++) {
+            const search = searchOf(NEAR_PEER, state);
+            expect(search.opened, `search ${i + 1}`).toBe(true);
+            state = { ...state, soulState: whatASoulSearchCost(search, state).after };
+            walked.push(state.soulState);
+        }
+        expect(walked).toEqual(['intact', 'damaged', 'fragmented', 'fading']);
+        expect(searchOf(FAR_BELOW, state).why).toBe('nothing_left');
+    });
+
+    /**
+     * HEAVEN DOES NOT GRADE IT. A rescuer reading a captive to find where the
+     * children were taken pays the same out of the same soul as an
+     * inquisitor. What it was FOR is the ledger's business, not this one's.
+     */
+    it('charges the same whatever the search was for', () => {
+        expect(whatASoulSearchCost(searchOf(NEAR_PEER), WHOLE))
+            .toEqual(whatASoulSearchCost(searchOf(NEAR_PEER), WHOLE));
+    });
+
+    /** A schema change fails loudly rather than resetting somebody to intact. */
+    it('refuses a soul state it has never heard of', () => {
+        const cracked = { soulState: 'cracked', identityContinuity: 1 };
+        expect(() => whatASoulSearchCost(searchOf(NEAR_PEER, cracked), cracked))
+            .toThrow(/Unknown soul state/);
     });
 });
