@@ -4539,6 +4539,53 @@ ${noticed}`;
             'no standing shifted one way or the other.';
 
         const facts = factsForInteraction(cultivator, party.name, intent, party.facts, unresolved);
+
+        // ── AND THE ACT ITSELF DID NOT HAPPEN, SAID SO IT CANNOT BE DROPPED ──
+        //
+        // Played, as a member of the Azure Cloud Pavilion standing on its
+        // ground:
+        //
+        //   > I take a manual from the sect library without asking
+        //   "You move through the library, your hand closing around a manual.
+        //    You take it without asking."
+        //
+        // Nothing was stolen. No object moved, nobody noticed, no ledger row.
+        //
+        // WHERE IT CAME FROM, MEASURED, because the obvious answer is wrong.
+        // The suspicion was that `intent` leaks to phase 3 - the inspector line
+        // says "Stated intent: steal. Carried for the narrator; read by no
+        // conditional." It does not. `factsForInteraction` puts the label on
+        // `structure`, and `composeNarrationUser` sends `lines` alone;
+        // captured off a recording provider, the word "steal" appears nowhere
+        // in the phase-3 message. The theft reached the narrator through
+        // `THE PLAYER SAID, WORD FOR WORD`, which is the player's own sentence
+        // and has to be there - asking turns on what was said.
+        //
+        // So the model was not leaking a field. It was filling a silence, and
+        // the line above is the silence: *"Nothing is settled by it"* is a
+        // sentence about SETTLEMENT, and a model reads it as "the social
+        // outcome is open" rather than as "the taking did not occur". Every
+        // other fix in this family landed the same way - the turn has to name
+        // the thing that did not happen, in terms of the ACT.
+        //
+        // Not one verb's bug. Measured across every member of
+        // `INTERACT_INTENTS` against a faction target: all eleven reach this
+        // branch, and eight of them are `PRESSING_SOMEBODY` acts a narrator
+        // will render as done because the player's own sentence says they did
+        // it. Stealing from your own house is getting a real resolver
+        // elsewhere; until it has one, the prose may not claim it happened.
+        //
+        // On `required` rather than on `lines`: `lines` is a licence and
+        // `withRequiredLines` is a duty, so a model that omits this gets it
+        // appended verbatim instead of leaving the player believing they took
+        // something.
+        sayThisWhateverTheNarratorDoes(
+            facts,
+            `The approach is the whole of what happened. Nothing was taken, nothing was handed `
+            + `over and nobody was moved - what ${cultivator.name} meant by it has not been `
+            + 'answered yet.'
+        );
+
         if (spoken) addHearing(facts, spoken);
 
         const execution = this.freeAction(run, 'interact', facts);
