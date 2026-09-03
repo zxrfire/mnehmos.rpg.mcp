@@ -19,6 +19,9 @@
 import { describe, it, expect } from 'vitest';
 import {
     GRADE_SPREAD,
+    rungsUnderThePitch,
+    standingWhileCarrying,
+    weightOf,
     RECORD_CAVEAT,
     drawGradeOutcome,
     isSettledOnUse,
@@ -32,7 +35,13 @@ import {
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { GRADE_ORDER, gradeRank } from '../../../src/data/cultivation/techniques.js';
 import { pillBandOrdinal } from '../../../src/engine/cultivation/breakthrough.js';
+import { NOTHING_IS_GIVEN_AT_OR_ABOVE } from '../../../src/engine/cultivation/taking-the-unearned-step.js';
 import { OVERCOMES } from '../../../src/engine/cultivation/spirit-roots.js';
+import {
+    BODY_REALM_MULTIPLIER,
+    MAX_ORDINAL,
+    bodyMultiplierForOrdinal
+} from '../../../src/engine/cultivation/realms.js';
 import { readFileSync } from 'node:fs';
 
 const SHEET: SheetForOutcome = {
@@ -194,8 +203,9 @@ describe('grade spread: the overdraw is a burst you buy and a residue you keep',
     const row = GRADE_SPREAD.chaos.find(o => o.key === 'overdrawn_and_half_mad')!;
     const change = whatItDoesToTheSheet(row, SHEET, ctx, forStream('over', 'probe'));
 
-    it('puts the body several rungs up for a window and leaves one behind', () => {
-        expect(change.overdraw!.rungs).toBeGreaterThan(change.overdraw!.residueRungs);
+    it('reads its lift off the object, and leaves one rung behind', () => {
+        expect(change.overdraw!.pitchOrdinal).toBe(ctx.sourceOrdinal);
+        expect(change.overdraw!.standsAt).toBeGreaterThan(SHEET.realmOrdinal);
         expect(change.overdraw!.residueRungs).toBeGreaterThan(0);
         expect(change.overdraw!.days).toBeGreaterThan(0);
     });
@@ -247,6 +257,117 @@ describe('grade spread: the detonation is the existing one, powered by the objec
 
     it('does not let the taker walk away', () => {
         expect(change.detonation!.theTakerIsGone).toBe(true);
+    });
+});
+
+describe('grade spread: the thing is a battery of fixed size', () => {
+    // The owner's ruling, and the whole of it is one addition on the body
+    // curve. These three cases are the ruling restated as numbers, and the
+    // reason they are pinned is that all three come out of ONE derivation with
+    // no branch in it - which is the property that would silently break if
+    // somebody later wrote a special case for the weak drinker.
+    const pitch = pillBandOrdinal('chaos');
+
+    it('is pitched level with immortal, at the rung both grades are for', () => {
+        expect(pitch).toBe(pillBandOrdinal('immortal'));
+    });
+
+    it('makes a nobody into the thing they drank, not into a better nobody', () => {
+        // "IF A 5 WERE TO SWALLOW IT AND SURVIVE THEY'D GET A 29". Their own
+        // rung is a rounding error next to what is in the object, and that
+        // falls out of the curve being exponential rather than out of a rule.
+        const stands = standingWhileCarrying(5, pitch);
+        expect(Math.round(stands)).toBe(pitch);
+    });
+
+    it('is a doubling to somebody standing at the pitch, which is one realm', () => {
+        // "anyone over 29 is 2x their own realm" and "a bonus a few ordinals
+        // up" are the same sentence, because BODY_REALM_MULTIPLIER is 2: a
+        // doubling IS a realm and a realm IS a few rungs.
+        const stands = standingWhileCarrying(pitch, pitch);
+        const ratio = bodyMultiplierForOrdinal(stands) / bodyMultiplierForOrdinal(pitch);
+        expect(ratio).toBeCloseTo(BODY_REALM_MULTIPLIER, 5);
+        expect(stands - pitch).toBeGreaterThan(2);
+    });
+
+    it('is nearly nothing to somebody well above it, and never negative', () => {
+        // "TO A 41, A 29 IS NOTHING." Real, and smaller than a rung - which is
+        // why the derivation returns a fraction instead of rounding it away.
+        const high = 41;
+        const stands = standingWhileCarrying(high, pitch);
+        const gained = stands - high;
+        expect(gained).toBeGreaterThan(0);
+        expect(gained).toBeLessThan(1);
+        // And the taper is monotonic: the higher you already are, the less of
+        // you the battery is.
+        expect(standingWhileCarrying(37, pitch) - 37).toBeGreaterThan(gained);
+    });
+
+    it('never runs off the top of the ladder', () => {
+        for (let o = 0; o <= MAX_ORDINAL; o++) {
+            const stands = standingWhileCarrying(o, pitch);
+            expect(stands).toBeLessThanOrEqual(MAX_ORDINAL);
+            expect(stands).toBeGreaterThanOrEqual(o);
+        }
+    });
+});
+
+describe('grade spread: being under the pitch weights the detonation, and only that', () => {
+    const pitch = pillBandOrdinal('chaos');
+
+    it('is zero at or above the thing rung, and grows below it', () => {
+        expect(rungsUnderThePitch(pitch, pitch)).toBe(0);
+        expect(rungsUnderThePitch(44, pitch)).toBe(0);
+        expect(rungsUnderThePitch(5, pitch)).toBe(pitch - 5);
+    });
+
+    it('leaves every other row\'s weight untouched, so it is not "bad outcomes"', () => {
+        // The owner names ONE outcome. Every other row keeps its absolute
+        // weight and therefore its proportion to every other row, which is the
+        // mechanical difference between "the blast gets likelier" and "the
+        // spread gets nastier".
+        for (const row of GRADE_SPREAD.chaos) {
+            if (row.key === 'it_goes_off') continue;
+            expect(weightOf(row, 0), row.key).toBe(row.weight);
+            expect(weightOf(row, 24), row.key).toBe(row.weight);
+        }
+        const blast = GRADE_SPREAD.chaos.find(o => o.key === 'it_goes_off')!;
+        expect(weightOf(blast, 24)).toBeGreaterThan(weightOf(blast, 0));
+    });
+
+    it('is a gamble at the pitch and mostly a bomb far under it', () => {
+        const share = (rungsUnder: number): number => {
+            let blast = 0;
+            const runs = 3000;
+            for (let i = 0; i < runs; i++) {
+                if (drawGradeOutcome('chaos', forStream('gap', i), rungsUnder).key === 'it_goes_off') {
+                    blast++;
+                }
+            }
+            return blast / runs;
+        };
+        const atThePitch = share(0);
+        const wayUnder = share(pitch);
+        expect(atThePitch).toBeLessThan(0.1);
+        expect(wayUnder).toBeGreaterThan(0.55);
+        expect(wayUnder).toBeGreaterThan(atThePitch * 5);
+    });
+
+    it('is a weighting and not a gate: a nobody can still get anything', () => {
+        // No floor anywhere. A weak drinker is far likelier to go off and can
+        // still get the root redraw or the line, which is what stops this being
+        // a rule that says "you may not".
+        const seen = new Set<string>();
+        for (let i = 0; i < 4000; i++) {
+            seen.add(drawGradeOutcome('chaos', forStream('nobody', i), pitch).key);
+        }
+        for (const row of GRADE_SPREAD.chaos) {
+            expect(seen.has(row.key), `${row.key} unreachable to somebody under the pitch`).toBe(true);
+        }
+    });
+
+    it('cannot move a reliable grade, whose spread has nothing to weight', () => {
+        expect(drawGradeOutcome('immortal', forStream('x', 1), 29).key).toBe('as_promised');
     });
 });
 
@@ -322,6 +443,11 @@ describe('grade spread: no bespoke branch on the word chaos', () => {
         // The one appearance left is the table key itself, which is the point:
         // the grade is a row, not a condition.
         expect((code.match(/chaos/g) ?? []).length).toBe(1);
+        // And no comparison against the rung the pills are pitched at
+        // either. 29 lives in `PILL_GRADE_REALM` and reaches this module
+        // as a value, so the battery arithmetic works for a grade pitched
+        // anywhere else without an edit.
+        expect(code).not.toMatch(/\b29\b/);
     });
 
     it('the pill catalog and the spread agree about which grades are reliable', () => {
@@ -329,5 +455,30 @@ describe('grade spread: no bespoke branch on the word chaos', () => {
         // schema without a spread will not compile. This asserts the other
         // half: nothing is in the table that is not on the ladder.
         expect(Object.keys(GRADE_SPREAD).sort()).toEqual([...GRADE_ORDER].sort());
+    });
+});
+
+describe('grade spread: the residue obeys the ladder, not the object', () => {
+    const row = GRADE_SPREAD.chaos.find(o => o.key === 'overdrawn_and_half_mad')!;
+    const pitch = pillBandOrdinal('chaos');
+    const at = (ordinal: number) =>
+        whatItDoesToTheSheet(row, { ...SHEET, realmOrdinal: ordinal }, { sourceOrdinal: pitch },
+            forStream('residue', ordinal));
+
+    it('keeps a rung for somebody with somewhere left to go', () => {
+        expect(at(5).overdraw!.residueRungs).toBeGreaterThan(0);
+        expect(at(29).overdraw!.residueRungs).toBeGreaterThan(0);
+    });
+
+    it('gives nothing at the height where nothing is given, by the existing rule', () => {
+        // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Unearned Step's bound and it is
+        // not about pills - nothing hands anybody a rung up there, whatever it
+        // is. Reused rather than restated, so this cannot become a second
+        // opinion about the top of the ladder.
+        expect(at(NOTHING_IS_GIVEN_AT_OR_ABOVE).overdraw!.residueRungs).toBe(0);
+        expect(at(NOTHING_IS_GIVEN_AT_OR_ABOVE + 2).overdraw!.residueRungs).toBe(0);
+        // And the burst still happens. What is withheld is the gift, not the
+        // month - they still stood higher and still spent it.
+        expect(at(NOTHING_IS_GIVEN_AT_OR_ABOVE).overdraw!.bodyMultiplier).toBeGreaterThan(1);
     });
 });

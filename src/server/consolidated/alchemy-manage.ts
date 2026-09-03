@@ -23,7 +23,13 @@ import { z } from 'zod';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
-import { SATIETY_MAX, type InjurySeverity, type Pill } from '../../schema/cultivation.js';
+import {
+    SATIETY_MAX,
+    type InjurySeverity,
+    type InsightDegree,
+    type InsightDomain,
+    type Pill
+} from '../../schema/cultivation.js';
 import {
     createInjury,
     describeDeath,
@@ -69,11 +75,20 @@ import { standingOf } from './where-a-cultivator-is-standing.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { pillBandOrdinal, whatACrossingTakesFrom } from '../../engine/cultivation/breakthrough.js';
-import { formInsight, recordAchievement } from '../../engine/cultivation/understanding.js';
+import {
+    formInsight,
+    recordAchievement,
+    type AchievementInput
+} from '../../engine/cultivation/understanding.js';
+import {
+    resolveHalfMadStretch,
+    type HalfMadStretch
+} from '../../engine/cultivation/half-mad-stretch.js';
 // The one place a grade's spread lives. Nothing here branches on a grade name.
 import {
     drawGradeOutcome,
     isSettledOnUse,
+    rungsUnderThePitch,
     whatItDoesToTheSheet,
     whatTheBlastTakesFrom,
     whatTheRecordsSay
@@ -456,6 +471,41 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
     };
 }
 
+/**
+ * Write a comprehension onto a cultivator, through the one constructor.
+ *
+ * Both paths that can produce one here go through this - the outcome that IS a
+ * comprehension, and a deed done during a month nobody steered - so neither can
+ * mint an insight whose provenance points at nothing. `formInsight` derives the
+ * insight's id from the achievement's, which is what makes an untraceable one
+ * unrepresentable rather than merely discouraged.
+ */
+function writeComprehension(
+    repos: ReturnType<typeof ensureCultivationDb>,
+    cultivatorId: string,
+    what: { domain: InsightDomain; subject: string; degree: InsightDegree },
+    event: AchievementInput,
+    from: { id: string; name: string },
+    rng: Parameters<typeof recordAchievement>[1]
+): void {
+    const standing = repos.cultivators.getById(cultivatorId)!;
+    const achievement = recordAchievement(event, rng);
+    const insight = formInsight(
+        {
+            domain: what.domain,
+            subject: what.subject,
+            access: { kind: 'inheritance', id: from.id, label: from.name },
+            opening: 'it arrived with the medicine and nobody sent for it'
+        },
+        what.degree,
+        achievement
+    );
+    repos.cultivators.update(cultivatorId, {
+        achievements: [...standing.achievements, achievement],
+        insights: [...standing.insights, insight]
+    });
+}
+
 export async function handleConsumePill(
     args: z.infer<typeof ConsumePillSchema>
 ): Promise<object> {
@@ -495,7 +545,18 @@ export async function handleConsumePill(
     // NO BRANCH ON THE GRADE'S NAME anywhere below. `drawGradeOutcome` is total
     // over every grade and the four reliable ones are one-row tables.
     const outcomeRng = forStream(run.seed, 'pill_outcome', run.turn, pill.id);
-    const outcome = drawGradeOutcome(pill.grade, outcomeRng);
+    // ── HOW FAR UNDER THE THING THIS BODY IS ─────────────────────
+    //
+    // The one input the drinker contributes, and it weights ONE row: a body
+    // too far under what it swallowed cannot hold what is in the thing, and
+    // the thing lets go. Read off the object's own pitch and never off a
+    // number written down here, so a grade pitched somewhere else tomorrow is
+    // correct without an edit. Zero at or above the pitch, which is the base
+    // table - waiting until you can carry it is a real decision, and this is
+    // what makes it one.
+    const pitch = pillBandOrdinal(pill.grade);
+    const under = rungsUnderThePitch(cultivator.realmOrdinal, pitch);
+    const outcome = drawGradeOutcome(pill.grade, outcomeRng, under);
     const change = whatItDoesToTheSheet(
         outcome,
         {
@@ -503,7 +564,7 @@ export async function handleConsumePill(
             insights: cultivator.insights,
             realmOrdinal: cultivator.realmOrdinal
         },
-        { sourceOrdinal: pillBandOrdinal(pill.grade) },
+        { sourceOrdinal: pitch },
         outcomeRng
     );
 
@@ -538,6 +599,7 @@ export async function handleConsumePill(
         : null;
 
     let death: { cause: string; description: string } | null = null;
+    let stretch: HalfMadStretch | null = null;
 
     const persist = repos.db.transaction(() => {
         if (!removeFromPouch(repos.db, cultivator.id, pill.id, 1)) {
@@ -587,49 +649,103 @@ export async function handleConsumePill(
             });
         }
         if (change.comprehension) {
-            // Through the ONE constructor, so the insight carries a provenance
-            // that names the event. An insight nothing can trace is
-            // unrepresentable here by design and this path is no exception.
-            const standing = repos.cultivators.getById(cultivator.id)!;
-            const achievement = recordAchievement({
+            writeComprehension(repos, cultivator.id, change.comprehension, {
                 kind: 'unusual_opportunity',
                 onDay: day,
                 turn: nextTurn,
                 summary: `Swallowed a ${pill.name} and understood something nobody chose.`,
                 detail: { pillId: pill.id, outcome: outcome.key }
-            }, outcomeRng);
-            const insight = formInsight(
-                {
-                    domain: change.comprehension.domain,
-                    subject: change.comprehension.subject,
-                    access: { kind: 'inheritance', id: pill.id, label: pill.name },
-                    opening: 'it arrived with the medicine and nobody sent for it'
-                },
-                change.comprehension.degree,
-                achievement
-            );
-            repos.cultivators.update(cultivator.id, {
-                achievements: [...standing.achievements, achievement],
-                insights: [...standing.insights, insight]
-            });
+            }, pill, outcomeRng);
         }
         if (change.bloodline) {
             writeFlag(repos.db, cultivator.id, FLAG_BLOODLINE_SPECIES, change.bloodline.speciesId);
             writeFlag(repos.db, cultivator.id, FLAG_BLOODLINE_TIER, change.bloodline.tier);
         }
         if (change.overdraw) {
-            const { rungs, days, residueRungs, foundation, bodyCost } = change.overdraw;
+            const { standsAt, standsAtRung, days, residueRungs, foundation, bodyCost }
+                = change.overdraw;
             writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_UNTIL, String(day + days));
-            writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_RUNGS, String(rungs));
+            writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_RUNGS, String(standsAtRung));
+
+            // ── THE MONTH ITSELF, RESOLVED IN ONE PASS ─────────────────
+            //
+            // Thirty days nobody steered is exactly what the time-skip
+            // primitive exists for, and it is drawn at the ELEVATED standing -
+            // so the buff is not a number in a report, it is the reason these
+            // deeds were possible at all. Its own stream, so it cannot shift
+            // the outcome draw that produced it.
+            //
+            // The player reads what they did. They do not choose it, and the
+            // character could not have, which is the one place AGENTS.md allows
+            // this - and the decision did not vanish, it was taken upstream
+            // when they swallowed the thing.
+            const before = repos.cultivators.getById(cultivator.id)!;
+            stretch = resolveHalfMadStretch(
+                {
+                    ownOrdinal: before.realmOrdinal,
+                    standsAt,
+                    bodyMultiplier: change.overdraw.bodyMultiplier,
+                    maxHp: before.maxHp,
+                    spiritStones: before.spiritStones
+                },
+                days,
+                forStream(run.seed, 'half_mad_stretch', run.turn, pill.id)
+            );
+            for (const deed of stretch.deeds) {
+                const deltas: Record<string, number> = {};
+                if (deed.hp) deltas.hp = deed.hp;
+                if (deed.spiritStones) deltas.spiritStones = deed.spiritStones;
+                if (deed.cultivationProgress) deltas.cultivationProgress = deed.cultivationProgress;
+                if (Object.keys(deltas).length > 0) {
+                    repos.cultivators.applyDeltas(cultivator.id, deltas);
+                }
+                if (deed.injury) {
+                    const wound = createInjury({
+                        severity: deed.injury.severity,
+                        source: 'combat',
+                        turn: nextTurn,
+                        woundType: ordinaryWoundFor('combat', deed.injury.severity),
+                        description: deed.injury.description
+                    }, outcomeRng);
+                    repos.cultivators.addInjury(cultivator.id, {
+                        id: wound.id,
+                        severity: wound.severity,
+                        source: wound.source,
+                        description: wound.description,
+                        sustainedOnTurn: wound.sustainedOnTurn,
+                        woundType: wound.woundType,
+                        cultivationPenalty: wound.cultivationPenalty,
+                        breakthroughPenalty: wound.breakthroughPenalty
+                    });
+                }
+                if (deed.comprehension) {
+                    writeComprehension(repos, cultivator.id, deed.comprehension, {
+                        kind: 'survived_extraordinary',
+                        onDay: day,
+                        turn: nextTurn,
+                        summary: `Came through a month at ${rankName(standsAtRung)} that was `
+                            + 'not their own rung, and understood something in it.',
+                        detail: { pillId: pill.id, deed: deed.key }
+                    }, pill, outcomeRng);
+                }
+            }
+            // The days really pass. A month resolved in one call is still a
+            // month, and a run whose clock did not move would be the digest
+            // lying about the only thing it is certain of.
+            repos.runs.advanceDays(run.id, days);
             // THE RESIDUE IS BOTH THINGS AT ONCE and both are written now: a
             // real rung, kept, and a body that is not what it was. The rung
             // goes through `advanceRealm` - the neutral door, the same one the
             // Unearned Step uses - because there was no crossing under it.
-            repos.cultivators.advanceRealm(cultivator.id, residueRungs);
-            // `establishFoundation` refuses to overwrite one already laid,
-            // which is correct: this cannot upgrade a cracked foundation and
-            // cannot damage a finished one it had no business touching.
-            repos.cultivators.establishFoundation(cultivator.id, foundation);
+            if (residueRungs > 0) {
+                repos.cultivators.advanceRealm(cultivator.id, residueRungs);
+                // `establishFoundation` refuses to overwrite one already laid,
+                // which is correct: this cannot upgrade a cracked foundation
+                // and cannot damage a finished one it had no business
+                // touching. It is inside the guard because a foundation with
+                // no rung under it would be a scar for a gift nobody got.
+                repos.cultivators.establishFoundation(cultivator.id, foundation);
+            }
             const standing = repos.cultivators.getById(cultivator.id)!;
             const taken = whatACrossingTakesFrom(standing.hp, standing.maxHp, bodyCost);
             if (taken > 0) repos.cultivators.applyDeltas(cultivator.id, { hp: -taken });
@@ -688,6 +804,19 @@ export async function handleConsumePill(
             line: change.line,
             dose: { printed: pill.potency, arrived: round2(dosed.potency) },
             overdraw: change.overdraw ?? null,
+            // WHAT THEY DID WITH IT, and not a note that something happened. A
+            // month the player did not steer is only honest if they are told
+            // what it was spent on, deed by deed.
+            theMonth: stretch,
+            // How far under the thing's own rung they were, and what that did
+            // to the odds. Said out loud because it is the one part of this a
+            // player could have decided otherwise, by waiting until they could
+            // carry it.
+            underThePitch: {
+                pitchOrdinal: pitch,
+                rungsUnder: under,
+                weightedTowardDetonation: under > 0
+            },
             detonation: change.detonation
                 ? {
                     ...change.detonation,

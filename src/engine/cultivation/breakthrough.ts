@@ -544,7 +544,12 @@ export const PILL_GRADE_FACTOR: Readonly<Record<TechniqueGrade, number>> = {
     earth: 1.25,
     heaven: 1.18,
     immortal: 1.12,
-    chaos: 1.08
+    // LEVEL WITH IMMORTAL. The descent above is per BAND - a pill pitched
+    // higher lifts a smaller share, because the odds it is lifting are worse -
+    // and the two top grades are now pitched at the same band, so a step
+    // between them would be chaos being strictly worse at the one thing both
+    // are for. They are peers; the descent has run out of rungs to descend.
+    chaos: 1.12
 };
 
 /**
@@ -561,7 +566,20 @@ export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = {
     earth: 'core_formation',
     heaven: 'nascent_soul',
     immortal: 'void_refinement',
-    chaos: 'tribulation_transcendence'
+    // ── LEVEL WITH IMMORTAL, AND IT IS THE LAST OF THE PEER RULING ───────
+    //
+    // Both top grades are FOR 29 and up. Chaos sat at Tribulation
+    // Transcendence, which was the old ladder's belief that it outranked
+    // immortal wearing a different field, and it was the last place that
+    // belief survived after `GRADE_POWER` tied them.
+    //
+    // Moving it down is not a softening. It is what gives the pitch a job:
+    // a chaos-grade thing holds a fixed quantity of stored energy - what a
+    // body at 29 is worth - and being UNDER that is what makes swallowing one
+    // dangerous. `grade-spread.ts` reads this ordinal twice, for the overdraw
+    // and for the detonation, because they are the same stored energy let go
+    // two different ways.
+    chaos: 'void_refinement'
 };
 
 /** Rungs above its own band over which a pill loses half its effect. */
