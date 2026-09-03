@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGameInWorld, ScriptedProvider } from './harness.js';
 import { ProviderNarrator } from '../../src/web/narrator.js';
 import type { LLMProvider } from '../../src/agent/provider/types.js';
+import { whatThisTurnMayRun } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 import { theSentenceSaysItsOwnOrder } from '../../src/web/a-sentence-can-be-more-than-one-call.js';
 
 /** A provider whose phase-1 answers are the plans below, one per turn. */
@@ -49,12 +50,20 @@ describe('one sentence, several engine calls', () => {
 
         const steps = turn.toolCalls.filter(row => row.name === 'engine.step');
         expect(steps.map(row => row.action)).toEqual(['look', 'status', 'recall']);
-        // Every call visible, not a summary of them: each step's own engine
-        // rows sit between the step rows rather than being replaced by them.
+        // Every call visible, not a summary of them: each step's own engine rows
+        // sit between the step rows rather than being replaced by them.
+        //
+        // Asserted as "each verb did something" rather than as an exact list,
+        // because a step legitimately files more than one row - the world writes
+        // a `name_in_passing` on a `look` when somebody says a name near you -
+        // and pinning the whole set makes this test a tripwire for other
+        // people's work rather than a statement about sequencing.
         const between = turn.toolCalls.filter(
             row => !row.name.startsWith('narrator.') && row.name !== 'engine.step'
         );
-        expect(between.map(row => row.action)).toEqual(['look', 'status', 'recall']);
+        for (const verb of ['look', 'status', 'recall']) {
+            expect(between.some(row => row.action === verb), `${verb} filed nothing`).toBe(true);
+        }
     });
 
     it('keeps every word the engine said, from every step', async () => {
@@ -416,5 +425,76 @@ describe('a clause that says why says when', () => {
         expect(theSentenceSaysItsOwnOrder('I go to Ninewatch')).toBe(false);
         expect(theSentenceSaysItsOwnOrder('I sit for a year and take work for a season')).toBe(false);
         expect(theSentenceSaysItsOwnOrder('I talk to the elder')).toBe(false);
+    });
+});
+
+/**
+ * THE OWNER'S ACCEPTANCE SENTENCE, END TO END.
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *
+ * Three acts the game already has, and the framing falls out of the ORDER
+ * rather than out of a frame verb. Two things had to be fixed before it could
+ * reach the engine at all: the danger check was declining the theft against a
+ * whole-sentence reading and substituting a duplicate verb in its place, and
+ * "it" in the second clause was being looked up among the things the player is
+ * carrying, where there is no row called "it".
+ */
+describe("the owner's acceptance sentence", () => {
+    const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
+
+    it('reaches the engine as three acts, with "it" meaning the purse', async () => {
+        const { game } = await playing([
+            STEPS(
+                { action: 'interact', target: 'Cao Antao', intent: 'steal',
+                    said: "I take Cao Antao's purse" },
+                { action: 'give', target: 'Shen Liefeng', topic: 'it',
+                    said: "press it into Shen Liefeng's hand" },
+                { action: 'move', target: 'away', said: 'walk away' }
+            )
+        ]);
+        await game.newRun('Probe');
+        const turn = await game.act(SAID);
+
+        // The theft is the turn's one costly act and it is NOT missing - which
+        // is what the danger check was eating before it compared against the
+        // player's own clauses.
+        const steps = turn.toolCalls.filter(row => row.name === 'engine.step');
+        expect(steps.some(row => row.action === 'interact')).toBe(true);
+        expect(turn.toolCalls.filter(row => row.name === 'engine.stepNotRun')).toHaveLength(0);
+
+        // The order was never in question - "it" chains the second clause to the
+        // first - so nothing is asked, and the rest is named as still ahead.
+        expect(turn.toolCalls.filter(row => row.name === 'engine.whichComesFirst')).toHaveLength(0);
+        expect(turn.toolCalls.filter(row => row.name === 'engine.stillToCome').map(r => r.action))
+            .toEqual(['give', 'move']);
+    });
+
+    it('a back-reference settles the order as firmly as "then" does', () => {
+        const chained = [
+            { action: { action: 'interact' as const, target: 'Cao Antao', intent: 'steal' } },
+            { action: { action: 'give' as const, target: 'Shen Liefeng', topic: 'it' } }
+        ];
+        // No sequencing word anywhere, and nothing to ask: the pressing cannot
+        // precede the taking, because "it" is the purse.
+        expect(whatThisTurnMayRun(chained, SAID).askAbout).toHaveLength(0);
+        expect(whatThisTurnMayRun(chained, SAID).theOrderWasGiven).toBe(true);
+    });
+
+    it('never silently loses a clause the reading layer declined', async () => {
+        const { game } = await playing([
+            STEPS(
+                // A fight nobody could read out of this sentence: the danger
+                // check declines it, and the player has to be told it did not
+                // happen rather than left to read prose that says it did.
+                { action: 'attack', target: 'Cao Antao', said: 'I run him through' },
+                { action: 'status', said: 'and check myself over' }
+            )
+        ]);
+        await game.newRun('Probe');
+        const turn = await game.act('I look myself over');
+
+        expect(turn.toolCalls.some(row => row.name === 'engine.stepNotRun')).toBe(true);
+        expect(turn.narration).toContain('not part of what happened');
     });
 });

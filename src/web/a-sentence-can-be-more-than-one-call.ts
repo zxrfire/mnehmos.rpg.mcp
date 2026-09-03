@@ -149,6 +149,18 @@ export interface PlanWithSteps extends Plan {
      * absent is what both deterministic tiers always produce.
      */
     readonly steps?: readonly PlanStep[];
+    /**
+     * Steps the reading layer declined and removed, in the player's own words.
+     *
+     * A clause that never became a step is invisible to everything downstream -
+     * the executor cannot report a step it was not given, and the narrator is
+     * then the only thing in the turn that knows the clause existed. Measured,
+     * it filled the gap: handed a turn whose only rulings were a refusal, a
+     * model wrote *"You take the purse from Cao Antao and press it into Shen
+     * Liefeng's hand"*. A clause the reader dropped needs exactly the treatment
+     * a clause the budget declined already gets.
+     */
+    readonly droppedClauses?: readonly PlanStep[];
 }
 
 /**
@@ -299,6 +311,218 @@ function forMatching(text: string): string {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/**
+ * The player's sentence, cut where a person would cut it.
+ *
+ * Commas, `and`, `then`, `before`, `after` - the joins people actually use to
+ * put three acts in one line. Deliberately dumb: it is not parsing the
+ * sentence, it is finding the places a clause could begin, because everything
+ * downstream re-reads each piece with the ordinary table anyway.
+ */
+export function theClausesOf(input: string): string[] {
+    return input
+        .split(/,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/i)
+        .map(part => part.trim())
+        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2);
+}
+
+/**
+ * Whether ANY clause of the player's own sentence reads as this verb.
+ *
+ * ── THE MEASUREMENT THAT MADE THIS NECESSARY ─────────────────────────────
+ *
+ * Played live, the owner's own acceptance sentence:
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *
+ * The model returned all three steps correctly - `interact/steal`, `give`,
+ * `move/flee`. The danger check then DECLINED the first and the third, because
+ * the model had emitted no `said` for them, so each was compared against a
+ * reading of the WHOLE sentence, which the table calls `give`. Both were
+ * replaced by that reading, the plan became `give -> give -> give`, and
+ * `oneClauseIsOneAct` collapsed it to one. **The theft did not survive the
+ * layer that exists to stop a model escalating - and the model had not
+ * escalated anything.** It had read the sentence exactly right.
+ *
+ * The invariant is *a player must not meet a bigger bill for the same words*.
+ * A whole-sentence reading is not "the same words" as one clause of it, and
+ * `said` - which the reader may simply not send - is the wrong thing to hang
+ * the comparison on. So the question is asked of the PLAYER'S TEXT directly:
+ * cut their sentence where a person would cut it and ask whether any piece of
+ * it reads as this verb with no model in the room.
+ *
+ * That cannot be gamed. Every clause comes from what they typed; the model
+ * contributes nothing to this test but the verb being checked. And it is
+ * strictly narrower than trusting `said`, because a quoted clause the reader
+ * invented would fail it.
+ */
+/**
+ * Clauses of the player's sentence that no step of the plan accounts for.
+ *
+ * ── WHY A DROPPED CLAUSE IS THE WORST OF THE THREE ───────────────────────
+ *
+ * A clause the budget held is reported. A clause the danger check declined is
+ * reported. A clause the READER simply never turned into a step is invisible to
+ * everything downstream - the executor cannot report a step it was not given -
+ * so the narrator becomes the only thing in the turn that knows the clause was
+ * ever there. Measured, that is exactly what it does with the knowledge:
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *
+ * over a turn holding one refusal, the prose read *"You take the purse from Cao
+ * Antao and press it into Shen Liefeng's hand"*. Neither happened.
+ *
+ * ── HOW A CLAUSE IS FOUND WITHOUT TRUSTING THE READER ────────────────────
+ *
+ * Not by comparing against `said`, which the reader may not send and which is
+ * the thing that failed here. The player's own sentence is cut into clauses and
+ * each one is read with no model in the room: a clause that reaches a real verb
+ * which no step in the plan carries is a clause the split lost.
+ *
+ * ── AND ONLY A CLAUSE THAT WOULD HAVE COST SOMETHING ─────────────────────
+ *
+ * The house rule, already measured elsewhere in this package against a corpus
+ * of sixty ordinary sentences containing "and": reporting every clause whose
+ * reading differs from the turn's produced seven false reports and every one of
+ * them was a free read. This reproduced it immediately - "who is here, what am
+ * I carrying, and what do I know of them" ran `look, status, recall` and the
+ * middle clause also reads as `inventory`, so a free read the model had routed
+ * to its neighbour was announced to the player as a thing that did not happen.
+ *
+ * Nothing was taken, so there is nothing to report. A free read the player
+ * still wants is theirs next turn for nothing.
+ *
+ * Conservative in the other direction too: two clauses reading as the same verb
+ * count as covered by one step, so this under-reports rather than over-reports.
+ * A false report tells a player something did not happen when it did, which is
+ * the same lie this exists to prevent, pointed the other way.
+ */
+export async function theClausesNoStepAccountsFor(
+    input: string,
+    steps: readonly PlanStep[],
+    read: (clause: string) => Promise<ActionName>
+): Promise<PlanStep[]> {
+    const carried = new Set(steps.map(step => step.action.action));
+    const lost: PlanStep[] = [];
+
+    for (const clause of theClausesOf(input)) {
+        const verb = await read(clause);
+        if (verb === 'unclear' || carried.has(verb)) continue;
+        if (costsTheAskerNothing({ action: verb })) continue;
+        carried.add(verb);
+        lost.push({ action: { action: verb }, said: clause });
+    }
+    return lost;
+}
+
+export async function anyClauseReadsAsThisVerb(
+    input: string,
+    verb: ActionName,
+    read: (clause: string) => Promise<ActionName>
+): Promise<boolean> {
+    for (const clause of theClausesOf(input)) {
+        if (await read(clause) === verb) return true;
+    }
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT "IT" MEANS IN THE THIRD CLAUSE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A pronoun that means whatever the clause before it was about.
+ *
+ * ── THE GAP THIS CLOSES, MEASURED ────────────────────────────────────────
+ *
+ *   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away
+ *
+ *   engine.handOver:  No pouch row matched "it". Nothing moved, no time passed.
+ *
+ * The second step's object arrived as the literal string `it`, was looked up
+ * among the things the player is carrying, and of course matched nothing. **A
+ * pronoun in step N means the thing step N-1 was about**, and until something
+ * carries that forward `it` can only ever be a missing pouch row.
+ *
+ * The set is closed and short on purpose. These are the words that stand for
+ * "the thing we were just talking about" and nothing else; anything outside it
+ * is a name the resolvers already handle, and widening this would start
+ * rewriting objects the player named explicitly.
+ */
+const A_PRONOUN_FOR_THE_LAST_THING: ReadonlySet<string> = new Set([
+    'it', 'them', 'that', 'those', 'this', 'these', 'the same', 'the thing', 'the same thing'
+]);
+
+function standsForTheLastThing(value: string | undefined): boolean {
+    return value !== undefined && A_PRONOUN_FOR_THE_LAST_THING.has(forMatching(value));
+}
+
+/**
+ * The thing a step's own clause was about, for the next step to refer to.
+ *
+ * Generic rather than a noun catalog, which would be a second catalog of the
+ * world's objects living in the reading layer. A clause a person writes in a
+ * plan is `<verb> <object>` - "take Cao Antao's purse", "buy the cheapest
+ * manual" - so dropping the leading pronoun and verb leaves the object, and
+ * every resolver downstream already knows how to match a phrase like that
+ * against real rows. Nothing here decides whether the thing exists.
+ *
+ * Null when the clause names no object, or names another pronoun, in which case
+ * whatever was already carried stays carried.
+ */
+export function theThingThisStepNamed(step: PlanStep): string | null {
+    const said = (step.said ?? '').trim();
+    if (said.length === 0) return null;
+
+    const words = said.split(/\s+/).filter(Boolean);
+    // "I take ...", "then press ..." - drop a leading subject or connective, and
+    // then the verb itself.
+    let at = 0;
+    while (at < words.length && /^(?:i|i'?ll|then|and|so|next|also|first|finally)$/i.test(words[at]!)) at++;
+    at++;
+
+    const rest = words.slice(at).join(' ').replace(/^(?:the|a|an|my|his|her|their)\s+/i, '').trim();
+    if (rest.length === 0 || standsForTheLastThing(rest)) return null;
+    return rest;
+}
+
+/**
+ * The same step with any bare pronoun replaced by what the last one named.
+ *
+ * Only ever fills a field that is EXACTLY a pronoun - never one carrying a name
+ * the player wrote - and only from a phrase that came out of the player's own
+ * sentence. So this cannot invent an object, cannot override one, and cannot
+ * make a step point at something nobody mentioned. It decides no outcome: the
+ * substituted phrase goes to the same resolver the typed phrase would have gone
+ * to, and is refused by it in the ordinary way if nothing matches.
+ */
+export function carryingTheReferentForward(step: PlanStep, lastThing: string | null): PlanStep {
+    if (lastThing === null) return step;
+
+    const action = { ...step.action };
+    let changed = false;
+    if (standsForTheLastThing(action.target)) { action.target = lastThing; changed = true; }
+    if (standsForTheLastThing(action.topic)) { action.topic = lastThing; changed = true; }
+
+    return changed ? { ...step, action } : step;
+}
+
+/** The inspector row saying what a pronoun was taken to mean. */
+export function theRowForAResolvedPronoun(
+    before: PlanStep,
+    after: PlanStep
+): ToolCallRecordish {
+    return {
+        name: 'engine.step',
+        action: after.action.action,
+        summary: `"${before.action.topic ?? before.action.target}" in this clause was taken to `
+            + `mean "${after.action.topic ?? after.action.target}", which is what the clause `
+            + 'before it was about. The phrase is the player\'s own; whether anything matches '
+            + 'it is the resolver\'s answer, not this one.',
+        ok: true
+    };
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // THE LAW
 // ─────────────────────────────────────────────────────────────────────────
@@ -418,7 +642,7 @@ export function whatThisTurnMayRun(
     const first = kept.findIndex(spendsSomething);
 
     // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION.
-    if (theSentenceSaysItsOwnOrder(input)) {
+    if (theOrderIsAlreadySettled(kept, input)) {
         const second = kept.findIndex((step, at) => at > first && spendsSomething(step));
         return {
             toRun: kept.slice(0, second),
@@ -492,6 +716,30 @@ export function whatThisTurnMayRun(
  * names the physician as still ahead, which is what the player asked for
  * either way.
  */
+export function theOrderIsAlreadySettled(
+    steps: readonly PlanStep[],
+    input: string
+): boolean {
+    if (theSentenceSaysItsOwnOrder(input)) return true;
+
+    // ── A BACK-REFERENCE FIXES THE ORDER AS FIRMLY AS "THEN" DOES ───────
+    //
+    //   > I take Cao Antao's purse, press it into Shen Liefeng's hand, and
+    //   > walk away
+    //
+    // No sequencing word anywhere, and the order is not in the least ambiguous:
+    // **it** means the purse, so the pressing cannot precede the taking. Asking
+    // which comes first is asking the player to repeat themselves, which is the
+    // failure this whole branch exists to avoid - and it is worse here, because
+    // the sentence is the one the design owner wrote to show what composition is
+    // for. A step that refers back to an earlier one is chained to it by the
+    // language, and a chain cannot be reordered.
+    return steps.some((step, at) =>
+        at > 0
+        && (standsForTheLastThing(step.action.topic)
+            || standsForTheLastThing(step.action.target)));
+}
+
 export function theSentenceSaysItsOwnOrder(input: string): boolean {
     return /\b(?:and then|then|afterwards?|after that|after which|before|first(?:ly)?|next|finally|once (?:i|that|it)|when (?:i|that|it)(?:'s| is| am)? (?:done|finished|over))\b/i.test(input)
         || THE_CLAUSE_THAT_SAYS_WHY.test(input);
@@ -592,6 +840,12 @@ export function whatThisStepIsCalled(step: PlanStep): string {
 
     const verb = plainNameOf(step.action.action);
     const at = step.action.target?.trim();
+    // "the journey to away" - a direction is not a destination, and gluing the
+    // two together makes the question read like a template rather than like
+    // somebody talking. Played, and it is what the player was offered.
+    if (at !== undefined && /^(?:away|off|out|elsewhere|somewhere else)$/i.test(at)) {
+        return step.action.action === 'move' ? 'walking away' : `${verb} away`;
+    }
     return at ? `${verb} ${at}` : verb;
 }
 
@@ -1199,6 +1453,36 @@ export function theRowForSomethingStillToCome(step: PlanStep): ToolCallRecordish
             + `${step.action.action}${step.action.target ? `(${step.action.target})` : '()'}`
             + ' comes after the act this turn spent. Nothing was spent on it.',
         ok: true
+    };
+}
+
+/**
+ * What the player reads when the reading layer dropped one of their clauses.
+ *
+ * Said as a fact about the sentence rather than about the reader, and it names
+ * the plain way to say the thing - which is what the decline itself already
+ * knows and what a refusal in this repository owes the player.
+ */
+export function sayingWhatTheReadingDropped(dropped: readonly PlanStep[]): string {
+    const named = dropped.map(whatThisStepIsCalled);
+    const rest = named.length === 1
+        ? named[0]!
+        : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+    return `"${rest}" ${named.length === 1 ? 'was' : 'were'} not part of what happened - `
+        + `that part of the sentence did not become an act, so nothing was done about it and `
+        + `nothing was spent on it. Say it on its own and it will run.`;
+}
+
+/** The same, as an inspector row per dropped clause. */
+export function theRowForADroppedClause(step: PlanStep): ToolCallRecordish {
+    return {
+        name: 'engine.stepNotRun',
+        action: step.action.action,
+        summary: `Not run: the reading layer declined ${step.action.action}`
+            + `${step.action.target ? `(${step.action.target})` : '()'}`
+            + ' - only a model read the sentence that way, and a model may not be the reason '
+            + 'a turn became dangerous. Nothing was spent on it.',
+        ok: false
     };
 }
 
