@@ -67,22 +67,21 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * Re-measure and bring it down when nothing is in flight.
  */
 /**
- * 496 -> 497 IS ONE EXPORT AND IT IS THE SECOND KIND, NOT THE FIRST.
+ * 497 -> 496: `canHurtYou` HAS ITS CONSUMER, AND THE SEAM IS CLOSED.
  *
- * `canHurtYou` in `src/web/action-set.ts`: the harm axis beside
- * `costsTheAskerNothing`, landed contract-first because the consumer that will
- * import it - the web layer's suggestion strip - is a different agent's change
- * and putting the rule inside it would make it a second opinion about danger.
- * Measured before and after in one command: exactly this one export moved the
- * count, and every other name the change adds is read inside its own module.
+ * The slot was held open by name for exactly one export - the harm axis in
+ * `src/web/action-set.ts`, landed contract-first so that the rule would not
+ * live inside the surface that ranks by it. `situated-reads.ts` now imports it
+ * and stamps every suggestion the strip produces, which is what the slot was
+ * being held for, so it comes back down.
  *
- * **Bring this back to 496 the moment the strip imports it.** This slot has a
- * name on it, which is the only thing that separates a seam held open on
- * purpose from the defect this ratchet exists to catch - and the difference
- * stops being visible the day nobody remembers which export the extra row was.
+ * That is the whole discipline this row was demonstrating: a seam held open on
+ * purpose carries the name of the consumer that will close it, and somebody
+ * closes it. A slot nobody brings back down is indistinguishable from the
+ * defect this ratchet exists to catch.
  */
 const DEAD = 171;
-const TEST_ONLY = 497;
+const TEST_ONLY = 496;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;
