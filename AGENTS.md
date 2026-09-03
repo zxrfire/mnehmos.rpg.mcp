@@ -2454,26 +2454,22 @@ If it would change how somebody works anywhere in the repo, it goes here. When a
 grows a long worked example, that is usually the example asking to move down and leave a
 sentence behind.
 
-### A catalog file mirrors the thing it describes, or it becomes a queue
+### An example outlives the thing it was about. Delete it when it does
 
-The single-reason-to-change rule applies to **data**, not only to code, and the tell is
-different. A catalog holding six regions has six reasons to change - but the cost that
-actually bites is not editing difficulty, it is **contention**.
+**A worked example in this file is a claim about the repo, and the repo moves.** The rule it
+illustrates usually stays true long after the file, function or measurement it named has been
+split, renamed or fixed - and then the example is worse than no example, because a reader
+checks it, finds nothing there, and stops trusting the rule beside it.
 
-Measured on this branch: `regions.ts` at 3,694 lines held every region, settlement,
-prefecture and arterial in the world, imported by 24 modules. Three separate pieces of work -
-a rename of every place name, a fix to the place-kind taxonomy, and intra-province adjacency -
-all needed it at once, and **only one could have it.** The other two waited on a file none of
-them shared any real subject with.
+**So when you change the thing an example names, update or delete the example in the same
+commit.** Not later, not as a sweep - a stale example is created by the change that made it
+stale, and that is the only moment anybody knows.
 
-**One file per thing the world actually has** and they proceed in parallel. The structure of
-the catalog should match the structure of what it describes, so that two people working on
-two different parts of the world are working on two different files.
+**Prefer the rule to survive without the example.** State the rule so it stands alone, then
+attach the evidence. If deleting the example would leave the rule unintelligible, the rule is
+underwritten and that is the thing to fix.
 
-**Split it by re-export**, as with code: the old path stays as a barrel forwarding everything,
-so none of the importers change and nobody else's file is touched. And **prove the split
-changed nothing** - serialise the catalog before and after and diff it. A data refactor that
-silently drops a row is far harder to notice than a code one that fails to compile.
-
-The general tell, worth checking before you start any large piece of work: **if you find
-yourself waiting on a file rather than on a decision, the file is the problem.**
+**And a measurement is not exempt - it is dated evidence.** "Three separate pieces of work all
+needed one file" is worth keeping only while somebody could go and see it. Once the file is
+split, the number is history, and history belongs in git. The fastest check: if a reader
+grepped for the name in this example, would they find it?
