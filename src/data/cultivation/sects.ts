@@ -767,7 +767,40 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Mist Servant', 'Outer Disciple', 'Inner Disciple', 'Mist Elder', 'Court Warden'],
         admissionOrdinal: 1,
         stipend: [3, 10, 30, 95, 300],
-        teaches: ['lesser-qi-gathering-manual', 'foundation-tempering-scripture', 'iron-thread-finger', 'hundred-cut-flying-blade'],
+        // ── WHY THE HEAD STANDS TWENTY RUNGS ABOVE THE SHELF ─────────────
+        //
+        // The Court's `powerOrdinal` is 37 and its best cultivation manual
+        // stopped at 17, which was the widest gap in the catalog between what
+        // a house IS and what it can teach. The design owner supplied the
+        // reason rather than a number: the Court Warden was dispatched from the
+        // Pavilion and arrived already high, so where the head stands is a fact
+        // about the terraces and never was a fact about this shelf.
+        //
+        // The gap is therefore real and stays - see `A house's shelf outruns
+        // its people` in AGENTS.md, which is the ordinary case here. What was
+        // wrong is that the shelf could not carry the Court's own intake out of
+        // the middle of the ladder at all, which is the other thing that entry
+        // names as genuinely broken. Three books close it and only one of them
+        // is new: the two elementless rungs thirteen other houses already
+        // teach, and the Mist Runoff Canon, which is the terrace method with
+        // every assumption of a clean root taken out of it.
+        //
+        // The two middle rungs are elementless and the top one is metal,
+        // which is not tidy and is the Court. It holds probationers, late
+        // admissions and the refused-but-not-disqualified, so an elementless
+        // succession is what it OUGHT to have - and the only thing it was ever
+        // given that reaches 29 is a terrace method, and a terrace method is
+        // metal. A good share of its own roll will get to 25 on the shared
+        // books and stop there. That gap is the Court, not an oversight.
+        teaches: [
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'undyed-core-canon',
+            'nascent-lotus-canon',
+            'mist-runoff-canon',
+            'iron-thread-finger',
+            'hundred-cut-flying-blade'
+        ],
         signatureTechniqueId: 'hundred-cut-flying-blade',
         specialities: ['attack'],
         rivals: [],
@@ -1171,6 +1204,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // in the world could not teach anybody anything - see
         // `THE_DEEPEST_ROADS` for what it holds and who can walk somebody up
         // it, which is the fact that actually distinguishes it from an apex.
+        // One book, and it is the whole library, and it stays that way. See
+        // the note above and `docs/world/climbing/manuals.md`: the Court is for one
+        // thing, a second title would be a second purpose, and a feeder rung
+        // into its road was drafted here and withdrawn - the reasoning is in
+        // `techniques.ts` under THE RUNG THE APEX ROADS OPEN AT.
         teaches: ['protected-crossing-canon'],
         signatureTechniqueId: 'protected-crossing-canon',
         specialities: ['defense'],
@@ -1198,6 +1236,29 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         id: 'sect-the-severed',
         name: 'The Severed',
         alignment: 'demonic',
+        // ── THE HEAD IS ONE RUNG ABOVE ANYTHING THE HOUSE CAN TEACH ──────
+        //
+        // 38, against a shelf whose best cultivation manual stops at 37. That
+        // is not a hole to be filled and the shelf is deliberately NOT raised
+        // to meet it. The design owner, on the measurement: *"the severed 38
+        // might've been a lucky encounter, and that's okay. that should be
+        // documented."*
+        //
+        // So this is what it looks like written down. Whatever took her the
+        // last rung was not the library and cannot be repeated by it - a ruin,
+        // a manual dug up, somebody met once - and the consequence is a house
+        // that cannot reproduce its own head and knows it. Nobody the Severed
+        // ever teach will stand where she stands unless they are lucky in the
+        // same way, and the Severed are unsentimental enough to say so.
+        //
+        // Mechanically it is one rung and it costs nothing: `carriesTo` takes
+        // the lower of her rung and the book's teachable end, so what she can
+        // walk anybody up is 37 regardless, and the extra rung buys her margin
+        // in a fight and no teaching capacity at all. That gap between what
+        // somebody IS and what they can PASS ON is the setting's own subject -
+        // see `Holding a thing and being able to pass it on are different
+        // facts` in AGENTS.md - and this is the smallest clean instance of it
+        // in the catalog.
         powerOrdinal: 38,
         ranks: ['Bound', 'First Cut', 'Third Cut', 'Ninth Cut', 'Nameless', 'The Severed Themselves'],
         admissionOrdinal: 5,

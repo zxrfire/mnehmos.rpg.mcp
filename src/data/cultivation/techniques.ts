@@ -2415,6 +2415,59 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Draws directly on the spirit vein a mountain sits upon. Enormously effective, and the reason sects treat their veins as territory worth killing over.'
     }),
     art({
+        // THE BOOK THAT WALKED DOWN THE GORGE WITH A PUNISHED MAN.
+        //
+        // Authored for a measured hole rather than for a shelf that wanted
+        // filling. The Azure Mist Court stands at `powerOrdinal: 37` and the
+        // best cultivation manual on its shelf stopped at 17 - a twenty-rung
+        // gap between what the house is and what it can teach, and the widest
+        // in the catalog by a distance.
+        //
+        // The design owner supplied the reason rather than the number: *"you
+        // can imagine the head is a lot higher than 29 cuz it was dispatched
+        // from the pavilion."* So the head and the shelf are allowed to differ
+        // and the difference is a fact about the house - somebody arrived
+        // already high, and what they could TEACH was never the same question
+        // as where they stood. What was wrong was the shelf, not the head.
+        //
+        // METAL, AND NOT ELEMENTLESS, WHICH IS THE UNCOMFORTABLE ANSWER.
+        //
+        // The Court's whole intake is probationers, late admissions and the
+        // refused-but-not-disqualified - muddled roots, mostly - so an
+        // elementless book is what it OUGHT to have and is not what it was
+        // given. What came down the gorge was a terrace method, and a terrace
+        // method is metal because the Pavilion's library is metal end to end.
+        // The Court could not re-cut it into something its own people could
+        // all use, and it teaches two metal Pavilion arts already for the same
+        // reason: it holds what it was handed.
+        //
+        // So the shelf now reaches 29 and a good share of the Court's own roll
+        // still cannot climb it, which is the Azure Mist stated as a shelf
+        // rather than as a joke about its name. See AGENTS.md, 'A house's
+        // shelf outruns its people'. It is also why an elementless draft of
+        // this row was withdrawn: elementless at this band would have made
+        // this the world's default 25-to-29 road and quietly deleted the fact
+        // that the only elementless one runs through a demonic art -
+        // `the-elementless-road-reaches-an-apex-door.test.ts` pins that, and
+        // it is a better fact than a tidy shelf.
+        id: 'mist-runoff-canon',
+        name: 'Mist Runoff Canon',
+        category: 'cultivation',
+        grade: 'heaven',
+        element: 'metal',
+        // Formation, and shallow. The method is reading a channel that is
+        // carrying somebody else's overflow, which is what the Court does for
+        // a living and what it is standing on.
+        domain: 'formation',
+        domainDegree: 1,
+        requiredOrdinal: 25,
+        qiCost: 112,
+        damage: null,
+        cooldown: 0,
+        description:
+            'A Pavilion method rewritten for water the Pavilion had finished with, by the Sword Elder who was sent down the gorge as a punishment nobody wrote down and spent forty years turning a posting into an institution. It is the terrace method with every assumption of a clean root taken out of it, which cost most of its elegance and none of its reach, and it is the only thing the Azure Mist Court holds that the terraces above did not hand it. The Pavilion has never asked for it back and has never been offered a copy.'
+    }),
+    art({
         id: 'void-tide-breathing-canon',
         name: 'Void-Tide Breathing Canon',
         category: 'cultivation',
@@ -2740,6 +2793,46 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     //   body whose single purpose is getting its own members over the last
     //   crossing has had every rung of this one walked, questioned and written
     //   up again by people who were about to need the next one.
+    //
+    // ── THE RUNG THESE ROADS OPEN AT, AND A DRAFT WITHDRAWN THERE ───────
+    //
+    // All four open at `requiredOrdinal: 41`, and exactly one book in the
+    // world carries a reader from 37 to 41: the Heaven-Conversing Primordial
+    // Canon, which is on no shelf anywhere. Measured over the corridor, both
+    // arms in one command:
+    //
+    //   ordinals 37, 38, 39, 40 have ONE ordinary continuation between them.
+    //   They are the only single-source rungs on the whole ladder.
+    //
+    // So the four best roads in the world are enterable only by somebody who
+    // has crossed the one stretch this age cannot teach - which reads as a
+    // hole and is the Late Age stated as arithmetic.
+    //
+    // A DRAFT THAT PUT A HOUSE'S OWN BOOK THERE WAS WRITTEN AND WITHDRAWN,
+    // and the reasons are recorded because the next person will want to try
+    // it. Two feeder rungs, one for the Pavilion and one for the Hollow
+    // Court, `requiredOrdinal: 37` and therefore cap 41 by ordinary realm
+    // geometry. It collided with three rules already in this repo:
+    //
+    //   THE ONLY CHOKEPOINT IN THE WORLD IS THAT STRETCH. Measured with the
+    //   draft in: zero single-source rungs anywhere on the ladder. The one
+    //   narrow place in the corridor is 37 to 40, and two books there widen
+    //   it to nothing. `cultivation-technique-caps.test.ts` pins it.
+    //
+    //   THE LATE AGE RULE FORBIDS IT, in this file's own test: a chaos-grade
+    //   art is out of a ruin or a grave, or it is one of the four roads
+    //   above. The stated ground is that each of those four bodies "has
+    //   somebody standing in the band the book is written for". Nobody in the
+    //   world stands between 33 and 41 except one person at 41, so no house
+    //   qualifies to teach a 37-band book by the catalog's own criterion.
+    //
+    //   AND THE HOLLOW COURT HOLDS ONE BOOK ON PURPOSE. It is for one thing;
+    //   a second title would be a second purpose, and a test asserts it.
+    //
+    // The consequence worth stating rather than fixing: the 41 cap already
+    // EXISTS and is simply unowned. Putting one on a shelf is a ruling about
+    // whether this age's houses may teach at a height none of them stands at,
+    // which is the Late Age itself and is the design owner's to make.
     //
     // AND NO LIVING PERSON CAN WALK ANYBODY TO THE END OF THREE OF THEM, which
     // is not authored either - it falls out of `carriesTo` against the seats.
