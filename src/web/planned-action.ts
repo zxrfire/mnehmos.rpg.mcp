@@ -25,6 +25,10 @@ import { z } from 'zod';
 
 import { ApproachLeverageSchema } from '../schema/cultivation.js';
 import {
+    type SomebodyStandingHere,
+    theNameTheVerbDropped
+} from './the-name-the-verb-dropped.js';
+import {
     ACTION_NAMES,
     TIMED_ACTIONS,
     TARGETED_ACTIONS,
@@ -329,11 +333,63 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
  * sentence the parser understood as a different action is a fact about a
  * different action.
  */
-export function carryWhatOnlyTheSentenceKnows(action: PlannedAction, input: string): PlannedAction {
+export function carryWhatOnlyTheSentenceKnows(
+    action: PlannedAction,
+    input: string,
+    /**
+     * Who is standing in front of the player, when the caller knows.
+     *
+     * Empty by default so the two callers that have no room in scope - the
+     * narrator and the sentence splitter - keep working unchanged and simply
+     * do not recover a name. The dispatch is the one place that holds the
+     * roster, and it is the one place that passes it.
+     */
+    whoIsStandingHere: readonly SomebodyStandingHere[] = []
+): PlannedAction {
     const fromSentence = parseIntent(input);
-    if (fromSentence.action !== action.action) return action;
-
     const merged: PlannedAction = { ...action };
+
+    // ── THE NAME THE VERB DROPPED, FOR EVERY VERB ────────────────────────
+    //
+    // Measured at 16% of turns arriving with a bare target - a verb chosen
+    // correctly and the person it was against deleted on the way. Half of
+    // those were `coerce` and had a different cause, since fixed at the root:
+    // `validatePlan` was stripping the target because `coerce` was missing
+    // from `TARGETED_ACTIONS`. The rest are spread across verbs, which is the
+    // harder half to find by playing, and this is what answers them.
+    //
+    // ── AND IT SITS ABOVE THE VERB CHECK, WHICH IS DELIBERATE ────────────
+    //
+    // Everything below this runs only when both readings agree on the verb,
+    // because a `leverage` read off a sentence the table understood as a
+    // different action is a fact about a different action. A NAME is not like
+    // that. "Claire" is Claire whichever verb won, the matcher reads the raw
+    // sentence rather than any parse of it, and a player who wrote somebody's
+    // name has named them however the rest of the sentence was read. So the
+    // name is carried even where the verbs disagree, and it is the only field
+    // here that is.
+    //
+    // ── THE TWO PROPERTIES THAT MAKE IT SAFE TO WIDEN ────────────────────
+    //
+    // NOT KNOWLEDGE-GATED: the player supplied the name, so nothing is
+    // revealed to them that they did not already write down. It is not a
+    // lookup, it is a recovery.
+    //
+    // NO GUESSING: `theNameTheVerbDropped` matches whole words exactly and
+    // returns one person or nobody. Two different people named is null, not a
+    // choice. Loosen either and this becomes a machine for acting on people
+    // nobody named - which at 16% of turns would do far more harm than the
+    // refusals it prevents.
+    if (
+        whoIsStandingHere.length > 0
+        && (merged.target ?? '').trim().length < 2
+        && TARGETED_ACTIONS.includes(merged.action)
+    ) {
+        const who = theNameTheVerbDropped(input, whoIsStandingHere);
+        if (who) merged.target = who.name;
+    }
+
+    if (fromSentence.action !== action.action) return merged;
 
     // What the player put on the table. Read by `resolveAttempt`, and by
     // nothing that a model is allowed to influence.
