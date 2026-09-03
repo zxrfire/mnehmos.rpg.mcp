@@ -37,6 +37,11 @@
  *                                        about it, there and then, and the one
  *                                        answer somebody has when the gap
  *                                        cannot be closed any other way
+ *   ground-trust.ts                      what the ground under two people does
+ *                                        to whether one believes the other,
+ *                                        priced on whether anybody answers for
+ *                                        what is done here rather than on what
+ *                                        kind of house is standing over it
  *   what-a-house-does-when-it-catches-you.ts
  *                                        and what the house does about it
  *                                        afterwards: whether acting would cost
@@ -46,6 +51,7 @@
  */
 
 export * from './an-attempt-to-move-somebody.js';
+export * from './ground-trust.js';
 export * from './what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 export * from './how-freely-somebody-parts-with-what-they-have.js';
 export * from './what-a-house-will-do-about-it.js';

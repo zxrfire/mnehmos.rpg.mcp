@@ -13,6 +13,7 @@ How anybody decides whether you are who you say you are. Read alongside
 | Section | The scene it answers |
 |---|---|
 | [Two things about the reader](#two-things-about-the-reader) | anybody is judging anybody |
+| [And a third thing, which is the ground](#and-a-third-thing-which-is-the-ground) | the same stranger says the same thing in two different towns |
 | [The spectrum of signals](#the-spectrum-of-signals) | somebody has to establish who they are |
 | [A signal is worth what they cannot check](#a-signal-is-worth-what-they-cannot-check) | deciding whether a particular deception works |
 | [Recognition runs backwards to prestige](#recognition-runs-backwards-to-prestige) | somebody from a great house is far from it |
@@ -83,6 +84,57 @@ to the mechanic:
 It also gives a player something to accumulate that is not a rung. Travel, meeting people,
 having seen a thing once - progress available to somebody stuck at a ceiling, which is where
 most of a run is spent.
+
+---
+
+## And a third thing, which is the ground
+
+<!-- tier: 2 trigger="the same stranger says the same thing in two different towns" -->
+
+The design owner's ruling, and it is an addition to the two axes above rather than a
+qualification of them:
+
+> And the trust system, it should also depend on WHERE YOU ARE. a righteous sect's town is
+> much easier for you to trust in than a demonic sect town.
+
+So trust is a function of the reader, of the person being read, **and of the ground the two
+of them are standing on.**
+
+**The axis is recourse, not virtue**, and that distinction is what stops it being a colour
+code. What a piece of ground buys a stranger is the answer to *if this person lies to me,
+is there anybody who would make them pay for it?* - which is a question the world already
+answers, in [`what-a-house-will-do-about-it.ts`](../../../src/engine/social-leverage/what-a-house-will-do-about-it.ts),
+about what a house does when one of its own is worked. Asked of the house that holds the
+ground instead, it produces four answers and they order themselves:
+
+| Where you are standing | What happens if you are wronged here | What a stranger's word is worth |
+|---|---|---|
+| a righteous house's ground | the house takes it up | most |
+| a neutral house's or a court's | it is written down and collected | middling |
+| a demonic house's ground | the house prices the member who was had | little |
+| **ground nobody holds** | nothing | **least** |
+
+**The floor being unheld ground rather than demonic ground is the catalog's own argument,
+not a moral one.** `THE_BLOWN_GROUND.whatItMakesTrue` puts it plainly: a house on your
+border that eats its own disciples is a house that *answers a letter, keeps a compound at a
+fixed address, can be arbitrated against, and can be leaned on through whatever it holds
+from whoever granted it*. The neighbours tolerate demonic houses because they have seen
+eleven days of the other thing and would rather have a correspondent.
+
+**It is a term and never a gate.** Somewhere trustworthy makes trust easier and never
+automatic; somewhere lawless makes it harder and never impossible. It weighs less than a
+realm of standing, less than an existing tie, less than a purse and less than who the
+person happens to be - and it is damped by whatever tie the subject already holds, because
+the ruling is about a *stranger*. Somebody who has known you thirty years reads you the
+same in a market town and in a demonic house's forecourt.
+
+**And a place having a bad year counts too** - a war, a beast tide, a famine, a district
+closed to gathering. This is the one place this document has been overruled: [checking costs
+time](#checking-costs-time-and-time-is-what-nobody-has) argues that pressure makes deception
+*work*, because nobody has time to go and find out. The owner's ruling is that a town under
+a beast tide is not a town where strangers are believed easily either, and that is what is
+built. The document's version is not wrong so much as unbuilt: what it describes is a price
+on *checking*, and nothing in this repo prices checking yet.
 
 ---
 
@@ -647,6 +699,9 @@ mistakes it for a description of the running world will build on sand.
 | **Life plates, and tokens that shatter** | **do not exist** anywhere in the repo |
 | **A jade tag carrying a house's name** | **does not exist** as an identity object |
 | **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and **nothing in `src/engine/` reads them** |
+| **The ground as a third axis** | **built**, `src/engine/social-leverage/ground-trust.ts`, off `src/engine/world/ground-holder.ts`. **Reached by the world and not yet by the player**: the NPC simulation fills `AttemptInput.where` at both its calls and `GameService.pressSomebody` does not |
+| **Who holds the ground under a town** | **wired**, through `PREFECTURES` in `data/cultivation/regions.ts`, which nothing in `src/` read before it |
+| **The Blown Ground** | **prose only.** It is not in `REGIONS`, so the seeder mints no location for it, no settlement in it exists, and `ADMIN set_location location=The Blown Ground` answers *"is not a place"* |
 
 **The encouraging half:** both axes already existed, so the two checks now built are a *reading*
 of state the world keeps rather than new state it had to grow. **The discouraging half:** the
