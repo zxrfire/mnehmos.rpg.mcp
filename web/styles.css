@@ -2373,15 +2373,25 @@ kbd {
   gap: 6px;
   font-family: var(--font-read);
   font-size: 14px;
+  /* Sticky, so getting back out of a compound four walls in does not mean
+     scrolling to the top of the level first.
+
+     It has to be an opaque BAR and not a strip of text, and the three
+     properties below are each load-bearing for that. On `var(--ink-800)` with
+     `padding: 2px 0` it painted only its own line height and only inside the
+     panel's padding, so a select scrolling under it was sliced in half with
+     both halves visible either side - which reads as a broken layout rather
+     than as something passing behind something else. The negative margin
+     matches `.overlay__body`'s padding so the bar reaches the panel edges, and
+     the shadow is what says "this is on top". */
   position: sticky;
-  top: 0;
+  top: -20px;
   z-index: 2;
-  /* Opaque, and painted past the panel's own padding. On `var(--ink-800)` and
-     with no side bleed, rows scrolled visibly THROUGH the trail. */
   background: var(--ink-900, var(--ink-850));
-  margin: 0 -20px;
-  padding: 6px 20px 7px;
-  border-bottom: 1px solid var(--line);
+  margin: -20px -20px 0;
+  padding: 20px 20px 8px;
+  border-bottom: 1px solid var(--line-strong);
+  box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.75);
 }
 .crumb {
   border: none;
