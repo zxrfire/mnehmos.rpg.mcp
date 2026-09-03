@@ -1003,6 +1003,33 @@ arms before deciding which of the two you are holding - and be most suspicious o
 dramatic enough to feel like a mechanism, because that is what the tail of a wide
 distribution looks like from close up.
 
+### The check that catches a lost edit is a count, not a diff
+
+Another agent overwrote `sects.ts` mid-task and thirty of thirty-one rank inserts
+vanished. Nothing about that was visible in the obvious places. `git status` said
+modified, which was true. `git diff --numstat` said 82 insertions, which was also true -
+and was the *other* agent's work plus a fragment of mine, which is exactly what a healthy
+diff looks like from a distance. The file had a plausible size, a plausible diff and a
+plausible status line.
+
+**What caught it was a census that printed the number of rungs per house and showed the
+Azure Cloud Pavilion at six.** A count of the thing itself, taken again afterwards and
+compared to the count taken before.
+
+So when you make a bulk edit across a catalog - N houses, N rows, N fields - **print N
+before and print N after**, and compare them. Not the diff, and not the line count: the
+count of the entities you actually changed. It costs one probe, it is immune to somebody
+else writing the same file underneath you, and it is the only instrument here that failed
+safe rather than reading plausibly.
+
+The reciprocal is worth having too: **a measurement taken while a contended file is
+mid-write is not a measurement.** The same session produced a seeded-world census that
+disagreed with the authored catalog, which looked like a serious engine defect and was
+partly a file caught between two states. It was reported as unresolved rather than
+published - and chasing it afterwards found a real one-rung bug underneath. Both halves
+of that are the right outcome: do not publish a number you cannot reproduce, and do not
+drop it either.
+
 ### A single measurement off a shared tree is already somebody else's unfinished work
 
 The lesson above is about the gap BETWEEN two readings, and that framing is too narrow. It

@@ -27,6 +27,7 @@ import { describe, expect, it } from 'vitest';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
+import type { NpcRecord } from '../../../src/engine/world/npc-state.js';
 import {
     bloodlineForChild,
     bloodlineTierForChild,
@@ -107,22 +108,52 @@ describe('and the birth pass keeps writing it', () => {
      * seeded family is a tableau rather than a line - and the tell would be a
      * world where the only people carrying anything are the nine that were
      * placed there.
+     *
+     * POOLED, AND THE BAR IS UNCHANGED. This asked one seed to prove a rare
+     * event and reported the world moving as the world breaking.
+     *
+     * Measured over eight seeds either side of a ladder change that had
+     * nothing to do with bloodlines: 29 carriers born against 22, and SIX OF
+     * EIGHT SEEDS producing at least one on both sides. The mechanism did not
+     * move at all. What moved was `line-run` itself, from 4 to 0 - while `p5`
+     * went 0 to 1 in the other direction on the same change.
+     *
+     * So two seeds in eight already produced nothing before anybody touched
+     * anything, which made this a guard with a one-in-four chance of failing
+     * on any given day for reasons that were never about the line.
+     *
+     * The bar is still "the world must go on producing carriers". It is simply
+     * no longer asked of a single draw. See AGENTS.md, pool the sample and
+     * never widen the bar.
      */
     it('produces carriers who were not seeded', async () => {
-        const { state } = seedWorld({ seed: 'line-run', catalog });
-        const after = advanceWorldYears(state, 200).state;
-
-        const carriers = after.npcs.filter(n => n.identity.bloodline !== null);
-        const born = carriers.filter(n => !n.id.startsWith('npc-line-'));
+        const SEEDS = ['line-run', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'];
+        let carriers: NpcRecord[] = [];
+        let born: NpcRecord[] = [];
+        let seedsThatProduced = 0;
+        for (const seed of SEEDS) {
+            const { state } = seedWorld({ seed, catalog });
+            const after = advanceWorldYears(state, 200).state;
+            const theirs = after.npcs.filter(n => n.identity.bloodline !== null);
+            const theirsBorn = theirs.filter(n => !n.id.startsWith('npc-line-'));
+            if (theirsBorn.length > 0) seedsThatProduced++;
+            carriers = carriers.concat(theirs);
+            born = born.concat(theirsBorn);
+        }
         expect(carriers.length).toBeGreaterThan(0);
         expect(born.length, 'no line has come down to anybody the world made').toBeGreaterThan(0);
+        // And it is not one lucky world carrying the whole claim.
+        expect(
+            seedsThatProduced,
+            'the line comes down in isolated worlds only'
+        ).toBeGreaterThanOrEqual(3);
 
         // And what they carry is a real species with a real strength, not a
         // flag: the ability is looked up rather than copied onto the person.
         for (const n of born) {
             expect(getBeast(n.identity.bloodline!.speciesId), n.name).toBeDefined();
         }
-    }, 240_000);
+    }, 900_000);
 });
 
 describe('the ladder itself is unchanged, and is not restated anywhere', () => {
