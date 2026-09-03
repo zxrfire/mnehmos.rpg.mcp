@@ -1255,11 +1255,15 @@ height, and nothing is in decline - which is a different setting, and a much dul
   cultivating whatever they were cultivating, and when the posting ends **goes back to their
   own sect.**
 
-  So the question to ask of an empty shelf is not *is this an exception* but **what does this
-  body admit at?** A house taking people off the floor owes them a road off it. A house whose
-  bar is well above the floor owes nobody a beginner's book, because it has no beginners -
-  and `admissionOrdinal` is where that is written down, so it is a question with an answer
-  rather than a judgement call.
+  **The property that does the work is that a posting is TEMPORARY, not that its bar is
+  high.** A high bar on its own justifies nothing: somebody who joins a house and stays owes
+  their whole climb to that house's shelf, whatever rung they walked in at, and an empty
+  shelf there means **they cannot cultivate at all** for as long as they belong to it. That
+  is broken however senior the intake.
+
+  So the question to ask of an empty shelf is **does anybody stay?** A body you belong to has
+  to be able to carry you. A body you are seconded to for a while does not, because you never
+  stopped walking your own road and you take it with you when you go.
 - **An absence produced by the machinery rather than by the world.** If a house's art demands a
   root its members are never dealt, then its shelf is dead every seed for a mechanical reason,
   and nobody inside the world could tell you when it stopped - because it never started. **The
