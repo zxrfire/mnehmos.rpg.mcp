@@ -289,8 +289,10 @@ import { KnowledgeGate, loosePlaceKey, placeKey, type AwarenessRow } from './kno
 import {
     LegacyLedger,
     pouchStacks,
-    nameOfStack
+    nameOfStack,
+    whatThisRunHasPutAside
 } from './leaving-things-for-the-next-life.js';
+import { whichHavingWasAskedAbout } from './inventory-phrasings.js';
 import { handOver } from './handing-somebody-a-thing.js';
 import {
     SiteLedger,
@@ -3451,7 +3453,11 @@ ${noticedWaiting}`;
                 );
 
             case 'inventory':
-                return this.inventory(run, cultivator);
+                // The RAW sentence, because which of the two questions was
+                // asked - what is ON me, or what do I HAVE - is a property of
+                // the words and not of a field a model filled in. Same rule
+                // `legacyAct` keeps for the form of words.
+                return this.inventory(run, cultivator, rawInput);
 
             case 'propose':
                 // `topic` is what is being put on the table, in the player's
@@ -9775,7 +9781,11 @@ ${opened.text}` : receipt,
      * is "It is done. Nothing about it drew attention." - which is what a
      * player asking what they were carrying was actually told.
      */
-    private async inventory(run: Run, cultivator: Cultivator): Promise<Execution> {
+    private async inventory(
+        run: Run,
+        cultivator: Cultivator,
+        rawInput = ''
+    ): Promise<Execution> {
         const listed = await handleInventory({
             action: 'inventory',
             cultivatorId: cultivator.id
@@ -9853,12 +9863,40 @@ ${opened.text}` : receipt,
             .map(id => getTechnique(id))
             .filter((art): art is NonNullable<typeof art> => art !== undefined);
 
+        // ── AND WHAT IS NOT ON YOU AT ALL ────────────────────────────────
+        //
+        // Ruled by the design owner, against the narrower reading this file
+        // shipped with: a human DM answers "what do I have" with "on you,
+        // this; in the vault, that." They do not answer "nothing, technically"
+        // and wait to be asked a second question. A true answer that misleads
+        // is the same defect as a confident wrong one.
+        //
+        // So the wide question reaches the legacy ledger. `what am I carrying`
+        // does not, and the split is deliberate rather than an oversight -
+        // that phrasing means something narrower and the distinction is worth
+        // keeping. `inventory-phrasings.ts` decides which was asked, off the
+        // player's own sentence.
+        //
+        // `leftByRun` is the ledger's one run-scoped read and it had NO CALLER
+        // ANYWHERE IN `src/` before this line. A read of what somebody has put
+        // beyond their own reach that nothing in the running game ever asks
+        // for is the defect AGENTS.md names as the most-repeated here, and it
+        // was sitting one shelf over from the verb whose whole job is to say
+        // what you have.
+        const asked = whichHavingWasAskedAbout(rawInput.toLowerCase().trim());
+        const elsewhere = asked === 'on the body'
+            ? []
+            : whatThisRunHasPutAside(this.legacy.leftByRun(run.id));
+
         const lines: string[] = [];
         if (pills.length === 0 && herbs.length === 0 && carried.length === 0
             && books.length === 0 && yard.length === 0) {
+            // "Nothing at all" would be a lie with a cache in the ground, and
+            // it is exactly the lie this read was ruled against: technically
+            // true, and it sends the player away.
             lines.push(
-                'Nothing in the pouch at all. What is on you is what you are standing in and '
-                + `${stones} spirit stone${stones === 1 ? '' : 's'}.`
+                `Nothing in the pouch${elsewhere.length > 0 ? '' : ' at all'}. What is on you is `
+                + `what you are standing in and ${stones} spirit stone${stones === 1 ? '' : 's'}.`
             );
         } else {
             if (books.length > 0) {
@@ -9904,6 +9942,16 @@ ${opened.text}` : receipt,
             lines.push(`${stones} spirit stone${stones === 1 ? '' : 's'} in the purse.`);
         }
 
+        // Marked and separated, and after the purse, so that nothing here can
+        // be mistaken for something spendable standing where you are.
+        if (elsewhere.length > 0) {
+            lines.push(
+                'Not on you, and not reachable from where you are standing: '
+                + elsewhere.map(row => row.line).join('; ')
+                + '. Getting any of it back is its own journey.'
+            );
+        }
+
         const tox = body.toxicity;
         if (tox && typeof tox.accumulated === 'number' && tox.accumulated > 0) {
             lines.push(
@@ -9914,8 +9962,8 @@ ${opened.text}` : receipt,
 
         const facts = factsForToolResult(
             pills.length + herbs.length + carried.length + books.length === 0
-                ? 'An empty pouch.'
-                : 'What is on you.',
+                ? (elsewhere.length > 0 ? 'An empty pouch, and what is not on you.' : 'An empty pouch.')
+                : (elsewhere.length > 0 ? 'What is on you, and what is not.' : 'What is on you.'),
             lines
         );
         facts.structure.push(
@@ -9924,8 +9972,14 @@ ${opened.text}` : receipt,
             `Held off the pouch entirely: ${carried.length} rated object(s) through `
             + `listCarriedArtifacts, ${books.length} book(s) through copiesHeldBy. A copy of a `
             + 'manual is a knowledge row with a provenance rather than a counted pouch row, so '
-            + 'the alchemy reader cannot see one however long it looks.'
+            + 'the alchemy reader cannot see one however long it looks.',
+            asked === 'on the body'
+                ? 'Asked about the body, so the legacy ledger was not read. "what do I have" '
+                + 'reaches it; "what am I carrying" is the narrower question and does not.'
+                : `legacyLedger.leftByRun: ${elsewhere.length} thing(s) put aside and still `
+                + 'standing. Not in the purse, not spendable here, and each one a journey away.'
         );
+        for (const row of elsewhere) facts.structure.push(row.structure);
         return this.freeAction(run, 'inventory', facts);
     }
 

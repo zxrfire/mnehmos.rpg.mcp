@@ -40,6 +40,7 @@ import { ApproachLeverageSchema } from '../schema/cultivation.js';
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
+import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // The other half of the word `tell`: carrying news of a wrong TO somebody,
 // rather than asking to be told about something. Imported and not re-exported,
 // like every other verb family's reader, so the harvested spelling vocabulary
@@ -1505,8 +1506,13 @@ export const DEFAULT_RECALL_INTENT: RecallIntent = 'knowledge';
 export const RECALL_PATTERNS: readonly RegExp[] = [
     /\bwhat do(?:es)? i? ?know (?:of|about)\b/,
     /\bwhat do i (?:know|remember|recall) (?:of|about)\b/,
-    /\bwhat have i (?:heard|been told|learned|learnt|got) (?:of|about|on)\b/,
-    /\bwhat do i have on\b/,
+    // "on" here means dirt on somebody - "what have I got on him". `on me` and
+    // `on myself` are the pouch, and both of those were answered with the
+    // knowledge table for a person called "me", which is the shape of every bug
+    // this parser produces: a phrase matched in the wrong role and answered
+    // confidently. See `inventory-phrasings.ts`, which owns the other reading.
+    /\bwhat have i (?:heard|been told|learned|learnt|got) (?:of|about|on(?!\s+(?:me|myself)\b))\b/,
+    /\bwhat do i have on\b(?!\s+(?:me|myself)\b)/,
     /\bremind me (?:what i (?:know|have heard) )?(?:of|about)\b/,
     /\bwhat i know (?:of|about)\b/,
     /\bhave i (?:ever )?heard (?:of|about)\b/,
@@ -3472,10 +3478,9 @@ function planIntent(input: string): PlannedAction {
     //
     // Ahead of everything that could read "check" or "look" as a verb aimed at
     // the room. `alchemy_manage.inventory` answers it and nothing reached it.
-    if (/\b(?:my (?:inventory|pouch|bag|pack|belongings|possessions)|what am i carrying|what do i (?:have|carry)|what(?:'s| is) in my (?:pouch|bag|pack)|check (?:my |the )?(?:inventory|pouch|bag|pack)|(?:show|list|open) (?:me )?(?:my |the )?(?:inventory|pouch|bag|pack)|turn out (?:my )?(?:pouch|pockets)|count (?:my|the) (?:stones?|spirit stones?|coins?|money|things|belongings)|check what i (?:am|'m) carrying|see what i (?:am|'m) carrying|what have i got on me)\b/.test(text)) {
-        // "take stock" is deliberately absent. `misparse.test.ts` carries
-        // "I take stock of a life that has gone nowhere in forty years",
-        // which is a man looking at his own life and not at his pockets.
+    // The phrasings themselves are in `inventory-phrasings.ts`, which also owns
+    // the money words `give` reads. This line keeps the ORDER and nothing else.
+    if (asksWhatYouAreCarrying(text)) {
         return { action: 'inventory' };
     }
 
