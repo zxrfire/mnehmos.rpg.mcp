@@ -1121,7 +1121,9 @@ describe('the row offers things that can end badly, because those are live too',
         // into something to aim at rather than a door that says no.
         const out = byId({ ...WELL, sitesYouCouldOpen: [ARUIN] }, 'enter_site')!;
         expect(out.say).toBe('I go into The Empty Frame');
-        expect(out.because).toMatch(/ordinal 21/);
+        // The rung, said the way a person says it. The number is how the engine
+        // holds a rung and it is not what somebody standing at a door calls it.
+        expect(out.because).toMatch(/pitched at Nascent Soul Early/);
         expect(out.because).toMatch(/aim at rather than a door that says no/);
         // And it does not imply the thing is underfoot. Reported from play:
         // the chip led with a site while the player stood on somebody else's
