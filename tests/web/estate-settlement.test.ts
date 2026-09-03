@@ -1,13 +1,17 @@
 /**
  * Somebody dies with things on them, and the things are still there afterwards.
  *
- * Played, in a pinned world, against real state. The claim is the one the
- * repository kept failing: a system that binds the world must bind the player,
- * and until this landed the player's death reached the world layer not at all.
- * Measured before the fix, on a starved cultivator holding pills, herbs, a
- * rated object and thirty stones - every pouch row still on the corpse, zero
- * provenance rows naming them, zero chronicle rows naming them, their world row
- * still reading `alive`, and no grave anywhere.
+ * Played, in a pinned world, through `game.act` - which is the point of the
+ * file. The module was tested in isolation first and that proved only that the
+ * arithmetic was right; a death is not something you can arrange from outside,
+ * so nothing was demonstrated until the turn engine did it on its own.
+ *
+ * Measured before any of it existed, on a starved cultivator holding pills,
+ * herbs, a rated object and thirty stones: every pouch row still on the corpse,
+ * the purse still at thirty, zero rows in `world_object_provenance` naming
+ * them, zero rows in `world_chronicle_actors` naming them, their world row
+ * still reading `alive`, and no grave anywhere. The cultivation layer had the
+ * death right and the world was told none of it.
  *
  * Every assertion below is on state. The narration is never read.
  */
@@ -15,10 +19,9 @@
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld, type Harness } from './harness';
-import { settleWhatTheyWereCarrying } from '../../src/web/estate-settlement';
-import { LegacyLedger } from '../../src/web/leaving-things-for-the-next-life';
-import { worldForRun, saveWorldForRun } from '../../src/server/state/cultivation-world';
+import { worldForRun } from '../../src/server/state/cultivation-world';
 import { getNpc, getObject } from '../../src/engine/world/world-state';
+import { othersPresent } from '../../src/web/hearsay';
 
 /** ADMIN_MODE is read at call time, so a test can turn it on and put it back. */
 async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
@@ -35,9 +38,9 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
 /**
  * Spend a life until it runs out.
  *
- * At idle focus with no rations, `advance_days` is the survival layer doing
- * what it does; nothing here decides the death and nothing here asserts one
- * happened before the engine says so.
+ * At idle focus with no rations this is the survival layer doing what it does.
+ * Nothing here decides the death and nothing asserts one before the engine
+ * says so - the loop simply stops asking once the run is closed.
  */
 async function liveUntilItEnds(harness: Harness): Promise<void> {
     for (let i = 0; i < 12; i += 1) {
@@ -46,28 +49,9 @@ async function liveUntilItEnds(harness: Harness): Promise<void> {
     }
 }
 
-/**
- * The one call `game.ts` will make at the line that declares a player dead.
- *
- * Assembled here rather than reached through `act`, because the wiring in
- * `game.ts` is held by another agent and the hunk is handed over separately.
- * Everything it touches is the real database and the real world.
- */
-async function settle(harness: Harness, standingOver: { id: string; name: string }[] = []) {
-    const run = harness.repos.runs.getById(harness.game.state().run.id)!;
-    const cultivator = harness.repos.cultivators.getById(run.cultivatorId)!;
-    const world = await worldForRun(run);
-    const outcome = settleWhatTheyWereCarrying({
-        db: harness.db,
-        world,
-        ledger: new LegacyLedger(harness.db),
-        cultivator,
-        runId: run.id,
-        causeNote: `Died of ${run.deathCause ?? 'something the row does not name'}.`,
-        standingOver
-    });
-    await saveWorldForRun(run);
-    return { outcome, cultivator, world, run };
+/** The world as it now stands on disk, for the run that is loaded. */
+async function worldNow(harness: Harness) {
+    return worldForRun(harness.repos.runs.getById(harness.game.state().run.id)!);
 }
 
 function pouchRows(harness: Harness, cultivatorId: string): number {
@@ -76,18 +60,28 @@ function pouchRows(harness: Harness, cultivatorId: string): number {
         .get(cultivatorId) as { n: number }).n;
 }
 
+function count(harness: Harness, sql: string, ...args: unknown[]): number {
+    return (harness.db.prepare(sql).get(...args) as { n: number }).n;
+}
+
 describe('a death moves what the dead were carrying', () => {
     it('empties the body into the ground where they fell, and the world records it', async () => {
         await withAdmin(async () => {
             const harness = await makeGameInWorld({ seed: 'estate-alone', worldSeed: 'estate-world' });
             const { game, db } = harness;
             const { cultivator } = await game.newRun('Shen Ke');
+
+            // Where they were born and where they will die. Nothing is moved
+            // and nothing is emptied of people first: starving is not
+            // something anybody did to them, so what they had goes into the
+            // ground whoever else is in the town. See `somebodyDidThis`.
             const place = game.state().cultivator.location;
 
             // A rated object the world holds a row for and nobody is holding.
             // The two the seeder leaves unpossessed are the only ones a player
             // can come to hold without a house losing its property, which is
-            // itself a finding and is reported rather than worked around.
+            // itself a finding and is reported rather than worked around - see
+            // `trackedOnTheBody` in `estate-settlement.ts`.
             await game.act('ADMIN grant_item itemId=artifact-the-severed-ledger-blade');
             await game.act('ADMIN grant_item itemId=pill-qi-gathering quantity=2');
             await game.act('ADMIN grant_item itemId=herb-qi-grass quantity=3');
@@ -96,39 +90,42 @@ describe('a death moves what the dead were carrying', () => {
             const stonesHeld = game.state().cultivator.spiritStones;
             expect(stonesHeld).toBeGreaterThan(0);
 
+            // NOTHING BELOW THIS LINE IS ARRANGED. The turn that kills them is
+            // the turn that settles them.
             await liveUntilItEnds(harness);
             expect(game.state().cultivator.alive).toBe(false);
 
-            const { outcome, world } = await settle(harness);
-
             // ── THE BODY ─────────────────────────────────────────────────
             expect(pouchRows(harness, cultivator.id)).toBe(0);
-            expect((db.prepare('SELECT spirit_stones AS s FROM cultivators WHERE id = ?')
-                .get(cultivator.id) as { s: number }).s).toBe(0);
+            expect(count(harness, 'SELECT spirit_stones AS n FROM cultivators WHERE id = ?', cultivator.id))
+                .toBe(0);
 
             // ── THE GROUND ───────────────────────────────────────────────
-            expect(outcome.estate.destination).toBe('in the ground');
-            expect(outcome.cache).not.toBeNull();
-            expect(outcome.cache!.place).toBe(place);
-            expect(outcome.cache!.goods.spiritStones).toBe(stonesHeld);
-            expect(outcome.cache!.goods.items.map(i => i.itemId).sort())
-                .toEqual(['herb-qi-grass', 'pill-qi-gathering']);
-            const site = db
-                .prepare("SELECT kind, discovered FROM cultivation_sites WHERE id = ?")
-                .get(outcome.cache!.id) as { kind: string; discovered: number };
-            expect(site.kind).toBe('cache');
+            const cache = db
+                .prepare("SELECT id, location, contents, discovered FROM cultivation_sites WHERE kind = 'cache'")
+                .get() as { id: string; location: string; contents: string; discovered: number };
+            expect(cache).toBeDefined();
+            expect(cache.location).toBe(place);
             // Nobody has found it. It is not a discovered site.
-            expect(site.discovered).toBe(0);
+            expect(cache.discovered).toBe(0);
+            const goods = (JSON.parse(cache.contents) as {
+                goods: { spiritStones: number; items: { itemId: string }[] };
+            }).goods;
+            expect(goods.spiritStones).toBe(stonesHeld);
+            expect(goods.items.map(i => i.itemId).sort())
+                .toEqual(['herb-qi-grass', 'pill-qi-gathering']);
 
             // ── THE TRACKED ROW, WITH THEIR NAME IN ITS CHAIN ────────────
             //
-            // The state the brief reported a player could not reach. It is one
-            // row in `world_object_provenance` keyed on the player's own id.
-            const naming = db
-                .prepare('SELECT COUNT(*) AS n FROM world_object_provenance WHERE holder_id = ?')
-                .get(cultivator.id) as { n: number };
-            expect(naming.n).toBeGreaterThan(0);
+            // The state the report said a player could not reach: a row in
+            // `world_object_provenance` keyed on the player's own id.
+            expect(count(
+                harness,
+                'SELECT COUNT(*) AS n FROM world_object_provenance WHERE holder_id = ?',
+                cultivator.id
+            )).toBeGreaterThan(0);
 
+            const world = await worldNow(harness);
             const blade = getObject(world, 'artifact-the-severed-ledger-blade');
             expect(blade).not.toBeNull();
             expect(blade!.possessorId).toBeNull();
@@ -136,15 +133,19 @@ describe('a death moves what the dead were carrying', () => {
             expect(blade!.provenance.some(p => p.previousHolderId === cultivator.id)).toBe(true);
 
             // ── THE RECORD ───────────────────────────────────────────────
-            expect(outcome.factIds.length).toBeGreaterThan(0);
-            const actors = db
-                .prepare('SELECT COUNT(*) AS n FROM world_chronicle_actors WHERE actor_id = ?')
-                .get(cultivator.id) as { n: number };
-            expect(actors.n).toBeGreaterThan(0);
-            const graves = db
-                .prepare("SELECT COUNT(*) AS n FROM world_locations WHERE kind = 'grave'")
-                .get() as { n: number };
-            expect(graves.n).toBeGreaterThan(0);
+            expect(count(
+                harness,
+                'SELECT COUNT(*) AS n FROM world_chronicle_actors WHERE actor_id = ?',
+                cultivator.id
+            )).toBeGreaterThan(0);
+            expect(count(harness, "SELECT COUNT(*) AS n FROM world_locations WHERE kind = 'grave'"))
+                .toBeGreaterThan(0);
+
+            // And the world knows they are dead. The row read `alive` for as
+            // long as nothing put a player's death into the world, and the
+            // end-of-turn refresh would write `alive` back over this if the
+            // ordering in `act` were the other way round.
+            expect(getNpc(world, cultivator.id)!.status).not.toBe('alive');
         });
     }, 300000);
 
@@ -160,12 +161,10 @@ describe('a death moves what the dead were carrying', () => {
 
             await liveUntilItEnds(harness);
             expect(game.state().cultivator.alive).toBe(false);
-            await settle(harness);
 
             // The next life, in the same world, standing on the same ground.
             await game.act('ADMIN reset Lu Wen');
-            const heir = game.state().cultivator;
-            expect(heir.alive).toBe(true);
+            expect(game.state().cultivator.alive).toBe(true);
             await game.act(`ADMIN set_location location=${place}`);
             expect(game.state().cultivator.location).toBe(place);
 
@@ -179,42 +178,67 @@ describe('a death moves what the dead were carrying', () => {
         });
     }, 300000);
 
-    it('hands it to somebody standing over the body instead of the ground', async () => {
+    /**
+     * THE RULING THIS PINS, AND WHY IT NEEDS PINNING.
+     *
+     * The first version of the settlement handed the estate to anybody
+     * `present` returned, and playing killed that within one run: a named
+     * place is a market town or a stretch of wild ground, not a body's length
+     * of dirt. Measured on this world - four people standing in the birth
+     * town, seven at one stretch of wilds, four at another, and no place with
+     * nobody in it that a life could also be spent in. So every death was a
+     * robbery and nothing was ever left in the ground, which is a world with
+     * no graves in it and the opposite of what the Late Age is made of.
+     *
+     * `somebodyDidThis` is the fix and this is the test that says so, because
+     * the alternative reading is one line of plausible code away and nothing
+     * else in the tree would notice it coming back.
+     */
+    it('does not hand it to bystanders: people were there and it still went into the ground', async () => {
         await withAdmin(async () => {
-            const harness = await makeGameInWorld({ seed: 'estate-taken', worldSeed: 'estate-world-taken' });
-            const { game, db } = harness;
+            const harness = await makeGameInWorld({ seed: 'estate-bystanders', worldSeed: 'estate-world' });
+            const { game } = harness;
             const { cultivator } = await game.newRun('Shen Ke');
+            await game.act('ADMIN grant_item itemId=pill-qi-gathering quantity=2');
 
-            await game.act('ADMIN grant_item itemId=artifact-azure-sword-tally');
-            const stonesHeld = game.state().cultivator.spiritStones;
+            // Somebody real, standing exactly where the player is standing,
+            // in addition to whoever the world already put there.
+            await game.act('ADMIN spawn_encounter ordinal=6 name=Cao Antao');
+            const watching = othersPresent(
+                harness.repos,
+                harness.repos.cultivators.getById(cultivator.id)!,
+                await worldNow(harness)
+            );
+            expect(watching.length).toBeGreaterThan(0);
 
             await liveUntilItEnds(harness);
             expect(game.state().cultivator.alive).toBe(false);
+            // Starving is not something any of them did to them.
+            expect(game.state().run.deathCause).toBe('starvation');
 
-            const run = harness.repos.runs.getById(game.state().run.id)!;
-            const world = await worldForRun(run);
-            const watcher = world.npcs.find(n => n.status === 'alive' && n.id !== cultivator.id)!;
-            const purseBefore = watcher.spiritStones;
-
-            const { outcome } = await settle(harness, [{ id: watcher.id, name: watcher.name }]);
-
-            expect(outcome.estate.destination).toBe('taken');
-            expect(outcome.cache).toBeNull();
-            expect(db.prepare("SELECT COUNT(*) AS n FROM cultivation_sites WHERE kind = 'cache'")
-                .get()).toEqual({ n: 0 });
-
-            const after = await worldForRun(run);
-            expect(getNpc(after, watcher.id)!.spiritStones).toBe(purseBefore + stonesHeld);
-
-            const tally = getObject(after, 'artifact-azure-sword-tally')!;
-            expect(tally.possessorId).toBe(watcher.id);
-            // Taking a thing does not make it yours.
-            expect(tally.ownerId).toBe(cultivator.id);
-            expect(tally.provenance.some(p => p.how === 'looted' && p.previousHolderId === cultivator.id))
-                .toBe(true);
-
-            // And the world knows they are dead, which it did not before.
-            expect(getNpc(after, cultivator.id)!.status).not.toBe('alive');
+            expect(count(harness, "SELECT COUNT(*) AS n FROM cultivation_sites WHERE kind = 'cache'"))
+                .toBe(1);
+            expect(pouchRows(harness, cultivator.id)).toBe(0);
         });
     }, 300000);
 });
+
+/**
+ * WHAT IS NOT PLAYED HERE, AND WHY IT IS SAID RATHER THAN FAKED.
+ *
+ * The taken branch - somebody killed you and is therefore standing over you -
+ * is covered at the engine level in `tests/engine/world/estate-at-death.test.ts`
+ * and NOT played here, because a played combat death is not reliably reachable
+ * from a fresh run. Measured, attacking a spawned hostile through `game.act`
+ * on one pinned world, twenty attacks at each of six rung gaps (10, 12, 14,
+ * 16, 18, 20): no death, at any of them. Four major realms up is refused
+ * outright - "not a fight, a decision the stronger party makes alone" - and
+ * the gaps below that were won or broken off. One death did occur at a gap of
+ * six, once, and moving a single ADMIN turn earlier in the fixture made it
+ * stop happening.
+ *
+ * So a seed that kills the player in a fight is a coincidence, and a test
+ * pinned to one is pinning the coincidence rather than the rule - AGENTS.md
+ * says so in as many words. The rule is pinned where it is deterministic and
+ * the gap is recorded here rather than papered over with a lucky fixture.
+ */
