@@ -753,6 +753,10 @@ import {
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
+import {
+    howStandingHerePutIt,
+    whoBeingHereIntroducesYouTo
+} from '../engine/world/being-on-their-ground.js';
 import { situatedReads } from './situated-reads.js';
 import { seclusionVerbs } from './seclusion-verbs.js';
 import { crossingVerb } from './crossing.js';
@@ -3772,6 +3776,48 @@ ${line}`;
 ${line}`;
                     }
                     looking.facts.structure.push(holder.structure);
+
+                    // ── AND BEING HERE IS HEARING OF THEM ────────────
+                    //
+                    // FOUND BY PLAYING, standing inside the Azure Cloud
+                    // Pavilion's own compound: "can I join this sect?" -
+                    // never the name, a deictic - resolved to the Pavilion
+                    // and was refused with "Not a name you hold", because
+                    // the knowledge table had no row and NOTHING WROTE ONE
+                    // FOR BEING THERE.
+                    //
+                    // The guard that refused is right and stays exactly as
+                    // it is - naming a house off a listing must not enrol
+                    // anybody. What changes is that a player standing in
+                    // somebody's courtyard genuinely does hold the name, so
+                    // it stops firing on its own accord rather than being
+                    // given an exception.
+                    //
+                    // `named` and no further: `being-on-their-ground.ts`
+                    // says why it grants below its own source ceiling.
+                    const introduced = whoBeingHereIntroducesYouTo(
+                        this.atHand.locations, groundHere
+                    );
+                    if (introduced) {
+                        const wrote = this.knowledge.learnIfNew({
+                            holderId: cultivator.id,
+                            kind: 'sect',
+                            id: introduced.factionId,
+                            name: introduced.factionName ?? introduced.factionId,
+                            onDay: Math.floor(run.elapsedDays),
+                            sourceKind: 'witnessed',
+                            sourceNote: 'They hold the ground this cultivator was standing on.',
+                            stage: 'named',
+                            statement: howStandingHerePutIt(introduced)
+                        });
+                        if (wrote) {
+                            looking.facts.structure.push(
+                                `being on their ground: ${introduced.factionName} named at ` +
+                                '`named` from `witnessed`, below the source ceiling. A name to ' +
+                                'say, not an introduction.'
+                            );
+                        }
+                    }
                 }
                 // And the wall, but only where it has something the player has
                 // not already read. Looking round a market town every day for a
