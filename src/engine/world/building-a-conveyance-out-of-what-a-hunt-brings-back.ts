@@ -64,6 +64,7 @@
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
+import { gradeRank } from '../../data/cultivation/techniques.js';
 import { forStream } from '../cultivation/rng.js';
 import { makeObject, type KeptAs, type ObjectRecord, type ObjectSignificance } from './possessions.js';
 import {
@@ -210,11 +211,17 @@ export function layDownKeel(recipe: ConveyanceRecipe): Berth {
     };
 }
 
-const GRADE_ORDER: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'];
-
-function gradeIndex(grade: TechniqueGrade): number {
-    return GRADE_ORDER.indexOf(grade);
-}
+// THE ONE LADDER, IMPORTED RATHER THAN RETYPED. This held a private copy of
+// the grade order and ranked on its index, which is exactly the drift a second
+// copy produces: `gradeRank` now ties immortal and chaos - they are peers in
+// power - and the local copy went on believing chaos outranked immortal.
+//
+// The tie is the right answer for both readings below. A chaos-grade core
+// satisfies an immortal line and an immortal core satisfies a chaos line,
+// because a hull is built out of a magnitude of material and both grades are
+// that magnitude. What a chaos-grade core additionally does when somebody uses
+// the boat is `grade-spread.ts`'s question and is not a shipwright's.
+const gradeIndex = gradeRank;
 
 /**
  * Whether a lot satisfies a line.
