@@ -315,7 +315,10 @@ export function opponentRollIdentity(opponent: CombatantInput): string {
  * So nothing here writes ownership anywhere, and it must not start.
  *
  * A fight can end the object, which is the point of passing the identity rather
- * than only the number: `resolveExchange` reports it by id in `brokenObjects`.
+ * than only the number: `resolveExchange` reports it by id in `brokenObjects`,
+ * and `whatTheFightBroke` in `web/combat-verbs.ts` is what writes the loss -
+ * the pouch row goes and the world row is ruined and kept. This module does not
+ * do it, and must not: it owns one store and has no world handle.
  */
 export function combatantFromCultivator(
     cultivator: Cultivator,
