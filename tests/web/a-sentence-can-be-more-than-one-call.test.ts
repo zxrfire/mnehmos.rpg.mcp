@@ -879,7 +879,7 @@ describe('a pronoun the table dropped is still a pronoun', () => {
  *   > I find out where I can go, take the road to whichever of them has the
  *   > best air, and sit down there for a year
  *
- *   The Giving ... a spirit tide, triple rate.   Bellhead ... thin qi, half rate.
+ *   The Giving ... a spirit tide, triple rate.   Bronze Bell Cape ... thin qi, half rate.
  *   Which comes first? "the journey to unspecified" or "sitting down to cultivate"?
  *
  * The rows were in hand, on the same turn, with the field on every one of them,

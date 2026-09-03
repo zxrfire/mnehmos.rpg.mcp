@@ -602,7 +602,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         alsoCalled: 'the first Weigher',
         kind: 'founder',
         factionId: 'sect-halfwater-rail',
-        whatTheyWere: 'A Watering factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
+        whatTheyWere: 'A Sweetspring Isle factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
         yearsAgo: 90,
         attestation: 'secure',
         attestationNote: 'Attested by the rate book, which begins in her hand on a dated page and has not been broken since, and by four separate refusals to raise the rate recorded in the margins with the names of the parties who asked.',

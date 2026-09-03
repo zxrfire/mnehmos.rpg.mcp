@@ -2,7 +2,7 @@
  * How somebody asks what they have.
  *
  * The most basic question in any roleplaying game, and the one this parser was
- * worst at. Played at The Sounding on a fresh build, with a model narrating:
+ * worst at. Played at Dragonvein Rock on a fresh build, with a model narrating:
  *
  *     > how much do I have left?
  *     "The thought does not resolve."

@@ -687,7 +687,7 @@ export const SECT_THEFT_PATTERN =
  * -- AND THE ANSWER ALREADY EXISTS AND IS GOOD ---------------------------
  *
  * `billsOnTheWall` returns real intakes with dates and bars - *"The Sink
- * Carriers is holding an intake at Watering in 8 days, and will hear anybody
+ * Carriers is holding an intake at Sweetspring Isle in 8 days, and will hear anybody
  * who has reached Qi Condensation at all"*. So this is a routing fix and not
  * a missing surface: the phrasings are added to the rule that already
  * reaches it rather than given a branch of their own.
@@ -1132,7 +1132,7 @@ function theHouseInside(phrase: string | undefined): string | undefined {
 
 // ─── TAKING AN INTAKE THE GAME ITSELF JUST POSTED ─────────────────────────
 //
-// FOUND BY PLAYING, standing in Halfwater. The wall volunteered three bills
+// FOUND BY PLAYING, standing in Thousand Sail Harbour. The wall volunteered three bills
 // unprompted - *"Three bills are tacked to the wall. Three of them state a bar
 // you already clear. The soonest intake listed opens in seventeen days."* - and
 // named all three with their houses, their places and their dates. Then:
@@ -1195,7 +1195,7 @@ export const TAKING_A_POSTED_INTAKE = new RegExp(
  * Which house's intake the sentence means, where it says.
  *
  * Three shapes, because a poster gets pointed at three ways: "the intake at the
- * Halfwater Rail", "the Halfwater Rail's intake", "the Hollow Bell intake".
+ * Thousand Sail Harbour Rail", "the Thousand Sail Harbour Rail's intake", "the Hollow Bell intake".
  * Undefined is the ordinary answer and is not a failure - it means the sentence
  * pointed at the paper rather than at a name, and the listing answers it.
  */
@@ -1812,7 +1812,7 @@ export const RECALL_SUBJECT =
 // house, a place, a person and an art, deterministic reader:
 //
 //   tell me about the Gleaners' Company    -> interact(target="me about the …")
-//   tell me about Halfwater                -> interact(target="me about …")
+//   tell me about Thousand Sail Harbour                -> interact(target="me about …")
 //   tell me about Shen Wanshi              -> interact(target="me about …")
 //   tell me about the Lesser Qi-Gathering  -> interact(target="me about …")
 //   what do you know about Shen Wanshi     -> unclear
@@ -2121,7 +2121,7 @@ export const BUYING_VERBS =
  *
  * -- THE TURN THIS WAS FOUND ON -------------------------------------------
  *
- * Played in Watering with thirty stones and a stall the game had just listed,
+ * Played in Sweetspring Isle with thirty stones and a stall the game had just listed,
  * one turn apart, same item, same purse:
  *
  *   buy the Lesser Qi-Gathering Manual      bought, off Bai Xuping, 4 stones

@@ -19,7 +19,7 @@
  * made it visible:
  *
  *   > is it safe to sit and cultivate here, or will someone bother me?
- *   "Coming out of The Sounding alive: certain."
+ *   "Coming out of Dragonvein Rock alive: certain."
  *
  * The survivability half is answered well. Nothing answered the other half,
  * because nothing could. That is `AGENTS.md`'s own test for a half-built

@@ -424,7 +424,7 @@ function adminDisabled(action: string) {
 // location to `"The`.
 //
 // That is not a cosmetic defect. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD -
-// The Dead Verge, Nine Peaks, The Low Fall, The Drowned Reach, Salt Reach - so
+// The Dead Verge, Nine Peaks, The Low Fall, The Drowned Reach, The Salt Fields - so
 // a parser that stops at the first space can reach almost none of the map, and
 // forbidden-zone and environmental gating cannot be exercised at all. The
 // engine then narrated "The. The air here is unremarkable" for a place that

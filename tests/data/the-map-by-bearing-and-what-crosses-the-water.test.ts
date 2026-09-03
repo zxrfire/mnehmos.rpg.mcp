@@ -132,7 +132,7 @@ describe('the south has ships in the middle of it', () => {
 
     it('puts places on open water and not only on coasts', () => {
         const names = south.places.map(p => p.name);
-        for (const middle of ['Halfwater', 'The Roads', 'The Long Middle', 'Salt Reach']) {
+        for (const middle of ['Thousand Sail Harbour', 'The Waiting Sails', 'The Boundless', 'The Salt Fields']) {
             expect(names, `${middle} is not on the map`).toContain(middle);
         }
         // A province of edges is a province with a hole in the middle of it.
@@ -143,9 +143,9 @@ describe('the south has ships in the middle of it', () => {
 
     it('keeps the water the worst ground in the world even with a port on it', () => {
         // A market in the middle of it must not quietly make the sea liveable.
-        // Everything at Halfwater is bought out of a chest, exactly as before.
+        // Everything at Thousand Sail Harbour is bought out of a chest, exactly as before.
         expect(south.localCeilingOrdinal).toBe(2);
-        const port = south.places.find(p => p.name === 'Halfwater')!;
+        const port = south.places.find(p => p.name === 'Thousand Sail Harbour')!;
         expect(port.ambient).toBe('thin');
         for (const r of REGIONS) {
             if (r.id === SOUTH_REGION_ID) continue;

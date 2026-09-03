@@ -112,15 +112,15 @@ export const PLACE = {
     ORCHID_TERRACE: 'Orchid Terrace',
 
     // ─── The Drowned Reach ───────────────────────────────────────────────
-    WATERING: 'Watering',
-    BELLHEAD: 'Bellhead',
-    THE_SOUNDING: 'The Sounding',
-    DRYRUN: 'Dryrun',
-    FARSIDE: 'Farside',
-    HALFWATER: 'Halfwater',
-    THE_ROADS: 'The Roads',
-    THE_LONG_MIDDLE: 'The Long Middle',
-    SALT_REACH: 'Salt Reach',
+    SWEETSPRING_ISLE: 'Sweetspring Isle',
+    BRONZE_BELL_CAPE: 'Bronze Bell Cape',
+    DRAGONVEIN_ROCK: 'Dragonvein Rock',
+    THE_BITTER_CROSSING: 'The Bitter Crossing',
+    THE_FAR_SHORE: 'The Far Shore',
+    THOUSAND_SAIL_HARBOUR: 'Thousand Sail Harbour',
+    THE_WAITING_SAILS: 'The Waiting Sails',
+    THE_BOUNDLESS: 'The Boundless',
+    THE_SALT_FIELDS: 'The Salt Fields',
 
     // ─── The Blown Ground (no province holds it) ─────────────────────────
     THE_MEET: 'The Meet',
