@@ -39,9 +39,9 @@ export interface MarketPrice {
  * One cash for the millet, a hundred and twenty for a month of rations: those
  * are figures a player can reason with.
  */
-export const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', 'service']);
+const MORTAL_CATEGORIES = new Set(['food', 'lodging', 'transport', 'medicine', 'service']);
 
-export const MARKET_LINES = 8;
+const MARKET_LINES = 8;
 
 /**
  * Which lines of a price board get read out, when it will not all fit.
