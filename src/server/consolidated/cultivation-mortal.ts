@@ -79,6 +79,7 @@ import {
     standingStock
 } from '../../engine/world/what-a-place-still-has-in-the-ground.js';
 import { worldForRun, saveWorldForRun } from '../state/cultivation-world.js';
+import { priceMultiplierInArea } from '../../engine/world/what-is-true-of-a-place-right-now.js';
 import { worldLocationFor } from '../../web/entities.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
@@ -582,6 +583,27 @@ async function theGroundUnder(
     }
 }
 
+/**
+ * What everything on sale here costs today, over and above what the province
+ * charges for it.
+ *
+ * Read off the same `theGroundUnder` the forage path already uses, so a price
+ * and a yield are answered against one place rather than two. One where there
+ * is no world, which is the honest answer rather than a guess: a run the world
+ * layer is not part of has no ground for anything to be true of.
+ */
+async function whatTheGroundHereAddsToAPrice(
+    run: Run,
+    cultivator: Cultivator
+): Promise<number> {
+    const ground = await theGroundUnder(run, cultivator);
+    if (!ground) return 1;
+    const world = await worldForRun(run);
+    return priceMultiplierInArea(
+        world.statuses, world.locations, ground.place.id, ground.onDay
+    );
+}
+
 export async function handleForage(
     args: z.infer<typeof ForageSchema>,
     cultivate: CultivateRunner
@@ -728,9 +750,33 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     if (isGuidingErrorBody(resolved)) return resolved;
 
-    const { cultivator } = resolved;
+    const { run, cultivator } = resolved;
     const standing = standingOf(cultivator);
     const region = requireRegion(standing.regionId);
+
+    // ── AND WHAT IS TRUE OF THIS GROUND TODAY ────────────────────────────
+    //
+    // The province's multiplier says what a place is LIKE and never moves.
+    // `priceMultiplierInArea` says what is TRUE of it now - a famine, a
+    // district shut, a war on the seat - and it had no caller anywhere in
+    // `src/`. Measured on the seat of a live war carrying `priceMultiplier: 2`,
+    // this board quoted a bowl of millet at 1 cash, which is what it cost in
+    // peacetime.
+    //
+    // One term for the whole board, exactly as `boardRegard` is one regard for
+    // the whole board: a war does not raise the price of millet and leave the
+    // salt alone. It multiplies in the line the board already composes its
+    // other two terms on - the province through `localPrice`, then how this
+    // counter is meeting this person - so there is still exactly one place a
+    // line on this board is priced.
+    //
+    // The tidier home for it is a third argument to `localPrice`, beside the
+    // province's own multiplier, so that every caller in the game picks it up
+    // by passing one value instead of writing this multiplication out again.
+    // That is a change to `regions.ts`, which another agent is renaming inside
+    // as this lands. The hunk is written up and handed over rather than
+    // committed into somebody's half-finished rename.
+    const groundTerm = await whatTheGroundHereAddsToAPrice(run, cultivator);
 
     // How this market meets this person, resolved once. A stall, an inn floor
     // and a bowl of millet are all pitched at the same rung, so the board is one
@@ -744,7 +790,7 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const prices = PRICES.filter(p => args.category === undefined || p.category === args.category)
         .map(p => {
             const list = localPrice(standing.regionId, p.cash);
-            const cash = Math.max(1, Math.round(list * boardRegard.priceMultiplier));
+            const cash = Math.max(1, Math.round(list * groundTerm * boardRegard.priceMultiplier));
             return {
                 id: p.id,
                 name: p.name,
@@ -768,7 +814,7 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     // derives it from the copyist's months rather than picking a figure.
     const manuals = manualsAStallCarries().map(m => {
         const list = localPrice(standing.regionId, m.cash);
-        const cash = Math.max(1, Math.round(list * boardRegard.priceMultiplier));
+        const cash = Math.max(1, Math.round(list * groundTerm * boardRegard.priceMultiplier));
         return {
             id: `manual-${m.id}`,
             techniqueId: m.id,
@@ -807,6 +853,9 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         manuals: args.category === undefined || args.category === 'manual' ? manuals : [],
         cashPerStone: CASH_PER_STONE,
         priceMultiplier: region.priceMultiplier,
+        // What is TRUE of this ground today, reported apart from what the
+        // province is LIKE. One is a standing property and one lifts.
+        groundPriceMultiplier: groundTerm,
         // Observable consequence, not a category: what this ground has left to
         // give somebody standing at this rank.
         groundHereStillGives: canAdvanceHere(standing.regionId, cultivator.realmOrdinal),

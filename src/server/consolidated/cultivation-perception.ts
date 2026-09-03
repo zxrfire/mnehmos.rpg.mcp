@@ -360,7 +360,13 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
                 }
             );
         }
-        subject = subjectFromLocation(location, onDay);
+        // The world's statuses go with the day. Without them `windowClosed`
+        // answers off the season alone, and a place whose road is shut because
+        // somebody is holding it with soldiers assesses as wide open.
+        subject = subjectFromLocation(location, onDay, {
+            statuses: world.statuses,
+            locations: world.locations
+        });
         context = {
             place: {
                 id: location.id,
