@@ -66,7 +66,7 @@ export const MAX_LOGGED_EVENTS = 40;
  * Narrow on purpose. It requires a lowercase identifier, at least one dot, no
  * spaces, and a colon - so "Day 3: ..." and any ordinary sentence are untouched.
  */
-export const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
+const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
 
 /**
  * The sum somebody said they were putting down, off their own sentence.
@@ -1010,7 +1010,7 @@ ${fact}`;
  * name, and stating it here would put the meaning in the narrator's hands one
  * sentence after the design took it out.
  */
-export function hearingFact(hearing: Hearing): string {
+function hearingFact(hearing: Hearing): string {
     return hearingProse(hearing);
 }
 
