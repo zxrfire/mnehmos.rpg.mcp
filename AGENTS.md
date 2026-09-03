@@ -1,36 +1,34 @@
 > # 天道无情
 >
-> **The Way of Heaven is without sentiment.**
+> The Way of Heaven is without feeling.
 >
-> Not cruel — **indifferent**. 无情 is the absence of feeling, not the presence of
-> malice. Heaven does not hate you and is not testing you; it does not know you are
-> there. That is what an engine is, and it is the one line every rule below is a
-> consequence of.
+> Heaven does not reward a good act or punish a bad one. Both are acts. Each has
+> effects, and the effects follow from what was done, not from what it deserved.
 
-It is already written all through this codebase, in the engine's own voice:
+A rescue and a killing are the same kind of event here. Each is written down, each is
+held by whoever holds it, each is read by whatever reads it. The engine computes what
+follows. It does not grade.
 
-- *"The barrier does not care how badly you want it."*
-- *"Talent is rolled once and never redrawn."*
-- *"There is no reload, no revival, no continue."*
-- **A rung buys advantage, never exemption.** The strong are not excused; they are
-  merely harder to stop.
-- **The same seed rules the same way with a model attached and without.** Prose is not
-  a variable the world reads.
+The world already runs this way:
 
-**What it means when you are writing code here.** Every recurring defect in this file is
-sentiment leaking into the Way:
+- A grudge is an account, not a verdict. It records who did what to whom, and what it
+  would cost to settle.
+- A house's response is read off its alignment and its interest. A righteous house and a
+  demonic one both answer; they answer differently, and neither answer is the world's
+  opinion of the act.
+- Reputation is what people know, not what is true about somebody's character.
+- Talent is rolled once. How somebody plays does not change it.
+- A rung buys advantage, not exemption.
+- Death is permanent for the virtuous and the wicked alike.
+- The same seed rules the same way with a model attached and without.
 
-- A **hardcoded fallback** is the code deciding somebody deserves an answer.
-- A **narrator that rules** is the story deciding what happened.
-- A **guard that is secretly a constant** is a rule that flatters whoever wrote it.
-- A **refusal that names no route** is the world sulking rather than being indifferent.
-- **Softening an outcome** because the player tried hard, or because the sentence was
-  good, is the largest version of all of them.
+In the code: anything that decides what somebody deserves is a defect. That includes a
+fallback that hands out an answer, a narrator that settles an outcome, a check that is
+always true, and any figure moved because the attempt was admirable or the sentence was
+well put.
 
-The engine owes nobody a good outcome. It owes everybody **the same** outcome, computed
-the same way, and stated plainly enough that they can see why. Be impartial in the code
-and the setting writes itself; be kind in the code and the setting stops meaning
-anything.
+This is not an instruction to make the game harsh. Harshness is also a view. The engine
+does not have one.
 
 ---
 
