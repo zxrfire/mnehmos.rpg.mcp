@@ -471,6 +471,10 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'lesser-qi-gathering-manual',
             'foundation-tempering-scripture',
             'void-piercing-sword-domain',
+            // An ordinary manual, held by an ordinary house, for the ordinary
+            // reason: two of its own married and wanted the plain benefit of
+            // it. Nothing about it is a Pavilion secret.
+            'twin-lotus-cultivation-method',
             // A metal road in the middle of the Pavilion's own shelf, which
             // ran 17 then 41 and nothing between - twenty-four rungs in which
             // a house whose library is metal end to end had no metal book at
@@ -1445,10 +1449,15 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'foundation-tempering-scripture',
             'undyed-core-canon',
             'nascent-lotus-canon',
-            'meridian-devouring-art'
+            'meridian-devouring-art',
+            // Same tithe, a different channel. Every righteous house in the
+            // province has this rite on its own list of things it will act on
+            // sight for; the Hall sells it anyway, at Foundation, to whoever
+            // can pay.
+            'crimson-bound-union-rite'
         ],
         signatureTechniqueId: 'meridian-devouring-art',
-        specialities: ['forbidden', 'attack'],
+        specialities: ['forbidden', 'attack', 'dual_cultivation'],
         rivals: ['sect-azure-cloud-pavilion', 'sect-hollow-bell-wanderers', 'sect-bone-lantern-cult'],
         territory: 'A sinkhole hall under a town that officially does not know it is there.',
         recruits: true,

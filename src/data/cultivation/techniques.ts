@@ -1208,7 +1208,8 @@ const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
     movement: 'movement',
     support: 'alchemy',
     cultivation: null,
-    forbidden: 'life_death'
+    forbidden: 'life_death',
+    dual_cultivation: 'body'
 };
 
 /**
@@ -1239,7 +1240,7 @@ function roadsFromCategory(category: string): string[] {
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'furnace'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -1255,6 +1256,8 @@ function art(
              * to grant as well.
              */
             subjects?: readonly string[];
+            /** True for a `dual_cultivation` art that only works on an opposite-sex partner. Defaults false. */
+            furnace?: boolean;
         }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -1300,6 +1303,7 @@ function art(
         // entries that never named one still answer the question, and an
         // entry that wants to be specific overrides it.
         subjects: t.subjects ? [...t.subjects] : roadsFromCategory(t.category),
+        furnace: t.furnace ?? false,
         notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }
@@ -3143,6 +3147,33 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Strikes hard for its grade and returns a portion of what it takes to the user\'s own wounds. The tithe is collected from the user\'s lifespan, quietly, and the manual does not mention this until the last page.'
     }),
     art({
+        id: 'crimson-bound-union-rite',
+        name: 'Crimson-Bound Union Rite',
+        category: 'dual_cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 15,
+        qiCost: 18,
+        damage: null,
+        cooldown: 30,
+        furnace: true,
+        description:
+            'Two channels are opened at once and one is made to run the wrong way. It works only between a man and a woman - the manual is honest about the mechanism and dishonest about everything around it - and it does not ask whether the second channel was offered. What is drawn off the unwilling side is called a tithe on the Hall\'s own ledgers, the same word it uses for coin. Every righteous register in the province lists this rite by name and calls for the head of anybody caught administering it; the Hall teaches it anyway, and its own people are, without exception, spending something they were not told about at the time.'
+    }),
+    art({
+        id: 'twin-lotus-cultivation-method',
+        name: 'Twin Lotus Cultivation Method',
+        category: 'dual_cultivation',
+        grade: 'mortal',
+        element: null,
+        requiredOrdinal: 5,
+        qiCost: 8,
+        damage: null,
+        cooldown: 10,
+        description:
+            'Two channels are opened at once and both are left running the right way. Practised with a spouse or a bonded partner - the manual is explicit that a stranger gets nothing out of it worth the trouble - and the reason it is one of the oldest, plainest arguments any house has for why a cultivator should marry rather than merely ally: cultivating the same art side by side moves both of them along a hair faster than cultivating it alone. No register anywhere bans it. It works only between a man and a woman, and the manual never claims to know why.'
+    }),
+    art({
         id: 'corpse-lantern-soul-forging',
         name: 'Corpse-Lantern Soul Forging',
         category: 'forbidden',
@@ -4437,7 +4468,17 @@ export interface TechniqueQuery {
     elements?: readonly Element[];
     /** When true, only arts with no element are returned. */
     elementlessOnly?: boolean;
-    /** Exclude forbidden arts, which are never legitimately taught. */
+    /**
+     * Exclude forbidden arts, which are never legitimately taught - and, with
+     * them, any `dual_cultivation` art whose `furnace` flag is set. A furnace
+     * art is banned by name on every righteous register the same way a
+     * forbidden one is; it just files under a different category because the
+     * mechanism, not the reputation, is what the category axis tracks. A
+     * house that teaches one anyway (`Technique.furnace`, and the Crimson
+     * Abyss Hall's `crimson-bound-union-rite`) still lists it on its own
+     * `teaches` array, which this filter never reads - it only narrows what
+     * counts as ordinarily, legitimately available.
+     */
     excludeForbidden?: boolean;
     /** Restrict to one source: what a sect can teach, or what must be dug up. */
     provenance?: TechniqueProvenance;
@@ -4456,7 +4497,7 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
             if (opts.category && t.category !== opts.category) continue;
             if (opts.grade && t.grade !== opts.grade) continue;
             if (opts.provenance && t.provenance !== opts.provenance) continue;
-            if (opts.excludeForbidden && t.category === 'forbidden') continue;
+            if (opts.excludeForbidden && (t.category === 'forbidden' || t.furnace)) continue;
             if (opts.elementlessOnly && t.element !== null) continue;
             if (opts.elements && t.element !== null && !opts.elements.includes(t.element)) continue;
             out.push(t);
