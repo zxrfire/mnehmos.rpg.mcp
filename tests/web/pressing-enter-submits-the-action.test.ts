@@ -56,7 +56,13 @@ describe('the keyboard path the page advertises', () => {
         // If this line is ever deleted the promise goes with it and the tests
         // below become a preference rather than a contract. Asserted so that
         // removing the hint and removing the handler are the same decision.
-        expect(page()).toMatch(/<kbd>Enter<\/kbd>\s*to act/i);
+        // The hint names the key twice, because one keyboard calls it Return and
+        // the other calls it Enter and they are the same key. The pattern allows
+        // the alias between the promise and what it promises; it does not allow
+        // the promise to go missing.
+        expect(page()).toMatch(
+            /<kbd>Enter<\/kbd>(?:[^<]*<kbd>Return<\/kbd>)?[^<]*to act/i
+        );
     });
 
     it('binds a keydown handler to both text boxes', () => {
