@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ProviderNarrator } from '../../src/web/narrator';
 import { parseIntent } from '../../src/web/actions';
-import { ScriptedProvider } from './harness';
+import { ScriptedProvider, makeGameInWorld } from './harness';
 
 const modelSaying = (json: string) =>
     new ProviderNarrator(new ScriptedProvider({ plans: [json] }), { model: 'test' });
@@ -108,4 +108,41 @@ describe('a question about earning', () => {
         expect(plan.action.action).toBe('market');
         expect(plan.source).toBe('model');
     });
+});
+
+/**
+ * The precondition the earning axis rests on, asserted rather than assumed.
+ *
+ * That axis corrects TOWARD `work`, which is the one direction this file
+ * otherwise refuses, and it is safe only because it corrects to the `board`
+ * intent, which reads the wall and spends nothing. That is a fact about another
+ * verb in another file.
+ *
+ * If reading the board ever costs a day, the guard becomes a way to spend one
+ * on somebody who asked a question - and every other test here would still
+ * pass. This is the one that would not.
+ */
+describe('what the earning axis is allowed to hand back', () => {
+    it('costs the player nothing to read', async () => {
+        const h = await makeGameInWorld({ worldSeed: 'guard-board', seed: 'guard-board' });
+        await h.game.newRun('Asker');
+
+        const before = h.game.state();
+        const asked = await h.game.act('is there work going here?');
+        const after = h.game.state();
+
+        // The verb the axis degrades to, and the intent that makes it a read.
+        expect(parseIntent('is there work going here?').action).toBe('work');
+        expect((parseIntent('is there work going here?') as { intent?: string }).intent)
+            .toBe('board');
+
+        expect(after.run.elapsedDays, 'reading what is going spends no days')
+            .toBe(before.run.elapsedDays);
+        expect(after.cultivator.spiritStones, 'and earns nothing either')
+            .toBe(before.cultivator.spiritStones);
+        expect(after.cultivator.hp).toBe(before.cultivator.hp);
+        // And it is an answer rather than a refusal, or the guard would be
+        // handing back a dead end.
+        expect(asked.narration.length).toBeGreaterThan(40);
+    }, 60_000);
 });
