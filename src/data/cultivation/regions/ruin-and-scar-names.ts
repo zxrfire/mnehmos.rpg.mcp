@@ -1,0 +1,120 @@
+/**
+ * Names for the generated half of the map: what a sealed compound and a scar
+ * get called, so that neither is called by its kind.
+ *
+ * Not `place-names.ts`, which is the one source of truth for the places the
+ * catalog AUTHORS. These two tables are drawn from at world generation, by
+ * `history.ts` and `locations.ts`, for ground that does not exist until a
+ * world is seeded and therefore belongs to no province here.
+ */
+
+import { z } from 'zod';
+
+// ─────────────────────────────────────────────────────────────────────────
+// PLACE NAMES FOR THE GENERATED HALF OF THE MAP
+//
+// A seeded world holds twelve ruins and eight scars, and every one of them is
+// currently called `the sealed compound at Lowhollow` or `the scar at
+// Coldmouth`. That is the LocationKind leaking into the fiction: nobody in this
+// world calls a place a sealed compound, and a scar is not called a scar by the
+// people who watched it happen.
+//
+// WHERE IT COMES FROM, EXACTLY. Not this file. Two call sites, both in the
+// world engine:
+//
+//   src/engine/world/history.ts:1221   name: `the sealed compound at ${seat}`
+//   src/engine/world/locations.ts:1709 name: `the scar at ${scar.location}`
+//
+// `seat` and `scar.location` are themselves generated, by PLACE_HEAD x
+// PLACE_TAIL at history.ts:864-871, and that half is fine: Sweptfall and
+// Coldmouth sit beside Sweptground and Scarwater without embarrassing
+// themselves. The defect is the concatenated kind in front of them, and it
+// cannot be fixed from here because `src/engine/world/` is not this file's to
+// edit. Both lines should draw from the tables below instead - the bridge is
+// `loadCultivationCatalog()` in `engine/world/catalog.ts`, which is already the
+// one sanctioned place content reaches the world layer.
+//
+// THE RULE THE TABLES OBEY, so a later addition matches:
+//
+//   1. Never the kind. No "Ruin of", no "Sealed Compound of", no "the X Scar".
+//      If a reader cannot tell what sort of place it is without a label, that
+//      is what the description field is for.
+//   2. One of five sources, and the source is recorded per entry so the rule
+//      stays checkable: what is visibly there, what happened, who held it (in
+//      the possessive, and only where the holder is gone), what people do there
+//      now, or a name that is wrong.
+//   3. Slightly too plain for what it describes. The province kept saying it
+//      because the province was there, not because it was apt.
+//   4. It must not sound like a faction. `sects.ts` names are very good and the
+//      registers must not blur - a place is duller than a house, always.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const PlaceNameSourceSchema = z.enum([
+    'what_is_visibly_there',
+    'what_happened',
+    'who_held_it',
+    'what_people_do_there_now',
+    'a_name_that_is_wrong'
+]);
+export type PlaceNameSource = z.infer<typeof PlaceNameSourceSchema>;
+
+export const GeneratedPlaceNameSchema = z.object({
+    name: z.string().min(1),
+    source: PlaceNameSourceSchema,
+    /** What the name is actually recording, in one line. */
+    records: z.string().min(20)
+});
+export type GeneratedPlaceName = z.infer<typeof GeneratedPlaceNameSchema>;
+
+/**
+ * Names for a sealed compound: the walled seat of a house that fell, shut from
+ * the inside in a richer age, with its manuals and its people still in it.
+ *
+ * Twenty against a draw of twelve, so a seeded world does not repeat.
+ */
+export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
+    { name: 'Ninebell', source: 'what_happened', records: 'The bells were counted on the last night and the count was passed outward. There were seven.' },
+    { name: 'Quan\'s Shelf', source: 'who_held_it', records: 'A surname nobody in the province can now attach to anything else, on a terrace anybody can see from the road.' },
+    { name: 'The Warm Gate', source: 'a_name_that_is_wrong', records: 'It has been cold for nine hundred years. The name is older than the sealing and was never revised.' },
+    { name: 'Halfroof', source: 'what_is_visibly_there', records: 'What is left standing above the wall line, which is about half of one roof.' },
+    { name: 'Threestone', source: 'what_is_visibly_there', records: 'Three array stones out of a ring nobody has ever counted the rest of.' },
+    { name: 'The Millet Yard', source: 'a_name_that_is_wrong', records: 'Nothing has grown in it in an age, and the surrounding villages still call it that at market.' },
+    { name: 'Digging', source: 'what_people_do_there_now', records: 'The only thing that has happened there for four hundred years, done by whoever is broke that season.' },
+    { name: 'Nothing Standing', source: 'what_happened', records: 'What the first party back reported, which turned out to be wrong by about eleven buildings.' },
+    { name: 'Muyang', source: 'who_held_it', records: 'The house name, used flat, with no honorific and no form of words around it.' },
+    { name: 'Sixty Doors', source: 'what_is_visibly_there', records: 'Counted from outside by somebody who could not get through any of them.' },
+    { name: 'The Long Rota', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
+    { name: 'Went Under', source: 'what_happened', records: 'Said of the seat rather than of the ground, and said the same way about a person.' },
+    { name: 'Coldwell', source: 'what_is_visibly_there', records: 'The only well outside the wall, still good, and the reason anybody camps there at all.' },
+    { name: 'Bai\'s Shortcut', source: 'who_held_it', records: 'A path around the perimeter named for the last steward, who was not using it to get anywhere.' },
+    { name: 'The Wide Door', source: 'a_name_that_is_wrong', records: 'It is narrow, it faces the wrong way, and every account since the fall has called it wide.' },
+    { name: 'Fivewinter', source: 'what_happened', records: 'How long the compound answered after it was shut, counted by the people who kept coming back to check.' },
+    { name: 'Hookyard', source: 'what_people_do_there_now', records: 'Where the diggers dress and sort before they go in, named for the tools they leave in it.' },
+    { name: 'The Second Wall', source: 'what_is_visibly_there', records: 'There is no first wall any more, so the surviving one is still called the second.' },
+    { name: 'Ren\'s Landing', source: 'who_held_it', records: 'A stair head that carries the name of a Warden nobody can now place in any roll.' },
+    { name: 'The Quiet Course', source: 'a_name_that_is_wrong', records: 'It is not quiet, it has never been quiet, and everybody who has been in says so and goes on calling it that.' }
+];
+
+/**
+ * Names for a scar: ground something did to, permanently thin, that people
+ * were standing near enough to name.
+ *
+ * Fourteen against a draw of eight. A scar name should be plainer than a ruin
+ * name, because the people who chose it were describing weather.
+ */
+export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
+    { name: 'The Burn', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
+    { name: 'Fourdays', source: 'what_happened', records: 'How long it took, counted from a hill by people who could not do anything else.' },
+    { name: 'The Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
+    { name: 'Nothing Grows', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },
+    { name: 'Wenzhi\'s Field', source: 'who_held_it', records: 'The farmer who held the ground, named because nobody could name what did it.' },
+    { name: 'The Good Ground', source: 'a_name_that_is_wrong', records: 'It was, and the surveys still carry the old entry, and every local knows better.' },
+    { name: 'Standing Water', source: 'what_is_visibly_there', records: 'It has not drained since, and nothing will drink it.' },
+    { name: 'Threeyear', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
+    { name: 'The Short Way', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },
+    { name: 'Gleaning', source: 'what_people_do_there_now', records: 'People still work the edges for what the ground gives up, and are known by it.' },
+    { name: 'Cutbank', source: 'what_is_visibly_there', records: 'The edge is sharp, and the sharpness of the edge is the thing everybody remarks on.' },
+    { name: 'The Old Crossing', source: 'a_name_that_is_wrong', records: 'Nobody has crossed it in two centuries and the road signs have never been changed.' },
+    { name: 'Hemu\'s Rest', source: 'who_held_it', records: 'A waystation keeper who did not leave, whose name outlasted the waystation and the road.' },
+    { name: 'Whitewater', source: 'what_is_visibly_there', records: 'The stream that comes off it runs pale and has done since, and the colour is the name.' }
+];
