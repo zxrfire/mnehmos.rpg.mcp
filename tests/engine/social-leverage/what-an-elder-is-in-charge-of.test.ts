@@ -15,6 +15,8 @@ import {
     whatTheyHold,
     whoAnswersAbout,
     whoIsInChargeOfWhat,
+    officePressureIn,
+    turningThemOutOfTheirRoom,
     whoseCallItIs
 } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of';
 
@@ -245,5 +247,127 @@ describe('first refusal', () => {
         });
         expect(call.holderId).toBeNull();
         expect(call.theirCallAlone).toBe(false);
+    });
+});
+
+describe('office scarcity is what makes anybody leave', () => {
+    const yearsFor = (n: number) => stagnationYearsForOrdinal(20) * n;
+
+    it('reports a queue when more people have settled than there are rooms', () => {
+        const pressure = officePressureIn({
+            rooms: ['treasury'],
+            roll: [
+                { id: 'head', rankIndex: 5 },
+                { id: 'elder-a', rankIndex: 4 },
+                { id: 'elder-b', rankIndex: 4 }
+            ],
+            rankCount: LADDER,
+            yearsHeldById: { head: yearsFor(1), 'elder-a': yearsFor(1), 'elder-b': yearsFor(1) },
+            realmOrdinalById: { head: 20, 'elder-a': 20, 'elder-b': 20 }
+        });
+        expect(pressure.offices).toBe(1);
+        expect(pressure.settled).toBe(3);
+        expect(pressure.waiting).toBe(2);
+        expect(pressure.whoIsWaiting).toHaveLength(2);
+    });
+
+    it('counts nobody as waiting while they are still climbing', () => {
+        const pressure = officePressureIn({
+            rooms: ['treasury'],
+            roll: [{ id: 'head', rankIndex: 5 }, { id: 'elder-a', rankIndex: 4 }],
+            rankCount: LADDER,
+            // Fresh at the rung: the house has not written either off.
+            yearsHeldById: { head: 0, 'elder-a': 0 },
+            realmOrdinalById: { head: 20, 'elder-a': 20 }
+        });
+        expect(pressure.settled).toBe(0);
+        expect(pressure.waiting).toBe(0);
+    });
+
+    it('empties the queue when there are rooms enough to go round', () => {
+        const pressure = officePressureIn({
+            rooms: ['treasury', 'archive', 'punishment_hall'],
+            roll: [{ id: 'head', rankIndex: 5 }, { id: 'elder-a', rankIndex: 4 }],
+            rankCount: LADDER,
+            yearsHeldById: { head: yearsFor(1), 'elder-a': yearsFor(1) },
+            realmOrdinalById: { head: 20, 'elder-a': 20 }
+        });
+        expect(pressure.waiting).toBe(0);
+    });
+
+    it('is pressure and never a departure - nothing here decides anybody goes', () => {
+        const pressure = officePressureIn({
+            rooms: [],
+            roll: [{ id: 'head', rankIndex: 5 }, { id: 'elder-a', rankIndex: 4 }],
+            rankCount: LADDER,
+            yearsHeldById: { head: yearsFor(9), 'elder-a': yearsFor(9) },
+            realmOrdinalById: { head: 20, 'elder-a': 20 }
+        });
+        // Nine times what the rung credits, and no room at all: still only a
+        // count and a sentence. No rate, no threshold, nobody leaving.
+        expect(Object.keys(pressure).sort())
+            .toEqual(['line', 'offices', 'settled', 'waiting', 'whoIsWaiting']);
+    });
+});
+
+describe('a head turning an elder out of their room', () => {
+    it('is available rather than blocked, and priced by leadership.ts', () => {
+        const out = turningThemOutOfTheirRoom({
+            personId: 'elder-a', purpose: 'treasury',
+            theirFollowing: 20, houseSize: 60, alreadyDone: 0
+        });
+        expect(out.cost.standingCost).toBeGreaterThan(0);
+        expect(out.purpose).toBe('treasury');
+    });
+
+    it('costs more for an elder with more people behind them', () => {
+        const small = turningThemOutOfTheirRoom({
+            personId: 'a', purpose: 'treasury',
+            theirFollowing: 2, houseSize: 60, alreadyDone: 0
+        });
+        const large = turningThemOutOfTheirRoom({
+            personId: 'b', purpose: 'treasury',
+            theirFollowing: 30, houseSize: 60, alreadyDone: 0
+        });
+        expect(large.cost.standingCost).toBeGreaterThan(small.cost.standingCost);
+    });
+
+    it('compounds, so a head emptying the council pays more each time', () => {
+        const first = turningThemOutOfTheirRoom({
+            personId: 'a', purpose: 'treasury',
+            theirFollowing: 10, houseSize: 60, alreadyDone: 0
+        });
+        const third = turningThemOutOfTheirRoom({
+            personId: 'c', purpose: 'treasury',
+            theirFollowing: 10, houseSize: 60, alreadyDone: 2
+        });
+        expect(third.cost.standingCost).toBeGreaterThan(first.cost.standingCost);
+    });
+
+    it('leaves them an elder rather than nothing', () => {
+        const out = turningThemOutOfTheirRoom({
+            personId: 'elder-a', purpose: 'treasury',
+            theirFollowing: 5, houseSize: 40, alreadyDone: 0
+        });
+        // The rare, earned, strictly-worse seat, reached by being pushed.
+        expect(out.theyBecome).toBe('settled, carried for what they are');
+    });
+
+    it('names who remembers it, which is what the head keeps paying', () => {
+        const out = turningThemOutOfTheirRoom({
+            personId: 'elder-a', purpose: 'treasury',
+            theirFollowing: 5, houseSize: 40, alreadyDone: 0,
+            others: ['elder-b', 'elder-a']
+        });
+        expect(out.whoResents).toEqual(['elder-a', 'elder-b']);
+    });
+
+    it('has no cooldown and no cap - the cost is the limiter', () => {
+        const out = turningThemOutOfTheirRoom({
+            personId: 'a', purpose: 'treasury',
+            theirFollowing: 10, houseSize: 60, alreadyDone: 99
+        });
+        // Still returns a price rather than a refusal, however many times.
+        expect(out.cost.standingCost).toBeGreaterThan(0);
     });
 });

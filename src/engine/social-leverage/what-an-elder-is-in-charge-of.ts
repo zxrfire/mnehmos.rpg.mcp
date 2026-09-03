@@ -143,7 +143,7 @@
 import type { RoomPurpose } from '../world/architecture.js';
 import { roomAuthorityOf } from '../world/architecture.js';
 import { stagnationYearsForOrdinal } from '../../schema/cultivation.js';
-import { mayExercise } from '../cultivation/leadership.js';
+import { expulsionCost, mayExercise, type ActCost } from '../cultivation/leadership.js';
 import type { OnTheRoll, TheirSay, WhereTheBodyLands } from './what-a-body-wants-is-what-its-deciders-want.js';
 import { whatTheBodyWants, whoDecidesIn } from './what-a-body-wants-is-what-its-deciders-want.js';
 
@@ -537,4 +537,190 @@ export function whoseCallItIs(input: {
 
 function round4(n: number): number {
     return Math.round(n * 1e4) / 1e4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHY ANYBODY EVER LEAVES
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How many people could hold an office here against how many offices there are.
+ *
+ * ── THE SCARCITY IS THE MECHANISM, NOT A COINCIDENCE OF COUNTS ───────────
+ *
+ * The design owner:
+ *
+ *   > a contested title is what makes sense? cuz that's what forces people to
+ *   > leave, cuz there's less offices than people who can theoretically hold
+ *   > that office (harvard again, LOL)
+ *
+ * Measured before this was written and it is already true everywhere: 2.06
+ * sealed rooms per house against 2.3 people at a deciding rung, in every house,
+ * permanently. Slightly more people who could hold a room than rooms. Nobody
+ * tuned that and nothing should.
+ *
+ * **This is the driver `leadership.ts`'s departure model never had.** That file
+ * has always said elders leave and take their followings with them, and
+ * `departuresAt` computes exactly who - but it is reachable only through a
+ * leadership verb a player has to already be running a house to use, so in an
+ * ordinary world nothing drives it. Office scarcity is what does: you have
+ * settled, you are worth a room, there is no room, and the person holding the
+ * one you want is not dying soon.
+ *
+ * ── WHAT THIS RETURNS IS PRESSURE, NEVER A DEPARTURE ─────────────────────
+ *
+ * No rate, no threshold, and nothing here decides that anybody goes. The
+ * arithmetic is the whole of it, so a house with an unusually long-lived head
+ * has a queue behind it and a house that lost two elders in a war does not -
+ * which is the world producing its own turnover rather than a number producing
+ * it. Whether somebody actually walks is `whatTheBodyWants` and the verbs, and
+ * for a player it is a decision with four live answers - wait, build a
+ * following, take somebody's office, or leave - and this module resolves none
+ * of them.
+ *
+ * The world already authored the consequence, incidentally: `seeding.ts` writes
+ * one `rival` tie per faction noted *"Was the other candidate."* That is this,
+ * and it was there before the mechanism was.
+ */
+export interface OfficePressure {
+    /** Sealed rooms in this house. */
+    offices: number;
+    /** People at a deciding rung the house reads as finished climbing. */
+    settled: number;
+    /**
+     * Settled people with no room. Zero or more; never negative.
+     *
+     * The queue. Each of them is somebody doing arithmetic about somebody
+     * else's room.
+     */
+    waiting: number;
+    /** Who they are, heaviest voice first. */
+    whoIsWaiting: readonly string[];
+    /** Engine truth, one line. Never narration. */
+    line: string;
+}
+
+export function officePressureIn(input: {
+    rooms: readonly RoomPurpose[];
+    roll: readonly OnTheRoll[];
+    rankCount: number;
+    /** Years each decider has stood at their rung, by id. Absent reads as none. */
+    yearsHeldById: Readonly<Record<string, number>>;
+    /** Their rung on the cultivation ladder, by id. Absent reads as zero. */
+    realmOrdinalById: Readonly<Record<string, number>>;
+}): OfficePressure {
+    const portfolios = whoIsInChargeOfWhat(input);
+    const offices = portfolios.length;
+    const room = whoDecidesIn({ roll: input.roll, rankCount: input.rankCount });
+
+    const settledPeople = room.filter(p => howFinishedTheyLook({
+        realmOrdinal: input.realmOrdinalById[p.id] ?? 0,
+        yearsHeld: input.yearsHeldById[p.id] ?? 0
+    }).looksFinished);
+
+    const waiting = settledPeople.filter(p => whatTheyHold(portfolios, p.id).length === 0);
+
+    return {
+        offices,
+        settled: settledPeople.length,
+        waiting: waiting.length,
+        whoIsWaiting: waiting.map(p => p.id),
+        line: waiting.length === 0
+            ? `${offices} rooms and ${settledPeople.length} settled - everybody who has stopped `
+              + 'has something to run, so nobody here is counting the years somebody else has '
+              + 'left.'
+            : `${offices} rooms and ${settledPeople.length} settled, so ${waiting.length} of them `
+              + 'have stopped climbing and have nothing to run. They are not failures and the '
+              + 'house is not punishing them - there is simply no room, and the people holding '
+              + 'the rooms are not going anywhere.'
+    };
+}
+
+/**
+ * A head turning an elder out of their room.
+ *
+ * The design owner: *"same idea to a patriarch forcing an elder out and it
+ * costs him."* Same shape as overruling the room - **available rather than
+ * blocked, expensive and visible.** Nothing here refuses it, because the rule
+ * that stops offices being reshuffled at whim is not a rule: it is that each
+ * removal buys resentment the head keeps paying for, and a head who has spent
+ * enough of it is a head the room can overrule. That is the third tier of
+ * `whatTheBodyWants` arriving as a CONSEQUENCE rather than as a special rule
+ * about offices, which is the whole design closing on itself.
+ *
+ * ── THE PRICE IS `leadership.ts`'S AND IS NOT RECOMPUTED HERE ────────────
+ *
+ * `expulsionCost` already prices removing an elder off their following, on the
+ * argument that dismissing somebody who brought in half the roster is visibly a
+ * different act from dismissing somebody who brought in two. That is the same
+ * resentment: what the head takes is their position, and whether they also walk
+ * out of the house is the elder's decision rather than the head's. So this
+ * returns the cost that function produced, untouched, and the caller hands it
+ * to `resolveAct` - which is what makes this a caller for `backlashLevel`,
+ * `obstructionChance` and `departuresAt`, none of which an ordinary world
+ * currently reaches.
+ *
+ * NOT LABELLED AS ITS OWN `LeadershipAct`, deliberately: that union lives in
+ * `leadership.ts`, which is being edited by somebody else as this is written,
+ * and adding a value to a contested union to get a nicer label is not worth the
+ * conflict. The cost, the years and the insult are the parts that matter.
+ *
+ * ── AND THE ELDER DOES NOT STOP EXISTING ─────────────────────────────────
+ *
+ * They keep elder standing, they may still take disciples, and they are now an
+ * office-less elder - the rare, earned, strictly-worse seat, reached by being
+ * pushed rather than by being carried. Same state, different road, and it
+ * needed nothing new.
+ *
+ * No cooldown and no cap, on the owner's instruction: the cost is the limiter.
+ * A head who can afford to empty his whole council has built himself the
+ * unanimous room that takes the house off him.
+ */
+export interface TurningThemOut {
+    /** Who lost the room. */
+    personId: string;
+    /** The room they lost, so a caller can hand it to somebody else. */
+    purpose: RoomPurpose;
+    /** What it costs the head, from `leadership.ts`. Unmodified. */
+    cost: ActCost;
+    /**
+     * Who now holds something against the head.
+     *
+     * The elder who lost the room, and every other decider standing on their
+     * side of it. A head who has turned three people out is a head with three
+     * people who remember, and the ledger is where that lives.
+     */
+    whoResents: readonly string[];
+    /** What they are afterwards. Not nothing. */
+    theyBecome: HowTheyAreHeld;
+    line: string;
+}
+
+export function turningThemOutOfTheirRoom(input: {
+    personId: string;
+    purpose: RoomPurpose;
+    /** Disciples in that elder's own line. Priced by `expulsionCost`. */
+    theirFollowing: number;
+    houseSize: number;
+    /** How many the head has already turned out. The insult compounds. */
+    alreadyDone: number;
+    /** Everyone else who decides here, so their resentment is legible too. */
+    others?: readonly string[];
+}): TurningThemOut {
+    const cost = expulsionCost(
+        Math.max(0, input.theirFollowing),
+        Math.max(1, input.houseSize),
+        Math.max(0, input.alreadyDone)
+    );
+    return {
+        personId: input.personId,
+        purpose: input.purpose,
+        cost,
+        whoResents: [input.personId, ...(input.others ?? []).filter(id => id !== input.personId)],
+        // Elder standing survives it. What is gone is the room.
+        theyBecome: 'settled, carried for what they are',
+        line: `${input.personId} is out of ${input.purpose} and still an elder of this house. `
+            + 'Nothing forbade it and it was not free: they keep their standing, they keep '
+            + 'whoever follows them, and the head has bought a person who remembers.'
+    };
 }
