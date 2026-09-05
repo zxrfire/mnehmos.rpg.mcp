@@ -238,7 +238,7 @@ Intents: `drive_off`, `subdue`, `kill`, `humiliate`.
 
 MAKE somebody do something, with hands rather than with words. Not the same as interact/threaten, which is a promise of harm and costs the target nothing yet - this is the point at which they stop being somebody being talked to. "target" names them; "intent" says what the compliance was for - submit, hand_over, talk, or tame. It resolves through the confrontation engine, so it fails the way a fight fails: somebody stronger does not decline, they answer. An animal made to submit is a tamed animal and reaches this same verb.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'coerce'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.attack` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'coerce'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.somebodyAtHand` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`, `intent`, `opening`.
 
