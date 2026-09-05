@@ -72,7 +72,7 @@ describe('killRequirement', () => {
 
     it('never lets a Cut cultivator be finished by the body alone', () => {
         // The seam persists in material. A carver who is merely killed may be
-        // back in nine years, which is why the Marches distinguishes a funeral
+        // back in nine years, which is why the Silent Cliffs distinguishes a funeral
         // from a scattering.
         for (const ordinal of [0, 12, 21, 33, MAX_ORDINAL]) {
             expect(killRequirement('tradition-cut', ordinal).bodyIsEnough).toBe(false);

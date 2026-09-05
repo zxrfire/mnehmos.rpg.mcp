@@ -13,26 +13,25 @@ import { z } from 'zod';
 // ─────────────────────────────────────────────────────────────────────────
 // PLACE NAMES FOR THE GENERATED HALF OF THE MAP
 //
-// A seeded world holds twelve ruins and eight scars, and every one of them is
-// currently called `the sealed compound at Lowhollow` or `the scar at
-// Coldmouth`. That is the LocationKind leaking into the fiction: nobody in this
-// world calls a place a sealed compound, and a scar is not called a scar by the
-// people who watched it happen.
+// A seeded world holds twelve ruins and eight scars, and every one of them was
+// called `the sealed compound at Lowhollow` or `the scar at Coldmouth` - the
+// LocationKind leaking into the fiction. Nobody in this world calls a place a
+// sealed compound, and a scar is not called a scar by the people who watched it
+// happen.
 //
-// WHERE IT COMES FROM, EXACTLY. Not this file. Two call sites, both in the
-// world engine:
+// `seedPriorAges` now draws from these tables and `locationFromRuin` and
+// `locationFromScar` patch the drawn name onto the record, so what a player
+// travels to is Coldwell or Nothing Grows. The generated toponym survives as
+// `location` - the ground the province puts it at - and that half was always
+// fine: Sweptfall and Coldmouth sit beside Burnt Earth and Clear River Ford
+// without embarrassing themselves.
 //
-//   src/engine/world/history.ts:1221   name: `the sealed compound at ${seat}`
-//   src/engine/world/locations.ts:1709 name: `the scar at ${scar.location}`
-//
-// `seat` and `scar.location` are themselves generated, by PLACE_HEAD x
-// PLACE_TAIL at history.ts:864-871, and that half is fine: Sweptfall and
-// Coldmouth sit beside Sweptground and Scarwater without embarrassing
-// themselves. The defect is the concatenated kind in front of them, and it
-// cannot be fixed from here because `src/engine/world/` is not this file's to
-// edit. Both lines should draw from the tables below instead - the bridge is
-// `loadCultivationCatalog()` in `engine/world/catalog.ts`, which is already the
-// one sanctioned place content reaches the world layer.
+// The draw is keyed on the world seed. It was not, and the consequence is
+// worth keeping: a ruin is drawn for every faction in every age, so the same
+// twelve keys occurred in every world and every world got the same twelve
+// names in the same order. Eight of the twenty below were unreachable
+// anywhere, three of them carrying a `LOCAL_RESIDUE` story about ground no
+// generator would ever make.
 //
 // THE RULE THE TABLES OBEY, so a later addition matches:
 //

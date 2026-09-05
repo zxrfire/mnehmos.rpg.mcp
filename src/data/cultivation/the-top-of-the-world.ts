@@ -1,36 +1,5 @@
 /**
  * The top of the world, and whether it can be moved.
- *
- * There is no doc for this. It is the only written record of the argument, and
- * `docs/world/INDEX.md` indexes it as such - if you are about to write one,
- * read this first rather than beside it.
- *
- * Split out of `catastrophe.ts`, which had grown to fifteen exports of which
- * two were about catastrophes. This is the other thirteen: everything about
- * who could kill somebody at the top of an apex, what it would take, why
- * nobody has, and what would happen if they did.
- *
- * It is one argument in several parts and the parts do not read correctly
- * alone. The margin explains why the ordinary answer fails; the stall explains
- * why a bigger version of the ordinary answer also fails; the shadow
- * conspiracy is the only shape that solves both; the revolt is the same thing
- * with the hard part removed; and the standoff is why none of it happens.
- *
- * NOTHING HERE DECIDES A FIGHT
- * Three drafts of this file carried their own arithmetic - a margin constant, a
- * weight function, a per-apex requirement table - and every one was a second
- * opinion about combat kept in a lore file, next to an engine that already had
- * one. What is left reads the ordinary catalogs and reports. Who wins is
- * answered by the resolver that answers it for two farmhands with sticks, and
- * where a number appears here it was measured rather than chosen. The harness
- * is `scripts/playtest-conspiracy.ts`; the guard is
- * `tests/data/cultivation-standoff.test.ts`.
- *
- * The whole-house figures in this file were unmeasurable for a while and are
- * not any more. `MEASUREMENT_STATUS` at the foot records what was wrong, what
- * was retracted and what replaced it, in place, the way `catastrophe.ts` does -
- * because a number nobody can trace is worth less than a number with its
- * correction attached.
  */
 
 import { APEX_INSTITUTIONS } from './hierarchy.js';
@@ -42,11 +11,6 @@ import { sectThreat, sectsWithASealedCeiling } from './sects.js';
 
 /**
  * What is required to kill somebody at the top of an apex.
- *
- * Read off the catalogs rather than asserted: `sectsWithASealedCeiling` returns
- * the houses that hold a break-glass ancestor, `sectThreat` gives the ceiling
- * each could put in the world for one use, and `APEX_INSTITUTIONS` gives the
- * ordinals that would have to be answered.
  */
 export interface ConspiracyArithmetic {
     /** Ceilings available, descending, one per house that holds a seal. */
@@ -102,12 +66,6 @@ export const WHY_THE_HEAD_IS_PINNED = {
 
 /**
  * The deaths available to somebody at the top of an apex.
- *
- * An earlier draft of this called the conspiracy the only one. That was wrong
- * and worth correcting loudly, because the mistake was the interesting kind:
- * it treated a very hard thing as an impossible one, which is exactly the error
- * an apex would like everybody to keep making. Nobody is invincible. There are
- * two routes, both are murderous, and the artifact is why.
  */
 export const DEATHS_AVAILABLE = {
     whyNotADisaster:
@@ -142,34 +100,13 @@ export const DEATHS_AVAILABLE = {
 
 /**
  * No arithmetic lives in this file any more, and the absence is the point.
- *
- * Three drafts of it did: a margin constant, a weight function, a per-apex
- * requirement table, a holder ranking. Every one of them was a second opinion
- * about who wins a fight, kept in a lore file, next to a fighting system that
- * already had one - and all of them were special cases dressed as data, because
- * they only ever applied to apexes.
- *
- * What is left is the ordinary machinery everything else already uses:
- *
- *   who is standing there   -> `powerOrdinal` on the faction, like anybody
- *   what they are holding   -> `ARTIFACTS`, ordered by power, like any object
- *   what could be woken     -> `sectThreat().ceiling`, like any sealed ancestor
- *   who arrives afterwards  -> `COURTS`, like any patron obligation
- *   who wins                -> the fighting system, like every other fight
- *
- * An apex head is a person at forty-something carrying an artifact rated in the
- * forties. That is the whole of it. Nothing below is a rule; it is a reading of
- * what those four tables already say, and if the resolver ever disagrees with
- * the reading, the reading is what is wrong.
  */
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE MARGIN, THE STALL, AND WHY IT HAS TO BE A MEGA CONSPIRACY
-// Colocated with the deaths above on purpose: none of these three reads
-// correctly on its own. The margin is why the ordinary answer fails, the
-// stall is why a bigger version of the ordinary answer also fails, and the
-// shadow conspiracy is the only shape that solves both at once.
-// ─────────────────────────────────────────────────────────────────────────
+// THE MARGIN, THE STALL, AND WHY IT HAS TO BE A MEGA CONSPIRACY Colocated with the
+// deaths above on purpose: none of these three reads correctly on its own. The
+// margin is why the ordinary answer fails, the stall is why a bigger version of the
+// ordinary answer also fails, and the shadow conspiracy is the only shape that
+// solves both at once.
 
 /**
  * What the immortal weapon sent down is worth when somebody actually comes.
@@ -209,10 +146,6 @@ export const THE_STALL = {
 /**
  * The one shape that solves both problems: somebody who already owns the
  * reinforcement.
- *
- * If a single party has spent a century acquiring quiet control of several
- * courts, then on the day the courts do not reinforce. They arrive, and they
- * arrive on the wrong side.
  */
 export const THE_SHADOW_CONSPIRACY = {
     theInsight:
@@ -231,10 +164,6 @@ export const THE_SHADOW_CONSPIRACY = {
 
 /**
  * Who, in the whole world, is actually holding something that counts.
- *
- * Measured rather than designed, and it came back sharper than the prose above
- * would have guessed - and with one entry nobody would have predicted from the
- * politics. Read off `ARTIFACTS` and `sectsWithASealedCeiling()`, which is all it takes.
  */
 export const WHO_HOLDS_A_KEY = {
     theCountAmongTheHouses:
@@ -248,14 +177,8 @@ export const WHO_HOLDS_A_KEY = {
 } as const;
 
 /**
- * And the correction that undoes most of the drama above: the count of two is
- * a count of the houses that would want to. It is not the count of who could.
- *
- * The Hollow Court holds four Seats at forty-two to forty-four - awake, not
- * sealed, no wake condition, no once-ever cost - and four immortal weapons.
- * Two of them walking out with two of those ends any apex in the region on the
- * same afternoon. No conspiracy, no century of appointments, no borrowed
- * liveries. The reason it has never happened is not that it is hard.
+ * And the correction that undoes most of the drama above: the count of two is a
+ * count of the houses that would want to. It is not the count of who could.
  */
 export const THE_HOLLOW_COURT_COULD = {
     whatTheyActuallyHold:
@@ -281,17 +204,6 @@ export const THE_HOLLOW_COURT_COULD = {
 
 /**
  * Why the top two do not fight, which is not restraint.
- *
- * The obvious arrangement was checked first and was wrong in the worst way:
- * with the three immortal objects rated in the same order as the heads holding
- * them, the Deep Survey won every pairing in every configuration a hundred
- * times in a hundred, including with its own courts defecting. Three
- * institutions that cannot fight are one institution and two titles.
- *
- * So the objects were rated against what each actually does in a fight rather
- * than against how important its owner is, and a standoff came out that nobody
- * wrote: the duel and the war have different winners, and neither house can
- * choose which one it gets.
  */
 export const WHY_NOBODY_MOVES = {
     theDuelGoesToTheLongCut:
@@ -309,7 +221,7 @@ export const WHY_NOBODY_MOVES = {
     whichIsWhatSheActuallyHolds:
         'So the Pavilion\'s power is not its own strength and never was. It is the certainty that anybody who spends themselves on it is next - and behind that, the thing nobody will put a number on: see `THE_ANCESTOR_WHO_MIGHT_ANSWER`. Ru Anjing left a house that cannot win anything and cannot be attacked, which is a stranger legacy than an army and a considerably more durable one - and the province, which reads the Pavilion as the harmless one, is describing the only faction on the board that has never had to be careful.',
     andSheDoesNotJOINAnything:
-        'And she does not intervene in theirs, which is the other half and the half everybody gets wrong. When the Survey and the Long Cut go at each other the Pavilion sits it out - measured, a Survey that somehow won that war would still take her ninety-six times in a hundred afterwards, so there is no moment in it where walking in improves her position. She is not a balancer, a kingmaker or a third party to their quarrel. She is a house that cannot be attacked and does not attack, and the distinction matters because two centuries of Low Fall commentary has assumed the first thing means the second.',
+        'And she does not intervene in theirs, which is the other half and the half everybody gets wrong. When the Survey and the Long Cut go at each other the Pavilion sits it out - measured, a Survey that somehow won that war would still take her ninety-six times in a hundred afterwards, so there is no moment in it where walking in improves her position. She is not a balancer, a kingmaker or a third party to their quarrel. She is a house that cannot be attacked and does not attack, and the distinction matters because two centuries of Jade Gorge commentary has assumed the first thing means the second.',
     soTheTopTwoAreLockedBySomethingElse:
         'What holds the Survey and the Long Cut apart is not her. It is each other: sixteen out of a hundred one way, none the other, five bodies against five, and a defection in either grant book worth more than every object in the region. Their standoff is administrative and hers is arithmetic, and the two have nothing to do with one another - which is why the province, which insists on describing all three in the same sentence, has never once predicted what any of them would do.',
     andItIsTHREEHousesForAReason:
@@ -360,29 +272,19 @@ export const WHY_NOBODY_MOVES = {
     andTheReasonTheZEROHoldsIsUnderTheInnerHall:
         'The Pavilion is one woman at forty-one and the sweep still says almost nobody can touch her, and the difference is a chamber Ru Anjing had cut in the last of her eleven years. Xie Wangchen went under at forty-one - level with Ru Anwei, not above her - before she crossed, whole, at peace, as one item in a plan she never finished explaining - her closest friend of two centuries, Ru Anwei\'s own senior, sealed by arrangement rather than by disaster. Take the Pavilion and you have to take him too, and unlike every other sealed ancestor in the region there is not one question anywhere about whose side he comes up on. He is not stronger than the woman he is under the floor for, and he does not need to be: every count in the region has the Pavilion at one body, and the largest proportional change available to any faction in this setting is having two. Four people know. The number every rival is working from is exactly half right.',
     andTheSameSweepSaysThePavilionIsTheKEYSTONE:
-        'Read the other way, the sweep says something the Low Fall would find absurd: give the weakest house in the region anything at all - a second object, a second body at the last realm, it does not matter which - and the board goes completely inert. Every move by everybody drops to zero. The Azure Cloud Pavilion is not a junior partner in this arrangement, it is the load-bearing member, and the two houses that could crush it are the two whose safety depends on nobody ever doing so.',
+        'Read the other way, the sweep says something the Jade Gorge would find absurd: give the weakest house in the region anything at all - a second object, a second body at the last realm, it does not matter which - and the board goes completely inert. Every move by everybody drops to zero. The Azure Cloud Pavilion is not a junior partner in this arrangement, it is the load-bearing member, and the two houses that could crush it are the two whose safety depends on nobody ever doing so.',
     andItIsCheckedRatherThanAsserted:
         'Every pairing is measured in both configurations whenever the suite runs, off the same resolver that settles a tavern brawl, and the full worth-it sweep including the perturbations lives in scripts/playtest-conspiracy.ts. The test does not demand that the three be evenly matched - they are not, and should not be. It demands that no house be able to take everything without risking anything, and that the balance still break when somebody is handed something new, because a standoff that survived a second object would not be a standoff, it would be a rule.'
 } as const;
 
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE REVOLT
-// The scenario the catalog had the least written about, which the exhaustive
-// sweep found by simply running it: everything under an apex, turning on it
-// at once. It is the conspiracy with the hard part removed, and the numbers
-// are not close.
-// ─────────────────────────────────────────────────────────────────────────
+// THE REVOLT The scenario the catalog had the least written about, which the
+// exhaustive sweep found by simply running it: everything under an apex, turning on
+// it at once. It is the conspiracy with the hard part removed, and the numbers are
+// not close.
 
 /**
  * What happens when a house's own people come up the stairs.
- *
- * Everything in `THE_SHADOW_CONSPIRACY` is about the cost of assembling force
- * in secret against somebody who is very hard to lie to. A revolt does not have
- * that problem: the parties are already inside, already coordinate as a matter
- * of routine, and already have standing reasons to be in the same room. The
- * only thing a plotter had to buy over a hundred and fifty years, a revolt gets
- * for nothing.
  */
 export const THE_REVOLT = {
     whatItIs:
@@ -400,12 +302,6 @@ export const THE_REVOLT = {
 /**
  * What the apex's own courts do about it, which is the part that decides who
  * actually inherits.
- *
- * A court is not a bystander to its apex's death. It has been administering an
- * arterial vein in that apex's name for centuries, which means it already holds
- * the ground, already collects, and is already the party every client sect
- * beneath it deals with. When the name above it stops existing, the court is
- * the only body in the region that can credibly say the arrangement continues.
  */
 export const THE_COURTS_BELOW = {
     theyClaimTheLegitimacy:
@@ -420,11 +316,6 @@ export const THE_COURTS_BELOW = {
 
 /**
  * Openly, or in secret. Both are available and they fail in opposite ways.
- *
- * A conspiracy buys surprise and pays for it in trust: parties who cannot
- * verify each other must spend irreplaceable weapons at the same hour on a
- * signal. An alliance buys durability and pays for it in warning, because an
- * alliance is a thing people can see, and what they can see the target can see.
  */
 export const OPENLY_OR_IN_SECRET = {
     theAllianceIsVisible:
@@ -449,49 +340,10 @@ export function housesThatCouldJoinAConspiracy(): { id: string; name: string; ce
 
 
 
-// ─────────────────────────────────────────────────────────────────────────
 // MEASUREMENT STATUS
-//
-// The header promises that every number in this file was measured rather than
-// chosen. This is the record of which ones still are, taken by re-running
-// `scripts/playtest-conspiracy.ts` against the current engine and then
-// replicating it independently at ten times the sample size.
-//
-// It is here rather than in a report because `catastrophe.ts` set the
-// precedent and it is the right one: a number nobody can trace is worth less
-// than a number with its retraction attached.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What reproduces, what does not, and why.
- *
- * THE FINDING, IN ONE LINE: the whole-house figures are not measuring the
- * world, they are measuring the round budget.
- *
- * `MAX_EXCHANGES` is 8, and its own doc comment says it is set "so that a
- * genuinely even fight only just runs out of exchanges". That is calibrated
- * for a DUEL. The conspiracy harness fights whole mobilised apexes - the Deep
- * Survey brings 8 bodies, the Long Cut 15, the Pavilion 5 - and eight
- * exchanges cannot empty a side of fifteen. Replicated at 300 seeds with full
- * reinforcements, every one of the six apex pairings returned
- * `winningSideId: null` on all 300 runs. Not one resolved, in either
- * direction, in any pairing.
- *
- * `worthIt` in the harness gates on `first.winningSideId === 'a'`, so a
- * stalemate is counted as "the attacker did not take the target". With every
- * fight stalemating, that expression is structurally zero for every house in
- * every world, and it prints as "nothing is worth doing".
- *
- * This is the failure mode AGENTS.md names: "A stalemate is not a loss...
- * scoring `winner === 'a'` counts that as a defeat for A." The same page warns
- * that an even five-a-side used to be a 100% stalemate. It is that, again, at
- * apex scale.
- *
- * Confirmed by removing one variable: the identical construction with the
- * client reinforcements left out - two or three bodies a side instead of
- * fifteen - stalemated 0 times in 3,000 and returned decisive figures. Side
- * SIZE is what decides whether the resolver resolves, and nothing else
- * changed.
  */
 export const MEASUREMENT_STATUS = {
     whatWasWrong:
@@ -509,14 +361,7 @@ export const MEASUREMENT_STATUS = {
 } as const;
 
 /**
- * The harness prints `head 43, Datum Lamp 45` in one banner and
- * `The Deep Survey (43+43)` in another, for the same object in the same run.
- *
- * Checked against the catalog: `sent-datum-lamp` carries `power: 43` and no
- * catalog anywhere rates it 45. The computation reads `lamp.power`, correctly;
- * the 45 is a hardcoded literal in a `console.log` banner. So it is a stale
- * label rather than a measurement defect - the figures underneath it were
- * computed from 43 throughout - but it is exactly the kind of thing that makes
- * a reader distrust a run they should distrust for other reasons entirely.
+ * The harness prints `head 43, Datum Lamp 45` in one banner and `The Deep Survey
+ * (43+43)` in another, for the same object in the same run.
  */
 export const THE_LAMP_IS_RATED_FORTY_THREE = 43;

@@ -58,9 +58,9 @@ describe('who holds the ground', () => {
     });
 
     it('falls through to the register for a town, which carries no holder of its own', () => {
-        // Sweptground: `prefecture-sweptground`, held by the Sweptground Temple.
-        const region = place('r', 'The Low Fall', { kind: 'region' });
-        const town = place('t', 'Sweptground', { parentId: 'r' });
+        // Burnt Earth: `prefecture-sweptground`, held by the Burnt Earth Temple.
+        const region = place('r', 'The Jade Gorge', { kind: 'region' });
+        const town = place('t', 'Burnt Earth', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(town.controllingFactionId).toBeNull();
@@ -70,10 +70,10 @@ describe('who holds the ground', () => {
     });
 
     it('keeps "the register carries it with nobody\'s name" as its own answer', () => {
-        // Scarwater: `prefecture-scarwater`, `heldByFactionId: null`,
+        // Clear River Ford: `prefecture-scarwater`, `heldByFactionId: null`,
         // `discrepancy: 'no_holder_of_record'`. Four of fifteen rows are this.
-        const region = place('r', 'The Low Fall', { kind: 'region' });
-        const town = place('t', 'Scarwater', { parentId: 'r' });
+        const region = place('r', 'The Jade Gorge', { kind: 'region' });
+        const town = place('t', 'Clear River Ford', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_holder_of_record');
@@ -82,15 +82,15 @@ describe('who holds the ground', () => {
     });
 
     it('reads a region that declares nobody holds it', () => {
-        const region = place('r', 'The Drowned Reach', {
+        const region = place('r', 'The Drowned Sea', {
             kind: 'region',
             data: { politics: 'no_authority' }
         });
-        const town = place('t', 'Bellhead', { parentId: 'r' });
+        const town = place('t', 'Bronze Bell Cliff', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_authority');
-        expect(read.why).toContain('Drowned Reach');
+        expect(read.why).toContain('Drowned Sea');
     });
 
     it('never reports unrecorded ground as unheld', () => {

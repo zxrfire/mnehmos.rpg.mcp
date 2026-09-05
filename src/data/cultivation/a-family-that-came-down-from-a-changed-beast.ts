@@ -136,10 +136,10 @@ export interface TheLineThatCameDown {
     people: readonly SomebodyInTheLine[];
 }
 
-export const THE_LINE_AT_MILLRUN: TheLineThatCameDown = Object.freeze({
+export const THE_LINE_AT_OLD_RIVER: TheLineThatCameDown = Object.freeze({
     speciesId: 'beast-millennial-tortoise',
     surname: 'Duan',
-    place: PLACE.MILLRUN,
+    place: PLACE.OLD_RIVER,
     regionId: 'region-wide-field',
     people: Object.freeze<readonly SomebodyInTheLine[]>([
         {

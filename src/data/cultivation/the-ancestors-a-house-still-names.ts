@@ -1,40 +1,11 @@
 /**
  * The ancestors a house still names, and what is actually left of them.
- *
- * Lifted out of `sects.ts` whole - the ten types describing an ancestor, a
- * seal and a parting gift, and the roll itself. That was over a quarter of the
- * most-collided-with file in the repo, filed under a name nobody would look in
- * for ancestry.
- *
- * Filed under its own subject on purpose. `sealed-ancestors.ts` is about the
- * same people: three resting places are written out in both, byte-identical,
- * free to drift, and pinned by a test only because somebody happened to
- * notice. Two files about one subject with no shared name is how that happens.
- *
- * The ACCESSORS stayed behind in `sects.ts`, deliberately: they read `SECTS`
- * as well as this roll, and following them here would have made the import
- * circular. Data and types out; questions about the data stay with the houses
- * they are asked about.
- *
- * `sects.ts` re-exports every name below, so nothing that imported them had to
- * change.
  */
 
 import { TRUE_IMMORTAL_ORDINAL } from '../../engine/cultivation/realms.js';
 
 /**
  * What became of somebody after they crossed.
- *
- * Ascension is not an ending, which the sheet kept implying. Two of the three
- * things that kill a cultivator here cannot reach them up there - heavenly
- * tribulation is behind them and lifespan has stopped being a number - but the
- * Immortal Realm has dangers and politics of its own, and people lose to them.
- * Somebody who crossed three thousand years ago has had three thousand years of
- * that.
- *
- * Nobody below the Lid can establish which of these is true for any given
- * ancestor. The catalog records it because the engine is allowed to know things
- * the world cannot; every character in the world is guessing.
  */
 export type AfterCrossing = 'still_above' | 'died_above';
 
@@ -50,21 +21,17 @@ export interface SectAncestor {
     name: string;
     fate: AncestorFate;
     /**
-     * What they stood at, or null where the record does not say - which is
-     * most of them. A wall of tablets is genealogy, and genealogy does not
-     * keep realms. Only the ancestors who are still load-bearing (ascended, or
-     * sealed and wakeable) are recorded, because those are the two cases where
-     * somebody had to be able to afford it.
+     * What they stood at, or null where the record does not say - which is most of
+     * them. A wall of tablets is genealogy, and genealogy does not keep realms.
+     * Only the ancestors who are still load-bearing (ascended, or sealed and
+     * wakeable) are recorded, because those are the two cases where somebody had to
+     * be able to afford it.
      */
     realmOrdinal: number | null;
     /** Years since the death, the crossing, or the sealing. */
     yearsAgo: number;
     /**
      * Set only where `fate` is 'ascended'. Null everywhere else.
-     *
-     * Ground truth, and unknowable in the world. A sect claiming its ancestor
-     * still answers is making a claim it cannot check, and one claiming the
-     * opposite is doing the same thing in the other direction.
      */
     afterCrossing: AfterCrossing | null;
     rememberedFor: string;
@@ -82,57 +49,17 @@ export interface MillennialOffering {
 
 /**
  * What the seal itself is, which decides what it can hold and for how long.
- *
- * A seal is a formation running continuously for centuries, and the grade is
- * mostly a statement about how much it burns to do that. The band it can hold
- * runs from Void Refinement to Tribulation Transcendence - below that nobody
- * would pay for it, and above it nothing in the Late Age has been built.
- *
- *   crude       cheap to raise and expensive to keep. Burns vein output
- *               continuously, degrades measurably within a lifetime, and anything
- *               sealed inside it thins. Holds the bottom of the band.
- *   sound       the ordinary standard, and the ordinary reason a sect is poor.
- *   masterwork  built by somebody who is not available any more. Draws almost
- *               nothing, has not been serviced in centuries, and is the reason
- *               a small sect can be sitting on something enormous without the
- *               expenditure that would give it away.
- *
- * The grade is therefore also a tell. A sect running a crude seal cannot hide
- * it - the vein output does not add up and the Consortium can read that off a
- * ledger. A masterwork is invisible, which is exactly why nobody can say which
- * quiet mountain has something under it.
  */
 export type SealGrade = 'crude' | 'sound' | 'masterwork';
 
 /**
  * Why somebody is under a mountain, which decides what waking them costs.
- *
- *   protector     sealed while still whole, deliberately, as a reserve. Waking
- *                 one spends a weapon the sect chose to bank.
- *   final_breath   sealed because they were ending anyway, and the seal is what
- *                 is left of them. Waking one spends the last of a person who
- *                 was already finished, usually to do a single specific thing
- *                 nobody else can.
- *
- * The distinction is not sentiment. A protector can be spent on anything worth
- * a weapon; one sealed at the end generally cannot be redirected, because what
- * is left of them is shaped around one act. It is also the difference between a
- * sect that armed itself and a sect that could not bear to let go, and rivals
- * read those two very differently.
  */
 export type SealReason = 'protector' | 'final_breath';
 
 export interface DormantAncestor {
     /**
      * Optional, and the difference between a weapon and a gamble.
-     *
-     * A house holding something asleep at forty-plus has an asset only if it
-     * knows who is down there, why they agreed, and what they will think of
-     * whoever wakes them. Most houses cannot answer all three - the seal is
-     * older than the roster, or the reason was desperation, or the person went
-     * under angry - and a protector who comes up with a question about the
-     * living is not reinforcement, it is a second problem. Set these where the
-     * answers are known; leave them out where the doubt is the point.
      */
     whoHeIs?: string;
     sealedBeforeTheCrossing?: string;
@@ -144,55 +71,6 @@ export interface DormantAncestor {
     dormantYears: number;
     /**
      * THIS IS NOT THE SECT'S `powerOrdinal`, AND MUST NEVER BE FOLDED INTO IT.
-     *
-     * `powerOrdinal` is the strongest member who will actually answer: someone
-     * who takes a challenge, walks a border, sits at a negotiation. A sealed
-     * ancestor does none of that. They are a break-glass asset with a stated
-     * trigger and a stated cost, spent once and generally not survived, so a
-     * sect holding one is an ordinary sect in every week of its life and a
-     * catastrophe in the one week its `wakeCondition` fires.
-     *
-     * Reading the two as one number breaks the world in both directions: it
-     * makes an eleven-disciple sect unfightable on paper, and it removes the
-     * only thing that made robbing them interesting - that outsiders cannot
-     * tell which sects have something under the mountain, because sects lie
-     * about it in both directions. See `sealedCeiling`.
-     *
-     * A SEAL CUTS BOTH WAYS, and the catalog should be read in both directions.
-     *
-     * Defensively it is the last card, and this is the reading every entry here
-     * is written in: the wake conditions are disaster clauses. The caldera is
-     * breached. The library is entered by force. Two perimeters are lost in one
-     * season. That is what a sect tells itself the seal is for, and it is true.
-     *
-     * Offensively it is a single use looking for something worth spending it
-     * on, and that is the reading a sect does not say out loud. Same object,
-     * same decision, opposite direction - which means a sect that has quietly
-     * reclassified its last card as an opening move looks exactly like one that
-     * has not. Nothing visible about it changes.
-     *
-     * Two objects in the world would justify the offensive read. See `sentDown`
-     * on the apex institutions in `hierarchy.ts`, and `partingGift` below: they
-     * are the same phenomenon at two ends of the ladder. An ascending cultivator
-     * divests downward, rarely but reliably; what a sect gets is a gift, and
-     * what an apex got is the reason it is an apex. Note also `asAnArtifact`:
-     * those objects are immortal-made and formidable before the Lid enters into
-     * it, so the sum works even for a sect with no route upward at all.
-     *
-     * The band is Void Refinement to Tribulation Transcendence, and which end
-     * depends on `sealGrade` rather than on the sect. Holding a body and a soul
-     * intact costs a formation running continuously off a vein, so the floor is
-     * economic: below Void Refinement nobody would spend it, and above
-     * Tribulation Transcendence nothing in the Late Age was ever built to hold.
-     *
-     * A crude seal holds the bottom of that band and eats the vein doing it. A
-     * masterwork holds the top and draws almost nothing, which is why the
-     * dangerous case is a small sect with a very old formation nobody can read.
-     *
-     * An ordinal below the band is not forbidden, but it is a claim about the
-     * SEALER rather than the sealed - somebody with an unreasonable amount of
-     * money and a personal reason - and it has to be said out loud in
-     * `wakeCondition` rather than left for a reader to notice.
      */
     realmOrdinal: number;
     /** What is holding them, which decides both the band and the running cost. */
@@ -219,14 +97,6 @@ export interface PartingGift {
     intact: boolean;
     /**
      * Arts that came down with it, by id, and usually none.
-     *
-     * Nothing goes through the Lid, so somebody spending their last decade
-     * divesting is putting down a working library along with everything else,
-     * and most of what a person at the top of the ladder owns is manuals. The
-     * ids are here rather than in the description because a manual named only
-     * in prose is a manual nothing in the world can hand anybody, which is the
-     * hole this field was added to close. Empty is the ordinary case: a sword
-     * is a sword.
      */
     techniqueIds: readonly string[];
 }
@@ -251,22 +121,14 @@ export interface AncestralRecords {
 }
 
 /**
- * Ancestral records, keyed by faction id, in the same style as
- * `SECT_ADMISSION`: content-side, stripped by `SectSchema.parse`, read at
- * request time.
- *
- * Almost every entry here is a wall of names. Three factions have something
- * dormant that is still in the world; two have a true ascended claim; one has
- * a claim that is simply false and has been working for four hundred years.
+ * Ancestral records, keyed by faction id, in the same style as `SECT_ADMISSION`:
+ * content-side, stripped by `SectSchema.parse`, read at request time.
  */
 export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
-    // ═══════════════════════════════════════════════════════════════════
-    // THE PREEMINENT INSTITUTION OF THE PRESENT AGE
-    // The last confirmed crossing in the world was this one. The Pavilion
-    // is not the strongest sect by its living members - it is roughly the
-    // fourth or fifth - and none of that matters, because of what is in
-    // the vault and who might still be listening.
-    // ═══════════════════════════════════════════════════════════════════
+    // THE PREEMINENT INSTITUTION OF THE PRESENT AGE The last confirmed crossing in
+    // the world was this one. The Pavilion is not the strongest sect by its living
+    // members - it is roughly the fourth or fifth - and none of that matters,
+    // because of what is in the vault and who might still be listening.
     'sect-azure-cloud-pavilion': {
         ancestors: [
             {
@@ -306,13 +168,12 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         claimsLivingAncestor: true,
         claimIsTrue: true,
         recency: 'recent',
-        // The thing every reading of this house has left out, and the reason
-        // an apex resting on one woman has never been tested. Ru Anjing spent
-        // eleven years divesting into the sect and the Pavilion has never
-        // published the sequence in full; this is what is not in the published
-        // part. It is a protector rather than a final breath - sealed while
-        // whole, deliberately, by somebody who could see what she was leaving
-        // her sister to hold alone.
+        // The thing every reading of this house has left out, and the reason an
+        // apex resting on one woman has never been tested. Ru Anjing spent eleven
+        // years divesting into the sect and the Pavilion has never published the
+        // sequence in full; this is what is not in the published part. It is a
+        // protector rather than a final breath - sealed while whole, deliberately,
+        // by somebody who could see what she was leaving her sister to hold alone.
         dormant: {
             name: 'Xie Wangchen, Fourth Sword Elder, struck from the roll in his own hand',
             restingPlace:
@@ -325,7 +186,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             sealedBeforeTheCrossing:
                 'This is the load-bearing date, and the eleven years are not what the province thinks they were. Ru Anjing did not simply divest into the sect: she picked one man, spent years of the Pavilion\'s output moving him up the ladder without a single entry appearing anywhere, cut a chamber, and put him under - all of it before she crossed, all of it in secret, and none of it explained to anybody who is still alive to ask. The generosity everybody remembers was the visible half of a plan. The other half is forty-two and asleep on the gorge vein.',
             andTheResourcesWentSomewhere:
-                'Which is also the answer to a question the Low Fall has been asking for three hundred and eighty years without knowing it was a question. Ru Anjing\'s divestment is recorded, the sequence is not published in full, and the recorded part has never quite added up - a decade of an apex\'s output is a great deal to account for, and the Pavilion has never been asked to account for it because asking would be rude to a story everybody enjoys. It went into a breakthrough nobody witnessed, for a man whose name was taken off the roll in his own hand, and it is still sitting under the inner hall drawing interest.',
+                'Which is also the answer to a question the Jade Gorge has been asking for three hundred and eighty years without knowing it was a question. Ru Anjing\'s divestment is recorded, the sequence is not published in full, and the recorded part has never quite added up - a decade of an apex\'s output is a great deal to account for, and the Pavilion has never been asked to account for it because asking would be rude to a story everybody enjoys. It went into a breakthrough nobody witnessed, for a man whose name was taken off the roll in his own hand, and it is still sitting under the inner hall drawing interest.',
 
             andHeKnowsWhatHeIsFor:
                 'He agreed to it knowing what waking costs and what it would mean about the day it happened, which is why the seal is keyed to Ru Anwei rather than to the mountain. He is not guarding a vault. He is waiting on one specific piece of news about one specific person, and the four people who know he is down there have never had to wonder whether he would come up angry or confused, which is what everybody else holding one of these quietly does.',
@@ -349,22 +210,6 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             intact: true,
             /**
              * The sword was one item and it was not the last one.
-             *
-             * Her own manuals went out under the divestment sequence to
-             * forty-one different recipients, which is the whole reason the
-             * sequence is worth reading and the reason the Pavilion cannot
-             * simply produce what she was carrying when she went up. What is
-             * listed here arrived afterwards, down the channel, in the three
-             * hundred and eighty years since - she is the most junior thing on
-             * the other side, she answers most often, and three of the things
-             * she has sent are writings rather than answers.
-             *
-             * The Pavilion holds them and cannot use them. They ask for a rung
-             * above the top of the ladder, its hall stands at forty-one, and it
-             * teaches none of them and could not - see the technique-routes
-             * suite, which asserts exactly that in both directions. A house
-             * standing over a library it cannot read is the interesting case
-             * and it is the only one this field is allowed to produce.
              */
             techniqueIds: [
                 // The two decrees. She had them and did not use either, which is
@@ -602,12 +447,6 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'Nobody outside the sect knows the Kindler is there. Its rivals price it as a strong demonic sect with a caldera, which is why the Ashen Forge Clan has twice pushed a border dispute further than it would have if it knew what was under the floor.'
     },
     // THE HOUSE WITH NOTHING ABOVE IT AND NO CLAIM TO ONE.
-    //
-    // Every other unbacked body in the catalog either claims a living ancestor
-    // or has one. This one names three dead women, claims nothing, and has
-    // never held an offering - which is not modesty and is not poverty. An
-    // offering is a thing you send UP, and the whole of what this house did a
-    // hundred and forty years ago was decline to have anybody up there.
     'sect-orchid-court': {
         ancestors: [
             {
@@ -651,26 +490,6 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-frostmirror-court': {
         ancestors: [
             // THE DEAD FORTY-SIX, AND THE ONLY ONE IN THE CATALOG.
-            //
-            // Every other house claiming a living ancestor has one: the
-            // Pavilion's answers, the Storm Tyrant's is alive and silent, the
-            // Sweptground Temple's is alive and in meditation. This is the
-            // case none of those cover - a claim that is false because the
-            // person on the far end died up there - and it is what
-            // `afterCrossing` was put on this schema for. That field has
-            // always carried the note that it is ground truth and unknowable
-            // in the world, and this is the row that makes the note matter.
-            //
-            // THE COURT DOES NOT KNOW AND CANNOT FIND OUT. It believes its
-            // silence has a communications cause, because the object its line
-            // ran through was lost in public and everybody watched. The cause
-            // is mortality and the loss is redundant on it: there has been
-            // nobody at the other end to reach for a long time, and the thing
-            // the Court grieves losing access to had already stopped existing.
-            //
-            // Nothing anywhere lets a cultivator establish this. It is true in
-            // the register because the register is the record; it is not true
-            // in any document, any rumour, or any account inside the world.
             {
                 name: 'Sovereign Yun Cangyi, who went up from the working face',
                 fate: 'ascended',
@@ -728,21 +547,6 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 'Nothing came back, and the Court filed the silence as a failure of the instrument rather than as an answer - which is the reading its own loss makes available and the only one anybody here has ever proposed. It has not held another and has not said it will not.'
         },
         // WHAT A RIVAL CAN ACTUALLY FIND, AND WHAT NOBODY CAN.
-        //
-        // Every false claim in this catalog carries traces, because a claim
-        // nobody can check is an assertion rather than a claim. The three
-        // added here do the job the rule wants without doing a job the design
-        // forbids: they are enough for an auditor to establish that the claim
-        // is UNSUPPORTED, and not one of them establishes that the ancestor is
-        // DEAD. Nobody on this side of the Lid ever finds that out - the two
-        // dates, the conflation and the unanswered offering are equally
-        // consistent with a woman who stopped sending and a woman who stopped
-        // existing, and there is no instrument anywhere that separates them.
-        //
-        // That is the whole shape of the thing. The Court is wrong about why
-        // it is alone, its rivals can prove it has no case, and the actual
-        // answer stays out of reach of everybody including the register's
-        // readers in the world.
         discoverableTraces: [
             'the Court fields a fraction of the defence its holdings warrant and has never lost the library',
             'two forced entries are recorded by outside parties; the parties are not recorded as having left',
@@ -952,15 +756,15 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
                 'There are no terms. He attached none, the Wanderers have never written any, and the estate sits in a shed behind the crossroads under a roof that gets repaired when somebody notices. They are not hoarding it. They have no vein to work it on, nobody who can read the manuals, and no idea what most of it is for.',
             intact: true,
             /**
-             * The manuals, named. Four, and the shape of the set is the fact
-             * worth having: a gathering canon, a body, a road and a way back
-             * from being killed. Not one of them is a weapon, because a man who
-             * spent six hundred years climbing to the end of the ladder and
-             * then declined the crossing was not collecting weapons. It is the
-             * largest body of chaos-grade transmission anybody in either
-             * province could physically walk up to, it is in a shed with a bad
-             * roof, and it is safe there because the people holding it stand at
-             * Core Formation and cannot read a character of it.
+             * The manuals, named. Four, and the shape of the set is the fact worth
+             * having: a gathering canon, a body, a road and a way back from being
+             * killed. Not one of them is a weapon, because a man who spent six
+             * hundred years climbing to the end of the ladder and then declined the
+             * crossing was not collecting weapons. It is the largest body of
+             * chaos-grade transmission anybody in either province could physically
+             * walk up to, it is in a shed with a bad roof, and it is safe there
+             * because the people holding it stand at Core Formation and cannot read
+             * a character of it.
              */
             techniqueIds: [
                 'heaven-conversing-primordial-canon',
@@ -1010,15 +814,15 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-hollow-court': {
         ancestors: [
             // Five of the six, one row each. A row that reads as a person and holds
-            // a count is the one mistake this roll can make: anything reading it got
-            // six ancestors out of two entries and could not say which two, and the
-            // register was subtracting the entries from the count and reporting the
-            // difference as crossings whose names had gone. They are entered under
-            // the seat they held rather than under a name, which is the Court's own
-            // practice and not a hole in the record - the names exist, on tablets
-            // inside the wall, and have never been lent out. The sixth is the most
-            // recent, is the one name that did get out, and is carried in
-            // `crossings.ts` as `mostRecentCrossingName`, so the two catalogs
+            // a count is the one mistake this roll can make: anything reading it
+            // got six ancestors out of two entries and could not say which two, and
+            // the register was subtracting the entries from the count and reporting
+            // the difference as crossings whose names had gone. They are entered
+            // under the seat they held rather than under a name, which is the
+            // Court's own practice and not a hole in the record - the names exist,
+            // on tablets inside the wall, and have never been lent out. The sixth
+            // is the most recent, is the one name that did get out, and is carried
+            // in `crossings.ts` as `mostRecentCrossingName`, so the two catalogs
             // together hold six people and count each of them once.
             { name: 'The one who went through first, whom the Court refers to only as that', fate: 'ascended', realmOrdinal: 46, yearsAgo: 4_400, afterCrossing: 'still_above', rememberedFor: 'Crossing from the north mountain and completing it, and being the reason there is anybody on the other side who answers when the Court calls.' },
             { name: 'The Second Seat who went from the north mountain with the first standing protector', fate: 'ascended', realmOrdinal: 46, yearsAgo: 3_600, afterCrossing: 'still_above', rememberedFor: 'The first crossing anybody stood protector at, one at a time and the others standing, which is the arrangement that made the four after it possible and which nobody outside the Court has ever been able to reproduce.' },
@@ -1101,7 +905,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-weir-office': {
         ancestors: [
             { name: 'Warden Qiu Shen', fate: 'dead', realmOrdinal: null, yearsAgo: 220, afterCrossing: null, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
-            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Marches.' }
+            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Silent Cliffs.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1121,7 +925,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-halfwater-rail': {
         ancestors: [
             { name: 'Weigher Duan Xi', fate: 'dead', realmOrdinal: 19, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Set the rate at a fortieth and refused four separate offers to raise it, on the argument that the port is worth what passes through it and nothing else. The rate has not moved since and the argument is repeated at every Factors\' table as though somebody had just thought of it.' },
-            { name: 'The Rail Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Halfwater is worth remarking on.' }
+            { name: 'The Rail Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Silver Island is worth remarking on.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -1135,7 +939,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-sink-carriers': {
         ancestors: [
             { name: 'The Waterman who cut the first tally board', fate: 'dead', realmOrdinal: null, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Left the names of strings that did not come back up on the board instead of wiping them, and the board has never been wiped since. It is now nine boards and the shed was rebuilt around them.' },
-            { name: 'Route Elder Ma out of Kettle', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
+            { name: 'Route Elder Ma out of Iron Gate', fate: 'lost', realmOrdinal: 17, yearsAgo: 11, afterCrossing: null, rememberedFor: 'Walked a string to a show that had closed and turned it round on the fourth day with two thirds of the water gone, bringing back every carrier and none of the load. It is the only decision anybody at the shed can name.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,

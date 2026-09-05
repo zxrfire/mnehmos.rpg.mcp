@@ -121,7 +121,7 @@ describe('spirit beasts: the catalog', () => {
  *      whole design is unreachable: every target a player could take would
  *      have deserved it, and a window in which nothing costs anything has no
  *      decision in it. This is the assertion to read if somebody is wondering
- *      why the Cairn Hound is in the catalog.
+ *      why the Grave Hound is in the catalog.
  */
 describe('what a beast is inclined to do about people', () => {
     it('uses the houses\' own alignment axis rather than a second enum', () => {

@@ -1,59 +1,6 @@
 /**
- * The ancient tier: what a richer age made, what is left of it, and who is
- * holding the remains.
- *
- * The narrative material is `docs/world/history/ancient.md`. This file is the part a
- * query can reach: which arts belong to the tier, what each one costs, which
- * materials the world no longer produces, who still has a copy, whose stock is
- * gone, and who is holding the one object that buys the only thing scarce at
- * the top of the world.
- *
- * THIS FILE ADDS NO MECHANICS. Every object it talks about is an ordinary row
- * in an ordinary catalog, made by the ordinary factory, read by the ordinary
- * lookups: the ruin medicine is a `PILLS` entry with `extend_lifespan`
- * on it, the ancient roads are `TECHNIQUES` entries with a `qiCost` and a
- * `cooldown`, and the extinct materials are `HERBS` rows. Take the objects
- * away and nothing is left over. What this file holds is the sentence the
- * objects cannot hold themselves: nothing can produce another.
- *
- * THREE TIERS OF ABSENCE, and they are different in kind
- * ------------------------------------------------------
- *   abandoned          intact, works perfectly, nobody uses it.  VOLUNTARY.
- *                      The question it poses is why everybody stopped, and the
- *                      answer is a fact about the era rather than the method.
- *
- *   lost               the recipe survives, the materials are extinct.
- *                      INVOLUNTARY. A house can read exactly what it can no
- *                      longer make, and price it to the stone.
- *
- *   no surviving copy  the last one is gone. Already declared, one tier
- *                      further along, in `NO_SURVIVING_COPY_TECHNIQUE_IDS`
- *                      with a reason each. Re-exported below rather than
- *                      copied, because two sets naming the same absence would
- *                      drift within a month.
- *
- * The middle tier is the same sentence applied to two different shapes. A
- * one-off object nobody can make again is the discrete case; an art whose
- * practice consumes something extinct is the continuous one, and the
- * continuous one is why an ancient art is a standing commitment rather than an
- * acquisition. Finding the manual is not the end of the story.
- *
- * WHERE IT ALL SITS: AT THE TOP, AND NOWHERE ELSE
- * -----------------------------------------------
- * Every holder named in this file is an apex, an ancient house, or a sect old
- * enough to have sent an expedition an age ago. That is deliberate and it is
- * `docs/world/houses/discovery.md` applied to objects rather than to institutions: a
- * disciple at a small house does not encounter any of this, meets nobody
- * practising it, and has no reason to believe the category exists. It becomes
- * visible on the way up.
- *
- * The exception is luck - a ruin, a portal, a stocked inheritance - and luck
- * has to stay exceptional or the tier stops meaning anything. There is exactly
- * one stocked inheritance in this catalog and that number should be defended.
- *
- * No rule is needed to hide any of it. The narrator may not name what the
- * player has not heard of, so placing these things high and rarely is
- * sufficient on its own.
+ * The ancient tier: what a richer age made, what is left of it, and who is holding
+ * the remains.
  */
 
 import { EXTINCT_HERB_IDS, EXTINCTION_NOTES, getHerb } from './herbs.js';
@@ -67,13 +14,7 @@ import {
     type TechniqueEntry
 } from './techniques.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE AXIS: CATEGORICAL AGAINST ELEMENTAL
-//
-// The spine of the whole tier, and the thing most likely to be got wrong,
-// which is why it is written down here rather than left to be inferred from
-// the catalog.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const MODERN_AND_ANCIENT = {
     modern:
@@ -99,17 +40,6 @@ export const MODERN_AND_ANCIENT = {
 /**
  * The boundary, stated because the two produce completely different social
  * consequences for a player who takes one up.
- *
- *   demonic    condemned. People know about it and forbid it. Possession is
- *              an offence. Taking one up gets you hunted.
- *   abandoned  finished with. People know about it and stopped. Nothing
- *              forbids it. Taking one up gets you looked at strangely by
- *              people who know exactly what you are paying.
- *
- * The catalog now carries both, and the difference is visible in `category`
- * without anybody having added a field: the four condemned arts are filed
- * `forbidden`, and the five ancient roads are filed under what they do -
- * attack, defence, movement - because they are not condemned and never were.
  */
 export const ABANDONED_IS_NOT_CONDEMNED = {
     demonic:
@@ -150,20 +80,8 @@ export interface AncientArt {
      */
     upkeepHerbId: string | null;
     /**
-     * Where the world's supply stops, expressed as `mastery` on [0, 1], which
-     * is the engine's own scale.
-     *
-     * THE ENGINE DOES NOT READ THIS YET, and that is worth stating plainly
-     * rather than implying. Nothing in `combat.ts` or the technique layer
-     * consults an upkeep, so the ceiling below is currently a fact the world
-     * believes and the catalog records, not a limit anything enforces. When it
-     * is enforced it should be enforced the honest way - an upkeep nobody can
-     * meet, not a rule saying you may not - because that is what makes the
-     * elder who says it a person describing their own house's history rather
-     * than a rule reading itself out loud.
-     *
-     * Null where there is no upkeep and the art simply goes as far as the
-     * practitioner does.
+     * Where the world's supply stops, expressed as `mastery` on [0, 1], which is
+     * the engine's own scale.
      */
     worldSupplyCeiling: number | null;
     /** Why the era walked away, which is always about the era. */
@@ -176,30 +94,6 @@ export interface AncientArt {
 
 /**
  * WHY THE OLD PRACTISE THESE, and it is not a rule anywhere.
- *
- * The cost is lifespan, and lifespan is worth what remains of it. A young
- * cultivator taking up an ancient road pays years they were going to use, at
- * the point in their life when those years are worth the most. Somebody with
- * three centuries behind them and few ahead pays years they were not going to
- * get, and the same art costs them nearly nothing.
- *
- * So the cost is progressive without a single branch, and it produces a whole
- * class of practitioner nobody had to author: the ancient roads belong to the
- * old. The frightening elder with an art nobody has seen in an age is not a
- * trope that had to be written down; she is what the cost function makes.
- *
- * Two consequences worth holding on to:
- *
- *   - A YOUNG PRACTITIONER IS DOUBLY REMARKABLE. They are paying a price that
- *     actually hurts them, in public, which is exactly the "you must be
- *     somebody" signal - either extraordinary luck or a house spending on
- *     them, and there is no third explanation.
- *
- *   - AN OLD PRACTITIONER WHO BREAKS THROUGH HAS BOUGHT THEMSELVES OUT. A rung
- *     is lifespan; somebody old enough to take up an ancient road who then
- *     advances has reset the clock they were spending, and is now holding a
- *     capability they acquired at a discount they no longer need. That is a
- *     real arc and it is available to anybody who does the arithmetic.
  */
 export const THE_OLD_ARE_THE_PRACTITIONERS = {
     theMechanism:
@@ -301,7 +195,7 @@ export const ANCIENT_ARTS: readonly AncientArt[] = [
         whenTheModernArtWins:
             'Whenever you might one day want to be alone. An ordinary gathering manual at the same rung is slower and asks nothing of you, and the difference in rate stops mattering the first time the other half of your circuit does something you would not have done.',
         whoPractisesIt:
-            'Almost nobody, and the ones who do are almost always siblings or a married pair who understood exactly what they were signing. The clearest surviving instance is two cairns eleven paces apart above Scarwater, raised on the same afternoon, in a province that has never asked why the second one was needed.'
+            'Almost nobody, and the ones who do are almost always siblings or a married pair who understood exactly what they were signing. The clearest surviving instance is two cairns eleven paces apart above Clear River Ford, raised on the same afternoon, in a province that has never asked why the second one was needed.'
     },
     {
         techniqueId: 'hollow-second-body',
@@ -351,18 +245,6 @@ export { ANCIENT_TECHNIQUE_IDS };
 
 /**
  * The requirement is legible, and that is the point.
- *
- * Anybody knowledgeable who sees what you are practising can do the arithmetic
- * themselves, and the conclusion is not about the art. It is about you: either
- * you got extraordinarily lucky, or a house is spending on you. There is no
- * third explanation, which is what makes an upkeep a status marker rather than
- * a cost.
- *
- * Both reactions below come from the same knowledge and neither is a flag on
- * anybody. Which one a cultivator gets follows from the observer - their own
- * standing, whether they know the art, and whether they have watched somebody
- * hit the wall with it - which is what the regard machinery already answers
- * about everything else.
  */
 export const HOW_AN_UPKEEP_IS_READ = {
     impressed:
@@ -401,17 +283,6 @@ export interface LostMaterial {
     remainingStock: string;
     /**
      * What is left, as a number, and where.
-     *
-     * WHY A NUMBER AND NOT A MOOD. "Nobody has any" is a wall; "there are nine
-     * left in the world and three of them are in a sealed site four days off
-     * any track" is a search with a destination and an end. The count is the
-     * whole difference between a scarcity a player is told about and one they
-     * can work with - and every unit found is one nobody else can ever have,
-     * which is a kind of consequence the setting otherwise has to fake.
-     *
-     * Keep the totals small enough to hold in the head. The point is that a
-     * sufficiently determined party could, in principle, learn how much is left
-     * in the world; that is impossible if the figure is in the hundreds.
      */
     remaining: {
         /** Held by named houses. Cross-checked against `ARCHIVE_COPIES`. */
@@ -515,39 +386,6 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
 /**
  * The most economically significant object in the setting, and it is a row in
  * `pills.ts` that was already there.
- *
- * IT IS ONE OBJECT. For a short while this catalog carried two - the existing
- * Immortal Longevity Pill at three thousand years, and a `pill-thousand-autumn`
- * added beside it for "the thousand-year medicine". They were always the same
- * thing, and two rows for one object is the parallel-catalog mistake AGENTS.md
- * forbids, committed at the worst possible place: nobody in play could have
- * told the two apart. The second row is retired and the surviving one is
- * re-rated. See the comment on the entry in `pills.ts` for what moved.
- *
- * WHY A PILL AND NOT AN ARTIFACT OR A THIRD KIND OF THING. `extend_lifespan`
- * already existed and the lifespan ladder already ran from five years upward,
- * so this is a rung of a ladder that was there. Its significance is legible
- * precisely because it sits in the same column as a pill mortals ruin families
- * for.
- *
- * WHY IT IS NOT SIMPLY THE BIGGEST NUMBER. It is different in kind on two
- * ordinary fields: toxicity zero, where every other rung of that ladder is a
- * bargain with a price attached, and a value at the exact ceiling of what the
- * pill catalog can price. And the modern line stops at three hundred years for
- * Nascent Soul and below - see `MODERN_REFINEMENT` - so there is nothing
- * between three hundred and this, and nothing above it at all.
- *
- * A FLAT THOUSAND AT ANY LEVEL, and the flatness prices it without a rule. A
- * thousand years is a rounding error to somebody with a century of ambition and
- * decisive to somebody at the top of the ladder facing a crossing that consumes
- * tens of thousands of years of their span. Nothing branches on who swallows
- * it; the object sorts its own market.
- *
- * WHAT "SPARINGLY" ACTUALLY MEANS. A house holding one and not spending it is
- * holding it FOR somebody, and the moment it is spent is a moment about a
- * specific person's remaining years rather than about ambition. The natural
- * consumer is an elder running out of time - which is also, and not by
- * coincidence, the same person the ancient roads sort themselves toward.
  */
 export const THE_RUIN_MEDICINE = {
     pillId: 'pill-immortal-longevity',
@@ -565,31 +403,6 @@ export const THE_RUIN_MEDICINE = {
 
 /**
  * THE EXTINCTION IS SYMMETRIC, and this is the more interesting fact.
- *
- * The obvious construction is a cross-Lid supply chain: a flower that grew down
- * here, immortals who needed it, and an extinction that broke the arrangement
- * at the bottom. That is not the world. The flower went from BOTH SIDES, at
- * once, and the immortals are in precisely the position everybody else is in -
- * holding a method with nothing to work it on.
- *
- * Three consequences, and each is better than what the dependency version would
- * have produced:
- *
- *   - THE IMMORTAL REALM IS NOT A SOURCE. Not one you could reach with enough
- *     standing, not one that is holding out, not one that could be petitioned
- *     by the right house with the right claim. There is none up there either.
- *     Every apex in the world has established this independently and stopped
- *     asking, which is why nobody treats the Lid as a supply problem.
- *
- *   - NOBODY IS WITHHOLDING. "No more are sent down" needs no story about
- *     willingness, judgement or a decision taken above about the lower world.
- *     There is simply nothing to send, and that is a much duller and much more
- *     final answer than a refusal would have been.
- *
- *   - WHAT EXISTS IS LEFTOVERS. The pills in ancient houses and in sealed sites
- *     are not the output of an arrangement. They are what was lying around when
- *     the flower stopped, on both sides, and they have been going down ever
- *     since with nothing coming the other way.
  */
 export const THE_EXTINCTION_IS_SYMMETRIC = {
     aboveTheLid:
@@ -604,37 +417,6 @@ export const THE_EXTINCTION_IS_SYMMETRIC = {
 
 /**
  * THE TRADE: material up, a finished pill back.
- *
- * ONE THING THAT CAN HAPPEN, NOT A ROUTE. A house that finds the flower in a
- * sealed site can send it up through an answering channel and receive a
- * finished pill in return, because the method survives above and only the
- * material is gone. It composes out of parts that already exist -
- * `IMMORTAL_CHANNELS` and `MillennialOffering` already model sending things
- * across, and the Deep Survey channel already returns objects nobody below can
- * make - so nothing new is being modelled here. What is being written down is
- * that there is finally something worth sending that is not devotion.
- *
- * It must stay rare and slow. Both ends are scarce: the flower is nearly gone,
- * and an ancestor is not a shop. This is a once-in-generations undertaking and
- * it would be a mistake to let it become a supply line - see
- * `THE_EXTINCTION_IS_SYMMETRIC`, which is the reason there is no line to
- * become.
- *
- * THE RETURN IS NOT GUARANTEED, and that has to stay true or the whole thing
- * proves nothing. Sending is the house's decision. Answering is not.
- *
- * AND IT IS PROOF OF A LIVING ANCESTOR, which is the sharpest thing about it.
- * `claimsLivingAncestor` and `claimIsTrue` are separate fields in `sects.ts`
- * precisely because a house frequently does not know: a channel that has gone
- * quiet is equally consistent with death, with disinterest, with a war up
- * there, and with an object down here that has stopped working. There is no
- * way to ask. Sending material up and getting a pill back collapses that
- * ambiguity in the only way the setting allows - not by asking, but by
- * something coming back - so the trade is also the one reliable instrument a
- * house has for settling its own most important claim.
- *
- * Which is why a house that has never tried, or tried and heard nothing, has an
- * excellent reason not to discuss it.
  */
 export const THE_TRADE = {
     whatItIs:
@@ -655,22 +437,6 @@ export const THE_TRADE = {
 
 /**
  * `believed_to_hold` is a real state of the world and now has a real holder.
- *
- * It briefly had none. The Azure Cloud Pavilion sat here until its answer
- * turned out to be structural - `heritage: 'recent'`, the same fact as its
- * empty province column - and a fact with a cause is worth more than an
- * unknown, so it moved to `never_had_one` and the standing emptied.
- *
- * That was a loss rather than a decision, and the difference matters: the
- * uncertainty was doing work. A house that MAY hold one, where nobody can
- * establish it either way, is the same shape as `claimsLivingAncestor` against
- * `claimIsTrue` in `sects.ts` - a claim the world cannot audit, believed by
- * people acting on it, and worth exactly what the belief is worth. It is the
- * kind of fact the Standing Register exists to argue about.
- *
- * The Pavilion was never a good instance of it anyway, because its question
- * had an answer. The Storm Tyrant Court is a better one, because its question
- * genuinely does not.
  */
 export type MedicineStanding = 'holds_one' | 'spent_theirs' | 'believed_to_hold' | 'never_had_one';
 
@@ -685,11 +451,6 @@ export interface MedicineHolding {
 
 /**
  * Who still has theirs.
- *
- * This is the shape `standoff.ts` and the Standing Register are built to argue
- * about: a house that has spent its one is a different house from a house that
- * has not, and a house nobody can confirm either way is a third thing again.
- * The catalog knows; almost nobody in the world does.
  */
 export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
     {
@@ -703,29 +464,11 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         factionId: 'apex-long-cut',
         standing: 'holds_one',
         howItIsKnown:
-            'One of the three sealed cases in the seat chamber, and the Long Cut publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Marches has arranged itself so carefully around never being the fourth emergency.',
+            'One of the three sealed cases in the seat chamber, and the Long Cut publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Silent Cliffs has arranged itself so carefully around never being the fourth emergency.',
         whatBecameOfIt: null
     },
     {
         // NONE, AND THE REASON IS THE SAME ONE AS EVERYTHING ELSE ABOUT THEM.
-        //
-        // This entry read `believed_to_hold` for a while, on the argument that
-        // the ambiguity was worth more than either answer. It is not. An
-        // unknown is only an unknown; an absence with a cause is a fact about
-        // the house. The Pavilion has none because Ru Anjing crossed three
-        // hundred and eighty years ago, and a pill of this kind comes from an
-        // ancestor with an age behind them - somebody who was given one, or
-        // kept one back, in a period when there were still flowers. She was not
-        // up there when there were.
-        //
-        // THREE ABSENCES, ONE CAUSE, and the third is the one that closes it.
-        // `heritage: 'recent'` already showed up as an empty province array in
-        // `regions.ts`; it shows up here as an empty medicine column; and it
-        // shows up a third time in `THE_TRADE`, because an ancestor three
-        // hundred and eighty years across is not somebody a house can make that
-        // kind of request of. No province, no medicine, no counterparty - and
-        // every one of them is the same sentence about the same woman crossing
-        // too recently.
         factionId: 'apex-azure-cloud',
         standing: 'never_had_one',
         howItIsKnown:
@@ -741,15 +484,6 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
     },
     {
         // THE ONE NOBODY CAN SETTLE, INCLUDING THEM.
-        //
-        // Everything else in this table is known to somebody. This is a house
-        // whose own records say it was given one, whose vault has not been
-        // opened in living memory, and which cannot afford to look - because
-        // the belief that it holds one is currently worth more to it than the
-        // pill would be, and is worth nothing at all the moment it is checked
-        // and is not there. Both outcomes of opening the door are worse than
-        // the door staying shut, which is why it has stayed shut through two
-        // centuries of decline that opening it might have arrested.
         factionId: 'sect-storm-tyrant-court',
         standing: 'believed_to_hold',
         howItIsKnown:
@@ -787,15 +521,6 @@ export interface ArchiveCopy {
     stock: 'spent' | 'remnant' | 'never_had_any';
     /**
      * How far the house's own stock carries somebody, on `mastery`'s [0, 1].
-     *
-     * Set only on a `remnant`, and only because the holder is a house that
-     * measures things. `masteryCeilingFor` returned null here and said why -
-     * inventing a figure would be the engine asserting something the world does
-     * not know - and that was the right call while nobody had established it.
-     * It is establishable: the Quiet Cut leaves nothing behind that could be
-     * surveyed, which is a practice that requires knowing to the measure what
-     * you are carrying. They know. Nobody has asked, and the engine is allowed
-     * to know things the world does not.
      */
     carriesToMastery?: number;
     /**
@@ -893,17 +618,6 @@ export interface StockedInheritance {
 
 /**
  * Exactly one, and the number is the design.
- *
- * A stocked inheritance is the answer to how anybody without a major house
- * behind them ever gets far up a material-gated art: somebody at the top of
- * the ladder planned for it and paid in advance. They are the only people who
- * can - the reach to have gathered it, the standing to have held it, and a
- * crossing ahead of them they may not come back from.
- *
- * If stocked inheritances routinely carried somebody to the top of an art, the
- * scarcity the whole tier rests on would evaporate. The interesting number is
- * one that gets somebody genuinely far and then stops, leaving them standing
- * exactly where a dead person's judgement ran out.
  */
 export const STOCKED_INHERITANCES: readonly StockedInheritance[] = [
     {
@@ -937,29 +651,11 @@ export { NO_SURVIVING_COPY_TECHNIQUE_IDS, NO_SURVIVING_COPY_NOTES };
 
 /**
  * DORMANT is the fifth, and it is the one where nothing is missing at all.
- *
- * The other four are about a thing: a road nobody walks, an input nobody has,
- * a copy that does not exist, or an art in ordinary circulation. This one is
- * about a PERSON. The knowledge is intact, complete and in the world - and the
- * only party who holds it is sealed under somebody's mountain, so it is
- * unavailable in a way that has nothing to do with the art and everything to
- * do with the fact that waking her is generally the end of her.
- *
- * It belongs in this table because it produces the same sentence from the
- * outside - you cannot get this - out of a completely different cause, and
- * because the cause is reversible in a way none of the others is. A lost
- * material is lost. A sealed holder is a decision somebody could take
- * tomorrow, once, at a price they can name. See `sealed-ancestors.ts`.
  */
 export type AbsenceTier = 'abandoned' | 'lost' | 'no_surviving_copy' | 'dormant' | 'present';
 
 /**
  * Arts whose only holder is asleep, and who is holding each.
- *
- * Deliberately tiny and deliberately not derived: an art is dormant because a
- * specific sealed person is the last one who can perform it, and nothing about
- * a technique row says that. One entry, which is the right number - a second
- * would make sealed ancestors a library rather than a decision.
  */
 export const DORMANT_HOLDERS: Readonly<Record<string, string>> = {
     'paired-breath-canon':
@@ -969,11 +665,6 @@ export const DORMANT_HOLDERS: Readonly<Record<string, string>> = {
 /**
  * Which tier of absence an art sits in. `present` is the ordinary answer for
  * everything in the catalog that is simply taught somewhere.
- *
- * An ancient art with an upkeep is BOTH abandoned and lost, and this returns
- * the more binding of the two: a road nobody walks is a social fact, and a
- * road nobody can feed is a material one, and the material one is what stops
- * a determined person.
  */
 export function absenceTierOf(techniqueId: string): AbsenceTier {
     if (NO_SURVIVING_COPY_TECHNIQUE_IDS.has(techniqueId)) return 'no_surviving_copy';
@@ -1015,11 +706,6 @@ export function unitsLeftInTheWorld(herbId: string): number {
 
 /**
  * Extinct material sitting in a site nobody has opened, by site id.
- *
- * This is what makes an extinct herb a destination rather than a wall: a party
- * that reaches this site finds a countable quantity of a thing that is not
- * anywhere else, and taking it is permanent in both directions - they have it
- * and the world has that much less.
  */
 export function ancientMaterialsAt(siteId: string): {
     herbId: string;

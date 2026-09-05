@@ -345,7 +345,7 @@ describe('the houses, measured against their own books', () => {
         //
         // NOT measured against `reliableOrdinal`. Reliable is what a house
         // makes ROUTINELY, and a book may legitimately outrun it because most
-        // disciples never finish the book - the Sweptground Temple's
+        // disciples never finish the book - the Burnt Earth Temple's
         // `reliable 13 / peak 46` is precisely that story, and the gap between
         // those two numbers is the game rather than a defect. `peakOrdinal` is
         // the highest it has EVER produced, and teaching past THAT would be

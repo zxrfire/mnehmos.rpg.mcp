@@ -10,12 +10,12 @@
  *
  * Measured over a seeded, advanced world before the fix:
  *
- *   day 0   Sweptground 25   Low Fall 30   Kettle 14   Sixmile 13
- *   +20y    Sweptground 18   Low Fall 18   Kettle  6   Sixmile  6
- *   +50y    Sweptground  7   Low Fall  4   Kettle  0   Sixmile  1
+ *   day 0   Burnt Earth 25   Green Water City 30   Iron Gate 14   Six Li 13
+ *   +20y    Burnt Earth 18   Green Water City 18   Iron Gate  6   Six Li  6
+ *   +50y    Burnt Earth  7   Green Water City  4   Iron Gate  0   Six Li  1
  *
  * Total alive held at about 350 the whole time - nobody was dying off - and
- * "The Quiet Marches (region)" went from 39 to 170. The encounter system draws
+ * "The Silent Cliffs (region)" went from 39 to 170. The encounter system draws
  * its cast from who is present, so the end state is person-free events forever.
  *
  * Three separate filters had the same defect: a newborn's home, a parent's

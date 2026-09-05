@@ -180,7 +180,7 @@ describe('the ages', () => {
         }
     });
 
-    it('lands the present age on the Low Fall calendar it counts in', () => {
+    it('lands the present age on the Jade Gorge calendar it counts in', () => {
         const present = presentAge();
         expect(present.beganYearsAgo).toBe(PRESENT_YEAR);
         const lowFall = CALENDARS.find(c => c.regionId === 'region-low-fall');

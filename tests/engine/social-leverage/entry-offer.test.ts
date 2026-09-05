@@ -105,7 +105,7 @@ describe('what the reference is taken from', () => {
     });
 
     it('never lets the head of a house be the peer', () => {
-        // The Sweptground Temple's Abbot stands at ordinal 20, and any rule
+        // The Burnt Earth Temple's Abbot stands at ordinal 20, and any rule
         // reading the whole roll makes him the reference for somebody at 21 -
         // which then offers the rank below the headship.
         const sect = getSect('sect-sweptground-temple')!;

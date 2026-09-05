@@ -34,7 +34,7 @@
  *           enough to read it takes what is there. The cost is geography - you
  *           are born where you are born, and four of these are one province
  *           each - and the consequence is that a province is a hand of roads
- *           dealt at birth. The Drowned Reach has no institution in it worth
+ *           dealt at birth. The Drowned Sea has no institution in it worth
  *           the name and a cultivator raised there can still walk the road of
  *           life and death, because the water does not ask who sent you.
  *
@@ -179,7 +179,7 @@ export type PlaceThatTeachesADao = z.infer<typeof PlaceThatTeachesADaoSchema>;
 //     the world by holding its door. Specialisation is an advantage, never
 //     ownership - the same rule the Dao houses are held to.
 //   - every province has at least one open ground, so being born badly narrows
-//     what is in reach without emptying it. The Quiet Marches, which is the
+//     what is in reach without emptying it. The Silent Cliffs, which is the
 //     province people leave, has exactly one and its floor is the lowest in
 //     the world.
 //   - the held grounds sit on houses that already have a reason to hold them,
@@ -358,7 +358,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         description:
             'The crossing every cart out of the western workings has used for six hundred years, where the driven stone comes up through the streambed in ridges and the water runs fast over it. It has ground four spans of rock away in living memory and it grinds anything standing in it.',
         what:
-            'Standing in it, which the quarry crews do because it is faster than going round. Nobody in the Marches thinks of this as cultivation. What it teaches is what wear is, from underneath, and the Marches produce a disproportionate number of people who cannot be worn down.'
+            'Standing in it, which the quarry crews do because it is faster than going round. Nobody in the Silent Cliffs thinks of this as cultivation. What it teaches is what wear is, from underneath, and the Silent Cliffs produce a disproportionate number of people who cannot be worn down.'
     },
     {
         id: 'dao-ground-glass-field',
@@ -401,7 +401,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         heldBy: null,
         standingRequired: 0,
         description:
-            'A surfacing in the Blown Ground that has stayed open longer than any other on record - eleven years and counting - and has nothing in it. Not thin qi: none, in a pocket eight spans across, in the middle of the richest unheld vein in the world. It moves like the rest of the ground and it has not closed.',
+            'A surfacing in the Burial Sands that has stayed open longer than any other on record - eleven years and counting - and has nothing in it. Not thin qi: none, in a pocket eight spans across, in the middle of the richest unheld vein in the world. It moves like the rest of the ground and it has not closed.',
         what:
             'Standing in the eight spans, which can be done for about forty breaths. It is the only place anybody can go where there is nothing, and forty breaths of nothing is more instruction in the road than any amount of reading about it.'
     },
@@ -448,7 +448,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         heldBy: null,
         standingRequired: 0,
         description:
-            'A survey office of an age that ended, under nine spans of flood silt in the east of the province, holding the working register of a formation network that covered ground the Wide Field no longer has a name for. The register was never finished. The unfinished part is the part that is legible.',
+            'A survey office of an age that ended, under nine spans of flood silt in the east of the province, holding the working register of a formation network that covered ground the Yellow Plain no longer has a name for. The register was never finished. The unfinished part is the part that is legible.',
         what:
             'Reading a draughtsman\'s working notes rather than their result, which nobody in the world does because working notes are not kept. The corrections are on the page, in order, and it is possible to watch somebody arrive at a line.'
     },
@@ -463,7 +463,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         heldBy: null,
         standingRequired: 0,
         description:
-            'A pillared hall on the seabed four days out, upright, roofed, and standing on nothing - there is no rock under the Reach and there is none under this either. Whatever it was built on is not there and the hall has not fallen.',
+            'A pillared hall on the seabed four days out, upright, roofed, and standing on nothing - there is no rock under the Drowned Sea and there is none under this either. Whatever it was built on is not there and the hall has not fallen.',
         what:
             'Getting to the floor of it and looking down through the joints. The Reach\'s whole governing fact is that there is no ground, and the hall is the one object in the world that argues with it, from the wrong side.'
     },

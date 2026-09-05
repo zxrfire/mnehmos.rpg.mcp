@@ -24,7 +24,7 @@
  *   regions/map-by-bearing.ts       the world read as five columns
  *   regions/provinces.ts            the political layer and its lookups
  *   regions/prefectures.ts          what a prefecture is, and all of them joined
- *   regions/arterials.ts            the four arterials under the Low Fall
+ *   regions/arterials.ts            the four arterials under the Jade Gorge
  *
  * The world header that used to open this file - the spine, the ceilings, one
  * ladder, two traditions - is at the top of `regions/the-map.ts`, which is what

@@ -204,7 +204,7 @@ export type {
 //      both be the one who gets it.
 //
 // Four factions carry no ambition at all, and the abstention is the content:
-// the Sweptground Temple, which states no grievance because it holds it was
+// the Burnt Earth Temple, which states no grievance because it holds it was
 // given what it needed two and a half thousand years ago; the Longbough Grove,
 // which holds that a grievance is a claim and makes no claims; the Kiln
 // Wardens, who are staff and have no interests of their own to have; and the
@@ -462,6 +462,20 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         // moving it to 0 would demote the entire ladder. See AZURE_CLOUD_INTAKE.
         admissionOrdinal: 3,
         stipend: [4, 12, 35, 110, 380, 650, 1_100],
+        protector: {
+            title: 'The Guest Above the Terraces',
+            policy: 'filled',
+            heldBy: 'beast-white-ape-of-the-gorge',
+            note:
+                'Not a member, not a servant, and under no instruction anybody has ever put in '
+                + 'writing. It held the gorge before the terraces were cut, it charges passage in '
+                + 'salt and in news, and it has kept every arrangement it made for a hundred and '
+                + 'forty years - which is longer than most of the Sword Elders have been alive. '
+                + 'The Pavilion does not discuss the office and has never claimed the ape as its '
+                + 'own, because the one thing that would end the arrangement is being given an '
+                + 'order. What holds it is that the ape has decided the terraces are the cheaper '
+                + 'of the two things it could be doing.'
+        },
         teaches: [
             'iron-thread-finger',
             'hundred-cut-flying-blade',
@@ -494,7 +508,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'void-piercing-sword-domain',
         specialities: ['attack', 'movement'],
         rivals: ['sect-crimson-abyss-hall', 'sect-ashen-forge-clan'],
-        territory: 'Terraced peaks above Low Fall gorge, and the vein under it, taken off somebody else nineteen centuries ago.',
+        territory: 'Terraced peaks above the gorge at Green Water City, and the vein under it, taken off somebody else nineteen centuries ago.',
         recruits: true,
         compound: {
             inherited: true,
@@ -503,7 +517,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A practice yard cut for six hundred, with two hundred and ten flagstones worn through and the rest sharp as the day they were laid.'
         },
         description:
-            'The region\'s orthodox sword sect, on terraces cut into the peaks above the Low Fall gorge, sitting on a vein it took off somebody else nineteen centuries ago and has held ever since. Its library is metal from end to end - the thread flicked off a fingertip, the flying blade, the white tiger\'s four hooked lengths, the golden bell, and the standing sword domain at the top of it - so a Pavilion disciple fights at reach and in the air, and is conspicuously bad in a corridor against somebody who has already closed. What the province sees is the courtyard, and both of the things the Pavilion is actually best at happen indoors: it certifies that a person is who they say they are, permanently and without appeal, and it runs the only programme in the world that takes uncultivated mortals onto probation and spends years finding out what they are. The number nobody says out loud is that it reliably produces Core Formation and that what it has put past Nascent Soul in four hundred years can be counted on one hand, with a Ru at each end of the count - the elder crossed three hundred and eighty years ago and is the last confirmed crossing either province can date, and the younger is sitting in the inner hall now. A house that carries one family past the middle of the ladder and thins to almost nothing around them has not found a method; it has a name and a vein, and neither of those is a method. That is why the nine lit nodes out of forty-one, the practice yard cut for six hundred that holds ninety, and the one woman the province can count in the inner hall are all the same fact.',
+            'The region\'s orthodox sword sect, on terraces cut into the peaks above the Jade Gorge gorge, sitting on a vein it took off somebody else nineteen centuries ago and has held ever since. Its library is metal from end to end - the thread flicked off a fingertip, the flying blade, the white tiger\'s four hooked lengths, the golden bell, and the standing sword domain at the top of it - so a Pavilion disciple fights at reach and in the air, and is conspicuously bad in a corridor against somebody who has already closed. What the province sees is the courtyard, and both of the things the Pavilion is actually best at happen indoors: it certifies that a person is who they say they are, permanently and without appeal, and it runs the only programme in the world that takes uncultivated mortals onto probation and spends years finding out what they are. The number nobody says out loud is that it reliably produces Core Formation and that what it has put past Nascent Soul in four hundred years can be counted on one hand, with a Ru at each end of the count - the elder crossed three hundred and eighty years ago and is the last confirmed crossing either province can date, and the younger is sitting in the inner hall now. A house that carries one family past the middle of the ladder and thins to almost nothing around them has not found a method; it has a name and a vein, and neither of those is a method. That is why the nine lit nodes out of forty-one, the practice yard cut for six hundred that holds ninety, and the one woman the province can count in the inner hall are all the same fact.',
         ambition: {
             wants:
                 'The other two to price what a house does on the axis they refuse to price, and to say so where it can be quoted. It is not asking either of them to change; it is asking them to answer in their own words instead of in a silence, which is the only move available to a body that objects and cannot act.',
@@ -572,7 +586,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Stone channels feeding the beds, cut to a standard the Hall\'s own masons cannot match and repair with fired clay where they crack.'
         },
         description:
-            'A terraced herb valley fed by nine warm springs, an hour off the Low Fall road, on ordinary ground with no vein worth the name - which is the whole explanation for everything else about the Hall. Its arts are wood and support almost without exception, from the mending palm any villager can be shown to the restoration art at the top, so its physicians are formidable at keeping somebody alive and have almost nothing to hit anybody with; a Hall cultivator in a fight is looking for the moment after it. Outsiders read the treatment of enemies as softness and get the ledger wrong: the Hall treats anyone who arrives injured and then bills them, never writes a bill off, and holds the largest book of unpaid obligations in the province. It is one of the few houses in the catalog whose pipeline is healthy rather than inherited - reliable to Core Formation Perfection on ground that gives it nothing, because the physicians cultivate at the bedside and the springs are worth more as a working valley than as a vein would have been.',
+            'A terraced herb valley fed by nine warm springs, an hour off the Jade Gorge road, on ordinary ground with no vein worth the name - which is the whole explanation for everything else about the Hall. Its arts are wood and support almost without exception, from the mending palm any villager can be shown to the restoration art at the top, so its physicians are formidable at keeping somebody alive and have almost nothing to hit anybody with; a Hall cultivator in a fight is looking for the moment after it. Outsiders read the treatment of enemies as softness and get the ledger wrong: the Hall treats anyone who arrives injured and then bills them, never writes a bill off, and holds the largest book of unpaid obligations in the province. It is one of the few houses in the catalog whose pipeline is healthy rather than inherited - reliable to Core Formation Perfection on ground that gives it nothing, because the physicians cultivate at the bedside and the springs are worth more as a working valley than as a vein would have been.',
         ambition: {
             wants:
                 'A grant of its own from the Third Sill, rather than holding the valley as a sub-tenancy from the Ascetic Order.',
@@ -653,6 +667,19 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Boat Hand', 'River Disciple', 'Current Disciple', 'Ford Master', 'River Elder', 'Grand River Elder', 'Alliance Head'],
         admissionOrdinal: 1,
         stipend: [3, 9, 26, 85, 300, 520, 900],
+        protector: {
+            title: 'The Old Neighbour Under the Ford',
+            policy: 'filled',
+            heldBy: 'beast-millennial-tortoise',
+            note:
+                'It was in the water before there was a ford, and the eleven towns grew up '
+                + 'around a thing every boat hand has been told about since they could walk. '
+                + 'Nobody in the Fordhall has ever asked it for anything and nobody has ever '
+                + 'needed to: what it does is be there, and every house within four provinces '
+                + 'knows what is in that water and prices a raid accordingly. The Fordhall '
+                + 'itself stands at ordinal 24 and would lose a war to half the region, which '
+                + 'is exactly why the arrangement is the most valuable thing it holds.'
+        },
         teaches: [
             'gutter-rain-palm',
             'reed-crossing-qinggong',
@@ -685,24 +712,24 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             inherited: true,
             formationNodesTotal: 8,
             formationNodesLit: 5,
-            remnant: 'A pier at Scarwater standing on pilings that were already old when the town was named, and which no flood has yet moved.'
+            remnant: 'A pier at Clear River Ford standing on pilings that were already old when the town was named, and which no flood has yet moved.'
         },
         description:
             'Eleven river towns and every ford between them, none of it over a vein and all of it over traffic, which is the whole business model stated as geography. It teaches water and movement - the gutter palm that takes a bigger opponent\'s footing, the reed crossing, the nine-cut sword chant, the mirror guard - so an Alliance fighter is superb on and near water and merely competent a hundred paces from it, and knows it. Less a sect than a federation of ferrymen who learned to fight: it takes almost anyone, pays almost nothing, and its real asset is that a ferryman is told things nobody would tell a magistrate, which the Alliance has never once thought of as intelligence. Half its river charts are copies of a survey two ages old and still better than anything it has made since, and at some point in the last century it stopped attempting new ones without anybody deciding to.',
         ambition: {
             wants:
-                'To federate the border road to Kettle and become a regional carrier rather than a river guild.',
+                'To federate the border road to Iron Gate and become a regional carrier rather than a river guild.',
             blockedBy: ['house-measured-span', 'sect-thousand-treasure-pavilion'],
             wouldCost:
                 'Eleven days of road it cannot police, wagons it does not own, and a fight with a house that prices carriage in a distance nobody else can measure. The River Elders hold that the Alliance is river people and will drown on land, and they have the votes.',
             contestedWith: ['sect-thousand-treasure-pavilion', 'house-measured-span'],
             movedOn:
-                'Three Ford Masters have been running an unlicensed wagon service to Scarwater for six years and remitting a share, which the River Elders have chosen not to establish.'
+                'Three Ford Masters have been running an unlicensed wagon service to Clear River Ford for six years and remitting a share, which the River Elders have chosen not to establish.'
         }
     },
     {
         id: 'sect-sweptground-temple',
-        name: 'Sweptground Temple',
+        name: 'Burnt Earth Temple',
         alignment: 'righteous',
         powerOrdinal: 30,
         ranks: ['Lamp Novice', 'Temple Monk', 'Inner Monk', 'Hall Warden', 'Quiet Elder', 'Grand Quiet Elder', 'Abbot'],
@@ -733,7 +760,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Six nodes, all of them lit, all of them cut by the Temple\'s own hands, all of them weak - and the only complete working formation in the province.'
         },
         description:
-            'A walled temple on swept ground a day out from the Sweptground treaty vault, built deliberately where nothing has settled in an age, which means no vein, no tribute and nothing anybody wants. Almost everything it teaches is elementless - the cross-meridian strike, the iron shirt, the warm current, the severing intent, the hollow body - and that is the point rather than a shortage: a temple that only accepted clean roots would be a temple for other people, and elementless arts will not conflict with whatever a muddled intake walks in carrying. It takes orphans, beggars, ruined roots and anyone else the good sects turned away that morning, asks for nothing but the work, and returns endowments of ground intact, which four separate sects have now discovered - and which is why it was never an apex and was never going to be. What makes an apex is somebody above the Lid feeding the house, and the abbot who crossed from here two and a half thousand years ago sent the Temple nothing: what came down came down to ordinary people across the province, a little of it passing through the Temple\'s hands and most of it not, in the largest uncatalogued distribution of immortal-made goods anybody has ever made. Its own patron above the Lid deliberately fed the province instead, which is exactly what the Temple does for people, done at the one scale where it changes a province. Six nodes, all lit, all cut by the Temple itself and all weak: it is the only complete working formation in the province and it is a beginner\'s diagram, which is also the honest summary of the whole institution. It holds one thing that is on no list, because the Temple keeps none, and that did not come from the abbot, because nothing did.'
+            'A walled temple on swept ground a day out from the Burnt Earth treaty vault, built deliberately where nothing has settled in an age, which means no vein, no tribute and nothing anybody wants. Almost everything it teaches is elementless - the cross-meridian strike, the iron shirt, the warm current, the severing intent, the hollow body - and that is the point rather than a shortage: a temple that only accepted clean roots would be a temple for other people, and elementless arts will not conflict with whatever a muddled intake walks in carrying. It takes orphans, beggars, ruined roots and anyone else the good sects turned away that morning, asks for nothing but the work, and returns endowments of ground intact, which four separate sects have now discovered - and which is why it was never an apex and was never going to be. What makes an apex is somebody above the Lid feeding the house, and the abbot who crossed from here two and a half thousand years ago sent the Temple nothing: what came down came down to ordinary people across the province, a little of it passing through the Temple\'s hands and most of it not, in the largest uncatalogued distribution of immortal-made goods anybody has ever made. Its own patron above the Lid deliberately fed the province instead, which is exactly what the Temple does for people, done at the one scale where it changes a province. Six nodes, all lit, all cut by the Temple itself and all weak: it is the only complete working formation in the province and it is a beginner\'s diagram, which is also the honest summary of the whole institution. It holds one thing that is on no list, because the Temple keeps none, and that did not come from the abbot, because nothing did.'
     },
     {
         id: 'sect-lantern-hall',
@@ -781,7 +808,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // arterial vein for an apex; a feeder does not administer anything - it takes people the apex is
     // not currently willing to hold and keeps them where they can be watched.
     //
-    // Being sent down to one is not a disgrace and nobody in the Low Fall reads
+    // Being sent down to one is not a disgrace and nobody in the Jade Gorge reads
     // it as one. A disciple on probation at Mist or Dew is a disciple the
     // Pavilion has decided is worth the cost of somewhere to put them, which is
     // a great deal more than it decides about most people.
@@ -853,7 +880,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A practice yard laid out for four hundred, kept swept for sixty, with the stone worn into lanes that no longer match where anybody stands.'
         },
         description:
-            'The lower gorge, below the Azure Cloud terraces and inside the same grant, on the half of the vein that was never worth terracing. It teaches four Pavilion arts and nothing of its own - the gathering manual, the tempering scripture, the thread and the flying blade - to people who have already failed at exactly those, which is a thing the terraces have four centuries of experience not doing. The name was the oldest joke in the Low Fall for three centuries and stopped being one without anybody noticing: a court administers an arterial and issues grants, and the Mist now administers the terrace runoff and issues grants in the name of the Pavilion, which is the whole of the definition. The Sword Elder who was sent down here as a punishment nobody wrote down spent forty years turning a posting into an institution and called it a Court because he wanted to; the province let him have it out of amusement; and somewhere in the second century after that it became true. Nobody has revised the joke. What it holds is people - probationers, late admissions, the refused-but-not-disqualified - and it is reliable to Core Formation on twelve lit nodes because teaching somebody who has failed once is a different trade from teaching somebody who has not, which nobody at the terraces has ever asked about.',
+            'The lower gorge, below the Azure Cloud terraces and inside the same grant, on the half of the vein that was never worth terracing. It teaches four Pavilion arts and nothing of its own - the gathering manual, the tempering scripture, the thread and the flying blade - to people who have already failed at exactly those, which is a thing the terraces have four centuries of experience not doing. The name was the oldest joke in the Jade Gorge for three centuries and stopped being one without anybody noticing: a court administers an arterial and issues grants, and the Mist now administers the terrace runoff and issues grants in the name of the Pavilion, which is the whole of the definition. The Sword Elder who was sent down here as a punishment nobody wrote down spent forty years turning a posting into an institution and called it a Court because he wanted to; the province let him have it out of amusement; and somewhere in the second century after that it became true. Nobody has revised the joke. What it holds is people - probationers, late admissions, the refused-but-not-disqualified - and it is reliable to Core Formation on twelve lit nodes because teaching somebody who has failed once is a different trade from teaching somebody who has not, which nobody at the terraces has ever asked about.',
         ambition: {
             wants:
                 'The quarterly probation roll actually read by somebody at the terraces who could act on it.',
@@ -955,7 +982,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'An explicit price for a vein is a starting gun, which is the Principal\'s whole objection and is correct. It would also make public that in four recorded shortages the rate was set by what the Thousand Treasure Pavilion would pay and published a week later as the Consortium\'s own.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'The Rate-Setters have compiled the index twice, in secret, and both copies are in the same locked house at Low Fall, which about eleven people know.'
+                'The Rate-Setters have compiled the index twice, in secret, and both copies are in the same locked house at Green Water City, which about eleven people know.'
         }
     },
     {
@@ -1158,7 +1185,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         id: 'sect-orchid-court',
         // The house, which is NOT the settlement. The terraces it lives on
         // are Orchid Terrace; this is the body standing on them, the way
-        // Rimefall is a town and the Frostmirror Court is the house on it.
+        // Cold Peak is a town and the Frostmirror Court is the house on it.
         // They were briefly one name and it cost the house its own
         // mentionability - see the note in `place-names.ts`.
         name: 'Orchid Court',
@@ -1216,7 +1243,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'Nothing it can pay and everything it would have to stop doing. Being left alone is only available while nobody has a reason to insist, and the Court sells into a Guild that has to account for what it buys. Every season it sells is a season somebody could work backwards from to a valley that is on nobody\'s figure.',
             contestedWith: [],
             movedOn:
-                'It has begun selling forward two seasons at a time through the Fourhands station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
+                'It has begun selling forward two seasons at a time through the Four Graves station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
         }
     },
     {
@@ -1513,7 +1540,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         signatureTechniqueId: 'corpse-lantern-soul-forging',
         specialities: ['forbidden', 'defense'],
-        // The Sink Carriers are the third, and it is a quarrel about the same
+        // Sand Well Carriers are the third, and it is a quarrel about the same
         // bodies from two directions: the sand keeps a corpse and gives it
         // back a decade later with its possessions on it, so a carrier who
         // does not make the return leg is Cult stock, and the Carriers count
@@ -1531,13 +1558,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'Old battlefields, worked in rotation, in the third year after any large engagement, and a field wall built of fragments sorted by weight rather than by what they were. It teaches four arts and two of them are corpse work - the cross-meridian strike, bark armour, the tithe palm and corpse-lantern soul forging - which makes its people durable, patient and carrying something that righteous sects execute for possessing. What it is actually best at is ground-reading: they are the best diggers alive and can date a battlefield to the season by what is flowering on it, which is a real science practised by people nobody will sit next to. They hold that the hundred-and-forty-year rotation exists to let sites recover; the founding note says it exists to let the survivors die off first, and the Cult has forgotten the difference.',
         ambition: {
             wants:
-                'A rotation slot in the Quiet Marches burn zones, which are the only unworked ground left within reach.',
+                'A rotation slot in the Silent Cliffs burn zones, which are the only unworked ground left within reach.',
             blockedBy: ['sect-gleaners-company', 'sect-weir-office'],
             wouldCost:
                 'Crossing a border neither region polices into ground the Gleaners have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Company located, which is the grievance from the other side.',
             contestedWith: ['sect-gleaners-company', 'sect-sink-carriers'],
             movedOn:
-                'Two Lantern Bearers have been working the Marches edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
+                'Two Lantern Bearers have been working the Silent Cliffs edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
         }
     },
     {
@@ -1548,6 +1575,19 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ranks: ['Kindling', 'Flame Servant', 'Abyss Disciple', 'Flame Hall Master', 'Nine Abyss Elder', 'Grand Abyss Elder', 'Flame Sovereign'],
         admissionOrdinal: 8,
         stipend: [12, 40, 140, 480, 1_500, 2_600, 4_500],
+        protector: {
+            title: 'The Seat at the Vent',
+            policy: 'filled',
+            heldBy: 'sealed-the-kindler',
+            note:
+                'The other occupant this office takes, and the commoner one: the house\'s own '
+                + 'deepest person, no longer leading, seated rather than buried. He went down '
+                + 'into the vent at strength with the terms running rather than at the end of '
+                + 'anything, so he wakes with real time and a future - see `sealed-the-kindler`, '
+                + 'held correctly and known to be held correctly. That is the whole of why the '
+                + 'Sect is genuinely hard to attack and why its rivals cannot work out where '
+                + 'the confidence comes from: they are counting the people who are awake.'
+        },
         teaches: [
             'ashfall-crescent',
             // Kindling is taken on at 8 and the sect's own transformation
@@ -1726,7 +1766,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'foundation-tempering-scripture',
         specialities: ['cultivation', 'defense'],
         rivals: ['sect-gleaners-company', 'sect-sixmile-wardens'],
-        territory: 'Both live pockets in the Marches, the weir works above Kettle, and the grant book.',
+        territory: 'Both live pockets in the Silent Cliffs, the weir works above Iron Gate, and the grant book.',
         recruits: true,
         compound: {
             inherited: true,
@@ -1735,12 +1775,12 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A flood-control works built to manage water by people who plainly also used it to manage qi, running seven of its twenty-six nodes and holding both of the region\'s remaining pockets between them.'
         },
         description:
-            'Both live pockets in the Quiet Marches, the weir works above Kettle, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Low Fall material and none of it carving, because Office members do not touch a chisel: the Office cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Low Fall - and it prices grants on a rank table it has never dared submit to the Ninefold Ledger for certification.',
+            'Both live pockets in the Silent Cliffs, the weir works above Iron Gate, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Office members do not touch a chisel: the Office cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Ledger for certification.',
         ambition: {
-            wants: 'A third workable face found and brought into the grant book before Gapwater runs out.',
+            wants: 'A third workable face found and brought into the grant book before Jade Face runs out.',
             blockedBy: ['court-ninth-face', 'sect-sixmile-wardens'],
             wouldCost:
-                'The only candidate ground is past the Dead Verge, and the Wardens will not stake a road to it. The Office has surveyed how much workable stone is left at Gapwater and has never published the figure, so it cannot argue the urgency without conceding the number.',
+                'The only candidate ground is past Nine Hundred Paces, and the Wardens will not stake a road to it. The Office has surveyed how much workable stone is left at Jade Face and has never published the figure, so it cannot argue the urgency without conceding the number.',
             contestedWith: ['sect-sixmile-wardens'],
             movedOn:
                 'It has sent two survey parties past the Verge without stakes in four years and lost one of them, which is not in the grant book.'
@@ -1748,7 +1788,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     },
     {
         id: 'sect-sixmile-wardens',
-        name: 'The Sixmile Wardens',
+        name: 'The Six Li Wardens',
         alignment: 'righteous',
         powerOrdinal: 14,
         ranks: ['Marker', 'Warden', 'Road Warden', 'Warden of the Six Mile'],
@@ -1764,16 +1804,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'swallow-skimming-step',
         specialities: ['movement', 'defense', 'support'],
         rivals: ['sect-weir-office'],
-        territory: 'The marked roads: every route through the Marches that does not cross dead ground.',
+        territory: 'The marked roads: every route through the Silent Cliffs that does not cross dead ground.',
         recruits: true,
         compound: {
             inherited: false,
             formationNodesTotal: 0,
             formationNodesLit: 0,
-            remnant: 'Nine hundred painted stakes and a shed at Sixmile with the survey in it, which is the only complete map of where it is safe to walk.'
+            remnant: 'Nine hundred painted stakes and a shed at Six Li with the survey in it, which is the only complete map of where it is safe to walk.'
         },
         description:
-            'The marked roads: every route through the Quiet Marches that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian strike, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Marches air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Low Fall, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
+            'The marked roads: every route through the Silent Cliffs that does not cross dead ground, held by a shed, nine hundred painted stakes and a survey, all of it their own work. They teach the cheapest survivable list in the catalog - the cross-meridian strike, the skimming step, the iron shirt, the gathering manual, the mending palm - which is what a militia needs to walk somebody out of burn ground, and on unaided Silent Cliffs air a Warden stops at Chipping and stays there. Its strongest member would be an outer disciple in the Jade Gorge, it takes anyone, pays almost nothing, and loses two or three people a year to ground that moved. The province finds them mildly comic and they own the only complete record of where it is safe to walk in a region full of ground that kills, kept current at that cost, and they believe the original survey is accurate because it has never been checked.',
         ambition: {
             wants:
                 'The Weir Office to pay for paint, and the burn-edge figures in the survey shed recalculated by somebody who is not a Warden.',
@@ -1782,7 +1822,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'A toll, which is the only instrument they have and which the Warden of the Six Mile holds is a road people leave to avoid paying for. Three Wardens have said the burn edge is accelerating and the shed has the figures, and nobody has recalculated them because nobody wants the answer.',
             contestedWith: ['sect-weir-office'],
             movedOn:
-                'They have refused to stake the ground past the Dead Verge twice, which is the first time in the Wardens\' history that the survey has been used as leverage rather than published.'
+                'They have refused to stake the ground past Nine Hundred Paces twice, which is the first time in the Wardens\' history that the survey has been used as leverage rather than published.'
         }
     },
     {
@@ -1803,7 +1843,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'shadow-splitting-gait',
         specialities: ['movement', 'defense'],
         rivals: ['sect-weir-office'],
-        territory: 'The burn zones, worked in rotation, and the barrow yard at Hollowmarket where the finds are sorted.',
+        territory: 'The burn zones, worked in rotation, and the barrow yard at Willow Village where the finds are sorted.',
         recruits: true,
         compound: {
             inherited: true,
@@ -1812,7 +1852,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A sorting yard laid out inside a ruin the Company did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
         },
         description:
-            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Hollowmarket where the finds are sorted before they go to Kettle. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Marches also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Company brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Company has never defaulted.',
+            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Gate. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Silent Cliffs also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Company brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Company has never defaulted.',
         ambition: {
             wants:
                 'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Company has misremembered.',
@@ -1828,9 +1868,9 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // ─────────────────────────────────────────────────────────────────────
     // TWO BODIES WITH NO APEX OVER THEM
     //
-    // Every other house in this catalog holds from somebody. A Low Fall sect
-    // holds a twelve-year grant, a Wide Field body holds a lease with a
-    // deposit on it, a Marches district holds a face the Long Cut scheduled,
+    // Every other house in this catalog holds from somebody. A Jade Gorge sect
+    // holds a twelve-year grant, a Yellow Plain body holds a lease with a
+    // deposit on it, a Silent Cliffs district holds a face the Long Cut scheduled,
     // a northern court holds an elevation and pays for the pass. The apexes
     // divide the land between them and nominate whoever holds the ground,
     // and the reason they prefer a bad holder to an empty seat is written out
@@ -1840,7 +1880,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // These two are outside that arrangement, and they are outside it for
     // OPPOSITE reasons, which is the whole reason both exist rather than one.
     //
-    //   The Halfwater Rail  is unowned because owning it would destroy it.
+    //   The Silver Island Rail  is unowned because owning it would destroy it.
     //                       Its entire value is that no party holds it, so
     //                       the moment one does, the other parties stop
     //                       coming and what was taken is forty acres of rock
@@ -1849,7 +1889,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     //                       power in the world is worse off the day it falls,
     //                       including the power that would take it.
     //
-    //   The Sink Carriers   are unowned because nothing on the Blown Ground
+    //   Sand Well Carriers   are unowned because nothing on the Burial Sands
     //                       outlives the instrument that would hold it. A
     //                       grant runs twelve years and a surfacing is gone
     //                       inside nine, so there is nothing there that can
@@ -1871,7 +1911,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-halfwater-rail',
-        name: 'The Halfwater Rail',
+        name: 'The Silver Island Rail',
         alignment: 'neutral',
         // One Nascent Soul, and the number is doing something specific. It is
         // NOT what defends the port - the port is defended by everybody
@@ -1895,7 +1935,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         // A guard art, and the whole doctrine of the watch is in the choice:
         // the port trains people to stop a thing without ending anybody,
-        // because a death at Halfwater is a party ashore with a grievance and
+        // because a death at Silver Island is a party ashore with a grievance and
         // that is the one commodity the port cannot afford to stock.
         signatureTechniqueId: 'still-water-mirror-guard',
         specialities: ['defense', 'movement', 'support'],
@@ -1912,7 +1952,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nothing inherited and nothing lit. The port stands on ground with no vein under it, so there is no diagram to have lost: what it built, it built - a stone quay, a weigh house, a water cistern cut into the rock, and a bell that is rung for arrivals and for nothing else.'
         },
         description:
-            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Rail is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Halfwater is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Rail does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Rail has no answer for, and the last three killings on the quay were all of that shape.',
+            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Rail is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Silver Island is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Rail does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Rail has no answer for, and the last three killings on the quay were all of that shape.',
         ambition: {
             wants:
                 'A second anchorage on the northern crossing, so that a hull out of the capes has somewhere to make a market before it reaches anybody\'s coast.',
@@ -1921,13 +1961,13 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'The thing it is. A second port is a network, a network is a body with reach, and a body with reach is a party rather than a counter - at which point the powers who currently protect the Rail by not touching it acquire a reason to. The Rail Master has put this to the Factors in exactly those words twice and been outvoted once.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'Two Factors have been buying salt flats at Salt Reach in their own names rather than the port\'s, which is either prudence or the first move of the thing the Rail Master warned about, and nobody has established which.'
+                'Two Factors have been buying salt flats at the Salt Fields in their own names rather than the port\'s, which is either prudence or the first move of the thing the Rail Master warned about, and nobody has established which.'
         }
     },
 
     {
         id: 'sect-sink-carriers',
-        name: 'The Sink Carriers',
+        name: 'Sand Well Carriers',
         alignment: 'neutral',
         powerOrdinal: 19,
         ranks: ['Skin', 'Carrier', 'String Head', 'Route Elder', 'Grand Route Elder', 'Waterman'],
@@ -1945,7 +1985,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         signatureTechniqueId: 'five-breath-circulation-scripture',
         specialities: ['defense', 'support', 'cultivation'],
         rivals: ['sect-bone-lantern-cult'],
-        territory: 'A shed and a stockyard a day past the last painted stake in the Marches, and a route across the sand that has to be rewalked every season.',
+        territory: 'A shed and a stockyard a day past the last painted stake in the Silent Cliffs, and a route across the sand that has to be rewalked every season.',
         recruits: true,
         compound: {
             inherited: false,
@@ -1954,16 +1994,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A tally board under the shed roof with every string that has gone out on it, and the ones that did not come back left up rather than wiped, which is the only record of the dead anywhere on this ground.'
         },
         description:
-            'Water carried out onto the Blown Ground in strings of forty to sixty skins, from the Sink to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because the Sink is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Carriers publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Route Elders regard as the only endorsement the shed has ever had.',
+            'Water carried out onto the Burial Sands in strings of forty to sixty skins, from Sand Well to whatever surfacings are open, by people who could not be taken anywhere else. It asks three things and no more: that you carry your own load, that you do not touch another string\'s water, and that you come back to the shed to be counted or be marked as not having. It does not ask where you came from, what you did, or whose art you are practising, and those three omissions are exactly the three questions a rogue cannot answer at any gate in the world, which is why the shed is full. What it lives on is the carry and a share of what comes off the ground it watered - never a price at the well, because Sand Well is the one thing on that ground nobody has ever fought over and a body that started selling it would be the first party to try. So the entry is cheap and the staying is not: water on the sand is bought by the cup at four days\' distance from the only well, and a carrier who cannot make the return leg is not thrown out, they simply run out, and everybody standing there can do the arithmetic before it happens. Losses run about one in six a season and the Carriers publish the figure at the shed door, on the reasonable view that somebody who cannot face the number should not be told it later. It teaches nothing anybody would want except what keeps a body walking - the strike, the shirt, the stone hide, detoxification, the warm current, the five-breath circulation - and it has produced exactly two cultivators past Core Formation in ninety years, both of whom stayed, which the Route Elders regard as the only endorsement the shed has ever had.',
         ambition: {
             wants:
                 'A second well. One dug, anywhere on the sand, of its own, so that the four-day figure stops being the thing that kills its people.',
             blockedBy: ['sect-thousand-treasure-pavilion', 'sect-bone-lantern-cult'],
             wouldCost:
-                'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Blown Ground is a thing the cover reaches in a decade, so the Carriers would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
+                'Everything the shed has and probably the shed. A well is a fixed point and a fixed point on the Burial Sands is a thing the cover reaches in a decade, so the Carriers would be spending the whole of what they have on something with a shorter life than the debt - which is the province\'s own argument for why nobody holds anything here, made against the only body that has ever wanted to.',
             contestedWith: ['sect-bone-lantern-cult'],
             movedOn:
-                'Two Route Elders have been paying a Marches carver out of their own shares to sound for water at a point nine days out, without telling the Waterman, and have four soundings and no water.'
+                'Two Route Elders have been paying a Silent Cliffs carver out of their own shares to sound for water at a point nine days out, without telling the Waterman, and have four soundings and no water.'
         }
     }
 ] as const;
@@ -1995,7 +2035,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         signatureTechniqueId: 'thread-reading-stance',
         specialities: ['support', 'cultivation'],
         rivals: ['house-quiet-cut', 'house-narrow-hour'],
-        territory: 'A book hall at Low Fall, and a circuit of arbitration benches in forty-one towns.',
+        territory: 'A book hall at Green Water City, and a circuit of arbitration benches in forty-one towns.',
         recruits: true,
         compound: {
             inherited: true,
@@ -2004,7 +2044,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A vault of tally volumes in a hand two ages old, still consulted, still binding, and still accurate about families that no longer know they are in it.'
         },
         description:
-            'A book hall at Low Fall and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Ledger auditor present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Ledger is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Book is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
+            'A book hall at Green Water City and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Ledger auditor present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Ledger is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Book is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
         ambition: {
             wants:
                 'The nine sealed volumes opened and entered, ending twenty-three centuries of the house not knowing what it is standing on.',
@@ -2220,7 +2260,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         signatureTechniqueId: 'binding-word-seal',
         specialities: ['support', 'defense', 'cultivation'],
         rivals: ['house-anchorhold', 'house-quiet-cut'],
-        territory: 'Oath halls at every border crossing of consequence, and the treaty vault at Sweptground.',
+        territory: 'Oath halls at every border crossing of consequence, and the treaty vault at Burnt Earth.',
         recruits: true,
         compound: {
             inherited: true,
@@ -2229,7 +2269,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A treaty vault holding agreements between parties who are all dead, several of which are still binding on people who have never read them.'
         },
         description:
-            'Oath halls at every border crossing of consequence and a treaty vault at Sweptground, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Bound Word witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
+            'Oath halls at every border crossing of consequence and a treaty vault at Burnt Earth, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Bound Word witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
         ambition: {
             wants:
                 'Its own founding oath against witnessing for the Severed dissolved, which it has wanted for two centuries and cannot do.',
@@ -2791,7 +2831,7 @@ export const DESTROYED_DAO_HOUSES: readonly DestroyedDaoHouse[] = [
         trueVersion:
             'It was ended by its own auditors, who founded the Ninefold Ledger the following year and kept the volumes. What the Court had been doing when it was ended was totalling what the crossings had taken out of everyone, and entering the Lid as the party that owed it.',
         traces: [
-            'the burned seat at Sweptground, where debts sworn on the ground do not settle and never have since',
+            'the burned seat at Burnt Earth, where debts sworn on the ground do not settle and never have since',
             'nine sealed volumes in the Ledger\'s own vault index, with no subject line',
             'a branded bloodline in the eastern towns that inherits an obligation nobody can identify or discharge',
             'standing oaths sworn to the Court, which have no surviving party to be discharged by and therefore do not lapse'
@@ -2935,7 +2975,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-clear-river-alliance': {
         minOrdinal: 1,
         preferredRoots: ['single_water', 'dual_water_fire'],
-        requirement: 'Any cultivator who can cross the ford at Scarwater unaided.'
+        requirement: 'Any cultivator who can cross the river at Clear River Ford unaided.'
     },
     'sect-sweptground-temple': {
         minOrdinal: 0,
@@ -3107,7 +3147,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         requirement: 'There is no application. The Grove approaches perhaps one person a generation, having watched them for some years, and has approached nobody in forty-one.'
     },
 
-    // The Quiet Marches. Note how low the bars are, and that the binding
+    // The Silent Cliffs. Note how low the bars are, and that the binding
     // requirement everywhere is stones rather than talent.
     'sect-weir-office': {
         minOrdinal: 2,
@@ -3117,7 +3157,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
     'sect-sixmile-wardens': {
         minOrdinal: 0,
         preferredRoots: [],
-        requirement: 'Walk the six miles from Kettle to Sixmile by the marked route, alone, and repaint any stake found down on the way.'
+        requirement: 'Walk the six miles from Iron Gate to Six Li by the marked route, alone, and repaint any stake found down on the way.'
     },
     'sect-gleaners-company': {
         minOrdinal: 0,
@@ -3376,7 +3416,7 @@ export function fosterageTermsOf(factionId: string | null | undefined): Fosterag
  * that the Mist keeps a recall roll and rarely enough that everybody at the Mist
  * knows the current number.
  *
- * So being sent down is not a disgrace and the Low Fall does not read it as one.
+ * So being sent down is not a disgrace and the Jade Gorge does not read it as one.
  * It reads it as the Pavilion deciding somebody is worth the cost of somewhere
  * to put them, which is a great deal more than it decides about most people -
  * and the alternative, at every other sect in the province, is being turned away
@@ -3743,7 +3783,7 @@ export function formationIntegrity(sectId: string): number {
 //
 // `delegatedFromSect` returning null is a real answer and the most interesting
 // one in the catalog: it is what the Azure Cloud Pavilion, the Hollow Court,
-// the Longbough Grove, the Clear River Fordhall and the Sixmile Wardens have in
+// the Longbough Grove, the Clear River Fordhall and the Six Li Wardens have in
 // common, and it is the only thing they have in common. An apex that answers
 // to nobody, an occupation nothing can move, a zone held by a belief, a toll
 // nobody authorised and six people repainting stakes are five completely

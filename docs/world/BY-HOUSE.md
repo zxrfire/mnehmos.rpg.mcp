@@ -17,8 +17,8 @@ docs and a handful of design constants - none of which name each other.
 Counts are mentions, so they rank rather than measure. The first file listed is almost
 always the one to read first.
 
-**The median house is written about in 15 files**, and the most-written-about,
-the Azure Cloud Pavilion, in 36. That is the number this file exists for:
+**The median house is written about in 17 files**, and the most-written-about,
+the Azure Cloud Pavilion, in 39. That is the number this file exists for:
 nobody was going to find all of that by grepping, and nobody did - six times in one
 session somebody wrote down design that was already in the catalog.
 
@@ -26,257 +26,266 @@ session somebody wrote down design that was already in the catalog.
 
 ### Azure Cloud Pavilion
 
-`sect-azure-cloud-pavilion` · its entry: [`sects.ts:430`](../../src/data/cultivation/sects.ts)
+`sect-azure-cloud-pavilion` · its entry: [`sects.ts:452`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 11 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 9 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6
-  …and 28 more files.
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 18 · [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`members.ts`](../../src/data/cultivation/members.ts) 12 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 11 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 7 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 6 · [`origin.md`](../../docs/world/houses/origin.md) 5
+  …and 31 more files.
 
-**Constants most about it:** `IMMORTAL_HOLDINGS`, `FACTION_HISTORY`, `STOCK_VERSUS_FLOW`, `THE_TRADE`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, and 29 more
+**Constants most about it:** `IMMORTAL_HOLDINGS`, `FACTION_HISTORY`, `LOW_FALL_PREFECTURES`, `STOCK_VERSUS_FLOW`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, and 30 more
 
 ### Verdant Spring Hall
 
-`sect-verdant-spring-hall` · its entry: [`sects.ts:493`](../../src/data/cultivation/sects.ts)
+`sect-verdant-spring-hall` · its entry: [`sects.ts:533`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3
-  …and 7 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2
+  …and 9 more files.
 
-**Constants most about it:** `ORIGIN_ACCOUNTS`, `SECT_ADMISSION`
+**Constants most about it:** `LOW_FALL_PREFECTURES`, `ORIGIN_ACCOUNTS`, `SECT_ADMISSION`
 
 ### Nine Peaks Ascetic Order
 
-`sect-nine-peaks-ascetic-order` · its entry: [`sects.ts:562`](../../src/data/cultivation/sects.ts)
+`sect-nine-peaks-ascetic-order` · its entry: [`sects.ts:602`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2
-  …and 11 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2
+  …and 12 more files.
 
-**Constants most about it:** `A_RESTING_PLACE_IS_NOT_A_GRAVE`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `INHERITANCE_TRIALS`, `ORIGIN_ACCOUNTS`, `SECT_ADMISSION`
+**Constants most about it:** `LOW_FALL_PREFECTURES`, `A_RESTING_PLACE_IS_NOT_A_GRAVE`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `INHERITANCE_TRIALS`, `ORIGIN_ACCOUNTS`, and 1 more
 
-### Sweptground Temple
+### Burnt Earth Temple
 
-`sect-sweptground-temple` · its entry: [`sects.ts:678`](../../src/data/cultivation/sects.ts)
+`sect-sweptground-temple` · its entry: [`sects.ts:731`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 2
-  …and 8 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3
+  …and 10 more files.
 
 **Constants most about it:** `SECT_ADMISSION`
 
 ### Lantern Hall
 
-`sect-lantern-hall` · its entry: [`sects.ts:713`](../../src/data/cultivation/sects.ts)
+`sect-lantern-hall` · its entry: [`sects.ts:766`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 10 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3
-  …and 9 more files.
+  …and 8 more files.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `MORTAL_ECONOMY_REGARD`, `SECT_ADMISSION`, `SECT_ARCHIVE`
 
 ### Azure Mist Court
 
-`sect-azure-mist-court` · its entry: [`sects.ts:763`](../../src/data/cultivation/sects.ts)
+`sect-azure-mist-court` · its entry: [`sects.ts:816`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`the-three-floors-a-house-admits-at.ts`](../../src/data/cultivation/the-three-floors-a-house-admits-at.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
-  …and 2 more files.
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+  …and 3 more files.
 
-**Constants most about it:** `FACTION_PARENTAGE`, `HIGH_REALM_PROVENANCE`
+**Constants most about it:** `FACTION_PARENTAGE`, `LOW_FALL_PREFECTURES`, `A_SECOND_CLOSED_COURT_IS_BLOCKED_ON_A_SEAT`, `HIGH_REALM_PROVENANCE`
 
 ### Azure Dew Sect
 
-`sect-azure-dew-sect` · its entry: [`sects.ts:796`](../../src/data/cultivation/sects.ts)
+`sect-azure-dew-sect` · its entry: [`sects.ts:896`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 4 · [`past-the-ceiling.md`](../../docs/world/climbing/past-the-ceiling.md) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
   …and 2 more files.
 
-**Constants most about it:** `AZURE_INTAKE`, `FOSTERAGE_TERMS`
+**Constants most about it:** `AZURE_INTAKE`, `FOSTERAGE_TERMS`, `LOW_FALL_PREFECTURES`
 
 ### Stonewright Consortium
 
-`sect-stonewright-consortium` · its entry: [`sects.ts:838`](../../src/data/cultivation/sects.ts)
+`sect-stonewright-consortium` · its entry: [`sects.ts:938`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2
-  …and 13 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2
+  …and 17 more files.
 
 **Constants most about it:** `PAVILION_SURPLUS`, `TRACKED_CRAFT`, `BOUNTIES`, `CALENDARS`, `DEAD_SCRIPTS`, `GUEST_ELDERS`, and 4 more
 
 ### Thousand Treasure Pavilion
 
-`sect-thousand-treasure-pavilion` · its entry: [`sects.ts:889`](../../src/data/cultivation/sects.ts)
+`sect-thousand-treasure-pavilion` · its entry: [`sects.ts:989`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 4 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3
-  …and 12 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 16 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 5 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 2
+  …and 14 more files.
 
 **Constants most about it:** `AUCTION_VENUES`, `TRACKED_CRAFT`, `ARCHIVE_AS_CLAIM`, `ARCHIVE_COPIES`, `FEEDER`, `OTHERS_WHO_NOTICED`, and 4 more
 
 ### Cinnabar Crucible Guild
 
-`sect-cinnabar-crucible-guild` · its entry: [`sects.ts:927`](../../src/data/cultivation/sects.ts)
+`sect-cinnabar-crucible-guild` · its entry: [`sects.ts:1027`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`regions.ts`](../../src/data/cultivation/regions.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3
-  …and 12 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3
+  …and 13 more files.
 
 **Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, `SEA_CARGO`, and 2 more
 
 ### Ashen Forge Clan
 
-`sect-ashen-forge-clan` · its entry: [`sects.ts:969`](../../src/data/cultivation/sects.ts)
+`sect-ashen-forge-clan` · its entry: [`sects.ts:1069`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
-  …and 7 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
+  …and 6 more files.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `HOUSE_ARTISANS`
 
 ### Hollow Bell Wanderers
 
-`sect-hollow-bell-wanderers` · its entry: [`sects.ts:1016`](../../src/data/cultivation/sects.ts)
+`sect-hollow-bell-wanderers` · its entry: [`sects.ts:1116`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 2 · [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) 1 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 1
-  …and 5 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 2 · [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) 1 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 1 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 1
+  …and 6 more files.
 
 **Constants most about it:** `OTHERS_WHO_NOTICED`, `ROAD_CUSTOMS`, `ROGUE_TRADES`, `THE_SENDING_PYRAMID`
 
+### Orchid Court
+
+`sect-orchid-court` · its entry: [`sects.ts:1185`](../../src/data/cultivation/sects.ts)
+
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
+  …and 4 more files.
+
+**Constants most about it:** `PLACE`
+
 ### Frostmirror Court
 
-`sect-frostmirror-court` · its entry: [`sects.ts:1056`](../../src/data/cultivation/sects.ts)
+`sect-frostmirror-court` · its entry: [`sects.ts:1250`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 4
-  …and 14 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 3 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 3
+  …and 16 more files.
 
 **Constants most about it:** `ARTERIALS`, `CONTINGENCIES`, `FAVOUR_STANCES`, `LIVING_TRANSMISSIONS`, `ORIGIN_ACCOUNTS`, `SEA_CARGO`, and 1 more
 
 ### The Root Sill Court
 
-`sect-kiln-wardens` · its entry: [`sects.ts:1120`](../../src/data/cultivation/sects.ts)
+`sect-kiln-wardens` · its entry: [`sects.ts:1314`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`sects.ts`](../../src/data/cultivation/sects.ts) 3 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
+**Read:** [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 6 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
   …and 6 more files.
 
 **Constants most about it:** `SHARED_EVENTS`, `FACTION_RELATIONSHIPS`, `LID_NON_POSITIONS`, `SEALED_FIGURE_NAMES`, `WHY_NOBODY_MOVES`
 
 ### The Hollow Court
 
-`sect-hollow-court` · its entry: [`sects.ts:1147`](../../src/data/cultivation/sects.ts)
+`sect-hollow-court` · its entry: [`sects.ts:1341`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 10 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3
-  …and 21 more files.
+**Read:** [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 10 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 3 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) 3
+  …and 22 more files.
 
 **Constants most about it:** `IMMORTAL_ANCESTORS`, `LID_NON_POSITIONS`, `SEAT_ORDER`, `ARTERIALS`, `AZURE_CLOUD_INTAKE`, `CROSSING_PRACTICE`, and 12 more
 
 ### The Severed
 
-`sect-the-severed` · its entry: [`sects.ts:1198`](../../src/data/cultivation/sects.ts)
+`sect-the-severed` · its entry: [`sects.ts:1397`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 5 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
   …and 11 more files.
 
 **Constants most about it:** `LID_NON_POSITIONS`, `DEMONIC_STANDINGS`, `LIVING_TRANSMISSIONS`
 
 ### Crimson Abyss Hall
 
-`sect-crimson-abyss-hall` · its entry: [`sects.ts:1250`](../../src/data/cultivation/sects.ts)
+`sect-crimson-abyss-hall` · its entry: [`sects.ts:1472`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`regions.ts`](../../src/data/cultivation/regions.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1
-  …and 4 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
+  …and 7 more files.
 
 ### Bone Lantern Cult
 
-`sect-bone-lantern-cult` · its entry: [`sects.ts:1298`](../../src/data/cultivation/sects.ts)
+`sect-bone-lantern-cult` · its entry: [`sects.ts:1525`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`regions.ts`](../../src/data/cultivation/regions.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2
-  …and 6 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 2
+  …and 9 more files.
 
 **Constants most about it:** `ROGUE_TRADES`, `THE_SENDING_PYRAMID`
 
 ### Nine Abyss Flame Sect
 
-`sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1344`](../../src/data/cultivation/sects.ts)
+`sect-nine-abyss-flame-sect` · its entry: [`sects.ts:1571`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2
-  …and 6 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2
+  …and 8 more files.
 
 **Constants most about it:** `HELD_INSTRUMENTS`, `SEALED_FIGURE_NAMES`
 
 ### Storm Tyrant Court
 
-`sect-storm-tyrant-court` · its entry: [`sects.ts:1399`](../../src/data/cultivation/sects.ts)
+`sect-storm-tyrant-court` · its entry: [`sects.ts:1639`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 10 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
-  …and 13 more files.
+**Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
+  …and 16 more files.
 
-**Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, `SHARED_EVENTS`
+**Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `MEDICINE_HOLDINGS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, and 1 more
 
 ### The Weir Office
 
-`sect-weir-office` · its entry: [`sects.ts:1512`](../../src/data/cultivation/sects.ts)
+`sect-weir-office` · its entry: [`sects.ts:1752`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 10 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`regions.ts`](../../src/data/cultivation/regions.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2
-  …and 7 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 10 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2
+  …and 9 more files.
 
-**Constants most about it:** `BOUNTIES`, `CALENDARS`, `TITLE_TRANSLATIONS`
+**Constants most about it:** `QUIET_MARCHES_PREFECTURES`, `BOUNTIES`, `CALENDARS`, `TITLE_TRANSLATIONS`
 
-### The Sixmile Wardens
+### The Six Li Wardens
 
-`sect-sixmile-wardens` · its entry: [`sects.ts:1550`](../../src/data/cultivation/sects.ts)
+`sect-sixmile-wardens` · its entry: [`sects.ts:1790`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`regions.ts`](../../src/data/cultivation/regions.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
-  …and 4 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2
+  …and 5 more files.
 
 **Constants most about it:** `CALENDARS`
 
 ### The Gleaners\
 
-`sect-gleaners-company` · its entry: [`sects.ts:1589`](../../src/data/cultivation/sects.ts)
+`sect-gleaners-company` · its entry: [`sects.ts:1829`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`regions.ts`](../../src/data/cultivation/regions.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2
-  …and 8 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2
+  …and 10 more files.
 
-**Constants most about it:** `BOUNTIES`, `DEALERS`, `ROGUE_TRADES`
+**Constants most about it:** `BOUNTIES`, `DEALERS`, `QUIET_MARCHES_PREFECTURES`, `ROGUE_TRADES`
 
-### The Halfwater Rail
+### The Silver Island Rail
 
-`sect-halfwater-rail` · its entry: [`sects.ts:1673`](../../src/data/cultivation/sects.ts)
+`sect-halfwater-rail` · its entry: [`sects.ts:1913`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
-  …and 2 more files.
+**Read:** [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1
+  …and 3 more files.
 
 **Constants most about it:** `FOUNDERS`, `HALFWATER_TERMS`, `SEA_CARGO`, `SEA_TRADERS`
 
-### The Sink Carriers
+### Sand Well Carriers
 
-`sect-sink-carriers` · its entry: [`sects.ts:1729`](../../src/data/cultivation/sects.ts)
+`sect-sink-carriers` · its entry: [`sects.ts:1969`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 1
-  …and 1 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+  …and 3 more files.
 
 **Constants most about it:** `FOUNDERS`
 
 ### The Ninefold Ledger
 
-`house-ninefold-ledger` · its entry: [`sects.ts:1773`](../../src/data/cultivation/sects.ts)
+`house-ninefold-ledger` · its entry: [`sects.ts:2013`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`history.ts`](../../src/data/cultivation/history.ts) 15 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 12 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`regions.ts`](../../src/data/cultivation/regions.ts) 5 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
-  …and 13 more files.
+**Read:** [`history.ts`](../../src/data/cultivation/history.ts) 15 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 12 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3
+  …and 15 more files.
 
 **Constants most about it:** `CALENDARS`, `DAO_HOUSES`, `RANK_MISREADINGS`, `WHY_ACCOUNTS_DISAGREE`, `A_DEPOSIT_IS_NOT_A_LIFE`, `CUSTODY_TAKERS`, and 17 more
 
 ### The House of the Narrow Hour
 
-`house-narrow-hour` · its entry: [`sects.ts:1900`](../../src/data/cultivation/sects.ts)
+`house-narrow-hour` · its entry: [`sects.ts:2140`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 1
-  …and 7 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`history.ts`](../../src/data/cultivation/history.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1 · [`crossings.ts`](../../src/data/cultivation/crossings.ts) 1
+  …and 9 more files.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `THE_LID`, `TITLE_TRANSLATIONS`
 
 ### The House of the Bound Word
 
-`house-bound-word` · its entry: [`sects.ts:2003`](../../src/data/cultivation/sects.ts)
+`house-bound-word` · its entry: [`sects.ts:2243`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`regions.ts`](../../src/data/cultivation/regions.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
   …and 5 more files.
 
 **Constants most about it:** `CALENDARS`, `CUSTODY_TAKERS`, `DORMANT_ARTS`
 
 ### The House of the Quiet Cut
 
-`house-quiet-cut` · its entry: [`sects.ts:2108`](../../src/data/cultivation/sects.ts)
+`house-quiet-cut` · its entry: [`sects.ts:2348`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 13 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
   …and 3 more files.
@@ -285,25 +294,25 @@ session somebody wrote down design that was already in the catalog.
 
 ### The House of Held Names
 
-`house-held-names` · its entry: [`sects.ts:2215`](../../src/data/cultivation/sects.ts)
+`house-held-names` · its entry: [`sects.ts:2455`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`regions.ts`](../../src/data/cultivation/regions.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
-  …and 10 more files.
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 14 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`dao-houses.md`](../../docs/world/houses/dao-houses.md) 1
+  …and 11 more files.
 
 **Constants most about it:** `DAO_HOUSE_DISPUTES`, `LU_SHENG_CARVINGS`, `WHY_ACCOUNTS_DISAGREE`
 
 ### The House of the Measured Span
 
-`house-measured-span` · its entry: [`sects.ts:2317`](../../src/data/cultivation/sects.ts)
+`house-measured-span` · its entry: [`sects.ts:2557`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 16 · [`sects.ts`](../../src/data/cultivation/sects.ts) 10 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 4 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 3 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 3
-  …and 9 more files.
+  …and 11 more files.
 
 **Constants most about it:** `DEAD_SCRIPTS`, `CUSTODY_TAKERS`, `DEAD_CIVILISATIONS`, `SEA_TRADERS`, `THE_CALENDAR_OFFSET`, `THE_FIRST_CULTIVATORS`, and 1 more
 
 ### The Anchorhold
 
-`house-anchorhold` · its entry: [`sects.ts:2444`](../../src/data/cultivation/sects.ts)
+`house-anchorhold` · its entry: [`sects.ts:2684`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`history.ts`](../../src/data/cultivation/history.ts) 23 · [`sects.ts`](../../src/data/cultivation/sects.ts) 18 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 10 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 8 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4
   …and 12 more files.
@@ -312,15 +321,15 @@ session somebody wrote down design that was already in the catalog.
 
 ### The Tally Court
 
-`house-tally-court` · its entry: [`sects.ts:2584`](../../src/data/cultivation/sects.ts)
+`house-tally-court` · its entry: [`sects.ts:2824`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 5 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 4 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 3 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 1
 
-**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `DESTROYED_DAO_HOUSES`, `SECTS`
+**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `DESTROYED_DAO_HOUSES`, `GRADE_BASELINE_OPACITY`, `SECTS`
 
 ### The Girdle of Nine Stones
 
-`house-girdle-of-nine-stones` · its entry: [`sects.ts:2606`](../../src/data/cultivation/sects.ts)
+`house-girdle-of-nine-stones` · its entry: [`sects.ts:2846`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 5 · [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 2 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 1
 
@@ -328,7 +337,7 @@ session somebody wrote down design that was already in the catalog.
 
 ### The Unlit Gate House
 
-`house-unlit-gate` · its entry: [`sects.ts:2627`](../../src/data/cultivation/sects.ts)
+`house-unlit-gate` · its entry: [`sects.ts:2867`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 1 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 1 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 1
 

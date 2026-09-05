@@ -11,7 +11,7 @@
  *   2. **There are four ways to be without a holder and only one of them is a
  *      vacuum.** `GroundHolding` resolves four answers and pricing three of
  *      them as the floor invents a vacuum out of a missing row, which that
- *      type's own docstring names as the defect. Scarwater is not eleven days
+ *      type's own docstring names as the defect. Clear River Ford is not eleven days
  *      of sand, and a ruin the survey never described is not either.
  *   3. It is a term and never a gate. Nowhere makes an ask certain and nowhere
  *      makes one impossible, and the ground never outweighs standing or a tie.
@@ -55,23 +55,23 @@ function held(factionId: string) {
     );
 }
 
-/** The vacuum. A region that declares nobody holds it - the Drowned Reach. */
+/** The vacuum. A region that declares nobody holds it - the Drowned Sea. */
 function noAuthority() {
     return reading(
         [
-            makeLocation({ id: 'r', name: 'The Drowned Reach', kind: 'region', data: { politics: 'no_authority' } }),
-            makeLocation({ id: 'g', name: 'Bellhead', kind: 'settlement', parentId: 'r' })
+            makeLocation({ id: 'r', name: 'The Drowned Sea', kind: 'region', data: { politics: 'no_authority' } }),
+            makeLocation({ id: 'g', name: 'Bronze Bell Cliff', kind: 'settlement', parentId: 'r' })
         ],
         'g'
     );
 }
 
-/** Scarwater: on the register with nobody's name against it, inside a province. */
+/** Clear River Ford: on the register with nobody's name against it, inside a province. */
 function noHolderOfRecord() {
     return reading(
         [
-            makeLocation({ id: 'r', name: 'The Low Fall', kind: 'region' }),
-            makeLocation({ id: 'g', name: 'Scarwater', kind: 'settlement', parentId: 'r' })
+            makeLocation({ id: 'r', name: 'The Jade Gorge', kind: 'region' }),
+            makeLocation({ id: 'g', name: 'Clear River Ford', kind: 'settlement', parentId: 'r' })
         ],
         'g'
     );
@@ -149,7 +149,7 @@ describe('the ground under two people', () => {
     });
 
     /**
-     * Scarwater is inside a province with a survey, a bench and a register, and
+     * Clear River Ford is inside a province with a survey, a bench and a register, and
      * somebody with no title keeps the fords open. A demonic house has
      * published that it will not answer for its own. Both beat the vacuum;
      * they do not beat it by the same amount, and they are not in that order.
@@ -320,7 +320,7 @@ describe('the ground under two people', () => {
  *      simulation already fills for every NPC manoeuvre.
  *   2. It is not the trust reading negated. A demonic house still DETERS force,
  *      because declining to avenge a member who was outwitted is a statement
- *      about deception; and Scarwater is worth less to a threatener than it
+ *      about deception; and Clear River Ford is worth less to a threatener than it
  *      costs a stranger.
  *   3. It is still a term. Lawless ground makes a threat more credible and
  *      never certain.
@@ -366,7 +366,7 @@ describe('the ground under a threat', () => {
         expect(trust(held(DEMONIC))).toBeLessThan(0);
         expect(threat(held(DEMONIC))).toBeLessThan(0);
 
-        // Scarwater: the un-appointed keepers of an unheld ford have more
+        // Clear River Ford: the un-appointed keepers of an unheld ford have more
         // reason to move against violence than to vouch for a stranger.
         expect(threat(noHolderOfRecord())).toBeGreaterThan(0);
         expect(Math.abs(threat(noHolderOfRecord())))

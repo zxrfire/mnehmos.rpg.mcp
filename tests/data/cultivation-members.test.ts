@@ -387,7 +387,7 @@ describe('members catalog', () => {
     });
 
     it('gives each province a rival and a master', () => {
-        // The spine, not the map. The Blown Ground has no members catalog and
+        // The spine, not the map. The Burial Sands has no members catalog and
         // must not have one: nobody is seated there, nobody teaches there, and
         // a rival on ground where nothing can be held is not a rival, it is
         // whoever is standing over you today.
@@ -467,16 +467,16 @@ describe('members catalog', () => {
     });
 
     it('names people the way their region names people', () => {
-        // regions.ts customs.naming: the Low Fall uses clan surnames with
-        // given names; the Marches uses tool-names and face-numbers and has no
-        // clan names at all. The tell is that a Marches name is not two words
-        // of the "Surname Given" shape drawn from the Low Fall pool.
+        // regions.ts customs.naming: the Jade Gorge uses clan surnames with
+        // given names; the Silent Cliffs uses tool-names and face-numbers and has no
+        // clan names at all. The tell is that a Silent Cliffs name is not two words
+        // of the "Surname Given" shape drawn from the Jade Gorge pool.
         //
         // A HOUSE THAT WITHHOLDS NAMES CONTRIBUTES NO CLAN NAMES TO THE POOL.
         // The Hollow Court's Seats are carried as positions - `First Seat` is
         // what stands in for a name, because no name of theirs leaves those
         // mountains - so feeding them in would put `First` and `Third` into the
-        // Low Fall clan pool and make the Marches face-number `Third Face Ren`
+        // Jade Gorge clan pool and make the Silent Cliffs face-number `Third Face Ren`
         // read as somebody's clan. Keyed off `WITHDRAWN_POWERS` rather than off
         // one sect id: withholding is what produces positions-instead-of-names,
         // and any house that ever did it would do the same thing here.
@@ -489,10 +489,10 @@ describe('members catalog', () => {
             const first = member.name.split(' ')[0];
             expect(
                 lowFallSurnames.has(first),
-                `${member.name} is a Marches person carrying a Low Fall clan name`
+                `${member.name} is a Silent Cliffs person carrying a Jade Gorge clan name`
             ).toBe(false);
         }
-        // And every Marches person is seated in a Marches faction.
+        // And every Silent Cliffs person is seated in a Silent Cliffs faction.
         for (const member of getMembersInRegion(ADJACENT_REGION_ID)) {
             expect(getRegionForFaction(member.factionId)?.id).toBe(ADJACENT_REGION_ID);
         }

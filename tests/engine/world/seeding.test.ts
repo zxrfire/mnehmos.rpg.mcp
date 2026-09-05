@@ -102,7 +102,7 @@ describe('seeding: a world that is already running', () => {
         expect(scarwater.environment.specialRules.length).toBeGreaterThan(0);
 
         // Places are children of their region, and roads are symmetric.
-        const sweptground = state.locations.find(l => l.name === 'Sweptground')!;
+        const sweptground = state.locations.find(l => l.name === 'Burnt Earth')!;
         expect(sweptground.parentId).toBe('loc-region-low-fall');
         expect(lowFall.links.some(l => l.toLocationId === 'loc-region-scarwater')).toBe(true);
         expect(scarwater.links.some(l => l.toLocationId === 'loc-region-low-fall')).toBe(true);
@@ -314,7 +314,7 @@ describe('catalog adapter', () => {
         expect(dominantAmbient({ thin: 10, dense: 60, normal: 30 })).toBe('dense');
         expect(densityFromProfile({ thin: 100 })).toBeLessThan(densityFromProfile({ dense: 100 }));
         // The 1..100 ground scale. An empty profile is the Late Age's ordinary
-        // open air, which is where Sweptground sits.
+        // open air, which is where Burnt Earth sits.
         expect(densityFromProfile({})).toBe(QI_DENSITY_DEFAULT);
         expect(densityFromProfile({ dense: 100 })).toBeLessThanOrEqual(QI_DENSITY_MAX);
     });

@@ -456,7 +456,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
         restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
         publishedCondition: null,
         privateContingency:
-            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Deep Survey cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Low Fall against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Court has written down.',
+            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Deep Survey cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Green Water City against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Court has written down.',
         strategy: 'silence',
         strategyNote:
             'Silence, absolutely, and for the specific reason that the plan requires surprise and the observation underneath it is spent the moment a second party holds it. The Court fields a fraction of the defence its holdings warrant and has never lost the library, which reads externally as luck and is a deliberate refusal to advertise.',
@@ -518,7 +518,7 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         whoKnows:
             'The Order has surveyed the workings to the depth he is at and has never opened it or said why, which is as close to knowing as an institution gets without admitting anything. What it does not accept is the conclusion: the ascetics tell it as a story, and a story is not a thing an Order has to act on. The Peak Wardens want the workings surveyed and Meng Da resolved; the Mountain Elders hold that the workings are the vein and the vein is not to be entered, which is doctrine dressed as caution and is the only reason nobody has gone looking.',
         hazard:
-            'The deepest vein in the province is being worked continuously by an institution that has an eight-hundred-year-old Patriarch somewhere underneath it and has decided the question is a matter of tradition. If he is down there and something reaches him - a collapse, a deep survey, a boundary dispute that goes to digging - it happens under the richest ground in the Low Fall, to a party nobody warned, with no wake condition, no cost accounting and nobody who could be said to have decided anything.',
+            'The deepest vein in the province is being worked continuously by an institution that has an eight-hundred-year-old Patriarch somewhere underneath it and has decided the question is a matter of tradition. If he is down there and something reaches him - a collapse, a deep survey, a boundary dispute that goes to digging - it happens under the richest ground in the Jade Gorge, to a party nobody warned, with no wake condition, no cost accounting and nobody who could be said to have decided anything.',
         opportunity:
             'The only sealed ancestor in the world that is not behind a seal. Anybody willing to go into the workings could reach him, and reaching him is the single cheapest access to a high-realm being available anywhere - which is exactly why the Mountain Elders have made not entering into a principle.',
         ifSheWakes:
@@ -528,8 +528,8 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
     },
     {
         id: 'sealed-the-tally-seal',
-        name: 'Whatever the Tally Court sealed at Sweptground',
-        whereItIs: 'Under the burned seat at Sweptground, behind a seal that predates the Ninefold Ledger and was cut by the house the Ledger destroyed.',
+        name: 'Whatever the Tally Court sealed at Burnt Earth',
+        whereItIs: 'Under the burned seat at Burnt Earth, behind a seal that predates the Ninefold Ledger and was cut by the house the Ledger destroyed.',
         sealedBy: 'The Tally Court, twenty-three centuries ago, for a reason that was in the volumes the Ledger took and has never opened.',
         sealedFor: 'Unknown, and the distinction matters: nobody can say whether it was sealed to keep something in, to keep something preserved, or to keep something from being read. The three cases call for three completely different responses and there is no evidence that separates them.',
         sealerFactionId: null,
@@ -537,20 +537,20 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         lastChecked: 'Not in twenty-three centuries by anyone with standing to do it. The ground is where debts sworn do not settle and never have, which is treated locally as a curiosity of the site.',
         awareness: 'rumoured',
         whoKnows:
-            'Sweptground Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by people who are dead is not the Temple\'s business. The Ninefold Ledger almost certainly holds the answer in its nine sealed volumes, has never opened them, and has three internal factions arguing about it for reasons that have nothing to do with this.',
+            'Burnt Earth Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by people who are dead is not the Temple\'s business. The Ninefold Ledger almost certainly holds the answer in its nine sealed volumes, has never opened them, and has three internal factions arguing about it for reasons that have nothing to do with this.',
         hazard:
             'An unmaintained seal cut by a destroyed house, on ground that visibly does something to obligations sworn on it, under a temple that takes in anybody and has four monks. Nobody is maintaining it because the maintainers were dissolved twenty-three centuries ago, nobody has inspected it because inspecting it requires opening it, and the only party who could say what is behind it destroyed the party that put it there and then sealed the records.',
         opportunity:
             'The Ledger volumes and the seal are the same question from two ends. A player who opened either would be the first person in two millennia to know what the Tally Court was actually doing when it was ended, which is worth more than anything physical that might be behind the stone.',
         ifSheWakes:
-            'If it is a person at all, it is a person whose institution was destroyed by a body that still exists and still holds the volumes. There is no duty to anybody - the Tally Court is gone, and nothing the Sweptground monks could say would give them a claim - so what wakes is someone with a short window, no obligations, and a grievance whose defendant is genuinely still there. That is the one case in this catalog where a stale grievance has a living heir, and the Ninefold Ledger has never once considered that its nine sealed volumes might be the other half of a person. What she would actually do with the hours is nobody\'s to predict. The Abbot, who takes in anybody and asks nothing, would very likely be the first person she spoke to, and that is not the worst possible start.',
+            'If it is a person at all, it is a person whose institution was destroyed by a body that still exists and still holds the volumes. There is no duty to anybody - the Tally Court is gone, and nothing the Burnt Earth monks could say would give them a claim - so what wakes is someone with a short window, no obligations, and a grievance whose defendant is genuinely still there. That is the one case in this catalog where a stale grievance has a living heir, and the Ninefold Ledger has never once considered that its nine sealed volumes might be the other half of a person. What she would actually do with the hours is nobody\'s to predict. The Abbot, who takes in anybody and asks nothing, would very likely be the first person she spoke to, and that is not the worst possible start.',
         nobodyIsResponsible:
             'The Temple did not seal it, the Ledger did not seal it, and the party that did no longer exists. If it opens, the arbitration would be about who has to deal with it rather than who caused it, and the Ledger would be arbitrating a case in which it is the interested party.'
     },
     {
         id: 'sealed-the-sorting-yard',
         name: 'The sealed part of the sorting-yard ruin',
-        whereItIs: 'Behind the front three chambers of the ruin the Gleaners\' Company works out of at Hollowmarket, in the Quiet Marches.',
+        whereItIs: 'Behind the front three chambers of the ruin the Gleaners\' Company works out of at Willow Village, in the Silent Cliffs.',
         sealedBy: 'The catastrophe, most likely, rather than by anybody - the driving of the qi into the stone closed a great deal that nobody chose to close, and this is one of the places that shut.',
         sealedFor: null,
         sealerFactionId: null,
@@ -558,13 +558,13 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         lastChecked: 'Thirty years ago, by Deep Gleaner Xun, who went in on a wager and did not come back. The Company sealed it again and raised the wager, which is the whole of the region\'s risk assessment.',
         awareness: 'rumoured',
         whoKnows:
-            'Every Gleaner, as a working fact rather than a secret: the Company lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Marches has ever been told, because nobody outside the Marches asks the Gleaners anything.',
+            'Every Gleaner, as a working fact rather than a secret: the Company lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Silent Cliffs has ever been told, because nobody outside the Silent Cliffs asks the Gleaners anything.',
         hazard:
             'A crew of nine to fifteen people sorts salvage every working day against a wall that has taken one person in living memory. The Company has no idea what is behind it, has never seen the inscription its own vocabulary above Keystone was copied from, and the highest-ranking authority in the province is a bureau with eleven staff and no procedure for this.',
         opportunity:
-            'The Marches vocabulary for the upper realms came off an inscription in there, which means somebody in that ruin knew what those states are - and the Long Cut, which administers the province and would very much like a working account of the upper realms, has never been told the sealed part exists.',
+            'The Silent Cliffs vocabulary for the upper realms came off an inscription in there, which means somebody in that ruin knew what those states are - and the Long Cut, which administers the province and would very much like a working account of the upper realms, has never been told the sealed part exists.',
         ifSheWakes:
-            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Marches vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Gleaners are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
+            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Silent Cliffs vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Gleaners are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
         nobodyIsResponsible:
             'The Company holds a salvage contract rather than a lease, and a contractor is not protected, arbitrated for, or spoken for. If it opened, the Weir Office would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later.'
     },
@@ -604,7 +604,7 @@ export const SEALED_ANCESTOR_PATTERN = {
         'A holder with a live sealed ancestor may publish it, to deter, or conceal it, to preserve surprise. A holder with a dead one has every reason to keep publishing. So a claim is not evidence and an absence of claim is not evidence, and no institution in the world can price another one on this axis - which is a large part of why the powers are so careful with each other.',
     howAnybodyKnows: [
         'published: the Anchorhold puts its wake condition in the regional survey standard as a line item, because a deterrent that nobody has read does not deter.',
-        'rumoured: the sorting-yard ruin and the Sweptground seal, known as working facts to the people standing next to them and to almost nobody else.',
+        'rumoured: the sorting-yard ruin and the Burnt Earth seal, known as working facts to the people standing next to them and to almost nobody else.',
         'holder only: the Kindler and the Mirror, both concealed deliberately and for opposite reasons - one to surprise a creditor, one to preserve a plan.',
         'unknown to the holder: Meng Da, under an institution that treats the question as folklore.',
         'forgotten: the category the world keeps producing and nobody can enumerate, since a seal whose record is gone is indistinguishable from a wall.'

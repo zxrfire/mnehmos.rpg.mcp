@@ -25,7 +25,7 @@
  * manual to give you, and the manual carries the ceiling. `reliableOrdinal` is
  * the right number to key it off - what a house can RELIABLY turn out is what
  * its ordinary manual teaches. `peakOrdinal` is the other question entirely:
- * somebody who found something else. Sweptground Temple at reliable 13 and
+ * somebody who found something else. Burnt Earth Temple at reliable 13 and
  * peak 46 - a local temple that once produced a True Immortal - is the setting
  * telling that story already, and the gap between those two numbers is the
  * whole game.

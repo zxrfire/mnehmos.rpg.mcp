@@ -438,16 +438,41 @@ describe('what you have heard of falls out of who your family corresponded with'
         // far - the apex will not lend its name to a placement, so what the
         // parent has is a word to spend rather than standing to trade on. The
         // claim being made here is about reach and it is unchanged.
-        const byReach = [...ORIGIN_TIERS].sort(
-            (a, b) => a.placement.reach - b.placement.reach
-        );
+        // POOLED, AND GROUPED BY REACH, and both halves are the fix rather
+        // than a widened bar. This drew ONE birth per tier and compared the
+        // counts in order, which is two samples and not a measurement: a
+        // birth's knowledge carries every place in the province it was drawn
+        // into, the provinces hold different numbers of places, and three
+        // tiers sit at reach 29 - so the comparison between those three was
+        // reading which province the draw landed in. Adding one village row to
+        // the Jade Gorge turned it red with nothing about reach having moved.
+        //
+        // Measured over 200 seeds a tier: reach 0 -> 5.5 names, 12 -> 9.9,
+        // 20 -> 13.2, 29 -> 24.5, 38 -> 39.2. The steps are large and the
+        // ordering across them is the claim; inside a reach it is a draw.
+        const POOL = 200;
+        const meanNames = (key: OriginTierKey): number => {
+            let total = 0;
+            for (let i = 0; i < POOL; i++) {
+                total += drawBirth(`ladder-of-names-${i}`, { world, origin: key }).knowledge.length;
+            }
+            return total / POOL;
+        };
+
+        const byReach = new Map<number, number[]>();
+        for (const tier of ORIGIN_TIERS) {
+            const at = byReach.get(tier.placement.reach) ?? [];
+            at.push(meanNames(tier.key));
+            byReach.set(tier.placement.reach, at);
+        }
+
         let previous = -1;
-        for (const tier of byReach) {
-            const count = drawBirth('ladder-of-names', { world, origin: tier.key })
-                .knowledge.length;
-            expect(count, `${tier.key} knows fewer names than a shorter reach`)
+        for (const reach of [...byReach.keys()].sort((a, b) => a - b)) {
+            const means = byReach.get(reach)!;
+            const mean = means.reduce((sum, one) => sum + one, 0) / means.length;
+            expect(mean, `reach ${reach} knows fewer names than a shorter reach`)
                 .toBeGreaterThanOrEqual(previous);
-            previous = count;
+            previous = mean;
         }
     });
 
@@ -516,7 +541,7 @@ describe('the draw itself', () => {
 
     it('reports a place density the ambient roll can use', () => {
         expect(groundDensityFor('Nine Peaks', world)).toBe(densityForBand('dense'));
-        expect(groundDensityFor('Sweptground', world)).toBe(densityForBand('thin'));
+        expect(groundDensityFor('Burnt Earth', world)).toBe(densityForBand('thin'));
         expect(groundDensityFor('nowhere at all', world)).toBeNull();
     });
 

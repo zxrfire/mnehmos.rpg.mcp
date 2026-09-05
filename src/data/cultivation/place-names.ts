@@ -1,60 +1,33 @@
 /**
- * Place names - the one source of truth for what every place in the world is
- * called, so that nothing else ever retypes one.
+ * Place names - one source of truth for what every place is called.
  *
- * WHY THIS FILE EXISTS
- * --------------------
- * `RegionPlaceSchema` in `regions.ts` is `{name, kind, ambient, note}` and has
- * no id. A place is therefore identified by its display string, and the string
- * is the key: `regionIdOfPlace`, `declaredAmbientAt` and `prefectureCarrying`
- * all match a place by name, and every one of them fails OPEN - an unmatched
- * name returns `undefined` and the caller falls back to the home province or
- * to a default band. So a name typed one way in the catalog and another way in
- * a route table does not throw. It quietly answers with the wrong province.
+ * A place has no id. `RegionPlaceSchema` is `{name, kind, ambient, note}`, so
+ * the display string IS the key, and `regionIdOfPlace`, `declaredAmbientAt` and
+ * `prefectureCarrying` all match on it. Every one of them fails OPEN: an
+ * unmatched name returns `undefined` and the caller falls back to the home
+ * province or a default band. So a name spelt two ways does not throw. It
+ * quietly answers with the wrong province, which is why the 53 loose string
+ * literals this file replaced were a defect rather than a tidiness problem.
  *
- * Before this file there were 53 place-name string literals in `src/` outside
- * the catalog - member home towns, courier routes, trade legs, a rumour's
- * subject, the starting location, and a fallback in `facts.ts` that retyped
- * `STARTING_LOCATION` rather than importing it. Every one of them was a second
- * copy of a name whose first copy is in `regions.ts`, and a rename that missed
- * any of them would have produced exactly the silent wrong answer above.
+ * > One source of truth for a name, exported as a const, imported everywhere.
+ * > Never retyped as a string literal.
  *
- * THE RULE
- * --------
- * > One source of truth for a name, exported as a public const, imported
- * > everywhere else. Never retyped as a string literal.
+ * `regions.ts` builds its `places[]` from these consts, so a rename is one line
+ * here - for the CODE. Authored prose that mentions a place is a sentence
+ * rather than a reference: roughly 700 lines across ~150 files, which a rename
+ * still has to sweep by hand. That cost is irreducible and interpolating consts
+ * into prose to shrink it makes the prose worse; `NARRATOR-CORE.md` is against
+ * it. A prefecture's `seat` stays a bare `string` for the same reason - six of
+ * the fourteen are prose rather than places.
  *
- * `regions.ts` builds its `places[]` out of these consts, so the catalog and
- * this file cannot disagree about what a place is called. Renaming a place is
- * a change to ONE line here.
+ * Add the const here first, then use it in `regions.ts`.
+ * `tests/data/place-name-drift.test.ts` fails in both directions: a place with
+ * no const is the defect this file exists to stop, and a const with no place is
+ * a name nobody can reach. It does NOT scan `tests/`, so the ~470 place
+ * literals asserted there are a rename's silent breakage surface and have to be
+ * swept by hand.
  *
- * WHAT THIS DOES NOT FIX, AND SHOULD NOT BE READ AS FIXING
- * --------------------------------------------------------
- * Authored PROSE that mentions a place - a `note`, a rumour's text, a
- * design comment, a paragraph of `docs/world/` - is a sentence, not a
- * reference. It cannot import anything, and a rename still has to sweep it.
- * That is roughly 700 lines across ~150 files and it is the irreducible cost
- * of renaming a place. Do not try to interpolate consts into prose to shrink
- * it: a sentence assembled from fragments reads worse than a sentence, and
- * `NARRATOR-CORE.md` is against it.
- *
- * WHAT IS DELIBERATELY STILL A STRING
- * -----------------------------------
- * A prefecture's `seat` is a place name in eight cases and free prose in six
- * ("the furnace on the volcanic flank", "no seat: nobody lives inside it"), so
- * the field stays `string` and the eight that are places use a const.
- *
- * The guard is `tests/data/a-place-name-has-one-source.test.ts`, which asserts
- * this table and the catalog agree in both directions and that no place-name
- * literal has reappeared anywhere in `src/`.
- *
- * ADDING A PLACE
- * --------------
- * Add the const here first, then use it in `regions.ts`. The guard fails in
- * both directions on purpose: a place with no const is the defect this file
- * exists to stop, and a const with no place is a name nobody can reach, which
- * is how a table like this goes stale. If the guard tells you the catalog has
- * a place this file does not name, the fix is one line here.
+ * WHAT THE NAMES SHOULD SOUND LIKE is `docs/world/writing/place-names.md`.
  */
 
 /**
@@ -63,32 +36,36 @@
  * sees; a rename changes the value alone.
  */
 export const PLACE = {
-    // ─── The Low Fall ────────────────────────────────────────────────────
-    LOW_FALL: 'Low Fall',
-    SCARWATER: 'Scarwater',
-    SWEPTGROUND: 'Sweptground',
+    // ─── The Jade Gorge ────────────────────────────────────────────────────
+    GREEN_FALL: 'Green Water City',
+    STONE_FORD: 'Clear River Ford',
+    // The home province had no `village` row at all, so a birth here could
+    // only open in a city or a sect town - which is the one origin the setting
+    // most wants available and the only province that could not supply it.
+    CLEAR_CREEK_VILLAGE: 'Clear Creek Village',
+    BURNT_EARTH: 'Burnt Earth',
     NINE_PEAKS: 'Nine Peaks',
 
-    // ─── The Quiet Marches ───────────────────────────────────────────────
-    KETTLE: 'Kettle',
-    HOLLOWMARKET: 'Hollowmarket',
-    SIXMILE: 'Sixmile',
-    GAPWATER_FACE: 'The Gapwater face',
-    DEAD_VERGE: 'The Dead Verge',
+    // ─── The Silent Cliffs ───────────────────────────────────────────────
+    IRON_GATE: 'Iron Gate',
+    GRAVE_MARKET: 'Willow Village',
+    SIX_LI: 'Six Li',
+    JADE_FACE: 'The Jade Face',
+    DEAD_STONE: 'Nine Hundred Paces',
 
-    // ─── The Wide Field ──────────────────────────────────────────────────
-    NINEWATCH: 'Ninewatch',
-    THIRDWALL: 'Thirdwall',
-    WHEATGATE: 'Wheatgate',
-    MUDSUMMER: 'Mudsummer',
-    MILLRUN: 'Millrun',
+    // ─── The Yellow Plain ──────────────────────────────────────────────────
+    CLOUD_GATE: 'Cloud Gate',
+    THREE_WALLS: 'Three Walls',
+    AUTUMN_GATE: 'Autumn Gate',
+    GRAIN_RAIN: 'Grain Rain',
+    OLD_RIVER: 'Old River Village',
 
     // ─── The White Stair ─────────────────────────────────────────────────
-    RIMEFALL: 'Rimefall',
-    THE_GIVING: 'The Giving',
-    UNDERHANG: 'Underhang',
-    UNDERSNOW: 'Undersnow',
-    FOURHANDS: 'Fourhands',
+    COLD_PEAK: 'Cold Peak',
+    THE_LIVING_ICE: 'The Living Ice',
+    STONE_SHADOW: 'Stone Shadow',
+    DEEP_SNOW: 'Deep Snow Village',
+    FOUR_GRAVES: 'Four Graves',
     // 空谷幽蘭 - the orchid in the empty valley, which is the classical image
     // for worth that does not advertise itself and does not need to be seen to
     // be worth something. It is the house rather than a description of the
@@ -107,28 +84,28 @@ export const PLACE = {
     // before houses, so a settlement called Orchid Court silently swallowed
     // the house of that name: a body at ordinal 34 that a carter could not
     // say, which `hearsay.ts` calls common currency and asserts. The world
-    // already had the pattern - Rimefall is the town and the Frostmirror
+    // already had the pattern - Cold Peak is the town and the Frostmirror
     // Court is the house on it - and this now follows it.
     ORCHID_TERRACE: 'Orchid Terrace',
 
-    // ─── The Drowned Reach ───────────────────────────────────────────────
-    WATERING: 'Watering',
-    BELLHEAD: 'Bellhead',
-    THE_SOUNDING: 'The Sounding',
-    DRYRUN: 'Dryrun',
-    FARSIDE: 'Farside',
-    HALFWATER: 'Halfwater',
-    THE_ROADS: 'The Roads',
-    THE_LONG_MIDDLE: 'The Long Middle',
-    SALT_REACH: 'Salt Reach',
+    // ─── The Drowned Sea ───────────────────────────────────────────────
+    SWEETSPRING_ISLE: 'Sweet Spring Island',
+    BRONZE_BELL_CAPE: 'Bronze Bell Cliff',
+    DRAGONVEIN_ROCK: 'Dragonvein Rock',
+    THE_BITTER_CROSSING: 'The Bitter Crossing',
+    THE_FAR_SHORE: 'The Far Shore',
+    SILVER_ISLE: 'Silver Island',
+    THE_WAITING_SAILS: 'Waiting Sails',
+    THE_BOUNDLESS: 'Boundless Sea',
+    THE_SALT_FIELDS: 'Salt Fields',
 
-    // ─── The Blown Ground (no province holds it) ─────────────────────────
-    THE_MEET: 'The Meet',
-    THE_SINK: 'The Sink',
-    LONG_OPEN: 'Long Open',
-    THE_FORTNIGHT: 'The Fortnight',
+    // ─── The Burial Sands (no province holds it) ─────────────────────────
+    WIND_MARKET: 'Wind Market',
+    SAND_WELL: 'Sand Well',
+    LONG_VEIN: 'Long Vein',
+    THE_SHORT_ROAD: 'The Short Road',
     TUOS_WALL: 'Tuo\'s Wall',
-    MIDWAY: 'Midway'
+    HALFWAY_GATE: 'Halfway Gate'
 } as const;
 
 /** The name of any place the map has a row for. */
@@ -141,18 +118,18 @@ export const PLACE_NAMES: readonly PlaceName[] = Object.freeze(
 
 /**
  * The provinces, and the wedge between them. Kept apart from {@link PLACE}
- * because `Low Fall` the town and `The Low Fall` the province are two
+ * because `Green Water City` the town and `The Jade Gorge` the province are two
  * different rows that a reader will otherwise conflate - which is a live
  * confusion in the played game, not a hypothetical one: see `seatSharesTheName`
  * in `src/web/lore.ts`, which exists to stop a narrator being handed both.
  */
 export const REGION_NAME = {
-    LOW_FALL: 'The Low Fall',
-    QUIET_MARCHES: 'The Quiet Marches',
-    WIDE_FIELD: 'The Wide Field',
+    JADE_GORGE: 'The Jade Gorge',
+    SILENT_CLIFFS: 'The Silent Cliffs',
+    YELLOW_PLAIN: 'The Yellow Plain',
     WHITE_STAIR: 'The White Stair',
-    DROWNED_REACH: 'The Drowned Reach',
-    BLOWN_GROUND: 'The Blown Ground'
+    DROWNED_SEA: 'The Drowned Sea',
+    BURIAL_SANDS: 'The Burial Sands'
 } as const;
 
 /** The name of any province, or of the ungoverned interior. */

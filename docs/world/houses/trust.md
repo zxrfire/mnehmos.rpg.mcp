@@ -124,7 +124,7 @@ whoever granted it*. The neighbours tolerate demonic houses because they have se
 days of the other thing and would rather have a correspondent.
 
 **But that argument is about a vacuum and not about unheld ground generally**, and the two
-rows in the middle are the difference. Scarwater is on the register with nobody's name
+rows in the middle are the difference. Clear River Ford is on the register with nobody's name
 against it, inside a province with a survey, a bench, a Ledger and an assay house, and run
 by a fordhall that holds no grant and takes a toll it has no authority to take: a complaint
 there has somewhere to go and nothing obliges anybody to hear it. Eleven days of sand with
@@ -173,7 +173,7 @@ come out somewhere a mirror would not have put them:
   a member who was *outwitted*, and being outwitted is not what a threat is. It holds ground,
   it keeps an address, and it is dangerous to cross - so for somebody weighing violence it is
   much like any other house, and nothing like an empty province.
-- **Scarwater is worth less to a threatener than it costs a stranger.** The people who keep an
+- **Clear River Ford is worth less to a threatener than it costs a stranger.** The people who keep an
   unheld ford working were never appointed to, but open violence on the road is precisely what
   stops it working. They have more reason to move against a threat than to speak for somebody
   they have never met.
@@ -754,7 +754,7 @@ mistakes it for a description of the running world will build on sand.
 | **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and **nothing in `src/engine/` reads them** |
 | **The ground as a third axis** | **built**, `src/engine/social-leverage/ground-trust.ts`, off `src/engine/world/ground-holder.ts`. **Reached by the world and not yet by the player**: the NPC simulation fills `AttemptInput.where` at both its calls and `GameService.pressSomebody` does not |
 | **Who holds the ground under a town** | **wired**, through `PREFECTURES` in `data/cultivation/regions.ts`, which nothing in `src/` read before it |
-| **The Blown Ground** | **prose only.** It is not in `REGIONS`, so the seeder mints no location for it, no settlement in it exists, and `ADMIN set_location location=The Blown Ground` answers *"is not a place"* |
+| **The Burial Sands** | **prose only.** It is not in `REGIONS`, so the seeder mints no location for it, no settlement in it exists, and `ADMIN set_location location=The Burial Sands` answers *"is not a place"* |
 
 **The encouraging half:** both axes already existed, so the two checks now built are a *reading*
 of state the world keeps rather than new state it had to grow. **The discouraging half:** the
@@ -809,6 +809,6 @@ rung for it.
 The recognition check does not pretend to model it, because storing "would know it again" is new
 state. What it does is refuse to collapse that state into ignorance:
 `perceivedButCouldNotPlaceIt` says the rung was enough and the reference was not. The world
-already contains the shape and has no machinery for it - a Blown Ground finder sells a direction
+already contains the shape and has no machinery for it - a Burial Sands finder sells a direction
 and a distance and does not lead the buyer there. **Whether that wants a rung of its own or a
 second axis belongs to whoever owns `discovery.ts`.**

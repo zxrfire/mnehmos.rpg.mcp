@@ -105,7 +105,7 @@ describe('the wrongs a world opens holding', () => {
      *
      * A guard for something this pass was measured doing. The first version drew
      * the doer from everybody able, and produced *"The Storm Tyrant killed Lu
-     * Zhenshi at Undersnow"* and *"First Seat killed Shen Rongfeng"* - the seeder
+     * Zhenshi at Deep Snow Village"* and *"First Seat killed Shen Rongfeng"* - the seeder
      * writing an unsettled murder onto the record of the most heavily authored
      * people in the world, asserted by nothing in the catalog. A seeder does not
      * argue with the writing.

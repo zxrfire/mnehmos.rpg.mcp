@@ -1,40 +1,5 @@
 /**
  * Technique (art) library.
- *
- * Content, not engine. Every entry here is inert data that the cultivation
- * engine resolves against; nothing in this file decides anything.
- *
- * TIERING CONTRACT
- * ----------------
- * The five technique grades map onto disjoint, ordered bands of the 47-rank
- * ladder (see `GRADE_ORDINAL_BANDS`). A manual is never learnable before its
- * band opens, so at every point on the ladder there is a visible next tier the
- * cultivator cannot yet touch. Qi costs are banded the same way, so grade is a
- * single number the player can reason about: higher grade means later, costlier
- * and stronger, with no exceptions anywhere in this catalog.
- *
- * ELEMENTS
- * --------
- * `element` must be one of the seven in `ElementSchema`, or null. Null means
- * elementless: any spirit root may cultivate the art without wuxing conflict,
- * which is why elementless arts are usually a little weaker per qi spent than
- * an elemental art of the same grade used by a matching root.
- *
- * The two mutated elements (lightning, ice) are deliberately starved. A mutated
- * root cultivates faster and hits harder than anyone, and then discovers that
- * the world contains almost no manuals it can use - see
- * `techniqueAvailability` on the mutated roots in `spirit-roots.ts`. This file
- * is where that scarcity is actually made true: every wuxing element has
- * strictly more arts than either mutated element does.
- *
- * DAMAGE
- * ------
- * `damage` is a dice expression the existing dice engine can parse
- * (`src/math/dice.ts`): `NdX`, with an optional flat modifier and an optional
- * trailing `!` for exploding dice. Compound expressions such as "2d6+1d4" are
- * NOT parseable and must never appear here. Healing arts express their
- * magnitude in the same field - the engine reads the category to know whether
- * the rolled number is taken off a target or put back into one.
  */
 
 import type {
@@ -57,42 +22,14 @@ import {
 } from '../../engine/cultivation/realms.js';
 import { ordinaryCapFor } from '../../engine/cultivation/cultivation.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// PROVENANCE - the Late Age rule
-// The world is poorer than it was. Veins that ran rich for a thousand years
-// have been drawn down, old wars killed whole regions outright, and what the
-// fallen civilisations did not consume they monopolised. Nobody has ascended
-// in living memory, and the manuals describing the upper realms were written
-// by people who are not available to explain them.
-//
-// So a technique is not simply "available at ordinal N". It has a source, and
-// above a certain grade that source is never a teacher:
-//
-//   taught → a living sect holds a working transmission of it.
-//   ruin   → recovered from a sealed site. No living teacher exists; the manual
-//            is the teacher, and it was not written for a reader like you.
-//   grave  → taken off a body. Cultivators die carrying everything they own,
-//            most of them die somewhere remote, and what they were part-way
-//            through is still on them. Disreputable, extremely profitable, and
-//            it attracts attention, because sects keep records of where their
-//            people fell.
-//
-// This is what makes digging a viable path for a cultivator born without
-// talent, or born somewhere poor. You will not out-cultivate a single-root
-// prodigy on the ambient qi of a late age. You might out-dig them.
-// ─────────────────────────────────────────────────────────────────────────
+// PROVENANCE - the Late Age rule The world is poorer than it was. Veins that ran
+// rich for a thousand years have been drawn down, old wars killed whole regions
+// outright, and what the fallen civilisations did not consume they monopolised.
+// Nobody has ascended in living memory, and the manuals describing the upper realms
+// were written by people who are not available to explain them.
 
 /**
  * Where a copy came from.
- *
- * `derived` is the fourth and it is not like the other three. The first three
- * are all somebody else's copy reaching a reader - a shelf, a sealed site, a
- * body - and the acquisition question is where it is and who has it. A derived
- * art had no prior copy: a cultivator at sufficient dao standing wrote the
- * continuation out of their own understanding, and the engine produced the row.
- *
- * It is the one route money cannot open, which is why it gets a provenance of
- * its own rather than borrowing `ruin`. A ruin can be excavated by hirelings.
  */
 export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
 
@@ -103,38 +40,7 @@ export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
  */
 export type TechniqueEra = 'modern' | 'ancient';
 
-// ─────────────────────────────────────────────────────────────────────────
 // SHOWN OR READ - the rule underneath provenance
-//
-// This applies to every art in the catalog, at every grade, from the first
-// mortal breathing method to whatever is above the Lid. There are two ways an
-// art gets into somebody, and they are not two speeds of one thing:
-//
-//   shown - a master performs it in front of you. They answer the question you
-//           did not know to ask, they correct the hand before the error sets,
-//           and they can repeat the half-second the whole art turns on until
-//           you have it. Most of what a teacher transmits was never in any
-//           manual, because most of it is not language.
-//
-//   read  - the manual is the teacher. It cannot answer, cannot correct, and
-//           cannot repeat anything; the reader rebuilds the missing half-second
-//           themselves, out of a description written by somebody who was not
-//           imagining them. It works. It takes far longer, it fails in ways
-//           that leave no explanation, and the failures are usually discovered
-//           at the point of use.
-//
-// `provenance` decides which one a given copy of an art offers: `taught` is a
-// shown art, `ruin` and `grave` are read ones. That is the real reason the
-// upper grades are harder to acquire than their ordinal band suggests, and the
-// reason a poor cultivator with a dug-up manual stays behind a sect disciple
-// holding the same art even after both of them have it.
-//
-// It is also the rule the ten-to-fifteen breath exception is a limiting case
-// of. Seeing an immortal act is the shown channel operating at a rung that has
-// no teachers, and it is worth what it is worth for the ordinary reason - not
-// because immortals are special, but because being shown always beats reading,
-// and that is the only demonstration anyone up there will ever give.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Which of the two channels a copy of an art offers its holder. */
 export type TransmissionMode = 'shown' | 'read';
@@ -150,43 +56,15 @@ export function transmissionModeOf(provenance: TechniqueProvenance): Transmissio
     return provenance === 'taught' || provenance === 'derived' ? 'shown' : 'read';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // OPACITY - and why the two channels do not differ by a fixed amount
-//
-// Arts are not equally hard to understand, and the difference is not their
-// grade. A blunt art with one idea in it can be taken off a page by a competent
-// reader with very little lost. An art whose whole content is timing, or
-// intent, or a relationship between two things the writer could only gesture
-// at, loses most of itself on the way onto the page and has to be rebuilt by
-// the reader out of almost nothing.
-//
-// So opacity is what decides how much the read channel actually costs. A plain
-// art is nearly as good read as shown. An opaque one is barely transmissible in
-// writing at all, which is why some famous manuals have been held for centuries
-// by houses full of people who can recite them and cannot perform them.
-//
-// This runs across the grades rather than with them. Most upper-grade arts are
-// opaque, which is the baseline below - but the interesting entries are the
-// ones that are not: a mortal-grade art nobody can read their way into, and a
-// chaos-grade art that turns out to be shockingly plain once somebody finally
-// sees the trick done. Those are set per entry.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How much of an art fails to survive being written down, 0..1.
- *
- * 0 is an art that loses nothing on the page. 1 is an art that is functionally
- * untransmissible in writing - the manual is real, complete, honest, and will
- * not get a reader there.
  */
 export type Opacity = number;
 
 /**
  * What an art of this grade is usually like, absent a reason to say otherwise.
- *
- * Higher grades are generally more opaque because more of what they contain is
- * the part that is not language. A baseline, not a rule: an entry that says
- * otherwise overrides it, and those entries are the ones worth writing.
  */
 export const GRADE_BASELINE_OPACITY: Record<TechniqueGrade, Opacity> = {
     mortal: 0.15,
@@ -202,12 +80,8 @@ export function opacityOf(entry: { grade: TechniqueGrade; opacity?: Opacity }): 
 }
 
 /**
- * How much longer this copy of this art takes to learn than the same art shown
- * by a master who has it.
- *
- * A shown art is the reference: 1. A read art pays its opacity - a perfectly
- * plain art read is barely slower than shown, and a fully opaque one takes
- * three times as long and may not land at all.
+ * How much longer this copy of this art takes to learn than the same art shown by a
+ * master who has it.
  */
 export function learningCostMultiplier(
     entry: { grade: TechniqueGrade; opacity?: Opacity },
@@ -228,18 +102,10 @@ export interface TechniqueEntry extends Technique {
     provenance: TechniqueProvenance;
     /**
      * Whether a copy of this art is anywhere in the world at all.
-     *
-     * True for all but a handful. `provenance` answers how a copy would reach
-     * somebody if one reached them; this answers the prior question, which the
-     * catalog used to leave to silence. See `NO_SURVIVING_COPY_TECHNIQUE_IDS`.
      */
     survivingCopy: boolean;
     /**
      * Why a sufficient dao could NOT reconstruct this one, or null.
-     *
-     * The counterpart to `derivable`, held to the same discipline as
-     * `NO_SURVIVING_COPY_NOTES`: an absence with a reason attached is a
-     * design statement, and an absence without one is missing content.
      */
     notDerivableReason: string | null;
     /** One factual line on where a copy is actually obtained. */
@@ -252,39 +118,8 @@ export interface TechniqueEntry extends Technique {
      */
     fragmentOf: string | null;
     /**
-     * Which age the art was written in, and it is a SECOND AND INDEPENDENT
-     * AXIS from `class`.
-     *
-     * `class` splits an art by what it is for - a manual you practise to rank
-     * up against a dao art you use to fight. `era` splits it by what kind of
-     * thing it does at all, and the two cut across each other, so all four
-     * quadrants are real and occupied:
-     *
-     *   modern  + cultivation   the elemental ladder every house teaches
-     *   modern  + dao           fire, ice, lightning, and at the top of the
-     *                           ladder something a province still names
-     *   ancient + cultivation   a road with a different bargain: lifespan, or
-     *                           blood, for something the elemental line has no
-     *                           way of asking for
-     *   ancient + dao           spears somebody else can carry; a piece of
-     *                           ground taken out of the world; a second body
-     *
-     * MODERN IS ELEMENTAL AND SCALES. ANCIENT IS CATEGORICAL. Neither is the
-     * stronger; the comparison is not coherent. A cultivator at the top of the
-     * elemental line who becomes lightning is one of the most dangerous things
-     * alive, and a cultivator who can put a spear into twenty other people's
-     * hands has changed what their house can do, and there is no exchange rate
-     * between those. What is forbidden is a strict upgrade - an ancient art
-     * better in every situation - because then the abandonment makes no sense
-     * and the whole tier collapses into "old is stronger".
-     *
-     * Resolved in `art()` from `ANCIENT_TECHNIQUE_IDS`, in the same block as
-     * provenance and surviving copies, so a new entry cannot forget it. The
-     * membership is authored rather than inferred because no property of a row
-     * distinguishes a categorical effect from an elementless modern one - but
-     * the catalog test holds the set to the one thing that IS checkable: an
-     * ancient art is never elemental, because carrying an element is what the
-     * other era does.
+     * Which age the art was written in, and it is a SECOND AND INDEPENDENT AXIS
+     * from `class`.
      */
     era: TechniqueEra;
 }
@@ -334,13 +169,12 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'immovable-heaven-pillar',
     'one-thought-ten-thousand-li',
     'rebirth-in-the-lotus-furnace',
-    // ── the ancient roads ────────────────────────────────────────────────
-    // Written for a richer age, intact, and not taught anywhere, because the
-    // era that could feed them is over and the era that followed built the
-    // elemental line instead. Ruin provenance is the whole of what places
-    // them: no living teacher, copies in sealed sites and in a small number of
-    // very old archives, and nothing about them that a sect could transmit
-    // even if it wanted to. See `docs/world/history/ancient.md` and `lost-ages.ts`.
+    // the ancient roads Written for a richer age, intact, and not taught anywhere,
+    // because the era that could feed them is over and the era that followed built
+    // the elemental line instead. Ruin provenance is the whole of what places them:
+    // no living teacher, copies in sealed sites and in a small number of very old
+    // archives, and nothing about them that a sect could transmit even if it wanted
+    // to. See `docs/world/history/ancient.md` and `lost-ages.ts`.
     'hundred-pace-step',
     'sealed-field-of-the-shut-hour',
     'thousand-spear-summoning',
@@ -385,43 +219,10 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 ]);
 
 /** Arts that only ever surface in a grave deposit. */
-// ─────────────────────────────────────────────────────────────────────────
 // THE CORRIDOR ABOVE THE MIDDLE
-//
-// Measured in `docs/world/writing/escapes.md`: the ladder above ordinal 17 is not a
-// ladder, it is a single-file corridor. At most heights the world offers
-// exactly ONE cultivation manual that continues, and usually wants a specific
-// element for it. Three of the choke points are single-source; one is a house
-// that will not open its library to anybody without a mutated ice root.
-//
-// That narrowness is the design and it is not a defect. What WOULD be a
-// defect is a choke point with one route, because a route is a thing that can
-// fail to be found, and a corridor whose only door is somebody else's estate
-// is a corridor that reads as missing content rather than as scarcity.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Manuals that exist in parts, and the OBJECT rows those parts are.
- *
- * A volume is a physical copy of a piece of a book: it has a holder, a
- * provenance and a power one rung below the whole, by `shardPower`. So it
- * lives in the object catalog rather than here, and this is the join.
- *
- * There is deliberately no second cap field. A partial set's ceiling is
- * DERIVED from how many volumes are held, by the engine, using the same
- * arithmetic that turns a broken blade into a worse blade.
- *
- * WHY THIS ONE. `heaven-conversing-primordial-canon` is the only continuation
- * anywhere between ordinal 37 and 40, and its only route was a parting gift -
- * a dead man's estate in a shed with a bad roof. One route, at the narrowest
- * point on the ladder. Rather than delete that (it is the best-written route
- * in the catalog: the largest body of chaos-grade transmission in two
- * provinces, safe because the people holding it stand at Core Formation and
- * cannot read a character of it), the work is scattered. The shed holds the
- * complete set. Three separate volumes are also loose in three houses, none
- * of which has all three and two of which do not know what they are holding.
- *
- * So the corridor now has two doors: take the estate, or find three people.
  */
 export const SCATTERED_MANUAL_VOLUMES: Readonly<Record<string, readonly string[]>> = {
     'heaven-conversing-primordial-canon': [
@@ -433,16 +234,6 @@ export const SCATTERED_MANUAL_VOLUMES: Readonly<Record<string, readonly string[]
 
 /**
  * Manuals a sufficient dao could write the continuation of.
- *
- * Opt-in, and deliberately short. Derivation is the prodigy's road, not the
- * way missing content gets papered over - the same discipline
- * `NO_SURVIVING_COPY_TECHNIQUE_IDS` is held to. If this set ever grows to
- * cover the choke points, the corridor has been quietly abolished rather than
- * opened, and the routes suite says so.
- *
- * What makes one derivable is that its road is walked rather than transmitted:
- * an art whose method a person could arrive at from their own comprehension,
- * given enough of it. What makes one not is written on the entry.
  */
 export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // Elementless accumulation. Nothing in it is anybody's secret; it is the
@@ -459,25 +250,7 @@ export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // not taught it and did not need to be.
     'meridian-devouring-art',
 
-    // ── THE RUNGS WHERE DERIVATION COSTS SOMETHING ───────────────────────
-    //
-    // The three above all sit under ordinal twenty-nine, where the precedent
-    // above the target is thick and the price is the floor. So the difficulty
-    // curve existed, was correct, and had nothing to bite on: every derivation
-    // anybody could actually attempt cost the same twelve years, and nobody was
-    // ever going to feel it.
-    //
-    // These two are on the curve, and they are two rather than three because
-    // the ratio guard in the escapes suite is right: a derivable set that grows
-    // to cover the choke points has abolished the corridor rather than opened
-    // it. Two points, far apart - a fifth of a life, then most of one - is
-    // enough to demonstrate a curve without becoming a second road.
-    //
-    // AND THE PRICE IS ALWAYS THE SAME KIND OF THING. Years and possibility,
-    // never stones, never rank, never standing. That is what keeps derivation
-    // the one door money cannot open, and it is also why the door is worth
-    // having: above ordinal thirty-seven nothing is taught at all, so the only
-    // other route is a physical object in a place somebody sealed.
+    // THE RUNGS WHERE DERIVATION COSTS SOMETHING
 
     // Taught, and not to you. The Rime Heart is transmitted by houses with
     // admission standards, so a cultivator those houses will not take has
@@ -486,23 +259,19 @@ export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // a thing nobody can be prevented from doing.
     'rime-heart-stillness-canon',
 
-    // The clearest case in the catalog, and the one that composes with
-    // everything else the entry says about itself. Spending your own allotted
-    // years as ammunition is a thing a person arrives at alone, at the top of
-    // the ladder, with nothing left to spend but time - and there is no victim
-    // in it anywhere, which is why it reads as abandoned rather than condemned
-    // and why it keeps being rewritten by people who would have been appalled
-    // to be handed it. Two books stand above the rung it is written for. It
-    // costs most of what a mortal life would have been.
+    // The clearest case in the catalog, and the one that composes with everything
+    // else the entry says about itself. Spending your own allotted years as
+    // ammunition is a thing a person arrives at alone, at the top of the ladder,
+    // with nothing left to spend but time - and there is no victim in it anywhere,
+    // which is why it reads as abandoned rather than condemned and why it keeps
+    // being rewritten by people who would have been appalled to be handed it. Two
+    // books stand above the rung it is written for. It costs most of what a mortal
+    // life would have been.
     'lifespan-devouring-heaven-theft'
 ]);
 
 /**
  * Why a particular manual cannot be reconstructed, however deep the reader.
- *
- * A stated absence, in the idiom `NO_SURVIVING_COPY_NOTES` established. These
- * are the interesting refusals - the ones where "you cannot derive this" is a
- * fact about the book rather than about the reader.
  */
 export const NOT_DERIVABLE_NOTES: Readonly<Record<string, string>> = {
     'canon-of-the-unwritten-span':
@@ -525,19 +294,6 @@ export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 
 /**
  * Arts the record attests and no copy of which is anywhere in the world.
- *
- * The three provenances above all assume a copy exists somewhere and argue
- * about how it would reach a reader. This set is the case they cannot state:
- * an art the world can name, date and describe the effect of, and cannot
- * produce, because every party who held the working died holding it and none
- * of them wrote it out. Nothing anywhere hands one of these over, and the
- * catalog says so here rather than by leaving the entry unreferenced and
- * hoping somebody notices - which is exactly how it went wrong before.
- *
- * Keep it small and keep the reason specific. An art belongs here only where
- * the entry's own description already says the transmission is gone; an art
- * that is merely hard to find belongs in a sealed site, and the audit will
- * make that argument for it if nobody else does.
  */
 export const NO_SURVIVING_COPY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'word-of-continuance'
@@ -555,16 +311,6 @@ export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
 
 /**
  * The arts written in the categorical idiom.
- *
- * Every member does something with no elemental reading at all - it moves a
- * resource between bodies, it makes a person act, it puts objects into the world
- * that somebody else can pick up, it takes ground out of the world, it makes a
- * second body, it couples two cultivators, it states a thing and the thing is
- * so - and every member costs the practitioner something they will miss. See
- * `ANCIENT_ARTS` in `lost-ages.ts` for what each of the low ones costs.
- *
- * A MEMBERSHIP SET RATHER THAN A RULE, and that is a deliberate and twice-made
- * decision rather than laziness. See `eraOf`.
  */
 export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // The categorical roads, at rungs the modern line also reaches. Small on
@@ -577,13 +323,13 @@ export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     'sixteen-thread-command',
     'hollow-second-body',
     'paired-breath-canon',
-    // Above the Lid. Every one of these was filed `modern` BY OMISSION for as
-    // long as the era axis has existed - the set was written before they were
-    // and never extended upward - so the axis has been reporting the opposite
-    // of the design at the top of the ladder, and the register has been
-    // rendering that. They are categorical on their face: a seam held open
-    // from underneath, a defence made of being permitted to remain, a strike
-    // that arrives before the answer to the first.
+    // Above the Lid. Every one of these was filed `modern` BY OMISSION for as long
+    // as the era axis has existed - the set was written before they were and never
+    // extended upward - so the axis has been reporting the opposite of the design
+    // at the top of the ladder, and the register has been rendering that. They are
+    // categorical on their face: a seam held open from underneath, a defence made
+    // of being permitted to remain, a strike that arrives before the answer to the
+    // first.
     'the-seam-that-did-not-close',
     'what-came-back-instead',
     'the-second-question',
@@ -598,43 +344,12 @@ export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
 
 /**
  * Arts above the Lid that are deliberately MODERN, with the reason each.
- *
- * Empty, and the emptiness is a fact rather than a gap: everything currently
- * written up there is categorical. The record exists because the case must stay
- * expressible - see `eraOf` - and because a marker with no reason attached is
- * the same silence in a different place, which is the discipline
- * `NO_SURVIVING_COPY_NOTES` is held to next door.
- *
- * An entry here says: somebody made an elemental art at that height on purpose.
- * It is ill-suited to where it was written rather than impossible, and its
- * natural destination is downward, where it would be earth-shaking.
  */
 export const MODERN_ABOVE_THE_LID_NOTES: Readonly<Record<string, string>> = {};
 
 /**
- * When an art was written, and it is a statement about IDIOM rather than about
- * a century or a height.
- *
- * HEIGHT IS EVIDENCE OF IDIOM, NEVER A DEFINITION OF IT. This resolver was
- * briefly changed to read `requiredOrdinal >= FALSE_IMMORTAL_ORDINAL`, on the
- * reasoning that a list can be forgotten and a rule cannot. The reasoning is
- * true and the change was still wrong, because of what it makes inexpressible:
- * a modern art written above the Lid. That is a design possibility that has
- * been ruled on directly - somebody up there can still make an elemental art,
- * it is merely ill-suited to a realm that changes slowly, and its natural
- * destination is downward where it would be earth-shaking. A derivation from
- * height closes that door permanently and silently, which is the worst way for
- * a door to close.
- *
- * So a membership set is the right instrument precisely BECAUSE it can express
- * an exception. The correlation is real - almost everything above the Lid is
- * categorical, and all six things currently up there are - and a correlation is
- * not a definition.
- *
- * The forgetting problem is real too, and it belongs in a test rather than in
- * the resolver: the escalation suite asserts that every art above the Lid is
- * either in the set above or carries a note in `MODERN_ABOVE_THE_LID_NOTES`
- * saying why it is not. That catches the omission without forbidding the case.
+ * When an art was written, and it is a statement about IDIOM rather than about a
+ * century or a height.
  */
 export function eraOf(t: Pick<Technique, 'id'>): TechniqueEra {
     return ANCIENT_TECHNIQUE_IDS.has(t.id) ? 'ancient' : 'modern';
@@ -642,10 +357,6 @@ export function eraOf(t: Pick<Technique, 'id'>): TechniqueEra {
 
 /**
  * Every art the prosperous age wrote, derived rather than listed.
- *
- * Kept as an export because it is the era axis a register renders off, and
- * because a name that used to mean "the six categorical arts" quietly meaning
- * something wider is worth stating: this is now the whole tier.
  */
 
 
@@ -669,41 +380,11 @@ export interface Band {
 
 /**
  * The highest ordinal this catalog authors content for.
- *
- * It used to be the last crossing, on the reasoning that above it nothing
- * circulates. That reasoning was half right and the half it got wrong is the
- * interesting one. Nothing circulates up there in the ordinary sense - no sect
- * teaches these, no ruin was stocked with them and nobody is walking around
- * with one on a body - but each of the two rungs above the Lid has exactly one
- * channel, both channels are real, and both now have entries at the far end of
- * them. So the ceiling is the ladder's own top and the scarcity is carried by
- * how few arts sit up there and how narrow the way to them is, rather than by
- * the catalog declining to write them down.
- *
- * What has NOT changed is why this constant is separate from the Lid. A manual
- * is paper: `MANUALS_MAY_EXCEED_THE_LID` is true, an art may sit anywhere on
- * the ladder and still be handed over down here, and the reader is exactly the
- * rung they were afterwards - see `WHAT_AN_ART_BUYS`. The ceiling on what can
- * be HELD is `OBJECT_CEILING_BELOW_THE_LID` and it is a different number about
- * a different kind of thing. This one is a statement about authoring and
- * nothing else.
- *
- * It is also not the bound on anything but arts. Encounters, sites and the
- * rest cover the playable ladder, which stops at `LAST_CROSSING_ORDINAL`,
- * because nobody above the Lid is rolling for what they meet on the road.
- *
- * See `ABOVE_THE_LID_TRANSMISSION` for the two channels.
  */
 export const CONTENT_MAX_ORDINAL = MAX_ORDINAL;
 
 /**
  * The two rungs above the Lid, one per channel.
- *
- * Nothing new is invented here. Both entries are the shown-or-read rule applied
- * to a rung where only one of the two channels exists at all, which is why they
- * are worth stating: 45 is shown and never read, 46 is read and almost never
- * shown, and what those two produce is the rule's clearest demonstration
- * anywhere in the world.
  */
 export const ABOVE_THE_LID_TRANSMISSION = {
     falseImmortal: {
@@ -724,14 +405,6 @@ export const ABOVE_THE_LID_TRANSMISSION = {
         /**
          * The one thing a later reader can walk up to, and why it does not make
          * this rung a read one.
-         *
-         * `mode` above is a statement about the transmission and it stands. What
-         * the faces are is the residue of it: a lecture needs a surface, he does
-         * not take the stone away with him afterwards, and what is left is
-         * legible in the ordinary hand of the province because it was cut for
-         * the people who were in the room. That is a different act from the
-         * durable carving in `CARVING`, which is what path three does when there
-         * is nobody left to hand anything to, and he has not done that one.
          */
         andTheFacesHeLeavesBehind:
             'Where he lectures he cuts, and the stone stays. It is not the durable form and he is not writing for posterity - it is the surface an afternoon was worked out on, left where the afternoon happened, in a hand anybody can read. Which is why a face of his is worth something and worth much less than the afternoon: whoever finds it is reading, at this rung, without the half-second, from somebody who is still alive and could simply have been asked. The opacity figures on his entries are what that costs, and they are the highest in the catalog.',
@@ -761,59 +434,12 @@ export const ABOVE_THE_LID_TRANSMISSION = {
 
 /**
  * Realm-ordinal window in which each grade is learnable. Aligned to realm
- * boundaries: mortal manuals are Qi Condensation, earth manuals carry you
- * through Foundation and Core, heaven through Nascent Soul and Deity
- * Transformation, immortal through Void Refinement and Body Integration, and
- * chaos manuals only exist for Grand Ascension and above.
- *
- * The chaos band runs to the top of the ladder rather than to the last
- * crossing, which is a consequence of `CONTENT_MAX_ORDINAL` and not a sixth
- * grade: the arts above the Lid are ordinary rows with large numbers in them,
- * in the same band as everything else at the top, and nothing anywhere reads
- * their ordinal to decide anything.
- *
- * ── THE ONE EXEMPTION, AND WHY IT IS NARROW ──────────────────────────────
- *
- * A WIDE-SPAN manual is exempt from this band, and nothing else is.
- *
- * The band says a manual is never learnable before its grade opens, which is
- * doing real work for ordinary books: it is what makes the succession a
- * ladder rather than a shop, and it is why there is always a visible next
- * tier a cultivator cannot yet touch. Every one of the seventeen ordinary
- * manuals still obeys it.
- *
- * But it cannot describe a treasure, and the setting requires one. The design
- * ruling is that a beginner holding a manual rated at the top of the ladder is
- * possible - vanishingly rare, and possible - and the band forbids exactly
- * that: it says a chaos-grade book opens at 37, so the only chaos book a
- * beginner could be handed is one they cannot read for thirty-two rungs, which
- * is the same as not being handed it.
- *
- * Raising `requiredOrdinal` to satisfy the band would destroy the thing it is
- * gating. A cap-45 book behind ordinal 37 skips nothing; the whole of what a
- * wide-span manual IS is that it starts where nothing else of its size does.
- * So the band yields, deliberately, and the gate moves to an axis the band
- * cannot express: `domain` and `domainDegree`, which is comprehension, which
- * cannot be bought, inherited or waited for. A well-funded heir at Qi
- * Condensation is exactly as far from a degree-three understanding of time as
- * a beggar is, and that is the point.
- *
- * `isWideSpan` is derived rather than flagged, so nothing can take the
- * exemption without actually reaching past its own realm geometry, and the
- * content suite checks that the exempt set stays tiny.
+ * boundaries: mortal manuals are Qi Condensation, earth manuals carry you through
+ * Foundation and Core, heaven through Nascent Soul and Deity Transformation,
+ * immortal through Void Refinement and Body Integration, and chaos manuals only
+ * exist for Grand Ascension and above.
  */
-// ── AND THE TOP TWO BANDS OVERLAP, BECAUSE THE GRADES ARE PEERS ──────────
-//
-// The chaos floor is immortal's floor, not a rung above it. `GRADE_POWER` says
-// the two grades are equal in force, so grade cannot be what puts one of them
-// further up the ladder than the other: a chaos art opens where an immortal
-// art opens.
-//
-// Every chaos art currently in the catalog sits at 37 or above all the same,
-// and that is a fact about those particular arts rather than about the band -
-// they came down from over the Lid, which is where the arts up there came from.
-// The band is what the grade PERMITS; where the entries sit is what the world
-// happens to hold.
+// AND THE TOP TWO BANDS OVERLAP, BECAUSE THE GRADES ARE PEERS
 export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 0, max: 12 },
     earth: { min: 13, max: 20 },
@@ -823,19 +449,10 @@ export const GRADE_ORDINAL_BANDS: Record<TechniqueGrade, Band> = {
 } as const;
 
 /**
- * Qi cost window per grade. The top two overlap, because the grades are peers:
- * a chaos art may cost what an immortal art costs, and firing one is not
- * dearer for being unpredictable. The qi pool a cultivator has at a given realm
- * is what gates how often any of them is usable.
- *
- * The chaos ceiling was 900, which was the whole band when the band stopped at
- * the last crossing. It was widened rather than reused when the catalog took in
- * the two rungs above the Lid, for the ordinary reason the bands exist at all:
- * an art nine rungs up from the bottom of its band should not cost what the art
- * at the bottom of it costs. Nothing above the Lid pays in this currency in any
- * case - `progressRequiredForOrdinal` returns null up there and says why - so
- * the figures on those entries are the band being honest about ordering rather
- * than a price anybody settles.
+ * Qi cost window per grade. The top two overlap, because the grades are peers: a
+ * chaos art may cost what an immortal art costs, and firing one is not dearer for
+ * being unpredictable. The qi pool a cultivator has at a given realm is what gates
+ * how often any of them is usable.
  */
 export const GRADE_QI_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 2, max: 14 },
@@ -845,34 +462,7 @@ export const GRADE_QI_BANDS: Record<TechniqueGrade, Band> = {
     chaos: { min: 130, max: 1500 }
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LADDER, AND THE TIE AT THE TOP OF IT
-//
-// `GRADE_ORDER` is a LISTING order. It is the order the bands below are
-// written in, the order a catalog is displayed in, and the order tests iterate
-// in. It is total because a list has to be, and it is NOT a statement about
-// power.
-//
-// `GRADE_POWER` is the power ladder, and it has a tie at the top:
-//
-//   > chaos grade is equal to immortal grade but it's got random effects which
-//   > may be bad (whereas immortal ones are uniformly positive). but chaos is
-//   > powerful.
-//
-// A chaos-grade thing is not a step above an immortal-grade thing. It is the
-// same magnitude of force, held in an object whose effect is settled when it
-// is USED rather than when it was made - `engine/cultivation/grade-spread.ts`
-// owns what that means and is the only place the difference lives.
-//
-// SO: ANYTHING COMPARING TWO GRADES BY POWER GOES THROUGH `gradeRank`, WHICH
-// RETURNS THE SAME NUMBER FOR BOTH, and a consumer that sorts on it gets a tie
-// rather than a fabricated preference. Nothing may reach for
-// `GRADE_ORDER.indexOf` to rank, because that is the ordering this correction
-// removed. Where a consumer genuinely needs a total order - a stable display
-// sequence, a band table that has to be written down in some order -
-// `GRADE_ORDER` is that order and the reason is that it is arbitrary and
-// stable, not that it is meaningful.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Grades in listing order. Enumeration and display; NOT a power ordering. */
 export const GRADE_ORDER: readonly TechniqueGrade[] = ['mortal', 'earth', 'heaven', 'immortal', 'chaos'] as const;
@@ -893,10 +483,6 @@ export const GRADE_POWER: Readonly<Record<TechniqueGrade, number>> = {
 
 /**
  * Rank of a grade by power, for comparisons.
- *
- * Returns the SAME value for `immortal` and `chaos`. A caller that needs them
- * ordered has to decide on some other axis and say which, because on this one
- * they are equal.
  */
 export function gradeRank(grade: TechniqueGrade): number {
     return GRADE_POWER[grade];
@@ -916,79 +502,10 @@ export function compareGrades(a: TechniqueGrade, b: TechniqueGrade): number {
 // CATALOG
 // ─────────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TWO KINDS OF ART, AND THE CEILING ON ONE OF THEM
-//
-// A cultivation manual is what you PRACTISE to rank up. A dao art is what you
-// USE to fight. The catalog had been conflating them under `category`, which
-// answers a different question - what the art does mechanically - and only one
-// of the two kinds carries a ceiling.
-//
-// ── Why the cap belongs to the book ──────────────────────────────────────
-//
-// The faction catalog already says what each house can produce:
-// `production.reliableOrdinal`, on 38 factions, and `members.ts` already
-// generates their rosters against it. So the NPCs obey the ceiling and only
-// the player was exempt - climbing to ordinal 44 on the roll of a house whose
-// catalog reads `reliableOrdinal: 14`.
-//
-// The fix is NOT a per-house rule. It is that a low-tier house teaches a
-// low-tier manual, and the manual stops. Nothing anywhere branches on the
-// sect; the cap is a fact about the paper in your hands, and it is the same
-// fact whoever handed it over - a teacher, a corpse, a tomb, or a False
-// Immortal's leavings.
-//
-// That also disposes of the Hollow Court, which reads `reliableOrdinal: 0`
-// while sitting at power ordinal 40. Its own note says why: "Produces nobody,
-// by construction: it takes no disciples." Zero is a statement about INTAKE,
-// not about the quality of anything it could teach, and a cap derived from the
-// house would have handed the Hollow Court a ceiling of zero. Deriving from the
-// manual instead means the question never arises.
-//
-// ── One realm per book ───────────────────────────────────────────────────
-//
-// The cap is the end of the realm the manual is pitched at, plus one - so a
-// manual carries a cultivator through its realm, one step over the boundary,
-// and then stops dead. The ordinary progression is therefore a SUCCESSION of
-// manuals, each needing to be replaced at a realm boundary, which is what
-// sends a player looking for the next volume.
-//
-// Independent of suitability, deliberately. A manual has both a cap and a fit
-// to a spirit root, and they do not interact: a perfectly suited manual still
-// runs out, and an ill-suited one teaches nothing at any height.
-//
-// ── WHY "PLUS ONE", AND WHY IT IS NOT AN OFF-BY-ONE ──────────────────────
-//
-// This has now been read twice as a mistake, so it is worth stating in the
-// terms the misreading uses. A book IS written to the perfection of its realm:
-// the last rung it teaches you to hold is the realm's last rung, and it also
-// teaches the crossing out of it, which is the hardest thing in the book and
-// the reason it was written. The cap is where the reader is STANDING when the
-// paper runs out, and after a crossing that is the first rung of the next
-// realm. So `realmEnd + 1` is the perfection rule, expressed as a position
-// rather than as a syllabus.
-//
-// It is also the interlock. Every manual's `requiredOrdinal` sits on a realm's
-// first rung, so a cap of `realmEnd + 1` lands the reader exactly on the rung
-// where the next book opens, and the world chain has no seam anywhere.
-// Re-capping the catalog at `realmEnd` instead - which is the natural way to
-// read "written to perfection" - puts a one-rung wall at every boundary,
-// because the reader stops at 16 and every successor wants 17 and nothing can
-// stand between them. Measured in `scripts/probe-seam.ts`: zero walls as the
-// catalog stands, walls at 12, 16, 20, 24, 28, 32, 36, 40 and 44 under the
-// re-capping. Do not move these numbers without running it.
-//
-// A cap that is NOT on this list is therefore an anomaly and needs a reason on
-// the entry - the author died, the upper sections were lost, the house holds a
-// copy missing its last volume. There are none in the catalog today.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Arts that raise a rank despite not being filed under `cultivation`.
- *
- * The override exists because `category` and `class` are genuinely different
- * axes and a demonic qi-gathering method is both forbidden AND a manual you
- * practise to climb. Everything not named here follows its category.
  */
 const CULTIVATION_CLASS_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // Forbidden methods that ARE progression: they raise a rank, by means the
@@ -1011,14 +528,6 @@ export function classOf(t: Pick<Technique, 'id' | 'category'>): TechniqueClass {
 
 /**
  * The rung a manual stops at, or null when it stops at nothing.
- *
- * Null is reserved for a manual whose realm band runs to the top of the
- * ladder. `MANUALS_MAY_EXCEED_THE_LID` is true in `realms.ts` - a manual is
- * paper, it may be rated anywhere, and studying one to full mastery leaves the
- * reader exactly the rung they were - so a book that carries somebody the
- * whole way is legal where no OBJECT below ordinal 45 is. It is the top prize
- * in the setting and there is exactly one route to each such book, all of them
- * `ruin` or `grave`. Nobody teaches these.
  */
 export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>): number | null {
     if (classOf(t) !== 'cultivation') return null;
@@ -1031,15 +540,6 @@ export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>)
 
 /**
  * Whether a manual reaches further than its own realm geometry would give it.
- *
- * `capOf` is `realmEnd + 1`, so an ordinary book carries a reader through one
- * realm and one rung over the boundary. A manual whose `cap` exceeds that is
- * a WIDE-SPAN book: it lets somebody skip, which nothing else in the catalog
- * does, and it is the reason a ruin is worth entering rather than a way to
- * save four rungs.
- *
- * Derived rather than flagged, so nothing can claim to be a treasure without
- * actually reaching further than one.
  */
 export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal' | 'cap'>): boolean {
     if (classOf(t) !== 'cultivation' || t.cap === null) return false;
@@ -1047,70 +547,15 @@ export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdin
     return ordinary !== null && t.cap > ordinary;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HOW WELL EACH BOOK IS WRITTEN
-//
-// The second axis, and it is NOT `grade`. Grade is pinned to height by
-// `GRADE_ORDINAL_BANDS` above and by the content suite that checks it, so the
-// market's 0-13 primer and an apex house's 0-13 intake canon are both
-// necessarily `mortal` - which is exactly the pair this table exists to
-// separate. See `ManualQualitySchema` and `engine/cultivation/manual-quality.ts`.
-//
-// THE SPREAD IS A RULE, NOT EIGHTY OPINIONS. Four sentences produce every row
-// below, and a new entry should be placed by applying them rather than by
-// taste:
-//
-//   `crude` IS THE MASS-COPY TIER. It takes a crowd of people who never
-//   mastered the thing writing it out for each other. That crowd requires
-//   masters to be ordinary, which stops being true above Core Formation - so
-//   `crude` appears only at cap <= 21, and the world's stall primer is the
-//   purest case of it. This is `degradedCopy` in the engine seen from the
-//   catalog's side, and it produces the rarity floor as a consequence: nothing
-//   high is ever cheap because nothing high was ever copied enough to wear out.
-//
-//   `corrupt` IS DAMAGE, and damage happens at any height. It is therefore the
-//   only bad tier available above Core Formation, and every row that takes it
-//   carries a reason in its own description - a wrecked set, a grave, an author
-//   who did not survive what they were writing down.
-//
-//   `sound` IS THE DEFAULT and the commonest. A working book with somebody
-//   alive who has read it to the end.
-//
-//   `refined` AND `pristine` CLUSTER UPWARD, because a book that reaches the
-//   top of the ladder was kept rather than copied, and because the houses that
-//   hold one have had centuries of people taking it to its end and writing down
-//   what they found there.
-//
-// The upward drift that falls out of those four is deliberate and matches the
-// ruling that manuals above Qi Condensation generally improve. What must NOT
-// fall out is quality tracking grade: `moonlit-well-absorption-art` is mortal
-// and refined, `iron-silt-settling-canon` is earth and crude, and
-// `heart-of-the-ten-thousand-corpses` is immortal and corrupt.
-//
-// QUALITY IS NOT RARITY. A trash Core Formation manual is a bad book AND a
-// hard object to come by, and those are different statements answered by
-// different fields. Rarity is keyed on coverage and lives in
-// `engine/world/manuals.ts` - `copiesOf` falls steeply in `cap`, and
-// `housesTeaching` says how widely a title is actually held. Nothing here
-// should ever be used as a proxy for either.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What a row that is not named below is. The identity element. */
 export const DEFAULT_MANUAL_QUALITY: ManualQuality = 'sound';
 
 export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
-    // ── Qi Condensation. The one band where the same rungs are sold at a
-    // stall and taught in a courtyard, so it carries the whole spread. ──
-    // ── The flower road, and the spread is the house saying what it is. ──
-    //
-    // Sound at the bottom and refined at the top, with nothing crude and
-    // nothing pristine. The Orchid Court has copied its own books by hand for
-    // as long as it has had them and has never sold one, so there is no
-    // stall-grade copy of any of these anywhere - and no masterwork either,
-    // because a house that has never been rich has never had anybody spend a
-    // life on a fair copy. The last volume is the one exception and it is
-    // refined for a reason the house would not put that way: it is the book
-    // the Matriarch worked from, and it has her corrections in it.
+    // Qi Condensation. The one band where the same rungs are sold at a stall and
+    // taught in a courtyard, so it carries the whole spread. The flower road, and
+    // the spread is the house saying what it is.
     'cold-bed-foundation-canon': 'sound',
     'overwintering-canon': 'sound',
     'second-flowering-canon': 'sound',
@@ -1197,11 +642,6 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
 
 /**
  * The road a category is on, when an entry does not name one itself.
- *
- * A default rather than a mapping: `subject` is finer than `category` and the
- * interesting entries override it. What this guarantees is that every art
- * answers the question at all, which is what `techniqueSubject` has always
- * needed and never had.
  */
 const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
     attack: 'weapon',
@@ -1215,17 +655,6 @@ const SUBJECT_BY_CATEGORY: Readonly<Record<string, string | null>> = {
 
 /**
  * The default road, as the one-element set the row now stores.
- *
- * ── A DEFAULT SUPPLIES ONE ROAD AND NEVER A SECOND ───────────────────────
- *
- * The whole point of an art being on more than one road is that the extra road
- * is UNCOMMON - an ability it happens to grant. Inferring a second one from the
- * category would make it a property of the category instead, which is the exact
- * thing the widening exists to avoid: if every sword art raised formations,
- * raising formations would be what being a sword art means.
- *
- * So this stays one road wide forever. An extra road is authored, on the row,
- * or it does not exist.
  */
 function roadsFromCategory(category: string): string[] {
     const road = SUBJECT_BY_CATEGORY[category] ?? null;
@@ -1233,12 +662,12 @@ function roadsFromCategory(category: string): string[] {
 }
 
 /**
- * Authoring helper. Mastery is per-cultivator state, never catalog state, so
- * every entry starts at zero and the factory keeps that out of the literals.
- * Provenance is resolved from the id sets above rather than repeated on every
- * entry, so the Late Age rule reads as one block instead of eighty-odd
- * scattered flags. Whether a copy exists at all is resolved the same way, and
- * an art with none carries its own reason in place of the generic note.
+ * Authoring helper. Mastery is per-cultivator state, never catalog state, so every
+ * entry starts at zero and the factory keeps that out of the literals. Provenance
+ * is resolved from the id sets above rather than repeated on every entry, so the
+ * Late Age rule reads as one block instead of eighty-odd scattered flags. Whether a
+ * copy exists at all is resolved the same way, and an art with none carries its own
+ * reason in place of the generic note.
  */
 function art(
     t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'requiresPeople' | 'runsOn'>
@@ -1258,11 +687,11 @@ function art(
              */
             subjects?: readonly string[];
             /**
-             * How many living people one practice needs, the practitioner
-             * included, and where its qi comes from. Defaults `1` and
-             * `'self'`, which is what almost the whole catalog is - see
-             * `TechniqueSchema.requiresPeople` and `.runsOn` for why these are
-             * a count and an enum rather than a boolean naming a trope.
+             * How many living people one practice needs, the practitioner included,
+             * and where its qi comes from. Defaults `1` and `'self'`, which is what
+             * almost the whole catalog is - see `TechniqueSchema.requiresPeople`
+             * and `.runsOn` for why these are a count and an enum rather than a
+             * boolean naming a trope.
              */
             requiresPeople?: number;
             runsOn?: TechniqueFuel;
@@ -1590,22 +1019,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'void-piercing-sword-domain',
-        // ── ONE OF THE TWO ARTS IN THE CATALOG THAT ALSO RAISES FORMATIONS ──
-        //
-        // The line is the row's own description and not a judgement about
-        // sword arts: *"sword intent is spread as a STANDING FIELD rather
-        // than thrown as a strike. Inside it, distance stops protecting
-        // anyone."* That is a formation described without the word - intent
-        // that occupies ground, that keeps standing, and whose whole mechanic
-        // is being inside it. The other three sword arts are a thrown sliver,
-        // a count of cuts, and a way to stand on your own blade.
-        //
-        // It is also the first rung at which an art may address a PLACE at all
-        // (`ADDRESS_OPENS_AT.place` is 21, and this art requires 21), so the
-        // ladder already agreed with the prose before anybody read it.
-        //
-        // Sword first: the formation road is the ability it happens to grant,
-        // and what it raises is a sword formation.
+        // ONE OF THE TWO ARTS IN THE CATALOG THAT ALSO RAISES FORMATIONS
         subjects: ['sword', 'formation'],
         name: 'Void-Piercing Sword Domain',
         category: 'attack',
@@ -1697,13 +1111,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         id: 'star-quenching-blade-domain',
         // A domain that comes down as a lattice of falling edges. It is named for the volume it occupies.
         reach: 'field',
-        // ── THE SECOND, AND THE ROW ALREADY SAID SO IN THREE PLACES ────────
-        //
-        // `reach: 'field'`; a comment that calls it *named for the volume it
-        // occupies*; and a description of a lattice cast upward that comes
-        // down over an area. A lattice over a volume is an array, and this is
-        // the immortal-grade end of the same idea the Void-Piercing Domain
-        // opens at Nascent Soul.
+        // THE SECOND, AND THE ROW ALREADY SAID SO IN THREE PLACES
         subjects: ['sword', 'formation'],
         name: 'Star-Quenching Blade Domain',
         category: 'attack',
@@ -2312,17 +1720,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         description:
             'Six pages, block-printed, sold at every market town for the price of a meal. It teaches one to draw ambient qi in a way that accumulates rather than dissipates. On thin ground it accumulates nothing, which the manual does not mention, and nine in ten cultivators never learn anything better.'
     }),
-    // THE COMPARISON THE QUALITY AXIS EXISTS FOR, and the reason it is not
-    // `grade`. Identical coverage to the block-printed primer above - opens at
-    // ordinal 0, stops at Qi Condensation Perfection, elementless so any root
-    // may work it - and both are `mortal`, because `GRADE_ORDINAL_BANDS` binds
-    // grade to `requiredOrdinal` and they open at the same rung. The only thing
-    // that separates them is `MANUAL_QUALITY`: crude against refined.
-    //
-    // Which is the answer to the obvious objection that if a road to Foundation
-    // can be bought at a stall, joining a house buys a beginner nothing. What
-    // the house gives is not a range of rungs. It is a better-taught version of
-    // the same range, and that is what somebody sweeps a courtyard for.
+    // THE COMPARISON THE QUALITY AXIS EXISTS FOR, and the reason it is not `grade`.
+    // Identical coverage to the block-printed primer above - opens at ordinal 0,
+    // stops at Qi Condensation Perfection, elementless so any root may work it -
+    // and both are `mortal`, because `GRADE_ORDINAL_BANDS` binds grade to
+    // `requiredOrdinal` and they open at the same rung. The only thing that
+    // separates them is `MANUAL_QUALITY`: crude against refined.
     art({
         id: 'azure-dew-gathering-canon',
         name: 'Azure Dew Gathering Canon',
@@ -2450,40 +1853,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         // THE BOOK THAT WALKED DOWN THE GORGE WITH A PUNISHED MAN.
-        //
-        // Authored for a measured hole rather than for a shelf that wanted
-        // filling. The Azure Mist Court stands at `powerOrdinal: 37` and the
-        // best cultivation manual on its shelf stopped at 17 - a twenty-rung
-        // gap between what the house is and what it can teach, and the widest
-        // in the catalog by a distance.
-        //
-        // The design owner supplied the reason rather than the number: *"you
-        // can imagine the head is a lot higher than 29 cuz it was dispatched
-        // from the pavilion."* So the head and the shelf are allowed to differ
-        // and the difference is a fact about the house - somebody arrived
-        // already high, and what they could TEACH was never the same question
-        // as where they stood. What was wrong was the shelf, not the head.
-        //
-        // METAL, AND NOT ELEMENTLESS, WHICH IS THE UNCOMFORTABLE ANSWER.
-        //
-        // The Court's whole intake is probationers, late admissions and the
-        // refused-but-not-disqualified - muddled roots, mostly - so an
-        // elementless book is what it OUGHT to have and is not what it was
-        // given. What came down the gorge was a terrace method, and a terrace
-        // method is metal because the Pavilion's library is metal end to end.
-        // The Court could not re-cut it into something its own people could
-        // all use, and it teaches two metal Pavilion arts already for the same
-        // reason: it holds what it was handed.
-        //
-        // So the shelf now reaches 29 and a good share of the Court's own roll
-        // still cannot climb it, which is the Azure Mist stated as a shelf
-        // rather than as a joke about its name. See AGENTS.md, 'A house's
-        // shelf outruns its people'. It is also why an elementless draft of
-        // this row was withdrawn: elementless at this band would have made
-        // this the world's default 25-to-29 road and quietly deleted the fact
-        // that the only elementless one runs through a demonic art -
-        // `the-elementless-road-reaches-an-apex-door.test.ts` pins that, and
-        // it is a better fact than a tidy shelf.
         id: 'mist-runoff-canon',
         name: 'Mist Runoff Canon',
         category: 'cultivation',
@@ -2522,13 +1891,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'immortal',
         element: 'ice',
-        // The narrowest door on the ladder, and the catalog already said so
-        // in prose: the Frostmirror Court admits mutated ice roots and
-        // nobody else. Written into the manual rather than into the house,
-        // because it is a fact about the book - the Court refuses
-        // applicants it could not teach, rather than teaching applicants it
-        // refuses. Ice is a mutated element, so this is consistent with
-        // `element` rather than stricter than it.
+        // The narrowest door on the ladder, and the catalog already said so in
+        // prose: the Frostmirror Court admits mutated ice roots and nobody else.
+        // Written into the manual rather than into the house, because it is a fact
+        // about the book - the Court refuses applicants it could not teach, rather
+        // than teaching applicants it refuses. Ice is a mutated element, so this is
+        // consistent with `element` rather than stricter than it.
         rootGrades: ['mutated'],
         domain: 'element',
         domainDegree: 2,
@@ -2541,44 +1909,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The only known ice-attuned accumulation canon above heaven grade. It slows the heart to four beats a minute and the mind to something the manual declines to describe.'
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
     // THE ELEMENTAL ROADS
-    //
-    // WHAT THIS BLOCK IS FIXING. Measured across the whole catalog by
-    // `scripts/probe-what-kind-of-house-is-this.ts`: of twenty-nine
-    // cultivation roads, twenty were ELEMENTLESS and nine carried an element,
-    // and the nine broke down as fire 3, metal 2, water 1, wood 1, earth 1,
-    // ice 1 and lightning NONE AT ALL. Only six of thirty-four houses taught
-    // any elemental road whatsoever.
-    //
-    // So a spirit root was very nearly decorative above the bottom of the
-    // ladder. A single_water cultivator had exactly one water road in the
-    // world and it stopped at thirteen, one rung into Foundation; a
-    // single_wood had one that stopped at seventeen. Everybody, whatever they
-    // were born with, walked the same elementless succession, which is not
-    // scarcity - it is an element being a name rather than a road.
-    //
-    // THESE ARE ROADS AND NOT A PARALLEL LADDER, and the difference matters.
-    // The elementless succession still carries anybody from nothing to Void
-    // Refinement and remains what most people walk. What an element buys is an
-    // alternative at some of those rungs which is better for a matching root
-    // and refused to the roots it fights - so being born to an element is now
-    // a set of doors that open and a set that do not, instead of a label.
-    // Every one of them is deliberately DISCONTINUOUS: none of the five covers
-    // the whole ladder, and the gaps are where an elemental cultivator goes
-    // back to the common road or goes looking.
-    //
-    // THE TWO LIGHTNING ROADS ARE NOT GATED BY THEIR ELEMENT AND CANNOT BE.
-    // `OVERCOMES` in `spirit-roots.ts` maps lightning and ice to null, because
-    // the mutated elements sit outside the wuxing cycle - so
-    // `conflictsWithRoot` returns false for every root against them and
-    // `suitsRoot` lets anybody at all read a lightning book. The gate that
-    // actually holds is `rootGrades: ['mutated']`, which the suitability layer
-    // reads, exactly as the Rime-Heart canon above already does for ice. A
-    // shelf pass that puts one of these on a teach list without that in mind
-    // will hand a storm road to a farmer with a wood root, and nothing in
-    // `newlyEntitled` will stop it.
-    // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'slack-water-foundation-canon',
         name: 'Slack Water Foundation Canon',
@@ -2598,14 +1929,13 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'earth',
         element: 'water',
-        // Pitched at Core Formation rather than at Nascent Soul, and the
-        // reason is the shelf it has to sit on. Every water house in the
-        // catalog is shallow - the Alliance topped out at thirteen - so a
-        // water road opening at twenty-one would have had to go to a house
-        // with no water in it, and the one place it fits leaves a four-rung
-        // hole between the book below it and this one. At seventeen it joins
-        // the Slack Water canon with no seam and the Alliance has an actual
-        // water career: thirteen, seventeen, twenty-one.
+        // Pitched at Core Formation rather than at Nascent Soul, and the reason is
+        // the shelf it has to sit on. Every water house in the catalog is shallow -
+        // the Alliance topped out at thirteen - so a water road opening at
+        // twenty-one would have had to go to a house with no water in it, and the
+        // one place it fits leaves a four-rung hole between the book below it and
+        // this one. At seventeen it joins the Slack Water canon with no seam and
+        // the Alliance has an actual water career: thirteen, seventeen, twenty-one.
         domain: 'element',
         requiredOrdinal: 17,
         qiCost: 44,
@@ -2763,120 +2093,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'One incomplete copy is known. It came out of a sealed vault under a collapsed compound, in a grade nobody has been taught in living memory, and it is incomplete in the way a map of a coastline is incomplete. Cultivating from it at Tribulation Transcendence Perfection is the last thing anyone in this world can be said to be doing.'
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
     // THE FOUR ROADS THAT REACH THE TOP OF THE LADDER
-    //
-    // One each, to the three apexes and to the Hollow Court, and nothing below
-    // that altitude has one. This band used to hold exactly one book - the
-    // Chaos Origin Scripture above, incomplete, out of a ruin, on nobody's
-    // shelf - which meant the strongest institutions in the world topped out
-    // at Foundation Establishment on their own teach lists. The Azure Cloud
-    // Pavilion could teach to 21 and had produced a woman who walked off the
-    // top of the ladder inside living memory, and both of those were in the
-    // catalog at once.
-    //
-    // THE FOUR ARE THE SAME HEIGHT AND ARE NOT THE SAME ROAD. Every one of
-    // them takes `requiredOrdinal` 41 and the ordinary cap that follows from
-    // it, so all four end where the ladder does and none of them crosses,
-    // because the crossing is in no book. What separates them is what it costs
-    // to walk them, which is the `opening` field and nothing else:
-    //
-    // ── THE CAP IS 45 AND IT MUST NOT BE WRITTEN AS 44 ───────────────────
-    // This has now been read twice as an overshoot, both times by somebody
-    // reasoning correctly from the wrong definition, so it is written out
-    // here in the terms the misreading uses. The last climbable rung is 44,
-    // the four roads take a reader to it, and 45 is the False Immortal rung
-    // that `realms.ts` says can be arrived at no way but the crossing - so
-    // "the road ends at 44" is a true sentence, and `cap: 44` is not how the
-    // engine says it.
-    //
-    // `techniqueExhausted` is `realmOrdinal >= cap`. A cap is therefore the
-    // first rung at which the paper stops carrying you, never the last rung
-    // it teaches. Write 44 and the person it stops is the person STANDING on
-    // 44 - which is the only person in the world who is gathering for the
-    // last crossing, because `LAST_CROSSING_ORDINAL` is 44 and the attempt is
-    // made FROM there. Measured in
-    // `scripts/probe-what-cap-44-would-do-to-the-last-crossing.ts`: at cap 44
-    // the rate at ordinal 44 is x0 against x1 at cap 45, and the crossing
-    // costs a hundred and sixty million qi-units nobody could then accrue. The
-    // whole Immortal realm would become unreachable by any route in the game.
-    //
-    // The guards do hold, and that was checked rather than assumed - the first
-    // draft of this comment claimed the change would pass silently, which was
-    // wrong and would have been a worse thing to leave here than nothing.
-    // Writing 44 on the 41-band entries turns five tests red across two
-    // suites, the load-bearing one being "hands each book off to the next at a
-    // realm boundary", which asserts `realmEnd + 1` for every book opening on
-    // a realm's first rung. So the guards are there; what was missing was any
-    // statement of WHY they are right, and a reader who found them failing had
-    // nothing to read but an arithmetic rule that looks like an off-by-one at
-    // the top of the ladder.
-    //
-    // So 45 here is the ordinary rule doing the ordinary thing - a cap is
-    // where the crossing leaves the reader standing - and it is load-bearing
-    // rather than an artifact of `ordinaryCapFor` running off the end.
-    //
-    //   The three apex roads are authored with a hard opening. Each was
-    //   written by one person for one successor and never revised by anybody
-    //   who had to read it cold, so the first rungs are somebody else's
-    //   shorthand and the reader crawls.
-    //
-    //   The Hollow Court's has none, and that is the whole of why its road is
-    //   the best in the world. Not a further reach and not a stronger method:
-    //   fewer walls, and transitions somebody already wrote out properly. A
-    //   body whose single purpose is getting its own members over the last
-    //   crossing has had every rung of this one walked, questioned and written
-    //   up again by people who were about to need the next one.
-    //
-    // ── THE RUNG THESE ROADS OPEN AT, AND A DRAFT WITHDRAWN THERE ───────
-    //
-    // All four open at `requiredOrdinal: 41`, and exactly one book in the
-    // world carries a reader from 37 to 41: the Heaven-Conversing Primordial
-    // Canon, which is on no shelf anywhere. Measured over the corridor, both
-    // arms in one command:
-    //
-    //   ordinals 37, 38, 39, 40 have ONE ordinary continuation between them.
-    //   They are the only single-source rungs on the whole ladder.
-    //
-    // So the four best roads in the world are enterable only by somebody who
-    // has crossed the one stretch this age cannot teach - which reads as a
-    // hole and is the Late Age stated as arithmetic.
-    //
-    // A DRAFT THAT PUT A HOUSE'S OWN BOOK THERE WAS WRITTEN AND WITHDRAWN,
-    // and the reasons are recorded because the next person will want to try
-    // it. Two feeder rungs, one for the Pavilion and one for the Hollow
-    // Court, `requiredOrdinal: 37` and therefore cap 41 by ordinary realm
-    // geometry. It collided with three rules already in this repo:
-    //
-    //   THE ONLY CHOKEPOINT IN THE WORLD IS THAT STRETCH. Measured with the
-    //   draft in: zero single-source rungs anywhere on the ladder. The one
-    //   narrow place in the corridor is 37 to 40, and two books there widen
-    //   it to nothing. `cultivation-technique-caps.test.ts` pins it.
-    //
-    //   THE LATE AGE RULE FORBIDS IT, in this file's own test: a chaos-grade
-    //   art is out of a ruin or a grave, or it is one of the four roads
-    //   above. The stated ground is that each of those four bodies "has
-    //   somebody standing in the band the book is written for". Nobody in the
-    //   world stands between 33 and 41 except one person at 41, so no house
-    //   qualifies to teach a 37-band book by the catalog's own criterion.
-    //
-    //   AND THE HOLLOW COURT HOLDS ONE BOOK ON PURPOSE. It is for one thing;
-    //   a second title would be a second purpose, and a test asserts it.
-    //
-    // The consequence worth stating rather than fixing: the 41 cap already
-    // EXISTS and is simply unowned. Putting one on a shelf is a ruling about
-    // whether this age's houses may teach at a height none of them stands at,
-    // which is the Late Age itself and is the design owner's to make.
-    //
-    // AND NO LIVING PERSON CAN WALK ANYBODY TO THE END OF THREE OF THEM, which
-    // is not authored either - it falls out of `carriesTo` against the seats.
-    // The Deep Survey stands at 43, the Long Cut at 42 and the Pavilion at 41,
-    // so the last rungs of those three roads have no teacher anywhere and have
-    // to be walked alone. The Hollow Court stands at 44 and is the only body
-    // in the world that can take somebody to the end of its own road, which is
-    // also the only one of the four that has repeatedly produced people who
-    // got there.
-    // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'clear-terrace-ascension-canon',
         name: 'Clear Terrace Ascension Canon',
@@ -2953,14 +2170,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
 
-    // ═══════════════════════════════════════════════════════════════════
-    // DAO HOUSE DISCIPLINES
-    // What the ancient houses actually teach. None of these is a good
-    // way to win a fight; every one of them is a good way to make a fight
-    // pointless, expensive, or impossible to walk away from. A house's
-    // strength is thousands of years of one principle, and the strength
-    // is legible here as reach rather than damage.
-    // ═══════════════════════════════════════════════════════════════════
+    // DAO HOUSE DISCIPLINES What the ancient houses actually teach. None of these
+    // is a good way to win a fight; every one of them is a good way to make a fight
+    // pointless, expensive, or impossible to walk away from. A house's strength is
+    // thousands of years of one principle, and the strength is legible here as
+    // reach rather than damage.
     art({
         id: 'thread-reading-stance',
         name: 'Thread-Reading Stance',
@@ -3188,6 +2402,36 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Two channels are opened at once and both are left running the right way. Practised with a spouse or a bonded partner - the manual is explicit that a stranger gets nothing out of it worth the trouble - and the reason it is one of the oldest, plainest arguments any house has for why a cultivator should marry rather than merely ally: cultivating the same art side by side moves both of them along a hair faster than cultivating it alone. No register anywhere bans it. It works only between a man and a woman, and the manual never claims to know why.'
     }),
     art({
+        id: 'lotus-nurturing-canon',
+        name: 'Lotus-Nurturing Canon',
+        category: 'dual_cultivation',
+        grade: 'mortal',
+        element: null,
+        requiredOrdinal: 13,
+        qiCost: 4,
+        damage: null,
+        cooldown: 0,
+        requiresPeople: 1,
+        runsOn: 'own_lifespan',
+        description:
+            'The half that is drawn from. It opens a channel and keeps it open, spending the body it is cultivated in to do it, and it gives the holder nothing whatever: no blow, no defence, no progress of their own. What it produces is a person who can be drawn off, and the deeper it is taken the more there is to draw - which is why nobody has ever begun it willingly, and why the ones who hold it at any depth were brought to it over years by somebody else. A technique list is not a private thing, and anybody who can read one can see a life spent as fuel.'
+    }),
+    art({
+        id: 'lotus-plucking-rite',
+        name: 'Lotus-Plucking Rite',
+        category: 'dual_cultivation',
+        grade: 'earth',
+        element: null,
+        requiredOrdinal: 13,
+        qiCost: 12,
+        damage: null,
+        cooldown: 20,
+        requiresPeople: 2,
+        runsOn: 'the_others',
+        description:
+            'The half that draws. It answers only against somebody cultivating the Lotus-Nurturing Canon, which is the whole of why the two are taught as a pair and never separately: without the other half there is nothing on the far end for it to run into. It carries no blow of its own - a cultivator who has spent their life on this and nothing else is beaten by anybody who spent theirs on a sword - and what it returns is qi, in the amount the other side has been brought to hold. Every righteous register lists it. The houses that teach it teach the Canon first, to somebody else.'
+    }),
+    art({
         id: 'corpse-lantern-soul-forging',
         name: 'Corpse-Lantern Soul Forging',
         category: 'forbidden',
@@ -3210,14 +2454,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         element: null,
         domain: 'life_death',
         // 27 -> 25, the first rung of Deity Transformation.
-        //
-        // The corridor guard found the hole: at 25 and 26 the only ordinary
-        // continuation in the world was earth-locked, so every other root
-        // arrived at Deity Transformation with nothing in front of it and had
-        // to wait two rungs it could not cultivate through. Opening this here
-        // closes it, and closes it in the right way: a non-earth root at this
-        // height has exactly one road and it is a demonic one. Stranded is a
-        // bug. Cornered is the game.
         requiredOrdinal: 25,
         qiCost: 110,
         damage: null,
@@ -3279,46 +2515,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Spends years off the end of the user\'s own allotted lifespan as ammunition. At Tribulation Transcendence there is a great deal of lifespan to spend, and cultivators who reach the tribulation with this art rarely have enough left to survive it.'
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
-    // THE ANCIENT ROADS - categorical, costly, and frequently the wrong
-    // thing to be holding
-    //
-    // The axis is CATEGORICAL versus ELEMENTAL, and it is the spine of
-    // `docs/world/history/ancient.md`. Everything above this block is elemental or is
-    // the elementless refinement of an elemental idea: fire, ice, wind, a
-    // blade, a shield, a step. That line scales to the horizon and nothing
-    // about it is modest - at the top of the ladder it is somebody throwing
-    // lightning from their fingers, or becoming it, and leaving ground a
-    // province still names three hundred years later.
-    //
-    // These six are the other kind, and the difference is not size. Each does
-    // something that no amount of taking an elemental art up the ladder would
-    // produce: it moves a resource between bodies, it makes a person act, it
-    // puts objects into the world that SOMEBODY ELSE CAN PICK UP AND CARRY, it
-    // takes a piece of ground out of the world, it puts you somewhere else, it
-    // makes a second body. None of them is a bigger anything.
-    //
-    // NEITHER SIDE IS THE STRONGER, and the comparison is not coherent. A
-    // cultivator at the top of the elemental line who becomes lightning is one
-    // of the most dangerous things alive; a cultivator who can put a spear into
-    // twenty other people's hands has changed what their house can do. There is
-    // no exchange rate between those and the choice is a use case, not a rank -
-    // an ancient art is sometimes plainly the better thing to be holding and
-    // sometimes plainly useless.
-    //
-    // WHAT IS FORBIDDEN IS A STRICT UPGRADE. An ancient art that is better in
-    // every situation makes the abandonment nonsense, and the whole tier
-    // collapses into "old is stronger". Each entry below therefore states, in
-    // its own description, the situation where the ordinary art at its rung is
-    // the thing you would rather have - and the era that walked away from these
-    // was not being squeamish. It was right about its own circumstances: they
-    // cost more, they were running out of inputs, and they answered questions
-    // that age had stopped being asked.
-    //
-    // The costs are stated in the descriptions, in the idiom the Crimson Tithe
-    // Palm already established, because a cost is content and not a second
-    // mechanic. Nothing in this block adds a rule.
-    // ═══════════════════════════════════════════════════════════════════
+    // THE ANCIENT ROADS - categorical, costly, and frequently the wrong thing to be
+    // holding
     art({
         id: 'hundred-pace-step',
         name: 'Hundred-Pace Step',
@@ -3419,14 +2617,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A second body, standing where it was made, doing what the practitioner does. It is not a duplicate and it is not the person: it holds nothing of what they know, cannot be left alone with a decision, and what it feels is not reported back. What it can do is be in a second place, which is a thing no art of the elemental line has ever offered at any rung. It is also, obviously and immediately, a question every house and every oath has to answer about the person who made it - whether the thing that signed is the thing that swore - and no two houses have answered it the same way. Making one consumes a lotus that stopped growing before any institution now standing was founded, and the practitioner does not get back what the making takes out of them.'
     }),
 
-    // ── an ancient road you PRACTISE ─────────────────────────────────────
-    // The quadrant that was empty, and the more interesting half. An ancient
-    // dao art changes what you can do in a fight; an ancient cultivation road
-    // changes what kind of cultivator you become, permanently, at a price.
-    //
-    // It addresses a BODY and always will - `addressIsLegal` makes that an
-    // invariant rather than a choice, because what you practise to rank up
-    // never escalates in kind. Only what you USE does.
+    // an ancient road you PRACTISE The quadrant that was empty, and the more
+    // interesting half. An ancient dao art changes what you can do in a fight; an
+    // ancient cultivation road changes what kind of cultivator you become,
+    // permanently, at a price.
     art({
         id: 'paired-breath-canon',
         name: 'Paired-Breath Canon',
@@ -3441,20 +2635,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Two people cultivate as one circuit. Progress is drawn twice and divided once, so a pair climbs faster than either would alone - and everything else is shared on the same terms. A deviation is both of your deviations. An injury takes its years off both clocks. What one of you spends of a life, the other has spent. The canon is explicit that it cannot be undone and does not soften it: the pairing outlives falling out, outlives distance, and ends when one of you does, which the survivor does not reliably survive. Nothing in the modern catalogue couples two cultivators at all, and no orthodox road asks you to decide at Foundation Establishment who you are willing to be half of for the rest of your life.'
     }),
 
-    // ── CONDITION: what a place is LIKE, rather than who is standing in it ──
-    // The third rung, and the floor is Body Integration for the reason the
-    // schema gives: damage stops meaning what it used to mean, and an art whose
-    // subject is no longer damage has stopped addressing what is standing
-    // there. Both entries below take a location and change a property of it
-    // that outlasts everybody who was present.
-    //
-    // BOTH ARE MODERN, and that is the interesting part rather than an
-    // oversight. `era` is a membership decision about idiom and neither of
-    // these is categorical: they are the late age's own high arts, elementless
-    // the way a great many modern arts are, and they are the reason the world
-    // is full of dead ground and famine districts. The scars are recent. An
-    // ancient tier that owned the whole top of the address ladder would make
-    // "old is stronger" true by distribution even with every entry legal.
+    // CONDITION: what a place is LIKE, rather than who is standing in it The third
+    // rung, and the floor is Body Integration for the reason the schema gives:
+    // damage stops meaning what it used to mean, and an art whose subject is no
+    // longer damage has stopped addressing what is standing there. Both entries
+    // below take a location and change a property of it that outlasts everybody who
+    // was present.
     art({
         id: 'quenching-of-the-standing-air',
         name: 'Quenching of the Standing Air',
@@ -3486,17 +2672,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The season stops turning over a place. Nothing grows there and nothing rots, wounds neither heal nor worsen, and food keeps for as long as it is inside. It is not a stopping of time and anybody who describes it that way has misunderstood it: people age normally, and only the ground has been taken out of the year. Held for a season it is the single best thing in the catalog for a siege, an archive or a sickbed. Held for a decade it kills a district, because a field that does not turn does not crop, and the places it has been used are known by their famines rather than by their battles. The practitioner holds it, continuously, and holds nothing else while they do.'
     }),
 
-    // ── SETTLED: a fact the world has already fixed ──────────────────────
-    // The fourth rung, and the floor is the last crossing: the one place below
-    // the Lid from which somebody is looking at the boundary rather than up at
-    // it. Four arts, one per Dao house principle, and every one of them is
-    // bounded in the way the schema insists on - it needs something to ALREADY
-    // BE TRUE, and no magnitude widens that bound.
-    //
-    // That is the whole reason these are the rung below a decree rather than
-    // small decrees. An infinitely powerful name-severing art still cannot
-    // reach somebody who was never named. Each entry says out loud what had to
-    // already be true, because that sentence is the test the schema applies.
+    // SETTLED: a fact the world has already fixed The fourth rung, and the floor is
+    // the last crossing: the one place below the Lid from which somebody is looking
+    // at the boundary rather than up at it. Four arts, one per Dao house principle,
+    // and every one of them is bounded in the way the schema insists on - it needs
+    // something to ALREADY BE TRUE, and no magnitude widens that bound.
     art({
         id: 'unsaying-of-a-given-name',
         name: 'Unsaying of a Given Name',
@@ -3554,19 +2734,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A boundary that was set stops being set. A perimeter, a survey line, a seal, a datum - anything somebody fixed on purpose and that has held because it was fixed. WHAT HAD TO ALREADY BE TRUE is that a person set it, knowing they were setting it; a border that grew out of custom has never been fixed and is untouched, and a wall is just a wall. Nothing moves and nothing falls down. The line simply stops being the line, and every claim that was resting on it is resting on nothing.'
     }),
 
-    // ── DECREE: a statement, and the world is obliged ────────────────────
-    // The top rung, one ordinal wide, and the thing that separates it from the
-    // rung below is not size. A settled art reaches a fact the world has
-    // already fixed. A decree needs nothing to have been true.
-    //
-    // Three structural requirements, all enforced elsewhere and all satisfied
-    // here: no damage expression, no headcount, and no living teacher. A decree
-    // that kills a number of people is a tier-four art wearing the wrong label.
-    //
-    // And both stay inside `WHAT_A_DECREE_CANNOT_SAY`: neither states a rung,
-    // neither is revisable, and neither requires anybody to administer it
-    // afterwards - each runs on its flat reading for ever, which is most of
-    // what makes them frightening rather than useful.
+    // DECREE: a statement, and the world is obliged The top rung, one ordinal wide,
+    // and the thing that separates it from the rung below is not size. A settled
+    // art reaches a fact the world has already fixed. A decree needs nothing to
+    // have been true.
     art({
         id: 'the-road-that-was-always-there',
         // Declared rather than defaulted, which every art above the Lid is
@@ -3606,41 +2777,21 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Somebody saw it. They were standing there, they have always been the person who was standing there, and they will say so - because it is what happened. NOTHING HAD TO BE TRUE BEFOREHAND: no observer, no vantage, no plausible reason for anybody to have been present. In a world whose oaths, inheritances, treaties and executions all rest on testimony, an art that manufactures a witness out of nothing is the most dangerous sentence anybody has ever written down, and every house that keeps a treaty vault has known of it for an age and has never once been able to devise a check against it. The flat reading is the danger: the witness is real, they are not lying, and there is nothing to detect.'
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ABOVE THE LID
-    // Six rows with large numbers in them and nothing else different about
-    // them. They are chaos grade like everything at the top, they are read
-    // by the same lookups, and no code anywhere asks what rung they sit at
-    // before doing anything - which is the whole reason it is safe to have
-    // written them down. See `WHAT_AN_ART_BUYS`: the best art in the world
-    // at full mastery buys nothing across the Lid, so a manual up here is
-    // paper and an object up here is not, and only one of those two things
-    // is in this file.
-    //
-    // All six are elementless, and that is not a coincidence being dressed
-    // up as a rule. The wuxing is an account of how a body draws, both of
-    // these rungs are reached by a crossing rather than by drawing, and
-    // nobody who has been through one has ever written an elemental art
-    // afterwards. It also keeps the mutated-root scarcity where the catalog
-    // put it, which is a good check on the reasoning rather than the reason.
-    //
-    // REACH IS DECLARED ON EVERY ONE OF THEM, DELIBERATELY
-    // The harness is blunt about it: somebody at the top of the ladder
-    // holding a single-target art does not take a mobilised apex at all,
-    // and the same person holding a wide one takes it in about two rounds.
-    // So reach is what decides whether the top rungs mean anything, and an
-    // entry up here that left the field off would be quietly deciding that
-    // they do not.
-    // ═══════════════════════════════════════════════════════════════════
+    // ABOVE THE LID Six rows with large numbers in them and nothing else different
+    // about them. They are chaos grade like everything at the top, they are read by
+    // the same lookups, and no code anywhere asks what rung they sit at before
+    // doing anything - which is the whole reason it is safe to have written them
+    // down. See `WHAT_AN_ART_BUYS`: the best art in the world at full mastery buys
+    // nothing across the Lid, so a manual up here is paper and an object up here is
+    // not, and only one of those two things is in this file.
 
-    // ── 45: three faces, one man, and no object anywhere behind them ─────
-    // Everything at this rung is Lu Sheng's, because the rung is one person
-    // wide - see `ABOVE_THE_LID_TRANSMISSION.falseImmortal`. He built these
-    // out of what came back from a crossing that did not complete, he holds
-    // nothing else at all, and the opacity figures are the highest in the
-    // catalog because a face cut where a lecture happened is the read
-    // channel operating at a rung that has exactly one teacher who could
-    // simply have been asked.
+    // 45: three faces, one man, and no object anywhere behind them Everything at
+    // this rung is Lu Sheng's, because the rung is one person wide - see
+    // `ABOVE_THE_LID_TRANSMISSION.falseImmortal`. He built these out of what came
+    // back from a crossing that did not complete, he holds nothing else at all, and
+    // the opacity figures are the highest in the catalog because a face cut where a
+    // lecture happened is the read channel operating at a rung that has exactly one
+    // teacher who could simply have been asked.
     art({
         id: 'the-seam-that-did-not-close',
         name: 'The Seam That Did Not Close',
@@ -3728,12 +2879,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         // A SECOND ROAD AT 17-20, which had exactly one and wanted fire.
-        //
-        // The corridor above the middle is single-file by design and was
-        // single-file to the point of being uninhabitable: a metal root
-        // standing at Core Formation had one book in the entire world and it
-        // was written for somebody else. Two roads is not a menu; it is the
-        // difference between a narrow world and a closed one.
         id: 'iron-silt-settling-canon',
         name: 'Iron-Silt Settling Canon',
         category: 'cultivation',
@@ -3748,26 +2893,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         // A THIRD ROAD AT 17-20, AND THE FIRST THAT ASKS NOTHING OF THE READER.
-        //
-        // The corridor at Core Formation had two doors and both of them were
-        // somebody else's element: fire on the Molten Core road, metal on the
-        // Iron-Silt. A wood, water or earth root - or a muddled one, which is
-        // most people - arriving at ordinal 17 had nothing at all.
-        //
-        // Measured against the faction catalog by `scripts/probe-shelf.ts`,
-        // that was not scarcity, it was a hole. Twenty of thirty-two houses
-        // held a shelf no disciple inside them could walk end to end, and the
-        // commonest shape by a distance was a primer stopping at 13 and the
-        // next book on the shelf wanting 21, with an eight-rung dead zone
-        // between them that no amount of rank, favour or patience crossed,
-        // because the requirement is on the book. Houses four centuries old do
-        // not sit on that. They solve it the cheapest way available, which is
-        // to buy the plain edition rather than write a better one.
-        //
-        // It is deliberately the least good of the three roads. Elementless
-        // means no attunement to gather the core around, which is slower going
-        // in and worse to build on afterwards, and that is the price of the
-        // door being open to everybody.
         id: 'undyed-core-canon',
         name: 'Undyed Core Canon',
         category: 'cultivation',
@@ -3781,13 +2906,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Core Formation with no element to gather the core around: slower than either attuned road going in, and the core it leaves takes an attunement badly for the rest of the cultivator\'s life. It exists because the two attuned roads want a fire root or a metal root and the province is mostly neither. Copied so often and so carelessly that no house claims it - houses that will not sit in the same room teach the same edition, errata and all, because each of them bought a copy rather than being handed one.'
     }),
     art({
-        // A SECOND ROAD AT 33-35, which had exactly one, wanted a mutated ice
-        // root, and was held by a single house that admits nobody else.
-        //
-        // That was the narrowest point on the whole ladder and the clearest
-        // case of the corridor being too thin to be a world: a fire root
-        // arriving at Body Integration had nothing at all in front of it, in
-        // any house, at any price.
+        // A SECOND ROAD AT 33-35, which had exactly one, wanted a mutated ice root,
+        // and was held by a single house that admits nobody else.
         id: 'cinder-lung-tempering-canon',
         name: 'Cinder-Lung Tempering Canon',
         category: 'cultivation',
@@ -3805,28 +2925,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         // THE WIDE-SPAN BOOK. The one manual in the catalog that lets somebody
         // skip, and the shape of what a treasure has to be.
-        //
-        // Every other manual carries a reader through exactly one realm and one
-        // rung over the boundary, because `capOf` is realm geometry. This one
-        // opens at Foundation and closes at Body Integration - twenty rungs,
-        // five ordinary books' worth - which is why finding it is worth a ruin
-        // rather than worth four rungs.
-        //
-        // WHAT IT IS GATED ON IS NOT RANK. `requiredOrdinal` is the wrong
-        // instrument for a treasure: put a cap-33 book behind ordinal 29 and it
-        // can no longer skip anything, which is the whole of what it is for. So
-        // it opens at 13, where its grade band opens, and the gate is
-        // comprehension instead - `domain: 'void'` at the deepest degree the
-        // catalog uses. That is the one axis money cannot buy, because it comes
-        // from what has happened to somebody rather than from how long they
-        // have sat, and a well-funded heir at Foundation is exactly as far from
-        // it as a beggar.
-        //
-        // AND THE OPENING IS BRUTAL. Eight rungs at a fifth rate: somebody
-        // handed this at thirteen crawls to twenty-one on a book that should
-        // have carried them there in a third of the time, and only then does it
-        // open up. It cannot be coasted on. That is the second half of the
-        // price, and it is why the book is a decision rather than a windfall.
         id: 'single-road-treatise',
         name: 'Treatise on the Single Road',
         category: 'cultivation',
@@ -3846,42 +2944,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         // THE FIRST WIDE-SPAN BOOK ANYBODY ACTUALLY TEACHES.
-        //
-        // Every other book that reaches past its own realm is a treasure with
-        // no living transmission, and the rule underneath that was "nobody
-        // teaches a book that makes four of their own redundant". That rule
-        // answered the wrong question. It is true of a house with four books;
-        // it says nothing about a house whose intake cannot use the ordinary
-        // succession at all, and the catalog contains one.
-        //
-        // The two mutated elements are starved on purpose - it is stated at
-        // the top of this file and made true by the count of entries - and
-        // below ordinal 33 there is no ice manual anywhere in the world. The
-        // Frostmirror Court admits nothing but mutated ice roots. So the
-        // orthodox succession, which is four attuned books in a row, is not
-        // available to a single person the Court has ever taken in, and a
-        // house in that position either writes one long unattuned road or
-        // stops producing anybody. It wrote one.
-        //
-        // WHAT LENGTH BUYS AND WHAT IT COSTS. Three realms held on one method,
-        // where every ordinary book carries a reader through one. That is what
-        // a deep foundation is mechanically: its people change methods less
-        // often, and every change of method is a risk they do not take. The
-        // price is `opening` - six rungs at a third rate, so a disciple who
-        // opens this at seventeen is behind somebody on the plain Undyed Core
-        // Canon until well past twenty - plus a comprehension gate money
-        // cannot pay, which is why a well-funded outsider cannot simply buy
-        // the Court's advantage even holding the book.
-        //
-        // AND IT STILL ENDS. A long span buys further, never all the way. It
-        // ends at twenty-nine, which is where the taught world ends for
-        // everybody: measured, no house anywhere transmits a manual that
-        // continues past 29, and the only book that does is dug out of a
-        // sealed site. The Second Register continued this and the Court has
-        // not held a copy in four hundred years, so above the far boundary its
-        // people are where every other house's people are - under a living
-        // master or nowhere. A shelf that stops is a fact about a house; a
-        // shelf that stops at a volume the house can name is a better one.
         id: 'standing-mirror-first-register',
         name: 'Standing Mirror Canon, First Register',
         category: 'cultivation',
@@ -3904,42 +2966,6 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         // THE TOP PRIZE, AND THE ONE BOOK THAT TAKES THE BAND EXEMPTION.
-        //
-        // Opens at 5. Ends at 45. Forty rungs, the entire ladder below the Lid,
-        // in one method with no substitution - against a catalog where every
-        // other book carries a reader through one realm because `capOf` is
-        // realm geometry, and against the Treatise on the Single Road, which is
-        // the common treasure at twenty.
-        //
-        // It is chaos grade at `requiredOrdinal: 5`, which its own grade band
-        // forbids, and that exemption is the deliberate part. See
-        // `GRADE_ORDINAL_BANDS` for the reasoning: raising the requirement to
-        // satisfy the band would destroy the thing the band is gating, because
-        // a cap-45 book that opens at 37 skips nothing at all.
-        //
-        // WHAT IT IS GATED ON INSTEAD. A degree-three comprehension of time,
-        // held by somebody at Qi Condensation. That is not a hard requirement,
-        // it is very nearly an impossible one, and it is impossible in the
-        // right direction: comprehension cannot be bought, inherited, gifted or
-        // waited for, so the one person in an age who can open this is somebody
-        // something happened to rather than somebody who was well funded. A
-        // Dao house cannot buy its heir into it.
-        //
-        // AND THE OPENING IS THE WORST IN THE CATALOG. Thirteen rungs at a
-        // tenth rate. Somebody who opens it at five crawls to eighteen on a
-        // book that any market-town manual would have carried them through in a
-        // fraction of the time - long enough that a mortal-lifespan cultivator
-        // can plausibly die inside the opening of the best book in the world,
-        // holding it, having gained almost nothing from it. That is the price,
-        // it is paid in the one currency nobody can borrow, and it is why this
-        // is a gamble rather than a windfall.
-        //
-        // Above it there is exactly one thing: the Canon of the Unwritten Span,
-        // which is uncapped and opens at 46, which is to say it is the version
-        // of this that nobody in the world can reach. `MANUALS_MAY_EXCEED_THE_LID`
-        // is what makes both of them legal - paper may be rated anywhere, where
-        // no object below the Lid may be, and that asymmetry is the reason the
-        // top prize in this setting is a book and not a sword.
         id: 'first-and-last-breath-canon',
         name: 'Canon of the First and Last Breath',
         category: 'cultivation',
@@ -3975,21 +3001,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // correct and that there is nothing in it they can do.
         domain: 'time',
         domainDegree: 3,
-        // Left at 46, deliberately, and it is the one manual the succession
-        // rule does not apply to.
-        //
-        // Every other realm needs a manual learnable on its first rung or the
-        // chain of books dead-ends there. Above the Lid there is no chain:
-        // `progressRequiredForOrdinal` returns null from ordinal 45 upward, so
-        // there is no progress currency, nothing to accrue, and a gathering
-        // canon is not how anybody gets there. Rating this at 45 would also
-        // put it on Lu Sheng's rung, where the setting says an art can only
-        // have come off one of his faces - and this one came out of a ruin.
-        //
-        // It is still the one manual in the world with no cap: its band runs
-        // to the top of the ladder, so `capOf` returns null and it never runs
-        // out. Legal because `MANUALS_MAY_EXCEED_THE_LID` - paper may be rated
-        // anywhere, where no object below ordinal 45 may be.
+        // Left at 46, deliberately, and it is the one manual the succession rule
+        // does not apply to.
         requiredOrdinal: 46,
         qiCost: 1_380,
         damage: null,
@@ -4014,33 +3027,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         description:
             'Not the coming down, which needs no art and costs a great deal. This is the going back, taken deliberately and on the practitioner\'s own count rather than waiting to be taken, and it is why nothing from up there is ever left lying about afterwards - what a visitor is carrying goes with them, on the breath they chose, every time it has ever happened.'
     }),
-    // ═══════════════════════════════════════════════════════════════════
     // THE FLOWER ROAD
-    //
-    // A school, built the way the sword school is built and for the same
-    // reason. See the note beside `FLOWER_SUBJECT` below.
-    //
-    // WHAT THE ROAD IS ABOUT, in one line, because that is the test a road
-    // has to pass: the sword is a moving edge and nothing that stands
-    // anywhere. A flower art is SET, AND OPENS AT ITS OWN TIME - placed
-    // rather than thrown, a season rather than a swing. That is why the
-    // cooldowns here are long and why the two arts that hold a volume do it
-    // by standing rather than by reaching: the road's whole premise is that
-    // the practitioner decides WHEN, and never how fast.
-    //
-    // NOT AN ELEMENT. Every row here is wood or ice, and neither of those is
-    // the road - the same distinction the sword note draws, where the
-    // Pavilion's shelf is metal end to end including a bell and a thread and
-    // neither of those is a sword. What these twelve have in common is the
-    // bed, not the material.
-    //
-    // THE CLIMB STOPS AT 33 AND THE HOUSE THAT TEACHES IT STANDS AT 34, AND
-    // THAT IS DELIBERATE. Do not "fix" the ladder to reach its own head. The
-    // Orchid Court's Matriarch is one rung past the top of her own road, the
-    // Court has never claimed to have taught her, and the valley did it -
-    // which is the whole of what that house is about and is stated in
-    // `sects.ts` in those words. A road that reached 34 would delete it.
-    // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'frost-setting-bud',
         // The road's premise, taught first and never taught again: a thing is
@@ -4093,17 +3080,16 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'standing-bed-array',
-        // NOT ON THE FORMATION ROAD, and it was drafted that way and taken
-        // back off. The frost channels along the valley floor genuinely are an
-        // array, so the crossover read as obvious - but raising arrays is two
-        // arts in the whole catalog by an owner ruling ("not every sword art
-        // is also a formation art, maybe one or two is"), and a second school
-        // picking it up doubles that as a SIDE EFFECT of building a road.
-        // `a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts` says
-        // to change that count deliberately, with the rows, and the ruling was
-        // made about the sword. Whether a second school may raise arrays is a
-        // question for the design owner, not a thing to take while nobody is
-        // looking.
+        // NOT ON THE FORMATION ROAD, and it was drafted that way and taken back
+        // off. The frost channels along the valley floor genuinely are an array, so
+        // the crossover read as obvious - but raising arrays is two arts in the
+        // whole catalog by an owner ruling ("not every sword art is also a
+        // formation art, maybe one or two is"), and a second school picking it up
+        // doubles that as a SIDE EFFECT of building a road.
+        // `a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts` says to
+        // change that count deliberately, with the rows, and the ruling was made
+        // about the sword. Whether a second school may raise arrays is a question
+        // for the design owner, not a thing to take while nobody is looking.
         subjects: ['flower'],
         name: 'Standing Bed Array',
         category: 'defense',
@@ -4174,13 +3160,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A standing cold laid over ground, inside which nothing opens until the practitioner allows it - a held breath, a drawn blade, a wound, a decision. It does not stop anybody doing anything. It decides when the doing arrives, and against most people that is the same thing said politely.'
     }),
 
-    // ── the climb, wood end to end ──────────────────────────────────────
-    // One element the whole way, which is deliberate and is the difference
-    // between this house and the physician house one province over: the
-    // Verdant Spring Hall's wood line runs 16, 17, 21, 25 and stops, so a
-    // wood root there has a real career and a real ceiling. Here the same
-    // root goes to thirty-three. Which road you are on decides nothing
-    // inside these walls; the door does.
+    // the climb, wood end to end One element the whole way, which is deliberate and
+    // is the difference between this house and the physician house one province
+    // over: the Verdant Spring Hall's wood line runs 16, 17, 21, 25 and stops, so a
+    // wood root there has a real career and a real ceiling. Here the same root goes
+    // to thirty-three. Which road you are on decides nothing inside these walls;
+    // the door does.
     art({
         id: 'cold-bed-foundation-canon',
         subjects: ['flower'],
@@ -4306,45 +3291,6 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
 
 /**
  * The sword is a school, and flight on a blade belongs to it.
- *
- * Ruled by the design owner: flight on one's own sword is not a rung anybody
- * with a metal root reaches at Foundation. It belongs to sword cultivators - to
- * sword schools with sword arts - and `gale-riding-sword-flight` gated on
- * `requiredOrdinal` and an element and on nothing else, which let anybody with
- * a metal root at 15 simply have it.
- *
- * The gate is built out of `subject`, which `TechniqueSchema` has always
- * carried and which `daoMatches` in `engine/cultivation/dao.ts` has always
- * read. It was populated on nothing until this ruling. Five rows carry it now
- * and they are exactly the arts whose whole subject is the blade - the flying
- * blade, the river chant, the two domains, and the flight itself.
- *
- * WHY NOT ELEMENT. `element: 'metal'` is what an art is made OF, and the
- * Pavilion's shelf is metal end to end including a golden bell and a thread
- * flicked off a fingertip, neither of which is a sword. Element and subject are
- * different questions and reading one for the other is what produced the hole.
- *
- * WHY NOT THE DAO GATE. `daoGate` fires at immortal and chaos grade only, and
- * the flight is earth grade. Demanding Dao standing of a Foundation cultivator
- * would close the art to everybody including the house that teaches it.
- *
- * AND `'sword'` IS THE WORD THE REST OF THE ENGINE ALREADY USES, which is the
- * reason these rows are worth having beyond the gate.
- * `engine/cultivation/understanding.ts` mints insights as
- * `{ domain: 'weapon', subject: 'sword' }` - from a sword tomb, and from the
- * outer library an origin can grow up in - and `SUBJECT_DOMAINS` maps `sword`,
- * `spear` and `blade` to the weapon domain. `SUBJECT_BY_CATEGORY` below
- * defaults every attack art to the subject `'weapon'`, which is a DOMAIN name
- * and matches no insight anywhere in the world, so a cultivator who understood
- * the sword got no bonus on the sword arts and could not have. Naming these
- * five for what they are about closes that, and `daoName('sword', 'weapon')`
- * reads out as "the Dao of the Sword" without anything else being touched.
- *
- * The consumer is `couldFlyOnTheirOwnBlade` in
- * `engine/world/what-a-conveyance-does-to-a-journey.ts`, which is what makes
- * this a live rule rather than a field: flight is one row of the conveyance
- * ladder, so a sword house's parties move differently from a richer
- * neighbour's, and that is the whole of what the exclusivity buys.
  */
 export const SWORD_SUBJECT = 'sword';
 
@@ -4362,41 +3308,6 @@ export function isSwordArt(techniqueId: string): boolean {
 
 /**
  * The flower is a school, and taking without ending the stand belongs to it.
- *
- * Built to the shape the sword road established directly above, deliberately
- * and point for point, because a second road invented on its own terms would
- * be a second way of being a road.
- *
- * WHAT IT IS ABOUT. The sword is *a moving edge, and nothing that stands
- * anywhere*. The flower is its structural opposite: an art on this road is
- * SET, AND OPENS AT ITS OWN TIME - placed rather than thrown, a season rather
- * than a swing. That is a real identity rather than a re-skin, and it is what
- * earns the long cooldowns and the two arts that hold a volume by standing.
- *
- * WHY NOT ELEMENT, again. These twelve are wood and ice and neither is the
- * road, exactly as the five sword arts are metal and water and neither is the
- * blade. What they have in common is the bed.
- *
- * WHAT THE ROAD BUYS, which is the part that makes it a road rather than a
- * tag on twelve rows. The sword road's answer is flight, and its consumer is
- * `couldFlyOnTheirOwnBlade`. This road's answer is
- * {@link takesWithoutEndingTheStand}, and its consumer is
- * `drawFromTheGround` in `engine/world/what-a-place-still-has-in-the-ground.ts`:
- * a taker on this road gets the same armful and the bed loses less. It is the
- * whole explanation of the house that teaches it - the Orchid Court has worked
- * the same beds for centuries and they still set, and anybody else with a
- * knife gets the same armful and a thinner bed next year.
- *
- * It reduces and never zeroes, which is `AGENTS.md`'s law about defences
- * applied to a bed: the ground still goes down, it goes down more slowly, and
- * nothing here creates a herb that was not there.
- *
- * AND THE ROAD STOPS BELOW THE HOUSE THAT TEACHES IT. `unhurried-canon` caps
- * at 33 and the Orchid Court's Matriarch stands at 34. That gap is load
- * bearing and is argued in `sects.ts`: she is the only one who ever crossed
- * that last stretch, the Court has never claimed to have taught her, and what
- * is behind that gate is ground rather than a curriculum. A road extended to
- * 34 would delete the house's whole thesis, so do not extend it.
  */
 export const FLOWER_SUBJECT = 'flower';
 
@@ -4414,15 +3325,6 @@ export function isFlowerArt(techniqueId: string): boolean {
 
 /**
  * Whether this cultivator takes from a bed the way the school takes.
- *
- * The flower road's answer to flight, and the gate is built the same way
- * `couldFlyOnTheirOwnBlade` is: holding one page out of a school is not being
- * of it. Another art of the school, or a road that is the flower, and the page
- * stops being a page.
- *
- * Deliberately NOT gated on a rung. Taking a cutting without killing the stand
- * is the first thing a bed hand is shown - `frost-setting-bud` opens at 3 -
- * and it is the one part of this road that is not about height at all.
  */
 export function takesWithoutEndingTheStand(input: {
     /** Every art they hold. Order is not read. */
@@ -4493,21 +3395,8 @@ export interface TechniqueQuery {
     /** When true, only arts with no element are returned. */
     elementlessOnly?: boolean;
     /**
-     * Exclude forbidden arts, which are never legitimately taught - and, with
-     * them, any art that `runsOn: 'the_others'`.
-     *
-     * The second half is the same statement as the first on the axis that
-     * actually carries it: an art whose qi comes out of somebody who gains
-     * nothing by it is banned by name on every righteous register, and whether
-     * the catalog happens to file it under `forbidden` or under
-     * `dual_cultivation` is a fact about the mechanism rather than about the
-     * reputation. `crimson-bound-union-rite` is the case that made the
-     * distinction matter: a `dual_cultivation` rite every register calls for a
-     * head over.
-     *
-     * A house that teaches one anyway still lists it on its own `teaches`
-     * array, which this filter never reads - it only narrows what counts as
-     * ordinarily, legitimately available.
+     * Exclude forbidden arts, which are never legitimately taught - and, with them,
+     * any art that `runsOn: 'the_others'`.
      */
     excludeForbidden?: boolean;
     /** Restrict to one source: what a sect can teach, or what must be dug up. */
@@ -4537,15 +3426,8 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
 }
 
 /**
- * The highest-grade arts a cultivator can currently reach, which is what a
- * shop, a sect library, or an inheritance should actually be offering.
- *
- * AT THE TOP THIS RETURNS TWO GRADES AND THAT IS THE ANSWER, not a bug to
- * flatten. `gradeRank` ties immortal and chaos, so "the best you can reach"
- * up there is the immortal arts AND the chaos arts, and a shelf that offered
- * only one of them would be answering a question nobody asked. Which of the
- * two somebody wants is exactly the decision the grades exist to pose: the
- * reliable one, or the one that is as strong and might do something else.
+ * The highest-grade arts a cultivator can currently reach, which is what a shop, a
+ * sect library, or an inheritance should actually be offering.
  */
 export function findBestTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery = {}): TechniqueEntry[] {
     const eligible = findTechniquesForOrdinal(ordinal, opts);
@@ -4566,37 +3448,7 @@ export function gradeForOrdinal(ordinal: number): TechniqueGrade {
     return 'chaos';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // LIVING TEACHERS
-//
-// A sixth route, and the one the catalog had no way to express. `provenance`
-// answers how a COPY would reach a reader - a shelf, a tomb, a body, a face,
-// an estate - and every one of those is paper. A person is not paper.
-//
-// The engine has always known the difference and said so twice. `opacity` is
-// how much of an art fails to survive being written down, which is why the
-// catalog can describe famous manuals "held for centuries by houses full of
-// people who can recite them and cannot perform them". And `guidanceMultiplier`
-// prices a master by the gap between them and the student. Both of those said
-// a person transmits better than a book, and neither could be used to GET a
-// method, because nothing in the data said which person held which one.
-//
-// This is that. It is a join table, not a second technique catalog: the arts
-// are the same rows read by the same code, and what is new is a name attached
-// to one, and a price that is not money.
-//
-// THREE RULES, and they are what keep this from being a shop.
-//
-//   1. A teacher stands at or above the manual's cap. Guidance is priced on
-//      the gap between guide and guided, and somebody who has not stood where
-//      the book ends cannot walk anybody to it. This is checked.
-//   2. What they want is never only stones. Every price here is a thing about
-//      the student or about the teacher's own unfinished business, because a
-//      method somebody can buy is a shelf with extra steps.
-//   3. A teacher is not a shortcut past the corridor's shape. They hold arts
-//      that exist, at rungs the corridor already gates, and being taught by
-//      one is a way THROUGH a choke point rather than around it.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface LivingTransmission {
     /** The person, by their row in `members.ts`. */
@@ -4680,23 +3532,6 @@ export function teachersOf(techniqueId: string): readonly LivingTransmission[] {
 
 /**
  * The highest rung TEACHING can put somebody on, for this book.
- *
- * A book's `cap` and its teachable end are not the same number, and reading the
- * first as the second is what made the register say the Hollow Court cannot
- * finish its own road.
- *
- * `cap` is where the paper stops carrying you, and for a book covering the last
- * realm that is 45 - the rung the last crossing LANDS on. Nobody is ever taught
- * onto 45. It is reached by surviving the crossing and by nothing else, which
- * `realms.ts` states flatly and which is the whole reason `LAST_CROSSING_ORDINAL`
- * is 44. So the highest rung any teacher can walk any student to is 44, whatever
- * the book says after that.
- *
- * The consequence worth stating, because it is the coherence complaint that
- * produced this function: a house whose best teacher stands at 44 can teach
- * every rung anybody can be taught, and comparing their reach against `cap`
- * reports them as two rungs short of a road they have in fact finished. The
- * Hollow Court's First Seat is that person. Compare against this instead.
  */
 export function teachableEndOf(techniqueId: string): number | null {
     const art = getTechnique(techniqueId);
@@ -4708,22 +3543,6 @@ export function teachableEndOf(techniqueId: string): number | null {
 
 /**
  * How far this teacher can actually take a student in this art.
- *
- * Their own rung, the book's teachable end, whichever is lower - because
- * guidance is priced on the gap between guide and guided, so nobody walks
- * anybody past where they themselves have stood, and nobody walks anybody onto
- * a rung that only the crossing reaches. See `teachableEndOf`.
- *
- * That produces a fact worth having rather than a rounding error. The
- * Rime-Heart Stillness Canon ends at 37 and the Frostmirror Court's highest
- * living member stands at 36, so the last rung of the narrowest book in the
- * world has no living teacher anywhere and has to be walked alone. Nobody
- * authored that; it fell out of the two numbers.
- *
- * The clamp at `LAST_CROSSING_ORDINAL` is inert today - the highest teacher in
- * the world stands at 44 - and it is written down anyway, because the thing it
- * refuses is a False Immortal being read as able to teach somebody onto their
- * own rung, and that is a sentence somebody will otherwise write.
  */
 export function carriesTo(memberOrdinal: number, techniqueId: string): number | null {
     const end = teachableEndOf(techniqueId);

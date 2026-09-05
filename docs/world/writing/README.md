@@ -11,6 +11,7 @@ of `docs/world` because the engine loads it at run time.
 | File | What it answers |
 |---|---|
 | [`escapes.md`](escapes.md) | characters that must not appear in prose |
+| [`place-names.md`](place-names.md) | what a place, house, item or art is called, and the two renames that were rejected |
 | [`tone.md`](tone.md) | the voice: what it does and what it never does |
 
 ---

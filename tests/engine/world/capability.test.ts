@@ -282,7 +282,7 @@ describe('capability: realm classes are potential, not entitlement', () => {
 
     it('decouples Void Refinement from the scarcity the world runs on', () => {
         const scar = makeLocation({
-            id: 'loc-scar', name: 'the scar at Scarwater', kind: 'scar',
+            id: 'loc-scar', name: 'the scar at Clear River Ford', kind: 'scar',
             thresholds: makeThresholds(0, 29, 33, 44),
             hazards: ['thin_qi', 'dead_zone']
         });

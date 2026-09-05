@@ -1,61 +1,5 @@
 /**
  * How each faction stands with the bodies above it, below it and beside it.
- *
- * The catalog already knew a great deal about who answers to whom - a grant in
- * `FACTION_PARENTAGE`, an apex on every court, a rivals list on every sect, a
- * contested claim on most ambitions, a counter on every dao house, a shared
- * event with two accounts of it - and none of it was ever assembled into the
- * one question a reader actually arrives with: *how do these two get on*. This
- * module is that assembly. It adds no faction, no grant and no fight; it reads
- * the tables that already exist, and it carries authored pairs for the ties
- * those tables cannot express.
- *
- * WHY THE PAIR IS THE OBJECT
- * --------------------------
- * A relationship is stored once, as a pair, with two sides on it. That is not
- * tidiness - it is the correctness rule stated in the type.
- *
- *   The FACT is symmetric and is written once. `kind`, `what` and `since` are
- *   single fields on the pair, so there is no way to record that A is patron to
- *   B without B holding from A. A one-directional claim the other side does not
- *   carry is the incoherence this module exists to remove, and the shape of the
- *   data makes it unrepresentable rather than merely tested for.
- *
- *   The FEELING is asymmetric and is written twice. `a` and `b` each carry
- *   their own warmth, their own account of the tie in their own mouth, what
- *   they actually do about it, and a grievance where there is one. A house can
- *   be dutiful upward and brutal downward; a client can be warm to a patron who
- *   is merely civil back. That asymmetry is the interesting part and it is
- *   the reason two mirrored records would have been the wrong shape: mirrored
- *   records let the facts drift, and a pair with two sides cannot.
- *
- * UPWARD AND DOWNWARD ARE NOT DECORATION
- * --------------------------------------
- * `aStandsTo` is where A sits relative to B, and it is read from the same
- * tables that decide the org chart, so a relationship cannot disagree with the
- * pyramid. Every body therefore has relations in three directions and the
- * register shows all three: what it answers to, what answers to it, and what
- * stands level with it. A body warm upward and cold downward is a legible and
- * common shape, and until now nothing anywhere said so.
- *
- * WHAT IS AUTHORED AND WHAT IS DERIVED
- * ------------------------------------
- * Both are data and neither is invented at render time. A derived tie restates
- * a row that already exists - a grant, a rivalry, an event with two accounts -
- * and says which table it came from, so a reader can check it. An authored tie
- * is written here because no table carries it: two bodies with no shared patron
- * and no shared border can still be the two most closely bound institutions in
- * the world, which is exactly the case of the Root Sill and the Kiln.
- *
- * Where both exist for one pair, the authored one wins and the derived one is
- * dropped, because the authored one says everything the derived one did and
- * more. `SOURCE` on the resolved record says which a reader is looking at.
- *
- * NOTHING HERE DECIDES ANYTHING. There is no warmth arithmetic, no threshold at
- * which a cold relationship becomes a war, and no helper that adds warmth words up.
- * `Warmth` is a word from a fixed list, chosen by an author or restated from a
- * `standing` field, and a grievance with a cause is worth more than any number
- * this file could have carried.
  */
 
 import { z } from 'zod';
@@ -88,33 +32,6 @@ export type RelationStance = z.infer<typeof RelationStanceSchema>;
 
 /**
  * How warm one side is toward the other. Six words, deliberately not a number.
- *
- * The scale is about conduct rather than sentiment, because conduct is what an
- * outsider can observe and what the engine could ever act on:
- *
- *   warm     glad of them, and will spend on them without being asked
- *   civil    the forms observed, and nothing past them
- *   distant  no ill will and no contact; nobody maintains this one
- *   wary     useful, and watched, and not left unattended
- *   cold     the forms observed, and the warmth deliberately withheld
- *   hostile  acted against, or would be if the cost ever fell
- *
- * `civil` and `cold` are the pair that does the most work in this world. Both
- * parties do exactly what the arrangement requires; only one of them has
- * decided that is all they will ever do.
- *
- * WHY THIS WORD IS `civil` AND NOT `correct`. It was `correct` for a long time,
- * in the formal-manners sense - scrupulously polite, nothing beyond the forms -
- * and every reader who met it read it as "accurate" instead, because that is
- * what the word means to anybody who has not been told otherwise. A gloss
- * printed beside it does not rescue that: the reader hits the word first and
- * has already misread the row by the time they reach the explanation. `civil`
- * carries the same meaning in ordinary English, needs no gloss to be understood
- * at all, and keeps the distinction from `cold` that the pair exists for -
- * everybody knows the difference between being met civilly and being met
- * coldly. The other five were checked against the same test and all pass it:
- * `warm`, `distant`, `wary`, `cold` and `hostile` mean in this scale what they
- * mean in a sentence.
  */
 export const WarmthSchema = z.enum([
     'warm',
@@ -170,10 +87,6 @@ export const RelationSideSchema = z.object({
     andSoTheyDo: z.string().min(60),
     /**
      * The specific complaint, where there is one, with its cause and its date.
-     *
-     * Null is a real answer and a common one: a body can be cold to another
-     * without having anything to complain about, and a grievance nobody can
-     * name is the kind that gets invented later.
      */
     grievance: z.string().min(60).nullable()
 });
@@ -189,10 +102,6 @@ export const FactionRelationshipSchema = z.object({
     kind: RelationKindSchema,
     /**
      * The tie itself, stated once, in nobody's voice.
-     *
-     * Both sides read this same sentence. If a fact only one party accepts
-     * belongs in the description, it belongs in that party's `howTheyPutIt`
-     * instead - this field is the part neither of them disputes.
      */
     what: z.string().min(100),
     /** Where it came from, dated wherever the catalog dates it. */
@@ -202,38 +111,10 @@ export const FactionRelationshipSchema = z.object({
 });
 export type FactionRelationship = z.infer<typeof FactionRelationshipSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE AUTHORED PAIRS
-//
-// Written here because no table in the catalog carries them. Everything else a
-// body stands in is derived below from the grant table, the court table, the
-// rivalry lists, the contested claims, the dao house counters and the shared
-// events, and a derived tie is not a lesser tie - it is the same fact, read out
-// of the row that already held it.
-//
-// The rule for adding one: it must say something the existing tables cannot.
-// Two houses that are rivals do not need an entry here to say they are rivals.
-// They need one when the interesting fact is that one of them does not think of
-// it as a rivalry.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
-    // ═══════════════════════════════════════════════════════════════════
     // THE TWO BODIES NOBODY JOINS
-    //
-    // The pair this module was built for. They share no patron, no border and
-    // no correspondence, so not one of the derivable tables produces a tie
-    // between them, and the register showed the two offices among the courts as
-    // two unrelated entries.
-    //
-    // NOT A NAMING DISPUTE. The catalog used to carry a partisan account on
-    // each of them arguing that it was the real house, with a field on each
-    // saying no instrument anywhere settles it. That framing is gone: it made
-    // an institution that had split read as an institution having an argument.
-    // They had a schism and they have run independently ever since, and this is
-    // the relationship - what each kept, whom each answers, and how much of
-    // each other they can stand.
-    // ═══════════════════════════════════════════════════════════════════
     {
         id: 'rel-the-root-sill-and-the-kiln',
         aId: 'sect-kiln-wardens',
@@ -344,13 +225,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         }
     },
-    // ── THE REFUSAL, AND THE ONLY TWO BODIES IN A POSITION TO NOTICE IT ──
-    //
-    // `severed_patronage` is the wrong kind and `tolerated` is the wrong
-    // reading, so this is `two_bodies_nobody_joins`: the North has no
-    // arbitration, no register and no third party, so a quarrel here has
-    // nowhere to go and simply sits. That is the province working rather than
-    // this pair being unusual.
+    // THE REFUSAL, AND THE ONLY TWO BODIES IN A POSITION TO NOTICE IT
     {
         id: 'rel-the-court-that-went-down',
         aId: 'sect-frostmirror-court',
@@ -375,7 +250,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'A grant is a band of altitude and a band of altitude has to be followed uphill. We were not able to say why we could not take one without saying what was in the valley, so we said no and did not explain, and that is still where the matter is.',
             andSoTheyDo:
-                'Sells its crop through the Cold Crucible and the Fourhands station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
+                'Sells its crop through the Cold Crucible and the Four Graves station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
             grievance: null
         }
     },
@@ -386,7 +261,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'same_patron',
         what:
-            'Two bodies answering the Deep Survey directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Low Fall nobody can replace, and the probation was carried across rather than lifted. The Kiln was not consulted about the raising, which is unremarkable, because the Kiln is not consulted about anything.',
+            'Two bodies answering the Deep Survey directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Jade Gorge nobody can replace, and the probation was carried across rather than lifted. The Kiln was not consulted about the raising, which is unremarkable, because the Kiln is not consulted about anything.',
         since:
             'The raising of the Storm Tyrant Court to answer the Survey directly, which made it the second Survey body in the province and gave the province its first pair to compare.',
         a: {
@@ -408,15 +283,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
 
-    // ═══════════════════════════════════════════════════════════════════
     // THE TOP OF THE WORLD
-    //
-    // Three apexes and the one body none of them will go near. Their conduct
-    // toward each other is authored on each apex row already; what was missing
-    // was the pairing, which is what makes the asymmetries legible - the
-    // Pavilion is cold to both and both are wary of it, and neither of those
-    // two is anything but civil with the other.
-    // ═══════════════════════════════════════════════════════════════════
     {
         id: 'rel-the-two-old-apexes',
         aId: 'apex-deep-survey',
@@ -487,7 +354,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'An arrangement with nobody in it to be responsible is not an answer to the objection, it is a way of not having to hear it. The Pavilion says so out loud, in a room where saying it out loud is read as a tell.',
             andSoTheyDo:
-                'Publishes its own standard and refuses on it, which makes the silent arrangements in the Marches legible by contrast without a word of it being addressed to anybody.',
+                'Publishes its own standard and refuses on it, which makes the silent arrangements in the Silent Cliffs legible by contrast without a word of it being addressed to anybody.',
             grievance: null
         },
         b: {
@@ -581,16 +448,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
 
-    // ════════════════════════════════════════════════════════════════════
     // TWO HOUSES CUT OFF FROM ABOVE, TREATED DIFFERENTLY FOR ONE REASON
-    //
-    // Both have lost the object their line ran through. The difference is
-    // whether the province KNOWS or merely suspects, and it shows up here
-    // rather than in either house's own description, because it is not a
-    // fact about either of them - it is a fact about how everybody else
-    // behaves toward them. A patron renews one without asking and prices the
-    // other; a tenant pays one on time and has begun testing the other.
-    // ════════════════════════════════════════════════════════════════════
     {
         id: 'rel-the-storm-tyrant-and-the-tenant-that-has-started-counting',
         aId: 'sect-storm-tyrant-court',
@@ -648,22 +506,10 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
 ];
-// ─────────────────────────────────────────────────────────────────────────
 // RESOLUTION
-//
-// A body's section of the register is the authored pairs it appears in, plus
-// every tie the other tables already implied. Derivation happens here rather
-// than in the view for the reason the whole module exists: a relationship the
-// register assembles at render time is decoration, and one the catalog can be
-// asked for is state.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * One relationship as it looks from one side of it.
- *
- * `stance` is where the OTHER body stands relative to the one being asked
- * about, because that is the question a reader of an entry is asking: what is
- * above me, what is below me, what is beside me.
  */
 export interface ResolvedRelationship {
     id: string;
@@ -687,14 +533,6 @@ export interface ResolvedRelationship {
 
 /**
  * What to call the body on the other end of a tie.
- *
- * A BODY, and only ever a body. This module relates institutions to
- * institutions and to nothing else: a person is not a faction, and neither is
- * whoever happens to be standing in the same ruin. Facts about what an
- * individual does, or about how a house behaves when it meets strangers,
- * belong in that house's own description - they are not ties, and putting one
- * here makes a section about how bodies stand with each other into a place
- * where anything can be filed.
  */
 function nameOfBody(id: string): string {
     return getSect(id)?.name
@@ -709,14 +547,6 @@ function invert(stance: RelationStance): RelationStance {
 
 /**
  * The warmth a `standing` value already states, restated in this vocabulary.
- *
- * Not a new fact and not an inference. `Parentage.standing` is the catalog's
- * own word for how a client is doing with its patron, and this is the same word
- * in the scale the register reads. It runs in one direction only, because
- * `standing` runs in one direction only: it says how the client stands, and it
- * says nothing whatever about what the patron feels, which is why a derived
- * downward tie takes `civil` and an authored one is the only way a patron
- * ever gets a warmer or a colder word than that.
  */
 function warmthFromStanding(standing: string): Warmth {
     switch (standing) {
@@ -743,19 +573,6 @@ interface DerivedPair {
 
 /**
  * The one id a body is filed under here, where it has more than one.
- *
- * Several bodies have a row in two catalogs - an apex that is also a sect, a
- * court that is also a sect - and the tables this module reads were each
- * written against whichever of the two their author had in front of them. The
- * Azure Mist holds from the Pavilion in the grant table and is posted by the
- * Azure Cloud in the court table, and those are one relationship with one other
- * party, not two: without this the Mist's entry listed its own patron twice
- * under two names, which is precisely the incoherence this module exists to
- * remove.
- *
- * The last id is taken rather than the first because `idsForFaction` returns
- * the institutional row first and the house row second, and the house name is
- * the one the register leads with and the one every reader arrives holding.
  */
 function canonical(id: string): string {
     const ids = idsForFaction(id);
@@ -768,10 +585,6 @@ function pairKey(a: string, b: string): string {
 
 /**
  * Every tie the other catalogs already contain, read out of them.
- *
- * Built once at module load, because the tables it reads are frozen constants
- * and a per-call rebuild would be the same answer at a cost paid on every
- * faction on the sheet.
  */
 const DERIVED: readonly DerivedPair[] = (() => {
     const out: DerivedPair[] = [];
@@ -832,13 +645,7 @@ const DERIVED: readonly DerivedPair[] = (() => {
         });
     }
 
-    // ── the court table: an apex and the courts it posted ────────────
-    //
-    // Read separately from the grant table because the catalog files
-    // subordination in two places and they do not overlap. A court names its
-    // apex on its own row; everything else points upward from the parentage
-    // table, and an apex assembled from one of them loses whatever lives in
-    // the other.
+    // the court table: an apex and the courts it posted
     for (const court of COURTS) {
         add({
             id: `rel-posted-${court.id}`,
@@ -1015,10 +822,6 @@ const STANCE_ORDER: Record<RelationStance, number> = { above: 0, alongside: 1, b
 
 /**
  * Every relationship one body stands in, seen from that body's side.
- *
- * Accepts any id the body is filed under - a court id, a sect id or an apex id
- * - because several bodies have rows in two catalogs and a caller holding
- * either one is asking the same question.
  */
 export function relationshipsOf(factionId: string, alsoKnownAsIds: readonly string[] = []): ResolvedRelationship[] {
     const mine = new Set<string>([factionId, ...alsoKnownAsIds]);
@@ -1062,12 +865,6 @@ export function relationshipsOf(factionId: string, alsoKnownAsIds: readonly stri
 
 /**
  * The one tie between two named bodies, from the first one's side. Usually none.
- *
- * Both ends are resolved through every id their body is filed under, because a
- * caller holding a court id and a caller holding that court's sect id are
- * asking the same question and must get the same answer. Matching on the bare
- * string instead reported that the Azure Mist Court does not record the apex
- * that posted it, which it does, under the apex's other name.
  */
 export function relationshipBetween(factionId: string, otherId: string): ResolvedRelationship | undefined {
     const theirs = new Set(idsForFaction(otherId));

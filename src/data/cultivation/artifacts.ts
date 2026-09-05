@@ -1,37 +1,5 @@
 /**
  * The artifact catalog.
- *
- * One table for every artifact in the world, ordered by `power` descending,
- * because the ordering is the argument: an object an ascended founder sent back
- * down and a notched sabre off a dead bandit are the same kind of row with
- * different numbers in one column. Read top to bottom and the whole hierarchy
- * of force in the setting is legible without a single sentence of explanation.
- *
- * NOTHING HERE IS SPECIAL-CASED, AND THAT IS THE DESIGN
- * There is no immortal-artifact table, no apex tier, no rule anywhere that says
- * the strongest objects behave differently from the weakest, and no branch that
- * checks who is holding one. They are `ObjectRecord`s, made by the same factory
- * that makes a spare robe, with an ownership trail like any looted blade. What
- * makes an apex head hard to kill is that they are carrying something in the forties - the same way
- * a bandit with a 6 is harder than a bandit with nothing, resolved by the same
- * code. Take the object away and the holder is an ordinary cultivator at their
- * own rung with no residue, which is the only reason stealing one is worth
- * writing a story about.
- *
- * Everything `catastrophe.ts` says about the top of the world being unassailable
- * is a description of what these numbers produce when the ordinary resolver
- * reads them. If the resolver stops producing it, the prose is what is wrong.
- *
- * WHAT THE NUMBERS MEAN
- * `power` is on the same ladder a person stands on, so an object at 41 is worth
- * roughly what a cultivator at 41 is worth, and the comparison a player wants to
- * make - is this worth more than the person carrying it - is a subtraction.
- *
- * These are measured rather than chosen. The combat harness ran four hundred
- * seeds a pairing against a head at forty-three and reported what each rating
- * produced; the sent-down objects are set where the outcome matches what the
- * setting says about them, and if the resolver changes, these numbers move
- * rather than the prose being defended.
  */
 
 import { makeObject, type ObjectRecord } from '../../engine/world/possessions.js';
@@ -45,13 +13,6 @@ import { idsForFaction } from './hierarchy.js';
  */
 /**
  * The two ways an object at forty-five comes to be in the world.
- *
- * Forty-five is the ceiling for anything that can be HELD down here, and the
- * reason is in `OBJECT_CEILING_BELOW_THE_LID`: a weapon rated at a rung lets
- * whoever holds it strike at that rung, so a forty-six in a mortal hand would
- * be a way to injure a True Immortal, and there is no such thing. But the
- * ceiling is a ceiling on what STAYS, not on what has ever been here, and that
- * distinction is where the second route comes from.
  */
 export const HOW_A_FORTY_FIVE_EXISTS = {
     sentDown:
@@ -72,23 +33,6 @@ export const HOW_A_FORTY_FIVE_EXISTS = {
 
 /**
  * The rung above the ceiling, and why it is in this table at all.
- *
- * `OBJECT_CEILING_BELOW_THE_LID` is forty-five and it is a ceiling on what can
- * be HELD down here, for the reason `realms.ts` gives: an object rated at a rung
- * lets whoever is holding it strike at that rung, so a forty-six in a mortal
- * hand is a way for somebody at forty-four to injure a True Immortal, and there
- * is no such thing anywhere. Nothing in these three rows breaks that. They are
- * not held down here. They are what somebody up there is carrying, and the
- * whole of their behaviour in the lower realm is the ten to fifteen breaths in
- * `BREATHS_IN_THE_LOWER_REALM` and then gone, with the carrier, every time.
- *
- * So they are in this table for the same reason a notched sabre is: because
- * there is exactly one table, the ordering is the argument, and an object that
- * lived in a separate immortal tier would be the precise mistake the header of
- * this file exists to prevent. The columns say the rest without a rule
- * anywhere - `ownerId` is null on all three, so `artifactsOwnedBy` can never
- * return one to any faction, and `possessorId` names a person no party in this
- * world can reach, ask, rob or inherit from.
  */
 export const NOTHING_AT_FORTY_SIX_IS_EVER_LEFT = {
     theyAreCarriedAndOnlyCarried:
@@ -103,35 +47,7 @@ export const NOTHING_AT_FORTY_SIX_IS_EVER_LEFT = {
         'With one exception, and it is the only evidence for any of this: something came down into a courtyard, crossed it, and eleven people watched. Three accounts survive, they agree on the duration and on nothing else, and not one of them describes what was in its hand in a way that establishes anything. Everything above is inference from the rule rather than from a sighting, and the catalog states it that way round.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // AN OBJECT FIT FOR YOUR PATH, AND THE MANY THAT ARE NOT
-//
-// `data.daoDomain` is the road an object is legible AS. Seven rows carry one
-// and seventeen do not, and the seventeen are the point: an object that is
-// merely strong teaches nobody anything, and if every legendary row taught a
-// road then holding one would be a prize rather than information.
-//
-// The rule for whether a row gets one is written in the row's own description
-// and nowhere else. The Ninth Nail is a place that cannot be folded, so it is
-// legible as formation. The Standing Edge settles who somebody is without
-// appeal, so it is karma. The Key of the Long Cold is explicitly "the strongest
-// thing anybody has built out of a CURRICULUM instead of out of a dao" - so it
-// has no road in it and never will, and the Storm Tally is a lightning
-// curriculum for the same reason. A curriculum teaches a method; a dao does
-// not.
-//
-// Nothing else is stored. The rung below which a holder reads nothing is
-// derived from `power` by `ARTIFACT_LEGIBLE_WITHIN` in
-// `engine/world/how-a-cultivator-comes-by-a-road.ts`, because a second
-// authored number beside `power` is a second opinion about how strong a thing
-// is, and it would go stale the first time anybody retuned the ladder. Data
-// files say what is standing where; they do not do arithmetic.
-//
-// This is the third of the comprehension sources the design owner asked for -
-// carvings, ground somebody great sat on, and an object fit for your path -
-// and all three arrive at the gate through the same `RoadWithinReach` list
-// that a player and an NPC both hand to the same function.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 46: carried, never held. See `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT` ──
@@ -162,7 +78,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: '',
         possessorId: 'figure-ru-anjing',
         description:
-            'The newest object in existence, three hundred and eighty years old, and the counterpart nobody in the Low Fall has ever considered: the Standing Edge is what she left, and this is what she took. The Azure Cloud Pavilion has built a certification practice, a reputation and most of its standing on the half of the pair she could afford to part with, and has never once asked what the other half is.',
+            'The newest object in existence, three hundred and eighty years old, and the counterpart nobody in the Jade Gorge has ever considered: the Standing Edge is what she left, and this is what she took. The Azure Cloud Pavilion has built a certification practice, a reputation and most of its standing on the half of the pair she could afford to part with, and has never once asked what the other half is.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     makeObject({
@@ -178,36 +94,11 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
             'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Fixed Star Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
-    // ── 45: three of them, and no two are held by allies ──────────────────
-    //
-    // WHY THE HOLLOW COURT'S FOUR ARE NAMED UNLIKE EVERYTHING ELSE HERE
-    // -----------------------------------------------------------------
-    // The Unwritten Span, The Second Silence, The Turned Leaf and The Fourth
-    // Refusal are abstractions where the rest of this catalog is images, and
-    // that is deliberate rather than an older draft nobody has got to.
-    //
-    // Every one of them is tagged `undeclared`: nobody outside the Court has
-    // seen one and the Court has never said they exist. So there is no name
-    // for them IN the world - no house calls them anything, no register lists
-    // them, and no seller has ever quoted one. What these rows carry is this
-    // catalog DESCRIBING four objects, which is a different act from reporting
-    // what people call a thing, and it should read differently.
-    //
-    // Contrast the sent-down band above and the forged band below, every one
-    // of which is `known-to-exist`. Those have public names because the world
-    // has had to talk about them, and they are images accordingly - the Ninth
-    // Nail, the Fixed Star Lamp, the Chained Stone.
-    //
-    // So: do not "fix" these four into treasure names. Naming them would be
-    // asserting that somebody below the Lid knows them well enough to have
-    // named them, and the whole point of the Court is that nobody does.
-    // `tone.md`'s rule against a definite article plus an abstract noun holds
-    // everywhere the world is doing the naming; this is the one band where it
-    // is not.
+    // 45: three of them, and no two are held by allies
     makeObject({
         id: 'hollow-unwritten-length',
         data: { daoDomain: 'life_death' },
-        name: 'The Unwritten Span',
+        name: 'The Long Life Candle',
         kind: 'artifact',
         significance: 'legendary',
         power: 45,
@@ -249,7 +140,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 44 ────────────────────────────────────────────────────────────────
     makeObject({
         id: 'hollow-second-silence',
-        name: 'The Second Silence',
+        name: 'The Nine-Knot Cord',
         kind: 'artifact',
         significance: 'legendary',
         power: 44,
@@ -263,7 +154,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 43: the most VALUABLE object there is, and the least use in a duel ─
     makeObject({
         id: 'hollow-turned-ledger',
-        name: 'The Turned Ledger',
+        name: 'The Cinnabar Brush',
         kind: 'artifact',
         significance: 'legendary',
         power: 43,
@@ -276,7 +167,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'hollow-fourth-refusal',
-        name: 'The Fourth Refusal',
+        name: 'The Closed Fan',
         kind: 'artifact',
         significance: 'legendary',
         power: 43,
@@ -301,17 +192,16 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
             'A reference that is not local. Its holder cannot be lied to about where anything is: formations do not resolve against it and concealment does not hold in front of it. It has not left the vault in nine hundred years, and the reason is logistics rather than doctrine - the seat is full of valuable things and the defence is presence.',
         tags: ['immortal-made', 'sent-down', 'never-carried', 'known-to-exist']
     }),
-    // ── THE CEILING AT FORTY-ONE ──────────────────────────────────────────
-    // Everything above this line was sent down by somebody who crossed.
-    // Everything below it was made here, and the band is populated - a house
-    // with centuries, a vein and a dao can build most of the way up. What no
-    // forge below the Lid has ever passed is forty-one, and the boundary is
-    // not scarcity or skill: an object is anchored by whoever finished it, and
-    // nobody who finished one was standing above the last realm. So the best
-    // thing anybody alive can make sits a rung under the weakest thing that
-    // came down, permanently, and every house that has tried to close that
-    // rung has produced something that came apart.
-    // ── 41: the ceiling, and the only mortal-made thing that reaches it ───
+    // THE CEILING AT FORTY-ONE Everything above this line was sent down by somebody
+    // who crossed. Everything below it was made here, and the band is populated - a
+    // house with centuries, a vein and a dao can build most of the way up. What no
+    // forge below the Lid has ever passed is forty-one, and the boundary is not
+    // scarcity or skill: an object is anchored by whoever finished it, and nobody
+    // who finished one was standing above the last realm. So the best thing anybody
+    // alive can make sits a rung under the weakest thing that came down,
+    // permanently, and every house that has tried to close that rung has produced
+    // something that came apart. 41: the ceiling, and the only mortal-made thing
+    // that reaches it
     makeObject({
         id: 'artifact-the-standing-weight',
         data: { daoDomain: 'formation' },
@@ -422,22 +312,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['forged', 'office-issued', 'four-exist']
     }),
     // -- FROM HERE DOWN, A ROW IS A KIND AND NOT AN OBJECT ----------------
-    //
-    // Everything above is one thing: it has a maker or a giver, a house that
-    // can name the year, and a movement somebody should be able to ask about
-    // two centuries later. These three are not. Their own descriptions say so -
-    // several hundred exist, it is issued to everybody, losing one is a fine -
-    // and a catalog row for a thing several hundred of which exist is a KIND
-    // standing in for all of them, which is `docs/world/things/items.md`'s
-    // almanac rather than its ledger.
-    //
-    // They stay in this table, because there is exactly one table and the
-    // ordering top to bottom is the whole argument - a person holding a four
-    // beats a person holding nothing, read by the same resolver that reads the
-    // forty-six. What changes is the switch: `mundane` is what `possessions.ts`
-    // documents as the marker for a thing that gets no provenance at all, so a
-    // reader and a seeder can both tell a kind from an individual without a
-    // second field and without a rule that names these three rows.
     makeObject({
         id: 'artifact-severed-name-knife',
         name: 'A Cutting Knife',
@@ -479,28 +353,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['forged', 'common', 'looted']
     }),
 
-    // ── A SCATTERED WORK, IN THREE HANDS ──────────────────────────────────
-    //
-    // The Heaven-Conversing Primordial Canon is the only cultivation manual
-    // anywhere that continues past ordinal 37, and until now its only route
-    // was a dead woman's estate in a shed with a bad roof. One route, at the
-    // narrowest point on the ladder.
-    //
-    // These are the second route. The complete work is still in the shed -
-    // that lore is untouched and it is the better prize. What is here is three
-    // separate volumes, loose, in three houses, none of which holds more than
-    // one. A volume is rated one rung below the whole by `shardPower`, the
-    // ordinary rule that turns a broken blade into a worse blade, so a partial
-    // set carries a reader less far than a complete one and the engine derives
-    // that rather than the catalog asserting it.
-    //
-    // The three holders are deliberately different KINDS of problem, because
-    // the point of scattering a book is that each piece is its own adventure:
-    // one house knows exactly what it has, one has no idea, and one knows it
-    // holds a third of something and has been looking for the rest for two
-    // hundred years. `knownOwnershipBy` differs on each accordingly - it is
-    // the difference between stealing a thing that will be missed by name and
-    // stealing a thing nobody can describe.
+    // A SCATTERED WORK, IN THREE HANDS
     makeObject({
         id: 'volume-heaven-conversing-first',
         name: 'The Heaven-Conversing Canon, first volume',
@@ -567,11 +420,6 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
 
 /**
  * Everything a given party owns. Not artifact-tier-specific in any way.
- *
- * Resolves through `idsForFaction` so a house that appears in two catalogs -
- * the Azure Cloud Pavilion is both an apex and a joinable sect - answers to
- * either of its ids. Ownership is a fact about the house, not about which
- * table you happened to look it up in.
  */
 export function artifactsOwnedBy(ownerId: string): readonly ObjectRecord[] {
     const ids = idsForFaction(ownerId);

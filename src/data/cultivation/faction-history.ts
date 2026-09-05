@@ -184,7 +184,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-promotion-past-the-kiln',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Deep Survey raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Low Fall beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
+        what: 'The Deep Survey raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Jade Gorge beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
         parties: ['sect-storm-tyrant-court', 'court-kiln', 'apex-deep-survey'],
         accounts: {
             'sect-storm-tyrant-court':
@@ -192,7 +192,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'court-kiln':
                 'Nothing about it concerns the Kiln, which issues no grants, holds no tenants and has never had a book for one to be removed from - and the Court has said as much, once, in the only sentence it has ever contributed to the subject. What it did not say, and what the Storm Tyrant has never stopped hearing, is that the Survey now keeps two bodies in this province: one that administers the richest arrangement in the world and takes nothing out of it, and one that administers a broken tether and cannot stop asking to be looked at.',
             'apex-deep-survey':
-                'The curriculum is the one thing in the Low Fall that cannot be replaced, and the Survey would rather administer such a thing than lease it. That is the whole of the reasoning and it was stated in one line. What the sect is, and what the province calls it, did not appear in the decision and there is no line on the form where it would have.'
+                'The curriculum is the one thing in the Jade Gorge that cannot be replaced, and the Survey would rather administer such a thing than lease it. That is the whole of the reasoning and it was stated in one line. What the sect is, and what the province calls it, did not appear in the decision and there is no line on the form where it would have.'
         },
         explains: 'the holding'
     },
@@ -304,9 +304,9 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         parties: ['sect-weir-office', 'house-ninefold-ledger'],
         accounts: {
             'sect-weir-office':
-                'Carving reaches ranks that drawing does not, every carver in the Marches knows it, and the grant book has priced it that way since there was a grant book. The Office has not submitted its table because submitting a table invites a finding, and it has been running an administration on the difference for sixty years without anybody in the region asking to see the arithmetic.',
+                'Carving reaches ranks that drawing does not, every carver in the Silent Cliffs knows it, and the grant book has priced it that way since there was a grant book. The Office has not submitted its table because submitting a table invites a finding, and it has been running an administration on the difference for sixty years without anybody in the region asking to see the arithmetic.',
             'house-ninefold-ledger':
-                'The certification is done, it is public, and it is band for band. The Ledger did not publish a conclusion about the Weir Office because the Ledger certifies what it is asked to certify and nobody in the Marches has asked - and it regards the Office\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
+                'The certification is done, it is public, and it is band for band. The Ledger did not publish a conclusion about the Weir Office because the Ledger certifies what it is asked to certify and nobody in the Silent Cliffs has asked - and it regards the Office\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
         },
         explains: 'the reputation'
     },
@@ -342,7 +342,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-what-the-temple-gave-back',
         yearsAgo: 2_600,
         provinceId: 'province-low-fall',
-        what: 'The Sweptground Temple has been endowed with ground four separate times and returned every endowment intact. The four sects that made them have each discovered this independently, and none of them at the time.',
+        what: 'The Burnt Earth Temple has been endowed with ground four separate times and returned every endowment intact. The four sects that made them have each discovered this independently, and none of them at the time.',
         parties: ['sect-sweptground-temple', 'sect-nine-abyss-flame-sect'],
         accounts: {
             'sect-sweptground-temple':
@@ -412,7 +412,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-roads-and-the-grants',
         yearsAgo: 190,
         provinceId: 'province-quiet-marches',
-        what: 'The Sixmile Wardens surveyed and staked every route through the Marches that does not cross dead ground. The Weir Office issues grants to holders who arrive on those roads and contributes nothing to them.',
+        what: 'The Six Li Wardens surveyed and staked every route through the Silent Cliffs that does not cross dead ground. The Weir Office issues grants to holders who arrive on those roads and contributes nothing to them.',
         parties: ['sect-sixmile-wardens', 'sect-weir-office'],
         accounts: {
             'sect-sixmile-wardens':
@@ -530,9 +530,9 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whyTheGapIs:
             'Wide and shallow forever, and moving for the first time in three centuries - on wagons rather than water. Three Ford Masters have run an unlicensed carrying service for six years and remit a share in kind, so eleven landings now handle bonded refining stock instead of ferry fares. What the Alliance never had was anything a cultivator climbs on; what it has now is cargo, and it turns entirely on the River Elders continuing not to establish what the wagons are.',
         whatTheUnlitNodesWere:
-            'They are not the Alliance\'s and never were. Five of its eight nodes are lit and all five are on piers, and the piers at Scarwater are two ages older than the Alliance - so what it holds is the river furniture of somebody long gone, three nodes of which nobody alive has ever seen working. Half its river charts are copies of a survey from the same period and are more accurate than anything the Alliance has produced since.',
+            'They are not the Alliance\'s and never were. Five of its eight nodes are lit and all five are on piers, and the piers at Clear River Ford are two ages older than the Alliance - so what it holds is the river furniture of somebody long gone, three nodes of which nobody alive has ever seen working. Half its river charts are copies of a survey from the same period and are more accurate than anything the Alliance has produced since.',
         whereTheWrongBeliefComesFrom:
-            'It believes the Scarwater pilings are Alliance work from three centuries back, and there is an Alliance repair record from three centuries back that says so - a genuine record of a genuine repair, read ever since as a record of the building. The pilings are two ages older and are the reason that ford has never moved, which the Alliance would find more useful to know than almost anything else it does know.',
+            'It believes the Clear River Ford pilings are Alliance work from three centuries back, and there is an Alliance repair record from three centuries back that says so - a genuine record of a genuine repair, read ever since as a record of the building. The pilings are two ages older and are the reason that ford has never moved, which the Alliance would find more useful to know than almost anything else it does know.',
         sharedEvents: ['event-the-tolls-and-the-fords']
     },
     'sect-sweptground-temple': {
@@ -742,25 +742,25 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'event-the-storeroom-read-from-a-list'
         ]
     },
-    // ── the Quiet Marches ─────────────────────────────────────────────
+    // ── the Silent Cliffs ─────────────────────────────────────────────
     'sect-weir-office': {
         factionId: 'sect-weir-office',
         origin:
             'Not a sect and not a tenant: a bureau of eleven with a counter, a register and a stamp, administering both workable faces of a province on somebody else\'s behalf. Its famous discretion extends exactly as far as the schedule it is given, and every carver in the region has organised their entire life around the stamp without once asking whose it is.',
         whyTheGapIs:
-            'The whole region\'s pipeline is three people at Standing Cut and one Keystone in two hundred years, and the Office has started prospecting, which is not a thing bureaus do. Two survey parties have gone past the Dead Verge in four years and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Marches since the catastrophe. It ends if Gapwater runs out first, and the Office is the only party that has measured how close that is.',
+            'The whole region\'s pipeline is three people at Standing Cut and one Keystone in two hundred years, and the Office has started prospecting, which is not a thing bureaus do. Two survey parties have gone past Nine Hundred Paces in four years and one did not come back, none of it entered in the grant book. A third face would be the first new ground in the Silent Cliffs since the catastrophe. It ends if Jade Face runs out first, and the Office is the only party that has measured how close that is.',
         whatTheUnlitNodesWere:
-            'The weir works above Kettle were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Office - so the bureau is administering the remains of a working it inherited without a description.',
+            'The weir works above Iron Gate were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Office - so the bureau is administering the remains of a working it inherited without a description.',
         whereTheWrongBeliefComesFrom:
-            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Marches will tell you the same thing because the work genuinely is harder. Harder is not higher. The Ledger has certified band for band that it is one ladder, and the Office has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
+            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Silent Cliffs will tell you the same thing because the work genuinely is harder. Harder is not higher. The Ledger has certified band for band that it is one ladder, and the Office has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
         sharedEvents: ['event-the-band-for-band-certification', 'event-the-roads-and-the-grants']
     },
     'sect-sixmile-wardens': {
         factionId: 'sect-sixmile-wardens',
         origin:
-            'A shed, nine hundred painted stakes and a survey, all of it their own work, and the only complete map of safe ground in the Quiet Marches. They hold nothing from anybody and never have, and the burn edge does not care whose name is on a grant. They perform the single most useful public service in the region and are paid in paint.',
+            'A shed, nine hundred painted stakes and a survey, all of it their own work, and the only complete map of safe ground in the Silent Cliffs. They hold nothing from anybody and never have, and the burn edge does not care whose name is on a grant. They perform the single most useful public service in the region and are paid in paint.',
         whyTheGapIs:
-            'The lowest production in the catalog, and the reason is the absence of a grant rather than any failing of theirs. No grant means no vein, no vein means no pipeline, and on unaided Marches ground a Warden stops at Chipping and stays there. The single exception in their history was the founder, which is what a house looks like when its ceiling is set by geology and its people are not the constraint.',
+            'The lowest production in the catalog, and the reason is the absence of a grant rather than any failing of theirs. No grant means no vein, no vein means no pipeline, and on unaided Silent Cliffs ground a Warden stops at Chipping and stays there. The single exception in their history was the founder, which is what a house looks like when its ceiling is set by geology and its people are not the constraint.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
             'They believe the original survey is accurate because it has never been wrong, and in the only sense they can test it never has: nobody has died following it. It has also never been checked. The burn edge has moved nine hundred paces since it was drawn and the stakes have been moved to match, by hand, one at a time, by people correcting the map to the ground and entering nothing - so the survey is now a record of nine hundred undocumented corrections that reads exactly like an accurate original.',
@@ -769,9 +769,9 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-gleaners-company': {
         factionId: 'sect-gleaners-company',
         origin:
-            'A salvage contract on burn zones, renewed annually, and a barrow yard at Hollowmarket laid out inside somebody else\'s building. Under direct rule there are no client sects, so the Company is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to.',
+            'A salvage contract on burn zones, renewed annually, and a barrow yard at Willow Village laid out inside somebody else\'s building. Under direct rule there are no client sects, so the Company is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to.',
         whyTheGapIs:
-            'It loses about one in nine a season and its one Keystone left for the Low Fall within a year, and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund. Live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is one season where the losses outrun the fund.',
+            'It loses about one in nine a season and its one Keystone left for the Jade Gorge within a year, and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund. Live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is one season where the losses outrun the fund.',
         whatTheUnlitNodesWere:
             'All fourteen are at the front of a ruin the Company has never fully entered, and the three that are lit are the three within reach of the entrance. The yard is laid out inside somebody else\'s building for the same reason: the Company works the edges of things it does not own and has never had a season spare to go further in, which is a fact about salvage economics and not about courage.',
         whereTheWrongBeliefComesFrom:
@@ -793,9 +793,9 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-halfwater-rail': {
         factionId: 'sect-halfwater-rail',
         origin:
-            'A weigh house and a cistern cut into rock, put up by a Watering factor who had worked out that the middle of the eastern passage was the only place in the world where four parties who would not sit in a room together all had to stop anyway. The founding decision was the rate: a fortieth, published, and never raised, on the argument that the port is worth exactly what passes through it. Nobody granted the ground and nobody has ever been asked to, because nobody had a use for forty acres of rock with no vein under it until there was a quay on it.',
+            'A weigh house and a cistern cut into rock, put up by a Sweet Spring Island factor who had worked out that the middle of the eastern passage was the only place in the world where four parties who would not sit in a room together all had to stop anyway. The founding decision was the rate: a fortieth, published, and never raised, on the argument that the port is worth exactly what passes through it. Nobody granted the ground and nobody has ever been asked to, because nobody had a use for forty acres of rock with no vein under it until there was a quay on it.',
         whyTheGapIs:
-            'There is no ground under Halfwater, so nothing there advances on the air. Every rung anybody at the port has climbed came out of a chest, which makes the pipeline a straight function of the wage bill: the watch sits at Foundation Establishment because Foundation Establishment is what the port pays for. The one person above it is not a product of the pipeline and never was - she was bought in, at a wage nobody at the quay is told, for the specific purpose of being somebody a disappointed buyer cannot quietly make disappear.',
+            'There is no ground under Silver Island, so nothing there advances on the air. Every rung anybody at the port has climbed came out of a chest, which makes the pipeline a straight function of the wage bill: the watch sits at Foundation Establishment because Foundation Establishment is what the port pays for. The one person above it is not a product of the pipeline and never was - she was bought in, at a wage nobody at the quay is told, for the specific purpose of being somebody a disappointed buyer cannot quietly make disappear.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
             'The port believes the watch is what makes the quay safe, and the belief is honestly come by, because the watch does make the quay safe up to the rung it can hold and everybody can see it working. What holds above that rung is that the people up there are mutually deterred, which is not the Rail\'s doing and is not the Rail\'s to keep. The gap between the two is where the last three killings on the quay happened, and all three were the same shape - somebody above the watch and below anybody who would have come for them - and the Factors have discussed each one as an incident rather than as the pattern it is.',
@@ -840,7 +840,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'house-bound-word': {
         factionId: 'house-bound-word',
         origin:
-            'Oath halls at every border crossing of consequence and the treaty vault at Sweptground, holding a vault of treaties binding on people who have never read them. Oathwright training takes forty years and the house will not shorten it, which is the founding decision and has never been reopened.',
+            'Oath halls at every border crossing of consequence and the treaty vault at Burnt Earth, holding a vault of treaties binding on people who have never read them. Oathwright training takes forty years and the house will not shorten it, which is the founding decision and has never been reopened.',
         whyTheGapIs:
             'Slow by design and getting slower. Forty years of training, intake falling for three generations, and a refusal to shorten the training that the house treats as the product rather than as a cost. Nothing was lost and nothing is being waited on: the pipeline is exactly as long as the house has always insisted it must be, applied to fewer people each generation.',
         whatTheUnlitNodesWere:

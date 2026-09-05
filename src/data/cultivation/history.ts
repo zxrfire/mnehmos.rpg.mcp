@@ -1,52 +1,6 @@
 /**
- * The deep past: four ages, two civilisations that are gone, and the four or
- * five questions about all of it that nobody can answer.
- *
- * WHY THIS FILE EXISTS
- * --------------------
- * The world has a rich present and had a thin past. Ruins were everywhere and
- * belonged to nobody; the setting asserted that civilisations stronger than
- * anything now living left the wreckage people walk through daily, and none of
- * those civilisations existed. This file is the causes.
- *
- * Depth here means causes, not more nouns. Everything in the present should be
- * explicable from what is written here, and the explanation should be partly
- * lost:
- *
- *   why the qi is thin          three ages spent it, in three different ways
- *   why sects hold veins        a vein grant is really a grant of ground plus
- *                               works, and nobody can build the works
- *   why nine of forty-one       a node that has never gone out can be kept; a
- *                               node that has gone out cannot be relit
- *   why the pyramid exists      the Settlement, which ended the age of taking
- *   why the roads go nowhere    they go to gate terminals, and the gates closed
- *   why nobody can date it      two provinces, two epochs, and an offset that
- *                               three institutions compute differently
- *
- * THE RULE THIS FILE OBEYS
- * ------------------------
- * Every claim has a knower, and the engine is one of the parties that can fail
- * to know. `src/engine/world/history.ts` supplies the distinction and this file
- * uses all three values of it:
- *
- *   objective       the engine knows this happened as stated. Rare here, and
- *                   reserved for things that are physically present: a stone
- *                   is where it is, a terminal answers or does not.
- *   reconstructed   assembled from surviving evidence by somebody named, and
- *                   it may be wrong. Most of this file.
- *   unresolved      the engine does not know either. The candidate answers are
- *                   listed and none is endorsed.
- *
- * A past the database has settled is a past nobody can discover. Where an
- * entry is `unresolved`, do not resolve it: `resolveFact` exists so that a
- * particular run can settle a particular question through play, and the
- * catalog must not do it in advance.
- *
- * SCOPE
- * -----
- * Inert data. Nothing here rolls, resolves or succeeds. The one function that
- * builds anything builds `Era` records from the age table so a ledger can be
- * opened on the authored past instead of a generated one.
+ * The deep past: four ages, two civilisations that are gone, and the four or five
+ * questions about all of it that nobody can answer.
  */
 
 import { z } from 'zod';
@@ -58,11 +12,6 @@ import { dayOfYear, type Era, type FactTruth, type RecordFidelity } from '../../
 
 /**
  * The engine's own stance toward a claim.
- *
- * Annotated with the engine's `FactTruth` on purpose: this catalog and
- * `src/engine/world/history.ts` must mean the same three things by these
- * words, and the annotation makes a divergence a compile error rather than a
- * subtle disagreement about what `reconstructed` means.
  */
 export const ClaimTruthSchema: z.ZodType<FactTruth> = z.enum(['objective', 'reconstructed', 'unresolved']);
 export type ClaimTruth = FactTruth;
@@ -92,27 +41,9 @@ export const ClaimSchema = z.object({
 });
 export type Claim = z.infer<typeof ClaimSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE AGES
-//
-// Four before the present, and the qi falls across all four for four
-// different reasons. That is the part that matters: an age does not thin
-// because time passed, it thins because of what the people in it did, and
-// each age did something different.
-//
-//   Wide       spent the arterial system running a network on it
-//   Standing   spent nothing and could not staff what it had built
-//   Counting   measured the fall, published it, and started the scramble
-//   Burning    took by force what the Counting Age had only leased, and
-//               killed enough ground doing it that taking stopped being worth
-//               it, which is the Settlement and the present arrangement
-//
-// Dating is in years before the present, which is year 1,517 of the Low Fall's
-// Standing Count. Whether that count is correct is a separate question and is
-// dealt with under CALENDARS below.
-// ─────────────────────────────────────────────────────────────────────────
 
-/** Year 1,517 of the Standing Count, which is the Low Fall's reckoning. */
+/** Year 1,517 of the Standing Count, which is the Jade Gorge's reckoning. */
 export const PRESENT_YEAR = 1_517;
 
 export const AgeSchema = z.object({
@@ -157,7 +88,7 @@ export const AGES: readonly Age[] = [
         whatItBuilt:
             'The gate terminals, of which the Measured Span inherited a survey listing thirty-one. The roads, which is the part everybody walks on and nobody thinks about: the old roads run terminal to terminal and not town to town, so the present road network connects places with no reason to be connected and misses every market in both provinces. And the figures. True distance between two points is a Wide Age measurement and the Span has never produced an original one, only maintained the table.',
         livingThere:
-            'Crowded, and by every account extremely uneven. The qi was thicker than anything now living has stood in and it was drawn on continuously by the network, so a person near a terminal lived in ground richer than the Hollow Court holds and a person four days away lived in ground the Low Fall would consider ordinary. There was no local anything: no local price, no local ruler, no local famine, because a shortfall anywhere was answered from somewhere else the same day. It is the only age in the record with no recorded famine at all, and the only one where a single failure could starve everybody.',
+            'Crowded, and by every account extremely uneven. The qi was thicker than anything now living has stood in and it was drawn on continuously by the network, so a person near a terminal lived in ground richer than the Hollow Court holds and a person four days away lived in ground the Jade Gorge would consider ordinary. There was no local anything: no local price, no local ruler, no local famine, because a shortfall anywhere was answered from somewhere else the same day. It is the only age in the record with no recorded famine at all, and the only one where a single failure could starve everybody.',
         didTheyKnow:
             'They knew the arterial veins were falling and they did not treat it as a problem, because for eleven thousand years of their own record it had never once mattered: the network moved qi to wherever it was short, so a drawn-down artery read as an accounting entry rather than as an event. Every surviving figure is a rate of draw, carefully kept, in a hand that plainly regarded the number as routine. Nobody has found a Wide Age document that treats the decline as anything other than administration.',
         howItEnded: {
@@ -213,7 +144,7 @@ export const AGES: readonly Age[] = [
                 'no scar layer, no burned seats and no mass graves anywhere in the Standing survey, in five and a half thousand years of it',
                 'the last dated Standing documents are staffing returns, and the returns get shorter',
                 'the boundary stones were never thrown down, which is what happens when a district is taken and does not happen when it is left',
-                'the Sweptground Temple can cut six nodes to its own specification and all six are weak, which is the modern floor and demonstrates the gap'
+                'the Burnt Earth Temple can cut six nodes to its own specification and all six are weak, which is the modern floor and demonstrates the gap'
             ],
             claimedOutcomes: [],
             fidelity: 'partial'
@@ -221,7 +152,7 @@ export const AGES: readonly Age[] = [
         whatSurvives: [
             'every inherited compound in both provinces, at node counts far above what their occupants can light',
             'the datum stone, chained, roofed and watched by two people at all times, which is itself a marker referring to a survey nobody holds',
-            'the standard weights, still the basis of every transaction in the Low Fall',
+            'the standard weights, still the basis of every transaction in the Jade Gorge',
             'the Standing hand, whose numerals are fully readable because the weights and the distance table kept them in continuous use, and whose prose is not readable at all'
         ],
         note:
@@ -287,7 +218,7 @@ export const AGES: readonly Age[] = [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
                 'the Bound Word holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
                 'grant language in nine unrelated houses converges on the same four clauses in the same order within a generation',
-                'the Low Fall counts its years from it, so at minimum somebody at the time was certain enough to reset a calendar'
+                'the Jade Gorge counts its years from it, so at minimum somebody at the time was certain enough to reset a calendar'
             ],
             claimedOutcomes: [
                 'an instrument was made, was witnessed, and is in somebody\'s keeping unpublished, most likely an apex that has never confirmed holding anything',
@@ -313,9 +244,9 @@ export const AGES: readonly Age[] = [
         endedYearsAgo: null,
         qiDensity: 0.22,
         whatItWas:
-            'The present, and nobody living in it calls it an age. The Low Fall calls the period the Standing Count because that is the name of its calendar, the Quiet Marches does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
+            'The present, and nobody living in it calls it an age. The Jade Gorge calls the period the Standing Count because that is the name of its calendar, the Silent Cliffs does not name it at all, and the term the two archivist institutions use between themselves for the whole situation is not in general circulation. It is fifteen centuries of granting rather than taking, on ground that has continued to fall the entire time, with no construction, no new discipline and one confirmed crossing in the last four hundred years.',
         whatItBuilt:
-            'Institutions inside inherited buildings. The present age has built ferry towns, market towns, sorting yards, register houses, a counter register, a courier network laid over somebody else\'s roads, and one complete formation of six weak nodes at the Sweptground Temple, which is the only entirely new working formation in the province and is cited by everybody on all sides of every argument about whether the age can build anything.',
+            'Institutions inside inherited buildings. The present age has built ferry towns, market towns, sorting yards, register houses, a counter register, a courier network laid over somebody else\'s roads, and one complete formation of six weak nodes at the Burnt Earth Temple, which is the only entirely new working formation in the province and is cited by everybody on all sides of every argument about whether the age can build anything.',
         livingThere:
             'Thin, ordinary and survivable, and for most people uneventful in a way the earlier ages were not. Progress is slow, the ceiling arrives early, and the ruins are so common that a village granary is built against a wall nobody remembers building. What the present has that no earlier age had is the wreckage of four ages lying open, and the whole exploration economy is people digging in it.',
         didTheyKnow:
@@ -340,19 +271,7 @@ export const AGES: readonly Age[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // DEAD CIVILISATIONS
-//
-// Distinct from the sects and houses that came after, and not the same kind of
-// thing. A house is an institution with a discipline; these were populations
-// with an infrastructure, and what they left is not a technique but a
-// utility that the present is still consuming.
-//
-// Every surviving work below is tied to something already in the catalogs. No
-// parallel wreckage is invented: the compounds are the compounds the sects are
-// standing in, the terminals are the Measured Span's terminals, the weights
-// and the datum are the Anchorhold's.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const SurvivingWorkSchema = z.object({
     /** What the present has, physically. */
@@ -480,7 +399,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
                     'Sixty-three nodes on a mountain held continuously by an order that has never had more than a few dozen members, which is the clearest available demonstration that the works were built for a population that no longer exists.'
             },
             {
-                what: 'The datum stone: a marker at the centre of the survey that every measurement in the Low Fall is ultimately taken from, chained down, under a roof, watched by two people at all times.',
+                what: 'The datum stone: a marker at the centre of the survey that every measurement in the Jade Gorge is ultimately taken from, chained down, under a roof, watched by two people at all times.',
                 heldByFactionId: 'house-anchorhold',
                 nodes: { total: 88, lit: 62 },
                 whyItCannotBeReplaced:
@@ -517,7 +436,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         },
         howItIsDiscoverable: [
             'counting nodes in two compounds held by unrelated sects and finding the same spacing and the same node families',
-            'the Sweptground Temple, whose six self-cut nodes are the only complete modern formation in the province and are all weak',
+            'the Burnt Earth Temple, whose six self-cut nodes are the only complete modern formation in the province and are all weak',
             'a Gleaners Company salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
             'the Anchorhold\'s own numerals, which any careful person can learn to read in a season, at which point every Standing document becomes a readable table of quantities inside an unreadable sentence'
         ],
@@ -581,17 +500,6 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
 
 /**
  * The two traditions, reconciled against the Standing Works.
- *
- * The catalogs already carry a tension that this file has to answer rather
- * than paper over. The Cut Road as a mass practice dates from the weir
- * inversion nine hundred years ago, and the Long Cut's ancestor was a carver
- * who crossed from driven ground twenty-six hundred years ago. Both are true,
- * because driven ground is not a Marches invention and the hierarchy catalog
- * already says so: the Long Cut administers every province where the qi went
- * into the stone, of which the Quiet Marches is one and not the largest.
- *
- * What this file adds is the reason driven ground exists at all, and it is
- * uncomfortable for both traditions.
  */
 export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
     statement:
@@ -601,7 +509,7 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
     evidence: [
         'the Weir Office\'s flood works have nodes cut into stone rather than laid on ground, which is the only place in either province where Standing work and Cut work are the same operation on the same site',
         'the Cut Road was reconstructed from nothing in nine hundred years by people with no manuals, which is a plausible span for rediscovering a technique and a very short one for inventing a road',
-        'driven ground is not confined to the Marches and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
+        'driven ground is not confined to the Silent Cliffs and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
         'a carver can work a Standing node out of a wall and does not find it different in kind from a face, which several Gleaners Company crews will confirm and no Anchorhold Warden will discuss'
     ],
     claimedOutcomes: [],
@@ -611,18 +519,12 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
 /** Why nobody has ever said the sentence above in a room with both traditions in it. */
 export const WHY_THE_RECONCILIATION_IS_NOT_MADE = [
     'The Anchorhold holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing Standing work is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
-    'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Low Fall position is that carving is quarrying with extra steps.',
-    'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Marches account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
+    'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Jade Gorge position is that carving is quarrying with extra steps.',
+    'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Silent Cliffs account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
     'And it would change what a vein lease is. If a node and a seam are the same thing, then a Drawn sect holding lit nodes and a carver holding a face are holding the same asset under two entirely different bodies of law, which is a question no arbitration in the world currently has a forum for.'
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHERE CULTIVATION CAME FROM
-//
-// Four accounts, none endorsed, one of them demonstrably wrong and held by
-// most of the world. The engine does not know the answer and must not
-// acquire one here.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const OriginAccountSchema = z.object({
     id: z.string(),
@@ -727,7 +629,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
         heldBy: ['apex-long-cut', 'sect-gleaners-company'],
         currency: 'minority',
         account:
-            'That there is no ladder, only material. The Cut Road position, held by carvers and by nobody in the Low Fall, is that the realms are simply the points at which the material fails and has to be worked differently, and that the Drawn dressed a workshop fact up as cosmology because they cultivate in the air where nothing can be seen. A carver will tell you the boundaries are where the stone changes, and will not be joking.',
+            'That there is no ladder, only material. The Cut Road position, held by carvers and by nobody in the Jade Gorge, is that the realms are simply the points at which the material fails and has to be worked differently, and that the Drawn dressed a workshop fact up as cosmology because they cultivate in the air where nothing can be seen. A carver will tell you the boundaries are where the stone changes, and will not be joking.',
         whyTheRealmsHaveTheirShape:
             'Because material has grain, and grain changes at intervals. On this account the ladder has the shape of the world\'s stone rather than of anybody\'s intention, and the thirteen at the bottom is simply the number of times a face changes character before it settles.',
         evidence: [
@@ -765,21 +667,7 @@ export const THE_FIRST_CULTIVATORS: Claim = {
     fidelity: 'rumour'
 };
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LID
-//
-// The important one. Nobody below it knows what it is. Four institutions hold
-// four incompatible theories, each with real evidence and a real problem, and
-// two serious bodies hold no theory at all in ways that are worse than any of
-// the theories.
-//
-// This is `truth: 'unresolved'` and it stays that way. The houses disagree
-// along the lines of their own principles, which is not a coincidence and is
-// the honest reason the disagreement is permanent: a fixity house looking at
-// the Lid sees a containment because a fixity house looking at anything sees a
-// containment, and a fate house sees a narrowing for the same reason. Each is
-// reasoning correctly from an instrument that only reads one thing.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const LidTheorySchema = z.object({
     id: z.string(),
@@ -855,7 +743,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
             'the crossing cannot be attempted early or late, only when the convergence has arrived, which every practitioner reports and which is a statement about possibility and not about geography'
         ],
         cannotAnswer:
-            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Long Cut\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Quiet Marches that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
+            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Long Cut\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Silent Cliffs that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
         theirAnswerToThat:
             'That the objects are evidence of something and not necessarily of a place, and that a sighting cannot be cast on a thing that is not a party, so the House has no instrument that reaches the question. Everybody including the House regards this as weak. The Open Hall faction has argued for two centuries that the House should either obtain a reading on the Ninth Nail or stop holding the theory.',
         ifItIsTrue:
@@ -937,14 +825,7 @@ export const THE_LID: Claim = {
     fidelity: 'partial'
 };
 
-// ─────────────────────────────────────────────────────────────────────────
 // TRANSMISSION AND LOSS
-//
-// This is what makes the past discoverable rather than merely written. A
-// player can learn a script, get into an archive, notice a recopying error, or
-// find out that the document everybody argues from is a citation of something
-// nobody holds.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const DeadScriptSchema = z.object({
     id: z.string(),
@@ -967,7 +848,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         name: 'The Standing hand',
         ageId: 'age-standing',
         legibility:
-            'The numerals are read completely and by a great many people. The prose is not read at all. A careful person can pick up a five-thousand-year-old survey document and state every quantity in it to the unit while having no idea what is being quantified, which is the ordinary experience of every archivist in the Low Fall and is far more frustrating than total illegibility would be.',
+            'The numerals are read completely and by a great many people. The prose is not read at all. A careful person can pick up a five-thousand-year-old survey document and state every quantity in it to the unit while having no idea what is being quantified, which is the ordinary experience of every archivist in the Jade Gorge and is far more frustrating than total illegibility would be.',
         readBy: ['house-anchorhold', 'house-measured-span', 'house-ninefold-ledger', 'sect-stonewright-consortium'],
         whyItIsLikeThat:
             'The numerals never went out of use. The standard weights are marked in them, the distance table is written in them, and every transaction in the province has kept them in continuous circulation for eleven thousand years. The prose went out of use in a single generation somewhere in the Counting Age and was never taught again, and nothing has ever kept a sentence alive the way a price keeps a number alive.',
@@ -1133,15 +1014,7 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // CALENDARS
-//
-// Two provinces, two epochs, and an offset three institutions compute
-// differently. This is not colour: it is load-bearing on property law, because
-// an inheritance interval computed across the border is computed against a
-// number nobody can verify, and twenty-eight is the number that has been used
-// for fifteen hundred years because a contract requires one.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const CalendarSchema = z.object({
     id: z.string(),
@@ -1187,7 +1060,7 @@ export const CALENDARS: readonly Calendar[] = [
             fidelity: 'partial'
         },
         note:
-            'Every property boundary, lease renewal and inheritance interval in the Low Fall is computed in this count, which means an error in the epoch would not change a single interval and would change every date.'
+            'Every property boundary, lease renewal and inheritance interval in the Jade Gorge is computed in this count, which means an error in the epoch would not change a single interval and would change every date.'
     },
     {
         id: 'calendar-face-reckoning',
@@ -1211,7 +1084,7 @@ export const CALENDARS: readonly Calendar[] = [
             fidelity: 'full'
         },
         note:
-            'The Marches does not name the present age and does not consider the question interesting. It has a schedule, the schedule has years on it, and a carver dates a contract by the face and the year and nothing else.'
+            'The Silent Cliffs does not name the present age and does not consider the question interesting. It has a schedule, the schedule has years on it, and a carver dates a contract by the face and the year and nothing else.'
     },
     {
         id: 'calendar-seat-years',
@@ -1305,43 +1178,10 @@ export const THE_CALENDAR_OFFSET: Claim = {
 export const WHAT_THE_OFFSET_HIDES = [
     'The official account of the Girdle of Nine Stones has the Anchorhold founded to replace it. The Anchorhold publishes its own founding at two thousand nine hundred years ago and the Girdle\'s fall is dated nine hundred years ago, so the account is off by two thousand years, on two numbers both houses publish. Nobody has ever put the two on the same page, because the dates are quoted in different reckonings in different provinces and everybody assumes the discrepancy is the offset.',
     'Cross-border inheritance intervals are computed at twenty-eight. If the Ledger\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Ledger has known this for at least two centuries.',
-    'A carver and a Low Fall cultivator describing the same border incident will file it in years that differ by an unverifiable amount, which is why the tradition war has two dates as well as two accounts and why nobody has noticed that the two dates are not the same event.'
+    'A carver and a Jade Gorge cultivator describing the same border incident will file it in years that differ by an unverifiable amount, which is why the tradition war has two dates as well as two accounts and why nobody has noticed that the two dates are not the same event.'
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE PAST AT HOUSEHOLD SCALE
-//
-// Everything above this line is the past as an institution holds it: dated,
-// argued, cited, with a party attached to every claim. That is the smaller
-// half. The larger half is what a family two fields from a sealed compound
-// says about it over a meal, and it is the only version most people in this
-// world will ever be given.
-//
-// It behaves differently from a record in three ways, and the entries below
-// are written to show all three:
-//
-//   IT IS ABOUT THE GROUND, NOT THE EVENT. Nobody near a scar knows what
-//   happened. They know what the ground does now, and they have reasoned
-//   backwards to a cause, and the reasoning is usually the wrong shape and
-//   the observation is usually excellent.
-//
-//   IT SURVIVES AS PRACTICE. A story is forgotten in three generations and a
-//   practice is not, because the practice keeps being performed. So the
-//   durable residue is a road that bends, a field nobody sows, a day nobody
-//   works, and the explanation attached to it is whatever the last person to
-//   be asked invented.
-//
-//   THE NAME OUTLASTS THE MEANING. `regions.ts` names these sites from what
-//   is visibly there, what happened, who held it, what people do there now,
-//   or a name that is wrong - and several of the resulting names have been in
-//   use for longer than anybody has been able to say what they record. That
-//   is the commonest single artefact of the deep past in this world: a word
-//   everybody uses correctly and nobody can unpack.
-//
-// NOTHING HERE IS A MECHANIC. These are descriptions of ground the world
-// generator already places, attached to names the catalog already holds. No
-// entry grants, blocks, modifies or prices anything.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const ResidueKindSchema = z.enum(['ruin', 'scar', 'road', 'word']);
 export type ResidueKind = z.infer<typeof ResidueKindSchema>;
@@ -1379,10 +1219,6 @@ export type LocalResidue = z.infer<typeof LocalResidueSchema>;
 
 /**
  * What the nearest people say about the named ground, and what they do about it.
- *
- * Ordered ruins, then scars, then the two kinds of residue that have outlived
- * the site entirely: a road whose shape is the only surviving evidence of
- * something, and a word.
  */
 export const LOCAL_RESIDUE: readonly LocalResidue[] = [
     // ── sealed compounds ──────────────────────────────────────────────
@@ -1638,12 +1474,12 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
 
     // ── residue with no site left ─────────────────────────────────────
     {
-        siteName: 'the bend above Millrun',
+        siteName: 'the bend above Old River Village',
         kind: 'road',
         whatTheySay:
             'The road goes round because the road has always gone round. My father carted it, his father carted it, and if you go straight you go straight into the wet and lose the load.',
         heldBy:
-            'Wide Field carters, who are entirely correct about the consequence',
+            'Yellow Plain carters, who are entirely correct about the consequence',
         practice:
             'The bend is maintained, ditched and gravelled at the district\'s expense, and the straight line across it is unmaintained and therefore worse every year, which makes the reason for the bend truer each decade.',
         truth: 'reconstructed',
@@ -1669,7 +1505,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
         whatTheySay:
             'Sill business. Means the road is shut and it is not our business why, and you go round, and you do not ask at the ford.',
         heldBy:
-            'the whole of the Low Fall, in the flat register used for a bank holiday',
+            'the whole of the Jade Gorge, in the flat register used for a bank holiday',
         practice:
             'The word is used for any closure with no notice attached, which means the province cannot distinguish closures with an author from closures without one, and has stopped trying.',
         truth: 'unresolved',
@@ -1700,12 +1536,6 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
 
 /**
  * The authored ages as engine `Era` records, oldest first.
- *
- * Days are absolute and negative, with day zero at the present, which is the
- * convention `seedPriorAges` already uses. The oldest age has no dateable
- * beginning, so its `startDay` is set one age-length before its end and its
- * note says so: the alternative is a false precision at the one place in the
- * record that most deserves not to have any.
  */
 export function historyEras(): Era[] {
     const out: Era[] = [];
@@ -1842,10 +1672,6 @@ export function residueOfKind(kind: ResidueKind): LocalResidue[] {
 
 /**
  * The residue whose account the record cannot settle.
- *
- * Deliberately the largest group. A local account that could be checked would
- * have been checked, and the ones that survive as practice survive precisely
- * because there is nothing to check them against.
  */
 export function unsettledResidue(): LocalResidue[] {
     return LOCAL_RESIDUE.filter(r => r.truth === 'unresolved');

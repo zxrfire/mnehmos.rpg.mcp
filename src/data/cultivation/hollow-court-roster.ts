@@ -1,75 +1,5 @@
 /**
  * Who is actually standing on the four mountains, and how the world sees them.
- *
- * The doc half of this is `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court
- * is the exception to all of it" - the age cap as a rate test, the vein, why an
- * extra member costs every existing one. This file is who is standing there and
- * what the province believes about them; the seats above them are
- * `WITHDRAWN_POWERS` in `sects.ts`. Both are indexed in `docs/world/INDEX.md`.
- *
- * The Hollow Court used to be the one faction in the catalog with nobody named
- * in it. That was defensible while its three lower rungs were empty - it was
- * four Seats and nothing else - and it left the highest acting body in the
- * world as an institution with no people, which is exactly the shape the
- * register exists to stop.
- *
- * THE COURT HAS ONE PURPOSE AND EVERYTHING HERE FOLLOWS FROM IT. It exists to
- * get its own members over the last crossing. It is not accumulating ground,
- * money, influence, students or a lineage, and anything that does not serve the
- * one thing is not its business. That single sentence answers most of what the
- * province finds strange about it: why it admits only people who could plausibly
- * reach the last realm, because there is nothing else here for anybody else to
- * do; why it draws nothing off the richest vein in the world, because the work
- * does not run on qi; why it does not recruit widely, appear often, or care
- * much what any province thinks - none of that advances the one thing.
- *
- * IT ALSO EXPLAINS WHY WHO SOMEBODY WAS DOES NOT MATTER HERE. A house, a name,
- * a famous deed - those bought the look. They stop counting at the gate.
- * Standing inside is how far along the road you are and nothing else, which is
- * why an outer disciple who arrived as the most talked-about cultivator in two
- * provinces is an outer disciple.
- *
- * ADMISSION IS PUBLIC AND STANDING IS NOT
- * ---------------------------------------
- * The door is in plain view and people watch it. When somebody already famous
- * walks up those mountains, everybody knows they went in, and the catalog does
- * not pretend otherwise - each person here has a public history anybody in two
- * provinces could recite.
- *
- * What does not leave is what happens afterwards. Which tier they hold, what
- * they are being taught, how far they have got: none of that is anybody's
- * outside. And the mechanism is not a vow of silence, it is that there is
- * almost no evidence. Court members hardly ever go out, and when they do they
- * go masked, so the province is full of confident opinions about which of the
- * people who went in is which of the figures seen since, and nobody can close
- * one.
- *
- * `worksOutsideAs` is the alias a person gives when they have to be addressed
- * outside at all. It is a title and a bare surname - "Elder Bai" - and the two
- * halves are doing different work: the surname is shared by thousands and
- * identifies nobody who does not already know, and the title is what strangers
- * attach to somebody of evident standing they cannot place. It is a courtesy
- * rather than a reading of this Court's ladder, so it is not evidence of tier
- * and sometimes contradicts it. Somebody who never leaves has no alias at all,
- * and the absence is a fact about them.
- *
- * AND THE ANONYMITY IS A GIFT RATHER THAN A DISCIPLINE. A famous name brings
- * petitions, obligations, houses wanting association and people wanting things,
- * and every hour of that is an hour not spent on the one goal. Masked and
- * unranked, none of it can reach them. Nobody imposes this; it is the condition
- * that makes the work possible, and the numbers are the mechanism - several
- * indistinguishable masked figures of that order, so no individual one can be
- * tracked, petitioned or leaned on.
- *
- * THE REGISTER IS THE OMNISCIENT VIEW AND CARRIES THE TRUTH. Real names, real
- * tiers, real ordinals, and the alias beside them. The concealment is a fact
- * about what a person IN the world can establish, not about what this catalog
- * knows - so nothing here is redacted, and any player-facing surface that shows
- * these people shows what a cultivator could actually have observed.
- *
- * NOTHING HERE IS A MECHANIC. No flag makes any of these people important, no
- * field marks anybody as a prodigy, and none of this is read by a resolver. It
- * is a roster with the ordinary columns, on the ordinary ladder.
  */
 
 import { z } from 'zod';
@@ -78,15 +8,8 @@ import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
 import { AwarenessSchema, type Awareness } from './hierarchy.js';
 
 /**
- * The Court's own ladder, bottom to top, plus the one position that is not on
- * it at all.
- *
- * The four rungs match `ranks` on the sect row. `Guest of the Court` does not
- * and is deliberately absent from it: the sect row's own comment says the title
- * is honorary, given without discussion, carries no obligation in either
- * direction, and sits OUTSIDE the ladder rather than beneath it - which is
- * exactly why it can be held by somebody the Court could not promote if it
- * wanted to.
+ * The Court's own ladder, bottom to top, plus the one position that is not on it at
+ * all.
  */
 export const HollowCourtTierSchema = z.enum([
     'Outer Disciple',
@@ -104,50 +27,23 @@ export const HollowCourtMemberSchema = z.object({
     tier: HollowCourtTierSchema,
     /**
      * Index into the sect row's `ranks`, so the two cannot drift.
-     *
-     * Null on a Guest, and the null is the content: the title is not a rung, so
-     * there is no index for it, and anything sorting the roll by rank has to
-     * decide what to do with somebody who is not on the ladder rather than
-     * quietly filing them at the bottom or the top of it.
      */
     rankIndex: z.number().int().min(0).max(3).nullable(),
     realmOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     /**
      * Years alive. Constrained from both ends and neither end is decoration.
-     *
-     * Below: nobody holds a rung their age cannot account for, because the
-     * climb takes what it takes. Above: nobody is older than the lifespan their
-     * rung grants, and every figure here is a modest fraction of it - Void
-     * Refinement gives five thousand years, Body Integration ten, Grand
-     * Ascension thirty. Age is never the thing that will stop any of these
-     * people, which is precisely why the road is the only question they have.
      */
     ageYears: z.number().int().min(1),
     /**
      * What the Court can actually require of them. Empty on exactly one person.
-     *
-     * Every other member is here to walk the road and the road is what is asked
-     * of them. A Guest is asked for nothing at all, which is the only
-     * arrangement available with somebody standing above the ladder, and the
-     * Court took it because association and access are worth more to a body
-     * with one goal than authority it could never have enforced.
      */
     whatIsAskedOfThem: z.string().min(60),
     /**
      * What they were famous for BEFORE the gate, which everybody knows.
-     *
-     * Admission is public. Somebody watched them walk up. This is the half of
-     * each person that circulates freely, and it is why the Court can be
-     * simultaneously famous and opaque - the province has a complete list of
-     * who went in and no way to attach any of it to what has been seen since.
      */
     knownForBefore: z.string().min(80),
     /**
      * The alias they use when they have to act outside. Null where they never do.
-     *
-     * A title and a bare surname. The title is what strangers call somebody of
-     * evident standing, not this Court's word for their rank, so it is not
-     * evidence of tier - see the module comment.
      */
     worksOutsideAs: z.string().min(3).nullable(),
     /** Where they are on the road, in the Court's own terms rather than a figure. */
@@ -159,40 +55,9 @@ export type HollowCourtMember = z.infer<typeof HollowCourtMemberSchema>;
 
 /**
  * The Guest, and the six below the Seats. One or two at each rung, on purpose.
- *
- * The Court is not a populous body and a roster of dozens would contradict
- * everything else said about it. What is here is what a body admitting on this
- * criterion actually accumulates: a handful of people, every one of whom the
- * outside world knows the name of, none of whom the outside world can place.
- *
- * The four Seats are deliberately NOT in this list. They are enumerated with
- * their ordinals in `WITHDRAWN_POWERS` in `sects.ts` - First through Fourth at
- * 44, 43, 43 and 42 - and they are unnamed across the whole catalog on purpose.
- * That is unchanged and should stay unchanged: the roster the Court was missing
- * was the one under them.
  */
 export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
-    // ── Guest of the Court. Off the ladder, above everything on it. ────
-    //
-    // He is on the roll, and putting him anywhere else would have been the
-    // wrong shape: he holds a title in the Court's own record, so his
-    // connection to this house is membership rather than a relationship
-    // between a faction and a passing individual. There is nothing exceptional
-    // about the mechanism at all - the title already existed, the sect row
-    // already describes it as honorary and obligation-free in both directions,
-    // and this is the person it was always for.
-    //
-    // AND IT BINDS HIM TO NOTHING, which is the only arrangement available with
-    // somebody standing above the ladder. The Court can require nothing of him,
-    // has no authority over him, and holds no instrument that would produce
-    // any. What it gets is association and access; what it gives up is every
-    // claim it might have made. A body whose single purpose is getting its
-    // members to the last crossing would keep the one person who has come
-    // nearest to it on any terms he would accept, and these are the terms.
-    //
-    // It also makes his teaching of the Seats INTERNAL - a member instructing
-    // members - rather than an outside visitor arriving at a closed house,
-    // which is tidier and matches the Court's discretion about who is where.
+    // Guest of the Court. Off the ladder, above everything on it.
     {
         id: 'hollow-court-guest-lu-sheng',
         name: 'Lu Sheng',
@@ -217,23 +82,7 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
             'Comes back. Nobody sends for him, nobody can, and nobody outside the four mountains can establish that any visit ever happened - and the Third Seat delivers a dao sermon on obligation at him, at length, every single time.'
     },
 
-    // ── Seat. Tribulation Transcendence, 41-44. Lifespan 100,000. ──────
-    //
-    // THE FOUR ARE MEMBERS AND THE ROLL HAS TO SHOW THEM. They were left off
-    // it at first on the reasoning that the catalog leaves the Seats unnamed on
-    // purpose, and that was the wrong conclusion from a true premise: a roll
-    // that omits the four people the entire house is about is not discretion,
-    // it is a hole - the entry said "four of its seats are out of the world
-    // entirely" over a list with no seats on it, and nothing reconciled the two.
-    //
-    // They are still unnamed. `name` carries the OFFICE, because that is what
-    // the world has for them and what the Court itself uses; nobody outside the
-    // four mountains has ever had a personal name for any of these people, and
-    // the register does not invent one. The ordinals are read off
-    // `WITHDRAWN_POWERS['sect-hollow-court'].seats` - 44, 43, 43, 42 - rather
-    // than restated, and the ages carry the ordering rule that record states:
-    // by ordinal descending, then by youth, so the Second is younger than the
-    // Third they stand level with.
+    // Seat. Tribulation Transcendence, 41-44. Lifespan 100,000.
     {
         id: 'hollow-court-first-seat',
         name: 'First Seat',
@@ -430,11 +279,6 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
 
 /**
  * How the Court moves when it has to be outside at all, which is seldom.
- *
- * Kept beside the roster rather than in it because it is one practice covering
- * everybody, and because the interesting facts are about the province rather
- * than about any individual: what people see, what they conclude, and why the
- * conclusion never closes.
  */
 export const HOW_THE_COURT_IS_SEEN = {
     whereTheyAreSeenAtAll:
@@ -448,23 +292,9 @@ export const HOW_THE_COURT_IS_SEEN = {
     andSometimesTheyDo:
         'They are people and not demons, and typically silent is a tendency rather than a rule. Rarely, and for their own reasons, one of them will say something - show a stranger a thing or two, correct an error, answer one question - and may disguise the voice while doing it. It is uncommon enough that somebody it happens to will still be telling the story at the end of their life, and it is the reason the Court is worth meeting rather than merely worth avoiding.',
     /**
-     * Where an ordinary cultivator stands on the ladder of knowing, about the
-     * two different questions - and they are different questions with
-     * different answers, which is the whole of the Court's opacity.
-     *
-     * Read on the same `Awareness` ladder everything else in the world is read
-     * on, because this is not a second kind of secret. `mayBeNamed` is true of
-     * the first and false of the second: the province may say that somebody
-     * walked up those mountains, and may not say which of the masked figures
-     * at a ruin was them.
-     *
-     * AND IT GOES STALE, which is the part that makes it playable. The Court
-     * does not answer, so it does not report deaths either - not as a policy
-     * but because telling the province anything is not its business. Every
-     * other house's losses propagate; these do not. So an outside belief here
-     * is not merely incomplete, it can be years or centuries WRONG, and
-     * somebody can carry a name that stopped meaning anything long ago. A
-     * hidden roster teaches a player nothing. A stale one can be acted on.
+     * Where an ordinary cultivator stands on the ladder of knowing, about the two
+     * different questions - and they are different questions with different
+     * answers, which is the whole of the Court's opacity.
      */
     whatTheProvinceHolds: {
         thatSomebodyWalkedUp: AwarenessSchema.parse('named') as Awareness,
@@ -496,10 +326,6 @@ export function getHollowCourtMember(id: string): HollowCourtMember | undefined 
 
 /**
  * The aliases the province actually hears, without the people behind them.
- *
- * Exported as its own list because it is the half of the roster that
- * circulates, and anything reasoning about what a cultivator could have heard
- * should be able to ask for it without being handed the join.
  */
 export function workingNamesInCirculation(): readonly string[] {
     return HOLLOW_COURT_ROSTER

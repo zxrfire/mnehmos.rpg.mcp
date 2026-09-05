@@ -59,17 +59,17 @@ import type { KnowingStage } from '../../../src/engine/social/discovery.js';
 
 function places(): LocationRecord[] {
     return [
-        makeLocation({ id: 'loc-province', name: 'The Low Fall', kind: 'region' }),
+        makeLocation({ id: 'loc-province', name: 'The Jade Gorge', kind: 'region' }),
         makeLocation({
-            id: 'loc-town', name: 'Kettle', kind: 'settlement', parentId: 'loc-province'
+            id: 'loc-town', name: 'Iron Gate', kind: 'settlement', parentId: 'loc-province'
         }),
         makeLocation({
-            id: 'loc-district', name: 'The Sixmile Cut', kind: 'wilderness', parentId: 'loc-town'
+            id: 'loc-district', name: 'The Six Li Cut', kind: 'wilderness', parentId: 'loc-town'
         }),
         makeLocation({
-            id: 'loc-elsewhere', name: 'Hollowmarket', kind: 'settlement', parentId: 'loc-province'
+            id: 'loc-elsewhere', name: 'Willow Village', kind: 'settlement', parentId: 'loc-province'
         }),
-        makeLocation({ id: 'loc-far', name: 'The Quiet Marches', kind: 'region' })
+        makeLocation({ id: 'loc-far', name: 'The Silent Cliffs', kind: 'region' })
     ];
 }
 
@@ -356,7 +356,7 @@ describe('passage: the season and somebody deciding are reported apart', () => {
     function pass(): LocationRecord {
         return makeLocation({
             id: 'loc-pass',
-            name: 'The Rimefall Pass',
+            name: 'The Cold Peak Pass',
             kind: 'wilderness',
             parentId: 'loc-province',
             // Open seven months of the year, from day 0.

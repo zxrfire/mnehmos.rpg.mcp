@@ -16,8 +16,8 @@
  *     seven years old they are at 0. They wait, in their own family's house.
  *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -
- *     the Sweptground Temple, the Azure Dew, the Hollow Bell Wanderers, the
- *     Sixmile Wardens and the Gleaners' Company. All five take anybody. So the
+ *     the Burnt Earth Temple, the Azure Dew, the Hollow Bell Wanderers, the
+ *     Six Li Wardens and the Gleaners' Company. All five take anybody. So the
  *     greatest name in the province buys a place at a house that would have
  *     taken a farmer's child that morning, which makes the name worth nothing
  *     at the only moment it should be worth everything.
@@ -151,7 +151,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
         why: 'It has the only probation door in the world, standing at zero, and it will take an uncultivated mortal off the road, test them, and spend years finding out what they are. So a favour buys nothing here: the child was getting in anyway. What a favour also cannot buy is the other door - the disciple bar has never moved, for anybody, and the Pavilion declines to move it in the same words every time. It is righteous, which in practice means it does not do the one thing everybody at that height is asked to do, and being handed a child by somebody powerful gets you precisely what walking up the mountain gets you.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody:
-            'It would move almost any bar in the province and it does not use it. The Pavilion has never asked a house to take somebody it would have refused, on the stated ground that it would then be doing to another house what it will not do to itself, and it is aware that this costs it a currency the other two spend freely. The Low Fall finds the position admirable and exhausting in roughly equal measure.'
+            'It would move almost any bar in the province and it does not use it. The Pavilion has never asked a house to take somebody it would have refused, on the stated ground that it would then be doing to another house what it will not do to itself, and it is aware that this costs it a currency the other two spend freely. The Jade Gorge finds the position admirable and exhausting in roughly equal measure.'
     },
 
     // ── the ones with a bar that cannot move, for four different reasons ─
@@ -229,7 +229,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
  */
 export const THE_APEXES_THAT_TRADE = {
     theDeepSurvey:
-        'It will place anybody, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Low Fall understands that a Survey request is a request in form only. What it takes is not stones. It takes the thing it always takes: a term added to what the house already owes, unstated, uncollected, and available. A house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it.',
+        'It will place anybody, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Jade Gorge understands that a Survey request is a request in form only. What it takes is not stones. It takes the thing it always takes: a term added to what the house already owes, unstated, uncollected, and available. A house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it.',
     theLongCut:
         'It will do the same and it prices it honestly, which is the difference. The Long Cut employs rather than grants, so it cannot lean on a tenant - what it has instead is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Long Cut regards as evidence that it sets them correctly.',
     andWhatTheyWillNotDo:

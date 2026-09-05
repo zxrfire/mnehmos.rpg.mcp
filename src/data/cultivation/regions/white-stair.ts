@@ -38,7 +38,7 @@ const STAIR_BANDS: LocalRankBand[] = [
     {
         fromOrdinal: 17, toOrdinal: 20,
         standardName: 'Core Formation', localName: 'Standing Ice',
-        localTheory: 'The cold holds inside the body without being maintained. The North is content to be told this is a golden core and will not argue about it, on the grounds that arguing with the Low Fall about words has never once changed a working face.',
+        localTheory: 'The cold holds inside the body without being maintained. The North is content to be told this is a golden core and will not argue about it, on the grounds that arguing with the Jade Gorge about words has never once changed a working face.',
         localSubdivisions: 3, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
         subRankNote: 'Three courses of ice against four stages. Both traditions can see instantly that somebody has crossed into the realm; where inside it they sit is not observable across the border and no correspondence exists.'
@@ -86,10 +86,10 @@ const STAIR_BANDS: LocalRankBand[] = [
     {
         fromOrdinal: 41, toOrdinal: 44,
         standardName: 'Tribulation Transcendence', localName: 'The Last Winter',
-        localTheory: 'A winter with nothing after it. The North assumes this means an ending and the Low Fall knows it means a beginning, and neither has ever put the question to anybody who would know.',
+        localTheory: 'A winter with nothing after it. The North assumes this means an ending and the Jade Gorge knows it means a beginning, and neither has ever put the question to anybody who would know.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Curriculum vocabulary. The Low Fall divides this realm into four and the White Stair into none, and the disagreement has never cost anybody anything because no northerner has been near it.'
+        subRankNote: 'Curriculum vocabulary. The Jade Gorge divides this realm into four and the White Stair into none, and the disagreement has never cost anybody anything because no northerner has been near it.'
     },
     {
         fromOrdinal: 45, toOrdinal: 46,
@@ -150,7 +150,7 @@ export const THE_WHITE_STAIR: Region = {
         missingDisciplines: [
             {
                 discipline: 'formations',
-                reason: 'An array is laid on ground that stays where it is put, and ice does not: stones set in ice go out of square inside a decade and out of use inside two. The exception is the one the Quiet Marches already uses - a node cut into rock holds - so the two courts that predate the retreat have working perimeters on stone and nobody has laid a new array in the province in four hundred years. Nothing can be laid at the working face at all, which is the part that matters, because the face is where the qi is and it is the one place in the province a formation could not be worth having.'
+                reason: 'An array is laid on ground that stays where it is put, and ice does not: stones set in ice go out of square inside a decade and out of use inside two. The exception is the one the Silent Cliffs already uses - a node cut into rock holds - so the two courts that predate the retreat have working perimeters on stone and nobody has laid a new array in the province in four hundred years. Nothing can be laid at the working face at all, which is the part that matters, because the face is where the qi is and it is the one place in the province a formation could not be worth having.'
             }
         ],
         strongDisciplines: [
@@ -179,23 +179,23 @@ export const THE_WHITE_STAIR: Region = {
     branches: [
         {
             parentSectId: 'sect-cinnabar-crucible-guild',
-            localName: 'The Cold Crucible at Rimefall',
+            localName: 'The Cold Crucible at Cold Peak',
             doesHere:
                 'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Guild\'s grant comes from the Frostmirror rather than from the Third Sill, which is an arrangement neither province has a document for and neither has asked about.'
         },
         {
             parentSectId: 'house-measured-span',
-            localName: 'The Fourhands Terminal',
+            localName: 'The Four Graves Terminal',
             doesHere:
                 'One of the nine stations, at the head of the pass, an hour from a station seventeen days\' walk away. It is the only reason anything reaches the North in the five months the road is shut, it opens four days in nine, and the Frostmirror pays for it in stones without ever having said what for.'
         }
     ],
     places: [
-        { name: PLACE.RIMEFALL, kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
-        { name: PLACE.THE_GIVING, kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Giving and nobody says what it is giving, or for how much longer.' },
-        { name: PLACE.UNDERHANG, kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
-        { name: PLACE.UNDERSNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
-        { name: PLACE.FOURHANDS, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
+        { name: PLACE.COLD_PEAK, kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
+        { name: PLACE.THE_LIVING_ICE, kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
+        { name: PLACE.STONE_SHADOW, kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
+        { name: PLACE.DEEP_SNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
+        { name: PLACE.FOUR_GRAVES, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
         {
             name: PLACE.ORCHID_TERRACE,
             kind: 'sect_town',
@@ -267,7 +267,7 @@ export const THE_WHITE_STAIR: Region = {
             kind: 'sea_crossing',
             otherRegionId: SOUTH_REGION_ID,
             description:
-                'Thirty-four days round the western capes to a northern inlet, open two months a year, and the only route into the White Stair that does not pass through the Low Fall. Everything the Court would rather not have counted at a gorge counter comes this way, and about one hull in five does not arrive.',
+                'Thirty-four days round the western capes to a northern inlet, open two months a year, and the only route into the White Stair that does not pass through the Jade Gorge. Everything the Court would rather not have counted at a gorge counter comes this way, and about one hull in five does not arrive.',
             travelDays: 34
         }
     ],

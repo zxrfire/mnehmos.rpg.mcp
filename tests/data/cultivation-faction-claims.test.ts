@@ -45,7 +45,7 @@ const KNOWN = new Set<string>([
 
 describe('a superlative is a measurement', () => {
     it('does not let the Nine Peaks claim a pipeline three houses beat', () => {
-        // Measured: reliable production in the Low Fall runs Crimson Abyss 29,
+        // Measured: reliable production in the Jade Gorge runs Crimson Abyss 29,
         // Nine Abyss 25, Ashen Forge 23, then a group at 21 that the Order is
         // in. It was calling itself the best pipeline in the province and it is
         // joint fourth. What IS singular is the thing it is short of, and the
@@ -88,7 +88,7 @@ describe('a superlative is a measurement', () => {
     });
 
     it('does not let the Frostmirror be the only body gunning for another', () => {
-        // Measured: nine Low Fall bodies hold an ambition blocked by a peer and
+        // Measured: nine Jade Gorge bodies hold an ambition blocked by a peer and
         // have moved on it. What is actually singular is the instrument -
         // nobody else forges their own landlord's paperwork.
         const court = getSect('sect-frostmirror-court')!;
@@ -96,20 +96,20 @@ describe('a superlative is a measurement', () => {
             if (!inLowFall(s.id) || !s.ambition?.movedOn) return false;
             return s.ambition.blockedBy.some(b => KNOWN.has(b) && !b.startsWith('apex-') && !b.startsWith('court-'));
         });
-        expect(gunning.length, 'the Low Fall has gone quiet - recheck the claim')
+        expect(gunning.length, 'the Jade Gorge has gone quiet - recheck the claim')
             .toBeGreaterThan(1);
         expect(court.description, 'the only-body-gunning claim is back')
-            .not.toMatch(/only body in the Low Fall/i);
+            .not.toMatch(/only body in the Jade Gorge/i);
     });
 
     it('never calls a grant the only pipeline that reaches a realm six houses reach', () => {
         // The governance line that started this. Nascent Soul opens at 21 and
-        // more than half the Low Fall reaches it.
+        // more than half the Jade Gorge reaches it.
         const terms = getParentage('sect-nine-peaks-ascetic-order')?.terms;
         expect(terms, 'the Order holds on no terms at all now').toBeTruthy();
         for (const b of terms!.buys) {
             expect(b, 'the only-Nascent-Soul claim is back')
-                .not.toMatch(/only pipeline in the Low Fall/i);
+                .not.toMatch(/only pipeline in the Jade Gorge/i);
         }
         const atNascentSoul = SECTS.filter(s => inLowFall(s.id) && reliableOf(s.id) >= 21);
         expect(atNascentSoul.length, 'the province thinned out - recheck').toBeGreaterThan(3);

@@ -1,111 +1,5 @@
 /**
  * Things that came down from above.
- *
- * The provenance rule this rests on - counted against tracked, what money
- * cannot buy, why a holder keeps what they cannot use - is
- * `docs/world/things/items.md`. What crosses the Lid at all is
- * `docs/world/climbing/immortals.md`. What is here and in neither of them is the stock
- * argument: `STOCK_VERSUS_FLOW`, `THE_TWO_CLAIMS`, and what service actually
- * buys. Indexed in `docs/world/INDEX.md`.
- *
- * A handful of consumables exist in the world that nobody below the Lid can
- * make, refine, repair or replace. They came down from the immortal realm,
- * which is the only provenance any of them has and the only one they can have,
- * and the supply is therefore finite and shrinking: every one spent is one
- * fewer in the world forever. That is what makes the holders careful rather
- * than merely stingy.
- *
- * TWO EFFECTS, BOTH CURRENTLY IMPOSSIBLE BY ANY OTHER MEANS
- * --------------------------------------------------------
- *   promote_realm        advance a small realm outright, skipping accumulation
- *                        that would otherwise take decades or centuries
- *   change_spirit_root   rewrite the aperture a person draws qi through
- *
- * The second one should read like something that should not exist, because it
- * should not. `spirit-roots.ts` states the rule the whole design rests on: a
- * spirit root is rolled once, is permanent, and there is no respec, no reroll
- * and no item that changes it. `CultivatorSchema` says the same thing in the
- * comment above the field - rolled once, permanent, never editable after
- * creation. Every balance measurement in this engine assumes it.
- *
- * So a Second Dealing is not a consumable tier. It is a world-historic
- * exception, of which two are known to exist, and the correct reaction to
- * hearing that one is in a room is not excitement but a kind of vertigo. The
- * catalog states the rule and then states the exception, in that order,
- * deliberately.
- *
- * NOT PURCHASABLE, AT ALL
- * -----------------------
- * There is no price field in this file and there must never be one. A price
- * would imply the economy reaches these, and it does not: the Thousand
- * Treasure Pavilion has never listed one in four hundred years of catalogues,
- * and the Stonewright Consortium declines to assay them, on the stated grounds
- * that an assay implies a rate.
- *
- * THREE GRADES, AND THE COMPARISON THEY MAKE POSSIBLE
- * ---------------------------------------------------
- * Both medicines come in higher, middle and lower, and grade tracks what an
- * ancestor can afford to send. Ancient ancestors answer rarely and send well.
- * A fresh one answers constantly and sends what she can, which is the bottom
- * grade, because three hundred and eighty years across is nothing.
- *
- *   Azure Cloud   most in total by a distance, all of it lower, and RISING
- *   Deep Survey   fewer, one higher, some middle and lower: rare and good
- *   Long Cut      fewer, one higher, differing middle and lower: rare and good
- *
- * So the four cannot be put in a single order at all, which is the point. The
- * Pavilion is rich in quantity and poor in quality; the apexes are the exact
- * inverse; and each of them would find the other position alarming for
- * completely different reasons.
- *
- * THREE HOLDERS, TWO KINDS OF OBSTACLE
- * ------------------------------------
- * The Azure Cloud Pavilion holds more than anybody, under written instructions
- * from the woman who left them, and can therefore act. There is somebody to
- * convince, and getting one is a social and political problem rather than a
- * heist. It is also the only holder whose stock goes UP, for a reason that is
- * a person rather than an institution - see `crossings.ts`.
- *
- * The Deep Survey and the Long Cut are a different kind of obstacle entirely,
- * and the difference is the point. These are the administrators of the world:
- * they hold the veins, set the terms and keep the registers, and a body that
- * runs an economy is exactly the body that counts a finite irreplaceable stock
- * down to the unit, minutes it, and requires a quorum to touch it. Their
- * carefulness is not sentiment and not hoarding. It is what an institution
- * does with a line item it cannot reorder.
- *
- * So the holding is small enough that releasing one is a decision taken
- * collectively, every member would rather not be the one who moved it, and any
- * one of them can say no. Rank does not help: a Surveyor asking is one voice,
- * and the others can refuse. There is a form for requesting one. It has been
- * submitted. The answer was no.
- *
- * That is arithmetic rather than a lever, and there is no version of the
- * problem where the player finds the right person and applies enough pressure.
- *
- * The contrast is deliberate: Azure Cloud is a sect where a LIVING woman
- * exercises judgement against guidance her sister gave before leaving, and the
- * apexes are bureaucracies holding an unreplenishable line item. Same objects,
- * entirely different obstacle - and the difference is not that one has written
- * terms. It is that the Pavilion has somebody who COULD say yes, and an apex
- * has a quorum where any one voice can refuse. Getting one from the Pavilion is
- * a social and political problem. Getting one from an apex is arithmetic.
- *
- * SHE LEFT. SHE DID NOT DIE, and this comment said otherwise for a while: it
- * called the Pavilion's holding "a dead woman's gift". That contradicts its own
- * line four paragraphs above - a dead benefactor's stock cannot go UP - and it
- * contradicts `sects.ts` and `crossings.ts`, which carry the fact in full: she
- * still answers, on a channel that is a living person rather than a bequest,
- * and the arrivals are why the stock rises rather than falls. Those two files
- * hold the names, the ages and the interval; they are not restated here,
- * because a second copy of a fact is a second thing to keep true.
- *
- * The rivals' line stays exactly as it is. The Ashen Forge Clan calls the
- * deference "renting a dead woman" and resents an authority owed to a dead
- * woman rather than earned, and that is what the province BELIEVES. They are
- * wrong, their wrongness is the point, and `sects.ts` says outright that what
- * none of them has worked out is that she still answers. An in-world opinion is
- * not an error. A narrator asserting it as fact was.
  */
 
 import { z } from 'zod';
@@ -126,11 +20,11 @@ export const ImmortalItemFormSchema = z.enum(['golden_pill', 'talisman']);
 export type ImmortalItemForm = z.infer<typeof ImmortalItemFormSchema>;
 
 /**
- * Both medicines come in three grades, and the grade is a property of the
- * object rather than of the effect: a lower Unearned Step and a higher one are
- * the same kind of thing, made by the same means, and one of them does far
- * less. Grade is what an ancestor can afford to send, which is why it maps so
- * cleanly onto how long they have been across.
+ * Both medicines come in three grades, and the grade is a property of the object
+ * rather than of the effect: a lower Unearned Step and a higher one are the same
+ * kind of thing, made by the same means, and one of them does far less. Grade is
+ * what an ancestor can afford to send, which is why it maps so cleanly onto how
+ * long they have been across.
  */
 export const ImmortalGradeSchema = z.enum(['higher', 'middle', 'lower']);
 export type ImmortalGrade = z.infer<typeof ImmortalGradeSchema>;
@@ -190,11 +84,11 @@ export const HoldingSchema = z.object({
     /** Collective holders only: the time somebody good was told no. */
     recordedRefusal: RecordedRefusalSchema.nullable(),
     /**
-     * Collective holders only. Saving the institution is not a transaction and
-     * does not buy anything. It produces a circumstance in which refusing
-     * becomes indefensible to people who would otherwise refuse - and even
-     * then, one or two of them may hold out, and a player who saves the sect
-     * and still walks away empty-handed has been treated honestly.
+     * Collective holders only. Saving the institution is not a transaction and does
+     * not buy anything. It produces a circumstance in which refusing becomes
+     * indefensible to people who would otherwise refuse - and even then, one or two
+     * of them may hold out, and a player who saves the sect and still walks away
+     * empty-handed has been treated honestly.
      */
     savingTheSect: z.string().nullable()
 });
@@ -727,7 +621,7 @@ export const THE_SENDING_PYRAMID = {
     theOrdinaryFactionShape:
         'So the ordinary faction shape is: a handful of lowers received across centuries, perhaps one middle in the whole record, no higher ever, and almost all of it spent. Anything richer than that needs a reason written down.',
     whoNeverReceivedAnything:
-        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. The Longbough Grove, the Sixmile Wardens, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Fordhall and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
+        'And a great many factions have never received anything at all, ever, which the catalog states rather than leaves implied. A receipt requires a line: somebody up there who is yours. The Longbough Grove, the Six Li Wardens, the Hollow Bell Wanderers, the Bone Lantern Cult, the Severed, the Clear River Fordhall and every Dao house have no crossed ancestor and no parent that has one, and consequently no history of receipts whatever. For them these objects are a rumour about other people.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -828,7 +722,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
         spentOn:
-            'Unrecorded by the Temple and reconstructed entirely from outside. The Ninefold Ledger holds two lineage audits, six hundred years apart, each opened because a Sweptground monk advanced in a way that did not add up and each closed without a finding. The Ledger is confident about the count and has no idea who authorised either.',
+            'Unrecorded by the Temple and reconstructed entirely from outside. The Ninefold Ledger holds two lineage audits, six hundred years apart, each opened because a Burnt Earth monk advanced in a way that did not add up and each closed without a finding. The Ledger is confident about the count and has no idea who authorised either.',
         judgedInHindsight:
             'Nobody can judge it, because nobody can say who received them or why. What is not in dispute is that a temple which takes in beggars and muddled roots put two irreplaceable objects into two people it never named, and the province - which regards the place as a charity - has never once wondered what it does with what it is given.'
     },

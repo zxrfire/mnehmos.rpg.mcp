@@ -1,6 +1,6 @@
 /**
  * The four arterials: one per Surveyor, and the administrative spine under the
- * Low Fall's grant book.
+ * Jade Gorge's grant book.
  *
  * Their own file rather than a province's because an arterial is the unit the
  * Survey works in and it is read against provinces rather than owned by one.
@@ -61,9 +61,9 @@ export const ARTERIALS: readonly Arterial[] = [
         ordinalInSystem: 3,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: 'court-third-sill',
-        drawnOnBy: 'The eleven surveyed veins of the Low Fall, and through them every granted sect in the province.',
+        drawnOnBy: 'The eleven surveyed veins of the Jade Gorge, and through them every granted sect in the province.',
         note:
-            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Deep Survey has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Low Fall never asking whose name is on the countersignature.'
+            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Deep Survey has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
     },
     {
         id: 'arterial-the-long-cold',

@@ -26,6 +26,7 @@ import {
     type HistoryLedger,
     type Observer
 } from '../../../src/engine/world/history.js';
+import { RUIN_NAMES, SCAR_NAMES } from '../../../src/data/cultivation/regions.js';
 
 function ledgerWithEra(): HistoryLedger {
     const ledger = createLedger();
@@ -353,5 +354,51 @@ describe('a world opens with exactly one ruin already open', () => {
         const a = seedPriorAges('seed-alpha', { presentYear: 0 }).ruins.find(r => r.opened);
         const b = seedPriorAges('seed-alpha', { presentYear: 0 }).ruins.find(r => r.opened);
         expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    });
+});
+
+/**
+ * The authored names for the generated half of the map, and whether a world
+ * can actually reach them.
+ *
+ * `drawPlaceName` was keyed on the site's own id and nothing else. A ruin is
+ * drawn for every faction in every age, so the twelve keys are the same in
+ * every world, and every world got the same twelve names in the same order -
+ * leaving eight of the twenty authored ruin names unreachable anywhere, three
+ * of them carrying a `LOCAL_RESIDUE` story about ground no generator would
+ * ever make. Scars escaped it because a scar is drawn on a coin flip.
+ */
+describe('history: naming the generated half of the map', () => {
+    const seeds = Array.from({ length: 24 }, (_, i) => `name-seed-${i}`);
+
+    it('reaches every authored ruin and scar name across a pool of worlds', () => {
+        const ruins = new Set<string>();
+        const scars = new Set<string>();
+        for (const seed of seeds) {
+            const prior = seedPriorAges(seed, { presentYear: 0 });
+            for (const r of prior.ruins) ruins.add(r.name);
+            for (const s of prior.scars) scars.add(s.name);
+        }
+        for (const entry of RUIN_NAMES) {
+            expect(ruins.has(entry.name), `${entry.name} is never drawn by any world`).toBe(true);
+        }
+        for (const entry of SCAR_NAMES) {
+            expect(scars.has(entry.name), `${entry.name} is never drawn by any world`).toBe(true);
+        }
+    });
+
+    it('gives one world one set of names, and two worlds different ones', () => {
+        const namesOf = (seed: string): string =>
+            seedPriorAges(seed, { presentYear: 0 }).ruins.map(r => r.name).join('|');
+        expect(namesOf('name-seed-0')).toBe(namesOf('name-seed-0'));
+        expect(namesOf('name-seed-0')).not.toBe(namesOf('name-seed-1'));
+    });
+
+    it('never repeats a name inside one world', () => {
+        for (const seed of seeds) {
+            const prior = seedPriorAges(seed, { presentYear: 0 });
+            const all = [...prior.ruins.map(r => r.name), ...prior.scars.map(s => s.name)];
+            expect(new Set(all).size, seed).toBe(all.length);
+        }
     });
 });

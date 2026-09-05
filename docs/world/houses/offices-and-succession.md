@@ -165,7 +165,7 @@ attempted where nobody is told, so not knowing is the ordinary outcome; a house 
 the exception, and the chair is the visible form of that. The reserved post is vacant and not
 abolished - nobody struck it off a roll, and the tense matters.
 
-**A house can be in neither state.** The Sweptground Temple has no Protector at all: their
+**A house can be in neither state.** The Burnt Earth Temple has no Protector at all: their
 abbot does not retire, so no retired head exists to fill it, and their only immortal succeeded
 and left, so there is nothing to reserve one for.
 

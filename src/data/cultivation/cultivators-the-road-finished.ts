@@ -149,7 +149,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER, PLACE.LOW_FALL],
+            places: [PLACE.STONE_FORD, PLACE.GREEN_FALL],
             settlements: ['market_town', 'city']
         },
         attitude: 'Professional about the lessons and uninterested in the story. Buy him a drink and he will give you four hours on why the duel was decided before either of them drew, which is the best instruction anybody in that town is getting.',
@@ -181,7 +181,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.NINE_PEAKS, PLACE.LOW_FALL],
+            places: [PLACE.NINE_PEAKS, PLACE.GREEN_FALL],
             settlements: ['sect_town', 'city']
         },
         attitude: 'Dry, unhurried, and entirely willing to name the road dealer who sold her the pill and what he charged. Half the outer disciples in that town complain to her and none of them ask her anything about herself.',
@@ -210,7 +210,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER],
+            places: [PLACE.STONE_FORD],
             settlements: ['village', 'market_town']
         },
         attitude: 'Not bitter at the herbalist. Bitter at himself, specifically and repeatedly, for having wanted it fast, and he will say so to any young cultivator holding a pill above their grade.',
@@ -239,7 +239,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-quiet-marches',
-            places: [PLACE.HOLLOWMARKET, PLACE.KETTLE],
+            places: [PLACE.GRAVE_MARKET, PLACE.IRON_GATE],
             settlements: ['village', 'market_town']
         },
         attitude: 'Cordial with all four. Drinks with two of them. Nobody who watches this understands it and he has never offered to explain.',
@@ -273,7 +273,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.LOW_FALL, PLACE.NINE_PEAKS],
+            places: [PLACE.GREEN_FALL, PLACE.NINE_PEAKS],
             settlements: ['city', 'sect_town']
         },
         attitude: 'Answers in one sentence, the same sentence, every time: part of it was never there and cannot be added later. Nobody believes him, because everybody wants the answer to be a technique somebody is withholding.',
@@ -302,7 +302,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.LOW_FALL, PLACE.SCARWATER],
+            places: [PLACE.GREEN_FALL, PLACE.STONE_FORD],
             settlements: ['city', 'market_town']
         },
         attitude: 'Blunt, quick, and completely uninterested in softening it. About a third of his clients pay and then argue, which he expects and prices in.',
@@ -331,7 +331,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER, PLACE.LOW_FALL],
+            places: [PLACE.STONE_FORD, PLACE.GREEN_FALL],
             settlements: ['market_town', 'city']
         },
         attitude: 'Short-tempered in the mornings and reasonable by evening, which everybody who travels with him learns to schedule around. He is proof the climb is possible on a bad foundation and is sick of being asked how.',
@@ -350,7 +350,7 @@ export const FALLEN: readonly Fallen[] = [
         lastOrdinal: 8,
         currentOrdinal: 8,
         stillClimbs: true,
-        what: 'His crew left the Dead Verge without him on the second day, as the rule says. He walked into Sixmile on the fifth, carrying his tools, having no account of the three days that anybody including him finds satisfactory.',
+        what: 'His crew left Nine Hundred Paces without him on the second day, as the rule says. He walked into Six Li on the fifth, carrying his tools, having no account of the three days that anybody including him finds satisfactory.',
         unexplained: 'Something is different and nobody can name it. He does not blink on the beat a person blinks on, and every crew that has shared a tent with him has noticed something, and no two of them describe the same thing.',
         existenceState: 'alive',
         identityContinuity: null,
@@ -362,7 +362,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-quiet-marches',
-            places: [PLACE.SIXMILE, PLACE.DEAD_VERGE, PLACE.HOLLOWMARKET],
+            places: [PLACE.SIX_LI, PLACE.DEAD_STONE, PLACE.GRAVE_MARKET],
             settlements: ['hamlet', 'village']
         },
         attitude: 'Thinks the whole thing is overdone, says so, and would like to be left alone about it. He is the same man he was in every particular anybody can point at, which is exactly the problem.',
@@ -391,7 +391,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.LOW_FALL, PLACE.SWEPTGROUND],
+            places: [PLACE.GREEN_FALL, PLACE.BURNT_EARTH],
             settlements: ['city', 'sect_town']
         },
         attitude: 'Impatient, precise, and superb company for exactly one hour, after which the impatience wins. Cannot do anything that needs hands and has organised an entire working life around that sentence.',
@@ -420,7 +420,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER],
+            places: [PLACE.STONE_FORD],
             settlements: ['market_town', 'village']
         },
         attitude: 'Introduces herself with both names and lets the other person choose. Whichever they pick, she uses for the rest of the conversation and does not mention again.',
@@ -449,7 +449,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-quiet-marches',
-            places: [PLACE.DEAD_VERGE, PLACE.SIXMILE],
+            places: [PLACE.DEAD_STONE, PLACE.SIX_LI],
             settlements: ['hamlet']
         },
         attitude: 'Identical every time, courteous, and entirely uninterested in the answer. Crews leave food, which it does not take, and have done for so long that the leaving is now the custom rather than the offering.',
@@ -480,7 +480,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER, PLACE.LOW_FALL],
+            places: [PLACE.STONE_FORD, PLACE.GREEN_FALL],
             settlements: ['market_town', 'city']
         },
         attitude: 'Would do it again, says so without ceremony, and finds the retelling boring. He has a two-sentence version for tables where somebody has just found out.',
@@ -509,7 +509,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.LOW_FALL, PLACE.SCARWATER, PLACE.SWEPTGROUND],
+            places: [PLACE.GREEN_FALL, PLACE.STONE_FORD, PLACE.BURNT_EARTH],
             settlements: ['city', 'market_town']
         },
         attitude: 'Brisk, unbothered, and mildly irritated that strangers find it sad. She answers two questions about the slip and then changes the subject, and the rule is stated in advance.',
@@ -538,7 +538,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER, PLACE.NINE_PEAKS],
+            places: [PLACE.STONE_FORD, PLACE.NINE_PEAKS],
             settlements: ['village', 'market_town']
         },
         attitude: 'Methodical to the point of tedium, on purpose. Every experienced culler on that circuit would rather work with him than with anybody faster, and they say so where he can hear it.',
@@ -567,7 +567,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SWEPTGROUND, PLACE.LOW_FALL],
+            places: [PLACE.BURNT_EARTH, PLACE.GREEN_FALL],
             settlements: ['sect_town', 'city']
         },
         attitude: 'Entirely functional and slightly puzzled by the discomfort she causes. The discomfort is other people\'s; she made a decision, it worked, and she has no further position on it.',
@@ -598,7 +598,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.SCARWATER, PLACE.NINE_PEAKS],
+            places: [PLACE.STONE_FORD, PLACE.NINE_PEAKS],
             settlements: ['village', 'market_town']
         },
         attitude: 'Quotes the price to the cash and has quoted it for thirty years. He is not asking for it. He is explaining the shape of the world to somebody who has just noticed the limp.',
@@ -627,7 +627,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.NINE_PEAKS, PLACE.SCARWATER],
+            places: [PLACE.NINE_PEAKS, PLACE.STONE_FORD],
             settlements: ['hamlet', 'village']
         },
         attitude: 'Gentle, apologetic, and exact about his own rules. He tells you where to stand before he tells you his name, and he is not being dramatic.',
@@ -659,7 +659,7 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-low-fall',
-            places: [PLACE.LOW_FALL, PLACE.NINE_PEAKS],
+            places: [PLACE.GREEN_FALL, PLACE.NINE_PEAKS],
             settlements: ['city', 'sect_town']
         },
         attitude: 'Wheezing, cheerful and profane. He has watched three journeymen promoted past him and holds opinions about all three that are worth the evening.',
@@ -679,7 +679,7 @@ export const FALLEN: readonly Fallen[] = [
         lastOrdinal: 6,
         currentOrdinal: 6,
         stillClimbs: false,
-        what: 'Cut faces on other people\'s grants for eighteen years and inhaled the reason Marches carvers die at forty. He is thirty-nine and entirely clear about the arithmetic.',
+        what: 'Cut faces on other people\'s grants for eighteen years and inhaled the reason Silent Cliffs carvers die at forty. He is thirty-nine and entirely clear about the arithmetic.',
         unexplained: null,
         existenceState: 'alive',
         identityContinuity: null,
@@ -691,12 +691,12 @@ export const FALLEN: readonly Fallen[] = [
         },
         place: {
             regionId: 'region-quiet-marches',
-            places: [PLACE.KETTLE, PLACE.GAPWATER_FACE],
+            places: [PLACE.IRON_GATE, PLACE.JADE_FACE],
             settlements: ['market_town']
         },
-        attitude: 'Working. Not dying, not doomed, not brave about it: working, with a year or two of it left, and irritated by visitors from the Low Fall who arrive with a face already arranged.',
+        attitude: 'Working. Not dying, not doomed, not brave about it: working, with a year or two of it left, and irritated by visitors from the Jade Gorge who arrive with a face already arranged.',
         company: 'good',
-        asked: 'Why he does not stop, which assumes there is something else to do in Kettle',
+        asked: 'Why he does not stop, which assumes there is something else to do in Iron Gate',
         danger: null,
         factionIds: ['sect-weir-office']
     }

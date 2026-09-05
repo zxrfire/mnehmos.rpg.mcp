@@ -14,14 +14,14 @@ import type { LocalRankBand } from './region-schema.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // LOCAL VOCABULARY
-// Every region relabels the same ladder. The Low Fall's labels happen to be
-// the standard ones, because the standard vocabulary is the Low Fall's.
+// Every region relabels the same ladder. The Jade Gorge's labels happen to be
+// the standard ones, because the standard vocabulary is the Jade Gorge's.
 //
 // Three of the five speak that vocabulary and two do not, and WHICH three is
-// content rather than economy: the Wide Field speaks it because every lease in
+// content rather than economy: the Yellow Plain speaks it because every lease in
 // nine cities is written in it and no landlord signs a grade he cannot look up,
-// and the Drowned Reach speaks it because it has no locals to have a word of
-// its own. The Marches and the White Stair each reached the same rungs by a
+// and the Drowned Sea speaks it because it has no locals to have a word of
+// its own. The Silent Cliffs and the White Stair each reached the same rungs by a
 // different road, so each named them.
 // ─────────────────────────────────────────────────────────────────────────
 

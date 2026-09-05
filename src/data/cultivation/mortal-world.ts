@@ -1,37 +1,6 @@
 /**
- * The mortal world: what people do, what things cost, where they live, and
- * what they think of cultivators.
- *
- * The setting's whole argument is scarcity, so an unmodelled mortal economy is
- * a hole in it. This file is not a simulation and the engine will not run one -
- * it is authored reference so the narrator can answer "what does that cost"
- * and "what could I do for money" with the same number twice.
- *
- * TWO CURRENCIES, AND WHY
- * -----------------------
- * Mortals do not use spirit stones. A stone is compressed qi: it is fuel, and
- * it is the only way to cultivate somewhere the ambient will not carry you,
- * which is why a poor cultivator's stones are never savings. Mortals use cash,
- * and the exchange is the one number that makes every other price legible:
- *
- *   1 spirit stone = 100 cash, at a market-town changer, less at the edges
- *
- * Anchors, so the scale is never guesswork:
- *
- *   30 stones      the starting purse of every run - 3,000 cash
- *   1 cash         a bowl of millet
- *   8 stones       a cultivator's meal, which is not a bigger bowl of millet -
- *                  it is a different animal, and it is what a stall means when
- *                  it prices a block-printed primer at "about a meal"
- *   12 cash        a night at an inn with a floor
- *   20 stones      a Minor Healing Pill, the one pill every run begins with
- *   40 stones      one day of grant access to a workable face in the Marches
- *   60 stones      a month of cave rent on a decent vein in the Low Fall
- *   9,000 stones   the Grain Abstinence Pill, and the reason it is a goal
- *
- * A starting cultivator is therefore a person with three months of an
- * innkeeper's wages in their pocket, one pill, and no way to make more except
- * the jobs below.
+ * The mortal world: what people do, what things cost, where they live, and what
+ * they think of cultivators.
  */
 
 import { z } from 'zod';
@@ -83,26 +52,11 @@ export type Occupation = z.infer<typeof OccupationSchema>;
 
 /**
  * How much longer than usual a job keeps being put to somebody.
- *
- * This one number is what makes `MORTAL_WORK_CEILING_ORDINAL` true. With the
- * ordinary bands a gate-zero job stops being offered at ordinal 17; the mortal
- * economy in fact keeps offering into the high teens, because a town that has
- * seen three cultivators this year still asks the fourth if he wants a day's
- * work. 1.2 stretches `dismissed` to open at ordinal 21, which is exactly where
- * `MORTAL_ATTITUDES` turns to fear-dressed-as-ceremony. The ceiling is now a
- * consequence of a generic column instead of a branch, and the test asserts the
- * two still agree.
  */
 export const OCCUPATION_REGARD_SPAN = 1.2;
 
 /**
  * The mortal economy, as one gate.
- *
- * A market stall, an inn floor and a bowl of millet are all pitched at the same
- * rung - the bottom one - and how a market treats somebody is one fact about
- * that person and that market rather than a fact about each item on the board.
- * Handlers read this profile instead of inventing a gate, so the board and the
- * jobs answer with the same arithmetic.
  */
 export const MORTAL_ECONOMY_REGARD = { gate: 0, span: OCCUPATION_REGARD_SPAN } as const;
 
@@ -110,7 +64,7 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     // ── mortal work, which is most work ───────────────────────────────
     { id: 'job-farmhand', name: 'Farmhand', kind: 'mortal', minOrdinal: 0, cashPerMonth: 180, settlements: ['hamlet', 'village'], risk: 'low', note: 'Board and a corner to sleep in are usually included, which is most of the pay. A cultivator who takes this is either hiding or finished.' },
     { id: 'job-porter', name: 'Porter', kind: 'either', minOrdinal: 0, cashPerMonth: 240, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'The commonest first job for a Qi Condensation cultivator with no connections: the body is better than a mortal\'s and nobody asks questions.' },
-    { id: 'job-ferryman', name: 'Ferryman', kind: 'either', minOrdinal: 0, cashPerMonth: 300, settlements: ['village', 'market_town'], risk: 'low', note: 'Clear River Fordhall work in the Low Fall. Steady, and the Alliance pays partly in crossings owed rather than cash.' },
+    { id: 'job-ferryman', name: 'Ferryman', kind: 'either', minOrdinal: 0, cashPerMonth: 300, settlements: ['village', 'market_town'], risk: 'low', note: 'Clear River Fordhall work in the Jade Gorge. Steady, and the Alliance pays partly in crossings owed rather than cash.' },
     { id: 'job-charcoal-burner', name: 'Charcoal burner', kind: 'mortal', minOrdinal: 0, cashPerMonth: 200, settlements: ['hamlet', 'village'], risk: 'moderate', note: 'Solitary, filthy and out in the woods for weeks, which makes it the standard cover for anyone who does not want to be found.' },
     { id: 'job-scribe', name: 'Scribe', kind: 'either', minOrdinal: 0, cashPerMonth: 400, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Requires literacy, which is rare. Lantern Hall and the Ninefold Ledger both hire, and both read what you wrote before paying.' },
     { id: 'job-mortal-doctor', name: 'Physician (mortal)', kind: 'mortal', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town', 'sect_town', 'city'], risk: 'none', note: 'Sets bones and delivers babies. Cannot treat a torn meridian and will say so, which is the difference between a doctor and a cultivator healer.' },
@@ -122,41 +76,28 @@ const OCCUPATION_DATA: readonly Occupation[] = [
     { id: 'job-tax-clerk', name: 'Tax clerk', kind: 'mortal', minOrdinal: 0, cashPerMonth: 500, settlements: ['market_town', 'city'], risk: 'low', note: 'Safe, literate, despised, and the only mortal profession with a reliable view of who actually owns what.' },
     // ── work that only exists where there is no ground ─────────────────
     { id: 'job-deckhand', name: 'Deckhand', kind: 'either', minOrdinal: 0, cashPerMonth: 340, settlements: ['market_town', 'city'], risk: 'moderate', note: 'Paid by the passage rather than the month, and the figure here is a passage annualised. A hull will take anybody who can pay the burn or work it off, and asks where you came aboard and nothing past that.' },
-    { id: 'job-water-carrier', name: 'Water carrier', kind: 'either', minOrdinal: 0, cashPerMonth: 380, settlements: ['hamlet', 'village'], risk: 'high', note: 'Sink Carriers work on the Blown Ground: forty to sixty skins in a string, four days from the only well. Better paid than a porter and it kills about one in six a season, and the shed publishes the figure at the door.' },
-    { id: 'job-quay-watch', name: 'Quay watch', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_300, settlements: ['market_town', 'city'], risk: 'moderate', note: 'The Halfwater Rail\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told at hiring that it does not go above Foundation Establishment.' },
+    { id: 'job-water-carrier', name: 'Water carrier', kind: 'either', minOrdinal: 0, cashPerMonth: 380, settlements: ['hamlet', 'village'], risk: 'high', note: 'Sink Carriers work on the Burial Sands: forty to sixty skins in a string, four days from the only well. Better paid than a porter and it kills about one in six a season, and the shed publishes the figure at the door.' },
+    { id: 'job-quay-watch', name: 'Quay watch', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_300, settlements: ['market_town', 'city'], risk: 'moderate', note: 'The Silver Island Rail\'s funded order, and the only paid watch in the world that is honest about where its writ stops. It handles theft, brawls and short weight, and is told at hiring that it does not go above Foundation Establishment.' },
     { id: 'job-shipmaster', name: 'Shipmaster', kind: 'either', minOrdinal: 0, cashPerMonth: 2_600, settlements: ['market_town', 'city'], risk: 'high', note: 'Owns or commands a hull, which is the largest thing anybody in the province owns. The whole of the job is a sum done ashore about how many days of water to load, and the whole of the risk is being wrong about it once.' },
 
     // ── work a Qi Condensation cultivator can realistically take ───────
     { id: 'job-beast-culler', name: 'Spirit-beast culler', kind: 'cultivator', minOrdinal: 3, cashPerMonth: 1_200, settlements: ['village', 'market_town', 'sect_town'], risk: 'high', note: 'Paid per head on a village contract. The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.' },
-    { id: 'job-escort', name: 'Caravan escort (cultivator)', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 2_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'Underwritten by the Stonewright Consortium, which prices the contract off its own rank table - the table that reads Marches carvers a rank low.' },
+    { id: 'job-escort', name: 'Caravan escort (cultivator)', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 2_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'Underwritten by the Stonewright Consortium, which prices the contract off its own rank table - the table that reads Silent Cliffs carvers a rank low.' },
     { id: 'job-dangerous-herb-gathering', name: 'Herb gathering, guarded ground', kind: 'cultivator', minOrdinal: 6, cashPerMonth: 1_800, settlements: ['village', 'market_town'], risk: 'high', note: 'Earth-grade herbs grow where something is living. Pays four times a picker and kills about one gatherer in twenty a year.' },
     { id: 'job-bellows-hand', name: 'Bellows hand (alchemy)', kind: 'either', minOrdinal: 0, cashPerMonth: 600, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'The Cinnabar Crucible Guild\'s bottom rung and the only route into alchemy from outside. Three years of it before anyone lets you near a cauldron.' },
-    { id: 'job-formation-hand', name: 'Formation hand', kind: 'cultivator', minOrdinal: 8, cashPerMonth: 1_500, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Holding nodes steady while somebody who understands them works. Impossible in the Quiet Marches, where formations do not run at all.' },
+    { id: 'job-formation-hand', name: 'Formation hand', kind: 'cultivator', minOrdinal: 8, cashPerMonth: 1_500, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Holding nodes steady while somebody who understands them works. Impossible in the Silent Cliffs, where formations do not run at all.' },
     { id: 'job-courier', name: 'Courier', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 1_100, settlements: ['market_town', 'sect_town', 'city'], risk: 'moderate', note: 'Measured Span work, paid per true li rather than walked. The Span will not hire anyone who cannot read its two-number directions.' },
     { id: 'job-cave-sitter', name: 'Cave sitter', kind: 'cultivator', minOrdinal: 2, cashPerMonth: 800, settlements: ['sect_town', 'village'], risk: 'low', note: 'Sitting in somebody else\'s rented cave so the claim does not lapse while they are away. Dull, safe, and the sitter cultivates on their employer\'s ground, which is the actual wage.' },
     { id: 'job-outer-chores', name: 'Outer disciple chores', kind: 'cultivator', minOrdinal: 1, cashPerMonth: 400, settlements: ['sect_town'], risk: 'low', note: 'A stipend rather than a wage, plus access to sect ground - which is worth more than the stipend and is why anyone accepts it.' },
     { id: 'job-tutor', name: 'Tutor to a merchant family', kind: 'cultivator', minOrdinal: 5, cashPerMonth: 900, settlements: ['market_town', 'city'], risk: 'none', note: 'Teaching a merchant\'s child the Lesser Qi-Gathering Manual. Humiliating, safe, and the fastest way for a low-realm cultivator to meet people with money.' },
-    { id: 'job-gleaner', name: 'Gleaner (burn zone)', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 3_000, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Quiet Marches only. The best-paid work available to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
-    { id: 'job-face-labour', name: 'Face labour (carving)', kind: 'cultivator', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town'], risk: 'high', note: 'Quiet Marches only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
+    { id: 'job-gleaner', name: 'Gleaner (burn zone)', kind: 'cultivator', minOrdinal: 4, cashPerMonth: 3_000, settlements: ['village', 'market_town'], risk: 'lethal', note: 'Silent Cliffs only. The best-paid work available to a Qi Condensation cultivator anywhere, and it kills about one in nine a season.' },
+    { id: 'job-face-labour', name: 'Face labour (carving)', kind: 'cultivator', minOrdinal: 0, cashPerMonth: 700, settlements: ['market_town'], risk: 'high', note: 'Silent Cliffs only. Cutting a face on somebody else\'s grant for a share of what comes out, and inhaling the reason carvers die at forty.' },
     { id: 'job-placer-runner', name: 'Placer\'s runner', kind: 'either', minOrdinal: 0, cashPerMonth: 550, settlements: ['village', 'market_town'], risk: 'low', note: 'Border-road work: finding foreign cultivators willing to be assessed, for a placer who charges more than a month of cave rent to do it.' },
     { id: 'job-gravedigger', name: 'Gravedigger', kind: 'mortal', minOrdinal: 0, cashPerMonth: 230, settlements: ['village', 'market_town', 'sect_town', 'city'], risk: 'low', note: 'Paid by the plot and not by the month, so the wage is a winter figure. The only trade that can tell you honestly how a town died last year.' },
     { id: 'job-bell-keeper', name: 'Bell keeper', kind: 'mortal', minOrdinal: 0, cashPerMonth: 150, settlements: ['village', 'market_town'], risk: 'none', note: 'Rings for funerals, for beasts and for fire, and refuses to ring for anything else, which in several valleys includes ringing twice.' },
     { id: 'job-salt-carrier', name: 'Salt carrier', kind: 'mortal', minOrdinal: 0, cashPerMonth: 290, settlements: ['village', 'market_town', 'city'], risk: 'moderate', note: 'Legal at the gate and lucrative between them. The risk in the figure is the gate rather than the road.' },
 
-    // ── commissions ──────────────────────────────────────────────────
-    //
-    // Not a second catalog and not a second system: the same rows, the same
-    // schema, the same `findWorkForOrdinal`. What changes above the mortal
-    // ceiling is only which entries the bands still put forward, which is the
-    // whole point of the mechanism.
-    //
-    // The old behaviour was that everything from ordinal 21 upward got an
-    // empty list and the sentence "nobody here is hiring anyone, for
-    // anything", which said a Tribulation Transcendence cultivator was
-    // unemployable. They are not unemployable. They are asked for entirely
-    // different things, at prices that are not on the same scale, and the
-    // asking is done by sects and cities rather than by a foreman with a
-    // board. These are those things.
+    // commissions
     { id: 'job-vein-warden', name: 'Vein warden', kind: 'cultivator', minOrdinal: 21, cashPerMonth: 12_000, settlements: ['sect_town', 'city'], risk: 'moderate', note: 'Sitting on somebody else\'s vein so that nothing else draws on it. The wage is nominal; what is actually being paid is the right to cultivate on the ground you are guarding.' },
     { id: 'job-convoy-escort', name: 'Pill convoy escort', kind: 'cultivator', minOrdinal: 23, cashPerMonth: 20_000, settlements: ['market_town', 'sect_town', 'city'], risk: 'high', note: 'The Cinnabar Crucible Guild moves finished heaven-grade medicine four times a year and will not move it without somebody who can survive being ambushed by the people who want it.' },
     { id: 'job-tide-breaker', name: 'Tide breaker', kind: 'cultivator', minOrdinal: 25, cashPerMonth: 45_000, settlements: ['village', 'market_town', 'sect_town'], risk: 'lethal', note: 'A beast tide is coming and a county has raised what it can. Paid on the count of what is standing afterwards, which is a payment structure with an obvious defect.' },
@@ -197,98 +138,46 @@ export type Price = z.infer<typeof PriceSchema>;
 export const PRICES: readonly Price[] = [
     // ── food and lodging: the mortal end of the scale ─────────────────
     { id: 'price-millet', name: 'Bowl of millet', category: 'food', cash: 1, unit: 'each', note: 'The floor of the whole economy. A day of eating badly is three of these.' },
-    { id: 'price-meal', name: 'Hot meal at an inn', category: 'food', cash: 6, unit: 'each', note: 'Fish and rice in the Low Fall; flatbread and sour broth in the Marches, at half again the price.' },
+    { id: 'price-meal', name: 'Hot meal at an inn', category: 'food', cash: 6, unit: 'each', note: 'Fish and rice in the Jade Gorge; flatbread and sour broth in the Silent Cliffs, at half again the price.' },
     { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number that makes the Grain Abstinence Pill worth nine thousand stones.' },
     { id: 'price-inn-night', name: 'Night at an inn', category: 'lodging', cash: 12, unit: 'night', note: 'A floor, a blanket and no privacy. A private room is four times that and exists in perhaps six buildings per town.' },
     { id: 'price-month-lodging', name: 'A month\'s lodging', category: 'lodging', cash: 300, unit: 'month', note: 'A room in a market town, which is roughly one and a half months of a porter\'s wage.' },
 
-    // ── and the cultivator end of the same scale ──────────────────────
-    //
-    // THE CONTRADICTION THIS CLOSES, WHICH WAS NEVER A CONTRADICTION.
-    //
-    // The Lesser Qi-Gathering Manual's catalog entry says it is "sold at every
-    // market town for the price of a meal", and a stall asks 780 cash for one -
-    // eight spirit stones. Read against the two rows above, both mortal and
-    // both under a stone, that sentence is off by a factor of a hundred and
-    // thirty, and a player checking the board would conclude the catalog was
-    // wrong about its own cheapest book.
-    //
-    // It is not. The design owner's ruling is that the manual's text is
-    // correct and it is a CULTIVATOR'S meal it is priced against, which is a
-    // different object from an innkeeper's bowl - a meal using cultivator
-    // animals is not a larger version of a mortal one. The whole block above
-    // is labelled "the mortal end of the scale" and the scale had no other
-    // end on it, so the only meal a reader could find was the wrong one.
-    //
-    // Priced at the primer, deliberately, because the primer is what the claim
-    // is made against: 800 cash is eight stones, which is the Lesser
-    // Qi-Gathering Manual to the stone, and the deeper stall book at thirteen
-    // is then a meal and a half. The manual's sentence is now checkable on the
-    // board instead of being contradicted by it.
-    //
-    // NOT what `eat` charges. `MEAL_COST_STONES` is one stone - a cultivator
-    // buying ordinary food at cultivator prices, which is why the receipt says
-    // a farmer at the next table did the same thing for less. This row is the
-    // other thing entirely, and the gap between one stone and eight is the
-    // difference between eating and eating something that was cultivating
-    // until recently.
+    // and the cultivator end of the same scale
     { id: 'price-spirit-beast-meal', name: 'Spirit-beast meat, a cultivator\'s meal', category: 'food', cash: 800, unit: 'each', note: 'Eight stones on the board for one sitting, before whatever a province adds to it - a mule\'s worth of a mortal\'s food, and the reason the two boards do not compare. What is being paid for is flesh off something that was drawing qi while it lived; a hundred bowls of millet do not add up to it and never will. The measure a stall means when it says a block-printed primer costs about what a meal does.' },
 
     // ── transport ─────────────────────────────────────────────────────
     { id: 'price-ferry', name: 'Ferry crossing', category: 'transport', cash: 2, unit: 'crossing', note: 'Free for Clear River Fordhall members, and the Alliance counts the debt in crossings rather than cash.' },
-    { id: 'price-caravan-passage', name: 'Caravan passage', category: 'transport', cash: 250, unit: 'per 100 li', note: 'Includes food and the protection of being one of a group. The border road to Kettle is eleven days and priced as such.' },
+    { id: 'price-caravan-passage', name: 'Caravan passage', category: 'transport', cash: 250, unit: 'per 100 li', note: 'Includes food and the protection of being one of a group. The border road to Iron Gate is eleven days and priced as such.' },
     { id: 'price-mule', name: 'Mule', category: 'transport', cash: 1_400, unit: 'each', note: 'Fourteen stones on four legs, and the single largest purchase most mortals ever make.' },
     { id: 'price-cart', name: 'Cart', category: 'transport', cash: 3_000, unit: 'each', note: 'Thirty stones: exactly the starting purse of a cultivator, which is a comparison mortals make bitterly and often.' },
     { id: 'price-span-courier', name: 'Measured Span courier', category: 'transport', cash: 900, unit: 'per true li', note: 'Priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.' },
 
-    // ── the water, which is priced in a different unit and should be ──
-    //
-    // A ferry is a crossing you can see both banks of and a caravan is priced
-    // by the hundred li of road, because on a road you are buying DISTANCE.
-    // Sea passage is quoted per head per day, everywhere in the Drowned
-    // Reach, and the unit change is the whole difference: what a passenger is
-    // actually buying out there is somebody else's provisioning risk over a
-    // stretch of time nobody can promise the length of. The three rows below
-    // are the same vocabulary as the ferry and the caravan, extended - not a
-    // second transport system beside them.
+    // the water, which is priced in a different unit and should be
     { id: 'price-sea-passage', name: 'Sea passage', category: 'transport', cash: 45, unit: 'per head per day', note: 'Quoted on the expected passage and never on the tail, which is where the arguments come from. Twenty-one days to the eastern shore is nine hundred and forty-five cash before anybody has burned a stone.' },
     { id: 'price-deck-passage-open-water', name: 'Deck passage, no landfall in it', category: 'transport', cash: 70, unit: 'per head per day', note: 'Half again, for a lane with nowhere to stop. The surcharge is not for the danger - it is because a hull on that water carries provisions for people it cannot put ashore, and everybody aboard is loaded for.' },
-    { id: 'price-water-jar', name: 'Fresh water, sealed stone jar', category: 'food', cash: 30, unit: 'jar', note: 'Six days for one person at the standing ration, and the actual binding constraint on every passage in the province. Halfwater sells it at a margin nobody argues about, because a shipmaster haggling over water in front of a crew has already lost the crew.' },
-    { id: 'price-hull-repair', name: 'Hull repair at a quay', category: 'service', cash: 2_200, unit: 'per call', note: 'Caulking, cordage and canvas. The Halfwater Rail keeps eleven caulkers and does not price them to profit, on the reasoning that a hull that cannot be repaired there is a hull that stops coming.' },
+    { id: 'price-water-jar', name: 'Fresh water, sealed stone jar', category: 'food', cash: 30, unit: 'jar', note: 'Six days for one person at the standing ration, and the actual binding constraint on every passage in the province. Silver Island sells it at a margin nobody argues about, because a shipmaster haggling over water in front of a crew has already lost the crew.' },
+    { id: 'price-hull-repair', name: 'Hull repair at a quay', category: 'service', cash: 2_200, unit: 'per call', note: 'Caulking, cordage and canvas. The Silver Island Rail keeps eleven caulkers and does not price them to profit, on the reasoning that a hull that cannot be repaired there is a hull that stops coming.' },
     { id: 'price-port-rate', name: 'Port rate on a cargo', category: 'service', cash: 25, unit: 'per stone of value per 40', note: 'A fortieth of what crosses the rail, published, unchanged in ninety years and refused upward four times in writing. It is light because the traffic is where the profit is and squeezing the traffic moves it.' },
 
-    // ── medicine: where the two currencies meet ───────────────────────
-    // The note used to end "cannot touch a meridian", and the engine disagreed
-    // with it in play: mortal care closed two torn meridians and two scorched
-    // channels in one run while this line was on the board beside it. What is
-    // actually out of reach is set by `medicineNeededFor` - crippling damage,
-    // or an ordinary tear on a body far enough up the ladder - and the prose
-    // yields to the measurement.
+    // medicine: where the two currencies meet The note used to end "cannot touch a
+    // meridian", and the engine disagreed with it in play: mortal care closed two
+    // torn meridians and two scorched channels in one run while this line was on
+    // the board beside it. What is actually out of reach is set by
+    // `medicineNeededFor` - crippling damage, or an ordinary tear on a body far
+    // enough up the ladder - and the prose yields to the measurement.
     { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, and puts a body that has been battered back on its feet. An ordinary torn meridian closes under the month of care on the line below; crippling damage does not, and neither does anything on a body the village has no medicine for.' },
     { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and it leaves you out of the fight for a season.' },
     { id: 'price-minor-healing-pill', name: 'Minor Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.' },
     { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.' },
-    { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Quiet Marches at any price because alchemy will not hold there.' },
+    { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Silent Cliffs at any price because alchemy will not hold there.' },
     // THE EARTH-GRADE RUNG OF THE SAME LADDER, and it was missing.
-    //
-    // The Clear Meridian Pill above is mortal grade and stops reaching once the
-    // body carrying the tear is past Foundation Establishment - which is
-    // `medicineNeededFor`'s realm axis, not a new rule. So the board quoted the
-    // cure for a novice, nothing for anybody above one, and a Core Formation
-    // cultivator with an ordinary torn meridian could be told by name what would
-    // mend them and then find that no counter in the world sold it.
-    //
-    // 42,000 cash is 420 stones, which is the catalog's own value at the
-    // hundred-to-one the whole board uses. It is the largest single row here,
-    // and that is the correct shape: the same tear costs seven times more to
-    // close on a bigger body, which is the second axis doing its work in a
-    // number a player can read.
     { id: 'price-marrow-washing-pill', name: 'Marrow-Washing Pill', category: 'medicine', cash: 42_000, unit: 'each', note: 'Four hundred and twenty stones, quoted at the two or three counters in a province that keep one. What a torn meridian costs once the body carrying it is past Foundation Establishment, and the reason a Core Formation cultivator with an ordinary injury still goes to their sect about it.' },
 
     // ── land and access: the real cost of advancing ───────────────────
     { id: 'price-cave-ordinary', name: 'Cave rent, ordinary ground', category: 'land', cash: 800, unit: 'month', note: 'Eight stones a month for somewhere with a door and nothing in the air worth breathing.' },
     { id: 'price-cave-vein', name: 'Cave rent, decent vein', category: 'land', cash: 6_000, unit: 'month', note: 'Sixty stones a month, twice the starting purse, and the single largest recurring expense in any cultivator\'s life.' },
-    { id: 'price-grant-day', name: 'Grant day at a workable face', category: 'land', cash: 4_000, unit: 'day', note: 'Forty stones a DAY, Quiet Marches only, and the reason nobody there saves anything.' },
+    { id: 'price-grant-day', name: 'Grant day at a workable face', category: 'land', cash: 4_000, unit: 'day', note: 'Forty stones a DAY, Silent Cliffs only, and the reason nobody there saves anything.' },
     { id: 'price-farmland-mu', name: 'Farmland', category: 'land', cash: 9_000, unit: 'per mu', note: 'Ninety stones for land a family can live off, which prices a whole mortal life against three months of a good cave.' },
 
     // ── services and information ──────────────────────────────────────
@@ -296,20 +185,14 @@ export const PRICES: readonly Price[] = [
     { id: 'price-oath-witness', name: 'Oath witnessing', category: 'service', cash: 5_000, unit: 'oath', note: 'Fifty stones and up, scaled to the penalty clause rather than the sum at stake.' },
     { id: 'price-scribe-letter', name: 'A letter written', category: 'service', cash: 8, unit: 'letter', note: 'Most people cannot write. This is why a scribe eats better than a farmhand.' },
     { id: 'price-placement', name: 'Placement of a foreign cultivator', category: 'information', cash: 7_000, unit: 'assessment', note: 'Seventy stones to have the Ninefold Ledger say where inside a realm somebody stands. Cheaper than being wrong once.' },
-    { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Marches this is a recurring cost of cultivating, which the Low Fall finds absurd.' },
+    { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Silent Cliffs this is a recurring cost of cultivating, which the Jade Gorge finds absurd.' },
     { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.' },
 
-    // ── the dead, which is the largest unavoidable expense a family has ──
-    //
-    // Priced here rather than left implied because a burial is the one
-    // purchase every mortal household makes and cannot decline, and the whole
-    // scale above is easier to read against it: a coffin costs what a mule
-    // costs, and a mule is the largest thing most families ever buy on
-    // purpose.
+    // the dead, which is the largest unavoidable expense a family has
     { id: 'price-coffin', name: 'Coffin', category: 'service', cash: 1_400, unit: 'each', note: 'The same figure as a mule, which every family notices, and the comparison is made at every funeral in both provinces.' },
     { id: 'price-burial-plot', name: 'Ground for a grave', category: 'land', cash: 600, unit: 'plot', note: 'Bought once and held forever, which is the only thing a mortal family owns that a cultivator cannot outbid them for, because nobody wants it.' },
     { id: 'price-corpse-cart', name: 'Carriage of a body', category: 'transport', cash: 90, unit: 'per stage', note: 'A city will not bury an outsider and a village will not keep one, so a body travels, and it travels at a fixed rate nobody haggles over.' },
-    { id: 'price-bell-tolling', name: 'A bell rung out', category: 'service', cash: 20, unit: 'each', note: 'Paid to the bell keeper by the stroke. In the Low Fall a second stroke is refused at any price in the valleys that will not ring twice.' },
+    { id: 'price-bell-tolling', name: 'A bell rung out', category: 'service', cash: 20, unit: 'each', note: 'Paid to the bell keeper by the stroke. In the Jade Gorge a second stroke is refused at any price in the valleys that will not ring twice.' },
     { id: 'price-mourner', name: 'A hired mourner', category: 'service', cash: 30, unit: 'day', note: 'Standard in the cities and considered grotesque in the villages, which supply most of the mourners.' },
     { id: 'price-name-cut', name: 'A name cut in stone', category: 'service', cash: 250, unit: 'each', note: 'Two and a half stones to be legible for a century. Most families pay for the name and not the dates, which is why the graveyards cannot be used to date anything.' },
 
@@ -411,7 +294,7 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
     {
         fromOrdinal: 13, toOrdinal: 16,
         lowFall: 'Respect with distance. Foundation Establishment is the line where a mortal stops assuming they can appeal to a magistrate about you. Innkeepers stop haggling, and nobody wants you in their village for long.',
-        quietMarches: 'Stared at in the street. A Standing Cut carver is among the strongest people most Marches towns have met, and the Low Fall visitor who does not know that is walking around underestimating everyone.'
+        quietMarches: 'Stared at in the street. A Standing Cut carver is among the strongest people most Silent Cliffs towns have met, and the Jade Gorge visitor who does not know that is walking around underestimating everyone.'
     },
     {
         fromOrdinal: 17, toOrdinal: 20,
@@ -421,7 +304,7 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
     {
         fromOrdinal: 21, toOrdinal: 28,
         lowFall: 'Fear, dressed as ceremony. Towns send someone out to meet them rather than let them arrive unannounced, and the meeting is about establishing what they want.',
-        quietMarches: 'No frame of reference. The Marches has produced two people at this height in nine hundred years and both left, so the reaction is closer to how a mortal reacts to weather.'
+        quietMarches: 'No frame of reference. The Silent Cliffs has produced two people at this height in nine hundred years and both left, so the reaction is closer to how a mortal reacts to weather.'
     },
     {
         fromOrdinal: 29, toOrdinal: MAX_ORDINAL,
@@ -430,23 +313,7 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT PEOPLE ARE AFRAID OF
-//
-// A settlement's fears are the most reliable statement of what it is, because
-// a fear costs money: somebody is paid to stand somewhere, a store is kept
-// that could have been eaten, a field is not sown. So each entry below names
-// the expenditure, and the expenditure is the part that is checkable.
-//
-// The pattern worth noticing is that the fears get LESS accurate as the
-// settlement gets larger. A hamlet is afraid of the thing in the woods, which
-// is there. A city is afraid of a shortage it has never had, and spends more
-// on it than the hamlet spends on everything.
-//
-// Nothing here is a hazard table. No entry spawns, gates or prices an
-// encounter; `encounters.ts` and the world engine decide what is actually out
-// there, and several of these fears are of things that are not.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const SettlementFearSchema = z.object({
     id: z.string(),
@@ -557,26 +424,7 @@ export const SETTLEMENT_FEARS: readonly SettlementFear[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT IS DONE WITH THE DEAD
-//
-// The one thing every settlement in the world has to do and the one where
-// they differ most, because a funeral is where a place's economics, its
-// geography and its beliefs are all forced to produce a single decision about
-// a body by a fixed deadline.
-//
-// Three facts run underneath all of them and none of them is a rule the
-// engine reads:
-//
-//   A city will not bury an outsider and a village will not keep one, so
-//   bodies travel, and the carriage rate is a real price above.
-//
-//   A cultivator's body is not the same object as a mortal's to the people
-//   handling it, and the difference is entirely about who might come asking.
-//
-//   The corpse-carrying trade is watched, everywhere, because one of the
-//   sects recruits out of it openly.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const FuneraryPracticeSchema = z.object({
     id: z.string(),
@@ -663,27 +511,11 @@ export function getSettlement(kind: Settlement['kind']): Settlement | undefined 
  */
 /**
  * The last ordinal at which anybody offers a cultivator work.
- *
- * Read straight off `MORTAL_ATTITUDES`: at 21 the attitude turns to "fear,
- * dressed as ceremony", where a town sends somebody out to meet the cultivator
- * rather than let them arrive. Nobody puts a day rate to a person they are
- * sending a delegation to meet, and by 29 they are "not really a social
- * category" at all.
- *
- * So this is not a rule about what a cultivator is willing to do. A Nascent
- * Soul who wanted to haul crates for the afternoon would find nobody prepared
- * to hire them, and a True Immortal asking after a porter's job is asking a
- * question the world has no answer to.
  */
 export const MORTAL_WORK_CEILING_ORDINAL = 20;
 
 /**
  * Everything reachable and still in place, before regard narrows it.
- *
- * `minOrdinal` is a survival floor and the settlement list is a fact about
- * geography; neither is a judgement about the asker. This is the honest
- * "what exists here" answer, and `findWorkForOrdinal` is the "what is put to
- * them" answer built on top of it.
  */
 export function workExistingFor(ordinal: number, settlement?: Settlement['kind']): Occupation[] {
     return OCCUPATIONS.filter(o =>
@@ -693,15 +525,6 @@ export function workExistingFor(ordinal: number, settlement?: Settlement['kind']
 
 /**
  * What is actually put to somebody standing here.
- *
- * There is no ceiling branch any more. The old one returned an empty list for
- * every ordinal above 20 and told a Tribulation Transcendence cultivator that
- * nobody was hiring anyone for anything, which read as unemployability rather
- * than as what it was. Now the ordinary bands do it: a job whose gate is far
- * enough below the asker stops being offered and says why, and the commissions
- * further up the catalog start being offered instead. The mortal ceiling
- * survives as a measured consequence - see `OCCUPATION_REGARD_SPAN` - rather
- * than as a rule.
  */
 export function findWorkForOrdinal(
     ordinal: RegardAskerInput,
@@ -713,10 +536,6 @@ export function findWorkForOrdinal(
 
 /**
  * Work that exists here and is not being put to them, each with the reason.
- *
- * This is the half that stops silence being an answer. "Nobody is hiring" and
- * "there are eleven jobs on that board and every one of them is beneath you"
- * are different facts, and the second one is the one the world usually means.
  */
 export function workWithheldFrom(
     ordinal: RegardAskerInput,
@@ -734,11 +553,6 @@ export function workWithheldFrom(
 
 /**
  * The highest ordinal at which any mortal-economy job is still put to somebody.
- *
- * Measured off the catalog and the bands rather than asserted, so the prose
- * above cannot go stale against the data. The test pins it equal to
- * `MORTAL_WORK_CEILING_ORDINAL`; if a future edit moves it, the constant is
- * what changes, and the paragraph with it.
  */
 export function measuredMortalWorkCeiling(): number {
     const mortalWork = OCCUPATIONS.filter(o => o.kind !== 'cultivator');
@@ -785,10 +599,6 @@ export function fearsOf(settlement: Settlement['kind']): SettlementFear[] {
 
 /**
  * The fears somebody is actually paid for.
- *
- * The useful cut, because a fear with a recipient is an institution's income
- * and therefore a fear that will be maintained whether or not the thing behind
- * it is still there.
  */
 export function fearsThatFundSomebody(): SettlementFear[] {
     return SETTLEMENT_FEARS.filter(f => f.paidTo !== null);

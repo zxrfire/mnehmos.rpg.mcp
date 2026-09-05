@@ -342,10 +342,10 @@ describe('regions', () => {
     });
 
     it('names the generated half of the map without putting the kind in the name', () => {
-        // `history.ts` and `locations.ts` currently build ruin and scar names
-        // by concatenating a LocationKind onto a generated toponym. These
-        // tables are what they should draw from instead; the rule is that a
-        // reader must not be able to recover the kind from the name.
+        // `history.ts` used to build ruin and scar names by concatenating a
+        // LocationKind onto a generated toponym. It draws from these tables
+        // now; the rule they obey is that a reader must not be able to recover
+        // the kind from the name.
         const forbidden = /\b(ruin|scar|compound|sealed|precinct|chamber|vault|settlement|wilds|vein|hall)\b/i;
         for (const table of [RUIN_NAMES, SCAR_NAMES]) {
             expect(table.length).toBeGreaterThanOrEqual(14);
@@ -426,14 +426,14 @@ describe('ungoverned ground is not a sixth province', () => {
                 .toBeGreaterThanOrEqual(r.ambientProfile.spirit_tide ?? 0);
         }
         // No local method, so no modifier. The only other 1 in the world is
-        // the Low Fall's, and the two places are nothing alike.
+        // the Jade Gorge's, and the two places are nothing alike.
         expect(sand.ambientRateMultiplier).toBe(1);
         const ones = SPINE_REGIONS.filter(r => r.cultivation.ambientRateMultiplier === 1);
         expect(ones.length).toBe(1);
         expect(ones[0].id).toBe(HOME_REGION_ID);
         // The two accounts must actually be written and must differ.
         expect(sand.whyItCannotBeHeld).not.toBe(sand.andWhyThatIsNotTheSeasReason);
-        expect(sand.andWhyThatIsNotTheSeasReason).toMatch(/Drowned Reach|water|sea/i);
+        expect(sand.andWhyThatIsNotTheSeasReason).toMatch(/Drowned Sea|water|sea/i);
         // The mechanism is the term of the instrument, not strength.
         expect(sand.theShows.againstTheGrantCycle).toMatch(/twelve/i);
     });
@@ -447,7 +447,7 @@ describe('ungoverned ground is not a sixth province', () => {
         expect(why.whatItWouldReturn.length).toBeGreaterThan(80);
         // Two reasons, held by different parties, one of them unstated.
         expect(why.theInterestedReason).not.toBe(why.whatItWouldCost);
-        expect(why.whoBelievesWhich).toMatch(/Wide Field|Low Fall|Marches/);
+        expect(why.whoBelievesWhich).toMatch(/Yellow Plain|Jade Gorge|Silent Cliffs/);
         // And the payoff: the vacuum is what makes the comparison a comparison.
         expect(THE_BLOWN_GROUND.whatItMakesTrue.length).toBeGreaterThan(150);
     });
@@ -518,7 +518,7 @@ describe('ungoverned ground is not a sixth province', () => {
         // The three steps that turned a page of prose into ground. Before
         // them `loadCultivationCatalog` read a list this was not in, so
         // `seedRegions` minted no location, no road linked it, and
-        // `ADMIN set_location location=The Blown Ground` came back "is not a
+        // `ADMIN set_location location=The Burial Sands` came back "is not a
         // place".
         const row = getRegion(BLOWN_GROUND_ID)!;
         expect(row).toBeDefined();

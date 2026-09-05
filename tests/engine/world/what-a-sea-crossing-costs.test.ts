@@ -55,7 +55,7 @@ describe('you cannot stop where you like', () => {
     it('makes a rock in the middle a different lane at the same length', () => {
         // Same days, same weather, and a materially different proposition,
         // because a hull that has passed a landfall is running for that
-        // landfall rather than for where it started. This is why Halfwater
+        // landfall rather than for where it started. This is why Silver Island
         // exists at all and why the eastern passage is the busiest water in
         // the world at twenty-one days while a shorter lane is feared.
         expect(commitDayOf(ROCK_IN_THE_MIDDLE)).toBe(8);
@@ -161,7 +161,7 @@ describe('water is the constraint, and the ground gives nothing', () => {
     });
 
     it('burns the same figure for a Core Formation cultivator and a porter', () => {
-        // The single most quoted fact the Drowned Reach has about itself, and
+        // The single most quoted fact the Drowned Sea has about itself, and
         // it has to be true in code or it is prose. There is no realm argument
         // anywhere in the burn, so there is nowhere for one to creep in.
         expect(stoneBurnFor(21, 1)).toBe(21 * STONES_BURNED_PER_HEAD_PER_DAY);

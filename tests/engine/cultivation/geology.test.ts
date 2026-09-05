@@ -1,7 +1,7 @@
 /**
  * Ambient qi is anchored to the ground, not drawn from a global distribution.
  *
- * The bug this file exists to prevent: standing in Sweptground, being told the
+ * The bug this file exists to prevent: standing in Burnt Earth, being told the
  * qi is thin and always has been, and then ninety days later - never having
  * moved - being told the air is thick enough to notice on the first breath.
  * Ambient was stable per call but re-rolled freely per 30-day block from one
@@ -42,7 +42,7 @@ describe('a place has a baseline', () => {
         expect(share('thin')).toBeGreaterThan(0.75);
         // An occasional better month, and that is all.
         expect(share('normal')).toBeLessThan(0.25);
-        // Dense in Sweptground is essentially off the table.
+        // Dense in Burnt Earth is essentially off the table.
         expect(share('dense')).toBeLessThan(0.01);
     });
 

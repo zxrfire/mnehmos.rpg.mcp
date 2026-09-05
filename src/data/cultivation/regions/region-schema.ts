@@ -42,14 +42,14 @@ export type RegionPolitics = z.infer<typeof RegionPoliticsSchema>;
  * in array order with no bearing on any of them and no way to derive one.
  *
  * The cost was not theoretical. The lower world map in the web client groups
- * by containment and by kind, so it could show that eleven houses are in the
- * Low Fall and could not show that the Low Fall is in the MIDDLE. Everything
+ * by containment and by kind, so it could show that eleven houses are in
+ * the Jade Gorge and could not show that the Jade Gorge is in the MIDDLE. Everything
  * the setting says about the centre - four roads meeting in one gorge, no
  * fifth road, every province resenting the same toll in the same words - is a
  * fact about bearings, and the only place it was written down was a comment.
  *
  * `interior` is not a compass point and is deliberately in the same enum. The
- * Blown Ground is between the four arms and inside none of them, which is a
+ * Burial Sands is between the four arms and inside none of them, which is a
  * position, and giving it its own word keeps it from being filed north or east
  * by somebody who wanted a complete set.
  */
@@ -151,7 +151,7 @@ export type RegionCultivation = z.infer<typeof RegionCultivationSchema>;
  *   - Nothing is maintained. A road is worked on. A crossing is provisioned
  *     against, which is a different verb and a different profession.
  *   - It joins two coasts that no road joins, and it is the only kind here
- *     that does. Every land connection in the world runs through the Low Fall.
+ *     that does. Every land connection in the world runs through the Jade Gorge.
  *
  * WHAT THIS DOES NOT DO, AND WHAT IT WOULD TAKE.
  * `LinkKind` in `engine/world/locations.ts` is `road|path|tunnel|gate|portal|

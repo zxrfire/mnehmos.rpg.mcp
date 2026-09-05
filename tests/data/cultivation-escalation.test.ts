@@ -575,7 +575,7 @@ describe('dormant arts: present, complete, proven and unperformed', () => {
     });
 
     it('the starkest case in the catalog is the one the setting already built', () => {
-        // The Sweptground Temple: reliable at Foundation, a founder who crossed,
+        // The Burnt Earth Temple: reliable at Foundation, a founder who crossed,
         // and three sets of writings from above the Lid on a shelf in a place
         // that keeps no accounts. Nobody authored this; it fell out of the
         // production table meeting the transmission rule at the top rung.

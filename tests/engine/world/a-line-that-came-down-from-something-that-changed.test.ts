@@ -35,7 +35,7 @@ import {
 } from '../../../src/engine/world/hunting-a-spirit-beast.js';
 import { BEAST_CHANGE_ORDINAL, getBeast } from '../../../src/data/cultivation/beasts.js';
 import {
-    THE_LINE_AT_MILLRUN
+    THE_LINE_AT_OLD_RIVER
 } from '../../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { lifespanForOrdinal } from '../../../src/engine/cultivation/realms.js';
 
@@ -43,8 +43,8 @@ const catalog = await loadCultivationCatalog();
 
 describe('the family the ladder is read off', () => {
     it('descends from a beast that could have become a person', () => {
-        const beast = getBeast(THE_LINE_AT_MILLRUN.speciesId);
-        expect(beast, THE_LINE_AT_MILLRUN.speciesId).toBeDefined();
+        const beast = getBeast(THE_LINE_AT_OLD_RIVER.speciesId);
+        expect(beast, THE_LINE_AT_OLD_RIVER.speciesId).toBeDefined();
         // A line comes down from somebody, and below the change there is no
         // somebody to come down from.
         expect(beast!.ordinal).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
@@ -55,7 +55,7 @@ describe('the family the ladder is read off', () => {
      * demonstrate nothing. This is the reason the family is authored at all.
      */
     it('stands somebody on every rung of the ladder, and past the end of it', () => {
-        const tiers = new Set(THE_LINE_AT_MILLRUN.people.map(p => p.tier));
+        const tiers = new Set(THE_LINE_AT_OLD_RIVER.people.map(p => p.tier));
         expect(tiers).toEqual(new Set<AbilityTier | null>(['final', 'grown', 'latent', null]));
     });
 
@@ -78,13 +78,13 @@ describe('the family the ladder is read off', () => {
         const family = state.npcs.filter(n => n.identity.bloodline !== null);
 
         expect(family.length).toBe(
-            THE_LINE_AT_MILLRUN.people.filter(p => p.tier !== null).length
+            THE_LINE_AT_OLD_RIVER.people.filter(p => p.tier !== null).length
         );
         // One place. A family is people who live together.
         expect(new Set(family.map(n => n.locationId)).size).toBe(1);
         // And one lineage, which the world builds off the shared surname it
         // already builds every other lineage off.
-        const lineage = state.lineages.find(l => l.surname === THE_LINE_AT_MILLRUN.surname);
+        const lineage = state.lineages.find(l => l.surname === THE_LINE_AT_OLD_RIVER.surname);
         expect(lineage, 'the family is on no roll').toBeDefined();
         expect(lineage!.edges.length).toBeGreaterThan(0);
     }, 120_000);

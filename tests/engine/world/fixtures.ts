@@ -139,7 +139,7 @@ export function fixtureCatalog(): WorldCatalog {
         regions: [
             region({
                 id: 'region-low-fall',
-                name: 'The Low Fall',
+                name: 'The Jade Gorge',
                 home: true,
                 qiDensity: 0.45,
                 ambient: 'normal',
@@ -149,7 +149,7 @@ export function fixtureCatalog(): WorldCatalog {
                 factionIds: ['sect-azure-cloud', 'sect-crimson-abyss', 'sect-standing-grove'],
                 exports: ['herbs', 'ore'],
                 places: [
-                    { name: 'Sweptground', kind: 'market_town', ambient: 'normal', note: 'The market.' },
+                    { name: 'Burnt Earth', kind: 'market_town', ambient: 'normal', note: 'The market.' },
                     { name: 'Coldfall', kind: 'village', ambient: 'thin', note: 'Upriver.' },
                     { name: 'The Old Compound', kind: 'site', ambient: 'dense', note: 'Nobody built it.' }
                 ],
@@ -158,7 +158,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             region({
                 id: 'region-scarwater',
-                name: 'Scarwater',
+                name: 'Clear River Ford',
                 qiDensity: 0.18,
                 ambient: 'thin',
                 // Low enough that talent alone does not get anybody out.
@@ -169,7 +169,7 @@ export function fixtureCatalog(): WorldCatalog {
                 factionIds: ['sect-weir-office', 'sect-gleaners-company'],
                 exports: ['salt'],
                 places: [
-                    { name: 'Scarwater', kind: 'village', ambient: 'thin', note: 'On the dead ground.' },
+                    { name: 'Clear River Ford', kind: 'village', ambient: 'thin', note: 'On the dead ground.' },
                     { name: 'The Weir', kind: 'waystation', ambient: 'thin', note: 'A toll.' }
                 ],
                 connections: [{ otherRegionId: 'region-low-fall', kind: 'trade_route', travelDays: 9 }],
