@@ -795,6 +795,19 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // first two are the ones measured routing WRONG on a fresh run:
         // "I ask" put it to whoever was nearest, and "who is in charge
         // here" was answered with the player's own sect standing.
+        // Being called in by your own house, and not going. Both are dispatched
+        // on and both had a pattern before either had a phrasing here, which is
+        // exactly the gap this file exists to catch.
+        'sect/summons': [
+            'what have I been called in for',
+            'what does the sect want of me',
+            'who sent for me'
+        ],
+        'sect/refuse': [
+            'I refuse the summons',
+            'I ignore the summons',
+            'I will not go'
+        ],
         'look/holder': [
             'I ask who holds this ground',
             'who is in charge here',

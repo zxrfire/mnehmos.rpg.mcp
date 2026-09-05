@@ -978,6 +978,21 @@ export const WHO_ANSWERS_FOR_THIS_GROUND = new RegExp(
     ].join('|')
 );
 
+/**
+ * Where the question is being PUT TO SOMEBODY rather than to the register.
+ *
+ * The design owner: *i should be able to ask WHO'S IN CHARGE HERE to nobody in
+ * particular* - and the answer to that, when the register holds nothing, is its
+ * own words: *ask somebody standing here.* Measured, that was a closed loop.
+ * "I ask the elder who is in charge" reached the register too, so the game told
+ * the player to ask a person and then refused to route the asking of one.
+ *
+ * The shape is the whole test: a word after `ask` that is not the question
+ * word is the person being asked.
+ */
+export const PUTTING_THE_QUESTION_TO_SOMEBODY =
+    /\b(?:ask|asks|asking|enquire of|inquire of|press|question)\s+(?!who\b|whose\b|what\b|whether\b|if\b|about\b|around\b|for\b)[a-z']/i;
+
 /** Where such a question names a place rather than meaning the ground underfoot. */
 export const PLACE_HISTORY_SUBJECT =
     'happened to|happened at|became of|history of|story of|stories of|said about|said of';
@@ -2467,8 +2482,12 @@ function planIntent(input: string): PlannedAction {
         && !PUTTING_IT_INTO_THEIR_HANDS.test(text)
         // "I ask who holds this ground" is a question about the ground, and
         // `parseAsk` was finding a person inside it. See
-        // {@link WHO_ANSWERS_FOR_THIS_GROUND}.
-        && !WHO_ANSWERS_FOR_THIS_GROUND.test(text)
+        // {@link WHO_ANSWERS_FOR_THIS_GROUND} - and, for why the exclusion is
+        // not the whole of it, {@link PUTTING_THE_QUESTION_TO_SOMEBODY}. The
+        // register's own answer to a silent record is *ask somebody standing
+        // here*, and this line was what made that a closed loop.
+        && !(WHO_ANSWERS_FOR_THIS_GROUND.test(text)
+            && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text))
         ? parseAsk(input)
         : null;
     if (asked && !/\bjoin(?:ing)?\b/.test(text)) {
@@ -2925,7 +2944,10 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
-        && /\b(?:sect|house|clan|school|order|here|it|this|my|our)\b/.test(text)) {
+        && /\b(?:sect|house|clan|school|order|here|it|this|my|our)\b/.test(text)
+        // Unless it is being put to a person, in which case it is a question
+        // asked of somebody rather than a read of the player's own house.
+        && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
         return { action: 'sect', intent: 'standing' };
     }
 
