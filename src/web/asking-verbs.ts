@@ -394,11 +394,27 @@ export const askingVerbs = {
             run, cultivator, ambient, TRAVEL_FOCUS, `Pressing ${party.name}`, result.days
         );
 
-        // What this attempt WAS, when it was a wrong, read off the one closed
-        // table that decides it. Handed to both halves - the records the
-        // attempt leaves, and what the other party does about it - so a threat
-        // cannot be a wrong to one of them and an arrangement to the other.
-        const wrong = WRONG_BEHIND_INTENT[intent] ?? null;
+        // What this attempt WAS, which is not what it was MEANT as.
+        //
+        // The closed table says what the act carries; `howItLandedOn` says what
+        // the person on the receiving end was in a position to take it for, and
+        // that is what the records and the reprisal are both written from - so
+        // a threat cannot be a wrong to one of them and an arrangement to the
+        // other, and neither can it be a threat because a reader upstream chose
+        // that word. Somebody far enough above you with nobody behind you is
+        // not being threatened whatever you meant, and somebody who buried a
+        // brother over you hears the mildest sentence in the game as one.
+        const wrong = party.kind === 'cultivator'
+            ? this.howItLandedOn(
+                cultivator,
+                { id: party.id, realmOrdinal: party.party?.realmOrdinal ?? cultivator.realmOrdinal },
+                WRONG_BEHIND_INTENT[intent] ?? null,
+                true,
+                // A theft that came away with something is not a thing that
+                // was said, and nothing about how they read it applies.
+                result.outcome === 'taken' || result.outcome === 'turned'
+            )
+            : WRONG_BEHIND_INTENT[intent] ?? null;
 
         // ── AND A THEFT TAKES SOMETHING ──────────────────────────────────
         //

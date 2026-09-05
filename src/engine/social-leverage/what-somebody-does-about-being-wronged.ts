@@ -234,7 +234,7 @@ function lesser(a: Reprisal, b: Reprisal): Reprisal {
 }
 
 /** Major-realm index, the unit `assessGap` in `combat.ts` counts in. */
-function realmIndexOf(ordinal: number): number {
+export function realmIndexOf(ordinal: number): number {
     const tier = realmForOrdinal(ordinal);
     return REALM_TIERS.findIndex(t => t.key === tier.key);
 }

@@ -350,3 +350,93 @@ export function whoTheDescriptionFits(input: {
             return fits.sort(byId);
     }
 }
+
+/**
+ * The canonical word for each sex, out of the sets above rather than beside
+ * them.
+ *
+ * `FEMALE` and `MALE` hold every synonym a player might type. A list handed to
+ * a reader wants ONE of them: twelve ways to say the same woman is twelve lines
+ * of prompt that narrow nothing.
+ */
+const PLAINEST_WORD_FOR: Readonly<Record<'male' | 'female', string>> =
+    Object.freeze({ female: 'woman', male: 'man' });
+
+/**
+ * The most ways of naming one person that are worth handing to a reader.
+ *
+ * Four is what fits beside a name without the square's roster becoming the
+ * longest thing in the prompt, and a reader that is shown twelve synonyms for
+ * one woman reads less of everything else.
+ */
+export const WAYS_OF_NAMING_SOMEBODY = 4;
+
+/**
+ * Every phrase that reaches THIS person and nobody else, standing where they
+ * are standing.
+ *
+ * ── THE LIST IS FILTERED THROUGH THE RESOLVER, NOT WRITTEN BESIDE IT ─────
+ *
+ * Every candidate phrase is put through `theDescriptionThisIs` and
+ * `whoTheDescriptionFits` against the whole square, and kept only where it
+ * comes back with this person at the front. So a phrase on this list is a
+ * phrase that WORKS, by construction and not by a second table agreeing with
+ * the first one. Two women in the square and "the woman" reaches whichever the
+ * resolver picks; it is listed for her and for nobody else, which is the truth
+ * about what typing it would do.
+ *
+ * That is also why the pool below is built out of this file's own tables. A
+ * word added to `RANKS` or a title added to `TITLES` turns up here without
+ * anybody being told to add it, and a word this file stops recognising stops
+ * being offered.
+ */
+export function theWordsThisPersonAnswersTo(input: {
+    readonly who: SomebodyDescribable;
+    readonly candidates: readonly SomebodyDescribable[];
+    readonly observer: {
+        readonly ordinal: number;
+        readonly sectId: string | null;
+        readonly rankIndex: number | null;
+    };
+    readonly alignmentOf: (sectId: string | null) => SectAlignment | null;
+    readonly rankIndexOf: (sectId: string | null, rankTitle: string | null) => number | null;
+    readonly tiesTo: (id: string) => readonly string[];
+}): string[] {
+    const who = input.who;
+    const sexWord = who.sex === 'female' || who.sex === 'male'
+        ? PLAINEST_WORD_FOR[who.sex]
+        : null;
+
+    const tier = REALM_TIERS.find(row =>
+        who.realmOrdinal >= row.ordinalStart && who.realmOrdinal <= row.ordinalEnd);
+    const alignment = input.alignmentOf(who.sectId);
+    const rank = (who.sectRank ?? '').toLowerCase().split(/[^a-z]+/).find(word => RANKS.has(word));
+
+    // Most-particular first, because the cap keeps a prefix of this. A rank is
+    // the thing a player in this setting reaches for before anything else -
+    // *saying elder is very common* - and a bare sex noun is the last resort,
+    // being the phrase likeliest to fit somebody else too.
+    const pool: string[] = [
+        ...(rank ? [`the ${rank}`] : []),
+        ...Object.keys(TITLES),
+        ...(tier ? [`the ${tier.name.toLowerCase()} cultivator`] : []),
+        ...(sexWord
+            ? Object.values(ORDERINGS)
+                .filter((end, at, all) => all.indexOf(end) === at)
+                .map(end => `the ${end} ${sexWord}`)
+            : []),
+        ...(sexWord ? [`the ${sexWord}`] : []),
+        ...(alignment ? [`the ${alignment} cultivator`] : [])
+    ];
+
+    const found: string[] = [];
+    for (const phrase of pool) {
+        if (found.length >= WAYS_OF_NAMING_SOMEBODY) break;
+        if (found.includes(phrase)) continue;
+        const description = theDescriptionThisIs(phrase);
+        if (description === null) continue;
+        const fits = whoTheDescriptionFits({ ...input, description });
+        if (fits[0]?.id === who.id) found.push(phrase);
+    }
+    return found;
+}

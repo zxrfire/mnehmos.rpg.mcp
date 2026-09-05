@@ -138,5 +138,13 @@ export const WRONG_BEHIND_INTENT: Readonly<Partial<Record<string, Wrong>>> = {
     // resolved a theft off a person since the pressure model was wired, and
     // only a MODEL could route a sentence to it - the parser answered every
     // phrasing with `unclear`. See the `steal` row in `INTERACT_INTENT_PATTERNS`.
-    steal: 'robbed'
+    steal: 'robbed',
+    // A declaration against a house is force offered as the reason to comply,
+    // which is this table's own definition of `threatened` and not a special
+    // case for war. It is here rather than beside the war code because whether
+    // words are a wrong is one question asked once, and the answer must not
+    // depend on which subsystem the sentence happened to route through: a
+    // refused declaration and a landed threat are the same words to the person
+    // standing in front of you, and only the first was invisible.
+    war: 'threatened'
 };

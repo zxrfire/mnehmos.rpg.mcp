@@ -863,6 +863,17 @@ import { matchVerbs } from './match-verbs.js';
 import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
 import { institutionVerbs } from './institution-verbs.js';
+import { howTheyTookIt } from '../engine/social/how-they-took-what-you-said.js';
+import {
+    realmIndexOf
+} from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
+import {
+    whatCanBeReachedFromHere,
+    whatThePhraseReaches,
+    whoTheWordsLandedOn,
+    type SomebodyPresent,
+    type WithinReach
+} from './what-can-be-reached-from-here.js';
 import type {
     ActResult,
     BreakthroughApiResult,
@@ -1724,6 +1735,17 @@ export class GameService {
                     // cultivator's world with no mark on which are in front of
                     // them. See `describeWhoIsHere`.
                     present: this.company(cultivator),
+                    // AND WHAT IS HERE TO BE POINTED AT, which is the other
+                    // direction and the one that was missing: the roster lets a
+                    // reader bind "the youngest woman" once it has decided to
+                    // write it, and this is what tells it the phrase resolves
+                    // at all.
+                    withinReach: this.reachFrom(cultivator).map(thing => ({
+                        kind: thing.kind,
+                        name: thing.name,
+                        alsoCalled: thing.alsoCalled,
+                        through: thing.through ? { name: thing.through.name } : null
+                    })),
                     // AND WHAT THIS SQUARE IS HOLDING OUT.
                     //
                     // The same reader the player gets when they ask what to do,
@@ -10689,19 +10711,7 @@ ${fit.line}`;
                     sectId: mine?.sectId ?? null,
                     rankIndex: mine?.rankIndex ?? null
                 },
-                alignmentOf: sectId =>
-                    sectId ? this.repos.sects.getById(sectId)?.alignment ?? null : null,
-                rankIndexOf: (sectId, rankTitle) => {
-                    if (!sectId || !rankTitle) return null;
-                    const at = this.repos.sects.getById(sectId)?.ranks
-                        .findIndex(rung => rung.toLowerCase() === rankTitle.toLowerCase());
-                    return at === undefined || at < 0 ? null : at;
-                },
-                tiesTo: id => (this.atHand?.npcs ?? [])
-                    .find(npc => npc.id === cultivator.id)?.relationships
-                    .filter(tie => tie.targetId === id)
-                    .map(tie => tie.kind)
-                    ?? []
+                ...this.howThisSquareReads(cultivator)
             });
             if (fits.length > 0) {
                 return here.find(row => row.id === fits[0].id) ?? null;
@@ -10806,6 +10816,61 @@ ${fit.line}`;
             aboutId: cultivator.id,
             ledger
         }));
+    }
+
+    /**
+     * What one person here took a thing aimed at them to be.
+     *
+     * The reader's label goes IN and does not come out untouched: what happens
+     * is what the person standing there was in a position to take it for, so a
+     * reader that called a boast a threat has not made it one, and a reader
+     * that missed a threat has not unmade it. Both directions of the ledger are
+     * read here - what they hold against this cultivator, and what they have to
+     * answer for to them - because the second is what makes an introduction
+     * sound like a reckoning to the one person in the square it should.
+     */
+    howItLandedOn(
+        cultivator: Cultivator,
+        them: { id: string; realmOrdinal: number },
+        wrongInTheAct: Wrong | null,
+        aboutThem = true,
+        landed = false
+    ): Wrong | null {
+        const ledger = ledgerAbout(this.db as never, cultivator.id);
+        // The same reasoning `whatTheSquareFeelsAbout` sets out for reading the
+        // whole ledger: `incurred_on_day` is written on two clocks.
+        const feeling = whatTheyFeelAboutYou({
+            theirId: them.id,
+            aboutId: cultivator.id,
+            ledger
+        }).feeling;
+
+        // THE OTHER END OF THE SAME ROWS. `whatTheyFeelAboutYou` skips the
+        // records this person is the subject of, because what somebody did is
+        // not what they feel. That is exactly the set wanted here.
+        const owed = ledger.some(record =>
+            record.status === 'open'
+            && record.subjectId === them.id
+            && record.holderId !== them.id);
+
+        const backing = this.present(cultivator).filter(row =>
+            row.id !== them.id
+            && row.sectId !== null
+            && row.sectId === this.repos.sects.getMembership(cultivator.id)?.sectId);
+
+        return howTheyTookIt({
+            wrongInTheAct,
+            aboutThem,
+            feeling,
+            // Major realms, the unit `combat.ts` decides reach in, through the
+            // reprisal module's own function so there is one answer to how far
+            // apart two people are.
+            realmsOverTheSpeaker:
+                realmIndexOf(them.realmOrdinal) - realmIndexOf(cultivator.realmOrdinal),
+            speakerIsBacked: backing.length > 0,
+            landed,
+            theyHaveSomethingToAnswerFor: owed
+        }).took;
     }
 
     /**
@@ -10919,6 +10984,87 @@ ${fit.line}`;
         strangers.sort((a, b) => b.ordinal - a.ordinal);
 
         return { named, strangers, total: here.length };
+    }
+
+    /**
+     * The three lookups a description needs, which are facts about the world
+     * and not about any one question asked of it.
+     */
+    private howThisSquareReads(cultivator: Cultivator): {
+        alignmentOf: (sectId: string | null) => SectAlignment | null;
+        rankIndexOf: (sectId: string | null, rankTitle: string | null) => number | null;
+        tiesTo: (id: string) => readonly string[];
+    } {
+        return {
+            alignmentOf: sectId =>
+                sectId ? this.repos.sects.getById(sectId)?.alignment ?? null : null,
+            rankIndexOf: (sectId, rankTitle) => {
+                if (!sectId || !rankTitle) return null;
+                const at = this.repos.sects.getById(sectId)?.ranks
+                    .findIndex(rung => rung.toLowerCase() === rankTitle.toLowerCase());
+                return at === undefined || at < 0 ? null : at;
+            },
+            tiesTo: id => (this.atHand?.npcs ?? [])
+                .find(npc => npc.id === cultivator.id)?.relationships
+                .filter(tie => tie.targetId === id)
+                .map(tie => tie.kind)
+                ?? []
+        };
+    }
+
+    /** The square as somebody a description could pick out. */
+    private squareAsDescribable(cultivator: Cultivator): SomebodyPresent[] {
+        return this.present(cultivator).map(person => ({
+            id: person.id,
+            name: person.name,
+            sex: person.sex ?? null,
+            age: person.age,
+            realmOrdinal: person.realmOrdinal,
+            sectRank: person.sectRank ?? null,
+            sectId: person.sectId,
+            sectName: person.sectName
+        }));
+    }
+
+    /**
+     * Everything within reach of this square, and every name each answers to.
+     *
+     * The square's roster is `company()`, which is what a READER is shown so it
+     * can bind a pointing phrase. This is the other direction: what is here to
+     * be pointed AT, with the phrases that reach each one. A reader given only
+     * the first has to guess what is nameable, and every guess that misses is a
+     * refusal the player reads as the game not understanding them.
+     */
+    reachFrom(cultivator: Cultivator): WithinReach[] {
+        const membership = this.repos.sects.getMembership(cultivator.id);
+        return whatCanBeReachedFromHere({
+            present: this.squareAsDescribable(cultivator),
+            observer: {
+                ordinal: cultivator.realmOrdinal,
+                sectId: membership?.sectId ?? null,
+                rankIndex: membership?.rankIndex ?? null
+            },
+            ...this.howThisSquareReads(cultivator)
+        });
+    }
+
+    /**
+     * Who in the square was named by a phrase, whatever the act aimed at them.
+     *
+     * The joint between the reach list and `howTheyTookIt`. It answers only who
+     * heard their own name in it; what any of them makes of that is the engine's
+     * question and asked per person.
+     */
+    whoHeardTheirNameIn(cultivator: Cultivator, phrase: string | undefined): {
+        aimedAt: WithinReach | null;
+        landedOn: SomebodyPresent[];
+    } {
+        const reach = this.reachFrom(cultivator);
+        const aimedAt = phrase ? whatThePhraseReaches(phrase, reach) : null;
+        return {
+            aimedAt,
+            landedOn: whoTheWordsLandedOn(aimedAt, this.squareAsDescribable(cultivator))
+        };
     }
 
     /**

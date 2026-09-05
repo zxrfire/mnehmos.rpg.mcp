@@ -151,6 +151,42 @@ you want is an item.
 
 ---
 
+## Every read runs both ways unless there is a reason it cannot
+
+> **If the engine can answer "given this phrase, what does it mean", it must also answer
+> "given this thing, what phrases reach it". If it can answer "what do they hold against
+> you", it must also answer "what do they have to answer for to you".**
+
+Most of what reads as the engine not understanding the player is a read that was only ever
+built in one direction. The one-way version always looks complete on its own, because the
+question it answers is the question the code was written to answer, and the missing
+direction is invisible until somebody plays it.
+
+Two that were missing, and what each one cost:
+
+- `whoTheDescriptionFits` took a phrase and returned a person, and there was no way to ask
+  what a person could be called. So a sentence that missed produced a blank look: the
+  engine could tell you "the youngest girl" reached nobody, and could not tell you what
+  would have. `theWordsThisPersonAnswersTo` is the same table read backwards, and the list
+  it hands out is filtered through the forward resolver, so a name on it is a name that
+  works by construction rather than by two tables agreeing.
+- `whatTheyFeelAboutYou` reads the records somebody HOLDS and deliberately skips the ones
+  they are the subject of, because what you did is not what you feel. Correct, and it
+  meant nothing could ask what a person had to answer FOR. So the man who killed three
+  Dawn Sect disciples heard *I am from the Dawn Sect* as an introduction, which is the one
+  thing it is not.
+
+The reasons a read legitimately does not invert are real and should be written down where
+it happens: a hash, a lossy summary, a thing whose backward form would need a fact the
+world does not hold. "Nobody asked for it yet" is not one of them.
+
+The test when adding a read: **say the question out loud, swap the ends, and ask whether
+anybody in the world would ever want that.** If they would, build it now. It is nearly
+always smaller than the forward one and it is nearly always the half that makes the game
+feel like it is paying attention.
+
+---
+
 ## Read the genre before you read the sentence
 
 Xianxia has its own conventions, and they are not the conventions of contemporary

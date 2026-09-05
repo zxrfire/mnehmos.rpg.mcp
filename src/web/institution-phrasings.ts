@@ -88,6 +88,42 @@ export const DECLARE_VERBS =
     + 'starting|go to|going to|take|takes|taking';
 
 /** The noun that says a declaration is a declaration of war. */
+/**
+ * Ending a house, said as an end rather than as a war.
+ *
+ * The design owner: *if ur the patriarch you disband your sect. if not you
+ * maybe try to rebel or end it (depends on if you are inside or outside).*
+ *
+ * All three of those fall out of `positionIn` and none of them is a branch on
+ * the word. `housePosture` already asks position and then rank, and answers
+ * with what a declaration requires for somebody who serves nobody, and with
+ * the rung it opens at for somebody junior - which is the outsider's answer
+ * and the rebel's answer, in the house's own terms. So an ending goes there.
+ *
+ * Measured before this: "I end the Hollow Court" reached the seduction verb,
+ * because the house is called a Court.
+ */
+export const ENDING_A_HOUSE_VERBS =
+    'end|ends|ending|ended|destroy|destroys|destroying|destroyed|'
+    + 'disband|disbands|disbanding|disbanded|dissolve|dissolves|dissolving|dissolved';
+
+/**
+ * The same act said as a phrase, where no single word is the verb.
+ *
+ * Kept apart from the verbs because those need VERB POSITION and these do not.
+ * Measured: a bare `\\bend\\b` took "I put my affairs in order before the
+ * end" - the exemplar for `legacy` - because `end` appeared in it and `order`
+ * satisfied the institution noun. `usedAsVerb` is what tells an ending from a
+ * noun, and this file already uses it for the declaration verbs above.
+ */
+export const ENDING_A_HOUSE_PHRASES = new RegExp(
+    [
+        '\\bput an end to\\b',
+        '\\b(?:wipe|wipes|wiping)\\s+out\\b',
+        '\\b(?:break|breaks|breaking)\\s+the back of\\b'
+    ].join('|')
+);
+
 export const WAR_NOUN = /\b(?:war|hostilities|the field against)\b/;
 
 export const ALLIANCE_VERBS =
@@ -279,13 +315,26 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
         };
     }
 
-    // ── war ──
+    // ── war, and ending a house, which is the same question ──
     //
     // The declaration verb has to be in verb position. Without that, "what do
     // I know of the war with the Nine Abyss" satisfies the noun rule
     // completely and would be answered by starting one.
-    if (usedAsVerb(text, DECLARE_VERBS) && WAR_NOUN.test(text)) {
-        const on = partyAfter(input, 'war (?:on|against|upon|with)|against|on');
+    //
+    // ENDING one is the same call and deliberately not a second intent. See
+    // {@link ENDING_A_HOUSE}: what "end it" means is decided by where the
+    // speaker stands, and `housePosture` already reads that - position first,
+    // then rank - so an outsider is told what a war requires, somebody junior
+    // is told whose decision it is, and the head is entitled to act. Three
+    // answers, one route, and nothing branching on the word.
+    const endingAHouse =
+        (usedAsVerb(text, ENDING_A_HOUSE_VERBS) || ENDING_A_HOUSE_PHRASES.test(text))
+        && AN_INSTITUTION_IS_BEING_ASKED.test(text);
+    if ((usedAsVerb(text, DECLARE_VERBS) && WAR_NOUN.test(text)) || endingAHouse) {
+        const on = partyAfter(
+            input,
+            'war (?:on|against|upon|with)|an end to|against|on|the'
+        );
         return { action: 'posture', intent: 'war', ...(on ? { target: on } : {}) };
     }
 

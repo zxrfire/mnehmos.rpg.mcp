@@ -672,10 +672,29 @@ export interface StateSummaryInput {
      */
     liveHere?: readonly AnAffordance[];
     /**
+     * What is here to be pointed AT, and the phrases that reach each one.
+     *
+     * The other direction from `present`, which says who is here so a pointing
+     * phrase can be bound. A reader that is only ever shown the roster has to
+     * guess which phrases are nameable, and a guess that misses comes back as a
+     * refusal the player reads as the game not following them. The houses on it
+     * are here through somebody standing here, which is what separates naming a
+     * house to its disciple's face from naming it across the map.
+     */
+    withinReach?: readonly ThingWithinReach[];
+    /**
      * What the player typed, so the blocks that have to be capped can put what
      * this turn is about at the top of themselves and cut from the bottom.
      */
     said?: string;
+}
+
+/** One thing that can be named from here, and what reaches it. */
+export interface ThingWithinReach {
+    kind: string;
+    name: string;
+    alsoCalled: readonly string[];
+    through: { name: string } | null;
 }
 
 /** One live thing, as much of it as the classifier needs. */
@@ -710,6 +729,34 @@ export function describeWhatIsLive(live: readonly AnAffordance[]): string[] {
             + 'these are is what the world would answer FIRST:',
         ...live.slice(0, LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER).map(one =>
             `  "${one.say}" (${one.routesTo}) - ${one.because}`)
+    ];
+}
+
+/**
+ * What can be named from here, said as what it is: what is at hand, not what is
+ * permitted.
+ *
+ * The same standing rule the live block carries. A house a thousand miles off
+ * can still be named and the engine will answer honestly about it; what being
+ * on this list changes is that there is a body here to answer.
+ */
+export function describeWhatIsWithinReach(reach: readonly ThingWithinReach[]): string[] {
+    if (reach.length === 0) return [];
+    return [
+        '',
+        'WITHIN REACH (what is here to be acted on, and the other names each one answers '
+            + 'to). THIS IS NOT A LIMIT ON WHAT MAY BE NAMED - anything the cultivator has '
+            + 'heard of can be named and the engine will answer for it. What is on this list '
+            + 'is what has a BODY here: a house is on it because somebody who answers to it '
+            + 'is standing in this square, so naming that house is naming somebody present, '
+            + 'and naming a house that is absent is talk:',
+        ...reach.map(thing => {
+            const names = thing.alsoCalled.length > 0
+                ? ` - also "${thing.alsoCalled.join('", "')}"`
+                : '';
+            const via = thing.through ? ` (here through ${thing.through.name})` : '';
+            return `  ${thing.name} [${thing.kind}]${via}${names}`;
+        })
     ];
 }
 
