@@ -13,7 +13,14 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { composeStateSummary, describeWhoIsHere } from '../../src/web/prompt';
+import {
+    AWARENESS_SHOWN_TO_THE_CLASSIFIER,
+    LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER,
+    composeStateSummary,
+    describeAwareness,
+    describeWhatIsLive,
+    describeWhoIsHere
+} from '../../src/web/prompt';
 import type { Company } from '../../src/web/facts';
 import { makeGameInWorld } from './harness';
 
@@ -109,4 +116,83 @@ describe('the square in the real phase-1 prompt', () => {
         expect(summary).toContain(`${company.total} people here in total`);
         for (const person of company.named) expect(summary).toContain(person.name);
     }, 120_000);
+});
+
+
+describe('what the world is holding out', () => {
+    /**
+     * The design owner's model, in his own words:
+     *
+     *   > get_affordances() doesn't mean "here are the only things you are
+     *   > allowed to do." It means "here are the things the world currently
+     *   > considers particularly actionable." The LLM still has a
+     *   > general-purpose attempt_action... You don't want the MCP layer
+     *   > deciding "teleport isn't in the current affordance list, therefore
+     *   > the player can't attempt it."
+     *
+     * So the block has to say so, out loud, in the prompt. A reader handed an
+     * unqualified list of six sentences will pick from the six.
+     */
+    it('says it is not a menu, and stays inside its cap', () => {
+        const many = Array.from({ length: 20 }, (_, i) => ({
+            say: `sentence ${i}`, because: `reason ${i}`, routesTo: 'move'
+        }));
+        const block = describeWhatIsLive(many).join(String.fromCharCode(10));
+
+        expect(block).toContain('NOT A MENU');
+        expect(block).toContain('still worth attempting');
+        expect(block).toContain('sentence 0');
+        expect(block).not.toContain(`sentence ${LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER}`);
+        // The action each one routes to, so a reader of a log can see what was
+        // being offered and a test can assert the pairing.
+        expect(block).toContain('(move)');
+    });
+
+    it('says nothing at all when nothing is live', () => {
+        expect(describeWhatIsLive([])).toEqual([]);
+    });
+});
+
+describe('the list of everything they have heard of', () => {
+    const row = (name: string, onDay: number) => ({
+        kind: 'cultivator' as const,
+        id: name,
+        name,
+        statement: '',
+        stance: 'knows' as const,
+        sourceKind: 'witnessed' as const,
+        sourceNote: '',
+        acquiredOnDay: onDay,
+        stage: 'known' as const
+    });
+
+    /**
+     * This block was unbounded, and it is the one part of the state summary
+     * that grows for as long as a run lasts. The cap is safe only because
+     * whatever the player NAMED is lifted to the top of it first: cutting the
+     * one row this turn is about is the single way a cap here costs a turn.
+     */
+    it('keeps what the sentence named, whatever else it cuts', () => {
+        const rows = [
+            ...Array.from({ length: 200 }, (_, i) => row(`Person ${i}`, 5000 + i)),
+            row('Xun Erlang', 0)
+        ];
+        const block = describeAwareness(rows, 'I ask Xun Erlang to teach me')
+            .join(String.fromCharCode(10));
+
+        expect(block).toContain('Xun Erlang');
+        expect(block).toContain('more this cultivator can name, not listed here');
+        // And the cut is stated honestly, because the block above this one
+        // claims to be the whole of what can be named.
+        expect(block).toContain('absent for room');
+        expect(block.split(String.fromCharCode(10)).length)
+            .toBeLessThanOrEqual(AWARENESS_SHOWN_TO_THE_CLASSIFIER + 1);
+    });
+
+    it('shows the most recently learned first, and says nothing about a cut it did not make', () => {
+        const block = describeAwareness([row('Old', 1), row('New', 900)], '')
+            .join(String.fromCharCode(10));
+        expect(block.indexOf('New')).toBeLessThan(block.indexOf('Old'));
+        expect(block).not.toContain('not listed here');
+    });
 });

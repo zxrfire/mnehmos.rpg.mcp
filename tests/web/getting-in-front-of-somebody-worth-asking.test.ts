@@ -161,7 +161,14 @@ describe('getting in front of somebody worth asking', () => {
         // that let it would be softening. What is asserted is that the request
         // reaches a person and comes back priced, which is the shape of a world
         // that has somebody in it to refuse you.
-        const asked = await say('I ask the nearest cultivator to teach me');
+        // NAMED FOR WHAT THEY ARE, which is how somebody who has just arrived
+        // picks out the person worth asking. "the nearest cultivator" used to
+        // land here by accident - it fell past every branch to the last of the
+        // crowd order, which happens to be the deepest body present - and
+        // `a-target-can-be-a-description.ts` now reads it literally, as the
+        // person standing closest to this cultivator's own height. That is a
+        // peer, and a peer is exactly who is not worth asking.
+        const asked = await say('I ask the strongest one here to teach me');
         const reached = worthAsking.some(npc => asked.includes(npc.name));
         expect(
             reached,
