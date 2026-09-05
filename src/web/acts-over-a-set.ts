@@ -63,7 +63,17 @@ export type SetShape =
     /** A house, named. */
     | { readonly kind: 'members_of'; readonly word: string; readonly house: string }
     /** A rank, among the people standing here. */
-    | { readonly kind: 'role_here'; readonly word: string; readonly role: string };
+    | { readonly kind: 'role_here'; readonly word: string; readonly role: string }
+    /**
+     * A LEANING rather than a house.
+     *
+     * The design owner: *i kill members of all righteous sects/demonic sects*.
+     * That is not thirty-five separate sentences about thirty-five houses, and
+     * it is the shape a campaign in this genre is actually declared in. The
+     * word is the catalog's own `SectAlignment`, so nothing here decides what
+     * righteous means.
+     */
+    | { readonly kind: 'of_alignment'; readonly word: string; readonly alignment: string };
 
 /**
  * The whole square, however it is said.
@@ -124,6 +134,20 @@ const A_WHOLE_HOUSE = new RegExp(
 );
 
 /** The rank words a square's people are picked out by. Matches `POINTING_AT_A_RANK`. */
+/**
+ * A leaning, said as a set: "all the righteous sects", "every demonic cultivator".
+ *
+ * The word itself is not listed here - `SectAlignment` owns it, and the caller
+ * checks what came back against the catalog. What this decides is that a set
+ * was named and by which word.
+ */
+const A_LEANING_IN_THE_PLURAL = new RegExp(
+    `^(?:(?:members?|people|anyone|anybody|everyone|everybody)\\s+(?:of|from|in)\\s+)?` +
+    `${ALL_OF}\\s+(?:of\\s+)?(?:the\\s+)?(?<leaning>[a-z]{4,20})` +
+    `(?:\\s+(?:sects?|houses?|clans?|orders?|schools?|cultivators?|disciples?|people|ones?))$`,
+    'i'
+);
+
 const A_RANK_IN_THE_PLURAL =
     /^(?:all|every|each|the whole|the entire|all of)\s+(?:of\s+)?(?:the\s+)?(?<role>elders?|disciples?|masters?|wardens?|heads?|guards?|servants?|attendants?)$/i;
 
@@ -150,6 +174,18 @@ export function theSetThisNames(query: string): SetShape | null {
             kind: 'role_here',
             word: wanted,
             role: rank.groups['role'].replace(/s$/i, '')
+        };
+    }
+
+    // A LEANING, BEFORE A HOUSE. "all the righteous sects" would otherwise be
+    // read as a house called "righteous", which is a name no house has and a
+    // set of thirty-five the player plainly meant.
+    const leaning = A_LEANING_IN_THE_PLURAL.exec(wanted);
+    if (leaning?.groups?.['leaning']) {
+        return {
+            kind: 'of_alignment',
+            word: wanted,
+            alignment: leaning.groups['leaning'].toLowerCase()
         };
     }
 
@@ -229,6 +265,7 @@ function theSetInWords(set: SetShape): string {
         case 'everyone_here': return 'the people standing here';
         case 'kin_of': return set.anchor.length > 0 ? `${set.anchor}'s people` : 'their people';
         case 'members_of': return set.house;
+        case 'of_alignment': return `the ${set.alignment} houses`;
         case 'role_here': return `the ${set.role}s`;
     }
 }

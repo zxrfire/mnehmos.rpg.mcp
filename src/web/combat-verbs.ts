@@ -5,7 +5,7 @@
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
 import { requireRegion } from '../data/cultivation/regions.js';
-import { sectThreat } from '../data/cultivation/sects.js';
+import { SECTS, sectThreat } from '../data/cultivation/sects.js';
 import {
     type ConfrontationOutcome,
     type ConfrontationResult,
@@ -547,6 +547,26 @@ export const combatVerbs = {
             });
         }
 
+        if (set.kind === 'of_alignment') {
+            // The catalog's own word, and nothing here decides what righteous
+            // means. A leaning it does not carry names no houses, and the set
+            // is empty - which is a real answer and reads as one.
+            const houses = new Set<string>(
+                SECTS.filter(row => row.alignment === set.alignment).map(row => row.id)
+            );
+            if (houses.size === 0) return null;
+            const members = [
+                ...this.repos.cultivators.roster()
+                    .filter(row => row.alive && row.sectId !== null && houses.has(row.sectId)),
+                ...(this.atHand
+                    ? [...houses].flatMap(id => npcsInFaction(this.atHand!, id))
+                    : [])
+            ].filter(row => row.id !== cultivator.id).map(asCandidate);
+            return theSetAsThisCultivatorKnowsIt({
+                members, gates, presenceIsItsOwnDiscovery: false
+            });
+        }
+
         const house = this.factionMeant(set.house, cultivator)
             // "the whole sect" names a house without saying which, exactly as
             // "him" names a person without saying who. It resolves the same
@@ -607,24 +627,36 @@ export const combatVerbs = {
 
     /**
      * An act aimed at a set completes over the part of it the player can reach.
+     *
+     * The design owner, having listed the ways a set gets named: *and replace
+     * kill with other verb too*. So the LOOP is here and the ACT is the
+     * caller's - what differs between robbing a family and killing one is which
+     * routine runs per person, never how the set is read, gated, counted or
+     * reported. A verb that grew its own copy of this would be the branch this
+     * file exists to prevent.
      */
-    async attackOverASet(
+    async actOverASet(
         this: GameService,
         cultivator: Cultivator,
         set: SetShape,
-        goal: string,
-        terms: BoutTerms = 'open',
-        opening: 'open' | 'from_concealment' = 'open',
-        wanted?: string
+        action: ActionName,
+        runOne: (member: { id: string; name: string }) => Promise<Execution>,
+        /** What reaching nobody reads as, in this verb's own terms. */
+        nothing: { headline: string; prose: string; note: string },
+        /**
+         * Whether a fight still standing stops the run. Only a confrontation
+         * leaves one, and the rest of the set is named rather than resolved
+         * behind the player's back.
+         */
+        stopsOnAHeldFight: boolean
     ): Promise<Execution> {
         const known = this.theSetAsYouKnowIt(cultivator, set);
         if (known === null) {
-            return refused('engine.resolveParty', 'attack', factsForRefusal(
-                'Nothing to swing at.',
-                'You look for them and the moment goes past you. There is nobody in front of '
-                + 'you that the thought fits, and standing here deciding is its own answer.',
-                `Unresolved set "${set.word}" for a confrontation: read as ${set.kind}, and `
-                + 'nothing this cultivator can name answers to it. No exchange was run.'
+            return refused('engine.resolveParty', action, factsForRefusal(
+                nothing.headline,
+                nothing.prose,
+                `Unresolved set "${set.word}": read as ${set.kind}, and nothing this cultivator `
+                + `can name answers to it. ${nothing.note}`
             ));
         }
 
@@ -632,12 +664,10 @@ export const combatVerbs = {
         const counted = howTheSetWasCounted(set, known);
 
         if (known.reached.length === 0) {
-            return refused('engine.resolveParty', 'attack', factsForRefusal(
+            return refused('engine.resolveParty', action, factsForRefusal(
                 'Nobody of them is standing here.',
-                remainder
-                    ?? 'You look for them and the moment goes past you. There is nobody in front '
-                    + 'of you that the thought fits, and standing here deciding is its own answer.',
-                `${counted} No exchange was run.`
+                remainder ?? nothing.prose,
+                `${counted} ${nothing.note}`
             ));
         }
 
@@ -646,14 +676,9 @@ export const combatVerbs = {
         for (const member of known.reached) {
             const now = this.currentRun();
             if (!now.cultivator.alive) break;
-            done.push(await this.attack(
-                now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
-                member.name, goal, terms, opening, wanted
-            ));
+            done.push(await runOne(member));
             if (!this.currentRun().cultivator.alive) break;
-            // A fight still standing is the turn's answer. The rest of the set
-            // is named below rather than resolved behind the player's back.
-            if (this.fight !== null) { heldOn = member.name; break; }
+            if (stopsOnAHeldFight && this.fight !== null) { heldOn = member.name; break; }
         }
 
         const reachedButNotYet = heldOn === null
@@ -680,11 +705,43 @@ export const combatVerbs = {
         folded.facts.structure.push(counted);
         folded.calls.unshift({
             name: 'engine.actOverASet',
-            action: 'attack',
+            action,
             summary: counted,
             ok: true
         });
         return folded;
+    },
+
+    /** A confrontation, over a set. The loop is `actOverASet`; this is the act. */
+    async attackOverASet(
+        this: GameService,
+        cultivator: Cultivator,
+        set: SetShape,
+        goal: string,
+        terms: BoutTerms = 'open',
+        opening: 'open' | 'from_concealment' = 'open',
+        wanted?: string
+    ): Promise<Execution> {
+        return this.actOverASet(
+            cultivator,
+            set,
+            'attack',
+            member => {
+                const now = this.currentRun();
+                return this.attack(
+                    now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
+                    member.name, goal, terms, opening, wanted
+                );
+            },
+            {
+                headline: 'Nothing to swing at.',
+                prose: 'You look for them and the moment goes past you. There is nobody in '
+                    + 'front of you that the thought fits, and standing here deciding is its '
+                    + 'own answer.',
+                note: 'No exchange was run.'
+            },
+            true
+        );
     },
 
     /**

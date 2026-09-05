@@ -575,6 +575,7 @@ import type { LocationRecord } from '../engine/world/locations.js';
 // about the same ground; this read is not going to be the third.
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
 import { whatDidNotHappen } from './unresolved-attempt-denials.js';
+import { theSetThisNames } from './acts-over-a-set.js';
 import {
     theDescriptionThisIs,
     whoTheDescriptionFits
@@ -3504,6 +3505,37 @@ ${noticed}`;
         }
 
         const query = (target ?? '').trim();
+
+        // A SET IS NOT ONE PERSON, AND THAT IS TRUE OF EVERY VERB
+        //
+        // The design owner, having listed the ways a set gets named - everyone
+        // here, somebody's family, a whole house, all the righteous sects -
+        // *and replace kill with other verb too*. `attack` had the loop and
+        // nothing else did, so "I rob his whole family" resolved to the last of
+        // the crowd order and the other four went unrobbed.
+        const asASet = query.length >= 2 ? theSetThisNames(query) : null;
+        if (asASet) {
+            return this.actOverASet(
+                cultivator,
+                asASet,
+                'interact',
+                member => {
+                    const now = this.currentRun();
+                    return Promise.resolve(this.interact(
+                        now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
+                        member.name, intent, topic, leverage, rawInput
+                    ));
+                },
+                {
+                    headline: 'Nobody that fits is standing here.',
+                    prose: 'You look for them and the moment goes past you. There is nobody in '
+                        + 'front of you that the thought fits, and standing here deciding is its '
+                        + 'own answer.',
+                    note: 'Nothing was put to anybody.'
+                },
+                false
+            );
+        }
 
         // A THEFT'S TOPIC IS A THING, NOT A QUESTION
         const named = intent === 'steal' ? topic : undefined;
