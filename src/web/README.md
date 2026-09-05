@@ -1041,6 +1041,38 @@ five rows that own a portable-thing noun: the pill branch, the site prize, `RIDI
 explicitly, and the theft row keeps every sentence it already read - the gap being fixed is
 the demonstrated one.
 
+### A target can name a set, and the set resolves the same way one person does
+
+`docs/world/what-the-genre-does-and-whether-we-model-it.md`, "Acts over a set": the act
+completes over the reachable subset and the turn says what it did not reach. Neither refused
+nor silently truncated.
+
+**Measured before it existed**, on world seed `w-a` with fifteen people in the square: *"I
+kill everyone here"* reached `POINTING`, which answers a pointer with the LAST element of the
+crowd order - and that order is rank-ascending, so it is the deepest body present. The turn
+came back *"5 major realms is not a fight"* and fourteen reachable people were never
+considered. **A set collapsing to the member most certain to refuse is worse than
+truncation**, because it reads as a ruling.
+
+[`acts-over-a-set.ts`](acts-over-a-set.ts) is the whole mechanism and has no verb in it. Two
+things about its shape are load-bearing:
+
+- **One expansion behind four ways of saying a set** - the square, somebody's own people, a
+  house, a rank. What differs per shape is which candidates the caller hands in; the gates and
+  the report are the same function. A branch that fires for families and not for other sets is
+  the mistake the ruling exists to prevent.
+- **The remainder is gated by the same knowledge the act was, and the type is what enforces
+  it.** `TheSetAsKnown` carries `reached` and `heardOfAndNotHere` and has **no field for the
+  set as the world holds it** - the same device as `Sighting` having no name field, so a
+  change that wants the census has to add a field and argue for it. `whatTheActDidNotReach`
+  returns `null` when the player knows of nobody else, and that null is the point: they are
+  not told they finished and not told they did not.
+
+`attackOverASet` in `combat-verbs.ts` is the first caller. It is **one costly act** - the
+expansion happens after the plan is fixed, so `whatThisTurnMayRun` sees a single step whose
+target is a description - and it still stops where the world stops it, because a fight is
+played rather than reported.
+
 ### `recall` resolves against the holder, never against the world
 
 The one target resolution in this package that does **not** consult a catalog. "What do I

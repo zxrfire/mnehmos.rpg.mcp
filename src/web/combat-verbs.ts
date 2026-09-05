@@ -60,6 +60,7 @@ import { whatTheyDoAboutBeingWronged } from '../engine/social-leverage/what-some
 import type { InheritanceRelation, ObligationInput } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
+import { npcsInFaction } from '../engine/world/world-state.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import {
     isRuined,
@@ -96,6 +97,17 @@ import {
 } from '../engine/social/a-body-under-somebody-elses-hand.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
+import { foldTheCallsIntoOneTurn } from './a-sentence-can-be-more-than-one-call.js';
+import {
+    type Reachability,
+    type SetShape,
+    type TheSetAsKnown,
+    howTheSetWasCounted,
+    theSetAsThisCultivatorKnowsIt,
+    theSetThisNames,
+    whatTheActDidNotReach
+} from './acts-over-a-set.js';
+import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
 import { resolveCultivator } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
@@ -393,6 +405,28 @@ export const combatVerbs = {
                 'Unresolved party: no subject named for a confrontation. Nothing was resolved and ' +
                 'no exchange was run.'
             ));
+        }
+
+        // ── A SET IS NOT ONE PERSON, AND USED TO BECOME THE WORST OF THEM ──
+        //
+        // Measured on world seed `w-a`, fifteen people in Old River Village:
+        // "I kill everyone here" reached `POINTING`, which answers a pointer
+        // with the LAST element of the crowd order - and that order is
+        // rank-ascending, so it is the deepest body present. The turn came back
+        // "5 major realms is not a fight" and fourteen reachable people were
+        // never considered. A set collapsing to the member most certain to
+        // refuse is worse than truncation, because it reads as a ruling.
+        //
+        // Placed above the faction branch on purpose: "all of Iron Gate Sect"
+        // scores as that faction and would take the house refusal, which is the
+        // right answer for "I attack the Iron Gate Sect" - a house is not
+        // standing anywhere - and the wrong one for a quantified sentence,
+        // which names the people in it.
+        const asASet = theSetThisNames(query);
+        if (asASet) {
+            return await this.attackOverASet(
+                cultivator, asASet, goal, terms, opening, wanted
+            );
         }
 
         // ── a house is not a person ──
@@ -710,6 +744,262 @@ export const combatVerbs = {
             cultivator, held,
             await this.answerTheFight(run, cultivator, ambient, held, { kind: 'strike' })
         );
+    },
+
+    /**
+     * Who a set-shaped target actually names, as this cultivator holds it.
+     *
+     * The candidates differ per shape and nothing else does: each branch hands
+     * `theSetAsThisCultivatorKnowsIt` a list and the two gates, and that
+     * function applies them the same way to a family, a house and a rank. Null
+     * means the phrase named a set the world has nobody for - a house nobody
+     * here has heard of, a pronoun with nobody behind it - which is the
+     * ordinary unresolved-party answer and not a special case.
+     */
+    theSetAsYouKnowIt(
+        this: GameService,
+        cultivator: Cultivator,
+        set: SetShape
+    ): TheSetAsKnown | null {
+        const here = this.present(cultivator);
+        const gates: Reachability = {
+            isPresent: id => here.some(row => row.id === id),
+            hasHeardOf: id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
+        };
+        const asCandidate = (row: { id: string; name: string }) =>
+            ({ id: row.id, name: row.name });
+
+        if (set.kind === 'everyone_here' || set.kind === 'role_here') {
+            const members = set.kind === 'everyone_here'
+                ? here
+                : here.filter(row =>
+                    (row.sectRank ?? '').toLowerCase().includes(set.role.toLowerCase()));
+            // Being able to see somebody is what makes them a member of a set
+            // defined by where they are standing, so the discovery gate is not
+            // asked - `whoTheNearestFaceIs` already lets a player swing at a
+            // face they cannot name. The remainder is empty by construction,
+            // and that is the honest answer: the square is the whole set.
+            return theSetAsThisCultivatorKnowsIt({
+                members: members.map(asCandidate),
+                gates,
+                presenceIsItsOwnDiscovery: true
+            });
+        }
+
+        if (set.kind === 'kin_of') {
+            const anchor = this.whoASetHangsOn(cultivator, set.anchor);
+            if (!anchor) return null;
+            const record = this.atHand?.npcs.find(npc => npc.id === anchor.id) ?? null;
+            // `whoTheyCarryFor` and not a second opinion about who somebody's
+            // family is: it reads the six ties `the-ties-an-ordinary-life-
+            // produces.ts` writes, and a list restated here would drift from it.
+            const ids = whoTheyCarryFor(anchor.id, record).ids;
+            return theSetAsThisCultivatorKnowsIt({
+                members: ids
+                    .map(id => this.whoThatIsIfTheyAreStillAlive(id))
+                    .filter((one): one is { id: string; name: string } => one !== null),
+                gates,
+                presenceIsItsOwnDiscovery: false
+            });
+        }
+
+        const house = this.factionMeant(set.house, cultivator)
+            // "the whole sect" names a house without saying which, exactly as
+            // "him" names a person without saying who. It resolves the same
+            // way: whoever the player is standing in front of, and their house.
+            ?? this.factionMeant(
+                this.whoASetHangsOn(cultivator, '')?.sectName ?? '', cultivator);
+        if (!house) return null;
+        const members = [
+            ...this.repos.cultivators.roster().filter(row => row.sectId === house.id && row.alive),
+            ...(this.atHand ? npcsInFaction(this.atHand, house.id) : [])
+        ].filter(row => row.id !== cultivator.id).map(asCandidate);
+        return theSetAsThisCultivatorKnowsIt({
+            members, gates, presenceIsItsOwnDiscovery: false
+        });
+    },
+
+    /**
+     * The one person a set is described in terms of.
+     *
+     * A pronoun resolves the way every other pronoun in this package resolves -
+     * `somebodyAtHand`, which reads who was addressed last and otherwise the
+     * nearest face - and a name resolves against the square and the records.
+     * An empty anchor is a pronoun with no word in it: "the whole sect" said by
+     * somebody standing in front of one person means that person's.
+     */
+    whoASetHangsOn(
+        this: GameService,
+        cultivator: Cultivator,
+        anchor: string
+    ): RosterEntry | null {
+        const wanted = anchor.trim();
+        const asPronoun = wanted.length === 0
+            ? 'them'
+            : ({ his: 'him', her: 'her', their: 'them', its: 'them' } as Record<string, string>)[
+                wanted.toLowerCase()];
+        if (asPronoun) return this.somebodyAtHand(asPronoun, cultivator);
+        // `my` and `your` name the player themselves, which is a set they are
+        // standing in rather than one in front of them.
+        if (/^(?:my|your|our)$/i.test(wanted)) {
+            return this.present(cultivator).find(row => row.id === cultivator.id) ?? null;
+        }
+        const named = resolveCultivator(
+            this.repos, wanted, cultivator.id, this.scopeFor(cultivator), cultivator.realmOrdinal
+        );
+        return named
+            ? this.present(cultivator).find(row => row.id === named.id)
+                ?? ({ id: named.id, name: named.name } as RosterEntry)
+            : null;
+    },
+
+    /**
+     * A name for an id, from whichever store holds the person - and null for
+     * somebody the world holds as dead.
+     *
+     * ── FOUND BY THE TEST THAT WAS WRITTEN FOR SOMETHING ELSE ────────────
+     *
+     * On world seed `w-f`, Shen Shuchen's only recorded parent is Liang Anya,
+     * who is `physically_dead` at world creation and standing in the same
+     * place. The first version of this reported her as a member of the family
+     * the act did NOT reach - twice wrong, since she was neither reachable nor
+     * a person. A relationship row survives the person on the end of it, which
+     * is what makes an inherited grudge possible and is exactly why this has to
+     * be asked here.
+     *
+     * `status === 'alive'` and not a new predicate: it is the same test
+     * `npcsAt` and `npcsInFaction` already apply, and it is not a third gate -
+     * a corpse is not a person the set was ever about.
+     */
+    whoThatIsIfTheyAreStillAlive(
+        this: GameService,
+        id: string
+    ): { id: string; name: string } | null {
+        const row = this.repos.cultivators.getById(id);
+        if (row) return row.alive ? { id, name: row.name } : null;
+        const npc = this.atHand?.npcs.find(person => person.id === id);
+        return npc && npc.status === 'alive' ? { id, name: npc.name } : null;
+    },
+
+    /**
+     * An act aimed at a set completes over the part of it the player can reach.
+     *
+     * `docs/world/what-the-genre-does-and-whether-we-model-it.md`, "Acts over a
+     * set". Not refused, not silently truncated, and the remainder is gated by
+     * the same knowledge the act was - see `acts-over-a-set.ts`, which owns
+     * both gates and the report and has no verb in it.
+     *
+     * ── IT IS ONE COSTLY ACT, AND THAT IS AN ARGUMENT RATHER THAN A GAP ──
+     *
+     * `a-sentence-can-be-more-than-one-call.ts` spends at most one costly act a
+     * turn and asks which comes first where a sentence holds two. This spends
+     * one: the expansion happens HERE, after the plan is fixed, so the budget
+     * sees a single `attack` step whose target is a description. Nothing in
+     * `whatThisTurnMayRun` changes and `MOST_CALLS_IN_ONE_TURN` is not touched.
+     *
+     * The reason it should be one rather than N is the same reason
+     * `oneClauseIsOneAct` exists: the question has nothing in it to answer.
+     * "Which of these six strangers first?" asks the player to re-say a
+     * sentence they already said as one act, and the law is about how much of a
+     * LIFE one sentence may spend rather than about how many calls it makes.
+     *
+     * ── AND IT STILL STOPS WHERE THE WORLD STOPS IT ──────────────────────
+     *
+     * A fight is played, not reported. So the loop runs each member through the
+     * ordinary single-target `attack` against the world the member before them
+     * left, and breaks the moment one becomes a fight that is still standing -
+     * `this.fight` is non-null exactly then. That member is now the fight the
+     * player is in, the rest are named, and nothing was resolved on their
+     * behalf. Where the gap settles a member one-sidedly - which is the
+     * extermination case, somebody walking through people who cannot answer -
+     * `attack` clears the held fight and the loop goes on.
+     *
+     * The order is `present()`'s own, which is rank-ascending then id: a stated
+     * total order that depends only on who is here. Nothing about it is chosen
+     * for this verb.
+     *
+     * Takes no run and no ambient: every member is run against `currentRun()`,
+     * which is `carryOutThePlan`'s rule - a sequence rather than a batch - and
+     * a member fought on the run the FIRST member started from would be fought
+     * on a body that had already changed.
+     */
+    async attackOverASet(
+        this: GameService,
+        cultivator: Cultivator,
+        set: SetShape,
+        goal: string,
+        terms: BoutTerms = 'open',
+        opening: 'open' | 'from_concealment' = 'open',
+        wanted?: string
+    ): Promise<Execution> {
+        const known = this.theSetAsYouKnowIt(cultivator, set);
+        if (known === null) {
+            return refused('engine.resolveParty', 'attack', factsForRefusal(
+                'Nothing to swing at.',
+                'You look for them and the moment goes past you. There is nobody in front of '
+                + 'you that the thought fits, and standing here deciding is its own answer.',
+                `Unresolved set "${set.word}" for a confrontation: read as ${set.kind}, and `
+                + 'nothing this cultivator can name answers to it. No exchange was run.'
+            ));
+        }
+
+        const remainder = whatTheActDidNotReach(set, known.reached, known.heardOfAndNotHere);
+        const counted = howTheSetWasCounted(set, known);
+
+        if (known.reached.length === 0) {
+            return refused('engine.resolveParty', 'attack', factsForRefusal(
+                'Nobody of them is standing here.',
+                remainder
+                    ?? 'You look for them and the moment goes past you. There is nobody in front '
+                    + 'of you that the thought fits, and standing here deciding is its own answer.',
+                `${counted} No exchange was run.`
+            ));
+        }
+
+        const done: Execution[] = [];
+        let heldOn: string | null = null;
+        for (const member of known.reached) {
+            const now = this.currentRun();
+            if (!now.cultivator.alive) break;
+            done.push(await this.attack(
+                now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
+                member.name, goal, terms, opening, wanted
+            ));
+            if (!this.currentRun().cultivator.alive) break;
+            // A fight still standing is the turn's answer. The rest of the set
+            // is named below rather than resolved behind the player's back.
+            if (this.fight !== null) { heldOn = member.name; break; }
+        }
+
+        const reachedButNotYet = heldOn === null
+            ? []
+            : known.reached.slice(known.reached.findIndex(one => one.name === heldOn) + 1);
+
+        const folded = foldTheCallsIntoOneTurn(done, `${set.word}: ${done.length} of `
+            + `${known.reached.length} standing here.`);
+
+        const tail = [
+            heldOn !== null && reachedButNotYet.length > 0
+                ? `${heldOn} is still in front of you, and while they are, `
+                  + `${reachedButNotYet.map(one => one.name).join(', ')} `
+                  + `${reachedButNotYet.length === 1 ? 'is' : 'are'} not something you have got to.`
+                : null,
+            remainder
+        ].filter((line): line is string => line !== null);
+
+        if (tail.length > 0) {
+            folded.facts.lines.push(...tail);
+            folded.facts.prose = [folded.facts.prose, ...tail]
+                .filter(text => text.length > 0).join('\n\n');
+        }
+        folded.facts.structure.push(counted);
+        folded.calls.unshift({
+            name: 'engine.actOverASet',
+            action: 'attack',
+            summary: counted,
+            ok: true
+        });
+        return folded;
     },
 
     /**
