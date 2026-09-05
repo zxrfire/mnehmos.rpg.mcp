@@ -7,6 +7,8 @@ import { CRIPPLING_UNTREATED_INJURIES } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { KnowledgeGate } from './knowledge.js';
 import { describeStanding } from './facts.js';
+import { HELPLESS_REALM_GAP } from '../engine/cultivation/combat.js';
+import { realmIndexOf } from '../engine/cultivation/realms.js';
 import {
     reticenceOf,
     howMuchTheyLetShow,
@@ -169,6 +171,28 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         0
     );
 
+    // AND THE ONES IT HAPPENED TO HARDEST
+    //
+    // Somebody who is not standing anywhere now had the whole of what they had
+    // moved, so they price out as the heaviest thing in the scene by the same
+    // arithmetic as everybody else. They were priced INTO it before and never
+    // given a line of their own, which left a killing as the one moment in this
+    // game where the person it happened to had nothing to say about it.
+    const dying = (scene.fallen ?? []).map(row => ({
+        row,
+        involved: true,
+        gotAMoment: theyGotAMoment(row.realmOrdinal, scene.playerNow.realmOrdinal),
+        asked: whatThisAsksOfThem({
+            moved: -1,
+            bodyLeft: 0,
+            rungsOverTheOther: row.realmOrdinal - scene.playerNow.realmOrdinal,
+            backed: standsWithTheirOwn(row, scene.now),
+            sceneWeight,
+            dealtWith: true,
+            reticence: reticenceOf(row.id)
+        })
+    }));
+
     const read = movements.map(m => {
         const dealtWith = declared.get(m.row.id)?.dealtWith ?? false;
         const bearing: Bearing = {
@@ -186,9 +210,11 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             // built on. A pure witness is somebody nothing touched and nobody
             // addressed; every other entry is a person this turn happened to.
             involved: m.moved !== 0 || m.bodyLeft < 1 || dealtWith,
+            gotAMoment: true,
             asked: whatThisAsksOfThem(bearing)
         };
     })
+        .concat(dying)
         .filter(entry => entry.asked.reading !== null)
         // Heaviest first: the person this turn actually happened to is the one
         // worth the sentence, and a square of forty must not push them out.
@@ -196,6 +222,7 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             || (a.row.id < b.row.id ? -1 : a.row.id > b.row.id ? 1 : 0));
 
     if (read.length === 0) return [];
+    const dead = new Set((scene.fallen ?? []).map(row => row.id));
 
     // WHO IS WORTH A SENTENCE OF THEIR OWN
     const involved = read.filter(entry => entry.involved);
@@ -214,7 +241,10 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             if (unnamedShown) continue;
             unnamedShown = true;
         }
-        lines.push(sentenceFor(entry.row, nameable, entry.asked, scene.playerNow.realmOrdinal));
+        lines.push(dead.has(entry.row.id)
+            ? lastSentenceFor(
+                entry.row, nameable, entry.asked, entry.gotAMoment, scene.playerNow.realmOrdinal)
+            : sentenceFor(entry.row, nameable, entry.asked, scene.playerNow.realmOrdinal));
         spokenFor++;
     }
 
@@ -301,6 +331,47 @@ function sentenceFor(
         disposition === null ? null : `They ${disposition}.`,
         whetherTheySayIt(asked.aloud)
     ].filter((part): part is string => part !== null).join(' ');
+}
+
+/**
+ * Whether the moment left them room to say anything.
+ *
+ * `HELPLESS_REALM_GAP` is the combat module's own statement of when a
+ * confrontation stopped being one: at that gap it resolves in a single action
+ * with nothing contested and no exchange rolled, and somebody who never got an
+ * exchange never got a moment to speak in either. Below it there were rounds,
+ * and a person with rounds in them has a last thing to say.
+ */
+function theyGotAMoment(theirOrdinal: number, killersOrdinal: number): boolean {
+    return realmIndexOf(killersOrdinal) - realmIndexOf(theirOrdinal) < HELPLESS_REALM_GAP;
+}
+
+/**
+ * The last thing there was to see of somebody. The narrator writes the words;
+ * this says only whether there were any and what the room could see.
+ */
+function lastSentenceFor(
+    row: RosterEntry,
+    nameable: boolean,
+    asked: { aloud: boolean },
+    gotAMoment: boolean,
+    observerOrdinal: number
+): string {
+    const who = nameable
+        ? row.name
+        : 'Somebody here whose name this cultivator does not have';
+    const standing = describeStanding(observerOrdinal, row.realmOrdinal);
+    if (!gotAMoment) {
+        return `${who}, ${standing}. They are dead. It took one action, and there was no part `
+            + 'of it they were present for.';
+    }
+    return [
+        `${who}, ${standing}.`,
+        'They are dying, and there was time enough in it for them to know so.',
+        asked.aloud
+            ? 'They say the last thing they are going to say.'
+            : 'They do not say anything, and the not saying is visible.'
+    ].join(' ');
 }
 
 /**

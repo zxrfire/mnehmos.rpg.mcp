@@ -16,6 +16,7 @@ import {
     effectivePowerMultiplier,
     rankName,
     realmForOrdinal,
+    realmIndexOf,
     type ImmortalStatus
 } from './realms.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
@@ -280,11 +281,6 @@ export const BROKEN_TRANSMISSION = 0.5;
  */
 export function brokenCombatPowerForOrdinal(ordinal: number): number {
     return combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
-}
-
-function realmIndexOf(ordinal: number): number {
-    const key = realmForOrdinal(ordinal).key;
-    return REALM_TIERS.findIndex(t => t.key === key);
 }
 
 function clampFactor(raw: number, max: number): number {
