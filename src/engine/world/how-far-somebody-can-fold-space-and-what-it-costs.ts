@@ -2,7 +2,7 @@
  * How far somebody can fold space, what it costs them, and what it does not buy.
  */
 
-import { clampOrdinal } from '../cultivation/realms.js';
+import { clampOrdinal, rankName } from '../cultivation/realms.js';
 import type { CapabilityGrant } from './capability.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -136,8 +136,15 @@ export function priceFold(input: FoldInput): FoldCost {
             daysSpent: walkingDays,
             daysSavedAgainstWalking: 0,
             arrivalReads: '',
+            // BOTH REFUSALS NAME WHAT WOULD CHANGE THEM. A player who types
+            // this has no reason to know the setting's word for it, let alone
+            // the rung it starts at - and "no" with nothing behind it is the
+            // one answer this engine is not allowed to give.
             reason: rangeDays <= 0
-                ? 'Space does not fold for them. It is a road, and it is as long as it is.'
+                ? 'Space does not fold for them. It is a road, and it is as long as it is. '
+                    + `Nothing folds it below ${rankName(FOLD_FLOOR_ORDINAL)}, and standing `
+                    + 'there is not enough on its own: it is refined against, the way anything '
+                    + 'else is.'
                 : 'They stand high enough for it and it is not theirs. Whatever they refined '
                     + 'themselves against, it was not this.'
         };
