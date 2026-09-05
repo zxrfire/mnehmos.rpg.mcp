@@ -295,7 +295,20 @@ describe('a bout that went past what was agreed', () => {
         expect(fact.witnessIds.length).toBeGreaterThan(1);
 
         // And where a house did open an account, it points at this event.
-        for (const account of rows.filter(r => r.kind === 'grudge' || r.kind === 'blood_feud')) {
+        //
+        // ── THE ACCOUNTS THIS DEED OPENED, AND NOT EVERY ACCOUNT ─────────
+        //
+        // A fight writes two kinds now. `whatTheLoserNowHoldsAboutYou`
+        // persists what `seedObligations` decided - the grudge the person you
+        // beat holds, which was computed and dropped for as long as played
+        // fights have existed - and the resolver has no world fact to point
+        // at, because it is not told about one. Its rows carry no terms tag.
+        // What this loop is about is the accounts opened BECAUSE the bout went
+        // past what was agreed, and those are the rows the terms are on.
+        const fromTheBout = rows.filter(r =>
+            (r.kind === 'grudge' || r.kind === 'blood_feud')
+            && (JSON.parse(r.tags ?? '[]') as string[]).includes('agreed'));
+        for (const account of fromTheBout) {
             expect(account.triggering_event_id).toBe(fact.id);
         }
     }, 900_000);
