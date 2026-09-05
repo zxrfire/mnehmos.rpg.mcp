@@ -608,6 +608,57 @@ into rank, and the only routine moment where a run can simply end. Three rules s
 
 Fortune contributes nothing to these odds. See Fortune's rule above.
 
+### The dao heart, and what it may never become
+
+At a realm boundary and at no other rung, the crossing reads the obligation ledger and
+counts what is still **open** against or in favour of the person standing at it. That is
+the whole input. `what-a-crossing-asks-of-the-dao-heart.ts` owns the selection;
+`MAX_DAO_HEART_STRAIN` owns what it costs.
+
+The trial descriptions have promised this for as long as they have existed - at the
+birthing, *everything the cultivator has never settled is present at that meeting and has
+a say in what comes out of it* - and nothing read it. There is no table of heart demons
+anywhere, and there must not be one: a switch over kinds of demon would be the design
+being wrong, and a switch over kinds of deed would be the engine having an opinion.
+
+**The constraint this is built against is the epigraph.** The engine must not make being
+kind safer or being ruthless safer, and both mistakes are easy to write by accident. So
+what is counted is not what a deed was - it is whether it is finished, which is a fact the
+ledger already stores in one word. `forgiven` and `avenged` are two ways of finishing and
+the crossing cannot tell them apart. `tests/engine/cultivation/the-dao-heart.test.ts`
+asserts that directly, and it is the sharpest single proof that there is no view here.
+
+Each road pays and none of them pays in the same currency:
+
+- **Restraint** leaves the other party alive and the account open. It weighs at every wall
+  until it is settled, and it *can* be settled - there is somebody to go to. The price is
+  years, exposure, and whatever they ask.
+- **Decisiveness** closes an account and the deed that closed it opens the ones held by
+  the dead party's kin and house, which `inheritOnDeath` copies down the generations
+  without discounting. The ledger does not get shorter. It gets wider and hereditary.
+- **Concealment** leaves an account with no name on it. Nobody is a party to it, so no
+  wall asks about it - and `theSearchItOpens` puts somebody on the road looking, and the
+  day a name attaches it arrives at its original severity and its original date, in one
+  piece, at a moment nobody chose.
+
+It is a **cost and never a bar**. The same law `blocksAdvancement` states about a heart
+demon: only a realm's own break halts anybody, and everything else is damage.
+
+**Reachability.** `ceiling` - what a player reaches by typing *"what is stopping me"* -
+reports the count and the weight before anything is committed, and never the causes.
+A term a player can only learn about from the modifier list of the attempt that killed
+them is a term they learn by dying of it.
+
+**It is zero for a caller with no ledger**, which is what makes it safe to add: the
+unaided sweeps in `ladder-odds.ts` and `origin-odds.ts` pass none, so every measurement
+the ladder is calibrated against is byte-identical with this in. `ARRIVES_BROKEN_CHANCE`
+measured the remaining headroom at 2.7 points across eight boundaries, and a global
+attrition term would have closed the top of the ladder.
+
+**What it does not yet bind.** `an-npc-striking-at-the-next-wall.ts` takes no ledger,
+because the world simulation does not hold obligation rows in memory. Turning it on for
+the world is a pyramid measurement, not an edit.
+
 ## Tribulation
 
 At the last realm, the Lid stops ignoring you.

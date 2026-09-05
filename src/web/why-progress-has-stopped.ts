@@ -82,6 +82,7 @@ export type GateKind =
     | 'rank'
     | 'progress'
     | 'clock'
+    | 'dao_heart'
     | 'open';
 
 export interface Gate {
@@ -161,6 +162,22 @@ export interface CeilingInput {
     yearsAtCurrentRealm: number;
     /** `stagnationYearsForOrdinal(ordinal)`. */
     stagnationYears: number;
+
+    /**
+     * 道心 - `daoHeartFor(...)`, already read. Null for a caller with no ledger.
+     *
+     * THE REACHABILITY HALF, and it is the reason this field is here rather
+     * than only in the odds. A term that only appears in a modifier list after
+     * the attempt is a term a player learns about by dying of it; this is the
+     * same fact, in the same words, before they commit. `ceiling` is the verb
+     * "what is stopping me" reaches and this is one of the answers.
+     *
+     * Only the COUNT and the WEIGHT are carried, never the causes. Naming what
+     * the crossing is asking about would be the engine reading somebody's own
+     * record back to them in a channel they cannot decline, and the ledger is
+     * already readable by asking for it.
+     */
+    daoHeart?: { open: number; weight: number; heaviest: string | null } | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -334,8 +351,42 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
         });
     }
 
+    // ── 道心, and it is SOFT because it never refuses anybody.
+    //
+    // An unfinished record makes a wall harder and closes no road, which is the
+    // same law `blocksAdvancement` states about a heart demon: only a realm's
+    // own break halts anybody, and everything else is damage. So this is a cost
+    // and it is reported as one - a hard gate here would be the failure mode
+    // `what-goes-wrong-at-a-realm-boundary.ts` had to strip out of
+    // `cultivation_left_incomplete`.
+    //
+    // Nothing about which way the accounts point, because the crossing does not
+    // read that and the read must not claim it does.
+    if (input.daoHeart && input.daoHeart.open > 0) {
+        const { open, weight, heaviest } = input.daoHeart;
+        gates.push({
+            kind: 'dao_heart',
+            hard: false,
+            line:
+                `${open} ${open === 1 ? 'account stands' : 'accounts stand'} unfinished in your `
+                + `name, the heaviest of them ${heaviest}. A rung between sub-ranks does not ask. `
+                + `A realm wall does, and the answer you have for it is the one you have `
+                + `actually settled - which way any of it points is not the question.`,
+            structure:
+                `${open} open obligation(s) this cultivator is a party to, weighing `
+                + `${weight.toFixed(2)}, read at realm boundaries only. Settling one removes it `
+                + `whatever the resolution was.`
+        });
+    }
+
     // Nothing in the way is an answer, and it has to be said out loud.
-    const blocking = gates.filter(g => g.kind !== 'clock' || g.hard);
+    //
+    // A soft clock and an unfinished record are both excluded from the count,
+    // for one reason: neither is IN THE WAY. They make the road dearer and they
+    // close nothing, and a player asking why they are stuck should still be
+    // told plainly that they are not - with the cost printed beside it rather
+    // than instead of it.
+    const blocking = gates.filter(g => (g.kind !== 'clock' && g.kind !== 'dao_heart') || g.hard);
     if (blocking.length === 0) {
         gates.unshift({
             kind: 'open',
@@ -374,6 +425,7 @@ function headlineFor(kind: GateKind): string {
         case 'rank': return 'the rank above is not theirs yet';
         case 'progress': return 'there is not enough qi gathered yet';
         case 'clock': return 'the years have run out';
+        case 'dao_heart': return 'the record is not finished with';
         case 'open': return 'nothing';
     }
 }

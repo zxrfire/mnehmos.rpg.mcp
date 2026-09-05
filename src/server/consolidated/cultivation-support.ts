@@ -58,6 +58,11 @@ import {
     type DiscoveryContext,
     type ExposureInput
 } from '../../engine/cultivation/understanding.js';
+import {
+    whatACrossingAsksOfTheDaoHeart,
+    type WhatTheCrossingAsks
+} from '../../engine/cultivation/what-a-crossing-asks-of-the-dao-heart.js';
+import { ledgerAbout } from '../../storage/repos/obligation.repo.js';
 import { CultivatorRepository } from '../../storage/repos/cultivator.repo.js';
 import { RunRepository } from '../../storage/repos/run.repo.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
@@ -1078,6 +1083,46 @@ export function tollConditionsFor(
         sectProtection,
         nameAlreadyTaken: readFlag(repos.db, cultivator.id, FLAG_NAME_TAKEN) === '1'
     };
+}
+
+/**
+ * 道心 - what this cultivator's own record weighs at a wall.
+ *
+ * THE ONE DERIVATION, and it is here rather than in either caller for the
+ * reason `whatACrossingTakesFrom` gives about the body cost: the played verb
+ * and the auto-breakthrough inside a seclusion must not be able to come to
+ * different answers about the same price, because the player who found the
+ * cheaper door would be playing a different game from the world.
+ *
+ * `ledgerAbout` is both directions and both statuses; the filtering is the
+ * engine module's and is not repeated here.
+ */
+export function daoHeartFor(
+    db: Database.Database,
+    cultivator: Cultivator,
+    asOfDay?: number
+): WhatTheCrossingAsks {
+    return whatACrossingAsksOfTheDaoHeart({
+        personId: cultivator.id,
+        ledger: ledgerAbout(db, cultivator.id),
+        ...(asOfDay === undefined ? {} : { asOfDay })
+    });
+}
+
+/**
+ * The same read, as the two fields a breakthrough or a time skip takes.
+ *
+ * Spread into a context rather than assigned field by field, so that a caller
+ * cannot supply the share and forget the count - which would book the bare
+ * `dao_heart` label and lose the only thing the line tells a player.
+ */
+export function daoHeartConditions(
+    db: Database.Database,
+    cultivator: Cultivator,
+    asOfDay?: number
+): { daoHeart: number; daoHeartOpen: number } {
+    const read = daoHeartFor(db, cultivator, asOfDay);
+    return { daoHeart: read.share, daoHeartOpen: read.open };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

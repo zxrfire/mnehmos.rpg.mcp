@@ -55,6 +55,7 @@ import {
     type CultivationRepos,
     isGuidingErrorBody,
     persistUnderstanding,
+    daoHeartConditions,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
@@ -398,6 +399,12 @@ export const seclusionVerbs = {
             // the bottom is largely gone within a lifetime, and one set near
             // the top holds for tens of thousands of years.
             randomEventScale: sealed ? doorScaleOverStretch(cultivator.realmOrdinal, lived) : 1,
+            // 道心. A wall crossed inside a stretch weighs the record exactly as
+            // a deliberate strike does. `daoHeartConditions` is the one
+            // derivation and `crossing.ts` is the other door onto it - if the
+            // two came apart, seclusion would be the cheap way past a wall and
+            // a player who found it would be climbing a different ladder.
+            ...daoHeartConditions(this.repos.db, provisioned, Math.floor(run.elapsedDays)),
             // A boundary crossed inside this stretch exacts its price, and it
             // can only take what the run actually owns. Handing it the real
             // rows is what makes the price a delete rather than an assertion.
@@ -1094,6 +1101,7 @@ export const seclusionVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
