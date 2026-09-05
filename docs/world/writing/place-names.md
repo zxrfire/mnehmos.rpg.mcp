@@ -140,15 +140,17 @@ Two consequences:
   carries a motion where Gorge, Cliffs, Plain, Sea and Sands are all static. And it
   passes this file's own test - swap it with the province next door and something
   becomes false immediately, because there is no stair on a plain.
-- **Never weld the two into one word.** English toponyms do - Blackpool, Sheffield,
-  Sweptfall, Coldmouth, Halfroof, Cutbank - and a type noun fused into its modifier stops
-  being a type noun, which is the whole of what this section is for. A generator and two
-  name tables were producing nothing but welded compounds while obeying every other rule
-  on this page, and the result read as a Yorkshire moor. *Half Roof*, *Cold Well*, *Cut
-  Bank*, *Swept Fall*: the same names, and the second set reads as translated.
-- **A gerund is the same failure in another coat.** *Digging* and *Gleaning* are English
-  place names (Reading, Barking). Name what the work leaves rather than the work: *Turned
-  Ground*, *The Picked Edge*.
+- **The noun has to be one of these, not merely spaced.** A generator and two name tables
+  were welding head to tail - Sweptfall, Coldmouth, Halfroof, Cutbank - and the first
+  attempt at a fix put a space in and stopped there. The design owner's verdict on that:
+  **HALF ROOF IS NOT XIANXIA**, and he was right. Roof, Well, Bank, Yard, Hollow, Rota,
+  Landing, Shortcut and Reach are English domestic and agricultural words, and a space
+  between two of them is still an English village. *Half Eaves Hall*, *Cold Spring*,
+  *Knife Edge*, *Iron Hook Slope* are the same places under the nouns the authored map
+  already uses.
+- **A gerund is the same failure in a third coat.** *Digging* and *Gleaning* are English
+  place names (Reading, Barking). Name what the work leaves: *Poor Man's Terrace*, *The
+  Thin Edge*.
 - **And a site's name should not be English furniture.** *The Empty Frame*, *The Burned
   Bench*, *The Chalked Board*, *The Unlocked Box* obey the no-type-noun licence below and
   still read as a National Trust sign, because a frame, a bench, a board and a box carry

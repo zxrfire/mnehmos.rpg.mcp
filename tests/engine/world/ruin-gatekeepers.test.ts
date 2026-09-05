@@ -27,7 +27,7 @@ const HOUSE = 'sect-azure-cloud-pavilion';
 function ruin(controllingFactionId: string | null = null) {
     return makeLocation({
         id: 'loc-ruin-test',
-        name: 'Cold Well',
+        name: 'Cold Spring',
         kind: 'ruin',
         thresholds: makeThresholds(15, 19, 23, 25),
         controllingFactionId

@@ -764,9 +764,15 @@ const GIVEN_TAIL = [
     'xue', 'feng', 'tao', 'lu', 'ping', 'wu', 'chen', 'shi', 'ya', 'kuan'
 ] as const;
 
+/**
+ * The modifier. Colour, mineral, weather and number - never a texture or a
+ * relative position, which are the two English habits (Sweptfall, Nearford,
+ * Underhollow). Every word here is one the authored map already uses.
+ */
 const PLACE_HEAD = [
-    'Swept', 'Low', 'Scar', 'Grey', 'Dry', 'Cold', 'Salt', 'Broken', 'Old', 'Wide',
-    'Black', 'Still', 'Thin', 'Deep', 'Sour', 'Flat', 'Long', 'Near', 'Under', 'Wet'
+    'Cold', 'Black', 'Green', 'White', 'Jade', 'Iron', 'Bronze', 'Azure', 'Vermilion',
+    'Deep', 'Thin', 'Broken', 'Old', 'Dry', 'Salt', 'Cloud', 'Frost', 'Ash',
+    'Nine', 'Seven', 'Three', 'Autumn', 'Grain', 'Silent', 'Hidden', 'Bitter'
 ] as const;
 
 /**
@@ -784,10 +790,22 @@ const PLACE_HEAD = [
  * them, where Terrace, Ford, Cliff and Peak are the same features under words a
  * reader takes as translated.
  */
+/**
+ * The feature the name ends in, and it is a WORD rather than a suffix.
+ *
+ * These were welded onto the head - Sweptfall, Coldmouth, Lowhollow - which is
+ * the English habit (Blackpool, Sheffield) and not the one this world's names
+ * are translated out of. Splitting them was not enough on its own and the
+ * design owner said so: HALF ROOF IS NOT XIANXIA. The NOUNS were the problem.
+ * Roof, Well, Bank, Yard, Hollow and Reach are English domestic and
+ * agricultural words, and a space between two of them is still an English
+ * village. What is left here is the set the authored map uses, and nothing
+ * else: Gorge, Terrace, Cliff, Peak, Gate, Ford, Pass, Ridge, Stair, Spring,
+ * Vein, Sands.
+ */
 const PLACE_TAIL = [
-    'Ground', 'Water', 'Ridge', 'Hollow', 'Mouth', 'Crossing',
-    'Stair', 'Gate', 'Bank', 'Quarry', 'Pass', 'Yard',
-    'Terrace', 'Ford', 'Cliff', 'Peak', 'Spring', 'Valley'
+    'Peak', 'Ridge', 'Gorge', 'Valley', 'Cliff', 'Terrace', 'Stair',
+    'Ford', 'Pass', 'Gate', 'Spring', 'Sands', 'Stream', 'Rock', 'Face'
 ] as const;
 
 const FACTION_ADJ = [
@@ -827,8 +845,21 @@ export function surnameOf(fullName: string): string {
     return space > 0 ? fullName.slice(0, space) : fullName;
 }
 
+/** The heads that count, which is the one case the tail has to agree with. */
+const A_NUMBER = new Set(['Nine', 'Seven', 'Three']);
+
 export function placeName(rng: CultivationRNG): string {
-    return `${rng.pick(PLACE_HEAD)} ${rng.pick(PLACE_TAIL)}`;
+    const head = rng.pick(PLACE_HEAD);
+    const tail = rng.pick(PLACE_TAIL);
+    // Nine Peaks, not Nine Peak. The authored map has the model - Nine Peaks,
+    // Three Walls, Four Graves, Six Li - and a counted feature is plural in
+    // both languages.
+    return `${head} ${A_NUMBER.has(head) ? pluralOf(tail) : tail}`;
+}
+
+function pluralOf(tail: string): string {
+    if (tail.endsWith('s')) return tail;
+    return tail.endsWith('ch') || tail.endsWith('sh') ? `${tail}es` : `${tail}s`;
 }
 
 export function factionName(rng: CultivationRNG): string {

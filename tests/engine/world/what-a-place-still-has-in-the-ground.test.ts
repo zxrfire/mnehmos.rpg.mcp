@@ -285,7 +285,7 @@ describe('what a place still has in the ground', () => {
             // Saying "worked out" about ground that never carried anything of a
             // grade is a lie in the shape of a measurement.
             const dead = makeLocation({
-                id: 'l3', name: 'The Burn', kind: 'scar', qiDensity: 1
+                id: 'l3', name: 'The Scorch', kind: 'scar', qiDensity: 1
             });
             const bands = whatTheGroundStillHas(dead, 0);
             expect(bands.every(b => b.capacity > 0)).toBe(true);
