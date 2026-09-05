@@ -1,52 +1,6 @@
 /**
- * Inheritance grounds: reaching one, reading it from outside, going in, and
- * taking what is behind the door.
- *
- * `data/cultivation/inheritance-trials.ts` has carried the whole of this from
- * the start - twenty-odd sites, three kinds of gate, an interior that the type
- * system itself keeps out of the pre-entry view - and nothing a player could
- * type reached any of it. It was the largest finished, tested, unplayable
- * system in the game, and `scripts/playtest-systems.ts` reported it as such in
- * its own friction block for as long as that block existed.
- *
- * This module is to that catalog what `entities.ts` is to the roster: the
- * narrow layer that decides WHICH site a sentence meant, whether this
- * cultivator may name it at all, and what each gate answers when it is put to
- * them. `game.ts` owns the writes; `facts.ts` owns the sentences.
- *
- * ── The interior stays outside until somebody walks in ────────────────────
- * The catalog's own guarantee is structural: `outsideViewOf` returns a type
- * with no `interior` key, so a caller holding only the outside view cannot
- * reach the inside even by mistake. Nothing here weakens that. There is
- * exactly one call to `enterSite` in this package's whole reachable surface
- * and it sits behind a recorded entry - see `GameService.site`.
- *
- * ── Three gates, three unrelated questions ────────────────────────────────
- * `THE_THREE_GATES` states the design and this module implements it without
- * flattening it:
- *
- *   strength        an ordinal. Meet it or do not. A refusal names the
- *                   shortfall, because there IS one and the claimant can do
- *                   something about it - namely get stronger.
- *   age_and_talent  what the run accumulated or was dealt. A refusal names
- *                   which measure fell short, and says plainly that power
- *                   does not substitute, because the catalog says so per gate
- *                   in `strengthDoesNotHelp`.
- *   fate            not a check against the sheet at all. A refusal here must
- *                   NOT imply a shortfall, because there is nothing to fall
- *                   short of and nothing to go and do. `FATE_IS_NOT_A_STAT`
- *                   is enforced by the schema (`characterStat` is `z.null()`)
- *                   and by {@link fateEvidenceFor}, which reads world state
- *                   rows and never touches an attribute.
- *
- * ── Locality, and why there is none ───────────────────────────────────────
- * No entry in the catalog carries a location, deliberately: an inheritance
- * ground is not on anybody's map. So "what is near here" cannot be answered
- * by distance and is not pretended to be. What it is answered by is the same
- * thing the sect listing is answered by - what this cultivator has actually
- * heard of - and the catalog states the starting point per site in
- * `outside.startingAwareness`, which is why thirteen of them are nameable by
- * a villager and the rest have to reach the player some other way.
+ * Inheritance grounds: reaching one, reading it from outside, going in, and taking
+ * what is behind the door.
  */
 
 import type Database from 'better-sqlite3';
@@ -81,12 +35,6 @@ const AWARENESS_ORDER: readonly Awareness[] = [
 
 /**
  * How much of a site this cultivator has.
- *
- * The catalog's `startingAwareness` is the floor - what a fresh cultivator in
- * this world already has for that particular site, which for a gate on a
- * hillside everybody walks past is `named` and for an oath room under a
- * dyer's yard is `unaware`. A knowledge record raises it to `named`, and
- * nothing lowers it: having been told about a thing does not un-tell you.
  */
 export function awarenessOfSite(site: Site, holderHasRecord: boolean): Awareness {
     const floor = site.outside.startingAwareness;
@@ -96,11 +44,6 @@ export function awarenessOfSite(site: Site, holderHasRecord: boolean): Awareness
 
 /**
  * Sites this cultivator could put a name to.
- *
- * The predicate the whole surface rests on, and the reason a player cannot
- * simply type their way into the best grave in the world on turn one: below
- * `named` the catalog withholds the name, the rumour and the attribution, so
- * there is nothing to type and nothing to resolve.
  */
 export function nameableSites(holdsRecordFor: (siteId: string) => boolean): Site[] {
     return SITES.filter(site => mayBeNamed(awarenessOfSite(site, holdsRecordFor(site.id))));
@@ -108,13 +51,6 @@ export function nameableSites(holdsRecordFor: (siteId: string) => boolean): Site
 
 /**
  * Which site a sentence meant, out of the ones this cultivator may name.
- *
- * Scored against the display name and against the id slug, because the id is
- * where the short distinctive phrase lives - "the eighth stone" is the whole
- * of `trial-the-eighth-stone` and none of "The Chamber Under the Eighth
- * Stone". Below {@link MATCH_THRESHOLD} nothing resolves, on the same
- * reasoning as every other resolver here: a near miss that opens the wrong
- * door is worse than a miss that asks the player to be clearer.
  */
 export function resolveSite(query: string, permitted: readonly Site[]): Site | null {
     const wanted = query.trim();
@@ -139,44 +75,6 @@ export function phraseOf(siteId: string): string {
 
 /**
  * Every distinctive phrase a player could type to mean a site, longest first.
- *
- * A view over the catalog rather than a written list, so a site added to
- * `inheritance-trials.ts` becomes typeable without anybody remembering to
- * come here. Read by the deterministic parser, which needs to know that "the
- * eighth stone" is a place before `game.ts` gets a chance to resolve it.
- *
- * Built from ids AND from whole names, and the distinction matters.
- *
- * This was ids only, on the reasoning that site names were English sentences -
- * the catalog then read "The Gate Frame With No Gate In It" and "A Culler On
- * the Kettle Circuit" - and that matching a player's prose against the WORDS
- * in those would fire on half the sentences in the game. That reasoning is
- * correct about words and does not apply to whole names, because `siteNamed`
- * tests `text.includes(phrase)`: a complete name is one specific substring,
- * not a bag of common words.
- *
- * The gap it left was closed-loop and unwinnable. The game lists these places
- * by NAME - "The ones you have names for are Handworn Gate, The Burned Bench,
- * The Empty Frame..." - and then accepted only the id slug, which is never
- * shown anywhere. Found by playing: asking what ruins were near, typing back
- * one of the names the game had just printed, and getting nothing.
- * `trial-the-swept-frame` answers to "swept frame", and the player had been
- * told "The Empty Frame".
- *
- * ── AND THE NAMES ARE NOW SHORT, WHICH MOVES THE RISK ────────────────────
- *
- * Those sentence-length names were themselves a defect - a name nobody would
- * say out loud is a caption - and the catalog has been cut to two and three
- * words throughout. That is better prose and it makes this lookup LESS safe,
- * not more: the argument above rests on a whole name being one long specific
- * substring, and "The Green Glass" is a good deal less specific than "The
- * Glass Where the Count Stopped". The length floor in `siteNamed` is now the
- * thing doing the work rather than a backstop, so a name short enough to
- * appear inside an ordinary sentence is the failure to watch for here.
- *
- * The leading article is dropped so that "I approach the Gate Frame..." and
- * "I approach Gate Frame..." both land, and the length floor in `siteNamed`
- * still guards against a short slug becoming a wildcard.
  */
 export const SITE_PHRASES: readonly string[] = [
     ...new Set(SITES.flatMap(site => [
@@ -191,12 +89,6 @@ export const SITE_PHRASES: readonly string[] = [
 
 /**
  * What a gate is allowed to read.
- *
- * Written out rather than taking a `Cultivator`, so that the set of things a
- * door may ask about is visible in one place and cannot quietly grow. Note
- * what is absent: `fortune`. The attribute measure does not accept it at the
- * schema level and nothing here could pass it if it did - see
- * `FATE_IS_NOT_A_STAT`.
  */
 export interface Claimant {
     realmOrdinal: number;
@@ -213,10 +105,6 @@ export interface Claimant {
 
 /**
  * The world state the fate gates read.
- *
- * Every field is a count of real rows. There is no number here that rises
- * because somebody did the same activity more times, which is the whole of
- * `FATE_IS_NOT_A_STAT`: a farmable coincidence is not a coincidence.
  */
 export interface FateEvidence {
     /**
@@ -270,20 +158,6 @@ export interface GateVerdict {
 
 /**
  * "a" or "an", by what the next word actually starts with.
- *
- * These lists are joined from catalog values, so the first word is whatever
- * the content author wrote rather than anything this file chose. A hardcoded
- * "a" produced "Short by: a exceptional or stable foundation" in the middle of
- * the best-written refusal in the game - the trial that turns somebody away for
- * having rank without foundation, which then tells them precisely what it
- * wanted. One wrong article in that paragraph is louder than it would be
- * anywhere else.
- *
- * Deliberately naive: it reads the letter, not the sound. Every quality and
- * grade in the catalog is a plain English adjective, so the exceptions that
- * would need a pronunciation table - a "unified" something, an "hour" - do not
- * arise here, and inventing one for them would be guessing at content that
- * does not exist.
  */
 function anArticleFor(phrase: string): string {
     return /^[aeiou]/i.test(phrase) ? 'an' : 'a';
@@ -340,14 +214,6 @@ function talentMeasure(
 
 /**
  * Whether world state satisfies a coincidence, and what was consulted.
- *
- * Only one of the six is currently readable off real rows, and this says so
- * rather than pretending otherwise. That is the honest state of the engine
- * and it is reported on the mechanical channel, never to the player: from
- * inside the fiction a door that does not open because the world never
- * arranged the coincidence and a door that does not open because the engine
- * holds no ledger for that kind of coincidence look identical, and they must,
- * because the alternative is a hint and a hint is the whole prize.
  */
 export function fateEvidenceFor(
     coincidence: Extract<Gate, { kind: 'fate' }>['coincidence'],
@@ -440,19 +306,8 @@ export function readGates(site: Site, claimant: Claimant): GateReading {
 }
 
 /**
- * The ordinal at which a site applies force to a body, or null where it
- * applies none.
- *
- * ONLY a strength gate states one. A talent gate is indifferent to how hard
- * the claimant can be hit and a fate gate is not about the claimant at all,
- * so neither of them is turned into damage here - which is why the audit
- * bench, whose own `howItKills` opens "It does not, and that is the trap",
- * costs a failed claimant nothing but the days.
- *
- * An unguarded grave is likewise not given a hazard it does not have. The
- * catalog is explicit that most graves have no gate and that "an unguarded
- * grave is the ordinary case"; inventing a force for one out of the
- * occupant's rank would be exactly the bespoke rule AGENTS.md forbids.
+ * The ordinal at which a site applies force to a body, or null where it applies
+ * none.
  */
 export function forceOrdinalOf(site: Site, blockedBy: GateVerdict | null): number | null {
     if (!blockedBy || blockedBy.kind !== 'strength') return null;
@@ -462,14 +317,6 @@ export function forceOrdinalOf(site: Site, blockedBy: GateVerdict | null): numbe
 
 /**
  * The gate, priced as force so the existing combat resolver can apply it.
- *
- * A gate is not a person and is never treated as one: it has no name in the
- * roster, it cannot be fought, negotiated with or fled from, and every
- * person-shaped field below takes the neutral value. What it has is an
- * ordinal and a body in front of it, which is precisely what `resolveExchange`
- * prices. Doing it this way rather than writing a damage formula here is the
- * point - there is one combat model in this project and a second one living
- * in the web layer would drift from it within a month.
  */
 export function forceAt(site: Site, ordinal: number): CombatantInput {
     const maxHp = Math.max(10, 20 + ordinal * 12);
@@ -514,21 +361,7 @@ export function prizeOther(site: Site): string[] {
                 : good.what);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LEDGER
-//
-// What has been done to a site, in this run. Written to `cultivation_sites`,
-// which the schema already keeps for exactly this and whose own comment says
-// a site outlives the run that turned it up. No new table: "the map is pocked
-// with other people's ambitions" is a property of the ground, and the ground
-// already has a table.
-//
-// `location` is deliberately left NULL. The catalog does not say where any of
-// these are, and writing the cultivator's own location into the row would be
-// asserting a geography nobody authored - and would then feed `siteTagsAt`,
-// which grants comprehension sources off discovered ground. A site the player
-// found is not a vein under their feet.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SiteRecord {
     catalogId: string;
@@ -615,11 +448,6 @@ export class SiteLedger {
 
     /**
      * The site a bare sentence means.
-     *
-     * "I go inside" and "what does it look like from out here" name nothing,
-     * exactly the way "what happened here" names nowhere. Both mean the thing
-     * the cultivator went to most recently, and that is a row rather than an
-     * assumption.
      */
     atHand(runId: string): SiteRecord | null {
         return this.found(runId)[0] ?? null;
@@ -659,46 +487,15 @@ function hardestOrdinal(site: Site): number {
 /**
  * The pre-entry face, re-exported through this module so that every caller in
  * `src/web` reaches it by the one route.
- *
- * Kept as a thin pass-through rather than inlined at the call site because it
- * is the single most important line in this file: everything a player who has
- * not gone in may be told comes from here, and the compiler refuses to hand
- * back an `interior` key through it.
  */
 export function faceOf(site: Site, awareness: Awareness): SiteOutsideView | undefined {
     return outsideViewOf(site.id, awareness);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE GROUND ITSELF DOES, BEFORE ANY GATE
-//
-// `readGates` answers "does this claimant satisfy the locks somebody built".
-// This answers the prior question: what does the ground do to a body of this
-// size standing in it, which is a fact about the place rather than a puzzle
-// anybody set. The catalog closes ground three genuinely different ways and
-// NONE of the second two could ever fire for a player, because nothing read
-// `access`:
-//
-//   anyone_who_survives_it  a minimum. Everybody is let in; below the floor
-//                           they do not come out. The gamble.
-//   nobody_above_the_line   a CAP. Too strong and the ground refuses you, and
-//                           the point of it is that somebody else must go.
-//   elders_and_above        an errand. High enough that only a senior lives,
-//                           and the senior is not who gains by it.
-//
-// A cap and an elder floor are the two shapes where the body that goes in is
-// not the body that gains - `entrantIsTheBeneficiary` says so - and both were
-// unreachable, so the whole "send somebody else" half of the design had never
-// once happened in a played game.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What this ground does to this claimant, before any gate is consulted.
- *
- * A thin wrapper over `readAdmission`, and deliberately thin: the catalog owns
- * every sentence, and composing prose here from `admits` and a floor would be
- * the template this whole surface exists to avoid. What this adds is the
- * ordinal, taken off the claimant rather than passed in twice.
  */
 export function readAccess(site: Site, claimant: Claimant): AdmissionReading {
     return readAdmission(site.access, claimant.realmOrdinal);
@@ -706,16 +503,6 @@ export function readAccess(site: Site, claimant: Claimant): AdmissionReading {
 
 /**
  * The ordinal the GROUND applies to somebody short of its floor.
- *
- * The sibling of {@link forceOrdinalOf}, which prices a GATE. The difference
- * matters: a gate is something a person built and only a strength gate hits
- * anybody, so `forceOrdinalOf` returns null for the audit bench. A floor is
- * geology - what is down there is down there - so the force is the floor
- * itself, which is what `whatItDoesToSomebodyShortOfIt` describes.
- *
- * Null where the ground is not what stopped them: a body at or above the floor
- * takes nothing from the place, and a body turned away by a CAP never went in.
- * Being refused at the threshold costs the days and nothing else.
  */
 export function groundForceOrdinalOf(
     site: Site,

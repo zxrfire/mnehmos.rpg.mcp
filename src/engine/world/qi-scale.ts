@@ -8,7 +8,7 @@
  * WHY IT MOVED OFF 0..1
  * ---------------------
  * It was a 0..1 fraction, which is the same information at a tenth of the
- * resolution. Measured against a live database: Sweptground, the default
+ * resolution. Measured against a live database: Burnt Earth, the default
  * birthplace, sat at 0.3475 and reported every turn as "thin: half cultivation
  * rate, and a penalty to breakthrough odds"; the best ground in the world sat
  * at 1.0; the sealed compound essentially next door sat at 0.7167. Almost every
@@ -48,7 +48,7 @@ export const QI_DENSITY_MIN = 1;
 /** The Hollow Court's ground, and the ceiling below the Lid. */
 export const QI_DENSITY_MAX = 100;
 
-/** The Late Age's ordinary open air. Sweptground sits about here. */
+/** The Late Age's ordinary open air. Burnt Earth sits about here. */
 export const QI_DENSITY_DEFAULT = 35;
 
 /**

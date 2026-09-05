@@ -39,7 +39,7 @@
  *   4. WATER IS THE BINDING CONSTRAINT, NOT FOOD. A rail dries fish for the
  *      whole passage and the fresh water is carried in sealed jars and cannot
  *      be made. `waterDaysAboard` is what actually kills people, and it is the
- *      reason the map of the Drowned Reach is a list of wells.
+ *      reason the map of the Drowned Sea is a list of wells.
  *
  *   5. THE GROUND GIVES NOTHING. There is no vein under open water, so a Drawn
  *      cultivator does not slow down, they stop. Every day of progress out
@@ -50,7 +50,7 @@
  *
  * THE ARITHMETIC IS THE HAZARD
  * ----------------------------
- * The Drowned Reach's own threat model says most people who die in the South
+ * The Drowned Sea's own threat model says most people who die in the South
  * die because a passage took longer than it was provisioned for, "which is not
  * misfortune, it is a sum somebody did wrong ashore". That sentence is the
  * specification for this module. `resolveCrossing` does not roll a disaster:
@@ -144,7 +144,7 @@ export interface SeaLane {
     openMonthsPerYear: number;
     /**
      * Landfalls in the middle, in days from `fromPlace`. Empty means there is
-     * nowhere to stop, which is what `Dryrun` and `The Long Middle` are named
+     * nowhere to stop, which is what `The Bitter Crossing` and `Boundless Sea` are named
      * for and is what makes a lane frightening rather than merely long.
      */
     intermediateLandfallDays: readonly number[];
@@ -236,7 +236,7 @@ export function waterCupsAboard(manifest: CrossingManifest): number {
  * Stones burned over a passage. Holding for everybody, advancing for some.
  *
  * No branch on realm, faction, root or title anywhere in it, which is the
- * whole content of the Drowned Reach's claim that a stranger with a counting
+ * whole content of the Drowned Sea's claim that a stranger with a counting
  * board can price a cultivator's progress exactly and in advance.
  */
 export function stoneBurnFor(days: number, heads: number, advancingHeads = 0): number {
@@ -350,7 +350,7 @@ export function resolveCrossing(
 // The price extends the mortal economy's existing transport vocabulary rather
 // than starting a second one: `price-ferry` is a crossing you can see both
 // banks of, `price-caravan-passage` is priced per 100 li of road, and this is
-// priced PER HEAD PER DAY, which is the unit the Drowned Reach actually
+// priced PER HEAD PER DAY, which is the unit the Drowned Sea actually
 // quotes and is a different unit for a reason - on a road you are buying
 // distance and out here you are buying somebody else's provisioning risk.
 // ─────────────────────────────────────────────────────────────────────────

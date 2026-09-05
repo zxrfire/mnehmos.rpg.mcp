@@ -1,64 +1,6 @@
 /**
  * Putting things beyond your own death, and collecting what somebody else put
  * beyond theirs.
- *
- * The played surface for two acts the world already had the machinery for and
- * no player could reach: burying a cache in the ground, and lodging a deposit
- * with a house against a phrase. `trials.ts` is this module's sibling and its
- * precedent - the same shape of thing, a narrow layer deciding WHICH row a
- * sentence meant and what the world says about it, with `game.ts` owning the
- * writes.
- *
- * ── Why this is not a new subsystem ──────────────────────────────────────
- *
- * The whole inheritance-site layer already exists and is already about finding
- * what dead cultivators left behind. `cultivation_sites` already carries a
- * comment saying that a site outlives the run that turned it up and that its
- * `run_id` deliberately has no foreign key, because "the map is pocked with
- * other people's ambitions". A buried cache is an inheritance site with a
- * known depositor and a very small interior. It goes in that table, with
- * `kind = 'cache'`, and no schema change was required for any of this - which
- * is the strongest evidence available that it belongs there.
- *
- * A deposit is not ground and goes in the same table for a different reason: a
- * house that fails with its vault intact leaves exactly a hole with things in
- * it, and the engine converts the row rather than moving it between systems.
- * One table, two kinds, one conversion. See
- * `engine/world/whether-a-house-still-honours-a-deposit.ts`.
- *
- * ── Isolation from the trial ledger ──────────────────────────────────────
- *
- * `SiteLedger` in `trials.ts` reads the same table and cannot see any of this:
- * it discards any row whose id does not resolve to a catalog site, and it
- * filters on `discovered = 1`, which a buried cache is not. Nothing here
- * touches a row it did not write. The two ledgers are neighbours in one table
- * and have no shared keys.
- *
- * ── `discovered` means what it says ──────────────────────────────────────
- *
- * A cache is written with `discovered = 0`, because a thing nobody has found is
- * not a discovered site. It flips to 1 when it is turned up - by a later run
- * with a spade, or by the world getting there first. That is the column doing
- * its documented job rather than a flag repurposed, and it keeps caches out of
- * `siteTagsAt`, which grants comprehension off discovered ground and must not
- * grant it off a hole somebody is standing over.
- *
- * ── The clock ────────────────────────────────────────────────────────────
- *
- * Everything about both routes turns on how long it has been, and a run's
- * `elapsedDays` restarts at zero every life. So the day recorded against a
- * cache or a deposit is the WORLD day - `WorldState.currentDay`, which is
- * continuous across runs and is the only clock that can measure the gap between
- * one cultivator burying something and another digging it up. Where no world
- * is running the day is recorded as null and the elapsed span is reported as
- * unmeasurable rather than guessed at; see {@link elapsedYears}.
- *
- * ── What crosses ─────────────────────────────────────────────────────────
- *
- * Stones and pouch stock. Nothing else, ever, by any route:
- * `A_DEPOSIT_IS_NOT_A_LIFE` states it and `applyGoods` is the only function in
- * this module that writes to a cultivator, so there is exactly one place to
- * check.
  */
 
 import type Database from 'better-sqlite3';
@@ -121,14 +63,6 @@ export interface GoodStack {
 
 /**
  * The set of things that can be left behind, and it is short on purpose.
- *
- * Stones and pouch stock are the two things this engine models a cultivator
- * physically holding. Techniques are not: a known art is a row against the
- * PERSON and there is no manual object on a cultivator to put in a hole, which
- * is the same gap `takeFromSite` reports honestly for immortal items rather
- * than faking. Nothing here pretends otherwise - the refusal at the counter
- * says what cannot be lodged and why, which is more useful than a silent
- * omission and is the only correct way to report a hole.
  */
 export interface LegacyGoods {
     spiritStones: number;
@@ -222,33 +156,6 @@ export type LegacyRecord = CacheRecord | DepositRecord;
 
 /**
  * What this run has put aside and could still get back, said in one line each.
- *
- * ── WHY THIS EXISTS, AND WHY IT IS HERE ──────────────────────────────────
- *
- * Ruled by the design owner against the obvious reading: **a human DM answers
- * "what do I have" with "on you, this; in the vault, that."** They do not
- * answer "nothing, technically" and wait to be asked a second question. So the
- * pouch read reaches this, marked and separated - a true answer that misleads
- * is the same defect as a confident wrong one, which is the worst thing the
- * phrasing census found.
- *
- * `what am I carrying` deliberately does NOT reach it. That phrasing means
- * something narrower and keeping the distinction is worth more than flattening
- * it; `inventory-phrasings.ts` owns which question was asked.
- *
- * It renders rather than queries, and the query it renders is
- * {@link LegacyLedger.leftByRun} - the module's one run-scoped read, which
- * until now **had no caller anywhere in `src/`.** A read of what the player has
- * put beyond their own reach, with nothing in the running game asking for it,
- * is the defect AGENTS.md names as this project's most-repeated: every artefact
- * of a finished feature present except the one that matters. This is its first
- * consumer.
- *
- * ── WHAT IS LEFT OUT, AND WHY IT IS NOT A JUDGEMENT CALL ─────────────────
- *
- * A lifted cache, one the world got to first, a collected deposit and an entry
- * whose attempts ran out. None of those is a thing the player still has, and
- * each is already a fact in the row rather than something inferred here.
  */
 export interface PutAside {
     /** Where it is and what is in it. The line the player reads. */
@@ -308,11 +215,6 @@ const DEPOSIT_PREFIX = 'deposit::';
 
 /**
  * Everything one campaign's cultivators have put aside, across every run.
- *
- * Reads are NOT scoped to a run, and that is the entire point: a cache buried
- * two lives ago is exactly what a later run is looking for. Writes record which
- * run did it, so the world knows whose ambition it is looking at, and nothing
- * anywhere joins that back to the living cultivator.
  */
 export class LegacyLedger {
     private readonly insertStmt: Database.Statement;
@@ -368,10 +270,6 @@ export class LegacyLedger {
 
     /**
      * Caches under a place name, whoever buried them and whenever.
-     *
-     * Matched on `loosePlaceKey` rather than on the raw string, because a
-     * location is free text and "the Reed Ford" and "Reed Ford" are the same
-     * ground. That comparison is the same one the destinations read uses.
      */
     cachesAt(place: string): CacheRecord[] {
         const wanted = loosePlaceKey(place);
@@ -464,12 +362,6 @@ export interface CacheReading {
 
 /**
  * What the ground actually holds now.
- *
- * The fate is asked of the engine and then WRITTEN BACK if it comes back bad,
- * so a cache that has gone stays gone rather than being re-derived against a
- * clock that has moved. The engine's answer is monotone so re-derivation would
- * agree anyway; persisting it is about the finding being a fact in the world
- * that other systems can read, not about the arithmetic.
  */
 export function readCache(
     record: CacheRecord,
@@ -677,26 +569,10 @@ export function groundOf(place: string | null | undefined): BurialGround {
     return groundFor(null);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE PRE-DEPOSIT READ
-//
-// "The player should be able to tell the difference BEFORE depositing, at
-// least roughly, because choosing where to leave it is the decision." So this
-// is a read, it is free, and it costs no days. What it must NOT do is print a
-// hazard rate: a percentage is a thing a player optimises against and it would
-// turn a judgement about institutions into arithmetic. It prints the catalog's
-// own facts - how long the house has stood, whether there is a book, what it
-// does with a lapse, what it will not do - and a coarse band, and lets the
-// player decide.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Four bands and no numbers.
- *
- * Derived by putting the house's own hazard against a two-hundred-year horizon,
- * which is the span a settled cultivator actually cares about - long enough for
- * a whole life to be lived and lost after theirs, short enough that a house
- * failing inside it is a real prospect.
  */
 export type CustodyBand = 'as safe as anything gets' | 'sound' | 'a risk' | 'a bad bet';
 
@@ -752,14 +628,7 @@ export function describeCounter(view: CounterView): string {
     return `${view.houseName}. ${stood}. ${fee} ${book} ${view.terms.whatTheyWillNotDo} Judged over two centuries: ${view.band}.`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // FACTS
-//
-// Built here rather than in `facts.ts` so that adding this surface to the game
-// is one import and one switch arm. Everything below returns the same
-// `EngineFacts` shape every other action produces, and every line in it came
-// out of a row or a catalog entry.
-// ─────────────────────────────────────────────────────────────────────────
 
 function facts(headline: string, lines: string[], structure: string[]): EngineFacts {
     return { headline, lines, structure, prose: lines.join('\n\n') };
@@ -767,13 +636,6 @@ function facts(headline: string, lines: string[], structure: string[]): EngineFa
 
 /**
  * Why a cultivator is standing at this counter, where the engine can say.
- *
- * "For settling" is what this whole surface was asked for, and settling is not
- * a mood: it is `stagnationRemaining` running down at a rung the cultivator is
- * not going to leave, or a lifespan doing the same. Passed in rather than read
- * here so this module keeps no opinion about survival, which `survival.ts`
- * owns. Absent means the question was asked by somebody who is fine, which is
- * also a legitimate time to bury something.
  */
 export interface OutOfRoad {
     /** Years of the settling allowance left at this rung, where one is known. */
@@ -957,14 +819,7 @@ export function factsForClaim(
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WRITES
-//
-// The only two functions in this module that change a cultivator, and the only
-// place `A_DEPOSIT_IS_NOT_A_LIFE` has to be checked. Neither of them touches
-// realmOrdinal, cultivationProgress, foundationQuality, insights, achievements,
-// sectId, knowledge or anything else that is part of WHO somebody is.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface GoodsMover {
     /** Add or subtract stones. Signed. */
@@ -1006,13 +861,6 @@ export function applyGoods(mover: GoodsMover, cultivatorId: string, goods: Legac
 
 /**
  * Record a wrong phrase against an entry, and say what the counter says.
- *
- * Pure over the record: returns the next record rather than mutating, so the
- * caller decides whether to persist it. The count is persisted at a house that
- * keeps a book and equally at one that does not, because the ENGINE has to
- * count in order to close the entry - what differs is that a house with no book
- * allows so many attempts that the count rarely matters, which is the whole of
- * the trade rather than a special case in the code.
  */
 export function recordWrongPhrase(
     record: DepositRecord,
@@ -1038,12 +886,6 @@ export function recordWrongPhrase(
 
 /**
  * Convert a deposit whose house burned into a cache at that house's seat.
- *
- * The single bridge between the two routes, and the reason they are one system.
- * The new row is an ordinary cache with `fromDepositId` set, buried in the seat
- * town's ground, with a burial that reflects what a collapsed vault actually is:
- * nobody concealed it, it is under a great deal of masonry, and it has been
- * sitting there since the house went.
  */
 export function vaultAsACache(
     deposit: DepositRecord,
@@ -1080,72 +922,15 @@ export function vaultAsACache(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SENTENCES
-//
-// Kept here rather than in `actions.ts` so that wiring this in is one import
-// and a four-line block, on the `SITE_PHRASES` precedent. The rule is the one
-// the site block established and for the same reason: A VERB IN VERB POSITION,
-// PLUS A NOUN THAT SAYS WHAT IT IS AIMED AT. "dig", "leave", "claim" and
-// "collect" are four of the commonest verbs a player types and three of them
-// are already owned by something - `dig up` by grave-robbing, `leave` by
-// resigning from a sect, `claim` by taking a prize - so none of them fires
-// here on its own.
-//
-// This block must sit BELOW the sect block and BELOW `siteStep`. A sentence
-// about leaving a sect is about leaving a sect, and a sentence about digging
-// up a named grave is grave-robbing, and both of those read as this one if
-// they are tested in the wrong order.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What is being put aside, said in the ways a player says it. */
 export const LEGACY_NOUNS =
     // `hoard` is deliberately absent. The Moving Hoard is a faction, so a bare
-    // `hoard` made "what do I have on the Moving Hoard" - a recall question
-    // about what somebody knows of a house - into a question about deposit
-    // counters. Caught by the parser coverage tests on the first integration.
-    // The other nouns here are not the names of anything in the catalog.
-    //
-    // `legacy`, `legacies`, `inheritance` and `bequest` were missing, which is
-    // the word this module is named after. "what legacies are there" and "is
-    // there an inheritance to claim" both reached nothing while "who holds
-    // deposits" was answered, so a player had to guess the accounting word to
-    // reach the thing the fiction calls an inheritance.
-    //
-    // Safe alongside the caution above because none of them names anything in
-    // the catalog either, and because the listing branch they feed
-    // additionally requires a question word. An inheritance GROUND - a ruin
-    // somebody digs - is a different noun and belongs to `site`, which owns
-    // "inheritance ground" explicitly and is checked ahead of this.
-    //
-    // `what i am carrying` had to go, and it is the same caution one size
-    // smaller. It is `inventory`'s own first exemplar, word for word, and it is
-    // how somebody names the pouch when they are selling out of it: "I want
-    // stones for what I am carrying" - `sell`'s own phrasing - was answered
-    // with a list of custody counters. `everything i am carrying` stays,
-    // because putting all of it somewhere IS this verb.
-    //
-    // `my pouch` went with it, one word over. A pouch is the container somebody
-    // CARRIES; the things in it are what they might leave, and the words for
-    // those - my things, my goods, my stones, my estate - are all still here.
-    // Measured: "what is in my pouch" was answered with the bequest-houses
-    // lecture, which is the plainest inventory question in the game.
-    //
-    // `my purse` went the same way afterwards, and the miss is instructive:
-    // the caution above was written about the pouch and the purse is the same
-    // word for the same object, one synonym over. Measured before it was
-    // taken out - "what is in my purse", "how much is in my purse", "what is
-    // left in my purse" and "how is my purse looking" ALL answered with the
-    // custody-counter listing, which is a confident answer to a question
-    // nobody asked. The purse is what the inventory read itself prints ("N
-    // spirit stones in the purse"), so the game was printing a word it then
-    // misread when it was typed back.
-    //
-    // `my stones` stays, and the line is the container against its contents:
-    // stones are a thing you might lodge with a house, and a purse is the
-    // thing you carry them in. The listing branch below needs a question word
-    // as well, so nothing that names a burial or a lodgement is affected
-    // either way.
+    // `hoard` made "what do I have on the Moving Hoard" - a recall question about
+    // what somebody knows of a house - into a question about deposit counters.
+    // Caught by the parser coverage tests on the first integration. The other nouns
+    // here are not the names of anything in the catalog.
     /\b(?:cache|caches|stash|deposit|deposits|strongbox|safekeeping|legacy|legacies|inheritances?|bequests?|my (?:things|goods|possessions|stones|wealth|savings|estate)|everything i (?:have|own|am carrying)|for (?:the next life|whoever comes after|whoever comes next))\b/;
 
 /** Verbs that mean burying and nothing else, so they need no noun beside them. */
@@ -1191,19 +976,6 @@ export function custodianNamed(text: string): string | undefined {
 
 /**
  * The form of words in a sentence, where the player put one in.
- *
- * Pulled out of the RAW INPUT rather than out of a planned action's `topic`,
- * deliberately and for two reasons. A model asked to fill a `topic` field will
- * paraphrase, and a paraphrased phrase is a phrase that does not open the
- * entry. And this way the phrase is never something a model produced, which
- * keeps it on the same footing as everything else the engine treats as
- * authoritative.
- *
- * Quotes first, because a player who quotes has been explicit and should get
- * exactly what they typed, spaces and all. Then the markers a person actually
- * uses. Never falls back to "the rest of the sentence": a lodge with no phrase
- * in it must be refused rather than sealed against half a sentence the player
- * did not mean.
  */
 export function phraseIn(input: string): string | undefined {
     const quoted = /["“']([^"”']{3,200})["”']/.exec(input);
@@ -1229,11 +1001,6 @@ export interface LegacyPlan {
 
 /**
  * One of the five steps, or null.
- *
- * `usedAsVerb` is passed in rather than imported so this module does not depend
- * on `actions.ts` and the two cannot form a cycle. `actions.ts` already exports
- * it, and passing it keeps the position rule - a verb counts in verb position
- * and not behind an article - identical to every other branch in the table.
  */
 export function legacyStep(
     text: string,
@@ -1252,25 +1019,13 @@ export function legacyStep(
     }
 
     // Digging. Needs the noun or the standing-here phrasing, so that "I dig for
-    // roots" stays with gathering and "I dig up the grave of Shen Guyi" has
-    // already been taken by the site block above.
-    //
-    // Ahead of the anchored burial branch below, and that ordering is
-    // load-bearing: "I dig where I buried it" contains a burial word AND the
-    // standing-here phrasing, and it is unambiguously a sentence about digging.
+    // roots" stays with gathering and "I dig up the grave of Shen Guyi" has already
+    // been taken by the site block above.
     if (usedAsVerb(text, LEGACY_DIG_VERBS) && (noun || here)) {
         return { action: 'legacy', intent: 'dig' };
     }
 
     // Burying, said the way people actually say it.
-    //
-    // "I spend a season burying my things here" puts the verb behind a noun
-    // phrase, so `usedAsVerb` correctly declines it - the position rule is
-    // protecting every other branch and is doing its job. What rescues this one
-    // is the anchor: with a cache noun or a standing-here phrase in the
-    // sentence there is nothing else it could be about, so the burial word is
-    // accepted wherever it sits. Found by writing out the sentences somebody
-    // would type rather than the one shape the parser happened to accept.
     if ((noun || here)
         && (usedAsVerb(text, LEGACY_BURY_VERBS_ANCHORED) || LEGACY_BURY_ANYWHERE.test(text))) {
         return { action: 'legacy', intent: 'bury', ...(days !== undefined ? { days } : {}) };
@@ -1310,18 +1065,7 @@ export function legacyStep(
     return null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE HANDLER
-//
-// The five steps, assembled here rather than in `game.ts` so that adding this
-// surface to the played game is an import, a field and one switch arm. Every
-// write goes through the injected `LegacyDeps`, so this module opens no
-// database handle of its own and can be tested against a fake.
-//
-// `game.ts` owns the writes in the sense that matters: it supplies the mover,
-// the ledger and the clock, and it decides how many days the turn costs. What
-// is here is which of the five happened and what the world says about it.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Mirrors `ToolCallRecord` in `game.ts`, structurally, to avoid a cycle. */
 export interface LegacyCall {
@@ -1383,10 +1127,6 @@ function decline(headline: string, scene: string, mechanical: string): LegacyOut
 
 /**
  * The whole surface, in one call.
- *
- * `days` is the burial effort and is ignored by every other intent.
- * `phrase` carries the form of words for `lodge` and `claim` and is never
- * logged, never put in a `structure` line, and never returned.
  */
 export function handleLegacy(
     deps: LegacyDeps,
@@ -1419,13 +1159,6 @@ export function handleLegacy(
 
 /**
  * Everything the cultivator is carrying goes in.
- *
- * Deliberately all-or-nothing rather than itemised. A player choosing exactly
- * which four herbs to bury is a spreadsheet, and the act being modelled is
- * somebody who is finished putting their things in the ground. What they keep
- * back is what they buy food with, so the purse is left with enough for a month
- * of rations - burying yourself to death on the way home is a comedy the engine
- * should not be writing.
  */
 export const KEPT_BACK_STONES = 2;
 

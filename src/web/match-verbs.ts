@@ -1,34 +1,5 @@
 /**
  * A match, a refusal, and a child - what each does to two houses.
- *
- * One subject, because they are one negotiation seen at three moments. A match
- * is put to a party rather than to a person; the refusal is as much of the
- * mechanic as the acceptance, and carries its own reason; and a child is what
- * the arrangement was FOR, which is why placing one belongs beside proposing
- * one rather than beside the other things a cultivator can spend years on.
- *
- * Two rules the module keeps, and both are the setting's rather than this
- * file's:
- *
- * - An origin buys inputs and never rank. Being born well makes surviving the
- *   climb far likelier because it buys stones, provisioned years, a teacher
- *   and placement - it does not put anybody at the top, and nothing here may
- *   grant a rung.
- * - What NPCs do is emergent and must not become an enum. Who will agree to a
- *   match, and at what price, comes out of what those people want and what is
- *   owed - a tenth reason should need no code, only a person with a different
- *   want.
- *
- * ── HOW THIS IS ATTACHED ──────────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.proposeAMatch(...)` resolves and typechecks exactly as it
- * did when the bodies sat in the class, and every line below is the line it
- * was. `src/web/README.md` has the argument and the warning about `private`.
- *
- * `shareOfALife` was a `private static`. A static has no instance, which is
- * what module scope already means, so it is a declaration here.
  */
 
 import { favourStanceOf } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
@@ -90,11 +61,6 @@ import type { GameService } from './turn-engine.js';
 
 /**
  * A fraction of a lifespan, as somebody would say it out loud.
- *
- * The same bands `whatAChildCosts` renders its own note with, said here so
- * the player's sentence can carry the two people's NAMES - which this layer
- * holds and the pure engine function does not, which is why its note reads
- * "at 6fd9935f-ee10-4184-ad6b-2dc0d0f320d4's rung".
  */
 function shareOfALife(fraction: number): string {
     if (fraction <= 0) return 'none';
@@ -105,27 +71,6 @@ function shareOfALife(fraction: number): string {
 
 /**
  * What the room said, in sentences a player can act on.
- *
- * ── THIS EXISTS BECAUSE A NUMBER NOBODY PRINTS IS A NUMBER NOBODY HAS ────
- *
- * AGENTS.md's most-repeated defect, one size down: `whatTheBodyWants` returns
- * three things that are worth more than its scalar, and all three die at this
- * boundary unless somebody writes them out.
- *
- *   whoMovedIt   the answer turned on ONE person. Under three tiers a player's
- *                problem is not what the house thinks, it is WHICH ELDER - so
- *                they get the name, and a name the game printed is a name the
- *                game will accept back.
- *   moved        what this asker has already done to that person, UNCLAMPED.
- *                A reading is held to the axis and the sway is not, so a player
- *                who has put down more than the axis can hold is told that the
- *                next favour bought nothing. That is the difference between a
- *                house that says no and a house whose no can be understood.
- *   against      who was overruled. A costly disagreement that nobody is told
- *                about is a free one.
- *
- * Prose only, and none of it decides anything - every number here was settled
- * by the engine before this function was called.
  */
 function whatTheRoomSays(
     council: WhereTheBodyLands,
@@ -210,13 +155,6 @@ function whatTheRoomSays(
 
 /**
  * How a house's roll carries somebody, in `birth.ts`'s own three values.
- *
- * `'by blood'` where the roster IS a lineage - `intakeRouteOf` answers that and
- * no faction id is named here - because a lineage is entered by blood and a
- * match is one of the two ways somebody comes to be of one. `'by taking'` for
- * anybody a house has actually put on its roll, which is the case where the
- * house has a say in where they go. `null` for somebody who merely stands
- * there, and a house cannot dispose of them at all.
  */
 function rollFor(houseId: string | null, ranked: boolean): 'by blood' | 'by taking' | null {
     if (houseId === null) return null;
@@ -227,12 +165,6 @@ function rollFor(houseId: string | null, ranked: boolean): 'by blood' | 'by taki
 export const matchVerbs = {
     /**
      * How the played cultivator enters a negotiation about a match.
-     *
-     * `carriesTheLineAt` is null and that is honest rather than lazy. Nothing
-     * in this world writes an ability tier onto anybody - the dilution rule has
-     * had no writer since it was written - so the engine can answer what a
-     * match does to a line and the played game has no line to hand it. Stated
-     * here so the next person finds the gap rather than the null.
      */
     asAPartyToAMatch(this: GameService, cultivator: Cultivator): APartyToAMatch {
         const membership = this.repos.sects.getMembership(cultivator.id);
@@ -248,11 +180,6 @@ export const matchVerbs = {
 
     /**
      * What a house would take, and who else has a say in it.
-     *
-     * Two shapes of sentence reach here and the difference between them is
-     * whether anything was put on the table. Asking what it would take is a
-     * question and costs no day; putting something down is an attempt and runs
-     * through the same resolver every other attempt in this game runs through.
      */
     async proposeAMatch(
         this: GameService,
@@ -714,11 +641,6 @@ export const matchVerbs = {
 
     /**
      * How strongly somebody already stands toward anybody who is not the asker.
-     *
-     * Read off the world's own relationship standings, which are kept for a
-     * dozen other reasons, and compared by the caller against the world's own
-     * defining bar. Zero where there is no world or no row - honest rather than
-     * assumed, and it means the answer falls through to what they want.
      */
     strongestTieAwayFrom(this: GameService, personId: string, notTowardId: string): number {
         const world = this.atHand;
@@ -735,16 +657,6 @@ export const matchVerbs = {
 
     /**
      * Saying no, and walking out, which are one act at two moments.
-     *
-     * ONE IMPLEMENTATION FOR EVERYBODY. Nothing below reads which party is
-     * played. A player matched by their own house and running from it, and
-     * somebody running from a clan that will not marry out, reach the same two
-     * functions with the arguments in different positions.
-     *
-     * Which of the two this is depends on the ledger rather than on the
-     * sentence: an open `marriage_pact` held by this cultivator means they are
-     * in one, and leaving is what they are doing. With none, they are refusing
-     * one that was put to them.
      */
     declineAMatch(
         this: GameService,
@@ -909,21 +821,6 @@ export const matchVerbs = {
 
     /**
      * Having a child, and placing one.
-     *
-     * ── THE VERB IS THE DECISION AND NOT A NEW CLOCK ─────────────────────
-     *
-     * A decade spent raising somebody is a decade not spent cultivating, and
-     * the time skip already charges for time. Nothing here invents a second
-     * clock, adds a penalty, or writes a rung: `birth.ts`'s first contract rule
-     * is that an origin buys inputs and never rank, and a child of a match is
-     * subject to it like anybody else.
-     *
-     * ── AND `place` IS THE FAVOUR REACHING A PLAYER FOR THE FIRST TIME ───
-     *
-     * `spendAWord` has written the obligation a placer carries since it was
-     * written, the world uses it for NPCs, and no player has ever been able to
-     * spend one. It is the whole road for somebody with no house, and it is
-     * finite: a word spent here is a word not spent on their own advancement.
      */
     async haveAChild(
         this: GameService,
@@ -1091,10 +988,6 @@ export const matchVerbs = {
 
     /**
      * A word spent on a door, which is what a name is actually worth.
-     *
-     * `spendAWord` decides all of it and none of it is reimplemented here: the
-     * house's own stance, whether there is a bar to skip at all, the receipt
-     * the person asked now holds, and who is told.
      */
     placeAChild(
         this: GameService,

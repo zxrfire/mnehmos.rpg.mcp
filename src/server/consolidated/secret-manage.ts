@@ -1,16 +1,5 @@
 /**
  * Consolidated Secret Management Tool
- *
- * Replaces 9 individual secret tools with a single action-based tool:
- * - create_secret -> action: 'create'
- * - get_secret -> action: 'get'
- * - list_secrets -> action: 'list'
- * - update_secret -> action: 'update'
- * - delete_secret -> action: 'delete'
- * - reveal_secret -> action: 'reveal'
- * - check_reveal_conditions -> action: 'check_conditions'
- * - get_secrets_for_context -> action: 'get_context'
- * - check_for_leaks -> action: 'check_leaks'
  */
 
 import { z } from 'zod';

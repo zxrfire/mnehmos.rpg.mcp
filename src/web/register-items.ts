@@ -1,62 +1,5 @@
 /**
  * The Standing Register's section on everything the world can track as a thing.
- *
- * A VIEW, like the rest of the register: nothing here authors anything, every
- * row is read off a catalog or off the engine function that already decides the
- * question, and a content edit moves the page without anybody opening this file.
- *
- * IT LIVES IN ITS OWN MODULE for the reason `register-structural-repair-
- * medicine.ts` gives: `register.ts` is three hundred kilobytes, and a section
- * that is one build call and one render call is a section nobody has to go
- * inside that file to add.
- *
- * ── WHY THIS IS NOT THE OBJECTS TAB ──────────────────────────────────────
- *
- * The Objects tab is the artifact catalog and the two immortal objects: things
- * with a `power` rating, sorted on it, because for those the ordering IS the
- * argument. That is one `ObjectKind` out of ten. The engine's own notion of a
- * tracked thing is `ObjectRecord` in `engine/world/possessions.ts`, and it
- * covers manuals, medicine, ingredients, comprehension materials, lots of
- * currency, graves and ground - none of which has a power rating, none of which
- * belongs in a table sorted on one, and every one of which is a row somebody
- * can hold, lose, steal and be asked about two centuries later.
- *
- * So this is the other question: NOT how hard does it hit, but what kinds of
- * thing exist, how many of each are catalogued, and how is each one kept.
- *
- * ── THE ONE LINE EVERYTHING IS ORGANISED ON ──────────────────────────────
- *
- * `docs/world/things/items.md` states the single decision that governs every item in
- * the world, and it is not value:
- *
- *     COUNTED   a holder and a number. Nobody cares which one you took.
- *     TRACKED   a row with a holder, a provenance and a story about how it was
- *               got. The test is whether this specific object moving is an
- *               event somebody should be able to find out about two centuries
- *               later.
- *
- * `ObjectSignificance` is the switch, and `mundane` is documented in
- * `possessions.ts` as the marker for a thing that gets no provenance at all.
- *
- * The same document makes a second claim, and it is the one worth MEASURING
- * rather than printing: a thing is cash-priced exactly where it is fungible and
- * barter-only exactly where it is singular, so the two boundaries are the same
- * boundary, and if they ever drift apart one of them is wrong. Two catalogs
- * answer both questions independently - pills through `pillCashPrice` and
- * `pillStorageModel`, repair medicine through `repairCashPrice` and
- * `repairStorageModel` - so the sheet joins them and reports agreement or names
- * the exceptions. Nothing here asserts that they agree. See {@link buildItemsRegister}.
- *
- * ── WHAT IS DELIBERATELY EMPTY ───────────────────────────────────────────
- *
- * Four of the ten kinds have no authored catalog: they are minted by the world
- * as it runs rather than written down in advance, and one has nothing behind it
- * at all. That is reported as an absence rather than hidden, because an absence
- * nobody has written down gets mistaken for a design decision - which is
- * exactly the failure `AGENTS.md` records under "what the engine does not model
- * yet". The kind table is typed `Record<ObjectKind, ...>`, so a kind added to
- * the engine fails this file to compile rather than quietly vanishing from the
- * page.
  */
 
 import type { ObjectKind, ObjectSignificance } from '../engine/world/possessions.js';
@@ -98,10 +41,6 @@ import { isSettledOnUse, RECORD_CAVEAT } from '../engine/cultivation/grade-sprea
 
 /**
  * The tier vocabulary, read off the contract rather than retyped.
- *
- * IT IS A VOCABULARY AND NOT A TOTAL ORDER. The first bands ascend; the top two
- * - immortal and chaos - are the same height and differ in variance, so nothing
- * here may rank one over the other. Read the words, never the index.
  */
 const TIERS: readonly string[] = TechniqueGradeSchema.options;
 
@@ -110,12 +49,6 @@ export type KeptAs = 'counted' | 'tracked';
 
 /**
  * One kind of thing the world can hold, and what the world has of it.
- *
- * `catalogued` is the count of authored instances, which is NOT the count of
- * things in a running world: a seeded world mints hundreds of manual rows off
- * 129 authored arts, and every grave in it is minted by somebody dying. Both
- * figures matter and they are different questions, so the column says which
- * one it is answering.
  */
 export interface RegisterItemKind {
     kind: ObjectKind;
@@ -139,19 +72,6 @@ export interface RegisterItemKind {
 
 /**
  * Which catalog a row was read out of.
- *
- * Carried explicitly rather than guessed back off the id: several catalogs mint
- * rows whose ids look alike, and a table that has to infer its own membership
- * is a table that will one day render somebody else's rows. A row says where it
- * came from, and the tables filter on that.
- *
- * THERE IS NO GROUP FOR EXTINCTION, AND THAT IS THE POINT. An extinct herb is a
- * herb with a property, so it is a row in the herb table carrying that property
- * - not a listing of its own. Splitting a table on a field means a reader has
- * to know the field exists before they can look in the right place, and it puts
- * the thing they were comparing against on another part of the page. The same
- * rule keeps the two objects that came down in the pill table rather than
- * beside it.
  */
 export type ItemGroup =
     | 'pills'
@@ -161,13 +81,6 @@ export type ItemGroup =
 
 /**
  * One catalogued thing, in the columns that are common to every kind.
- *
- * Deliberately narrow. The per-catalog detail already has a home - pills carry
- * an effect and a toxicity, herbs a biome, artifacts an owner - and duplicating
- * all of it here would be a second version of five tables that can disagree
- * with the five. What this row carries is the answer to the four questions the
- * owner asked for and only those: what it is, how it is kept, where it comes
- * from, and the rung it is pitched at.
  */
 export interface RegisterItemRow {
     kind: ObjectKind;
@@ -177,13 +90,13 @@ export interface RegisterItemRow {
     /** Grade or tier on whatever ladder this kind uses. Null where it has none. */
     grade: string | null;
     /**
-     * The rung this thing is pitched at, and it does NOT mean the same thing
-     * across kinds - which is why `pitchNote` travels with it. On a pill it is
-     * the realm the medicine is made for; on a herb it is the rung below which
-     * the ground it grows on kills you; on a repair dose it is the last break it
-     * reaches; on a material it is the height understanding it carries somebody
-     * to; on an artifact it is a combat rating. Flattening those into one
-     * column without saying so would be the sheet inventing a comparison.
+     * The rung this thing is pitched at, and it does NOT mean the same thing across
+     * kinds - which is why `pitchNote` travels with it. On a pill it is the realm
+     * the medicine is made for; on a herb it is the rung below which the ground it
+     * grows on kills you; on a repair dose it is the last break it reaches; on a
+     * material it is the height understanding it carries somebody to; on an
+     * artifact it is a combat rating. Flattening those into one column without
+     * saying so would be the sheet inventing a comparison.
      */
     pitchedAt: number | null;
     pitchNote: string;
@@ -199,11 +112,6 @@ export interface RegisterItemRow {
 
 /**
  * Whether the counted/tracked line and the cash/barter line are the same line.
- *
- * Measured per catalog rather than asserted anywhere. `agree` counts the rows
- * where cash-priced and counted coincide (in either direction); `drift` names
- * every row where they do not, and an empty `drift` is the claim holding rather
- * than the claim being restated.
  */
 export interface ItemBoundary {
     catalog: string;
@@ -227,13 +135,7 @@ export interface RegisterItems {
     boundariesAgree: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE KIND TABLE
-//
-// Typed against the engine's own union, so a kind added to `ObjectKind` breaks
-// the build here instead of silently dropping off the page. That is the whole
-// reason the table is a Record rather than an array.
-// ─────────────────────────────────────────────────────────────────────────
 
 type KindFacts = Omit<RegisterItemKind, 'kind' | 'catalogued'> & { catalogued: () => number };
 
@@ -368,10 +270,6 @@ const GRADE_WORD = (g: string): string => g;
 
 /**
  * Every pill in the catalog, on the common columns.
- *
- * Both the storage model and the price come from the engine functions that
- * already decide them - never from a threshold restated here - which is what
- * makes the boundary measurement below worth anything.
  */
 function pillRows(): RegisterItemRow[] {
     return PILLS.map(p => {
@@ -401,15 +299,6 @@ function pillRows(): RegisterItemRow[] {
                 ? 'sent down; nobody here can refine one'
                 : 'refined from herbs, by a recipe somebody holds',
             // WHAT THE PILL PROMISES, AND WHETHER THAT IS A PROMISE.
-            //
-            // On a grade whose effect is settled when the thing is used rather
-            // than when it was made, the potency figure beside it is one draw
-            // out of an open set - so the row is marked, on the row, in the
-            // same cell as the figure it qualifies. It must stay per-row even
-            // where a whole band carries it: a reader scanning one line has to
-            // see that this line's number is not a guarantee, and the
-            // incompleteness is the content rather than a repetition to fold
-            // into a heading.
             detail: `${p.effect.replace(/_/g, ' ')} ${p.potency} ${POTENCY_UNITS[p.effect]}`
                 + (p.toxicity > 0 ? `, toxicity ${p.toxicity}` : ', no toxicity')
                 + (isSettledOnUse(p.grade) ? ' - settled on use, not on the label' : '')
@@ -419,14 +308,6 @@ function pillRows(): RegisterItemRow[] {
 
 /**
  * The four repair medicines, on the same columns as everything else.
- *
- * THIS IS THE ONLY TABLE THEY ARE IN. They were in two, on one tab, four rows
- * apiece with four columns in common - the almanac listing here, and a second
- * section of their own further down - which is two authorities on one set of
- * rows and the same defect the extinct materials had. What that section carried
- * and this did not was the worth in stones and the terms; both are on the row
- * now, so the merge lost nothing, and what a cell could not hold - where each
- * grade stops - is the note above the table.
  */
 function repairRows(): RegisterItemRow[] {
     const readings = new Map(readAllRepairMedicine().map(r => [r.id, r]));
@@ -452,13 +333,13 @@ function repairRows(): RegisterItemRow[] {
             provenance: m.madeBelowTheLid
                 ? `refined on this side, ${m.refinedPerCentury ?? 0} a century in the whole world`
                 : 'sent down; the count only ever falls',
-            // WORTH AND TERMS, EACH SAID ONCE PER ROW AND NEVER BOTH IN THE
-            // SAME CELL AS THE PRICE. `repairCashPrice` IS the weight in stones
-            // wherever a thing is sold privately, so on those rows the price
-            // cell already carries the worth and what is missing is the terms;
-            // on the rows money cannot buy, the price cell carries the terms
-            // and what is missing is the worth. Printing both columns
-            // unconditionally is how the merged table said one number twice.
+            // WORTH AND TERMS, EACH SAID ONCE PER ROW AND NEVER BOTH IN THE SAME
+            // CELL AS THE PRICE. `repairCashPrice` IS the weight in stones wherever
+            // a thing is sold privately, so on those rows the price cell already
+            // carries the worth and what is missing is the terms; on the rows money
+            // cannot buy, the price cell carries the terms and what is missing is
+            // the worth. Printing both columns unconditionally is how the merged
+            // table said one number twice.
             detail: `mends ${m.mends.join(', ').replace(/_/g, ' ')}`
                 + (price === null
                     ? (worth === null ? '' : ` · worth ${stones(worth)} stones`)
@@ -472,14 +353,6 @@ const EXTINCT_BY_HERB = new Map(LOST_MATERIALS.map(m => [m.herbId, m]));
 
 /**
  * Every herb, extinct ones included and marked rather than filed elsewhere.
- *
- * An extinction is a property of a material, so it is columns on the material's
- * own row: it stops having a price, it stops being a count and becomes jars
- * somebody can name, and where it comes from stops being a biome and becomes
- * whatever an older age left behind. What no cell can hold - the recipes it
- * closed, the arts it fed, the object kinds nobody can make any more, and where
- * the last units are sitting - travels with the row underneath the table, in
- * {@link extinctionRecord}.
  */
 function herbRows(): RegisterItemRow[] {
     return HERBS.map(h => {
@@ -521,21 +394,6 @@ function herbRows(): RegisterItemRow[] {
 
 /**
  * The two objects that came down, on the same columns as the pills.
- *
- * WHY THEY ARE IN THE PILL TABLE. `immortal` is a tier, and a tier is a column.
- * These sat in a listing of their own, which meant a reader comparing what an
- * object can do against what medicine can do had the two answers on different
- * parts of the page - and it is the arrangement `AGENTS.md` names outright as
- * the mistake to avoid: no parallel catalog for important things. The
- * Unbroken Pattern Pill is the worked example already on the sheet - an
- * immortal-grade dose sitting in the ordinary repair-medicine table with
- * `immortal` in its grade cell and nothing else marking it out.
- *
- * `pitchedAt` is null on purpose rather than for want of a number. Grade caps
- * the DESTINATION here, so each of these has three rungs and not one, and the
- * catalog states them in prose rather than as fields. A single figure in that
- * column would be the sheet inventing a comparison; the three are under the
- * table, where the catalog's own words are.
  */
 function immortalRows(): RegisterItemRow[] {
     return IMMORTAL_ITEMS.map(i => ({
@@ -563,10 +421,6 @@ function immortalRows(): RegisterItemRow[] {
 
 /**
  * The comprehension materials, by band rather than by instance.
- *
- * One row per band and the count beside it, because the instances are seeded
- * from the band by the engine and differ only in who ended up holding one. A
- * row per instance would be fifty rows saying the same thing seven ways.
  */
 function materialRows(): RegisterItemRow[] {
     return MATERIAL_BANDS.map(b => ({
@@ -588,12 +442,6 @@ function materialRows(): RegisterItemRow[] {
 
 /**
  * The two boundaries, joined and measured.
- *
- * Two catalogs answer "is there a cash price" and "is it a count or a row"
- * through separate engine functions, so the sheet can check the claim in
- * `items.md` rather than repeat it. Agreement in EITHER direction counts: a
- * priced thing that is counted agrees, an unpriced thing that is a row agrees,
- * and the two mixed cases are the drift.
  */
 function measureBoundaries(): ItemBoundary[] {
     const measure = <T>(
@@ -687,12 +535,6 @@ const keptChip = (kept: KeptAs): string =>
 
 /**
  * One table of item rows, in the columns every kind shares.
- *
- * FIXED LAYOUT WITH DECLARED WIDTHS, and it is not decoration. Auto layout on
- * a hundred rows of free text sizes every column to its longest cell: measured,
- * the first draft produced a table 4,058px wide holding three rows, and a pill
- * table 13,280px tall for forty-one. A fixed table fits the sheet's own column
- * and wraps, which is what the reader wanted from a listing.
  */
 function itemTable(caption: string, rows: readonly RegisterItemRow[]): string {
     if (!rows.length) return '';
@@ -742,10 +584,6 @@ ${hoistedLine(hoisted, rows.length)}`;
 
 /**
  * An id resolved to what people call it. Falls back to the id, visibly.
- *
- * A register that prints a slug at a reader has stopped being a document. The
- * extinction record used to print its site ids raw, which is the one column of
- * it a player could act on.
  */
 const techniqueNameOf = (id: string): string => TECHNIQUES.find(t => t.id === id)?.name ?? id;
 const recipeNameOf = (id: string): string => RECIPES.find(x => x.id === id)?.name ?? id;
@@ -753,12 +591,6 @@ const siteNameOf = (id: string): string => SITES.find(s => s.id === id)?.name ??
 
 /**
  * Where repair medicine stops, which is the one thing its rows cannot carry.
- *
- * Two different ceilings, and a reader gets them wrong from prose alone: the
- * last rung anything made on this side reaches, and the last rung anything at
- * all reaches. Read off the engine, never restated. This is the half of the
- * repair-medicine section that was worth keeping when its table was folded into
- * the listing above; the rest of it was four rows already on this page.
  */
 const repairCeilings = (): { madeBelowTheLid: number; anythingAtAll: number } => ({
     madeBelowTheLid: ordinaryGradeCeiling(),
@@ -767,12 +599,6 @@ const repairCeilings = (): { madeBelowTheLid: number; anythingAtAll: number } =>
 
 /**
  * What each grade of a thing that came down actually reaches.
- *
- * THIS IS THE HALF A CELL CANNOT CARRY. The row above says the tier, the count
- * and where it came from; this says what a lower one does that a higher one
- * does not, which is the whole reason anybody cares which grade a holder has.
- * It sits directly under the table its rows are in rather than under a heading
- * of its own, because it is detail belonging to two rows and not a listing.
  */
 function immortalGradeDetail(): string {
     return IMMORTAL_ITEMS.map(i => `<div class="objblk">
@@ -788,12 +614,6 @@ function immortalGradeDetail(): string {
 
 /**
  * What each extinction took with it, and where the last of the material is.
- *
- * THE ROW SAYS EXTINCT AND HOW MANY ARE LEFT. This says what went with it - an
- * extinction is not one loss, it is a list - and where the unfound units are
- * sitting, which is the difference between a wall and a search with an end.
- * None of it fits in a table cell and none of it may be dropped, so it travels
- * with the rows, immediately under the table they are in.
  */
 function extinctionRecord(): string {
     const total = LOST_MATERIALS.reduce((n, m) => n + m.remaining.inArchives + m.remaining.unfound, 0);

@@ -1,33 +1,5 @@
 /**
  * The low-realm loop: what a poor cultivator does between breakthroughs.
- *
- * `data/cultivation/mortal-world.ts` has held occupations, prices, settlements
- * and how mortals actually regard a Qi Condensation cultivator since it was
- * written, and none of it was reachable. That mattered more than it sounds. A
- * run starts with thirty spirit stones and one pill; a decent cave is sixty
- * stones a month. Without a way to earn, the only thing a poor cultivator can
- * do is sit in bad qi until something kills them, and the long mundane stretch
- * that makes an extraordinary event feel extraordinary never happens.
- *
- * ── `work` IS NOT A SECOND TIME SKIP ──────────────────────────────────────
- *
- * It is `cultivate` with the focus fixed and a wage on the end. The whole
- * simulation - satiety, injuries, encounters, aging, automatic breakthroughs,
- * the world moving alongside - is the same deterministic pass, and the wage is
- * arithmetic over days actually worked. There is no second engine here and
- * there must not be one.
- *
- * The focus is fixed at `idle` and is NOT a caller input. That is the trade the
- * whole action exists to make real: a month spent earning is a month not spent
- * cultivating, and a caller who could choose otherwise would simply choose the
- * better multiplier every time.
- *
- * ── NOTHING HERE ACCEPTS AN OUTCOME ───────────────────────────────────────
- *
- * The caller names a job and a span. Whether the span survives to its end is
- * the time skip's answer, and the wage is paid for the days the engine says
- * were worked - not the days that were asked for. A cultivator who died in
- * month four is not paid for month five.
  */
 
 import { z } from 'zod';
@@ -123,15 +95,6 @@ export const MarketSchema = z.object({
         .enum(['food', 'lodging', 'transport', 'medicine', 'land', 'service', 'tool', 'information',
             /**
              * The books, which were priced nowhere and sold nowhere.
-             *
-             * `items.md` says common manuals sell at a market stall next to the
-             * cooking pots and that a poor cultivator's first real decision is
-             * whether the money goes on a book or on food - and asking to buy
-             * one got the look people give somebody asking for a thing that is
-             * not sold, while naming one was free. A category rather than a
-             * `PRICES` row because the stock is derived from the technique
-             * catalog, so a manual added to the content files is on the board
-             * the day it lands.
              */
             'manual'])
         .optional()
@@ -191,14 +154,7 @@ export async function handleWork(
     const withheld = workWithheldFrom(asker, settlement);
     const exists = workExistingFor(cultivator.realmOrdinal, settlement);
 
-    // ── No job named: this is the query half, and it is the important one. ──
-    //
-    // What changed here: this used to hand back an empty array above the mortal
-    // ceiling and a sentence saying nobody was hiring anyone for anything,
-    // which read as unemployability. The board is now three separate facts -
-    // what is put to them, what exists here and is being withheld, and why -
-    // and above the ceiling the first of those is the commissions rather than
-    // nothing.
+    // No job named: this is the query half, and it is the important one.
     if (!args.occupationId) {
         return {
             standing: describeStanding(cultivator, standing),
@@ -269,12 +225,6 @@ export async function handleWork(
         !(occupation.settlements as readonly string[]).includes(standing.settlementKind)
     ) {
         // AND SAY WHAT IS HIRING, because otherwise this is a wall.
-        //
-        // Found by playing: a cultivator standing in a settlement that does not
-        // take innkeepers got this same sentence twenty-five times, no time
-        // passed, and nothing suggested a single thing they could do instead.
-        // The structured payload already carried `offeredIn` and a hint, and
-        // neither reaches a player - they see the sentence.
         const alsoHere = OCCUPATIONS
             .filter(o => o.id !== occupation.id)
             .filter(o => (o.settlements as readonly string[]).includes(standing.settlementKind!))
@@ -303,26 +253,7 @@ export async function handleWork(
         });
     }
 
-    // ── Board, advanced against the wage ─────────────────────────────────
-    //
-    // What this fixes, and it was the single largest defect in the mortal
-    // economy: "I work as an innkeeper for a year" ran FIFTY DAYS and paid
-    // fifteen stones. Not because anything refused - because a full belly is
-    // `ACTIONS_PER_FULL_SATIETY` days long, nobody was buying food, and the
-    // time skip correctly stopped the span when the cultivator starved. A year
-    // of innkeeping is 108 stones by the catalog and a player could reach
-    // one seventh of it, which is why a poor cultivator stayed poor for ever.
-    //
-    // A worker eats out of the wage. That is one line of arithmetic applied to
-    // every occupation with no branch anywhere, priced through the same
-    // `RATION_COST_STONES` the cauldron and the cave mouth use, and it costs
-    // the worker real money - a year's board is 16 of those 108 stones. What
-    // it is NOT is free food: the advance is settled against earnings below,
-    // and somebody who dies in month four has been fed on credit nobody
-    // collects, which is the same answer the wage already gives.
-    //
-    // `handleCultivate` refuses rations the purse cannot cover, so the advance
-    // is paid BEFORE the span rather than netted after it.
+    // Board, advanced against the wage
     const rationsNeeded = Math.max(0, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
     const requested = args.rations ?? 0;
     const rations = Math.max(requested, rationsNeeded);
@@ -349,15 +280,9 @@ export async function handleWork(
     const simulatedDays = Number(spanResult.simulatedDays ?? 0);
     const died = spanResult.died === true;
 
-    // Paid for the days the engine says were worked, never for the days asked
-    // for. Cash is the mortal currency; stones are the cultivator's, and the
-    // conversion is the one number the whole mortal economy rests on.
-    //
-    // The rate is the rate, and how much of it gets earned is the physical band
-    // - somebody ten rungs past what the work is pitched at moves seven times
-    // the crates in the same month and is paid for the crates. It is the
-    // ordinary `yieldMultiplier`, applied once, and it is the reason a season of
-    // labour is a different proposition at Foundation than at Qi Condensation.
+    // Paid for the days the engine says were worked, never for the days asked for.
+    // Cash is the mortal currency; stones are the cultivator's, and the conversion
+    // is the one number the whole mortal economy rests on.
     const monthsWorked = simulatedDays / DAYS_PER_MONTH;
     const cashEarned = Math.floor(occupation.cashPerMonth * monthsWorked * jobRegard.yieldMultiplier);
     const stonesEarned = Math.floor(cashToStones(cashEarned));
@@ -410,19 +335,6 @@ export async function handleWork(
         hp: after.hp,
         maxHp: after.maxHp,
         // AND WHAT THE SPAN DID TO THEM.
-        //
-        // A work span runs the ordinary event layer, so a labourer picks up
-        // wounds across years the same way anybody else does - and this path
-        // reported wages, food and health while saying nothing whatsoever
-        // about them. Found by playing: an innkeeper worked three spans across
-        // four years, was told the pay each time, and died of
-        // `untreated_injuries` without one sentence about a wound.
-        //
-        // That death no longer exists - a torn channel does not kill anybody -
-        // and the reporting matters just as much, for the reason underneath the
-        // original one: nothing closes these on their own, they take a growing
-        // share of the cultivation rate for as long as they are carried, and a
-        // player who is never told cannot decide to have them treated.
         untreatedInjuries: untreatedInjuryCount(after.injuries),
         crippledInjuryThreshold: CRIPPLING_UNTREATED_INJURIES,
         alive: after.alive,
@@ -531,13 +443,6 @@ function describeStanding(cultivator: Cultivator, standing: Standing): Record<st
         place: standing.placeName ?? cultivator.location,
         // THE PROVINCE, BESIDE THE PLACE, BECAUSE HALF THIS BODY IS ABOUT THE
         // PROVINCE AND NOT ABOUT THE PLACE.
-        //
-        // `groundHereStillGives` below is `canAdvanceHere(regionId, ...)` - a
-        // fact about the region's `localCeilingOrdinal` - and the renderer had
-        // only `place` to say it with, so it said neither and wrote "the ground
-        // here". Both halves of the sentence are already resolved in `standing`;
-        // one of them just was not being handed over. See the ceiling branch in
-        // `web/tool-result-prose.ts`.
         region: standing.regionName,
         settlement: settlement
             ? {
@@ -556,27 +461,10 @@ function describeStanding(cultivator: Cultivator, standing: Standing): Record<st
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // FORAGE
-//
-// The verb that made the defect visible. `I gather what herbs I can find` used
-// to be a fixed seven days for a single stalk at every one of the forty-five
-// rungs; the only thing that moved was which stalk. It is composed exactly the
-// way `work` is - one span through the ordinary time skip, and the draw priced
-// off the ordinary bands - so there is no second engine here either.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * The world's row for the ground somebody is standing on, and the day it is.
- *
- * Null where there is no world - the harness runs with it off by design, and a
- * run without a world layer still forages. The stock then does not bind, which
- * is the same shape every other world-backed guard here has and is stated
- * rather than silent: with no world there is nothing that could say a district
- * has been worked out.
- *
- * The world's own clock, never the run's. Worlds outlive runs, so a stock that
- * ticked on `elapsedDays` would grow back to full every time somebody died.
  */
 async function theGroundUnder(
     run: Run,
@@ -596,11 +484,6 @@ async function theGroundUnder(
 /**
  * What everything on sale here costs today, over and above what the province
  * charges for it.
- *
- * Read off the same `theGroundUnder` the forage path already uses, so a price
- * and a yield are answered against one place rather than two. One where there
- * is no world, which is the honest answer rather than a guess: a run the world
- * layer is not part of has no ground for anything to be true of.
  */
 async function whatTheGroundHereAddsToAPrice(
     run: Run,
@@ -672,17 +555,7 @@ export async function handleForage(
     const fraction = drawn.days > 0 ? Math.min(1, simulatedDays / drawn.days) : 0;
     const wanted = died ? 0 : Math.floor(drawn.quantity * fraction);
 
-    // ── AND THE GROUND HAS A NUMBER ─────────────────────────────────────
-    //
-    // What the regard says a person of this rung would find is a statement
-    // about the SEARCHER. What is actually there is a statement about the
-    // PLACE, and until this it was infinite: forage, and material appeared,
-    // forever, in a province that could not be picked clean.
-    //
-    // The ground is the ceiling, never the floor. It can only ever reduce what
-    // the draw above already decided, and when it does the refusal is said out
-    // loud - a place that has been worked out has to say so rather than
-    // quietly hand back less.
+    // AND THE GROUND HAS A NUMBER
     const ground = await theGroundUnder(run, cultivator);
     const draw = ground
         ? drawFromTheGround(ground.place, {
@@ -764,28 +637,7 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const standing = standingOf(cultivator);
     const region = requireRegion(standing.regionId);
 
-    // ── AND WHAT IS TRUE OF THIS GROUND TODAY ────────────────────────────
-    //
-    // The province's multiplier says what a place is LIKE and never moves.
-    // `priceMultiplierInArea` says what is TRUE of it now - a famine, a
-    // district shut, a war on the seat - and it had no caller anywhere in
-    // `src/`. Measured on the seat of a live war carrying `priceMultiplier: 2`,
-    // this board quoted a bowl of millet at 1 cash, which is what it cost in
-    // peacetime.
-    //
-    // One term for the whole board, exactly as `boardRegard` is one regard for
-    // the whole board: a war does not raise the price of millet and leave the
-    // salt alone. It multiplies in the line the board already composes its
-    // other two terms on - the province through `localPrice`, then how this
-    // counter is meeting this person - so there is still exactly one place a
-    // line on this board is priced.
-    //
-    // The tidier home for it is a third argument to `localPrice`, beside the
-    // province's own multiplier, so that every caller in the game picks it up
-    // by passing one value instead of writing this multiplication out again.
-    // That is a change to `regions.ts`, which another agent is renaming inside
-    // as this lands. The hunk is written up and handed over rather than
-    // committed into somebody's half-finished rename.
+    // AND WHAT IS TRUE OF THIS GROUND TODAY
     const groundTerm = await whatTheGroundHereAddsToAPrice(run, cultivator);
 
     // How this market meets this person, resolved once. A stall, an inn floor
@@ -815,13 +667,7 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         })
         .sort((a, b) => a.cash - b.cash);
 
-    // ── THE STALL NEXT TO THE COOKING POTS ───────────────────────────────
-    //
-    // Priced through the same two multipliers everything else on the board
-    // goes through - the region's, and how this counter is meeting this
-    // person - so a book and a bowl of millet cannot end up on two different
-    // scales. What the copy costs before those is `stallPriceCash`, which
-    // derives it from the copyist's months rather than picking a figure.
+    // THE STALL NEXT TO THE COOKING POTS
     const manuals = manualsAStallCarries().map(m => {
         const list = localPrice(standing.regionId, m.cash);
         const cash = Math.max(1, Math.round(list * groundTerm * boardRegard.priceMultiplier));
@@ -834,12 +680,6 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
             cash,
             listCash: list,
             // THE BOARD QUOTES WHAT THE COUNTER TAKES.
-            //
-            // Every other line rounds to two places, which is right for a
-            // quote nobody can act on from here. A book can be bought in the
-            // next sentence, and `buyAManual` charges the whole stone -
-            // reading 7.02 and paying 8 is a shop window with a different
-            // price behind it.
             spiritStones: Math.max(1, Math.ceil(cashToStones(cash))),
             affordable: cultivator.spiritStones >= Math.max(1, Math.ceil(cashToStones(cash))),
             // What it is FOR, said on the board rather than after the purchase.
@@ -870,14 +710,6 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         // give somebody standing at this rank.
         groundHereStillGives: canAdvanceHere(standing.regionId, cultivator.realmOrdinal),
         // And WHERE it stops, said as a rung rather than left to be inferred.
-        //
-        // The boolean above is `ordinal < localCeilingOrdinal`, so a renderer
-        // holding only the boolean can say no more than "not past where you are
-        // standing" - which is exact for somebody sitting on the ceiling and an
-        // understatement for anybody above it. The rung is the fact the boolean
-        // is derived from and is the same figure `why-progress-has-stopped.ts`
-        // prints for the identical ruling, off the same `localCeilingOrdinal`,
-        // so the two reads cannot drift into telling a player different numbers.
         groundCarriesNobodyPast: rankName(region.localCeilingOrdinal),
         settlements: SETTLEMENTS.map(s => ({
             kind: s.kind,

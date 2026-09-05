@@ -1,62 +1,5 @@
 /**
  * What this cultivator has ever heard of.
- *
- * docs/world/houses/discovery.md states the rule this module exists to make
- * mechanical:
- *
- *   > Never reference an entity the player has no knowledge record for.
- *
- * A Qi Condensation cultivator in a village does not know the ancient sects
- * exist. Not "has not visited them" - does not know the names. That is the
- * accurate state of almost everyone, and it is the single easiest thing for a
- * narrating model to break, because the name is sitting in its context and the
- * sentence wants one. One careless clause destroys a revelation the player was
- * supposed to earn over a hundred turns.
- *
- * Instructing the model not to do it is necessary and not sufficient. The
- * enforcement that actually holds is upstream: DO NOT SEND IT THE ANSWER KEY.
- * Everything in this module exists so that the sect catalog, the roster and the
- * gazetteer are filtered down to what this holder has a record for before any
- * of it reaches a prompt.
- *
- * ── Where the rows live ───────────────────────────────────────────────────
- * `knowledge_records`, defined in `src/storage/migrations.social.ts`. No new
- * table: awareness of an entity's existence is a knowledge record like any
- * other, filed under the claim key `exists:<kind>:<id>`, with a stance and a
- * source like anything else a person holds. Rows are built by the engine's own
- * `recordKnowledge` so the shapes stay canonical, then written here.
- *
- * There is no repository for these tables yet, so this module is a narrow
- * reader and writer over the ones this layer needs. When the storage layer
- * grows a proper knowledge repository, this should collapse into it.
- *
- * ── The ladder of knowing ─────────────────────────────────────────────────
- * discovery.md specifies six stages - unaware, whisper, named, placed,
- * encountered, known - and `src/engine/social/discovery.ts` holds the whole of
- * that reasoning as pure functions. This module's part is storage: a stage
- * rides on the record's own `tags` as `stage:<stage>`, and a row written
- * before the ladder existed still has a position, derived from the two things
- * every such row already carries - what the holder holds, and how they came by
- * it. So there is no migration, no backfill and no second table.
- *
- * Two predicates come out of it and they are not the same question:
- *
- *   `isAwareOf`   has a name been said near them. Licenses the name.
- *   `canPointAt`  do they know where, or who, or when. Licenses setting out.
- *
- * A cultivator who heard "Kettle" through a wall passes the first and fails
- * the second, which is the entire design: "Seeing is a knowledge state, not an
- * access state."
- *
- * ── The one thing that overrides both, for one line ───────────────────────
- * An ADMIN line reaches past the played cultivator's own ignorance, because an
- * operator's job is to stand the world somewhere ordinary play would take four
- * hundred years to reach and being subject to one character's ignorance is what
- * stops them. Both predicates ask the table first and answer honestly; the
- * override is applied to the ANSWER, is scoped to one holder for the duration of
- * one call, and writes nothing - so nothing here has stopped gating and the
- * holder's own map of the world is exactly what it was. See
- * [`operator-knowledge-reach.ts`](operator-knowledge-reach.ts).
  */
 
 import type Database from 'better-sqlite3';
@@ -84,37 +27,11 @@ import { theOperatorReachesPast } from './operator-knowledge-reach.js';
 
 /**
  * Entity kinds whose existence is gated.
- *
- * People, factions and places, which is what the rule names. The item catalogs
- * - techniques, pills, herbs, formulas - are deliberately NOT gated: they are
- * craft reference rather than world revelation, and the actions that touch
- * them already gate on real possession (`train_technique` needs the art
- * learned, `refine` needs the ingredients in the pouch). Gating them a second
- * time here would buy nothing and cost the alchemy surface entirely.
- *
- * ── Four is the whole list, and `event` is the catch-all ──────────────────
- * discovery.md names exactly four things the rule covers: "an ancient sect's
- * name, a famous cultivator, a distant city, a historical event". These are
- * GATES rather than a taxonomy, so everything `lore.ts` draws from files under
- * one of them - the ages, the dead civilisations, the readings of the Lid, the
- * accounts of where cultivation came from and the objects that came down from
- * above all gate as `event`, because they are things that happened or were
- * made and they gate identically.
- *
- * Do not add a fifth. A player who has heard one of these names cannot tell
- * which category it belongs to, which is the point rather than a compromise -
- * whether the Hollow Court is a sect, a court, a person or a joke is not
- * conveyed by having heard of it - and a new kind would have to be taught to
- * every reader of this table, several of which are outside this package.
  */
 export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event';
 
 /**
  * Stances that count as having heard of something.
- *
- * `ignorant` is deliberately excluded and is not the same as having no row:
- * "she has been told repeatedly and does not accept it" is a real state, and it
- * still does not license naming the thing in narration.
  */
 export const AWARE_STANCES: readonly Stance[] = ['knows', 'believes', 'suspects'];
 
@@ -126,24 +43,6 @@ export function placeKey(name: string): string {
 /**
  * `placeKey` with a leading article dropped. FOR COMPARISON ONLY - never for a
  * stored key, or every knowledge record ever written stops resolving.
- *
- * This exists because the two halves of place resolution disagreed about the
- * article and neither half was wrong on its own. The parser strips a leading
- * "the" out of what the player typed; `placeKey` keeps it, because it is built
- * from the location's FULL name. So a knowledge record written as
- * `exists:place:the-sealed-compound-at-blackbank` could never be found by
- * anybody who typed the name of the place it was written for.
- *
- * Counted in a live world: 26 of 33 locations begin with "the", and they are
- * all the interesting ones - every ruin, every scar, and all four sites at qi
- * density 1.0. The seven that resolved were the settlements, the best of them
- * at 0.3475, which is exactly the density of the default birthplace. The whole
- * of the world worth travelling to was unreachable by name, and the failure was
- * silent: the refusal quoted the article-stripped string back and looked like a
- * cultivator who had simply never heard of the place.
- *
- * Applied to BOTH sides of every comparison, which is the part that matters.
- * Stripping one side is what produced the bug.
  */
 export function loosePlaceKey(name: string): string {
     // `^the-` rather than `^the`, so "Theodore's Rest" is not quietly renamed.
@@ -152,26 +51,6 @@ export function loosePlaceKey(name: string): string {
 
 /**
  * The claim key for "this thing exists".
- *
- * One convention, so a query for "has this holder heard of the Lantern Hall"
- * is a single indexed lookup on `(holder_id, claim_key)` rather than a scan.
- *
- * ── Two of the four kinds are not simply their own id ─────────────────────
- * A PLACE has no row to point at, so it is keyed off its name by `placeKey`.
- *
- * And a PERSON out of the content catalogs has two ids - the catalog's, which
- * is what `lore.ts` and the hearsay layer speak of them by, and the world
- * row's, which is what every presence read asks about - so both are folded
- * onto the one the catalog holds.
- * [`a-catalog-person-and-their-world-row.ts`](../engine/world/a-catalog-person-and-their-world-row.ts)
- * carries that argument in full, including why the fold is a catalog lookup
- * and never a prefix strip.
- *
- * The fold is applied HERE rather than at the callers deliberately. This table
- * has a dozen readers and half a dozen writers across three packages, they
- * disagreed about which of a person's two ids to use, and the two call sites
- * that had noticed were each patching it locally. One place to be right is the
- * whole point of the module.
  */
 export function existenceClaimKey(kind: KnownEntityKind, id: string): string {
     if (kind === 'place') return `exists:place:${placeKey(id)}`;
@@ -202,11 +81,6 @@ export interface AwarenessInput {
     statement?: string;
     /**
      * How far up the ladder this acquisition carries them.
-     *
-     * Optional, and clamped by what the source could actually have delivered -
-     * a fragment through a wall is a `whisper` however it is labelled. Omit it
-     * and the stage is derived from the stance and the source, which is what
-     * keeps every existing call site correct without being touched.
      */
     stage?: KnowingStage;
 }
@@ -216,15 +90,7 @@ export interface AwarenessRow {
     id: string;
     name: string;
     /**
-     * What the holder takes to be so, in the words the record was written
-     * with.
-     *
-     * Carried rather than dropped, because for most rows in this table it is
-     * the whole of what somebody has. A name that was merely overheard carries
-     * the engine's own "a name that got said. What it is remains unknown", and
-     * that thin sentence is the accurate and complete account of what they
-     * hold. Any reader that composed a phrase of its own here would be
-     * inventing a memory on the holder's behalf.
+     * What the holder takes to be so, in the words the record was written with.
      */
     statement: string;
     stance: Stance;
@@ -233,12 +99,6 @@ export interface AwarenessRow {
     acquiredOnDay: number;
     /**
      * Where this holder stands on the six-stage ladder for this entity.
-     *
-     * The HIGHEST live stage they hold, not the stage of one row: somebody who
-     * overheard a name through a wall and later had it placed for them by a
-     * carter holds two records and stands where the carter left them. The
-     * lower row is kept - it is a different fact with a different provenance -
-     * and `provenanceOf` is how to get at it.
      */
     stage: KnowingStage;
 }
@@ -256,10 +116,6 @@ interface RawRow {
 
 /**
  * Reader and writer for existence awareness.
- *
- * Every method takes a holder id explicitly. There is deliberately no ambient
- * "current player", because the whole value of this table is that two holders
- * standing in the same room hold different things.
  */
 export class KnowledgeGate {
     private readonly insertStmt: Database.Statement;
@@ -311,14 +167,6 @@ export class KnowledgeGate {
 
     /**
      * Has this holder ever heard of it? The predicate the whole rule rests on.
-     *
-     * ── AND THE ONE THING THAT OVERRIDES IT ──────────────────────────────
-     *
-     * An operator line reaches past this holder's ignorance, for that line and
-     * no other. The table is asked first and answers honestly; the override is
-     * applied to the answer rather than instead of the question, so nothing here
-     * stops gating and the lift is recorded where the surface can print it. See
-     * `operator-knowledge-reach.ts` for why it is a scope and not a flag.
      */
     isAwareOf(holderId: string, kind: KnownEntityKind, id: string): boolean {
         if (this.awareStmt.get(holderId, existenceClaimKey(kind, id)) !== undefined) return true;
@@ -327,10 +175,6 @@ export class KnowledgeGate {
 
     /**
      * Where this holder stands on the ladder for one entity.
-     *
-     * `unaware` when there is no row, which is the same answer a holder who has
-     * been told repeatedly and refuses to accept it gets - because neither of
-     * them can name the thing, and this predicate is about naming.
      */
     stageOf(holderId: string, kind: KnownEntityKind, id: string): KnowingStage {
         let stage: KnowingStage = 'unaware';
@@ -342,16 +186,6 @@ export class KnowledgeGate {
 
     /**
      * Could this holder point at it, ask after it, or set out for it?
-     *
-     * `placed` and above. discovery.md's whole distinction between hearing a
-     * name and being able to do anything with one, and the predicate a travel
-     * verb should be asking instead of `isAwareOf`: a word overheard through a
-     * wall is not a destination.
-     *
-     * It is emphatically NOT a question about whether the holder will be let
-     * in, will survive the ground, or will be admitted at the gate. "Seeing is
-     * a knowledge state, not an access state" - the location layer owns the
-     * other half and is asked separately.
      */
     canPointAt(holderId: string, kind: KnownEntityKind, id: string): boolean {
         if (stageCanPointAt(this.stageOf(holderId, kind, id))) return true;
@@ -376,14 +210,6 @@ export class KnowledgeGate {
 
     /**
      * Everything this holder has heard of, optionally of one kind.
-     *
-     * This is what a prompt builder is allowed to draw on. It is not the world;
-     * it is one person's map of it, and the difference is the game.
-     *
-     * One entry per entity, carrying the highest stage held. Several rows for
-     * one name is the normal case now that a name can be acquired twice - and a
-     * whitelist that listed the same town three times would spend three lines
-     * of a prompt saying one thing.
      */
     awareness(holderId: string, kind?: KnownEntityKind): AwarenessRow[] {
         const rows = this.listStmt.all(holderId) as RawRow[];
@@ -413,12 +239,6 @@ export class KnowledgeGate {
 
     /**
      * Record that a name has surfaced, and where it came from.
-     *
-     * `INSERT OR IGNORE` on the engine's stable id makes this idempotent for an
-     * identical acquisition, so re-walking into the same village on the same day
-     * does not fill the table. A genuinely new acquisition - a different day, a
-     * different source, a firmer stance - is a new row, which is correct: how
-     * somebody came to hold something twice is worth keeping.
      */
     learn(input: AwarenessInput): KnowledgeRecord {
         const stage = stageWanted(input);
@@ -463,18 +283,6 @@ export class KnowledgeGate {
 
     /**
      * Record awareness only when it would actually move the holder.
-     *
-     * Returns true when something genuinely new was learned, so a caller can
-     * tell the player that a name has just entered their world - which is a
-     * moment, and should read as one.
-     *
-     * "New" now means new ON THE LADDER, not merely absent from the table. A
-     * cultivator who overheard a name through a wall and then walks into the
-     * place has learned something, and before the ladder existed that second
-     * acquisition was silently dropped because a row already existed - which
-     * meant a whisper was a permanent ceiling and the only way up was to have
-     * never heard of it. Re-hearing the same thing at the same stage still
-     * writes nothing and still returns false.
      */
     learnIfNew(input: AwarenessInput): boolean {
         const held = this.stageOf(input.holderId, input.kind, input.id);
@@ -490,48 +298,6 @@ export class KnowledgeGate {
 
     /**
      * The world a new cultivator starts with.
-     *
-     * discovery.md: "Their world is the county, the local sect that takes
-     * disciples, the market town, and whatever their grandmother believed."
-     *
-     * The COUNTY, and that word is doing the work. It used to be read as "the
-     * village", which produced a cultivator who could name exactly one place
-     * and therefore could not go anywhere: travel is gated on being able to
-     * name a destination, nothing in the early game granted a place name, and a
-     * run was confined for its whole life to whatever ground it was born on.
-     * Measured across seven playthroughs, every one of them held exactly one
-     * place record and died at the bottom of the ladder on halved cultivation.
-     *
-     * That was never a design decision. Local geography is the most ordinary
-     * knowledge there is: a child in a temple town can name the market town two
-     * days off and the province seat, because everybody around them could
-     * before that child could walk. So:
-     *
-     *   home            `known`. They live there.
-     *   the county      `placed`. Every settlement and site in it. They can
-     *                   point at these and set out for them, which is not the
-     *                   same as being able to survive them.
-     *   the province    `placed`. The name of the region they are inside.
-     *   over the border `named`. There is another province and it has a name.
-     *                   Nobody local can tell them anything useful about it and
-     *                   several of them are wrong.
-     *   the local sect  `named`. What everyone in the county says. Nobody has
-     *                   checked.
-     *
-     * Everything past that is unheard of and has to come from a source the
-     * player can point at. That is not a limitation to work around. It is the
-     * content, and none of the above touches it: the county is four names in a
-     * world of hundreds, and being able to walk to the next town is where the
-     * game starts rather than what it withholds.
-     *
-     * ── Safe to call after a birth has already seeded rows ────────────────
-     * Every write goes through `learnIfNew`, so this is a FLOOR rather than a
-     * replacement. A birth that already granted the province at a firmer stance
-     * keeps it; a birth that granted nothing gets the county. Calling it twice
-     * writes nothing the second time. That matters because what a birth confers
-     * is an advantage - a better address, a heavier purse, more names said at
-     * home - and being able to point at the next town is not an advantage. It
-     * is what everybody has.
      */
     seedStartingAwareness(
         holderId: string,
@@ -630,12 +396,6 @@ export class KnowledgeGate {
 
 /**
  * The stage an acquisition claims, with the source ceiling applied.
- *
- * A caller may name a stage, or may name a stance and let it be derived. Both
- * routes go through `stageFromSource`, because "each step needs a source, and
- * the sources are scarce" is a rule about the world rather than a rule about
- * how carefully a call site was written. Labelling an overheard fragment
- * `known` does not make it one.
  */
 function stageWanted(input: AwarenessInput): KnowingStage {
     if (input.stage) return stageFromSource(input.sourceKind, input.stage);

@@ -1,24 +1,5 @@
 /**
  * The game service - phase 2, and the only thing in this package that writes.
- *
- * Read the method bodies with one question in mind: *where does a value from a
- * model response become a row?* The answer is nowhere. A narrator can reach
- * this class in exactly one way - `Narrator.plan()` returns a member of a closed
- * enum plus a bounded `days` and an 80-character place name - and every number
- * that lands in SQLite after that comes out of `simulateTimeSkip`,
- * `attemptBreakthrough` or `applyDeltas`.
- *
- * `Narrator.narrate()` is called *after* the write, with the result of the
- * write, and its return value goes to exactly one place: the play log, as prose.
- * There is no branch anywhere below that inspects it.
- *
- * The service takes its `Database` by injection, so tests drive a real engine
- * over an in-memory database with no HTTP and no network. It then installs that
- * handle as the process database and builds its repositories through
- * `ensureCultivationDb`, which is what keeps this front door and the MCP tool
- * front door writing the same rows the same way - a second implementation of
- * "what a crossing took" would eventually disagree with the first, and the
- * disagreement would be a corrupted save rather than a failing test.
  */
 
 import { randomUUID } from 'crypto';
@@ -27,12 +8,11 @@ import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
 import {
     SATIETY_MAX,
-    // The settling clock, which `stagnation_aging` kills on. Read for the
-    // ceiling report so a player is told about it before it is spent, rather
-    // than in the death line.
-    // `STARTING_SPIRIT_STONES` is deliberately gone from here: what a run opens
-    // with is now a property of the birth rather than a constant, and nine
-    // births in ten still draw about that figure. The constant stays exported
+    // The settling clock, which `stagnation_aging` kills on. Read for the ceiling
+    // report so a player is told about it before it is spent, rather than in the
+    // death line. `STARTING_SPIRIT_STONES` is deliberately gone from here: what a
+    // run opens with is now a property of the birth rather than a constant, and
+    // nine births in ten still draw about that figure. The constant stays exported
     // from the schema as the thin-county tier's own number.
     type AmbientQi,
     type Cultivator,
@@ -426,14 +406,10 @@ import {
     type ObligationRecord
 } from '../engine/social/grudges.js';
 import { obligationFromRow, type ObligationRow } from '../storage/repos/obligation.repo.js';
-// What is WRONG with a place, as against what is still in the ground under it.
-// The area-status layer had no importer anywhere in `src/web`, so a famine, a
-// shut pass or a worked-out district changed prices and danger and said nothing.
-// ── THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING ───────────────
-//
-// Every module below was complete, tested and had no caller in `src/`. Each of
-// them records its own gap in its own file - `FOLD_TRAVEL_ENGINE_GAP` names
-// this handler by name - and the verbs below are what read them.
+// What is WRONG with a place, as against what is still in the ground under it. The
+// area-status layer had no importer anywhere in `src/web`, so a famine, a shut pass
+// or a worked-out district changed prices and danger and said nothing. THE THREE
+// WAYS OF COVERING GROUND THAT ARE NOT WALKING
 import {
     adjustCountedHolding,
     conveyanceSoldAs,
@@ -460,14 +436,13 @@ import {
 // keeps apart from the perceptual one. Read in `investigate`.
 import type { AttemptResult } from '../engine/social-leverage/index.js';
 // The third discovery channel: you make somebody tell you, and standing decides
-// whether that works. An ask with a different subject - there is no resolver in
-// it, and `resolveAttempt` below is the only thing that settles one.
-// The perceptual half of discovery, beside the social one above it. See that
-// module's banner for the line between them: it gives the world and never
-// gives people.
-// The fourth, and the one a player asks first: what kinds of thing are live at
-// all, standing here, in this state. Prompts rather than a menu - see the
-// banner in the module for why that distinction is the whole design.
+// whether that works. An ask with a different subject - there is no resolver in it,
+// and `resolveAttempt` below is the only thing that settles one. The perceptual
+// half of discovery, beside the social one above it. See that module's banner for
+// the line between them: it gives the world and never gives people. The fourth, and
+// the one a player asks first: what kinds of thing are live at all, standing here,
+// in this state. Prompts rather than a menu - see the banner in the module for why
+// that distinction is the whole design.
 import {
     whatIsWorthDoingStandingHere,
     theMostPressing,
@@ -534,14 +509,13 @@ import type { WorldState } from '../engine/world/world-state.js';
 // the wound is the resolver's and is untouched, and what an agreement changes
 // is who holds an account about it afterwards.
 import {
-    // Who this particular person is about parting with things, which the
-    // resolver would derive on its own. Read here so the PROSE can say it: a
-    // term in an odds breakdown is legible to somebody reading the mechanical
-    // channel and invisible to somebody reading the sentence, and the ruling
-    // this serves is that a generous elder should READ as generous.
-    // What the person on the other end does about having been coerced, lied to
-    // or leaned on. Decided after the attempt and reading only what the
-    // resolver decided; see `whatTheWrongedPartyDid`.
+    // Who this particular person is about parting with things, which the resolver
+    // would derive on its own. Read here so the PROSE can say it: a term in an odds
+    // breakdown is legible to somebody reading the mechanical channel and invisible
+    // to somebody reading the sentence, and the ruling this serves is that a
+    // generous elder should READ as generous. What the person on the other end does
+    // about having been coerced, lied to or leaned on. Decided after the attempt
+    // and reading only what the resolver decided; see `whatTheWrongedPartyDid`.
     type Wrong
 } from '../engine/social-leverage/index.js';
 // The board's own exchange rate, in closed form. See the function's comment.
@@ -567,12 +541,11 @@ import {
     whatTheyWantThatYouCouldReach
 } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
 // A match, a refusal and a child. Every function it exports is a join onto
-// something that already existed and had no caller; see the directory's README.
-// The world's own bar for a tie that decides what somebody does. Read, never
-// restated - see `whetherTheyGoAlongWithIt`.
-// The favour that skips an admission bar, and the catalog that says which
-// houses will take one. Both have been complete since they were written and
-// neither has ever been reachable by the person playing.
+// something that already existed and had no caller; see the directory's README. The
+// world's own bar for a tie that decides what somebody does. Read, never restated -
+// see `whetherTheyGoAlongWithIt`. The favour that skips an admission bar, and the
+// catalog that says which houses will take one. Both have been complete since they
+// were written and neither has ever been reachable by the person playing.
 import type {
     AWantYouCouldReach
 } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
@@ -737,14 +710,7 @@ import {
 import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
 
-// ── TURNING A RESULT INTO SENTENCES MOVED OUT ────────────────────────────
-//
-// `summariseToolBody` and the call-record builders around it are in
-// `tool-result-prose.ts` now. A result gaining a shape that needs a sentence
-// is its own reason to change, and the branch table is worth being able to
-// read in one place - a verb missing from it does not fail, it falls through
-// to "It is done." and says nothing. `MAX_LOGGED_EVENTS` went with them
-// because both halves of the event-log cap have to be the same number.
+// TURNING A RESULT INTO SENTENCES MOVED OUT
 import {
     addHearing,
     MAX_LOGGED_EVENTS,
@@ -820,8 +786,8 @@ import { crossingVerb } from './crossing.js';
 export { doorScaleOverStretch } from './seclusion-verbs.js';
 import { combatVerbs } from './combat-verbs.js';
 import {
-    theirHalfOfTheArt,
-    whyTheArtWillNotAnswer
+    theirHalfOfTheRite,
+    whyTheRiteWillNotOpen
 } from './an-art-that-needs-both-of-them.js';
 // 护法 - standing over somebody else's crossing. The giving half of the verb
 // surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
@@ -875,14 +841,7 @@ import {
 } from './market-prices.js';
 import type { MarketPrice } from './market-prices.js';
 
-// ── THE WIRE SHAPES AND THE REFUSAL MOVED OUT ────────────────────────────
-//
-// `GameError`, `StateView`, `ToolCallRecord`, `ActResult`, `CultivateResult`,
-// `BreakthroughApiResult`, `GameServiceOptions` and `Execution` were declared
-// in this file. They are the contract between this service and the browser,
-// which is a different reason to change from anything a turn does, so they
-// live in `turn-wire-shapes.ts` now. Re-exported below, so this module's own
-// export surface is exactly what it was before the move.
+// THE WIRE SHAPES AND THE REFUSAL MOVED OUT
 import { GameError } from './turn-wire-shapes.js';
 import { matchVerbs } from './match-verbs.js';
 import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
@@ -911,76 +870,22 @@ export type {
 /** Spirit stones for one ration. A ration refills the belly to full: 50 days. */
 /**
  * Whose database is currently the ambient one.
- *
- * `setDb` installs a PROCESS-global handle, and so do the world caches
- * downstream of it. One service per process is the deployment and never
- * notices; two in one process silently share whichever was built last,
- * which is how a run in one database ended up standing in a crowd of a
- * hundred and forty-three people from another.
  */
 let ambientDb: Database.Database | null = null;
 
 /**
  * Phrases that point at a person rather than naming one.
- *
- * Kept deliberately narrow. Everything here is a role, a pronoun or a
- * demonstrative - words that cannot be somebody's name - so a misspelled
- * real name never lands here and quietly gets the wrong person.
  */
 const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they|everyone|everybody|all of them|the lot of them|every person|the rest of them)(?: here| nearby| about| around| present| in the room| in front of me| in the square)?$/i;
 
 /**
  * A word that refers BACK to somebody, rather than describing anybody.
- *
- * ── A PRONOUN WITH NO REFERENT WAS SILENTLY BECOMING SOMEBODY ELSE ───
- *
- * Played in the browser, and it is worse than any refusal:
- *
- *   > I offer her family everything I have for her hand
- *   "You put the words to Shen Liefeng..."
- *
- * The player had spent the two previous turns on Gu Peiyan. "her" fell into
- * `POINTING`, which answers a pointer with the crowd order's last element, and
- * the proposal was made to a different person - with nothing anywhere saying
- * the addressee had been swapped.
- *
- * The rest of `POINTING` is right to use the crowd order and this is not, and
- * the difference is grammatical rather than a matter of degree. *"The elder"*
- * and *"the stranger"* DESCRIBE somebody the player is looking at, so any
- * person answering the description is a legitimate reading. A pronoun
- * describes nobody: it stands in for a name that was already said, and the
- * only honest answer is the person it was said about. Reaching for the nearest
- * body instead is the substitution defect, which
- * `POINTING_AT_A_RANK` and `POINTING_AT_NOBODY_IN_PARTICULAR` were both
- * written to stop in their own corners of the same regex.
- *
- * So a pronoun resolves to whoever the player last dealt with, and where there
- * is no such person it resolves to NOBODY and the caller refuses by name -
- * which says the sentence could not be read, instead of reading it as somebody
- * the player never mentioned.
  */
 const A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED =
     /^(?:him|her|them|they|his|hers|their|theirs)$/i;
 
 /**
  * An Unearned Step in the pouch, with the grade it was made at.
- *
- * ── WHY THE GRADE IS IN THE ID ───────────────────────────────────────────
- *
- * The catalog holds ONE row for the object and three grades on it, because
- * grade is a property of the copy rather than of the kind - and the pouch
- * stores a count against an item id and has nowhere else to put one. So a
- * carried copy is `immortal-unearned-step:lower`, and this is the one place
- * that convention is read.
- *
- * It is a stop-gap and the catalog says what the real answer is:
- * `NOT_YET_KEPT_AS_OBJECTS` states that every one of these should be an
- * `ObjectRecord` with a holder chain and a provenance, that a count "cannot
- * answer which one moved, who moved it, or what was given for it", and that the
- * worked precedent is `who-holds-the-structural-repair-medicine.ts` next door.
- * That is a seeding job in files this does not own. What this buys in the
- * meantime is that the EFFECT exists and a player can reach it, which is the
- * difference between a rule and a paragraph.
  */
 function theUnearnedStepIn(
     itemId: string
@@ -1000,48 +905,12 @@ function theUnearnedStepIn(
 
 /**
  * A pointer that names no role at all, which is the commonest one typed.
- *
- * Measured in one room on one turn, before this existed:
- *
- *     "I spar with someone here"      There is nobody in front of you that the
- *                                     thought fits.
- *     "I introduce myself to someone" You put the words to Tang Shuwu.
- *
- * Two failures from one cause. `someone` was in neither `POINTING` nor the
- * roster, so the fight path found nobody and the conversation path fell through
- * to a FUZZY NAME MATCH and silently landed on a specific person - the same
- * defect `POINTING_AT_A_RANK` was written for, in different clothes. Meanwhile
- * the room knew perfectly well that forty-nine people were in it.
- *
- * The indefinite case wants a different answer from the rest of `POINTING`, and
- * this is why it is a set of its own. "The elder" and "him" describe SOMEBODY
- * SPECIFIC that the player is looking at, so the arbitrary crowd order is the
- * honest answer. "Someone" describes nobody in particular, and answering it
- * with the crowd order hands a Qi Condensation disciple the strongest person in
- * the square to pick a fight with - a footgun dressed as a resolution. What
- * somebody means by "someone" is a person they could actually walk up to, so
- * that is what it resolves to: a face they can name, nearest their own height.
  */
 const POINTING_AT_NOBODY_IN_PARTICULAR = /\b(?:someone|somebody|anyone|anybody)\b/i;
 
 /**
- * Pointers that are a RANK rather than a description, and must land on
- * somebody who actually holds it.
- *
- * Found by a standing sweep, and it was a state-changing false positive rather
- * than a cosmetic one. "I kill the elder", typed by a rogue at ordinal 2 with
- * no house and no elder anywhere in the square, resolved: `elder` is in
- * {@link POINTING}, `somebodyAtHand` returns whoever happens to be standing
- * nearest to a pointing phrase, and the confrontation ran against a person the
- * sentence was not about. Real wounds were written to the character.
- *
- * The difference from the rest of that list is the whole point. "the man",
- * "the stranger", "him" are descriptions of whoever is there and cannot be
- * wrong about who they are; "the elder" PRESUPPOSES A LADDER, and a sentence
- * naming a rung must not be answered by somebody who is not on it. So a rank
- * pointer is checked against `sectRank` on the roster row, and where nobody
- * present holds it the pointer resolves to nothing - which every caller
- * already handles by refusing and saying what it could not find.
+ * Pointers that are a RANK rather than a description, and must land on somebody who
+ * actually holds it.
  */
 const POINTING_AT_A_RANK = /\b(elder|disciple|master|warden|head)\b/i;
 
@@ -1056,23 +925,9 @@ export { PROVISION_COST_STONES };
 /** What a thing costs, in whichever currency it is actually sold in. */
 /**
  * How many lines of a price board get read out.
- *
- * Every count in the paragraph underneath is taken against this same
- * slice. A board that lists eight and reasons about twenty-five is telling
- * the player about goods they cannot see.
  */
 /**
  * What a donation is worth against the same money earned by serving.
- *
- * The one judgement in the donation path, which is why it is named and stated
- * rather than folded into an expression. The design owner's rule: "somebody who
- * pays instead of serving should get a worse rate than the duty board implies,
- * or contribution stops meaning service rendered and becomes a second
- * currency."
- *
- * A third, which is steep on purpose. Paying is meant to be the expensive way
- * to do it - the route for somebody who has stones and no years - and a shallow
- * discount would make the board pointless for anybody who ever finds money.
  */
 const DONATION_DISCOUNT = 1 / 3;
 
@@ -1081,12 +936,6 @@ const DEFAULT_DUTY_DAYS = 20;
 
 /**
  * The interact intents that are ATTEMPTS TO MOVE SOMEBODY.
- *
- * `talk` and `apologise` are not on it: putting words to a person and saying
- * sorry are things that happen and do not have a pressure outcome, and running
- * them through the resolver would price a greeting as an attempt on somebody.
- * Everything here is a sentence where the player wants something and is using
- * something to get it.
  */
 const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
     'bribe', 'threaten', 'seduce', 'deceive', 'negotiate', 'interrogate', 'recruit',
@@ -1099,31 +948,6 @@ const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
 
 /**
  * What the pill just bought will not close, said on the receipt.
- *
- * ── The defect, found by playing ─────────────────────────────────────────
- *
- * The `help` read named a Meridian Rebirth Pill as what the wound wanted, and
- * `I buy a Clear Meridian Pill` then took 132 spirit stones for something
- * `treat_injury` refuses to spend on that wound - because `treatWorstInjury`
- * enforces `medicineReaches` and the counter did not. Nothing in the sale said
- * so. The player learned it later, holding the pill, out the money.
- *
- * ── Why this is a sentence and not a refusal ─────────────────────────────
- *
- * `AGENTS.md` is explicit that the fix for an action that seems unwise is a
- * price or a warning, never a removed verb: banning is a decision taken away
- * from the person playing, and it is indistinguishable from the feature being
- * missing. There are real reasons to buy a pill that will not touch today's
- * wound - a lighter one tomorrow, a body that is not yet past the grade, a
- * sale a player wants for its own sake - and the engine is not entitled to
- * decide which of those they are having. So the pill is sold, the stones are
- * taken, and the receipt says what it will and will not reach, with the name
- * of the medicine that would in it.
- *
- * Nothing here decides anything. `medicineReaches` is the same call the
- * physician and `treat_injury` already make, and the sentence is the one
- * `whatToSayAboutTheCure` already writes for the other two surfaces, so the
- * counter cannot disagree with either about the same wound.
  */
 function whatThisPurchaseWillNotReach(
     cultivator: Cultivator,
@@ -1183,17 +1007,6 @@ function whatThisPurchaseWillNotReach(
 
 /**
  * Whether what somebody typed names a title by a piece of it.
- *
- * The commission titles in this game are long and good - "What a Poor District
- * Has Instead of Monsters" - and a player refers to one the way people refer to
- * anything long: by the memorable part. Whole-string matching made the best
- * writing in the content files into an obstacle.
- *
- * Two words or more, and only words that carry meaning: a shared "the" or "of"
- * is not a reference to anything, and one shared noun would collide the moment
- * two commissions both mention a village. Three or more letters per word, and
- * at least two of them adjacent in the title, which is what makes it a phrase
- * rather than a bag of coincidences.
  */
 function sharesADistinctivePhrase(query: string, title: string): boolean {
     const words = (s: string) => s.toLowerCase().match(/[a-z]{3,}/g) ?? [];
@@ -1223,21 +1036,16 @@ const DUTY_STOPWORDS: ReadonlySet<string> = new Set([
 /** A refusal with an HTTP status. The message is safe to show a player. */
 /**
  * The actions that only mean anything among mortals.
- *
- * Everything left out is still legal above the Lid: looking at where you are,
- * reading your own sheet, sitting down to cultivate, weighing an attempt. What
- * is here is the mortal economy and mortal society, neither of which a True
- * Immortal is standing in.
  */
 const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
     'work', 'market', 'provision', 'eat', 'gather', 'hunt', 'interact', 'sect', 'move',
     /**
-     * A yard is somewhere in the province, and everything that goes into one
-     * comes off a body a hunting party carried home. `OBJECT_CEILING_BELOW_THE_LID`
-     * is the other half of why: what a True Immortal could make down there is
-     * capped at a rung below them, so the sentence is re-offered as the two
-     * ways an immortal does anything below rather than answered by looking for
-     * a bench in a place where there is nobody.
+     * A yard is somewhere in the province, and everything that goes into one comes
+     * off a body a hunting party carried home. `OBJECT_CEILING_BELOW_THE_LID` is
+     * the other half of why: what a True Immortal could make down there is capped
+     * at a rung below them, so the sentence is re-offered as the two ways an
+     * immortal does anything below rather than answered by looking for a bench in a
+     * place where there is nobody.
      */
     'craft',
     // An inheritance ground is a hole in a hillside in the province. A True
@@ -1245,77 +1053,38 @@ const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
     // strikes of the heaviest tribulation there is.
     'site',
     /**
-     * Hitting somebody, which is the user's own worked example of what this
-     * list should DO rather than refuse: "if you say you wanna attack the sect
-     * you could send an immortal weapon down to your sect below and a message,
-     * or you could do it yourself." Both of those are real and both are
-     * reachable, so a sentence about a fight in the province is re-offered here
-     * rather than answered by looking for somebody to swing at in a place where
-     * there is nobody.
+     * Hitting somebody, which is the user's own worked example of what this list
+     * should DO rather than refuse: "if you say you wanna attack the sect you could
+     * send an immortal weapon down to your sect below and a message, or you could
+     * do it yourself." Both of those are real and both are reachable, so a sentence
+     * about a fight in the province is re-offered here rather than answered by
+     * looking for somebody to swing at in a place where there is nobody.
      */
     'attack',
     /**
-     * Three of the four institutional verbs. A petition travels along a chain
-     * of people; a declaration is made to somebody who has to hear it; a seal
-     * is under a mountain in the province. None of the three is reachable from
-     * the far side except by going.
-     *
-     * `offer` is deliberately NOT here, and it is the one exception on the
-     * list. It is the same verb from the other end: below the Lid it is an
-     * offering going up, above it a thing going down a line somebody is
-     * holding, and which of those a player gets is decided by state rather
-     * than by the word. Putting it here would have refused an immortal the one
-     * mortal-world action they can actually perform.
+     * Three of the four institutional verbs. A petition travels along a chain of
+     * people; a declaration is made to somebody who has to hear it; a seal is under
+     * a mountain in the province. None of the three is reachable from the far side
+     * except by going.
      */
     'petition', 'posture', 'seal',
     /**
      * Asking a square what it has heard.
-     *
-     * Gossip is a mortal-world channel by construction: it reads the lower
-     * world's ledger, weights a fact up for how far ABOVE the listener the
-     * people in it stand, and picks its tellers out of the crowd standing here.
-     * Every one of those is wrong on the far side of the Lid - there is no
-     * crowd, nobody up there is above a True Immortal in the sense the weight
-     * means, and the reason `look` has an above-the-Lid branch at all is that
-     * the ordinary readers happily overheard two names through a wall on the
-     * wrong layer. Re-offered rather than answered.
      */
     'news'
 ] as const;
 
 /**
  * The words that mean "the library" rather than naming anything in it.
- *
- * A curriculum sentence carries the noun phrase the parser found after the
- * verb, and for the commonest phrasing that phrase IS the question - "what the
- * sect teaches". Refusing to resolve it is what keeps a request to see the
- * shelf from becoming a generational decree about an art nobody named.
  */
 const GENERIC_LIBRARY_PHRASE =
     /\b(?:what|which|curriculum|curricula|library|shelf|taught|teach|teaches|teaching|methods|list|everything|anything|else)\b/i;
 
 /**
  * The words that mean "a house" rather than naming one.
- *
- * The same problem `GENERIC_LIBRARY_PHRASE` solves, one verb over. "I look for
- * a sect that will take me" carries the noun phrase "sect that will take me",
- * which is a question about the whole category and not a name that failed to
- * resolve - and the two need opposite answers. A name that resolves to nothing
- * must be refused as unheard; a category has to reach the listing, which is the
- * only thing in the game that answers it.
- *
- * Anchored at the start on purpose. An unanchored noun test would swallow every
- * real house whose name ends in one of these words, which is most of them.
  */
 /**
  * The words that mean "a pill" rather than naming one.
- *
- * Third instance of the same rule, after the library and the house. A category
- * has to reach the listing and a name has to reach the formula, and treating
- * the first as the second is how "I refine a pill" quietly became a Minor
- * Healing Pill - one arbitrary row out of forty-two, chosen by containment.
- *
- * Anchored, so `Foundation-Guiding Pill Formula` is still a name.
  */
 /** How many formulas the listing reads out before it starts counting. */
 const RECIPES_SHOWN = 8;
@@ -1328,33 +1097,6 @@ const DUTIES_SHOWN = 8;
 
 /**
  * What a FULL month of mortal care puts back, as a flat quantity of HP.
- *
- * FIXED, not a fraction, and that is the whole of the design. The user's
- * ruling: wounds are not forever, they are answered by a graded ladder of
- * healing pills at the same rank requirement, "where a lower should heal almost
- * nothing - it'll heal a fixed hp amount and as you get up the amount becomes
- * a lot."
- *
- * A fixed amount self-scales in exactly that way with no rule saying so.
- * Twenty-four HP is most of a novice's body and a rounding error on a
- * Nascent Soul one, so the same village physician who mends a Qi Condensation
- * cultivator is a person applying a splint to a mountain four realms up. Being
- * weak after a seclusion is allowed to stay true.
- *
- * This was a FRACTION for one commit - "a full month restores a body
- * completely" - and that was wrong for a reason worth recording: it made the
- * entire pill ladder pointless. Nobody buys a 1,200-potency Undying Flesh Pill
- * when a month and a few stones does more, so the graded consumable the whole
- * medicine layer is built around had no customers at any rung.
- *
- * DERIVED FROM THE LADDER, not chosen beside it: the strongest mortal-grade
- * `heal_hp` pill in the catalog. Mortal care IS the bottom rung, and pricing it
- * as its own constant would let the two drift until a month of rest quietly
- * beat a pill again. If the data layer retunes the band, this follows.
- *
- * A shorter stay mends proportionally less, off `simulatedDays`, so this is a
- * ceiling on a month rather than a grant - and it can never exceed what the
- * body is actually missing.
  */
 const CARE_RESTORES_HP = Math.max(
     1,
@@ -1365,33 +1107,15 @@ const CARE_RESTORES_HP = Math.max(
 
 /**
  * The rung a cultivator with no cultivation manual is carried to.
- *
- * Re-exported from the cultivation engine rather than restated. It was a local
- * constant here for one commit, which is exactly the drift AGENTS.md warns
- * about: `techniqueCeiling` branches on this exact value to tell "there is no
- * book" apart from "the book is spent", and two copies of it would eventually
- * disagree about which sentence a player is shown.
  */
 
 /**
  * How much of a day sect work leaves for cultivation.
- *
- * Below `WAITING_FOCUS` and above nothing. A commission is somebody else's
- * errand run at their pace, and the whole reason contribution is worth
- * anything is that earning it costs the thing it buys.
  */
 const DUTY_FOCUS = 0.25;
 
 /**
  * How a name reached this cultivator, for the inspector.
- *
- * Both call sites used to hardcode `name_overheard` and 'from people who did
- * not know they were heard'. There are three channels now - somebody says it to
- * you, somebody says it near you, and a traveller says it in passing with a
- * number of days on it - and two of those three summaries were simply false. An
- * inspector row that misdescribes where a name came from is worse than no row:
- * the whole discovery layer is about provenance, and this is where somebody
- * reads it back.
  */
 function hearingCall(heard: Hearing): ToolCallRecord {
     const name = heard.names[0].name;
@@ -1443,29 +1167,12 @@ const GENERIC_HOUSE_PHRASE =
 
 /**
  * The same words, but only where they are the WHOLE of what was said.
- *
- * `GENERIC_HOUSE_PHRASE` is unanchored at its end and has to stay that way for
- * the joining path it was written for. Six of the seven dao houses are called
- * "The House of ...", so once the leading article comes off the subject the
- * remainder begins with `house` and the unanchored test reads a specific name
- * as the whole category. Anchored at both ends it cannot: "a sect" is a
- * category, "House of the Narrow Hour" is a name, and no house in the catalog
- * is called any of these words on its own.
  */
 const GENERIC_HOUSE_CATEGORY_ONLY =
     /^(?:any |some |a |an |one |another |new |good |strong |nearby |local |the )*(?:guest (?:student|studentship|place|pupil)|sects?|orders?|schools?|clans?|houses?|cults?|somewhere|anywhere|somebody|someone|anyone|anybody)(?:\s+(?:somewhere|anywhere|near(?:by)?|around(?: here)?|here|about|else))?$/i;
 
 /**
  * Which elder a sentence meant, out of the ones the house actually holds.
- *
- * Matched against the roster the tool just returned rather than against
- * anything the player asserted, and a query that names nobody resolves to
- * nobody so the listing stands. Names are tried before rank titles and never
- * mixed with them: every elder in a house shares a title, so scoring the two
- * together lets "Elder Fang" match the word "Elder" on somebody else and
- * dismiss a person the player never named. This is the one leadership act that
- * lands the day it is spoken, and it takes the elder's whole line out with
- * them - a near miss here is not a near miss, it is the wrong person gone.
  */
 function elderNamed(listing: object, query: string | undefined): string | null {
     const wanted = (query ?? '').trim();
@@ -1499,26 +1206,6 @@ const ANY_ELDER_AT_ALL =
 
 /**
  * Verbs that are two names for one act, so a sentence naming both named one.
- *
- * ── A DECLINED CLAUSE THAT DEMONSTRABLY RAN ──────────────────────────────
- *
- * Played: `I go into seclusion for a year and gather qi` reported
- * *"Ran seclude. Not run: 'gather qi'"* over a year in which qi went 0 to 6.
- * Seclusion is how qi is gathered - `cultivate` and `seclude` are two doors
- * onto `runSeclusion` - so the honest-reporting line, which is the one thing a
- * player is being asked to trust about what a turn did, taught them that a year
- * of sitting still accumulates nothing.
- *
- * A CLOSED TABLE OF DISPATCH FACTS, not a similarity test. Each pair below is
- * two `case` labels in `execute` that call the same method with the same
- * arguments, and that is the only thing that puts a pair here: if the two ever
- * stop reaching one handler, the row is wrong and should go. Which is why it is
- * here, next to the dispatch, rather than in
- * `the-part-of-the-sentence-that-was-not-run.ts` - that module reads the verb
- * TABLE and has no way to know what two verbs resolve to.
- *
- * Symmetric on purpose: which of the two the player happened to type first is
- * not a fact about whether they asked for two things.
  */
 const SAME_ACT_UNDER_TWO_NAMES: ReadonlyArray<readonly [ActionName, ActionName]> = [
     // Both reach `runSeclusion`. One names the posture, the other names what
@@ -1554,10 +1241,6 @@ const ADMIN_ACTIONS = [
 
 /**
  * ADMIN's one run-lifecycle verb, spelled the several ways people spell it.
- *
- * Separate from `parseAdminCommand` because `admin_manage` arranges the world
- * and does not own runs - `game.ts` does, and a tool handler reaching in to
- * end one would be the second writer this file exists to prevent.
  */
 const ADMIN_RESET = /^(?:reset|restart|regenerate|reroll|new_run|newrun)(?![a-z_])[:\s-]*/i;
 
@@ -1575,19 +1258,10 @@ export class GameService {
     private readonly log: PlayLog;
     /**
      * What each cultivator has heard of.
-     *
-     * The enforcement behind docs/world/houses/discovery.md: everything that reaches a
-     * prompt or an entity resolver is filtered through this first, so the
-     * narrator is never handed a name the player has not earned.
      */
     readonly knowledge: KnowledgeGate;
     /**
      * What this run has done to the inheritance grounds it has found.
-     *
-     * Over `cultivation_sites`, which the schema already keeps for exactly
-     * this and whose own comment says a site outlives the run that turned it
-     * up. Same posture as `KnowledgeGate` over `knowledge_records`: a narrow
-     * reader and writer, not a second table.
      */
     readonly sites: SiteLedger;
     readonly legacy: LegacyLedger;
@@ -1595,106 +1269,39 @@ export class GameService {
     readonly worldEnabled: boolean;
     /**
      * The world, loaded once per action.
-     *
-     * Resolving who is standing in front of the player needs the world, and it
-     * is asked several times in the course of one action - by the scope, by the
-     * hearing check, by a refusal deciding whether anybody is about. Loading it
-     * once at the top of the action and holding it is the difference between
-     * one rebuild and five.
      */
     atHand: WorldState | null = null;
     /**
-     * World facts that reached this player by no channel at all, still eligible
-     * to turn up on them.
-     *
-     * The digest counts what nobody told them - thirty-five events in one live
-     * five-year seclusion - and that counter is correct: a world that is mostly
-     * none of your business is the design. Arrival is the other door, and it is
-     * rolled once per FACT and stable forever, so a fact that turned up has to
-     * come OUT of this list or it turns up again in every subsequent window.
-     * `consumeArrivals` is what takes it out, and it is not optional.
+     * World facts that reached this player by no channel at all, still eligible to
+     * turn up on them.
      */
     pendingArrivals: ArrivableFact[] = [];
     /**
      * A seclusion that stopped because of somebody, with the answer still owed.
-     *
-     * Beside `pendingArrivals` and for the same reason: it is a fact about a
-     * turn in flight rather than a fact about the world, and the world layer
-     * has nothing to say about it. See
-     * `choosing-what-to-do-when-a-seclusion-is-broken.ts` for what each branch
-     * costs and why losing this is not a way to cheat - losing it is going, and
-     * going is what the engine did unasked before any of this existed.
      */
     crossroads: SeclusionCrossroads | null = null;
     /**
      * A fight that has started and has not ended.
-     *
-     * Beside `crossroads` and for the same reason, and it is the one piece of
-     * turn-in-flight state that is NOT owed an answer: the crossroads stands for
-     * exactly one turn and this stands until somebody is down, somebody is out,
-     * or the round budget runs out. What the two share is the lifetime - in
-     * memory, this run, this body - and the argument for it is in
-     * `unfinished-fight.ts`: a persisted fight would let a player walk out
-     * mid-swing, cultivate for a decade and come back to the same raised arm.
-     *
-     * UNLIKE the crossroads, an ordinary sentence does not end it. A player who
-     * types "I cultivate" with somebody swinging at them takes the round and
-     * then does what they asked - see `takeTheRoundFirst`. A fight is a
-     * situation, not a mode you are trapped in.
      */
     fight: StandingFight | null = null;
     /**
      * Two costly acts in one sentence, with the choice still owed.
-     *
-     * Beside `crossroads` and for the same reasons, down to the lifetime: it is
-     * a fact about a turn in flight, it stands for exactly one turn, and losing
-     * it costs the player nothing, because nothing was spent raising it. See
-     * `a-sentence-can-be-more-than-one-call.ts`.
      */
     private whichComesFirst: WhichComesFirst | null = null;
     /**
      * What the turn before this one did, and what it told the player.
-     *
-     * Beside `crossroads` and `whichComesFirst` and for the same reasons: a
-     * fact about a turn in flight rather than about the world, one turn deep,
-     * in memory, and worth nothing to lose - losing it costs the player a
-     * back-reference and never an act, because the act is still theirs the
-     * moment they name it.
-     *
-     * ONE TURN, AND THE BOUND IS THE DESIGN. It is composed into the phase-1
-     * prompt and thrown away, so nothing accumulates and there is no
-     * conversation history anywhere. A reader given ten turns starts writing
-     * continuity; one turn is enough to resolve "keep at it" and "the cheaper
-     * one" and structurally cannot become a narrative. See
-     * `last-turn-memory.ts`.
      */
     private lastTurn: WhatTheLastTurnDid | null = null;
     /**
      * Steps that ran this turn, being collected for {@link lastTurn}.
-     *
-     * Written where the executor already classifies how a step went, so a step
-     * the world refused never lands here and a refused turn leaves nothing to
-     * carry on with. That is the honest answer and it is the one the player
-     * gets.
      */
     private ranThisTurn: PlanStep[] = [];
     /**
      * Things this turn named to the player, being collected for {@link lastTurn}.
-     *
-     * Written by the branches that LIST things - the market board, the
-     * copyist's stall - rather than recovered by reading the narration back.
-     * Parsing prose for what exists would make the narrator authoritative over
-     * the world, which is the one thing it may never be.
      */
     private namedThisTurn: ThingNamed[] = [];
     /**
      * Set when an action changed the world without spending a day.
-     *
-     * Every other world write rides on the time skip, which persists at the end
-     * of a span. The far-side actions do not spend days and are all real state -
-     * an abode settled, a seam opened and closed inside fifteen breaths, an
-     * object put down a channel - so they say so here and `act` writes once,
-     * after phase 2, before anything is narrated.
      */
     worldDirty = false;
     private readonly narrator: Narrator;
@@ -1726,34 +1333,20 @@ export class GameService {
 
     /**
      * Roll a cultivator and open a run.
-     *
-     * Talent is rolled here, from a seed minted here, using the engine's own
-     * `rollSpiritRoot` and `rollAttributes`. The request body carries a name and
-     * nothing else that is read: a client that posts
-     * `{name, spiritRoot: 'mutated_lightning', attributes: {...}}` gets the same
-     * roll it would have got by posting the name alone. Talent is not earned,
-     * cannot be improved, and is not negotiable - that is the genre, and it is
-     * also why the client is not trusted with it.
      */
     /**
      * Point the ambient handle at this service's database.
-     *
-     * Called at the top of every public entry point rather than once in the
-     * constructor. Production has one service and never notices; two in one
-     * process silently share whichever was built last, which is how three
-     * separate suite runs produced three different sets of failures from
-     * the same code.
      */
     private useOwnDb(): void {
         if (ambientDb === this.db) return;
         setDb(this.db);
-        // The world layer holds process-global caches - which world is the
-        // active one, which world a run belongs to, the catalog - and none of
-        // them are keyed by database. Swapping the handle underneath them
-        // without saying so means the next run joins whichever world was
-        // created first in this process, from whichever database that was.
-        // `resetCultivationWorlds` exists for exactly this and says so; the
-        // worlds are in SQLite and come back on the next touch.
+        // The world layer holds process-global caches - which world is the active
+        // one, which world a run belongs to, the catalog - and none of them are
+        // keyed by database. Swapping the handle underneath them without saying so
+        // means the next run joins whichever world was created first in this
+        // process, from whichever database that was. `resetCultivationWorlds`
+        // exists for exactly this and says so; the worlds are in SQLite and come
+        // back on the next touch.
         resetCultivationWorlds();
         ambientDb = this.db;
     }
@@ -1774,14 +1367,14 @@ export class GameService {
 
         // The next life begins in the world the last one left behind, not in a
         // fresh one. `planNextRun` decides the seed, so a run is a life lived
-        // inside this world rather than a world of its own - which is what
-        // makes the ruins the new cultivator digs through the previous
-        // cultivator's. When there is no world, the seed factory stands in.
-        // `latestFinishedRun` rather than the ledger. "Which world does this
-        // life begin in" and "what does this world's record of deaths say" are
-        // different questions, and the ledger now excludes admin-rigged runs in
-        // SQL - so reading lineage off it would have handed a fresh run a null
-        // world the moment an operator flagged the run before it.
+        // inside this world rather than a world of its own - which is what makes
+        // the ruins the new cultivator digs through the previous cultivator's. When
+        // there is no world, the seed factory stands in. `latestFinishedRun` rather
+        // than the ledger. "Which world does this life begin in" and "what does
+        // this world's record of deaths say" are different questions, and the
+        // ledger now excludes admin-rigged runs in SQL - so reading lineage off it
+        // would have handed a fresh run a null world the moment an operator flagged
+        // the run before it.
         const previousRun = this.repos.runs.latestFinishedRun();
         const world = this.worldEnabled && previousRun ? await worldForRun(previousRun) : null;
         const plan = world
@@ -1794,14 +1387,6 @@ export class GameService {
         const seed = plan ? plan.seed : this.seedFactory();
 
         // Where this life opens, and what it opens with.
-        //
-        // Pure and deterministic off the same seed, and what it confers is a
-        // place, a purse and a handful of knowledge rows - never a realm, a
-        // rank, a membership or a foundation. That line is what keeps an origin
-        // an OPENING POSITION rather than a head start: nine births in ten are
-        // still a thin county, and what the other one in ten buys is being
-        // somewhere better with more in the purse and more names already said
-        // in front of them.
         const birth = drawBirth(seed);
 
         const root = rollSpiritRoot(forStream(seed, 'creation', 'spirit_root').next());
@@ -1827,18 +1412,7 @@ export class GameService {
             attributeStream.next()
         ]);
 
-        // ── ONE DERIVATION, AND THIS WAS THE SECOND COPY OF IT ───────────
-        //
-        // `realms.ts` says it in as many words - "the one derivation of a
-        // cultivator's HP pool. Nobody may write another" - and names this
-        // exact line as the thing it has to agree with: "`maxHpForOrdinal(might,
-        // 0)` must equal what the birth path writes." It did, because the
-        // constants were kept in step by hand across two files. That is a
-        // coincidence maintained by attention, and the ladder's body curve was
-        // rewritten twice while this sat here.
-        //
-        // Same numbers, one source. A newborn is ordinal 0, and the multiplier
-        // there is 1, so nothing about an opening sheet moves.
+        // ONE DERIVATION, AND THIS WAS THE SECOND COPY OF IT
         const maxHp = maxHpForOrdinal(attributes.might, 0);
         const maxQi = maxQiForOrdinal(attributes.insight, 0);
 
@@ -1865,21 +1439,6 @@ export class GameService {
                 spiritStones: birth.spiritStones,
                 location: birth.place.name,
                 // A MEMBER FROM BIRTH, AT NO RANK IN IT.
-                //
-                // `sectId` without `sectRank` is not a new state and needs no
-                // new column: `entities.ts` already prints "at the rank of X"
-                // against "at no rank in it", and `factionRankIndex` in
-                // `ground-that-teaches-a-road.ts` reads -1 when there is no
-                // rank title, so a born member draws no share of the house's
-                // chambers. No `sect_members` row is written either, which is
-                // what leaves the ladder in front of them: being taken ON is
-                // `join`, and `join` checks the house's own floor.
-                //
-                // Set only where the house's own roll carries them - a lineage
-                // for its own children, or a house that took somebody in. An
-                // apex sect member's child gets nothing here, because an apex
-                // is joined rather than born into and its bar has never moved
-                // for anybody.
                 ...(birth.raisedInside?.onTheRoll
                     ? { sectId: birth.raisedInside.house.id }
                     : {}),
@@ -1890,32 +1449,6 @@ export class GameService {
         })();
 
         // What this life starts holding, in two layers that do different jobs.
-        //
-        // THE COUNTY first. Everybody can name the ground they grew up on and
-        // the market town two days off, whoever their parents were, and that has
-        // nothing to do with standing - it is what `seedStartingAwareness` and
-        // `localGeographyFor` are for. Home at `known`, every other settlement in
-        // the province at `placed`, the province at `placed`, provinces over the
-        // border at `named`. Being able to point at the next town is not a
-        // privilege a birth confers; it is the fix for a cultivator being trapped
-        // in their birthplace for life, measured across seven playthroughs and
-        // fatal in every one.
-        //
-        // It goes FIRST so that the ground somebody grew up on is written by the
-        // one thing that knows what growing up somewhere means. Two writers both
-        // claiming the birthplace is how home ended up at `encountered` - a place
-        // somebody has been rather than a place they are from, which reads as a
-        // traveller who arrived last week. The floor property comes from
-        // `learnIfNew` inside the seeder rather than from the ordering, so
-        // nothing is lost by running it here.
-        //
-        // THE BIRTH'S OWN ROWS on top. `drawBirth` decides which names a family
-        // of that standing would have said in front of a child, and they are
-        // written as ordinary knowledge records with ordinary stances and sources
-        // - so the gate that governs every other name governs these, and a
-        // Dao house birth knows more because of who raised them rather than
-        // because of a special case. `learn` supersedes, so a name the county
-        // only placed is still upgraded by a birth that genuinely knew it.
         this.knowledge.seedStartingAwareness(created.cultivator.id, 0, birth.place.name, null);
         for (const row of birth.knowledge) {
             this.knowledge.learn({ ...row, holderId: created.cultivator.id, onDay: 0 });
@@ -1923,29 +1456,19 @@ export class GameService {
 
         // AND THE PEOPLE. Measured on three seeds before this existed: nine to
         // fourteen places known and not one person, with thirteen, five and
-        // seventeen bodies standing in the square. `company()` reports anybody
-        // with no record as an ordinal and nothing else, so every person in the
-        // world was a permanent stranger and the four verbs that need somebody
-        // to be pointed at could not find one.
-        //
-        // The design owner's ruling: "you aren't dropped as a nobody, you have
-        // presumably grown up in the area you are in. you at least know
-        // SOMETHING to start." The blank slate was never neutrality - it was a
-        // person with no past, in a setting where everybody else has one.
-        //
-        // It needs the world, which for the first run of a database does not
-        // exist yet, so this is the call that brings it into being. Cheap on a
-        // warm process, and `warmWorld` was going to do it on the next request
-        // anyway.
+        // seventeen bodies standing in the square. `company()` reports anybody with
+        // no record as an ordinal and nothing else, so every person in the world
+        // was a permanent stranger and the four verbs that need somebody to be
+        // pointed at could not find one.
         await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
 
-        // AND THE GROUND. The same ruling, applied to geography: somebody who
-        // grew up here can point at the caves and the wild ground outside the
-        // village. That was previously handled by `destinations` listing the
-        // world's own location table without asking the gate anything, which
-        // handed over dao ground and prospected finds along with the caves.
-        // The knowledge is real now, and the gate is closed. Needs the world,
-        // which the call above has just brought into being.
+        // AND THE GROUND. The same ruling, applied to geography: somebody who grew
+        // up here can point at the caves and the wild ground outside the village.
+        // That was previously handled by `destinations` listing the world's own
+        // location table without asking the gate anything, which handed over dao
+        // ground and prospected finds along with the caves. The knowledge is real
+        // now, and the gate is closed. Needs the world, which the call above has
+        // just brought into being.
         this.seedTheGroundAroundHome(created.cultivator);
 
         // And the roster, so the world can put them on a list from the first
@@ -1982,13 +1505,13 @@ export class GameService {
 
         this.log.append(created.run.id, [
             ...(plan ? [{ role: 'narrator' as const, turn: 0, text: plan.note }] : []),
-            // WHICH OF THE TWO WAYS OF PLAYING THIS IS, in the log rather than
-            // only in a status bar. Without a key the bar read
-            // "narrator anthropic/claude-opus-5 (not configured)", which is a
-            // diagnostic about an environment variable and reads as a broken
-            // install. It is not one: the whole game is playable here. Said in
-            // both directions on purpose - a line that only appears when
-            // something is missing is an apology rather than a mode.
+            // WHICH OF THE TWO WAYS OF PLAYING THIS IS, in the log rather than only
+            // in a status bar. Without a key the bar read "narrator
+            // anthropic/claude-opus-5 (not configured)", which is a diagnostic
+            // about an environment variable and reads as a broken install. It is
+            // not one: the whole game is playable here. Said in both directions on
+            // purpose - a line that only appears when something is missing is an
+            // apology rather than a mode.
             { role: 'engine' as const, turn: 0, text: announceMode(this.narrator).line },
             {
                 role: 'engine',
@@ -2017,13 +1540,6 @@ export class GameService {
 
     /**
      * Free-text intent, resolved in three strictly separated phases.
-     *
-     * Phase 1 chooses a verb (model, validated, or deterministic parser).
-     * Phase 2 runs it through the engine and writes the result.
-     * Phase 3 describes what phase 2 decided.
-     *
-     * The state returned to the client is re-read from the database after
-     * phase 2 and is not touched by phase 3.
      */
     /**
      * @param forced Set only by the ADMIN dispatcher below, never by a caller
@@ -2037,20 +1553,7 @@ export class GameService {
         if (trimmed.length === 0) throw new GameError('Say something.');
         if (trimmed.length > 2000) throw new GameError('That is too long. Two thousand characters at most.');
 
-        // ── RESET SURVIVES DEATH, AND HAS TO ─────────────────────────────
-        //
-        // `requireLiveRun` below refuses every call once the cultivator is
-        // dead, and the refusal it throws ends "Begin a new run." - which was
-        // then the one thing that could not be done, because ADMIN was
-        // dispatched AFTER the guard. Measured: a lethal reprisal closed the
-        // run and every subsequent `ADMIN reset` was answered with the death
-        // notice, so testing anything past a death meant restarting the
-        // process. Reset is the verb that answers that refusal, so it is read
-        // before it.
-        //
-        // Nothing else moves up here. Arranging the world around a corpse is
-        // meaningless and the guard is right to refuse it; this is the single
-        // exception, and it is a run-lifecycle write rather than a world one.
+        // RESET SURVIVES DEATH, AND HAS TO
         if (isAdminModeEnabled()) {
             const head = ADMIN_PREFIX.exec(trimmed);
             if (head) {
@@ -2074,27 +1577,7 @@ export class GameService {
         const admin = ADMIN_PREFIX.exec(trimmed);
         if (admin) {
             const rest = trimmed.slice(admin[0].length);
-            // ── ADMIN <VERB> IS AN ORDINARY TURN WITH ONE ANSWER PINNED ───
-            //
-            // Not a second execution path, and the recursion is the point:
-            // everything below this line - phase 2, the crossroads, the dropped
-            // clause, the world write, phase 3, the log - runs exactly as it
-            // runs for a typed sentence. The ONLY difference is that phase 1 is
-            // skipped, because the operator named the verb, and that no model
-            // has read the line.
-            //
-            // What is decided inside is one question and it is named:
-            // `withTheAttemptLanding` opens a context that the uncertain
-            // decisions consult, every gate is left standing, and the bill is
-            // whatever the verb charges. See `forcing-an-attempt-to-land.ts`.
-            //
-            // AND IT IS BEHIND THE SAME ONE GATE AS EVERYTHING ELSE HERE.
-            // `adminAct` is what refuses when the mode is off, and the forced
-            // path does not go through it - so without this line ADMIN <verb>
-            // was reachable with ADMIN_MODE unset, which is the one thing this
-            // whole surface may never be. Falling through rather than throwing
-            // here keeps a single refusal voice: `adminAct` says it, in its own
-            // words, for every admin line there is.
+            // ADMIN <VERB> IS AN ORDINARY TURN WITH ONE ANSWER PINNED
             const forced = isAdminModeEnabled() ? readAForcedVerb(rest) : null;
             if (forced !== null) {
                 const ran = await withTheAttemptLanding(
@@ -2108,56 +1591,10 @@ export class GameService {
         const ambient = this.ambientFor(cultivator, run);
         this.atHand = await this.loadWorld();
 
-        // ── THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE ─────
-        //
-        // Before phase 1, which is before any span this turn could spend. The
-        // world's systems are keyed on `state.npcs` - most sharply
-        // `gatherings.ts`, whose entire invitation list is drawn from it - so
-        // without a row the person playing was structurally uninvitable to
-        // every meeting, bout, competition and expedition the world holds.
-        //
-        // HERE rather than in `advanceWorld`, which is the tempting place and
-        // is not sufficient: `work` spends its days through the consolidated
-        // tool, which calls `advanceWorldForCultivator` itself and never passes
-        // through this class's span helper. A turn is the thing every path has
-        // in common.
-        //
-        // And a row rewritten from the `Cultivator` at the top of every turn
-        // cannot drift from it: whatever the world wrote to it last turn is
-        // gone, and the sheet is the only thing that can ever set a rung. See
-        // `the-player-as-a-row-the-world-can-invite.ts` for the two simulation
-        // passes that additionally skip it, and why those two and no others.
+        // THE PLAYER IS ON THE ROSTER, AND THE SHEET IS THE SOURCE
         this.refreshThePlayerRow(cultivator);
 
-        // ── A QUESTION THE ENGINE LEFT OPEN IS ANSWERED FIRST ────────────
-        //
-        // Captured here, before anything can clear it, because BOTH answers
-        // have to be findable afterwards: the two explicit ones below, and the
-        // implicit one, which is every other sentence in the language. See
-        // `settleAnyStandingCrossroads`.
-        //
-        // The two answers are matched before phase 1 rather than routed through
-        // it because they are not verbs. "I sit back down" would route to
-        // `cultivate` and start a FRESH sitting at the default length, which
-        // would hand the player back the years they had just been asked to
-        // choose about and charge them for a new stretch on top - the exact
-        // double-count the clock rule forbids.
-        // ── AND SO IS SOMEBODY WHO IS SWINGING AT YOU ────────────────────
-        //
-        // A fight the service is holding takes the sentence before phase 1, for
-        // the same reason the crossroads does: these are not verbs. "I block his
-        // sword" means nothing standing in an empty road and everything with a
-        // blade coming at you, so it is read against the situation rather than
-        // added to a table that has no situation in it.
-        //
-        // ── AND A SENTENCE THE FIGHT HAS NO ANSWER FOR IS NOT A REFUSAL ──
-        //
-        // This is the more important half. `whatTheySaidInTheFight` returns null
-        // for "I cultivate", "I look around", "I buy a pill" - and the answer is
-        // NOT to tell the player no. The round lands on them, and then the thing
-        // they asked for happens. Anything else is banning: a player may attempt
-        // anything, and standing in a fight does not make that untrue. It is
-        // simply a very poor moment to read a wall.
+        // A QUESTION THE ENGINE LEFT OPEN IS ANSWERED FIRST
         const inAFight = theFightStillStands(this.fight, run.id, cultivator.id)
             ? this.fight
             : null;
@@ -2175,34 +1612,14 @@ export class GameService {
                     ? 'go' as const
                     : null;
 
-        // ── AND SO IS "WHICH OF THOSE TWO FIRST" ─────────────────────────
-        //
-        // Read and cleared here, before phase 1, for the same reason the
-        // crossroads is: the answer is not a verb. It stands for exactly one
-        // turn and any other sentence is an ordinary turn, so clearing it
-        // unconditionally is the whole of its lifetime management - a player who
-        // said something else has not answered, and nothing is owed to them.
+        // AND SO IS "WHICH OF THOSE TWO FIRST"
         const asked = theQuestionStillStands(this.whichComesFirst, run.id, cultivator.id)
             ? this.whichComesFirst
             : null;
         this.whichComesFirst = null;
         const picked = asked === null ? null : whichOneTheyChose(trimmed, asked);
 
-        // ── AND THE TURN BEFORE THIS ONE, WHICH IS ALL THERE IS ──────────
-        //
-        // Captured and CLEARED here, before anything can add to it, which is
-        // the whole of its lifetime management: the memory is one turn deep, it
-        // is replaced at the bottom of this method, and a turn that never gets
-        // there leaves nothing behind. `theLastTurnStillStands` additionally
-        // refuses a record that is two turns old, because a turn that threw
-        // could otherwise leave one wearing the clothes of a fresh one.
-        //
-        // Two things read it and they read it for different reasons. The
-        // deterministic path below resolves "keep at it" and "the cheaper one"
-        // against it with no model in the room, because the vocabulary is
-        // closed and the list is one list, and the bottom reading tiers are a
-        // shipping mode. Phase 1 is additionally SHOWN it, as one labelled
-        // block composed fresh and thrown away - information, never authority.
+        // AND THE TURN BEFORE THIS ONE, WHICH IS ALL THERE IS
         const before = theLastTurnStillStands(
             this.lastTurn, run.id, cultivator.id, run.turn
         ) ? this.lastTurn : null;
@@ -2210,16 +1627,7 @@ export class GameService {
         this.ranThisTurn = [];
         this.namedThisTurn = [];
 
-        // ── "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID ───────────────
-        //
-        // Read before phase 1 and not by it, for the same reason the crossroads
-        // answer is: it is not a verb, and the act it means is one the player
-        // themselves ran a turn ago rather than one anything inferred. That
-        // ordering is also what makes the danger check unnecessary here rather
-        // than skipped - there is no model in this reading, so "do it again"
-        // after an attack is a second attack at every reading tier, produced
-        // from the player's own previous turn. It costs exactly what saying it
-        // out in full costs; see `last-turn-memory.ts`.
+        // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
         const carriesOn = fightAnswer === null && picked === null
             && forced === null && answered === null
             ? theSentenceCarriesOn(trimmed)
@@ -2228,13 +1636,7 @@ export class GameService {
             ? null
             : carryingOnFromTheLastTurn(before, trimmed);
 
-        // ── phase 1 ──
-        //
-        // Skipped outright when ADMIN named the verb. The rest of the sentence
-        // still goes through the ordinary deterministic parser, so the target,
-        // the intent, the topic and the duration are read the way they are read
-        // for anybody - what the operator settled is WHICH VERB, and that is
-        // the one thing phase 1 exists to answer.
+        // phase 1
         const plan: PlanWithSteps = fightAnswer !== null
             ? {
                 // No model reads a sentence said inside a fight, and that is
@@ -2309,15 +1711,7 @@ export class GameService {
                 describeTheLastTurn(before)
             );
 
-        // ── AND "THAT ONE" MEANS ONE OF THE THINGS YOU WERE JUST SHOWN ───
-        //
-        // After phase 1 rather than inside it, so it holds at every reading
-        // tier: the model is TOLD the list and will usually name the thing
-        // outright, and a reader that hands back the player's demonstrative
-        // instead - which is what both deterministic tiers do, and what a model
-        // did on the played turn this exists for - gets it substituted here.
-        // Only a phrase that names nothing on its own is touched, and only from
-        // a list the ENGINE printed last turn.
+        // AND "THAT ONE" MEANS ONE OF THE THINGS YOU WERE JUST SHOWN
         const resolved = before === null || carryingOn !== null
             ? null
             : resolvingAgainstTheLastTurn(plan, before, trimmed);
@@ -2325,14 +1719,7 @@ export class GameService {
             ? resolved.plan
             : plan;
 
-        // ── WHO WAS STANDING HERE BEFORE ANY OF IT ───────────────────────
-        //
-        // The other half of a snapshot, taken here because after phase 2 it is
-        // too late: a purse that emptied and a wound that opened are only
-        // visible against what the square held a moment ago. Read rather than
-        // declared, so a verb written next year that moves somebody puts a
-        // person into the prose without its author knowing the channel exists.
-        // See `scene-person-readings.ts`.
+        // WHO WAS STANDING HERE BEFORE ANY OF IT
         const squareBefore = this.present(cultivator);
         // And the body on the other side of a fight already standing, whose
         // hit points live in the fight rather than on any row a snapshot of
@@ -2395,48 +1782,7 @@ export class GameService {
             );
         }
 
-        // ── AND THE PART OF THE SENTENCE THAT DID NOT RUN ────────────────
-        //
-        // One turn is one action, and that stays true: nothing below runs a
-        // second verb. What it does is SAY that another verb was there, which
-        // is the whole defect - `I buy a month of rations and eat` bought and
-        // did not eat, and said nothing about the eating, so the player learned
-        // it from a hunger banner that would not go away.
-        //
-        // It runs in both directions, and the other one is the worse of the
-        // two: the parser takes whichever verb its table reaches first, so
-        // `I gather herbs and go to the market` browses a board and the
-        // gathering disappears. The expensive half is the half that goes.
-        //
-        // Here rather than inside `execute` because it is a fact about the
-        // sentence and not about any one verb: put in one branch it would cover
-        // one verb, and the next verb somebody adds would drop clauses again.
-        //
-        // AND IT IS OFF WHEN THE TURN RAN A PLAN. This helper answers one
-        // question - "one verb ran; was there a second one in the sentence?" -
-        // and a turn that ran three verbs has already answered it, in the
-        // affirmative, by running them. Left on, it reports a clause a LATER
-        // STEP EXECUTED as though it had been declined, which is worse than the
-        // silence it was written to replace: the whole value of the honest
-        // report is that a player can trust it.
-        //
-        // AND IT IS OFF WHEN THE TWO CLAUSES ARE ONE ACT. Played, against a
-        // local model, and it is the worst shape this report can take:
-        //
-        //   > I go into seclusion for a year and gather qi
-        //   "Ran seclude. Not run: 'gather qi' [...] which on its own reads as
-        //    cultivate."
-        //
-        // Qi went 0 to 6 over that year. Seclusion IS gathering qi - `cultivate`
-        // and `seclude` are two names for one handler, `runSeclusion`, and the
-        // player was told that the thing that demonstrably happened had not
-        // happened. That is worse than a wrong number, because this line is
-        // precisely the thing the player is now being asked to trust.
-        //
-        // `SAME_ACT_UNDER_TWO_NAMES` is a closed table of verb pairs that reach
-        // one handler, not a similarity test. Two verbs that resolve to the same
-        // engine call cannot be two things a turn had to choose between, and
-        // that is a fact about the dispatch above rather than about the words.
+        // AND THE PART OF THE SENTENCE THAT DID NOT RUN
         const naming = theClauseThisTurnDidNotRun(trimmed, theTurnsPlan.action.action);
         const dropped = stepsOfThePlan(theTurnsPlan).length > 1
             || (naming !== null && sameActUnderTwoNames(theTurnsPlan.action.action, naming.action))
@@ -2463,14 +1809,7 @@ export class GameService {
 
         const after = this.currentRun();
 
-        // ── AND THIS TURN BECOMES THE ONE THE NEXT ONE MAY REFER TO ──────
-        //
-        // Recorded LAST, after everything that could have added to either list,
-        // and it replaces rather than appends: the memory is exactly one turn
-        // deep by construction rather than by being trimmed. `onTurn` is the
-        // counter as this turn leaves it, and the next turn reads that same
-        // number - so a turn taken by any other door moves the counter past it
-        // and the memory lapses on its own. See `last-turn-memory.ts`.
+        // AND THIS TURN BECOMES THE ONE THE NEXT ONE MAY REFER TO
         this.lastTurn = {
             runId: after.run.id,
             cultivatorId: after.cultivator.id,
@@ -2486,20 +1825,7 @@ export class GameService {
         // the sheet says rather than what it said a turn ago.
         this.refreshThePlayerRow(after.cultivator);
 
-        // ── AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD ──────────────
-        //
-        // AFTER the refresh above, and that ordering is load-bearing rather
-        // than tidy: the refresh writes the world row from the sheet, and the
-        // settlement marks that row dead. The other way round, the refresh
-        // would resurrect it inside the same turn. `standInTheWorld` no longer
-        // writes `alive` over a dead sheet either, so this is belt and braces
-        // and both halves are wanted.
-        //
-        // ONE PLACE, at the end of the turn, because six separate lines in
-        // this package can end a life - the two skips, the crossing, the
-        // reprisal, the fight and the alchemy path - and a settlement per
-        // death site is six chances to forget the seventh. It runs at most
-        // once per run: `requireLiveRun` refuses every later act.
+        // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD
         const died = this.settleTheEstateIfTheyDied();
         if (died) {
             execution.calls.push({
@@ -2525,22 +1851,7 @@ export class GameService {
             await saveWorldForRun(run);
         }
 
-        // ── EVERYTHING THIS TURN SHOWED, WRITTEN DOWN ────────────────────
-        //
-        // THE ONE WRITER. Producers declare what they put in front of the
-        // player on `execution.perceived`; this is where it becomes a row, in
-        // phase 2, before anything is narrated and before phase 3 is handed a
-        // licence to mention any of it.
-        //
-        // It replaces remembering. Knowledge used to be written by whoever
-        // happened to be holding the player - fourteen `noteEncounter` call
-        // sites across six files - and a verb that forgot was indistinguishable
-        // from a verb that decided not to. That is how a house named to the
-        // player three times in one session was still `unaware` when they tried
-        // to ask it for something.
-        //
-        // It widens nothing. Every gate upstream still rules; this records what
-        // they let through, at a stage the source has already clamped.
+        // EVERYTHING THIS TURN SHOWED, WRITTEN DOWN
         for (const perceived of execution.perceived ?? []) {
             const learned = recordPerception(this.knowledge, after.cultivator, after.run, perceived);
             if (learned.length > 0) {
@@ -2551,24 +1862,7 @@ export class GameService {
             }
         }
 
-        // ── AND THE PEOPLE WHO WERE IN IT ────────────────────────────────
-        //
-        // One call, at the end of every turn, over everybody standing here -
-        // involved or not. It reads no verb and no intent: what it reads is
-        // what moved, for whom, as a fraction of what they had, with a witness
-        // priced against the loudest thing that happened to anybody.
-        //
-        // Measured before it existed: a three-round fight told the narrator
-        // "You are on 36 of 40; Kong Liekuan is on 39 of 43" and nothing else,
-        // with two people standing in the square for all three rounds who were
-        // never mentioned. Being admitted to a house came back with nobody in
-        // it at all. The prose was dry because there was no person in the
-        // prompt, and there is no instruction that fixes that.
-        //
-        // The two things the roster snapshot cannot see are read HERE, beside
-        // it, rather than reported by whichever verb ran: the fight this turn
-        // was standing in, and the person the plan pointed at. See
-        // `scene-person-readings.ts` for why that distinction is load-bearing.
+        // AND THE PEOPLE WHO WERE IN IT
         this.sayWhoWasInIt(
             execution, squareBefore, cultivator, after.cultivator,
             theBearingsThisTurnCanRead(
@@ -2602,15 +1896,7 @@ export class GameService {
         // ── phase 3 ──
         const narration = await this.narrator.narrate(execution.facts, scene);
 
-        // ── AND A FORCED TURN SAYS SO, ABOVE THE STORY ────────────────────
-        //
-        // Written here and not in `adminAct`, because a forced turn IS an
-        // ordinary turn - everything above ran for it exactly as it runs for a
-        // typed sentence, and the only thing left to do is say what was
-        // arranged. The receipt goes in as the ENGINE's own words, the way
-        // every other admin call is filed, and the narration underneath it is
-        // untouched: the world as it now stands, told by whichever narrator
-        // this process was started with.
+        // AND A FORCED TURN SAYS SO, ABOVE THE STORY
         const receipt = forced === null
             ? null
             : this.receiptForAForcedVerb(forced, execution, after.run.id);
@@ -2636,19 +1922,6 @@ export class GameService {
 
     /**
      * What ADMIN arranged, said out of world, and written to the audit trail.
-     *
-     * Two jobs and they are the same job. It TELLS the operator which of the
-     * two things happened - the roll was decided, or the world refused before
-     * any roll arose - and it RECORDS it, because the audit rows are the admin
-     * flag and a run holding an arranged success must never reach the death
-     * ledger or the balance data as though it had earned one.
-     *
-     * The refusal half is the useful half, and the design owner asked for it in
-     * these terms: *"it should say no, you can do it by setting your realm to
-     * 29 and your age."* So it names every route it has for the refusal that
-     * actually happened, keyed on that refusal's own identity - and where there
-     * is no route it says that flatly, because a helpful-sounding alternative
-     * to an impossibility is worse than a plain no.
      */
     private receiptForAForcedVerb(
         forced: ForcedVerbLine,
@@ -2666,19 +1939,7 @@ export class GameService {
 
         const lines: string[] = [`ADMIN - FORCED ${forced.verb.toUpperCase()}`];
 
-        // ── WHAT WAS DECIDED IS A FACT ABOUT THE DECISIONS, NOT THE VERB ──
-        //
-        // This used to read `execution.outcome` and nothing else, and it was
-        // wrong in a way a played transcript showed plainly: a forced theft
-        // that LANDED - the money moved, the reprisal fired - was reported as
-        // "Nothing was decided. The world refused before any uncertain question
-        // arose." A verb can file a refusal on its way through and still have
-        // reached the roll this was pointed at, and one that spends its turn
-        // being answered by an injured Nascent Soul is exactly such a verb.
-        //
-        // So the receipt asks the CONTEXT what it was actually asked, which is
-        // the only thing that knows. A refusal only means "nothing was decided"
-        // when nothing was in fact decided.
+        // WHAT WAS DECIDED IS A FACT ABOUT THE DECISIONS, NOT THE VERB
         const landed = [...(theAttemptInFlight()?.landed ?? [])];
 
         if (landed.length > 0) {
@@ -2852,11 +2113,6 @@ export class GameService {
 
     /**
      * Refuse an operator surface when admin mode is off.
-     *
-     * Shared so every admin endpoint refuses in the same words and with the
-     * same status. It does not guard state - nothing behind it writes - it
-     * guards *disclosure*: these surfaces state plainly what the world spends
-     * a great deal of effort keeping unstated.
      */
     assertAdmin(what: string): void {
         if (!this.adminMode) {
@@ -2874,11 +2130,6 @@ export class GameService {
 
     /**
      * Every cultivator in the world, read-only.
-     *
-     * Gated on ADMIN mode, which per context.md lifts content gates and never
-     * the authority rule: this endpoint reads rows and adds display names. It
-     * has no write path, so there is nothing here for ADMIN to be dangerous
-     * with.
      */
     async roster(): Promise<{ roster: RosterRowView[] }> {
         this.useOwnDb();
@@ -2908,11 +2159,6 @@ export class GameService {
 
     /**
      * How far anybody actually gets, three ways.
-     *
-     * Belief, model and measurement side by side, plus what this particular
-     * world contains today. Admin only, and a balance instrument rather than a
-     * play surface: it answers "is the ladder doing what we think it does" and
-     * nothing a player would ever ask.
      */
     async ladderOdds(): Promise<LadderOddsReport> {
         this.useOwnDb();
@@ -2925,10 +2171,6 @@ export class GameService {
 
     /**
      * The world the current run is standing in.
-     *
-     * Rebuilt from the run's seed and caught up to the run's clock by the
-     * owning module, so this is cheap on a warm process and correct on a cold
-     * one. Null when there is no run yet, or when the world is switched off.
      */
     async loadWorld(): Promise<WorldState | null> {
         this.useOwnDb();
@@ -2941,49 +2183,9 @@ export class GameService {
 
     /**
      * Run one action.
-     *
-     * Exhaustive over the closed set by construction: adding a name to
-     * ACTION_NAMES without adding a case here is a compile error, which is the
-     * point of the enum being closed in the first place.
-     *
-     * Read the `interact` and `move` branches with one thing in mind: neither
-     * of them looks at `action.intent` to decide anything. The intent is passed
-     * to the facts so the narrator can say what was attempted, and that is all
-     * it is ever allowed to do. An outcome selected by the word the player
-     * typed would be an outcome the engine did not compute.
      */
     /**
      * A sentence that contained a plan, carried out in the order it was said.
-     *
-     * ── WHY THIS IS HERE AND WHY IT IS THIS SHORT ────────────────────────
-     *
-     * The law - what may run, how many, and what happens when two acts both
-     * cost - is `a-sentence-can-be-more-than-one-call.ts` and is pure. What
-     * `game.ts` owns is the only thing it can own: **running each step against
-     * the live world**, re-reading the run and the cultivator between steps so
-     * that a step sees what the step before it left. That is the difference
-     * between a sequence and a batch, and it is the whole reason the design
-     * owner's example works:
-     *
-     *   > I take his purse, hand it to the man beside him, and walk away
-     *
-     * Three acts the game already has, and the framing falls out of the ORDER
-     * rather than out of a `frame` verb. Nobody composed it; the player did.
-     *
-     * ── AND A PLAN THAT STOPS HALFWAY IS ONE OF THE ANSWERS ──────────────
-     *
-     * Caught taking it, caught passing it, or gone with the purse in another
-     * man's hand: three different worlds out of one sentence, and none of them
-     * needs a branch. When the world stops a step, the plan stops there and the
-     * account says so in the world's terms - *the theft did not come off, so
-     * there was nothing to hand over* - rather than in the executor's.
-     *
-     * ── THE SINGLE-STEP PATH IS THE OLD PATH, UNTOUCHED ──────────────────
-     *
-     * One step returns `this.execute(...)` with the same arguments the same way
-     * it always did. Both deterministic tiers produce exactly one step, so no
-     * draw order anywhere moves for a player with no model configured - which
-     * is the determinism claim, and it is structural rather than measured.
      */
     private async carryOutThePlan(
         plan: PlanWithSteps,
@@ -3024,13 +2226,7 @@ export class GameService {
             const asPlanned = budget.toRun[i]!;
             const step = carryingTheReferentForward(asPlanned, lastThingNamed);
 
-            // ── A CLAUSE THAT ONLY CHOOSES RUNS NO VERB ─────────────────
-            //
-            // "pick the strongest one" is a selection from the rows the turn is
-            // already holding, not an act against anybody, so it resolves a
-            // NAME and spends nothing. What it picks becomes what the clauses
-            // after it are talking about, which is the whole reason the third
-            // clause of that sentence used to reach a placeholder.
+            // A CLAUSE THAT ONLY CHOOSES RUNS NO VERB
             if (step.selects) {
                 const picked = this.whoTheChoiceLandsOn(cultivator, step.selects);
                 if (picked !== null) lastThingNamed = picked.name;
@@ -3066,17 +2262,7 @@ export class GameService {
             }
             done.push(one);
 
-            // ── TWO WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT ───
-            //
-            // The step did not come off, or it came off and the run did not
-            // survive it. Told apart because the player has to be able to tell
-            // them apart: see `howTheStepWent`, where a live turn reported a
-            // theft that plainly landed as one that "did not come off".
-            //
-            // `notReached` is only what THIS TURN was going to run. Steps held
-            // by the budget were never this turn's and are not collateral of
-            // anything - reporting them here is what made a journey the player
-            // had sequenced for later read as a casualty of the theft.
+            // TWO WAYS A PLAN ENDS EARLY, AND THEY ARE DIFFERENT
             const stillAlive = this.currentRun().cultivator.alive;
             if (went === 'did_not_come_off' || !stillAlive) {
                 stoppedOn = step;
@@ -3086,13 +2272,7 @@ export class GameService {
             }
         }
 
-        // ── TWO COSTLY ACTS: ASK, AND SAY IT EXACTLY ONCE ────────────
-        //
-        // Raised AFTER the free reads have run, so the question can name
-        // whoever they resolved. The turn still has to BE a turn, so where
-        // nothing ran at all the question is itself the free read - and in that
-        // case the wording is already the whole of `facts.prose`, so appending
-        // it again is what printed the same ruling twice on a played turn.
+        // TWO COSTLY ACTS: ASK, AND SAY IT EXACTLY ONCE
         const fork: WhichComesFirst | null = budget.askAbout.length > 0
             ? {
                 runId: run.id,
@@ -3145,14 +2325,14 @@ export class GameService {
         } else if (fork !== null) {
             if (alreadySaid) {
                 // Already the whole of `prose`, so saying it again is the
-                // double-printed ruling a played turn caught. What it still
-                // needs is the `required` channel: measured, a model handed
-                // nothing but this question wrote "You reach for Cao Antao's
-                // purse and press it into Shen Liefeng's hand. Then you walk
-                // away." - three acts, none of which happened, off a turn whose
-                // only fact was that it was ASKING. `withRequiredLines` appends
-                // what the prose left out, at both front doors, so the question
-                // reaches the player whatever the narrator felt like writing.
+                // double-printed ruling a played turn caught. What it still needs
+                // is the `required` channel: measured, a model handed nothing but
+                // this question wrote "You reach for Cao Antao's purse and press it
+                // into Shen Liefeng's hand. Then you walk away." - three acts, none
+                // of which happened, off a turn whose only fact was that it was
+                // ASKING. `withRequiredLines` appends what the prose left out, at
+                // both front doors, so the question reaches the player whatever the
+                // narrator felt like writing.
                 (folded.facts.required ??= []).push(whatTheQuestionAsks(fork));
             } else {
                 sayThisWhateverTheNarratorDoes(folded.facts, whatTheQuestionAsks(fork));
@@ -3193,13 +2373,6 @@ export class GameService {
         }
 
         // A CLAUSE THE READING LAYER DROPPED IS SAID TOO.
-        //
-        // The executor cannot report a step it was never given, so without this
-        // the narrator is the only thing in the turn that knows the clause
-        // existed - and measured, it filled the gap: handed a turn whose only
-        // ruling was a refusal, a model wrote "You take the purse from Cao Antao
-        // and press it into Shen Liefeng's hand". The same treatment a clause
-        // the budget declined already gets.
         if (plan.droppedClauses && plan.droppedClauses.length > 0) {
             // Only what the player actually typed reaches the player. A step the
             // reader ADDED and the check then declined is an inspector row and
@@ -3228,22 +2401,6 @@ export class GameService {
 
     /**
      * Who a choice like "the strongest one" lands on, out of the people here.
-     *
-     * ── IT NAMES ONLY PEOPLE THE PLAYER COULD ALREADY NAME ───────────────
-     *
-     * The discovery gate, applied to a comparison. The candidates are the faces
-     * this cultivator has a record for and nobody else, so a choice can never
-     * be the thing that hands over a name - which it would be, silently and
-     * every time, if it sorted the whole square. Where the deepest person
-     * present is a stranger the choice lands on the deepest person they can
-     * NAME, and the sentence says so, which is honest and discloses nothing.
-     *
-     * ── AND ONLY OVER FIELDS THIS TURN ACTUALLY HOLDS ROWS FOR ───────────
-     *
-     * A rung and an age are on the roster row. A distance and a price are not
-     * rows this method has, and it returns null for them rather than guessing -
-     * the refusal names what would work, which is the standard every other
-     * refusal in this package is held to.
      */
     private whoTheChoiceLandsOn(
         cultivator: Cultivator,
@@ -3278,20 +2435,6 @@ export class GameService {
 
     /**
      * The place with the best ground, out of the places this cultivator knows.
-     *
-     * ── SAME ROWS THE READ PRINTS, SAME GATE ────────────────────────────
-     *
-     * A projection of this cultivator's own place awareness onto the catalog,
-     * which is the join `destinations` opens with and is the only part of it a
-     * choice needs - roads, ruins, occupancy and province ceilings are that
-     * read's business and none of them decides which ground is thickest.
-     *
-     * The gate is the same one everywhere else in this package: a place the
-     * player has no record for is not a candidate, so a choice can never be the
-     * thing that hands over a name. `sealed_vein` is deliberately absent from
-     * the ordering - it is not reachable by travelling, so offering it as the
-     * answer to "somewhere the air is thick" would be naming a door rather than
-     * a destination.
      */
     private whereTheGroundIsBest(
         cultivator: Cultivator,
@@ -3333,48 +2476,11 @@ export class GameService {
         rawInput = ''
     ): Promise<Execution> {
         // A True Immortal is not standing in the province any more.
-        //
-        // `existence.ts` has modelled this the whole time - `canExistBeyondTheLid`
-        // and `evaluateLidTransit`, which prices a descent at nine tribulation
-        // strikes - but nothing in this layer consulted it, so a True Immortal
-        // could look over a market stall and hire themselves out as a porter for
-        // twenty-nine spirit stones. The mortal world is not somewhere they are.
-        // Coming down is possible and it is the most expensive thing they can
-        // do; it is not the default state of the run.
-        // ── A True Immortal is not standing in the province any more ──
-        //
-        // This used to be a flat refusal and the refusal was correct and empty:
-        // "Not from here", every time, with nothing on the other side of it.
-        // Played cold at ordinal 46 that reads as the game ending rather than
-        // as the game moving, which is exactly backwards - the layer above the
-        // Lid is one of the most complete systems in the project and none of it
-        // was reachable.
-        //
-        // The sentence a player typed HAS answers up here. There are two, they
-        // are the two the setting has always described, and both resolve
-        // through machinery that already exists: send something down a line
-        // somebody is holding, or go yourself at nine strikes for ten to
-        // fifteen breaths. So the mortal-world verbs are RE-OFFERED rather than
-        // refused, and the two verbs that carry them are in the closed set.
         if (canExistBeyondTheLid(cultivator) && MORTAL_WORLD_ACTIONS.includes(action.action)) {
             return this.aboveTheLid(run, cultivator, action.action);
         }
 
-        // ── THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT ─
-        //
-        // `attack` used to do this for itself and no other verb did it at all.
-        // The recovery now lives in `carryWhatOnlyTheSentenceKnows`, and this
-        // is the only caller that can supply what it needs: the narrator and
-        // the sentence splitter call the same function with no room in scope
-        // and simply do not recover a name.
-        //
-        // Before the switch, so every verb below reads a target that is what
-        // the player named - whether it survived into the plan or only into
-        // the sentence. Measured at 16% of turns arriving with a bare target.
-        //
-        // Guarded on both sides so an ordinary turn pays nothing: no sentence
-        // or a target already present and neither the pattern table nor the
-        // roster is touched.
+        // THE NAME THE VERB DROPPED, PUT BACK BEFORE ANYTHING READS IT
         if (rawInput && (action.target ?? '').trim().length < 2) {
             action = carryWhatOnlyTheSentenceKnows(action, rawInput, this.present(cultivator));
         }
@@ -3382,11 +2488,11 @@ export class GameService {
         switch (action.action) {
             // `durationAskedFor` is the UNCLAMPED span in the sentence.
             // `action.days` has already been through `parseDuration`, which
-            // silently caps at MAX_CULTIVATION_DAYS - so "I cultivate for
-            // 100000 years" arrived here as 36500 and the player was told
-            // "Seclusion of 100 years was intended", which is the engine
-            // reporting its own ceiling as somebody else's intention. Carried
-            // so the account can say what was asked and what was capped.
+            // silently caps at MAX_CULTIVATION_DAYS - so "I cultivate for 100000
+            // years" arrived here as 36500 and the player was told "Seclusion of
+            // 100 years was intended", which is the engine reporting its own
+            // ceiling as somebody else's intention. Carried so the account can say
+            // what was asked and what was capped.
             case 'cultivate':
                 // A target on `cultivate` is somebody named as sitting it with
                 // them, and the shared road is the only thing that reads it -
@@ -3458,25 +2564,11 @@ export class GameService {
                 );
 
             case 'guard':
-                // 护法. Naming somebody spends the span and resolves THEIR
-                // crossing; naming nobody is the free read of who would stand
-                // over the player's own. Both live in `standing-guard.ts`, and
-                // the split is here rather than inside the verb so the free
-                // half never touches `loadWorld`.
-                //
-                // AND THE READ IS ASKED FOR, NEVER FALLEN INTO. A sentence
-                // that meant to guard somebody and named a pronoun - "I stand
-                // guard while she crosses" - must be REFUSED with who is
-                // standing here rather than answered with a roster of who
-                // would guard the player, which is a good answer to a question
-                // nobody asked.
-                //
-                // There is no DEFAULT_GUARD_INTENT, and that is on purpose:
-                // the acting branch is already the misparse-safe one. It needs
-                // a person who is actually standing here AND a world record for
-                // them AND a tie that carries the arrangement, none of which a
-                // guessed sentence supplies, and it spends nothing on the way
-                // to any of those refusals. `give` makes the same argument.
+                // 护法. Naming somebody spends the span and resolves THEIR crossing;
+                // naming nobody is the free read of who would stand over the
+                // player's own. Both live in `standing-guard.ts`, and the split is
+                // here rather than inside the verb so the free half never touches
+                // `loadWorld`.
                 return action.intent === GUARD_IS_A_QUESTION
                     ? this.whoWouldStandOverYourCrossing(run, cultivator)
                     : await this.standGuard(
@@ -3509,11 +2601,11 @@ export class GameService {
                             ? this.present(cultivator).find(row =>
                                 row.name.toLowerCase() === action.target!.trim().toLowerCase())
                             : undefined);
-                    const why = whyTheArtWillNotAnswer(
-                        theirHalfOfTheArt(this.repos, cultivator.id),
+                    const why = whyTheRiteWillNotOpen(
+                        theirHalfOfTheRite(this.repos, cultivator.id),
                         whoWith
-                            ? theirHalfOfTheArt(this.repos, whoWith.id)
-                            : { cultivating: false, stage: 0 },
+                            ? theirHalfOfTheRite(this.repos, whoWith.id)
+                            : { takingArt: null, spendingArt: null, stage: 0 },
                         whoWith?.name ?? 'them'
                     );
                     if (why) {
@@ -3620,20 +2712,7 @@ ${noticedWaiting}`;
                         copiesHeldBy(this.db, cultivator.id).length > 0
                     ).line
                 ));
-                // ── AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE ──
-                //
-                // Found by playing. The sheet reads whose roll somebody is on
-                // off `cultivator.sectId`, which a probationer correctly does
-                // not have - so a person in year twelve of an apex's intake
-                // asked "where do I stand" and was told "Serves no house.
-                // Nothing is owed to them and nothing is asked of them." Both
-                // sentences are true of a probationer and together they are
-                // the wrong answer, because the interesting fact about that
-                // person is the one they omit.
-                //
-                // Appended rather than threaded into `standingLines`: that
-                // function is pure and has no database, and the probation is a
-                // flag rather than a column on the row.
+                // AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE
                 const onProbation = probationOf(this.repos, cultivator, run);
                 if (onProbation) {
                     // AND IF IT HAS BEEN DECIDED, IT HAS BEEN DECIDED. The
@@ -3765,13 +2844,13 @@ ${noticedWaiting}`;
                 return this.listTechniques(run, cultivator, action.target);
 
             case 'acquisition':
-                // "what are my options" is understood as a question about how
-                // the manual in your hands could go further. That is a good
-                // read and it is the wrong one for somebody who has just
-                // started and is asking what the game is - measured in a real
-                // run, where the sentence answered about the manual only. The
-                // two are told apart by whether the sentence is about a book;
-                // anything that mentions one keeps the answer it had.
+                // "what are my options" is understood as a question about how the
+                // manual in your hands could go further. That is a good read and it
+                // is the wrong one for somebody who has just started and is asking
+                // what the game is - measured in a real run, where the sentence
+                // answered about the manual only. The two are told apart by whether
+                // the sentence is about a book; anything that mentions one keeps
+                // the answer it had.
                 if (ASKING_WHAT_IS_POSSIBLE.test(rawInput) && !ABOUT_A_MANUAL.test(rawInput)) {
                     return this.guidance(run, cultivator, ambient);
                 }
@@ -3829,19 +2908,10 @@ ${noticedWaiting}`;
                     return this.guidance(run, cultivator, ambient);
                 }
 
-                // The cheapest action available, and the whole reason it is in
-                // the closed set: no time, no food, no roll, no death. A player
-                // may type something ambiguous a hundred times and lose nothing
-                // but a moment.
-                //
-                // AND IT TEACHES. A refusal that names its cause is the rule
-                // this project already holds; a refusal with nothing after it
-                // is a dead end, and this is the single most common thing a new
-                // player sees. So the engine says what KINDS of thing work
-                // standing here - the two or three that are live in this state,
-                // from the same source `help` reads - rather than leaving them
-                // to guess again. Nothing is unlocked and nothing is cheapened:
-                // the sentence they typed still did nothing at all.
+                // The cheapest action available, and the whole reason it is in the
+                // closed set: no time, no food, no roll, no death. A player may
+                // type something ambiguous a hundred times and lose nothing but a
+                // moment.
                 const pressing = theMostPressing(
                     whatIsWorthDoingStandingHere(this.whatIsLiveHere(cultivator, ambient, run)),
                     3
@@ -3872,14 +2942,14 @@ ${noticedWaiting}`;
             }
 
             case 'look': {
-                // Looking round on the far side of the Lid is a different read
-                // from looking round in a province, and it used to be the same
-                // one. What that produced, found by playing at 46: the ambient
-                // description of a layer whose qi density is 1.0 by definition,
-                // a Dao house's practice observed among people who are not
-                // there, and two names overheard through a wall in a province
-                // on the other side of a hole. Every one of those is a mortal
-                // -layer read applied to somebody who has left it.
+                // Looking round on the far side of the Lid is a different read from
+                // looking round in a province, and it used to be the same one. What
+                // that produced, found by playing at 46: the ambient description of
+                // a layer whose qi density is 1.0 by definition, a Dao house's
+                // practice observed among people who are not there, and two names
+                // overheard through a wall in a province on the other side of a
+                // hole. Every one of those is a mortal -layer read applied to
+                // somebody who has left it.
                 if (canExistBeyondTheLid(cultivator)) {
                     return this.lookAbove(run, cultivator);
                 }
@@ -3893,19 +2963,6 @@ ${noticedWaiting}`;
                 }
 
                 // WHO ELSE IS DRAWING ON THIS GROUND.
-                //
-                // The question a player asks the moment they learn occupancy
-                // matters, and it reached nothing at all: "how crowded is it
-                // here" did not resolve into any action in the set. Answered
-                // off the same `GroundConditions` the rate is computed from,
-                // and free, because looking around you costs nothing.
-                // WHAT MY STANDING BUYS ME ON MY HOUSE'S GROUND.
-                //
-                // "I ask for time on the vein", "where can I cultivate in the
-                // sect" and "I go to the sect cultivation chamber" all reached
-                // nothing - the last one refused as a name that is not a place,
-                // which is true and useless, because the chamber is real and
-                // the player's standing already entitles them to days in it.
                 if (action.intent === 'ground_time') {
                     this.atHand = this.atHand ?? await this.loadWorld();
                     return this.freeAction(run, 'look', factsForGroundTime(
@@ -3916,12 +2973,6 @@ ${noticedWaiting}`;
                 }
 
                 // WHO ANSWERS FOR THIS GROUND, ASKED FOR DELIBERATELY.
-                //
-                // The volunteer at the foot of this case speaks only where
-                // nobody holds the ground. Somebody who ASKED is owed the
-                // answer whichever of the four readings it is - including "the
-                // record does not say", which is the one that used to be priced
-                // as a vacuum.
                 if (action.intent === 'holder') {
                     this.atHand = this.atHand ?? await this.loadWorld();
                     return this.whoAnswersHere(run, cultivator);
@@ -3943,14 +2994,6 @@ ${noticedWaiting}`;
                 }
 
                 // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
-                //
-                // A house that needs bodies advertises, and a house that does
-                // not need them has no reason to. So a wall is a discovery
-                // channel that runs the opposite way to every other one in the
-                // game: instead of the player having to find a name, the houses
-                // that are short come looking. Free, because reading a wall is
-                // free everywhere; the price is at the door, where the bar on
-                // the paper is the real bar.
                 if (action.intent === 'bills') {
                     const wall = readTheWall(this.knowledge, cultivator, run);
                     return this.freeAction(run, 'look', wall.lines.length > 0
@@ -3967,23 +3010,7 @@ ${noticedWaiting}`;
 
                 const company = this.company(cultivator);
                 const standing = this.standingHere(cultivator);
-                // ── AND WHETHER ANYTHING IS WRONG WITH THIS GROUND ───────
-                //
-                // The second caller `ground-status-lines.ts` was extracted for,
-                // and it had never been wired: the module sat with no caller in
-                // `src/` while `investigate` carried a verbatim copy. Its own
-                // header holds the measurement - standing on the seat of a live
-                // war, with `stops: ['passage']`, `priceMultiplier: 2` and
-                // `dangerDelta: 0.5` all running, `I look around` ended "It is
-                // an ordinary day and it intends to stay one."
-                //
-                // Both verbs read the identical module now, which is the point:
-                // a famine must not be something a player learns only by
-                // guessing the other verb.
-                //
-                // `standingHere` is true by construction here. Looking round IS
-                // the ground under your own feet, and that is the floor case
-                // the stage rule exists for.
+                // AND WHETHER ANYTHING IS WRONG WITH THIS GROUND
                 const groundHere = this.worldPlaceOf(cultivator);
                 const wrong = this.atHand && groundHere
                     ? whatIsWrongWithThisGround({
@@ -4019,20 +3046,7 @@ ${line}`;
                         + `${wrong.stage} over ${wrong.running} status(es) running here.`
                     );
                 }
-                // ── AND WHO ANSWERS FOR IT, WHERE NOBODY DOES ────────────
-                //
-                // The trust term has been moving the player's odds off this
-                // since it landed and the game would not say it: both callers
-                // of `whoHoldsTheGround` were inside the NPC simulation. A
-                // fresh run opens at Wind Market on The Burial Sands, so this is
-                // turn-one ground.
-                //
-                // Volunteered only where nobody holds it. An absent register is
-                // a fact about paper, not about the world, and it would print
-                // over most of the map: measured on a seeded world, 113 of 435
-                // people stand on ground the record does not describe. Asked
-                // for deliberately, all four readings answer - `whoAnswersHere`
-                // in `situated-reads.ts`.
+                // AND WHO ANSWERS FOR IT, WHERE NOBODY DOES
                 if (this.atHand && groundHere) {
                     const holder = whoAnswersForThisGround({
                         locations: this.atHand.locations,
@@ -4054,32 +3068,7 @@ ${line}`;
                     }
                     looking.facts.structure.push(holder.structure);
 
-                    // ── AND BEING HERE IS HEARING OF THEM ────────────
-                    //
-                    // FOUND BY PLAYING, standing inside the Azure Cloud
-                    // Pavilion's own compound: "can I join this sect?" -
-                    // never the name, a deictic - resolved to the Pavilion
-                    // and was refused with "Not a name you hold", because
-                    // the knowledge table had no row and NOTHING WROTE ONE
-                    // FOR BEING THERE.
-                    //
-                    // The guard that refused is right and stays exactly as
-                    // it is - naming a house off a listing must not enrol
-                    // anybody. What changes is that a player standing in
-                    // somebody's courtyard genuinely does hold the name, so
-                    // it stops firing on its own accord rather than being
-                    // given an exception.
-                    //
-                    // `named` and no further: `being-on-their-ground.ts`
-                    // says why it grants below its own source ceiling.
-                    // DECLARED, NOT WRITTEN. This was the first producer to
-                    // move onto the seam, and it is the one that proved the
-                    // gap: it used to call `learnIfNew` here, which worked and
-                    // meant every future perception had to remember to do the
-                    // same. The rule it grants is unchanged - `named` from
-                    // `witnessed`, deliberately below the source ceiling,
-                    // because being somewhere tells you whose ground it is and
-                    // nothing about their politics.
+                    // AND BEING HERE IS HEARING OF THEM
                     const introduced = whoBeingHereIntroducesYouTo(
                         this.atHand.locations, groundHere
                     );
@@ -4110,33 +3099,7 @@ ${line}`;
 
 ${line}`;
                 }
-                // ── AND WHO IN THE SQUARE IS TRADING ─────────────────────
-                //
-                // The owner's complaint in one sentence: *being somewhere is so
-                // limiting if you know nothing.* A look named three people and
-                // said nothing about the fact that one of them was carrying a
-                // book they would sell, so the whole of the ordinary business
-                // of a settlement was invisible to somebody with no vocabulary.
-                //
-                // Gated on the same signal as the wall above, and for the same
-                // reason: `whatIsBeingOfferedHere` grants the seller's name
-                // through `learnIfNew`, so a seller already known writes
-                // nothing and is dropped here without anything having to
-                // remember that this player has stood here before. Standing in
-                // one market town for a season does not reprint the offer.
-                //
-                // ONE LINE, not the block. A look is a look; the board is where
-                // the asks are read out, and the sentence that gets there is
-                // named rather than left to be guessed.
-                //
-                // NO NAMES, AND NOTHING LEARNED. Seeing somebody is not knowing
-                // them, and a LOOK is not a source a name may arrive through -
-                // `presence.test.ts` guards exactly that, and the first version
-                // of this line broke it by handing over four. What a look can
-                // honestly report is the SHAPE: somebody in this square is
-                // hawking something, and the cheapest of it is going for this
-                // much. Who they are is what walking over to them buys, and the
-                // board is where the name is granted, through the ordinary gate.
+                // AND WHO IN THE SQUARE IS TRADING
                 const trading = readWhatIsOnOfferHere(
                     cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
                 );
@@ -4177,33 +3140,10 @@ ${noticed}`;
 
     // ── the three semantic actions ───────────────────────────────────────
 
-    // ─────────────────────────────────────────────────────────────────────
     // A WORD GIVEN, CARRIED, OR NOT KEPT
-    //
-    // The oath contract shape was complete and had no player path. A house
-    // could put one on somebody - `whatTheHouseDoesAboutIt` writes an indenture
-    // when it catches you - and nobody could swear one, be told what they were
-    // carrying, or break one.
-    //
-    // NOTHING HERE IS NEW MACHINERY. `grudges.ts` has carried `kind: 'oath'`
-    // and every cause on it since it was written; `what-an-indenture-...` says
-    // what a term is and who witnesses it; `whatWalkingOutOfItCosts` prices
-    // walking away and was written for exactly this. The one rule the whole
-    // section is built on is the design's own, from `faction-character.ts` on
-    // the House of the Bound Word: *a broken oath is structural rather than
-    // punitive - removing it removes some of the person.* So nothing below
-    // prevents anybody leaving. It says what leaving is.
-    // ─────────────────────────────────────────────────────────────────────
 
     /**
      * What kind of word this is, out of the causes the ledger already carries.
-     *
-     * A CLOSED SET, read off the sentence, and nothing anywhere branches on it
-     * to decide an outcome - the weight, the witness and what breaking it costs
-     * are identical whichever of these it is. It is the label the record
-     * carries so that somebody reading the ledger in eighty years can tell a
-     * brotherhood from a silence, which is exactly what `grudges.ts` keeps the
-     * causes for.
      */
     private whatKindOfOath(said: string): OathCause {
         if (/\b(?:brother|brotherhood|sister|sibling|sworn kin)\b/.test(said)) {
@@ -4372,14 +3312,7 @@ ${noticed}`;
         const said = `${topic ?? ''} ${rawInput}`.toLowerCase();
         const cause = this.whatKindOfOath(said);
 
-        // ── WHO PUTS THEIR NAME TO IT ────────────────────────────────────
-        //
-        // The premier oathwright is not universally available and the reason is
-        // its own founding oath, which it has honoured at the cost of a fortune
-        // it can see and cannot touch. A house that cannot get the best witness
-        // uses a lesser one, and the person held under that oath is held by
-        // something correspondingly easier to argue with. Nothing here scores
-        // that; it is a fact carried on the record.
+        // WHO PUTS THEIR NAME TO IT
         const witnessed = party.kind === 'sect'
             ? theOathwrightWouldWitnessFor(party.id)
             : true;
@@ -4415,13 +3348,13 @@ ${noticed}`;
             holderId: cultivator.id,
             subjectId: party.id,
             cause,
-            // A witnessed word with nothing behind it. The heavier weights
-            // belong to an oath that CLOSES something - `settleItWithABinding`
-            // writes one exactly as heavy as the account it discharged, on the
-            // argument that a lighter oath would be cheaper to break than what
-            // it replaced. Nothing is being discharged here, so nothing licenses
-            // a heavier row, and `slight` is the ledger's word for an
-            // unpleasantness rather than for a promise.
+            // A witnessed word with nothing behind it. The heavier weights belong
+            // to an oath that CLOSES something - `settleItWithABinding` writes one
+            // exactly as heavy as the account it discharged, on the argument that a
+            // lighter oath would be cheaper to break than what it replaced. Nothing
+            // is being discharged here, so nothing licenses a heavier row, and
+            // `slight` is the ledger's word for an unpleasantness rather than for a
+            // promise.
             severity: 'serious',
             onDay: today,
             description:
@@ -4472,27 +3405,11 @@ ${noticed}`;
     }
 
 
-    // ── ONE TARGET RESOLVER, FOR EVERY VERB AIMED AT A PERSON ────────────
-    //
-    // The owner flagged long ago that spar, bribe, threaten, favour and
-    // introduce should share one of these, and the symptom of not having one
-    // was measurable: three phrasings of the same request reached three
-    // different lookups, and a fourth resolved a party called
-    //
-    //   "Han Peiru with 60 spirit stones to introduce me to the elder"
-    //
-    // against a roster of two-word names and matched nobody. `interact` and
-    // `request` both come through the two methods below, so a name that
-    // resolves for one resolves for the other and a refusal reads the same
-    // whichever verb produced it.
+    // ONE TARGET RESOLVER, FOR EVERY VERB AIMED AT A PERSON
 
     /**
      * The party a sentence is aimed at: a pointed-at face, a named person, or a
      * faction. Null when it is none of those.
-     *
-     * `pointedAt` is passed in rather than recomputed because the caller has
-     * usually already needed it to decide whether a question was being asked of
-     * somebody standing there.
      */
     partyPutTo(
         cultivator: Cultivator,
@@ -4509,21 +3426,6 @@ ${noticed}`;
 
     /**
      * The refusal for a name that resolved to nobody, with the room attached.
-     *
-     * The blank look is right about the NAME and says nothing about the room,
-     * so every failed approach read identically whatever was attempted and
-     * whoever was standing there. Played live, "I bribe the gate guard" in a
-     * town with no gate guard came back "a sentence with a hole in it" - and a
-     * reviewer comparing it against a working seduction concluded the leverage
-     * mapping was missing. It was not: the verb parsed correctly and the person
-     * did not exist. A refusal that cannot be told apart from a broken feature
-     * is a bad refusal.
-     *
-     * Naming who is visibly present leaks nothing - `look` already lists exactly
-     * these people - and it is the difference between a dead end and a next
-     * move. `blankLook`'s own rule stands: it still never confirms whether the
-     * NAME exists, and this adds no name the player could not already see by
-     * looking up.
      */
     nobodyByThatName(
         cultivator: Cultivator,
@@ -4563,16 +3465,6 @@ ${noticed}`;
 
     /**
      * Approaching a person or a faction.
-     *
-     * Two halves, and the split is the design. The engine CAN state, from real
-     * rows, who this party is and what stands between them; it CANNOT yet
-     * resolve what came of the approach, because the social layer that would
-     * decide it - relationships, obligations, what each side knows and wants -
-     * is not something this layer may invent.
-     *
-     * So the attempt is recorded and the facts are reported, and the result is
-     * marked unresolved rather than narrated. "I try to sneak into the sect" is
-     * an attempt, not an infiltration.
      */
     interact(
         run: Run,
@@ -4588,31 +3480,7 @@ ${noticed}`;
     ): Execution | Promise<Execution> {
         const scope = this.scopeFor(cultivator);
 
-        // ── WHOSE IT IS, ASKED OF THE WORLD, BEFORE IT IS CALLED A THEFT ─
-        //
-        //   "Saying `take` about something that is not yours - and is not
-        //    genuinely free, like an apple in the middle of nowhere - is
-        //    stealing."
-        //
-        // The reader routes a bare taking here with `intent: 'take'`, which
-        // asserts nothing: there is no hostile word in "I pick up the manual on
-        // my way out" and there must not be a list of polite theft verbs, so the
-        // sentence cannot settle it and does not try. `whoseThingIsBeingTaken`
-        // asks the rows - who is standing here, what each of them has within
-        // reach, what is standing free - and answers one of three things.
-        //
-        // Only the middle one is a theft, and it becomes the EXISTING one:
-        // `intent` is rewritten to `steal` and everything below is untouched, so
-        // `resolveAttempt`, `whatALiftTook`, `whatTheyDoAboutBeingWronged` and
-        // `createObligation` are reached exactly as a sentence with the word
-        // `steal` in it reaches them. There is one theft path and this is not a
-        // second one.
-        //
-        // Skipped when the sentence named the owner itself: "I take a sword from
-        // the Cloud River Sect" names who it is being taken from, and the party
-        // resolver below is already the thing that asks the world whether they
-        // exist. Guessing a different holder over the top of a named one would
-        // be the reading layer overruling the player.
+        // WHOSE IT IS, ASKED OF THE WORLD, BEFORE IT IS CALLED A THEFT
         if (intent === 'take') {
             const thing = (topic ?? '').trim();
             topic = undefined;
@@ -4633,63 +3501,13 @@ ${noticed}`;
 
         const query = (target ?? '').trim();
 
-        // ── A THEFT'S TOPIC IS A THING, NOT A QUESTION ───────────────────
-        //
-        // Every branch below reads `topic` as *the subject somebody is being
-        // asked about* - `demandOf` and four `askAround` short-circuits - and a
-        // theft carries one for a different reason: which of their things is
-        // being taken. Left in the field, "I steal the spirit boat from Cao
-        // Nuolin" was answered by Cao Nuolin turning "spirit boat" over once
-        // and saying something true about the weather, and the taking never
-        // ran.
-        //
-        // Taken off the field once, here, rather than guarded five times: this
-        // is the point where the two uses of one field part company, and a
-        // fifth branch added later would otherwise have to remember.
-        //
-        // `steal` by name because the two uses are genuinely two uses and no
-        // predicate over the string can tell them apart. The rule that `intent`
-        // never decides an OUTCOME is untouched - this picks WHICH ROUTINE
-        // RUNS, which is what all eight readers of `intent` in this class do.
+        // A THEFT'S TOPIC IS A THING, NOT A QUESTION
         const named = intent === 'steal' ? topic : undefined;
         if (named !== undefined) topic = undefined;
 
-        // ── A QUESTION WITH WEIGHT BEHIND IT IS NOT A QUESTION ───────────
-        //
-        //   "you can DEMAND knowledge. whether it succeeds is whether people
-        //    respect you - either via power or something else."
-        //
-        // Every one of the `askAround` short-circuits below took a topic to the
-        // polite path whatever was behind it, so "I question the elder about
-        // the Nine Peaks" and "I press him about the Sill" - attempt intents
-        // with real topics, both of which the parser produces today - were
-        // silently downgraded to requests and answered by the other party's
-        // willingness alone. The player's standing, the ledger, what they are
-        // owed and every other term the pressure model prices had no bearing
-        // whatever on whether they found anything out.
-        //
-        // Asked FIRST, ahead of all three, because being downgraded is the
-        // defect and each of those branches is one of the ways it happened.
-        //
-        // Routed on the set this file already means by "an attempt to move
-        // somebody". Nothing here reads `intent` to decide an OUTCOME: what
-        // settles a demand is `resolveAttempt`, the same call a bribe and a
-        // threat go through, and there is no second resolver on this path.
-        // See `making-somebody-tell-you.ts`.
+        // A QUESTION WITH WEIGHT BEHIND IT IS NOT A QUESTION
         if (topic && topic.length >= 2 && ATTEMPT_INTENTS.has(intent)) {
-            // ── A NAME IS NOT A DESCRIPTION, AND THE DIFFERENCE IS THE WHOLE
-            //    GUARD ──
-            //
-            // Caught by `misparse.test.ts` on the first build of this branch,
-            // which is the test that exists for exactly this mistake: "I ask
-            // the Hollow Court about the crossing", from somebody who has never
-            // heard of the Court, got re-aimed at whoever was standing nearest.
-            // A name that resolves to nothing must NOT substitute a bystander -
-            // the refusal below owns that case and has to keep owning it.
-            //
-            // So the same three shapes the polite path already separates, on
-            // the same predicate: nothing said, a POINTING phrase, or a name.
-            // Only the first two may reach for whoever is at hand.
+            // A NAME IS NOT A DESCRIPTION, AND THE DIFFERENCE IS THE WHOLE GUARD
             const atHand = this.present(cultivator);
             const namedParty = query.length >= 2
                 ? this.partyPutTo(cultivator, query, scope)
@@ -4742,25 +3560,8 @@ ${noticed}`;
         const party = this.partyPutTo(cultivator, query, scope, pointedAt);
         // A DESCRIPTION is not a name. "The old woman" resolves to nobody in the
         // roster and should not be fuzzy-matched into one; what it does mean is
-        // that there is a person in front of the player, and a person can be
-        // asked something.
-        //
-        // A NAME that resolves to nothing is the opposite case and used to take
-        // the same branch, which is the defect a live from-scratch run caught.
-        // "I ask the Hollow Court for an immortal pill", typed at ordinal 0 by
-        // somebody who has never heard of the Hollow Court, threw the Court away
-        // and put the question to whoever was standing nearest - a Qi
-        // Condensation clerk - and came back byte-identical to an unrelated
-        // question asked of the same person. The addressee was silently
-        // replaced, and the player had no way to see it.
-        //
-        // `POINTING` is the closed set of phrases that describe somebody rather
-        // than naming them, and it is the right discriminator here for the same
-        // reason it is the right one in `somebodyAtHand`: everything in it is a
-        // role, a pronoun or a demonstrative, so a name can never land in it.
-        // Everything else falls through to the refusal below - which is
-        // deliberately the SAME refusal an invented name gets, so an unheard
-        // faction and a made-up one stay indistinguishable.
+        // that there is a person in front of the player, and a person can be asked
+        // something.
         if (!party && topic && topic.length >= 2 && POINTING.test(query)) {
             const atHand = this.present(cultivator);
             if (atHand.length > 0) {
@@ -4781,50 +3582,14 @@ ${noticed}`;
             if (who) return this.askAround(run, cultivator, who, topic, scope);
         }
 
-        // They may say something they assume the player already knows. The
-        // engine picks it and writes it down; the narrator only gets a licence
-        // to have them say it.
-        //
-        // ── NOT WHILE YOU ARE ROBBING THEM ───────────────────────────────
-        //
-        // Played, on the second theft off the same person:
-        //
-        //   "Fang Shutao answers being robbed in the body. Shen Wu does not
-        //    walk away from it whole.
-        //    Fang Shutao mentions The Fired Terraces the way you would mention
-        //    a bridge - it is out in The Silent Cliffs, and people who have
-        //    business with it go and stand on it."
-        //
-        // The person who had just broken a meridian handed over a place name,
-        // and `this.hear` WROTE THE KNOWLEDGE ROW for it - so a hostile
-        // encounter was a reliable way to farm the map. Hearsay is somebody
-        // talking to you as though you were somebody they talk to; being robbed
-        // is the state in which nobody is.
-        //
-        // Gated on `WRONG_BEHIND_INTENT` rather than on a list of verbs written
-        // here: it is the same closed table the reprisal and the ledger read,
-        // so "was that a wrong" continues to have one answer in this file and
-        // not three. And it is read BEFORE the offer, because `hear` writes as
-        // it picks - a hearing suppressed afterwards would already be on the
-        // knowledge table.
+        // They may say something they assume the player already knows. The engine
+        // picks it and writes it down; the narrator only gets a licence to have
+        // them say it.
         const spoken = party.kind === 'cultivator' && WRONG_BEHIND_INTENT[intent] === undefined
             ? this.hear(cultivator, run, `interact:${party.id}`, party.id)
             : null;
 
-        // ── AN ATTEMPT TO MOVE SOMEBODY, ACTUALLY RESOLVED ───────────────
-        //
-        // `engine/social-leverage/` is a finished pressure model - four
-        // outcomes, tone, leverage, audience, concealment, patience,
-        // alignment-dependent fallout, delayed discovery - with 34 passing
-        // tests and no route from the player to it. NPCs ran it on each other
-        // and "I bribe the gate guard" came back "They look at you the way
-        // people look at a sentence with a hole in it", with the inspector
-        // saying `Stated intent: bribe. Carried for the narrator; read by no
-        // conditional.` That is the AGENTS.md defect named first in the file.
-        //
-        // The resolver reads `leverage` and never `intent`, which is what keeps
-        // seduction priced by the machine that prices a purse and a threat.
-        // The parser sets the leverage; nothing here translates a verb.
+        // AN ATTEMPT TO MOVE SOMEBODY, ACTUALLY RESOLVED
         if (party.kind === 'cultivator' && party.party && ATTEMPT_INTENTS.has(intent)) {
             return this.pressSomebody(
                 run, cultivator, ambient, party, intent, leverage, rawInput, spoken,
@@ -4843,55 +3608,7 @@ ${noticed}`;
 
         const facts = factsForInteraction(cultivator, party.name, intent, party.facts, unresolved);
 
-        // ── AND THE ACT ITSELF DID NOT HAPPEN, SAID SO IT CANNOT BE DROPPED ──
-        //
-        // Played, as a member of the Azure Cloud Pavilion standing on its
-        // ground:
-        //
-        //   > I take a manual from the sect library without asking
-        //   "You move through the library, your hand closing around a manual.
-        //    You take it without asking."
-        //
-        // Nothing was stolen. No object moved, nobody noticed, no ledger row.
-        //
-        // WHERE IT CAME FROM, MEASURED, because the obvious answer is wrong.
-        // The suspicion was that `intent` leaks to phase 3 - the inspector line
-        // says "Stated intent: steal. Carried for the narrator; read by no
-        // conditional." It does not. `factsForInteraction` puts the label on
-        // `structure`, and `composeNarrationUser` sends `lines` alone;
-        // captured off a recording provider, the word "steal" appears nowhere
-        // in the phase-3 message. The theft reached the narrator through
-        // `THE PLAYER SAID, WORD FOR WORD`, which is the player's own sentence
-        // and has to be there - asking turns on what was said.
-        //
-        // So the model was not leaking a field. It was filling a silence, and
-        // the line above is the silence: *"Nothing is settled by it"* is a
-        // sentence about SETTLEMENT, and a model reads it as "the social
-        // outcome is open" rather than as "the taking did not occur". Every
-        // other fix in this family landed the same way - the turn has to name
-        // the thing that did not happen, in terms of the ACT.
-        //
-        // Not one verb's bug. Measured across every member of
-        // `INTERACT_INTENTS` against a faction target: all eleven reach this
-        // branch, and eight of them are `PRESSING_SOMEBODY` acts a narrator
-        // will render as done because the player's own sentence says they did
-        // it. Stealing from your own house is getting a real resolver
-        // elsewhere; until it has one, the prose may not claim it happened.
-        //
-        // AND IT DENIES THE ACT RATHER THAN REPORTING A CONDITION, which is
-        // the whole of why it works. The first version of this line said the
-        // approach was all that happened and nothing had been settled - true,
-        // and a model can narrate the hand closing and the outcome pending
-        // against it without contradicting itself, which is exactly what it
-        // did. `whatDidNotHappen` names the shelf, the purse, the unsaid word:
-        // a fact the player's own sentence collides with. See
-        // `unresolved-attempt-denials.ts` for the measurement behind that, and
-        // for why all eleven intents get one rather than `steal` alone.
-        //
-        // On `required` rather than on `lines`: `lines` is a licence and
-        // `withRequiredLines` is a duty, so a model that omits this gets it
-        // appended verbatim instead of leaving the player believing they took
-        // something.
+        // AND THE ACT ITSELF DID NOT HAPPEN, SAID SO IT CANNOT BE DROPPED
         sayThisWhateverTheNarratorDoes(facts, whatDidNotHappen(intent, cultivator.name));
 
         if (spoken) addHearing(facts, spoken);
@@ -4932,13 +3649,6 @@ ${noticed}`;
 
     /**
      * Taking work, through the tool layer that owns the mortal economy.
-     *
-     * Half the deaths in this world are logistical, and this is the verb that
-     * answers that: it is how a cultivator with an empty purse buys the food
-     * that stops the starvation clock. It advances the run's own time, which is
-     * why `handleWork` owns the whole thing rather than this layer approximating
-     * it - the days, the wage, the rations bought and the qi not gathered while
-     * bent over somebody else's field are one calculation.
      */
     private async work(
         cultivator: Cultivator,
@@ -4946,19 +3656,6 @@ ${noticed}`;
         target: string | undefined,
         /**
          * `board` reads what is going and takes nothing. Anything else takes.
-         *
-         * The label exists because a QUESTION about work was buying a season.
-         * Measured, on a fresh run: `any work going?` spent ninety days as a
-         * Shipmaster, because naming no trade is deliberately read as *take any
-         * work* so that "I take whatever the village will give me" is not
-         * answered with a menu. Both readings are right and they are different
-         * sentences; this is what tells them apart, and it is the only thing it
-         * does. See `ASKING_AFTER_WORK` for which phrasings set it.
-         *
-         * The default is the COSTLY branch, which inverts the rule every other
-         * intent-carrying verb follows, and deliberately: the bare form is what
-         * somebody types when they are out of stones, and answering that with a
-         * listing costs them a turn they may not have.
          */
         intent?: string
     ): Promise<Execution> {
@@ -4969,22 +3666,7 @@ ${noticed}`;
         // village does not offer should reach the tool's own refusal, which
         // knows why, rather than being silently dropped here.
         const wanted = (target ?? '').trim();
-        // ── WHAT IS GOING *HERE* ─────────────────────────────────────────
-        //
-        // The settlement argument is not optional in practice and omitting it
-        // was fatal. `findWorkForOrdinal(ordinal)` answers for the whole world
-        // at that rung, so "take any work" picked the best-paying line
-        // anywhere - Shipmaster, at 2,600 cash a month - and `handleWork`,
-        // which DOES filter by settlement, then refused it. Eighteen
-        // consecutive attempts across two towns, every one burning a turn and
-        // earning nothing, each refusal listing the jobs that were on offer in
-        // the same sentence that declined to give one:
-        //
-        //   "Nobody in Nine Peaks is hiring for Shipmaster. What is going
-        //    here: Porter, Scribe, Physician (mortal), Innkeeper..."
-        //
-        // Work is the only income an unbacked cultivator has, so this killed
-        // a run by starvation while the answer was on screen throughout.
+        // WHAT IS GOING *HERE*
         const here = standingOf(cultivator).settlementKind ?? undefined;
         const offered = findWorkForOrdinal(cultivator.realmOrdinal, here);
         const named = wanted.length >= 3
@@ -4992,20 +3674,7 @@ ${noticed}`;
                 || o.name.toLowerCase().includes(wanted.toLowerCase()))
             : undefined;
 
-        // ── "take any work" means take any work ──────────────────────────
-        //
-        // Naming nothing lists the board, which is right for a player asking
-        // what is going and wrong for the sentence this action exists to serve.
-        // "I take whatever work the village will give me" is what somebody
-        // types when they are out of stones and out of options, and answering
-        // it with a menu costs them a turn they cannot afford - which is the
-        // same class of defect as the board that could be read and not bought
-        // from.
-        //
-        // The engine picks, not this layer: the best-paying line on the board
-        // that is actually being PUT TO THEM HERE, which is
-        // `findWorkForOrdinal`'s own answer narrowed by its own regard and by
-        // the settlement. A tie is broken by id so the choice is reproducible.
+        // "take any work" means take any work
         const anyWork = named === undefined && GameService.WORK_UNSPECIFIED.test(wanted);
         // Reading the board is not taking anything off it, so no occupation
         // reaches `handleWork` - which is the branch that already answers
@@ -5042,15 +3711,6 @@ ${noticed}`;
 
     /**
      * Somebody was asked something, and answers.
-     *
-     * The engine's part is small and strictly bounded: work out what this
-     * person could know, what they are placed to say, and what saying it would
-     * cost - three separate limits, all read off rows - and then hand the
-     * narrator observable behaviour. `asked.ts` holds that reasoning; this
-     * method is the wiring, plus the one consequential bit: when something is
-     * actually said, the knowledge record is written HERE, before the prose
-     * exists. A name the player was told is a name they have, whether or not
-     * the sentence describing it ever gets written.
      */
     askAround(
         run: Run,
@@ -5074,14 +3734,9 @@ ${noticed}`;
         // through the part where they decline to help.
         const knownAlready = this.knowledge.isAwareOf(cultivator.id, 'cultivator', asked.id);
 
-        // Whether the question was about THEM. Read off the canonical topic
-        // the parser emits, which is a closed lookup rather than a scan of the
-        // player's prose - see `what-somebody-knows-about-themselves.ts`.
-        //
-        // It reaches `askedAbout` as an input rather than being decided there,
-        // for the same reason `compelled` is: this file knows who is standing
-        // in front of the player and that file knows what the three limits are,
-        // and neither should be doing the other's job.
+        // Whether the question was about THEM. Read off the canonical topic the
+        // parser emits, which is a closed lookup rather than a scan of the player's
+        // prose - see `what-somebody-knows-about-themselves.ts`.
         const ownFact = selfFactFromTopic(topic);
         const aboutThemselves = ownFact === null
             ? null
@@ -5127,53 +3782,19 @@ ${noticed}`;
                 `${asked.name} said it at ${placeName(cultivator)}.`)
             : false;
 
-        // ── ASKING IN THE REGION GIVES IT ────────────────────────────────
-        //
-        // `seedSectGround` states the rule about its own location in as many
-        // words: "A name you have to be given. Joining gives it; being told
-        // gives it; asking in the region gives it." The first two clauses were
-        // reachable and the third was not, so a player who had been told a
-        // house existed - which is where every fresh cultivator starts, at
-        // stage `named`, "exists somewhere out there and takes disciples" -
-        // could name the house forever and never learn where its gate was.
-        //
-        // The consequence was not cosmetic. Every catalog figure in the world
-        // stands on their house's ground, so a route that cannot reach a gate
-        // cannot reach anybody worth asking, and the listing's own closing line
-        // - "or you would have to walk up on your own" - described a thing the
-        // game did not let you do.
-        //
-        // IN THE REGION is the whole of the condition, and it is doing real
-        // work rather than decorating one. Where a house's gate stands is
-        // ordinary local knowledge to the people who live in that province and
-        // is not ordinary anywhere else, so this grants the gates around you
-        // and never a map of the world. A house three provinces over stays a
-        // name until somebody who knows says otherwise.
-        //
-        // AND IT DOES NOT HANG OFF `answer.teaches`, which is the version that
-        // was written first and measured as a dead branch. `teaches` requires
-        // `holdsIt` - a knowledge row on the NPC being asked - and a villager in
-        // a square has no row for the house up the gorge, so a player who
-        // travelled six days to the right province and asked got "agrees that it
-        // is a good question, agrees that people do ask it, and has finished
-        // speaking" and learned nothing. That is the correct answer about the
-        // house's BUSINESS and the wrong one about the mountain it is on. This
-        // is the same principle as `seedTheGroundAroundHome`: a farm boy knows
-        // where the caves are, and everybody in a province knows which valley
-        // the local house keeps its gate in, whether or not the particular
-        // person asked has anything else to say.
+        // ASKING IN THE REGION GIVES IT
         const gate = subject?.kind === 'sect' && this.atHand
             ? this.atHand.locations.find(row =>
                 row.kind === 'sect_seat' && row.controllingFactionId === subject.id)
             : undefined;
-        // Both provinces read off the WORLD, not off the gazetteer. `standingOf`
-        // is a name match against the static places and answers with the HOME
-        // region for anything it does not name - which is every sect ground,
-        // every cave and every ruin. Asking somebody a question while standing
-        // on a house's ground would then have been priced as though the player
-        // were back where they were born, and the gate a province away would
-        // have opened for free. A fallback written in ordinary English is
-        // invisible; this one is a wrong answer that never looks like one.
+        // Both provinces read off the WORLD, not off the gazetteer. `standingOf` is
+        // a name match against the static places and answers with the HOME region
+        // for anything it does not name - which is every sect ground, every cave
+        // and every ruin. Asking somebody a question while standing on a house's
+        // ground would then have been priced as though the player were back where
+        // they were born, and the gate a province away would have opened for free.
+        // A fallback written in ordinary English is invisible; this one is a wrong
+        // answer that never looks like one.
         const provinceOf = (locationId: string | null | undefined): string | null => {
             if (!this.atHand || !locationId) return null;
             const row = this.atHand.locations.find(l => l.id === locationId);
@@ -5203,13 +3824,9 @@ ${noticed}`;
         // Said out loud, and said BEFORE the facts are built rather than pushed
         // onto `lines` afterwards - `factsForToolResult` composes the prose from
         // the array it is handed, so a line appended after the call reaches the
-        // engine channel and never reaches the player. Measured exactly that
-        // way once: the grant landed, the destinations read listed the gate on
-        // the next turn, and the turn that granted it said nothing at all.
-        //
-        // A knowledge row the player is never told about is a grant they cannot
-        // use. This is the sentence that turns a house they can name into a door
-        // they can walk to.
+        // engine channel and never reaches the player. Measured exactly that way
+        // once: the grant landed, the destinations read listed the gate on the next
+        // turn, and the turn that granted it said nothing at all.
         const said = showed && gate
             ? [
                 ...answer.lines,
@@ -5287,11 +3904,6 @@ ${noticed}`;
 
     /**
      * How many times this cultivator has dealt with somebody before.
-     *
-     * Counted off the knowledge table rather than a relationship stat, because
-     * there is no relationship stat and inventing one here would put a number
-     * on something the design is explicit should stay a judgement. Turning up
-     * twice leaves two rows; that is the whole of it.
      */
     dealingsWith(cultivator: Cultivator, otherId: string): number {
         return this.knowledge
@@ -5302,17 +3914,6 @@ ${noticed}`;
 
     /**
      * Sects: which ones would take them, and joining one.
-     *
-     * Two halves, decided by whether a sect was actually named. Listing is a
-     * read and costs nothing; joining is one of the most consequential things
-     * a low cultivator can do, and both belong to `sect_manage` rather than to
-     * anything reimplemented here.
-     *
-     * The listing is discovery-gated on the way out. `sect_manage.list` returns
-     * every sect in the campaign, which is the correct answer for a tool whose
-     * caller is an operator and exactly the wrong one for a villager: a
-     * starting cultivator has heard of one, and handing them the register would
-     * spend a hundred turns of revelation on a single query.
      */
     private async sect(
         run: Run,
@@ -5333,16 +3934,6 @@ ${noticed}`;
                 return this.duty(run, cultivator, ambient, target);
 
             // Answering the house, or not.
-            //
-            // Split from `duty` because the board is a wall anybody may read and
-            // this is a thing that was said to one person by name: no target is
-            // meaningful, and there is at most one ask standing.
-            //
-            // Two intents rather than one with a topic, which is the same read
-            // versus act split every other committing verb in this file uses.
-            // `summons` asks what is outstanding and what saying no would cost,
-            // and is free; `refuse` spends it. A model answering with the
-            // cheaper of the two gets the price rather than the grudge.
             case 'summons':
                 return this.refuseWhatTheHouseAsked(run, cultivator, true);
 
@@ -5414,28 +4005,14 @@ ${noticed}`;
                 });
                 const given = this.fromToolResult('sect_manage.order', 'sect', body, 'The order');
 
-                // ── AND SOMEBODY WATCHED ─────────────────────────────────
-                //
-                // Only after a claim the house did not recognise, and only
-                // then: the decree is already spent and already failed by this
-                // point. Being reported is what decides whether a RECORD opens,
-                // never whether the forgery happened - the same ordering the
-                // library theft follows, and inverting it would make an
-                // unreported forgery into a forgery that did not occur.
+                // AND SOMEBODY WATCHED
                 const claim = (body as { authority?: { legitimate?: boolean } }).authority;
                 if (claim && claim.legitimate === false) {
                     await this.somebodyWatchedThatDecree(run, cultivator, body, given);
                 }
                 return given;
             }
-            // ── the four powers a rank buys above `order` ──
-            //
-            // Each takes an argument out of free text, and each has a LISTING
-            // mode reached by omitting it. That is not a fallback: a player who
-            // has not been told which elders there are, or what the bar costs
-            // to move, cannot sensibly name one, and being shown the price is
-            // the sentence before the one that spends it. So an argument that
-            // does not resolve prices the act rather than guessing at it.
+            // the four powers a rank buys above `order`
             case 'recruit': {
                 const kind = topic === 'elder' ? 'elder' : 'disciple';
                 // "three disciples" is three people. Read off the same phrase
@@ -5510,17 +4087,7 @@ ${noticed}`;
                     await handleStipend({ action: 'stipend', cultivatorId: cultivator.id }),
                     'The stipend'
                 );
-            // ── SITTING IN SOMEWHERE THAT HAS NOT TAKEN YOU ──────────────
-            //
-            // The one institutional verb here that is not gated on holding a
-            // rung, and the reason it exists: the game tells a player
-            // constantly that a teacher is one of the two ways past a manual's
-            // ceiling, and then gives a nobody nobody to ask. A guest place is
-            // a route somebody with no house and no name can actually walk.
-            //
-            // Free, and correctly so - `fromToolResult` advances no clock, and
-            // being entered on a roll is a conversation rather than a span. The
-            // years are spent afterwards, cultivating on what you were shown.
+            // SITTING IN SOMEWHERE THAT HAS NOT TAKEN YOU
             case 'guest': {
                 if (topic === 'depart') {
                     return this.fromToolResult(
@@ -5533,20 +4100,7 @@ ${noticed}`;
                     );
                 }
                 const asked = (target ?? '').trim();
-                // ── A HOUSE WHOSE NAME BEGINS "House of" IS NOT A CATEGORY ──
-                //
-                // `GENERIC_HOUSE_PHRASE` is unanchored at its end, so once the
-                // leading article is stripped off "the House of the Narrow
-                // Hour" the remainder starts with `house` and reads as the
-                // whole category. Played: "can I study at the House of the
-                // Narrow Hour" was answered with the listing of every house
-                // that takes guests, which is the deflection failure - it looks
-                // like an answer and is a reply to a question nobody asked.
-                //
-                // Fixed here rather than in the shared constant, because the
-                // constant is doing its job elsewhere and six of the seven dao
-                // houses are named this way. The category words only mean the
-                // category when they are the WHOLE of what was said.
+                // A HOUSE WHOSE NAME BEGINS "House of" IS NOT A CATEGORY
                 const generic = GENERIC_HOUSE_CATEGORY_ONLY.test(asked);
                 const house = asked.length >= 3 && !generic
                     ? resolveSect(this.repos, asked, this.scopeFor(cultivator), cultivator.sectId)
@@ -5587,29 +4141,17 @@ ${noticed}`;
                     await handleStanding({ action: 'standing', cultivatorId: cultivator.id }),
                     'The standing'
                 );
-                // ── ANSWERING "COULD I LEAVE" WITHOUT LEAVING ────────────
-                //
-                // The question used to be routed to the executor and it
-                // RESIGNED THE MEMBERSHIP - permanently, forfeiting the
-                // contribution, to somebody who had asked what their options
-                // were. It is answered here instead, and the answer has to be
-                // an answer: a standing read alone says where they stand and
-                // never says what the door costs.
-                //
-                // Every figure is `handleStanding`'s own. Nothing below
-                // recomputes a forfeiture; it names the number the read
-                // already returned and says what happens to it.
+                // ANSWERING "COULD I LEAVE" WITHOUT LEAVING
                 const held = positionIn(this.repos, cultivator.id);
                 if (topic === 'leaving') {
-                    // "Seat" was the Hollow Court's own word for a rung, swept
-                    // out of generic code by `652a66e` everywhere except this
-                    // file, which was dirty at the time. Note WHICH sense this
-                    // one was: not the head of the house, because the person
-                    // asking is any member at any rung - it is the RANK sense
-                    // that commit separated out, and the house's own word for
-                    // the rank is already in hand as `rankTitle`. Saying it
-                    // once and referring back is what removes the repetition
-                    // the old sentence had.
+                    // "Seat" was the Hollow Court's own word for a rung, swept out
+                    // of generic code by `652a66e` everywhere except this file,
+                    // which was dirty at the time. Note WHICH sense this one was:
+                    // not the head of the house, because the person asking is any
+                    // member at any rung - it is the RANK sense that commit
+                    // separated out, and the house's own word for the rank is
+                    // already in hand as `rankTitle`. Saying it once and referring
+                    // back is what removes the repetition the old sentence had.
                     const line = held
                         ? `Walking out is a thing you say out loud and it is done the day you say `
                           + `it. What it costs is ${held.rankTitle} and the ${held.contribution} `
@@ -5638,50 +4180,13 @@ ${noticed}`;
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
 
-        // ── A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE ─────────
-        //
-        // Found in a played run and it is the sharpest half of the join defect.
-        // "I want to join a sect" carried the word `sect` as its subject, the
-        // fuzzy matcher scored it against the register, and the player was
-        // enrolled in the Azure Dew Sect - one input after the game had told
-        // them, correctly, that knowing a name is not an introduction and
-        // somebody would have to put them in front of the house.
-        //
-        // The generic phrase was already recognised twenty lines below, where
-        // it decides whether an unresolved name deserves a refusal. It was
-        // simply asked too late, so a word that means "the whole category"
-        // never reached it. Asked here, "a sect" reaches the listing, which is
-        // the answer to a question about the whole set - the same rule
-        // `GENERIC_PILL_PHRASE` and `GENERIC_LIBRARY_PHRASE` already follow.
+        // A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE
         const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)
             ? resolveSect(this.repos, query, scope, cultivator.sectId)
             : null;
 
         if (named) {
-            // ── Joining a second house is leaving the first, and it must say so ──
-            //
-            // `SectRepository.addMember` removes the existing membership row in
-            // the same transaction, correctly - membership is exclusive - and
-            // nothing anywhere told the player. A Dew Servant of the Azure Dew
-            // Sect applied to the Pavilion, the Azure Dew row vanished, and the
-            // narration mentioned neither the departure nor the contribution
-            // that went with it.
-            //
-            // The right behaviour already exists one verb over. `leave` says
-            // "contribution does not travel; whatever was earned here stays
-            // here", which is exactly the fact being silently applied. So this
-            // refuses until the player has actually left, rather than
-            // duplicating the departure path and eventually disagreeing with it.
-            // ── UNLESS THE HOUSE ABOVE SENT FOR THEM ─────────────────────
-            //
-            // The refusal below is right for a defection and wrong for a
-            // recall. Somebody at the Mist or the Dew who has outrun what
-            // their house can teach is on a roll the terraces keep, and going
-            // back up the gorge is not walking out on anybody - the grant
-            // terms say the Mist owes the Pavilion "every disciple the
-            // terraces ask for, on the day they ask". Telling them they are
-            // already somebody's would be the world enforcing a rule it does
-            // not enforce on its own people, which is the oldest defect here.
+            // Joining a second house is leaving the first, and it must say so
             const sentUp = recallDueFor(this.repos, cultivator);
             const held = positionIn(this.repos, cultivator.id);
             if (held && held.sectId !== named.id
@@ -5699,47 +4204,7 @@ ${noticed}`;
                 ));
             }
 
-            // ── AND WHAT THE HOUSE MAKES OF THEM ─────────────────────────
-            //
-            // The offer rule has read the house's own roster since it was
-            // written and had nothing to say about the PERSON, because neither
-            // door could reach a council: `sect-manage.ts` has no world handle
-            // and `worldForRun` calls `catchUp`, which can advance time and is
-            // therefore not a read. So a probationer the house had watched for
-            // twenty years and a stranger off the road got identical offers -
-            // the renown half of the design built, tested, and reachable by
-            // nobody, which is this repo's most-repeated defect.
-            //
-            // This is the caller that has the state. `whatTheBodyWants` is the
-            // same aggregate `match-verbs.ts` already runs on the same two
-            // inputs: the house's roll off the world, and every open row naming
-            // the player. Nothing new decides anything - the leaning comes back
-            // and `entryOfferFor` bands it.
-            //
-            // THE LEDGER IS WHERE THE DIFFERENCE COMES FROM, and it is the
-            // honest source rather than a bonus. Somebody the house carried on
-            // probation has rows with its deciders - favours done, wrongs held,
-            // a sponsor who staked something - and a stranger has none. Nobody
-            // is given anything for having been a probationer; what they have
-            // is a history, and the history is what the room reads.
-            // AND THE READING HAS TO BE SUPPLIED, WHICH IS THE WHOLE TRAP.
-            //
-            // `whatTheBodyWants` defaults `readingOf` to `openHandednessOf` -
-            // how freely a person parts with what they have, drawn off their
-            // id. That is the right default for the barter and match callers
-            // and it is the WRONG QUESTION here, and it does not fail loudly:
-            // measured on a four-person roll, an indifferent council read
-            // +0.37 purely because the head's id happened to draw high, which
-            // bands as `level_with_their_own` - so every walk-up would have
-            // been seated at their peers' rank and the whole 299/140/3
-            // correction would have been silently undone by wiring it.
-            //
-            // Renown is the reading this door wants, and an unknown stranger
-            // reads exactly 0 on it, which is the ordinary offer. Empty today:
-            // `whatIsSaidAbout` needs tellings per decider, and the rumour
-            // shape in `what-people-are-saying.ts` is a different `Told` that
-            // wants an adapter. Passing it empty is honest - nobody has heard
-            // of them - and it is what keeps the default from creeping in.
+            // AND WHAT THE HOUSE MAKES OF THEM
             const world = this.atHand ?? await this.loadWorld();
             const council = whatTheBodyWants({
                 readingOf: renownReading([]),
@@ -5759,17 +4224,8 @@ ${noticed}`;
             return this.fromToolResult('sect_manage.join', 'sect', result, named.name);
         }
 
-        // A house was named and it resolved to nothing, so the listing below is
-        // an answer to a question nobody asked.
-        //
-        // Found in a live run and it is the subtle one, because the listing is
-        // GOOD - "there is one name you have for this: Azure Dew Sect. Knowing a
-        // name is not an introduction." A player who typed "I apply to the
-        // Thousand Treasure Pavilion" read that, saw a sensible refusal, and had
-        // no way to tell that the Pavilion had been silently swapped for the
-        // one house they happened to know. The same rule the inheritance
-        // grounds already follow: a specific name that resolves to nothing does
-        // not fall through to whatever was at hand.
+        // A house was named and it resolved to nothing, so the listing below is an
+        // answer to a question nobody asked.
         if (query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)) {
             return refused('engine.resolveSect', 'sect', factsForRefusal(
                 'Not a name you hold.',
@@ -5813,20 +4269,7 @@ ${noticed}`;
                         ? `There is one name you have for this: ${heard[0].name}.`
                         : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
                           `and ${heard[heard.length - 1].name}.`,
-                    // ── AND THE HOUSES THAT WOULD, AND ON WHAT FOOTING ──
-                    //
-                    // This listing said which doors were SHUT and never which
-                    // were open, so the one question somebody standing outside
-                    // a house actually has - would they have me - went
-                    // unanswered by the read written to answer it.
-                    //
-                    // Found by playing, from the other end: "if they'll have
-                    // me, I'll join" enrolled the player on the spot. A
-                    // conditional is now routed here instead of to the door,
-                    // and this is the sentence it is routed here FOR. The rung
-                    // is half the answer and not decoration - entering a house
-                    // at its floor and entering it near its top are different
-                    // decisions, and a player told only "yes" has to ask again.
+                    // AND THE HOUSES THAT WOULD, AND ON WHAT FOOTING
                     ...heard
                         .filter(x => x.admissible === true && typeof x.wouldEnterAtRank === 'string')
                         .map(x => `${x.name} would take you, and would seat you as `
@@ -5844,24 +4287,7 @@ ${noticed}`;
                         .map(x => `${x.name} would not take you as a disciple as you stand, and `
                             + 'its intake is open to you now - it takes people at the floor, '
                             + 'carries them, and decides about them later.'),
-                    // ── AND HOW MANY YOU HAVE NO NAME FOR ───────────────
-                    //
-                    // Counted, never listed. The filter above is the whole
-                    // discovery gate on this surface - `isAwareOf` decides
-                    // which houses may be named - and this is the other half
-                    // of the same rule: a player is entitled to know that the
-                    // world is larger than their address book, and not to be
-                    // handed what is in the rest of it.
-                    //
-                    // The travel read keeps the same discipline in the same
-                    // words: names below `placed` "are counted and never
-                    // listed: naming one would hand over a discovery that was
-                    // meant to be earned".
-                    //
-                    // It is also the more useful answer. A bare list of two
-                    // houses reads as the world being small; two and a number
-                    // reads as a reason to go and ask somebody, which is the
-                    // act that actually moves this forward.
+                    // AND HOW MANY YOU HAVE NO NAME FOR
                     ...(all.length > heard.length
                         ? [`There are ${all.length - heard.length} more that would take somebody `
                             + 'like you and that you have no name for. Nobody has said them in '
@@ -5871,30 +4297,7 @@ ${noticed}`;
                     'or you would have to walk up on your own.'
                 ]);
 
-        // ── AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED ──
-        //
-        // Played, immediately after the listing learned to say who would take
-        // you. The engine was right - no membership row, no rank, no day spent -
-        // and ollama wrote:
-        //
-        //   > if they'll have me, I'll join
-        //   "The offer was met. You are a Lamp Novice of Burnt Earth Temple."
-        //
-        // It collapsed *would seat you as Lamp Novice* into *you are a Lamp
-        // Novice*, which is the very failure this whole family is about,
-        // committed one layer along: a conditional read as an accomplishment.
-        // The rank in the sentence is what makes it so easy - a rung named
-        // beside the player reads as theirs.
-        //
-        // `sayThisWhateverTheNarratorDoes` rather than another line on `lines`,
-        // because `lines` is a licence and `required` is a duty:
-        // `withRequiredLines` appends this verbatim when the prose does not
-        // already carry it, so a model that omits it cannot leave the player
-        // believing they were taken on.
-        //
-        // Only when somebody WOULD take them. Where every door is shut there is
-        // nothing to mistake for an offer, and saying it anyway would be the
-        // engine talking to itself.
+        // AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED
         if (heard.some(x => x.admissible === true)) {
             sayThisWhateverTheNarratorDoes(
                 facts,
@@ -5924,23 +4327,6 @@ ${noticed}`;
 
     /**
      * What the people standing here say is happening somewhere else.
-     *
-     * The inverse of `recall`, and the gap it closes is the one the playtest
-     * report is entirely about: the world writes rankings, refusals, duels and
-     * houses opening closed ground into the ledger every year, and the only
-     * route any of it had to a player was the digest - which is gated on
-     * standing, arrives only after a span of days, and is a report. Nobody
-     * finds out that two of the world's tallest fell out by being briefed.
-     *
-     * Free, and the write is the same one standing near a conversation already
-     * makes: knowledge records at `whisper`, with the SPEAKER on them and the
-     * rumour's own sentence as the statement. So checking a rumour is not a
-     * mechanic anybody had to build - ask a second person, then ask your own
-     * head, and the knowledge layer hands back both accounts without ranking
-     * them.
-     *
-     * Phase 3 is handed what was said and by whom. It is never handed the
-     * distortion; that goes to the inspector, in `structure`.
      */
     private news(run: Run, cultivator: Cultivator): Execution {
         const asked = askAround({
@@ -5958,14 +4344,7 @@ ${noticed}`;
 
         for (const hearing of asked.hearings) recordHearing(this.knowledge, cultivator, run, hearing);
 
-        // ── AND FINDING OUT IS WHAT OPENS THE ACCOUNT ────────────────────
-        //
-        // AGENTS.md, *a fact reaches a person, and reaching them is an event*.
-        // The deed was already true and already on the record; what was missing
-        // was somebody who could act on it. `hearing-of-a-wrong.ts` decides
-        // whether this telling supplied that, and the row it hands back is
-        // dated to today rather than to the day it happened - which is the
-        // whole of the ruling, in one field.
+        // AND FINDING OUT IS WHAT OPENS THE ACCOUNT
         const opened: ToolCallRecord[] = [];
         for (const account of asked.opens) {
             const record = createObligation(account.row);
@@ -6000,25 +4379,6 @@ ${noticed}`;
 
     /**
      * Telling somebody that a wrong was done to them, and putting a name on it.
-     *
-     * ── THE SAME JOIN, ENTERED AT THE OTHER DOOR ─────────────────────────
-     *
-     * `news` is this cultivator finding something out. This is them being the
-     * person somebody else finds out from, and it deliberately runs through
-     * `whatBeingToldOpens` rather than writing a second path into the ledger:
-     * the date, the weight, the three states and the rule that the account opens
-     * against whoever was NAMED are all decided there and are not re-decided
-     * here. What this method contributes is the two things the join cannot know
-     * - who the player meant, and whether they had any business saying it.
-     *
-     * ── BOTH HALVES HAVE TO BE REAL, WHICH IS WHAT MAKES IT FREE ─────────
-     *
-     * A person who is actually standing here, and a wrong the world priced that
-     * this cultivator could point at. Neither is supplied by a sentence the
-     * parser guessed at, which is the same protection `give` has and the reason
-     * this verb spends no day. It can still be wrong about everything else, and
-     * that is the design: the name the player used is carried through untouched
-     * whether or not that person did it.
      */
     private tellSomebody(
         run: Run,
@@ -6039,13 +4399,7 @@ ${noticed}`;
             ));
         }
 
-        // ── WHO IS BEING TOLD, AND THEY HAVE TO BE HERE ──────────────────
-        //
-        // The same resolution every verb aimed at a person uses, and then the
-        // co-location check on top of it: a name that resolves to somebody four
-        // provinces away is a person this cultivator cannot speak to, and news
-        // does not travel because somebody said it into the air. `interact`'s
-        // demand path makes the identical check for the identical reason.
+        // WHO IS BEING TOLD, AND THEY HAVE TO BE HERE
         const pointedAt = this.somebodyAtHand(query, cultivator);
         const party = this.partyPutTo(cultivator, query, scope, pointedAt);
         const here = this.present(cultivator);
@@ -6056,18 +4410,7 @@ ${noticed}`;
             return this.nobodyByThatName(cultivator, query, scope, 'tell');
         }
 
-        // ── AND WHO THEY ARE PUTTING IT ON ───────────────────────────────
-        //
-        // Read out of the claim and resolved through the same knowledge-gated
-        // lookup, so a name this cultivator has never heard reaches nothing here
-        // exactly as it reaches nothing anywhere else. THE RESOLUTION IS THE
-        // ONLY CHECK: nothing compares the name against who actually did it, and
-        // nothing may - see `hearing-of-a-wrong.ts`.
-        //
-        // A name that resolves to nobody does not throw the turn away. It leaves
-        // the telling with no name in it, which is a true description of what
-        // the hearer received, and the middle state is a real state rather than
-        // a failure.
+        // AND WHO THEY ARE PUTTING IT ON
         const named = whoTheClaimBlames(said);
         const blamed = named === null
             ? null
@@ -6136,12 +4479,6 @@ ${noticed}`;
 
     /**
      * The account this holder already carries about this event, or null.
-     *
-     * Keyed on what it rests on rather than on who it is against, because the
-     * row worth finding is the one with NO name on it: that is the account they
-     * opened when they learned something had been done and could not say by
-     * whom, and a telling that supplies a name belongs on it rather than beside
-     * it.
      */
     private accountCarriedAbout(holderId: string, factId: string | null): ObligationRecord | null {
         if (factId === null) return null;
@@ -6152,29 +4489,10 @@ ${noticed}`;
         return row ? obligationFromRow(row as ObligationRow) : null;
     }
 
-    // ── what this cultivator is carrying ─────────────────────────────────
-    //
-    // Found by a rank-band sweep, and the dead sentences were at the CEILING:
-    // "what do I know of Lu Sheng", "what do I know of the Hollow Court" and
-    // "what is my dao" all parsed to nothing at ordinals 37-46, where the
-    // ladder is finished and comprehension is the only thing still moving.
-    //
-    // The gate this must not weaken is the one the whole knowledge layer
-    // rests on, so the defence is structural rather than careful: the query is
-    // matched against THE HOLDER'S OWN ROWS and the catalogs are never
-    // searched. There is no code path from a name the player typed to a name
-    // they have not been told, which means no phrasing of this can teach
-    // anybody anything - and it also means an unheard name and an invented one
-    // come back identical, which is required. The shape of the answer must not
-    // be the answer.
+    // what this cultivator is carrying
 
     /**
      * What this cultivator holds about a name, or about everything.
-     *
-     * `intent` selects which of the two tables is read - what they have HEARD,
-     * or what they have UNDERSTOOD - on the same terms as `sect`, `look` and
-     * `site`. Both are free, so unlike `site` there is no expensive default to
-     * steer away from; an unrecognised label falls through to the wider read.
      */
     private recall(
         run: Run,
@@ -6242,12 +4560,6 @@ ${noticed}`;
 
     /**
      * Anything further they have actually earned about it.
-     *
-     * Only for a record held at `knows` - having overheard a word in a market
-     * buys the word and nothing else - and only through the same scoped
-     * resolvers `investigate` uses, which are already awareness-gated. So this
-     * discloses nothing a second sentence could not already have got, and a
-     * record at any lower stance discloses nothing at all.
      */
     private earnedAbout(
         cultivator: Cultivator,
@@ -6270,13 +4582,6 @@ ${noticed}`;
 
     /**
      * What this cultivator has understood, which is the other axis entirely.
-     *
-     * Composed from `daoOf` and from the SAME `daoView` the sheet's panel is
-     * built from, so the sentence and the panel cannot drift. That matters
-     * more here than anywhere: at the last two rungs the ladder is shut and
-     * this is the only thing still moving, so a player reading two different
-     * accounts of it is reading two different accounts of their whole
-     * remaining life.
      */
     private recallDao(run: Run, cultivator: Cultivator): Execution {
         const insights = cultivator.insights ?? [];
@@ -6306,30 +4611,6 @@ ${noticed}`;
 
     /**
      * WHOSE ART THAT WAS.
-     *
-     * The trust hierarchy's strongest check, put to the character by the player.
-     * `docs/world/houses/trust.md` says a house's arts are the closest thing it has to
-     * an identity and that watching somebody cultivate goes straight to the
-     * thing in question - and the whole of it was unaskable, with both of the
-     * numbers that decide the answer sitting in the database and no question
-     * pointed at them.
-     *
-     * Free, and never refused. Looking at what is in front of you and thinking
-     * about it is always a legitimate thing to do, so this spends no day and
-     * takes nothing. Like `recall` it reads the holder's own rows and the
-     * catalog they can already name, so it cannot teach anybody anything they
-     * had no route to.
-     *
-     * THE ANSWER IS GRADED BY THE TWO AXES AND NEVER FAKES CONFIDENCE. Somebody
-     * with no reference is told they would not know it rather than handed a
-     * "no" they have not earned; somebody with a reference and too low a rung
-     * is told what it matches AND that they could not tell a good imitation.
-     * At the top it is one flat sentence, and that terseness is the reward.
-     *
-     * "is this the Azure Cloud's art" names a house and no art, which is the
-     * ordinary phrasing rather than a shortfall in it: the art the sentence
-     * means is that house's signature, so the house's own catalog row supplies
-     * it.
      */
     private recognise(
         run: Run,
@@ -6361,13 +4642,12 @@ ${noticed}`;
         const artId = art?.id ?? houseSignature;
 
         if (!artId && askedHouse.length > 0) {
-            // A house they cannot name is a house they hold no reference for,
-            // and that IS the answer rather than a failure to compute one. It
-            // goes down the graded path with the rest so the player gets the
-            // same honest sentence they would get if the name had resolved:
-            // never a "no" they have not earned, and never a refusal, because
-            // asking yourself whether you recognise something is always a
-            // legitimate thing to do.
+            // A house they cannot name is a house they hold no reference for, and
+            // that IS the answer rather than a failure to compute one. It goes down
+            // the graded path with the rest so the player gets the same honest
+            // sentence they would get if the name had resolved: never a "no" they
+            // have not earned, and never a refusal, because asking yourself whether
+            // you recognise something is always a legitimate thing to do.
             const facts = factsForRecognisingAnArt({
                 artName: 'whatever that was',
                 claimedHouseName: askedHouse,
@@ -6497,41 +4777,10 @@ ${noticed}`;
     }
 
 
-    // ── institutions acting on each other, and on the dead ────────────────
-    //
-    // Four verbs, one shape. A party asks something of another party, of the
-    // dead, or of somebody above the Lid - and most of the time the answer is
-    // NO, in terms the asker can act on. That is the point rather than a
-    // shortfall: the Requisition Against Standing Stock has been granted once
-    // in four hundred years and refused ten times, and the catalog says the
-    // refusals are filed with the same care as the grant.
-    //
-    // THE GATE IS THE FEATURE, AND IT SPEAKS. Every one of these produces a
-    // different answer for a rogue, for a junior in a house, and for the seat,
-    // and each names its own reason: somebody who serves nothing is told what
-    // the act would require, somebody junior is told the rung it opens at IN
-    // THEIR OWN HOUSE'S TITLE, and the seat is told what it cost. The refusals
-    // come from `standing.ts`, which copies `sect-leadership.ts` sentence for
-    // sentence so that the ladder reads the same however a player runs into it.
-    //
-    // NONE OF THEM WEAKENS THE KNOWLEDGE GATE. Every faction goes through
-    // `factionMeant`, which filters by `isAwareOf` before it scores anything,
-    // so a house the player has not been told about resolves to nothing and is
-    // refused identically to one that does not exist. Asking about a thing
-    // must not teach that the thing is there.
+    // institutions acting on each other, and on the dead
 
     /**
      * A faction the player can actually name: a sect, a court, or an apex.
-     *
-     * `resolveSect` covers the sect catalog and the sects table. Courts and
-     * apexes live in `hierarchy.ts` and have no rows at all, and three of the
-     * twelve dead sentences named one - so they are matched here on the same
-     * terms and through the same gate, filed under the `sect` knowledge kind
-     * exactly as `sect-politics.ts` already files them.
-     *
-     * Returns null for an unheard name and for an invented one, and the two are
-     * indistinguishable to every caller. That equivalence is required rather
-     * than incidental; the shape of a refusal must never be the answer.
      */
     factionMeant(
         query: string | undefined,
@@ -6570,17 +4819,6 @@ ${noticed}`;
 
     /**
      * Whether a sentence named a body and got nothing back.
-     *
-     * The distinction every one of these verbs turns on, and the one a live
-     * playtest caught them getting wrong. "I make an offering" with no
-     * addressee means the player's own house and is a complete sentence. "I ask
-     * the Hollow Court for a pill" NAMES SOMEBODY, and if that name resolves to
-     * nothing the request has not been made - falling through to the player's
-     * own house instead is the engine quietly answering a different question,
-     * which is the whole failure mode this batch of verbs exists to remove.
-     *
-     * True only where a name was actually typed. A short or empty string is not
-     * a failed resolution; it is no addressee at all.
      */
     namedButUnresolved(
         query: string | undefined,
@@ -6625,25 +4863,10 @@ ${noticed}`;
         ));
     }
 
-    // ── the far side of the Lid ──────────────────────────────────────────
-    //
-    // Ordinal 46 is the one point where progression is also geographic, and the
-    // layer on the other side is one of the most complete systems in the
-    // project - the seam, the landing, five houses older than the lower world's
-    // records, residents, standing built on tenure and holdings rather than on
-    // a second power ladder, a peril clock, `descend` and `sendAcross`.
-    //
-    // NOTHING IN THE CODEBASE CALLED ANY OF IT, and what a player got instead
-    // was one refusal, correct and empty, in front of an empty room. That is
-    // the same defect as `treat`, `buy`, `site` and the four institutional
-    // verbs, at the one height where there is nothing else to do at all.
+    // the far side of the Lid
 
     /**
      * The player, as somebody the far side has a row for.
-     *
-     * Null when the world simulation is off for this run, which is the only
-     * reason the far side would have nothing to say - and the refusal below
-     * says so rather than pretending the layer is empty.
      */
     residentNow(cultivator: Cultivator, run: Run): Resident | null {
         if (!this.atHand) return null;
@@ -6654,13 +4877,6 @@ ${noticed}`;
 
     /**
      * Where an immortal actually is, which is somewhere rather than nowhere.
-     *
-     * The abode first, because it is the only thing on this layer that is
-     * theirs; then both readings of what they are worth, because both are true
-     * at once and neither is the answer. Nothing from the mortal layer is drawn
-     * on - no practice, no overheard name, no province ambient - and that is
-     * enforced by not calling those readers rather than by filtering them,
-     * which is the difference between a rule and a hope.
      */
     private lookAbove(run: Run, cultivator: Cultivator): Execution {
         const resident = this.residentNow(cultivator, run);
@@ -6711,12 +4927,6 @@ ${noticed}`;
 
     /**
      * A mortal-world sentence, re-offered in the two forms an immortal has.
-     *
-     * Not a refusal, and the difference is the point: what the player asked for
-     * is available, twice, in forms that cost different things. Both are
-     * resolved by machinery that already existed; all this does is say so, and
-     * settle the abode on the way past, because standing in a field is not what
-     * happens to somebody who comes through.
      */
     private aboveTheLid(run: Run, cultivator: Cultivator, attempted: ActionName): Execution {
         const resident = this.residentNow(cultivator, run);
@@ -6759,23 +4969,6 @@ ${noticed}`;
 
     /**
      * Going back down, at nine strikes, for ten to fifteen breaths.
-     *
-     * The most expensive action in the game and the only one at the top of the
-     * ladder that is a decision. Three separate pieces of the engine resolve it
-     * and this method owns none of them:
-     *
-     *   `evaluateLidTransit(down)`   whether it is permitted, and what it draws
-     *   `resolveDescentStrikes`      the nine strikes, through the same
-     *                                per-strike odds every tribulation uses
-     *   `descend(state, ...)`        the breaths, the object ceiling, and the
-     *                                fact the province gets - which names
-     *                                nobody, because nobody down there could
-     *                                say what was in it
-     *
-     * The expulsion is not a second action and is not something the player has
-     * to remember: `descend` resolves the visit atomically and the resident's
-     * layer never changes, because a True Immortal in the lower world is a
-     * thing being pushed back out for the whole time they are there.
      */
     private descend(
         run: Run,
@@ -6971,16 +5164,6 @@ ${noticed}`;
 
     /**
      * The immortal end of the channel: send something down, and a word with it.
-     *
-     * The cheap route and the unreliable one. Nothing of the sender crosses, so
-     * nothing is drawn on them - and nothing of them is there to see it done,
-     * which is the trade. What arrives is acted on by people who are not them.
-     *
-     * The gate is the LINE, and it is an object rather than a permission:
-     * `sendAcross` requires a channel carrying `lid_channel`, held by somebody
-     * on the other side. That is the whole difference between a house that
-     * receives and a house that hears nothing, and it is why an ascending
-     * cultivator's parting gift matters long after they have forgotten it.
      */
     sendDown(
         run: Run,
@@ -7103,30 +5286,10 @@ ${noticed}`;
         };
     }
 
-    // ── inheritance grounds ──────────────────────────────────────────────
-    //
-    // `data/cultivation/inheritance-trials.ts` is roughly nineteen hundred
-    // lines of finished, tested content - twenty-odd sites, three unrelated
-    // kinds of gate, an interior the type system keeps out of the pre-entry
-    // view - and until these methods existed nothing a typed English sentence
-    // could do reached one line of it. The systems playtest reported it in its
-    // own friction block as the largest unplayable system in the game.
-    //
-    // Four steps, and the split between the first two and the last two is the
-    // one guarantee this whole surface exists to keep: a cultivator who has
-    // not gone in cannot learn what is inside, THROUGH ANY PHRASING. That is
-    // enforced three times over - `outsideViewOf` returns a type with no
-    // `interior` key, `SiteFace` in `facts.ts` has no field that could hold
-    // one, and the single call to `enterSite` in this package sits below a
-    // recorded entry in a method that has already spent the days.
+    // inheritance grounds
 
     /**
      * The realm rank a sentence names, or null when it names none.
-     *
-     * Read by containment against the ladder's own names rather than parsed,
-     * so `realms.ts` stays the authority for what a rank is called and this
-     * cannot go stale when the ladder changes. Scanned from the top down so a
-     * longer name wins over a shorter one it contains.
      */
     private ordinalNamed(text: string | undefined): number | null {
         const query = (text ?? '').toLowerCase().trim();
@@ -7139,12 +5302,6 @@ ${noticed}`;
 
     /**
      * The art a curriculum sentence named, or null when it named none.
-     *
-     * The generic phrase is refused rather than matched. "What the sect
-     * teaches" is the question, not an answer to it, and handing it to a fuzzy
-     * matcher is how a sentence about the shelf ends up decreeing whichever
-     * art happened to share a word with it - for a generation, at the price of
-     * every elder's standing.
      */
     private artNamed(text: string | undefined, cultivator: Cultivator): string | null {
         const query = (text ?? '').trim();
@@ -7154,23 +5311,6 @@ ${noticed}`;
 
     /**
      * What is for sale where they are standing.
-     *
-     * A read. Nothing is bought by looking at a board, no time passes, and a
-     * place with no market says so - which is most places, and is the reason
-     * getting out of a poor region is the first real goal anybody has.
-     *
-     * ── AND WHO IS SELLING, WHICH IS NOT THE SAME QUESTION ───────────────
-     *
-     * `handleMarket` knows the region and the purse and nothing about the
-     * people, because it is an MCP handler with no world in front of it. So the
-     * board it returns is a price list with no seller attached - millet, a
-     * ferry, an inn, a copyist's stall - and standing in a square full of
-     * cultivators told a player nothing about any of them.
-     *
-     * The design owner's word for what was missing: *random cultivators selling
-     * stuff they found or do not need any more.* That is the block appended
-     * here, and it is composed in this layer because this is the only layer
-     * that holds all three of the world, the knowledge gate and the square.
      */
     private async market(
         run: Run,
@@ -7192,16 +5332,7 @@ ${noticed}`;
         const offered = whatIsBeingOfferedHere(
             this.knowledge, cultivator, run, this.atHand, this.alreadyHasACopyOf(cultivator)
         );
-        // ── AND WHEN NOBODY IS SELLING, WHY NOT ──────────────────────────
-        //
-        // `AGENTS.md`: prefer a refusal that names a way out. A square where
-        // everybody is holding their own house's manual is not an empty square,
-        // and "nobody here is trading" would be a true sentence that teaches
-        // nothing. What is actually true - *that one is his own house's, and no
-        // figure you can name moves it; the road to it is the house* - is a
-        // door, and it is the door the whole recruitment half of the game is
-        // about. Only when there is nothing on offer, because a player who can
-        // buy something does not need the lecture.
+        // AND WHEN NOBODY IS SELLING, WHY NOT
         const shownLines = offered.offers.length > 0
             ? offered.lines
             : linesForWhatWillNotMove(offered.read);
@@ -7212,24 +5343,6 @@ ${noticed}`;
 ${line}`;
         }
         // The cost half goes to `lines`, and it has to.
-        //
-        // This whole sentence used to live in `structure`, which
-        // `composeNarrationUser` never sends - so a model narrating a market
-        // read was never told the turn had spent nothing. Played against
-        // ollama, the sentence "I look over the stalls, ask who is selling a
-        // manual, and buy the cheapest one they have" returned prose saying
-        // "You trade eleven spirit stones for the copy" over a ruling that said
-        // nothing was bought, and the player believed they owned the one object
-        // that unblocks the opening of this game.
-        //
-        // The prompt now forbids that, but a prompt cannot be obeyed by a model
-        // that is not shown the ruling. And this fact belongs on `lines` by that
-        // channel's own test: it is OBSERVABLE. Somebody who spends an afternoon
-        // at the stalls and buys nothing knows both of those things without
-        // being told a single number.
-        //
-        // The counts and the pricing band stay in `structure`, where they are
-        // read by an operator and would only be paraphrased into exposition.
         board.facts.lines.push(
             'You read what is on offer here. Nothing was bought and no time passed.'
         );
@@ -7239,17 +5352,6 @@ ${line}`;
             + 'copy is worth. Reading them costs nothing: nothing bought, no time passed.'
         );
         // WHAT WAS NAMED IS WHAT "THE CHEAPER ONE" CAN MEAN NEXT TURN.
-        //
-        // Recorded here, where the engine decides what to print, rather than
-        // recovered by reading the narration back: parsing prose for what
-        // exists would make the narrator authoritative over the world, which is
-        // the one thing it may never be. See `last-turn-memory.ts`.
-        //
-        // IN THE ORDER THE BOARD PRINTS THEM, which is the order the player
-        // reads them - the stall block first, then whoever is standing here
-        // holding something. Only the nameable objects: a bowl of millet is a
-        // price and an availability with no row anywhere, and "the cheaper one"
-        // is never about the ferry.
         const stall = (result as { manuals?: MarketPrice[] }).manuals;
         if (Array.isArray(stall)) {
             for (const book of stall) {
@@ -7282,24 +5384,11 @@ ${line}`;
 
     /**
      * What happens if they try.
-     *
-     * The capability predicates, asked rather than discovered by dying. It
-     * reports odds and never resolves anything: an attempt is always permitted,
-     * and this is the difference between a player who chose badly and one who
-     * was not told the ground was lethal.
      */
     private async assess(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
         const query = (target ?? '').trim();
 
-        // ── a master reading a student ──
-        //
-        // A different question from "could I survive that cave", answered off
-        // different rows: who in this house is standing above them, and whether
-        // the ladder has stopped crediting the years they have spent at this
-        // rung. `AssessSchema` had three subjects and none of them was a person
-        // being TAUGHT, which left the send-off - the sentence a master says
-        // when a disciple has taken what there is here - unreachable and
-        // unaskable.
+        // a master reading a student
         if (query.length === 0 || GameService.ASSESSING_THEMSELVES.test(query)) {
             const read = await handleAssess({
                 action: 'assess',
@@ -7311,19 +5400,7 @@ ${line}`;
             );
         }
 
-        // ── "HERE" IS A PLACE, AND IT IS THE ONE THEY ARE STANDING IN ────
-        //
-        // Played: `what can I gather here` came back "Shen Wu has never heard
-        // of \"here\"." - about the ground under their feet, in a word the game
-        // itself uses in almost every sentence it prints. `AGENTS.md`: the
-        // player must be able to type back what the game printed, and a refusal
-        // that names no route is the feature missing said politely. This one
-        // managed both at once.
-        //
-        // Resolved to the location rather than added to a noun list, because
-        // there is nothing to look up: the cultivator row already says where
-        // they are. Narrow to the words that can only mean the present place -
-        // a name is never in this set, so nothing that used to resolve stops.
+        // "HERE" IS A PLACE, AND IT IS THE ONE THEY ARE STANDING IN
         const place = GameService.THE_GROUND_UNDER_THEIR_FEET.test(query)
             ? placeName(cultivator)
             : query;
@@ -7339,52 +5416,23 @@ ${line}`;
 
     /**
      * Words that mean the place the asker is standing in, and cannot mean a name.
-     *
-     * Deliberately closed and deliberately anchored. "Here" is the whole of the
-     * case that was found; the others are the same deixis spelled the two other
-     * ways a person spells it. Nothing here is a place name in any catalog, so
-     * a real name can never fall into it.
      */
     private static readonly THE_GROUND_UNDER_THEIR_FEET =
         /^(?:here|this place|where i am|where i(?:'m| am) standing|around here|this ground|the ground(?: here)?)$/i;
 
     /**
      * An assessment with no subject, or with the asker as the subject.
-     *
-     * "Am I ready", "how am I doing here", "have I stopped" - a question about
-     * the person asking rather than about any ground. Previously these fell to
-     * the place read and were answered with the weather at the cultivator's own
-     * location, which is a true statement and not an answer.
      */
     private static readonly ASSESSING_THEMSELVES =
         /^(?:my ?self|me|my (?:progress|standing|position|cultivation|prospects)|where i (?:am|stand)|whether i(?:'m| am)? (?:ready|stuck|stalled|finished|done)|if i(?:'m| am)? (?:ready|stuck|stalled)|ready|stuck|stalled)$/i;
 
     /**
      * Alchemy, through the same handler the MCP tool surface calls.
-     *
-     * Not reimplemented here. `alchemy_manage.refine` owns the odds, the
-     * ingredient burn and the pouch write, and a second implementation would
-     * eventually disagree with the first about what a failed cauldron costs.
      */
     private async refine(run: Run, cultivator: Cultivator, target: string | undefined): Promise<Execution> {
         const query = (target ?? '').trim();
 
-        // ── "what can I make" ──
-        //
-        // A generic noun is not a name, and it used to be treated as one:
-        // "I refine a pill" scored "pill" against the recipe catalog, matched
-        // `Minor Healing Pill Formula` on containment, and silently picked one
-        // arbitrary formula out of forty-two. Same class as
-        // `GENERIC_LIBRARY_PHRASE` and `GENERIC_HOUSE_PHRASE` - a category is a
-        // question about the whole set and has to reach the listing.
-        //
-        // And the listing is the half of the loop that was missing entirely.
-        // `handleListRecipes` has been in `alchemy-manage.ts` the whole time,
-        // filtered by the cultivator's own realm, and nothing typed reached it -
-        // so a player could not find out which formulas they could attempt, and
-        // therefore could not know which herbs to gather. `MAX_PILL_BONUS` is
-        // 0.35, the largest modifier in the game and the intended way past the
-        // rungs that kill, and the whole of the road to it was dark.
+        // "what can I make"
         if (query.length < 2 || GENERIC_PILL_PHRASE.test(query)) {
             const listed = await handleListRecipes({
                 action: 'list_recipes',
@@ -7401,9 +5449,9 @@ ${line}`;
             // `handleListRecipes` returns rows and no `narrationHint`, and the
             // generic fallback for a body it cannot summarise is "It is done.
             // Nothing about it drew attention." - which is what a player asking
-            // what they can make was actually told. A read that reports nothing
-            // is worse than no read: it says the answer is empty when the answer
-            // is forty-two formulas.
+            // what they can make was actually told. A read that reports nothing is
+            // worse than no read: it says the answer is empty when the answer is
+            // forty-two formulas.
             const rows = (listed as { recipes?: RecipeRow[] }).recipes ?? [];
             const lines = rows.length === 0
                 ? [
@@ -7467,37 +5515,12 @@ ${line}`;
 
     /**
      * Practising an art, through `technique_manage.practise`.
-     *
-     * That handler owns mastery accrual and rolls a deviation check on the same
-     * terms the time-skip uses, so practising a conflicting art is not free
-     * just because it is short. The target must be an art the cultivator
-     * actually knows.
      */
     private async train(
         cultivator: Cultivator,
         target: string | undefined,
         /**
          * How long they said, and it was being thrown away.
-         *
-         * ── A SPAN NOBODY NAMED IS NOT A SPAN THE PLAYER CHOSE ───────────
-         *
-         * Played: `I sit down and practise it until I can break through` spent
-         * SEVEN DAYS and moved mastery 0% to 3%. "Until I can break through" is
-         * an open request; a week is not an answer to it, and the player had no
-         * way to tell they had been handed a default.
-         *
-         * Two things were wrong and the second is the larger. This method never
-         * read `action.days` at all - it passed the constant to `handlePractise`
-         * unconditionally - so `I practise for a year` spent a week too, and
-         * every duration the parser lifted off a practice sentence went in the
-         * bin. `handlePractise` has taken days, months and years since it was
-         * written, spends them, ages the cultivator by them and advances the
-         * run; nothing was reaching it.
-         *
-         * And where nobody named one, the default is SAID. An engine that
-         * quietly substitutes a figure and then reports it back as what was
-         * intended is telling the player their own intention, and it is the
-         * same defect as the truncated span in `shortSkip`, one layer up.
          */
         days?: number
     ): Promise<Execution> {
@@ -7505,18 +5528,6 @@ ${line}`;
         let technique = query.length >= 2 ? resolveTechnique(this.repos, query, cultivator.id) : null;
 
         // THE ONE ART THEY HAVE.
-        //
-        // "I train" names nothing, and a cultivator who knows exactly one
-        // method has said everything that needs saying. This refused with "you
-        // cannot decide which of the things you know you meant to practise" to
-        // somebody holding a single manual, which is not a choice they were
-        // failing to make. Found by playing: learn the first book, type "I
-        // train", get told you are undecided between one thing.
-        //
-        // Only when the naming is genuinely empty. A query that resolved to
-        // nothing is a different failure and keeps its own refusal below,
-        // because guessing at what somebody meant to type is worse than saying
-        // it did not resolve.
         if (!technique && query.length === 0) {
             const held = this.repos.techniques.listKnown(cultivator.id);
             // Resolved by name through the same path a typed name takes, so the
@@ -7587,12 +5598,6 @@ ${line}`;
 
     /**
      * Foraging.
-     *
-     * Time passes through the simulator; what the ground gives up is drawn from
-     * the herb catalog's own weighted table on a seeded sub-stream, and lands in
-     * the shared pouch. The whole point of the Late Age is that you might not
-     * out-cultivate a prodigy but you can out-dig them, and nothing else in the
-     * verb set reaches that.
      */
     private async gather(
         run: Run,
@@ -7637,14 +5642,6 @@ ${line}`;
         // `rolled` from both branches - so "I gather Blood Millet" rolled the
         // weighted table and handed back Qi Grass, and the comment above it
         // described a behaviour the code did not have.
-        //
-        // It matters more than it did: the alchemy refusal is the thing that
-        // tells a player which herb a formula wants, and the game was then
-        // ignoring the name it had just told them to go and pick.
-        //
-        // Still gated on reach below - naming a herb you cannot harvest yet
-        // does not make it harvestable, it just means you looked for the right
-        // thing and could not take it.
         const named = wanted ? getHerb(wanted.id) : undefined;
         const found = named && named.harvestOrdinal <= applied.cultivator.realmOrdinal
             ? named
@@ -7706,38 +5703,6 @@ ${line}`;
 
     /**
      * Going out after something that is not a person.
-     *
-     * The counterpart to `gather`, and it exists for the same reason: the Late
-     * Age's promise is that you may not out-cultivate a prodigy but you can
-     * out-dig them, and until this verb there was exactly one way to act on
-     * that. Foraging is the safe half. This is the half with a body on the
-     * other end of it, and it is where the top of the material ladder comes
-     * from - `beasts.ts` carries the only supply of heaven-grade and above
-     * that the world actually produces.
-     *
-     * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────
-     *
-     * It does not resolve a fight. `combat_manage.resolve` does, and a beast
-     * reaches it as a described opponent - a name and a realm ordinal, the
-     * fields `OpponentSchema` already has - so it goes through `assessPower`,
-     * the categorical-gap refusal, `killRequirement` and the same seeded
-     * exchange stream a person goes through. There is no second resolver and
-     * there must not be: a beast fight that did not replay from its seed
-     * would break a stated law of this engine.
-     *
-     * ── THE RUNG DECIDES WHICH SCENE THIS IS ─────────────────────────────
-     *
-     * Anything that speaks stands at `BEAST_CHANGE_ORDINAL` or above and is a
-     * party rather than a problem. Setting out to hunt is not setting out to
-     * kill somebody, so meeting one on a general hunt ENDS THE SCENE with a
-     * meeting: the engine does not swing on the player's behalf at something
-     * that could have been spoken to.
-     *
-     * That is intent, not a ban. Name it - "I hunt the White Ape of the
-     * Gorge" - and the confrontation runs exactly as it would against a
-     * person, because anybody may attempt anything and the engine's job is to
-     * say what it cost. What changes is what the world then knows: the core
-     * carries a provenance saying it came off something that could answer.
      */
     private async hunt(
         run: Run,
@@ -7788,38 +5753,14 @@ ${line}`;
         ];
         const lines: string[] = [];
 
-        // ── WHAT THE HUNTING HAS DONE TO THIS GROUND ─────────────────────
-        //
-        // Depletion as a cause rather than a chore, and the sentence a player
-        // needs before they understand why the encounters got worse. Hunt a
-        // district out and what has been removed is the bottom of its food
-        // chain; what is left is what was eating it, and it is still here.
-        //
-        // Nothing has changed grade and nothing has crossed the counted line -
-        // a hare is still a hare. What changed is the PLACE.
+        // WHAT THE HUNTING HAS DONE TO THIS GROUND
         const worked = this.atHand ? worldLocationFor(this.atHand, here) : null;
         const emptied = worked
             ? whatIsLeftOutThere(worked, Math.floor(this.atHand!.currentDay))
             : null;
         if (emptied) lines.push(emptied);
 
-        // ── WHAT IS ABOVE THEM ON THIS GROUND, AND WHERE IT GOES ─────────
-        //
-        // The read that keeps people alive, and it is free: walking the ground
-        // tells you what has left it. What it must not be is the FIRST thing
-        // said. It led, at length, about a thing the same sentence declares
-        // will not be put in front of them - so somebody who asked for a hare
-        // was answered with three lines about a Void Refinement cultivator
-        // twenty-nine rungs up before the hare was mentioned. Reported three
-        // times in one night by three different readers, which is what a lead
-        // that answers a question nobody asked looks like from outside.
-        //
-        // So the quarry goes first and this is a footnote after it. And the
-        // footnote is short where the gap is unbridgeable: `reaction` is the
-        // resolver's own account of what the ground does about the gap, and it
-        // is worth reading when the thing could actually reach you. When it is
-        // an entire realm above, the count and the name are the whole of the
-        // warning and the rest is the engine explaining itself.
+        // WHAT IS ABOVE THEM ON THIS GROUND, AND WHERE IT GOES
         const reachable = found.worst !== null && found.worst.band !== 'unreachable';
         const whatElseIsOutHere = found.above.length > 0 && found.worst
             ? (() => {
@@ -7902,33 +5843,7 @@ ${line}`;
 
         const body = isGuidingErrorBody(result) ? null : result as Record<string, unknown>;
 
-        // ── FOR A BEAST, `finished` IS THE DEATH ─────────────────────────
-        //
-        // `opponentDied` is the survival layer's answer and it is only ever
-        // written for an opponent with a row in the `cultivators` table. A
-        // beast is DESCRIBED to the resolver - a name and an ordinal - so it
-        // has no row, and reading `opponentDied` alone meant a beast could be
-        // killed outright and yield nothing. Measured in a played run: an
-        // ordinal 27 cultivator against the White Tiger at 20 came back
-        // "the finishing requirement was met in full" and then "the White
-        // Tiger Core only comes off a body, and there is no body."
-        //
-        // `finished` is the right field and not a workaround, because of what
-        // a beast is. `THE_BEAST_ROAD.death` states it: the body is the whole
-        // of them, no nascent soul leaves, nothing comes back. For a
-        // cultivator the finishing requirement being met is not yet an ending
-        // - that is the whole reason the survival layer gets a second say -
-        // and for a beast there is nothing left to have a second say about.
-        // The distinction the two fields draw is exactly the distinction
-        // between the two kinds of thing.
-        //
-        // AND THE BAND DECIDES WHICH OF THE TWO FIELDS GOVERNS. A beast at
-        // `BEAST_CHANGE_ORDINAL` is a person, so a person's rules apply to its
-        // death as much as to its life - measured in a played run: killing The
-        // Reader at Burnt Earth came back "the body is gone and the person is
-        // not, the soul left intact", which is the nascent soul path working
-        // correctly on somebody who has one. Reading `finished` there would
-        // have handed the player a core off a body whose owner walked away.
+        // FOR A BEAST, `finished` IS THE DEATH
         const killed = body?.opponentDied === true
             || (body?.finished === true && bandOf(met) !== 'person');
 
@@ -7955,44 +5870,7 @@ ${line}`;
     }
 
     /**
-     * Who answers for a beast that was killed, and only where somebody found
-     * out.
-     *
-     * `who-answers-for-a-beast-that-was-killed.ts` had no caller anywhere in
-     * `src/`, and it took something bigger down with it: `Beast.disposition` is
-     * read in exactly one file and it is that one, so the catalog set
-     * righteous, neutral or demonic on every row in the world and nothing live
-     * ever asked. This is the caller.
-     *
-     * ── WHAT THIS DECIDES AND WHAT IT DOES NOT ───────────────────────────
-     *
-     * Nothing here refuses a killing and nothing anywhere else does either.
-     * What is decided is the three facts the engine layer cannot know because
-     * they are about locations and rosters, and that module says so in its own
-     * header:
-     *
-     *   who was standing behind it   the house that holds this ground. A beast
-     *                                on open ground is nobody's, which is most
-     *                                of the hunting trade and the reason it is
-     *                                a trade.
-     *   who can put a name to it     a `KnowingStage` per party. Below `placed`
-     *                                nobody can, and no account opens because
-     *                                there is nobody for it to be against.
-     *   how far they can reach       whether the killer answers to a body.
-     *
-     * The direction is not decided here either. `whoPaidFor` reads the
-     * disposition, and killing a demonic beast off somebody's ground opens a
-     * FAVOUR they owe you through the identical call - one expression, both
-     * signs, and no branch in this file on what the thing was.
-     *
-     * ── WHY THE STAGE IS THIS AND NOT A DRAW ─────────────────────────────
-     *
-     * A new draw here would move every later draw on whatever stream it
-     * borrowed, which this repo treats as a regression until proved
-     * byte-identical. It does not need one. A house that holds ground and has
-     * people standing on it can say who was out there; a house that holds it
-     * and has nobody on it knows the thing is dead and cannot put a name to
-     * that - which is `named`, the deniable rung, exactly as written.
+     * Who answers for a beast that was killed, and only where somebody found out.
      */
     private whoAnswersForTheKill(
         run: Run,
@@ -8091,15 +5969,7 @@ ${line}`;
             ok: true
         });
 
-        // ── AND THE WORLD CONTAINS THE KILLING ───────────────────────────
-        //
-        // Written FIRST, so the records below can carry its id. The same
-        // ordering `attentionFor` keeps and for the same reason: an account
-        // whose triggering event is not in the ledger is a house being owed
-        // something for an event nobody can repeat.
-        //
-        // The weight is `whatADeedLeaves`'s and is not decided twice - this is
-        // the "priced elsewhere" path, so `aDeedEntersTheWorld` never asks.
+        // AND THE WORLD CONTAINS THE KILLING
         const deed = aDeedEntersTheWorld(this.atHand, {
             kind: 'resource_contested',
             weight: left.leaves!.weight,
@@ -8133,13 +6003,7 @@ ${line}`;
             ok: true
         });
 
-        // ── AND THE ACCOUNTS IT OPENS ────────────────────────────────────
-        //
-        // `whatADeedLeaves` already decided every one of them, holder-first,
-        // in both directions - a wrong they hold about you, or a favour you
-        // hold about them where the thing had been taking from them. None of
-        // it is re-decided here; the rows are written with the fact's id on
-        // them, and nothing about the killing is re-weighed.
+        // AND THE ACCOUNTS IT OPENS
         for (const opens of left.leaves!.opens) {
             const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
             writeObligation(this.db as unknown as DatabaseHandle, record);
@@ -8154,22 +6018,8 @@ ${line}`;
             });
         }
 
-        // Whether they can name the house is the discovery layer's question,
-        // asked here rather than assumed - the same rule the site verb keeps.
-        //
-        // ── AND BOTH SENTENCES NAME THE GROUND ───────────────────────────
-        //
-        // `461535a`'s rule, applied to the two lines it did not reach: name the
-        // place whenever the game knows it. `here` is the place name, it is two
-        // statements above on the deed as `place: here`, and it is in the
-        // summary of every call this method pushes - so the operator's record
-        // named the ground and the player's sentence said "this ground".
-        // Played on Azure Cloud Pavilion grounds, which the same paragraph had
-        // just named, both branches.
-        //
-        // The two silences stay apart, exactly as that commit left them. "X
-        // holds it" is information and "somebody holds it and you have no name
-        // for them" is a warning; only the place name was missing from each.
+        // Whether they can name the house is the discovery layer's question, asked
+        // here rather than assumed - the same rule the site verb keeps.
         if (left.knownTo.length > 0) {
             const known = this.knowledge.isAwareOf(cultivator.id, 'sect', holder!.id);
             // The guard from `ground-holder.ts`, and here it is the ordinary
@@ -8194,13 +6044,6 @@ ${line}`;
 
     /**
      * Move what came off the body into the world, in the shape it deserves.
-     *
-     * The counted/tracked line from `items.md`, and the two halves are stored
-     * differently on purpose. A pelt is a quantity in a pouch. A core is a row
-     * with a holder and a history, made and then MOVED through
-     * `transferPossession` so the provenance chain has a first link - an
-     * object that arrives with no chain behind it is indistinguishable from
-     * something stolen, which is exactly what that document cares about.
      */
     private takeFromTheBody(
         harvest: ReturnType<typeof whatComesOffTheBody>,
@@ -8214,13 +6057,7 @@ ${line}`;
         const lines: string[] = [];
 
         for (const { material, shape } of harvest.taken) {
-            // ── WHAT THE DISTRICT STILL HAS ──────────────────────────────
-            //
-            // Both shapes draw the band down, because both came off a body
-            // that was standing on this ground. What differs is what is
-            // STORED - a number against the place for the counted half, a row
-            // with a history for the tracked one - and not whether the world
-            // is one animal poorer for it.
+            // WHAT THE DISTRICT STILL HAS
             const ground = this.takeFromTheGround(
                 cultivator, 'beast_material', material.grade, 1
             );
@@ -8312,15 +6149,6 @@ ${line}`;
 
     /**
      * Take counted stock out of the ground under somebody.
-     *
-     * The world's own row is the ceiling and never the floor: the draw upstream
-     * has already decided what a person of this rung would find, and this can
-     * only ever reduce it. When it does, the reason is said out loud - a place
-     * that has been worked out has to say so rather than quietly hand back
-     * less. See `what-a-place-still-has-in-the-ground.ts`.
-     *
-     * With the world off there is no row and nothing binds, which is the same
-     * shape every other world-backed guard here has.
      */
     private takeFromTheGround(
         cultivator: Cultivator,
@@ -8382,15 +6210,6 @@ ${line}`;
 
     /**
      * A named beast, resolved the way the game prints it.
-     *
-     * Any name the game prints is a name the game must accept, and this verb
-     * prints beast names constantly - in the threats-above line, in the
-     * meeting, in every refusal. Matched on the whole name and on any word of
-     * it long enough to be meant, so "the white tiger", "White Tiger" and
-     * "tiger" all land on the same row.
-     *
-     * Ambiguity resolves to nothing rather than to a guess. Picking which
-     * thing somebody meant to fight is the one thing this must not do.
      */
     private beastMeant(target: string | undefined): Beast | null {
         const wanted = (target ?? '').trim().toLowerCase();
@@ -8407,31 +6226,9 @@ ${line}`;
 
     /**
      * Fold an MCP handler's return value into an Execution.
-     *
-     * Those handlers return either a guiding error body or a result object with
-     * an engine-authored `narrationHint`. Both are facts; the error is simply
-     * the fact that the engine declined, and it is passed through rather than
-     * softened.
      */
     /**
      * ADMIN, the exploratory testing surface.
-     *
-     * Deliberately NOT narrated. The operator is asking the engine what it did,
-     * and wrapping that in prose would put a model between them and the answer,
-     * which is the one thing this surface exists to avoid. Output is whatever
-     * `admin_manage` returned, verbatim.
-     *
-     * Arguments are explicit `key=value` pairs rather than parsed from prose.
-     * That is the whole safety property: there is no inference here to be wrong,
-     * and an unrecognised action is answered with the list rather than a guess.
-     *
-     * A VALUE ENDS AT THE NEXT KEY, NOT AT THE NEXT SPACE. This used to split on
-     * whitespace, so `set_location location=The Jade Face` sent `"The"` and
-     * quoting it sent `"The` - and most of this world's gazetteer is multi-word,
-     * so most of the map was unreachable from the operator surface. Booleans had
-     * the same shape of problem: `fill=true` arrived as a string and every
-     * boolean field in the admin schemas rejected it. `parseAdminCommand` owns
-     * both, beside the schemas it has to satisfy.
      */
     private async adminAct(request: string, run: Run, cultivator: Cultivator): Promise<ActResult> {
         if (!isAdminModeEnabled()) {
@@ -8465,48 +6262,7 @@ ${line}`;
         const text = response.content?.[0]?.text ?? 'The admin surface returned nothing.';
         const after = this.currentRun();
 
-        // ── AND THEN THE WORLD IS LOOKED AT ───────────────────────────────
-        //
-        // ADMIN exists to stand the world in a state ordinary play would take
-        // four hundred years to reach. Arranging it and then saying nothing
-        // left the operator holding a receipt: the encounter existed, and there
-        // was no way to see it exist. So a call that CHANGED something is
-        // followed by a look at what it changed into - phase 3 over the
-        // post-state, the same call `newRun` opens a life with.
-        //
-        // This is NOT the admin output being narrated. The receipt is untouched
-        // and still verbatim; what follows it is the world as it now stands,
-        // and the newly-stood-up person is in it because `company` reads the
-        // world rather than the command. The engine decided, the narrator
-        // describes, and the narrator is not told what to say about it. The
-        // authority rule is exactly as it was.
-        //
-        // It is also the only place the engine -> narrator seam is exercised
-        // against arbitrary state. Ordinary play reaches Core Formation in one
-        // run in a hundred and eighty, so phase 3 has barely run above
-        // Foundation at all; from here it is one line.
-        //
-        // No flag guards it. Which narrator answers is settled at startup and
-        // ADMIN gets whatever the process was started with, so testing the
-        // engine alone is "start it without a model" rather than a mode.
-        //
-        // A read - `roster`, `audit_log`, `help` - changed nothing and gets
-        // nothing, because describing an unchanged room after printing a list
-        // is noise.
-        // ── AND AN ADMIN LINE CAN KILL SOMEBODY TOO ──────────────────────
-        //
-        // `adminAct` returns before the turn's own tail, so the settlement
-        // that runs at the end of `act` never reaches an operator's death -
-        // and `advance_days` at idle focus is the commonest way anybody in
-        // this project has ever seen a cultivator starve. An operator standing
-        // a world in a state and then killing somebody in it is a real death
-        // in a real world, exactly as `spawn_encounter` produces a real
-        // person, so the world hears about it on the same terms.
-        //
-        // BEFORE the look below, so the world the operator is shown afterwards
-        // is one that already knows. The world handle is loaded here because
-        // the admin branch returns above the line in `act` that loads it, so
-        // on an ADMIN-only turn there may be nothing in hand yet.
+        // AND THEN THE WORLD IS LOOKED AT
         let estate: EstateOutcome | null = null;
         if (!after.cultivator.alive && after.cultivator.deathCause) {
             this.atHand = this.atHand ?? await this.loadWorld();
@@ -8534,13 +6290,12 @@ ${line}`;
         return {
             narration: told ? `${text}\n\n${told.text}` : text,
             events: [],
-            // The estate row goes in the ENGINE channel and not into the
-            // receipt's prose. An operator whose `advance_days` starved
-            // somebody needs to be able to see where what they were carrying
-            // went - it is exactly the post-state ADMIN exists to show - and
-            // it is a field report rather than something a character
-            // perceived, so it belongs in the inspector beside every other
-            // call this turn made.
+            // The estate row goes in the ENGINE channel and not into the receipt's
+            // prose. An operator whose `advance_days` starved somebody needs to be
+            // able to see where what they were carrying went - it is exactly the
+            // post-state ADMIN exists to show - and it is a field report rather
+            // than something a character perceived, so it belongs in the inspector
+            // beside every other call this turn made.
             toolCalls: [
                 ...(estate ? [{
                     name: 'world.settleWhatTheyWereCarrying',
@@ -8556,31 +6311,9 @@ ${line}`;
 
     /**
      * The world as it now stands, told by whatever narrator this process has.
-     *
-     * Deliberately `factsForLook` and not a fact list assembled from the admin
-     * result: what an operator wants to see after arranging something is the
-     * arrangement, from inside, and `look` is the engine's existing answer to
-     * that question. It reads the post-state, so a spawned opponent is present
-     * because they are present rather than because the command mentioned them.
      */
     /**
      * End this run and begin another, from the top.
-     *
-     * "Runs end when the cultivator dies; there is no abandoning one" is a rule
-     * about PLAY, and it is still enforced for players in `newRun`. It is not a
-     * rule about the operator surface: testing a game whose interesting states
-     * are four hundred years apart means starting over constantly, and the only
-     * way to do that was to stop the process and delete the database.
-     *
-     * The dead run is flagged admin FIRST and closed with no death cause,
-     * because it did not die - a reset is not evidence about how cultivators
-     * end, and `writeAdminAudit` is what keeps it out of the ledger. It stays
-     * in `latestFinishedRun`, deliberately: the next life begins in the world
-     * this one left behind, which is what makes reset "start this world over
-     * from a new birth" rather than "throw the world away".
-     *
-     * The name carries over unless one is given, so `ADMIN reset` is the whole
-     * command and `ADMIN reset Shen Yuan` is the whole command with a name.
      */
     private async adminReset(name: string, run: Run, cultivator: Cultivator): Promise<ActResult> {
         const wanted = name.length > 0 ? name : cultivator.name;
@@ -8609,16 +6342,7 @@ ${line}`;
 
         const receipt = [
             `reset - ${cultivator.name} closed, ${created.cultivator.name} born`,
-            // ── AND IT MUST NOT CLAIM NOBODY DIED WHEN SOMEBODY DID ──────
-            //
-            // This line said "no death cause was filed, because there was no
-            // death" unconditionally, which was true of the case it was
-            // written for and a lie about the commonest one: reset is reached
-            // from the death screen more than anywhere else, and it was
-            // reporting a killing as a bookkeeping close. `endRun` already
-            // declines to overwrite a recorded death - the ledger was right
-            // and only the receipt was wrong - so this reads the run rather
-            // than assuming it.
+            // AND IT MUST NOT CLAIM NOBODY DIED WHEN SOMEBODY DID
             `Ended: run ${run.id} on turn ${run.turn}, at ordinal ${cultivator.realmOrdinal}. `
                 + (run.status === 'active'
                     ? 'No death cause was filed, because there was no death. '
@@ -8667,25 +6391,6 @@ ${opened.text}` : receipt,
     ): Execution {
         if (isGuidingErrorBody(result)) {
             // `message` is written in the world's voice by the tool layer.
-            //
-            // `hint` is a tool invocation for a developer - this comment said so
-            // already, and said "never goes to a player" - and it was going
-            // straight onto the mechanical line anyway, together with the bare
-            // error code. That was written when the structure channel was
-            // believed not to reach anybody: it does, `engineEntries` renders
-            // every line of it into the play log, and the result was read in
-            // play as
-            //
-            //   nothing_accrued. Time is advanced by
-            //   cultivation_manage.cultivate. Calling stipend twice does not
-            //   pay twice.
-            //
-            // - a database key and an MCP tool name, in the transcript, on the
-            // commonest refusal a house member meets. So the hint now goes to
-            // the inspector, where a tool name is exactly the right word, and
-            // the log gets the ruling said as a ruling. Every refusal this
-            // engine files goes through here, so this one branch is most of the
-            // remaining surface.
             const hint = typeof result.hint === 'string' ? result.hint : null;
             const execution = refused(name, action, factsForRefusal(
                 `${subject}: refused.`,
@@ -8767,55 +6472,16 @@ ${opened.text}` : receipt,
         };
     }
 
-    // ── being hurt, and the shop that was always there ───────────────────
-    //
-    // The softlock, found by playing cold in a browser and reproduced in full:
-    //
-    //   turn 11  3 untreated meridian injuries. Any further combat is fatal.
-    //   turn 12  "I cultivate for twenty years"
-    //            Day 30 - Qi deviation: a minor meridian injury.
-    //            Day 30 - 4 untreated meridian injuries.
-    //            You came out early. 30 days of the 20 years were spent.
-    //
-    // Untreated injuries raise deviation risk, deviation adds another injury
-    // and ejects the cultivator from seclusion after about a month, and the
-    // next attempt goes wrong slightly sooner. He could not advance, could not
-    // heal, and could not die - the only exit the engine named was combat and
-    // the engine had already said combat was fatal. All of it with three
-    // hundred and forty-five spirit stones in the purse, standing in a market
-    // whose board advertised a physician at forty cash.
-    //
-    // Both halves of that are fixed here and both were the same defect: a
-    // price the player has been shown that no sentence can spend money on.
+    // being hurt, and the shop that was always there
 
     /**
      * The two lines on the board that answer "I am hurt".
-     *
-     * Ids rather than a rule. Everything about what they cost, what they are
-     * worth against a pill and what a mortal physician can and cannot do is
-     * read off the catalog rows themselves - including the one fact that
-     * decides which of them is any use, which is the physician's own note
-     * saying he cannot touch a meridian.
      */
     private static readonly PRICE_PHYSICIAN_VISIT = 'price-doctor-visit';
     private static readonly PRICE_COURSE_OF_CARE = 'price-splint-and-month';
 
     /**
      * Getting a wound seen to.
-     *
-     * Priced off the same rows `market` prints, through the same
-     * `localPrice`, so the number the player was quoted is the number they
-     * pay. Nothing about the price or the effect is authored here.
-     *
-     * The physician is refused for the commonest case and it is the catalog
-     * that refuses him: every injury this engine produces is a meridian
-     * injury, and `price-doctor-visit` says in its own note that a mortal
-     * physician "sets a bone, stitches a cut, cannot touch a meridian". What
-     * the mortal world does sell for a meridian is the course of care, which
-     * calls itself the alternative to a healing pill - slower, cheaper, and it
-     * leaves you out of the fight for a season. So the answer to "I am hurt"
-     * is a real choice with a real price on both sides, and it came out of the
-     * price list rather than out of this method.
      */
     private async treat(run: Run, cultivator: Cultivator, ambient: AmbientQi): Promise<Execution> {
         const hurt = untreatedInjuries(cultivator.injuries);
@@ -8827,54 +6493,10 @@ ${opened.text}` : receipt,
         // player must never be charged less than the board quoted.
         const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
 
-        // ── WHAT A PHYSICIAN IS ACTUALLY FOR ─────────────────────────────
-        //
-        // A design decision, made deliberately and written down here because it
-        // is a decision and not a tuning constant.
-        //
-        // Measured across 1,058 lives: HP was a strictly monotonic decreasing
-        // resource. Forty controlled ten-year skips from 5/50 with full rations
-        // restored exactly zero, and 75% of all combat deaths had NO untreated
-        // wounds - nothing to treat, no verb to use, no way back. The frontier
-        // sat at ordinal 17 of 46 with a median age at death of 23 against a
-        // hundred-year lifespan. That is not a hard road; it is a bleed-out,
-        // and a bleed-out is not a decision anybody gets to make.
-        //
-        // The rule chosen, and the reason it does not contradict anything:
-        //
-        //   A WOUND DOES NOT MEND ON ITS OWN. A BODY DOES, UNDER CARE -
-        //   BY A FIXED AMOUNT, WHICH IS THE BOTTOM RUNG OF A LADDER.
-        //
-        // The user's ruling settled the second half: wounds are not forever,
-        // they are answered by graded healing pills at the same rank
-        // requirement, "where a lower should heal almost nothing - it'll heal a
-        // fixed hp amount and as you get up the amount becomes a lot." So care
-        // restores `CARE_RESTORES_HP` and not a share of the wound, and being
-        // weak after a seclusion stays true at every rung above the first.
-        //
-        // `injuries.ts` is explicit that there is no long rest and no hit dice,
-        // and that stays exactly true: a torn meridian is permanent until
-        // somebody is paid to close it, it never closes by waiting, and it
-        // still ratchets the odds of the next one. What changes is that being
-        // BATTERED and being WOUNDED stop being the same thing. Lying still
-        // under a roof for a month, fed, having paid for it, puts a body back
-        // on its feet - which is what every physician in the world has ever
-        // been for, and is the one service the board already advertises and
-        // nothing could buy.
-        //
-        // It is not free and it is not fast. A month is a month, the clock runs
-        // through it, the food is bought or the stay kills them, and a broke
-        // cultivator cannot have it at all. What it is not any more is
-        // impossible.
+        // WHAT A PHYSICIAN IS ACTUALLY FOR
         const battered = cultivator.hp < cultivator.maxHp;
 
-        // ── WHAT A PHYSICIAN CAN ACTUALLY REACH, PRICED BEFORE IT IS SOLD ──
-        //
-        // The two axes gate what mortal care closes, and a gate without a price
-        // change reintroduces the exact defect the whole meridian pass was for:
-        // eleven stones taken, a month spent, "Nothing closed." A treatment
-        // sold against a wound it cannot touch is worse than a refusal, and the
-        // refusal has to name the grade that would work.
+        // WHAT A PHYSICIAN CAN ACTUALLY REACH, PRICED BEFORE IT IS SOLD
         const reachable = hurt.filter(injury =>
             !isPermanentWound(injury.woundType)
             && medicineReaches('mortal', injury.severity, cultivator.realmOrdinal));
@@ -8887,18 +6509,6 @@ ${opened.text}` : receipt,
                 .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
                 .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
             // AND IT NAMES THE THING THAT WOULD WORK.
-            //
-            // This refusal was correct, well written, and a dead end. Measured
-            // in play: a cultivator carrying a crippling tear, holding 194
-            // spirit stones against a 54-stone cure, was told what grade of
-            // medicine it wanted and never told that the medicine has a name,
-            // is on a board, and was inside their purse. They found it by
-            // reading `pills.ts`, which is not a thing a player can do.
-            //
-            // The shape copied here is the one this project already got right
-            // on the Cultivate control, which names the Lesser Qi-Gathering
-            // Manual when there is no method. A refusal is finished when it
-            // names the alternative.
             const cure = whatWouldCloseThisWound(
                 hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
@@ -9025,25 +6635,14 @@ ${opened.text}` : receipt,
             };
         }
 
-        // The engine's own triage decides which wounds, worst first. This
-        // layer decides only how many were paid for.
-        // MORTAL GRADE, because that is what a village physician is. The two
-        // axes are the owner's ruling - the rarity of the medicine scales with
-        // the severity of the injury and the realm of the injured - and before
-        // this the resolver had neither, so a Nascent Soul with crippling torn
-        // meridians bought thirty days of splints for fourteen stones and
-        // walked out whole. See `what-grade-of-medicine-a-wound-needs.ts`.
-        //
-        // Nothing here narrows the bottom of the ladder: at Qi Condensation and
-        // Foundation Establishment a minor or serious tear is still mortal
-        // grade, still a month and a few stones, and still the cheapest cure in
-        // the game. What is gated is height and severity.
-        //
-        // Passed as a PREDICATE rather than as a grade, so `injuries.ts` never
-        // has to know what a pill grade is. It imports the wound table and the
-        // schema and nothing else; the medicine ladder lives one layer out and
-        // reaches `breakthrough.ts`, which imports `injuries.ts` back. Handing
-        // the rule down as a function is what keeps that from being a cycle.
+        // The engine's own triage decides which wounds, worst first. This layer
+        // decides only how many were paid for. MORTAL GRADE, because that is what a
+        // village physician is. The two axes are the owner's ruling - the rarity of
+        // the medicine scales with the severity of the injury and the realm of the
+        // injured - and before this the resolver had neither, so a Nascent Soul
+        // with crippling torn meridians bought thirty days of splints for fourteen
+        // stones and walked out whole. See
+        // `what-grade-of-medicine-a-wound-needs.ts`.
         const triage = treatWorstInjuries(
             applied.cultivator.injuries,
             courses,
@@ -9053,23 +6652,7 @@ ${opened.text}` : receipt,
             (before: Injury) => !before.treated
                 && triage.injuries.some((closed: Injury) => closed.id === before.id && closed.treated)
         );
-        // ── AND THE BODY, A FIXED AMOUNT FOR A FULL MONTH ────────────────
-        //
-        // `CARE_RESTORES_HP` of it, scaled only by the days actually lain
-        // still: a stay cut short by starvation or by a boundary crossing mends
-        // the fraction of a month it lasted, off the same `simulatedDays` every
-        // other consequence of this stretch is priced from. Never more than the
-        // body is missing.
-        //
-        // A FLAT quantity rather than a share of the wound, so that a month of
-        // mortal care is most of a novice and almost nothing at height, and the
-        // graded healing pills are the actual answer once a body is large. It
-        // is the bottom rung of that ladder, not a substitute for it.
-        //
-        // Nothing here touches a meridian. `treatWorstInjuries` above owns
-        // those, is the only thing that closes one, and is unchanged - a wound
-        // and a battering are two different problems with two different
-        // answers, and this is only the second one.
+        // AND THE BODY, A FIXED AMOUNT FOR A FULL MONTH
         const lay = Math.max(0, Math.min(1, skip.simulatedDays / TREATMENT_DAYS));
         const missing = applied.cultivator.maxHp - applied.cultivator.hp;
         const mended = Math.max(0, Math.min(missing, Math.round(CARE_RESTORES_HP * lay)));
@@ -9097,13 +6680,7 @@ ${opened.text}` : receipt,
         });
         facts.lines.unshift(provisioning.line);
 
-        // ── WHAT THE STAY COULD NOT REACH, AND WHAT WOULD ────────────────
-        //
-        // A wound left open by a mortal physician must say so and must name the
-        // grade that would close it, or the player pays, reads a success, and
-        // walks out still carrying the thing that is going to kill them. This
-        // is the same rule the technique ceiling and the bleed warning now
-        // follow: name the blocker AND the fix.
+        // WHAT THE STAY COULD NOT REACH, AND WHAT WOULD
         const beyond = untreatedInjuries(after.injuries)
             .filter(injury => !isPermanentWound(injury.woundType))
             .filter(injury => !medicineReaches('mortal', injury.severity, after.realmOrdinal));
@@ -9156,14 +6733,6 @@ ${opened.text}` : receipt,
                 },
                 {
                     // CARE'S OWN CONTRIBUTION, ON A CHANNEL THAT IS NOT PROSE.
-                    //
-                    // The HP a stay puts back was visible only in the sentence
-                    // describing it, so the inspector could not show it and
-                    // nothing could measure it - which matters now that the
-                    // month a stay costs ALSO mends the body ambiently. Those
-                    // are two systems and the sheet delta is their sum; this
-                    // row is the paid half on its own, which is the half the
-                    // healing ladder is a statement about.
                     name: 'engine.mortalCare',
                     action: 'treat',
                     summary:
@@ -9181,18 +6750,6 @@ ${opened.text}` : receipt,
 
     /**
      * Buying a line off the price board.
-     *
-     * The board is the only list in this game the player has actually been
-     * shown, so a name off it is the one free-text subject they can be certain
-     * they typed correctly - and until this existed, twenty-two advertised
-     * lines had four verbs between them covering three of them. The rest went
-     * to the party resolver, which answered "nobody by that name" to somebody
-     * trying to pay a physician.
-     *
-     * Three outcomes, and the third is the honest one rather than the lazy
-     * one: what the engine models, it does; what it does not model, it says so
-     * and charges nothing. A player who is billed for a night at an inn that
-     * changes no row has been robbed by the software.
      */
     private async buy(
         run: Run,
@@ -9202,31 +6759,11 @@ ${opened.text}` : receipt,
     ): Promise<Execution> {
         const query = (target ?? '').trim();
 
-        // ── A BOOK, WHICH IS THE ONE THING ON THE BOARD THAT WAS NOT ─────
-        //
-        // Ahead of `resolvePrice`, because `PRICES` has no manual row and never
-        // will: what a stall carries is derived from the technique catalog, so
-        // a book added to the content files is buyable the day it lands.
-        //
-        // Found by playing. "buy a manual" was refused with the look people
-        // give somebody asking for a thing that is not sold - and then "I want
-        // to learn the Lesser Qi-Gathering Manual" handed the road over for
-        // nothing. The correct verb was blocked and the free one worked, which
-        // is exactly backwards, and this is the half that fixes the blocking.
+        // A BOOK, WHICH IS THE ONE THING ON THE BOARD THAT WAS NOT
         const bought = await this.buyAManual(run, cultivator, query);
         if (bought) return bought;
 
-        // ── SOMETHING TO GET ON, AHEAD OF THE BOARD'S OWN MATCH ──────────
-        //
-        // The board calls it a mule and a player says horse, so "I buy a
-        // horse" was refused with the look people give somebody asking for a
-        // thing that is not sold - over an animal that is priced, stocked and
-        // rideable. That is the near-synonym rule exactly.
-        //
-        // FIRST, because a whole word against a closed list is stronger
-        // evidence than a prefix against a name: `resolvePrice` matched "I buy
-        // a carriage" to Carriage of a body, which is the fixed rate for
-        // moving a corpse, and quoted it at one stone.
+        // SOMETHING TO GET ON, AHEAD OF THE BOARD'S OWN MATCH
         const asRide = priceRowForSomethingToRide(query);
         const resolved = asRide === undefined && query.length >= 3
             ? resolvePrice(query)
@@ -9236,18 +6773,7 @@ ${opened.text}` : receipt,
             : resolved ? getPrice(resolved.id) : undefined;
 
         if (!price) {
-            // ── ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM ─────────────
-            //
-            // `pillTradeTier` already computes that heaven grade and above is
-            // not for sale at any price, and gives the reason. The refusal
-            // never asked it, so "I buy a Meridian Rebirth Pill" - the medicine
-            // the catalog says is the only thing below immortal grade that
-            // touches crippling damage - answered "a thing that is not sold"
-            // and listed millet and ferry crossings.
-            //
-            // This is the sentence the high corner wanted: told what would mend
-            // you and why you cannot have it yet. It is also the `items.md`
-            // rule reaching a player for the first time.
+            // ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM
             const asPill = query.length >= 3 ? resolvePill(query) : null;
             const pill = asPill ? getPill(asPill.id) : undefined;
             const notForSale = pill ? cashRefusalReason(pill) : null;
@@ -9262,13 +6788,6 @@ ${opened.text}` : receipt,
             }
 
             // One line per category, not the first eight rows of the catalog.
-            //
-            // `PRICES` is authored in category order, so slicing the top of it
-            // listed food, lodging and transport and stopped - and a player who
-            // asked for a healing pill by a name the catalog does not use was
-            // told what IS sold in a sentence that never mentioned medicine.
-            // The refusal was the second place the board hid its own medicine
-            // from a dying player; `boardSample` is the first.
             const board = boardSample(
                 PRICES.map(row => ({ ...row } as unknown as MarketPrice))
             ).map(row => row.name).join(', ');
@@ -9297,21 +6816,7 @@ ${opened.text}` : receipt,
         // taking the money for a state change that never happens.
         const pill = price.category === 'medicine' ? resolvePill(price.name.replace(/,.*$/, '')) : null;
 
-        // ── A THING YOU CAN ACTUALLY PUT UNDER YOU ───────────────────────
-        //
-        // Played and reported: "I buy a horse" and "I hire a mount for the
-        // road" both answered with the look people give somebody asking for a
-        // thing that is not sold. Both halves of that were already written -
-        // the board has carried a mule at fourteen stones and a cart at thirty
-        // since it was authored, and `what-a-conveyance-does-to-a-journey.ts`
-        // has carried what a mount does to a road - and nothing joined them,
-        // so `whatTheyCouldRide` offered a tracked craft nobody had any way to
-        // come to own and the counted tier had no holder in the whole engine.
-        //
-        // `adjustCountedHolding` is where it lands, which is the arithmetic
-        // that file insists on rather than `transferPossession`: a carriage
-        // leaving somebody is a number going down by one, there is nothing to
-        // recognise and nobody to be asked about it.
+        // A THING YOU CAN ACTUALLY PUT UNDER YOU
         const rideable = conveyanceSoldAs(price.id);
         if (rideable) {
             // The catalog names carry their own article - "A drawn carriage" -
@@ -9406,28 +6911,7 @@ ${opened.text}` : receipt,
             return updated;
         })();
 
-        // ── THE ALMANAC IS NOT THE LEDGER ────────────────────────────────
-        //
-        // `price.note` used to be spliced in here and it is almanac copy: it
-        // says what a KIND of thing is, in the third person, to a reader who is
-        // browsing. Dropped into a transaction it produced this, verbatim, on
-        // buying one pill:
-        //
-        //   "18 spirit stones of the 65 you had. Twenty stones. Every run
-        //    starts with exactly one, and it is worth a mule and a half.
-        //    47 left in the purse."
-        //
-        // - a second price contradicting the one just charged, and a sentence
-        // about what every run starts with, in the middle of a receipt.
-        //
-        // `items.md` names the rule: the almanac says what a thing IS and the
-        // ledger says WHO HAS IT, they are different questions, and a surface
-        // that answers both answers neither. The note belongs on the board,
-        // where it already is, and the receipt says what was bought, what it
-        // cost, and what is left.
-        // What the counter has just sold, and what it will not close. Built
-        // BEFORE the facts so the sentence is in `prose` rather than appended
-        // to a receipt that has already been rendered.
+        // THE ALMANAC IS NOT THE LEDGER
         const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId);
 
         const facts = factsForToolResult(`${pill.name}, bought.`, [
@@ -9464,19 +6948,8 @@ ${opened.text}` : receipt,
         /^(?:a |an |one |the |some |any |my )?\s*(?:cultivation |gathering |qi )?(?:manual|manuals|book|books|scripture|scriptures|canon|canons|primer|primers|art|arts|technique|techniques|method|methods)\s*$/i;
 
     /**
-     * Buying a copy of a manual, which is the first real decision in the game.
-     * ── THREE ANSWERS, AND THE MIDDLE ONE IS THE GOOD WRITING ────────────
-     *
-     * A name that is not a book at all falls through to the ordinary price
-     * board, which is why this returns null rather than refusing.
-     *
-     * A book the stall does not carry keeps the refusal it already had, and
-     * that refusal is CORRECT for it - `items.md`: above the line, cash is
-     * simply not the medium, not "expensive" but not for sale. What is added is
-     * that it now names what would work instead, which the old one did not.
-     *
-     * A book the stall does carry is sold, for stones, priced through the same
-     * `localPrice` the market board quotes with.
+     * Buying a copy of a manual, which is the first real decision in the game. ──
+     * THREE ANSWERS, AND THE MIDDLE ONE IS THE GOOD WRITING ────────────
      */
     private async buyAManual(
         run: Run,
@@ -9488,13 +6961,7 @@ ${opened.text}` : receipt,
         const askingFor = (book: { id: string; cash: number }): number =>
             Math.max(1, Math.ceil(cashToStones(localPrice(regionId, book.cash))));
 
-        // ── the stall, read ──
-        //
-        // A category is a question about the whole set and must reach the
-        // listing rather than be handed to a fuzzy matcher, which is the rule
-        // `GENERIC_PILL_PHRASE` and `GENERIC_HOUSE_PHRASE` already follow. This
-        // is the sentence a player types first and it is the one the old
-        // refusal answered worst.
+        // the stall, read
         if (query.length === 0 || GameService.BOOK_IN_GENERAL.test(query)) {
             const lines = stock.length === 0
                 ? ['Nobody within a day of here copies books for a living.']
@@ -9531,25 +6998,7 @@ ${opened.text}` : receipt,
 
         if (query.length < 3) return null;
 
-        // ── BUYING IT OFF THE PERSON HOLDING IT ──────────────────────────
-        //
-        // Ahead of the stall, so somebody standing in front of you asking less
-        // than the counter is who you deal with. A listing nobody can act on is
-        // the defect this repo calls a refusal that names no door, and the
-        // whole point of a market of people is that the price has a person
-        // behind it.
-        //
-        // WHAT MOVES IS A COPY, AND THAT IS WHY IT IS ALLOWED TO. Every offer
-        // reachable this way is `isCommonlyHeld` or awkwardness rung 1, and
-        // `manuals.md` says a common book may be written out by anybody holding
-        // one. Nothing is duplicated that the world is short of: rungs 2 and 3
-        // never appear as an offer at all, so no house's inner shelf leaves
-        // through here at any price.
-        //
-        // AND THE PROVENANCE TRAVELS. `recordACopyHeld` is the same write the
-        // stall makes, and the seller's name goes onto the knowledge row beside
-        // it - so *where did you get that* has an answer two centuries later,
-        // which is half of what `items.md` means by holding being a signature.
+        // BUYING IT OFF THE PERSON HOLDING IT
         this.atHand = this.atHand ?? await this.loadWorld();
         const fromAPerson = whatIsBeingOfferedHere(
             this.knowledge, cultivator, run, this.atHand, this.alreadyHasACopyOf(cultivator)
@@ -9639,11 +7088,6 @@ ${opened.text}` : receipt,
 
     /**
      * Whether a copy of this is already on them, one way or another.
-     *
-     * Both ways count. A held copy is the obvious one; an art already PRACTISED
-     * is the one that was nearly missed, and buying a second copy of something
-     * you have known for a century is the sort of sale a market should not
-     * offer and a player should not be charged for.
      */
     private alreadyHasACopyOf(cultivator: Cultivator): (thingId: string) => boolean {
         const held = new Set(copiesHeldBy(this.db, cultivator.id));
@@ -9653,36 +7097,6 @@ ${opened.text}` : receipt,
 
     /**
      * Buying a copy off the cultivator standing in front of you.
-     *
-     * The other half of the stall, and the half with a person on it. What
-     * separates the two is not the price - it is that this one comes with a
-     * reason attached, and the reason is a fact about the seller the buyer can
-     * act on: somebody who needs stones is a cheaper afternoon than a counter,
-     * and somebody who should not be seen holding a thing is a cheaper
-     * afternoon still and a worse decade.
-     *
-     * ── WHAT IS AND IS NOT DUPLICATED ────────────────────────────────────
-     *
-     * A copy. `manuals.md` is explicit that a common book may be written out
-     * again by anybody who has read it to its end, which is what makes them
-     * plentiful, and every offer that reaches here is either common or the
-     * awkwardness rung `betrayalOfSelling` calls "somebody will want to know
-     * where you got it". Rungs 2 and 3 - a house's own working manual, and the
-     * top of any shelf - are withheld upstream and never appear as an offer, so
-     * nothing scarce is manufactured here.
-     *
-     * ── AND THE SELLER IS ON THE RECORD ──────────────────────────────────
-     *
-     * The knowledge row written when the offer was heard says who this came
-     * off, which is what makes *where did you get that* answerable later. The
-     * art itself is the other half of that record and always was:
-     * `unauthorisedPractice` names the houses who would want a word with
-     * anybody practising something that is not theirs.
-     *
-     * Returns null rather than a refusal when the purse will not cover it, so
-     * the caller falls through to the stall - a player who cannot afford the
-     * person may still be able to afford the counter, and being told "no" by
-     * the first of two sellers is not an answer to the question they asked.
      */
     private async buyOffSomebodyStandingHere(
         run: Run,
@@ -9713,17 +7127,7 @@ ${opened.text}` : receipt,
                   + 'facts.'
                 : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it. Owning `
                   + 'it and having read it are different facts.',
-            // ── WHO WILL WANT A WORD WITH YOU, WHICH IS NOT WHOSE IT IS ──
-            //
-            // `unauthorisedPractice` is the join, and this is the site it is
-            // right for. It answers who will want a word with the person SEEN
-            // PRACTISING a thing that is not theirs, and it drops your own
-            // house from the list because being one of theirs is the answer to
-            // the question. That filter makes it the wrong join for a leak -
-            // selling your own house's art is the case it would have gone
-            // silent on - and exactly the right one here, where the buyer is
-            // acquiring somebody else's signature and will be wearing it for
-            // the rest of their climb.
+            // WHO WILL WANT A WORD WITH YOU, WHICH IS NOT WHOSE IT IS
             ...(() => {
                 const answerable = unauthorisedPractice(
                     { factionId: cultivator.sectId ?? null }, offer.thingId
@@ -9771,34 +7175,9 @@ ${opened.text}` : receipt,
 
     /**
      * Putting something on the counter.
-     *
-     * The other half of `buy`, and the missing half of gathering. `forage`
-     * prices every herb it turns up and puts it in the pouch; until this
-     * existed, nothing anywhere converted a pouch back into stones, so a
-     * cultivator who spent a season foraging was exactly as poor afterwards
-     * and carrying more.
-     *
-     * Resolved against THE POUCH and never against the party resolver. That is
-     * the whole reason this action exists as its own verb: "I sell a Qi Grass"
-     * used to reach the INTERACT table, where the engine went looking for a
-     * person by that name and reported that nobody was there.
-     *
-     * `quoteSale` decides the number. There is no roll in a sale - the ladder
-     * decides, through `regardOf`, so somebody standing well above the counter
-     * is not cheated and somebody holding a thing they visibly cannot defend
-     * is. This method chooses nothing except which lots go on the counter.
      */
     /**
      * Handing somebody a thing you already hold, for nothing.
-     *
-     * The decision half is `handing-somebody-a-thing.ts`, which opens no
-     * database handle and returns deltas; this applies them. The same seam
-     * `legacyAct` keeps, and for the same reason.
-     *
-     * Free, and every branch out of here returns through `freeAction`: nothing
-     * is attempted against the recipient, so there is no roll to lose and no
-     * day to spend. What it leaves is a favour they hold about the giver, which
-     * is the only account in this engine that opens without leverage.
      */
     private async giveSomething(
         run: Run,
@@ -9892,19 +7271,7 @@ ${opened.text}` : receipt,
         cultivator: Cultivator,
         target: string | undefined
     ): Promise<Execution> {
-        // ── AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT ───────────
-        //
-        // "I sell a copy of the Void-Piercing Sword Domain" is a sale and it
-        // reached `Nothing on you worth a counter` - the pouch holds herbs and
-        // pills, an art is a row on `cultivator_techniques`, and nothing
-        // anywhere converted the second into stones. So the world's NPCs sold
-        // copies to each other through `whatIsInTheirHands` while the player
-        // had no path to the act at all: the rule bound everybody except the
-        // person playing, which is this repo's commonest defect with the halves
-        // swapped.
-        //
-        // Returns null when the sentence is not about an art, so a name that is
-        // a herb falls through to the pouch exactly as before.
+        // AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT
         const asACopy = await this.sellACopyOfAnArt(run, cultivator, (target ?? '').trim());
         if (asACopy) return asACopy;
 
@@ -10007,52 +7374,6 @@ ${opened.text}` : receipt,
 
     /**
      * Writing out a copy of an art and selling it.
-     *
-     * ═════════════════════════════════════════════════════════════════════
-     * THE ACT IS NEVER REFUSED FOR BEING WRONG. IT IS PRICED
-     * ═════════════════════════════════════════════════════════════════════
-     *
-     * `AGENTS.md`, on agency: do not ban it and do not soften it, and the
-     * answer to *may I* is *yes, and here is what it costs*. The design owner
-     * said the same thing about this exact act - *"if a disciple had the gall
-     * to write it out without approval the sect would easily punish them"* -
-     * and the operative word is punish rather than prevent. So nothing below
-     * checks permission. There are two refusals and both are about CAPABILITY:
-     * you have never been taught it, or you have not taken it to the end.
-     *
-     * ═════════════════════════════════════════════════════════════════════
-     * WHICH MAKES IT SELF-LIMITING WITHOUT A PROHIBITION ANYWHERE
-     * ═════════════════════════════════════════════════════════════════════
-     *
-     * `couldWriteOutACopy` is the whole gate, and it is the owner's second
-     * ruling: *"you'd have to master it, which would mean you are at sect
-     * leader or higher"*. An ordinary disciple is not turned away from this
-     * verb - they simply have nothing to write out, by the same fact that makes
-     * them an ordinary disciple.
-     *
-     * And the consequence falls out of the reprisal resolver with nothing added
-     * to it. The people who CAN leak a house's signature art are the people at
-     * its own summit, and `whetherYouAreWorthTheTrouble` answers `beyond_them`
-     * for exactly those people: *"stands where nothing they could do about it
-     * would reach. There is a record and there is no reprisal."* A house that
-     * knows precisely who did it and can do nothing is the scene, and no branch
-     * anywhere produces it.
-     *
-     * ═════════════════════════════════════════════════════════════════════
-     * AND WHETHER ANYBODY WORKED IT OUT IS NOT A NEW SYSTEM
-     * ═════════════════════════════════════════════════════════════════════
-     *
-     * `couldTheyTellItIs` already answers whether one person watching could
-     * place one art to one house, on the two axes it was written for - a rung
-     * to follow what is happening, and a reference for what that house's work
-     * looks like. Every person standing in the square is asked, the best answer
-     * becomes the house's `KnowingStage`, and `whatTheHouseDoesAboutIt` reads
-     * `canPointAt` off it. Nothing was written here to make a deed nobody
-     * worked out come back as *"nobody can put a name to it"*; that is what the
-     * resolver says on its own when the stage map is empty.
-     *
-     * Returns null when the sentence is not about an art this cultivator could
-     * be selling, so the pouch sale below is reached unchanged.
      */
     private async sellACopyOfAnArt(
         run: Run,
@@ -10139,13 +7460,7 @@ ${opened.text}` : receipt,
         const months = monthsToCopy(opens, carriesTo);
         const days = Math.max(1, Math.round(months * (DAYS_PER_YEAR / 12)));
 
-        // ── AND WHO, STANDING HERE, COULD SAY WHOSE IT WAS ───────────────
-        //
-        // No witness table. `couldTheyTellItIs` is asked of everybody in the
-        // square, and their reference for the house is read off the roster
-        // rather than invented: one of theirs knows it whole, somebody who
-        // practises the art has watched it done, and everybody else has never
-        // been in the room.
+        // AND WHO, STANDING HERE, COULD SAY WHOSE IT WAS
         this.atHand = this.atHand ?? await this.loadWorld();
         const place = this.atHand ? worldLocationFor(this.atHand, cultivator.location) : null;
         const here = this.atHand && place
@@ -10236,20 +7551,6 @@ ${opened.text}` : receipt,
 
     /**
      * What the house whose art it was does about it.
-     *
-     * Three existing things joined and nothing invented: the leak as an
-     * ordinary `Deed`, the reprisal resolver, and the ledger. The resolver is
-     * handed the two parties and the stage map and its answer is written down
-     * whatever it is - including *nothing*, which is the commonest answer and
-     * the one this exists to be able to produce honestly.
-     *
-     * WHAT IS AND IS NOT PERSISTED. A record is always written where somebody
-     * can point at the deed, because a house that knows is a house that holds
-     * it in eighty years and that is the half that lasts. A crippling or a term
-     * of years is written ONLY where the resolver actually landed one - the
-     * design owner's *"maybe cripple their cultivation"* and *"or a dao oath"* -
-     * and where the offender stands beyond what the house could reach, the
-     * answer is standing and rumour, which is what the record IS.
      */
     private whatTheHouseDidAboutTheLeak(input: {
         run: Run;
@@ -10310,25 +7611,7 @@ ${opened.text}` : receipt,
             stages: new Map([[ownerFactionId, input.houseStage]]),
             theirOrdinal: Number(sect?.powerOrdinal ?? 0),
             yourOrdinal: cultivator.realmOrdinal,
-            // ── DERIVED, AND IT IS WHAT DECIDES WHICH OF THE TWO LANDS ───
-            //
-            // `whatTheHouseTakes` reads this as an investment question - is
-            // there something in them the house can still use - and the answer
-            // is genuinely different for the two kinds of leaker, which is why
-            // both of the owner's answers are reachable from one call.
-            //
-            //   AN OUTSIDER holds a thing the house wants back: the copy, and
-            //   the account of who put it in their hands. Keeping them is worth
-            //   something, so it takes the years.
-            //   ONE OF THEIR OWN holds nothing the house has not got. There is
-            //   no question about where they got it and nothing to be gained by
-            //   feeding them for sixty years, so it takes the capability -
-            //   *"maybe cripple their cultivation so they couldn't do it
-            //   again"*, which is the sentence this whole task began with.
-            //
-            // `wouldBeMissed` is whether anybody would write about them, which
-            // is what wearing colours means, and it only steps the band that
-            // decides whether they are worth noticing at all.
+            // DERIVED, AND IT IS WHAT DECIDES WHICH OF THE TWO LANDS
             worth: {
                 holdsSomethingWanted: mine !== ownerFactionId,
                 wouldBeMissed: mine !== null
@@ -10428,13 +7711,6 @@ ${opened.text}` : receipt,
 
     /**
      * What is in the pouch.
-     *
-     * `handleInventory` has been complete since alchemy was written and no
-     * sentence reached it. Rendered here rather than left to the summariser,
-     * for the same reason `list_recipes` is: the handler returns rows and no
-     * `narrationHint`, and the last-resort line for a body nobody can summarise
-     * is "It is done. Nothing about it drew attention." - which is what a
-     * player asking what they were carrying was actually told.
      */
     private async inventory(
         run: Run,
@@ -10460,84 +7736,21 @@ ${opened.text}` : receipt,
         const herbs = body.herbs ?? [];
         const stones = body.spiritStones ?? 0;
 
-        // ── AND WHAT IS BEING CARRIED THAT IS NOT MEDICINE ────────────────
-        //
-        // Found by playing, by the design owner, and it read as the surface
-        // lying: `ADMIN grant_item ordinal=46 kind=artifact` answered GRANTED
-        // with the catalog id, and then `what am I carrying`, `what am I
-        // holding` and `inventory` all said "Nothing in the pouch at all".
-        //
-        // The grant was real. `addToPouch` wrote the row, and it is still
-        // there - what could not see it is this read, because `handleInventory`
-        // is an ALCHEMY tool and `listPouch` filters to pills and herbs by
-        // design. `listCarriedArtifacts` is the accessor for the other kind and
-        // it has had exactly one caller, `carriedArtifact`, which prices a
-        // fight nothing has ever asked it to price.
-        //
-        // So a rated object was in the database, invisible to every sentence a
-        // player can type, and worth nothing in a fight. A write nobody can
-        // read is indistinguishable from a write that did not happen, and this
-        // is the verb whose whole job is to say what you have.
+        // AND WHAT IS BEING CARRIED THAT IS NOT MEDICINE
         const carried = listCarriedArtifacts(this.db, cultivator.id)
             .map(entry => ({ entry, record: getArtifact(entry.itemId) }))
             .filter((row): row is { entry: typeof row.entry; record: NonNullable<typeof row.record> } =>
                 row.record !== undefined);
 
-        // ── AND WHAT IS IN THE YARD ──────────────────────────────────────
-        //
-        // A third shelf in the same table, and the same defect a third time:
-        // a bought mule is a row `getArtifact` cannot name, so the filter
-        // above dropped it and the verb whose whole job is to say what you
-        // have said "nothing in the pouch at all" over something that cost
-        // thirteen stones. A counted conveyance is not a rated object and has
-        // no artifact row and never will - it is an AMOUNT, which is exactly
-        // why it reads through the counted accessors instead.
+        // AND WHAT IS IN THE YARD
         const yard = countedConveyancesHeld(this.whatIsInTheirYard(cultivator));
 
-        // ── AND THE BOOKS, WHICH ARE THE COMMONEST THING A PLAYER BUYS ────
-        //
-        // The same defect as the artifact one above, one shelf over, and found
-        // the same way. Played:
-        //
-        //   > I buy the Lesser Qi-Gathering Manual
-        //   "11 spirit stones of the 30 you had, and the copy is yours."
-        //   > what do I have
-        //   "Nothing in the pouch at all."
-        //
-        // The purchase is real and the provenance line is exact; what could not
-        // see it is this read. `recordACopyHeld` writes to the knowledge table
-        // rather than to `cultivator_pouch`, which is right - a copy has a
-        // history and a person it came from, and `items.md` is clear that is
-        // what separates a tracked thing from a counted one - and it means the
-        // pouch reader will never find one however long it looks.
-        //
-        // So the verb whose whole job is to say what you have asks the other
-        // shelf too. Nothing is moved and no second row is written: the same
-        // accessor `holdsACopyOf` reads, rendered.
+        // AND THE BOOKS, WHICH ARE THE COMMONEST THING A PLAYER BUYS
         const books = copiesHeldBy(this.db, cultivator.id)
             .map(id => getTechnique(id))
             .filter((art): art is NonNullable<typeof art> => art !== undefined);
 
-        // ── AND WHAT IS NOT ON YOU AT ALL ────────────────────────────────
-        //
-        // Ruled by the design owner, against the narrower reading this file
-        // shipped with: a human DM answers "what do I have" with "on you,
-        // this; in the vault, that." They do not answer "nothing, technically"
-        // and wait to be asked a second question. A true answer that misleads
-        // is the same defect as a confident wrong one.
-        //
-        // So the wide question reaches the legacy ledger. `what am I carrying`
-        // does not, and the split is deliberate rather than an oversight -
-        // that phrasing means something narrower and the distinction is worth
-        // keeping. `inventory-phrasings.ts` decides which was asked, off the
-        // player's own sentence.
-        //
-        // `leftByRun` is the ledger's one run-scoped read and it had NO CALLER
-        // ANYWHERE IN `src/` before this line. A read of what somebody has put
-        // beyond their own reach that nothing in the running game ever asks
-        // for is the defect AGENTS.md names as the most-repeated here, and it
-        // was sitting one shelf over from the verb whose whole job is to say
-        // what you have.
+        // AND WHAT IS NOT ON YOU AT ALL
         const asked = whichHavingWasAskedAbout(rawInput.toLowerCase().trim());
         const elsewhere = asked === 'on the body'
             ? []
@@ -10640,18 +7853,6 @@ ${opened.text}` : receipt,
 
     /**
      * Swallowing a pill.
-     *
-     * Two systems were dark behind this one missing case, and the second is
-     * the larger. The six `heal_hp` pills could be BOUGHT and never taken - a
-     * new cultivator could spend 28 of their 30 stones on a Minor Healing Pill
-     * and carry it to their death - and `handleConsumePill` is the ONLY writer
-     * of `FLAG_PENDING_PILL`, so `ctx.pill` at every breakthrough in every
-     * played life was null and `MAX_PILL_BONUS`, the largest modifier in the
-     * game and the intended way past the rungs that kill, had never fired.
-     *
-     * Resolved against the POUCH, for the same reason `sell` is: a pill is a
-     * thing you are carrying, and the alternative reading of the sentence is a
-     * person by that name.
      */
     private async consumePill(
         run: Run,
@@ -10694,55 +7895,14 @@ ${opened.text}` : receipt,
 
         const name = this.lotFor(chosen)?.name ?? chosen.itemId;
 
-        // ── THE ONE PILL THAT IS NOT A PILL ──────────────────────────────
-        //
-        // Before `getPill`, because it is not in that catalog and never will
-        // be: an Unearned Step is an object that came down from over the Lid,
-        // and `alchemy_manage.consume_pill` prices medicine somebody refined.
-        //
-        // This is the exemption that gives the crossing toll its meaning. The
-        // design owner's ruling is that a crossing costs the body *"unless via
-        // admin panel or the immortal pill that lets you skip a ordinal - that's
-        // the diff between the immortal pill and the ones that give you qi, the
-        // qi ones you still have to cross and risk it."* Every qi pill in the
-        // pouch hands over accumulation and leaves the wall exactly where it
-        // was; this one hands over the far side.
-        //
-        // It goes through `advanceRealm` and never through `attemptBreakthrough`,
-        // which is the whole of how the exemption is expressed - no roll, no
-        // failure table, no tribulation, no toll and no `bodyCost`, because none
-        // of those code paths is entered. An exemption implemented as a flag on
-        // the resolver would be a second set of rules for one act; this is the
-        // absence of the act.
+        // THE ONE PILL THAT IS NOT A PILL
         const step = theUnearnedStepIn(chosen.itemId);
         if (step) return this.spendTheUnearnedStep(run, cultivator, chosen, step);
 
-        // ── ASK BEFORE WASTING IT ──
-        //
-        // A restorative swallowed at full does nothing, is gone anyway, and
-        // leaves toxicity - so it is strictly worse than not taking it. The
-        // engine says so afterwards now, which was an improvement on saying
-        // nothing, but afterwards is the wrong moment: the pill is already
-        // spent. Found by playing, at eighteen of the thirty spirit stones a
-        // cultivator starts with.
-        //
-        // A refusal rather than a prompt, because this layer has no way to ask
-        // a question and wait. The player says it again with `anyway` and it
-        // goes through, which is the same shape every other deliberate
-        // override in this game takes.
+        // ASK BEFORE WASTING IT
         const pill = getPill(chosen.itemId);
 
         // -- AND THE ONE THAT IS NOT A WASTE BUT AN ENDING ----------------
-        //
-        // Same gate, opposite reason. The refusal below is for a pill that
-        // would do nothing; this is for the one that does something no second
-        // sentence can undo, and it is the only irreversible thing in the
-        // pouch. A player who typed "I take a pill" while hurt, or who let a
-        // model choose which one, must not die of it.
-        //
-        // It reuses `TAKE_IT_ANYWAY` rather than inventing a confirmation, so
-        // it is the same override every other deliberate act in this game
-        // takes, and the refusal says plainly what saying it again buys.
         if (pill?.effect === 'end_the_soul' && !GameService.TAKE_IT_ANYWAY.test(rawInput)) {
             return refused('engine.thisOneEndsYou', 'consume_pill', factsForRefusal(
                 `${name} is not medicine.`,
@@ -10783,21 +7943,6 @@ ${opened.text}` : receipt,
 
     /**
      * Spend an Unearned Step: the one crossing that is given rather than made.
-     *
-     * `takeTheUnearnedStep` decides all of it off the catalog's own contract -
-     * one boundary, grade caps the destination, 41 is a hard stop, once per
-     * life, and a crossing taken short of Perfection leaves an `incomplete`
-     * foundation. Nothing is re-decided here; this writes.
-     *
-     * ── SPENT ON EVERY BRANCH, INCLUDING THE ONES THAT DO NOTHING ────────
-     *
-     * `ONCE_IN_A_LIFE` is explicit: *"a second one of either does nothing at
-     * all to somebody who has already taken one - it is simply consumed against
-     * a body that will not take it twice."* So the pouch row goes on a refusal
-     * as well, and the refusal says so, because a player who does not know that
-     * has been handed a trap rather than a rule. The one exception is the wall
-     * refusal: standing in the wrong place is not a decision they have taken
-     * yet, and charging for it would make the object impossible to aim.
      */
     private spendTheUnearnedStep(
         run: Run,
@@ -10907,17 +8052,6 @@ ${opened.text}` : receipt,
 
     /**
      * How a manual could go further, by every route there is.
-     *
-     * ONE COMMAND, THREE COSTS. Finding the next volume, being taught it, and
-     * writing it yourself are the same question - how does this book get
-     * further - asked of a world that answers differently depending on what you
-     * have. `assessAcquisition` funnels all three and returns the same
-     * `AcquisitionReport` whatever the route, so this layer picks no winner: it
-     * asks about each and prints what came back.
-     *
-     * The read is free and it is the point. A player standing at a ceiling has
-     * three things they might do and no way to compare them; the engine has
-     * always been able to price all three and nothing ever asked it to.
      */
     private async acquisition(
         run: Run,
@@ -11000,25 +8134,7 @@ ${opened.text}` : receipt,
             })
         }));
 
-        // ── SAY EACH SENTENCE ONCE ───────────────────────────────────────
-        //
-        // Found by playing: "what are my options" printed one sentence SIX
-        // times. Two multiplications on top of each other, and neither is a
-        // fault in the assessment.
-        //
-        // `AcquisitionReport.headline` is `lines[0]` by construction, so
-        // rendering the headline and then the whole of `lines` says the first
-        // sentence twice per route. And most of what the assessment returns is
-        // a fact about the MANUAL rather than about the route - whether it
-        // suits this cultivator, where it ends, what its opening costs - so the
-        // same sentence comes back from all three.
-        //
-        // The fix is to render on that split rather than to trim a duplicate:
-        // what every route says is said once, above them, and each route then
-        // carries only what is true of that route. Three bare "open."s under a
-        // shared reason is the honest shape of the answer - the routes really
-        // are equivalent here - and it is one screen rather than six lines of
-        // the same clause.
+        // SAY EACH SENTENCE ONCE
         const shared = assessed[0].report.lines
             .filter(line => assessed.every(({ report }) => report.lines.includes(line)));
         for (const line of shared) if (!lines.includes(line)) lines.push(line);
@@ -11058,42 +8174,17 @@ ${opened.text}` : receipt,
         return execution;
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // THE THREE QUESTIONS A STUCK PLAYER ASKS
-    //
-    // Measured dead by `scripts/playtest-the-drive.mjs` over the real
-    // endpoint, in the words a person types. Every one of the three is a
-    // GATHERING of state this class already reads for other purposes, handed
-    // to a renderer that holds no thresholds of its own. Nothing below
-    // computes a ceiling, decides who teaches, or prices a road; it reads six
-    // engine functions and repeats what they said.
-    // ─────────────────────────────────────────────────────────────────────
 
     /**
      * The arts that could be learned, filtered by everything that decides it.
-     *
-     * Realm, spirit root, dao standing and the run's own scarcity are all the
-     * handler's, and this layer chooses none of them. The conflicting list is
-     * shown WITH its warning rather than hidden: an art that fights the root is
-     * learnable, and it is the trade the genre is actually about.
      */
     private async listTechniques(
         run: Run,
         cultivator: Cultivator,
         target?: string
     ): Promise<Execution> {
-        // ── ASKING ABOUT ONE BOOK, WHICH IS NOT ASKING FOR IT ────────────
-        //
-        // "can I learn the Lesser Qi-Gathering Manual" and "what would it cost
-        // to learn it" are questions, and until this existed the first of them
-        // LEARNED IT and the second reached nothing at all. See
-        // `ASKING_RATHER_THAN_DOING` in `actions.ts` for the routing; this is
-        // where the question gets its answer.
-        //
-        // Free by construction. It is a read of the same three facts the
-        // refusal in `handleLearn` is built from - what the stall asks, what
-        // this cultivator is carrying, and who teaches it - so the answer to
-        // "may I" and the answer to "I do" can never disagree.
+        // ASKING ABOUT ONE BOOK, WHICH IS NOT ASKING FOR IT
         const asked = (target ?? '').trim();
         if (asked.length >= 3 && !GameService.BOOK_IN_GENERAL.test(asked)) {
             const named = this.whatItWouldTake(run, cultivator, asked);
@@ -11129,12 +8220,6 @@ ${opened.text}` : receipt,
         };
 
         // WHERE IT STOPS, SAID BEFORE THE DECADE IS SPENT.
-        //
-        // A cultivation manual is a hard ceiling: at or past its cap, progress
-        // is zero, not slow. Before this, the only way to find out that the
-        // book you picked up ends at seventeen was to reach seventeen. That is
-        // not difficulty, it is a trap, and it is also the reason the corridor
-        // above the middle of the ladder reads as a wall instead of as a road.
         const carries = (row: Listed): string =>
             row.class !== 'cultivation'
                 ? ' It carries nobody anywhere; it is an art, not a road.'
@@ -11146,23 +8231,7 @@ ${opened.text}` : receipt,
 
         const lines: string[] = [];
 
-        // ── WHAT YOU ARE ALREADY PRACTISING, WHICH IS THE QUESTION ───────
-        //
-        // Played, and it is a hole rather than a wording problem: "what arts do
-        // I know", "what techniques do I have", "list my techniques" and "what
-        // am I practising" all reach THIS surface, and every one of them was
-        // answered with the LEARNABLE list - which filters `known !== true`, so
-        // the art the player is actually practising is the one row guaranteed
-        // to be missing. After `I learn the Lesser Qi-Gathering Manual`, the
-        // Lesser Qi-Gathering Manual vanished from every listing in the game
-        // and no sentence anywhere named the method being practised.
-        //
-        // The filter above is right for the list it makes - a road you are
-        // already on is not a road you could be taught - and the fix is not to
-        // stop filtering it. It is that the answer opens with what is held,
-        // because that is what four of the five ways of asking were asking for,
-        // and because a method's CEILING is the fact a player most needs and
-        // this is the only surface that prints one.
+        // WHAT YOU ARE ALREADY PRACTISING, WHICH IS THE QUESTION
         const held = cultivator.knownTechniques
             .map(id => getTechnique(id))
             .filter((art): art is NonNullable<typeof art> => art !== undefined);
@@ -11263,12 +8332,6 @@ ${opened.text}` : receipt,
 
     /**
      * Learning an art, which is not practising one.
-     *
-     * Every gate is `handleLearn`'s - realm, dao standing, element, and whether
-     * a copy exists in this run at all - and every one of them refuses with the
-     * measured reason. This layer resolves the name against the whole catalog
-     * rather than against what is already known, because the sentence is about
-     * something they do NOT have yet.
      */
     private async learnTechnique(
         cultivator: Cultivator,
@@ -11286,18 +8349,7 @@ ${opened.text}` : receipt,
             ));
         }
 
-        // ── A COPY THEY TOOK IS A COPY THEY HAVE ────────────────────────
-        //
-        // `handleLearn`'s upper gate refuses anything above the common shelf
-        // unless `provenance` says how it was got, and its own refusal names
-        // the third road: "or find a copy. `provenance` records which of those
-        // it was." A stolen manual is that road, and until the enum had a word
-        // for it the theft moved the row and left the book shut.
-        //
-        // `taken` rather than `found_in_place`, ruled: a copy that reads as
-        // found is a copy nobody can ever be caught holding, which deletes the
-        // consequence the taking exists for. The book opens; what stays true is
-        // that `ownerId` still names the house and the chain still says stolen.
+        // A COPY THEY TOOK IS A COPY THEY HAVE
         this.atHand = this.atHand ?? await this.loadWorld();
         const took = aTakenCopyOf(this.atHand, cultivator.id, technique.id);
 
@@ -11311,38 +8363,9 @@ ${opened.text}` : receipt,
             'technique_manage.learn', 'learn_technique', result, technique.name
         );
 
-        // ── WHETHER IT IS FOR THEM, IN THE SAME BREATH ───────────────────
-        //
-        // A miss has to be legible in the MOMENT. `assessFit` writes the
-        // sentence - "it is sound. It is written for water. This cultivator
-        // draws fire. Sitting with it will teach them nothing, however long
-        // they sit" - and nothing returned it, so a player who picked up an art
-        // that did not suit them learned the wrong lesson: sit longer, rather
-        // than go somewhere else. That inversion is the exact thing the
-        // suitability layer exists to prevent.
-        //
-        // Said on success as well as on refusal, deliberately. Being told what
-        // you have just taken on is worth more than being told what you were
-        // stopped from taking, because the thing you took on is the one you are
-        // about to spend a decade with.
+        // WHETHER IT IS FOR THEM, IN THE SAME BREATH
         const catalog = getTechnique(technique.id);
-        // ── AND A SUITABILITY LINE MUST NOT ARGUE WITH A REFUSAL ─────────
-        //
-        // `suitability.ts` writes, for a book that suits somebody, "there is
-        // nothing standing between them and it except the work" - which is
-        // true about FIT and false about acquisition, and appending it under a
-        // refusal produced this, in play:
-        //
-        //   "A stall asks about 8 spirit stones for a copy, and Lin Baoqing is
-        //    carrying 30. ... There is nothing standing between them and it
-        //    except the work."
-        //
-        // Two sentences of the same paragraph disagreeing about whether the
-        // player can have the book. The miss cases still say their piece under
-        // a refusal, because a miss is exactly what the layer exists to make
-        // legible in the moment and it never contradicts one; the SUITED line
-        // is the only one that claims the road is open, so it is the only one
-        // withheld when the road is not.
+        // AND A SUITABILITY LINE MUST NOT ARGUE WITH A REFUSAL
         const suitedButRefused = (fit: ReturnType<typeof fitOf>): boolean =>
             fit.fit === 'suited' && execution.outcome === 'refused';
         if (catalog && !suitedButRefused(fitOf(cultivator, catalog))) {
@@ -11373,10 +8396,6 @@ ${fit.line}`;
 
     /**
      * The house's roll, its portfolios, and who sits at the top of it.
-     *
-     * Three things every authority question needs together, assembled once
-     * rather than in each caller. The roll is the named cast plus this
-     * cultivator at their own rung, which is what `whoDecidesIn` reads.
      */
     private async theHouseAround(cultivator: Cultivator, held: HousePosition): Promise<{
         roster: ContactPerson[];
@@ -11405,19 +8424,6 @@ ${fit.line}`;
 
     /**
      * Somebody was standing there when the false decree was given.
-     *
-     * The design owner's ruling, in one clause: *"or rat him out to the
-     * punishment elder."* Before this, forging a mandate cost 3.36 standing and
-     * the witness went back to what they were doing - a rounding error for an
-     * act that spends the house's own name without holding any of it.
-     *
-     * Nothing here decides anything. `whatTheWitnessDoesAboutIt` reads what that
-     * particular person holds against this one and what this one holds over
-     * them, `ifCaughtAtSomethingTheHousePunishes` decides what the house does,
-     * and `whatYourOwnHouseOpensAboutYou` writes the row. There is no RNG on
-     * this path at all - deliberately, because the lesson is meant to be that
-     * WHO you tried it on mattered more than that you tried it, and a die roll
-     * would make that unlearnable.
      */
     private async somebodyWatchedThatDecree(
         run: Run,
@@ -11497,15 +8503,6 @@ ${fit.line}`;
 
     /**
      * What has been brought to you about the house's own people.
-     *
-     * The other end of the same rows, and the reason it exists: building only
-     * the reported-on half would be a punishment that happens TO the player and
-     * never THROUGH them, which is the officeless-elder problem again - standing
-     * with no jurisdiction attached to it.
-     *
-     * Gated on the portfolio and never on the rank. Somebody senior who does not
-     * hold the room is not brought complaints, and being told so names the thing
-     * they would have to go and get.
      */
     private async complaintsBrought(
         run: Run,
@@ -11549,13 +8546,7 @@ ${fit.line}`;
         // ── DECIDING ONE ─────────────────────────────────────────────────
         if (verdict !== null && (verdictOn ?? '').trim().length > 0) {
             const wanted = (verdictOn ?? '').trim();
-            // ── NOBODY DECIDES THEIR OWN CASE ────────────────────────────
-            //
-            // `whereAComplaintGoes` already refuses to ROUTE one to its own
-            // subject, and the same rule has to hold at the other end or
-            // holding the room would be a way of making your own record go
-            // away. Filtered before the match so that "I dismiss the complaint
-            // against me" cannot resolve by being the only row on the pile.
+            // NOBODY DECIDES THEIR OWN CASE
             const theirs = open.filter(row => row.subjectId !== cultivator.id);
             const chosen = theirs.find(row =>
                 matchScore(wanted, nameOf(row.subjectId)) > MATCH_THRESHOLD)
@@ -11631,22 +8622,6 @@ ${fit.line}`;
 
     /**
      * Which rooms of the house this person speaks for.
-     *
-     * The read that makes an order given in the house's name a decision rather
-     * than a trap. `whoIsInChargeOfWhat` deals portfolios deterministically and
-     * with no RNG for exactly this reason - *"a player has to be able to work
-     * out whose door to knock on before knocking"* - so the answer here is
-     * knowable in advance and stays the same when asked twice.
-     *
-     * ── IT READS PORTFOLIOS AND NEVER `Sect.office` ──────────────────────
-     *
-     * The hard rule, restated at the point of the read because this is where
-     * somebody would break it. Jurisdiction is `APortfolio`. `Sect.office` is
-     * the Protector's chair, sits off the ladder, and the design owner ruled
-     * that a member does not know whether their house has one - *"an empty
-     * chair and a filled one look identical from inside the house."* Naming it
-     * here would tell a member the one thing they are not told, and the two
-     * fields are one word apart.
      */
     private async whatIRunHere(run: Run, cultivator: Cultivator): Promise<Execution> {
         const held = positionIn(this.repos, cultivator.id);
@@ -11704,25 +8679,6 @@ ${fit.line}`;
 
     /**
      * Taking a thing your own house owns.
-     *
-     * Found by playing: "I take a manual from the sect library without asking"
-     * was answered with prose saying the hand closed around it, and NOTHING
-     * MOVED. `steal` is an intent on `interact`, `factsForInteraction` says
-     * outright that the intent is "carried for the narrator; read by no
-     * conditional", and `transferPossession` - the one function that moves a
-     * row - had callers for trade, bequest, estate, hunting and legacy, and not
-     * one for a taking.
-     *
-     * `house-property-theft.ts` holds the act and the reasoning. This resolves
-     * the sentence, supplies the two facts about the played world that a pure
-     * function cannot have - who is holding what, and who is standing here -
-     * and writes what comes back.
-     *
-     * THE ORDER IS THE WHOLE THING. The object moves because the player took
-     * it; notice is decided after and separately; the record opens only if it
-     * was noticed. Backwards, an unnoticed theft becomes a theft that did not
-     * happen, which is the defect this verb exists to close wearing different
-     * clothes.
      */
     private async takeFromTheHouse(
         run: Run,
@@ -11798,12 +8754,12 @@ ${fit.line}`;
         // refusal owes.
         if (!holding.takeable) {
             // The refusal has to name the TRUE reason, and for a shelf of common
-            // primers that reason is not "go and siphon it". A house holds
-            // several copies of an ordinary manual and none of a deep one, so
-            // what is being refused here is that there is no single row to
-            // move - not that the player should reach for the other crime.
-            // Pointing at `siphon` for a book would be a sentence that reads
-            // like help and sends somebody to a verb that takes stones.
+            // primers that reason is not "go and siphon it". A house holds several
+            // copies of an ordinary manual and none of a deep one, so what is being
+            // refused here is that there is no single row to move - not that the
+            // player should reach for the other crime. Pointing at `siphon` for a
+            // book would be a sentence that reads like help and sends somebody to a
+            // verb that takes stones.
             return refused('house-property-theft.keptAs', 'sect', factsForRefusal(
                 `${holding.object.name} is not a thing you take one of.`,
                 'The house keeps that in copies rather than as one object with a history behind '
@@ -11898,37 +8854,6 @@ ${fit.line}`;
 
     /**
      * Being asked by your own house, and saying no.
-     *
-     * ── WHAT WAS MISSING ─────────────────────────────────────────────────
-     *
-     * `encounters/duties.ts` promises this in its own opening lines - "the
-     * house calls on you. You may refuse, and refusing is a row in the
-     * obligations ledger rather than a shrug" - and every piece of it was built
-     * except the answer. `recordEncounters` discarded `occurrence.duty`, so a
-     * summons interrupted a span, printed a sentence and was gone; `refuseDuty`
-     * was called exactly once in the repository, with `'failed'`, on the branch
-     * where the cultivator had died. `'refused'` and `'lapsed'` had no caller.
-     *
-     * `pending-summons.ts` keeps the ask. This chooses which of three things
-     * the player is doing with it and composes the sentence; the outcome is
-     * `resolveAct`'s and the ledger row is `refuseDuty`'s.
-     *
-     * ── THE PRICE IS SHOWN BEFORE IT IS SPENT ────────────────────────────
-     *
-     * Ruled by the design owner: *a player should be able to see what saying no
-     * will cost - otherwise it is a trap rather than a decision.* So the free
-     * branch is not a fallback, it is half the verb, and it is `affordable`'s
-     * figures verbatim. Nothing here recomputes a curve.
-     *
-     * ── AND IT IS THE ONE ACT THE BOTTOM RUNG CAN PERFORM ────────────────
-     *
-     * `POWERS_BY_TIER.ordered` is empty, so before this an ordinary member could
-     * spend no standing and their credit with the house only ever recovered.
-     * Refusing runs through the same `resolveAct` as every leadership act, which
-     * lights the non-head branch of an escalation ladder that was written and
-     * unreachable: obstruction, then their own line walking, then
-     * `dismissedFromTheHouse`. A member being thrown out by their own house is
-     * that existing branch finally having an input, not a new mechanic.
      */
     private async refuseWhatTheHouseAsked(
         run: Run,
@@ -11938,14 +8863,7 @@ ${fit.line}`;
         const today = Math.floor(run.elapsedDays);
         const pending = readPendingSummons(this.repos, cultivator.id);
 
-        // ── NOBODY ASKED ─────────────────────────────────────────────────
-        //
-        // A refusal with nothing to refuse is not an error and must not be
-        // answered like one. `positionIn` separates the two reasons, because
-        // they want opposite things from the player: somebody in no house is
-        // told what would have to be true for anybody to send for them, and a
-        // member is told that nothing is outstanding, which is a fact about
-        // their house rather than about their sentence.
+        // NOBODY ASKED
         if (!pending) {
             const held = positionIn(this.repos, cultivator.id);
             return this.freeAction(run, 'sect', factsForRefusal(
@@ -12018,13 +8936,7 @@ ${fit.line}`;
             return this.freeAction(run, 'sect', facts);
         }
 
-        // ── SAYING IT ────────────────────────────────────────────────────
-        //
-        // The order matters and is the same order `completeDuty` uses: the
-        // house's answer is resolved, the standing is spent, and the ledger row
-        // is written, before anything is narrated. A refusal the player reads
-        // about that is not in the database is the failure mode the whole
-        // authority rule exists to prevent.
+        // SAYING IT
         const outcome = resolveAct(
             {
                 standing: price.credit.standing,
@@ -12057,18 +8969,7 @@ ${fit.line}`;
         });
         clearPendingSummons(this.repos, cultivator.id);
 
-        // ── THE DISMISSAL HAPPENS BEFORE IT IS SAID ──────────────────────
-        //
-        // `resolveAct` decides it; the row has to go for it to be true.
-        // Narrating a dismissal off an `ActOutcome` field while the membership
-        // sat untouched would be the engine asserting an outcome with no state
-        // change behind it, which is the one thing the authority rule forbids
-        // outright - and it would have read perfectly in the prose.
-        //
-        // `removeMember` is `handleLeave`'s own call, so being thrown out and
-        // walking out forfeit identically. The contribution is read off the
-        // position taken before the removal, because after it there is no row
-        // to read it from.
+        // THE DISMISSAL HAPPENS BEFORE IT IS SAID
         const forfeited = price.position.contribution;
         if (outcome.dismissedFromTheHouse) {
             this.repos.sects.removeMember(price.position.sectId, cultivator.id);
@@ -12108,20 +9009,7 @@ ${fit.line}`;
         const facts = factsForToolResult(
             overdue ? 'It lapsed.' : 'You refused.', lines
         );
-        // ── REQUIRED, WITHOUT BEING SAID TWICE ───────────────────────────
-        //
-        // Set directly rather than through `sayThisWhateverTheNarratorDoes`,
-        // which PUSHES onto `lines` and `prose` as well - and these lines are
-        // already in both. Played, that helper printed the refusal, then
-        // printed it again underneath itself. `combat-verbs.ts` assigns this
-        // field the same way and for the same reason: the line is already
-        // narrated, and what `required` adds is that it survives a model that
-        // would otherwise summarise it away.
-        //
-        // Kept to two. `README.md` is explicit that this channel is for what a
-        // player cannot play without, and that a line stapled to the end of
-        // good prose is a cost - so the outcome and the dismissal qualify, and
-        // the obstruction flavour does not.
+        // REQUIRED, WITHOUT BEING SAID TWICE
         facts.required = [
             lines[0],
             ...(outcome.dismissedFromTheHouse ? [lines[lines.length - 1]] : [])
@@ -12152,24 +9040,6 @@ ${fit.line}`;
 
     /**
      * The mission board, and taking a line off it.
-     *
-     * `sect_members.contribution` is one of three independent axes of standing
-     * and until this existed it had NO EARNER. `handlePromote` spends it,
-     * `handleStipend` credits a trickle of it, and nothing anywhere could add
-     * to it deliberately - so "I do sect work for contribution" was answered
-     * with the mortal job board, which pays in cash and moves no standing at
-     * all. A ladder with a rung nobody can climb is a ladder with a ceiling
-     * nobody was told about.
-     *
-     * Two halves, and the split is the same one every other committing verb in
-     * this file uses: an unnamed duty is a READ of the wall, and a named one is
-     * an oath. The read shows the refusals too, each carrying the engine's own
-     * line about why - because an empty board and a board full of work beneath
-     * somebody are different facts, and an Elder standing in front of the
-     * second one should be told which it is.
-     *
-     * Every number is `sectBoardFor`'s. This method chooses which line, and
-     * nothing else.
      */
     private async duty(
         run: Run,
@@ -12182,14 +9052,7 @@ ${fit.line}`;
         const board = sectBoardFor(deps, cultivator);
         const wanted = (target ?? '').trim();
 
-        // ── WHAT THE BOARD CALLS IT ──────────────────────────────────────
-        //
-        // The tier, first, because it is the first thing a person reads off a
-        // notice and the board had never printed one. `tierNameFor` is the
-        // house's own word for the band, and the band is `dutyTermsFor`'s -
-        // already computed, already carried on `terms.regard`, and rendered
-        // here rather than paraphrased. There is no second difficulty scale
-        // and there must not be: the tier IS the regard band.
+        // WHAT THE BOARD CALLS IT
         const describe = (offer: DutyCandidate): string =>
             `${offer.entry.name} - ${tierNameFor(offer.terms.regard.band).toLowerCase()} at `
             + `${rankName(offer.terms.pitchOrdinal)}: ${humanDays(offer.terms.days)}, `
@@ -12198,30 +9061,7 @@ ${fit.line}`;
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
             + '.';
 
-        // ── A SENTENCE THAT POINTS AT THE ONE LINE IS NOT A REQUEST TO READ ──
-        //
-        // `AGENTS.md` cites this by name under "if a near-synonym works, the
-        // phrasing that fails is a bug". Played: `I take a duty`, `I take the
-        // duty` and `I accept the commission` all re-listed the wall, while
-        // `I take What a Poor District Has Instead of Monsters` ran - so the
-        // whole subsystem was reachable only by retyping a seven-word title
-        // the player had just been shown.
-        //
-        // The discriminator was already in the plan and was being thrown away
-        // one line below. `what duties are there` carries NO target;
-        // `I take a duty` carries the target "duty". Both then hit
-        // `BOARD_IN_GENERAL`, which matches the bare noun either way, and the
-        // early return took the reading branch before `THE_ONE_ON_THE_BOARD` -
-        // written for exactly these words, twenty lines down - could be
-        // reached at all.
-        //
-        // Narrow, on the rule about fixing the gap that was demonstrated: a
-        // target has to have been typed, it has to be one of the words that
-        // POINT at a line rather than at the wall - "board", "work" and
-        // "whatever is going" are not in that set and go on reading - and
-        // there has to be exactly one thing on the wall for "the duty" to be
-        // unambiguous. With two on it, reading the wall IS the route, and that
-        // is what a refusal here owes.
+        // A SENTENCE THAT POINTS AT THE ONE LINE IS NOT A REQUEST TO READ
         const pointedAtTheOnlyOne =
             wanted.length > 0
             && board.offers.length === 1
@@ -12263,21 +9103,7 @@ ${fit.line}`;
             return this.freeAction(run, 'sect', facts);
         }
 
-        // ── a line, taken ──
-        //
-        // THE DEFINITE ARTICLE RESOLVES WHEN THERE IS ONE THING TO RESOLVE TO.
-        //
-        // "I take the mission" against a board holding exactly one commission
-        // was refused with "You read it twice and it is not there" - and then
-        // named it in the next clause, which is a refusal arguing with itself.
-        // A player should not have to retype a seven-word title to accept the
-        // only job on the wall. Same rule `consume_pill` already follows for a
-        // pouch holding one pill.
-        //
-        // And a DISTINCTIVE FRAGMENT is a name. The board prints "What a Poor
-        // District Has Instead of Monsters"; "the poor district one" is how a
-        // person refers to it, and matching only the whole string made the
-        // titles - which are one of the best things in the game - a liability.
+        // a line, taken
         const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
             ? board.offers[0]
             : board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
@@ -12327,20 +9153,7 @@ ${fit.line}`;
         // forgetting it - which is the same answer the wage already gives.
         if (after.alive) {
             const settled = completeDuty(settlement);
-            // ── BEING PAID IS NOT AN INCIDENTAL DETAIL OF THE STRETCH ────
-            //
-            // Played: a duty ran, `completeDuty` credited contribution and
-            // took the purse from 30 to 43, and the whole narration was the
-            // no-manual paragraph plus "You stand at Qi Condensation Layer 1,
-            // 16 years old." Not one word about the pay, on the turn that paid.
-            //
-            // `lines` is a LICENCE and `prose` is what the deterministic
-            // narrator ships, and `shortSkip` composed the prose before this
-            // ran - so pushing onto `lines` alone reached nobody at either
-            // tier. The same class of omission as the starvation one fixed in
-            // `b22bf98`, and the same answer: a payment is something the player
-            // must end up reading, so it goes on `required`, which both front
-            // doors honour.
+            // BEING PAID IS NOT AN INCIDENTAL DETAIL OF THE STRETCH
             sayThisWhateverTheNarratorDoes(execution.facts, settled.line);
             execution.facts.structure.push(
                 `encounters.completeDuty: obligation ${settled.obligation.id} fulfilled; `
@@ -12355,23 +9168,7 @@ ${fit.line}`;
                 ok: true
             });
 
-            // ── AND IT BECOMES SOMETHING PEOPLE REPEAT ───────────────────
-            //
-            // Played and reported: two untreated wounds given to somebody in
-            // the square, then `what news is there` and `what are people
-            // saying about me` returned the identical unrelated line, before
-            // and after. Nothing a player did ever reached the ledger the
-            // whole propagation layer reads - `circulating`, `retell`, the
-            // digest and `whatIsSaidAbout` all read `state.history.facts` -
-            // so the board was a wage and never a reputation.
-            //
-            // The weight is the TIER's and is not decided twice. A commission
-            // pitched where the cultivator already stands is work; one pitched
-            // past what a house would send anybody at is what somebody in a
-            // courtyard is still repeating. That is `Regard`'s own band read
-            // into the ledger's own vocabulary, joined rather than invented,
-            // and it is the same band the board printed at the top of the
-            // notice.
+            // AND IT BECOMES SOMETHING PEOPLE REPEAT
             const band = chosen.terms.regard.band;
             const said = this.atHand
                 ? aDeedEntersTheWorld(this.atHand, {
@@ -12444,10 +9241,6 @@ ${fit.line}`;
 
     /**
      * "the mission", "it", "that one" - a line, when there is only one line.
-     *
-     * Distinct from BOARD_IN_GENERAL, which is a request to READ the wall.
-     * These are somebody pointing at the single thing on it, which is only
-     * ambiguous when there is more than one, and the caller checks that first.
      */
     private static readonly THE_ONE_ON_THE_BOARD =
         /^(?:the |that |this |it|one)?\s*(?:mission|missions|commission|job|duty|task|assignment|errand|contract|one|it)?\s*$/i;
@@ -12457,47 +9250,8 @@ ${fit.line}`;
         /^(?:the |my |a |any |some )?\s*(?:board|wall|duty|duties|work|sect work|commissions?|assignments?|jobs?|whatever(?:'s| is)? going|anything)\s*$/i;
 
     /**
-     * The two terms the cultivation rate wants and this layer never supplied:
-     * what the manual can carry them to, and who is teaching them.
-     *
-     * `computeCultivationRate` reads both and both default to "not declared",
-     * which is why nothing was visibly wrong - a cultivator with no manual and
-     * no master cultivated exactly as fast as one with the best of both, and
-     * the two most important reasons to join a house did nothing.
-     *
-     * Neither is invented here. `capOf` is the manual's own rated band, read
-     * off the catalog row for an art this cultivator has actually been taught;
-     * the guide is a real person on their own house's roster who is genuinely
-     * standing above them.
-     *
-     * `techniqueCap` is a HARD ceiling - at or past it, progress is zero - so
-     * it is deliberately the HIGHEST cap among the arts they hold, and null the
-     * moment any one of them is rated to the top. Reading it any other way
-     * would have a cultivator who learned a second, better manual stopped by
-     * the first one.
-     *
-     * ── NO MANUAL IS A CEILING OF ZERO, NOT AN ABSENT CEILING ────────────
-     *
-     * This was the other way round for one commit and it inverted the whole
-     * design. `null` means UNCAPPED, so a cultivator holding no cultivation
-     * manual climbed for ever while one who took up the Lesser Qi-Gathering
-     * Manual was stopped at 13 on the spot - measured at ordinal 28 as
-     * `no manual -> perDay 24.0` against `cap 13 -> perDay 0.0`. The incentive
-     * was to learn nothing, and a life did exactly that: ordinal 28 with zero
-     * known techniques, out of a sect whose ceiling is 14.
-     *
-     * Zero is the honest number. A cultivator practising no method is carried
-     * as far as no method carries anybody, and `techniqueExhausted` reads
-     * `ordinal >= 0` as true at every rung, which is the hard stop the engine
-     * and the lore both state. It is safe to be this hard because the first
-     * manual is genuinely reachable: measured 30 fresh lives out of 30 able to
-     * learn the Lesser Qi-Gathering Manual on turn one, so the gate costs a
-     * sentence rather than a run.
-     *
-     * KNOWN PROSE DEFECT, reported to whoever owns `cultivation.ts`: with a cap
-     * of zero the breakdown line reads "The manual ends at <first rung>", which
-     * implies a manual. The factor is right and the sentence is not; it wants a
-     * distinct label for "there is no manual".
+     * The two terms the cultivation rate wants and this layer never supplied: what
+     * the manual can carry them to, and who is teaching them.
      */
     rateTermsFor(cultivator: Cultivator): {
         techniqueCap: number | null;
@@ -12511,16 +9265,10 @@ ${fit.line}`;
             const art = getTechnique(id);
             if (!art || classOf(art) !== 'cultivation') continue;
             anyManual = true;
-            // THE LINE. Never `art.cap` - that is the CATALOG ceiling, and it
-            // stops being the manual's real one the moment somebody writes a
-            // stage onto it. A derivation does not spawn a book; it extends
-            // this one, so the ceiling has to be composed rather than read.
-            //
-            // `effectiveCapOf` also applies contiguity, which is why the
-            // holder's stage count goes in rather than the world's: a stage
-            // past the end of the book is worth nothing to somebody who has
-            // not reached the end of the book, and `writtenTo` on the report
-            // is the separate number for what the world has managed.
+            // THE LINE. Never `art.cap` - that is the CATALOG ceiling, and it stops
+            // being the manual's real one the moment somebody writes a stage onto
+            // it. A derivation does not spawn a book; it extends this one, so the
+            // ceiling has to be composed rather than read.
             const reach = effectiveCapOf(
                 { id: art.id, name: art.name, cap: art.cap ?? capOf(art), volumes: art.volumes ?? null },
                 wholeWorkVolumes(art),
@@ -12547,21 +9295,6 @@ ${fit.line}`;
 
     /**
      * The two ORDINARY multipliers, which this layer was also not supplying.
-     *
-     * `CultivationOptions` has four rate terms and the six skip sites here
-     * passed one of them. `techniqueBonus` and `sectBonus` both defaulted to 1,
-     * which is why 30 promotions and 5,376 contribution across 52 measured sect
-     * lives moved the outcome by approximately zero: `rankIndex` reaches the
-     * rate through `sectBonus` and through nothing else, so climbing socially
-     * was arithmetically free of effect.
-     *
-     * The two cultivate paths were computing disjoint halves of the same
-     * options object - the MCP surface supplied these two and no ceilings, this
-     * one supplied the ceilings and neither of these - so the same cultivator
-     * progressed at two different rates depending on which door they came
-     * through. Same derivation as `cultivationOptionsFor`, deliberately: a
-     * manual half understood is half a manual, and a rank is worth what
-     * `SECT_BONUS_PER_RANK` says it is worth.
      */
     private multipliersFor(cultivator: Cultivator): {
         techniqueBonus: number;
@@ -12572,21 +9305,6 @@ ${fit.line}`;
         const root = getSpiritRoot(cultivator.spiritRoot);
         let techniqueBonus = 1;
         // HOW WELL THE BOOK IS WRITTEN, AND HOW MUCH LADDER IT TRIES TO COVER.
-        //
-        // Two terms `computeCultivationRate` accepts and this path never sent,
-        // so every manual in the played game cultivated at exactly the same
-        // speed however good or bad it was. `manual-quality.ts` calls quality
-        // the largest non-realm term in the game and measures a x2.13 spread
-        // across its five tiers; all of it was being discarded here. The MCP
-        // path in `cultivation-manage.ts` has passed `techniqueQuality` since
-        // it was written, so the two front ends disagreed about the same book.
-        //
-        // Span is the counterweight to quality and was equally absent: nothing
-        // in `src/` passed it, so `OPENING_COST_PER_EXCESS_REALM` never fired
-        // and the three wide-span manuals in the catalog opened at full rate.
-        // One of them reaches nine realms and should open at roughly a seventh
-        // of it. Without the penalty, "find the widest book" is the whole game,
-        // which is exactly what that constant exists to prevent.
         let techniqueQuality: ManualQuality | null = null;
         let techniqueSpan: ManualBand | null = null;
 
@@ -12634,50 +9352,12 @@ ${fit.line}`;
 
     /**
      * The ground they are sitting on, and everybody else sitting on it.
-     *
-     * Two rules ride on this one field and both were inert because nothing
-     * passed it, which is the same state the technique ceiling was in.
-     *
-     *   CONTESTED QI. Qi drawn by one person is not available to another, so
-     *   occupancy is summed as DRAW rather than heads - one Deity
-     *   Transformation elder crowds out sixteen mortals. A valley that
-     *   comfortably carries thirty carries three hundred at a tenth of the
-     *   rate, which is why a sect's elders live apart from its disciples and
-     *   why putting an ancient on your own vein is a decision.
-     *
-     *   THE THIN-REGION CEILING. Ground poorer than the middle of the thin band
-     *   carries nobody past ordinal 12 - a hard zero, not a slower multiplier,
-     *   because "whole provinces exist where nobody has passed Qi Condensation
-     *   in living memory" is a ceiling and a multiplier never stops anybody.
-     *   All thirteen Qi Condensation rungs stay climbable on dead ground, so a
-     *   cultivator born there has a full realm of runway before the ground is
-     *   the thing in their way, and the answer is to move.
-     *
-     * The cultivator's own ordinal is in the list, because they are one of the
-     * people drawing on it. Null without a loaded world, which degrades to
-     * "nobody is competing and the ground is not known to be poor" - the old
-     * behaviour, and honest about being a lack of information rather than a
-     * measurement of an empty valley.
      */
     /**
      * Who else is drawing on this ground, as a sentence and as numbers.
-     *
-     * Reads `groundFor` - the SAME `GroundConditions` the rate is computed
-     * from - so the sheet and the engine cannot come to disagree about how
-     * crowded a place is. That is not a hypothetical: the encounter line said
-     * "Burnt Earth comfortably carries 3 cultivators and currently holds 9"
-     * while the sheet said `Ambient qi: THIN` and nothing else, and a player
-     * had no way to know the second sentence was the smaller half of the story.
-     *
-     * Null without a loaded world, which is honest and not a failure.
      */
     /**
      * Who is drawing on a named place, for the destinations read.
-     *
-     * Both fields or neither: a row with a headcount and no capacity is a
-     * number with nothing to compare it to. Nulls where the world holds no
-     * record, which is the honest answer for a settlement the gazetteer names
-     * and the world has not instantiated.
      */
     occupancyOf(name: string): { occupants: number | null; supportedDraw: number | null } {
         const record = this.atHand ? worldLocationFor(this.atHand, name) : null;
@@ -12690,11 +9370,6 @@ ${fit.line}`;
 
     /**
      * Caves, wilds and veins in one province - the ground that is not a town.
-     *
-     * Only what the world has already discovered, which is every one of them on
-     * a fresh world: these are local geography rather than the hard find a rich
-     * lone cave is supposed to be. Sorted by what the ground holds, because the
-     * question this answers is where to go and sit.
      */
     quietGroundIn(regionName: string): LocationRecord[] {
         if (!this.atHand) return [];
@@ -12712,28 +9387,6 @@ ${fit.line}`;
 
     /**
      * The gates of the houses that hold ground in one province.
-     *
-     * WHY THIS IS A SEPARATE READ FROM `quietGroundIn`. That one lists ground
-     * nobody holds and is filtered on `discovered`, which is true of all of it
-     * on a fresh world - local geography, and a farm child knows where the
-     * caves are. A sect's ground is the opposite case in both halves. It is
-     * seeded `discovered: false` on purpose, because its own header says so:
-     * "A name you have to be given. Joining gives it; being told gives it;
-     * asking in the region gives it." So the `discovered` flag is not the gate
-     * here; the caller's `canPointAtLocation` is, and this read is deliberately
-     * permissive so that the gate is the only thing deciding.
-     *
-     * WHY IT EXISTS AT ALL. `sectGroundId` had exactly two references in `src/`
-     * - its own definition and the one line that builds the location - which is
-     * the shape `AGENTS.md` calls a module nothing calls. 34 seats, each with a
-     * generated compound inside it, road-linked to their province, and no
-     * player-facing read in the game named one. The listing said "Knowing a
-     * name is not an introduction. Somebody would have to put you in front of
-     * them, or you would have to walk up on your own" and there was nothing to
-     * walk up to.
-     *
-     * Sorted by name rather than by qi: this is a list of doors, and which door
-     * is worth knocking on is not a question about ground.
      */
     housesWithGroundIn(regionName: string): LocationRecord[] {
         if (!this.atHand) return [];
@@ -12748,16 +9401,6 @@ ${fit.line}`;
 
     /**
      * Whether this cultivator could set out for a world location.
-     *
-     * The location-record form of the predicate `somewhereReal` already applies
-     * to a typed name. Both keys are tried because place records are written
-     * against both over the life of a database - `seedStartingAwareness` writes
-     * the birthplace under its NAME and the province under its ID, and a record
-     * written under either has to satisfy this.
-     *
-     * `canPointAt` rather than `isAwareOf`, for the reason `destinations`
-     * states at length: a name caught through a wall is a name and not a
-     * destination.
      */
     canPointAtLocation(cultivator: Cultivator, record: LocationRecord): boolean {
         if (this.knowledge.canPointAt(cultivator.id, 'place', record.id)) return true;
@@ -12771,32 +9414,6 @@ ${fit.line}`;
 
     /**
      * The ground around home, as records rather than as a hole in a gate.
-     *
-     * `seedStartingAwareness` deals out the county - the birthplace, the
-     * province, the neighbouring towns - off the static gazetteer, and stops
-     * there. The world's own caves, wilds and veins are not in that catalog, so
-     * a new cultivator held no record for a single piece of open ground in the
-     * province they grew up in, and `destinations` covered for it by listing
-     * them ungated. That is the wrong half to fix: what a farm child knows is
-     * where the local caves are, and knowing something is a record.
-     *
-     * So the ordinary ground of the home province is granted at `placed`, the
-     * same stage and for the same reason as the next town along - it is not an
-     * advantage, it is what everybody has.
-     *
-     * TWO KINDS ARE DELIBERATELY WITHHELD, and they are the two the world means
-     * somebody to find:
-     *
-     *   DAO GROUND    `how-a-cultivator-comes-by-a-road.ts` seeds The Glass
-     *                 Field, The Nine-City Assize and their siblings as
-     *                 ordinary `wilds`. Nobody is born knowing where a road
-     *                 teaches itself.
-     *   PROSPECTED    what the world uncovered while somebody was alive.
-     *                 `foundGroundIn` already refuses to name one without a
-     *                 record, and this keeps the two surfaces agreeing.
-     *
-     * Every write is `learnIfNew`, so this is a floor and never a replacement,
-     * and calling it twice writes nothing the second time.
      */
     private seedTheGroundAroundHome(cultivator: Cultivator): number {
         if (!this.atHand) return 0;
@@ -12826,24 +9443,6 @@ ${fit.line}`;
 
     /**
      * What this cultivator's standing entitles them to on their house's ground.
-     *
-     * THE FIRST CONCRETE THING RANK HAS EVER BOUGHT IN THIS GAME. The world
-     * seeds hundreds of chambers, each with a controlling house and its own
-     * qiDensity; houses allocate days on them by standing; and ground is the
-     * largest multiplier in the model - reaching ordinal 29 costs 317 years on
-     * ordinary ground against 79 on a sealed vein. Every NPC in the world was
-     * already getting this and the player had no route to it at all, which is
-     * the AGENTS.md defect running in the direction nobody watches for: not the
-     * world binding NPCs and sparing the player, but the world REWARDING NPCs
-     * and excluding them.
-     *
-     * `groundEntitlementFor` is the identical arithmetic the advancement pass
-     * runs for every member of the same house on the same day, so the player is
-     * told about the world they are actually in rather than a parallel one.
-     * It decides nothing about what may be asked for and writes no prose; the
-     * phrasing and the refusals are this layer's.
-     *
-     * Null for anybody in no house, or where the world is not loaded.
      */
     private groundEntitlement(cultivator: Cultivator): GroundEntitlement | null {
         if (!this.atHand) return null;
@@ -12880,47 +9479,10 @@ ${fit.line}`;
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // A MATCH, A REFUSAL, AND A CHILD
-    //
-    // The three verbs that make the second half of a life in this world
-    // playable, and between them they add no mechanism at all. Every piece was
-    // built, argued out and left with no caller:
-    //
-    //   the price of somebody a house was not going to give up
-    //                             `whatItWouldTake`, the same function the
-    //                             barter verb above already runs, on the same
-    //                             one scale, with no list of currencies
-    //   the `marriage_pact` oath  `grudges.ts` has carried the cause since it
-    //                             was written and nothing ever produced one
-    //   walking out of it         `whatWalkingOutOfItCosts`, no caller in src/
-    //   what a line does          `bloodlineTierForChild`, no caller in src/
-    //   what a refusal leaves     `whatADeedLeaves`, which prices any deed at
-    //                             all off what it cost against what they had
-    //   placing a child on a word `spendAWord`, used by the world for NPCs and
-    //                             reachable by no player until now
-    //
-    // See `src/engine/household/README.md` for the argument. Nothing in this
-    // section reads which party is the played one, and nothing anywhere in it
-    // branches on anybody's gender: the engine module uses ONE type for both
-    // sides of a match and a test scans it for a vocabulary that would.
-    // ─────────────────────────────────────────────────────────────────────
 
     /**
      * The `wants` term, supplied from rows for the first time.
-     *
-     * `resolveAttempt` has priced this since it was written and every caller in
-     * this layer left it unset, so "they have an open goal you could move" was
-     * FALSE in every social attempt any player has ever made - a whole term of
-     * a seven-term resolver, worth as much as the tie, reading zero for the
-     * life of the verb. It is the last of the three that were missing;
-     * `theirTie` and `ledger` were wired when the same audit found them.
-     *
-     * Note what is NOT gated here. Whether somebody wants something the player
-     * could reach is a fact about the world and applies whether or not the
-     * player has any idea of it - the knowledge gate belongs on the READ, which
-     * is `what-somebody-is-after.ts`, and putting it here would mean a player
-     * who had not asked was quietly resolved against different arithmetic.
      */
     whatTheyWantOfYou(
         cultivator: Cultivator,
@@ -12940,18 +9502,6 @@ ${fit.line}`;
 
     /**
      * The records an attempt leaves, written down.
-     *
-     * `AttemptMarks` is the resolver saying what the world is now carrying that
-     * it was not before, and its own header says every field is a record the
-     * caller persists. Nothing persisted any of them, while `factsForAttempt`
-     * told the player "it is on somebody's ledger now, and ledgers here are
-     * kept" - the narrator asserting an outcome the database never took.
-     *
-     * Ties are still not written, and that is a stated gap rather than an
-     * oversight: this layer has no relationship repository, `dealingsWith`
-     * counts knowledge rows precisely because there is no relationship stat, and
-     * inventing one here would put a number on the thing the design is explicit
-     * should stay a judgement.
      */
     recordWhatTheAskLeft(
         run: Run,
@@ -12961,56 +9511,10 @@ ${fit.line}`;
         action: ActionName = 'request',
         /**
          * Whether anything was actually asked for.
-         *
-         * False for the courtesy that asks for nothing, and it is the one place
-         * this layer declines to write a record the resolver handed it. The
-         * reason is that the record does not describe the event: `refusalGrudge`
-         * writes "came to X with nothing but the asking and was turned down",
-         * and there was no asking - somebody who does not take you up on a
-         * drink has not been imposed on. Writing it would also make the cheapest
-         * lever in the game self-defeating, since a missed afternoon would cost
-         * the same -0.1 that a refused favour does.
-         *
-         * Stated rather than silent because it IS the caller second-guessing
-         * the engine, which `AGENTS.md` warns about by name. The narrow version
-         * of the same judgement belongs inside `refusalGrudge` and should move
-         * there; this is the smallest place to hold it in the meantime.
          */
         somethingWasAsked = true,
         /**
          * What the attempt was, when what it was is a WRONG.
-         *
-         * ── COERCION WAS REGISTERING AS RELATIONSHIP-BUILDING ────────────
-         *
-         * Measured in play, at ordinal 29 against a stranger: a threat landed
-         * and a theft landed, and the only thing either wrote was a `patron`
-         * tie from the victim to the player, strength 0.1, roles `was_bought`,
-         * with the history line "X got something out of Y". The ledger was
-         * empty. So robbing somebody made you closer to them, and the standing
-         * model - which reads this table - would have treated extortion as
-         * rapport for as long as anybody kept doing it.
-         *
-         * The engine already knew better on the OTHER branch: a refused threat
-         * writes a grudge, through `whatARefusalLeaves`. The successful path is
-         * made to agree with it here.
-         *
-         * WHY THE SIGN CANNOT LIVE ON THE TIE. `relationships.ts` has hostile
-         * types - `enemy`, `rival`, `sworn_enemy` - so a hostile ROW is
-         * expressible. What is not expressible is a hostile STRENGTH: `strength`
-         * is documented as how much the tie matters to its holder, and
-         * `oddsOf` reads it as `theirTie.strength * TIE_WEIGHT`, unsigned and
-         * positive, worth up to 30 points on every later approach. A row typed
-         * `enemy` carrying 0.1 would therefore make the next thing you asked
-         * the person you just robbed EASIER, which is the same defect wearing
-         * the right word. The sign this layer really supports is the ledger's
-         * KIND - `grudges.ts` names robbery and humiliation in as many words -
-         * so that is where it is put, and no tie is written at all.
-         *
-         * `null` for everything that is not a wrong. A bribe, a courtship, a
-         * recruitment pitch and a refused request are not wrongs however badly
-         * they land, and `WRONG_BEHIND_INTENT` is the closed table that decides
-         * which is which - the same one the reprisal reads, so there is one
-         * answer to "was that a wrong" and not two.
          */
         wrong: Wrong | null = null
     ): { calls: ToolCallRecord[]; wroteToTheLedger: boolean } {
@@ -13041,20 +9545,7 @@ ${fit.line}`;
                 });
                 continue;
             }
-            // ── ONE STANDING RECORD, NOT ONE A DAY ───────────────────────
-            //
-            // `createObligation` derives its id from the pair, the cause AND
-            // THE DAY, so a second refusal a week later is a second row rather
-            // than the same fact restated. The odds do not spiral - the
-            // resolver reads the WORST open grudge and never the count - but
-            // six asks left six grudges, and anything that counts what somebody
-            // is carrying would have read that as six separate injuries.
-            //
-            // "X asked me for something and I said no" is one standing fact
-            // about two people, so it is given one id. Severity is not
-            // recomputed, which is the rule `grudges.ts` actually states; only
-            // the identity is collapsed, and the newest refusal is the one the
-            // row ends up describing.
+            // ONE STANDING RECORD, NOT ONE A DAY
             const record = createObligation(
                 mark.kind === 'grudge'
                     ? {
@@ -13117,27 +9608,7 @@ ${fit.line}`;
                 ok: true
             });
         }
-        // ── AND WHAT TURNING UP AGAIN PUTS RIGHT ─────────────────────────
-        //
-        // Measured, and it was a soft lock wearing a mechanic. One refused
-        // request writes a slight grudge worth -0.1, and -0.1 takes the
-        // COURTESY - the thing the refusal itself tells the player to go and do
-        // - from about 29% to about 9%. So the route out of a refusal was
-        // poisoned by the refusal that named it, permanently, because nothing
-        // in the player's path had ever called `settleObligation`.
-        //
-        // `asking.md` already says what settles it, and it is the same act:
-        // *"a carter you bought a drink for last month talks more freely...
-        // because he has no position to protect and you are now someone he
-        // knows."* Somebody who keeps coming back wanting nothing is not
-        // somebody you are still annoyed with. So a courtesy that LANDS
-        // forgives the open refusal grudge between the two of them - one
-        // record, settled, by the engine's own function and with its own
-        // resolution vocabulary.
-        //
-        // It is not free and it is not automatic: the courtesy has to land, and
-        // at 9% that is eleven days of turning up. That is the price of having
-        // asked badly, and it is a price rather than a wall.
+        // AND WHAT TURNING UP AGAIN PUTS RIGHT
         if (!somethingWasAsked && (result.outcome === 'taken' || result.outcome === 'turned')) {
             for (const open of openLedgerBetween(this.repos, cultivator.id, party.id)) {
                 if (open.kind !== 'grudge') continue;
@@ -13179,13 +9650,8 @@ ${fit.line}`;
     }
 
     /**
-     * What agreeing to it actually does, which is the whole difference between
-     * a verb and a paragraph.
-     *
-     * `AGENTS.md` names this failure and lists eight instances of it: a
-     * subsystem built, tested, sometimes rendered, and never reached by anybody
-     * in the running world. A request that lands and changes no row is that
-     * failure wearing a success message.
+     * What agreeing to it actually does, which is the whole difference between a
+     * verb and a paragraph.
      */
     async whatTheyAgreedTo(
         run: Run,
@@ -13302,30 +9768,6 @@ ${fit.line}`;
 
     /**
      * Paying into the house's ledger instead of serving it.
-     *
-     * The other half of the contribution economy. Missions were the only
-     * earner, so a player with stones and no time had no route to a promotion -
-     * a rich cultivator and a poor one had exactly the same one.
-     *
-     * THE RATE IS DERIVED AND NOT PICKED. `contributionPerStoneOverDays` falls
-     * out of `dutyTermsFor`'s own two lines in closed form: the base, the pitch
-     * and the regard all cancel, leaving `days / 28`. The reference span is the
-     * MEDIAN of what this house is actually offering right now, so the rate
-     * follows the board as content changes and there is no second opinion about
-     * what contribution is worth anywhere in the codebase.
-     *
-     * TWO RULES ON TOP OF IT, both the design owner's:
-     *
-     *   A DONATION IS WORTH LESS THAN THE WORK. Otherwise contribution stops
-     *   meaning service rendered and becomes a second currency. The discount is
-     *   the one number here that is a judgement rather than a derivation, which
-     *   is why it is named, and it is steep on purpose: paying should be the
-     *   expensive way to do it, taken by somebody who has stones and no years.
-     *
-     *   A HOUSE THAT TAKES ANY SUM FROM ANYBODY READS AS A SHOP. The floor is
-     *   the lowest rank's monthly stipend, read off the sect's own table: below
-     *   what the house pays its least important member in a month is below what
-     *   it is worth a clerk's time to write down.
      */
     private donate(run: Run, cultivator: Cultivator, amount: number | undefined): Execution {
         const held = this.repos.sects.getMembership(cultivator.id);
@@ -13419,22 +9861,7 @@ ${fit.line}`;
             ok: true
         }];
 
-        // ── AND WHETHER IT WAS ANYTHING WORTH REMEMBERING ────────────────
-        //
-        // The kindness direction, and the one place in this file where nothing
-        // has priced the deed already - so `whatADeedLeaves` prices it, which
-        // is what that module is for. Its whole argument is that a gift and a
-        // killing are one transfer with the sign flipped, and the weight is
-        // COST AGAINST WHAT THE PAYER HAD: a hundred stones off somebody
-        // carrying a hundred and one is most of a life, and off somebody
-        // carrying ten thousand it is a gesture. That is exactly the
-        // distinction that decides whether a house tells anybody, and it is
-        // unreachable from the sum alone.
-        //
-        // No account is opened. `whatADeedLeaves` says what the record WOULD
-        // be and the obligation ledger is not this method's to write; the
-        // engine's answer here is only that the world now contains the gift.
-        // A slight one is a slight fact, which is what `magnitude` is for.
+        // AND WHETHER IT WAS ANYTHING WORTH REMEMBERING
         const purseBefore = cultivator.spiritStones;
         const gift = this.atHand
             ? aDeedEntersTheWorld(this.atHand, {
@@ -13508,13 +9935,6 @@ ${fit.line}`;
 
     /**
      * The ground under them, as far as they can actually make it out.
-     *
-     * The measurement is unchanged and is still `howCrowdedThisGroundIs`. What
-     * is new is that it is read through somebody: the design owner's ruling is
-     * that reading a vein is a skill and arrives with the ladder, so a Qi
-     * Condensation cultivator gets a feeling and not a capacity figure, and the
-     * sheet's percentage is masked rather than a second rendering path being
-     * written. See `what-you-can-tell-about-the-ground.ts`.
      */
     private crowdingHere(cultivator: Cultivator): CrowdingRead | null {
         const ground = this.groundFor(cultivator);
@@ -13532,27 +9952,6 @@ ${fit.line}`;
 
     /**
      * Somebody who can read a vein and would read it for you, by name.
-     *
-     * The other half of the ruling: "this is where a master can help tell you."
-     * A disciple who cannot yet feel more than heavy or thin still gets the
-     * figures, because they asked somebody and were told - which is the first
-     * concrete, same-day benefit a master has ever had, at the bottom of the
-     * ladder where the teaching multiplier is otherwise a number nobody can see.
-     *
-     * Three conditions, and each one is doing work:
-     *
-     *   THEY CAN READ IT      `READS_A_VEIN`. Somebody who cannot survey ground
-     *                         themselves has nothing to pass on.
-     *   THEY WOULD SAY SO     a master on the house roll, or somebody standing
-     *                         here who is in the same house. A stranger four
-     *                         rungs up does not stop to explain the county.
-     *   THEY CAN BE NAMED     the discovery gate, unweakened. Being told
-     *                         something by somebody you cannot name is not a
-     *                         thing that happens.
-     *
-     * It degrades on its own, which is the point: a student whose masters have
-     * died, or who walks out of their house, loses the reading with everything
-     * else, and nothing here has to know that happened.
      */
     private whoCouldReadTheGroundForYou(cultivator: Cultivator): string | null {
         if (cultivator.realmOrdinal >= READS_A_VEIN) return null;
@@ -13579,11 +9978,6 @@ ${fit.line}`;
 
     /**
      * Load the world if it is not already loaded, and answer nothing.
-     *
-     * `state()` is synchronous and has 64 call sites in the tests alone, so it
-     * is not becoming async for this. The endpoint awaits this first instead,
-     * which puts the ground read on the sheet from the first paint rather than
-     * from the first action.
      */
     async warmWorld(): Promise<void> {
         this.useOwnDb();
@@ -13606,34 +10000,11 @@ ${fit.line}`;
 
     /**
      * The strongest person in this cultivator's own house who is above them.
-     *
-     * A house is worth joining because somebody in it knows more than you do,
-     * and `guidanceMultiplier` is where that becomes a number - saturating at
-     * about +50% eight rungs up, and falling to exactly 1 when the guide is at
-     * or below you, which is the honest answer for the head of a small sect.
-     *
-     * `members.ts` holds 164 real people with real rungs, so nobody is
-     * invented: a house with nobody above the player supplies no guide, and
-     * that is a fact about the house.
      */
     private guideFor(cultivator: Cultivator): number | null {
         let best: number | null = null;
 
-        // ── AND SOMEBODY WHO TOOK THEM ON ────────────────────────────────
-        //
-        // A house supplies a guide because somebody in it stands above you. A
-        // person who agreed to take you on supplies one for exactly the same
-        // reason, by exactly the same arithmetic, and until `request` existed
-        // there was no way for a player to acquire one - so the whole of the
-        // guidance term was reachable only by joining something.
-        //
-        // `manuals.md` calls this the third and most demanding shape a teaching
-        // takes: a teacher and no book at all, where progress runs through
-        // somebody's goodwill rather than an object you hold. What is stored is
-        // the rung they had when they agreed, which is the honest reading -
-        // somebody who climbs after taking you on has not thereby taught you
-        // more, and somebody who agreed at or below your rung supplies a
-        // multiplier of exactly 1 by `guidanceMultiplier`'s own definition.
+        // AND SOMEBODY WHO TOOK THEM ON
         const took = readFlag(this.db, cultivator.id, FLAG_MASTER);
         if (took) {
             const ordinal = Number(took.split(':').pop());
@@ -13652,27 +10023,6 @@ ${fit.line}`;
 
     /**
      * What this cultivator is currently near enough to comprehend.
-     *
-     * THE SINGLE LARGEST GAP IN THIS FILE, and it was an omission rather than
-     * a bug. `simulateTimeSkip` takes an `understanding` context and this layer
-     * never supplied one, on any of its six skip paths - so
-     * `discoverableInsights` was handed an empty room every time. The only
-     * comprehensions a played life could reach were the three that need no
-     * access at all: `body` off a survived deviation, and `life_death`/`void`
-     * off a survived tribulation. Three, and only by being badly hurt.
-     *
-     * What that cost is not confined to dao. The dao gate had to ship switched
-     * OFF, because enforcing it against a world where nobody can comprehend
-     * anything stops every cultivator alive at Foundation or Deity. Suitability
-     * never ran, because it filters a set that was always empty. Every escape
-     * route out of a stalled ladder runs through here.
-     *
-     * `discoveryContextFor` has been complete the whole time and is what the
-     * MCP tool surface already calls, so this is the same context assembled
-     * from the same rows - manuals they can actually read, a sect that will
-     * teach, ground somebody has already found, and where they were born. The
-     * engine supplies `runSeed` and `affinityOf` itself, which is what turns
-     * suitability and the prodigy path on.
      */
     understandingFor(
         run: Run,
@@ -13684,25 +10034,7 @@ ${fit.line}`;
             practisingTechniqueId
         }).context;
 
-        // ── AND WHAT THEY ARE CARRYING ──────────────────────────────────
-        //
-        // `roadsCarriedByObjectsInReachOf` has supplied this to every NPC in
-        // the world since it was written, and to nobody at the keyboard:
-        // `discoveryContextFor` holds no `WorldState` and objects live in one,
-        // so an object fit for somebody's path was a channel that bound the
-        // simulation and not the played game. This layer has the world, which
-        // is why the join is here.
-        //
-        // It goes into the SAME list as ground, tagged `artifact`, because it
-        // is the same fact - what is within this cultivator's reach to
-        // comprehend - and `simulateTimeSkip` reads the list back out as
-        // `roadsWithinReach`. A second field beside it would be a second
-        // exposure system, and the two would disagree inside a month.
-        //
-        // A body at a great height arrives through here and needs no code: it
-        // is an object with a `power` and a `daoDomain`, and both gates the
-        // ruling asks for - high enough to impart, close enough to receive -
-        // are the two this reader already applies.
+        // AND WHAT THEY ARE CARRYING
         const world = this.atHand;
         if (!world) return context;
         const carried = thingsCarriedThatTeachARoad(world, {
@@ -13760,34 +10092,10 @@ ${fit.line}`;
 
     /**
      * A pouch row joined to its catalog, priced.
-     *
-     * The catalog row itself is carried on `item`, not just its value, because
-     * `regardOf` reads whatever gate column that catalog uses. Passing an
-     * ordinal instead would quietly drop every `regard` profile a record
-     * carries.
      */
     private lotFor(entry: PouchEntry): (SaleLot & { kind: PouchItemKind }) | null {
         if (entry.kind === 'herb') {
-            // ── A BEAST MATERIAL IS A REAGENT AND SELLS AS ONE ───────────
-            //
-            // Counted beast materials go into the pouch under `herb`, which
-            // is the reagent kind - `PouchItemKind` is 'pill' | 'herb' |
-            // 'artifact', it is declared in a shared file with a CHECK
-            // constraint behind it, and widening a shared union for one
-            // caller is not worth what it costs everybody else. The catalog
-            // agrees with the choice in its own header: beast materials are
-            // written in the herb catalog's idiom deliberately, same five
-            // grades, same value bands, same rarity ceilings, so that an
-            // alchemist buying a core and an alchemist buying a root run the
-            // same arithmetic.
-            //
-            // Resolved BEFORE `getHerb`, and without this line the whole
-            // hunting yield is dead weight: `getHerb` returns undefined for a
-            // beast material, `lotFor` returns null, and `sell` silently
-            // drops the row - so a player fills a pouch with pelts and cores
-            // and no counter in the world will quote them. That is the same
-            // half-wired shape this file's hunting verb exists to fix,
-            // reproduced one layer down.
+            // A BEAST MATERIAL IS A REAGENT AND SELLS AS ONE
             const material = getBeastMaterial(entry.itemId);
             if (material) {
                 return {
@@ -13847,16 +10155,6 @@ ${fit.line}`;
 
     /**
      * Buying food before it is needed, and carrying it.
-     *
-     * The stock is held on the cultivator rather than reconstructed at the
-     * moment of seclusion, which is the whole difference. Rations bought here
-     * survive travel, survive a change of mind about how long to sit, and are
-     * spent by the time skip - so `provisions_exhausted` becomes a fact about
-     * a decision the player made rather than a warning about a resource they
-     * were never allowed to hold.
-     *
-     * Priced off the same catalog entry the market board quotes, so the number
-     * on the board and the number charged here cannot drift.
      */
     private provision(
         run: Run,
@@ -13866,13 +10164,10 @@ ${fit.line}`;
         rations?: number,
         options: { askedFor?: number } = {}
     ): Execution {
-        // A COUNT IS TAKEN AS ITSELF. "Buy twenty rations" names twenty things
-        // to carry, not a span to be fed for, and converting one into the other
-        // in the parser would be wrong in both directions - how long a ration
-        // lasts depends on the body, because hunger tapers by realm.
-        //
-        // No span and no count means "as much as I can carry sensibly": enough
-        // for the default seclusion, which is the thing they are about to do.
+        // A COUNT IS TAKEN AS ITSELF. "Buy twenty rations" names twenty things to
+        // carry, not a span to be fed for, and converting one into the other in the
+        // parser would be wrong in both directions - how long a ration lasts
+        // depends on the body, because hunger tapers by realm.
         const wanted = rations !== undefined
             ? Math.max(1, Math.floor(rations))
             : Math.max(
@@ -13903,13 +10198,6 @@ ${fit.line}`;
         const covers = held * ACTIONS_PER_FULL_SATIETY;
 
         // THE CEILING, SAID RATHER THAN APPLIED IN SILENCE.
-        //
-        // `parseDuration` caps at MAX_CULTIVATION_DAYS, so "nine thousand years
-        // of rations" arrived here as a hundred years and the account reported
-        // a hundred years as though that were what was asked. Exactly the
-        // defect already fixed for seclusion, and the honest form is a few lines
-        // below this one: a purse that covers less than the ask already says
-        // "which is less than you went in for".
         const askedFor = options.askedFor;
         const clamped = days !== undefined && askedFor !== undefined && askedFor > days
             ? `${humanDays(askedFor)} was asked for. The most this engine will provision against `
@@ -13961,22 +10249,9 @@ ${fit.line}`;
 
     /**
      * Hand a stretch of days what it needs out of the pack, and deduct it.
-     *
-     * Seclusion has `buyProvisions`, which also tops the pack up at the door.
-     * The ordinary actions - working, gathering, travelling - do not buy
-     * anything on the player's behalf; they eat what is already carried.
-     * Before this existed they ate nothing at all, and a player could starve to
-     * death holding fifteen rations because they had spent the week earning the
-     * stones rather than sitting in a cave.
      */
     /**
      * Open a ration if the belly is low and the pack has one.
-     *
-     * Nobody carrying food starts a season of hauling hungry. Found by
-     * playtesting: a player who did the sensible thing - buy two years of
-     * rations, then take work to afford more - finished the shift at exactly
-     * zero satiety and died of starvation on their next action, with a
-     * fortnight of food still on their back.
      */
     private feedFromPack(cultivator: Cultivator): Cultivator {
         // The wound list is consulted here too: a failed transformation does
@@ -14022,10 +10297,6 @@ ${fit.line}`;
 
     /**
      * What this stretch would cost to eat, without buying anything.
-     *
-     * A read, and the one the seclusion picker prices its preview from. It runs
-     * the same function `buyProvisions` runs, so the figure shown at the door
-     * is the figure charged inside it.
      */
     provisionsForAStretch(days: number): ProvisioningPlan {
         this.useOwnDb();
@@ -14045,49 +10316,19 @@ ${fit.line}`;
         days: number,
         /**
          * Rations an interrupted half of THIS SAME sitting left unopened.
-         *
-         * Not in the pack, because the time skip ate out of a count it was
-         * handed rather than out of the flag, and the leftovers of a stretch
-         * that stopped early have never gone back. Passed in by `sitBackDown`
-         * so a sitting split into two halves buys food once for the whole
-         * span - the alternative is charging a second purse for days that
-         * were already paid for, which is a price for staying that has
-         * nothing to do with the person outside and would quietly make going
-         * the correct answer every time.
          */
         stillUnopened = 0
     ): { cultivator: Cultivator; rations: number; covered: number; line: string } {
         // The arithmetic is not done here. It is done in
-        // `what-feeding-a-stretch-of-seclusion-costs.ts`, which is also what
-        // the picker asks before the player commits - so what the door quotes
-        // and what the cave charges cannot drift apart.
-        //
-        // What is already in the pack comes first. A player who stocked up
-        // deliberately must not be charged again at the cave mouth for food
-        // they are carrying, and the ones they carried in are the ones the
-        // time skip eats.
-        //
-        // `stillUnopened` counts with the pack for the purposes of the
-        // arithmetic - it is food that exists and has been paid for - and
-        // separately for the purposes of the WRITE below.
+        // `what-feeding-a-stretch-of-seclusion-costs.ts`, which is also what the
+        // picker asks before the player commits - so what the door quotes and what
+        // the cave charges cannot drift apart.
         const alsoAtTheCaveMouth = Math.max(0, Math.floor(stillUnopened));
         const plan = whatFeedingThisStretchCosts(
             cultivator, this.rationsHeld(cultivator) + alsoAtTheCaveMouth, days
         );
-        // NOTHING TO BUY IS NOT NOTHING AFFORDABLE, AND THEY USED TO PRINT THE
-        // SAME SENTENCE.
-        //
-        // A cultivator from Deity Transformation up has stopped eating -
-        // `SATIETY_BURN_BY_REALM` is zero there and `burnSatiety` burns nothing
-        // - so there is no purchase to make and no clock to warn about. Priced
-        // flat, the same body was charged 730 stones for a year of rations it
-        // could not open, and when the purse was empty it was told the belly
-        // covered fifty days and then starvation began. Both were false: the
-        // measured run sat 1320 days at satiety 100 with the starvation counter
-        // never leaving zero, and was interrupted by wounds.
-        //
-        // Nothing comes off the pack and nothing comes out of the purse. What is
-        // carried stays carried, because the time skip will not eat it either.
+        // NOTHING TO BUY IS NOT NOTHING AFFORDABLE, AND THEY USED TO PRINT THE SAME
+        // SENTENCE.
         if (plan.hungerHasStopped) {
             return {
                 cultivator,
@@ -14137,21 +10378,7 @@ ${fit.line}`;
                 ? `${carried} ration${carried === 1 ? '' : 's'} came out of the pack` +
                   `${toBuy > 0 ? `, and ${toBuy} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
                 : `${rations} ration${rations === 1 ? '' : 's'} bought for ${cost} spirit stones. `)
-                // ── AND WHAT IS LEFT, ON BOTH BRANCHES ───────────────────
-                //
-                // The remainder used to be printed only when the food covered
-                // the stretch, so the SHORT branch - the one where somebody is
-                // about to starve and most needs to know whether they can buy
-                // more - stated a price and no balance.
-                //
-                // Played: the engine ruled "bought for 8 spirit stones" and the
-                // narration said "leaving you with eight spirit stones". The
-                // purse held 16. The model reached for a number the facts did
-                // not carry and used the price as the remainder - which is one
-                // of the four failures whose output-side check was withdrawn on
-                // the ruling that this class is fixed in what the turn TELLS the
-                // narrator. This is that fix: there is no number to invent when
-                // the number is there.
+                // AND WHAT IS LEFT, ON BOTH BRANCHES
                 + (covered >= days
                     ? `That covers the whole stretch. ${updated.spiritStones} stones left.`
                     : `That is food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. ` +
@@ -14164,29 +10391,6 @@ ${fit.line}`;
 
     /**
      * What the qi is doing where this cultivator is standing.
-     *
-     * THE DENSITY IS PASSED, and until now it never was - by this caller or by
-     * any other in the repository. `ambient.ts` has been correct the whole time
-     * (at density 1.0 it puts 98.4% of the weight on `dense`) and every caller
-     * omitted the figure, so everything fell through to `impliedDensityFor`,
-     * which hashes the NAME of the place. Measured over the map that produced:
-     * 64.1% of places typically thin, 25.2% normal, 10.8% dense, and
-     * `sealed_vein` - a 4x rate - unreachable in play at any location.
-     *
-     * What it looked like from inside a run: six consecutive thin months
-     * standing on ground whose usable density is 1.0, and a ladder that stops
-     * being climbable around ordinal 16 for every character, because a 6x rate
-     * swing existed in the engine and nobody could ever reach it. The engine
-     * half was written long ago; this is the half that was missing, which is
-     * why `geology.test.ts` passed while the game stayed thin.
-     *
-     * Two sources, in order of authority. The world's own location record is
-     * the real answer and carries `sealed` with it - a sealed ruin sits on a
-     * pocket nothing has drawn on and offers nobody any of it, so the vein is
-     * rich and the usable density is nil, and only the record knows that. The
-     * birth catalog's band is the fallback for a run with the world simulation
-     * off, or for a place name the world has no row for. Undefined, and only
-     * undefined, falls back to the hash.
      */
     ambientFor(cultivator: Cultivator, run: Run): AmbientQi {
         const place = placeName(cultivator);
@@ -14212,11 +10416,6 @@ ${fit.line}`;
 
     /**
      * Who is asking, and what they have heard of.
-     *
-     * Passed to every entity resolver so that a sect the player has never heard
-     * named simply does not resolve. `here` lets anyone standing in the same
-     * place resolve regardless, which is the `encountered` stage of
-     * discovery.md: you can see who is in the room without being told a name.
      */
     scopeFor(cultivator: Cultivator): KnowledgeScope {
         return {
@@ -14229,20 +10428,10 @@ ${fit.line}`;
 
     /**
      * Everybody standing where the player is standing.
-     *
-     * Both populations, joined on the place name. This is the call that was
-     * missing: nineteen people were at Burnt Earth and every social path
-     * dead-ended, because the only population anybody asked about was the
-     * `cultivators` table and the world's people were not in it.
      */
 
     /**
      * What the player's membership looks like from where they are standing.
-     *
-     * Joining an order is the most consequential thing a low cultivator can
-     * do, and until this existed the world never mentioned it again: the seat
-     * of your own sect read exactly like a strange town. Two facts, both off
-     * rows - whether they belong to anything, and whether this is its ground.
      */
     private standingHere(cultivator: Cultivator): string | null {
         if (!cultivator.sectId) return null;
@@ -14271,15 +10460,6 @@ ${fit.line}`;
 
     /**
      * Whether a name is anywhere the world would recognise.
-     *
-     * Three registers, and any one of them is enough. The world's own location
-     * table is authoritative where it is populated; the roster covers places
-     * that have people in them but no record yet; and the cultivator's own
-     * knowledge covers everywhere they have been told about, which is how a
-     * player reaches somewhere they have only heard named.
-     *
-     * Where they are already standing counts too - "I go back to Burnt Earth"
-     * from Burnt Earth is a no-op, not a refusal.
      */
     somewhereReal(name: string, cultivator: Cultivator): boolean {
         // Loose on both sides. The parser strips a leading article and
@@ -14298,14 +10478,6 @@ ${fit.line}`;
         if (occupied) return true;
 
         // Knowing a name is not knowing a way there.
-        //
-        // Two predicates now exist and the difference is deliberate:
-        // `isAwareOf` licenses SAYING the name, and opens at `whisper`;
-        // `canPointAt` licenses SETTING OUT, and opens at `placed`. A name
-        // caught through a wall is a name and not a destination, and travelling
-        // to one used to work - which meant the overheard channel, whose whole
-        // design is fragments a player cannot yet place, was quietly a travel
-        // itinerary.
         return this.knowledge
             .awareness(cultivator.id, 'place')
             .some(row =>
@@ -14316,39 +10488,13 @@ ${fit.line}`;
 
     /**
      * Somebody standing here, when the player pointed rather than named.
-     *
-     * "The nearest cultivator", "the old woman", "him" - these are not names
-     * and must never be fuzzy-matched into one, because that hands the player
-     * an identity they have not earned and, in a fight, picks the opponent for
-     * them. What they ARE is a gesture at a person in the square, which is a
-     * legitimate way to indicate somebody standing in front of you.
-     *
-     * Returns null when the phrase looks like an actual name, so a typo in a
-     * real name still fails honestly rather than hitting whoever is closest.
      */
     /**
      * The ruin the player means when they say "the ruins".
-     *
-     * Looked up in the world's own locations rather than invented: a place
-     * whose name or kind says ruin, at or adjacent to where they are standing.
-     * Returns null when the world is off or there is nothing of the sort here,
-     * and the refusal above then says so as a search that came up empty.
      */
     /**
      * The ground under their feet, when the sentence says "here" rather than a
      * name.
-     *
-     * A CLOSED SET, and deliberately a short one. Every word in it is a way of
-     * saying "where I am standing" and none of them can ever be somebody's
-     * name - which is the same construction `THE_SCENE_ITSELF` uses in the
-     * parser, for the same reason: a name must never land in it.
-     *
-     * Narrow on purpose, and this is the rule `AGENTS.md` states as fixing the
-     * gap that was demonstrated. It does NOT accept "the ruins", "the shrine",
-     * "the market" or anything else with a subject in it - those either resolve
-     * as themselves or fail as themselves, and widening this to catch them
-     * would steal sentences from `ruinAtHand` and from ordinary place
-     * resolution, which is exactly the mistake that entry records.
      */
     groundAtHand(query: string, cultivator: Cultivator): ResolvedEntity | null {
         if (!/^(?:the |this |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings)$/i
@@ -14394,11 +10540,6 @@ ${fit.line}`;
 
     /**
      * A face they can place, nearest their own height, and only then anybody.
-     *
-     * The pick two branches of `somebodyAtHand` both want, kept in one place so
-     * a pronoun and an indefinite resolve to the same person. NOT the crowd
-     * order, which sorts deepest-first and would hand a Qi Condensation
-     * disciple the strongest body in the square.
      */
     whoTheNearestFaceIs(cultivator: Cultivator, here: readonly RosterEntry[]): RosterEntry | null {
         if (here.length === 0) return null;
@@ -14426,25 +10567,7 @@ ${fit.line}`;
             const addressed = last ? here.find(row => row.id === last) : undefined;
             if (addressed) return addressed;
 
-            // ── AND OTHERWISE THE NEAREST, WHICH IS NOT THE CROWD ORDER ──
-            //
-            // The design owner's rule: a pronoun is whoever you spoke to last,
-            // or the nearest person otherwise. This used to return null here,
-            // and the reason given above is sound about the CROWD ORDER - that
-            // returns the deepest person in the square, so "I force her to
-            // marry me" proposed to the strongest stranger present.
-            //
-            // Falling to `whoTheNearestFaceIs` is a different fallback and does
-            // not reopen it: it prefers somebody whose face the player can
-            // already place, nearest their own height, which is the same pick
-            // `POINTING_AT_NOBODY_IN_PARTICULAR` makes below and for the same
-            // reason. A pronoun with nobody behind it now means the person in
-            // front of you rather than nobody at all.
-            //
-            // Measured before this: four played scenarios - a forced marriage,
-            // a furnace, taking a disciple, and a killing - all parsed to the
-            // right verb and then died here, because a sentence saying "her"
-            // after a sentence that named nobody had nothing to bind to.
+            // AND OTHERWISE THE NEAREST, WHICH IS NOT THE CROWD ORDER
             return this.whoTheNearestFaceIs(cultivator, here);
         }
 
@@ -14468,15 +10591,14 @@ ${fit.line}`;
             return this.whoTheNearestFaceIs(cultivator, here);
         }
 
-        // The last of a list that has ONE order, which is the whole of what
-        // makes this reproducible. See `oneCrowd` in `hearsay.ts`: this used to
-        // read the last element of two independently-sorted halves stuck
-        // together, so the same seed on the same day could hand
-        // `combat_manage.resolve` a different opponent, and the stream is
-        // seeded on the opponent's id. Nothing about "nearest" is computed
-        // here - there is no distance in this world model - and the honest
-        // version of that is a stated arbitrary order rather than an unstated
-        // one.
+        // The last of a list that has ONE order, which is the whole of what makes
+        // this reproducible. See `oneCrowd` in `hearsay.ts`: this used to read the
+        // last element of two independently-sorted halves stuck together, so the
+        // same seed on the same day could hand `combat_manage.resolve` a different
+        // opponent, and the stream is seeded on the opponent's id. Nothing about
+        // "nearest" is computed here - there is no distance in this world model -
+        // and the honest version of that is a stated arbitrary order rather than an
+        // unstated one.
         return here.length > 0 ? here[here.length - 1] : null;
     }
 
@@ -14486,11 +10608,6 @@ ${fit.line}`;
 
     /**
      * The body the fight this turn is standing in is being fought against.
-     *
-     * Null whenever there is no fight, which is almost every turn. The roster id
-     * and the combat id are different namespaces - `held.party.id` is the row,
-     * `held.opponent.id` is the body the resolver priced - so the join is made
-     * here rather than left to a caller that has only one of them.
      */
     private theBodyOpposite(held: StandingFight | null): BodyInAFight | null {
         if (!held) return null;
@@ -14505,11 +10622,6 @@ ${fit.line}`;
 
     /**
      * Anybody who was standing here as the turn opened and is now dead.
-     *
-     * A QUERY over the same rows the snapshot came from, taken here so that no
-     * verb has to report a killing for the people who watched it to answer it.
-     * Somebody who merely walked out of the square is not in it: the two stores
-     * are asked whether the person is alive, and only a `no` counts.
      */
     private theFallenAmong(
         before: readonly RosterEntry[],
@@ -14531,20 +10643,6 @@ ${fit.line}`;
 
     /**
      * Put the people who were in this turn into the account of it.
-     *
-     * ── ONE IMPLEMENTATION, AND THE REASON IT IS A METHOD ────────────────
-     *
-     * Three call sites reach phase 3 with an execution in hand: the typed
-     * turn, the Cultivate button and the Attempt Breakthrough button. A
-     * channel on only the first is a channel whose content depends on which
-     * control the player used, and a barrier struck in a crowded square is one
-     * of the loudest things that happens in front of anybody.
-     *
-     * Both front doors, and NOT `required`. `lines` is the model's licence and
-     * `prose` is what the deterministic narrator ships, so a channel on only
-     * one of them says different things to two players on the same seed.
-     * `required` is for what a player cannot play without - a death, a
-     * payment, a wound - and somebody's bearing is not that.
      */
     private sayWhoWasInIt(
         execution: Execution,
@@ -14572,25 +10670,9 @@ ${fit.line}`;
 
     /**
      * Who is here, split by whether the player can name them.
-     *
-     * The discovery rule, applied to people. Being in the room is permission to
-     * see somebody; it is not permission to know who they are. So a face the
-     * player has a record for gets a name and everybody else gets a reading of
-     * how they carry themselves, and the count of the rest is a crowd rather
-     * than a cast list.
      */
     /**
      * Write down the faces a life like this grew up around.
-     *
-     * The gate is untouched and this is deliberately an ordinary write through
-     * it: `learnIfNew`, at the stance somebody holds for a face they have known
-     * since before either of them was anybody, with the source and the note on
-     * the row like every other record in the table. A player still cannot name
-     * anybody nobody has said in front of them - what has changed is who has.
-     *
-     * Silent when the world is off, when the birthplace is somewhere the world
-     * does not model, or when the hamlet holds nobody but the player. All three
-     * are real answers and none of them is an error.
      */
     private async seedTheFacesFromHome(
         cultivator: Cultivator,
@@ -14640,16 +10722,6 @@ ${fit.line}`;
 
     /**
      * Move the world the same span the cultivator just spent.
-     *
-     * Called from every path that consumes days, so that forty years in a cave
-     * come out into a world that had forty years. The digest is built against
-     * this cultivator's own knowledge, which means the same span reaching two
-     * different people would tell them different things - and tell most people
-     * nothing at all, which is the intended ratio and not a bug to fix.
-     *
-     * The count of what never reached them goes to the inspector and never to
-     * the narrator. Surfacing it would turn "the world is mostly none of your
-     * business" into a status line.
      */
     async advanceWorld(days: number, cultivator: Cultivator, run: Run): Promise<WorldReport> {
         if (!this.worldEnabled || days <= 0) return { lines: [], structure: [] };
@@ -14670,12 +10742,6 @@ ${fit.line}`;
 
     /**
      * Put the player on the world's roster, or refresh the row already there.
-     *
-     * Thin on purpose: everything about what the row contains and what the
-     * world may do to it lives in
-     * `the-player-as-a-row-the-world-can-invite.ts`. What this knows is the two
-     * things only this layer can answer - which world is loaded, and which
-     * house the sect repository says they are in.
      */
     private refreshThePlayerRow(cultivator: Cultivator): void {
         if (!this.atHand) return;
@@ -14687,18 +10753,8 @@ ${fit.line}`;
     }
 
     /**
-     * If this turn ended the life, put the death and the estate into the world.
-     * ── WHY IT IS HERE AND NOT AT EACH DEATH SITE ────────────────────────
-     *
-     * This is the only line in the package that has, at once, the closed run,
-     * the dead sheet, the loaded world, the ledger, who is standing here and
-     * the persist flag. Every place that can kill somebody has some of those
-     * and none has all of them.
-     *
-     * Idempotent, which is what makes the second call site below safe: the
-     * cache id is derived from the run and `LegacyLedger.write` upserts on it,
-     * and `enshrineRun` will not place a second grave for an id it has already
-     * placed. Returns null where nobody died, which is nearly every turn.
+     * If this turn ended the life, put the death and the estate into the world. ──
+     * WHY IT IS HERE AND NOT AT EACH DEATH SITE ────────────────────────
      */
     settleTheEstateIfTheyDied(): EstateOutcome | null {
         const now = this.currentRun();
@@ -14734,18 +10790,6 @@ ${fit.line}`;
     /**
      * Where a deed by this cultivator happened, as a location id the world
      * resolves.
-     *
-     * A fact carries a location ID and the character sheet carries a NAME, so
-     * the two are joined by `worldLocationFor` the way every other read in this
-     * file does it. Null is honest and handled: `whoWasThere` answers a deed
-     * somewhere the world does not model with the parties and no one else.
-     *
-     * NOT read off the player's own world row, which was the first version and
-     * is wrong. `the-player-as-a-row-the-world-can-invite.ts` states outright
-     * that the row's `locationId` is null and is never set - presence belongs
-     * to the play layer, and a second stored source of it cost four separate
-     * defects in one afternoon. This resolves the play layer's answer at write
-     * time and stores nothing, so the row still stands nowhere.
      */
     worldPlaceOf(cultivator: Cultivator): string | null {
         if (!this.atHand) return null;
@@ -14754,11 +10798,6 @@ ${fit.line}`;
 
     /**
      * Whether a name gets said in this scene, and the record for it if so.
-     *
-     * The write happens here, in phase 2. Phase 3 receives only a licence to
-     * mention something the database already holds, which keeps the dependency
-     * pointing the right way: prose can fail to use a name without the name
-     * failing to exist.
      */
     private hear(
         cultivator: Cultivator,
@@ -14789,11 +10828,6 @@ ${fit.line}`;
 
     /**
      * One thing worth noticing about the people here.
-     *
-     * A practice names nothing, so unlike a name it is safe in the narrator's
-     * own voice - it is the "show the world, never explain it" half of the
-     * doctrine rather than the discovery half. `practices.ts` holds the one
-     * narrow gate that does apply.
      */
     private notice(cultivator: Cultivator, run: Run, occasion: string): string | null {
         const seen = observableHere({
@@ -14812,53 +10846,6 @@ ${fit.line}`;
 
     /**
      * The blank look, which is the answer.
-     *
-     * Somebody in the same place has never heard the words, or there is nobody
-     * to have not heard them. Either way the player learns the same thing - the
-     * name gets them nothing here - without being told that a rule was applied.
-     * Never confirms whether the thing exists, and never lists what would have
-     * worked.
-     *
-     * ── WHY THE WITNESS IS GATED ─────────────────────────────────────────
-     *
-     * This sentence used to name `here[0]` outright, and that was two defects
-     * in one line. Reproduced: at a settlement of fifteen strangers,
-     * `I negotiate with Kong Lanwu` - somebody real and somewhere else - came
-     * back "You put the words to Liang Fuhe", and the very next sentence of
-     * the same refusal said "you have a name for none of them". The paragraph
-     * contradicted itself because the first half was ungated and the second
-     * half was not.
-     *
-     * The first defect is the discovery leak: `Liang Fuhe` is a name this
-     * cultivator has no record for, handed over by the ERROR path, which is
-     * the door discovery.md is shutting. The second is worse and is the reason
-     * this is fixed ahead of the other two. The player asked for one person
-     * and read the name of another, in a sentence that describes the words
-     * being delivered - so what a refusal looks like from inside the game is a
-     * REDIRECT, and the player now believes they spoke to somebody they did
-     * not. A refusal that names a way out is this repo's pattern; a refusal
-     * that quietly picks a different target is not a refusal at all.
-     *
-     * So: name the witness only where the player could already name them,
-     * which is what makes it an earned name rather than a free one, and
-     * otherwise say plainly that nobody here answers to it. Seeing that
-     * somebody is standing there is not knowing who they are - the same rule
-     * `nobodyByThatName` applies to the list it appends after this.
-     *
-     * ── AND THE DELIVERY CLAIM WAS THE SAME DEFECT, ONE LINE LOWER ───────
-     *
-     * The gate above fixed WHICH name is printed and left the sentence around
-     * it saying `You put the words to X` - so the paragraph still told the
-     * player their sentence had been delivered to somebody they never named,
-     * which is the redirect this whole note forbids, surviving inside the fix
-     * for it.
-     *
-     * **Both branches now open with the fact this refusal is actually about:
-     * the NAME reached nobody.** A bystander may be named as somebody who heard
-     * a stranger say something, never as the person it was said to. That
-     * ordering also stops the paragraph reading as *I did not understand you* -
-     * which it is not, and must not imply, because the sentence that reaches
-     * here is often perfectly clear and simply names nobody who is here.
      */
     private blankLook(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -14884,14 +10871,6 @@ ${fit.line}`;
 
     /**
      * What is actually about, briefly, when the player named nobody.
-     *
-     * Says what is there and stops. A list of who could be approached is a
-     * developer affordance wearing a sentence.
-     *
-     * The lone-person branch is gated for the same reason `blankLook` is: one
-     * stranger in an empty square is still a stranger, and printing their name
-     * because they happen to be the only one there would be the discovery leak
-     * arriving through arithmetic instead of through a lookup.
      */
     whoIsAbout(cultivator: Cultivator): string {
         const here = this.present(cultivator);
@@ -14913,14 +10892,6 @@ ${fit.line}`;
 
     /**
      * What the player could have meant, drawn only from what they know.
-     *
-     * A refusal that listed every recruiting sect in the catalog would leak the
-     * world through the error path, which is exactly the door discovery.md is
-     * shutting. This lists people in the room and names already held.
-     *
-     * INSPECTOR ONLY. It used to be appended to the refusal the player reads,
-     * which made every dead end end in a list of valid targets - a developer
-     * affordance, and an invitation to play the parser instead of the game.
      */
     knownNamesLine(cultivator: Cultivator, scope: KnowledgeScope): string {
         const names = nearbyNames(this.repos, cultivator, scope);
@@ -14931,12 +10902,6 @@ ${fit.line}`;
 
     /**
      * Record that the player has now encountered something.
-     *
-     * discovery.md is explicit that each step up the ladder of knowing needs a
-     * source, and that a name learned from a drunk and a name read in an
-     * archive are different facts. So awareness is written with its provenance
-     * rather than left to exist only in the transcript, which is where it would
-     * be unauditable and unrevisable.
      */
     noteEncounter(
         cultivator: Cultivator,
@@ -14997,12 +10962,6 @@ ${fit.line}`;
 
     /**
      * The sect's display name for a cultivator's `sectId`.
-     *
-     * Two sources, in the order that respects an operator's own edits: a sect
-     * written into this database wins, and the shipped catalog in
-     * `src/data/cultivation` answers for the ids that were never persisted. An
-     * id that resolves to neither yields null rather than itself - the sheet
-     * shows "unaffiliated" instead of a database key.
      */
     sectNameFor(cultivator: Pick<Cultivator, 'sectId'>): string | null {
         if (!cultivator.sectId) return null;
@@ -15023,33 +10982,6 @@ ${fit.line}`;
 
     /**
      * Who is actually holding something against this cultivator, derived.
-     *
-     * ── THE FIELD THAT NOTHING WROTE ─────────────────────────────────────
-     *
-     * `Cultivator.feuds` is a stored JSON array with exactly ONE writer in the
-     * whole of `src/` - `combat-manage.ts`, on the MCP tool path - so the
-     * played game has never written one. The sheet's Feuds panel therefore said
-     * *"No one is currently hunting you"* for the entire life of this game,
-     * whatever the player did to anybody. AGENTS.md's *a field nothing writes*
-     * in its purest form: not inert, reading as a value, and the value is a lie
-     * with a straight face.
-     *
-     * The same entry prescribes the fix - *prefer deriving to storing where the
-     * answer moves* - and the answer moves constantly, because whether somebody
-     * can come for you changes every time either of you crosses a rung.
-     *
-     * ── WHAT IS ON THE PANEL, AND WHAT IS NOT ────────────────────────────
-     *
-     * Only the people who may act AND think it worth doing. Somebody holding a
-     * grave account who cannot reach you is not hunting you, and putting them
-     * on a panel headed Feuds would say they were. `whoIsComingForYou` keeps
-     * the two apart and the second list is on the same return value for
-     * whenever the sheet grows a place to say *they have written your name down
-     * and there is nothing behind it*, which is the better half of the fact.
-     *
-     * The stored array is not read and not written. Its one MCP writer is left
-     * alone rather than deleted, because deleting a column somebody else's
-     * front door writes to is a different change with a different owner.
      */
     private whoIsHuntingThisCultivator(cultivator: Cultivator): string[] {
         const npcs = this.atHand?.npcs ?? [];
@@ -15139,25 +11071,9 @@ ${fit.line}`;
 
     /**
      * Engine rulings, as log lines. Sourced only from facts.ts and SimEvents.
-     *
-     * The structure channel is included here and NOT in the narrator prompt.
-     * The log is the operator's record, where a rank ordinal and a governance
-     * category are exactly the right words; the prose is where they would
-     * become a briefing the world does not contain.
      */
     private engineEntries(execution: Execution, turn: number, narration?: string): LogEntry[] {
         // The headline goes in UNLESS the narration already opens with it.
-        //
-        // With no model configured the narrator is this engine, so the prose
-        // begins with the very sentence the ruling row states - and the player
-        // read the same line twice, in two styles, on every single turn. The
-        // ruling row exists so prose and engine can be compared and "the two
-        // should never disagree"; where they are the same string there is
-        // nothing to compare and the row is only noise.
-        //
-        // Self-correcting on purpose: a model's narration will not open with
-        // the headline verbatim, so configuring one brings the row straight
-        // back with no flag to set and nothing to remember.
         const opensWithIt = typeof narration === 'string'
             && narration.trimStart().startsWith(execution.facts.headline.trim());
         const entries: LogEntry[] = opensWithIt
@@ -15180,20 +11096,7 @@ ${fit.line}`;
     }
 }
 
-// ── THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE ─────────────────────
-//
-// `travelVerbs` holds `GameService` methods that live in `travel-verbs.ts`.
-// The declaration merge below adds their signatures to the class type and the
-// `Object.assign` puts them on the prototype, so `this.move(...)` above
-// resolves and typechecks exactly as it did when the bodies sat in this file.
-//
-// This is what lets a body be MOVED rather than rewritten: `this` stays
-// `this`, so every line of a moved method is the line it was and a reviewer
-// can diff it against the original. The price is that the members those
-// methods reach are no longer marked `private`. That is a compile-time
-// annotation and nothing else - it is erased entirely, so no runtime
-// behaviour changes and nothing becomes reachable that `(service as any)`
-// could not already reach.
+// THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
 export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs {}
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;

@@ -35,9 +35,9 @@
  *
  *   held                  somebody holds this and can be named
  *   no_holder_of_record   the register carries the ground with nobody's name
- *                         against it. Scarwater, Sixmile, the Dead Verge
+ *                         against it. Clear River Ford, Six Li, Nine Hundred Paces
  *   no_authority          the region itself declares nobody holds it, which in
- *                         the catalog today is the Drowned Reach
+ *                         the catalog today is the Drowned Sea
  *   unrecorded            nothing anywhere says. NOT the same as unheld, and
  *                         a caller that treats it as such has invented a
  *                         vacuum out of a missing row

@@ -1,21 +1,5 @@
 /**
  * Consolidated Technique Tool - `technique_manage`
- *
- * Arts: what a cultivator can learn, how well they hold it, and what it costs
- * them to hold something their meridians were not built for.
- *
- * AUTHORITY BOUNDARY
- * ------------------
- * - `list_available` filters by realm ordinal and by spirit-root compatibility,
- *   and applies the root's own `techniqueAvailability` as a seeded per-run draw.
- *   A mutated-lightning cultivator does not get to decide that a lightning
- *   manual happens to be lying around; the run seed decided that already.
- * - `learn` never silently accepts a conflicting element. It routes the attempt
- *   through the engine's deviation logic (`rollDeviation` / `resolveDeviation`)
- *   and persists whatever that produced - a torn meridian, burned progress, lost
- *   HP, and death if the state was already at the edge.
- * - `practise` and `use` compute their own numbers. The caller supplies days or
- *   a target, never a mastery value, a damage roll or a result.
  */
 
 import { z } from 'zod';
@@ -79,19 +63,6 @@ import {
 
 /**
  * Who is feeding this cultivator the material an ancient art consumes.
- *
- * WORLD, ALWAYS, FOR NOW, AND THIS IS AN ABSENCE RATHER THAN A DECISION.
- * The two provisionings that beat the world's supply are both authored - a
- * stocked cellar in one grave, and one house quietly holding a remnant - and
- * neither is anything the run currently records. Nothing tracks which site a
- * cultivator emptied or which house is spending on them, so there is no
- * honest way to hand `masteryCeilingFor` anything but the open supply.
- *
- * The consequence is worth stating plainly rather than leaving to be
- * discovered: today every practitioner in the game stops where the world stops.
- * When provisioning becomes state a run holds, this function is where it
- * arrives, and it is one line - return the site or the faction the cultivator
- * is drawing on. Nothing else in this file needs to change.
  */
 function provisioningFor(_cultivatorId: string): Provisioning {
     return UNPROVISIONED;
@@ -143,26 +114,6 @@ const CONFLICT_MASTERY_FACTOR = 0.5;
 
 /**
  * Which manuals this cultivator owns a physical copy of.
- *
- * `manuals.ts` has modelled this for the whole world from the beginning - a
- * house holds so many copies and no more, an NPC is capped at the best book
- * they actually hold - and the player was not in it. Naming a book was the
- * whole of acquiring one: measured in a live run, "I want to learn the Lesser
- * Qi-Gathering Manual" left the purse untouched at thirty stones and the
- * technique held. That is the oldest defect in this repo, stated in `AGENTS.md`
- * under "the world's rules must bind the player too", and books are the worked
- * example it opens with.
- *
- * Kept as a flag rather than as a table on purpose, and it is the one decision
- * here worth arguing with. `cultivator_flags` is the generic per-cultivator
- * store and needs no migration, which matters while several agents are in
- * `migrations.cultivation.ts` at once; the honest cost is that a copy recorded
- * this way has no provenance, no condition and no count, so it cannot answer
- * "which copy is it" - and `items.md` says a manual scarce enough for that
- * question to matter is a tracked row rather than a counted quantity. Every
- * book this reaches is below that line by construction (see the gate in
- * `handleLearn`), so the shortcut is correct for exactly the range it covers
- * and would be wrong the moment it were widened.
  */
 export const FLAG_MANUAL_COPIES_HELD = 'manual_copies_held';
 
@@ -212,37 +163,10 @@ export const LearnSchema = z.object({
     cultivatorId: z.string().optional(),
     /**
      * WHERE THE BOOK CAME FROM, when it did not come from a stall.
-     *
-     * Above the commonly-held line a road is somebody's property, and the
-     * caller has to say how this cultivator came by it. Absent, only the
-     * common shelf and the reader's own house are open - which is the honest
-     * default, because a player naming an art has not thereby acquired it.
-     *
-     * The gate this feeds is deliberately not a rank check. A house's working
-     * library is what its people can be taught FROM; which of them is entitled
-     * to which shelf is a further question the world layer already answers for
-     * NPCs in `manuals.ts`, and wiring that to the player is worth doing on
-     * top of this rather than instead of it.
      */
     provenance: z
         /**
          * `taken` is the fifth, and it is not a synonym for `found_in_place`.
-         *
-         * Ruled by the design owner when the theft verb landed. Routing a
-         * stolen copy through `found_in_place` would be the load-bearing kind
-         * of lie: the whole theft design rests on the provenance chain gaining
-         * a link that says what happened, and `knownOwnershipBy` in
-         * `possessions.ts` turns on the difference between a stolen thing
-         * nobody can identify and one the owning house can name on sight. A
-         * copy that reads as found is a copy nobody can ever be caught
-         * holding, which silently deletes the consequence the act exists for.
-         *
-         * The plain-English test is the one that settles it: `where did you
-         * get that book` has four honest answers here and the fifth is "I took
-         * it." Nobody asked that question says they found it in place.
-         *
-         * So a stolen manual opens. The risk is that somebody sees you
-         * carrying it, not that the pages refuse to turn.
          */
         .enum(['found_in_place', 'taught_by_a_person', 'bought', 'inherited', 'taken'])
         .optional()
@@ -276,13 +200,8 @@ const ForgetSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Whether the world of THIS run contains a copy of this art the cultivator
- * could plausibly get hold of.
- *
- * Mutated roots cultivate faster and hit harder than anyone and then discover
- * the world has almost no manuals they can use. That scarcity is a property of
- * the run, not of the moment, so the draw is keyed to (seed, techniqueId) and
- * gives the same answer every time it is asked.
+ * Whether the world of THIS run contains a copy of this art the cultivator could
+ * plausibly get hold of.
  */
 function isAvailableInRun(seed: string, spiritRootKey: string, technique: Technique): boolean {
     const root = getSpiritRoot(spiritRootKey as Parameters<typeof getSpiritRoot>[0]);
@@ -320,20 +239,7 @@ function projectTechnique(
         description: technique.description,
         rootMatch: matched ? 'matched' : conflicts ? 'conflicting' : 'neutral',
         matchedBonus: matched ? root.matchedTechniqueBonus : 1,
-        // ── WHERE THE MANUAL STOPS ───────────────────────────────────────
-        //
-        // The single cheapest thing that makes the corridor above the middle
-        // of the ladder legible instead of cruel. `techniqueCap` is a HARD
-        // ceiling in `computeCultivationRate` - at or past it, progress is
-        // zero, not slow - and until this was reported a player found out by
-        // spending forty years discovering that the book they picked up ends
-        // at seventeen. A ceiling nobody can see before they commit to it is
-        // not a difficulty curve, it is a trap.
-        //
-        // `class` rides along because the two answers are easy to confuse: a
-        // dao art has no cap because it is not a cultivation manual and was
-        // never going to carry anybody anywhere, which is a different fact
-        // from a cultivation manual rated to the top of the ladder.
+        // WHERE THE MANUAL STOPS
         class: classOf(technique),
         carriesToOrdinal: capFor(technique),
         carriesToRank: capFor(technique) === null
@@ -501,32 +407,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
         );
     }
 
-    // ── ABOVE THE COMMON SHELF, A ROAD IS SOMEBODY'S PROPERTY ──
-    //
-    // The world runs on this and the player did not. `manuals.ts` seeds sect
-    // libraries, hands copies to members, prices the betrayal of selling one,
-    // and caps every NPC at the best book they actually hold - while a player
-    // could name any art at or below the Dao gate and simply have it. Measured
-    // in `scripts/probe-who-may-open-a-book.ts`: fifteen of twenty-four roads
-    // asked for nothing but the rung, and the widest opened at thirteen and
-    // carried to thirty-three. Found by playing, when an outsider with no house
-    // learned a named sect's canon for nothing.
-    //
-    // The common shelf stays open, and that is load-bearing rather than
-    // generous: `manuals-wired.test.ts` measures that the first book is
-    // reachable in every fresh life, because a hard ceiling at six with no way
-    // to buy a road past it is a soft lock on turn one.
-    // ── AND A HOUSE THAT HAS NOT TAKEN YOU CAN STILL BE TEACHING YOU ─────
-    //
-    // The gate above and the one below both asked exactly one question - "does
-    // the house whose roll you are on teach this" - and a guest is on nobody's
-    // house roll by construction. So without this the whole guest arrangement
-    // would be a card in a menu: a player could be entered on a house's guest
-    // roll, be shown a shelf, and then be refused every book on it.
-    //
-    // Narrow on purpose. `aGuestIsTaughtThis` answers only about the OPEN half
-    // of the host's shelf, so nothing here can reach past what the house
-    // decided to show, and the deep material stays exactly where it was.
+    // ABOVE THE COMMON SHELF, A ROAD IS SOMEBODY'S PROPERTY
     const asAGuest = aGuestIsTaughtThis(
         repos.db, cultivator.id, cultivator.realmOrdinal, technique.id
     );
@@ -571,29 +452,7 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
         }
     }
 
-    // ── AND BELOW IT, A BOOK IS STILL AN OBJECT SOMEBODY SOLD YOU ──
-    //
-    // The gate above closed the top of the shelf and left the bottom of it
-    // open, on the reasoning that a hard ceiling at `BOOKLESS_CEILING` with no
-    // way past it is a soft lock on turn one. That reasoning is right and the
-    // conclusion drawn from it was wrong: what stops the soft lock is a PRICE,
-    // not an absence of one, and `items.md` has always said what the price is -
-    // common manuals sell at a market stall next to the cooking pots, and a
-    // poor cultivator's first real decision is whether the money goes on a book
-    // or on food.
-    //
-    // Found by playing the opening. The Cultivate refusal is one of the best
-    // things in the game - "what is missing is not years and not discipline, it
-    // is a book, or somebody willing to teach them one" - and typing the book's
-    // name resolved the whole of it: technique held, thirty stones untouched,
-    // no teacher, no time, no house. Every obstacle the game had just described
-    // evaporated the moment it was named.
-    //
-    // Three ways to have got it, and they are the three the setting already
-    // names. You bought a copy, your house teaches it, or you say where it came
-    // from - a grave, a body, somebody's afternoon. Nothing here refuses the
-    // attempt on grounds of taste: `AGENTS.md` forbids fixing this by removing
-    // a verb, so the answer to "may I" is still yes, and this is the cost.
+    // AND BELOW IT, A BOOK IS STILL AN OBJECT SOMEBODY SOLD YOU
     const writtenTo = technique.cap ?? capOf(technique);
     const belowTheStallLine =
         classOf(technique) === 'cultivation'

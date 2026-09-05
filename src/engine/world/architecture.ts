@@ -1,89 +1,5 @@
 /**
  * Architecture - the inside of a compound.
- *
- * The gap this closes, measured before it was written: a seeded world held 65
- * locations, nesting bottomed out at depth 1 (a province, and places in it),
- * and the Azure Cloud Pavilion - the house with a newly ascended immortal and
- * an entire storyline attached - was one node called "grounds" with two roads
- * out of it. No scripture pavilion, no ancestral hall, no vault. There was
- * nowhere to stand.
- *
- * Nothing here is new machinery. `locations.ts` already had `parentId`,
- * `LocationThresholds`, `AccessAssessment`, `OpeningCycle`, `qiDensity`,
- * `hazards`, `affinities`, `sealed` and an append-only `changes` list. What it
- * did not have was any interior member on `LocationKind` and anything that
- * produced one. So this module is a GRAMMAR and a GENERATOR over machinery
- * that already existed, plus exactly one piece of engine work - `reachThrough`,
- * below, because access was answered one location at a time and an interior is
- * a chain.
- *
- * ── THE THREE RULES IT IS BUILT UNDER ───────────────────────────────────
- *
- * 1. NOTHING IS BESPOKE. Every compound comes out of the same function reading
- *    the same columns. There is no per-faction table anywhere in this file and
- *    none may be added. A house is distinctive because its numbers are, in the
- *    same fields every other house's numbers are in.
- *
- * 2. STORE WHAT SOMETHING READS; DERIVE THE REST. A room stores its purpose,
- *    its parent, its thresholds, its qi, its capacity and its style id. It
- *    does not store its smell, its light, its floor material or its furniture,
- *    because nothing in the engine reads any of those - they are DERIVED at
- *    description time from purpose x style x condition through the ordinary
- *    seeded RNG, which gives unlimited texture at no storage cost and, unlike a
- *    stored adjective, is reproducible from the seed.
- *
- * 3. STATUS IS PHYSICALLY MANIFEST, AND THE LADDER IS THE HOUSE'S OWN.
- *    Precincts are generated one per rank in `CatalogFaction.ranks`, which
- *    already varies per faction and already reads ['Outer Disciple', 'Inner
- *    Disciple', 'Core Disciple', 'Elder', 'Grand Elder', 'Patriarch']. A house
- *    with four ranks gets four precincts. Nobody chose four tiers.
- *
- * ── HOUSE STYLE, AND WHY IT IS DATA ─────────────────────────────────────
- *
- * An institution has a design language: one vocabulary of materials, one idiom,
- * applied across the whole compound. Precincts differ in quality and privacy,
- * not in style - that is what makes a compound read as one place built by one
- * body over centuries. An individual expresses themselves; an institution
- * expresses itself. So a disciple's residence inside a sect looks like every
- * other residence in that sect regardless of the disciple's spirit root.
- *
- * The exception, and it is derivable rather than declared: a house is
- * elemental exactly as far as the house itself is elementally narrow.
- * `preferredRoots` on the sect entry already says who it will take, and the
- * distribution across the catalog is real - most houses take every root, a
- * handful are partially coloured, two admit exactly one mutated root and
- * nothing else. A house that takes everybody cannot have elemental buildings,
- * because an earth disciple's courtyard there is a standard courtyard. A house
- * that takes nothing but ice is ice all the way down. `elementalIntensity`
- * below is that, plus the element spread of the manuals it actually teaches,
- * because a house whose whole curriculum is elementless is the most
- * element-neutral architecture in the world FOR A STATED REASON rather than by
- * default.
- *
- * The same representation is read from both ends. Generation uses it to build;
- * identification uses it to recognise. A house style is an archaeological
- * fingerprint, so a ruin's architecture is evidence of who built it, an expert
- * can read it and a non-expert cannot - and the difficulty is asymmetric for
- * free: a single-root compound is trivially identifiable centuries later, and
- * telling WHICH ordinary house built an ordinary ruin is the hard skill. The
- * tags are written to `data.styleTags` on every location this module produces,
- * so `provenance.ts` can match against them without importing anything here.
- *
- * ── WHAT THIS IS NOT ────────────────────────────────────────────────────
- *
- * No hour-of-day room state. This engine's clock runs in days and years - the
- * normal player move is "I enter seclusion for two years" - so a room that
- * differs at 8am and midnight is state nothing will ever read. What DOES vary
- * is the day, and `OpeningCycle` already expresses it.
- *
- * No NPC schedules. The world already simulates people at scale. Rooms read
- * where NPCs are; a second scheduler here would drift from the real one, which
- * is the "second combat system in the prose layer" mistake under another name.
- *
- * No dimensions, with one exception. Nothing reads a room's length. Something
- * does read `capacity`: a practice yard cut for six hundred that holds ninety
- * is one of the strongest facts in the sect catalog, and it is capacity against
- * occupancy. So capacity is stored and every other measurement is not.
  */
 
 import { clampOrdinal } from '../cultivation/realms.js';
@@ -111,11 +27,6 @@ import { QI_DENSITY_MAX, clampQiDensity, ordinaryBandFor, qiFraction } from './q
 
 /**
  * The shape a house builds in.
- *
- * Derived, never authored. Eight values, because the discriminating power has
- * to come from the whole fingerprint rather than from this one facet - a world
- * where every neutral house is a `walled_court` is fine, provided the material,
- * the precision and the upkeep pull them apart afterwards.
  */
 export type Idiom =
     | 'terraced'      // cut into a slope, one court above the next
@@ -145,13 +56,6 @@ export type Scale = 'human' | 'oversized' | 'monumental';
 
 /**
  * Where a senior member is permitted to deviate from the house style.
- *
- * A broad house has a style to deviate FROM, so an elder's residence is where
- * their own element finally shows. A single-root house has no such axis -
- * everybody is the same element - so seniority has to be signalled by space,
- * privacy and how many of the arrays around you are lit. Either way the
- * deviation is legible, and a player can read rank off architecture before
- * anybody tells them one.
  */
 export type DeviationAxis = 'element' | 'scale';
 
@@ -168,11 +72,6 @@ export interface HouseStyle {
     scale: Scale;
     /**
      * 0..1. How far the buildings themselves are elemental.
-     *
-     * Zero is a house that takes every root and teaches across the wheel: its
-     * buildings are resolutely ordinary and an earth disciple's courtyard is a
-     * courtyard. One is a house that admits a single root and teaches nothing
-     * else: cave abodes all the way down. See {@link elementalIntensityOf}.
      */
     elementalIntensity: number;
     /** The element the intensity is IN, or null where there is none. */
@@ -180,10 +79,6 @@ export interface HouseStyle {
     deviation: DeviationAxis;
     /**
      * The matchable facets, as flat strings.
-     *
-     * This is the archaeological fingerprint and the ONLY part of the style
-     * that other modules should read, because it needs no import from here.
-     * Written to `data.styleTags` as a space-joined string.
      */
     tags: string[];
 }
@@ -230,24 +125,6 @@ const GOVERNANCE_IDIOM: Record<string, Idiom> = {
 
 /**
  * How elemental a house's buildings are, 0..1.
- *
- * Two signals, both already in the content, neither needing a new field:
- *
- *   intake      `preferredRoots`. Every accepted root spreads one unit of
- *               weight across the elements it can hold, so `single_earth`
- *               contributes a whole unit of earth and `muddled_five_element`
- *               contributes a fifth of each. The dominant share of the
- *               resulting distribution is how narrow the intake actually is.
- *               An empty list is every root, and scores zero - correctly,
- *               because a house that takes everybody cannot build for one.
- *
- *   curriculum  the elements of the manuals it teaches. Elementless arts count
- *               in the denominator and not in the numerator, so a house whose
- *               doctrine is that almost everything it teaches is elementless
- *               lands near zero on purpose rather than by omission.
- *
- * Weighted toward intake, because who a house will admit is the harder gate
- * and the one that determines who is standing in the building.
  */
 export function elementalIntensityOf(
     preferredRoots: readonly string[],
@@ -267,14 +144,13 @@ export function elementalIntensityOf(
         for (const e of elements) intake.set(e, (intake.get(e) ?? 0) + share);
     }
     // NARROWNESS IS THE COUNT OF ELEMENTS THE HOUSE WILL ADMIT AT ALL, not the
-    // dominant share of a weighted distribution. Measured: the weighted version
-    // put seven houses in the absolutist band, including the Azure Cloud
-    // Pavilion, whose intake is metal-dominant but who also takes dual roots
-    // and puts uncultivated mortals on probation to find out what they are -
-    // its courtyards are courtyards. A house is only built for one element if
-    // there is only one element in the building, and a house that will take a
-    // muddled five-element root has every element in the building whatever its
-    // curriculum says.
+    // dominant share of a weighted distribution. Measured: the weighted version put
+    // seven houses in the absolutist band, including the Azure Cloud Pavilion,
+    // whose intake is metal-dominant but who also takes dual roots and puts
+    // uncultivated mortals on probation to find out what they are - its courtyards
+    // are courtyards. A house is only built for one element if there is only one
+    // element in the building, and a house that will take a muddled five-element
+    // root has every element in the building whatever its curriculum says.
     let intakeElement: string | null = null;
     let dominant = 0;
     for (const [element, weight] of intake) {
@@ -334,11 +210,6 @@ function ornamentOf(alignment: CatalogFaction['alignment'], governance: string):
 
 /**
  * Whether the compound fits the people in it.
- *
- * An inherited compound was cut by somebody stronger, so the walls are for a
- * house that no longer exists. `powerOrdinal` against the compound's own
- * calibration is the size of that gap, and it is the single most legible fact
- * about a late-age institution: a yard cut for six hundred holding ninety.
  */
 function scaleOf(inherited: boolean, powerOrdinal: number, admissionOrdinal: number): Scale {
     if (!inherited) return 'human';
@@ -361,10 +232,6 @@ export interface StyleInput {
 
 /**
  * The house's design language, as a pure function of what the catalog holds.
- *
- * No RNG. A style must be the same in every world for the archaeology to be
- * worth anything - a Pavilion ruin has to look like Pavilion work whichever
- * seed produced the world it is standing in.
  */
 export function houseStyleOf(input: StyleInput): HouseStyle {
     const { intensity, element } = elementalIntensityOf(input.preferredRoots, input.teachesElements);
@@ -436,18 +303,6 @@ export function styleTagsOf(location: LocationRecord): string[] {
 
 /**
  * Facets in the order they stop being readable.
- *
- * A ruin is not a compound with the lights off; it is a compound minus
- * whatever did not last. Ornament is hung on a wall and is the first thing
- * taken. Upkeep is unreadable the moment a site stops being maintained - every
- * ruin is dark, so "dark" says nothing about who built it. Trim goes with the
- * roofs. What survives to the far end is the shape of the plan, the stone it
- * was cut from and how big it was, because those are the ground.
- *
- * This is what makes attribution hard, and it makes it hard UNEVENLY, which is
- * the whole point: `element:` is in the surviving set, so a house that admitted
- * one root is named from its ruin centuries later, and a house that admitted
- * everybody leaves three facets that a dozen of its neighbours also leave.
  */
 const FACET_DECAY: readonly (readonly string[])[] = [
     ['ornament:'],                      // lost first: hung, and worth taking
@@ -480,14 +335,6 @@ export interface StyleMatch {
 
 /**
  * Which houses could have built this, and how many.
- *
- * The asymmetry is the point and it is not asserted anywhere - it falls out of
- * the arithmetic. An absolutist house carries an `element:` facet that almost
- * nothing else in the world carries, so one candidate survives and an expert
- * names the builder outright. A house that takes every root carries seven
- * ordinary facets that a dozen other houses also carry, so the field stays
- * wide and telling WHICH ordinary house built an ordinary ruin is the genuinely
- * hard read. Both come from the same comparison.
  */
 export function matchHouseStyle(
     observedTags: readonly string[],
@@ -513,11 +360,8 @@ export function matchHouseStyle(
 }
 
 /**
- * How hard this building is to attribute, as the number of houses that match
- * it as well as the best one does.
- *
- * One means the architecture names its builder. Nine means the reader has
- * narrowed it to nine houses and has to find something else.
+ * How hard this building is to attribute, as the number of houses that match it as
+ * well as the best one does.
  */
 export function attributionField(
     observedTags: readonly string[],
@@ -546,14 +390,6 @@ export interface Precinct {
 
 /**
  * The compound's precincts, one per rank in the house's own ladder.
- *
- * The bars are interpolated from `admissionOrdinal` at the outermost wall to
- * `powerOrdinal` at the innermost, which is exactly the span the sect gate is
- * already calibrated over. A house that takes no applicants starts its outer
- * wall at admission rather than at nothing, because there is no probation
- * ground in a compound with no intake.
- *
- * Nothing here is a tier count. Four ranks make four precincts.
  */
 export function precinctsOf(faction: {
     ranks: readonly string[];
@@ -579,10 +415,6 @@ export function precinctsOf(faction: {
 
 /**
  * What a room is FOR. Content, stored as `data.purpose`, matched by string.
- *
- * The vocabulary is bounded because each entry has a spec below that decides
- * behaviour. Adding a purpose that behaves identically to an existing one is
- * decoration and should be a different NAME on the same purpose instead.
  */
 export type RoomPurpose =
     | 'gatehouse'
@@ -605,13 +437,6 @@ export type RoomPurpose =
     | 'treasury'
     /**
      * Where a house holds one of its own.
-     *
-     * The only room in this list that seals a PERSON rather than a thing, and
-     * that is the whole of why it is not `under_hall`: an under hall keeps
-     * something asleep and a punishment hall keeps somebody awake. It exists
-     * because a portfolio has to be a room somebody is in charge of, and the
-     * design owner's own example - *"punishment elder (you control the
-     * jails)"* - was the one office in the world with nowhere to be.
      */
     | 'punishment_hall'
     | 'residence'
@@ -664,13 +489,13 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
     // THE ONE ROOM CUT TO BE BAD GROUND, and the negative lift is the whole
     // mechanism rather than decoration. Every other room in this table either
-    // leaves the ground alone or improves it; this one is built to take the
-    // vein away from whoever is in it, so time spent here is time off the
-    // ladder. That is what makes holding somebody a punishment instead of an
-    // inconvenience, and it is read by anything that prices a stay rather than
-    // being asserted anywhere. Obvious enough that everybody in the house knows
-    // where it is - a discipline hall nobody can find deters nobody - and
-    // sealed, because what it holds can walk.
+    // leaves the ground alone or improves it; this one is built to take the vein
+    // away from whoever is in it, so time spent here is time off the ladder. That
+    // is what makes holding somebody a punishment instead of an inconvenience, and
+    // it is read by anything that prices a stay rather than being asserted
+    // anywhere. Obvious enough that everybody in the house knows where it is - a
+    // discipline hall nobody can find deters nobody - and sealed, because what it
+    // holds can walk.
     punishment_hall: { kind: 'vault', depth: 0.65, obviousness: 0.5, qiLift: -10, sealed: true, capacityPer: 0.04, hazards: ['formation'] },
     treasury: { kind: 'vault', depth: 0.9, obviousness: 0.25, qiLift: 0, sealed: true, capacityPer: 0.03, hazards: ['formation'] },
     // No qi lift. What seniority buys here is space and privacy, not a better
@@ -687,18 +512,6 @@ export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
 
 /**
  * Whether a room is one somebody is in charge of, and how far in it sits.
- *
- * Two fields off the private table rather than the table itself, because the
- * only question anybody outside this file has about a purpose is whether it has
- * a bar on it. **Sealed is the whole of the criterion**: nobody is Elder of the
- * Forecourt, and a room people walk through is not an office. Measured across
- * the catalog when this was written, the sealed rooms per house came out at
- * almost exactly the deciders per house, which is why no threshold is applied
- * here - the model was already in the table.
- *
- * `depth` comes with it so a caller handing several rooms to several people can
- * put the deepest one in the most senior hands without a second opinion about
- * which room that is.
  */
 export function roomAuthorityOf(purpose: RoomPurpose): { sealed: boolean; depth: number } {
     const spec = PURPOSE[purpose];
@@ -713,11 +526,6 @@ export function purposeOf(location: LocationRecord): RoomPurpose | null {
 
 /**
  * The house's own word for a room.
- *
- * Named off the style rather than off a per-faction table: a carved compound
- * has a "deep hall" where a terraced one has an "upper hall", and neither is a
- * rule that applies to one faction. The names are content, and the engine
- * matches on `data.purpose`, never on the name.
  */
 function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): string {
     const inward = style.idiom === 'carved' || style.idiom === 'buried';
@@ -754,11 +562,6 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
 
 /**
  * Everything the generator needs, and it is all already in the catalogs.
- *
- * Deliberately a flat input rather than `CatalogFaction`, so the generator is
- * testable against a fixture and so a house that is not a sect - a Dao house,
- * a court - can be grown from the same function without either side knowing
- * about the other's shape.
  */
 export interface CompoundInput {
     factionId: string;
@@ -794,12 +597,6 @@ export interface CompoundResult {
 
 /**
  * How many heads the compound was cut for, per unit of `capacityPer`.
- *
- * An inherited compound was cut by whoever was here before, so it is sized off
- * what THEY reached, which is the compound's mastery bar - and the house
- * currently in it is sized off its own admission bar. That gap is the whole of
- * "a yard cut for six hundred holding ninety", and it comes out of two columns
- * that already exist rather than out of a number anyone typed.
  */
 export function compoundCapacityUnit(input: CompoundInput): number {
     const built = input.inherited ? Math.max(input.powerOrdinal, 12) : input.admissionOrdinal + 8;
@@ -808,10 +605,6 @@ export function compoundCapacityUnit(input: CompoundInput): number {
 
 /**
  * Build the inside of a compound.
- *
- * Pure and deterministic: same seed and same input yield the same rooms, so
- * this can be called eagerly at seeding or lazily the first time somebody walks
- * through the gate, and the two produce the same compound.
  */
 export function growCompound(
     seat: LocationRecord,
@@ -922,13 +715,6 @@ export function growCompound(
 
 /**
  * Which rooms this house has.
- *
- * Every line reads a column. Nothing here is a per-faction table, and the
- * variety comes from the fact that the columns genuinely differ: a house that
- * takes no applicants has no dormitory, a house that answers to somebody has an
- * audience hall and a tribute room, a house that can make things has a
- * workshop, a house sitting on a vein has a chamber over it, and a house with
- * something asleep has somewhere to keep it.
  */
 export function roomsFor(input: CompoundInput): RoomPurpose[] {
     const out: RoomPurpose[] = ['gatehouse', 'forecourt', 'practice_yard', 'ancestral_hall'];
@@ -1069,18 +855,6 @@ function buildRoom(
 
 /**
  * The nodes, and the way in that the gate is not.
- *
- * `formationNodesTotal` over `formationNodesLit` has been in the sect catalog
- * for a long time and was read only as a ratio. A node is a physical object at
- * a physical point: a lit one carries the `formation` hazard and nothing else
- * is unusual about it, and a DARK one is a hole in the ward, so it carries a
- * `seam` link that lands inside a precinct without passing the gate. That is
- * what makes a compound's condition tactical rather than descriptive - the
- * nine-of-forty-one house is not merely poorer, it is porous.
- *
- * A bounded number of sites is built, each standing for its share of the
- * total, because forty-one locations for one compound is storage nothing reads.
- * The share is recorded on the site so the count stays traceable.
  */
 function growNodes(
     seat: LocationRecord,
@@ -1153,13 +927,13 @@ function growNodes(
 
         if (!lit) {
             darkNodeIds.push(node.id);
-            // The hole, and it opens onto the wall this node's array was
-            // covering. Nodes ring the whole compound, so node i covers
-            // precinct i - which means a house whose dark nodes happen to be
-            // the inner ones has a hole in its inner ward, and one whose dark
-            // nodes are on the perimeter merely has a leaky forecourt. Nobody
-            // chose which; `formationNodesLit` did, and it has been in the
-            // sect catalog for a long time being read only as a ratio.
+            // The hole, and it opens onto the wall this node's array was covering.
+            // Nodes ring the whole compound, so node i covers precinct i - which
+            // means a house whose dark nodes happen to be the inner ones has a hole
+            // in its inner ward, and one whose dark nodes are on the perimeter
+            // merely has a leaky forecourt. Nobody chose which; `formationNodesLit`
+            // did, and it has been in the sect catalog for a long time being read
+            // only as a ratio.
             const into = precinctRecords[i % precinctRecords.length];
             linkLocations(node, into, 'seam', 1);
             node.data.opensOnto = into.id;
@@ -1194,18 +968,6 @@ function resourcesFor(purpose: RoomPurpose): string[] {
 
 /**
  * `evaluateAccess` answers one location. An interior is a chain of them.
- *
- * A vault three walls in is guarded by all three walls, and asking only about
- * the vault is how somebody standing in the province gets told they can operate
- * in the treasury. So the verdict on a room is the STRICTEST verdict on the way
- * to it, and the location that produced it is named - because "you were stopped
- * at the inner gate" and "you were stopped at the vault door" are different
- * pieces of information and a player needs the first one.
- *
- * This is also what makes a dark formation node worth anything. Coming in
- * through the seam means the chain you walked is shorter, so the bars on the
- * walls you went around never applied. The way in that is not the gate is not a
- * special rule; it is a different path through the same function.
  */
 export interface ReachResult {
     /** The room asked about. */
@@ -1225,22 +987,10 @@ const LEVEL_ORDER: Record<AccessAssessment['level'], number> = {
 
 /**
  * Walk a path and return the worst thing on it.
- *
- * `path` is outermost-first and is the caller's - which is the whole point,
- * because the caller decides whether they came through the gate or through a
- * dead node, and the function does not care which.
  */
 export interface ReachOptions {
     /**
      * The location they arrived INSIDE of, having gone around the walls.
-     *
-     * Coming through a dead formation node puts somebody past the ward, so the
-     * ENTRY bars from the outside up to and including that point never applied
-     * to them. Survival and operational still do - being in the inner court
-     * without the rank to work there is exactly the state this models, and a
-     * hole in a wall does not confer standing. Measured: without this, the seam
-     * a dark node opens was worth nothing, because the landing precinct
-     * charged its own gate bar to somebody who had just come through the wall.
      */
     enteredAt?: string;
 }
@@ -1314,24 +1064,6 @@ export function pathTo(
 
 /**
  * What one person knows about one room.
- *
- * Knowledge of a room is NOT a flag on the room. The ruling this implements is
- * that knowledge follows engagement rather than altitude - a house engages with
- * its own compound and an outsider does not, however senior. So a disciple of
- * twenty years knows the back stair and a visiting elder four realms above them
- * does not, and that has to be expressible or the whole information model stops
- * at the door.
- *
- * Two inputs, and they do different work:
- *
- *   rank    buys the FRONT of the house. A high rank places every obvious room
- *           immediately, because those are the rooms rank is exercised in.
- *   years   buy the BACK of the house. An unobvious room is learned by being
- *           in the building, and nothing else substitutes for it.
- *
- * Which is why a visitor with courtesy rank and no years gets the audience hall
- * and never the archive. Reuses `KnowingStage` from the social layer; there is
- * no second discovery ladder here and none may be added.
  */
 export interface ViewerStanding {
     /** Index into the house's own rank ladder, or -1 for an outsider. */
@@ -1368,12 +1100,12 @@ export function roomStageFor(room: LocationRecord, viewer: ViewerStanding): Know
         return reached ? 'known' : familiarity >= 0.3 ? 'placed' : 'named';
     }
     // An unobvious room is learned by being in the building, and RANK DOES NOT
-    // SUBSTITUTE. The right to be somewhere and the knowledge that it is there
-    // are different facts: a twenty-year outer disciple knows the back stair,
-    // and the house's own elder of two years has the right to use it and does
-    // not know it is there. Measured - the first version gated `known` on
-    // reach, so no long-serving junior could ever get there and the ruling this
-    // implements was unexpressible.
+    // SUBSTITUTE. The right to be somewhere and the knowledge that it is there are
+    // different facts: a twenty-year outer disciple knows the back stair, and the
+    // house's own elder of two years has the right to use it and does not know it
+    // is there. Measured - the first version gated `known` on reach, so no
+    // long-serving junior could ever get there and the ruling this implements was
+    // unexpressible.
     if (familiarity >= 0.6) return 'known';
     if (reached && familiarity >= 0.25) return 'known';
     if (reached || familiarity >= 0.3) return 'placed';
@@ -1402,11 +1134,6 @@ export interface RoomDescription {
 
 /**
  * What this room looks like, worked out rather than remembered.
- *
- * Four lines on entry, more on inspection, and every one of them is a function
- * of purpose x style x condition x seed. Nothing here is stored on the record
- * and nothing here is authored per faction: two compounds read differently
- * because their columns differ, which is the only mechanism this file has.
  */
 export function describeRoom(
     room: LocationRecord,

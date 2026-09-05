@@ -1,88 +1,6 @@
 /**
- * Convergence: a ruin is not a place you can go, it is a place that is
- * periodically reachable.
- *
- * `OpeningCycle` has been on `LocationRecord` since the location layer was
- * written - `periodDays`, `openDays`, `phaseDay`, and `isOpenOn` to read it -
- * and nothing in play has ever consumed it. This module is the consequence
- * half, and it is the single best pressure the exploration loop has:
- *
- *   THE CLOCK IS HARD          the window is short and the site is deep. Every
- *                              day inward is a day you must also spend coming
- *                              out, so the decision is continuous rather than
- *                              made once at the door.
- *   OVERSTAYING IS FATAL       not because something kills you. Because the way
- *                              out closes and this particular site is not
- *                              reachable again for longer than you have left.
- *   NOBODY EVER CLEARS ONE     which is why a ruin can be picked over three
- *                              times and never emptied: the far rooms are not
- *                              guarded, they are out of reach of anybody who
- *                              also intends to leave.
- *
- * That last one is the quiet result and it is worth stating plainly, because it
- * means the depletion axis in `provenance.ts` is BOUNDED BY GEOMETRY rather
- * than by a rule somebody wrote. The sealed wing nobody has opened is often
- * just the one furthest from the door.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE ESCAPE HATCH IS SELF-CANCELLING, AND IT ALREADY EXISTED
- * ═════════════════════════════════════════════════════════════════════════
- *
- * There is a way to leave late. `spatial_folding` is a `CapabilityGrant` on the
- * Void Refinement class, written long before this module. Two properties of it
- * do all the work here:
- *
- *   IT IS HIGH        Void Refinement is ordinal 29. Somebody who can fold
- *                     space is not a person who explores ruins for a living, so
- *                     the way out exists, is real, and is never available to the
- *                     person who needs it.
- *   IT WANES          distance is what a waning convergence spends.
- *                     {@link pierceReach} scales the reach by how much of the
- *                     window is left, so it narrows exactly as the situation
- *                     gets worse and is at its weakest on the last day. That is
- *                     true at every rung, and it is the property that does the
- *                     work here - not shortness.
- *
- * The reach itself is the folder's own, off the one curve every fold in the
- * world is priced on - `how-far-somebody-can-fold-space-and-what-it-costs.ts`,
- * where it starts at one province and grows with the rung. So somebody very
- * high reaches deeper into a closing site than somebody who has just refined
- * themselves, and neither of them beats the clock: the waning multiplies
- * whatever they brought, and a call that goes out late fails on geometry
- * however grand the person answering it is.
- *
- * No consumable version of this may be added. An item that folds space on
- * demand is the same mechanic with its teeth pulled.
- *
- * ── But somebody else might come ──────────────────────────────────────────
- *
- * The rule above is about your own capability, and it holds. It says nothing
- * about anybody else's. Somebody who IS that high might come and get you, and
- * {@link rescuersFor} is the question "would anyone", answered from the
- * relationship rows that already exist rather than from a new system.
- *
- * Three things keep it honest, and all three are load-bearing:
- *
- *   IT IS LEGIBLE IN ADVANCE   you can ask before you go deeper, which is what
- *                              makes staying one more day a decision instead of
- *                              a gamble. Somebody with no such tie is playing a
- *                              much tighter game and should feel it.
- *   THEY MAY NOT COME          the precondition qualifies them; it does not
- *                              commit them. They can be elsewhere, they can
- *                              decline, and they can be too late - the reach
- *                              they are crossing is the same waning distance,
- *                              so a late call fails on geometry however high
- *                              the person answering stands.
- *   WHO COMES IS THE ANSWER    a rescuer's reach is their own, so the tie that
- *                              matters is not merely a tie - it is a tie to
- *                              somebody far enough up. Two people with the same
- *                              master and different masters are in different
- *                              amounts of trouble, and that is legible before
- *                              anybody goes anywhere.
- *   IT COSTS                   a rescue OPENS an obligation rather than closing
- *                              one. Being fetched out of a closing site is not
- *                              a thing that happens to nobodies, and afterwards
- *                              you owe somebody who can reach you anywhere.
+ * Convergence: a ruin is not a place you can go, it is a place that is periodically
+ * reachable.
  */
 
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -177,45 +95,11 @@ export const PIERCE_GRANT: CapabilityGrant = FOLD_GRANT;
 
 /**
  * Days of depth a full-strength fold covers.
- *
- * Short, because the grant says short. It is a bound on distance and never a
- * substitute for the clock: at the widest it buys about a week of depth, which
- * is less than the deep wings of a large site.
- *
- * It is the fold's reach at the rung where folding starts, read from
- * `how-far-somebody-can-fold-space-and-what-it-costs.ts` rather than restated,
- * because the two were the same physical fact carried in two constants.
- *
- * It is the FLOOR of the curve and not a ceiling on it. {@link pierceReach} and
- * {@link rescuersFor} both price a fold on the folder's own rung, so somebody
- * high enough reaches further in - which is the ruling everywhere else in the
- * world and has no reason to stop being true at a ruin door. What that never
- * touches is the waning: the reach is scaled by what is left of the window in
- * both, so it is at its weakest on the day it would matter most and no amount
- * of rank fixes having been asked too late.
- *
- * Where the constant is still the right number on its own is
- * {@link expeditionBudget}'s `bestEver`, which asks a question about the SITE
- * rather than about a person.
  */
 export const PIERCE_REACH_DAYS = FOLD_RANGE_AT_THE_FLOOR;
 
 /**
  * How far somebody could fold, from here, today.
- *
- * Their own reach off the world's one fold curve, then scaled by what is left
- * of the window, because the site is receding: as convergence wanes the
- * distance grows, so the same fold covers less of it. The consequence is the
- * design point - the escape is at its weakest on the day it would matter most,
- * and it reaches zero at the close, at every rung.
- *
- * The rung buying more reach does not soften this module. The self-cancelling
- * property was never that the fold is short; it is that anybody who can fold at
- * all is not a person who explores ruins for a living, and that is a statement
- * about who is standing in here rather than about how far they could go.
- *
- * Returns zero for anybody who cannot fold at all, which is nearly everybody
- * and certainly everybody who would be in here.
  */
 export function pierceReach(
     convergence: Convergence,
@@ -256,9 +140,6 @@ export interface ExpeditionBudget {
     /**
      * Wings this person cannot reach in one window at all, even standing at the
      * door on the day it opened and folding the whole way back.
-     *
-     * Somebody higher has a shorter list, which is what being higher is for.
-     * What nobody gets is a longer window.
      */
     unreachableWings: RuinWing[];
     /** The honest sentence for a narrator that wants one. */
@@ -267,11 +148,6 @@ export interface ExpeditionBudget {
 
 /**
  * What this person can actually get to before the way out shuts.
- *
- * The whole model is one division: half the remaining window is the deepest you
- * can be and still walk out, because the walk back costs what the walk in did.
- * A fold adds its reach to the RETURN leg only - it does not make you faster
- * going in, and it does not extend the window.
  */
 export function expeditionBudget(
     location: LocationRecord,
@@ -360,11 +236,6 @@ export interface Overstay {
 
 /**
  * What happens to somebody still inside when it closes.
- *
- * Nothing kills them. The arithmetic does: the site is not reachable again for
- * `periodDays`, and either that fits inside what they have left or it does not.
- * A cultivator high enough for the period to be a nap survives it and comes out
- * into a world that has moved on, which is a good outcome and a rare one.
  */
 export function resolveOverstay(
     location: LocationRecord,
@@ -406,12 +277,6 @@ export function resolveOverstay(
 
 /**
  * The ties that would put somebody on the road for you.
- *
- * Read off `RelationshipKind`, which already exists and already means these
- * things. There is no rescue relationship and none may be added: a master comes
- * for a disciple, a creditor comes for what they are owed, a patron comes for
- * an investment, and kin come because they are kin. Each is a different price
- * and the engine does not decide which.
  */
 export const RESCUE_PRECONDITIONS: Record<string, { kinds: RelationshipKind[]; minStanding: number; why: string }> = {
     master: {
@@ -469,15 +334,6 @@ export interface RescuePledge {
 
 /**
  * Who, if anybody, would come and get this person out - asked in advance.
- *
- * Legible before the decision, which is the whole point: a player who knows the
- * answer is nobody can still go deeper, and is doing it with their eyes open.
- *
- * Every candidate must clear three separate bars, and they are independent:
- * they must be able to fold space at all, they must hold a qualifying tie, and
- * the fold must reach the depth in question TODAY. The third is why calling
- * late fails - the reach is the waning distance, and it shrinks as the window
- * does.
  */
 export function rescuersFor(
     state: WorldState,
@@ -511,18 +367,11 @@ export function rescuersFor(
         }
         if (!matched) continue;
 
-        // Somebody at this height holds what their height makes possible; the
-        // grant list is potential and this reads it as such, which is the one
-        // place in the engine where "could hold it" is the right question -
-        // a rescuer is not present to be assessed, and the world does not store
-        // acquired grants for NPCs.
-        //
-        // AND HOW FAR THEY REACH IS THEIR OWN, off the same curve every other
-        // fold in the world is priced on. A master four realms above the one
-        // who came last time comes further in, which is what being that high
-        // is for. What it does not change is the waning: the reach is still
-        // scaled by what is left of the window, so a late call still fails on
-        // geometry and no amount of rank fixes having been asked too late.
+        // Somebody at this height holds what their height makes possible; the grant
+        // list is potential and this reads it as such, which is the one place in
+        // the engine where "could hold it" is the right question - a rescuer is not
+        // present to be assessed, and the world does not store acquired grants for
+        // NPCs.
         const reach = Number((
             foldRangeInWalkingDays(candidate.cultivation.realmOrdinal) * convergence.remaining
         ).toFixed(2));
@@ -558,12 +407,6 @@ export interface RescueResult {
 
 /**
  * Somebody is inside, the door is closing, and the call goes out.
- *
- * Mutates `state` on a success, because being fetched out is not free: the
- * subject leaves owing somebody who can reach them anywhere. The row is written
- * as `creditor`, which is exactly what the rescuer now is, and it goes on the
- * subject where every other inherited account already lives - so it outlives
- * them and lands on an heir like any other debt.
  */
 export function attemptRescue(
     state: WorldState,
@@ -635,13 +478,6 @@ export function attemptRescue(
 
 /**
  * A second scholar, and a different one.
- *
- * Placing the builder tells you what a house like that kept and where. Knowing
- * the cycle tells you WHEN YOU CAN GO, and the two are separate readings held
- * by separate people - which is what makes a properly equipped expedition three
- * people rather than one person with three advantages.
- *
- * Same predicate, same key mechanism, different subject.
  */
 export const SCHEDULE_READ_ORDINAL = 10;
 

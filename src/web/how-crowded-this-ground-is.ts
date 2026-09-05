@@ -17,7 +17,7 @@
  * a hundred-year lifespan.
  *
  * The engine knew it exactly and never said it. Its own encounter line reads
- * "Sweptground comfortably carries 3 cultivators and currently holds 9"; the
+ * "Burnt Earth comfortably carries 3 cultivators and currently holds 9"; the
  * character sheet said `Ambient qi: THIN` and nothing whatever about who else
  * was standing there. So the highest-value decision available to a player was
  * invisible, and the run that found it died at the Foundation wall while its

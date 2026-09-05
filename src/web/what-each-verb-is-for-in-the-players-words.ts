@@ -396,7 +396,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: ['intent', 'target', 'topic'],
         intents: [
             'leave', 'promote', 'stipend', 'standing', 'join', 'siphon', 'order',
-            'recruit', 'admission', 'curriculum', 'expel', 'duty', 'donate', 'guest'
+            'recruit', 'admission', 'curriculum', 'expel', 'duty', 'donate', 'guest',
+            // Dispatched on by the engine and undeclared until now, so the phase-1
+            // glossary never told a model they existed and nothing typed reached them.
+            'summons', 'refuse'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to

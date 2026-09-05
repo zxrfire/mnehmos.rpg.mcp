@@ -1,39 +1,5 @@
 /**
  * Target resolution.
- *
- * `interact`, `investigate`, `move`, `refine`, `gather` and `train_technique`
- * all take a free-text subject, and free text is exactly where a hallucinated
- * entity would get in. So nothing here trusts the string: it is matched against
- * real rows and real catalog entries, and a subject that matches nothing
- * resolves to nothing. The caller then refuses the action rather than narrating
- * an encounter with a person who does not exist.
- *
- * That is the second half of the closed-enum protection. The enum stops a model
- * inventing an ACTION; this stops it inventing a THING to do it to.
- *
- * ── And a third gate: knowledge ───────────────────────────────────────────
- * Existing is not enough. docs/world/houses/discovery.md: never reference an entity
- * the player has no knowledge record for. So resolution of people, factions and
- * places is scoped to a `KnowledgeScope` - what this cultivator has heard of,
- * plus whoever is physically standing in front of them. A sect the player has
- * never heard the name of does not resolve, and the refusal is worded so that
- * it does not confirm the sect exists either. Ignorance has to be real to be
- * worth anything.
- *
- * The item catalogs (techniques, pills, herbs, formulas) are not scoped; see
- * the note on `KnownEntityKind` for why.
- *
- * ── And a fourth: structure ───────────────────────────────────────────────
- * docs/world/writing/tone.md: nobody tells the protagonist how anything works. Knowing
- * that a sect exists is not knowing that it admits from ordinal 3, that its
- * ranks run Barrow Hand to Company Master, or that it is neutral rather than
- * righteous - those are schema categories, and a category handed to a narrator
- * becomes a briefing, because that is what a category in a prompt is for.
- *
- * So every resolver returns two channels. `facts` is what a person would
- * perceive or has been told, and is the only thing a prompt ever sees.
- * `structure` is the governance, the ladder, the ordinals and the grades, and
- * goes to the inspector, where mechanical precision is the entire point.
  */
 
 import type Database from 'better-sqlite3';
@@ -41,6 +7,11 @@ import type { Cultivator } from '../schema/cultivation.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
+import { describePhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
+import {
+    A_FACE_YOU_HAVE_SOMETHING_BEHIND
+} from '../engine/social/what-a-look-at-somebody-reaches.js';
+import { isAtLeast } from '../engine/social/discovery.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { describeStanding, rungAndOrdinal } from './facts.js';
@@ -77,50 +48,26 @@ export type EntityKind =
     | 'place'
     /**
      * A ruin, a trial or a grave, resolved to its PRE-ENTRY FACE.
-     *
-     * Distinct from `place` because a site is not somewhere anybody lives
-     * and, today, is not anywhere at all - the catalog carries no locational
-     * field on either half of `SiteSchema`. See `resolveNameableSite`.
      */
     | 'site'
     /**
-     * A RUNG on a house's ladder, used as a way of referring to whoever
-     * holds it - *the grand elder*, *the Pavilion Master*.
-     *
-     * Not `cultivator`, deliberately. The subject of the sentence is the
-     * office, and resolving the office must not hand over the person: the
-     * asker may be entitled to know the rung exists and entitled to nothing
-     * about whoever stands on it. See `resolveRankOnALadder`.
+     * A RUNG on a house's ladder, used as a way of referring to whoever holds it -
+     * *the grand elder*, *the Pavilion Master*.
      */
     | 'rank'
     /**
      * A thing in the world, resolved off its own row.
-     *
-     * Not gated, for the reason `resolveObject` gives at length: the player
-     * receives the reading their rung and their reference support, never the
-     * catalog entry, so naming a thing hands nobody an answer key.
      */
     | 'object'
     /** A line on the mortal price board. Not gated: the player was shown it. */
     | 'price'
     /**
      * The asker, looking at themselves. Deliberately NOT `cultivator`.
-     *
-     * A caller that sees `cultivator` writes a knowledge record for the subject
-     * and reads the trust ladder against it, and both are nonsense pointed at
-     * the person doing the looking: it would put the player in their own list
-     * of people they have heard of. A kind nothing switches on gets the facts
-     * narrated and none of that.
      */
     | 'self';
 
 /**
  * Who is asking, and what they have heard of.
- *
- * `here` is the whole reason this is not simply a knowledge lookup: you can see
- * who is in the room with you whether or not anyone ever said their name.
- * discovery.md calls that stage `encountered`, and the caller turns it into a
- * real knowledge record with source `witnessed` once it resolves.
  */
 export interface KnowledgeScope {
     gate: KnowledgeGate;
@@ -129,38 +76,16 @@ export interface KnowledgeScope {
     here: string | null;
     /**
      * Everybody standing in the same place, from both populations.
-     *
-     * Supplied rather than looked up because resolving it needs the world, and
-     * the world is loaded once per action rather than once per lookup. An empty
-     * list means nobody is about; an absent list means nobody asked.
      */
     present?: readonly RosterEntry[];
     /**
      * The world's own object rows.
-     *
-     * Supplied rather than looked up, for the same reason `present` is: the
-     * world is loaded once per action and not once per lookup. An empty list
-     * means the world holds nothing here; an absent one means nobody asked, and
-     * `resolveObject` answers null to both rather than reaching for the catalog
-     * - see the note there on why a catalog answer would be a lie.
      */
     objects?: readonly ObjectRecord[];
 }
 
 /**
  * The world location a free-text place name refers to.
- *
- * A cultivator's `location` is free text by design - the schema says the engine
- * stores it and never computes with it - while world NPCs stand at location
- * ids like `loc-region-low-fall-sweptground`. Nineteen people were standing in
- * Sweptground and the player could not see one of them, because "Sweptground"
- * and that id never compared equal.
- *
- * The join is by NAME, because the name is the one thing both sides genuinely
- * agree on: the world's locations carry the display names the content authored,
- * and the display name is what the player typed. An unmatched name is not an
- * error - it is a road, or a hillside, or somewhere the gazetteer does not
- * name, and the honest answer is that there is nobody there.
  */
 export function worldLocationFor(world: WorldState, place: string | null): LocationRecord | null {
     const wanted = (place ?? '').trim().toLowerCase();
@@ -169,16 +94,8 @@ export function worldLocationFor(world: WorldState, place: string | null): Locat
     const exact = world.locations.find(l => l.name.trim().toLowerCase() === wanted);
     if (exact) return exact;
 
-    // "the Low Fall" against "Low Fall", and the id form for anything that
-    // reached us already keyed.
-    //
-    // This comment was here before the code did it. `placeKey` keeps the
-    // article and the parser strips it, so the two sides could never agree for
-    // any location whose name begins with "the" - which in a generated world is
-    // 26 of 33, including every ruin, every scar and all four sites at the qi
-    // ceiling. `loosePlaceKey` drops the article on BOTH sides; the stored key
-    // is untouched, because changing that orphans every knowledge record ever
-    // written.
+    // "the Jade Gorge" against "Green Water City", and the id form for anything
+    // that reached us already keyed.
     const key = placeKey(wanted);
     const loose = loosePlaceKey(wanted);
     return world.locations.find(l =>
@@ -206,16 +123,6 @@ export interface ResolvedEntity {
     structure: string[];
     /**
      * The numbers a resolver needs, when this entity is a person.
-     *
-     * Everything above is either narratable prose or an inspector string, and
-     * a caller that needs the rung to price something against was reduced to
-     * parsing `structure` for it. These are the same values that line already
-     * carries, exposed as numbers so `engine/social-leverage/` can be handed a
-     * party without re-fetching the row.
-     *
-     * Absent for a sect or a place, and absent for a person the player has not
-     * resolved to a real row. Nothing here is ever narrated: it is the same
-     * inspector-only material as `structure`, in a shape code can read.
      */
     party?: {
         realmOrdinal: number;
@@ -226,29 +133,10 @@ export interface ResolvedEntity {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE STRUCTURE CHANNEL, IN WORDS
-//
-// This channel goes to the inspector AND to the play log, so a player reads
-// it - see the `structure` field comment in facts.ts for the standard it is
-// written to. Every resolver below states its catalog row as sentences with
-// the figures intact rather than as `Object.entries` joined with commas.
-//
-// What resolving the enum keys buys: `spiritRoot=single_metal` is a database
-// key and "Single Metal Root" is the thing it names, and the second is not
-// less precise than the first. Where there is no name to resolve to, the raw
-// key is passed through rather than guessed at.
-//
-// And an ordinal always arrives with its rung. `ordinal` is a field name, not
-// a rank, and every other surface in the game says "Qi Condensation Layer 1".
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The display name for a spirit-root key, falling back to the key.
- *
- * `getSpiritRoot` throws on an unknown key, and an inspector read must never be
- * the thing that takes a turn down. A root the catalog has never heard of reads
- * oddly instead of reading wrongly.
  */
 function rootName(key: string): string {
     return SPIRIT_ROOTS.find(root => root.key === key)?.name ?? key;
@@ -286,11 +174,6 @@ function normalise(value: string): string {
 
 /**
  * Score a candidate name against what the player typed.
- *
- * Exact beats prefix beats containment beats shared words, and anything below
- * one shared word scores zero. Deliberately conservative: a near-miss that
- * resolves to the wrong sect is worse than a miss that asks the player to be
- * clearer, because the near-miss becomes a real state change.
  */
 export function matchScore(query: string, candidate: string): number {
     const q = normalise(query);
@@ -298,46 +181,16 @@ export function matchScore(query: string, candidate: string): number {
     if (q.length === 0 || c.length === 0) return 0;
     if (q === c) return 100;
 
-    // ── ONE WORD IS NOT A NAME ───────────────────────────────────────────
-    //
-    // FOUND BY PLAYING, and it is the same defect the two-letter rule below
-    // was written for, one size up. Reproduced against a live world:
-    //
-    //   "origin"     -> Chaos Origin Scripture              60, matched
-    //   "name"       -> Nameless Witness Stance             80, matched
-    //   "manual"     -> Lesser Qi-Gathering Manual          60, matched
-    //   "court"      -> Storm Tyrant Court                  60, matched
-    //   "scripture"  -> Five-Breath Circulation Scripture   60, matched
-    //
-    // What that cost in play: `I ask the tortoise where it came from` had its
-    // topic reduced to the word "origin", which resolved to an art nobody had
-    // mentioned, and the asking gate then correctly refused - so the player was
-    // told that this person had never heard of the Chaos Origin Scripture. Two
-    // turns spent, nothing learned, and a beautifully written wrong answer,
-    // because the model in front of it made the nonsense convincing.
-    //
-    // A single common word carried in a long catalog name is not evidence the
-    // player meant that row; it is evidence the catalog is large. So a one-word
-    // query wins on a longer name only when it supplies HALF that name's own
-    // significant words - which is what makes "wheatgate" reach Wheatgate
-    // Market and "lanshi" reach Ning Lanshi, while leaving "storm" and
-    // "manual" unresolved, as they should be. A multi-word query is unchanged.
-    //
-    // Below the bar it does not score zero; it falls through to the word
-    // overlap, which is the honest reading of one word in common.
+    // ONE WORD IS NOT A NAME
     const oneWordAgainstAName = !q.includes(' ') && c.includes(' ');
     if (!oneWordAgainstAName || carriesHalfTheName(q, c)) {
         if (c.startsWith(q) || q.startsWith(c)) return 80;
     // Containment needs the shorter side to be distinctive, or a two-letter
     // fragment buried in the middle of a word wins outright at 60 - above
-    // MATCH_THRESHOLD. Played: after buying the Lesser Qi-Gathering Manual,
-    // `I learn it` resolved to Bitter Frost Needle, because "it" is inside
-    // "B-it-ter", and answered about a rung-8 art the cultivator had never
-    // heard of. `I learn the manual` was correct all along.
-    //
-    // Two characters is not a guess: the word-overlap branch immediately below
-    // already discards words of two letters or fewer for exactly this reason,
-    // so this makes one rule out of two halves that disagreed.
+    // MATCH_THRESHOLD. Played: after buying the Lesser Qi-Gathering Manual, `I
+    // learn it` resolved to Bitter Frost Needle, because "it" is inside "B-it-ter",
+    // and answered about a rung-8 art the cultivator had never heard of. `I learn
+    // the manual` was correct all along.
         if (Math.min(q.length, c.length) > 2 && (c.includes(q) || q.includes(c))) return 60;
     }
 
@@ -350,12 +203,6 @@ export function matchScore(query: string, candidate: string): number {
 
 /**
  * Whether one word accounts for half of what a name is made of.
- *
- * The name's own significant words are the denominator, not its characters: a
- * character ratio reads "nine peaks" against the Nine Peaks Ascetic Order as
- * 42% and refuses a fragment the game itself prints, while reading "origin"
- * against the Chaos Origin Scripture as 30% and refusing it for the right
- * reason. Words are what a person types and words are what a name is.
  */
 function carriesHalfTheName(q: string, c: string): boolean {
     const words = c.split(' ').filter(w => w.length > 2);
@@ -368,25 +215,12 @@ export const MATCH_THRESHOLD = 55;
 
 /**
  * The ways somebody refers to their own house without naming it.
- *
- * Anchored, so a real house called "The Sect of Our Own Making" is still
- * matched by name rather than swallowed here. `own` is included because "my own
- * sect" is as natural as "my sect"; a bare "the sect" is NOT, and deliberately:
- * standing in front of a stranger's compound and saying "the sect" means that
- * one, and answering with the player's own would be the substitution bug in a
- * different coat.
  */
 export const MY_OWN_HOUSE =
     /^(?:my|our)\s+(?:own\s+)?(?:sect|house|order|school|clan|hall|pavilion|court)$/i;
 
 /**
  * Words that stand in for a thing rather than naming one.
- *
- * A bare pronoun is never an entity's name, so it must never be scored against
- * the catalog - the best it can do is find something that happens to contain
- * its letters. Resolving what "it" refers to is a different job from matching a
- * name, and this file does not do that job; returning null is the honest answer
- * and lets the caller refuse in words the player can act on.
  */
 export const STANDS_IN_FOR_A_THING = /^(?:it|them|they|him|her|he|she|that|this|those|these|one|its)$/i;
 
@@ -407,25 +241,6 @@ function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string
 
 /**
  * The one thing they are carrying that answers to the word, or nothing.
- *
- * ── WHY THIS IS NOT `best` WITH A LOWER BAR ──────────────────────────────
- *
- * `matchScore`'s one-word rule - a bare word wins on a longer name only when it
- * supplies half that name's own significant words - exists because a common
- * word carried in a long catalog name is evidence the CATALOG IS LARGE rather
- * than evidence the player meant that row. It is right, and it is the reason
- * "manual" no longer reaches a book nobody mentioned.
- *
- * Over what somebody is carrying, that reasoning inverts. A pouch holds one or
- * two things; there is no largeness for a common word to be evidence of, and a
- * player who says "the manual" while holding exactly one manual has named it as
- * precisely as anybody can. So a shared significant word is enough here.
- *
- * The safety property is UNIQUENESS rather than a score. If two things they are
- * carrying answer to the word, this returns nothing and the caller refuses -
- * because "which one" is a question the player can answer and a guess is not.
- * That is the same rule `nearestVocabularyWord` follows for a tie, for the same
- * reason: an ambiguity's honest answer is the refusal, not a coin toss.
  */
 function theOneTheyHold<T>(query: string, items: readonly T[], nameOf: (item: T) => string): T | null {
     if (STANDS_IN_FOR_A_THING.test(query.trim())) return null;
@@ -433,19 +248,7 @@ function theOneTheyHold<T>(query: string, items: readonly T[], nameOf: (item: T)
     return hits.length === 1 ? hits[0]! : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // REDACTION
-//
-// Resolving an entity the player knows about is not the end of it. The facts
-// ABOUT that entity name other entities - the sect a person belongs to, the
-// territory a sect is seated in, the rivals it feuds with - and those are
-// exactly the ancient names discovery.md is protecting. A leak through the
-// facts of a permitted lookup is still a leak, and it is the subtle one.
-//
-// So every name inside a fact goes through here first. What comes back for an
-// unknown name is not a blank: it is the shape of the thing without the label,
-// which is what the player would actually perceive.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** A name the holder has heard, or a description of it that names nothing. */
 function nameOrShape(
@@ -461,18 +264,6 @@ function nameOrShape(
 
 /**
  * A place name, or an admission that the player could not name it.
- *
- * The value handed in is whatever that roster row carries, and the two
- * populations carry different things: a `cultivators` row's `location` is free
- * text - a display name - and a world NPC's is a location id. Both reach here.
- *
- * So a gate that passes is not licence to print the argument. Where the holder
- * holds a record under the id, the record's own NAME is what gets said, because
- * nobody in this world says `loc-sect-azure-dew-sect-ground`. Found the moment
- * sect grounds became somewhere a player could learn about: the read went
- * straight from "somewhere this cultivator could not name" to printing the id,
- * which is the same defect as naming a ruin by its slug and breaks the rule
- * that a name the game prints is a name the game must accept.
  */
 function placeOrShape(scope: KnowledgeScope | undefined, place: string | null): string {
     if (!place) return 'unrecorded';
@@ -511,19 +302,6 @@ function knownNamesOnly(
 
 /**
  * One line saying what somebody's own record makes them, and who can use it.
- *
- * The live read of `personal-record.ts`, and it runs for ANYBODY the resolver
- * finds - the player, an NPC in a square, a name off the roster - because the
- * question and the rows are the same for all of them. A world in which only the
- * player has a reputation is a world in which nobody else has done anything.
- *
- * `backing` is read off the roll rather than supplied: `Backing`'s own three
- * values are somebody nobody answers for, somebody on a roll their house would
- * not put its weight behind, and somebody a house would have to be dealt with
- * over - which is a rank on a roll, no rank on a roll, and no roll.
- *
- * Holders are placed from the same candidate list the resolver already built,
- * so a holder this reader cannot place is left out rather than invented.
  */
 function whatTheirRecordSays(
     repos: CultivationRepos,
@@ -624,6 +402,22 @@ export function resolveCultivator(
         `Last known to be at ${placeOrShape(scope, match.location)}.`
     ];
 
+    // WHAT THEIR BODY IS, AND THE ONE THING THAT GATES IT
+    const theirPhysique = physiqueOrNull(match.physique);
+    if (theirPhysique) {
+        const met = !scope || isAtLeast(
+            scope.gate.stageOf(scope.holderId, 'cultivator', match.id),
+            A_FACE_YOU_HAVE_SOMETHING_BEHIND
+        );
+        facts.push(
+            met
+                ? `${match.name} is ${theirPhysique.tell}. It is a ${theirPhysique.name}, and `
+                  + 'there are people who would cross a province for one.'
+                : `Whatever ${match.name}'s body is, it is not something anybody has learned `
+                  + 'at second hand. It would take standing in front of them.'
+        );
+    }
+
     if (match.untreatedInjuries > 0) {
         // "1 injuries are open", found in play. A count printed against a fixed
         // plural is the engine reading its own column out loud, and this is a
@@ -636,18 +430,7 @@ export function resolveCultivator(
         );
     }
 
-    // ── what the name is worth ──
-    //
-    // `docs/world/houses/trust.md` puts names third in the hierarchy - below the arts
-    // and below the objects - and this is the whole of what that rung buys: a
-    // surname that carries a house on its own, which almost none do. Reading a
-    // face gives nothing; reading a name gives corroboration at best.
-    //
-    // Gated on having heard of the house, like every other name in these
-    // facts. A reserved name is a fact about the world and the LINK from it to
-    // a house is knowledge, so a cultivator who has never heard of the Pavilion
-    // learns nothing from meeting a Ru - which is correct rather than coy, and
-    // is why this sits behind the same gate `affiliation` does.
+    // what the name is worth
     const lineage = readALineageOffAName(match.name);
     if (lineage.settles
         && lineage.houseIdItCarriesOnItsOwn
@@ -696,23 +479,13 @@ export function resolveCultivator(
                 ? `On the roll of ${match.sectId}`
                   + `${match.sectRank ? `, at the rank of ${match.sectRank}` : ', at no rank in it'}`
                 : 'On no house\'s roll, and so at no rank in one')
-            + `. ${rootName(match.spiritRoot)}. ${match.spiritStones} spirit stones and `
+            + `. ${rootName(match.spiritRoot)}. `
+            + (theirPhysique ? `${theirPhysique.name}. ` : '')
+            + `${match.spiritStones} spirit stones and `
             + `${match.untreatedInjuries} untreated `
             + `injur${match.untreatedInjuries === 1 ? 'y' : 'ies'}. Last recorded at `
             + `${match.location ?? 'nowhere the row states'}.`,
-            // ── WHAT THEIR OWN RECORD MAKES THEM ─────────────────────────
-            //
-            // Righteous, neutral or demonic off the obligation ledger rather
-            // than off whose roll they are on, and who among the people
-            // holding something is in a position to use it. Derived on every
-            // read, because what somebody IS changes every time they do
-            // something and a stored word would be stale the moment after it
-            // was written - `engine/social-leverage/personal-alignment.ts`.
-            //
-            // On the MECHANICAL channel and not in `facts`, on this file's own
-            // precedent two entries up: the inspector states what the prose
-            // gate withholds. Who is coming for somebody is exactly the kind
-            // of thing a stranger does not learn by looking at them.
+            // WHAT THEIR OWN RECORD MAKES THEM
             whatTheirRecordSays(repos, match, candidates)
         ],
         // The same three values the line above prints, as numbers. See the
@@ -738,18 +511,7 @@ export function resolveSect(
     const heard = (id: string): boolean =>
         !scope || scope.gate.isAwareOf(scope.holderId, 'sect', id);
 
-    // ── "my sect" ──
-    //
-    // A possessive is not a name and cannot be matched like one, so "I ask my
-    // sect for a technique" resolved to nobody while the refusal printed
-    // "Known to this cultivator: Azure Dew Sect" in the same breath - the
-    // membership row was right there. Nobody says the name of their own house
-    // when they mean their own house.
-    //
-    // It bypasses the knowledge gate, and that is correct rather than a leak:
-    // the gate exists so a name has to reach a cultivator before they can use
-    // it, and somebody's own house is the one name they cannot fail to hold.
-    // A possessive from somebody who serves nothing still resolves to nothing.
+    // "my sect"
     if (memberOf && MY_OWN_HOUSE.test(query.trim())) {
         const own = repos.sects.getById(memberOf);
         if (own) {
@@ -833,12 +595,6 @@ export function resolveSect(
 
 /**
  * A sect, as somebody outside it perceives it.
- *
- * Alignment is never stated: "righteous" and "demonic" are the schema's words,
- * and a person forms that judgement by watching what a sect does, if they ever
- * form it at all. The rank ladder is stated only to a member, because a member
- * lives inside it - to everybody else it is a set of titles overheard without
- * an explanation, which is exactly the texture tone.md asks for.
  */
 function sectFacts(
     name: string,
@@ -861,48 +617,6 @@ function sectFacts(
 
 /**
  * WHAT THEY ARE HOLDING BEATS WHAT IS IN THE BOOK.
- *
- * ── THE TURN THIS WAS FOUND ON ───────────────────────────────────────────
- *
- * A player at Qi Condensation Layer 1 had one thing in the world: the Lesser
- * Qi-Gathering Manual, bought two turns earlier, the only book they held. They
- * typed *"I open the manual and start learning it"*. The ruling:
- *
- *   Azure Dew Gathering Canon: refused.
- *   The engine declined, and the reason it filed is no copy of this book.
- *
- * "the manual" reached a book they had never seen, off a catalog of hundreds,
- * while the one in their hands was never considered - and the refusal was then
- * perfectly reasoned about the wrong object: *"There is no such book to be
- * found on any stall in the market; it is a thing kept in private houses."*
- * Naming it exactly worked. So the only way through was to know and type the
- * catalog title of the object in their own pouch, which is the
- * you-must-know-a-string failure `AGENTS.md` rules out, sitting on the single
- * most load-bearing turn in the game: the whole opening is one blocker, and it
- * is *"a book, or somebody willing to teach them one"*.
- *
- * ── THE ORDER, AND WHY IT IS AN ORDER RATHER THAN A BETTER MATCHER ───────
- *
- * A matcher will always find something plausible in a catalog of hundreds, and
- * plausible is exactly how a book nobody had seen beat the copy in the pouch.
- * What fixes it is precedence, not scoring:
- *
- *   1. what the player HOLDS
- *   2. what is standing in front of them
- *   3. the catalog
- *
- * A bare noun - "the manual", "the sword", "the pill" - means the thing in
- * their own hands every time, and the catalog is where you go only when nothing
- * they hold answers to the word. This function implements 1 and 3; 2 has no
- * meaning for a book. The general form belongs to one resolver every verb goes
- * through - `learn the manual`, `read the manual`, `sell the manual` and `give
- * him the manual` all have the same right answer - and it is written up in
- * `AGENTS.md` under "The parser names the act. The engine is the one that says
- * no". This is the demonstrated case, fixed where it was demonstrated.
- *
- * The held set is not a second catalog: `copiesHeldBy` returns technique ids,
- * and they are looked up in `TECHNIQUES` like everything else. What changes is
- * which rows are searched first.
  */
 export function resolveTechnique(
     repos: CultivationRepos,
@@ -1025,36 +739,8 @@ export function resolvePill(query: string): ResolvedEntity | null {
 }
 
 /**
- * A thing somebody is holding, or a thing with a name.
- * ── THE ROW, NEVER THE CATALOG ───────────────────────────────────────────
- *
- * Resolved out of `scope.objects`, which is the world's own table, and never
- * out of `artifacts.ts`. Two different reasons and both matter: `possessorId`
- * and `ownerId` are separate facts that only a row carries, and a catalog
- * lookup would describe a thing that is not anywhere - silently confirming an
- * artifact exists in a world where it may have been destroyed, or was never
- * placed. A ruined row still resolves, because being able to find out that the
- * thing is gone is the whole of why the row is kept.
- *
- * ── UNGATED, AND THE GRADING DOES THE WORK A GATE WOULD DO BADLY ─────────
- *
- * Naming any object is allowed, exactly as naming any technique or pill is. It
- * hands nobody the answer key, because THE PLAYER DOES NOT RECEIVE THE CATALOG
- * ENTRY - they receive the reading their own rung and their own reference
- * support, out of `artifact-recognition.ts`. A carter naming the Standing Edge
- * gets a carter's answer. The design owner's ruling, in one line:
- *
- *   *"if you inspect a counted but untracked artifact you get a generic
- *   description. ownership of this IS tracked. a tracked one, and you are aware
- *   of what it is, you get a damn good one. all dependent on your own
- *   cultivation and awareness, ofc."*
- *
- * ── AND `possessorId` IS HOW "THE SWORD IN HIS HAND" RESOLVES ────────────
- *
- * That phrasing names a thing THROUGH the person holding it, which is a lookup
- * by possessor rather than by name and is what a player actually types. It runs
- * second, so a bare person's name is still a person: `resolveCultivator` is
- * ahead of this in `resolveAnything` and takes them first.
+ * A thing somebody is holding, or a thing with a name. ── THE ROW, NEVER THE
+ * CATALOG ───────────────────────────────────────────
  */
 export function resolveObject(
     query: string,
@@ -1097,17 +783,7 @@ export function resolveObject(
     return {
         kind: 'object',
         id: thing.id,
-        // ── THE NAME IS PART OF THE ANSWER, NOT A LABEL ON IT ────────────
-        //
-        // Callers print this, so handing back the catalog name for a thing the
-        // reader cannot place would give away the entry the grading exists to
-        // withhold - and it reads as a contradiction on the page: *"The
-        // Standing Edge. You could not say what it is."* Played, that is
-        // exactly what came out.
-        //
-        // `id` is untouched, so an inspector, a log line and any caller that
-        // needs to find the row again still can. What is withheld is only what
-        // the player is told.
+        // THE NAME IS PART OF THE ANSWER, NOT A LABEL ON IT
         name: read.reading === 'nothing' && !read.nothingToRecognise
             ? 'Something you cannot place'
             : thing.name,
@@ -1126,11 +802,6 @@ export function resolveObject(
 
 /**
  * What a reader actually comes away with, graded.
- *
- * Four answers and they are not degrees of one thing. The counted one and the
- * out-of-your-depth one in particular are real readings rather than softer
- * versions of the good one - see `artifact-recognition.ts` on why the two axes
- * do not fail the same way.
  */
 function whatTheySeeLookingAtIt(
     thing: ObjectRecord,
@@ -1187,17 +858,6 @@ function whatTheySeeLookingAtIt(
 
 /**
  * A line on the price board.
- *
- * The board is the only list in the game the player has actually been shown -
- * `market` prints it verbatim - so a name off it is the one free-text subject
- * a player can be sure they typed correctly, and it must resolve. Until this
- * existed "a visit from the mortal physician" went to the party resolver,
- * which looked for somebody standing in the square with that name and reported
- * that nobody by it was there.
- *
- * Matched against the name and against the name with its qualifying clause
- * stripped, because the board reads "Mortal physician, one visit" and nobody
- * types the comma.
  */
 export function resolvePrice(query: string): ResolvedEntity | null {
     const wanted = query.trim();
@@ -1233,19 +893,6 @@ export function resolvePrice(query: string): ResolvedEntity | null {
 
 /**
  * A place.
- *
- * The deliberate exception to "resolve or fail". `Cultivator.location` is
- * documented in the schema as free text that the engine stores and lists but
- * never reasons about, and there is no gazetteer to check a name against yet -
- * so a plain, non-empty place name resolves to itself. What is checked is that
- * a name was given at all: "I set out." names nowhere, and sending the
- * cultivator to a place called "I set out." would quietly corrupt the run.
- *
- * TODO(world): once the world layer's `world_locations` store and
- * `assessCapability` are available, resolve against real locations and route
- * the attempt through the capability predicates instead, so that entering a
- * sealed ruin is answered by "what happens when you try" rather than by whether
- * a string was non-empty.
  */
 export function resolvePlace(query: string | undefined): ResolvedEntity | null {
     const cleaned = (query ?? '').trim().slice(0, 80);
@@ -1269,50 +916,9 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
 
 /**
  * Anything at all: a person, a faction, an art, a formula, a herb, a pill.
- *
- * Order is by how consequential a mistaken match would be. Resolving a person
- * wrongly is worse than resolving a herb wrongly, so people are checked first
- * and the first entity to clear the threshold wins.
  */
 /**
  * The one subject in the world that never needed resolving, and did not resolve.
- *
- * ── WHAT IT COST ────────────────────────────────────────────────────────
- *
- * Fifteen examine sentences typed on a fresh run, deterministic reader, no
- * model. Ten of them came back with the same sentence:
- *
- *   > I examine myself
- *   > I examine my injuries
- *   > I examine my meridians
- *   > I examine my body
- *   > I examine my spirit root
- *   > I examine my foundation
- *   > I examine my cultivation
- *       "You go over Millrun looking for it and it is not the kind of place
- *        that has one. Either it is somewhere else, or it is nowhere, and
- *        standing here turning it over is not going to settle which."
- *
- * The engine held every one of those facts and printed them, in full and
- * well, one sentence earlier for "who am I". What it could not do was find
- * the person asking, because `resolveAnything` searches the roster with the
- * asker excluded by id, then the houses, then the map, then three catalogs,
- * and the asker is in none of them.
- *
- * Two rules broken at once, and the second is the worse. The refusal names no
- * route - it does not even repeat the words that failed - and it says the
- * place does not have one, about a body that is standing in it. A player
- * reading that learns that the game cannot see them.
- *
- * ── WHY THE WHOLE STANDING RATHER THAN THE PART ASKED FOR ────────────────
- *
- * "my injuries", "my spirit root" and "my foundation" are three questions and
- * this returns one answer to all three, which is deliberate: slicing the sheet
- * by which noun was typed means a player who says "my qi" and gets a line
- * about qi cannot tell whether the rest exists. The sheet is short, it is
- * theirs, and a person taking stock of themselves takes stock of all of it.
- * What is withheld here is what is withheld everywhere - the rule behind each
- * number - and that is `structure`'s business, not this function's.
  */
 function resolveTheAskerThemselves(
     query: string,
@@ -1350,6 +956,15 @@ function resolveTheAskerThemselves(
             : `On a roll${self.sectRank ? `, addressed as ${self.sectRank}` : ', at no rank in it'}.`
     ];
 
+    // AND WHAT THIS BODY IS, WHICH THEY HAVE ALWAYS KNOWN
+    const ownPhysique = physiqueOrNull(self.physique);
+    if (ownPhysique) {
+        facts.push(
+            `${describePhysique(ownPhysique)} They have known since they were small, and so `
+            + 'has everybody who ever touched them.'
+        );
+    }
+
     return {
         kind: 'self',
         id: self.id,
@@ -1366,40 +981,12 @@ function resolveTheAskerThemselves(
 
 /**
  * Ways of saying "me".
- *
- * A possessive plus almost any noun off the sheet is the asker talking about
- * themselves, and the list of nouns is short because the sheet is short. Bare
- * "my sword" and "my pack" are deliberately absent: those are objects, they may
- * one day resolve to objects, and answering them with a standing read would be
- * the deflection this codebase keeps finding - a good answer to a question
- * nobody asked, which is worse than a refusal because it reads like an answer.
  */
 const SELF_AS_A_SUBJECT = new RegExp(
     '^(?:the\\s+)?(?:'
     + 'me|myself|my\\s*self|self'
 
     // -- AND THE DEICTIC, WHICH IS HOW SOMEBODY POINTS AT THEMSELVES ------
-    //
-    // FOUND BY PLAYING, wounded, 25 of 50, with `I see a physician` in the
-    // live strip at that moment:
-    //
-    //   I need someone to look at this wound
-    //   -> "You go over Ninewatch, searching for the place the name implies,
-    //      but nothing here answers to it."
-    //
-    // It looked for a town called "this wound". The engine was holding that
-    // wound - the grade, the untreated status, the 25 of 50, and that a month
-    // under a physician closes it - and the resolver read the phrase as a
-    // proper noun to look up in the gazetteer.
-    //
-    // The pattern already had `wound`. It required the POSSESSIVE, so `my
-    // wound` answered with the body read and `this wound` fell through to
-    // the place refusal. Measured on one run, two lines apart.
-    //
-    // `this` and `these` only. A person can point at their own body and at
-    // nobody else's, which is what makes the deixis safe here - `that wound`
-    // and `the wound` are things you say about somebody else, and they stay
-    // exactly where they are.
     + '|(?:my|this|these)\\s+(?:'
         + 'body|condition|state|health|standing|situation|sheet'
         + '|injur(?:y|ies)|wound|wounds|meridian|meridians|channels?'
@@ -1430,17 +1017,12 @@ export function resolveAnything(
         // echoes a house name is read as the rung the asker serves under.
         resolveRankOnALadder(query, self, scope) ??
         resolveSect(repos, query, scope, self.sectId) ??
-        // AHEAD OF THE ORDINARY PLACE, and that ordering is the fix rather
-        // than a preference. Measured: `tell me about The Tended Tomb` with
-        // this branch behind `resolveKnownPlace` came back *"The Tended Tomb,
-        // which is a name and a road and not much else that anyone here can
-        // tell you"* - the generic place fallback, about a grave whose marker
-        // the engine can read out in full.
-        //
-        // It steals nothing, because `nameableSites` can only ever return the
-        // authored sites: no settlement, province or road is in that set, so a
-        // place keeps its own name in every case where it has one. What this
-        // wins is exactly the names where a site is the more specific answer.
+        // AHEAD OF THE ORDINARY PLACE, and that ordering is the fix rather than a
+        // preference. Measured: `tell me about The Tended Tomb` with this branch
+        // behind `resolveKnownPlace` came back *"The Tended Tomb, which is a name
+        // and a road and not much else that anyone here can tell you"* - the
+        // generic place fallback, about a grave whose marker the engine can read
+        // out in full.
         resolveNameableSite(query, scope) ??
         resolveKnownPlace(query, self, scope) ??
         resolveTechnique(repos, query, self.id) ??
@@ -1457,66 +1039,6 @@ export function resolveAnything(
 
 /**
  * A rung on the asker's own house's ladder, and whoever stands on it.
- *
- * -- THE DEFECT THIS EXISTS FOR -------------------------------------------
- *
- * Played as a Sword Elder of the Azure Cloud Pavilion, one turn after the house
- * gained a `Grand Sword Elder` rung:
- *
- *   who is the grand elder here?
- *   Nothing here answers to it.
- *   Unresolved subject "grand elder here": no knowledge record and nothing
- *   co-located.
- *
- * **The parser took a rank as a name** and went looking for a person called
- * "grand elder here".
- *
- * -- AND THE TOLD-THE-STRUCTURE GRANT IS WHAT MAKES IT WRONG ---------------
- *
- * `what-joining-tells-you.ts` landed the rule that being enrolled tells you the
- * ladder - the shape of the house and who is on the rungs that matter. So a
- * member KNOWS there is a grand elder. They know the rank exists, they know
- * somebody holds it, and they may hold nothing at all about the person.
- *
- * **Asking by the rung is the natural thing to type in exactly that state**, and
- * it is the state that grant produces at the bottom of a house. A player who
- * knows the structure and not the roster has no other way to refer to anybody.
- *
- * -- IT IS PER-HOUSE VOCABULARY, NOT A GLOBAL ONE -------------------------
- *
- * "The grand elder" means nothing in general and means one person at the
- * Pavilion. Every house names its own rungs - Pavilion Master, Hall Sovereign,
- * Order Patriarch, Abbot - and `sect.ranks` is already that list, so the
- * vocabulary is data and no table is added here.
- *
- * The house is the asker's own. Standing on somebody's ground is the other
- * context that should reach this and does not yet: `KnowledgeScope` carries a
- * place NAME and not the location rows, so the holder of the ground cannot be
- * read from here. A non-member asking after "the abbot" while standing in the
- * Temple is the case that is still missing, and it wants a scope field rather
- * than a second rule.
- *
- * -- RESOLVING THE RUNG IS NOT NAMING THE HOLDER --------------------------
- *
- * The two silences, and they are the same shape as the ground holder's. Being
- * told the ladder entitles somebody to ask; whether a NAME comes back is a
- * separate question answered by what they hold about the person:
- *
- *   nobody holds it     a real answer about the house, and useful.
- *   somebody does and   the rung resolves, the person does not. "There is one,
- *   you cannot say who  and you do not know who" is the honest sentence, and it
- *                       is worth more than a refusal.
- *   you can name them   the ordinary case for a member of any standing.
- *
- * KNOWING AN OFFICE EXISTS IS NEVER A ROUTE TO THE PERSON HOLDING IT, and the
- * knowledge row is what enforces that rather than a second check. Somebody the
- * asker holds nothing about is not named however plainly the rung resolves, so
- * the office can be common knowledge while its holder is not - which is exactly
- * the state a new member is in and the reason this exists.
- *
- * A height gate was written here and removed: see the note at the filter for why
- * it could not fire, and why knowledge winning over the gap is the right rule
- * for a row somebody was handed rather than one they perceived.
  */
 export function resolveRankOnALadder(
     query: string,
@@ -1539,17 +1061,6 @@ export function resolveRankOnALadder(
     if (wanted.length < 3) return null;
 
     // ---- THE PLAYER SAYS THE SHORT FORM, AND THE LADDER SAYS THE LONG ----
-    //
-    // Measured on the sentence that produced this: `who is the grand elder` did
-    // NOT reach `Grand Sword Elder` on a score alone, because the house's idiom
-    // puts its own word in the middle of the title and a player naturally leaves
-    // it out. Everybody says "the grand elder"; nobody says "the grand sword
-    // elder".
-    //
-    // So a title also matches when it CONTAINS every word the player used, and
-    // the score is still what chooses between the ones that do - which is what
-    // keeps `sword elder` on `Sword Elder` rather than on `Grand Sword Elder`,
-    // where both contain the words and only one is what was said.
     const said = wanted.toLowerCase().split(/\s+/).filter(word => word.length > 0);
     const singular = (word: string) => word.replace(/s$/, '');
 
@@ -1576,20 +1087,6 @@ export function resolveRankOnALadder(
     const holders = getMembersOf(house).filter(member => member.rankIndex === rankIndex);
 
     // ---- WHO OF THEM THIS ASKER MAY BE TOLD ABOUT ------------------------
-    //
-    // The knowledge row, and only that. A presence check was written here and
-    // taken out again, because it could not fire: `noticesThatTheyAreThere`
-    // answers true outright for anybody `known`, and everybody reaching it had
-    // already passed `isAwareOf`. A gate that cannot fail is worse than no gate
-    // - it reviews as a check and is a no-op.
-    //
-    // And removing it is right rather than merely tidy. The rule everywhere else
-    // is that KNOWLEDGE WINS OVER THE GAP: a row about somebody survives any
-    // number of rungs, because being told who leads your house is not a claim to
-    // have perceived them. The height gate belongs where a name would otherwise
-    // arrive by arithmetic - the roster read, the room read - and a member
-    // naming their own Pavilion Master off a row they were given on their first
-    // day is not that case.
     const nameable = holders.filter(
         member => scope.gate.isAwareOf(scope.holderId, 'cultivator', member.id)
     );
@@ -1639,37 +1136,6 @@ export function resolveRankOnALadder(
 
 /**
  * A ruin, a trial or a grave the holder could put a name to.
- *
- * ── THE DEFECT THIS EXISTS FOR ───────────────────────────────────────────
- *
- * The suggestion strip offers `I go into <site>`, and typing **"what is <that
- * site>?"** came back *"Nothing here answers to it. Unresolved subject: no
- * knowledge record and nothing co-located."* **The strip offered a thing the
- * inspect path denied existed**, and the refusal then listed six things it
- * could see, all of them people and houses.
- *
- * `resolveAnything` walked asker, cultivator, sect, known place, technique,
- * object, recipe, pill, herb. No site, ever.
- *
- * ── THE ACTUAL BUG IS THE TWO GATES, NOT THE MISSING BRANCH ──────────────
- *
- * `go into` resolves through `siteMeant`, which filters on `nameableSites` and
- * the awareness record. `what is` resolved through a chain that could not see a
- * site at all. Two surfaces answering the same noun from different gates can
- * disagree, and did. So this calls the SAME `nameableSites` with the SAME
- * awareness predicate and hands the query to the SAME `resolveSite` matcher -
- * which scores on the display name and on the id slug, because "the eighth
- * stone" is the whole of `trial-the-eighth-stone` and none of "The Chamber Under
- * the Eighth Stone". Sharing all three makes the two verbs agree by
- * construction rather than by both being written correctly.
- *
- * ── AND IT STOPS AT THE THRESHOLD ────────────────────────────────────────
- *
- * `faceOf` returns a type with no `interior` key, so the compiler refuses the
- * leak before a test has to catch it. What comes back is the marker, and the
- * rumour and the attribution where awareness permits them - the same pre-entry
- * face the `site` verb shows, at the same awareness. Asking what a place is has
- * never been the same act as going into it, and this does not make it one.
  */
 export function resolveNameableSite(
     query: string,
@@ -1715,10 +1181,6 @@ export function resolveNameableSite(
 
 /**
  * A place the holder has actually heard of, or the one they are standing in.
- *
- * Distinct from `resolvePlace`, which accepts any name because walking in a
- * direction does not require having been told where you are going. Examining a
- * place you have never heard of is a different claim, and it is refused.
  */
 export function resolveKnownPlace(
     query: string,
@@ -1760,15 +1222,6 @@ export function resolveParty(
 
 /**
  * Names worth suggesting when a subject resolved to nothing.
- *
- * Scoped, and this one matters more than it looks: the old version fell back to
- * listing every recruiting sect in the catalog, which handed the player - and
- * then the narrator - the answer key inside an error message. A refusal that
- * leaks the world is worse than a refusal that does not help.
- *
- * What is offered instead: people standing in the same place, and names this
- * cultivator has actually heard. If that list is empty, the honest answer is
- * that they know of nobody, and the caller says so.
  */
 export function nearbyNames(
     repos: CultivationRepos,
@@ -1793,16 +1246,7 @@ export function nearbyNames(
             .map(row => row.name)
         : [];
 
-    // ── AND THE GROUND, WHICH THIS COULD NEVER MENTION ───────────────
-    //
-    // The awareness filter above admits `cultivator` and `sect` and nothing
-    // else, so a refusal listing what the player could have meant printed six
-    // people and houses however many ruins and graves they could name. That
-    // read as *the parser only knows people*, and it was the line an agent used
-    // to conclude that `resolveAnything` could not see a site - correctly, at
-    // the time, and it would have gone on saying so after the branch landed.
-    //
-    // The same gate the resolver uses, so the two say the same thing.
+    // AND THE GROUND, WHICH THIS COULD NEVER MENTION
     const sites = scope
         ? nameableSites(id => scope.gate.isAwareOf(scope.holderId, 'place', id))
             .map(site => site.name)

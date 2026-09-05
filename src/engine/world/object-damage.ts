@@ -1,132 +1,5 @@
 /**
- * Whether a thing survives what was put through it, and what state it is left
- * in.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE RULING THIS FILE EXISTS TO ENFORCE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * The design owner, asked how a spirit boat comes apart when two houses fight:
- *
- *   > no bespoke logic, the same way that a sword breaks.
- *
- * So there is ONE function that answers "is this thing damaged, and how
- * badly", and it does not know what the thing is. A hull, a sabre, a carriage,
- * a formation plate, a spirit tool and a manual all reach it, and every one of
- * them is priced off the same three numbers.
- *
- * The enforcement is in the TYPE, not in a comment. {@link ThingUnderForce}
- * deliberately does not carry `ObjectKind`. An `ObjectRecord` passes straight
- * in - the field is simply not visible on the other side - so a branch on
- * boat-versus-sword cannot be written here without somebody first widening the
- * input, which is a change a reviewer can see. `breakSpiritBoat` is not a
- * function that was left out; it is a function this signature makes
- * unwriteable.
- *
- * Everything specific to a boat comes off the boat's own row: its `power`, its
- * `significance`, its owner, its scars. Take the row away and there is no boat
- * logic left over anywhere.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE ARITHMETIC IS NOT HERE, AND THAT IS THE POINT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `engine/cultivation/whether-a-weapon-survives-being-used.ts` already owns the
- * whole quantity: a gate on the rung, then one subtraction on the ladder taken
- * twice. This file adds no second opinion about how hard it is to break
- * something. It calls `weaponExposure` verbatim and answers a different
- * question with the result: not "did the weapon end" but "what state is the
- * thing in now".
- *
- * What that module names `weaponPower` and `metBy`, this one names `the thing`
- * and `the force`, because they were never about weapons and bodies - they are
- * a rung on the ladder and another rung on the ladder, and the ratio of two
- * rungs is a number of realms whatever is standing at either end.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * BREAKING IS NOT BINARY
- * ═════════════════════════════════════════════════════════════════════════
- *
- * The catalog already talks about three different ruined things and they are
- * genuinely different states, so `broke: boolean` cannot carry them:
- *
- *   SHATTERED  it ended and the pieces are worth a row each. `shatter`.
- *   RUINED     it ended and there is nothing on the ground worth carrying
- *              away. `ruin`. The ordinary case, by a long way.
- *   HOLED      it took the blow, it is worth less than it was, and it can be
- *              mended. A scar with a date and a cause on it.
- *   INERT      *a spirit tool with the qi long gone out of it* - the phrase is
- *              `encounters.ts`'s and `the-late-age.md`'s. Still an object,
- *              still on somebody's shelf, and no longer worth anything. This
- *              is where a thing nobody mended ends up.
- *   GONE       it stopped existing and left no record, because it never had
- *              one.
- *
- * None of those five is a kind of object. Which one a thing lands in is
- * decided by two numbers - how far it was outclassed, and how many scars it is
- * already carrying - and by one property of the row: whether there is a row.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT `power` MEANS, BECAUSE EVERYTHING HERE IS READ OFF IT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `ObjectRecord.power` is WHAT A THING CONTRIBUTES TO FORCE, on the same ladder
- * a person stands on. Ruled by the design owner, and it is narrower than it
- * looks:
- *
- *   A WEAPON has one. It lets whoever holds it strike at its rung, which is the
- *   artifact catalog's founding claim.
- *   A HULL has one. Being inside it puts a rated thing between you and what is
- *   coming - see `sheltering.ts`, where that is `canUnmake` and not a bonus.
- *   A MEDICINE HAS NONE. *The pill itself doesn't make you stronger, it stores
- *   hp* - and taking one is an ACT, worth a round you were not guarding in,
- *   which is the fight's business and not this column's.
- *   A SINGLE-USE DAO MATERIAL HAS NONE. It is worth an enormous amount and none
- *   of it is worth anything in a fight.
- *
- * So a row whose `power` is really *the rung this thing is FOR* is writing a
- * different quantity into the column, and everything in this file, in
- * `sheltering.ts` and in the confrontation will read it as force. `data.forOrdinal`
- * is where that number belongs and two catalogs already carry it there as well.
- * Nothing here compensates for the confusion, deliberately: this module reads
- * the field as documented, and a row that means something else by it is the
- * row's defect.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * COUNTED THINGS CANNOT BE DAMAGED, AND THAT IS NOT A SIMPLIFICATION
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `docs/world/things/items.md` splits the world's things into what is a number on
- * a holder's row and what is one object with a history. A COUNTED CARRIAGE
- * CANNOT BE HOLED, because there is nowhere to write the scar: the holder has
- * three carriages, not three carriages one of which has a hole in it. So the
- * only two answers available to it are `held` and `gone`, and `gone` writes
- * nothing anywhere - the caller decrements a line.
- *
- * A TRACKED hull can carry a scar with a date and a cause on it, be mended,
- * and be asked about in two hundred years. Both answers are correct and they
- * are not the same answer, which is why {@link keptAs} is consulted rather
- * than smoothed over. It is also the ONLY place this file branches, and note
- * what it branches on: whether the world keeps a history of this thing, never
- * what the thing is.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * A BROKEN THING IS A WRONG DONE TO A PERSON
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Whose it was and who broke it are carried out of here on every result, and
- * {@link whatItCostThem} turns the loss into the one number
- * `engine/social-leverage/what-a-deed-leaves.ts` reads: what it cost against
- * what they had. Breaking the only rated thing a poor house owns and breaking
- * one of an apex's forty are the same deed and different weights, which is
- * that file's own thesis arriving here with no new machinery.
- *
- * Nothing in this file branches on the cause. `ForceApplied.cause` is carried
- * through untouched and never read, exactly as `Deed.cause` is - a tenth way
- * for a thing to get broken needs a tenth caller and no code here.
- *
- * PURE. State in, deltas out, no mutation of inputs, at most one draw and only
- * where the answer is genuinely in doubt.
+ * Whether a thing survives what was put through it, and what state it is left in.
  */
 
 import {
@@ -157,39 +30,11 @@ import {
 
 /**
  * How many holes a thing takes before the qi goes out of it.
- *
- * ── This number is a judgement and here is the argument for it ────────────
- *
- * Every scar costs a rung, because a rung down is the ONLY movement this world
- * allows a thing's rating - `shardPower` in `possessions.ts`, and nothing else
- * anywhere moves a grade in either direction. So the question is only how many
- * rungs a thing gives up before it stops answering at all.
- *
- * One is wrong: a thing that dies of the first hole makes mending pointless,
- * and mending is the whole reason `holed` is a state rather than a step on the
- * way to `ruined`. Ten is wrong the other way: the Late Age is FULL of tools
- * with the qi long gone out of them - a child's toy is one - and that only
- * happens if it happens on a human timescale.
- *
- * Three, which is a thing that has been holed more often than anybody has
- * bothered to mend it. Move this and the population of dead spirit tools moves
- * with it; nothing else reads it.
  */
 export const SCARS_BEFORE_THE_QI_GOES = 3;
 
 /**
  * Where a thing with no rating stands on the ladder.
- *
- * `power` is null on most rows and it means *worth nothing in a fight* rather
- * than *made of paper*, so an unrated thing is not exempt from the arithmetic -
- * it is at the bottom of it. Rung zero, and then the ordinary subtraction
- * applies with no special case: anybody at a real rung outclasses zero by
- * several realms, which is a mortal sword against a cultivator and is the
- * correct answer.
- *
- * It also means an unrated thing can never be HOLED - `shardPower(0)` is 0, so
- * there is no rung for a scar to take - and it goes straight to the end state.
- * That falls out of the arithmetic rather than being written down as a rule.
  */
 export const UNRATED_STANDS_AT = 0;
 
@@ -199,11 +44,6 @@ export const UNRATED_STANDS_AT = 0;
 
 /**
  * Everything this resolver may see about a thing.
- *
- * NOTE WHAT IS ABSENT: `kind`. An `ObjectRecord` satisfies this type, so every
- * caller passes the whole row and this side sees only the four fields that are
- * true of a hull, a sabre and a manual alike. Widening it is how a boat branch
- * would get written, so widening it is the thing to argue about in review.
  */
 export interface ThingUnderForce {
     id: string;
@@ -220,23 +60,12 @@ export interface ThingUnderForce {
 
 /**
  * What is being put through it, in the only terms the ladder has.
- *
- * The three numbers are exactly what `weaponExposure` asks for and they are
- * deliberately not "a person". A house's strongest hand in a war supplies
- * them; so does a formation coming down, a sea, a beast, or a mountain moving.
- * Whatever can be priced on the ladder can break something, and nothing here
- * needs to know which it was.
  */
 export interface ForceApplied {
     /** The whole composite standing of it, on the combat scale. */
     standing: number;
     /**
      * The same thing's rung and body line ALONE, with nothing it brought.
-     *
-     * Passive versus active, kept for the same reason `weaponExposure` keeps
-     * it: a hull that came apart because the sea it was in was too much for it
-     * and a hull somebody took apart are different sentences, and the
-     * difference is a subtraction rather than a flavour field.
      */
     bare: number;
     /** The rung behind it. The gate, and the gate is absolute. */
@@ -265,10 +94,6 @@ export interface ForceApplied {
 
 /**
  * What state the thing is in afterwards.
- *
- * Five words rather than a boolean, and none of them is a kind of object. See
- * the header for what each one is and which of the catalog's own sentences it
- * comes from.
  */
 export type ThingState =
     /** Nothing happened to it. The gate refused, or it was fit for this. */
@@ -297,12 +122,6 @@ export interface ThingHarmed {
     keptAs: KeptAs;
     /**
      * The sample that decided it, or null when nothing was in doubt.
-     *
-     * Null in both directions and for the same reason `resolveWeaponAgainstBody`
-     * keeps it null: a fit thing is not rolled for and neither is one two
-     * realms under what came at it. A caller that passes no stream at all gets
-     * the certain answers and `held` everywhere else, which is what a preview
-     * wants.
      */
     roll: number | null;
     /** The rung it stood at going in, with any earlier scars already off it. */
@@ -332,17 +151,6 @@ export interface ThingHarmed {
 
 /**
  * What becomes of a thing that has had something put through it.
- *
- * One call, one answer, and no knowledge of what it was handed. Reads three
- * numbers off the thing's own row and three off the force, and every sentence
- * about spirit boats in the setting is this function meeting a row whose
- * `power` came out of a shipwright's yard.
- *
- * `rng` may be null, in which case nothing uncertain is resolved and the
- * uncertain band answers `held`. That is a PREVIEW rather than a resolution -
- * `exposure.chance` is the honest number to show somebody before they swing,
- * and every other gated-then-rolled system in this engine shows its odds
- * first.
  */
 export function whatBecomesOfIt(
     thing: ThingUnderForce,
@@ -473,11 +281,6 @@ function theEnd(
 
 /**
  * It took the blow and is worse for it.
- *
- * The near miss, which used to be nothing at all. A thing that was outclassed
- * far enough to be at risk and came through anyway has still been through
- * something, and the whole of the difference between a possession and a
- * consumable is that the world can say so on the row.
  */
 function theMark(
     thing: ThingUnderForce,
@@ -558,12 +361,6 @@ export function isInert(thing: Pick<ThingUnderForce, 'tags'>): boolean {
 
 /**
  * Whether it is carrying a hole somebody could close.
- *
- * The marks accumulate rather than replacing each other, so a thing that was
- * holed twice and then ended still carries `holed`. That is correct on the row
- * - the holes happened, and the chain says when - and it is the wrong answer to
- * this question, which is about what could be mended NOW. So the two later
- * states are excluded here rather than by rewriting history.
  */
 export function isHoled(thing: Pick<ThingUnderForce, 'tags' | 'data'>): boolean {
     return thing.tags.includes('holed')
@@ -585,18 +382,6 @@ export interface WrittenBack {
 
 /**
  * Write what happened onto the thing's own history.
- *
- * Being broken and being mended are events in an object's chain exactly as
- * being stolen is - `items.md`'s *spent is not gone* applies to a hole as much
- * as to an ending, and for the same reason: a house that cannot account for
- * the state of what it holds should have a record that says so.
- *
- * `power` is written down rather than shadowed, deliberately. Every reader of
- * a rating in this engine - `bestObjectHeldBy`, the confrontation, the exposure
- * this file just called - looks at `ObjectRecord.power` and nothing else, so a
- * holed hull is worth less to all of them the moment this returns, with no
- * edit anywhere. What is kept beside it is `ratedWhole`, which is the only
- * thing {@link mend} needs and the only thing that could not be recovered.
  */
 export function writeBack(
     object: ObjectRecord,
@@ -660,13 +445,6 @@ export function writeBack(
 
 /**
  * The link a scar leaves in the chain.
- *
- * The holder does not change, which is the whole difference between this and
- * every other entry: `AcquisitionMode` is about how a thing changed hands and
- * a hole changes nobody's hands. `unknown` is the honest member for "this link
- * is not a handover" and the `note` carries what it actually was, in the
- * engine's own words, so somebody reading the chain in two centuries gets the
- * day, the cause and the rung it dropped to.
  */
 function scarLink(
     object: ObjectRecord,
@@ -709,25 +487,6 @@ export interface Mending {
 
 /**
  * Close one hole.
- *
- * ── THE GATE IS THE SAME GATE, AND THERE IS NOT A SECOND RULE ─────────────
- *
- * Mending is working with the thing, so the bar is `canUnmake`: your rung must
- * reach the rung it was made at. That is the same predicate that decides who
- * can refine a grade of medicine and who can break an object, stated in the
- * units artifacts use. A separate "repair rung" would be a third opinion about
- * the ladder and it would drift from the other two.
- *
- * One scar per call and one rung back per scar, bounded by `ratedWhole`.
- * NOTHING EVER GOES ABOVE WHAT IT WAS MADE AT - `items.md`'s *nothing moves up*
- * is enforced here rather than trusted, because a repair that overshoots is the
- * one route by which a grade could climb, and there is no such route.
- *
- * A thing whose qi has gone is not refused out of pessimism. It is refused
- * because it is no longer rated at anything, so there is no rung for the gate
- * to check and nothing for a rung to give back. If a later ruling wants that
- * to be answerable, what it wants is a way to put qi INTO an object, which is
- * a different act with a different price and does not belong in a repair.
  */
 export function mend(
     object: ObjectRecord,
@@ -796,22 +555,6 @@ function refuse(object: ObjectRecord, scars: number, why: string): Mending {
 
 /**
  * What losing this was worth to whoever owned it, against what they had.
- *
- * `Deed.cost` in `social-leverage/what-a-deed-leaves.ts` is relative on
- * purpose - *a hundred stones off a beggar and a hundred stones off a house
- * treasury are not the same deed* - and this is that field for a thing rather
- * than for a purse. A house whose only rated possession was the hull answers 1;
- * an apex that owns forty answers almost nothing, and neither of those is a
- * rule about houses.
- *
- * Priced on the combat scale rather than by counting rows, because rungs are
- * not linear: an object at 40 and an object at 20 are not two objects, they are
- * one object and a rounding error, and counting them as two is the arithmetic
- * error that makes an apex's loss look like a peasant's.
- *
- * A hole costs the share of the rung it took, not the whole thing, which is
- * how the same function prices *he holed my boat* and *he broke my boat*
- * without knowing which happened.
  */
 export function whatItCostThem(
     lost: { ratedBefore: number | null; ratedAfter: number | null },
@@ -836,12 +579,6 @@ export function whatItCostThem(
 
 /**
  * Whether this is a thing that does not come back.
- *
- * `Deed.irreversible` in one line, and it is exactly the question this file
- * already answered: a hole can be closed and an ending cannot. Nothing here
- * decides whether anybody WILL mend it - that is a person with a want, and
- * `how-many-of-the-broken-are-ever-mended.ts` is the world's own answer about
- * how rarely anybody does.
  */
 export function doesNotComeBack(state: ThingState): boolean {
     return state === 'ruined' || state === 'shattered' || state === 'gone' || state === 'inert';
@@ -849,10 +586,6 @@ export function doesNotComeBack(state: ThingState): boolean {
 
 /**
  * The words for what happened, for a ledger entry somebody reads in a century.
- *
- * Not a branch on the cause and not a branch on the thing: it reads the state,
- * which is the only thing that varies, and drops the caller's own `cause`
- * straight in beside it.
  */
 export function describeTheLoss(harmed: ThingHarmed, thingName: string, cause: string): string {
     const who = harmed.byName === '' ? 'Something' : harmed.byName;

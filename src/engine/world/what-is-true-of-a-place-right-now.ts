@@ -1,141 +1,5 @@
 /**
  * What is true of a place right now, and what it does while it is true.
- *
- * A place is not only a fixed set of properties. Things are true of it for a
- * while and then stop being true: a famine, a pass shut for the winter, a beast
- * tide running, a district worked out, a blockade, a war on the ground a house
- * stands on. This module is that layer, and it is the substrate the rest of the
- * world's answers about availability sit on top of.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE CAUSATION DIRECTION IS THE WHOLE POINT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Mundane goods are never counted. Nobody tracks how much grain a province
- * holds, and consumption does not move a mundane good: a thousand travellers
- * buying meals does not cause a famine. **A famine causes the meals to stop.**
- *
- * So the event is the thing that is stored, and availability is read off it.
- * {@link AreaStatus.stops} is that reading - a list of what is simply not to be
- * had here while this is true - and there is no ledger of millet anywhere
- * behind it. A status is one row per area per thing that is true of it, which
- * is a handful per world; anything needing a row per object is too much.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THREE DIFFERENT FACTS, AND THEY MUST NOT BE COLLAPSED
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   what is true          the status, and its {@link StatusCause}
- *   what is visible       {@link AreaStatus.signs} - what anybody standing
- *                         here observes, understanding nothing
- *   what anybody has
- *   worked out            `KnowingStage`, in `engine/social/discovery.ts`
- *
- * The third is NOT modelled here and must not be. This module takes a
- * `KnowingStage` as an argument ({@link readStatusAtStage}) and never stores
- * one. There is exactly one knowledge ladder in this repo.
- *
- * The load-bearing consequence, and it is pinned by a test: **what a status
- * DOES does not depend on anybody knowing about it.** {@link stoppedInArea},
- * {@link priceMultiplierInArea} and {@link dangerDeltaInArea} take no stage,
- * because a famine stops the millet for a traveller who has never heard the
- * word. Knowing is what buys you the reason, the warning and the way out.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * A STATUS HAS A CAUSE, AND CAUSES ARE OF TWO KINDS WITHOUT A BRANCH
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `BEAST_TIDES` in `data/cultivation/beasts.ts` already insists on this and
- * this generalises it rather than sitting beside it: a tide is a symptom of
- * something that changed on the ground, and the houses that treat one as a
- * monster problem rather than a survey problem are the ones it happens to
- * twice. A status that appeared from nowhere would undo that.
- *
- * A war is the other kind. It is a status on an area exactly as a famine is,
- * and it is caused by somebody choosing rather than by a vein moving. That
- * difference is {@link StatusCause.decidedById} - a value, null for weather and
- * ground - and **nothing in this module branches on it.** A caller that wants
- * to know who to blame reads the field.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * STATUSES END. THE TYPE WILL NOT LET YOU WRITE ONE THAT DOES NOT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A famine that never lifts is a worse bug than no famine, so
- * {@link makeAreaStatus} refuses a status with no {@link AreaStatus.reviewOnDay}
- * and refuses one whose review is not after its start.
- *
- * `reviewOnDay` is the day the world looks at this again, not a promise about
- * when it stops. A famine has an expected end; a war does not, and a war gets a
- * review date like everything else - whoever reviews it either
- * {@link liftStatus} or {@link extendStatus}. Open-ended is deliberately not
- * representable, because it is the shape the never-lifting bug arrives in.
- *
- * A caller that wants the lift announced in the time digest schedules an
- * ordinary effect for `reviewOnDay` with `makeScheduledEffect` from
- * `world-state.ts`. That machinery already exists and nothing here duplicates
- * it.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT WAS ALREADY HERE, AND IS THEREFORE NOT HERE
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   who is where        `NpcRecord.locationId`. Presence is read, never
- *                       stored again: a second record of who is where goes out
- *                       of agreement with the first the moment anybody moves.
- *                       {@link whoIsInArea} is a query over existing state.
- *   places that shut    `LocationRecord.cycle` with `isOpenOn`,
- *                       `nextOpeningDay` and `nextClosingDay` in
- *                       `locations.ts`. Seasonal opening is already closed-form
- *                       arithmetic, so {@link passageStoppedInArea} CONSULTS it
- *                       rather than restating it as a status.
- *   permanent scars     `LocationChange` in `locations.ts`, with its own
- *                       `causeFactId`, `causeKnown` and `attributedCauses`.
- *                       That layer is for what a place BECAME and is
- *                       deliberately append-only and permanent. This layer is
- *                       for what is true of it for a while. A change that ends
- *                       belongs here; a status that never lifts belongs there.
- *   windows that open   `OpportunityWindow` in `opportunities.ts`, which is the
- *                       same arithmetic with the opposite valence - a thing you
- *                       can take, rather than a thing that is wrong. Recurring
- *                       availability is its business and not this module's.
- *   the province a
- *   place sits in       `regionOf` in `what-people-are-saying.ts`. It answers
- *                       the root of the chain; {@link areaChainOf} answers the
- *                       whole chain, because a district being worked out is
- *                       true of the district and not of the province.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE BOUNDARY WITH COUNTED STOCK
- * ═════════════════════════════════════════════════════════════════════════
- *
- * This layer owns what is TRUE of an area. It does not own HOW MUCH MATERIAL
- * is in it, and the two are separate files on purpose:
- *
- *   what a place still has    `what-a-place-still-has-in-the-ground.ts`. One
- *   in the ground             number per place per kind per grade, drawn down
- *                             by taking, regrown on a clock. Its `readingFor`
- *                             already answers 'worked_out' off that number and
- *                             says so in prose.
- *   what is true of it        this file. Not counted, and not derived from any
- *                             count.
- *
- * **A worked-out district is THEIR reading, not a status here.** Do not write
- * a status that restates a count: it would be a second authority on the same
- * fact and the two would disagree the first time anybody foraged. What belongs
- * here is what somebody DECIDED in consequence - a house closing a district, a
- * guild refusing to buy out of it, a blockade - because a decision is not
- * recoverable from a number.
- *
- * The same rule runs the other way: mundane goods are stopped here and counted
- * nowhere, which that file states as its own first distinction.
- *
- * ── No draws ─────────────────────────────────────────────────────────────
- *
- * Nothing in this module is stochastic. There is no RNG import and no call
- * site takes a stream, so no existing draw moves and no seeded world changes
- * because this file exists. Whoever decides that a famine begins does the
- * drawing; this records it.
  */
 
 import type { KnowingStage } from '../social/discovery.js';
@@ -149,10 +13,6 @@ import type { NpcRecord } from './npc-state.js';
 
 /**
  * Why a place is like this.
- *
- * `what` is stated whether or not a living soul knows it, which is the same
- * arrangement `LocationChange` makes for permanent events: the world holds the
- * truth, and whether anybody has it is a separate question.
  */
 export interface StatusCause {
     /** What happened. A ground change, a seal, a decision, a harvest failing. */
@@ -169,12 +29,6 @@ export interface StatusCause {
 
 /**
  * Something that is true of an area now and will not be forever.
- *
- * `kind` is a free-form word, deliberately not an enum. The world's statuses
- * are content, in the same way `LocationRecord.hazards` are content, and the
- * eleventh kind must cost a row and no branch. Written so far: 'famine',
- * 'beast_tide', 'war', 'blockade', 'siege', 'quarantine',
- * 'closed_to_gathering'. Nothing here reads any of them.
  */
 export interface AreaStatus {
     id: string;
@@ -197,10 +51,6 @@ export interface AreaStatus {
     signs: readonly string[];
     /**
      * Whether asking around here gets you the cause.
-     *
-     * Generalises `BeastTide.causeKnownLocally`. False is the common and more
-     * interesting case, and it is a ceiling on hearsay rather than on truth:
-     * see {@link localCeilingFor}.
      */
     causeKnownLocally: boolean;
 
@@ -215,11 +65,6 @@ export interface AreaStatus {
 
     /**
      * What is simply not to be had here while this is true.
-     *
-     * Free-form strings, matched by string, in the same way a hazard is. This
-     * is the whole of the availability model: the goods are not counted, they
-     * are stopped. {@link STOPS_PASSAGE} is the one entry with a constant,
-     * because a travel predicate has to match it in another file.
      */
     stops: readonly string[];
     /** What everything still to be had here costs while this is true. */
@@ -253,10 +98,6 @@ export interface AreaStatusInput {
 
 /**
  * The only way to make one, and it refuses the two shapes that are bugs.
- *
- * A status with no review date never lifts. A status whose review is at or
- * before its start has already ended and will read as running forever to any
- * caller comparing days the obvious way.
  */
 export function makeAreaStatus(input: AreaStatusInput): AreaStatus {
     if (!Number.isFinite(input.beganOnDay)) {
@@ -299,11 +140,6 @@ export function makeAreaStatus(input: AreaStatusInput): AreaStatus {
 
 /**
  * Whether this is true on this day.
- *
- * A status past its review day and never looked at is NOT running. That is the
- * design decision and it is the one that stops a famine outliving the world: an
- * unattended status expires rather than persisting. Whoever wants it to go on
- * has to say so.
  */
 export function isStatusRunningOn(status: AreaStatus, day: number): boolean {
     if (day < status.beganOnDay) return false;
@@ -353,10 +189,6 @@ export function extendStatus(status: AreaStatus, toDay: number): AreaStatus {
 
 /**
  * A place and every place containing it, innermost first.
- *
- * `regionOf` in `what-people-are-saying.ts` answers the last element of this
- * and is the right call when the province is the question. This is the whole
- * chain, because a worked-out district is not a worked-out province.
  */
 export function areaChainOf(
     locations: readonly LocationRecord[],
@@ -373,11 +205,6 @@ function indexById(
 
 /**
  * The chain off a prepared index.
- *
- * Separate from {@link areaChainOf} so a caller asking about every place in the
- * world builds the index once. Walking the whole map per location is the
- * difference between this layer being cheap and being quadratic, and a world
- * carries around a thousand places.
  */
 function chainFrom(
     byId: ReadonlyMap<string, LocationRecord>,
@@ -422,10 +249,6 @@ export function statusesInArea(
 
 /**
  * Who is standing in this area right now.
- *
- * Read off `NpcRecord.locationId` and nothing else. There is no second record
- * of who is where and there must not be: it would go out of agreement with the
- * first the moment anybody moved.
  */
 export function whoIsInArea(
     npcs: readonly NpcRecord[],
@@ -473,10 +296,6 @@ export function isStoppedInArea(
 
 /**
  * What everything still to be had here costs, as a multiplier.
- *
- * Multiplicative across statuses, because two things going wrong at once is
- * worse than either and the arithmetic should say so without a special case
- * for the pair.
  */
 export function priceMultiplierInArea(
     statuses: readonly AreaStatus[],
@@ -507,11 +326,6 @@ export function dangerDeltaInArea(
 
 /**
  * Whether getting through is stopped today, and why.
- *
- * The two reasons are of different kinds and are deliberately reported apart.
- * A pass that is shut five months a year is `LocationRecord.cycle` doing what
- * it already does; a blockade is somebody's decision. Both leave a traveller
- * outside, and only one of them lifts because somebody changed their mind.
  */
 export interface PassageReading {
     stopped: boolean;
@@ -548,11 +362,6 @@ export function passageStoppedInArea(
 
 /**
  * The most anybody local can hand you about this.
- *
- * `causeKnownLocally` false does not mean the cause is unknowable. It means
- * asking around gets you as far as the signs and no further, so a cultivator
- * who wants the reason has to go and read the ground themselves. That is the
- * survey problem a tide is, stated as a ceiling.
  */
 export function localCeilingFor(status: AreaStatus): KnowingStage {
     return status.causeKnownLocally ? 'known' : 'encountered';
@@ -569,16 +378,6 @@ export interface StatusReading {
 
 /**
  * What somebody at this stage can say about this status.
- *
- * The ladder is `KnowingStage`'s own, read straight off `STAGE_MEANING`:
- *
- *   whisper       a word got said, and what it refers to cannot be worked out
- *   named         they know it is happening and roughly what it is
- *   placed        they know where, or when - so how long it has been true
- *   encountered   they have been in it, so they have the signs
- *   known         they have the cause
- *
- * Nothing is invented for this ladder and no sixth rung is added to it.
  */
 export function readStatusAtStage(
     status: AreaStatus,
@@ -608,14 +407,6 @@ export function readStatusAtStage(
 
 /**
  * The whole answer to "what is going on here", at one person's stage.
- *
- * A place where something is wrong says so in prose. It does not silently
- * return different numbers and leave somebody to work out why the millet cost
- * four times what it cost last year.
- *
- * `stageOf` is supplied by the caller from the social layer's records - one
- * stage per status id. A status the caller has no stage for reads `unaware`,
- * which is the ordinary case and produces no lines at all.
  */
 export function whatIsGoingOnHere(
     statuses: readonly AreaStatus[],

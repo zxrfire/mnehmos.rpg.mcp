@@ -1,83 +1,5 @@
 /**
  * What goes wrong with a place, why, and what makes it stop.
- *
- * `what-is-true-of-a-place-right-now.ts` is the layer: the record, the clock,
- * the join and what a status DOES. It has always been complete and it has never
- * had a writer. Measured before this file existed: a thousand world-years,
- * **zero rows**, with `whatIsGoingOnHere` wired into the played `investigate`
- * verb over a permanently empty column - which is the shape AGENTS.md calls the
- * worse defect, because an empty column is not inert. It reads as a value, and
- * every reader goes on answering with total confidence that nothing is wrong
- * anywhere.
- *
- * This file is the other half. It says what the world proposes about a place
- * today; `applyAreaStatuses` in `the-world-changing-on-its-own.ts` is its one
- * caller and does the writing.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * EVERY STATUS HAS A CAUSE, AND THE CAUSE IS SOMETHING ELSE THAT HAPPENED
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `BEAST_TIDES` in `beasts.ts` is emphatic that a tide is a SYMPTOM of
- * something that changed on the ground, and that the houses which treat one as
- * a monster problem rather than a survey problem are the ones it happens to
- * twice. A status invented out of a weighted table would undo that, so every
- * opener below binds to state something else already wrote:
- *
- *   closed to gathering  a district its holder has worked out. The count is
- *                        `what-a-place-still-has-in-the-ground.ts`'s, and this
- *                        is the DECISION taken in consequence - which is
- *                        exactly the seam that file draws, because a decision
- *                        is not recoverable from a number and a status that
- *                        restated the number would be a second authority on it.
- *   a beast tide         the ordinary animals are gone from this ground, which
- *                        is `theOrdinaryAnimalsAreGone` and is the tell every
- *                        gatherer knows. What is left out there is what was
- *                        eating them, and it is still eating.
- *   a war               two houses that are actually fighting, on ground one of
- *                        them actually holds. `decidedById` carries whose war.
- *   a famine            a harvest that failed. The one drawn opener, on its own
- *                        seeded stream, and the only one with nobody to blame.
- *
- * ── The two kinds of cause, without a branch ─────────────────────────────
- *
- * `StatusCause.decidedById` is a value and nothing in the status layer reads
- * it. A war has one, a famine does not, and that is the whole difference
- * between them in the record.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT LIFTS ONE IS THE SAME QUESTION THAT OPENED IT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A famine that never lifts is a worse bug than no famine, and a review pass
- * that branches on `kind` would make the free-form `kind` field a lie - the
- * eleventh kind is supposed to cost a row and no branch.
- *
- * So there is no reviewer here. `whatIsWrongWithPlacesToday` answers what the
- * world would propose RIGHT NOW, and the caller compares that against what is
- * already running: a status still proposed is extended, a status no longer
- * proposed is lifted. One rule, no table, and a kind added tomorrow reviews
- * itself for free.
- *
- * That gives each opener the right ending without anybody writing one. A
- * district closes while its holder has nothing to gather and opens when the
- * ground comes back. A tide runs while the ground is empty. A war ends when the
- * fighting does. A famine is proposed on the year it is drawn and not on the
- * next one, so it lifts - unless the draw comes up again, which is a second bad
- * year and reads correctly as one.
- *
- * ── One status of a kind per area ────────────────────────────────────────
- *
- * Two famines in one province is one famine. Candidates are keyed on
- * {@link statusKey}, and the caller matches running rows on the same key.
- *
- * ── The draw ─────────────────────────────────────────────────────────────
- *
- * Exactly one opener takes a stream and it is the caller's, keyed off a name no
- * other pass uses. Nothing else here is stochastic, so a world with no failed
- * harvest draws precisely what it drew before this file existed.
- *
- * Pure. State in, candidates out, no mutation and no I/O.
  */
 
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -97,12 +19,6 @@ import {
 
 /**
  * One thing the world says is true of a place today.
- *
- * Everything `makeAreaStatus` needs except the id and the dates, which belong
- * to whoever is writing rather than to whoever noticed. `reviewInDays` is how
- * long before the world looks again, and it is a property of the cause: a
- * failed harvest is answered by the next harvest, and a district that has been
- * stripped is answered by the regrowth clock of the band that was stripped.
  */
 export interface StatusCandidate {
     areaId: string;
@@ -118,13 +34,6 @@ export interface StatusCandidate {
     cause: StatusCause;
     /**
      * What anybody standing here observes, understanding nothing.
-     *
-     * WHOLE SENTENCES, capitalised and stopped. `readStatusAtStage` pushes
-     * each sign as its own line and a caller joining them with a space gets a
-     * paragraph with no punctuation in it - which is what a played
-     * `investigate` produced: "It has been like this for 1455 days. the
-     * caravans have stopped and the road east is not being used there are more
-     * people sleeping outside the walls than there were".
      */
     signs: readonly string[];
     causeKnownLocally: boolean;
@@ -134,26 +43,10 @@ export interface StatusCandidate {
     reviewInDays: number;
     /**
      * The longest this may go on, however true its cause stays.
-     *
-     * THE LAYER'S OWN CONTRACT, ENFORCED RATHER THAN HOPED FOR. A status is
-     * what is true of a place FOR A WHILE; what a place permanently BECAME is
-     * `LocationChange` and belongs in another table. Without this the review
-     * below happily extends a status for as long as its cause holds, and a
-     * cause that does not go away produces one that does not either -
-     * measured, a beast tide that had been running for 182,135 days, which is
-     * a `LocationChange` wearing a status as a costume.
-     *
-     * Per candidate rather than per kind, so it is data like everything else
-     * here and the review stays one rule.
      */
     mayRunForDays: number;
     /**
      * How long after this ends before the world may say it again.
-     *
-     * The other half of the cap, and it is what stops a capped status from
-     * simply reopening the following year and running forever in instalments.
-     * A tide on ground that stays empty is a thing that happens to that ground
-     * about once a generation, not a thing that is permanently happening.
      */
     quietForDaysAfter: number;
 }
@@ -171,10 +64,6 @@ export const STOPS_FOOD = 'food';
 
 /**
  * How much a place holds, as far as this file is concerned.
- *
- * Declared structurally rather than as `WorldState` so the openers can be
- * driven from a test without a seeded world, and so nothing here reaches for
- * anything the caller did not hand over.
  */
 export interface GroundAsItStands {
     place: LocationRecord;
@@ -188,35 +77,14 @@ export interface GroundAsItStands {
     holderFightingNames: readonly string[];
     /**
      * Whether this is the ground the holder actually sits on.
-     *
-     * A war is a status on the seat and not on every holding in the ledger.
-     * Without this a house with forty veins put forty rows in the table for one
-     * war, and the layer's own claim - a handful per world, not a row per
-     * object - stops being true the first time anybody fights.
      */
     isTheHoldersSeat: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE OPENERS
-//
-// Each reads state something else wrote and proposes zero or more candidates.
-// None of them writes, none of them decides a date, and adding a fifth costs a
-// function and no edit anywhere else.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * A house shuts a district it has finished.
- *
- * The consequence `what-a-place-still-has-in-the-ground.ts` names and refuses
- * to model itself: the COUNT is theirs, and what somebody decided in
- * consequence is not recoverable from it. A house that has worked its own
- * ground out stops other people working it, because what is left is what it
- * will be gathering next decade.
- *
- * Both bands have to be gone. A district with game left in it is a district
- * with a reason to let people onto it, and closing it over the herbs alone
- * would make this fire on nearly every holding in the world.
  */
 export function districtsTheirHolderHasShut(
     ground: readonly GroundAsItStands[],
@@ -272,17 +140,6 @@ export function districtsTheirHolderHasShut(
 
 /**
  * The ordinary animals are gone, so what is left is what was eating them.
- *
- * `theOrdinaryAnimalsAreGone` has said this since it was written and closed
- * with an admission that the sentence was ahead of the mechanic. This is the
- * mechanic: the ground carries a status, the status carries the danger, and
- * anybody standing here is in it whether or not they have heard the word.
- *
- * The signs are the tell the catalog already records for a tide - the ordinary
- * animals went first and went far - and the cause is deliberately NOT known
- * locally. That is the survey problem stated as a ceiling: asking around gets
- * you the signs, and somebody who wants the reason has to go and read the
- * ground themselves.
  */
 export function tidesWhereTheGameWent(
     ground: readonly GroundAsItStands[],
@@ -335,19 +192,6 @@ export function tidesWhereTheGameWent(
 
 /**
  * Ground held by somebody who is fighting.
- *
- * The road is the first thing a war takes. `war_opened` already says so in the
- * fact it writes - *the trade road is unusable, the caravans have stopped* -
- * and until now that sentence was narration over a world in which passage was
- * never once stopped anywhere.
- *
- * ONE ROW PER FIGHTING HOUSE, ON ITS SEAT. Not one per holding: a house with
- * forty veins is in one war, and forty rows saying so would make the layer's
- * own claim about its size false. Measured before the seat filter went in: 440
- * live war statuses at year five hundred against 10 tides and 8 closures.
- *
- * It lifts on its own, because the proposal is the review: when the houses stop
- * being at war they stop being proposed, and the status ends.
  */
 export function groundUnderAWar(ground: readonly GroundAsItStands[]): StatusCandidate[] {
     const out: StatusCandidate[] = [];
@@ -395,26 +239,11 @@ export function groundUnderAWar(ground: readonly GroundAsItStands[]): StatusCand
 
 /**
  * How often a province's harvest fails outright.
- *
- * The one number in this file that was chosen rather than read off something
- * else, so it is stated once and pinned by a test. A little under once a
- * generation per province: rare enough that a famine is a thing people
- * remember, common enough that a five-century world has had a run of them and
- * somebody's grandmother has a story.
- *
- * Consumption does not cause it and cannot. Mundane goods are never counted
- * anywhere - **a famine causes the meals to stop, and a thousand travellers
- * buying meals does not cause a famine** - which is the causation direction the
- * whole status layer exists to keep pointing the right way.
  */
 export const A_HARVEST_FAILS = 0.04;
 
 /**
  * A harvest that failed, on a province.
- *
- * The only drawn opener and the only one with nobody to blame. It is proposed
- * on the year it is drawn and not on the next one, so it lifts at its review -
- * unless the draw comes up again, which is a second bad year and reads as one.
  */
 export function harvestsThatFailed(
     regions: readonly LocationRecord[],
@@ -466,9 +295,6 @@ export function harvestsThatFailed(
 /**
  * Everything the world says is wrong today, keyed so the caller can compare it
  * against what is already running.
- *
- * The caller extends what is still here and lifts what is not. That is the
- * whole review and it is why there is no reviewer.
  */
 export function whatIsWrongWithPlacesToday(input: {
     ground: readonly GroundAsItStands[];

@@ -1702,7 +1702,7 @@ the same three against the LOCATION table, and it calls the same function now.
 
 What the rule returns is three things rather than one, because knowing where a thing is and
 being able to read it are different facts. `knowsWhereItIs` is what makes somebody able to
-TELL you - the cart drivers of the Quiet Marches have crossed the Grinding Ford for six
+TELL you - the cart drivers of the Silent Cliffs have crossed the Grinding Ford for six
 hundred years and the row says nobody there thinks of it as cultivation - and `shortBy` is
 the first thing a visitor is missing, in the order they meet them: found, then in the
 province or of the house, then let in, then able to read it. That ordering is what makes it

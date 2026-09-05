@@ -10,7 +10,7 @@
  * the player's odds off it. Somebody was being priced on a fact the game would
  * not tell them.
  *
- * Measured, on a fresh run that opens at the Meet on The Blown Ground. Five
+ * Measured, on a fresh run that opens at Wind Market on The Burial Sands. Five
  * phrasings, five wrong answers, none of them the one true sentence:
  *
  *   "I ask who holds this ground"  routed to an NPC, and the resolve failed:
@@ -22,8 +22,8 @@
  *                                  PLAYER's affiliation. "Unaffiliated."
  *   "who do I complain to here"    unclear
  *
- * The second is the one worth naming: it printed *"You are in The Meet, The
- * Blown Ground"* and then said what the ground carries, standing on the one
+ * The second is the one worth naming: it printed *"You are in Wind Market, The
+ * Burial Sands"* and then said what the ground carries, standing on the one
  * province in the world where the answer to who holds it is nobody.
  *
  * ── WHAT IS VOLUNTEERED, AND WHAT ONLY ANSWERS ───────────────────────────
@@ -155,9 +155,9 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
     // so the gate can only bite on a `held` reading. Without that condition the
     // replacement below fired on all four, and the two readings `look`
     // volunteers are precisely the two where nobody holds the ground - so a
-    // player below the bar standing on The Blown Ground, which is where a fresh
+    // player below the bar standing on The Burial Sands, which is where a fresh
     // run opens, was about to be told "somebody holds this ground and nobody is
-    // going to say who" over the top of "nobody holds The Drowned Reach, and
+    // going to say who" over the top of "nobody holds The Drowned Sea, and
     // everybody has noticed", with the route line still telling them to take it
     // to whoever keeps the place running. Withholding a name the world does not
     // have is not discretion, it is a different world.

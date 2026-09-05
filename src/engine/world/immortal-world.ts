@@ -1,56 +1,5 @@
 /**
  * The other side of the Lid.
- *
- * `layers.ts` says what a layer IS and what may cross between them. This is the
- * place itself: how it comes into existence, what happens when somebody arrives,
- * what standing means up there, what still kills, and how the two layers keep
- * running at the same time.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * BOTH FACTS ARE TRUE AT ONCE, AND THAT IS THE WHOLE POINT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Measured against the world they left, a newly ascended immortal is beyond
- * comprehension: a True Immortal with a wide art takes any fully mobilised apex
- * in about two rounds, and mean damage from anybody below the Lid is zero.
- * Measured against the world they arrived in, they are a newcomer with no
- * lineage, no standing, no allies, and cultivation that is unremarkable.
- *
- * Making both true SIMULTANEOUSLY - rather than alternately, or by fiat - is
- * this module's actual job, and the trick is that neither reading is invented:
- *
- *   - The first is already measured. `powerMultiplierForOrdinal(46)` against the
- *     strongest thing alive below is a division, and `readTwoWays` does it
- *     rather than asserting it.
- *
- *   - The second falls out of the ladder ending. **Everybody above the Lid
- *     stands at ordinal 46**, because 46 is the only ordinal that can be there.
- *     So cultivation is not a differentiator up there at all - it is the entry
- *     ticket, and a newcomer's is identical to a founder's. Standing is made of
- *     things this layer already models for the world below: tenure, lineage,
- *     a house, allies, and what you are holding. A newcomer scores zero on
- *     every one of them, and no second power ladder had to be invented to say
- *     so.
- *
- * That is what produces the payoff the design is after: the player meets the
- * invincible ancestor who reorganised a continent, and later finds out he is
- * not considered exceptional at home.
- *
- * ── DELIBERATELY THIN ────────────────────────────────────────────────────
- *
- * There is no second progression system here, no second economy and no second
- * survival layer. The weight of this game lives below the Lid. What is up here
- * is: a place, some people who were already there, some things with no
- * equivalent below, two ways to die, and a channel through which almost
- * nothing fits.
- *
- * ── GENERATED ON CONTACT ─────────────────────────────────────────────────
- *
- * A world nobody has ascended from does not carry forty immortals. The layer is
- * materialised by `ensureImmortalLayer` the first time anything needs it, and
- * everything in it derives from the WORLD seed rather than from when the call
- * happened - so the same seed always produces the same sky, whether it was
- * first looked at in year 1,000 or year 1,500.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
@@ -128,30 +77,13 @@ export const IMMORTAL_NATIVE_COUNT = 48;
 export const IMMORTAL_PERIL_GROUND_COUNT = 3;
 
 /**
- * How far the immortal houses predate anything the lower world can produce a
- * record of.
- *
- * Not decoration. `foundedOnDay` sits this far behind the earliest day in the
- * chronicle, so "older than the lower world's records" is a comparison the
- * engine can perform rather than a sentence somebody wrote.
+ * How far the immortal houses predate anything the lower world can produce a record
+ * of.
  */
 export const OLDER_THAN_THE_RECORD_YEARS = 12_000;
 
 /**
  * Qi at densities the lower world cannot produce.
- *
- * MEASURED, AND THE MEASUREMENT CORRECTED THE OBVIOUS ASSERTION. The first
- * version of this said the two ranges do not overlap, and that is false: the
- * density scale is 0..1 BY DEFINITION - 1.0 is "the richest ground the world
- * has ever carried" - so a sealed ruin and a worked vein below both reach 1.0
- * on it, and nothing above can be off the end of a scale with an end.
- *
- * What is actually different is where the figure sits and how much of the map
- * carries it. Below, the AGE runs at about 0.34 and only ever falls; the places
- * at 1.0 are pockets, they are a small minority of the map, and every one of
- * them is either sealed or being fought over. Above, it is the floor, over the
- * whole layer, unguarded. `immortalWorldShape` reports both halves of that
- * comparison rather than the one that reads better.
  */
 export const IMMORTAL_QI_DENSITY = QI_DENSITY_MAX;
 
@@ -167,23 +99,13 @@ export const IMMORTAL_SPECIAL_RULES: readonly string[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * How long it takes for arriving to stop being the most interesting thing
- * about somebody.
- *
- * Three thousand years, because that is the figure the setting quotes for how
- * long is a long time to keep not losing. Tenure saturates there; it does not
- * keep paying forever, or the oldest resident would be unreachable by anybody
- * and the layer would have a permanent apex, which is precisely the shape this
- * design refuses.
+ * How long it takes for arriving to stop being the most interesting thing about
+ * somebody.
  */
 export const TENURE_SATURATION_YEARS = 3_000;
 
 /**
  * What standing is made of.
- *
- * Every weight is on an axis the world layer already stores for the world
- * below. None of them is cultivation, and that is deliberate: up there
- * cultivation is the entry ticket and everybody holds the same one.
  */
 export const STANDING_WEIGHTS = {
     tenure: 0.30,
@@ -237,39 +159,18 @@ export interface ImmortalStanding {
 
 /**
  * How often the layer asks whether somebody is still there.
- *
- * Fifty years. A rate, not a tick: perils are drawn at absolute multiples of
- * this interval, so ten years then thirty produces the same world as forty and
- * the cost of a five-century advance is one draw per resident per fifty years.
  */
 export const PERIL_INTERVAL_YEARS = 50;
 export const PERIL_INTERVAL_DAYS = PERIL_INTERVAL_YEARS * DAYS_PER_YEAR;
 
 /**
  * The two things ascension did not remove.
- *
- * Heavenly tribulation is behind them and lifespan has stopped being a number.
- * Everything else on the list still applies, and these are the two the setting
- * names: environmental dangers calibrated for immortals, and politics that has
- * been running uninterrupted for a very long time and kills the people who lose
- * at it.
- *
- * Base rates are per resident per fifty years, before standing. A newcomer at
- * zero standing survives five centuries about three times in five and three
- * thousand years about once in thirty; a founder with everything survives five
- * centuries almost always and three thousand years rather less than half the
- * time. Nobody is safe, which is the requirement.
  */
 export const ENVIRONMENT_PERIL_PER_INTERVAL = 0.030;
 export const POLITICS_PERIL_PER_INTERVAL = 0.025;
 
 /**
  * The most standing can buy.
- *
- * Deliberately short of 1. A house, four generations and three thousand years
- * of not losing makes somebody hard to kill and never makes them safe - and
- * the alternative would be a permanent apex nothing can remove, which is the
- * one thing the layer must not produce.
  */
 export const MAX_PERIL_RELIEF = 0.72;
 
@@ -320,11 +221,6 @@ export interface ImmortalLayerSummary {
 
 /**
  * Bring the far side into existence, once.
- *
- * Everything derives from the world seed, so the sky a world has is a property
- * of the world rather than of when somebody first looked at it. Idempotent:
- * the presence of any location on the immortal layer is the flag, so there is
- * no separate "seeded" boolean to fall out of agreement with the rows.
  */
 export function ensureImmortalLayer(state: WorldState): ImmortalLayerSummary {
     const existing = state.locations.filter(l => isAboveTheLid(l));
@@ -720,12 +616,6 @@ export function ascensionOf(state: WorldState, residentId: string): AscensionRec
 
 /**
  * What the engine knows became of somebody who crossed.
- *
- * Admin and engine only. Rendering this to anybody below the Lid would delete
- * the setting's most useful uncertainty: a house whose channel has gone quiet
- * knows nothing at all, because silence is equally consistent with death, with
- * disinterest, with a war up there, and with an object down here that stopped
- * working.
  */
 export function afterCrossingOf(state: WorldState, residentId: string): AscensionRecord['afterCrossing'] | null {
     return ascensionOf(state, residentId)?.afterCrossing ?? null;
@@ -733,12 +623,6 @@ export function afterCrossingOf(state: WorldState, residentId: string): Ascensio
 
 /**
  * Standing above the Lid, itemised.
- *
- * Nothing in here reads cultivation, because cultivation up there is a
- * constant. A newcomer scores zero on every axis: no tenure, no line, no house,
- * no allies, nothing in hand that was made on this side. That is what "a
- * newcomer with no lineage, no standing, no allies and unremarkable
- * cultivation" is, in data.
  */
 export function immortalStanding(
     state: WorldState,
@@ -850,13 +734,6 @@ export function immortalStanding(
 
 /**
  * How many generations of this person's line were already up here.
- *
- * ANCESTORS above the Lid, not membership of a line whose founder happens to be
- * above it. The distinction cost a test: a newly ascended cultivator is the
- * founder of their own family, that family is entirely below, and counting the
- * line rather than the ancestry handed a newcomer a generation of standing for
- * having had children in a world they can no longer reach. Being somebody's
- * ancestor is worth nothing on this side; having one is the whole of it.
  */
 function ancestryAbove(state: WorldState, residentId: string): { depth: number; surname: string } {
     let depth = 0;
@@ -941,12 +818,6 @@ export interface TwoReadings {
 
 /**
  * The invincible ancestor, priced twice.
- *
- * The lower reading is a measurement over the living roster: whatever the
- * strongest thing alive below actually is, divided into what a True Immortal
- * is. The upper reading is a rank among residents. Neither is a sentence
- * somebody wrote next to a faction, and they disagree by orders of magnitude,
- * which is the payoff.
  */
 export function readTwoWays(
     state: WorldState,
@@ -1044,25 +915,6 @@ export interface AscendResult {
 
 /**
  * Go through.
- *
- * Ascension has been an ending everywhere it appears; here it becomes a
- * transition, and the difference is enumerable:
- *
- *   - the person is still `alive`, still a going concern, still in the roster;
- *   - their lineage edges, relationships, grudges, debts, history facts and
- *     the provenance of everything they ever owned are untouched;
- *   - their house's claim to an ascended ancestor becomes TRUE, and stays
- *     unverifiable;
- *   - what they were carrying stops being theirs, because nothing goes through
- *     the Lid with them - and that divestment is the author of the world's
- *     entire inheritance economy;
- *   - the world below does not pause, and nothing about it waits for them.
- *
- * The lower world is told nothing it can rely on. The fact it gets is
- * `unresolved`, with the three candidate answers people actually offer, and it
- * stays that way: crossed, died and in seclusion are indistinguishable from
- * underneath. The engine's own answer is on the `AscensionRecord` and never
- * renders.
  */
 export function ascend(state: WorldState, input: AscendInput): AscendResult {
     const empty: AscendResult = {
@@ -1128,20 +980,6 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
                 transfersOwnership: true
             });
             // The gift is the LINE, and this tag is what makes it one.
-            //
-            // Without it `sendAcross` had no reachable channel object anywhere
-            // in the codebase, so the only reliable connection between the two
-            // layers was written, tested and impossible to open. The setting
-            // has always said what a channel is made of: a house that holds
-            // something left by the one who crossed is a house that receives,
-            // and a house that holds nothing hears nothing. That is the whole
-            // difference between the four bodies in `IMMORTAL_CHANNELS` and
-            // everybody else, and it is a property of the OBJECT rather than of
-            // the house - which is why it is set here and not on the faction.
-            //
-            // It cuts both ways, as it should: the gift is also what a rival
-            // would have to take to cut the line, and the house cannot tell
-            // whether silence means the line is dead or the person is.
             gift = { ...gift, locationId: faction!.seatLocationId };
             if (!gift.tags.includes(LID_CHANNEL_TAG)) {
                 gift = { ...gift, tags: gift.tags.concat(LID_CHANNEL_TAG) };
@@ -1334,24 +1172,7 @@ export function ascend(state: WorldState, input: AscendInput): AscendResult {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE ABODE
-//
-// The landing is open ground that nobody owns and everybody arrives on, and
-// until this existed that was the whole of the far side for a newcomer -
-// which made ascension read as an ending with a field attached. It is not.
-// Somebody who comes through settles, quickly, and the abode is the first
-// thing that happens up there: somewhere to be, somewhere to keep what they
-// make, and somewhere they can be found by anybody else on this layer.
-//
-// It is an ordinary location and nothing about it is immortal-specific except
-// the layer. `kind` is `cave` - the genre's own word for a cultivator's
-// dwelling, and a kind with no faction implication - rather than a new member
-// of `LocationKind`, because a type widened for one case is the bespoke rule
-// this design forbids. What an abode is FOR follows from the generic systems:
-// objects have a `locationId`, people have a `locationId`, and being findable
-// is `evaluateAccess` against thresholds like anywhere else.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SettleAbodeInput {
     residentId: string;
@@ -1372,18 +1193,6 @@ export interface SettleAbodeResult {
 
 /**
  * Make somewhere to be, above the Lid.
- *
- * Idempotent by construction: the id is keyed on the resident, so a second
- * call finds the first one's location and moves nobody. The abode hangs off
- * the landing rather than off the seam, which is a statement about the
- * geography and not a convenience - everybody arrives at the landing, so
- * everybody's ground is measured from it.
- *
- * Thresholds are the layer's, which is to say the entry bar is True Immortal
- * and so is every other bar. Nothing up there is difficult because of the
- * ladder; the ladder is finished. What an abode is worth is that it is YOURS,
- * on a layer where a newcomer's standing is zero on every axis
- * (`immortalStanding`), and holdings is one of the axes.
  */
 export function settleAbode(state: WorldState, input: SettleAbodeInput): SettleAbodeResult {
     const npc = getNpc(state, input.residentId);
@@ -1523,17 +1332,6 @@ export interface DescentResult {
 
 /**
  * Force an opening inward.
- *
- * Not a travel option. It is paid for out of cultivation condensed over ages,
- * it draws the heaviest tribulation in the game, and it buys ten to fifteen
- * breaths - enough to end a faction and not enough to take one, hold ground,
- * occupy a province, install anybody or govern for an afternoon. That is why
- * nobody above the Lid rules anything down here.
- *
- * The visit is resolved atomically and the resident's layer never changes,
- * because the expulsion is already happening for the whole time they are here:
- * a True Immortal in the lower world is a thing being pushed back out, the way
- * water finds a level.
  */
 export function descend(state: WorldState, input: DescendInput): DescentResult {
     const npc = getNpc(state, input.residentId);
@@ -1671,16 +1469,6 @@ export interface SendAcrossResult {
 
 /**
  * Put something through the Lid without going through it.
- *
- * The setting's only reliable channel between the two sides, and the reason
- * anything below knows the other side exists at all. It is also why the most
- * valuable commodity in the world is not a treasure but a working line of
- * enquiry to somebody who already went through - precisely the sort of thing
- * that gets misreported, faked and sold.
- *
- * A message reaches exactly one person: it is stored as their memory and as a
- * secret fact. It does not become public knowledge, because a channel does not
- * announce.
  */
 export function sendAcross(state: WorldState, input: SendAcrossInput): SendAcrossResult {
     const from = getNpc(state, input.fromId);
@@ -1796,11 +1584,6 @@ export interface ChannelReading {
 
 /**
  * What a house can actually conclude from its channel.
- *
- * A channel that still answers proves somebody is picking up. A channel that
- * has gone quiet proves nothing at all, and this returns the whole list of
- * things it is equally consistent with, so no caller can quietly collapse it
- * into "the ancestor is dead."
  */
 export function readChannel(
     state: WorldState,
@@ -1862,19 +1645,6 @@ export interface ImmortalAdvanceResult {
 
 /**
  * Advance the far side alongside the near one.
- *
- * Called from the driver on the same slice as `applyPressure`, which is what
- * makes "the lower world does not pause" and "the immortal world does not
- * pause" the same statement. An ascended cultivator does not leave a snapshot
- * behind and does not become one: both layers keep running, and whoever next
- * looks at either finds it substantially different.
- *
- * Cheap and decomposable. Perils are drawn at ABSOLUTE multiples of
- * `PERIL_INTERVAL_DAYS`, so ten years then thirty produces exactly the world
- * forty years produces, and a five-century advance is ten draws per resident.
- *
- * No-ops entirely on a world nobody has ascended from, which is almost all of
- * them.
  */
 export function advanceImmortalLayer(
     state: WorldState,
@@ -1936,12 +1706,6 @@ export function advanceImmortalLayer(
 
 /**
  * Somebody stops being up there.
- *
- * Written as a secret fact and nothing else. There is deliberately no estate
- * settled, no inheritance fired and no grudge handed on: whatever they were
- * going to leave below was left at the crossing, and the lower world has no way
- * of learning that this happened. A house whose ancestor died four thousand
- * years ago is still claiming a living one, honestly, and will go on doing so.
  */
 function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: string): void {
     Object.assign(state, upsertNpc(state, markDead(resident, onDay, note)));
@@ -1968,11 +1732,6 @@ function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: 
 
 /**
  * The sky does not empty.
- *
- * The same demographic floor the lower world runs, at a hundredth of the size:
- * without it a five-century soak reports a collapse that is an artefact of the
- * model rather than anything that happened. It is not a second progression
- * system - nobody here advances, because there is nowhere to advance to.
  */
 function replenishNatives(state: WorldState, day: number, interval: number): number {
     const houses = state.factions.filter(f => isAboveTheLid(f) && f.dissolvedOnDay === null);
@@ -2038,10 +1797,6 @@ export interface ImmortalWorldShape {
     eraQiDensityBelow: number;
     /**
      * Share of places below that reach the immortal floor.
-     *
-     * The honest half of "densities the lower world cannot produce": a few
-     * pockets do, and every one of them is sealed or contested. Above, it is
-     * the whole map and nobody is guarding it.
      */
     shareBelowAtImmortalDensity: number;
 }

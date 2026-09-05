@@ -15,7 +15,7 @@
  *
  * `how-crowded-this-ground-is.ts` surfaced the largest lever in the game, which
  * was badly needed and is right. What it did not do is ask WHO IS READING. A Qi
- * Condensation cultivator was being handed "Low Fall comfortably carries a draw
+ * Condensation cultivator was being handed "Green Water City comfortably carries a draw
  * of 30, and 10 are drawing on it" on turn one, which is a surveyor's figure in
  * the hands of somebody who has been cultivating for a year.
  *

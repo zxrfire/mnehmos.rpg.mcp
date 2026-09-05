@@ -72,23 +72,20 @@
  * several; a person has one, and the days do not divide.
  *
  * ═════════════════════════════════════════════════════════════════════════
- * NOT YET REACHED BY A SENTENCE. DELETE THIS SECTION WHEN IT IS
+ * THE SENTENCE THAT REACHES IT
  * ═════════════════════════════════════════════════════════════════════════
  *
- * There is no `craft` member of `ACTION_NAMES` yet, so nothing a player types
- * arrives here. That is not the design: it is a file-ownership boundary. The
- * wiring - the enum member, the pattern-table branch, the verb-surface entry
- * and the `GameService.craft` handler - was written, applied in a detached
- * worktree and played through `game.act` end to end, and it lands as its own
- * hunk in files another agent holds. Run
- * `grep -rn "planTheBuild" src/` before believing this paragraph: the moment
- * `game.ts` names it, this section is false and is part of that change.
+ * `craft` is a member of `ACTION_NAMES` and `craft-verbs.ts` is the caller.
+ * The section this replaces said the wiring had been written in a detached
+ * worktree and never landed, and told the next reader to `grep -rn
+ * "planTheBuild" src/` before believing it. That grep found a test and a doc
+ * comment for as long as the paragraph stood.
  *
- * What was verified in the worktree, so the next reader does not re-derive it:
- * "I build a boat from the hides I took" routes here and is refused with the
- * rung it wants; "I build a carriage" lays a keel; "I go back to the carriage
- * and finish it" finishes one; and `buy`, `sell`, `ride`, `passage`, `hunt`,
- * `gather`, `refine` and `move` all keep every sentence they had.
+ * What it costs to keep true: the pattern-table branch sits immediately ahead
+ * of the two alchemy rules, because the second of those fires on
+ * `make|craft|cook|brew` beside an alchemical noun and would otherwise ask
+ * `resolveRecipe` for a pill called "a carriage". `tests/web/building-a-carriage.test.ts`
+ * pins that ordering from the player's end.
  */
 
 import type Database from 'better-sqlite3';

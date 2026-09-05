@@ -1,38 +1,5 @@
 /**
  * What the world volunteers to somebody standing here.
- *
- * A command line answers what you typed. A game answers what you meant and
- * tells you what you could have meant instead, and this is the half of that
- * which is the engine's rather than the reader's. Every read here is a pure
- * question about a situation: why nothing is accumulating, who could teach
- * you, where you could go, what is live on this ground, what a thing would
- * take.
- *
- * The reason it is one module is that these were built together and for one
- * reason, and it is written down. A full run in the browser reached qi
- * deviation with three untreated injuries, every stone spent on food and
- * satiety at zero - five turns from death, with a way out - and `help`, `what
- * can I do` and `what are my options` all refused. The trap was well designed
- * and the exit was hidden. So the rules these keep are shared and have to stay
- * shared:
- *
- * - Prompts, never a menu. The whole character of this game is that you say
- *   what you do in your own words, so the read always closes by saying it is
- *   not the list.
- * - Situated, never a dump. Every line is gated on a fact the engine already
- *   computes, and the whole read is capped.
- * - Every sentence is verified to parse. Offering somebody a sentence that
- *   reaches nothing is worse than the refusal it replaces.
- * - Nothing changes an outcome. No price, no probability, no unlock. Dying
- *   becomes a decision rather than a failure to guess vocabulary.
- *
- * ── HOW THIS IS ATTACHED ──────────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.guidance(...)` resolves and typechecks exactly as it did
- * when the bodies sat in the class, and every line below is the line it was.
- * `src/web/README.md` has the argument and the warning about `private`.
  */
 
 import { getSect, getTechnique } from '../data/cultivation/index.js';
@@ -136,31 +103,8 @@ import { type RankStanding, whyProgressHasStopped } from './why-progress-has-sto
 import type { GameService } from './turn-engine.js';
 
 /**
- * The furthest rung anything this person is carrying could put the asker on,
- * or null where nothing they hold goes past where the asker already stands.
- *
- * ── EVERY PIECE OF THIS ALREADY DECIDED THE SAME QUESTION ────────────────
- *
- * `whatTheyAreCarrying` is the same read the ASK path uses to decide what can
- * be asked for at all - a world row's `techniqueIds`, a cultivator row's
- * `knownTechniques`, and `LIVING_TRANSMISSIONS` for the handful of people who
- * are worth more than the shelf they stand beside. `carriesTo` is the same
- * arithmetic that then prices it: the lower of their own rung and the book's
- * teachable end. Take those two away and there is nothing here.
- *
- * So this adds no rule about who may teach whom. It answers, on the READ, a
- * question the ASK has always answered - and it exists because a player had no
- * way to find out which of the people above them was a road except by spending
- * a turn walking up to each of them in turn.
- *
- * Measured, for a cultivator at ordinal 38 across five seeded worlds: SIX
- * people in the world hold a road that carries any further, standing in two
- * places. Before this the read could not tell that player apart from one whose
- * house is full of elders who hold nothing.
- *
- * Null rather than the asker's own rung when nothing goes further, because
- * "they hold an art you have not got" and "they could take you up" are
- * different answers, and the read says both in different words.
+ * The furthest rung anything this person is carrying could put the asker on, or
+ * null where nothing they hold goes past where the asker already stands.
  */
 function howFarTheyCouldCarry(
     game: GameService,
@@ -195,16 +139,6 @@ function ordinalOfWorldPerson(game: GameService, personId: string): number {
 export const situatedReads = {
     /**
      * Why nothing is accumulating, with the binding gate named first.
-     *
-     * The pieces were all present and none of them was reachable. The manual
-     * axis was on the STATUS read - forty lines down a sheet a player asks for
-     * when they want their hit points - and the province, the rank and the
-     * settling clock were reachable by no sentence at all.
-     *
-     * Free, and that is load-bearing: a player at a wall has to be able to ask
-     * what it is as many times as they like. The whole design rests on the
-     * pressure being legible, and pressure a player is charged to look at is
-     * pressure they will stop looking at.
      */
     ceiling(this: GameService, run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
         const terms = this.rateTermsFor(cultivator);
@@ -287,39 +221,6 @@ export const situatedReads = {
 
     /**
      * Who stands above them and would teach, said only of people they know of.
-     *
-     * Two populations, joined and then gated the same way:
-     *
-     *   THE ROLL   `rosterFor` returns the house's catalog roster with `known`
-     *              already resolved against the knowledge rows, plus the
-     *              `master` role and the three teaching limits.
-     *   THE ROOM   `present()` is who is physically here, which includes
-     *              people from no house at all. Gated on `isAwareOf`, the same
-     *              predicate `company()` uses for a face in a square.
-     *
-     * Somebody in both is reported once, from the roster, because the roster
-     * row carries strictly more - and `here` is set from the room, so "they
-     * are here" is a fact about the present rather than about the catalog.
-     *
-     * ── AND A NAME GATE IS NOT ENOUGH ────────────────────────────────────
-     *
-     * Both populations then go through `noticesThatTheyAreThere`, and that is
-     * a second gate rather than a tightening of the first. Played at ordinal
-     * 25 on the Pavilion's ground, this read answered *"1 are counted without
-     * a name because this cultivator has never met them"* about Ru Anwei, who
-     * stands at 41 and has not left her hall in three hundred and eighty
-     * years - so the name was withheld and the count, and the exact rung gap,
-     * were handed over. The design owner: *"this you shouldn't even know"*,
-     * *"you can only count those you know about (even if you don't know their
-     * names)"*, *"a DT wouldn't even make himself visible to you for no
-     * reason"*.
-     *
-     * `presence-recognition.ts` carries the whole argument and derives the
-     * threshold from `REGARD_BANDS` rather than picking one. What matters here
-     * is which way the two gates compose: knowledge WINS, so an elder holding
-     * court or somebody who has spoken to you is still on this list at any
-     * height, and what drops out is only a person the roster would otherwise
-     * have introduced by arithmetic.
      */
     teacher(this: GameService, run: Run, cultivator: Cultivator): Execution {
         const inTheRoom = new Map(this.present(cultivator).map(row => [row.id, row]));
@@ -327,11 +228,6 @@ export const situatedReads = {
         const counted = new Set<string>();
         /**
          * How many were dropped for being unnoticeable, for the inspector.
-         *
-         * Reported on the engine channel and NOT to the player, which is the
-         * whole distinction this fix rests on: an operator reading the log
-         * needs to know the gate fired, and telling the player "there are two
-         * more you cannot perceive" is the leak wearing an apology.
          */
         let unnoticed = 0;
 
@@ -461,21 +357,7 @@ export const situatedReads = {
             ok: true
         }];
 
-        // ── AND THE PEOPLE ON YOUR OWN ROLL, WHOM YOU HAVE MET ───────────
-        //
-        // FOUND BY PLAYING, as a Sword Elder of the Azure Cloud Pavilion,
-        // enrolled, standing on the house's own ground: "who are the other
-        // elders here?" answered *7 present: 0 this cultivator can put a name
-        // to, 7 they cannot*, and the narrator wrote that none of them looked
-        // up. A member of a house could not name one person in it.
-        //
-        // This read had already done every piece of the work - it joins the
-        // roll to the room and gates both on `noticesThatTheyAreThere` - and
-        // then showed the player people without recording that it had. Which
-        // is the seam's whole subject: what the game shows you, you know.
-        //
-        // DECLARED, not written. `the-people-you-serve-with.ts` holds the rule
-        // and why it is two conditions rather than one.
+        // AND THE PEOPLE ON YOUR OWN ROLL, WHOM YOU HAVE MET
         const meeting = whatStandingAmongYourOwnShows(cultivator, membership?.sectId ?? null, {
             // The catalog's display name, which is what a member would say.
             houseName: getSect(membership?.sectId ?? '')?.name ?? 'the house',
@@ -522,17 +404,6 @@ export const situatedReads = {
 
     /**
      * Where they could go, priced, with the qi and the province's ceiling.
-     *
-     * The discovery gate here is `canPointAt` rather than `isAwareOf`, and the
-     * difference is the whole point: `REACHABLE_FROM` is `placed`, and a name
-     * caught through a wall is a name and not a destination. `somewhereReal`
-     * already applies exactly this predicate when the player tries to TRAVEL
-     * to a place, so listing on any looser rule would advertise destinations
-     * the move verb would then refuse.
-     *
-     * The names below `placed` are counted and never listed. Listing them would
-     * quietly promote a whisper into a road and spend a discovery the player
-     * was supposed to earn.
      */
     destinations(this: GameService, run: Run, cultivator: Cultivator): Execution {
         const here = standingOf(cultivator);
@@ -551,24 +422,7 @@ export const situatedReads = {
         const reachable: Destination[] = [];
         let unplaceable = 0;
 
-        // ── ONE ROW PER PLACE, WHATEVER TAG IT ARRIVED UNDER ─────────────
-        //
-        // A place can hold TWO knowledge records under two different ids and
-        // one display name: the catalog's own id, and the world location row
-        // the seeder wrote for the same ground. `awareness` dedupes by
-        // `claim_key`, which is correct at its own level and is not a dedupe
-        // by PLACE - so `exists:place:the-dead-verge` and
-        // `exists:place:loc-region-quiet-marches-the-dead-verge` are two rows,
-        // both resolve to the same catalog place, and both were pushed.
-        //
-        // Reproduced before fixing, on an ordinary opening turn: two of seven
-        // destinations were emitted twice, byte-identical, in the prose AND on
-        // the engine channel - "Nine Hundred Paces" and "The Jade Face". The
-        // quiet-ground loop below already guarded against this for its own
-        // rows; nothing guarded the two loops above it.
-        //
-        // First writer wins, which is the catalog row: it carries the authored
-        // `kind` and the region the place actually sits in.
+        // ONE ROW PER PLACE, WHATEVER TAG IT ARRIVED UNDER
         const remember = (destination: Destination): void => {
             const key = loosePlaceKey(destination.name);
             if (reachable.some(row => loosePlaceKey(row.name) === key)) return;
@@ -582,14 +436,14 @@ export const situatedReads = {
             }
             const wanted = loosePlaceKey(row.name);
 
-            // A PROVINCE, which is the scale the catalog actually prices. This
-            // half was missing from the first build and it was the whole of the
-            // travel answer: "The Jade Gorge" and "The Drowned Sea" are names
-            // in the knowledge table like any other, they are the only names
-            // with a stated `travelDays` beside them, and looking up
-            // settlements only dropped every one of them on the floor. The
-            // read listed five towns in the player's own province, each of them
-            // zero days away, and the cost map below never once returned a row.
+            // A PROVINCE, which is the scale the catalog actually prices. This half
+            // was missing from the first build and it was the whole of the travel
+            // answer: "The Jade Gorge" and "The Drowned Sea" are names in the
+            // knowledge table like any other, they are the only names with a stated
+            // `travelDays` beside them, and looking up settlements only dropped
+            // every one of them on the floor. The read listed five towns in the
+            // player's own province, each of them zero days away, and the cost map
+            // below never once returned a row.
             const province = REGIONS.find(region => loosePlaceKey(region.name) === wanted);
             if (province) {
                 remember({
@@ -632,23 +486,8 @@ export const situatedReads = {
                 ambient: found.place.ambient,
                 regionName: found.region.name,
                 // Never zero for "somewhere in this province", and never
-                // fabricated. Two figures can answer, at two scales, and the
-                // one that applies is decided by where the player is standing:
-                //
-                //   same province   `placeRoadDays`, if the catalog states a
-                //                   road between here and there. Sparse, so
-                //                   usually null, and null still prints as
-                //                   "nothing states how far" rather than as a
-                //                   zero a player would plan around.
-                //   another one     the province road, as before.
-                //
-                // Found by playing. The listing said Clear River Ford was in this
-                // province and "nothing states how far", and `move` then spent
-                // the two days the catalog states for that road - the game
-                // printing one thing and charging another, which is the exact
-                // defect the place-road layer was added to end. `daysOnTheRoadTo`
-                // is the charging half and this is the printing half, and they
-                // now read the same row.
+                // fabricated. Two figures can answer, at two scales, and the one
+                // that applies is decided by where the player is standing:
                 travelDays: found.region.id === fromRegion.id
                     ? placeRoadDays(cultivator.location, found.place.name)
                     : cost.get(found.region.id) ?? null,
@@ -659,49 +498,7 @@ export const situatedReads = {
             });
         }
 
-        // ── GROUND THAT IS NOT A TOWN ────────────────────────────────────
-        //
-        // The read listed settlements and nothing else, so a player asking
-        // where they could go was answered with the two market towns they had
-        // names for - both crowded, both thin - while a DENSE vein with nobody
-        // on it sat in the same province. Measured on a live world: 34 caves,
-        // wilds and veins, all of them already `discovered` by the world, 31 of
-        // them with zero occupancy, the best at qiDensity 70 against a
-        // settlement's 35.
-        //
-        // Nothing was stopping the player travelling there either - `move`
-        // accepts any world location by name, and has all along. They were
-        // simply never told the names, so "I look for a quiet cave in the
-        // mountains" and "I seek an uninhabited place to cultivate" both
-        // reached nothing and the busiest ground in the world stayed the only
-        // ground they could name.
-        //
-        // Own province only, and only what the world has already discovered.
-        // This is local geography - a farm boy knows where the caves are - and
-        // not the hard discovery that finding a lone rich cave is meant to be.
-        //
-        // ── AND IT IS STILL GATED, WHICH IT WAS NOT ──────────────────────
-        //
-        // "A farm boy knows where the caves are" is a reason to GRANT a record,
-        // not a reason to skip the gate, and this loop read the world's own
-        // location table straight into a player-facing list with no knowledge
-        // check anywhere in it. `seedTheGroundAroundHome` grants the ordinary
-        // ground at birth so the farm boy keeps his caves; everything else has
-        // to be learned like anything else.
-        //
-        // Measured before this: a fresh cultivator holding no record for any of
-        // them was handed The Glass Field and The Nine-City Assize by name.
-        // Those are DAO GROUNDS - `how-a-cultivator-comes-by-a-road.ts` seeds
-        // its `open` catalog rows as ordinary `wilds`, discovered - and this
-        // read was the only place in the game they appear at all, ungated,
-        // stripped of everything that makes them what they are. The same hole
-        // would have handed over any prospected find that landed on one of
-        // these three kinds.
-        //
-        // The gate is `canPointAt`, the same predicate the rest of this read
-        // and `foundGroundIn` already use. Default-deny: the loop asks whether
-        // this cultivator can point at the row, rather than asking whether the
-        // row is one of the kinds somebody remembered to exclude.
+        // GROUND THAT IS NOT A TOWN
         let unnamed = 0;
         // Ground this cultivator cannot point at, kept as what it looks like
         // from above it. Filled by this loop and the one after it, and read at
@@ -738,25 +535,7 @@ export const situatedReads = {
             });
         }
 
-        // ── AND WHAT IS SIMPLY VISIBLE FROM UP THERE ─────────────────────
-        //
-        // The second discovery channel, and the one the design was missing.
-        // Everything above this line is somebody having SAID something: the
-        // knowledge rows, `canPointAt`, the count of names too vague to walk
-        // towards. That is the whole of how the world reached a player, and it
-        // is a mortal's account of how the world reaches anybody.
-        //
-        //   "at higher ranks you should just be able to fly and look around."
-        //
-        // So the gazetteer is walked a second time on a different question -
-        // not "have you been told about this" but "could you see it from the
-        // height you can reach" - and what comes back is physical and stripped.
-        // See `what-you-can-see-from-up-there.ts` for the line this must hold
-        // and for why `Sighting` has no name on it.
-        //
-        // Ground already on `reachable` is skipped: for a place they can point
-        // at, the read above says more and says it better, and printing the
-        // silhouette of somewhere they can already name is noise.
+        // AND WHAT IS SIMPLY VISIBLE FROM UP THERE
         for (const region of REGIONS) {
             const sameProvince = region.id === fromRegion.id;
             // No stated road is not a distance. A province the catalog does not
@@ -786,21 +565,7 @@ export const situatedReads = {
             onTheGround
         });
 
-        // ── AND THE GATES ────────────────────────────────────────────────
-        //
-        // Same gate, same shape, different half of the map. A house's ground is
-        // where the people worth asking actually stand - measured on 5 seeds,
-        // every one of the 88 cultivators at Foundation Establishment and above
-        // is on one - and until it appeared here the read that answers "where
-        // can I go" could not name a single one of the 34.
-        //
-        // Counted into `unnamed` when the gate refuses, exactly like quiet
-        // ground. That counter reaches the engine channel and never the prose,
-        // which is right: `unplaceable` is the player-facing "and two further
-        // names you cannot place", and it is about names they HOLD. A gate they
-        // have never been told about is not a name they are carrying, and
-        // saying "there are eight things here you cannot see" would advertise
-        // the discovery instead of gating it.
+        // AND THE GATES
         for (const record of this.housesWithGroundIn(fromRegion.name)) {
             if (reachable.some(row => loosePlaceKey(row.name) === loosePlaceKey(record.name))) continue;
             if (!this.canPointAtLocation(cultivator, record)) {
@@ -832,14 +597,7 @@ export const situatedReads = {
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
 
-        // ── AND THE TWO WAYS OF GETTING THERE THAT ARE NOT THE ROAD ──────
-        //
-        // Both belong on this read rather than beside their own verbs, for the
-        // same reason the sight horizon does: this is the question a player
-        // asks when they want to leave, and a capability nobody can find out
-        // about is a capability nobody has. A counter in the square is a fact
-        // about the square, and how far a rung reaches is a fact about the
-        // person - neither is a secret and neither costs anything to say.
+        // AND THE TWO WAYS OF GETTING THERE THAT ARE NOT THE ROAD
         if (thereIsACounterAt(placeName(cultivator))) {
             const line = 'The Measured Span keeps a counter here. There is a board on the wall '
                 + 'with what runs from it, what each costs and when it goes, and reading it '
@@ -869,17 +627,11 @@ export const situatedReads = {
             }
         }
 
-        // The two channels are kept visibly apart in the prose as well as in
-        // the code. What was said to you comes first, because it is the answer
-        // to the question; what you can see comes after it and is introduced as
-        // a different kind of knowing, so a player can tell at a glance which
-        // of their facts came from a person and which from their own eyes.
-        //
-        // Said whenever there is ground out here they cannot point at - which
-        // includes the case where the horizon is zero, because a refusal that
-        // names what would work is worth more than silence, and "you cannot get
-        // above it yet" is exactly the sentence that tells a low cultivator
-        // their map has holes and that asking is still the way to fill them.
+        // The two channels are kept visibly apart in the prose as well as in the
+        // code. What was said to you comes first, because it is the answer to the
+        // question; what you can see comes after it and is introduced as a
+        // different kind of knowing, so a player can tell at a glance which of
+        // their facts came from a person and which from their own eyes.
         if (onTheGround.length > 0) {
             facts.lines.push('', overlook.headline, ...overlook.lines);
             facts.prose = `${facts.prose}\n\n${overlook.headline}\n${overlook.lines.join('\n')}`;
@@ -915,32 +667,6 @@ export const situatedReads = {
 
     /**
      * What ground this cultivator can point at teaches, and what it wants.
-     *
-     * ── THE DEFECT ───────────────────────────────────────────────────────
-     *
-     * Twenty-three places that teach a road are seeded into every world, and
-     * `daoGroundsInReachOf` - the function that decides who can get at one -
-     * had NO CALLER anywhere in `src/web` or `src/server`. Every NPC alive was
-     * walking roads off ground the player could not name, could not be told
-     * about, and took nothing from while standing on it. This is the verb, and
-     * `ground-that-teaches-a-road.ts` is what it reads.
-     *
-     * ── THE GATE HOLDS, AND IS THE SAME GATE ─────────────────────────────
-     *
-     * Nothing here names a place the cultivator could not already name. The
-     * predicate is `canPointAtLocation`, which is what `destinations` and the
-     * move verb use, plus the one case it cannot cover: ground they are
-     * standing on, which they can obviously point at whatever the table says.
-     * A player who has been told about nothing gets a short honest answer that
-     * does not say what exists.
-     *
-     * ── AND EVERY REFUSAL NAMES WHAT WOULD WORK ──────────────────────────
-     *
-     * The bar, the reading against it, and the gap - the three facts the sect
-     * admission line answers with, which is the one refusal in this game that
-     * has always read well. Composed in
-     * `ground-that-teaches-a-road.ts` off the row's own fields, so a
-     * twenty-fourth ground needs no branch here or there.
      */
     roadsWithinReach(this: GameService, run: Run, cultivator: Cultivator): Execution {
         const world = this.atHand;
@@ -978,14 +704,7 @@ export const situatedReads = {
                 : `${where}${wants.because} ${wants.wouldWork}`);
         }
 
-        // ── AND THE GROUND YOU CAN CARRY ─────────────────────────────────
-        //
-        // A body at a great height imparts a dao, and an object fit for a path
-        // does the same thing: it is a locus you sit with rather than a place
-        // you go. One reader, so the two can never disagree about who receives
-        // anything. Nothing is listed that is not already bound to this
-        // cultivator - carried, or kept by a house that has taken them in - so
-        // this cannot name a thing they had no business knowing about.
+        // AND THE GROUND YOU CAN CARRY
         const holding = { ...who, id: cultivator.id };
         const carried = thingsCarriedThatTeachARoad(world, holding);
         for (const thing of carried) {
@@ -1031,34 +750,10 @@ export const situatedReads = {
         return execution;
     },
 
-    // ─────────────────────────────────────────────────────────────────────
     // WHAT IS LIVE STANDING HERE
-    //
-    // The fourth question, and it turned out to be the one a new player asks
-    // first: not "why am I stuck" but "what are the kinds of thing I can do
-    // at all". Found by playing a full run in the browser, where `help` and
-    // `what can I do` - the two most universal inputs in the history of text
-    // games - both landed on the unclear refusal while a dozen good verbs sat
-    // one guess away.
-    //
-    // Nothing below computes an outcome. It is a GATHERING, in the same shape
-    // as `ceiling`, `teacher` and `destinations` above it: six facts this
-    // class already reads for other purposes, handed to a pure function that
-    // holds no thresholds of its own beyond the schema's. See
-    // `what-is-worth-doing-standing-here.ts` for what it may and may not say.
-    // ─────────────────────────────────────────────────────────────────────
 
     /**
      * The state that decides what is worth offering, as scalars.
-     *
-     * Every field is read through the function that already owns it -
-     * `techniqueCeiling` for the road, `medicineReaches` for what a physician
-     * can close, `canAttemptBreakthrough` for the crossing - so this cannot
-     * disagree with the verb it points at. A second opinion about whether a
-     * wound is treatable would be a second medicine system.
-     *
-     * Cheap enough to run on every state read: one pouch query, one roster
-     * read that is already in hand, and arithmetic.
      */
     whatIsLiveHere(
         this: GameService,
@@ -1108,12 +803,6 @@ export const situatedReads = {
                 standingOf(cultivator).regionId
             ),
             // -- AND WHOEVER IS ON THEIR KNEES IN FRONT OF THEM -----------
-            //
-            // A submission ends the fight, so the fact that somebody yielded
-            // lives on a flag rather than on a fight row. Presence is what
-            // makes it lapse: the id is only worth anything while that person
-            // is still in the square, so this is a join between the note and
-            // the room rather than a countdown.
             yielding: (() => {
                 const noted = readFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
                 if (!noted) return null;
@@ -1130,17 +819,7 @@ export const situatedReads = {
             pillsCarried: pouch.filter(entry => entry.kind === 'pill').length,
             peopleAboveHere: roster.filter(row => row.realmOrdinal > cultivator.realmOrdinal).length,
             peopleHere: roster.length,
-            // ── WHAT IS NAILED UP HERE, AND WHEN THE DOOR OPENS ──────────
-            //
-            // The derivation the deliberate read runs, without the granting.
-            // See the import note: `readTheWall` writes a knowledge row for
-            // every house on the paper, and this method runs on every state
-            // read, so calling it here would grant the province to somebody
-            // standing still.
-            //
-            // Null where the place is off the map rather than a zeroed shape.
-            // "There is no wall here" and "I have no idea what is here" are
-            // different facts and only the first is worth a sentence.
+            // WHAT IS NAILED UP HERE, AND WHEN THE DOOR OPENS
             paperOnTheWall: this.paperUpAt(cultivator, run),
             spanCounterHere: thereIsACounterAt(here),
             // What the board would actually put to somebody at this rung, which
@@ -1161,13 +840,7 @@ export const situatedReads = {
             // years for one, which is the sentence somebody standing on a vein
             // needs and was never shown.
             ambient,
-            // ── THE NAMES, ALREADY GATED ─────────────────────────────────
-            //
-            // Every name below has passed the gate the read it points at
-            // enforces - `isAwareOf` for a face, `canPointAt` for a road, and
-            // nothing at all for the ground under their own feet. The
-            // affordance module never widens what it is handed; see the header
-            // on `namesSomething` for where that line actually falls.
+            // THE NAMES, ALREADY GATED
             peopleHereByName: roster
                 .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
                 .map(row => ({
@@ -1190,16 +863,7 @@ export const situatedReads = {
                 .sort((a, b) => a.askStones - b.askStones),
             roadUnderfoot: this.groundTheyCanPointAt(cultivator)
                 .find(row => row.underfoot)?.name ?? null,
-            // ── THE DANGEROUS HALF, WHICH WAS NEVER BEING PRODUCED ───────
-            //
-            // Measured against `canHurtYou` over 102 squares: of fifteen verbs
-            // this row generated, three could hurt anybody, and `site/enter`
-            // was not among them in any of the 42 squares standing on one.
-            //
-            // `nameableFor` is the `site` verb's own gate - `isAwareOf`
-            // through `nameableSites` - so a name that reaches the row is a
-            // name `siteMeant` will resolve. Openable first, then the
-            // shallowest that is still above, which is the one worth aiming at.
+            // THE DANGEROUS HALF, WHICH WAS NEVER BEING PRODUCED
             sitesYouCouldOpen: this.nameableFor(cultivator)
                 .map(site => ({
                     name: site.name,
@@ -1229,17 +893,10 @@ export const situatedReads = {
                 return holding === 'no_authority' || holding === 'no_holder_of_record';
             })(),
             aboveTheLid: canExistBeyondTheLid(cultivator),
-            // The one entry here that is gone next turn whatever happens. See
-            // the field's note in the affordance module for why it is offered
-            // ahead of the body, which nothing else is.
-            // ── WHAT IS HAPPENING, WHICH BEATS WHERE IT IS HAPPENING ─────
-            //
-            // Read off the same held fight `act` routes a sentence through, and
-            // priced with the same `whereThisFightStands` the narration quotes -
-            // so the row and the prose above it cannot disagree about the odds.
-            // The preview rolls on a stream nobody fights from, which is what
-            // makes it safe to run on every state read: looking at the chance
-            // cannot move it.
+            // The one entry here that is gone next turn whatever happens. See the
+            // field's note in the affordance module for why it is offered ahead of
+            // the body, which nothing else is. WHAT IS HAPPENING, WHICH BEATS WHERE
+            // IT IS HAPPENING
             fight: theFightStillStands(this.fight, run.id, cultivator.id)
                 ? (() => {
                     const held = this.fight!;
@@ -1281,27 +938,6 @@ export const situatedReads = {
 
     /**
      * Places they could set out for whose ground beats the ground underfoot.
-     *
-     * ── Why this is not `whereCouldTheyGo` ───────────────────────────────
-     *
-     * Because that read prices roads, counts occupancy, resolves provinces and
-     * folds in ruins and quiet ground, and it runs when somebody ASKS. This
-     * runs on every state read, and all it needs is the one column the
-     * destinations read has that nothing else does: a band, against a name the
-     * player has already earned a road to.
-     *
-     * ── The gate is `canPointAt`, and it is the whole safety of it ───────
-     *
-     * The same predicate `destinations` prints under and the `move` verb
-     * enforces. A name that arrives here is a name the player could already
-     * type at the travel verb and be honoured, which is the bar a suggested
-     * sentence has to clear: a chip that reaches a refusal teaches the player
-     * that the row lies. A place they have only heard whispered fails
-     * `canPointAt` and is not on this list.
-     *
-     * Empty where nothing known is better, which is the ordinary case and the
-     * right answer. Somebody standing on the best ground they have a name for
-     * should not be told to walk.
      */
     thickerGroundTheyCouldReach(
         this: GameService,
@@ -1362,28 +998,6 @@ export const situatedReads = {
 
     /**
      * The recruiting paper up where this cultivator is standing, counted.
-     *
-     * ── Why this is a separate method from `readTheWall` ─────────────────
-     *
-     * Because one of them writes and one of them does not, and the difference
-     * is the whole discovery rule. `readTheWall` grants a knowledge row for
-     * every house on the paper, which is correct for somebody who walked over
-     * and looked at it and would be a leak on a surface that renders on every
-     * state read. So the affordance layer takes the pure derivation - the same
-     * `billsOnTheWall` call, the same field, the same day, the same seed - and
-     * gets back counts. No house name leaves this method.
-     *
-     * ── And what it is for ───────────────────────────────────────────────
-     *
-     * The miss that produced it, from a real run: two houses were holding
-     * intakes at Autumn Gate, one in 35 days and one in 70, the engine knew both
-     * and narrated both, and the row of things to do went on offering the same
-     * three reads it offers everywhere. A wall is the most place-specific
-     * object in a settlement and it is the one channel that runs towards the
-     * player instead of waiting to be found.
-     *
-     * Null rather than a zeroed shape where the location is off the map, which
-     * is a different fact from an empty wall and wants a different silence.
      */
     paperUpAt(
         this: GameService,
@@ -1420,27 +1034,6 @@ export const situatedReads = {
 
     /**
      * Who answers for the ground under them, asked for deliberately.
-     *
-     * The trust term in `ground-trust.ts` has been moving the player's odds off
-     * this since it landed, and the played game would not say it:
-     * `whoHoldsTheGround` had two callers in `src/` and both were inside the
-     * NPC simulation. Measured on a fresh run, which opens at Wind Market on The
-     * Burial Sands - so a player stands on the one province nobody holds, on
-     * turn one, and could not find out. Five phrasings, five wrong answers:
-     *
-     *   "I ask who holds this ground"  an NPC, and the resolve failed
-     *   "who holds this ground"        `destinations`, answering with the
-     *                                  province's realm ceiling
-     *   "whose ground is this"         the same
-     *   "who is in charge here"        `sect`, answering about the PLAYER
-     *   "who do I complain to here"    unclear
-     *
-     * Somebody who ASKED is answered whichever of the four readings it is,
-     * including "the record does not say" - which is the one the old fold
-     * priced as a vacuum. The volunteer is narrower and lives with the look
-     * itself; see `ground-holder-lines.ts` for why.
-     *
-     * Free. Asking whose ground you are standing on costs nothing anywhere.
      */
     whoAnswersHere(this: GameService, run: Run, cultivator: Cultivator): Execution {
         const where = this.worldPlaceOf(cultivator);
@@ -1472,24 +1065,10 @@ export const situatedReads = {
 
     /**
      * Dao ground this cultivator holds a record for, or is standing on.
-     *
-     * The gate, in one place, so the affordance and the read cannot disagree
-     * about what the player knows. The predicate is the one `destinations` and
-     * the move verb enforce, over the same rows - `canPointAt` and never
-     * `isAwareOf`, because a name caught through a wall is a name and not a
-     * destination.
-     *
-     * The awareness table is read ONCE rather than per ground. This runs on
-     * every `look` and every `help`, and `canPointAtLocation` costs two queries
-     * a row.
      */
     /**
      * Things bound to this cultivator that carry a road - carried, or kept by a
      * house that has taken them in.
-     *
-     * No knowledge gate, because there is nothing to gate: an object is on this
-     * list only because it is already theirs or their house's, and nobody has
-     * to be told where their own hands are.
      */
     thingsTheyHoldThatTeach(this: GameService, cultivator: Cultivator): ThingThatTeaches[] {
         const world = this.atHand;
@@ -1530,40 +1109,13 @@ export const situatedReads = {
 
     /**
      * The same list, for the sheet.
-     *
-     * On the state payload rather than only in narration because the player
-     * who most needs it is the one who has not thought to ask: the run that
-     * found this pressed Cultivate, because it was the only obvious control on
-     * the screen, and died. Two or three of these beside it are the difference
-     * between a trap and a decision.
-     *
-     * Never throws and never blocks a state read. A sheet that fails to render
-     * because the suggestion list could not be built would be a far worse bug
-     * than the one this fixes, and `present()` in particular depends on a world
-     * that a bare state read may not have loaded.
      */
     affordancesFor(this: GameService, cultivator: Cultivator, run: Run): Affordance[] {
         try {
             const live = whatIsWorthDoingStandingHere(
                 this.whatIsLiveHere(cultivator, this.ambientFor(cultivator, run), run)
             );
-            // ── THE HARM AXIS, STAMPED HERE AND DEFINED NOWHERE NEAR HERE ─
-            //
-            // `canHurtYou` lives in `action-set.ts` beside the free-versus-
-            // spending split, and this is its consumer. The affordance module
-            // is deliberately not allowed to answer this question itself: a
-            // predicate about danger written inside the surface that ranks
-            // danger would be a second opinion, and this repo has spent a day
-            // removing second opinions.
-            //
-            // The exception is the fight register, which sets its own and must.
-            // `canHurtYou` takes an `ActionName`, and inside a live fight
-            // `I block` and `I keep swinging` never become plans at all -
-            // `fight-answers.ts` reads them before the pattern table, they
-            // spend no day, and they can end the run in the round they are
-            // typed. Running them through `parseIntent` here would score the
-            // five most dangerous strings in the game as safe, so anything
-            // already marked stays marked.
+            // THE HARM AXIS, STAMPED HERE AND DEFINED NOWHERE NEAR HERE
             return live.map(a => a.canHurtYou
                 ? a
                 : (() => {
@@ -1577,16 +1129,6 @@ export const situatedReads = {
 
     /**
      * `help`, `what can I do`, and everything that means them.
-     *
-     * Free, and that is load-bearing for the same reason `ceiling` is free: a
-     * player who is charged a turn to ask what their options are will stop
-     * asking, and this is the one read a player in trouble asks repeatedly.
-     *
-     * It is deliberately situated rather than a catalog. A fixed command list
-     * would flatten the whole character of the game, which is that you say
-     * what you do in your own words; what comes back is the handful of things
-     * that are live in THIS state, so the player learns the shape of the space
-     * and then phrases it themselves.
      */
     guidance(this: GameService, run: Run, cultivator: Cultivator, ambient: AmbientQi): Execution {
         const here = this.whatIsLiveHere(cultivator, ambient, run);
@@ -1596,18 +1138,7 @@ export const situatedReads = {
             `${placeName(cultivator)}, at ${rankName(cultivator.realmOrdinal)}. `
             + 'What is live for you here:';
 
-        // ── THE STATE GOES ON `lines`, NOT ONLY ON `structure` ───────────
-        //
-        // Phase 3 is shown `lines` and never `structure`, so a state summary
-        // that lives only on the mechanical channel describes a player the
-        // narrator cannot see. Asked to write "you stand there", a model then
-        // has no figure for the purse except the one in the player's own
-        // sentence - and that sentence is a CLAIM, which a player who is
-        // describing themselves from memory will get wrong.
-        //
-        // The same three numbers as the structure line below, in the register
-        // `lines` speaks. One sentence rather than a column: what the dump rule
-        // forbids is a paragraph of figures, not the figures.
+        // THE STATE GOES ON `lines`, NOT ONLY ON `structure`
         const theirState =
             `On them: ${here.spiritStones} spirit stone${here.spiritStones === 1 ? '' : 's'}, `
             + `satiety ${here.satiety} of 100`
@@ -1657,10 +1188,6 @@ export const situatedReads = {
 
     /**
      * A manual's real ceiling for this holder, stages and volumes folded in.
-     *
-     * The single place this layer is allowed to answer "how far does this book
-     * carry them". Never `manual.cap`: that is the CATALOG's ceiling and it
-     * stops being the manual's real one the moment anybody writes a stage.
      */
     reachOf(
         this: GameService,
@@ -1680,13 +1207,6 @@ export const situatedReads = {
         );
 
         // TWO DIFFERENT NUMBERS, and they need two calls.
-        //
-        // `EffectiveCap.writtenTo` is computed from the count it was GIVEN, so
-        // handing it this holder's stages makes both fields the holder's and
-        // the world's ceiling never appears. The world's is `writtenTo` over
-        // the row count, which is what `stagesWrittenSince` is for - and the
-        // gap between them is the sentence worth having: it goes further than
-        // you can follow it.
         return {
             ...held,
             worldWrittenTo: writtenTo(manual, stagesWrittenSince(this.repos, art.id))
@@ -1695,16 +1215,6 @@ export const situatedReads = {
 
     /**
      * What standing between this cultivator and one named book actually is.
-     *
-     * The answer to a QUESTION about learning, and it changes nothing. Returns
-     * null when the name is not an art at all, so the caller falls through to
-     * the listing rather than refusing a sentence it merely failed to resolve.
-     *
-     * Every line is a restatement of something the engine already computed:
-     * the rung the book opens at, what a stall asks for a copy, whether one is
-     * already held, and how many houses teach it. Nothing here decides
-     * anything - that is `handleLearn`'s - which is what keeps the answer to
-     * "may I" and the answer to "I do" from drifting apart.
      */
     whatItWouldTake(
         this: GameService,

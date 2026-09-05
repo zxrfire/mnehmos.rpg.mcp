@@ -1,37 +1,5 @@
 /**
  * An inheritance ground: finding it, standing outside it, going in, taking.
- *
- * Four steps and they are deliberately four, because each one is a different
- * decision with a different price. Approaching costs nothing; reading a face
- * from outside costs nothing; going IN spends days and can kill; taking is
- * what the whole thing was for. A model answering `{"intent": "go in and get
- * it"}` gets the listing, because the default intent of anything that commits
- * has to be the cheapest branch it has.
- *
- * Two gates on top of ordinary target resolution, and neither is this file's
- * invention:
- *
- * - A site whose awareness is below `named` CANNOT BE RESOLVED AT ALL. The
- *   catalog withholds the name, so there is nothing to type - which is why a
- *   villager can type thirteen of them and the rest have to reach the player
- *   from somebody first.
- * - A specific name that resolves to nothing does NOT fall through to the site
- *   at hand. Naming a grave you have only heard rumoured must not quietly open
- *   the one you were standing at an hour ago.
- *
- * And the structural gate underneath is the catalog's: `outsideViewOf` returns
- * a type with no `interior` key, `SiteFace` has no field that could hold one,
- * and the single call to `enterSite` sits below a recorded entry in a method
- * that has already spent the days. Three independent reasons rather than one
- * convention.
- *
- * ── HOW THIS IS ATTACHED ────────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.site(...)` resolves and typechecks exactly as it did when
- * the bodies sat in the class, and every line below is the line it was.
- * `src/web/README.md` has the argument and the warning about `private`.
  */
 
 import { getTechnique } from '../data/cultivation/index.js';
@@ -130,15 +98,6 @@ import type { GameService } from './turn-engine.js';
 
 /**
  * The words that mean "the site in front of me" rather than naming one.
- *
- * The same defect `GENERIC_LIBRARY_PHRASE` exists for, and the same fix. The
- * parser hands over the noun phrase it found after the verb, and for the
- * commonest phrasings that phrase is generic - "the door", "the grave", "what
- * is behind the plate". Handing one of those to a fuzzy matcher resolves it:
- * "door" is contained in "The Door That Wants Somebody Not In the Record" and
- * scores over the threshold, so "I study the door" would open a specific
- * fate-gated trial three provinces away that the player has never heard of.
- * A generic phrase names nothing and falls through to the site at hand.
  */
 const GENERIC_SITE_PHRASE =
     /^(?:the |a |an |this |that |it |what |whatever )*(?:door|doorway|gate|gateway|gate frame|threshold|marker|headstone|entrance|shaft|plate|standing stone|site|sites|place|trial|trials|grave|graves|tomb|tombs|crypt|crypts|barrow|barrows|undercroft|interment|inheritance|inheritance ground|inheritance grounds|grave goods?|prize|contents|manuals?|is behind.*|is inside.*|is in there|is left|behind.*|inside.*)$/i;
@@ -150,13 +109,6 @@ const GRAVE_GRAVE_ORDINAL = 21;
 /**
  * What emptying a piece of ground is worth to whoever holds it, by the rung the
  * ground is pitched at.
- *
- * Bands rather than a curve, and read off the site's own ordinal, so the same
- * table prices a Qi Condensation grave and the interment of somebody at the top
- * of the ladder. Aligned to the realm boundaries the rest of the game already
- * uses rather than chosen: `serious` opens at Foundation, `grave` at Core
- * Formation, `unforgivable` where the ladder stops producing people who can be
- * quietly robbed.
  */
 const GRAVE_SERIOUS_ORDINAL = 13;
 
@@ -166,10 +118,6 @@ const HERE_ITSELF =
 
 /**
  * How many things done to a place are read out at once.
- *
- * A place that has been fought over for three thousand years has a long log,
- * and a wall of them is a chronicle rather than an answer. The most recent
- * changes are the ones that made it what it is now.
  */
 const PLACE_CHANGES_SHOWN = 3;
 
@@ -181,12 +129,6 @@ export const siteVerbs = {
 
     /**
      * The world state a fate gate is allowed to turn on.
-     *
-     * Counted off the obligations ledger, which is real rows written by things
-     * that happened. `generation > 0` is business inherited rather than
-     * incurred, which is exactly what "carrying an obligation you did not take
-     * on" means, and it is not a number that rises because somebody repeated an
-     * activity - which is the test `FATE_IS_NOT_A_STAT` sets.
      */
     fateEvidence(this: GameService, cultivator: Cultivator): FateEvidence {
         const row = this.db
@@ -199,13 +141,6 @@ export const siteVerbs = {
 
     /**
      * Which site a sentence meant.
-     *
-     * A name resolves against the ones this cultivator may name and nothing
-     * else, so a player cannot type their way into a grave they have never
-     * heard of. A generic phrase - "the door", "the grave", "what is behind the
-     * plate" - names nothing and falls through to the site they went to most
-     * recently, which is a row rather than a guess, exactly the way "what
-     * happened here" falls through to the ground underfoot.
      */
     siteMeant(
         this: GameService,
@@ -233,10 +168,6 @@ export const siteVerbs = {
 
     /**
      * Ground the world found, in this province, that this cultivator may name.
-     *
-     * Gated on `isAwareOf` exactly as the authored sites are: the world knowing
-     * about a ruin is not the player knowing about it, and listing every find
-     * the moment it is uncovered would spend somebody else's discovery.
      */
     foundGroundFor(this: GameService, cultivator: Cultivator): FoundGround[] {
         if (!this.atHand) return [];
@@ -253,15 +184,6 @@ export const siteVerbs = {
 
     /**
      * Standing outside something the world uncovered.
-     *
-     * Free, like the authored approach: looking at a door costs nothing. What
-     * it reports is STRUCTURE - character, scale, whose it was, what the ground
-     * does - because that is what a find carries. There is no authored interior
-     * to quote and none is invented; see `ground-the-world-found.ts`.
-     *
-     * The access read is the same `readAdmission` the authored sites use, so a
-     * cap here refuses for the same reason a cap there does and the player
-     * learns one rule rather than two.
      */
     approachFoundGround(
         this: GameService,
@@ -351,17 +273,8 @@ export const siteVerbs = {
     },
 
     /**
-     * Putting things beyond your own death, and collecting what somebody else
-     * put beyond theirs.
-     *
-     * The whole surface lives in `leaving-things-for-the-next-life.ts`, on the
-     * `trials.ts` precedent: this method supplies the clock, the mover and the
-     * company, and decides nothing about how a cache or a deposit turns out.
-     *
-     * The phrase comes off the RAW INPUT and never off a planned action's
-     * `topic`. A model asked to fill a field paraphrases, and a paraphrased
-     * phrase does not open the entry - so the one thing a player has to carry
-     * across a death is the one thing no model touches.
+     * Putting things beyond your own death, and collecting what somebody else put
+     * beyond theirs.
      */
     async legacyAct(
         this: GameService,
@@ -466,15 +379,6 @@ export const siteVerbs = {
 
     /**
      * The trials and the graves: reaching one, reading it, going in, taking it.
-     *
-     * `intent` selects WHICH of the four runs and nothing else, on the same
-     * terms as `sect` and `look`: the label is matched against a closed set of
-     * literals, an unrecognised one falls through to the default, and every
-     * outcome on the far side is computed from the catalog and from this
-     * cultivator's own rows. What is different here is that one of the four
-     * spends days and can kill, so the default is deliberately the CHEAPEST of
-     * them. A model that answers `{"action":"site","intent":"go in and get it"}`
-     * gets the listing.
      */
     async site(
         this: GameService,
@@ -566,13 +470,6 @@ export const siteVerbs = {
 
     /**
      * Reaching one, and reading it without going in.
-     *
-     * Both steps return the same disclosure because the gate between outside
-     * and inside is a door rather than a distance, and both are reads: no time
-     * passes, nothing is spent, and being refused costs what being answered
-     * costs. What the approach additionally does is write down that this
-     * cultivator has been here, which is what makes "I go inside" a sentence
-     * that resolves to something afterwards.
      */
     readSiteFromOutside(
         this: GameService,
@@ -623,33 +520,6 @@ export const siteVerbs = {
 
     /**
      * Going in.
-     *
-     * Three things happen, in this order, and the order is the design.
-     *
-     * FIRST the days are spent, through `simulateTimeSkip` and `applyTimeSkip`
-     * like every other stretch of time in this package. That is what makes
-     * entering cost something even at a site that turns out to be empty, and it
-     * is why a cultivator on their last ration can die of the walk in - through
-     * the survival layer, on the same code path as starving anywhere else.
-     * Nothing about that death is asserted here.
-     *
-     * SECOND the gates are read, in the order the catalog puts them in, and the
-     * first one that does not open stops it. Which kind refused decides what
-     * the player is told, because the three are not three settings of one dial:
-     * strength names a shortfall, talent names what was wanted and says power
-     * does not substitute, and fate names nothing at all.
-     *
-     * THIRD, and only for a strength gate, the thing does what it was built to
-     * do. A strength gate is the one kind that states an ordinal of force, so
-     * it is the one kind that puts force into a body, and it is resolved by
-     * `resolveExchange` - the engine's own combat model, priced at the gate's
-     * ordinal - rather than by a damage formula invented in this layer. Death
-     * from it goes through `evaluateDeathConditions` and `markDead`, which is
-     * the same pair `technique_manage.learn` uses when a deviation kills
-     * somebody. A talent gate is indifferent to how hard the claimant can be
-     * hit and a fate gate is not about the claimant at all, so neither of them
-     * is turned into damage: the bench's own `howItKills` opens "It does not,
-     * and that is the trap", and the engine agrees with it.
      */
     async enterTheSite(
         this: GameService,
@@ -902,12 +772,6 @@ export const siteVerbs = {
 
     /**
      * What a strength gate does to somebody who is under it.
-     *
-     * Priced by `assessPower` and resolved by `resolveExchange`, which are the
-     * engine's own, so a gate hits exactly as hard as a person at that ordinal
-     * would and no harder. Nothing about the arithmetic lives here; what lives
-     * here is the decision that a strength gate is the only kind that applies
-     * force at all, which is the catalog's own distinction and not a new one.
      */
     async gateForce(
         this: GameService,
@@ -924,16 +788,6 @@ export const siteVerbs = {
 
     /**
      * The depth of the ground itself, applied to somebody short of it.
-     *
-     * The sibling `gateForce` needed and did not have. A GATE is something a
-     * person built and is priced off a gate ordinal; a FLOOR is geology, and is
-     * priced off the floor. Same exchange, same resolver, same writes - what
-     * differs is only where the number comes from, which is why this splits at
-     * the ordinal rather than duplicating the body.
-     *
-     * A separate RNG stream from the gate's, so that a place which both has a
-     * floor and has gates does not draw the same sample twice for two different
-     * hazards.
      */
     async groundForce(
         this: GameService,
@@ -1061,16 +915,6 @@ export const siteVerbs = {
 
     /**
      * Taking it, which is the act that empties the place.
-     *
-     * Entry has to be on record first. That is not ceremony: the whole surface
-     * is built so a player cannot learn what is inside without going in, and a
-     * take that worked from the threshold would be a route around that.
-     *
-     * The grant itself goes through `technique_manage.learn` rather than
-     * through anything reimplemented here, so a manual the claimant cannot read
-     * comes back as the engine's own refusal - which is not a bug and is the
-     * world's stated design: the top grades are written for somebody who has
-     * walked a road, which is why they sit in ruins unread.
      */
     async takeFromSite(this: GameService, run: Run, cultivator: Cultivator, site: Site): Promise<Execution> {
         const record = this.sites.get(run.id, site.id);
@@ -1206,16 +1050,6 @@ export const siteVerbs = {
 
     /**
      * The engine's own account of this turn, for the output-side check.
-     *
-     * Built from the `Execution` the caller already holds, so it cannot drift
-     * from what was actually filed: a rank counted off the skip's own deltas, a
-     * breakthrough attempt counted by whether one was RESOLVED at all, and a
-     * death read off the row rather than off anybody's sentence.
-     *
-     * `breakthroughAttempted` is deliberately true for a FAILURE as well as a
-     * success. Prose about a failed attempt legitimately contains the words a
-     * successful one would, and refusing that would throw away good writing
-     * about the most dramatic thing in the game.
      */
     filedOutcome(this: GameService, execution: Execution): FiledOutcome {
         return {
@@ -1233,17 +1067,6 @@ export const siteVerbs = {
 
     /**
      * Who notices that a piece of ground was emptied.
-     *
-     * Every house named on the site, and nobody else. The severity is read off
-     * what the ground is pitched at rather than chosen: emptying a Qi
-     * Condensation grave is a slight and emptying somebody at the top of the
-     * ladder is not, and the same table prices both. Nothing here is written
-     * about graves in particular.
-     *
-     * The record is an ordinary `grudge` row on the `obligations` tables, so
-     * it is discoverable by every query that already reads them, it inherits
-     * the ordinary inheritance rules, and a descendant three generations later
-     * can still be carrying it.
      */
     attentionFor(
         this: GameService,
@@ -1392,26 +1215,6 @@ export const siteVerbs = {
 
     /**
      * What was done to this ground, and who says why.
-     *
-     * `engine/world/locations.ts` has carried the whole of this from the
-     * start - origin, an append-only change log, and a current state that is
-     * the two folded together, patched in place so the map scars rather than
-     * growing - and nothing in this layer reached any of it. A player could
-     * stand in a scar for a hundred turns and never be able to ask about it.
-     *
-     * Three things are read out and one is withheld:
-     *
-     *  - what the place IS, which anybody with eyes has;
-     *  - that it CHANGED, and when, which is legible in the ground itself;
-     *  - what the people here BELIEVE, which is `attributedCauses` and is
-     *    stored as belief because that is what it is;
-     *  - and the CAUSE, only when `causeKnown` says the world has surrendered
-     *    it. `causeFactId` is deliberately not consulted when it has not: the
-     *    seeded ruins all carry a cause fact that nobody has recovered, and an
-     *    answer that read differently in that case would be an answer.
-     *
-     * A read. No time passes, nothing is spent, and being refused costs the
-     * same as being answered.
      */
     placeHistory(
         this: GameService,

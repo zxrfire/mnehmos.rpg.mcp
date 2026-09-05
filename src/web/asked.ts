@@ -1,28 +1,5 @@
 /**
  * What comes back when the player asks somebody something.
- *
- * `docs/world/houses/asking.md` is the specification and it is emphatic that none of
- * this is a mechanic: no roll, no unlock, no phrase the world checks for, and
- * nothing that varies run to run. What it does say is the division of labour
- * this file implements - "the engine holds the facts; the judgement is
- * narration."
- *
- * So the engine's whole job here is to answer three questions off real rows,
- * which asking.md is careful to call three separate limits:
- *
- *   1. what this person could know,
- *   2. what they are in a position to say,
- *   3. what saying it would cost them.
- *
- * The result is a `reach`, and the narrator is handed observable behaviour
- * rather than the reach. That split is the reason the two channels exist:
- * `lines` say what the person did, `structure` says which limit bit. A player
- * reads the first and learns to tell them apart over a run; a developer reads
- * the second and can see immediately whether the engine was right.
- *
- * Nothing here is random. The same person asked the same thing on the same day
- * answers the same way, because asking.md's one hard rule is that the world's
- * habits must be stable enough for the person playing to learn them.
  */
 
 import type { Cultivator } from '../schema/cultivation.js';
@@ -35,11 +12,6 @@ import type {
 
 /**
  * How far the answer got. Named for what the player sees, not for the rule.
- *
- * `blank` and `deflects` are deliberately adjacent: asking.md wants ignorance
- * and evasion to be hard to tell apart at first and easy later, so the lines
- * for the two are built to rhyme and the difference is left in behaviour a
- * player can learn to read rather than in a label.
  */
 export type Reach = 'answers' | 'partial' | 'guesses' | 'deflects' | 'blank';
 
@@ -52,73 +24,22 @@ export interface AskedInput {
     rawTopic: string;
     /**
      * Whether the asked person holds a record of the subject themselves.
-     *
-     * True is decisive. False is not: most people in this world hold no rows at
-     * all, and treating an empty table as ignorance would make everyone a
-     * fool. Absence falls through to the stratum reading below.
      */
     holdsIt: boolean;
     /**
      * How many times the player has dealt with this person before.
-     *
-     * asking.md calls this the cheapest lever in the game and it is available
-     * to a cultivator with nothing: turning up twice counts, and it counts for
-     * more than realm does.
      */
     priorDealings: number;
     /**
      * What to call them, or null when the player cannot name them yet.
-     *
-     * Standing in the same square is permission to see somebody, never to
-     * know who they are. A stranger who answers a question has introduced
-     * themselves and the caller writes that down; a stranger who shrugs has
-     * not, and putting their name in the prose would hand the player an
-     * acquisition the world declined to make.
      */
     speakerName: string | null;
     /**
      * Whether standing has already overridden their unwillingness.
-     *
-     * The one hook a DEMAND has into this file, and it is deliberately the
-     * smallest one that could work. asking.md's three limits are what a person
-     * asked politely runs into; a demand is the same question with weight
-     * behind it, and weight can only ever move the SECOND and THIRD of them -
-     * what they are placed to say and what saying it would cost.
-     *
-     * It cannot move the first, and the guarantee is structural rather than
-     * remembered: limit one is tested above the branch this flag is read in, so
-     * a compelled answer from somebody who does not know the answer is not a
-     * case anybody has to think about. It cannot be reached.
-     *
-     *   > "Somebody who does not know the answer cannot be made to know it,
-     *   >  however far above them you stand."
-     *
-     * Set by `making-somebody-tell-you.ts` off a landed `resolveAttempt`, and
-     * by nothing else. This file decides nothing about whether the demand
-     * worked - it is told.
      */
     compelled?: boolean;
     /**
      * What they were asked about THEMSELVES, when that is what was asked.
-     *
-     * The one thing in this file that reaches above limit one, and it reaches
-     * it because limit one is the wrong question about this class of fact.
-     * "Could they know" is right about a rumour, a location, a house's business
-     * or somebody else's art. **A person's own name, age, sex and who they
-     * answer to are not things they could fail to have heard of**, and running
-     * them through the knowledge gate produced a refusal saying so - which is
-     * both wrong and, being a refusal, unanswerable.
-     *
-     * `what-somebody-knows-about-themselves.ts` holds the closed set and the
-     * reasoning. Two things about it are load-bearing here:
-     *
-     *   - **It settles only that they KNOW.** Limits two and three still run
-     *     unchanged below, so somebody with a position to protect can still
-     *     decline - and declining reads as a deflection, which is what it is,
-     *     rather than as never having heard of themselves.
-     *   - **It does not assert the answer is true.** What comes back is what
-     *     they SAID; the fact carries the instrument that would check it, where
-     *     the world has one.
      */
     aboutThemselves?: WhatTheySayAboutThemselves | null;
 }
@@ -131,42 +52,19 @@ export interface Answer {
     structure: string[];
     /**
      * Whether the player has genuinely acquired the subject.
-     *
-     * Only true when something was actually said. A shrug teaches nothing, and
-     * writing a knowledge record for a deflection would hand the player a name
-     * the world declined to give them.
      */
     teaches: boolean;
     /**
      * Whether the player now knows who they were talking to.
-     *
-     * True when they actually said something. Being answered at length and
-     * wrongly still counts - the carter told you his name while he was
-     * telling you everything else.
      */
     introduces: boolean;
     /**
      * Whether limit one was passed: could this person know it at all.
-     *
-     * Exposed because a demand has to be able to tell the two refusals apart
-     * before it spends anybody's day on an attempt. Leaning on somebody who is
-     * withholding is a thing that can work; leaning on somebody who has never
-     * heard of it is not, and the two must not read alike.
      */
     couldKnow: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THEY DID, IN WORDS
-//
-// asking.md's one hard rule about variation: "Do not randomise across runs.
-// The world's habits should be stable enough to learn." So these are picked by
-// a stable hash of who was asked and what about, never by a roll. The same
-// person asked the same thing answers the same way for ever, and two different
-// questions to the same person do not come back byte-identical - which is what
-// made ignorance and evasion impossible to tell apart at any point in a run
-// rather than merely at first.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Attached, and the question named something they are placed to say nothing about. */
 const BLANK_LINES: readonly string[] = [
@@ -213,11 +111,6 @@ const UNATTACHED_UNPLACEABLE_LINES: readonly string[] = [
 
 /**
  * Which line this person gives, decided once and for ever.
- *
- * A hash rather than a roll: nothing here consumes an RNG stream, nothing
- * varies between runs, and the same question to the same person is the same
- * answer in a replay. That is the whole of asking.md's stability rule, and the
- * reason the person playing can learn the world's habits at all.
  */
 function pick(lines: readonly string[], who: string, topic: string, askedId: string): string {
     let hash = 2166136261;
@@ -236,11 +129,6 @@ function pick(lines: readonly string[], who: string, topic: string, askedId: str
 
 /**
  * Whether this person has a position to protect.
- *
- * asking.md's real rule: what closes a mouth is position, not power. A sect
- * rank is an account somebody has to give of themselves; having none is the
- * thing that makes a wandering expert forthcoming, and it is why the useful
- * person is usually two rungs below the one who actually knows.
  */
 function attached(asked: RosterEntry): boolean {
     return asked.sectId !== null && asked.sectId.length > 0;
@@ -328,27 +216,7 @@ export function askedAbout(input: AskedInput): Answer {
         // position does not, which is why the confident wrong answer and the
         // useful one come from the same kind of person.
         if (holdsPosition) {
-            // ── Two different failures, and they used to be one ──
-            //
-            // A question that resolved to something ABOVE this person is a wall:
-            // they are placed to say nothing and they say nothing, and that is
-            // asking.md's official who is not being difficult.
-            //
-            // A question that resolved to NOTHING is a different situation
-            // entirely, and collapsing the two is what made the asking surface
-            // useless. Almost every question a new cultivator asks resolves to
-            // nothing, because they have no names to ask with - so the stratum
-            // test could never pass, every attached speaker returned `blank`,
-            // and `blank` is the one reach that can never deposit a name. Two
-            // entirely different questions came back byte-identical, forever,
-            // and a player learned that asking does not work. It was the single
-            // largest hole in the discovery layer.
-            //
-            // What actually happens when somebody with a position is asked
-            // something they cannot place is that they say something warm and
-            // empty and move it along - which is `deflects`, and a deflection
-            // is worth sitting through precisely because it can still drop the
-            // one thing on the way out.
+            // Two different failures, and they used to be one
             if (!subject) {
                 return {
                     reach: 'deflects',
@@ -382,21 +250,7 @@ export function askedAbout(input: AskedInput): Answer {
         };
     }
 
-    // ── limit three, and the one a DEMAND can reach ──
-    //
-    // They know it and the account they owe costs more than the telling. That
-    // is a judgement about what saying it is worth to them, and a judgement is
-    // exactly the kind of thing weight moves - which is the whole of what
-    // `compelled` is for. Note where the flag is read: BELOW limit one, so it
-    // has already been established that there is something here to be got out
-    // of them. Somebody who does not know cannot be leaned into knowing, and
-    // that is enforced by the position of this branch rather than by a rule.
-    // A fact about themselves that costs nothing to say cannot be priced as
-    // though it cost something. `theyMayKeepIt` is false for a name, an age and
-    // a sex - saying one costs an official exactly what it costs a carter - and
-    // true for whose they are, which is the one of the four a position has an
-    // interest in. So declining is still reachable, on the fact where declining
-    // means something, and an official no longer refuses to give his own name.
+    // limit three, and the one a DEMAND can reach
     const aFactTheyCanKeep = themselves === null || themselves.theyMayKeepIt;
     if (aFactTheyCanKeep && holdsPosition && goodwill < 2 && !input.compelled) {
         // Warm, useless, and not a refusal - a deflection has to be survivable
@@ -418,18 +272,7 @@ export function askedAbout(input: AskedInput): Answer {
         );
     }
 
-    // ── they know it, they are saying it, and it is about them ──
-    //
-    // Placed BELOW limits two and three on purpose. A person who does not want
-    // to tell you their name has already deflected above and never reaches
-    // this, which is the whole of how declining stays reachable: the two
-    // refusals now read differently because they ARE different, and the one
-    // this file used to give - never having heard of themselves - was neither.
-    //
-    // What is returned is a sentence somebody said. `whatWouldCheckIt` is on
-    // the inspector channel and not in the prose, because the player finding
-    // out that a claim is checkable is a thing they do by playing rather than
-    // by being told in the same breath as the claim.
+    // they know it, they are saying it, and it is about them
     if (themselves) {
         return {
             reach: 'answers',
@@ -477,17 +320,7 @@ export function askedAbout(input: AskedInput): Answer {
         };
     }
 
-    // ── a real answer, bounded by what they know ──
-    //
-    // The substance is the subject's own observable facts, unchanged. This
-    // layer decides whether they were said, never what they are.
-    //
-    // `compelled` is deliberately absent from this line, and the consequence is
-    // worth having rather than an oversight: somebody with a position who was
-    // MADE to answer lands on `partial` - the first fact and no more, and "that
-    // is as far as it goes". So a demand that works still gets less out of
-    // somebody than turning up twice does. You can make a person tell you, and
-    // what you get is the least they can get away with saying.
+    // a real answer, bounded by what they know
     const full = !holdsPosition || goodwill >= 2;
     const said = full ? subject.facts : subject.facts.slice(0, 1);
 

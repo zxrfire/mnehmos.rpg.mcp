@@ -1,44 +1,5 @@
 /**
  * Names entering the world through the mouths of people who assume you know them.
- *
- * docs/world/houses/discovery.md, "Characters assume you know": the discovery rule
- * governs the NARRATOR'S OWN VOICE and must not gag the people in the world. A
- * cultivator says a name flatly, with no context, because of course you know it
- * - everyone they have ever spoken to did. They are not withholding; it does
- * not occur to them that explanation is required.
- *
- *     "That road's shut. Hollow Court business."
- *
- * That is the primary way names should enter a player's world, and it is better
- * than any deliberate revelation.
- *
- * ── Why the engine picks the name, and not the model ──────────────────────
- * The obvious implementation is to let the narrator drop names and then read
- * them back out of the prose. That is precisely the forbidden move: it takes
- * state out of a model response. So the order is inverted. The engine decides,
- * from real rows, which names a present speaker would plausibly say; it writes
- * the knowledge record itself; and it hands the narrator a short licence of
- * exactly those names. The record exists because the engine created it, and the
- * prose is the dressing on a fact that was already true.
- *
- * A name that never gets picked is never spoken and never recorded, and a name
- * that is picked is recorded whether or not the narration uses it well. Both of
- * those are the correct failure mode.
- *
- * ── Where the names come from ─────────────────────────────────────────────
- * `lore.ts`, which is the whole world rather than the sect catalog. This module
- * used to draw from `SECTS` alone, which meant a player could run a lifetime
- * and never hear that there were ages before this one, that something is sealed
- * under a hall two valleys over, or that the road is shut for reasons with a
- * name. That material existed and was unreachable. It is reachable now by being
- * ACQUIRABLE - said by somebody who assumes you know it - and never by being
- * printed.
- *
- * ── Hearing grants the name, not the meaning ──────────────────────────────
- * Everything recorded here lands at the lowest positive stance - `suspects` -
- * with the source attached. The player has the word and nothing else, from one
- * interested party who may be wrong. Whether the Hollow Court is a sect, a
- * court, a person or a joke is not conveyed by having heard of it.
  */
 
 import type { Cultivator, Run } from '../schema/cultivation.js';
@@ -87,11 +48,6 @@ import {
 
 /**
  * Re-exported rather than redefined.
- *
- * Both thresholds now live beside the table they filter, in `lore.ts`. They are
- * still surfaced here because this is where the rest of the layer has always
- * read them from - `asked.ts` reads the margin through this module - and moving
- * a constant is not a reason to move a call site.
  */
 export { WORKING_KNOWLEDGE_MARGIN, COMMON_CURRENCY_ORDINAL };
 
@@ -102,53 +58,16 @@ export const OVERHEARD_CHANCE = 0.2;
 
 /**
  * Why this scene is being listened to.
- *
- * The rates above are the AMBIENT ones: a name arriving in a scene the player
- * did not spend anything to reach. Two other things a player can do are
- * deliberate, and a deliberate act that pays off three times in ten is a
- * deliberate act a player learns not to bother with.
- *
- *   ambient    walking through a square, dealing with somebody. Rare.
- *   listening  loitering, waiting, sitting in a market with no business.
- *              The cheapest action a poor cultivator has, and the one the
- *              overheard channel exists for.
- *   asked      the player put a question to somebody. What comes back is
- *              governed by the answer they got, below.
  */
 export type HearingIntent = 'ambient' | 'listening' | 'asked';
 
 /**
  * How far an answer got.
- *
- * Structurally identical to `Reach` in `asked.ts` and deliberately NOT imported
- * from it: this module must not depend on the answering layer, and the
- * answering layer must not depend on this one. They meet at the call site,
- * which is the only place that legitimately knows about both.
  */
 export type AnswerReach = 'answers' | 'partial' | 'guesses' | 'deflects' | 'blank';
 
 /**
  * Whether a name falls out of an answer, by what kind of answer it was.
- *
- * `asking.md` is the whole of the reasoning here, and every number is a
- * sentence from it:
- *
- *   guesses   the highest, which is the counter-intuitive part and the best
- *             thing in the file. "A carter asked about something above his
- *             stratum is not being cagey - he has never needed the word. He
- *             may guess, confidently and wrongly." Somebody filling a gap
- *             fills it with proper nouns. The name is recorded as `assumed`
- *             and at the lowest confidence in the module, because it very
- *             probably has nothing to do with what was asked - which the
- *             player has no way to tell.
- *   answers   somebody with a reason to talk to you, talking freely. Adjacent
- *             names come with it because they are ordinary to them.
- *   partial   the same person, stopping early.
- *   deflects  low and deliberately NOT zero. "Whether someone who was not
- *             going to help mentions one thing on the way out." That one thing
- *             is this, and it is the entire reason a deflection is worth
- *             sitting through.
- *   blank     nothing. A shrug teaches nothing and must not write a row.
  */
 export const REACH_NAME_CHANCE: Record<AnswerReach, number> = {
     answers: 0.85,
@@ -160,12 +79,6 @@ export const REACH_NAME_CHANCE: Record<AnswerReach, number> = {
 
 /**
  * Chance a deliberate listen produces a fragment.
- *
- * High, because the player spent a turn on it and because this is the channel
- * carrying the material `discovery.md` says can only arrive this way - the
- * things there is no way to ask about. Not 1, because two people on the far
- * side of a wall are usually talking about the price of salt, and a market
- * that yields a proper noun every single time is a market handing out its map.
  */
 export const LISTENING_OVERHEARD_CHANCE = 0.75;
 
@@ -174,15 +87,8 @@ export interface SpeakableName {
     id: string;
     name: string;
     /**
-     * How far up the ladder THIS name carries, when it differs from the rest of
-     * the hearing.
-     *
-     * Almost always absent, and absent means the hearing's own default. The one
-     * case that needs it is a traveller: where they came from is `placed`,
-     * because they said it with a number of days attached, and anything else
-     * they mention on the way past is a `whisper` like any other dropped name.
-     * Two stages out of one sentence is exactly what actually happens when
-     * somebody accounts for the road.
+     * How far up the ladder THIS name carries, when it differs from the rest of the
+     * hearing.
      */
     stage?: KnowingStage;
     /** What the holder ends up holding, when the default sentence will not do. */
@@ -192,23 +98,18 @@ export interface SpeakableName {
 export interface Hearing {
     /**
      * `told` is somebody addressing the player. `overheard` is two people not
-     * addressing them, which is the sharper form: the option to ask is gone,
-     * and what the player ends up holding is knowledge with compromising
-     * provenance - they cannot act on it without revealing where they were
-     * standing. `passing` is somebody who came through, said where they had
-     * come from, and left - the one channel that reliably brings a name from
-     * outside the county to a cultivator who has never been anywhere.
+     * addressing them, which is the sharper form: the option to ask is gone, and
+     * what the player ends up holding is knowledge with compromising provenance -
+     * they cannot act on it without revealing where they were standing. `passing`
+     * is somebody who came through, said where they had come from, and left - the
+     * one channel that reliably brings a name from outside the county to a
+     * cultivator who has never been anywhere.
      */
     mode: 'told' | 'overheard' | 'passing';
     /** Who said it. Null when overheard from behind a wall. */
     speaker: string | null;
     /**
      * What may be said. Small by design.
-     *
-     * One name when somebody is talking to the player. Up to two when they are
-     * talking to each other, because that is what makes an overheard exchange a
-     * fragment rather than a name-drop: two names, a relationship implied
-     * between them, and no way to place either.
      */
     names: SpeakableName[];
     /** Engine-authored provenance, recorded and shown to the narrator. */
@@ -217,19 +118,10 @@ export interface Hearing {
     confidence: number;
     /**
      * How the player came by it, in the knowledge layer's own vocabulary.
-     *
-     * Carried rather than derived from `mode`, because `told` and `assumed` are
-     * both somebody talking to the player and the difference between them is
-     * the whole point: one of them was making it up. Never reaches a prompt -
-     * the player is not told which they got.
      */
     sourceKind: SourceKind;
     /**
-     * The stage every name in this hearing lands at, unless the name overrides
-     * it.
-     *
-     * `whisper` for the two ambient channels, which is discovery.md's own rule
-     * for a name said flatly: "They have the word and nothing else."
+     * The stage every name in this hearing lands at, unless the name overrides it.
      */
     stage?: KnowingStage;
     /**
@@ -245,21 +137,6 @@ export interface Hearing {
 
 /**
  * The hearing as engine prose, for the path with no model behind it.
- *
- * Authored here because the engine chose the names, and because the previous
- * version - written at the call site - failed the doc in three ways at once. It
- * DESCRIBED an overheard exchange rather than being one. It said "this
- * cultivator", which is the engine talking about the player in the third
- * person. And it explained the epistemics, telling the player that they could
- * not ask without revealing where they had been standing, which is precisely
- * the thing discovery.md wants them to feel and not be told.
- *
- * What is left says only what happened and what the player now has. It asserts
- * no relationship between the names, on purpose: the engine has not established
- * one, and inventing an implication here would be the deterministic narrator
- * making up a fact about the world. The elliptical exchange discovery.md
- * describes is a narrator's job, and the prompt already carries the rules for
- * writing one - this is the floor, not the ceiling.
  */
 export function hearingProse(hearing: Hearing): string {
     const names = hearing.names.map(name => name.name);
@@ -290,16 +167,6 @@ export function hearingProse(hearing: Hearing): string {
 
 /**
  * Every name this speaker could drop into a sentence without thinking.
- *
- * Kept at one argument, and the argument is the SPEAKER's standing. Nothing
- * here consults the player's knowledge - that is the whole point. The speaker
- * is not adjusting for their audience, because it has not occurred to them that
- * they need to.
- *
- * What has changed is the source. This used to be a filter over `SECTS`; it is
- * now a filter over the whole speakable world, with the same rule doing the
- * same work - your own working range, plus whatever is large enough to be in
- * the air regardless of who is speaking.
  */
 export function speakableFor(speakerOrdinal: number): SpeakableName[] {
     return mentionableFor({ ordinal: speakerOrdinal, factionId: null }).map(toSpeakable);
@@ -311,17 +178,6 @@ function toSpeakable(entry: Mentionable): SpeakableName {
 
 /**
  * People standing in the same place as the cultivator, alive, not themselves.
- *
- * Two populations, and forgetting the second one is what made a village of
- * nineteen people read as empty. The `cultivators` table holds the player and
- * whoever a run wrote down; the WORLD holds everybody who was already here, and
- * they are the ones a player standing in a square actually sees. A social layer
- * that only knows about the first population has nobody to be social with.
- *
- * The two are keyed differently on purpose and joined here: a cultivator's
- * `location` is free text by design, and a world NPC's is a location id. See
- * `worldLocationFor` for the join, which is by name because the name is what
- * both sides actually agree on.
  */
 export function othersPresent(
     repos: CultivationRepos,
@@ -347,31 +203,6 @@ export function othersPresent(
 
 /**
  * Two halves of a crowd, given ONE order.
- *
- * This function is the fix for a reproducibility bug, and the bug is worth
- * stating because the shape of it will recur. `stored` and `inWorld` each sort
- * deterministically on their own, and concatenating them does NOT: which half
- * a given person arrives through is a property of the day rather than of the
- * person, so the last element of `[...stored, ...inWorld]` flips identity
- * without the crowd changing at all.
- *
- * That mattered because callers pick out of this list by POSITION.
- * `somebodyAtHand` answers "the nearest cultivator" with the last element, and
- * `combat_manage.resolve` then seeds its stream on the opponent's id - so the
- * same seed, the same day and the same people produced a different opponent, a
- * different stream and a different wound. `resolveConfrontation` was
- * byte-identical the whole time; the non-determinism was here, in an ordering
- * nobody had stated.
- *
- * The order itself is arbitrary and is deliberately said to be arbitrary -
- * there is no distance in this world model, so "nearest" cannot be computed and
- * must not be pretended at. What is required is that it be TOTAL and depend
- * only on the SET of people present, never on how they got into it. Rank first
- * so the list reads sensibly to anything that renders it, then id, which is
- * stable for the life of a row.
- *
- * Deduplicated by id, keeping the stored row: a person with a real database row
- * and a world entry is one person, and the row is the authority.
  */
 export function oneCrowd(
     stored: readonly RosterEntry[],
@@ -407,22 +238,12 @@ export interface HearingInput {
     intent?: HearingIntent;
     /**
      * How far the answer got, when the player asked somebody something.
-     *
-     * Read only when `intent` is `asked`. The caller has already run the
-     * answering layer by the time it gets here, so this is not a second
-     * judgement about the same conversation - it is the first one, arriving.
      */
     reach?: AnswerReach;
 }
 
 /**
  * Decide whether a name gets said in this scene, and which.
- *
- * Seeded and therefore replayable: the same run on the same day in the same
- * place hears the same thing. Returns null far more often than not, because a
- * world in which every conversation deposits a proper noun is a world handing
- * out its map, and the value of a dropped name is that it is rare enough to
- * snag on.
  */
 export function offerHearing(input: HearingInput): Hearing | null {
     const { repos, gate, cultivator, run, occasion } = input;
@@ -561,11 +382,6 @@ export function offerHearing(input: HearingInput): Hearing | null {
 
 /**
  * How much of the world goes past this door, 0..1.
- *
- * Read off the location's own links, because a place with four roads out of it
- * is a place people come through and a dead-end valley is not. This module does
- * not own the map and does not go looking for one: when the world is off, the
- * answer is the middle, which is the honest reading of "nobody has said".
  */
 function trafficAt(world: WorldState | null | undefined, place: string | null): number {
     if (!world) return 0.5;
@@ -577,11 +393,6 @@ function trafficAt(world: WorldState | null | undefined, place: string | null): 
 
 /**
  * Somebody came through, and said where from.
- *
- * The candidate list is places this cultivator cannot already name, drawn from
- * the same table every other channel draws from. Nothing bespoke: a place
- * becoming nameable through a traveller is the same row, acquired the same way,
- * as a place becoming nameable through an elder.
  */
 function offerTraveller(
     input: HearingInput,
@@ -605,46 +416,12 @@ function offerTraveller(
 
 /**
  * How often somebody here mentions ground that teaches a road.
- *
- * Two rates, because being talked to and standing near a conversation are
- * different events - the same split every other channel in this file makes.
- *
- * Higher than the ambient name draw, and it is not generosity. THE CANDIDATE
- * SET EMPTIES: a province holds one to four of these, a local can point at all
- * of them, and once the player holds the records the channel returns null for
- * the rest of that life. What the rate decides is how long the first year
- * takes, and the fiction is unambiguous about that - the Grinding Ford is the
- * crossing every cart out of the western workings uses, and somebody would have
- * said so.
- *
- * What it is NOT is a way to learn about ground somewhere else. The speaker has
- * to be able to point at it out of their own life, which for open ground means
- * standing in the same province the player is standing in. Provinces stay hands
- * dealt at birth.
  */
 export const GROUND_MENTIONED_CHANCE = 0.15;
 export const GROUND_MENTIONED_WHEN_ADDRESSED = 0.35;
 
 /**
  * Somebody here says where a road-teaching ground is.
- *
- * THE CHANNEL THAT WAS MISSING. Twenty-three of these are seeded into every
- * world and no source in the game could put one into a player's knowledge, so
- * the discovery gate over them was default-deny across an empty set: correct,
- * and indistinguishable from the places not existing.
- *
- * The speaker is anybody standing here whose own life puts the ground in front
- * of them - `knowsWhereItIs`, never `inReach`. That distinction is the content.
- * A cart driver at the bottom of the ladder has crossed the ford ten thousand
- * times and will never take anything off it, and he is exactly the person who
- * can tell you where it is. Requiring the speaker to be able to READ it would
- * have made a landmark a secret and, measured on a seeded world, would have
- * left every settlement outside one province with nobody who could say a word.
- *
- * `placed`, because they said where it is. That licenses setting out, which is
- * the whole point - and it licenses nothing else. What the ground is for, and
- * whether it will teach this cultivator anything, is not conveyed by having
- * been told where a ford is.
  */
 function offerGroundSomebodyGoesTo(
     input: HearingInput,
@@ -788,45 +565,6 @@ function unknownTo(
 
 /**
  * The candidates who are not standing in the square.
- *
- * ── WHY THE OVERHEARD CHANNEL NEEDS THIS AND THE OTHERS DO NOT ───────────
- *
- * `heldBy` gives a speaker their own working vocabulary, and a speaker's own
- * vocabulary is full of the people they stand next to all day: at the Azure
- * Cloud Pavilion grounds, Yan Shuling's mentionables include Yan Shuling and
- * three colleagues who were in the square with her. Measured on a seeded
- * world: 1,086 speaker/present-name pairs across the map, so this is a
- * property of how the catalog is placed rather than an unlucky seed.
- *
- * Two people talking to each other about somebody eight feet away is bad
- * writing, and discovery.md is explicit about why it is also bad design: the
- * overheard device exists to hand the player "a fragment they cannot resolve",
- * and "an overheard fragment that is explained a paragraph later was just
- * exposition wearing a costume". A name the player can resolve by turning
- * round is resolved in the same scene, which spends the device for nothing.
- *
- * The `told` and `passing` channels are deliberately NOT filtered. Somebody
- * talking TO the player and nodding at a colleague across the courtyard is an
- * introduction, which is a legitimate and wanted way for a name to arrive; the
- * traveller channel draws places only.
- *
- * ── MATCHED ON NAME AS WELL AS ID, AND THE ID HALF CATCHES NOTHING ───────
- *
- * The two id namespaces do not meet. `lore.ts` keys a catalog person as
- * `member-yan-shuling`; `seeding.ts` instantiates the same person into the
- * world as `npc-member-yan-shuling`. Measured on a seeded world: 203 lore
- * people, 428 world NPCs, and ZERO ids in common.
- *
- * So the id comparison is here for the `cultivators` half of the crowd, which
- * does share ids, and the NAME comparison is the one that does the work - for
- * the reason `personName` in `engine/world/history.ts` gives at length: the
- * knowledge system is keyed by id and everything the player reads is keyed by
- * name. A gate that only compared ids would pass every single one of those
- * 1,086 pairs while looking correct.
- *
- * No draw is added or removed by this: `pickWeighted` spends exactly one band
- * roll and one row roll whatever the candidate list holds, so a scene with
- * nobody nameable present is byte-identical to what it drew before.
  */
 function notStandingHere(
     candidates: readonly Mentionable[],
@@ -844,12 +582,6 @@ function notStandingHere(
 
 /**
  * Who said it, honestly.
- *
- * discovery.md: a name from a drunk carter and a name from a sect archivist are
- * different facts, and the carter's may still be the true one. So the stance is
- * the same for both and this sentence is what separates them - a note the
- * player's own record carries, and which reads differently a hundred turns
- * later when they finally hear the name from somewhere else.
  */
 function toldNote(
     speaker: RosterEntry,
@@ -884,10 +616,6 @@ function toldNote(
 
 /**
  * How much of a fact this is.
- *
- * Never a gate on anything. It is on the record so that two rows for the same
- * name, acquired from two people, can be told apart later by something other
- * than the day they landed.
  */
 function toldConfidence(speaker: RosterEntry, reach: AnswerReach | null): number {
     const base = speaker.sectId ? 0.35 : 0.25;
@@ -902,19 +630,6 @@ function toldConfidence(speaker: RosterEntry, reach: AnswerReach | null): number
 
 /**
  * Write the hearing down, at the lowest stage, with its real source.
- *
- * `suspects` rather than `believes`: the player has a word and no way to
- * evaluate it. A name from a drunk carter and a name from a sect archivist are
- * different facts and the carter's may still be the true one, so the stance
- * stays low for both and the SOURCE is what distinguishes them.
- *
- * Three sources reach this table and they are genuinely different facts:
- * `told` is somebody saying it, `overheard` is somebody not meaning to, and
- * `assumed` is somebody filling a gap with whatever came to hand. The player
- * is never shown which one they got.
- *
- * Returns the names that were genuinely new, which is what the narrator is
- * licensed to have a character say.
  */
 export function recordHearing(
     gate: KnowledgeGate,

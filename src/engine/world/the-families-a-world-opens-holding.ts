@@ -57,7 +57,7 @@
  *
  * It also swallows the one family the catalog authors. `lin-duan` carries 27-30
  * edges over the 28-31 people in a world named Duan - of whom **nine** are
- * `THE_LINE_AT_MILLRUN` and the rest are procedural people who drew a common
+ * `THE_LINE_AT_OLD_RIVER` and the rest are procedural people who drew a common
  * surname. `a-family-that-came-down-from-a-changed-beast.ts` is explicit that
  * this must not happen: *"a stranger with the same name proves nothing at
  * all."* The lineage chain proves it anyway. That is a finding about

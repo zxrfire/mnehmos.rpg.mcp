@@ -1,42 +1,5 @@
 /**
  * The two questions a narrator has to be able to ask before it writes a line.
- *
- *   assess         "what happens if they try this"
- *   understanding  "what has this cultivator actually comprehended, and what
- *                   does it make them"
- *
- * Both were built and neither was reachable. `assessCapability` had no consumer
- * outside the world layer's own tests, and `daoOf` was consulted once, deep
- * inside the technique gate, where nobody could see it.
- *
- * ── WHY `assess` MATTERS MORE THAN IT LOOKS ───────────────────────────────
- *
- * The engine must never answer an intent with "your realm is too low, this
- * action is unavailable". It answers what happens WHEN YOU TRY, which is five
- * separate questions that come apart:
- *
- *   attempt      is it physically initiable at all
- *   survive      will the attempt kill you
- *   succeed      can it actually work
- *   understand   will you comprehend what you found
- *   force        can you impose it over resistance
- *
- * `attempt` fails only for PHYSICAL reasons - a sealed door and no key, a shut
- * window, not being there. It is never failed because the action is unwise or
- * the odds are bad. Those are answers to the other four, and every one of them
- * comes back with the arithmetic itemised and a stated reason, so a model
- * cannot quietly decide something is possible because the story would be
- * better that way.
- *
- * ── WHAT THIS FILE WILL NOT RETURN ────────────────────────────────────────
- *
- * Latent affinity, in any form, under any name. `affinityFor` is derived rather
- * than stored precisely so that no serialiser can leak it and no UI can render
- * it - the world genuinely does not know either. And there is no advisory
- * anywhere about whether a road suits the person walking it: a cultivator can
- * spend two centuries on a Dao their root never suited and the realisation has
- * to be arrived at by living it. A helpful flag would convert a tragedy into a
- * tooltip. See the warning at the top of `engine/cultivation/dao.ts`.
  */
 
 import { z } from 'zod';
@@ -118,11 +81,6 @@ export const AssessSchema = z.object({
 
 /**
  * The strongest person on the student's own roster who is genuinely above them.
- *
- * The same rule the cultivation rate's `guideOrdinal` reads, deliberately: what
- * a master can tell a student and what a master is worth to a student's
- * progress must be the same person, or the send-off and the rate would
- * disagree about who is teaching.
  */
 function assessorFor(
     repos: CultivationRepos,
@@ -154,34 +112,6 @@ export const UnderstandingSchema = z.object({
 
 /**
  * A cultivator as the capability layer sees them.
- *
- * ── `heldGrants` USED TO BE EMPTY, AND THAT WAS THE DEFECT ───────────────
- *
- * It was `[]` with a comment arguing that a realm is POTENTIAL and that
- * claiming a grant here would be the tool inventing capability. The argument
- * was careful and the result was that **no cultivator in the game held any of
- * the fifteen grants**, so every consumer downstream was off: `judge` never saw
- * `gates_places` or `reads_formations`, `neutralisedHazards` never subtracted
- * anything, and the whole layer read as built while doing nothing.
- *
- * The ruling is that realm capability is ENFORCED rather than asserted, so this
- * hands over what the rung has actually earned. The half of the old argument
- * that was right is kept and lives in `ARRANGED_GRANTS`: a few capabilities
- * name a thing in the world rather than a property of the body, and a realm
- * cannot supply those. A prepared vessel is an actual vessel somebody readied.
- * Being at home in ice is not.
- *
- * ── AND A BREAK TAKES SOME OF IT BACK ────────────────────────────────────
- *
- * `grantsHeldWith` subtracts what this cultivator's structural breaks deny, so
- * a crippled nascent soul and a whole one are no longer the same person with
- * different prose. Retired wound keys are resolved first, or a saved row would
- * silently deny nothing.
- *
- * `knowledgeIds` is the honest counterpart: comprehension the cultivator
- * genuinely holds, keyed the way an inscription's `comprehensionKey` is, so a
- * scholar with the right notes reads what a cultivator four realms above them
- * cannot.
  */
 export function capabilityActorFor(cultivator: Cultivator): CapabilityActor {
     const root = getSpiritRoot(cultivator.spiritRoot);
@@ -257,20 +187,7 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             preparation: args.preparation ?? 0
         };
     } else if (against === 'student') {
-        // ── A MASTER READING A STUDENT ───────────────────────────────────
-        //
-        // The gap this fills, found by a sweep of the schema rather than of the
-        // play: `against` had three values and none of them was a PERSON BEING
-        // TAUGHT. A master looking at a disciple and saying "you have taken
-        // what there is here; go" is the send-off the whole guidance term
-        // exists for, and it could not be asked for.
-        //
-        // Nothing here is authored. The assessor is a real person on the
-        // student's own roster who is genuinely standing above them, and the
-        // stall is `yearsAtCurrentRealm` against the ladder's own
-        // `stagnationYearsForOrdinal`. A house with nobody above the student
-        // supplies no assessor, and THAT is the send-off - stated as an absence
-        // rather than as advice.
+        // A MASTER READING A STUDENT
         const studentId = args.studentId ?? cultivator.id;
         const student = studentId === cultivator.id
             ? cultivator
@@ -369,28 +286,7 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             statuses: world.statuses,
             locations: world.locations
         });
-        // ── AND THE OTHER HALF OF THE QUESTION ───────────────────────────
-        //
-        // Found by playing: *"is it safe to sit and cultivate here, or will
-        // someone bother me?"*. The survivability half was answered well and
-        // NOTHING answered the second half, because nothing could - every input
-        // to the arrival machinery is consulted at execution and nowhere else.
-        // So the player could be interrupted and could not ask about being
-        // interrupted, which is `AGENTS.md`'s own signature for a half-built
-        // system: the world does a thing to somebody and no verb lets them ask
-        // about it.
-        //
-        // Here rather than behind a new verb, on the ruling that the player
-        // asked ONE question with two halves and should not have to know it was
-        // two. `assess` is already the verb for what happens if I try.
-        //
-        // THE INPUTS, NEVER THE ROLL. `encountersFor` would answer this exactly
-        // and must not be called: it takes the span as a parameter, so running
-        // it forward would hand the player an outcome the engine has not filed.
-        // `theArrivalReadFor` is pure, unseeded, and reports only standing facts
-        // that are true whether or not anybody ever sits down. Same discipline
-        // as `request`'s weigh mode, which runs everything up to the roll and
-        // stops.
+        // AND THE OTHER HALF OF THE QUESTION
         const membership = repos.sects.getMembership(cultivator.id);
         const locatability = locatabilityFrom(location, membership?.sectId ?? null);
         const heads = npcsAt(world, location.id).length;
@@ -525,11 +421,6 @@ function discoveredSite(
 
 /**
  * A place this cultivator could actually name.
- *
- * The discovery gate applies to tool output exactly as it applies to narration:
- * a cultivator may assess where they are standing, and anywhere they hold a
- * knowledge record for. Everywhere else does not resolve - not because it is
- * secret, but because they have never heard of it.
  */
 function findKnownLocation<T extends { id: string; name: string }>(
     locations: readonly T[],

@@ -1,13 +1,5 @@
 /**
  * Consolidated Narrative Management Tool
- *
- * Replaces 6 individual narrative tools with a single action-based tool:
- * - add_narrative_note -> action: 'add'
- * - search_narrative_notes -> action: 'search'
- * - update_narrative_note -> action: 'update'
- * - get_narrative_note -> action: 'get'
- * - delete_narrative_note -> action: 'delete'
- * - get_narrative_context_notes -> action: 'get_context'
  */
 
 import { z } from 'zod';

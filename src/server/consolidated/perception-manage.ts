@@ -1,15 +1,5 @@
 /**
  * perception_manage - the Operator's constraint-perception lens.
- *
- * Five actions:
- *   assess         - debit attention, scan committed state, rank controls.
- *   list_hazards   - cheap decomposition (cached first-call per scene).
- *   read_hazard    - deep-read origin and removal options for one hazard.
- *   recover        - refill attentional_capacity (rest hook).
- *   get_capacity   - read-side query, free.
- *
- * Every commit writes a perception_assessments row + an event_logs row
- * sharing the same intent_id (Phase-1 shadow ledger per §10.2).
  */
 
 import { z } from 'zod';

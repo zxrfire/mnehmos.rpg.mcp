@@ -1,22 +1,5 @@
 /**
  * Consolidated Alchemy Tool - `alchemy_manage`
- *
- * Pills are the only reliable way to undo damage in this world, and they are
- * scarce. This tool owns refining them, swallowing them, and the pouch they sit
- * in.
- *
- * AUTHORITY BOUNDARY
- * ------------------
- * - `refine` never accepts a result. The caller names a recipe; the engine
- *   checks the pouch, computes the odds from the recipe's base rate plus realm
- *   margin, Insight and any supplementary herbs, rolls a seeded stream, consumes
- *   the ingredients either way, and only then decides whether a pill exists.
- * - `consume_pill` never accepts an effect. The pill's own catalog row decides
- *   what happens, the engine applies it, and toxicity accumulates on the body
- *   whether or not anyone wanted it to.
- * - A pill taken for its breakthrough boost is RECORDED, not returned as advice:
- *   `cultivation_manage.breakthrough` reads the persisted record and spends it.
- *   There is no way to assert a pill bonus at the moment of the attempt.
  */
 
 import { z } from 'zod';
@@ -143,10 +126,6 @@ export const MAX_REFINE_CHANCE = 0.97;
 
 /**
  * Accumulated toxicity the body absorbs before a meridian gives out.
- *
- * Pills are not free healing. Ten mortal-grade pills, or two heaven-grade ones,
- * and the medicine becomes the injury. Crossing the threshold mints a real
- * poison injury through the same path every other wound takes.
  */
 export const TOXICITY_TOLERANCE = 3;
 
@@ -293,20 +272,7 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
         });
     }
     if (recipe.requiredOrdinal > cultivator.realmOrdinal) {
-        // ── WHICH OF THE TWO WALLS IT IS ──────────────────────────────────
-        //
-        // A formula can be out of reach for two different reasons and a player
-        // told the wrong one goes and does the wrong thing about it. If the
-        // GRADE's materials are past them, no amount of practice at this recipe
-        // helps and the answer is rungs. If only this particular formula is
-        // hard, they are working the right materials and merely need a few more
-        // rungs of the realm they are already climbing.
-        //
-        // The grade wall is the design owner's ruling and it is the one that
-        // ends at "nobody": immortal grade is not refined below the Lid at all,
-        // so the refusal there names the OTHER roads to a dose rather than a
-        // rung nobody can reach. AGENTS.md - a refusal names what would work,
-        // and never removes the verb.
+        // WHICH OF THE TWO WALLS IT IS
         const gradeOfPill = getPill(recipe.producesPillId)?.grade;
         const gradeWall = gradeOfPill !== undefined
             && !canRefineGrade(gradeOfPill, cultivator.realmOrdinal)
@@ -346,27 +312,7 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
         })
         .filter(i => i.held < i.required);
     if (missing.length > 0) {
-        // ── A REFUSAL THAT DOES NOT NAME ITS CAUSE IS A BROKEN FEATURE ────
-        //
-        // This said `${recipe.name} cannot be attempted.` and stopped, with the
-        // shortfall sitting in the payload where no player ever sees it. Found
-        // by playing: a cultivator dying of untreated meridian injuries typed
-        // "I refine a Minor Healing Pill" and was told that sentence, which is
-        // indistinguishable from an unfinished subsystem - and it sits directly
-        // on the only road out of the commonest death in the game.
-        //
-        // The branch immediately above already does this properly ("requires
-        // Qi Condensation Layer 7; Torn stands at Qi Condensation Layer 1"), so
-        // the fix is to match its sibling rather than to invent a style.
-        //
-        // WHERE IT GROWS, not just what is missing. Every recipe in the
-        // catalog wants only herbs that grow at or below the rung the recipe
-        // itself demands (asserted in
-        // `tests/server/alchemy-refusals-name-their-cause.test.ts`), so
-        // anybody who has got past the branch above can go and pick every one
-        // of these - which makes naming the ground an instruction rather than
-        // an observation. Biome, not a place name: the world has many
-        // riverbanks and the engine is not choosing one for them.
+        // A REFUSAL THAT DOES NOT NAME ITS CAUSE IS A BROKEN FEATURE
         const shortOf = missing.map(i => `${i.short} x ${i.name}`).join(', ');
         const where = ` ${missing.map(i => `${i.name} grows ${i.biome === null
             ? 'somewhere nobody has written down'
@@ -475,12 +421,6 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
 
 /**
  * Write a comprehension onto a cultivator, through the one constructor.
- *
- * Both paths that can produce one here go through this - the outcome that IS a
- * comprehension, and a deed done during a month nobody steered - so neither can
- * mint an insight whose provenance points at nothing. `formInsight` derives the
- * insight's id from the achievement's, which is what makes an untraceable one
- * unrepresentable rather than merely discouraged.
  */
 function writeComprehension(
     repos: ReturnType<typeof ensureCultivationDb>,
@@ -531,31 +471,9 @@ export async function handleConsumePill(
     const day = Math.floor(run.elapsedDays);
     const nextTurn = run.turn + 1;
 
-    // ── WHAT THIS ONE TURNS OUT TO DO ────────────────────────────────────
-    //
-    // Drawn HERE, at the moment it is swallowed, because that is what the
-    // grade means: an object whose effect was settled when it was made returns
-    // its single row and nothing changes, and an object whose effect is settled
-    // at use gets it decided now, once, by the engine.
-    //
-    // ON ITS OWN STREAM, and that is not a formality. A new draw dropped into
-    // an existing stream shifts every later draw off it - so `pill_outcome` is
-    // separate from `pill_toxicity`, every other seeded roll in the game is
-    // byte-identical to what it was, and this one is reproducible from the run
-    // seed like everything else.
-    //
-    // NO BRANCH ON THE GRADE'S NAME anywhere below. `drawGradeOutcome` is total
-    // over every grade and the four reliable ones are one-row tables.
+    // WHAT THIS ONE TURNS OUT TO DO
     const outcomeRng = forStream(run.seed, 'pill_outcome', run.turn, pill.id);
-    // ── HOW FAR UNDER THE THING THIS BODY IS ─────────────────────
-    //
-    // The one input the drinker contributes, and it weights ONE row: a body
-    // too far under what it swallowed cannot hold what is in the thing, and
-    // the thing lets go. Read off the object's own pitch and never off a
-    // number written down here, so a grade pitched somewhere else tomorrow is
-    // correct without an edit. Zero at or above the pitch, which is the base
-    // table - waiting until you can carry it is a real decision, and this is
-    // what makes it one.
+    // HOW FAR UNDER THE THING THIS BODY IS
     const pitch = pillBandOrdinal(pill.grade);
     const under = rungsUnderThePitch(cultivator.realmOrdinal, pitch);
     const outcome = drawGradeOutcome(pill.grade, outcomeRng, under);
@@ -630,16 +548,7 @@ export async function handleConsumePill(
         }
         writeFlag(repos.db, cultivator.id, FLAG_PILL_TOXICITY, String(round4(toxicityAfter)));
 
-        // ── AND WHATEVER ELSE THE DRAW DID ───────────────────────────────
-        //
-        // Every one of these is irreversible and none of them is softened. A
-        // chaos object that cannot actually ruin somebody is not a chaos
-        // object, and quietly protecting a player who chose to swallow one is
-        // exactly the softening AGENTS.md forbids.
-        //
-        // Field-presence, not a switch on the outcome's key: adding a row to
-        // the spread that sets a field already handled here needs no edit, and
-        // a row that sets a NEW field is the only thing that does.
+        // AND WHATEVER ELSE THE DRAW DID
         if (change.spiritRoot) {
             repos.cultivators.update(cultivator.id, { spiritRoot: change.spiritRoot });
         }
@@ -669,18 +578,7 @@ export async function handleConsumePill(
             writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_UNTIL, String(day + days));
             writeFlag(repos.db, cultivator.id, FLAG_OVERDRAWN_RUNGS, String(standsAtRung));
 
-            // ── THE MONTH ITSELF, RESOLVED IN ONE PASS ─────────────────
-            //
-            // Thirty days nobody steered is exactly what the time-skip
-            // primitive exists for, and it is drawn at the ELEVATED standing -
-            // so the buff is not a number in a report, it is the reason these
-            // deeds were possible at all. Its own stream, so it cannot shift
-            // the outcome draw that produced it.
-            //
-            // The player reads what they did. They do not choose it, and the
-            // character could not have, which is the one place AGENTS.md allows
-            // this - and the decision did not vanish, it was taken upstream
-            // when they swallowed the thing.
+            // THE MONTH ITSELF, RESOLVED IN ONE PASS
             const before = repos.cultivators.getById(cultivator.id)!;
             stretch = resolveHalfMadStretch(
                 {
@@ -756,13 +654,7 @@ export async function handleConsumePill(
         repos.runs.incrementTurn(run.id, 1);
 
         const after = repos.cultivators.getById(cultivator.id)!;
-        // ── THE ONE DETONATION ───────────────────────────────────────────
-        //
-        // Priced by `whatTheBlastTakesFrom`, which wraps the existing reprisal
-        // pricing and reads the power off the OBJECT rather than the body - so
-        // a nobody who swallows the wrong pill takes out what a nobody never
-        // could. There is no version of this the taker walks away from, and
-        // `obviously_fatal_choice` is the honest cause: they swallowed it.
+        // THE ONE DETONATION
         if (change.detonation) {
             const line = `${pill.name} went off. ${change.line}`;
             death = { cause: 'obviously_fatal_choice', description: line };
@@ -790,15 +682,7 @@ export async function handleConsumePill(
             potency: pill.potency,
             toxicity: pill.toxicity
         },
-        // ── WHAT THIS ONE TURNED OUT TO BE ───────────────────────────────
-        //
-        // Reported for every pill, because "it did what it said" is a real
-        // answer and a surface that only speaks up on the strange ones teaches
-        // a player to read silence as safety.
-        //
-        // `dose` is the number that actually arrived against the number printed
-        // on the row. Where they differ the player is told, rather than being
-        // handed an effect summary that quietly used a different figure.
+        // WHAT THIS ONE TURNED OUT TO BE
         turnedOutTo: {
             outcome: outcome.key,
             settledOnUse: isSettledOnUse(pill.grade),
@@ -890,21 +774,7 @@ function resolvePillEffect(
     };
 
     switch (pill.effect) {
-        // ── THE ONE THAT IS NOT A BENEFIT ────────────────────────────────
-        //
-        // Death through the ordinary path, so nothing here is a second way to
-        // die: the damage is dealt and the pipeline that handles every other
-        // death handles this one, with the same record and the same estate.
-        //
-        // What makes it worth swallowing is the flag rather than the damage.
-        // Dying alone leaves a body a Nascent Soul can still read - death
-        // deletes no knowledge rows, they stay filed under the id - so being
-        // killed and taking it with you are different events, and this is the
-        // second one.
-        //
-        // The refusal that guards it is `handleConsumePill`'s existing
-        // wasted-pill gate, reused rather than rebuilt. A player who types
-        // "I take a pill" loosely must not die of it.
+        // THE ONE THAT IS NOT A BENEFIT
         case 'end_the_soul':
             return {
                 ...base,
@@ -917,13 +787,6 @@ function resolvePillEffect(
             };
 
         // -- AND THE OTHER END OF THE SAME AXIS ---------------------------
-        //
-        // Hollows the swallower and appoints nobody. Whose hand a body is
-        // under is written by whoever put the pill in them, which is not this
-        // path: somebody who takes one alone is emptied and belongs to no one.
-        //
-        // No death here, which is the whole difference from `end_the_soul`.
-        // The body goes on, and the flag is what a later reader consults.
         case 'hollow_the_soul':
             return {
                 ...base,
@@ -966,22 +829,7 @@ function resolvePillEffect(
             };
         }
         case 'treat_injury': {
-            // ── THE GRADE HAS TO REACH THE WOUND, AND IT USED NOT TO ──────
-            //
-            // Found by playing, and it is why that run survived: a 60-stone
-            // MORTAL Clear Meridian Pill closed a CRIPPLING tear one turn after
-            // a physician had refused the same wound in as many words. The
-            // ladder in `what-grade-of-medicine-a-wound-needs.ts` was consulted
-            // by `GameService.treat` and by nothing on this path, so the game
-            // held two positions on the same question and the cheaper one won.
-            //
-            // `treatWorstInjury` has taken a `reaches` predicate since the two
-            // axes were built; this branch simply never passed one. Both axes
-            // are the wound's: how bad it is, and how large the body carrying
-            // it is. Neither has anything to do with who REFINED the pill -
-            // that is `who-can-refine-a-grade-of-medicine.ts`, a different
-            // ladder answering a different question, and the two must not be
-            // read into each other.
+            // THE GRADE HAS TO REACH THE WOUND, AND IT USED NOT TO
             const count = Math.max(1, Math.round(pill.potency));
             const reaches = (severity: InjurySeverity): boolean =>
                 medicineReaches(pill.grade, severity, cultivator.realmOrdinal);
@@ -994,18 +842,7 @@ function resolvePillEffect(
                 treated.push(step.treated);
             }
 
-            // ── AND WHEN IT DOES NOT REACH, IT SAYS WHAT WOULD ───────────
-            //
-            // "Nothing to treat. The pill was wasted." is true and useless: it
-            // reads as "you had no wounds" to somebody who is visibly carrying
-            // several. A refusal is only finished when it names the thing that
-            // would work at its price, which is the shape the physician's
-            // refusal already has, so it uses the physician's own sentence.
-            // Permanent wounds are excluded on purpose. `treatWorstInjury`
-            // skips them whatever grade is applied, and no medicine below the
-            // structural-repair catalog closes one - so counting them here
-            // would have the engine promise a cure that does not exist, which
-            // is the mirror of the defect being fixed.
+            // AND WHEN IT DOES NOT REACH, IT SAYS WHAT WOULD
             const outOfReach = injuries.filter(injury =>
                 !injury.treated
                 && !isPermanentWound(injury.woundType)
@@ -1065,18 +902,12 @@ function resolvePillEffect(
             };
         }
         case 'boost_breakthrough': {
-            // The grade and the count go on the record AT CONSUMPTION, not at
-            // the attempt. `attemptBreakthrough` prices a graded pill through
-            // the real band curve and an ungraded one through the legacy flat
-            // `potency` path, and every pill in the catalog has a grade - so
-            // omitting it was routing every player pill down the fallback that
-            // exists for a synthesised pill with no catalog row behind it.
-            //
-            // The count is stamped here for a reason that is not convenience:
-            // permanent tolerance is a fact about the body that swallowed the
-            // pill on the day it swallowed it. Read at the attempt instead, a
-            // pill held through four later pills would grow weaker in the
-            // pouch, which is not something a pouch does.
+            // The grade and the count go on the record AT CONSUMPTION, not at the
+            // attempt. `attemptBreakthrough` prices a graded pill through the real
+            // band curve and an ungraded one through the legacy flat `potency`
+            // path, and every pill in the catalog has a grade - so omitting it was
+            // routing every player pill down the fallback that exists for a
+            // synthesised pill with no catalog row behind it.
             const pending: PendingPill = {
                 pillId: pill.id,
                 name: pill.name,
@@ -1105,20 +936,8 @@ function resolvePillEffect(
                 summary: `${pill.potency} qi-units of cultivation progress condensed directly.`
             };
         case 'extend_lifespan': {
-            // Lifespan is a realm property; a longevity pill buys years by
-            // taking them off the clock, not by raising the ceiling.
-            //
-            // What it buys is decided by `lifespanYearsFor`, not by `potency`,
-            // because a refinement is bounded by the refiner: nothing any
-            // living alchemist can set holds past three hundred years, and
-            // nothing they can set holds at all in a body past Nascent Soul.
-            // The rule is about who made the pill and never about which pill
-            // it is - see `MODERN_REFINEMENT` in `pills.ts`.
-            //
-            // A refusal is still a consumption. The pill is spent either way,
-            // which is the honest outcome and the one a narrator has to be
-            // able to report: the engine says it did nothing, and the prose
-            // does not get to soften that.
+            // Lifespan is a realm property; a longevity pill buys years by taking
+            // them off the clock, not by raising the ceiling.
             const years = lifespanYearsFor(pill, cultivator.realmOrdinal);
             const refusal = lifespanRefusalReason(pill, cultivator.realmOrdinal);
             if (years <= 0) {
@@ -1176,19 +995,7 @@ function projectPouch(db: ReturnType<typeof ensureCultivationDb>['db'], cultivat
                 toxicity: pill?.toxicity ?? null,
                 value: pill?.value ?? null,
                 quantity: entry.quantity,
-                // ── WHAT IT SAYS ON THE TIN IS NOT ALWAYS THE ANSWER ─────
-                //
-                // For a grade whose effect is settled at use, `effect` and
-                // `potency` above are what this pill is FOR, not what it will
-                // do - and a pouch listing that presents the two identically
-                // has lied to the player about the most important property the
-                // object has. `whatIsKnown` is the honest version.
-                //
-                // The reach is 2: what somebody carrying the thing has picked
-                // up in passing. A house archive answers a research verb and
-                // would pass a larger number. Note there is no denominator
-                // anywhere in the result - the set of outcomes is open and "2
-                // of 9" would be a lie the data cannot support.
+                // WHAT IT SAYS ON THE TIN IS NOT ALWAYS THE ANSWER
                 whatIsKnown: pill ? whatTheRecordsSay(pill.grade, 2) : null
             };
         }

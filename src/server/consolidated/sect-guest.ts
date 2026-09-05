@@ -1,53 +1,5 @@
 /**
  * The guest roll: `sect_manage({ action: 'guest' })`.
- *
- * A house takes guest students on purpose, and it is not charity. Two reasons,
- * both of them the house's own interest:
- *
- *   IT IS A PIPELINE. An admission bar tells a house somebody's rung. A year of
- *   watching them work tells it what they are like, and for a house that admits
- *   by adoption it is the only instrument there is.
- *
- *   AND IT COSTS THEM NOTHING, because they hold the best back. A house can
- *   afford to teach an outsider its lower material precisely BECAUSE the deep
- *   material is behind membership. Nobody is afraid of a guest leaving; the
- *   guest was never shown the thing worth stealing.
- *
- * The arithmetic - which houses, what they open, what they keep, how long they
- * watch - is entirely in
- * `engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.ts` and
- * is a pure function of the catalog. This file owns three things and nothing
- * else: the roll, the refusals, and the day.
- *
- * ── THE ROLL IS NOT THE HOUSE ROLL ───────────────────────────────────────
- *
- * `sect_members` is untouched by every path below. A guest holds no rank, earns
- * no contribution, draws no stipend and KEEPS THEIR OWN HOUSE - this is not a
- * transfer, not a secondment and not a defection, so `docs/world/
- * past-the-ceiling.md`'s departure economy does not fire at all. Nothing is
- * being left.
- *
- * The shape is the one this world already uses. `false-immortals.ts` describes
- * the Guest at Kettle as "entered on the station roll and never on the house
- * roll", and `faction-roll.ts` files an off-ladder title by `rankIndex === null`
- * rather than by a faction id so that a second body granting one needs no
- * change. Its nearest neighbour in code is `FLAG_GUEST_OF` in
- * `sect-politics.ts` - the guest ELDER, which is this arrangement inverted:
- * there the visitor is stronger than the house and sells presence, here they
- * are weaker and buy access. Two flags rather than one, because they are
- * opposite bargains and somebody can be neither, either, or in principle both.
- *
- * ── WHAT A GUEST IS BUYING, AND WHAT THEY ARE NOT ────────────────────────
- *
- * Access. The house spends teaching time and nothing else - no protection at a
- * crossing, no backing in a quarrel, no standing, no liability. That has to be
- * legible BEFORE anybody accepts, so `WHAT_A_GUEST_PLACE_IS_NOT` rides on every
- * read and on the acceptance, and it is never empty.
- *
- * The position therefore has a specific vulnerability and it is worth having
- * rather than smoothing away: a guest is away from their own protection, among
- * people who owe them nothing. Somebody who leans on a guest is not leaning on
- * the house.
  */
 
 import { z } from 'zod';
@@ -82,11 +34,6 @@ import { applyProbation, carriedProbationFacts, probationOf } from './sect-proba
 
 /**
  * One row on somebody's guest roll.
- *
- * Deliberately thin, and deliberately not a membership record. There is no
- * rank, no contribution and no standing here because there is none in the
- * fiction - what the house is keeping is a note of who is sitting in and since
- * when, which is all it needs in order to decide about them later.
  */
 export interface GuestRollEntry {
     hostFactionId: string;
@@ -94,10 +41,6 @@ export interface GuestRollEntry {
     sinceDay: number;
     /**
      * Whether their own house had said not to.
-     *
-     * Recorded rather than acted on. The host is not poaching and has no view;
-     * the party with a grievance is the home house, and it is the home house's
-     * ledger that owns the consequence.
      */
     againstTheirOwnHouse: boolean;
 }
@@ -115,11 +58,6 @@ export function guestPlaceHeldBy(
 
 /**
  * Whether this house would teach this cultivator this art on the guest roll.
- *
- * The one predicate the technique layer needs, and it is the reason this module
- * exists rather than being a read: a guest place that opens no book is a card
- * in a menu. Deliberately narrow - it answers only about the OPEN shelf, so
- * nothing here can reach past what the house decided to show.
  */
 export function aGuestIsTaughtThis(
     db: Database.Database,
@@ -138,9 +76,6 @@ export function aGuestIsTaughtThis(
 /**
  * What a house withholds from a guest, for a refusal that names what membership
  * would change instead of saying no.
- *
- * Returns null where this art is not the host's business at all, so a caller
- * can tell "they hold it and will not show you" from "they do not hold it".
  */
 export function whyAGuestIsNotShownThis(
     db: Database.Database,
@@ -228,19 +163,7 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
     const homeId = membership?.sectId ?? null;
     const held = guestPlaceHeldBy(repos.db, cultivator.id);
 
-    // ── THE FAR END OF A PUBLISHED DOOR ──────────────────────────────────
-    //
-    // Before anything else, because by the time somebody walks back up the
-    // terraces to ask, the house has already decided about them. See the
-    // header of `sect-probation.ts` for why a decided judgement writes on what
-    // looks like a read: the scoring is the house's act on the house's clock,
-    // there is nothing here to accept or decline, and the roll is cleared so
-    // the branch cannot fire twice.
-    //
-    // Departing is exempt. Walking out of a probation is a thing somebody may
-    // do at any point - it costs nothing, because nothing was given - and
-    // sorting them on the way out would be the engine refusing an action,
-    // which is the one thing it may not do.
+    // THE FAR END OF A PUBLISHED DOOR
     const probation = args.depart ? null : probationOf(repos, cultivator, run);
     if (probation && probation.outcome !== 'carried') {
         const applied = applyProbation(repos, cultivator, run, probation);
@@ -281,14 +204,7 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
         const gate = new KnowledgeGate(repos.db);
         const all = housesThatWouldTakeAGuest(cultivator.realmOrdinal, homeId);
         const heard = all.filter(p => gate.isAwareOf(cultivator.id, 'sect', p.factionId));
-        // ── SAID AS A SENTENCE, BECAUSE THE FALLBACK IS INVISIBLE ────────
-        //
-        // `summariseToolBody` branches on the shape of a result and a shape it
-        // does not know falls through to "It is done. Nothing about it drew
-        // attention." - which reads like a sentence and says nothing. This
-        // listing landed on it in the first played run, so it says its own
-        // answer, in the world's voice, the way the sect listing next door
-        // already does.
+        // SAID AS A SENTENCE, BECAUSE THE FALLBACK IS INVISIBLE
         const named = heard.map(p => p.factionName);
         const narrationHint = heard.length === 0
             ? all.length === 0
@@ -458,13 +374,6 @@ export async function handleGuest(args: z.infer<typeof GuestSchema>): Promise<ob
 
 /**
  * Whether the house has come round to putting membership to its guest.
- *
- * Exported for the caller that has the held technique ids to hand; nothing in
- * this file reads the technique table, on the same principle as the rest of it.
- * The offer is the payoff for the whole arrangement and it is also the moment
- * it stops being free: taking it means leaving your own house, and part of what
- * is on the other side is the thing a guest never had, which is somebody
- * answering when something happens to you.
  */
 export function guestWouldBeOfferedAPlace(
     db: Database.Database,

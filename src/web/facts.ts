@@ -1,23 +1,5 @@
 /**
  * Engine outcomes, rendered as English.
- *
- * This module is the single place where a `TimeSkipResult`, a
- * `BreakthroughResult` or a survival state becomes a sentence. Both narrator
- * paths consume it and neither may bypass it:
- *
- * - the provider narrator is handed `lines` as the *entire* factual content
- *     of its phase-3 prompt, so the model has nothing to narrate from except
- *     what the engine actually returned;
- * - the deterministic narrator ships `prose` verbatim.
- *
- * That symmetry is the point. With no provider configured the player reads the
- * engine's own account; with one configured they read the same account in
- * better sentences. Neither version can contain a fact the engine did not
- * produce, because neither version is composed anywhere else.
- *
- * The register is the one context.md asks for: plain declarative sentences,
- * cruelty in the content rather than the adjectives, cosmic events anchored to
- * one physical detail.
  */
 
 import {
@@ -38,7 +20,8 @@ import {
     whatTheStoneSays,
     type HeadstoneFacts
 } from './headstone-reading.js';
-import { LOW_SATIETY } from '../engine/cultivation/survival.js';
+import { LOW_SATIETY, lifespanCeilingFor } from '../engine/cultivation/survival.js';
+import { physiqueOrNull } from '../engine/cultivation/physiques.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AskWeight, AttemptResult, Wrong } from '../engine/social-leverage/index.js';
@@ -55,113 +38,24 @@ export interface EngineFacts {
     /** One-line summary. Used as the overlay title and the log's first line. */
     headline: string;
     /**
-     * The complete factual content of the outcome, one statement per entry.
-     * This is what a narrator is allowed to know. Nothing else is sent.
-     *
-     * OBSERVABLE ONLY. Everything here must be something a person in the room
-     * could see, hear, feel or be told - never a category out of the schema.
-     * docs/world/writing/tone.md: nobody tells the protagonist how anything works, and
-     * a bare label in a prompt is an invitation to paraphrase it into a
-     * briefing. That is what a category in a prompt is FOR.
+     * The complete factual content of the outcome, one statement per entry. This is
+     * what a narrator is allowed to know. Nothing else is sent.
      */
     lines: string[];
     /**
      * The structural truth: governance, ladders, grades, ordinals, thresholds.
-     *
-     * Engine-only. It reaches the inspector and the play log, where mechanical
-     * precision is the whole point, and it is never sent to a narrator. The
-     * engine holds the structure so that people can BEHAVE according to it,
-     * which is its only purpose in narration - so the narrator gets the
-     * behaviour and the operator gets the structure.
-     *
-     * ── AND IT IS WRITTEN AS SENTENCES ───────────────────────────────────
-     *
-     * "Never sent to a narrator" was read for a long time as "not for people",
-     * and it is not that. These lines are rendered in the play log beside the
-     * prose, so a PLAYER reads them, and the landing page makes a promise about
-     * exactly this: every number below is the engine's, shown as it was
-     * computed. Showing the mechanics is deliberate and must not be hidden
-     * behind a flag, a fold or an admin mode.
-     *
-     * What was wrong was never the content. Measured on an ordinary opening -
-     * default configuration, no admin flag, no narrator key - 16 of 49 log
-     * entries were `Object.entries` joined with commas:
-     *
-     *     Fourhands: region=The White Stair, travelDays=unstated, ambient=thin,
-     *     occupants=3, supportedDraw=7, localCeilingOrdinal=36
-     *
-     * Every one of those figures is worth showing. `localCeilingOrdinal` is how
-     * far that province carries anybody; `occupants` against `supportedDraw` is
-     * the crowding mechanic, which a player has to understand to choose ground.
-     * The information was good and the presentation was a debug print.
-     *
-     * So the standard for this channel is the breakthrough line, which was
-     * always right: **"Breakthrough failed at Qi Condensation Layer 6 at 85.0%.
-     * The qi dispersed without damage; a quarter of the accumulated progress is
-     * gone."** Exact, checkable, unhedged, and a sentence.
-     *
-     * Two rules follow, and the first is the one that matters:
-     *
-     *   KEEP EVERY NUMBER. Losing a figure to make a nicer sentence is a
-     *   regression, not a polish. Resolve an enum key to what it names; do not
-     *   drop it.
-     *
-     *   SAY A CONSTANT ONCE. A null or an unchanging value repeated on every
-     *   row of a list is not a measurement - `travelDays=unstated` eight times
-     *   buried the two rows that carried a figure. State it once, in words,
-     *   and say why it is unstated.
      */
     structure: string[];
     /** The deterministic rendering, ready to show a player as-is. */
     prose: string;
     /**
      * Lines the player MUST end up reading, whatever the narrator does.
-     *
-     * A subset of `lines`, not a second channel of content: everything here is
-     * also in `lines`, so a model that renders it well renders it once and this
-     * adds nothing. What it defends against is OMISSION.
-     *
-     * The measurement that made it necessary: the engine files a
-     * `method_ceiling` event saying, in full, "there is no road for the qi to
-     * take, so nothing accumulates and nothing ever will."
-     * The model receives that whole sentence inside a long digest and drops it,
-     * so a cultivator sits for fifty years gaining nothing and is never told
-     * why. With the deterministic narrator it reaches the player on every seed.
-     * The difference between the two front doors was the model's mood.
-     *
-     * Reserved for facts a player cannot play without: why nothing is
-     * accumulating, that they have died, what a crossing cut away. Not for
-     * anything merely interesting - a required line that arrives stapled to the
-     * end of good prose is a cost, and it is only worth paying where silence
-     * would be a lie by omission.
      */
     required?: string[];
 }
 
 /**
  * Add a fact a caller learned AFTER the prose was composed, on every channel.
- *
- * ── WHY THIS IS A FUNCTION AND NOT THREE LINES AT EACH CALL SITE ─────
- *
- * The same omission has now been found five times in five different verbs, and
- * it looks correct every time it is written. A caller resolves something after
- * the composer has run - the wage a duty paid, the wound a reprisal left, the
- * years a child took - pushes the sentence onto `lines`, and stops. But `lines`
- * is a LICENCE a model may decline to use, and `prose` is what the
- * deterministic narrator actually ships and was built one call earlier without
- * it. So the sentence reaches nobody at either tier, while every artefact of
- * having said it is present in the code.
- *
- * `required` is the channel that survives a model - `withRequiredLines`
- * appends anything the narration left out, at both front doors - so anything a
- * player cannot play without belongs on it. Keep that bar: `required` is for a
- * death, a payment, a wound, a span spent. A merely interesting sentence
- * stapled to the end of good prose is a cost, and `EngineFacts.required` says
- * so above.
- *
- * `prose` is written too rather than left to `withRequiredLines`, so the
- * composed account reads in the order things happened rather than with the
- * consequence bolted on after the closing paragraph.
  */
 export function sayThisWhateverTheNarratorDoes(facts: EngineFacts, said: string): void {
     facts.lines.push(said);
@@ -171,18 +65,6 @@ export function sayThisWhateverTheNarratorDoes(facts: EngineFacts, said: string)
 
 /**
  * A rung, named, with its ordinal kept beside it.
- *
- * The engine channel talks in ordinals because that is what the ladder is
- * indexed by, and for a while it printed only the index: "standing at ordinal
- * 0", "carries nobody past ordinal 36". `ordinal` is a FIELD NAME, not a rung.
- * Every other surface in the game says "Qi Condensation Layer 1" and
- * "Grand Ascension Rising Soul", and a player reading the log beside the prose
- * was being handed two vocabularies for one fact.
- *
- * Keeping the number is still right - an operator sorts and compares on it, and
- * the promise is that the arithmetic is visible - so this keeps both. It is the
- * one formatting decision in this channel that is worth centralising, because
- * five modules make it and they had already drifted.
  */
 export function rungAndOrdinal(ordinal: number): string {
     return `${rankName(ordinal)} (ordinal ${ordinal})`;
@@ -193,14 +75,11 @@ function observable(headline: string, lines: string[], prose: string, structure:
     return { headline, lines, structure, prose };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE WORLD, AS THE ENGINE'S STATES MEAN IT
-// The ambient table is the qi-density table. Qi is a resource that pools in
-// spiritual veins and is not evenly distributed, so these strings say what a
-// band means to live in rather than what it multiplies. They are what the
-// narrator is given, so a model that has never seen context.md still cannot
-// describe a spirit tide as scenery.
-// ─────────────────────────────────────────────────────────────────────────
+// THE WORLD, AS THE ENGINE'S STATES MEAN IT The ambient table is the qi-density
+// table. Qi is a resource that pools in spiritual veins and is not evenly
+// distributed, so these strings say what a band means to live in rather than what
+// it multiplies. They are what the narrator is given, so a model that has never
+// seen context.md still cannot describe a spirit tide as scenery.
 
 const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
     thin: 'Qi density thin: half cultivation rate, and a penalty to breakthrough odds. Drawn down long ago, or never rich.',
@@ -212,12 +91,6 @@ const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
 
 /**
  * The same four states, as a person standing in them would experience them.
- *
- * This is what goes to the narrator; the table above goes to the inspector.
- * Nobody in this world is told they are standing in a 0.5x multiplier - they
- * sit down for an hour and get less than an hour back, and after enough years
- * of that they draw their own conclusions. Rate language would teach the player
- * a rule, which is the one thing narration is not for.
  */
 const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
     thin: 'The air here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
@@ -234,13 +107,13 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     combat_defeat: 'killed in combat',
     obviously_fatal_choice: 'forced a fight while barely able to stand',
     lifespan_exhausted: 'lifespan exhausted - died of old age at the ceiling of the realm',
-    // The figure is the RUNG'S, not fifty. `stagnationYearsForOrdinal` is
-    // max(50, lifespan / 5), so fifty is only true through Foundation
-    // Establishment - it is a hundred at Core Formation and twenty thousand at
-    // Tribulation Transcendence. This entry said fifty to everybody, which made
-    // it a lie about most of the ladder in the one sentence a player reads
-    // about their own death. `describeDeathCause` takes the ordinal now and
-    // this row is a function of it, the way `standingStructure` already does it.
+    // The figure is the RUNG'S, not fifty. `stagnationYearsForOrdinal` is max(50,
+    // lifespan / 5), so fifty is only true through Foundation Establishment - it is
+    // a hundred at Core Formation and twenty thousand at Tribulation Transcendence.
+    // This entry said fifty to everybody, which made it a lie about most of the
+    // ladder in the one sentence a player reads about their own death.
+    // `describeDeathCause` takes the ordinal now and this row is a function of it,
+    // the way `standingStructure` already does it.
     stagnation_aging: 'settled - the years this rung credits ran out, and the qi already inside them finished working on them instead',
     // RETIRED. Nothing produces this cause any more; the row is kept so a run
     // ledger written before the ruling still renders. See `docs/world/climbing/injuries.md`.
@@ -286,12 +159,6 @@ export function describeDeathCause(
 
 /**
  * What the difference between two cultivators feels like from below.
- *
- * The engine knows both ordinals exactly. Handing them to a narrator produces
- * "as a mere Qi Condensation Layer 3, he could never..." - power-level
- * exposition, banned in Tier 1 and tedious besides. What a person actually
- * perceives is a gap, and discovery.md is explicit that the player should do
- * the arithmetic themselves rather than be given the sum.
  */
 export function describeStanding(observerOrdinal: number, subjectOrdinal: number): string {
     const gap = subjectOrdinal - observerOrdinal;
@@ -307,10 +174,6 @@ export function describeStanding(observerOrdinal: number, subjectOrdinal: number
 
 /**
  * Where a True Immortal is, which is not anywhere on the map.
- *
- * The Immortal realm is a place rather than a rank band - other immortals and
- * immortal beasts are in it, and the province the cultivator came from is on
- * the other side of a hole they had to punch to leave through.
  */
 export const ABOVE_THE_LID_PLACE = 'the far side of the Lid';
 
@@ -323,7 +186,7 @@ export function placeName(
     if ((cultivator.immortalStatus ?? 'none') === 'true_immortal') return ABOVE_THE_LID_PLACE;
     // The same const `STARTING_LOCATION` is built from, rather than a second
     // spelling of it: this fallback IS where a cultivator with no row started.
-    return cultivator.location?.trim() || PLACE.SWEPTGROUND;
+    return cultivator.location?.trim() || PLACE.BURNT_EARTH;
 }
 
 /** "10 years", "3 months", "18 days" - whichever unit reads plainest. */
@@ -348,17 +211,6 @@ function signed(n: number, digits = 0): string {
 
 /**
  * How long they have stood here, said the way a person would say it.
- *
- * The sheet used to open this line with `toFixed(1)`, so the first thing a
- * sixteen-year-old read about themselves on the turn they were born into the
- * world was "0.0 years at this realm without advancing" - a decimal point on
- * zero, and an accusation of stalling levelled at somebody who has not had
- * time to. Found in play on turn one of a fresh run.
- *
- * The number is the same number; what changes is that a figure is only printed
- * where a figure is what the player wants, which is once the stretch is long
- * enough to be worth counting. Under a year there is nothing to count, and at
- * one year English wants the singular.
  */
 function timeHeldAtThisRealm(years: number): string {
     if (years < 1) {
@@ -373,13 +225,19 @@ function timeHeldAtThisRealm(years: number): string {
 }
 
 /**
+ * What this body is, or null for almost everybody.
+ */
+function bodyLine(cultivator: Cultivator): string | null {
+    const physique = physiqueOrNull(cultivator.physique);
+    if (!physique) return null;
+    return `${physique.name}: ${physique.tell}. `
+        + `This body is finished at ${Math.round(lifespanCeilingFor(cultivator))} years `
+        + `whatever else happens, which at this rung is `
+        + `${Math.round(lifespanCeilingFor(cultivator) - cultivator.age)} from today.`;
+}
+
+/**
  * The player's own condition, as they experience it.
- *
- * Their own sheet is not world structure and is not withheld - a person knows
- * their own rank and counts their own money. What IS withheld is the rule
- * behind each number: not "three untreated injuries and the next fight is
- * fatal", which teaches a threshold, but the state of the meridians, which the
- * player can draw a conclusion from. The interface shows the arithmetic.
  */
 export function standingLines(cultivator: Cultivator, ambient: AmbientQi): string[] {
     const untreated = untreatedInjuryCount(cultivator.injuries);
@@ -387,40 +245,15 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
     return [
         `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
         `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
+        // AND WHAT THE BODY IS, WHERE IT IS ANYTHING
+        ...(bodyLine(cultivator) ? [bodyLine(cultivator) as string] : []),
         // THE BODY AND THE PURSE, SAID ONCE EACH.
-        //
-        // This line carried the climb as well - `Cultivation progress N
-        // qi-units` - and `standingStructure` says `N of M qi-units toward the
-        // next rank` four lines below it. So the sheet opened by naming a
-        // number with no denominator and then named it again with one, and a
-        // player read the same figure twice on the way down. The second is the
-        // sentence worth having, because a progress figure means nothing
-        // without the price of the rung; this line leaves the climb to it.
-        //
-        // The three that stay are the same three numbers, out of the slashes.
-        // A field row is not shorter than a sentence, it is only harder to
-        // read, and this is the screen somebody opens when they suspect they
-        // are in trouble.
         `${cultivator.hp >= cultivator.maxHp
             ? `Unmarked, ${cultivator.maxHp} of ${cultivator.maxHp}.`
             : `${cultivator.hp} of ${cultivator.maxHp} left in the body.`} `
         + `${cultivator.satiety >= 100 ? 'Fed.' : `Satiety ${cultivator.satiety} of 100.`} `
         + `${cultivator.spiritStones} spirit stone${cultivator.spiritStones === 1 ? '' : 's'} in the purse.`,
         // AND WHAT CARRYING THAT MANY ACTUALLY COSTS.
-        //
-        // The sheet reported the number and never what it meant. Played to
-        // three untreated wounds it said "3 meridian injuries have been open
-        // since the day it was taken" and stopped, while combat and work had
-        // both been saying the consequential half for some time. The one screen
-        // a player reads when they suspect they are in trouble was the last
-        // place to tell them.
-        //
-        // What it says has changed with the ruling: this is not the count that
-        // kills, because nothing about a torn channel kills. It is the count at
-        // which the body gives up repairing itself, and it is meant to read as
-        // intolerable rather than as terminal.
-        //
-        // The pronouns were singular too, against a plural subject.
         untreated === 0
             ? 'The meridians are whole.'
             : untreated >= CRIPPLING_UNTREATED_INJURIES
@@ -433,16 +266,6 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
                   + `At ${CRIPPLING_UNTREATED_INJURIES} the body stops mending itself altogether.`,
         timeHeldAtThisRealm(cultivator.yearsAtCurrentRealm),
         // WHOSE ROLL THEY ARE ON.
-        //
-        // The sheet listed root, attributes, qi, health, hunger and money and
-        // never once said what house the cultivator serves - so somebody who
-        // had joined a sect could read their own status and find no trace of
-        // it. Standing is most of what a person IS in this setting: it decides
-        // what they are taught, what they are owed and what is asked of them.
-        //
-        // Found by playing, twice over. "What is my reputation" routed here
-        // correctly and came back with a sheet containing no reputation, which
-        // is the deflection this file already treats as a defect elsewhere.
         cultivator.sectId
             ? `On the roll of ${sectNameFor(cultivator.sectId)}`
               + `${cultivator.sectRank ? `, ranked ${cultivator.sectRank}` : ''}.`
@@ -453,10 +276,6 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): strin
 
 /**
  * A house's name from its id, falling back to the id itself.
- *
- * The catalog is the only place the pretty name lives, and a run may carry a
- * house the catalog has never heard of - one the world founded for itself. The
- * id is a poor name but it is a true one, and it beats printing nothing.
  */
 function sectNameFor(sectId: string): string {
     return getSect(sectId)?.name ?? sectId;
@@ -464,17 +283,6 @@ function sectNameFor(sectId: string): string {
 
 /**
  * The thresholds behind those numbers, as sentences.
- *
- * This channel reaches the play log, which means it reaches the PLAYER - the
- * landing page's promise is that every number the engine computed is shown as
- * it was computed, and the log is where that promise is kept or broken. It was
- * being kept in the sense that the figures were all present and broken in the
- * sense that they arrived as `realmOrdinal=0, spiritRoot=quad_metal_wood_earth_water,
- * foundation=none.` - a debug print of facts worth reading.
- *
- * So: every figure that was in the field dump is still here, and the enum keys
- * are resolved to what they are. Nothing was dropped to make the sentence read
- * better; that would be the regression this rewrite exists to avoid.
  */
 export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): string[] {
     const untreated = untreatedInjuryCount(cultivator.injuries);
@@ -513,26 +321,10 @@ export function factsForTimeSkip(
     label = 'Seclusion',
     /**
      * What the PLAYER asked for, where that is not what the skip was given.
-     *
-     * A seclusion can be shortened before it starts - the encounter layer
-     * decides somebody arrives in year two, and the skip is handed the
-     * truncated span. `skip.requestedDays` is then the truncated figure, so
-     * asking for five years and being told "Seclusion of 2 years was intended"
-     * is the engine reporting its own arithmetic as the player's intention.
-     *
-     * Omitted where the two agree, which is every caller that does not
-     * pre-truncate.
      */
     askedForDays?: number,
     /**
      * The span the SENTENCE asked for, before the engine's own ceiling.
-     *
-     * `parseDuration` clamps at MAX_CULTIVATION_DAYS and said nothing about it,
-     * so "I cultivate for 100000 years" answered "Seclusion of 100 years was
-     * intended" - a thousandfold correction that reads like agreement. The
-     * ceiling is real; being silent about it is the invisible-fallback defect
-     * in numeric form. Omitted where nothing was clamped, which is almost
-     * always.
      */
     ceilingCutFrom?: number
 ): EngineFacts {
@@ -584,31 +376,17 @@ export function factsForTimeSkip(
 
 /**
  * Event kinds whose line a player must end up reading.
- *
- * Deliberately short, and every entry earns its place by being something a
- * player cannot make a decision without.
- *
- *   `method_ceiling`  why the years are buying nothing. Measured being dropped
- *                     from a long digest by a model that had been handed the
- *                     whole sentence, leaving a cultivator to sit for fifty
- *                     years and never find out that no manual means no road.
- *   `ground_ceiling`  the same fact about the ground rather than the book, and
- *                     the same answer: the thing to do is move, and a player
- *                     who is not told will sit.
- *
- * A death is required too, and is pushed separately below rather than listed
- * here, because it is not an event kind - it is a property of the skip.
  */
 const REQUIRED_EVENT_KINDS: ReadonlySet<string> = new Set([
     'method_ceiling',
     'ground_ceiling',
-    // `resource_depleted` is the food running out, and the engine files it
-    // WITH the arithmetic attached - "there is food for about 50 more days,
-    // and 5 days beyond that before it kills". The skip interrupts itself to
-    // file it precisely because starvation must be a decision a player
-    // declined rather than one they never got, and a decision they are not
-    // told about is one they never got. It earns its place here by the same
-    // test as the two above: a player cannot act without it.
+    // `resource_depleted` is the food running out, and the engine files it WITH the
+    // arithmetic attached - "there is food for about 50 more days, and 5 days
+    // beyond that before it kills". The skip interrupts itself to file it precisely
+    // because starvation must be a decision a player declined rather than one they
+    // never got, and a decision they are not told about is one they never got. It
+    // earns its place here by the same test as the two above: a player cannot act
+    // without it.
     'resource_depleted'
 ]);
 
@@ -634,11 +412,6 @@ function timeSkipHeadline(skip: TimeSkipResult, before: Cultivator, after: Culti
 
 /**
  * The zero-configuration account of a decade.
- *
- * Written to be read, not to be a debug dump: an opening that places the
- * player, the events in order as short flat statements, and a closing that
- * says plainly what it cost. The engine's own `summary` strings carry the
- * numbers, so this composes around them rather than restating them.
  */
 function timeSkipProse(
     before: Cultivator,
@@ -654,33 +427,6 @@ function timeSkipProse(
     const where = placeName(before);
 
     // NOT EVERY SPAN IS SPENT SITTING DOWN.
-    //
-    // This renderer serves every action that consumes time, and its opening
-    // assumed the one that made it: seclusion. So travelling read as
-    // "Low Fall. Drive Recheck sat down and began to breathe. Travel of 1 day
-    // was intended." - a person setting out described as somebody settling in,
-    // and the ambient flavour underneath it is about the ground they are
-    // leaving rather than anywhere they are going.
-    //
-    // The label already says which it is; it just was not being asked.
-    // Three postures, not two. Travelling is a road; a sect duty, a commission
-    // or a stretch of work is somebody OUT DOING SOMETHING, and neither is
-    // sitting still. The seclusion opener reached both until it was played:
-    // "Wheatgate. Shen Weiran sat down and began to breathe. Sect duty: What a
-    // Poor District Has Instead of Monsters of 20 days was intended." - a man
-    // sent to deal with a district's troubles, described as settling in to
-    // meditate, with the ambient flavour underneath about ground he is not
-    // sitting on.
-    //
-    // The label already says which it is; it just was not being asked.
-    //
-    // A FOURTH POSTURE, and the same defect a third time. Played:
-    // "Wheatgate. Shen Wu sat down and began to breathe. Raising a child with
-    // Yun Minlu of 12 years was intended." Twelve years of raising somebody
-    // described as settling in to meditate. A LIFE LIVED WITH SOMEBODY is not
-    // a road and is not an errand either - nobody sent them and there is
-    // nowhere they went - so it gets its own opening rather than being folded
-    // into the nearest one that is merely less wrong.
     const travelling = /travel|journey|road|walk/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
     const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
@@ -731,15 +477,15 @@ function timeSkipProse(
         );
     }
 
-    // "Nothing found you" is a claim about the whole stretch and this function
-    // can only see half of it: the encounter layer's own occurrences arrive
-    // later, appended by the caller. Where the span was shortened BEFORE the
-    // skip - `asked > skip.requestedDays` - something demonstrably did find
-    // them, and saying otherwise produced the flat contradiction a playtester
-    // reported: "Something was already coming that would end it at 1.7 years"
-    // followed immediately by "Nothing found you. 1.7 years went by in the
-    // ordinary way." The player planned thirty years, got 1.7, and was told
-    // nothing happened, which is strictly worse than either outcome.
+    // "Nothing found you" is a claim about the whole stretch and this function can
+    // only see half of it: the encounter layer's own occurrences arrive later,
+    // appended by the caller. Where the span was shortened BEFORE the skip - `asked
+    // > skip.requestedDays` - something demonstrably did find them, and saying
+    // otherwise produced the flat contradiction a playtester reported: "Something
+    // was already coming that would end it at 1.7 years" followed immediately by
+    // "Nothing found you. 1.7 years went by in the ordinary way." The player
+    // planned thirty years, got 1.7, and was told nothing happened, which is
+    // strictly worse than either outcome.
     if (skip.events.length === 0 && asked > skip.requestedDays) {
         paragraphs.push(
             `${humanDays(skip.simulatedDays)} of it were quiet, and then the stretch ended `
@@ -780,18 +526,13 @@ function timeSkipProse(
             + 'and nothing closes them on its own. A month under a physician does, in any '
             + 'settlement; a healing pill does it faster.'
         );
-        // Past the threshold the sentence above stops being a warning and
-        // becomes a countdown, and until now it read exactly the same at nine
-        // wounds as at one. A playtested run went 1 to 3 to 9 across three
-        // stretches, gained no ranks in any of them, and died of qi deviation
-        // at Qi Condensation Layer 3 - having been told the identical sentence
-        // each time. The engine already knows this threshold and already says
-        // it on two other surfaces; it was silent on the one the player is
-        // actually reading.
-        //
-        // This changes nothing about the odds. It is the same trap, and it is
-        // still lethal to somebody who keeps sitting down. What it stops being
-        // is a cliff with no edge marked on it.
+        // Past the threshold the sentence above stops being a warning and becomes a
+        // countdown, and until now it read exactly the same at nine wounds as at
+        // one. A playtested run went 1 to 3 to 9 across three stretches, gained no
+        // ranks in any of them, and died of qi deviation at Qi Condensation Layer 3
+        // - having been told the identical sentence each time. The engine already
+        // knows this threshold and already says it on two other surfaces; it was
+        // silent on the one the player is actually reading.
         if (untreated >= CRIPPLING_UNTREATED_INJURIES) {
             closing.push(
                 `That is past ${CRIPPLING_UNTREATED_INJURIES}, so the body has stopped mending `
@@ -827,19 +568,8 @@ function timeSkipProse(
     paragraphs.push(closing.join(' '));
 
     if (skip.died) {
-        // WORD FOR WORD what the `required` channel holds, and that is the
-        // whole point of calling the same function.
-        //
-        // These were two sentences saying one thing in slightly different
-        // words - "is dead - X. The run is closed and written to the ledger.
-        // There is no reload and no revival." here, "is dead: X. The run is
-        // closed. There is no reload." there - and `withRequiredLines` appends
-        // what it cannot find, so it could not find this and appended it. The
-        // player was told they had died three times in one answer: once on the
-        // day it happened in the digest, once here, and once again at the
-        // bottom with a paragraph of somebody else's gossip in between.
-        //
-        // Measured in a played run, starving in Sweptground on turn 51.
+        // WORD FOR WORD what the `required` channel holds, and that is the whole
+        // point of calling the same function.
         paragraphs.push(theDeathSentence(after.name, skip.deathCause, after.realmOrdinal));
     }
 
@@ -848,16 +578,6 @@ function timeSkipProse(
 
 /**
  * How little is left in a body before the body is what the turn is about.
- *
- * A FRACTION rather than a figure, because a figure means four different things
- * on this ladder: forty points is a whole newborn and is a rounding error to
- * somebody at Nascent Soul. A tenth of the pool is the same statement at every
- * rung, which is the same reasoning `whatTheWrongedPartyDid` gives for pricing
- * a reprisal off the pool rather than off an absolute.
- *
- * Presentation and not balance, which is why it lives here beside the sentence
- * it decides and not in `schema/cultivation.ts`: nothing reads it to resolve
- * anything. It changes what is SAID and never what happens.
  */
 export const NEARLY_GONE = 0.1;
 
@@ -868,53 +588,11 @@ export function nearlyGone(who: Pick<Cultivator, 'hp' | 'maxHp' | 'alive'>): boo
 
 /**
  * The body, when there is almost none of it left.
- *
- * ── NOTHING SAID AT ONE POINT OF HEALTH ─────────────────────────────
- *
- * Played: two thefts off the same person took a cultivator 40 -> 20 -> 1, and
- * the prose at 1 read exactly as it read at 20 - *"does not walk away from it
- * whole"* - with no number anywhere in it. The satiety warning two lines above
- * this has existed for a long time and does the same job for the belly: the
- * body never had one.
- *
- * ── AND THE ROUTE IT NAMED DID NOT WORK ─────────────────────────────
- *
- * The first version of this sentence ended *"Sitting still mends it back, and a
- * physician mends it faster"*, and a player at 1 of 40 with 2 spirit stones did
- * exactly that. Played, and measured afterwards on the same numbers:
- *
- *     44 days sitting still at 1 of 40   ->  1 of 40.   Nothing.
- *     50 days sitting still at 1 of 50   ->  2 of 50.   One point.
- *
- * The body IS mending. `HP_RECOVERY_FRACTION_PER_DAY` is 0.0005, the block in
- * `time-skip.ts` is not gated on untreated wounds, and `wait` and `seclude`
- * run the identical arithmetic - so none of the obvious explanations is the
- * one. The rate is simply denominated in YEARS: a fortieth of a point a day, a
- * whole bar from empty in about five and a half years, which is what its own
- * ruling says it is for and why it must not be raised. A month of mortal care
- * restores a fixed amount, and a faster calendar would hand back more than the
- * treatment beside it and make the whole healing ladder pointless.
- *
- * So the rate is right and the SENTENCE was wrong. "Mends it back" in the
- * present tense, said to somebody one hit from death, reads as an instruction
- * for this turn, and the player spent a month and a half and their last two
- * stones on it. `AGENTS.md`: a refusal names a route - and a route is only
- * better than a bare no if the route is real. A real route with its span
- * withheld is a bare no that took six weeks to arrive.
- *
- * What it says now is what the engine actually knows: how long, off the same
- * constant the skip mends by; that it stops entirely on an empty belly, which
- * is the gate that ate the played stretch; and that the fast answer costs money,
- * which is a fact about a purse rather than about a body.
  */
 export function theBodyIsNearlyGone(
     who: Pick<Cultivator, 'hp' | 'maxHp'>,
     /**
      * What is in the purse, when the caller knows.
-     *
-     * The difference between "a physician mends it faster" and a sentence
-     * somebody can act on: at two stones the physician is not a route, and
-     * saying so is the whole of what the played run needed to hear.
      */
     spiritStones?: number
 ): string {
@@ -945,22 +623,11 @@ export function theBodyIsNearlyGone(
 
 /**
  * About what a settlement's physician wants to close a wound.
- *
- * Not the price - `handleMarket` owns that, it moves with the region, and the
- * treatment refusal prints the real figure. This is only the threshold for
- * whether to point somebody at the door or at a day's work, and being roughly
- * right is the whole requirement: the failure it exists to stop is telling a
- * player with two stones that a physician is their answer.
  */
 const PHYSICIAN_IS_ROUGHLY = 10;
 
 /**
  * That the cultivator is dead and the run will not continue, in one sentence.
- *
- * One function because there is one sentence. Two call sites compose it - the
- * digest's `required` list and the prose - and `withRequiredLines` matches on
- * a normalised substring, so the moment the two drift the player reads the
- * same verdict twice with a paragraph between them.
  */
 function theDeathSentence(name: string, cause: DeathCause | null | undefined, ordinal: number): string {
     return `${name} is dead: ${describeDeathCause(cause, ordinal)}. `
@@ -988,11 +655,6 @@ export function factsForBreakthrough(
     ambient: AmbientQi,
     /**
      * What arriving actually took out of the body, after the caller's clamp.
-     *
-     * The caller's figure rather than `result.bodyCost`, because the fraction
-     * is what the resolver decided and this is what was charged - they part
-     * company whenever somebody crossed on almost nothing, which is exactly the
-     * case worth reading about.
      */
     paidWithTheBody = 0
 ): EngineFacts {
@@ -1023,16 +685,12 @@ export function factsForBreakthrough(
     return {
         headline: breakthroughHeadline(result, before),
         lines,
-        // The prose half of a breakthrough was always right - "Breakthrough
-        // failed at Qi Condensation Layer 6 at 85.0%. The qi dispersed without
-        // damage; a quarter of the accumulated progress is gone." - and it is
-        // the standard the rest of this channel was rewritten to match. The
-        // ROLL is the thing only this line carries: it is what makes the odds
-        // checkable rather than merely stated, which is the whole promise.
-        //
-        // What is still not said is that a boundary is PRICED. That rule is
-        // one the player works out by crossing one; the line reports that this
-        // attempt was a boundary crossing and stops there.
+        // The prose half of a breakthrough was always right - "Breakthrough failed
+        // at Qi Condensation Layer 6 at 85.0%. The qi dispersed without damage; a
+        // quarter of the accumulated progress is gone." - and it is the standard
+        // the rest of this channel was rewritten to match. The ROLL is the thing
+        // only this line carries: it is what makes the odds checkable rather than
+        // merely stated, which is the whole promise.
         structure: [
             `Outcome: ${result.outcome}. `
             + `${rungAndOrdinal(result.fromOrdinal)} to ${rungAndOrdinal(result.toOrdinal)}, `
@@ -1100,20 +758,7 @@ function breakthroughProse(
                 ? `You are ${rankName(after.realmOrdinal)}. Something was cut away on the way across, the way something always is at a boundary. You will notice what is missing later, or you will not, which is worse.`
                 : `You are ${rankName(after.realmOrdinal)}. The step was expensive and it was only a step.`
         );
-        // ── AND THE BODY IS LARGER THAN IT WAS ───────────────────────────
-        //
-        // Nothing said it. Played, a crossing left the sheet reading "40 of
-        // 1280 left in the body", which is the vessel growing and reads exactly
-        // like a terrible wound - the one number on the screen that moved, with
-        // no sentence anywhere to say which of the two it was. And in the other
-        // direction, six crossings on command grew nothing at all, which is the
-        // engine defect this line is the surface of.
-        //
-        // Said as one breath rather than two, because they are one event: the
-        // vessel grew, and this is what is standing in it. Only where it
-        // actually changed - a sub-rank step inside a realm can leave the pool
-        // where it was, and announcing an unchanged number is the dump this
-        // channel exists to avoid.
+        // AND THE BODY IS LARGER THAN IT WAS
         if (after.maxHp > before.maxHp) {
             paragraphs.push(
                 `The body it has to be carried in is larger than it was: ${before.maxHp} before, `
@@ -1130,17 +775,7 @@ function breakthroughProse(
                       + 'fill the vessel it enlarges.')
             );
         }
-        // ── AND WHAT GETTING THROUGH TOOK ────────────────────────────────
-        //
-        // The design owner's ruling that a crossing deals damage, said on the
-        // turn it was charged. Before this, six crossings on command left a
-        // cultivator at 40 of 40 and the only thing that ever cost the body on
-        // a successful attempt was lightning above ordinal 40.
-        //
-        // Separate from the vessel sentence above deliberately: one is the pool
-        // getting larger and one is the body paying for the trip, and the whole
-        // reason the vessel line exists is that a player could not tell those
-        // two apart from the number alone.
+        // AND WHAT GETTING THROUGH TOOK
         if (paidWithTheBody > 0) {
             paragraphs.push(
                 `Getting through it took ${paidWithTheBody} out of you, which leaves `
@@ -1172,19 +807,10 @@ export function factsForLook(
     company: Company = { named: [], strangers: [], total: 0 },
     /**
      * What belonging to something looks like from where they are standing.
-     *
-     * A player who has sworn to an order and walks into its seat was being
-     * told the same thing a stranger would be told. Membership is the most
-     * consequential thing a low cultivator can acquire and the world never
-     * mentioned it again.
      */
     standing: string | null = null,
     /**
      * Whether the ground under them has nothing wrong with it.
-     *
-     * False suppresses the nothing-is-wrong fallback, and only that: every
-     * line about the PERSON still prints. Only the caller can answer it,
-     * because only the caller has read the area-status layer.
      */
     groundIsQuiet = true
 ): EngineFacts {
@@ -1213,12 +839,6 @@ export function factsForLook(
 
 /**
  * Who is about, asked directly.
- *
- * `look` and this used to return the same paragraph, which made asking the
- * narrower question pointless. Someone scanning a square for a face does not
- * want the weather: the people come first and the room is dropped entirely.
- * The discovery gate is the same one - being in the square is permission to
- * see somebody, never to know their name.
  */
 export function factsForCompany(
     cultivator: Cultivator,
@@ -1244,11 +864,6 @@ export function factsForCompany(
 
 /**
  * Who is standing here, split by whether the player can put a name to them.
- *
- * The split is the discovery rule applied to people rather than to factions.
- * Nineteen people present does not mean nineteen names: being in the room is
- * permission to SEE somebody, not to know who they are, and a village square
- * that hands over a cast list has spent nineteen introductions at once.
  */
 export interface Company {
     /** People the player has a knowledge record for. Nameable. */
@@ -1269,11 +884,6 @@ export const COMPANY_SHOWN = 4;
 
 /**
  * How far above the player somebody has to stand to be worth singling out.
- *
- * Below this everybody in a square reads the same, and describing five
- * strangers one at a time produces five identical clauses - which is what the
- * first version of this did. A crowd is a crowd; the person worth a sentence is
- * the one the others are being careful around.
  */
 const NOTABLE_GAP = 4;
 
@@ -1316,16 +926,12 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
         const standsOut = deepest.ordinal - observerOrdinal >= NOTABLE_GAP;
         const others = standsOut ? strangers.length - 1 : strangers.length;
 
-        // The crowd clause and the standout clause are both written for a
-        // plural, and a square with one or two people in it is common - a thin
-        // county at dawn is most of the early game. Found by playing: the
-        // second paragraph of a new run read "One other person ARE about, none
-        // of whom are looking at you", and then sent THE OTHERS moving around
-        // somebody who was the only other person there.
-        //
-        // So each count gets the sentence that is true of it. The plural
-        // wording is kept exactly where it was for the case it was written
-        // for; what is added is the two counts underneath it.
+        // The crowd clause and the standout clause are both written for a plural,
+        // and a square with one or two people in it is common - a thin county at
+        // dawn is most of the early game. Found by playing: the second paragraph of
+        // a new run read "One other person ARE about, none of whom are looking at
+        // you", and then sent THE OTHERS moving around somebody who was the only
+        // other person there.
         if (others === 1) {
             sentences.push('one other person is about, and they are not looking at you.');
         } else if (others > 1) {
@@ -1333,28 +939,7 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
                 `${roughly(others)} are about, none of whom are looking at you.`
             );
         }
-        // ── AND WHAT THE CROWD IS, WHICH IS THE HALF A MODEL INVENTED ────
-        //
-        // Played in the browser against a local model, standing in a HAMLET:
-        //
-        //   "Around you, the thirty-five others who have pushed past the first
-        //    layer move through the village with the indifference of the
-        //    established. Some are far beyond you, forty-four rungs deep."
-        //
-        // The world was measured afterwards and nobody like that was there:
-        // every living cultivator above Void Refinement stands at a sect seat.
-        // So the count was right, the placement was right, and the reading was
-        // invented - and the reason it was invented is that this function
-        // handed over a bare number with nothing said about what the number
-        // WAS. `standsOut` fires only for somebody `NOTABLE_GAP` above, so the
-        // ordinary case - a square full of people at or near the player's own
-        // height - was a count and a silence, which is an invitation.
-        //
-        // What is said is derived from the ordinals this function already
-        // holds and leaks nothing the discovery rule protects: no name, no
-        // rung, no individual. A crowd that is not remarkable is described as
-        // not remarkable, which is both true and the whole of what a look can
-        // honestly report about strangers.
+        // AND WHAT THE CROWD IS, WHICH IS THE HALF A MODEL INVENTED
         if (!standsOut && others > 1) {
             sentences.push(
                 'none of them reads as anything out of the ordinary, and nothing about the way '
@@ -1387,12 +972,6 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
 
 /**
  * What a person notices about themselves without reciting their own numbers.
- *
- * The sheet is already on screen. A fallback narrator that answers "look
- * around" with "Wen Shu, Qi Condensation Layer 4, 17 years old, 0 spirit stones
- * to their name" has written the sheet twice and the situation not at all. An
- * empty purse, a wound that has not closed and a year that went nowhere are all
- * things somebody notices about themselves; none of them are things they count.
  */
 function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
     const notes: string[] = [];
@@ -1400,13 +979,6 @@ function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
 
     if (untreated >= CRIPPLING_UNTREATED_INJURIES) {
         // What somebody in this state would actually notice about themselves.
-        //
-        // This line has been rewritten twice. It first said standing up was a
-        // decision; then it added a countdown, because untreated wounds gave
-        // out on their own. They do not - a torn channel is a torn muscle - so
-        // the countdown is gone and what is left is the thing that is true and
-        // is worse to live with: nothing is getting better, and it has stopped
-        // getting better on its own.
         const days = Math.max(0, Math.round(cultivator.bleedingTurns));
         notes.push(
             'Three things have gone wrong inside and none of them have closed. Standing up is a '
@@ -1444,21 +1016,6 @@ function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
     if (notes.length > 0) return notes.join(' ');
 
     // AND THE DAY IS ONLY QUIET IF THE GROUND AGREES.
-    //
-    // Everything above is about the PERSON. The fallback is about the WORLD,
-    // and the world has its own reader - `ground-status-lines.ts` - which knows
-    // about the war, the famine, the beast tide and the shut road. Saying the
-    // day intends to stay ordinary directly above four sentences describing a
-    // siege is the one thing a turn may never do at any tier.
-    //
-    // Measured the moment `look` was wired to the status layer, standing on
-    // the seat of a live war with the caravans stopped:
-    //
-    //     It is an ordinary day and it intends to stay one.
-    //     The Weir Office is fighting The Sixmile Wardens...
-    //
-    // The caller says whether the ground is quiet, because only the caller has
-    // read it. Defaulting to true leaves every other caller as it was.
     if (!groundIsQuiet) return '';
 
     // Nothing is wrong, which still has to be said differently in different
@@ -1493,12 +1050,6 @@ function stableIndex(key: string, modulo: number): number {
 
 /**
  * What is still moving for somebody whose rank never will.
- *
- * Rank and dao are separate axes and only one of them is shut above the Lid.
- * `discoverableInsights` reads the spirit root and nothing else, and degree has
- * no ceiling tied to the ladder, so understanding keeps deepening at 45 and 46
- * exactly as it did below - which is the whole of what a False Immortal has to
- * do with a span that long, and the only honest answer to "where do I stand".
  */
 function daoStandingLines(cultivator: Cultivator): string[] {
     const insights = cultivator.insights ?? [];
@@ -1526,25 +1077,15 @@ export function factsForStatus(
     ready: boolean,
     /**
      * Why nothing is accumulating, when nothing is.
-     *
-     * `techniqueCeiling(...).line`, passed in rather than derived, because the
-     * cap is the caller's to know and this module holds no catalog. Null is the
-     * ordinary case and adds nothing.
      */
     ceiling: string | null = null
 ): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     if (progressRequired === null) {
-        // No figure, because there is no rung above this one priced in qi -
-        // handing the narrator a number here would be handing it a lie. But
-        // saying only that leaves somebody above the Lid with a status read that
-        // is entirely absences, which is the opposite of the truth about them.
-        //
-        // The rank is finished. The dao is not: insight formation, degree and
-        // discovery never touched the ladder, so the one axis that still moves
-        // is the one that was never counted in qi to begin with. For a False
-        // Immortal it is the only thing left that can go up, and it is what six
-        // hundred years of having nothing to attempt is actually spent on.
+        // No figure, because there is no rung above this one priced in qi - handing
+        // the narrator a number here would be handing it a lie. But saying only
+        // that leaves somebody above the Lid with a status read that is entirely
+        // absences, which is the opposite of the truth about them.
         lines.push('There is nothing above this rung that qi buys, so there is no figure to report.');
         lines.push(...daoStandingLines(cultivator));
     } else {
@@ -1594,13 +1135,6 @@ export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target:
 
 /**
  * Going somewhere.
- *
- * `intent` says how it was meant - travelling, fleeing, slipping in - and it is
- * carried into the account so the narrator can describe it. It selects nothing:
- * the engine resolves every movement the same way, and until the world layer's
- * capability predicates land it has no basis for treating a flight differently
- * from a stroll. Pretending otherwise would be inventing a mechanic in the
- * narration layer.
  */
 export function factsForMove(
     before: Cultivator,
@@ -1621,29 +1155,7 @@ export function factsForMove(
         ...base.lines
     ];
 
-    // ── A JOURNEY SAYS WHERE IT ENDED, WHATEVER HAPPENED ON THE WAY ──────
-    //
-    // The quiet-road sentence was the ONLY place `destination` reached the
-    // prose, and it was behind `skip.events.length === 0` - so any event at all
-    // threw the arrival away and printed the seclusion digest in its place. A
-    // bookless cultivator files a `method_ceiling` event on every skip there
-    // is, which means for the whole opening stretch of a run every journey read
-    // like this, verbatim, on a one-day walk:
-    //
-    //   > I go to the Wide Field vein
-    //   "Millrun. Lin Baoqing took to the road. Travel of 1 day was intended.
-    //    Day 0 - This cultivator is practising no cultivation method at all.
-    //    [the whole no-manual paragraph]
-    //    You stand at Qi Condensation Layer 1, 16 years old."
-    //
-    // Where they went is not in it. The player typed a destination and the
-    // answer names their rung and their age instead - which is the floor
-    // failure the section in `AGENTS.md` opens with, and it costs no model to
-    // fix, because the destination was a parameter to this function all along.
-    //
-    // Appended rather than prepended: the digest already opens with setting out
-    // and closes with how they stand, so the arrival is the sentence that
-    // belongs after it, and leading with it would say the going twice.
+    // A JOURNEY SAYS WHERE IT ENDED, WHATEVER HAPPENED ON THE WAY
     const arrival =
         `${before.name} is in ${destination} now. ${describeAmbientPerceived(ambientAfter)}`;
     const prose = skip.events.length === 0 && !skip.died
@@ -1664,13 +1176,13 @@ export function factsForMove(
             // in front of it was the same word twice, once as a column value.
             [`The ground at ${destination}. ${describeAmbientInWorld(ambientAfter)}`, ...standingStructure(after, ambientAfter)]
         ),
-        // For the same reason `factsForGather` carries it, and narrowed the
-        // same way: a road is a spent stretch, it can starve somebody or finish
-        // them, and `required` is the only channel that survives a model
-        // deciding the arrival was the interesting part. `observable` has no
-        // slot for it, so dropping it was silent - which is how it stayed
-        // dropped. Not `base.required`: a journey is not a stretch spent
-        // cultivating either, and the ceiling paragraph belongs to that one.
+        // For the same reason `factsForGather` carries it, and narrowed the same
+        // way: a road is a spent stretch, it can starve somebody or finish them,
+        // and `required` is the only channel that survives a model deciding the
+        // arrival was the interesting part. `observable` has no slot for it, so
+        // dropping it was silent - which is how it stayed dropped. Not
+        // `base.required`: a journey is not a stretch spent cultivating either, and
+        // the ceiling paragraph belongs to that one.
         required: whatTheStretchCostTheBody(after, skip)
     };
 }
@@ -1699,17 +1211,6 @@ export function factsForEat(cultivator: Cultivator, satietyRestored: number, sto
 
 /**
  * An action that did not happen.
- *
- * `scene` is what the player sees, and it is the only part that is narrated: a
- * short piece of the world declining, in the world's own voice. `mechanical` is
- * why, in the engine's voice, and goes to the inspector and the play log.
- *
- * The split matters more here than anywhere else in this file. An error message
- * that reaches the player is a scene that failed to get written - naming the
- * engine, explaining the policy, or listing the valid targets all break the
- * fiction harder than bad prose ever could, and all three are the reflex of
- * writing for a developer and shipping it unaltered. Refusals still may not be
- * softened; they simply have to be in character.
  */
 export function factsForRefusal(headline: string, scene: string, mechanical?: string): EngineFacts {
     return observable(headline, [scene], scene, mechanical ? [mechanical] : []);
@@ -1721,11 +1222,6 @@ export function factsForRefusal(headline: string, scene: string, mechanical?: st
 
 /**
  * An examination.
- *
- * Everything in `subjectFacts` was read out of a row or a catalog entry. The
- * narrator dresses it; it does not get to add a detail the record does not
- * hold, which is the point of examining something in a simulation rather than
- * in a story.
  */
 export function factsForInvestigation(
     cultivator: Cultivator,
@@ -1733,14 +1229,7 @@ export function factsForInvestigation(
     subject: string,
     subjectFacts: readonly string[]
 ): EngineFacts {
-    // ── NOBODY HAS TO BE ASKED FOR YOUR OWN AGE ─────────────────────────
-    //
-    // The closing clause is what makes an examination honest about its limits:
-    // a face gives you what a face gives you, and the rest is somebody's to
-    // withhold. Pointed at the asker it becomes a contradiction, which is a
-    // floor failure at every tier - the sheet was read out in full and then
-    // followed by a sentence saying the town is under no obligation to say any
-    // of it. Found the turn "I examine myself" started resolving at all.
+    // NOBODY HAS TO BE ASKED FOR YOUR OWN AGE
     const looking = subject === cultivator.name;
     return {
         headline: `${subject}, examined.`,
@@ -1775,13 +1264,6 @@ export interface PlaceChangeAccount {
     summary: string;
     /**
      * Whether the true cause is on record anywhere in the world.
-     *
-     * The ONLY thing this renderer is permitted to branch on. A place can hold
-     * a cause that nobody has recovered - the seeded ruins all do - and the
-     * answer for that case has to be indistinguishable from the answer for a
-     * place whose cause was never written down at all. If the prose could be
-     * read to say "there is a reason and you have not earned it", the gate has
-     * been turned into a hint, and a hint is the whole prize.
      */
     causeKnown: boolean;
     /** The cause, and only ever when {@link causeKnown} is true. */
@@ -1813,17 +1295,6 @@ function aKind(kind: string): string {
 
 /**
  * What a place is, what was done to it, and what the people here say about why.
- *
- * The shape of the answer is fixed and the knowledge gate decides only its last
- * paragraph. Everything above that - what it is now, that it changed, the year
- * it changed - is physical and observable by anybody with eyes. The cause is
- * the only part that is knowledge rather than perception, and it is the only
- * part that can be missing.
- *
- * When it is missing the answer is the disagreement, in full, with no ranking
- * and no hint of which of them is closest. A player who could tell the likely
- * story from the unlikely one by how it was phrased would be reading the
- * engine's opinion, and the engine does not have one.
  */
 export function factsForPlaceHistory(
     place: { name: string; kind: string; description: string },
@@ -1899,12 +1370,6 @@ export function factsForPlaceHistory(
 
 /**
  * An attempted interaction.
- *
- * Note what this deliberately does NOT contain: an outcome. The engine can
- * state who this party is and what stands between them from real rows, and it
- * cannot yet resolve what came of the approach. Saying so plainly is the whole
- * discipline - an intent is an attempt, and an attempt narrated as an
- * accomplishment is the drift this architecture exists to prevent.
  */
 export function factsForInteraction(
     cultivator: Cultivator,
@@ -1936,12 +1401,6 @@ export function factsForInteraction(
 
 /**
  * An action the engine genuinely cannot resolve yet.
- *
- * The alternative would be to let the narrator describe it, and a described
- * outcome with no state change behind it is precisely the failure mode the
- * whole architecture is built against. So this is a first-class result: it says
- * what was attempted, that nothing happened, and which layer would have to
- * exist for something to happen.
  */
 export function factsForUnsupported(attempt: string, missing: string): EngineFacts {
     return observable(
@@ -1965,19 +1424,7 @@ export function factsForToolResult(
     return observable(headline, [...lines], prose ?? lines.join('\n'));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THIS CULTIVATOR IS CARRYING
-//
-// Two reads, and the discipline is the same one that governs the whole
-// knowledge layer: these renderers may say what the holder HOLDS and may not
-// say what is true. A knowledge row that says a name got said and nothing else
-// renders as a name that got said and nothing else, however thin that reads.
-//
-// The thinness is the content. `docs/world/houses/discovery.md` wants a player to
-// accumulate fragments they cannot place, and the moment this file starts
-// helpfully joining two of them up, the revelation the player was supposed to
-// earn over a hundred turns has been spent on a status read.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** One thing the holder is carrying, as they hold it. */
 export interface HeldFact {
@@ -2017,9 +1464,6 @@ function sourcePhrase(sourceKind: string): string {
 /**
  * The same two columns for the structure channel, which wants the distinction
  * exactly and does not want it in the second person.
- *
- * `stance=believes` is a database key; "held as believed" is the thing it
- * names, and it is not the less precise of the two.
  */
 function heldFirmness(stance: string): string {
     if (stance === 'knows') return 'held as known';
@@ -2038,12 +1482,6 @@ function heldRoute(sourceKind: string): string {
 
 /**
  * What the holder has on one name.
- *
- * Several rows for one query is the ordinary case and is never collapsed. A
- * cultivator who has heard four incompatible stories has four incompatible
- * stories, and the engine has no opinion about which of them is the real one -
- * working that out is the prize, and a renderer that ranked them would have
- * handed it over for the price of a question.
  */
 export function factsForRecall(
     cultivator: Cultivator,
@@ -2120,14 +1558,6 @@ export function factsForHolding(
     }
 
     // ONE ENTRY PER NAME, not one per record.
-    //
-    // This layer never overwrites - a place read about and a place stood in are
-    // different facts kept side by side, which is the whole point of the
-    // provenance chain - so a subject the cultivator learned twice holds two
-    // rows. Listing rows put "Mudsummer" in the middle of the player's own
-    // recall twice and called the total "names" when it was counting records.
-    // The raw count is still worth having and is on the engine channel below,
-    // where a number that means rows can say so.
     const byKind = new Map<string, string[]>();
     for (const row of held) {
         if (!byKind.has(row.kind)) byKind.set(row.kind, []);
@@ -2161,13 +1591,6 @@ export function factsForHolding(
 
 /**
  * The other axis.
- *
- * Rank and dao are separate and only one of them can be shut, which is why
- * this read exists as its own answer rather than as a line on the status
- * sheet. For a cultivator whose ladder is finished it is not a subsection of
- * their condition - it is the whole of what they are still doing, and
- * `theOnlyAxisLeft` comes off the same predicate the engine refuses a
- * re-attempt with, so the sheet, the refusal and this sentence cannot disagree.
  */
 export function factsForDao(
     cultivator: Cultivator,
@@ -2248,16 +1671,6 @@ export function factsForDao(
 
 /**
  * A course of mortal care, bought and taken.
- *
- * Reads out the price twice on purpose - what it cost in cash and what that
- * came to in stones - because the board quotes the first and the purse holds
- * the second, and a player who was shown "40 cash the visit" and charged
- * "1 stone" has been given two numbers with no bridge between them.
- *
- * The count of wounds still open is stated plainly and last. It is the number
- * the whole spiral turns on: untreated injuries raise deviation risk, and a
- * player who has paid for one course out of four needs to know they have not
- * bought their way out yet.
  */
 export function factsForTreatment(
     before: Cultivator,
@@ -2305,16 +1718,6 @@ export function factsForTreatment(
         lines.push('Nothing closed. The month was spent and the meridians are where they were.');
     } else {
         // THE SAME WOUND, DESCRIBED ONCE.
-        //
-        // A month of care closes them worst first, and three burnt channels
-        // carry the same description - so a player who came in with three got
-        // that description three times, word for word, with a blank line
-        // between each. Measured in a played run: nine identical lines out of
-        // the eleven the answer contained.
-        //
-        // Nothing is dropped. Every wound that closed is still counted and
-        // still described; the ones that are the same are counted together,
-        // which is also how a person would say it.
         const counted = new Map<string, number>();
         for (const description of course.treated) {
             counted.set(description, (counted.get(description) ?? 0) + 1);
@@ -2351,31 +1754,10 @@ export function factsForTreatment(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // INHERITANCE GROUNDS
-//
-// Four renderers for the four steps, and the split between the first two and
-// the last two IS the structural gate. `SiteFace` has no interior key. Not
-// "does not read one" - does not have one, so the compiler refuses a version
-// of this file that leaks the inside through the outside view, exactly the
-// way `outsideViewOf` refuses it one layer down. Everything an un-entered
-// player can be told goes through {@link factsForSiteFace}, and everything
-// that renderer can say is in the type it is handed.
-//
-// The other rule these carry: none of the prose below is composed. The
-// marker, the rumour, the two readings, the chamber, what it does to people
-// and what each gate does when it refuses were all authored beside the site
-// in `inheritance-trials.ts`, and they are passed through verbatim. A
-// renderer that paraphrased them would be a second, worse copy of the catalog
-// living in the presentation layer.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * A site as somebody standing outside it has it.
- *
- * Deliberately not derived from the catalog's `Site` by omission: it is
- * written out, so a field added to an interior can never widen this by
- * accident. Same reasoning, and the same wording, as `SiteOutsideView`.
  */
 export interface SiteFace {
     /** Null where this cultivator's awareness does not permit naming it. */
@@ -2392,11 +1774,6 @@ export interface SiteFace {
     advertisedOrdinal: number | null;
     /**
      * Graves only. Legible from the marker, and the whole of the useful read.
-     *
-     * The two enums are their own types rather than `string`, because
-     * `headstone-reading.ts` maps both onto what a person would actually say
-     * and a widened type there would let a new manner of death ship with no
-     * sentence for it.
      */
     grave: HeadstoneFacts | null;
 }
@@ -2408,11 +1785,6 @@ function siteHead(face: SiteFace): string {
 
 /**
  * Everything that can be learned without going in, and nothing else.
- *
- * `arriving` changes only the framing sentence. It does not change what is
- * disclosed, and it must not: a player who walked up to the threshold has
- * exactly what a player who stood back and read it has, because the gate
- * between outside and inside is a door rather than a distance.
  */
 export function factsForSiteFace(
     cultivator: Cultivator,
@@ -2427,13 +1799,7 @@ export function factsForSiteFace(
         face.marker
     ];
 
-    // ── WHAT CULTIVATION LEVEL IS THE EXPERT ─────────────────────────────
-    //
-    // The load-bearing fact about a tomb, and it used to print as "at ordinal
-    // 44" - a database column three lines under authored prose that says it
-    // properly. `headstone-reading.ts` owns the sentences, and owns the rule
-    // the catalog had written and nothing had ever read: what the manner of
-    // death did to what the occupant was carrying.
+    // WHAT CULTIVATION LEVEL IS THE EXPERT
     if (face.grave) lines.push(...whatTheStoneSays(face.grave));
     if (face.rumour) lines.push(face.rumour);
     if (face.attributedTo) lines.push(`It is put down to ${face.attributedTo}.`);
@@ -2467,10 +1833,6 @@ export function factsForSiteFace(
 
 /**
  * What this cultivator could name, when they named none.
- *
- * The same answer the sect listing gives and for the same reason: no entry in
- * the catalog carries a location, so "what is near here" cannot be answered by
- * distance and is answered by what has actually reached this person instead.
  */
 export function factsForSiteListing(
     cultivator: Cultivator,
@@ -2515,10 +1877,6 @@ export function factsForSiteListing(
 
 /**
  * The inside, once the engine has recorded that somebody walked in.
- *
- * This is the only renderer in the file that may hold interior text, and the
- * only caller that may build one is the branch in `game.ts` that has already
- * written the entry.
  */
 export function factsForSiteInterior(
     cultivator: Cultivator,
@@ -2570,15 +1928,6 @@ export function factsForSiteInterior(
 
 /**
  * A door that did not open, and which of the three questions it was asking.
- *
- * `shortfall` is present exactly where the concept applies, and its absence on
- * a fate gate is the whole point of this renderer existing rather than one
- * generic refusal. A player refused by strength is told what they are short of
- * because getting stronger is a thing they can go and do. A player refused by
- * talent is told what the door wanted and that hitting it harder is not an
- * answer. A player refused by fate is told that it did not open, and nothing
- * else, because there is nothing else that is true - and a sentence implying
- * there is something to try would be the engine lying to keep them busy.
  */
 export function factsForGateRefused(
     cultivator: Cultivator,
@@ -2609,13 +1958,6 @@ export function factsForGateRefused(
 
 /**
  * What actually left the site.
- *
- * `granted` and `withheld` both come back from `technique_manage.learn`, which
- * is the same handler the tool surface uses, so a manual sitting in a ruin
- * that the claimant cannot read comes back as the engine's own refusal rather
- * than as a silent nothing. That case is not a bug: the world says outright
- * that the top grades are written for somebody who has walked a road, which is
- * why such manuals sit in ruins unread.
  */
 export function factsForSiteTaken(
     cultivator: Cultivator,
@@ -2653,49 +1995,6 @@ export function factsForSiteTaken(
 
 /**
  * What a spent stretch did to the body, in the words the digest uses.
- *
- * ── A PLAYER STARVED TO DEATH AND THE GAME SAID "POUCHED A HERB" ─────────
- *
- * Found by playing, deterministic reader, no model. Twenty-five spirit stones
- * in the purse and a bowl of millet on sale for one cash, seven turns of
- * foraging, satiety 100 -> 44 -> 30 -> 16 -> 2 -> 0 -> five turns starving ->
- * dead. Every turn printed exactly two sentences and neither of them was about
- * hunger. The killing turn printed:
- *
- *   > I gather herbs
- *   "5 days bent over the ground around Millrun.
- *    Found and pouched: one Nine-Node Calamus, mortal grade, worth about 6
- *    spirit stones."
- *
- * and shipped `alive: false` in the very same result. The death was discovered
- * on the NEXT input, as a 409.
- *
- * ── AND IT WAS WRONG AT EVERY TIER, WHICH IS THE POINT ───────────────────
- *
- * `factsForTimeSkip` gets both of these right: `timeSkipProse` closes with the
- * satiety line and the death sentence, and `required` carries the death
- * verbatim so a model cannot drop it. `factsForGather` called it, took its
- * `structure` and its `lines`, and composed a fresh two-sentence `prose` -
- * which is what the deterministic narrator ships - while dropping `required`
- * entirely. So the no-model tier could not say it and the model tier was not
- * required to. Not an embedding weakness; an omission in the composer, and it
- * would read the same with any narrator in front of it.
- *
- * Returned as lines rather than folded in, because `withRequiredLines` matches
- * on a normalised substring: composing the death here in the same words the
- * `required` channel holds is what stops the player being told twice.
- *
- * ── AND WHY NOT SIMPLY `base.required` ──────────────────────────────────
- *
- * That was the first fix and it was worse than the defect in one direction.
- * `REQUIRED_EVENT_KINDS` holds `method_ceiling` and `ground_ceiling`, and both
- * are required of an account of a stretch spent CULTIVATING - "you sat for
- * fifty years and nothing accumulated, and nothing ever will". A forage is not
- * that stretch. Carrying them wholesale stapled the whole no-manual paragraph
- * to the end of every seven-day foraging turn, unchanged, forever, which is the
- * dump this module's own note warns about: "a required line stapled to the end
- * of good prose is a cost". The body and the run are what a forage cannot leave
- * out, because those are what a forage can actually change.
  */
 function whatTheStretchCostTheBody(after: Cultivator, skip: TimeSkipResult): string[] {
     const said: string[] = [];
@@ -2751,20 +2050,6 @@ export function factsForGather(
 
 /**
  * What a house's ground is worth to the person standing in the queue for it.
- *
- * Ground is the largest multiplier in the model - ordinal 29 costs 317 years on
- * ordinary ground against 79 on a sealed vein - and a member's rank already
- * decides how much of the year they get on the good ground. Every NPC in the
- * world was getting that and the player had no sentence that reached it.
- *
- * Said in DAYS PER YEAR rather than as a fraction, because it is an entitlement
- * and not a resource: "fifty-one days a year on the vein" is a thing a person
- * can plan a life around, and "0.14" is not.
- *
- * The poor-house answer reads bleak on purpose. Unlimited access to ground
- * worth nothing is the honest description of a small house, and a player who
- * reads it as generous will stay somewhere that cannot carry them - which is
- * the difference between understanding why to leave and thinking you are fine.
  */
 export function factsForGroundTime(
     cultivator: Cultivator,
@@ -2861,18 +2146,6 @@ export function factsForGroundTime(
 
 /**
  * An attempt to move somebody, resolved.
- *
- * The sibling of `factsForInteraction`, which exists because for a long time
- * nothing here could resolve an approach and saying so plainly was the honest
- * answer. This is what replaces it now that `engine/social-leverage/` is
- * reachable: four outcomes, each with its own consequence, and none of them
- * "nothing is settled by it".
- *
- * Each outcome gets its own sentence deliberately. `turned` coming back as "It
- * is done. Nothing about it drew attention." is the invisible-fallback failure
- * this codebase has had four times, and it is worst here - being turned means
- * the person you leaned on is now working against you, which is the single most
- * consequential thing that can come out of a conversation.
  */
 export function factsForAttempt(
     subject: string,
@@ -2881,51 +2154,17 @@ export function factsForAttempt(
     subjectFacts: readonly string[],
     /**
      * What the attempt WAS, when what it was is a wrong.
-     *
-     * ── YOU DO NOT ASK SOMEBODY IF YOU MAY ROB THEM ──────────────────
-     *
-     * The owner's ruling, and it was reproducible in one turn:
-     *
-     *   > I steal from Fang Shutao
-     *   "Shen Wu put it to Fang Shutao. [...] Fang Shutao refused. It was
-     *    refused, and it stayed between the two of you."
-     *
-     * Every clause of that is the wrong shape. A theft is not put to anybody,
-     * nobody is given the chance to decline one, and its failure is being
-     * CAUGHT rather than being turned down. The engine had the fact all along -
-     * `WRONG_BEHIND_INTENT` is the closed table the reprisal and the ledger
-     * already read - and this composer was the one place it was not passed.
-     *
-     * Note what does NOT change: the resolver, the odds, the days, the marks
-     * and the reprisal are identical, because the physical outcome is not
-     * allowed to move with the wording. `AGENTS.md`: model the intent and what
-     * follows socially, and leave what the world then does exactly where it
-     * was. What changes here is only the account of what happened.
-     *
-     * `null` for everything that is not a wrong, which is the ordinary ask.
      */
     wrong: Wrong | null = null,
     /**
      * How many times this has already been put to this person.
-     *
-     * Was hardcoded to `0`, so `howItHasBeenGoing` printed "and this was the
-     * first try" on every attempt forever. Played: three thefts off one person,
-     * the odds correctly falling 5% -> 2% as the grudge landed, each one
-     * reported as the first. A player watching the number move while being told
-     * nothing has happened yet cannot tell a working system from a broken one.
      */
     priorTries = 0
 ): EngineFacts {
     const taking = wrong !== null;
     const landed = result.outcome === 'taken' || result.outcome === 'turned';
 
-    // ── AND IT IS THE PLAYER'S OWN TURN, IN THE PLAYER'S OWN PERSON ──────
-    //
-    // Third person, in prose that is second person on every other surface in
-    // the game - "You stand at Qi Condensation Layer 1", "You came out early".
-    // The name is still what the SUBJECT's half of the paragraph uses, because
-    // they are somebody else; what changes is the half about the person
-    // playing.
+    // AND IT IS THE PLAYER'S OWN TURN, IN THE PLAYER'S OWN PERSON
     const opening = taking
         ? `You go at ${subject} for it. Nothing is asked and nothing is offered.`
         : `You put it to ${subject}.`;
@@ -3033,19 +2272,6 @@ function whatWasAsked(kind: string, named: string): string {
 
 /**
  * A request put to a person, resolved.
- *
- * THE DEFECT THIS EXISTS TO FIX IS IN ONE LINE OF ITS OUTPUT. `factsForAttempt`
- * renders the same resolver and says "It was taken." - which, measured in a
- * live run against `I bribe Han Peiru with 60 spirit stones`, came back as
- * *"Han Peiru agreed."* Agreed to WHAT. The resolver is right not to know: it
- * prices the weight of an ask and must never read the player's verb. Knowing
- * what was actually being asked for is the caller's job, and until there was a
- * verb with an object there was no caller who knew.
- *
- * So every line here names the thing. The headline names it, the outcome names
- * it, and a refusal names what would have moved them - which is the bar the
- * Cultivate refusal already sets and the one every refusal in this package has
- * to meet.
  */
 export function factsForRequest(
     cultivator: Cultivator,
@@ -3058,41 +2284,16 @@ export function factsForRequest(
     /** How many times this has already been put to this person. */
     priorAsks = 0,
     /**
-     * Whether a record was actually WRITTEN, which is not the same as whether
-     * the resolver produced one.
-     *
-     * `AttemptMarks.obligation` is what the engine decided; whether the caller
-     * kept it is a separate fact, and a courtesy that asks for nothing has its
-     * refusal grudge dropped on the floor. Rendering off the mark said "it is
-     * on somebody's ledger now, and ledgers here are kept" over a ledger that
-     * had not been touched - the narrator asserting a write that never
-     * happened, which is the one thing this package exists to prevent, and it
-     * had crept back in through the field it reads.
+     * Whether a record was actually WRITTEN, which is not the same as whether the
+     * resolver produced one.
      */
     wroteToTheLedger = false,
     /**
      * How strongly they already hold you, 0..1, from the relationships table.
-     *
-     * Here for one reason: the advice has to stop when the advice stops
-     * working. Turning up is the answer at zero and it is not the answer at
-     * one, and a refusal that keeps saying "buy them a drink" after fifty
-     * drinks is naming a route that no longer moves anything - the same defect
-     * as naming one that was never built, arriving one turn of the screw later.
      */
     theirTie = 0,
     /**
      * How freely this person parts with things, on -1..+1.
-     *
-     * The design owner's ruling is that greed and generosity are part of
-     * somebody's character, and the test for whether it landed is not the
-     * arithmetic - it is that *"a generous elder should read as generous"*. The
-     * odds breakdown carries the term; this carries the sentence, and a no is
-     * where it belongs, because a no is the commonest thing a player hears and
-     * because a generous person saying one is doing something a tight-fisted
-     * one is not.
-     *
-     * Nought means ordinary, and an ordinary person's refusal is left exactly
-     * as it was.
      */
     openHandedness = 0
 ): EngineFacts {
@@ -3117,13 +2318,6 @@ export function factsForRequest(
     if (again) lines.push(again);
 
     // A COURTESY HAS ITS OWN OUTCOMES.
-    //
-    // Nothing was asked, so nobody said no. What the roll decided is whether
-    // the afternoon LANDED - whether they took the drink, sat down, noticed
-    // that you were there - and a miss is being politely ignored rather than
-    // being refused. Rendering it as a refusal, with what would have moved
-    // them attached, would be the engine telling the player that turning up
-    // did not work because they did not turn up hard enough.
     if (courtesy) {
         lines.push(
             result.outcome === 'taken' || result.outcome === 'turned'
@@ -3151,15 +2345,7 @@ export function factsForRequest(
                     + 'decided something about you, and they are going to act on it.'
                 );
                 break;
-            // ── THEY NAMED TERMS ─────────────────────────────────────────
-            //
-            // Not a no. `an-attempt-to-move-somebody.ts`'s fifth outcome fires
-            // only where the person being asked has an open want the asker is
-            // in a position to reach, and somebody in that position does not
-            // close a door - they say what they would take. So this deliberately
-            // does NOT run `whatWouldMoveThem`, which is the advice given to
-            // somebody who was refused: the advice here is the terms, and the
-            // terms come from the caller that knows what was being traded.
+            // THEY NAMED TERMS
             case 'countered':
                 lines.push(
                     `${subject} does not agree and does not say no. There is something they `
@@ -3185,16 +2371,7 @@ export function factsForRequest(
         }
     }
 
-    // ── HOW OFTEN A THING LIKE THIS COMES OFF, AND HOW OFTEN IT HAS BEEN
-    //    TRIED ─────────────────────────────────────────────────────────────
-    //
-    // Measured: somebody bought the same person a drink eighteen times, got
-    // "civil about it and it goes nowhere" every time, and nearly filed the
-    // verb as broken. It was landing at 13% - they were Charm 1, Fortune 1, on
-    // a muddled root, which is the worst social character the game rolls, and
-    // eighteen misses at 13% is an 8% run. The engine knew all of it and said
-    // none of it, so the player with the worst numbers got the least
-    // information about why.
+    // HOW OFTEN A THING LIKE THIS COMES OFF, AND HOW OFTEN IT HAS BEEN TRIED
     lines.push(howItHasBeenGoing(result.odds, priorAsks, landed));
 
     if (wroteToTheLedger) {
@@ -3227,15 +2404,6 @@ export function factsForRequest(
 
 /**
  * A refusal in the voice of the person it came from, or nothing.
- *
- * `whatWouldMoveThem` says what would change the answer, which is a fact about
- * the ASK. This says what kind of no it was, which is a fact about the PERSON,
- * and the two are deliberately separate sentences: the advice must not change
- * because somebody is generous, and the character must not disappear because
- * the advice is fixed.
- *
- * The trailing space is here rather than at the call sites so that an ordinary
- * person's refusal is byte-identical to what it was before this existed.
  */
 function inTheirOwnGrain(openHandedness: number): string {
     const grain = whatTheirRefusalIsLike(openHandedness);
@@ -3243,46 +2411,11 @@ function inTheirOwnGrain(openHandedness: number): string {
 }
 
 /**
- * The other half of every refusal, and the reason there is a table rather than
- * one sentence.
- *
- * "No" is a bug. `AGENTS.md` and the Cultivate refusal both set the bar: a
- * refusal has to name the thing that would change the answer, and what that
- * thing is depends entirely on what was being asked for. At the bottom of the
- * scale it is turning up again; at the top of it there is nothing a stranger
- * can offer, and saying so plainly is more useful than implying there is a
- * price nobody has found yet.
- *
- * `docs/world/things/items.md` and `economy.md` hold the line these sentences are
- * drawn along - below it things have prices, above it cash is not the medium -
- * and `PURSE_REACH` in the resolver is the same line as arithmetic. Neither of
- * them is restated here; these say in words what that table already does.
+ * The other half of every refusal, and the reason there is a table rather than one
+ * sentence.
  */
 /**
  * EVERY SENTENCE HERE MUST NAME A DOOR THAT EXISTS.
- *
- * The first draft of this table did not, and the defect it produced is the one
- * this whole verb was written to fix, arriving one layer deeper. It said, of a
- * courtesy: *"Turn up twice, buy somebody a drink, do a small thing for
- * nothing, and ask again."* That is `asking.md` quoted almost verbatim, and it
- * is good writing, and all three sentences were typed back by somebody reading
- * it - `I buy X a drink` reached the price board, and the other two reached
- * nothing at all. `AGENTS.md` has an entry called "the player must be able to
- * type back what the game printed", and a refusal is the single place in this
- * game where that rule bites hardest, because a refusal is where the player is
- * being told what to do next.
- *
- * So there are two ways to keep this table honest and only two: build the verb,
- * or narrow the sentence. Both were used. `RequestKind.nothing` is the verb -
- * all four of `asking.md`'s courtesies parse now, and the first two rows below
- * name them in the exact words that work. The bottom two rows were narrowed
- * instead, because what would actually move somebody that far is not a thing a
- * player can do standing there, and saying so plainly is worth more than
- * offering a route nobody has built.
- *
- * Read this next to `PURSE_REACH`. The two tables are the same statement made
- * twice - once as odds, once in words - and if either is edited the other is
- * wrong.
  */
 const WHAT_WOULD_HAVE_MOVED_THEM: Readonly<Record<AskWeight, string>> = {
     a_courtesy:
@@ -3309,23 +2442,11 @@ const WHAT_WOULD_HAVE_MOVED_THEM: Readonly<Record<AskWeight, string>> = {
 
 /**
  * Where the tie stops being the answer.
- *
- * `TIE_WEIGHT` is the whole of what turning up can ever be worth, and a tie at
- * full strength has spent it. Past this point another afternoon changes
- * literally nothing, and saying so is the difference between a refusal that
- * tells the player what to do and one that tells them to keep doing what they
- * have already finished doing.
  */
 const A_TIE_THAT_HAS_NOTHING_LEFT = 0.9;
 
 /**
  * What would move them, which depends on what has already been spent.
- *
- * Two arms per weight and not one, because the honest answer to "what now"
- * changes once the cheapest lever is exhausted. The saturated arm is
- * deliberately the shorter and bleaker one: what is left above a real favour is
- * standing and obligation, and neither is something a player can do this
- * afternoon. A narrower true sentence beats a richer false one.
  */
 function whatWouldMoveThem(ask: AskWeight, theirTie: number): string {
     if (theirTie < A_TIE_THAT_HAS_NOTHING_LEFT) return WHAT_WOULD_HAVE_MOVED_THEM[ask];
@@ -3346,27 +2467,12 @@ function whatWouldMoveThem(ask: AskWeight, theirTie: number): string {
 
 /**
  * That they have heard this from you before, said out loud.
- *
- * Six identical refusals in a row read as a broken loop rather than as a person
- * saying no again - and the state was changing underneath all six, because a
- * refusal writes a record and the next attempt reads it. The same defect was
- * fixed in the wound warning earlier: the same sentence at one wound and at
- * nine. The fix is the same one. Let the text know what the state knows.
- *
- * Counted asks, not days: what a person notices is being asked twice, whether
- * that was a week apart or a season.
  */
 function theyHaveHeardThisBefore(
     subject: string,
     priorAsks: number,
     /**
      * A courtesy repeated is the mechanic and not a nag.
-     *
-     * The whole of what turning up buys is that it was done more than once -
-     * `asking.md` says "turning up twice" in as many words - so counting it
-     * back at the player is the game working, and the wording that fits a
-     * fourth request for the same favour would be telling them off for using
-     * the verb correctly.
      */
     courtesy = false
 ): string | null {
@@ -3396,11 +2502,6 @@ function theyHaveHeardThisBefore(
 
 /**
  * What asking them would take, without asking them.
- *
- * The free read behind `could I ask her to teach me`, and it runs the same code
- * as the request itself and stops one line before the roll - so it cannot drift
- * away from the thing it describes, which is what a separately-written "what
- * would happen if" always does.
  */
 export function factsForWeighingARequest(
     cultivator: Cultivator,
@@ -3451,22 +2552,6 @@ export function factsForWeighingARequest(
 
 /**
  * Ground that would not have them, and who should go instead.
- *
- * The CAP, which is one of three ways the catalog closes ground and the only
- * one whose whole point is that somebody else must go. Nothing player-facing
- * ever read it, so a site written to say "this is not for you, send your
- * junior" had never once said it to anybody.
- *
- * THE PROSE IS THE CATALOG'S. `readAdmission` composes `account` out of the
- * site's own `whatReadsThePerson`, `whyItRefusesPower` and `soWhoGoesInstead` -
- * three strings written for that place and no other - and this renders it
- * unchanged. Composing a sentence here from `admits` and a ceiling would give
- * every capped site in the world the same voice, which is exactly the
- * difference between this surface and a template.
- *
- * It costs the days and nothing else. Being measured at a threshold and found
- * too large is not an injury: `groundForceOrdinalOf` returns null above the
- * line for that reason.
  */
 export function factsForGroundRefused(
     cultivator: Cultivator,
@@ -3493,11 +2578,6 @@ export function factsForGroundRefused(
 
 /**
  * Ground that let them in, and what being at its depth is like.
- *
- * The other side of the same read, and it exists so that clearing a floor is
- * an event rather than silence. `whatIsDownThere` and `whatComesBackForThatPerson`
- * are written per site; an elder floor in particular says who the errand is FOR,
- * which is the sentence that makes a senior's trip somebody else's inheritance.
  */
 export function factsForGroundSurvived(
     cultivator: Cultivator,
@@ -3519,22 +2599,7 @@ export function factsForGroundSurvived(
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHOSE ART THAT WAS
-//
-// The player putting the trust hierarchy's strongest check to themselves. The
-// rule these lines are written to, and the reason they are longer at the
-// bottom of the ladder than at the top:
-//
-//   NEVER LIE, AND NEVER FAKE CONFIDENCE. A reader short on either axis gets a
-//   genuinely uncertain answer because their character is genuinely uncertain -
-//   not a wrong answer, and not a coin flip dressed as knowledge. The player
-//   must be able to trust that hedging means hedging.
-//
-//   CERTAINTY IS THE REWARD. At the top the answer is one flat sentence with no
-//   hedging in it at all, and the difference in TONE is the progression: a
-//   player who has climbed sees their own answers get shorter.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface ArtRecognitionInput {
     /** The art, as the catalog names it. */
@@ -3556,13 +2621,6 @@ export interface ArtRecognitionInput {
 
 /**
  * What the character can honestly say about what they just watched.
- *
- * Notice what is NOT here: who the performer serves. An art is evidence about
- * where a body was trained and the two are different questions - the Hollow
- * Court is an entire institution built on the gap, since it takes nobody below
- * a Void Refinement floor and its people therefore perform, honestly, the arts
- * of the houses that raised them. A correct identification can leave a wrong
- * conclusion available, and that is the design rather than a gap to fill in.
  */
 export function factsForRecognisingAnArt(input: ArtRecognitionInput): EngineFacts {
     const {

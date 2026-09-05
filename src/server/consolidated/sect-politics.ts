@@ -1,36 +1,5 @@
 /**
  * Sect politics: the half of a sect that is not a stipend.
- *
- * The catalogs have carried all of this for a while and none of it had an
- * action attached: dormant ancestors with a wake condition and a wake cost,
- * grievances, the things a faction is certain of and wrong about, the whole
- * `claimIsTrue` apparatus, four governance models, parentage chains, and guest
- * elders who are neither members nor outsiders. Data with no verb is not in the
- * game.
- *
- *   prospect      would joining this house put anything new within reach
- *   patronage     who backs this faction, on what terms - and being taken on
- *                 as a guest elder, which is not membership and never becomes it
- *   verify_claim  buy a certification of somebody's ancestral claim
- *   denounce      say it in public, and find out whether you had evidence
- *   petition      send a request upward through the chain, as far as it goes
- *   wake          the thing under the mountain: what it would take, and what
- *                 waking it costs
- *
- * ── TWO RULES THAT GOVERN EVERY LINE BELOW ────────────────────────────────
- *
- * 1. THE DISCOVERY GATE APPLIES TO TOOL OUTPUT. `docs/world/houses/discovery.md` is
- *    not a narration guideline that stops at the prompt boundary - if these
- *    actions hand back the apex institution's name to a cultivator who has
- *    never heard of it, the careful work in `web/knowledge.ts` is undone from
- *    behind. So the stack comes back as far as this cultivator can name it and
- *    no further, and the rest arrives as `unattributedEffectsOf` - the things
- *    that visibly happen with nobody's name on them.
- *
- * 2. NO STRUCTURAL LABELS. `governance: 'federated'` is a category that invites
- *    a narrator to explain the world instead of showing it. What comes back is
- *    what it is like from below: somebody nearby to petition, or a counter with
- *    a queue at it. The model is used to decide; it is not the answer.
  */
 
 import { z } from 'zod';
@@ -84,19 +53,11 @@ import type { Cultivator, InsightDomain } from '../../schema/cultivation.js';
 
 /**
  * The house that sells certification of an ancestral claim.
- *
- * Only one institution in the world can settle whether a sect actually has an
- * ancestor above the Lid, and it sells the answer to the claimant or to a
- * rival, publishing either way. That asymmetry is the whole market.
  */
 export const CERTIFYING_HOUSE_ID = 'house-ninefold-ledger';
 
 /**
  * Spirit stones a certification costs.
- *
- * The catalog's published placement fee, which is what the house charges for
- * the same kind of work: an authoritative statement about somebody else that
- * nobody else can make.
  */
 export const CERTIFICATION_COST_STONES = 70;
 
@@ -164,14 +125,6 @@ export const AboveSchema = z.object({
 
 /**
  * Would joining this house put anything new within reach?
- *
- * Mechanically this is what a sect is actually selling. Access is a HARD FILTER
- * on comprehension, not a modifier: a road with nothing behind it is absent
- * rather than difficult, and two hundred years of effort will not widen the
- * set. So the honest answer to "should I join" is a set difference - what is
- * reachable from inside that is not reachable from outside - and that is a
- * question `hasAccessTo` was exported to answer without anybody duplicating the
- * derivation.
  */
 export async function handleProspect(args: z.infer<typeof ProspectSchema>): Promise<object> {
     const repos = ensureCultivationDb();
@@ -539,14 +492,6 @@ export async function handleVerifyClaim(
 
 /**
  * Say it in public.
- *
- * The engine decides whether it lands, and it decides on ONE thing: whether the
- * denouncer is holding evidence. An accusation with a certification behind it
- * is a problem the accused institution has to answer; the same words without
- * one are a person shouting, and the house has forty-one towns' worth of
- * arbitration benches and a great deal more standing than the shouter.
- *
- * Both outcomes write real state, and neither is a coin flip.
  */
 export async function handleDenounce(args: z.infer<typeof DenounceSchema>): Promise<object> {
     const repos = ensureCultivationDb();
@@ -673,13 +618,6 @@ function heldCertification(
 
 /**
  * Send a request upward, and find out how far up there is.
- *
- * The petition travels the parentage chain one tier at a time and stops where
- * the world stops it. What comes back is never the whole stack: a tier can only
- * pass a petition to something it is itself aware of, and most sects are not
- * aware of what is above their own patron. Where the chain runs out of names
- * the cultivator holds, the answer is the effect without the attribution -
- * which is exactly how the top of this world reaches anybody.
  */
 export async function handlePetition(args: z.infer<typeof PetitionSchema>): Promise<object> {
     const repos = ensureCultivationDb();
@@ -817,18 +755,6 @@ function apexBehind(id: string): { id: string } | undefined {
 
 /**
  * The thing under the mountain.
- *
- * What this returns is the condition and the cost, and it deliberately does NOT
- * perform a waking. The wake condition is a fact about the world - "the library
- * is entered by force", "not theft, not trespass - force" - and there is no
- * state anywhere in this engine that records whether it has been met. Adding a
- * `conditionMet` parameter would be exactly the affordance the authority
- * boundary exists to refuse: a caller asserting the circumstance that produces
- * the outcome.
- *
- * So this is the honest half: it says what would do it, what it costs, and
- * refuses to be the mechanism. When the world layer can record that a library
- * was entered by force, this action resolves against that fact and not before.
  */
 export async function handleWake(args: z.infer<typeof WakeSchema>): Promise<object> {
     const repos = ensureCultivationDb();
@@ -910,12 +836,6 @@ export async function handleWake(args: z.infer<typeof WakeSchema>): Promise<obje
 
 /**
  * What breaking the seal yourself would actually mean.
- *
- * The requirements come from the engine's own opposition constructor against
- * the sleeper's real ordinal, so nothing here is arithmetic this file invented.
- * `alertness` is zero because a sleeper is not watching, and `attempt` is
- * blocked by the seal itself - a physical fact, and the only kind of reason
- * `attempt` is ever permitted to fail for.
  */
 function describeSealAssessment(
     cultivator: Cultivator,

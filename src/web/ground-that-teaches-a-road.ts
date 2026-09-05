@@ -29,7 +29,7 @@
  *
  *   A SOURCE     the player learns of a ground from somebody who could point at
  *                it - which is to say from a person whose own life puts it in
- *                front of them. Everybody in the Quiet Marches can tell you
+ *                front of them. Everybody in the Silent Cliffs can tell you
  *                where the Grinding Ford is; the carts have been crossing it for
  *                six hundred years. Almost none of them has ever taken anything
  *                from it. That gap is the whole content of the channel, and it
@@ -442,7 +442,7 @@ function rankTitle(factionId: string | null, index: number): string | null {
  * because a dao ground is a world location and is not a catalog place. Every
  * read that went through `regionIdOfPlace` answered "the home province" for
  * anybody actually standing on one - so a cultivator who walked to the Glass
- * Field was treated as never having left the Low Fall.
+ * Field was treated as never having left the Jade Gorge.
  */
 export function howAPlayerStands(
     state: WorldState,

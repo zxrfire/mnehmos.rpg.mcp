@@ -1,98 +1,5 @@
 /**
  * One turn of memory, so a sentence may refer to the turn before it.
- *
- * ── THE DEFECT THIS EXISTS TO REMOVE ─────────────────────────────────────
- *
- * The reader sees one sentence and nothing else. Everything it knows comes
- * from the current input plus world state, so a sentence whose meaning lives in
- * the turn before has nothing to resolve against. Played, on this branch:
- *
- *     > I stay where I am and keep at it for ten years
- *     "The thought does not resolve."
- *
- *     > I keep cultivating for ten years          <- same turn, same intent
- *     Qi Condensation Layer 3 to Qi Condensation Layer 4.   [ran]
- *
- * The verb was never the problem. **"Keep at it" is what failed**, and it is
- * the plainest English there is for *carry on with what I was doing* - in a
- * game whose core loop is long stretches of the same act, it is the commonest
- * sentence a player will type. The other half of the same gap:
- *
- *     > The cheaper one leaves me something to eat with. I will take that one.
- *     "Not something anybody here sells."
- *
- * one turn after the game itself had said *"a copy of the Lesser Qi-Gathering
- * Manual sits there for eighteen spirit stones, and a Five-Breath Circulation
- * Scripture is listed at twenty-nine."* The player referred to one of them the
- * way a person would.
- *
- * ── ONE TURN BACK, AND IT IS A PARAMETER RATHER THAN A SESSION ───────────
- *
- * The design owner's shape, and it is why the bound is not a limitation to work
- * around but the design:
- *
- *   > "you could send this to the llm again, the previous turn's info? and
- *   >  clear the context between turns so it doesn't pollute"
- *
- * So the call stays stateless. Exactly one turn of it is composed fresh into
- * the phase-1 prompt by {@link describeTheLastTurn} and thrown away; nothing
- * accumulates, and there is no conversation history anywhere. A reader given
- * ten turns starts writing continuity - remembering intentions the player never
- * had, carrying forward a mood, inventing what happened in between - and this
- * architecture's whole defence is that the reader has no authority. One turn is
- * enough to resolve *keep at it* and *the cheaper one* and structurally cannot
- * become a narrative.
- *
- * ── INFORMATION, NEVER AUTHORITY ─────────────────────────────────────────
- *
- * Handing the reader what the last turn RULED does not touch the authority
- * line. The engine still rules, every step still goes through `validatePlan`,
- * and a resolved back-reference reaches phase 2 as an ordinary member of the
- * closed enum. What changes is only that the reader can see what "it" refers
- * to.
- *
- * ── AND IT WORKS WITH NO MODEL AT ALL ────────────────────────────────────
- *
- * The vocabulary is small and closed - *keep at it, carry on, again, the same,
- * that one, the cheaper one* - and it is resolved against ONE previous action
- * and ONE previous list. That is a lookup, not an inference, so the same record
- * that goes into the prompt is also read here with no model in the room. It
- * has to be: `docs` and `AGENTS.md` both hold that the deterministic tier is a
- * shipping mode, and a back-reference that only resolves when a good model is
- * attached is a feature the bottom three reading tiers do not have.
- *
- * ── REPEATING AN ACT IS NEVER A DISCOUNT ─────────────────────────────────
- *
- * A carried-on act is the SAME `PlannedAction` the player ran last turn, handed
- * to the same executor. "Keep at it for ten years" spends ten years exactly as
- * "I cultivate for ten years" does, because it becomes that. Nothing here
- * prices anything, and there is no path by which naming an act a second way
- * makes it cheaper.
- *
- * The danger check that stops a model escalating a turn is satisfied by
- * construction rather than by being asked again. Its invariant is *a player
- * must never meet a bigger bill for the same words*, and the continuation is
- * resolved BEFORE phase 1, with no model in the room - so "do it again" after
- * an attack is a second attack at every reading tier, produced from the
- * player's own previous turn rather than from anything a model said. If the
- * last turn was refused there is nothing to repeat, and
- * {@link nothingToCarryOnWith} says so plainly and spends nothing.
- *
- * ── AND THE READING IS SHOWN ─────────────────────────────────────────────
- *
- * `AGENTS.md`: where a reading is a judgement call, show it. Resolving a
- * back-reference is one, so the turn says what it resolved to - *carrying on
- * with sitting down to cultivate* - and a player who meant something else can
- * see it and say so.
- *
- * ── WHERE IT IS HELD ─────────────────────────────────────────────────────
- *
- * In memory on `GameService`, beside `crossroads`, `fight` and
- * `whichComesFirst`, and for the same reasons those three are: it is a fact
- * about a turn in flight rather than a fact about the world, it stands for
- * exactly one turn, and losing it costs the player nothing, because nothing was
- * spent recording it. A PERSISTED one would be worse than useless - it would
- * let somebody close the tab, come back, and refer to a turn from last week.
  */
 
 import {
@@ -113,11 +20,6 @@ import {
 
 /**
  * Something the turn told the player was here, by name.
- *
- * Written by the branches that LIST things - the market board, the copyist's
- * stall - rather than recovered by reading prose back, because parsing the
- * narrator's output would make the narrator authoritative over what exists,
- * which is the one thing it may never be.
  */
 export interface ThingNamed {
     /** The name as the engine printed it, which is the name it will accept back. */
@@ -130,10 +32,6 @@ export interface ThingNamed {
 
 /**
  * What the turn before this one did, and what it told the player.
- *
- * `acts` is what actually RAN. A step the world refused is not in it, so a
- * refused turn leaves an empty list and there is nothing to carry on with -
- * which is the honest answer and is the one this file gives.
  */
 export interface WhatTheLastTurnDid {
     readonly runId: string;
@@ -150,21 +48,6 @@ export interface WhatTheLastTurnDid {
 
 /**
  * The same list with one entry per thing, keeping the first time it was named.
- *
- * ── ONE BOOK NAMED TWICE IS NOT TWO BOOKS ────────────────────────────────
- *
- * Measured on a real market board: the copyist's stall listed the Lesser
- * Qi-Gathering Manual at 8 and the Five-Breath Circulation Scripture at 13, and
- * somebody standing in the square was also holding a Five-Breath at 8. Three
- * lines, two books, and "the cheaper one" against the raw list picked the
- * Five-Breath - the DEARER of the two the player had just been shown - because
- * the same title appeared twice at two prices.
- *
- * The first mention wins because it is the one the player read first, and the
- * price kept with it is the one they were quoted. That price is a label rather
- * than an authority: it decides which NAME the phrase means, and what the
- * purchase actually costs is settled afterwards by the resolver, which looks
- * for the best route to the named thing exactly as it would for a typed name.
  */
 export function withoutSayingTheSameThingTwice(
     named: readonly ThingNamed[]
@@ -181,21 +64,8 @@ export function withoutSayingTheSameThingTwice(
 }
 
 /**
- * Whether a record still belongs to the cultivator and run in front of us, and
- * is still only one turn old.
- *
- * The same shape and the same reasoning as `theQuestionStillStands` and
- * `stillStands` next door, plus the one thing those two do not need: an age
- * check, and an EXACT one.
- *
- * `onTurn` is the run's turn counter as the recording turn left it, and a turn
- * about to be taken reads that same number - so the record is current exactly
- * when the two are equal. That is not a formality. The service has other doors
- * that take a turn without passing through `act` at all: the panel's Cultivate
- * button, the panel's Strike-the-barrier button. Each of them moves the counter
- * and none of them records anything, so an equality check lapses the memory
- * across them for free, where any tolerance at all would let "keep at it" carry
- * on from the turn BEFORE whatever the player had just done with a button.
+ * Whether a record still belongs to the cultivator and run in front of us, and is
+ * still only one turn old.
  */
 export function theLastTurnStillStands(
     record: WhatTheLastTurnDid | null,
@@ -218,18 +88,6 @@ export const MOST_NAMED_THINGS_RECALLED = 10;
 
 /**
  * The previous turn, as its own labelled block for the phase-1 prompt.
- *
- * Short and factual on purpose: what verb ran, what it was pointed at, and what
- * the turn TOLD the player. Both kinds of back-reference need it - *what I just
- * did* comes off the first, *what you just told me* off the second - and
- * nothing else about the turn is any of the reader's business. In particular no
- * prose, no outcome figures and no narration: the reader is choosing what was
- * attempted, and a paragraph of last turn's results is an invitation to write
- * continuity out of it.
- *
- * Null when there is nothing to say, so the caller leaves the block out
- * entirely rather than sending a header with "nothing" under it - a model shown
- * an empty section reliably invents something to put in it.
  */
 export function describeTheLastTurn(record: WhatTheLastTurnDid | null): string | null {
     if (record === null) return null;
@@ -278,17 +136,6 @@ function describeOneAct(step: PlanStep): string {
 
 /**
  * The ways somebody says *carry on with what I was doing*.
- *
- * Matched against ONE CLAUSE rather than against the sentence, and the clause
- * has to be the whole of it, give or take a span. That is what keeps "I keep
- * going north" out: after "keep going" there is a destination, so the clause is
- * about going north and not about carrying on. "I stay where I am and keep at
- * it for ten years" cuts into two clauses and the second one is exactly this
- * phrase plus a span, which is the sentence this whole file was built for.
- *
- * Deliberately generous inside that frame, because `AGENTS.md` is explicit that
- * where a near-synonym works the phrasing that fails is a bug, and the failing
- * half is usually the more natural one.
  */
 const CARRYING_ON = new RegExp(
     '^\\s*(?:i\\s+(?:just\\s+)?(?:will\\s+|shall\\s+|would\\s+like to\\s+|want to\\s+)?|just\\s+|let me\\s+)?'
@@ -322,14 +169,6 @@ const CARRYING_ON = new RegExp(
 
 /**
  * Clauses of a sentence, cut where a person would cut one.
- *
- * A local copy rather than the composition module's `theClausesOf`, and the
- * difference is the whole reason: that one drops any piece under two words,
- * because a one-word fragment cannot be an act with an object. Here a one-word
- * clause is the commonest case there is - "again" - and dropping it would lose
- * the sentence this exists to read. It also cuts on the full stop, because
- * *"The cheaper one leaves me something to eat with. I will take that one."* is
- * two sentences a player typed as one turn.
  */
 export function theClausesOfATurn(input: string): string[] {
     return input
@@ -353,13 +192,6 @@ export function theSentenceCarriesOn(input: string): string | null {
 
 /**
  * Which of the last turn's acts *it* means.
- *
- * The costly one, when there was one, and otherwise the last thing that ran.
- * That is not a preference - it is what the words mean. A turn that looked at a
- * board and then sat down for a year was a turn spent sitting down; "keep at
- * it" is about the year. Free reads are the frame around an act and never the
- * act, which is the same rule `A_SENTENCE_MAY_CONTAIN_A_PLAN` states for the
- * reader and `theClausesNoStepAccountsFor` measures for the executor.
  */
 export function theActToCarryOn(record: WhatTheLastTurnDid): PlanStep | null {
     const costly = record.acts.filter(step => !costsTheAskerNothing(step.action));
@@ -369,16 +201,6 @@ export function theActToCarryOn(record: WhatTheLastTurnDid): PlanStep | null {
 
 /**
  * The act to run, with the span taken from THIS sentence.
- *
- * "Keep at it for ten years" is ten years, not another one of whatever the last
- * stretch was. Where the sentence names no span the last one's is used, which
- * is what "again" means, and where neither says anything the verb's own default
- * applies downstream exactly as it would for a typed sentence.
- *
- * Nothing else is carried across. The target, the intent and the leverage are
- * the last act's because they are what "it" refers to; the duration is the one
- * thing the player has just said out loud, and taking the old one over it would
- * be the reader deciding how much of somebody's life to spend.
  */
 export function carryingOnFromTheLastTurn(
     record: WhatTheLastTurnDid,
@@ -397,10 +219,6 @@ export function carryingOnFromTheLastTurn(
 
 /**
  * What the player reads when there is nothing to carry on with.
- *
- * A refusal that names a route, which is what a refusal owes anybody here. It
- * spends nothing: saying "there is nothing to repeat" is a free turn, and the
- * act the player wanted is still theirs the moment they name it.
  */
 export function nothingToCarryOnWith(record: WhatTheLastTurnDid | null): string {
     if (record === null) {
@@ -460,11 +278,6 @@ export function theRowForCarryingOn(said: string, step: PlanStep): ToolCallRecor
 
 /**
  * A phrase that points at something the last turn listed rather than naming it.
- *
- * Closed and short, exactly like `A_PRONOUN_FOR_THE_LAST_THING` next door and
- * for the same reason: anything outside it is a name the resolvers already
- * handle, and widening it would start rewriting objects the player named
- * explicitly.
  */
 const A_BARE_ONE = /^(?:the\s+)?(?:that|this|it|one|same|other)(?:\s+one)?$/i;
 
@@ -481,10 +294,6 @@ const THE_LAST_ONE = /\b(?:the\s+)?(?:last|final)\s+one\b/i;
 
 /**
  * Whether this field is a reference rather than a name.
- *
- * Only ever true of a phrase that names nothing on its own. "the cheaper one"
- * is not an object in any catalog and never will be; "Lesser Qi-Gathering
- * Manual" is, and nothing here will touch it.
  */
 export function standsForSomethingNamedLastTurn(value: string | undefined): boolean {
     if (value === undefined) return false;
@@ -498,26 +307,6 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
 
 /**
  * Which of the things the last turn named this phrase means, or null.
- *
- * ── THE SENTENCE IS CONSULTED, NOT ONLY THE FIELD ────────────────────────
- *
- * Measured on the sentence this exists for:
- *
- *   > The cheaper one leaves me something to eat with. I will take that one.
- *
- * The reference the reader hands over is "that one", and "that one" against two
- * listed manuals decides nothing. The thing that decides it is sitting in the
- * player's own sentence one clause earlier. So a bare demonstrative falls back
- * to the whole of what they typed - which is reading the player's words, the
- * same move `anyClauseReadsAsThisVerb` makes and safe for the same reason: the
- * model contributes nothing to it.
- *
- * ── AND IT NEVER GUESSES ─────────────────────────────────────────────────
- *
- * "That one" against two things with nothing to tell them apart returns null,
- * and null means the phrase goes to the resolver exactly as the player typed it
- * and is refused in the ordinary way. Picking one would be the reader deciding
- * which manual somebody bought.
  */
 export function whichOfTheNamedThings(
     phrase: string | undefined,
@@ -565,13 +354,6 @@ export interface ResolvedAgainstTheLastTurn {
 
 /**
  * The same plan with any bare reference replaced by what the last turn named.
- *
- * Only ever fills a field that is EXACTLY a reference - never one carrying a
- * name the player wrote - and only from a list the ENGINE printed last turn.
- * So this cannot invent an object, cannot override one, and cannot make a step
- * point at something nobody mentioned. It decides no outcome: the substituted
- * name goes to the same resolver the typed name would have gone to, and is
- * refused by it in the ordinary way if the thing has since gone.
  */
 export function resolvingAgainstTheLastTurn(
     plan: PlanWithSteps,

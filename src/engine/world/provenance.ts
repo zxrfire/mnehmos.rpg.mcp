@@ -1,48 +1,5 @@
 /**
  * Ruins along two axes that do not talk to each other.
- *
- * A ruin used to be one number - how dangerous - and one bit: sealed or not.
- * That produced a map of anonymous untouched holes, which is the least
- * interesting version of the setting's core loop. Two facts about a site are
- * genuinely independent, and separating them is the whole of this module:
- *
- *   PROVENANCE   how much is knowable about WHO LEFT IT. A name in somebody's
- *                archive, three competing stories, or nothing at all.
- *   DEPLETION    how much of it has already been GONE THROUGH. Per wing, so a
- *                site picked over twice can still have one door nobody opened.
- *
- * They are independent on purpose and the code must keep them so. Knowing whose
- * house this was tells you how they built and what they valued; it does not
- * tell you what is still in there, because somebody may have been through it
- * last century. Conversely a stripped hall says nothing about who built it.
- * {@link identifyBuilder} never reads wing state and {@link wingsOf} never reads
- * provenance - if those two ever cross, the axes have collapsed back into one.
- *
- * ── Reading a site is a skill, and it is not a realm ──────────────────────
- *
- * The read runs through `assessCapability`'s `understand` predicate, which is
- * already built to be answered by INSIGHT AND KNOWLEDGE rather than by rank:
- * `comprehensionKeys` are absolute, so somebody holding the right notes places
- * a ruin that a cultivator four realms above them cannot. That is the scholar,
- * and no new resolver was written for them.
- *
- * A failed read is informative rather than blank. Anybody standing in front of
- * a site sees that it is old, that it is large, and that somebody built it;
- * what a failed read returns is the NAME OF WHAT IS MISSING, so "I cannot place
- * this" is an instruction to go and find somebody who can, not a dead end.
- *
- * And a successful read hands over HABITS, never contents. What a house valued,
- * how it built, where a house like that put the things it sealed. That narrows
- * the search and prices the risk. It cannot tell you the vault is still full,
- * and it must never be extended to.
- *
- * ── Where it is stored ────────────────────────────────────────────────────
- *
- * On `location.data`, which is a flat scalar map, so the wing list is a JSON
- * string with a defensive parse. Nothing about `LocationRecord` changes, which
- * means every existing world, migration and repo keeps working and a site
- * seeded before this module existed reads as anonymous and untouched - the
- * honest default rather than a crash.
  */
 
 import { forStream } from '../cultivation/rng.js';
@@ -62,10 +19,6 @@ import { applyLocationChange, type ChangeResult, type LocationRecord } from './l
 
 /**
  * How much survives about the builder, in the world rather than in a person.
- *
- * This is a property of the RECORD, not of the reader. Whether any particular
- * cultivator can get at it is the second question and is answered by
- * {@link identifyBuilder}.
  */
 export type ProvenanceStanding =
     /** Named in something anybody literate can consult. Everyone knows. */
@@ -83,11 +36,6 @@ export const PROVENANCE_STANDINGS: readonly ProvenanceStanding[] = [
 
 /**
  * The `understand` bar each standing sits behind.
- *
- * Not a difficulty curve somebody chose: it is how far from a name the world
- * has let the record decay. `anonymous` is `MAX_ORDINAL` because there is
- * genuinely nothing to read, and the correct answer to reading it is a refusal
- * that says so - which is why the top of the ladder does not buy past it either.
  */
 export const PROVENANCE_READ_ORDINAL: Record<ProvenanceStanding, number> = {
     documented: 0,
@@ -106,10 +54,6 @@ export interface Provenance {
     builtInYear: number | null;
     /**
      * The knowledge id that places this site outright.
-     *
-     * Keyed the way an insight is keyed - `domain:subject` - so it is satisfied
-     * by the ordinary `knowledgeIds` a cultivator already carries and needs no
-     * second vocabulary.
      */
     key: string | null;
     /** The `understand` bar for placing it without the key. */
@@ -130,10 +74,6 @@ export function anonymousProvenance(): Provenance {
 
 /**
  * The provenance a site carries, or the honest default.
- *
- * Reads only `data`. A location seeded before this module existed comes back
- * anonymous, which is true rather than convenient: nothing was recorded, so
- * nothing is knowable.
  */
 export function readProvenance(location: LocationRecord): Provenance {
     const raw = String(location.data.provenanceStanding ?? '');
@@ -174,11 +114,6 @@ export function withProvenance(location: LocationRecord, p: Provenance): Locatio
 
 /**
  * The site's provenance as a thing to be read.
- *
- * Deliberately a SEPARATE subject from `subjectFromLocation`. Surviving a ruin
- * and placing its builder are different questions with different answers, and
- * folding them together is how "strong enough to walk in" quietly became
- * "strong enough to know what this is".
  */
 export function subjectFromProvenance(location: LocationRecord): CapabilitySubject {
     const p = readProvenance(location);
@@ -194,10 +129,6 @@ export function subjectFromProvenance(location: LocationRecord): CapabilitySubje
 
 /**
  * What one person, standing here, can say about who built this.
- *
- * `placed` is the whole verdict. Everything else is what they get for it, and
- * what they get is HABITS - what this kind of house valued and where it put
- * things - never an inventory.
  */
 export interface ProvenanceReading {
     placed: boolean;
@@ -233,11 +164,6 @@ export interface RuinExpectation {
 
 /**
  * Place the builder, or say what is missing.
- *
- * The read is `assessCapability`'s `understand` predicate and nothing else, so
- * a scholar with the right notes beats a cultivator four realms above them, and
- * both of them beat nobody at all in front of an anonymous site - because there
- * is nothing there to beat.
  */
 export function identifyBuilder(
     location: LocationRecord,
@@ -278,10 +204,6 @@ export function identifyBuilder(
 
 /**
  * What is true of the site to anybody with eyes.
- *
- * Read off columns the location already carries, so it cannot drift from the
- * record: how deep the pocket under it runs, what the trials were calibrated
- * for, and how many ways in there are. None of it names anybody.
  */
 export function plainSightOf(location: LocationRecord): string[] {
     const out: string[] = [];
@@ -298,10 +220,6 @@ export function plainSightOf(location: LocationRecord): string[] {
 
 /**
  * The refusal, and it names what would fix it.
- *
- * The three cases are genuinely different and should read differently: an
- * archive exists and you are not in it; stories exist and none of them can be
- * checked from here; or nothing exists and no amount of learning helps.
  */
 function missingFor(p: Provenance): string {
     switch (p.standing) {
@@ -321,13 +239,6 @@ function missingFor(p: Provenance): string {
 
 /**
  * Habits, derived from what the house DID, never from a table of houses.
- *
- * Every line below is read off a column the site already carries, which is what
- * keeps this out of bespoke territory: there is no per-builder catalog anywhere
- * and none may be added. A house that sealed a rich pocket built to keep; a
- * house that calibrated its trials high did not stock anything a weak thief
- * could carry out. Those are inferences from the record, and they are exactly
- * what a scholar sells.
  */
 export function expectationsFor(location: LocationRecord): RuinExpectation[] {
     const out: RuinExpectation[] = [];
@@ -386,11 +297,6 @@ export function expectationsFor(location: LocationRecord): RuinExpectation[] {
 
 /**
  * How thoroughly a wing has been gone through.
- *
- * Four states rather than a boolean, because the interesting case is the middle
- * of the range: a hall two parties have already worked is not empty, it is
- * PICKED OVER, and what is left in it is what the first two could not carry,
- * could not read, or could not survive.
  */
 export type Depletion =
     /** Nobody has been in. Either sealed, or nobody has found the way. */
@@ -431,24 +337,12 @@ export interface RuinWing {
     lastWorkedOnDay: number | null;
     /**
      * Days from the door.
-     *
-     * The reason a site is picked over and never emptied. Reaching this wing
-     * costs `depthDays` in and the same again out, and `convergence.ts` prices
-     * that against a window that is always shorter than the site is deep - so
-     * the far rooms are not guarded, they are simply out of reach of anybody
-     * who also intends to leave. See `expeditionBudget`.
      */
     depthDays: number;
 }
 
 /**
  * The wings of a site.
- *
- * Derived deterministically from what the site already records - how much was
- * stocked and how high the trials were cut - so a world seeded before this
- * module existed grows the same wings it would have been given, and two callers
- * asking on different days get the same answer. Written back on first mutation
- * and read from `data` thereafter.
  */
 export function wingsOf(location: LocationRecord): RuinWing[] {
     const stored = parseWings(location.data.wings);
@@ -521,14 +415,13 @@ function deriveWings(location: LocationRecord): RuinWing[] {
             // deeper than a small one and is correspondingly less reachable in
             // one window.
             depthDays: (i + 1) * Math.max(1, Math.round(1 + location.thresholds.mastery / 8)),
-            // SEPARATELY sealed, and only the deepest room is. Whether the
-            // SITE is shut is a different fact living on the location record
-            // and answered by `evaluateAccess` - conflating the two meant a
-            // sealed site derived every wing shut, so breaking the outer seal
-            // left a place nobody could enter any part of. The inner door is
-            // the one that stays shut after somebody gets in, which is what
-            // makes "picked over twice with one wing nobody has opened" a
-            // reachable state.
+            // SEPARATELY sealed, and only the deepest room is. Whether the SITE is
+            // shut is a different fact living on the location record and answered
+            // by `evaluateAccess` - conflating the two meant a sealed site derived
+            // every wing shut, so breaking the outer seal left a place nobody could
+            // enter any part of. The inner door is the one that stays shut after
+            // somebody gets in, which is what makes "picked over twice with one
+            // wing nobody has opened" a reachable state.
             sealed: deepest,
             state: 'untouched',
             workings: 0,
@@ -552,11 +445,6 @@ export function withWings(location: LocationRecord, wings: readonly RuinWing[]):
 
 /**
  * The site's depletion, as one word, derived from its wings.
- *
- * The LEAST worked wing decides it, not the average: a site with one untouched
- * room is an untouched site to the person who wants that room, and reporting it
- * as "stripped" because four halls are empty is the summary lying about the
- * only fact that matters.
  */
 export function overallDepletion(wings: readonly RuinWing[]): Depletion {
     if (wings.length === 0) return 'untouched';
@@ -569,15 +457,6 @@ export function overallDepletion(wings: readonly RuinWing[]): Depletion {
 
 /**
  * Somebody worked a wing.
- *
- * One step down the depletion ladder per working, and the step is smaller each
- * time because what is left is progressively harder to take - which is the
- * `REMAINING_SHARE` curve stated as a state machine rather than as arithmetic
- * in a caller.
- *
- * Writes a real `LocationChange`, so a site's working history is queryable the
- * same way its catastrophes are and a narrator cannot claim a hall was emptied
- * that the record says was never entered.
  */
 export function workWing(
     location: LocationRecord,
@@ -618,10 +497,6 @@ export function workWing(
 
 /**
  * What a site is worth to somebody arriving now, on the depletion axis alone.
- *
- * Deliberately says nothing about provenance. A caller that wants both asks
- * both, and the two answers are allowed to be uncorrelated - which is the
- * point of the module.
  */
 export interface SiteStanding {
     depletion: Depletion;
@@ -652,29 +527,7 @@ export function siteStanding(location: LocationRecord): SiteStanding {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AXIS THREE: HOW LONG AGO IT STOPPED BEING LIVED IN
-//
-// Not every ruin is ancient. A sect destroyed last century is a ruin, and it is
-// a different object in nearly every respect - and the differences FALL OUT of
-// the other two axes rather than needing to be written down.
-//
-//   NEW       people watched it happen, so provenance is ordinarily documented
-//             and the scholar is not needed. What is in it is of this age:
-//             somebody's treasury, ordinary elemental manuals, their stores. No
-//             extinct material, because the people who lived there were of this
-//             age and had none.
-//   OLD       within the reach of records but not of memory. The middle case,
-//             and the one where the archive is worth consulting.
-//   ANCIENT   the tier `ancient.md` is about. Unreadable without learning, and
-//             the only place the extinct stock is.
-//
-// The age also decides whether there is a CLOCK. A house that fell last century
-// left a place you can walk to: no convergence, no window, no reason for the
-// depth gradient below to exist. An ancient site is reachable when it is
-// reachable. That is the sharpest mechanical difference between the two, and it
-// is the reason to go to the ordinary one.
-// ─────────────────────────────────────────────────────────────────────────
 
 export type RuinAge = 'new' | 'old' | 'ancient';
 
@@ -685,10 +538,6 @@ export const OLD_RUIN_YEARS = 2_000;
 
 /**
  * How long ago this stopped being lived in.
- *
- * Read off the record rather than a tag: the day the place was abandoned,
- * destroyed or sealed is already in its change history, so the age is a
- * subtraction and cannot drift from what actually happened to it.
  */
 export function ageOf(location: LocationRecord, onDay: number): RuinAge {
     const fell = fellOnDay(location);
@@ -713,15 +562,6 @@ export function fellOnDay(location: LocationRecord): number | null {
 
 /**
  * What a wing holds, in kind rather than in amount.
- *
- * Depth is deliberately NOT a multiplier. The shallows hold what was portable
- * and obvious, because that is what a house keeps where it can be got at; the
- * depths hold what somebody SEALED rather than carried, which is a different
- * category of object and is still there for a different reason - not because
- * nobody wanted it, but because taking it was never the fast part.
- *
- * The age gates the tier: nothing from a new ruin is ancient, whatever depth it
- * is at, because the people who lived there had none of it.
  */
 export function wingHolds(
     wing: RuinWing,
@@ -757,26 +597,7 @@ export function wingHolds(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE GRADIENT IS A RECORD OF WHO CAME, NOT A DIFFICULTY CURVE
-//
-// Everybody who came before faced the same clock: in, take what is near the
-// door, out before it shuts. So a site that has been visited is bare at the
-// front and full at the back - and a site that has NOT been visited shows no
-// such pattern at all, because nothing produced one.
-//
-// That makes the distribution derived rather than authored, and it makes the
-// first chamber INFORMATIVE. Three cases, and each says something different to
-// somebody who has just walked in:
-//
-//   stripped shallows      people have been here. Legible to anybody, no
-//                          scholarship needed, and truer than any record.
-//   untouched shallows,    everybody could have come and nobody did - or
-//   known site             nobody came back. A better warning than a hazard
-//                          marker, and the engine does not say which it is.
-//   untouched shallows,    nobody has ever found it. The find of a lifetime,
-//   unknown site           and the player knows inside a minute.
-// ─────────────────────────────────────────────────────────────────────────
 
 export type ChamberSign = 'been_worked' | 'nobody_came_back' | 'never_found' | 'no_pattern';
 
@@ -796,10 +617,6 @@ export interface FirstChamberReading {
 
 /**
  * What walking into the first room tells anybody, whatever they know.
- *
- * Reads the shallow wings and the discovery flag, and nothing else. No realm
- * gate and no knowledge gate: this is the one thing about a site that does not
- * need a scholar, which is exactly why it is worth having.
  */
 export function firstChamberTells(location: LocationRecord): FirstChamberReading {
     const wings = wingsOf(location);
@@ -850,32 +667,7 @@ export function firstChamberTells(location: LocationRecord): FirstChamberReading
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // KNOWLEDGE FOLLOWS ENGAGEMENT, NOT ALTITUDE
-//
-// The sharpest correction to the obvious model, and the one that cuts against
-// intuition hardest. The strongest power in the region may know LESS about a
-// given site than a middling house three provinces away - not because it is
-// stupid, but because the house has been sending people in for two hundred
-// years and the apex has never once looked. Height is not omniscience. What a
-// house knows is the residue of what it has DONE.
-//
-// So ruin knowledge is a RELATION - this knower, this site, this much - and
-// never a global flag on the site. `knownAxes` below is that relation, and the
-// only thing it reads is engagement: who is recorded in the site's own change
-// history as having worked it, which is a fact the site already stores.
-//
-// Two consequences worth having on purpose:
-//
-//   THE GRADIENT IS A FACT; KNOWING IT IS A DIFFERENT FACT. A house that has run
-//   expeditions knows the shallows are bare. A house that has not will send its
-//   disciples in expecting the entrance to pay, and be wrong.
-//
-//   BEING WRONG IS POSSIBLE. A house with one visit's worth of engagement has a
-//   confident and partial picture, and can transmit it. A scale that runs only
-//   from ignorant to correct is much less interesting than one where a little
-//   knowledge produces a wrong answer somebody will act on.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SiteKnowledge {
     knowerId: string;
@@ -889,10 +681,6 @@ export interface SiteKnowledge {
     knowsSchedule: boolean;
     /**
      * One visit's worth of picture, held confidently.
-     *
-     * The dangerous middle: enough engagement to have an opinion, not enough
-     * for it to be right. A house here will brief its disciples on a site it
-     * has seen a tenth of.
      */
     confidentlyPartial: boolean;
     /** What they would tell somebody, and whether it is true. */
@@ -904,11 +692,6 @@ export const ENGAGEMENTS_FOR_A_PICTURE = 3;
 
 /**
  * What one knower knows about one site.
- *
- * Reads the site's own change history for this knower's name, which is where
- * `workWing` already records who did what. Nothing is stored per knower and
- * nothing needs to be: engagement IS the record, so a house that stops going
- * loses its edge to the next house that starts.
  */
 export function knownAxes(
     location: LocationRecord,
@@ -939,30 +722,7 @@ export function knownAxes(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AXIS FOUR: WHO CONTROLS THE DOOR NOW
-//
-// A known site, on a predictable cycle, inside somebody's territory is not a
-// free-for-all. It is an ASSET, and a house that can reach it decides who goes
-// in. Three prices, and the third is the interesting one:
-//
-//   DISCIPLES ONLY  the strongest concrete argument for joining a house that
-//                   this game has. Not a rate multiplier - access to somewhere
-//                   nobody else may go.
-//   A FEE           priced in the currency a player at the bottom actually
-//                   earns, and the first thing worth spending stones on that is
-//                   not consumed.
-//   A TASK          a house sends you in on their errand, which means somebody
-//                   with no standing and no money can still get through the
-//                   door - and the house has an interest in what you find. It
-//                   does not close when you come out.
-//
-// CHARGING IS NOT CONTROLLING. `regions.ts` already separates what a house holds
-// `onPaper` from what it holds `onTheGround`, and a ruin in a catchment somebody
-// holds on paper only is the best case in the set: they will levy a toll and
-// they cannot actually stop you. Going in anyway is a whole style of play, and
-// it composes with the clock, because the holder knows the schedule too.
-// ─────────────────────────────────────────────────────────────────────────
 
 export type SiteControl =
     /** Nobody's, because nobody knows. */
@@ -994,16 +754,6 @@ export const RUIN_TOLL_PER_DANGER_ORDINAL = 40;
 
 /**
  * Who holds this door and what they want for it.
- *
- * Read entirely off columns that already exist: `controllingFactionId` says
- * whether anybody claims it, `discovered` says whether a claim is even
- * possible, and the holder's own recorded reach says whether the claim is worth
- * anything. Nothing is invented and no faction id is branched on.
- *
- * The price follows from the holder rather than being drawn: a house that takes
- * applicants sells access, a house that does not reserves it, and a house too
- * thin on the ground to enforce anything asks for an errand instead - because
- * an errand is the one price that does not require standing at the entrance.
  */
 export function accessTermsFor(
     location: LocationRecord,
@@ -1051,37 +801,10 @@ export function accessTermsFor(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // A STRIPPED RUIN IS EMPTY OF THINGS AND FULL OF UNDERSTANDING
-//
-// The one kind of value that survives being visited a hundred times, because
-// comprehension cannot be carried out. `understanding.md` is explicit that
-// insight cannot be bought, granted by rank or handed over - so a site that has
-// nothing left to take still has everything it ever had to understand, and the
-// hundredth visitor gets exactly what the first one did.
-//
-// This matters beyond the theme. Almost everything else built here lately is
-// gated on being somebody: backing, standing, a stocked inheritance, a person
-// who would come for you. A safe, exhausted, well-known ruin asks nothing at
-// all except that you go and sit in it, and it is the only destination in the
-// game a cultivator at the bottom can actually afford.
-//
-// WHAT IS COMPREHENDED IS ABOUT THE PLACE. A manual teaches a method; a ruin
-// teaches what happened in it - the house that fell, what they were doing, what
-// killed them. So two different ruins do not teach the same thing, and the tags
-// below are derived from each site's own record rather than handed out per kind.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What this site puts within reach of understanding.
- *
- * Returns location tags in the vocabulary `discoverableInsights` already reads,
- * so this is wiring rather than a second comprehension system. Every tag is
- * derived from something the site actually records: the halls it had, how it
- * ended, what is still running in it.
- *
- * Deliberately independent of depletion. A stripped site returns the same list
- * a full one does, which is the whole point.
  */
 export function comprehensionTagsFor(location: LocationRecord, onDay: number): string[] {
     const tags = new Set<string>();
@@ -1115,12 +838,6 @@ export interface StandingOffer {
     comprehensible: string[];
     /**
      * What the world says about the danger.
-     *
-     * A JUDGEMENT, not a fact: it is believed safe because many people have
-     * come back, which is evidence and is not proof. The engine keeps the
-     * belief and the thresholds separate on purpose, and they are allowed to
-     * disagree - `deemedSafe` true with a live `mastery` bar is a site whose
-     * reputation is wrong, and that case must stay possible.
      */
     deemedSafe: boolean;
     /** What the record actually says, which nobody standing outside can read. */
@@ -1129,11 +846,6 @@ export interface StandingOffer {
 
 /**
  * Everything on offer, with the two kinds kept apart.
- *
- * The three games this produces are all visible in one call: an unfound site
- * has carryables at every depth, a half-worked one has them only past where the
- * clock stops people, and a finished one has none and the same comprehension it
- * always had.
  */
 export function standingOffer(location: LocationRecord, onDay: number): StandingOffer {
     const wings = wingsOf(location);
@@ -1159,24 +871,6 @@ export function standingOffer(location: LocationRecord, onDay: number): Standing
 
 /**
  * A house's seat, after the house.
- *
- * The loop the whole task closes: world-changing events CREATE ruins, so the
- * set of sites is not fixed at seeding and somebody who secludes for a century
- * comes out to find somewhere that did not exist when they sat down.
- *
- * Everything about the result follows from how it was made rather than from a
- * generator:
- *
- *   PROVENANCE  `documented`. People watched it happen and it is in the
- *               chronicle with a fact id. No scholar needed, which is the
- *               opposite end of the archaeology axis from an anonymous site.
- *   NO CLOCK    a place you can walk to. Nothing about it converges, so the
- *               depth gradient has no cause here and none appears - which is
- *               itself a fact about which kind of place somebody is standing in.
- *   WINGS       the halls the house actually had, all untouched, because it
- *               fell this year and nobody has been in yet.
- *
- * Pure: a new record comes back with the change appended.
  */
 export function ruinFromFallenSeat(
     location: LocationRecord,

@@ -15,13 +15,9 @@ export interface HttpServerTransportOptions {
 const DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024;
 
 /**
- * Service authentication only: proves the caller is the web service, says
- * nothing about which customer the request is for. Tenant identity comes from
- * the separate signed x-rpg-tenant header.
- *
- * The token is deliberately NOT accepted from the query string. Query
- * parameters are recorded by proxies, CDNs, and access logs, so a credential
- * placed there leaks into infrastructure that has no business holding it.
+ * Service authentication only: proves the caller is the web service, says nothing
+ * about which customer the request is for. Tenant identity comes from the separate
+ * signed x-rpg-tenant header.
  */
 function isAuthorized(req: IncomingMessage, authToken: string): boolean {
     const headerToken = req.headers['x-rpg-mcp-token'];
@@ -32,17 +28,6 @@ function isAuthorized(req: IncomingMessage, authToken: string): boolean {
 
 /**
  * Resolves the tenant a request is acting for.
- *
- * Absent header is allowed and yields no tenant: meta-tools (search_tools,
- * load_tool_schema) are genuinely tenant-agnostic and the host's tool catalog
- * loads schemas before any campaign is in play. Those requests simply never
- * reach `requireTenant()`. Anything that touches tenant-owned storage fails
- * closed there instead, which keeps the boundary at the database rather than
- * at a transport rule that would have to enumerate which tools are safe.
- *
- * A header that is *present but invalid* is always rejected - that is a caller
- * asserting an identity it cannot prove, which is never a request we want to
- * serve unscoped.
  */
 function resolveTenant(
     req: IncomingMessage,
@@ -89,17 +74,8 @@ function readBody(req: IncomingMessage, maxBytes: number): Promise<unknown> {
 }
 
 /**
- * Minimal HTTP server exposing the MCP Streamable HTTP transport at /mcp and
- * a plain health check at /health for platform healthchecks (Railway, etc).
- *
- * Runs in stateless mode (sessionIdGenerator: undefined). The SDK enforces
- * "one transport instance per request" in stateless mode - reusing a
- * transport across requests throws "Stateless transport cannot be reused
- * across requests" - so a fresh McpServer + StreamableHTTPServerTransport
- * pair is built per POST /mcp request via `serverFactory`. Pass a factory
- * that reuses your app-level singletons (DB, pubsub, audit logger) and only
- * constructs a new McpServer/tool-registration wrapper each call - tool
- * registration itself is cheap (no I/O).
+ * Minimal HTTP server exposing the MCP Streamable HTTP transport at /mcp and a
+ * plain health check at /health for platform healthchecks (Railway, etc).
  */
 export async function startHttpServerTransport(
     serverFactory: () => McpServer,

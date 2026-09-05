@@ -1,23 +1,5 @@
 /**
  * Institutions acting on each other, and on the dead.
- *
- * Petition, posture, seal, offer and the way back down through the Lid: the
- * words a player uses for the five acts a house takes against another house or
- * against its own ancestors, and the one step that routes them.
- *
- * The last of the four verb families lifted out of the pattern table in
- * `actions.ts`, on the shape `leaving-things-for-the-next-life.ts` established
- * for `legacyStep`. It went last because it was the only one with an edge into
- * another family - `institutionalAct` reads `ASKING_TO_BE_TAKEN_IN`, which is
- * the sect vocabulary - so the sect file had to exist first for the dependency
- * to run one way. It now does: this module imports from `sect-phrasings.ts` and
- * nothing imports back.
- *
- * `planIntent` keeps its one-line call and the ordering around it untouched.
- * `institutionalAct`'s own ordering - alliance before offering, seal before
- * offering - is load-bearing and is exactly as it was.
- *
- * Single reason to change: how a player says one house is acting on another.
  */
 
 import { PlannedAction } from './planned-action.js';
@@ -25,25 +7,7 @@ import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 import { usedAsVerb, partyAfter } from './sentence-parts.js';
 import { ASKING_TO_BE_TAKEN_IN } from './sect-phrasings.js';
 
-// ─── INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD ───────────────────
-//
-// Every rule below follows the shape the `order` branch established and the
-// four seat powers repeated: A VERB IN VERB POSITION, PLUS THE NOUN THAT SAYS
-// WHAT IT IS AIMED AT. Both halves are required, and they have to be, because
-// this vocabulary is the setting's own. "ancestor", "seal", "war", "offering",
-// "claim", "grant" and "petition" appear far more often as the object of
-// somebody else's sentence than as the subject of one of these, and every one
-// of them sits one clause away from a verb that would take the sentence
-// somewhere adjacent and answer it wrongly.
-//
-// These sit HIGH in the table - above the asking branch, above `investigate`,
-// above `interact` - and that placement is the fix for the defect that
-// produced them. `interact` matches any sentence naming a faction, so
-// "I ask the Deep Survey for one of its pills", "I offer an alliance to the
-// Frostmirror Court" and "I petition the Third Sill Court for a grant" were
-// all being answered by walking the player over and describing the building.
-// A verb that quietly does something adjacent is worse than one that does
-// nothing, because the player cannot tell refused from not implemented.
+// INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD
 
 /** Which form is being filed. Selects a read; never decides an outcome. */
 export type PetitionIntent = 'grant' | 'stock' | 'descent';
@@ -53,26 +17,12 @@ export const DEFAULT_PETITION_INTENT: PetitionIntent = 'grant';
 
 /**
  * The verbs that mean this on their own.
- *
- * `petition` and `appeal` are enough by themselves: nothing else in the
- * setting's vocabulary uses either word, and both name the act exactly.
- *
- * `apply` is deliberately NOT here, and leaving it in cost a regression that
- * this comment exists to stop somebody re-introducing. "I apply to the
- * Thousand Treasure Pavilion" is a sentence about JOINING - the sect surface
- * has owned `apply to` since it was written - and a bare `apply` in this table
- * took it and filed a request for a grant with a house the player was trying
- * to enrol in.
  */
 export const PETITION_VERBS_ALONE =
     'petition|petitions|petitioning|appeal|appeals|appealing';
 
 /**
  * The verbs that mean this only with the thing being asked for.
- *
- * `file`, `submit` and `lodge` reach the form branch through
- * {@link STANDING_STOCK_NOUNS}; here they need {@link PETITION_NOUNS}, because
- * every one of them is an ordinary word for putting a piece of paper somewhere.
  */
 export const PETITION_VERBS =
     'petition|petitions|petitioning|appeal|appeals|appealing|apply|applies|applying|'
@@ -92,48 +42,17 @@ export const PETITION_NOUNS =
 
 /**
  * A BODY, rather than a person standing in front of you.
- *
- * The asking half of the petition rule is documented as reaching this "only
- * with an institutional object", and it did not: {@link PETITION_NOUNS} lists
- * things - a manual, an art, a pill - and a thing can be asked of anybody. So
- * "I ask him for the manual", which is `request`'s own exemplar and the ONLY
- * route in this game to being taught by a person, was filed as a petition to
- * an institution and refused in an institution's terms.
- *
- * The fix is the sentence the docstring already claimed: an asking verb
- * reaches `petition` when the thing being asked is asked OF a body. A named
- * faction satisfies it through the same phrase list the rest of this block
- * uses; the generic nouns are here because a player says "the house" far more
- * often than they say a name they may not have been told yet.
- *
- * `PETITION_VERBS` - petition, appeal, apply, file, lodge - are unaffected.
- * Nobody petitions a person, and those words carry the institution in
- * themselves.
  */
 export const AN_INSTITUTION_IS_BEING_ASKED =
     /\b(?:sects?|houses?|clans?|orders?|schools?|halls?|courts?|pavilions?|councils?|elders?|the (?:seat|body|institution|administration|registry)|my house|our house|the family|patriarch|matriarch|hall master|sect master|head of the)\b/;
 
 /**
  * The form, by name and by shape.
- *
- * `requisition` is unambiguous and needs no verb. The rest is the general case
- * the Requisition is one instance of: an application against something an
- * institution is holding and cannot reorder. Nothing here names a faction.
  */
 export const REQUISITION_NAMED = /\brequisitions?\b/;
 
 /**
  * The objects themselves, by name, generated from the catalog.
- *
- * A player who has been told what one of these is called asks for it by name -
- * "an Unearned Step", "a Second Dealing" - and a hand-written list here would
- * go stale the moment the catalog gained a third. Built rather than typed, on
- * the precedent `SITE_PHRASES` already sets in this file: a phrase list that
- * can drift from the content it describes is a phrase list that will.
- *
- * Names only. Nothing about what any of them does, how many exist, or who is
- * holding one crosses this boundary - the parser is deciding which verb the
- * sentence is, and the knowledge gate in `game.ts` decides everything else.
  */
 export const IMMORTAL_ITEM_NAMED = new RegExp(
     '\\b(?:' + IMMORTAL_ITEMS
@@ -161,11 +80,6 @@ export const POSTURE_INTENTS: readonly PostureIntent[] =
     ['stance', 'war', 'alliance', 'defect', 'tribute'] as const;
 /**
  * The read, and it must stay the default.
- *
- * Three of the four commit the house irreversibly and one of them starts a war.
- * A model answering `{"action":"posture","intent":"deal with them"}` gets the
- * standing between the two houses and nothing else, on exactly the reasoning
- * behind {@link DEFAULT_SITE_INTENT}.
  */
 export const DEFAULT_POSTURE_INTENT: PostureIntent = 'stance';
 
@@ -181,40 +95,20 @@ export const ALLIANCE_VERBS =
     + 'forming|seek|seeks|seeking|extend|extends|extending|ally|allies|sue for';
 
 export const ALLIANCE_NOUNS =
-    // `peace with` and `truce` were missing, and "I make peace with the Azure
-    // Dew Sect" is the plainest sentence in this whole block - `make` was
-    // already a declaration verb, so the only thing standing between that
-    // sentence and the verb it wants was the noun. Both require their
-    // preposition, which keeps them off "the region is at peace" and off
-    // anybody merely describing a standing.
-    //
-    // And both refuse a PRONOUN after it, which `misparse.test.ts` caught
-    // immediately: "I make peace with it, in a manner of speaking, for a
-    // season" is in the inert-fallback set, and it committed the house to a
-    // peace with a party the sentence never named. Three of the five postures
-    // bind a house irreversibly, so a phrasing that reaches one without
-    // naming anybody is worse than a phrasing that reaches nothing.
+    // `peace with` and `truce` were missing, and "I make peace with the Azure Dew
+    // Sect" is the plainest sentence in this whole block - `make` was already a
+    // declaration verb, so the only thing standing between that sentence and the
+    // verb it wants was the noun. Both require their preposition, which keeps them
+    // off "the region is at peace" and off anybody merely describing a standing.
     /\b(?:alliance|alliances|allied|a pact|the pact|a league|common cause|mutual defence|mutual defense|terms with|peace with (?!it\b|them\b|him\b|her\b|that\b|this\b|myself\b)|peace between|truce with (?!it\b|them\b|him\b|her\b|that\b|this\b)|a truce)\b/;
 
 /**
- * Changing who the house holds from, which two courts in the catalog's own
- * history have already done.
- *
- * Requires a destination. "I defect" on its own is a member leaving a sect and
- * belongs to `sect`, which owns the word already - taking it here without
- * somewhere to go would answer a resignation with a diplomatic manoeuvre.
+ * Changing who the house holds from, which two courts in the catalog's own history
+ * have already done.
  */
 /**
- * Demanding a payment from somebody, which is only a demand if you hold
- * something over them.
- *
- * Nearly dropped for want of data, and then it turned out the data is the best
- * part: `getParentage(client).parentFactionId` says who a house actually holds
- * from and `holds` says in what terms, so whether this is a levy or a threat is
- * a fact about the two parties rather than about the sentence. A house
- * demanding from its own client is exercising a right the catalog wrote down. A
- * house demanding from somebody else's client has said something about the
- * patron.
+ * Demanding a payment from somebody, which is only a demand if you hold something
+ * over them.
  */
 export const TRIBUTE_VERBS =
     'demand|demands|demanding|levy|levies|levying|require|requires|requiring|'
@@ -231,10 +125,6 @@ export type SealIntent = 'read' | 'wake';
 export const SEAL_INTENTS: readonly SealIntent[] = ['read', 'wake'] as const;
 /**
  * The priced read, and it must stay the default.
- *
- * Waking one is the single most consequential thing a house can do and the one
- * act in this file that changes a power ordinal. A model answering
- * `{"action":"seal"}` with no label gets the condition and the cost.
  */
 export const DEFAULT_SEAL_INTENT: SealIntent = 'read';
 
@@ -256,25 +146,12 @@ export const SEALED_NOUNS =
 
 /**
  * Sentences that contain the wake vocabulary and mean something else.
- *
- * "break through the barrier" is the breakthrough branch and reaches this file
- * first, but "I break the seal on the gate" at an inheritance ground is a
- * site sentence and "I raise the admission bar" is a decree, and both would
- * otherwise satisfy the rule above. Vetoed rather than ordered, because each of
- * them satisfies it completely.
  */
 export const NOT_THE_SEALED_ANCESTOR =
     /\b(?:barrier|bottleneck|admission|entry bar|the bar\b|curriculum|dawn|morning|from sleep|up early)\b/;
 
 /**
  * The channel, from whichever end the speaker is standing at.
- *
- * `send` is the immortal side of the same pipe `offering` is the mortal side
- * of, and they are one verb on purpose. Somebody below pays a decade of a
- * house's principal and asks; somebody above decides whether to answer and what
- * to send. Two verbs for that would have been two implementations of one
- * relationship, and the half that decides which end you are at is state -
- * `canExistBeyondTheLid` - rather than the word the player used.
  */
 export type OfferIntent = 'channel' | 'offering' | 'send';
 export const OFFER_INTENTS: readonly OfferIntent[] = ['channel', 'offering', 'send'] as const;
@@ -303,10 +180,6 @@ export const ASCENDED_NOUNS =
 
 /**
  * Sending something DOWN, which is the other end of the same pipe.
- *
- * Both halves required, as everywhere in this section. "send" and "down" are
- * each far too ordinary alone - "I send the disciples down to the river" is an
- * errand - so the rule wants a sending verb aimed at the lower world by name.
  */
 export const SENDING_DOWN =
     /\b(?:send|sends|sending|drop|drops|dropping|put|puts|putting|pass|passes|passing|reach|reaches|reaching|deliver|delivers)\b[^.!?]*\b(?:down through the lid|through the lid|below the lid|down the line|down the channel|down to (?:the )?(?:province|world below|lower world|mortal world|my |our |them\b))\b/;
@@ -315,18 +188,7 @@ export const SENDING_DOWN =
 export const SENDING_NOUNS =
     /\b(?:a word|word|a message|the message|a warning|an answer|a sword|a blade|a weapon|a pill|a talisman|an object|something|a gift|instructions?)\b/;
 
-// ─── GOING BACK DOWN YOURSELF ─────────────────────────────────────────────
-//
-// The other of the two answers, and the expensive one. Kept narrow because it
-// is the single most dangerous action in the game: nine strikes of the
-// heaviest tribulation there is, weathered by somebody who spent a life
-// reaching the rung where they could be struck by it. A sentence has to say
-// plainly that the speaker is going, and through the Lid, before it reaches
-// this - so the whole rule is a movement verb next to the boundary by name.
-//
-// "I go down" alone is deliberately NOT enough. Below the Lid it means a
-// staircase, and a phrasing that means a staircase to almost everybody must
-// not end a run for the one player standing above the Lid when they type it.
+// GOING BACK DOWN YOURSELF
 
 export const GOING_DOWN_VERBS =
     'go|goes|going|descend|descends|descending|return|returns|returning|come|comes|coming|'
@@ -335,16 +197,11 @@ export const GOING_DOWN_VERBS =
 
 export const THE_WAY_BACK_DOWN =
     // `to the lower world` without a preceding "down" or "into". The pattern
-    // carried both of those and not the bare preposition, so "I return to the
-    // lower world" reached nothing while "I go down to the lower world" and "I
-    // go into the lower world" both worked. There is no second reading of the
-    // phrase: below the Lid nobody calls anywhere the lower world, so it needs
-    // no anchor beyond itself.
-    //
-    // Note what is still NOT here, and must not be added: "the mountain",
-    // "downhill", or any other slope. This verb crosses the Lid once and ends
-    // the run's whole footing, and "I descend the mountain" means a walk to
-    // very nearly everybody who types it. See the banner above.
+    // carried both of those and not the bare preposition, so "I return to the lower
+    // world" reached nothing while "I go down to the lower world" and "I go into
+    // the lower world" both worked. There is no second reading of the phrase: below
+    // the Lid nobody calls anywhere the lower world, so it needs no anchor beyond
+    // itself.
     /\b(?:back down|down through the lid|through the lid|down to the (?:province|world below|lower world|mortal world|world)|(?:in)?to the lower world|below the lid|down myself|down in person|the way i came)\b/;
 
 /**
@@ -358,12 +215,6 @@ export const DESCENT_UNAMBIGUOUS =
 
 /**
  * What is being asked for, in the petitioner's own words.
- *
- * Carried verbatim into the record and shown back in the refusal, which is the
- * entire point of the verb: the Requisition requires the applicant to state
- * what is at stake in terms of the arterial system rather than in terms of
- * themselves, and being refused in the terms you asked in is the interaction.
- * Nothing branches on it.
  */
 export function matterAsked(input: string): string | undefined {
     const found = /\b(?:for|about|regarding|concerning)\s+(?:one of\s+|the\s+|a\s+|an\s+|some\s+)?(.{2,120}?)\s*[.!?]?$/i
@@ -374,13 +225,6 @@ export function matterAsked(input: string): string | undefined {
 
 /**
  * A party phrase that is not a party.
- *
- * "make an offering to our ascended ancestor" names a recipient and no
- * institution, and handing `ascended ancestor` to a faction matcher would
- * resolve nothing and produce a refusal for a sentence that was perfectly
- * clear. The rule is narrow on purpose: it drops the phrase only where the
- * whole of it is the act's own vocabulary, so "our ancestor at the Pavilion"
- * still carries the Pavilion.
  */
 function isTheActItself(phrase: string | undefined): boolean {
     if (!phrase) return true;
@@ -389,19 +233,8 @@ function isTheActItself(phrase: string | undefined): boolean {
 }
 
 /**
- * One of the four institutional acts, or null when the sentence is about
- * something else.
- *
- * Ordered narrowest first, and the ordering is load-bearing in two places.
- * ALLIANCE before OFFERING, because `offer` is a verb in both tables and "I
- * offer an alliance" is not a rite. SEAL before OFFERING for the same reason
- * in the other direction: a sentence about an ancestor is not automatically a
- * sentence about incense.
- *
- * Every branch that COMMITS the house is reachable only through an explicit
- * verb plus its noun. There is no phrasing that arrives here vaguely and
- * starts a war, which is the property `DEFAULT_POSTURE_INTENT` exists to keep
- * true on the model path as well.
+ * One of the four institutional acts, or null when the sentence is about something
+ * else.
  */
 export function institutionalAct(text: string, input: string): PlannedAction | null {
     // ── war ──
@@ -437,13 +270,7 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
         if (to) return { action: 'posture', intent: 'defect', target: to };
     }
 
-    // ── the thing under the mountain ──
-    //
-    // Whose mountain it is is NOT read off the sentence. A player who names
-    // nobody meant their own house and one who names a house meant that one,
-    // and which of those is a decision and which is theft is decided by the
-    // membership row in `game.ts`. Reading it here would let a phrasing choose
-    // between a legal act and a crime.
+    // the thing under the mountain
     if (usedAsVerb(text, WAKE_VERBS)
         && SEALED_NOUNS.test(text)
         && !NOT_THE_SEALED_ANCESTOR.test(text)) {
@@ -490,17 +317,7 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
         return { action: 'offer', intent: 'offering', ...(to ? { target: to } : {}) };
     }
 
-    // ── the form, by name ──
-    //
-    // `requisition` needs no verb: nothing else in the setting uses the word,
-    // and a player who has heard it has heard it from somebody describing
-    // exactly this. Everything else needs the verb and the thing.
-    //
-    // `against` is deliberately not a party marker here. The form's own name
-    // is "a Requisition Against Standing Stock", so reading a party out of it
-    // resolved the sentence to an institution called "Standing Stock" - which
-    // is the shape of every bug this parser has produced, a phrase matched in
-    // the wrong role and answered confidently.
+    // the form, by name
     if (REQUISITION_NAMED.test(text)
         || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
             && (STANDING_STOCK_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text)))) {

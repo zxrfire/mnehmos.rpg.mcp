@@ -1,53 +1,5 @@
 /**
  * Capability: five questions, never a gate.
- *
- * The engine must never answer an intent with "your realm is too low, this
- * action is unavailable." That is a refusal dressed as a rule, and it is wrong
- * twice over: it removes the attempt, and it removes the consequence of the
- * attempt. What the engine answers instead is what happens WHEN YOU TRY, which
- * is a different question and a better one.
- *
- * Five predicates, and they come apart on purpose:
- *
- *   attempt      is the action physically initiable at all
- *   survive      will the attempt kill you
- *   succeed      can it actually work
- *   understand   will you comprehend what you found, or what happened to you
- *   force        can you impose the outcome over resistance
- *
- * A Foundation Establishment cultivator CAN ATTEMPT an ancient ruin. Whether
- * they SURVIVE it is a separate answer, and whether they can UNDERSTAND the
- * inscription on the wall is a third. A weak cultivator CAN ATTEMPT to rob a
- * Core Formation elder: the attempt is permitted, and preparation, terrain, the
- * elder's attention, who else is present and what the thief knows decide the
- * rest.
- *
- * ── The anti-hallucination primitive ──────────────────────────────────────
- *
- * This is the call the narrating agent makes when it wants to know whether
- * something is possible. It gets five facts back, each with its arithmetic
- * itemised and a stated reason, and it narrates from them. Without it, a model
- * asked "can they do this" quietly decides yes because the story would be
- * better that way, which is precisely the failure the whole architecture exists
- * to prevent. So `assessCapability` returns a structured result and never a
- * bare boolean, and every verdict carries the numbers that produced it.
- *
- * ── `attempt` is almost always true ───────────────────────────────────────
- *
- * `attempt` fails only for PHYSICAL reasons: a sealed door and no key, a realm
- * whose window is shut, being dead, not being there, or a barrier that
- * genuinely will not open for someone of that weight. It is never failed
- * because the action is unwise, because the target is stronger, or because the
- * odds are bad. Those are answers to the other four questions.
- *
- * ── Specialists ──────────────────────────────────────────────────────────
- *
- * A {@link CapabilityModifier} moves each predicate INDEPENDENTLY, so a
- * technique built for cold can lower `survive` by ten ordinals and touch
- * nothing else, and a translator's notes can lower `understand` while leaving a
- * cultivator just as likely to die in the room they can now read. That is what
- * lets a lower-realm specialist survive where a stronger generalist cannot, and
- * read what a stronger one cannot.
  */
 
 import { MAX_ORDINAL, clampOrdinal, rankName } from '../cultivation/realms.js';
@@ -80,10 +32,6 @@ export const CAPABILITY_PREDICATES: readonly CapabilityPredicate[] = [
 
 /**
  * A realm is a capability class, not a damage multiplier.
- *
- * The question for every rank above Core Formation is what becomes possible
- * that was fundamentally impossible one realm below, and several of the answers
- * change which environments are enterable at all.
  */
 export type RealmCapabilityClass =
     | 'mortal'
@@ -97,14 +45,6 @@ export type RealmCapabilityClass =
 
 /**
  * A specific thing a realm makes possible.
- *
- * POTENTIAL, NOT ENTITLEMENT. Reaching a realm gives access to its class; it
- * does not hand over the list. Whether a particular cultivator holds a
- * particular grant depends on specialisation, preparation, technique and what
- * they were willing to pay - so a grant is only in force when it is BOTH
- * available at the actor's realm AND present in `actor.heldGrants`. Two Deity
- * Transformation cultivators can be wildly different, and nobody gets
- * everything.
  */
 export type CapabilityGrant =
     /** Nascent Soul: the soul persists without the body. */
@@ -117,23 +57,12 @@ export type CapabilityGrant =
     | 'suppresses_lesser'
     /**
      * Void Refinement: needs no ambient qi at all.
-     *
-     * The single most consequential grant on the ladder. In the Late Age
-     * most ground has already been drawn down or taken, so a cultivator who
-     * no longer needs ambient qi is decoupled from the scarcity the entire
-     * world is organised around.
      */
     | 'no_ambient_needed'
     /** Void Refinement: dead zones, scars and voids become survivable. */
     | 'enters_dead_zones'
     /**
      * Void Refinement: folding space rather than crossing it.
-     *
-     * The grant is a switch and the RANGE is not: it starts at one province
-     * over and grows with the rung, so what this hands over depends on how high
-     * the holder stands. `how-far-somebody-can-fold-space-and-what-it-costs.ts`
-     * owns the curve, what it costs, and the two things that can serve as a fix
-     * on the far end.
      */
     | 'spatial_folding'
     /** Void Refinement: reads regional formation structure whole. */
@@ -224,14 +153,6 @@ export function isGrantAvailableAt(ordinal: number, grant: CapabilityGrant): boo
 
 /**
  * Grants that reaching the realm does NOT hand over.
- *
- * Deliberately tiny, and each entry needs a reason of this kind: the grant
- * names a thing that exists in the world rather than a property of the body.
- * `prepared_vessel` is the whole list - a Nascent Soul cultivator who never
- * arranged a vessel does not have one, and the realm cannot supply it.
- *
- * Everything else is what the body IS at that rung, and withholding it would
- * be the empty-set defect again, wearing a policy.
  */
 export const ARRANGED_GRANTS: readonly CapabilityGrant[] = ['prepared_vessel'];
 
@@ -247,20 +168,6 @@ export function grantsConferredAt(ordinal: number): CapabilityGrant[] {
 
 /**
  * What each structural break takes back, by wound key.
- *
- * THE POINT OF A BROKEN STATUS, mechanically. A crossing that lands badly
- * leaves somebody AT the rung with the thing that rung was for not working,
- * and until this existed that was prose: a crippled nascent soul and a whole
- * one were the same person with different flavour text, which is the softening
- * the agency rule forbids.
- *
- * Each entry is the design owner's own statement of what the failed version
- * lacks, reduced to the grants that carry it. See `docs/world/capability-gaps-
- * by-realm.md`, which states each capability and each failure mode in full -
- * including the parts this boolean layer CANNOT express, which are recorded
- * there rather than approximated here.
- *
- * Keyed on current wound keys. Callers resolve retired keys first.
  */
 export const GRANTS_DENIED_BY_BREAK: Readonly<Record<string, readonly CapabilityGrant[]>> = {
     // "it cannot survive very long outside the body." The soul is real and
@@ -307,12 +214,8 @@ export const GRANTS_DENIED_BY_BREAK: Readonly<Record<string, readonly Capability
 };
 
 /**
- * The grants this cultivator actually holds: what the rung confers, less what
- * their breaks have taken back.
- *
- * Takes wound keys rather than `Injury` rows so this module stays free of the
- * injury schema, and so a caller can ask the question about somebody it only
- * has a summary of.
+ * The grants this cultivator actually holds: what the rung confers, less what their
+ * breaks have taken back.
  */
 export function grantsHeldWith(
     ordinal: number,
@@ -328,10 +231,6 @@ export function grantsHeldWith(
 
 /**
  * Hazards each grant makes irrelevant.
- *
- * Free-form tags on both sides, matched by string, because hazards are content.
- * `gates_places` is handled separately: Grand Ascension is not immune to a list
- * of hazards, it is simply no longer gated by places.
  */
 const GRANT_NEUTRALISES: Partial<Record<CapabilityGrant, readonly string[]>> = {
     prepared_vessel: ['body_lethal', 'crushing', 'pressure'],
@@ -347,13 +246,6 @@ export const NEUTRALISED_HAZARD_RELIEF = 5;
 
 /**
  * What this cultivator actually has.
- *
- * The intersection of what the realm makes possible and what they claim. A
- * Nascent Soul cultivator who never arranged a vessel does not hold
- * `prepared_vessel`, and the engine says so rather than assuming the realm came
- * with it. A held grant the realm does not support is silently dropped: nobody
- * gets a Void Refinement trick at Foundation Establishment because a caller
- * wrote it down.
  */
 export function heldGrants(actor: CapabilityActor): CapabilityGrant[] {
     const available = new Set(grantsAvailableAt(actor.realmOrdinal));
@@ -371,10 +263,6 @@ export function grantStatus(
 
 /**
  * Hazards this actor's grants make irrelevant, and which grant did it.
- *
- * Only hazards actually present on the subject are reported, so the result
- * doubles as the explanation: "the scar's thin qi is nothing to them, because
- * they no longer need ambient qi" is one row.
  */
 export function neutralisedHazards(
     actor: CapabilityActor,
@@ -395,10 +283,6 @@ export function neutralisedHazards(
 
 /**
  * What each predicate costs, in realm ordinals.
- *
- * Ordinals rather than an abstract difficulty because realm is the spine every
- * other system in this engine is expressed against, and a requirement a player
- * can compare to their own rank is a requirement they can plan around.
  */
 export type CapabilityRequirements = Record<CapabilityPredicate, number>;
 
@@ -428,11 +312,6 @@ export type CapabilityModifierSource =
 
 /**
  * Something the actor has that changes one or more predicates.
- *
- * `offsets` are SUBTRACTED from the requirement, so a positive number is a
- * benefit and a negative one is a handicap. Each predicate is listed separately
- * and there is no "overall bonus" field, deliberately: a thing that makes you
- * harder to kill has not made you better at reading.
  */
 export interface CapabilityModifier {
     id: string;
@@ -465,11 +344,6 @@ export function makeCapabilityModifier(
 
 /**
  * Adapter for the location layer's threshold modifiers.
- *
- * The two vocabularies map cleanly - entry is attempt, survival is survive,
- * operational is succeed, mastery is force - and `understand` has no
- * counterpart because a location threshold has never said anything about
- * comprehension. A caller who wants a modifier to help with reading must say so.
  */
 export function fromThresholdModifier(mod: ThresholdModifier): CapabilityModifier {
     return {
@@ -554,10 +428,6 @@ export interface CapabilityActor {
     knowledgeIds?: readonly string[];
     /**
      * Realm-class capabilities this cultivator has actually acquired.
-     *
-     * Potential is decided by realm; possession is decided here. Leaving it
-     * empty is correct and common: most cultivators at any realm hold few of
-     * the things their realm makes possible.
      */
     heldGrants?: readonly CapabilityGrant[];
     /** False when they are not there. An absent actor cannot attempt anything. */
@@ -580,11 +450,6 @@ export interface AppliedCapabilityModifier {
 
 /**
  * A qualitative answer, because the narrator needs one.
- *
- * "SURVIVAL: unlikely - no method of resisting the soul pressure here" is a
- * scene. A survival probability of 0.31 is not, and it invites the narrating
- * model to invent a reason. So the margin is bucketed and the reason names the
- * specific thing that is not handled.
  */
 export type Likelihood = 'certain' | 'likely' | 'even' | 'unlikely' | 'impossible';
 
@@ -635,10 +500,6 @@ export interface CapabilityAssessment {
 
 /**
  * Answer all five questions.
- *
- * Pure arithmetic over stored numbers. Nothing here knows whether the actor is
- * the player, nothing scales to how a run is going, and nothing refuses an
- * action because the odds are poor.
  */
 export function assessCapability(
     actor: CapabilityActor,
@@ -673,10 +534,6 @@ export function assessCapability(
 
 /**
  * Reasons the attempt cannot physically begin.
- *
- * This list is deliberately short and deliberately concrete. Nothing about
- * being outmatched, outnumbered, unwise or unprepared belongs here: those are
- * answers to `survive`, `succeed` and `force`.
  */
 function physicalBlockers(actor: CapabilityActor, subject: CapabilitySubject): string[] {
     const blockers: string[] = [];
@@ -869,10 +726,6 @@ function judge(
 
 /**
  * Bucket the margin.
- *
- * Never a probability. The engine is not claiming to know the odds of a thing
- * it has not rolled; it is saying how far the actor is from the requirement,
- * in the vocabulary a narrator can use.
  */
 function likelihoodFor(margin: number, blocked: boolean): Likelihood {
     if (blocked) return 'impossible';
@@ -885,11 +738,6 @@ function likelihoodFor(margin: number, blocked: boolean): Likelihood {
 
 /**
  * What the actor brings to each question.
- *
- * Realm is the spine of all five, but not the whole of any of them: Insight is
- * comprehension, which is archaeology on somebody else's memories, and Might is
- * what you can put through a person. Both are worth a few ordinals and no more,
- * because attributes must not become a second ladder.
  */
 function standingFor(actor: CapabilityActor, predicate: CapabilityPredicate): number {
     const ordinal = clampOrdinal(actor.realmOrdinal);
@@ -985,11 +833,6 @@ function summarise(
 
 /**
  * Requirements for going into a place.
- *
- * Maps the location layer's four thresholds onto four of the predicates and
- * derives comprehension. `data.comprehensionOrdinal` lets content raise the
- * reading bar above the acting bar, which is the ruin case: you can walk in and
- * fight, and the writing on the wall is still nothing to you.
  */
 export function requirementsFromLocation(location: LocationRecord): CapabilityRequirements {
     const comprehension = Number(location.data.comprehensionOrdinal);
@@ -1003,13 +846,8 @@ export function requirementsFromLocation(location: LocationRecord): CapabilityRe
 }
 
 /**
- * The world as much of it as this function needs to know whether the road in
- * is shut today.
- *
- * A structural argument rather than `WorldState`, for the same reason
- * `GroundAsItStands` is one: nothing here should be able to reach for anything
- * the caller did not hand over, and a test should be able to drive it with two
- * arrays.
+ * The world as much of it as this function needs to know whether the road in is
+ * shut today.
  */
 export interface GroundAroundALocation {
     statuses: readonly AreaStatus[];
@@ -1018,25 +856,6 @@ export interface GroundAroundALocation {
 
 /**
  * A location as a capability subject, including its seal and its cycle.
- *
- * ── WHY THE STATUSES ARE HERE AND NOT IN A SECOND PREDICATE ──────────────
- *
- * `windowClosed` was `!isOpenOn(location, onDay)`, which is the SEASON'S half
- * of "the road in is shut today" and only that half. The other half is
- * `stops: ['passage']` on an area status - a blockade, a siege, a war holding
- * the ground - and `passageStoppedInArea` was written to answer both together,
- * consulting `isOpenOn` itself rather than restating it. It had no caller
- * anywhere in `src/`, so a house at war held its seat and the engine went on
- * answering that anybody could walk onto it.
- *
- * So this reads the fuller predicate where it read the narrower one. The two
- * reasons stay distinct in `PassageReading` for anybody who needs to tell a
- * shut pass from somebody's decision; what `attempt` needs is the disjunction,
- * which is what `stopped` is.
- *
- * `ground` is optional because `onDay` already is: a caller not asking about a
- * day is not asking about what is true on one. Where a day IS given and the
- * ground is not, the answer is the season alone, exactly as before.
  */
 export function subjectFromLocation(
     location: LocationRecord,
@@ -1086,11 +905,6 @@ export interface OppositionInput {
 
 /**
  * Requirements for acting against somebody.
- *
- * `attempt` is ZERO, always. A weak cultivator may attempt to rob a Core
- * Formation elder, and the engine's job is to say what that costs, not to
- * forbid it. Succeeding is a different number, and surviving having tried is a
- * third one - which is the honest shape of that decision.
  */
 export function requirementsFromOpposition(input: OppositionInput): CapabilityRequirements {
     const opponent = clampOrdinal(input.realmOrdinal);
@@ -1124,10 +938,6 @@ export function subjectFromOpposition(input: OppositionInput): CapabilitySubject
 
 /**
  * Requirements for reading something.
- *
- * Attempting to read is always free - anyone may stare at a door. Everything
- * else about an inscription is comprehension, so the other predicates sit at
- * zero and `understand` carries the weight.
  */
 export function requirementsFromInscription(comprehensionOrdinal: number): CapabilityRequirements {
     return makeRequirements({ attempt: 0, survive: 0, succeed: 0, understand: comprehensionOrdinal, force: 0 });

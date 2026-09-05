@@ -1,25 +1,5 @@
 /**
  * An engine result, turned into the sentences a player and an operator read.
- *
- * `summariseToolBody` is the whole reason this is a file. It turns a tool
- * result into prose through branches keyed on what the result carries, and a
- * verb whose shape has no branch here does not fail - it falls through to "It
- * is done. Nothing about it drew attention.", which reads like a sentence and
- * says nothing. AGENTS.md records three verbs that sat there at once: a fight
- * that omitted two thirds of the HP and an untreated wound, four years of work
- * with the wounds left out, and a petition's entire journey. Nothing notices
- * this except a person reading the answer and asking "and then what happened?",
- * so the branch table wants to be somewhere a reader can see all of it.
- *
- * Everything beside it is the same job at a smaller scale: `skipCalls`,
- * `worldCalls`, `structureCalls` and `tollCalls` turn a result into inspector
- * rows; `routingCall` and `narrationCall` record which reader chose the verb
- * and which narrator wrote the prose; `refused` is the shape of a declined
- * action; `reportFromDigest` renders what the world did while a span passed.
- *
- * Moved out of `game.ts` unchanged. The reason to change this file is that a
- * result gained a shape that needs a sentence - which is a different reason
- * from anything about how a turn is run.
  */
 import { getMembersOf } from '../data/cultivation/members.js';
 import { rankName } from '../engine/cultivation/realms.js';
@@ -43,43 +23,11 @@ export const MAX_LOGGED_EVENTS = 40;
 
 /**
  * A structure line, with the name of the function that produced it taken off.
- *
- * Reported across several sessions and it keeps surviving because it looks like
- * debug output somebody meant to remove. It is not - it is a deliberate
- * mechanical channel that the player also reads. Four occurrences in eleven
- * turns of ordinary play, on the two commonest early actions:
- *
- *   technique_manage.list_available: 4 compatible, 0 conflicting, 134 gated...
- *   encounters.assessFit: suited at grade ordinal 0; reach=match, element=match
- *
- * The playtester's diagnosis is the fix: "The content is fine and arguably
- * useful; it's the `module.function:` prefix that shouldn't be in the story."
- * Being told what is compatible, what is gated by realm, and that an art suits
- * you on reach and on element is genuinely worth knowing. Being told which MCP
- * handler said so is not.
- *
- * Done here rather than at the several dozen `structure.push` sites, because
- * one place cannot go stale and a convention across dozens will. Nothing is
- * lost to an operator: every `calls[]` entry still carries its handler in
- * `name`, which is where a handler name belongs.
- *
- * Narrow on purpose. It requires a lowercase identifier, at least one dot, no
- * spaces, and a colon - so "Day 3: ..." and any ordinary sentence are untouched.
  */
 const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
 
 /**
  * The sum somebody said they were putting down, off their own sentence.
- *
- * Read here rather than in the parser because it is not a routing decision:
- * `actions.ts` chooses a verb, and how much money is in a bribe is a parameter
- * of the act. Keeping it out of the plan object also keeps a model from ever
- * being in a position to name a figure that leaves the purse - the enum's whole
- * discipline - since this reads the PLAYER'S raw sentence and nothing else.
- *
- * Requires the noun. A bare number in "I bribe the third guard" is not an offer,
- * and reading it as one would have somebody paying three stones for a sentence
- * about a person.
  */
 export function stonesNamedIn(sentence: string): number | null {
     const said = /\b(\d[\d,]*)\s*(?:spirit\s+)?stones?\b/i.exec(sentence);
@@ -96,12 +44,6 @@ export function withoutTheHandlerName(line: string): string {
 
 /**
  * A time-skip, broken into the calls it actually made.
- *
- * Every `summary` here is either composed from the digest's own numbers or is a
- * `SimEvent.summary` verbatim - engine strings, not prose. The per-event rows
- * are what make the inspector worth opening: a decade of seclusion shows up as
- * the breakthroughs, deviations and opportunities the engine ruled, in order,
- * next to whatever the narration made of them.
  */
 export function skipCalls(action: string, skip: TimeSkipResult, provisioning: string | null): ToolCallRecord[] {
     const calls: ToolCallRecord[] = [];
@@ -168,22 +110,9 @@ export function skipCalls(action: string, skip: TimeSkipResult, provisioning: st
 
 /**
  * The handful of fields worth reading off an MCP handler's result.
- *
- * Deliberately a small allowlist rather than a dump of the whole body: these
- * results are large, and everything not listed here is either an id the player
- * cannot use or a projection the sheet already shows.
  */
 /**
  * Strip the deliberate-override word out of a named target.
- *
- * "I take the pill anyway" parses to `target: "pill anyway"`, and the override
- * is not part of the pill's name - left in, confirming a wasted pill refused a
- * second time for an entirely different reason ("no pill called pill anyway on
- * you"), which is a worse answer than the one being confirmed.
- *
- * A module function rather than a static on the class: the same word will want
- * stripping wherever an override is offered, and a target is a string rather
- * than anything the game service owns.
  */
 export function withoutTheOverride(target: string): string {
     return target.replace(/\b(?:anyway|anyhow|regardless|even so)\b/gi, '').replace(/\s+/g, ' ').trim();
@@ -192,18 +121,7 @@ export function withoutTheOverride(target: string): string {
 export function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
 
-    // ── THE TERMS OF A GUEST PLACE ───────────────────────────────────────
-    //
-    // The sixth verb to land on the shrug, caught on its first played run:
-    // "can I study at the House of the Narrow Hour" came back as one sentence
-    // saying the house would let you sit in, and said nothing whatever about
-    // what it would show you, what it would keep, how long it would watch you,
-    // or the five things the place is not. All of that was in the body.
-    //
-    // The order below is the order somebody deciding actually wants it: what is
-    // on the table, then what is not, then what the position does not carry -
-    // because that last is the part that has to be read BEFORE accepting rather
-    // than discovered afterwards.
+    // THE TERMS OF A GUEST PLACE
     if (typeof body.hostName === 'string' && Array.isArray(body.opens)) {
         const opens = body.opens as Array<{ name?: string; carriesTo?: string | null; requiredRank?: string }>;
         const kept = (body.keepsBack ?? []) as Array<{ name?: string; why?: string }>;
@@ -241,42 +159,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (typeof body.stillOf === 'string') lines.push(`Still of: ${body.stillOf}`);
     }
 
-    // ── WHERE SOMEBODY STANDS IN THEIR OWN HOUSE ─────────────────────────
-    //
-    // `handleStanding` returns rank, contribution and exactly what the next
-    // rung wants, and this function had no branch for that shape - so asking
-    // came back "It is done. Nothing about it drew attention." The fallback
-    // defect again, on the read that answers "how much contribution do I have",
-    // which is the number gating every promotion in the game.
-    //
-    // The promotion refusal already states both requirements and both current
-    // values and is the best sentence of its kind in the codebase. This says
-    // the same thing before the player is refused rather than after.
-    // A house taking somebody back at the seat they left. Said, not merely
-    // applied: a returning member seated below what their rung would otherwise
-    // buy has to be told why, or the house looks as though it has misjudged
-    // them. See the entry cap in `sect-manage.ts`.
+    // WHERE SOMEBODY STANDS IN THEIR OWN HOUSE
     const returning = body.returning as { note?: string } | null | undefined;
     if (returning?.note) lines.push(returning.note);
 
-    // ── BEING RAISED A RUNG ──────────────────────────────────────────────
-    //
-    // `handlePromote` returns the old title, the new one, the contribution it
-    // cost and the new stipend, and this function had no branch for that shape.
-    // Measured in play:
-    //
-    //     > I ask to be promoted to Outer Disciple
-    //     It is done. Nothing about it drew attention.
-    //
-    // The state changed correctly and one of the few structural events in a
-    // career came back as the last-resort line. It is the fifth time this
-    // fallback has swallowed a verb, which is why the shrug is the thing worth
-    // hunting rather than any one of the verbs.
-    //
-    // The contribution is the part a player most needs said: a promotion is
-    // BOUGHT, the ledger is spent rather than merely met, and somebody who does
-    // not know that will plan the next twenty years off a balance they no
-    // longer have.
+    // BEING RAISED A RUNG
     if (body.promoted === true) {
         const sect = body.sect as { name?: string } | undefined;
         const to = typeof body.toRank === 'string' ? body.toRank : null;
@@ -365,40 +252,11 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     const deviation = body.deviation as { deviated?: boolean; summary?: string } | undefined;
     if (deviation?.deviated && deviation.summary) lines.push(deviation.summary);
 
-    // ── what a fight cost ──
-    //
-    // `combat_manage.resolve` returns a rich body - every exchange with its
-    // damage, the HP left afterwards, the wounds each side picked up, the
-    // lethal-injury threshold - and NONE of it reached the player, because
-    // this function had no combat branch and the handler's `narrationHint` is
-    // atmosphere rather than accounting.
-    //
-    // Found by playing. One swing at somebody standing in the square came back
-    // as "Broken off. Both parties are worse than they were, the wounds are
-    // real, and nothing is settled." - which is true, and reads well, and does
-    // not mention that it took two thirds of the HP off a sixteen-year-old and
-    // left an untreated wound behind. The player had to read /api/state to find
-    // out they had nearly died.
-    //
-    // This is the same defect the work path carried until it was played too,
-    // and it is worse here: work drains you over years and combat does it in a
-    // turn, and the injury threshold is the fastest way to die in the game.
+    // what a fight cost
     if (typeof body.outcome === 'string' && Array.isArray(body.exchanges)) {
         const them = body.opponent as { id?: string; name?: string } | undefined;
 
-        // ── AND WHAT WOULD HAVE WORKED ───────────────────────────────────
-        //
-        // `assessGap` computes `REAL_OPTIONS` alongside the refusal and puts
-        // them on `gap.options`, which rides all the way here and was never
-        // printed. Measured in play: six identical no-contests against somebody
-        // seven realms up, and not one word about what would have worked - a
-        // refusal with the route already in the payload and thrown away by the
-        // last hop.
-        //
-        // `gap-routes.ts` maps them to what a player would actually type and
-        // drops the five that have no verb behind them, because printing those
-        // would be the narrator inventing affordances at the exact moment
-        // somebody is desperate enough to try every line in the paragraph.
+        // AND WHAT WOULD HAVE WORKED
         const gap = body.gap as { options?: unknown } | undefined;
         if (Array.isArray(gap?.options) && gap.options.length > 0) {
             lines.push(...sayingWhatWouldWork(
@@ -459,16 +317,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         }
 
         // AND SAY WHAT CARRYING THEM COSTS.
-        //
-        // These two lines used to say the wounds would kill and count down to
-        // it. They do not kill - a torn channel is a torn muscle - and a threat
-        // the engine never carries out teaches a player to ignore the line.
-        //
-        // The true version is not softer. Untreated wounds accumulate, nothing
-        // closes them, and at the threshold the body stops mending itself
-        // altogether, so every scratch after that one is permanent until
-        // somebody is paid. That is what a player needs in order to decide to
-        // go and have them treated, which is the decision this line exists for.
         const carried = mine?.mortality?.untreatedInjuries;
         const crippledAt = mine?.mortality?.crippledInjuryThreshold;
         const rateLoss = mine?.mortality?.injuryRatePenalty;
@@ -510,17 +358,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (typeof body.unpaid === 'string') lines.push(body.unpaid);
 
         // AND SAY IF THEY ARE STARVING.
-        //
-        // The time-skip path has warned at this threshold since it was written;
-        // the work path never did, and work is where a player spends years.
-        // Found by playing: fourteen consecutive years of innkeeping took HP
-        // from 30 to 15 and satiety to 20, the purse to twelve hundred stones,
-        // and said nothing but the wages each time. A meal costs one stone.
-        //
-        // The information was not even hidden - `status` prints "Satiety
-        // 20/100" - but a player has no reason to open a status sheet while a
-        // job is going fine, and nothing in the job's own account suggested it
-        // was not.
         const satietyNow = typeof body.satiety === 'number' ? body.satiety : null;
         if (satietyNow !== null && satietyNow <= LOW_SATIETY) {
             const hpNow = typeof body.hp === 'number' ? body.hp : null;
@@ -541,22 +378,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         }
 
         // AND THE WOUNDS THE SPAN LEFT BEHIND.
-        //
-        // Work runs the ordinary event layer, so a labourer picks up wounds
-        // across years like anybody else. This branch reported wages, food and
-        // health and said nothing about them at all.
-        //
-        // Found by playing. An innkeeper worked three spans across four years,
-        // was told the pay every time, and died of `untreated_injuries` without
-        // one sentence about a wound. The satiety warning above was written
-        // after the same discovery about hunger.
-        //
-        // That death is retired - a torn channel does not kill anybody - and
-        // the line is still needed, for the reason that was underneath the
-        // original one. Untreated is a state that does not improve on its own,
-        // it takes a growing share of everything the body does, and at the
-        // threshold the body stops mending itself at all. A player who is never
-        // told cannot decide to go and have them treated.
         const carried = typeof body.untreatedInjuries === 'number'
             ? body.untreatedInjuries : null;
         const crippledAt = typeof body.crippledInjuryThreshold === 'number'
@@ -574,21 +395,13 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     }
 
     // -- the sects --
-    //
-    // `sect_manage.join` and `.leave` return a membership record rather than a
-    // narration hint. Without this the last-resort line reached a player as
-    // "The Gleaners' Company is done." - which reads as the sect being
-    // finished, not as the joining having happened. Same defect class as the
-    // work and market boards: a tool surface written for a model that will
-    // phrase the figures, called here by something that has to phrase them
-    // itself.
     if (body.joined === true) {
         const joinedSect = body.sect as { name?: string } | undefined;
         const membership = body.membership as { rankTitle?: string } | undefined;
         lines.push(
             // "at ${rankTitle}" read as a place. Barrow Hand is the lowest
             // rank in the Gleaners' Company and it is also a town, so the line
-            // told a player standing in Sweptground that they were somewhere
+            // told a player standing in Burnt Earth that they were somewhere
             // else. A rank has to be named as a rank.
             `Taken on by ${joinedSect?.name ?? 'the sect'}` +
             `${membership?.rankTitle ? `, ranked ${membership.rankTitle}` : ''}. ` +
@@ -625,17 +438,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     }
 
     // The stipend, which is the whole reason a poor cultivator joins a house.
-    //
-    // `handleStipend` returns `spiritStonesPaid` and no narration hint, so a
-    // payment of a hundred and fifty stones reached a player as "It is done.
-    // Nothing about it drew attention." - the last-resort line, on the single
-    // largest sum a low cultivator ever sees. Same defect class as `work` and
-    // `join`: a tool surface written for a model that will phrase the figures,
-    // called by something that has to phrase them itself.
-    // A pill swallowed. `handleConsumePill` returns the applied effect and no
-    // narration hint, so the single most consequential object in the game -
-    // and, through FLAG_PENDING_PILL, the largest modifier in it - landed in
-    // the generic catch-all as "It is done. Nothing about it drew attention."
     if (body.consumed === true) {
         const swallowed = body.pill as { name?: string; grade?: string } | undefined;
         lines.push(
@@ -695,24 +497,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (typeof body.note === 'string') lines.push(body.note);
     }
 
-    // ── WHAT HAPPENS IF THEY TRY, WHICH IS THE WHOLE POINT OF THE VERB ───
-    //
-    // The eighth verb on the shrug, and the most expensive one to lose. Played:
-    //
-    //     > what can I gather here
-    //     It is done. Nothing about it drew attention.
-    //
-    // `assess` is described in this file as "the capability predicates, asked
-    // rather than discovered by dying" - the difference between a player who
-    // chose badly and one who was not told the ground was lethal - and the
-    // branch above answers only the `student` subject. Every assessment of a
-    // PLACE, which is what the verb is mostly used for, came back as the
-    // last-resort line with five verdicts and a hazard list in the body.
-    //
-    // Rendered as the qualitative answers rather than the margins, on the
-    // capability layer's own rule: "SURVIVAL: unlikely - no method of resisting
-    // the soul pressure here is a scene. A survival probability of 0.31 is
-    // not." The numbers stay on the structure channel, where they belong.
+    // WHAT HAPPENS IF THEY TRY, WHICH IS THE WHOLE POINT OF THE VERB
     if (body.against === 'place' && body.assessed === true) {
         const saidBefore = lines.length;
         const where = body.place as
@@ -747,15 +532,8 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                 `Getting what you went for: ${succeed.likelihood}. ${succeed.reason ?? ''}`.trim()
             );
         }
-        // The specific thing that is not handled, which is the half a player
-        // can act on - a hazard names the preparation that answers it.
-        //
-        // The keys are whole descriptions with the spaces taken out -
-        // `dead_ground_which_looks_like_ordinary_heath_and_is_silent_in_a_way_
-        // visitors_take_a_few_minutes_to_identify` - so they read as prose the
-        // moment the underscores come back, and read as a database dump if they
-        // do not. Two, because four of those in one sentence is a paragraph of
-        // identifiers whatever the punctuation.
+        // The specific thing that is not handled, which is the half a player can
+        // act on - a hazard names the preparation that answers it.
         const unhandled = (survive?.unhandledHazards ?? []).map(h => h.replace(/_/g, ' '));
         if (unhandled.length > 0) {
             const shown = unhandled.slice(0, 2);
@@ -771,14 +549,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
             lines.push('It is sealed. Something was shut here deliberately and has stayed shut.');
         }
 
-        // ── AND WHO COULD REACH YOU ON IT ────────────────────────────────
-        //
-        // The second half of the question the verb is mostly asked with.
-        // Composed in `engine/encounters/arrival-exposure-read.ts` rather than
-        // here, because it is a read of the arrival tables and belongs beside
-        // them; this branch only decides where it goes in the paragraph, which
-        // is after survivability - "can I live through this ground" is the
-        // bigger question and stays first.
+        // AND WHO COULD REACH YOU ON IT
         const reach = body.reach as { lines?: string[] } | undefined;
         for (const line of reach?.lines ?? []) lines.push(line);
         // Only where nothing above landed. `assessment.summary` is the
@@ -790,17 +561,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         }
     }
 
-    // ── a petition, and how far it actually got ──
-    //
-    // `sect_politics.petition` returns where it went, how far up it climbed,
-    // every stop on the way, what asking is like in that house's own terms and
-    // when an answer might come - and none of it reached the player, because
-    // this function had no branch for it. Petitioning a sect came back as "It
-    // is done. Nothing about it drew attention.", which is the last-resort line
-    // this file already calls out as a defect: a sentence about the software,
-    // shipped to somebody who had just asked an institution for something.
-    //
-    // Found by playing. Same shape as combat and the work board before them.
+    // a petition, and how far it actually got
     if (body.petitioned === true) {
         const from = body.from as { name?: string } | undefined;
         const stops = typeof body.chainLength === 'number' ? body.chainLength : null;
@@ -921,18 +682,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                 );
             }
         }
-        // ── THE STALL NEXT TO THE COOKING POTS ───────────────────────────
-        //
-        // Rendered on its own rather than folded into the board above, because
-        // the first question a player has about a book is not what it costs. It
-        // is where the book stops and whether they can open it today, and
-        // neither of those is a fact about any other line on a market board.
-        //
-        // Written from the defect: the game refused "buy a manual" with the
-        // look people give somebody asking for a thing that is not sold, and
-        // then listed millet, inns and ferry crossings - so the correct verb
-        // was blocked, the free one worked, and the board never once mentioned
-        // the only object in the world a beginner actually needs.
+        // THE STALL NEXT TO THE COOKING POTS
         const books = body.manuals as Array<MarketPrice & {
             openAtThisRung?: boolean; note?: string;
         }> | undefined;
@@ -953,43 +703,8 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
             );
         }
 
-        // Whether this ground can still take them anywhere is the one thing a
-        // price board actually decides, and it is why leaving is a goal.
-        //
-        // ── NAME THE PLACE, AND NAME THE PROVINCE ────────────────────────
-        //
-        // This read, verbatim, for as long as it has existed:
-        //
-        //     Whatever else is true of this place, the ground here has nothing
-        //     further to give somebody at this rank.
-        //
-        // Played at The Sounding - a named rock, on a named vein head, in the
-        // Drowned Reach - and reported by the design owner as a sentence about
-        // nothing. It is not the narrator's doing: `composeNarrationUser` sends
-        // `Place: The Sounding` in the SCENE header and then orders the model to
-        // narrate the facts EXACTLY, so an anonymous fact narrates anonymously,
-        // and the model has no licence to go and fetch the name back. The
-        // anonymity entered here, on `lines`, with both names sitting two fields
-        // away in the same body.
-        //
-        // The province is named as well as the place because THE FACT IS THE
-        // PROVINCE'S. `groundHereStillGives` is `canAdvanceHere(regionId, …)`,
-        // read off the region's `localCeilingOrdinal` - so what is exhausted is
-        // the Drowned Reach, and The Sounding is the one place in it the catalog
-        // calls "the best ground in the province". The same turn told the player
-        // the air was dense. Both were true and the sentence made them look like
-        // a contradiction, purely by refusing to say which one it was about.
-        //
-        // `why-progress-has-stopped.ts` has rendered this identical fact as
-        // "${regionName} carries nobody past ${rank}" since it was written. This
-        // was that ruling with the names taken out, and the fix is to stop
-        // taking them out rather than to invent a second way of saying it.
-        //
-        // The last branch keeps the old sentence and is not a leftover. A road,
-        // a hillside and a cave are real answers from `standingOf`, which
-        // resolves nothing and reports `placeName: null` rather than guessing -
-        // and saying "the ground here" about ground the gazetteer genuinely does
-        // not name is honest. Saying it INSTEAD of looking is the defect.
+        // Whether this ground can still take them anywhere is the one thing a price
+        // board actually decides, and it is why leaving is a goal.
         if (body.groundHereStillGives === false) {
             const where = body.standing as { place?: unknown; region?: unknown } | undefined;
             const place = typeof where?.place === 'string' ? where.place.trim() : '';
@@ -1013,24 +728,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
     }
 
     // AND IF THEY DIED DOING IT, SAY SO.
-    //
-    // Every verb that consumes time can kill somebody - untreated injuries, a
-    // disturbance that lands, starvation - and only the seclusion path ever
-    // reported it. `facts.ts` has rendered death since it was written and is
-    // reached from the time-skip narration alone, so a cultivator who died
-    // working got the wages line and then, on every turn afterwards, nothing at
-    // all. Found by playing: fourteen years of farm work ended in
-    // `untreated_injuries` and the game never said a word.
-    //
-    // Here rather than in each verb, because the next verb added would have the
-    // same hole and nobody would notice.
-    // The no-cause branch has to say the word. "And that was the end of it."
-    // reads as the end of the FIGHT, and it was the only sentence a player got
-    // on the turn a duel killed them: measured in a played run, the account ran
-    // "Broken off. Both parties are worse than they were... 2 exchanges: 5
-    // dealt, 3 taken, which leaves 3 of 50. And that was the end of it." and
-    // then a line about how many people watched. Every subsequent turn came
-    // back 409. Nothing anywhere told the player they had died.
     if (body.died === true || body.alive === false) {
         const cause = typeof body.deathCause === 'string' ? body.deathCause : null;
         lines.push(
@@ -1048,11 +745,6 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
 
 /**
  * Put a hearing into both channels a player can reach it through.
- *
- * `lines` is the narrator's licence to have somebody say it. `prose` is the
- * zero-provider rendering, and a name that only existed in the prompt would
- * simply not happen for an operator running without a model - which would make
- * the whole mechanism a paid feature.
  */
 export function addHearing(facts: EngineFacts, hearing: Hearing): void {
     const fact = hearingFact(hearing);
@@ -1064,11 +756,6 @@ ${fact}`;
 
 /**
  * The fact of having heard a name, for the narrator's fact list.
- *
- * Says that a word was said and withholds everything else, because that is
- * genuinely all the player has. What the thing is does not travel with the
- * name, and stating it here would put the meaning in the narrator's hands one
- * sentence after the design took it out.
  */
 function hearingFact(hearing: Hearing): string {
     return hearingProse(hearing);
@@ -1083,13 +770,6 @@ export interface WorldReport {
 
 /**
  * Turn a digest into the two channels the rest of this layer uses.
- *
- * The lines go to the narrator verbatim, because the world layer has already
- * done the redaction on its own side and doing it twice would only risk
- * disagreeing with it. The counts go to the inspector: how much of a span the
- * player never heard about is a fact about the simulation, and a curious player
- * can go and look, but it must not become a sentence in the prose. The moment
- * it does, "the world is mostly none of your business" becomes a status line.
  */
 export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
     if (!digest || digest.lines.length === 0) {
@@ -1119,10 +799,6 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
 
 /**
  * What the world did while the player was busy, as inspectable rows.
- *
- * Only the structural half. The digest lines themselves are already in the
- * narration facts, and repeating them here would double every world event in
- * the play log.
  */
 export function worldCalls(world: WorldReport): ToolCallRecord[] {
     return world.structure.map(line => ({
@@ -1135,10 +811,6 @@ export function worldCalls(world: WorldReport): ToolCallRecord[] {
 
 /**
  * Structural truth, as inspectable rows.
- *
- * These are the categories the narrator is never shown: ordinals, grades,
- * governance, rank ladders. They are precisely what an operator auditing a run
- * wants, and precisely what would turn a scene into a lecture.
  */
 export function structureCalls(lines: readonly string[]): ToolCallRecord[] {
     return lines.map(line => ({
@@ -1180,10 +852,6 @@ export function refused(name: string, action: string, facts: EngineFacts): Execu
 
 /**
  * The routing step, as an inspectable row.
- *
- * Deliberately first in the list and deliberately explicit about where the verb
- * came from: this is the one place a model influenced anything, and a player
- * auditing the run should be able to see that it influenced only this.
  */
 export function routingCall(plan: { action: PlannedAction; source: PlanSource; note?: string }): ToolCallRecord {
     const args = [

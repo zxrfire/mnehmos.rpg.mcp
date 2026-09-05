@@ -1,26 +1,5 @@
 /**
  * Consolidated Cultivation Tool - `cultivation_manage`
- *
- * The cultivator's own life: rolled talent, accumulated progress, the long
- * seclusion, and the bottleneck that ends most runs.
- *
- * AUTHORITY BOUNDARY
- * ------------------
- * Nothing here accepts an outcome.
- *
- *   create_cultivator  rolls spirit root and attributes SERVER-SIDE from the run
- *                      seed. Any attempt to supply talent is rejected outright
- *                      rather than ignored, so a caller that tried is told it
- *                      failed instead of quietly narrating a lie.
- *   cultivate          hands the whole duration to `simulateTimeSkip` and writes
- *                      exactly what came back - injuries, ranks, death and all.
- *                      A ten-year skip is one call and one transaction.
- *   breakthrough       hands the attempt to `attemptBreakthrough` and returns the
- *                      complete itemised modifier list and the raw roll. The
- *                      numbers are never hidden and never softened.
- *
- * Every random draw comes from `forStream(run.seed, ...)`. There is no
- * `Math.random()` in this file.
  */
 
 import { z } from 'zod';
@@ -158,10 +137,6 @@ type CultivationAction = typeof ACTIONS[number];
 
 /**
  * Talent-shaped keys a caller must never supply.
- *
- * Rejected loudly rather than stripped: a schema that silently drops
- * `spiritRoot` lets an agent believe it chose one and narrate accordingly,
- * which is precisely the hallucination surface this engine exists to close.
  */
 const FORBIDDEN_TALENT_KEYS = [
     'spiritRoot', 'spirit_root', 'spiritroot', 'root',
@@ -172,10 +147,6 @@ const FORBIDDEN_TALENT_KEYS = [
 
 /**
  * Derived, not chosen, and derived in exactly one place.
- *
- * The curve and its calibration live in `realms.ts` under "what a rung buys in
- * body". A second formula here is how the player and the world came to be
- * built differently, so this is a re-export and must stay one.
  */
 const maxHpFor = maxHpForOrdinal;
 const maxQiFor = maxQiForOrdinal;
@@ -252,15 +223,6 @@ const CultivateSchema = z.object({
         .describe(`Rations to carry. Each costs ${RATION_COST_STONES} spirit stones and refills the belly once.`),
     /**
      * Rations ALREADY bought and not yet eaten, carried into a resumed stretch.
-     *
-     * Added to `rations` and deliberately NOT charged for. Food is bought per
-     * stretch, so a caller that resumes an interrupted span would otherwise buy
-     * the same pack twice - the rule `src/web/README.md` states for the
-     * seclusion crossroads ("the clock is neither handed back nor charged
-     * twice"), which reads `endState.rationsRemaining` off the engine and hands
-     * it to the resumption. This is the same field on the tool path, and it
-     * exists because the two paths must not disagree about what a resumed skip
-     * costs. `advance_days` is the caller.
      */
     carriedRations: z.number().int().min(0).max(10_000).optional().default(0),
     autoBreakthrough: z.boolean().optional().default(true),
@@ -289,16 +251,6 @@ const LadderSchema = z.object({
 
 /**
  * Roll everything a cultivator is dealt, from seeded sub-streams.
- *
- * Three things, not two: a spirit root, four attributes, and a place to have
- * been born into. The stream coordinate includes a nonce so two cultivators
- * created in the same run do not share a draw, and excludes anything the caller
- * controls beyond the name - there is no input that biases the result toward a
- * better root or a better birth.
- *
- * `origin` gets its own named stream rather than consuming from the root's, so
- * adding it does not perturb the root or the attributes of any seed that has
- * already been played. An existing run replays to the same talent it always had.
  */
 function rollTalent(seed: string, nonce: number) {
     const rootRng = forStream(seed, 'spirit_root', nonce);
@@ -647,21 +599,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         });
     }
 
-    // ══ WHO REACHES THEM WHILE THE SPAN RUNS ═════════════════════════════
-    // ── AND IT IS THE SAME SEQUENCE, NOT A SECOND ONE ────────────────────
-    //
-    // Deliberately the four steps in the order `encounters.ts` documents, with
-    // the same truncations, because a second arrival system built for this
-    // handler is exactly the fork that made the two paths disagree in the first
-    // place. Where the two spans differ is the ACTIVITY, which is a parameter
-    // the table already carries: `ARRIVAL_EXPOSURE` prices `labour` at 1.1 and
-    // `seclusion` at 0.55, so somebody earning among people is MORE exposed
-    // than somebody meditating. That ordering is the ruling, already written
-    // down, and it needed a caller rather than a number.
-    //
-    // `randomEvents: false` means no arrivals at all. That is what an operator
-    // standing a world up passes through `advance_days`, and being robbed while
-    // arranging a precondition is not a thing they asked for.
+    // WHO REACHES THEM WHILE THE SPAN RUNS AND IT IS THE SAME SEQUENCE, NOT A
+    // SECOND ONE
     const activity: EncounterActivity = focus === 'travelling'
         ? 'travel'
         // Not cultivating is the whole of what `idle` says, and `labour` is the
@@ -709,23 +648,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     // ── THE SIMULATION. One call, however long the duration. ──
     const result = simulateTimeSkip(arrivingCultivator, lived, {
         seed: run.seed,
-        // Judged rather than copied, because the field defaults to the row id
-        // and a caller with a stable id should pass nothing.
-        //
-        // This one is not stable. `create_cultivator` above mints the id with
-        // `randomUUID()`, and `resolveActiveRun` resolves a RUN - so what
-        // reaches here is always a player character with a random id, never a
-        // catalog NPC. The "two cultivators in one world must not draw alike"
-        // case that justifies the per-cultivator component cannot arise here,
-        // because a run has exactly one player.
-        //
-        // The second reason is the stronger one. This is the SAME cultivator
-        // the command bar drives through `GameService`, reached through the
-        // other door, and that door now passes the identity. Leaving this one
-        // alone would mean the same character comprehending different things
-        // depending on which surface advanced their clock - the identical
-        // defect as the two cultivate paths computing disjoint halves of one
-        // options object, which is a bug this file has already had once.
+        // Judged rather than copied, because the field defaults to the row id and a
+        // caller with a stable id should pass nothing.
         rollIdentity: PLAYER_ROLL_IDENTITY,
         locationId,
         turn: run.turn,
@@ -808,14 +732,14 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             satiety: end.satiety - mid.satiety,
             starvationTurns: end.starvationTurns - mid.starvationTurns,
             bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
-            // A DELTA, not an end state. The purse is the one field here that
-            // is not exclusively the skip's, and writing it absolutely reverts
-            // any spend made between the caller's snapshot and this call -
-            // which is how a bribe came to report "10 spirit stones went with
-            // it" and leave the player one stone richer. `web/apply.ts` carries
-            // the measurement and the argument; this is the same write on the
-            // tool path, and its header states that the two paths must not
-            // disagree about what a skip persists.
+            // A DELTA, not an end state. The purse is the one field here that is
+            // not exclusively the skip's, and writing it absolutely reverts any
+            // spend made between the caller's snapshot and this call - which is how
+            // a bribe came to report "10 spirit stones went with it" and leave the
+            // player one stone richer. `web/apply.ts` carries the measurement and
+            // the argument; this is the same write on the tool path, and its header
+            // states that the two paths must not disagree about what a skip
+            // persists.
             spiritStones: end.spiritStones - before.spiritStones,
             cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
             age: end.age - mid.age,
@@ -860,20 +784,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     const after = repos.cultivators.getById(before.id)!;
     const runAfter = repos.runs.getById(run.id)!;
 
-    // ── STEP 4: what the arrivals left behind, AFTER the skip. ───────────
-    //
-    // After, because a knowledge record is a write and phase 3 only ever gets a
-    // licence to mention something that is already true.
-    //
-    // `cutTo` first, and it is not optional. The encounter layer cut its window
-    // at ITS first interrupt; the skip then stopped wherever it liked - a wound,
-    // a threshold, a death - and everything between those two days is a span the
-    // cultivator never reached. Without this, a run that ended on day 5 records
-    // the people it would have met on day 2995. `encounters.ts` carries three
-    // playtests that found exactly that.
-    //
-    // `repos` is passed, so ordinary contact accumulates into a real tie rather
-    // than every meeting being another first.
+    // STEP 4: what the arrivals left behind, AFTER the skip.
     let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = null;
     if (arrivals) {
         const reached = cutTo(arrivals, startDay, result.simulatedDays);
@@ -882,17 +793,11 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         );
     }
 
-    // ── THE WORLD MOVED TOO. ──
-    // A ten-year seclusion is ten years of somebody else's decisions. The world
-    // advances by exactly the span that was LIVED, not the span that was asked
-    // for, and what comes back is filtered through what this cultivator has a
-    // knowledge record for - so a faction they have never heard of arrives as a
-    // closed road rather than as a named report.
-    //
-    // Deliberately non-fatal. The cultivator's own state is already committed
-    // by the transaction above, and losing that because the world could not be
-    // built would be the worse failure by a wide margin. A null digest is an
-    // honest "nothing reached you", which is also the commonest true answer.
+    // THE WORLD MOVED TOO. A ten-year seclusion is ten years of somebody else's
+    // decisions. The world advances by exactly the span that was LIVED, not the
+    // span that was asked for, and what comes back is filtered through what this
+    // cultivator has a knowledge record for - so a faction they have never heard of
+    // arrives as a closed road rather than as a named report.
     let world: Awaited<ReturnType<typeof advanceWorldForCultivator>> = null;
     let worldError: string | null = null;
     try {
@@ -907,13 +812,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         options
     );
 
-    // ── WHAT WAS ASKED FOR, NOT WHAT THE ARRIVAL LEFT OF IT ─────────────
-    //
-    // The skip was handed `lived`, so `result.requestedDays` is the span AFTER
-    // an arrival cut it, and reporting that would tell a caller who asked for
-    // ten years and got two hundred days that the whole span ran. That is the
-    // exact invisible-truncation defect `advance_days` was carrying, one layer
-    // down, and it would have arrived with this change.
+    // WHAT WAS ASKED FOR, NOT WHAT THE ARRIVAL LEFT OF IT
     const cutShortByAnArrival = lived < days;
     // The one that stopped it. There is at most one, by construction: the
     // window is cut at its first interrupting occurrence.
@@ -928,17 +827,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             ? {
                 daysLived: result.simulatedDays,
                 daysUnspent: days - result.simulatedDays,
-                // ── IT HAS TO NAME WHAT ARRIVED ──────────────────────────
-                //
-                // Read off the interrupting OCCURRENCE, not off
-                // `RecordedEncounters.met`. `met` holds people whose standing
-                // moved - a relationship contact - and is empty for precisely
-                // the arrivals that stop a span: measured, four worlds out of
-                // four cut at day 120 by "8 bandits block the road at Iron Gate,
-                // strongest is Qi Condensation Layer 3", with `met` empty every
-                // time. Reporting that as an unnamed somebody would have been
-                // the withdrawn `ground` member in a different costume - a span
-                // that went badly rather than a thing that arrived.
+                // IT HAS TO NAME WHAT ARRIVED
                 what: interrupting?.kind ?? null,
                 account: interrupting?.event?.summary ?? null,
                 // Whether it can be answered rather than only suffered. A
@@ -1478,10 +1367,6 @@ const definitions: Record<CultivationAction, ActionDefinition> = {
 
 /**
  * `work` runs the same span `cultivate` does, and adds a wage.
- *
- * Injected rather than imported so the mortal-world module never reaches back
- * into this file: there is one time skip in the cultivation surface, and this
- * is the function that owns it.
  */
 async function runCultivate(args: Record<string, unknown>): Promise<Record<string, unknown>> {
     const parsed = CultivateSchema.parse(args);
