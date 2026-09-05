@@ -633,7 +633,6 @@ export const ApexInstitutionSchema = z.object({
      * entry for the Pavilion, which stands in a gorge with a gate on it.
      */
     holdsPrefectureIds: z.array(z.string()),
-    /** Its courts, by id. */
     courtIds: z.array(z.string()),
     /**
      * Rank ladder. At an apex this is NOT derived from realm: everyone below a

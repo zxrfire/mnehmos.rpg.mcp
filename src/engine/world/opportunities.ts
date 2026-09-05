@@ -378,7 +378,6 @@ export interface OpportunityQuery {
     kinds?: readonly OpportunityKind[];
     locationId?: string;
     factionId?: string;
-    /** Only ones open on this day. */
     openOnDay?: number;
     /** Only ones this person knows about. */
     knownToId?: string;

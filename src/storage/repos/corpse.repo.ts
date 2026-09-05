@@ -525,7 +525,6 @@ export class CorpseRepository {
         stmt.run(newState, now, now, corpseId);
     }
 
-    /** Clean up gone corpses */
     cleanupGoneCorpses(): number {
         // Delete corpse inventory first
         const deleteInventory = this.db.prepare(`

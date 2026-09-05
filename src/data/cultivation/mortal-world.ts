@@ -317,7 +317,6 @@ export const MORTAL_ATTITUDES: readonly MortalAttitude[] = [
 
 export const SettlementFearSchema = z.object({
     id: z.string(),
-    /** Where it is held. */
     settlement: z.enum(['hamlet', 'village', 'market_town', 'sect_town', 'city']),
     /** Stated the way somebody living there would state it. */
     fear: z.string().min(40),

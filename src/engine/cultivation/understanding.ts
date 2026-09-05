@@ -360,7 +360,6 @@ export interface InsightCandidate {
 export interface ExposureInput {
     /** What it is about, e.g. 'sword', 'formation'. */
     subject?: string | null;
-    /** Element it is about, if any. */
     element?: Element | null;
     /** Named in provenance: "the Ninefold Pavilion library". */
     label: string;

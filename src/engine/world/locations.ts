@@ -397,7 +397,6 @@ export interface LocationChange {
     attributedCauses: string[];
     /** How much of the record of this change survives. */
     fidelity: 'full' | 'partial' | 'rumour' | 'lost';
-    /** Was anybody there. */
     witnessed: boolean;
     patch: LocationPatch;
 }

@@ -87,7 +87,6 @@ export interface TheShapeOfAWrong {
     somethingWasTaken: boolean;
     /** It can come back. `repaid` and `compensated` are available discharges. */
     canBeGivenBack: boolean;
-    /** They are still there to hold the record. */
     theySurviveToHoldIt: boolean;
     /**
      * The thing happens on its own often enough that they cannot be sure. READ:
