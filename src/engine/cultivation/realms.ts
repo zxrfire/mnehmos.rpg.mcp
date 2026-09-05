@@ -276,6 +276,17 @@ export function realmForOrdinal(ordinal: number): RealmTier {
     return tier;
 }
 
+/**
+ * Where the realm sits on the ladder. GAPS BETWEEN PEOPLE ARE COUNTED IN THESE
+ * AND NOT IN ORDINALS - a realm is a different kind of body, and two people
+ * eight ordinals apart inside one realm are far closer than two people one
+ * ordinal apart across a boundary.
+ */
+export function realmIndexOf(ordinal: number): number {
+    const key = realmForOrdinal(ordinal).key;
+    return REALM_TIERS.findIndex(tier => tier.key === key);
+}
+
 /** Sub-rank name within the realm, e.g. "Layer 7", "Perfection", "Marrow". */
 export function subRankForOrdinal(ordinal: number): string {
     const clamped = clampOrdinal(ordinal);

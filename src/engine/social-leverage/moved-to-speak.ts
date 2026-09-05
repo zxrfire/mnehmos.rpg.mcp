@@ -50,6 +50,13 @@ export const WITNESS_SHARE = 0.35;
 
 /**
  * The floor for somebody the other party actually dealt with.
+ *
+ * Enough to clear `WORTH_A_SENTENCE` and no more, which is the whole of what it
+ * is for: being spoken to earns a reading when nothing else about them moved.
+ * It is deliberately NOT the reason they answer - raising it until it cleared
+ * the cost of answering also pinned the reading, and three rounds of a fight
+ * wearing somebody down produced the same sentence three times. What happened
+ * to them and whether they answer are two questions.
  */
 export const BEING_DEALT_WITH = 0.12;
 
@@ -101,7 +108,18 @@ export function whatThisAsksOfThem(bearing: Bearing): WhatItAsksOfThem {
     return {
         weight: round4(weight),
         cost: round4(cost),
-        aloud: shown > cost && weight >= WORTH_A_SENTENCE,
+        // BEING DEALT WITH IS NOT A WEIGHT THAT HAS TO CLEAR A COST. The
+        // design owner: *if i'm talking to a dude then yeah he should say
+        // something every turn. if not then probably not, unless i do something
+        // that affects them.* Cost is the question for somebody deciding
+        // whether to speak up about a thing that was not put to them. Leaving
+        // a question hanging in front of witnesses is a deliberate act and not
+        // what temperament produces; what temperament decides is how much of
+        // themselves is in the answer, and that is the reticence clause and a
+        // different sentence. Measured before this: the verb had the person
+        // answering *straight away and at length* while the scene line
+        // underneath said the not saying was visible.
+        aloud: bearing.dealtWith === true || (shown > cost && weight >= WORTH_A_SENTENCE),
         reading: readingFor(weight, moved, bearing.dealtWith === true)
     };
 }

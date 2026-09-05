@@ -93,13 +93,32 @@ describe('what is worth a sentence at all', () => {
         expect(barely.reading).toBeNull();
     });
 
-    it('gives the person the other party dealt with a reading and not a speech', () => {
+    /**
+     * This used to assert that being spoken to was *not, on its own, a reason
+     * to answer out loud*. The design owner overruled it: *if i'm talking to a
+     * dude then yeah he should say something every turn.* The person a
+     * conversation was with was the one participant guaranteed to be silent.
+     */
+    it('gives the person the other party dealt with an answer', () => {
         const addressed = whatThisAsksOfThem(bearing({ dealtWith: true }));
         expect(addressed.weight).toBe(BEING_DEALT_WITH);
         expect(addressed.reading).not.toBeNull();
-        // Being spoken to is something to answer. It is not, on its own, a
-        // reason to answer it out loud.
-        expect(addressed.aloud).toBe(false);
+        expect(addressed.aloud).toBe(true);
+    });
+
+    /**
+     * Answering is not speaking up unbidden, so neither temperament nor the
+     * ladder decides whether it happens. A stoic answers and somebody twenty
+     * rungs beneath the person addressing them answers; what those two facts
+     * change is how much of themselves is in it, which is a different clause.
+     */
+    it('does not put the answer to their temper or to the ladder', () => {
+        expect(whatThisAsksOfThem(bearing({ dealtWith: true, reticence: 0.9 })).aloud).toBe(true);
+        expect(whatThisAsksOfThem(bearing({ dealtWith: true, rungsOverTheOther: -20 })).aloud)
+            .toBe(true);
+        // And somebody nobody addressed is still put through the cost.
+        expect(whatThisAsksOfThem(bearing({ moved: -0.4, rungsOverTheOther: -20 })).aloud)
+            .toBe(false);
     });
 
     it('does not read somebody who was addressed as a bystander', () => {
@@ -107,6 +126,18 @@ describe('what is worth a sentence at all', () => {
         const watching = whatThisAsksOfThem(bearing({ sceneWeight: 0.9 }));
         expect(addressed.weight).toBe(watching.weight);
         expect(addressed.reading).not.toBe(watching.reading);
+    });
+
+    /**
+     * And being dealt with must not pin the reading. Raising the floor until it
+     * cleared the cost of answering did exactly that: three rounds of a fight
+     * wearing somebody down came back as the same sentence three times, because
+     * the floor outweighed everything the rounds had actually taken.
+     */
+    it('leaves the reading to what happened to them', () => {
+        const at = (moved: number) =>
+            whatThisAsksOfThem(bearing({ dealtWith: true, moved })).reading;
+        expect(new Set([at(-0.1), at(-0.4), at(-0.9)]).size).toBe(3);
     });
 });
 
@@ -133,7 +164,10 @@ describe('a witness is priced off the loudest thing in the room', () => {
 
 describe('whether they answer it out loud', () => {
     it('is reachable in both directions from the same event', () => {
-        const event = { moved: -0.8, dealtWith: true };
+        // Something happened to them and nobody put it to them - which is the
+        // half of it temperament still decides. Being dealt with is not, and
+        // has a case of its own above.
+        const event = { moved: -0.8 };
         const open = whatThisAsksOfThem(bearing({ ...event, reticence: -0.9 }));
         const closed = whatThisAsksOfThem(bearing({ ...event, reticence: 0.9 }));
 

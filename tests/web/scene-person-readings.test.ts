@@ -182,7 +182,13 @@ describe('the discovery gate holds', () => {
 });
 
 describe('somebody who is no longer standing here', () => {
-    it('is priced into what the room saw, and is given no sentence', () => {
+    /**
+     * This used to assert the opposite - that the dead were priced into the
+     * room and given no sentence of their own. The design owner overruled it:
+     * *the dude should die with a message (unless you're so strong you just one
+     * shot them)*. The pricing was never the wrong half; the silence was.
+     */
+    it('is priced into what the room saw, and gets the sentence as well', () => {
         const dead = person({ id: 'dead', name: 'The Killed' });
         const lines = whatThePeopleHereAreAnswering({
             before: [dead, person({ id: 'a' }), person({ id: 'b' })],
@@ -192,7 +198,7 @@ describe('somebody who is no longer standing here', () => {
             playerNow: player(),
             gate: gateOver(['dead', 'a', 'b'])
         });
-        expect(lines.join(' ')).not.toMatch(/The Killed/);
+        expect(lines.join(' ')).toMatch(/The Killed/);
         expect(lines.length).toBeGreaterThan(0);
         expect(lines.join(' ')).toMatch(/2 other people here had no part in it/);
     });
@@ -332,5 +338,55 @@ describe('who the plan pointed at', () => {
         expect(merged.find(row => row.personId === 'a')).toEqual({
             personId: 'a', dealtWith: true
         });
+    });
+});
+
+describe('the person it happened to hardest', () => {
+    /**
+     * The design owner: *the dude should die with a message (unless you're so
+     * strong you just one shot them). some sorta dying breath or before that* -
+     * and *that falls out of npc's talking*.
+     *
+     * It did not. The dead were priced INTO the scene, raising what the moment
+     * asked of everybody who merely watched, and were never given a line of
+     * their own - so a killing was the one thing that could happen in this game
+     * where the person it happened to had nothing to say about it.
+     */
+    it('gives the dying a last line, and the one-shot none', () => {
+        const dead = person({ id: 'dead', realmOrdinal: 4 });
+        const scene = (killersOrdinal: number) => whatThePeopleHereAreAnswering({
+            before: [dead],
+            now: [],
+            fallen: [dead],
+            playerBefore: player({ realmOrdinal: killersOrdinal }),
+            playerNow: player({ realmOrdinal: killersOrdinal }),
+            gate: gateOver(['dead'])
+        }).join(' ');
+
+        // Level with them: it was a fight, and a fight has rounds in it.
+        expect(scene(4)).toContain('They are dying');
+        expect(scene(4)).toContain('the last thing they are going to say');
+
+        // And two major realms up it is not a fight at all. `HELPLESS_REALM_GAP`
+        // is the combat module's own line, and this reads it rather than
+        // choosing a second number.
+        const oneShot = scene(30);
+        expect(oneShot).toContain('It took one action');
+        expect(oneShot).not.toContain('They are dying');
+    });
+
+    /** Whoever it happened to hardest goes first, and the dead outweigh anybody. */
+    it('puts the dead ahead of the people who watched it', () => {
+        const dead = person({ id: 'dead', name: 'The Dead' });
+        const watcher = person({ id: 'watcher', name: 'The Watcher' });
+        const [first] = whatThePeopleHereAreAnswering({
+            before: [dead, watcher],
+            now: [watcher],
+            fallen: [dead],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver(['dead', 'watcher'])
+        });
+        expect(first).toContain('The Dead');
     });
 });

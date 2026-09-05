@@ -24,9 +24,9 @@ import {
 import { LEANING_DEGREE } from './dao.js';
 import {
     MAX_ORDINAL,
-    REALM_TIERS,
     bodyMultiplierForOrdinal,
-    rankName
+    rankName,
+    realmIndexOf
 } from './realms.js';
 import { BODY_COST_OF_A_CROSSING } from './breakthrough.js';
 import {
@@ -610,12 +610,6 @@ export function whatItDoesToTheSheet(
 }
 
 // WHAT THE BLAST REACHES
-
-/** Which major realm an ordinal sits in. Index, for counting realms apart. */
-function realmIndexOf(ordinal: number): number {
-    const at = REALM_TIERS.findIndex(t => ordinal >= t.ordinalStart && ordinal <= t.ordinalEnd);
-    return at < 0 ? REALM_TIERS.length - 1 : at;
-}
 
 /**
  * What an empowered detonation takes off somebody standing there, 0..1 of pool.
