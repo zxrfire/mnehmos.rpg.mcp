@@ -1,35 +1,5 @@
 /**
  * The death engine.
- *
- * This is the ONLY place in the cultivation layer that decides a cultivator is
- * dead. Combat, breakthroughs, deviation and the time-skip all produce damage,
- * injuries and counters; they hand the resulting state here and this module
- * returns a `DeathCause` or `null`. Centralising it matters for a permadeath
- * game: with five modules each allowed to set `alive = false`, the run ledger
- * eventually disagrees with itself about how someone died, and there is no
- * reload to paper over it.
- *
- * The ways the survival layer kills you, and where each threshold comes from
- * (all constants live in `schema/cultivation.ts`):
- *
- *   combat_defeat          hp reaches 0 and nothing said what took it
- *   obviously_fatal_choice a fight forced below SUICIDAL_HP_FRACTION
- *   starvation             STARVATION_TURNS consecutive turns at 0 satiety
- *   lifespan_exhausted     age reaches the realm's lifespanYears
- *   stagnation_aging       stagnationYearsForOrdinal() without advancing a rank
- *
- * ── AND THE ONE THAT USED TO BE ON THAT LIST ─────────────────────────────
- *
- * `untreated_injuries` was, by a wide margin, the commonest death in this game.
- * It is retired. A torn meridian is a torn muscle: very annoying, slow, and not
- * something you die of. It impairs - the rate, the fight, the body's ability to
- * mend itself - and it never ends a run. `docs/world/climbing/injuries.md` is the spec
- * and `evaluateDeathConditions` is where the two clauses used to stand.
- *
- * The `bleedingTurns` counter and BLEED_OUT_TURNS survive that removal as an
- * odometer rather than a clock: how long the channels have been open, which is
- * a true fact about a body and is what a player is now shown in place of a
- * countdown. Nothing reads them to kill anybody.
  */
 
 import {
@@ -49,31 +19,24 @@ import {
     realmForOrdinal,
     type RealmKey
 } from './realms.js';
+import { lifespanWithPhysique, physiqueOrNull } from './physiques.js';
 import { bleedingInjuryCount } from './injuries.js';
 import type { Injury } from '../../schema/cultivation.js';
 import { hasBody, isGoingConcern, isTerminal } from './existence.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // SATIETY
 // Food is a logistics problem, not a stat. At SATIETY_COST_PER_ACTION = 2 out
 // of SATIETY_MAX = 100, a full belly buys exactly 50 turn-consuming actions,
 // and five turns past empty you are dead. A decade of seclusion is therefore
 // impossible without either provisions or a grain-abstinence pill - which is
 // the correct answer, and the reason that pill effect exists in the schema.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The point at which somebody should be told they are hungry.
- *
- * A tenth of a full belly, which at the base burn is five turn-consuming
- * actions from empty and five more from dead. Late enough that it is not
- * nagging, early enough to be worth acting on - a meal costs one spirit stone.
- *
- * It lives here rather than in a narrator because two paths need it and they
- * disagreed: the time-skip narration warned at this figure and the work path
- * had no warning at all. Measured by playing, fourteen straight years of work
- * took a cultivator from full health to half, satiety to this line, and the
- * purse past a thousand stones, and never once mentioned food.
+ * The point at which somebody should be told they are hungry. It lives here
+ * rather than in a narrator because two paths need it and they disagreed.
+ * Measured by playing: fourteen straight years of work took a cultivator from
+ * full health to half, satiety to this line, and the purse past a thousand
+ * stones, and never once mentioned food.
  */
 export const LOW_SATIETY = Math.round(SATIETY_MAX * 0.2);
 
@@ -85,7 +48,6 @@ export interface SatietyState {
     starvationTurns: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HUNGER TAPERS, AND THEN STOPS
 //
 // A mortal eats every day. A cultivator eats less and less the further up they
@@ -100,15 +62,9 @@ export interface SatietyState {
 // is a correct outcome. Above it, a forty-year seclusion is a decision about
 // forty years rather than a shopping trip, and the game becomes about the
 // ladder instead of the pantry.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What one day's hunger costs at this realm, as a fraction of a mortal's.
- *
- * Indexed by realm rather than by ordinal: the change happens at realm
- * boundaries, which is where everything else about a body changes. Zero from
- * Deity Transformation up, and zero means no satiety is burned and starvation
- * cannot occur at all.
  */
 export const SATIETY_BURN_BY_REALM: Readonly<Record<RealmKey, number>> = {
     qi_condensation: 1,
@@ -130,27 +86,6 @@ export const SATIETY_BURN_BY_REALM: Readonly<Record<RealmKey, number>> = {
 
 /**
  * The wound that takes the meals back.
- *
- * Each realm-boundary wound locks the ability its realm exists to grant, and
- * for Deity Transformation the one capability the engine genuinely enforces is
- * this one: `SATIETY_BURN_BY_REALM.deity_transformation` is zero, and a
- * cultivator who transformed does not eat. Somebody whose transformation was
- * only PARTIAL does not get that. Design owner: "it's only partial, they don't
- * have the full abilities of a DT", and having to eat is the most concrete of
- * those abilities.
- *
- * They burn at the Nascent Soul rate - the realm they actually completed -
- * rather than at a mortal's, because what failed was the last crossing and not
- * everything under it. That is one full belly lasting a very long time and
- * never lasting forever, so the meals are a real logistical fact again without
- * being a mortal's problem.
- *
- * NOTE WHERE THIS SITS BESIDE THE OTHER RULING IN THIS FILE. Untreated CHANNEL
- * wounds have just stopped killing anybody; this makes one STRUCTURAL wound
- * cost something ongoing, and a cultivator carrying it can in principle starve.
- * That is correct and is not what was retired: starvation is a fair death with
- * a visible clock and a cure you can buy in any settlement. Only channel wounds
- * stop killing people. See `docs/world/climbing/injuries.md` for the family split.
  */
 const FAILED_TRANSFORMATION = 'failed-transformation';
 
@@ -161,10 +96,6 @@ function transformationIsPartial(injuries: readonly Injury[] | undefined): boole
 
 /**
  * The multiplier for this rung.
- *
- * `injuries` is optional and omitting it is the old behaviour exactly, which is
- * what keeps the dozen callers that do not have a wound list to hand honest
- * rather than silently wrong. Pass it wherever a real body is being priced.
  */
 export function satietyBurnMultiplier(
     realmOrdinal: number,
@@ -187,14 +118,6 @@ export function stillNeedsToEat(realmOrdinal: number, injuries?: readonly Injury
 
 /**
  * Burn satiety for `actions` turn-consuming actions.
- *
- * Any action taken while already at zero satiety advances the starvation
- * counter by one; any action taken with food in the belly resets it. Pure -
- * returns the new values, writes nothing.
- *
- * `realmOrdinal` scales the cost by {@link satietyBurnMultiplier}. A cultivator
- * whose multiplier is zero burns nothing and can never advance the starvation
- * counter, which is the whole of the Deity Transformation rule.
  */
 export function burnSatiety(
     state: SatietyState,
@@ -241,10 +164,6 @@ export function eat(state: SatietyState, restore: number = SATIETY_MAX): Satiety
 
 /**
  * Turns of starvation still survivable. Zero means the next one is fatal.
- *
- * `Infinity` above the point where hunger stops - a cultivator who does not eat
- * is not on a long clock, they are off it, and a finite number here would be
- * rendered somewhere as a countdown that never moves.
  */
 export function turnsUntilStarvation(state: SatietyState, realmOrdinal = 0): number {
     const multiplier = satietyBurnMultiplier(realmOrdinal);
@@ -259,7 +178,6 @@ function clampSatiety(n: number): number {
     return Math.max(0, Math.min(SATIETY_MAX, Math.floor(n)));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // PRICING A STRETCH BEFORE ENTERING IT
 //
 // The satiety clock above answers "what happened", one day at a time. This
@@ -300,7 +218,6 @@ function clampSatiety(n: number): number {
 // burn multiplier - rather than restated, so a projection and the simulation
 // that follows it cannot disagree. `provisioning.test.ts` checks every
 // projection against a real `simulateTimeSkip` run for that reason.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What one day of this stretch costs the belly. Zero above Nascent Soul. */
 function satietyPerDay(realmOrdinal: number): number {
@@ -309,10 +226,6 @@ function satietyPerDay(realmOrdinal: number): number {
 
 /**
  * Days one full ration covers at this rung.
- *
- * `Infinity` where hunger has stopped: rations are not consumed at all there,
- * and a finite number would invite a caller to make somebody buy food they
- * cannot eat.
  */
 export function daysPerRation(realmOrdinal: number): number {
     const perDay = satietyPerDay(realmOrdinal);
@@ -327,11 +240,6 @@ export function daysOfBelly(satiety: number, realmOrdinal: number): number {
 
 /**
  * Rations that must be in the pack for `days` to be fed end to end.
- *
- * The belly covers the first stretch on its own and is counted first, which is
- * why this is the number to price a purchase at rather than `days / 50`: a
- * cultivator who has just eaten should not be sold food for the days their own
- * stomach already covers.
  */
 export function rationsToCover(
     days: number,
@@ -360,18 +268,6 @@ export interface ProvisioningInput {
 
 /**
  * What the time skip will actually do with this request.
- *
- * Three outcomes and not two, because the simulation genuinely has three and
- * conflating the middle one with either neighbour is how this got missed:
- *
- *   `fed`      the whole stretch is provisioned. It runs its length.
- *   `ejected`  the food runs out partway. The skip stops there and the
- *              cultivator walks out alive, having spent `coveredDays` of the
- *              `days` they asked for and gained nothing for the rest.
- *   `fatal`    there is no interrupt left to fire, because entering already
- *              empty-bellied and empty-packed is a state the skip has decided
- *              you were warned about. They die on `fatalOnDay`, whatever
- *              duration was asked for.
  */
 export type ProvisioningOutcome = 'fed' | 'ejected' | 'fatal';
 
@@ -415,11 +311,6 @@ export interface ProvisioningAssessment {
 
 /**
  * Price a stretch of days against what is in the belly and the pack.
- *
- * Pure, and takes no view on what the caller should do with the answer. A
- * caller that intends to refuse reads `fatal` and `reason`; one that intends
- * to warn about a wasted decade reads `outcome === 'ejected'` and
- * `wastedDays`; one that is buying reads `rationsShort`.
  */
 export function assessProvisioning(input: ProvisioningInput): ProvisioningAssessment {
     const days = Number.isFinite(input.days) ? Math.max(0, Math.floor(input.days)) : 0;
@@ -529,7 +420,6 @@ function describeProvisioning(a: {
         `${a.daysUntilFatal} days of that is fatal. A cave does not deliver.`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HOW LONG THE CHANNELS HAVE BEEN OPEN
 //
 // This block was the bleed-out clock: a persisted counter, a pure
@@ -554,7 +444,6 @@ function describeProvisioning(a: {
 // The `hasBody(existence)` gate that used to guard this is unchanged and still
 // guards the flesh arithmetic around it: a soul persisting without a body has
 // no channels to tear.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface BleedState {
     /** Open channel wounds the body is currently carrying. */
@@ -575,13 +464,6 @@ export function isBleedingOut(untreatedInjuries: number): boolean {
 
 /**
  * Advance the open-channel counter for `turns` turns.
- *
- * Any turn spent at or above the crippling untreated count advances it; any
- * turn spent below it resets to zero, exactly as `burnSatiety` clears
- * `starvationTurns` on the first action taken with food in the belly.
- * Treating one wound out of three therefore buys the whole clock back, which
- * is the point: the counter measures the state you are in now, not the damage
- * you have taken over a life. Pure - returns the new values, writes nothing.
  */
 export function bleedOut(state: BleedState, turns = 1): BleedState {
     const untreatedInjuries = Math.max(0, Math.floor(state.untreatedInjuries));
@@ -597,15 +479,9 @@ export function bleedOut(state: BleedState, turns = 1): BleedState {
 }
 
 /**
- * Turns before the neglect is total. NOBODY DIES AT ZERO - it means the
- * channels have now been open a full season and are as set as they get.
- *
- * `Infinity` when the untreated count is under the threshold, for the same
- * reason `turnsUntilStarvation` returns it above the hunger line: somebody not
- * in this state is off the measure rather than late on it.
- *
- * Callers that used to schedule a death deadline on this must not. The
- * time-skip no longer does; it reports the count and the cost instead.
+ * Turns before the neglect is total. NOBODY DIES AT ZERO - it means the channels
+ * have been open as long as they can be. Callers that used to schedule a death
+ * deadline on this must not; the time-skip reports the count and the cost instead.
  */
 export function turnsUntilBleedOut(state: BleedState): number {
     if (!isBleedingOut(Math.max(0, Math.floor(state.untreatedInjuries)))) return Infinity;
@@ -625,31 +501,31 @@ export function bleedStateOf(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AGING
-// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The years THIS body actually gets, rung and all.
+ */
+export function lifespanCeilingFor(
+    cultivator: Pick<Cultivator, 'realmOrdinal'> &
+        Partial<Pick<Cultivator, 'immortalStatus' | 'physique'>>
+): number {
+    return lifespanWithPhysique(
+        effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none'),
+        physiqueOrNull(cultivator.physique)
+    );
+}
 
 /** Years of lifespan remaining at the current realm. Negative means overdue. */
 export function lifespanRemaining(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'age'> &
-        Partial<Pick<Cultivator, 'immortalStatus'>>
+        Partial<Pick<Cultivator, 'immortalStatus' | 'physique'>>
 ): number {
-    return (
-        effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none') -
-        cultivator.age
-    );
+    return lifespanCeilingFor(cultivator) - cultivator.age;
 }
 
 /**
  * Years of stagnation remaining before death by aging.
- *
- * `yearsAtCurrentRealm` is reset by ANY rank advance, not only by crossing a
- * realm boundary - the schema's phrasing is "years at the current realm without
- * advancing", and advancing a sub-rank is advancing. Read the other way, Qi
- * Condensation's thirteen layers would be an unsurvivable 50-year budget for
- * a climb that costs a single root about forty years, and every muddled root
- * would die before Foundation regardless of play. The forgiving reading is the
- * one the numbers were built for.
  */
 export function stagnationRemaining(
     cultivator: Pick<Cultivator, 'yearsAtCurrentRealm' | 'realmOrdinal'>
@@ -657,10 +533,8 @@ export function stagnationRemaining(
     return stagnationYearsForOrdinal(cultivator.realmOrdinal) - cultivator.yearsAtCurrentRealm;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SUICIDAL CHOICES
 // The engine will not refuse an obviously fatal choice. It will make it fatal.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SuicideAssessment {
     suicidal: boolean;
@@ -670,23 +544,6 @@ export interface SuicideAssessment {
 /**
  * Whether entering combat right now is an obviously fatal choice: below
  * SUICIDAL_HP_FRACTION of max HP.
- *
- * Advisory on its own - it becomes a death only through
- * `evaluateDeathConditions` with `forcingCombat` set.
- *
- * ── OPEN CHANNELS ARE NOT ON THIS LIST ANY MORE ──────────────────────────
- *
- * A second clause here counted CRIPPLING_UNTREATED_INJURIES as suicidal, back
- * when forcing a fight in that state was an immediate death. It is not, and
- * leaving the clause would have this function reporting "suicidal" for a state
- * nothing kills anybody for - a warning with no consequence behind it, which is
- * worse than no warning.
- *
- * Fighting badly wounded is still a bad idea and the engine still says so, in
- * the place it is actually true: the condition line of `assessPower` and the
- * damage a wounded attacker lands in `resolveExchange`. You are much likelier
- * to LOSE the fight, and losing a fight has always been fatal. That is the
- * honest version - the wound makes the death likelier rather than being it.
  */
 export function assessSuicidalCombat(
     cultivator: Pick<Cultivator, 'hp' | 'maxHp' | 'injuries'>
@@ -701,59 +558,32 @@ export function assessSuicidalCombat(
     return { suicidal: reasons.length > 0, reasons };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE DEATH CHECK
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface DeathContext {
     /**
-     * The cultivator is entering or continuing combat right now. Required for
-     * the suicidal-HP cause and for the IMMEDIATE untreated-injury cause, both
-     * of which are about the choice rather than the state.
-     *
-     * It is not required for the slow untreated-injury cause. Three open
-     * meridians kill on their own in BLEED_OUT_TURNS whatever the cultivator
-     * chooses to do, including nothing.
+     * The cultivator is entering or continuing combat right now. Required for the
+     * suicidal-HP cause and for the IMMEDIATE untreated-injury cause, both of which
+     * are about the choice rather than the state.
      */
     forcingCombat?: boolean;
 
     /**
      * What emptied the HP bar, when the caller knows and it was not violence.
-     *
-     * An empty bar is a state and not a story, and this gate had exactly one
-     * story for it. Found by playing: a cultivator who sat in a cave for a
-     * seclusion, took three qi deviations and died of them went into the death
-     * ledger as `combat_defeat` - "killed in combat" - in a run in which no
-     * combat occurred at any point. In a permadeath game the ledger is the only
-     * surviving account of a life, so it was the permanent record that was
-     * wrong.
-     *
-     * Only the loss that actually reaches zero sets this. A caller that does
-     * not know leaves it unset and gets `combat_defeat`, which is right for
-     * every path where something hit the cultivator.
      */
     hpDepletedBy?: DeathCause;
 }
 
 /**
  * The single death gate.
- *
- * Returns the cause, or `null` if the cultivator lives. Checks run in a fixed
- * order and the FIRST match wins, so a cultivator who is simultaneously at 0 HP
- * and out of lifespan is recorded as having died of whatever emptied the bar.
- * The ordering is most-immediate-cause-first: what actually stopped the heart
- * this turn beats the slow condition that would have stopped it eventually.
- *
- * Each threshold is `>=`, so death lands exactly ON the documented number: the
- * fifth consecutive starving turn, the fiftieth stagnant year, the hundredth
- * birthday at Qi Condensation. Not one turn before, not one after.
  */
 export function evaluateDeathConditions(
     cultivator: Pick<
         Cultivator,
         'hp' | 'maxHp' | 'satiety' | 'starvationTurns' | 'age' | 'realmOrdinal' |
         'yearsAtCurrentRealm' | 'injuries' | 'alive'
-    > & Partial<Pick<Cultivator, 'existenceState' | 'immortalStatus' | 'bleedingTurns'>>,
+    > & Partial<Pick<Cultivator,
+        'existenceState' | 'immortalStatus' | 'bleedingTurns' | 'physique'>>,
     ctx: DeathContext = {}
 ): DeathCause | null {
     const existence = cultivator.existenceState ?? 'alive';
@@ -783,7 +613,7 @@ export function evaluateDeathConditions(
             return 'starvation';
         }
 
-        // ── WHERE THE TWO UNTREATED-INJURY DEATHS USED TO BE ──────────────
+        // WHERE THE TWO UNTREATED-INJURY DEATHS USED TO BE
         //
         // Two clauses stood here and both are gone. One killed a cultivator who
         // entered a fight carrying CRIPPLING_UNTREATED_INJURIES open channels;
@@ -818,7 +648,7 @@ export function evaluateDeathConditions(
     // A True Immortal is through the Lid and out of the world's arithmetic
     // entirely. A False Immortal is emphatically NOT immortal - they get a vast
     // finite span, and `effectiveLifespanYears` is where that lives.
-    if (status !== 'true_immortal' && cultivator.age >= effectiveLifespanYears(cultivator.realmOrdinal, status)) {
+    if (status !== 'true_immortal' && cultivator.age >= lifespanCeilingFor(cultivator)) {
         return 'lifespan_exhausted';
     }
 
@@ -842,7 +672,7 @@ export function evaluateDeathConditions(
 export function describeDeath(
     cause: DeathCause,
     cultivator: Pick<Cultivator, 'name' | 'realmOrdinal' | 'age'> &
-        Partial<Pick<Cultivator, 'immortalStatus'>>
+        Partial<Pick<Cultivator, 'immortalStatus' | 'physique'>>
 ): string {
     const who = `${cultivator.name}, ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}`;
     switch (cause) {
@@ -851,7 +681,8 @@ export function describeDeath(
         case 'obviously_fatal_choice':
             return `${who}: forced a fight while barely able to stand, and did not survive it.`;
         case 'lifespan_exhausted':
-            return `${who}: lifespan exhausted at the limit of ${effectiveLifespanYears(cultivator.realmOrdinal, cultivator.immortalStatus ?? 'none')} years. Died of old age.`;
+            return `${who}: lifespan exhausted at the limit of `
+                + `${Math.round(lifespanCeilingFor(cultivator))} years. Died of old age.`;
         case 'stagnation_aging':
             return `${who}: spent ${Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal))} years without advancing a single rank. Died of old age at a bottleneck never crossed.`;
         case 'untreated_injuries':

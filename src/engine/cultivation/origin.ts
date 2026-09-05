@@ -1,129 +1,11 @@
 /**
  * Origin - the third thing a cultivator is dealt.
- *
- * A run draws a spirit root, four attributes, and a place to have been born
- * into. The first two decide what someone could become. The third decides
- * whether they will ever be in a position to find out.
- *
- * See `docs/world/houses/origin.md`, which this file implements.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE HARD RULE: ORIGIN BUYS INPUTS, NEVER RANK
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Nothing in this module confers a realm ordinal, cultivation progress,
- * admission to an institution, a rank inside one, a foundation, an insight, or
- * any other position on the ladder. There is deliberately no field on
- * {@link OriginTier} that could. The Hollow Court's own admission text is the
- * statement of the rule: a Void Refinement floor and evidence you could cross,
- * and nothing else counts, which explicitly includes being somebody's child -
- * the children of the seated are fostered out to allied sects at whatever rank
- * they happen to be.
- *
- * What an origin buys is the five inputs the ladder actually runs on:
- *
- *   RESOURCES     spirit stones, and therefore pills, and therefore a
- *                 seclusion that is a plan rather than a way to starve
- *   PLACEMENT     a sect that will take you at an age when it matters, with a
- *                 teacher who answers and elders who stand at your crossings
- *   ACCESS        which is what gates comprehension, and is expressed through
- *                 the existing AccessSource set in understanding.ts rather
- *                 than through any mechanism of this module's own
- *   STANDING      somebody's word, which is worth more than stones and is
- *                 spent rather than kept
- *   SURVIVABLE    a well-supplied expedition into something lethal is a
- *   RISK          different act from a poor cultivator's
- *
- * None of it is a shortcut. It is the difference between a road being long and
- * a road being closed.
- *
- * ─── AND BEING ON A ROLL IS NOT ADMISSION ────────────────────────────────
- *
- * `familyHouse.onTheRoll` says a house's own roll carries somebody from the
- * day they were born. That is not the rule above being softened, and the test
- * for whether it is, is the one the owner's constraint states: DOES IT SKIP A
- * BAR SOMEBODY ELSE HAS TO CLEAR?
- *
- *   BY BLOOD    No, because there is no bar to skip. A Dao house's roll is a
- *               lineage - `sects.ts`: "A house does not recruit; it has
- *               children" - and the door it keeps is ADOPTION, which is the
- *               door for outsiders. Nobody is adopted by being born.
- *   BY TAKING   Yes, and it is paid for. That is the admission favour, and
- *               `spending-a-word-to-place-a-child.ts` writes the obligation
- *               somebody now carries for it. A skipped bar with a receipt is
- *               the mechanic working; a skipped bar with no receipt is the
- *               defect.
- *   NULL        The bar is standing where it always was. An apex sect
- *               member's child is born inside the compound and applies at the
- *               same gate as somebody who walked up the mountain.
- *
- * And in none of the three does the roll confer a RUNG. `entryRankIndex` is 0
- * everywhere and is asserted to be; the floors in
- * `data/cultivation/the-three-floors-a-house-admits-at.ts` are what a person
- * has to clear to be taken ON, and being born on a roll clears none of them.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT THIS MODULE DOES NOT DO
- * ═════════════════════════════════════════════════════════════════════════
- *
- * It does not advise. Nothing here says an origin is good, bad, promising or
- * hopeless, and nothing recommends a path from one. The table below is a
- * factual account of what a family can put behind a child, in the same voice
- * `SPIRIT_ROOTS` describes an aperture.
- *
- * It also grants nothing that has to be found. A Dao house can put a child
- * on dense ground; it cannot put them on a sealed vein, because a sealed vein
- * is not a thing anybody owns - it carries weight zero in the ambient roll and
- * has to be walked into. That is why `MAX_ORIGIN_AMBIENT` is `dense`, and it
- * is the reason privilege alone cannot reach the top of the ladder.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE TOP OF THE TABLE IS THREE ROUTES, NOT ONE RUNG
- * ═════════════════════════════════════════════════════════════════════════
- *
- * There used to be a single `great_house` row, and it was flattening three
- * births that arrive by three different roads:
- *
- *   A BLOODLINE       A Dao house is a family. The house IS the parents, the
- *                     roster is a lineage, and being its child is the whole of
- *                     the claim. Position is inherited directly because there
- *                     is nothing else it could be inherited from.
- *
- *   PROXIMITY AND A   An apex sect is joined, not born into. A member's child
- *   WORD              is not a member, is not on the roll, and inherits nothing
- *                     institutionally: the Azure Cloud Pavilion's disciple bar
- *                     has never moved for anybody and does not move for them.
- *                     What the parent has is a fortune and the largest word in
- *                     the pyramid, which is spent rather than kept.
- *
- *   A FAVOUR          Somebody with standing asked a house to take a child it
- *                     would have refused on its own admission ordinal, and the
- *                     house did. That route is open wherever a member has a
- *                     word worth spending: it is forced at the Hollow Court,
- *                     whose bar does not count being somebody's child so it
- *                     cannot keep its own, and it is merely quieter everywhere
- *                     else. From the child's side the two are the same fact.
- *
- * They differ by WHAT THEY ARE and not by a special case each. Everything below
- * is expressed in the fields every other tier already uses, and the sharpest
- * differences fall out of two of them: `access.tradition` is null for the apex
- * member's child because a tradition is transmitted to members and they are not
- * one, and `vouchers` is zero for the placed child because the one word that
- * could have been spent on them was spent placing them and nobody will say by
- * whom.
- *
- * The three together carry EXACTLY the weight the single row carried. This is a
- * differentiation, not an inflation.
- *
- * Pure. Deterministic. No I/O, no database, no LLM.
  */
 
 import type { AmbientQi, ManualQuality } from '../../schema/cultivation.js';
 import type { DiscoveryContext, ExposureInput } from './understanding.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TIERS
-// ─────────────────────────────────────────────────────────────────────────
 
 export type OriginTierKey =
     | 'thin_county'
@@ -137,85 +19,23 @@ export type OriginTierKey =
     | 'fostered_on_a_word';
 
 /**
- * The kind of body the family itself belongs to, stated as what a house IS
- * rather than as which house it is.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY THIS IS NOT `placement.reach`, MEASURED
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `engine/birth/birth.ts` used to read the family's own house off `reach`, on
- * the reasoning that the strongest house a name reaches is the house the name
- * belongs to. That inference is false in both directions and the table says so
- * itself:
- *
- *   TOO HIGH   `dao_house_bloodline` reaches 38, and the seven Dao houses stand
- *              at 29 to 35. Its band was therefore the Azure Cloud Pavilion,
- *              the Hollow Court and the Severed - measured over 200 forced
- *              births, a tier whose name is "A Dao house, by blood" drew a Dao
- *              house ZERO times.
- *   TOO LOW    `apex_sect_members_child` reaches 29 deliberately, because "an
- *              apex will not lend its name to a placement" - the comment on
- *              that row says so. Its parent stands at an apex, at 38 or above.
- *              Its band contained no apex at all.
- *
- * So the two are different facts and the table now carries both. `reach` is
- * what the family's WORD reaches. This is what the family IS.
- *
- * NOTHING HERE NAMES A FACTION. `standingFrom` is a `powerOrdinal` floor and
- * `roster` is read against `intakeRouteOf` in the catalog, so which houses a
- * tier can be born into is a fact about the catalog and moves with it.
+ * The kind of body the family itself belongs to, stated as what a house IS rather
+ * than as which house it is.
  */
 export interface FamilyHouse {
     /**
      * What kind of roll the house keeps.
-     *
-     *   'a lineage'  the roll IS the family. `sects.ts`: "the roster is a
-     *                lineage. A house does not recruit; it has children, and
-     *                their children hold the same books." `intakeRouteOf`
-     *                answers `'adoption'` for exactly these.
-     *   'an intake'  the roll is people who were admitted, one at a time,
-     *                against a stated bar.
      */
     roster: 'a lineage' | 'an intake';
     /** Lowest `powerOrdinal` a house at this family's own standing holds. */
     standingFrom: number;
     /**
      * Whether the family lives on the house's ground or on its own.
-     *
-     * SEPARATE FROM {@link onTheRoll}, and the two combinations that are not
-     * the obvious ones are the interesting rows. A retainer household and an
-     * apex member's child both live inside the walls and are on nobody's roll;
-     * a cultivating clan has its own hall and its own vein, and the house here
-     * is one it is attached to rather than one it is in.
-     *
-     * This is what decides where a run OPENS. Reading it off `onTheRoll`
-     * instead put a small cultivating family - which the table describes as
-     * having "a hall, a hillside with some qi in it" - inside a salvage
-     * company's sorting yard in 60 births of 100.
      */
     whereTheyLive: 'inside it' | 'a hall of their own';
     /**
-     * Whether the house's own roll carries this person from the day they were
-     * born, and by which route. NEVER A RANK - see the note below.
-     *
-     *   'by blood'   the roll is a lineage and they are on the line. Nothing
-     *                was skipped, because a lineage has no admission for its
-     *                own: `HouseAdmission.route` is adoption, and adoption is
-     *                the door for OUTSIDERS.
-     *   'by taking'  the house took them in and put them on it. A word was
-     *                spent to do it, which is why `vouchers` is zero on the row
-     *                that carries this - the one word that could have been
-     *                spent on them was this one.
-     *   null         they grew up inside the walls and the roll does not carry
-     *                them. They stand at the house's own door like anybody
-     *                else, which is what the door is for.
-     *
-     * BEING ON A ROLL IS NOT BEING ON A RUNG. `entryRankIndex` is still nailed
-     * to 0 and still asserted; a person on a roll at no rung has to clear the
-     * same floor a walk-up applicant clears before the house takes them ON.
-     * `the-three-floors-a-house-admits-at.ts` holds those floors and this
-     * module does not restate one.
+     * Whether the house's own roll carries this person from the day they were born,
+     * and by which route. NEVER A RANK - see the note below.
      */
     onTheRoll: 'by blood' | 'by taking' | null;
 }
@@ -223,16 +43,12 @@ export interface FamilyHouse {
 /**
  * What a family's word reaches, and what standing inside a house is worth.
  *
- * `reach` is the highest `powerOrdinal` of a sect that will take this person
- * on the family's name alone. It is NOT admission: an institution's own
- * `admissionOrdinal` still binds, and a house whose bar this person does not
- * meet does not take them however loud the name. Placement decides which
- * doors are worth knocking on, and the door decides who comes in.
- *
- * `entryRankIndex` is fixed at 0 for every tier and is asserted to be so. A Dao
- * house's own child starts in the outer court beside everyone else, and so does
- * a child an apex Seat spent a word to place; the receiving house's own ladder
- * is climbed the ordinary way from the bottom in both cases.
+ * `reach` is the family's WORD and not the family's standing, and reading it as
+ * the standing was wrong both ways. TOO HIGH: `dao_house_bloodline` reaches 38
+ * and the seven Dao houses stand at 29 to 35, so over 200 forced births a tier
+ * named "A Dao house, by blood" drew a Dao house ZERO times. TOO LOW:
+ * `apex_sect_members_child` reaches 29 deliberately, and its band contained no
+ * apex at all.
  */
 export interface OriginPlacement {
     /** Highest sect `powerOrdinal` the family's word reaches. 0 means nobody. */
@@ -255,12 +71,6 @@ export interface OriginPlacement {
 
 /**
  * What the family can put a child near.
- *
- * Shaped as `DiscoveryContext` fragments on purpose: origin does not have an
- * access mechanism of its own, it supplies rows to the one that already
- * exists. Every entry becomes an `AccessSource` with a real label, and an
- * origin with nothing here reaches its own spirit root and nothing else -
- * which is the ordinary case and most of what this axis is for.
  */
 export interface OriginAccess {
     teachers: readonly ExposureInput[];
@@ -293,21 +103,6 @@ export interface OriginTier {
     /**
      * WHAT BOOK THEY ARE ACTUALLY HANDED, on the quality axis rather than the
      * coverage one - see `engine/cultivation/manual-quality.ts`.
-     *
-     * The same kind of fact as `ground` and `placement.sectBonus`: a material
-     * circumstance of the life, decided before the person had any say in it,
-     * and the single most consequential of the three because it is what they
-     * spend every day on. Coverage is NOT here on purpose. The rungs a road
-     * covers are for sale at a stall - `lesser-qi-gathering-manual` costs the
-     * price of a meal - so what an origin buys is not access to a range but a
-     * better-taught version of the same range.
-     *
-     * It also stops being worth anything to somebody who cannot read it. A Dao
-     * house hands out a worked canon whose demand a mediocre child of the
-     * house cannot meet, so the house's advantage is CONDITIONAL ON TALENT
-     * rather than flat - which is the correct answer to "a mediocre person
-     * wouldn't understand a manual from a Tribulation Transcendence cultivator
-     * either", applied at the bottom of the ladder where most lives happen.
      */
     roadQuality: ManualQuality;
     placement: OriginPlacement;
@@ -331,16 +126,6 @@ export interface OriginTier {
 
 /**
  * Ceiling on what any origin can put underfoot.
- *
- * Ordinary ground, and no better. A family's holding removes the RISK of being
- * born on a thin hillside; it does not put anybody somewhere exceptional. The
- * bands above this are contested holdings that get fought over rather than
- * inherited, and the band above those is a sealed vein, which nobody owns.
- *
- * This matters more than it looks. Thin to dense is a fourfold multiplier on
- * cultivation rate - larger than the gap between the best spirit root and the
- * worst - so an origin that handed out dense ground would be a bigger term
- * than talent, and talent is supposed to decide nearly everything.
  */
 export const MAX_ORIGIN_AMBIENT: AmbientQi = 'normal';
 
@@ -349,18 +134,6 @@ export const MAX_EXPEDITION_MARGIN = 0.2;
 
 /**
  * The table.
- *
- * Weights are integers out of ten million rather than floats, matching
- * `SPIRIT_ROOTS`: the distribution is then exactly reproducible from a seed
- * and can be asserted without float tolerance. Nine runs in ten are a farm in
- * a thin county, and that is the point rather than a tuning artefact.
- *
- * THE DENOMINATOR USED TO BE A HUNDRED THOUSAND, and the only reason it moved
- * is that the top row split into three. Every figure below is the old one
- * multiplied by a hundred, so every tier's probability is unchanged to the
- * digit, and the three routes at the top sum to exactly what the single
- * `great_house` row weighed. A hundred thousand could not express the split at
- * all: the row weighed four, and three distinguishable shares do not fit in it.
  */
 export const ORIGIN_TIERS: readonly OriginTier[] = [
     {
@@ -433,7 +206,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             // they actually buy is above, in the stones, the ground and the
             // book, and none of that needs anybody to take their word.
             //
-            // Raising this to reach the Sixmile Wardens would delete the one
+            // Raising this to reach the Six Li Wardens would delete the one
             // origin in the table that says something true about the difference
             // between having a little and having any.
             reach: 12,
@@ -538,7 +311,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
         description:
             'A vein the clan holds outright, a catalogued library, elders who will stand at a crossing, and a name that several sects will take a letter from. Its children are placed at nine.'
     },
-    // ── The three routes at the top ────────────────────────────────────
+    // The three routes at the top
     //
     // Rarer than everything above and better resourced than all of it, and NOT
     // ordered against each other: they are three different things rather than
@@ -771,13 +544,11 @@ export function isOriginTierKey(value: unknown): value is OriginTierKey {
     return typeof value === 'string' && ORIGIN_TIERS.some(t => t.key === value);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT IT BUYS: RESOURCES
 //
 // Stones are finite and they are spent. That is the whole of why a Dao house
 // does not simply win: a thousand-year climb eats a patriarch's fortune
 // the same way it eats everyone else's, only later.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Spirit stones a year of sealed seclusion costs: food, rent, replacements. */
 export const STONES_PER_YEAR_OF_SECLUSION = 60;
@@ -791,7 +562,6 @@ export const FOUNDATION_PILL_STONES = 1_200;
 /** Stones a healer wants for one torn meridian, at ordinal zero. */
 export const TREATMENT_STONES = 120;
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A YEAR OF WORK PAYS
 //
 // The other half of every price on this page, and it lived in
@@ -810,7 +580,6 @@ export const TREATMENT_STONES = 120;
 // silently move. It is written down rather than quietly fixed: the world runs
 // on THIS one, through `deriveLife`, and that is the one every price should be
 // checked against.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** A working year covers this share of a secluded year's upkeep, at ordinal 0. */
 export const EARNINGS_BASE_SHARE = 0.9;
@@ -818,30 +587,16 @@ export const EARNINGS_BASE_SHARE = 0.9;
 export const EARNINGS_PER_ORDINAL = 0.35;
 /**
  * Ceiling on the rank multiplier.
- *
- * An apex figure is wealthy rather than absurd. A Grand Ascension cultivator's
- * holdings are not what makes them dangerous, and the economy should not imply
- * otherwise - which is also what stops the top of the ladder buying its way up
- * once progress has a price.
  */
 export const EARNINGS_RANK_CAP = 9;
 
 /**
  * Share of a year the ordinary cultivator spends sealed rather than earning.
- *
- * Not a design target. It is the middle of the `effort` draw `deriveLife` makes
- * for every life in the world, written down so that a price quoted "in years of
- * income" is quoted against the same year the simulation actually runs.
  */
 export const TYPICAL_SECLUDED_SHARE = 0.45;
 
 /**
  * What a year of work is worth to somebody at this rank.
- *
- * Rank is earning power in this world: a Foundation Establishment cultivator can
- * take contracts a mortal cannot survive and refuse ones a mortal cannot refuse.
- * Scaled off the seclusion cost so the two terms stay in proportion when either
- * is retuned.
  */
 export function earningsPerYear(ordinal: number): number {
     const scale = Math.min(EARNINGS_RANK_CAP, 1 + Math.max(0, ordinal) * EARNINGS_PER_ORDINAL);
@@ -850,13 +605,6 @@ export function earningsPerYear(ordinal: number): number {
 
 /**
  * What is actually left over, after keeping themselves alive.
- *
- * The number every price on this page should be read against, and the reason
- * the bottom of the ladder is poor in a way a gross figure hides: at ordinal
- * zero this is 2.7 stones a year against upkeep of sixty, so a farm child does
- * not have a small budget, they have very nearly none. It climbs to 137 by the
- * time somebody is standing at the Foundation crossing, and that is what makes
- * the middle of the ladder a market at all.
  */
 export function netEarningsPerYear(
     ordinal: number,
@@ -868,23 +616,6 @@ export function netEarningsPerYear(
 
 /**
  * How steeply the price of everything climbs with the rank it is for.
- *
- * The single most important number on this page, and the reason a patriarch's
- * fortune does not simply win.
- *
- * A pill that carries a Qi Condensation cultivator through a crossing is not
- * the same object as one that carries a Nascent Soul cultivator through one,
- * and it is not priced like it either: the ingredients are rarer by the same
- * order the ladder's own cost curve climbs.
- *
- * It is set to EXACTLY the ladder's own 1.35 rank-cost growth, and that
- * identity is the whole point. When price and cost climb together, the number
- * of ranks a fortune covers is logarithmic in the fortune: thirty times the
- * money buys about eleven more rungs, not thirty times the road. So a
- * patriarch's holding is worth a real and legible stretch of the climb and
- * then it is simply gone, at which point its holder is buying pills out of
- * income like everybody else. Resources on a patriarch's scale, spent rather
- * than hoarded.
  */
 export const PRICE_GROWTH_PER_ORDINAL = 1.35;
 
@@ -900,10 +631,6 @@ export function injuryTreatmentPrice(ordinal: number): number {
 
 /**
  * Years of uninterrupted seclusion a holding funds.
- *
- * The concrete meaning of "provisions that make a forty-year seclusion a plan
- * rather than a way to starve". Below what a plan needs, the cultivator has to
- * come out and work, which is a focus multiplier rather than a moral failing.
  */
 export function provisionedYears(spiritStones: number): number {
     if (!Number.isFinite(spiritStones) || spiritStones <= 0) return 0;
@@ -912,10 +639,6 @@ export function provisionedYears(spiritStones: number): number {
 
 /**
  * Potency of the best pill a holding can pay for, 0..1.
- *
- * Linear and honest: half the price buys half the pill. Feeds
- * `ConsumedPill.potency` (scaled by `MAX_PILL_BONUS` at the call site) and
- * `FoundationConditions.pillPotency`, both of which already clamp.
  */
 export function affordablePillPotency(spiritStones: number, priceAtFullPotency: number): number {
     if (!Number.isFinite(spiritStones) || spiritStones <= 0) return 0;
@@ -923,22 +646,15 @@ export function affordablePillPotency(spiritStones: number, priceAtFullPotency: 
     return Math.max(0, Math.min(1, spiritStones / priceAtFullPotency));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT IT BUYS: ACCESS
 //
 // Wired into the access set that already exists. There is no second
 // mechanism, and there must never be one: an origin that opened
 // comprehension by any route other than an AccessSource would be a Dao
 // granted without provenance, which understanding.ts refuses by construction.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The rows an origin contributes to a `DiscoveryContext`.
- *
- * Callers merge this with whatever else the cultivator is currently near - a
- * sect they joined later, a ruin they opened, the ground they are standing on.
- * A `thin_county` origin contributes nothing, so the merge is a no-op and the
- * cultivator reaches their own root and nothing else.
  */
 export function originDiscoveryContext(
     key: OriginTierKey
@@ -970,9 +686,7 @@ export function withOriginAccess(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT IT BUYS: PLACEMENT
-// ─────────────────────────────────────────────────────────────────────────
 
 /** A house the family's word reaches, described without recommending it. */
 export interface PlacementCandidate {
@@ -986,17 +700,6 @@ export interface PlacementCandidate {
 
 /**
  * Which of these houses would take this person on the family's word.
- *
- * Two conditions, both hard. The house has to be within the family's reach,
- * and the applicant has to meet the house's OWN floor - placement opens the
- * conversation and never the door. This is why a Dao house's own child cannot
- * be placed at the Hollow Court: its floor is Void Refinement, and a seven year
- * old is at ordinal zero like everybody else. It is also why an apex sect
- * member's child gets nothing here that a farm child does not, at the age it
- * would matter: the bar is the bar, and moving one is what `vouchers` is for.
- *
- * Returns matches in catalog order. It does not rank them, and it does not
- * recommend one.
  */
 export function placementsWithinReach(
     key: OriginTierKey,
@@ -1010,23 +713,10 @@ export function placementsWithinReach(
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT IT BUYS: SURVIVABLE RISK
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Survival odds for a supplied expedition into somewhere lethal.
- *
- * Three properties this must keep:
- *
- *   1. It moves survival and NOTHING else. It does not touch what is in the
- *      ruin, whether the vein is there, or whether it is still unopened. A
- *      house can pay for the escorts and the talismans; it cannot pay for the
- *      place to contain something.
- *   2. It is bounded. `MAX_EXPEDITION_MARGIN` keeps the worst places lethal
- *      to everybody, which is the reason the poor road exists at all.
- *   3. It runs out. `expeditions.supplied` is a count over a whole life, and
- *      an unsupplied attempt gets the base number like anyone else's.
  */
 export function expeditionSurvival(
     key: OriginTierKey,
@@ -1039,13 +729,11 @@ export function expeditionSurvival(
     return Math.max(0, Math.min(1, base + margin));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE OPENING POSITION
 //
 // Everything an origin is worth, in one factual object. This is what a
 // character sheet prints. It contains no ordinal, no rank, no progress and no
 // judgement, and the shape is the enforcement.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface OpeningPosition {
     origin: OriginTierKey;
@@ -1070,10 +758,6 @@ export interface OpeningPosition {
 
 /**
  * The opening position, and only the opening position.
- *
- * Deliberately not a summary of prospects. A player reading this learns what
- * they were handed on the day they were born; nothing here tells them what it
- * is worth, because the world does not know either.
  */
 export function openingPosition(key: OriginTierKey): OpeningPosition {
     const tier = getOrigin(key);

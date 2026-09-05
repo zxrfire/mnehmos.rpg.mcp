@@ -1,92 +1,5 @@
 /**
  * What a house would take for somebody on its roll, and who else has a say.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * ALMOST NOTHING NEW IS BEING BUILT, AND THE PARTS THAT WERE MISSING ARE
- * CALLERS RATHER THAN MECHANISMS
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A match is a negotiation over something singular that its holder was not
- * looking to give up. `what-somebody-would-take-for-a-thing-they-will-not-
- * sell.ts` already prices exactly that, on one scale, with no list of
- * currencies anywhere in it - *"how high does it carry the person receiving
- * it?"* - and its own header names a place for a child in a house as one of
- * the media it handles. So what is paid for a match is not a new kind of money
- * and there is no price table in this file. What can be put down is `OnTheTable[]`,
- * open, and a tenth acceptable offer needs no code: stones, an art, a manual,
- * a material, a favour owed, protection, a debt forgiven, a place found for a
- * sibling, an alliance. Every one of them is the same two fields.
- *
- * What was missing is the join: how to build {@link HowTheyAreHoldingIt} for a
- * house holding a PERSON rather than an object.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT A HOUSE IS ACTUALLY BUYING, AND IT IS USUALLY NOT MONEY
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Two axes, and only one of them is a number.
- *
- *   THE RUNG    What the house gives up is what the person carries somebody
- *               to, which is their own rung. That is the existing scale and
- *               it is priced by the existing function.
- *
- *   THE LINE    What a house is short of is answered by a rule this repo
- *               already carries and which nothing in `src/` has ever called:
- *               `bloodlineTierForChild` in `world/hunting-a-spirit-beast.ts`.
- *               A line steps down when one parent carries it and the other
- *               does not, and holds when both do. It is gone in three
- *               generations, and there is no dilution constant anywhere.
- *
- * Everything a house wants falls out of those two read together, with nothing
- * authored per house:
- *
- *   - A house whose line is HELD has a spare carrier and is selling a rung.
- *     Money reaches it about as well as money reaches anything up here, which
- *     is to say hardly.
- *   - A house whose line is WASTING is buying a carrier, and no figure touches
- *     that. It wants the match itself.
- *   - A house down to its LAST carrier has a present need, and
- *     `what-somebody-would-take-for-a-thing-they-will-not-sell.ts` already
- *     rules on what a present need is: a refusal at any figure. That is the
- *     insular clan, arriving for free, with the reason legible in the fiction
- *     rather than in a flag. `hunting-a-spirit-beast.ts` predicts it in as many
- *     words - *"a family whose line is wasting has a REASON to marry its own,
- *     so the world grows insular bloodline clans"* - and this is the code that
- *     makes it so.
- *   - And a clan that will not marry out is a clan whose members do not get to
- *     choose, which is why people run. That is the third party below.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THREE PARTIES, AND THE DISAGREEMENT IS THE CONTENT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * The head of the house, the parents, and the person are three separate
- * answers and any two of them may point opposite ways. A house that agrees and
- * a person who will not is precisely the case that produces somebody running,
- * and it is not an edge case - it is the one the whole thing is for.
- *
- * This file answers the first two and DELIBERATELY DOES NOT ANSWER THE THIRD.
- * Whether a person can be moved is `an-attempt-to-move-somebody.ts`, which
- * reads no faction, no alignment and no gender, already leaves a door open at
- * two percent, and is already reachable by the played game. A second model of
- * whether somebody says yes would be a second model of consent, and it would
- * drift.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * NO ASYMMETRY, ANYWHERE, IN ANY DIRECTION
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Both sides of a match are {@link APartyToAMatch} - the same type, the same
- * fields, in both directions. Who proposes, who is proposed for and whose
- * house is being asked are positions in a call, not properties of a person.
- * There is no field, no branch and no sentence anywhere in this directory that
- * would read differently if the two arguments were swapped, and
- * `tests/engine/household/a-match-reads-the-same-in-both-directions.test.ts`
- * asserts both halves of that mechanically: the swap, and a scan of every
- * identifier and string in the directory against a gendered vocabulary.
- *
- * Pure. Rows in, an answer out. No catalog lookup, no repository, no I/O, no
- * RNG, no ladder arithmetic of its own.
  */
 
 import type { AbilityTier } from '../world/hunting-a-spirit-beast.js';
@@ -103,16 +16,10 @@ import {
 import { bandForGap } from '../cultivation/regard.js';
 import type { RegardBand } from '../../schema/cultivation.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TWO SIDES, WHICH ARE ONE TYPE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * One person in a match, from either side of it.
- *
- * THE SAME TYPE IS USED FOR BOTH AND THAT IS LOAD-BEARING. Nothing here
- * records which of the two is proposing, because that is which argument they
- * were passed as and it changes nothing about how either of them is read.
  */
 export interface APartyToAMatch {
     personId: string;
@@ -130,12 +37,6 @@ export interface APartyToAMatch {
     houseId: string | null;
     /**
      * How that house's roll carries them, in `birth.ts`'s own three values.
-     *
-     * `'by blood'` is a lineage roster - the case where a marriage changes who
-     * is on a roll, because a lineage is entered by blood and a match is how
-     * somebody new comes to be of it. `'by taking'` is a ward. `null` is
-     * somebody who merely lives on the ground, and a house cannot dispose of
-     * them: see {@link theirsToGive}.
      */
     onTheRoll: 'by blood' | 'by taking' | null;
 }
@@ -151,40 +52,16 @@ export interface TheHouseBeingAsked {
     /** The rung the house itself reaches. Read only against the other side's. */
     reachesTo: number;
     /**
-     * How many OTHER people on this roll carry the line at the tier this
-     * person carries it at.
-     *
-     * Counted off the roster by the caller. Zero means the person being asked
-     * for is the last of it, which is the whole of the difference between a
-     * house that will price its own decay and a house that will not discuss it.
+     * How many OTHER people on this roll carry the line at the tier this person
+     * carries it at.
      */
     othersCarryingTheLineAsWell: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // PUTTING A LEDGER FAVOUR ON THE TABLE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * A favour already owed, as something that can be put down.
- *
- * The credit side of `grudges.ts` has never been spendable. An obligation owed
- * TO somebody sat on the ledger as a scoreboard entry, and the one thing in
- * this world that cannot be bought with stones - a house suspending its own
- * admission bar, a match a house was not looking for - is exactly what a word
- * is for.
- *
- * This is four lines because the pricing already exists.
- * `what-somebody-would-take-for-a-thing-they-will-not-sell.ts` states the rule
- * in its own header: *"a favour owed by a Nascent Soul cultivator carries them
- * to Nascent Soul, because that is the height of what can be asked for with
- * it."* So the height is the rung of whoever owes it, supplied by the caller
- * off the world, and the record is echoed into the label so a player can see
- * which of their favours the engine weighed.
- *
- * It is singular by construction: `items.md`'s line is that a thing is
- * barter-only exactly where it is singular, and a word from one named person
- * is spent once. That is the same sentence `spendAWord` enforces at the gate.
  */
 export function aFavourOwedPutOnTheTable(
     record: Pick<ObligationRecord, 'id' | 'kind' | 'subjectId' | 'status'>,
@@ -201,9 +78,7 @@ export function aFavourOwedPutOnTheTable(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE HOUSE WOULD TAKE
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What a house is short of, read off what it has rather than off a table. */
 export type WhatTheHouseIsShortOf =
@@ -225,12 +100,8 @@ export interface WhatAHouseWouldTake {
     /** What this house wants, derived from its line and never from a row. */
     shortOf: WhatTheHouseIsShortOf;
     /**
-     * What the children of this match would carry, from
-     * `bloodlineTierForChild`, unchanged and uncopied.
-     *
-     * This is the fact both houses are actually negotiating over and it is
-     * symmetric: the same value whichever way round the two parties are
-     * passed, because that function reads both parents and nothing else.
+     * What the children of this match would carry, from `bloodlineTierForChild`,
+     * unchanged and uncopied.
      */
     theLineTheChildrenWouldCarry: AbilityTier | null;
     /** True when the match costs this house the tier it currently holds. */
@@ -243,22 +114,6 @@ export interface WhatAHouseWouldTake {
 
 /**
  * What a house would take for somebody on its roll, and whether this is it.
- *
- * The arithmetic is entirely `whatItWouldTake`'s and is not reimplemented. All
- * this function does is decide the three inputs that module asks for, and the
- * deciding is the design:
- *
- *   `itCarriesTo`         the person's own rung. What the house gives up.
- *   `theirsToGive`        whether the person is on this house's roll at all.
- *                         A house cannot dispose of somebody it merely
- *                         houses, and being told so is not a refusal - it is
- *                         being told to ask a different party.
- *   `theirClaimCanWait`   false exactly when the house is down to its last
- *                         carrier and this match would step the line down.
- *
- * The refusal sentences are this file's rather than the pricing module's,
- * because that module's lines are written about objects and a person is not
- * one. The numbers are shared; the words are not.
  */
 export function whatAHouseWouldTakeForAMatch(input: {
     house: TheHouseBeingAsked;
@@ -357,9 +212,7 @@ function sentenceFor(input: {
         + 'which is not the same as one anybody has agreed to.';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AND WHO ELSE HAS A SAY
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The three parties, named once.
@@ -384,30 +237,17 @@ export interface WhoAgreesAndWhoDoesNot {
     says: readonly WhatAPartySays[];
     /**
      * True when the two parties this module can answer for disagree.
-     *
-     * The interesting state and the one the stories are in: a house that has
-     * been paid and parents watching their line end, or parents who want the
-     * match and a house that will not spend the person.
      */
     theyDisagree: boolean;
     /**
-     * True when the two answered parties are both in favour and the only
-     * remaining question is the person's.
-     *
-     * This is the state that produces somebody running, and naming it is what
-     * lets a caller reach the running path without inferring it.
+     * True when the two answered parties are both in favour and the only remaining
+     * question is the person's.
      */
     onlyThePersonIsLeftToAsk: boolean;
 }
 
 /**
  * What the head of the house and the parents each say, and where they differ.
- *
- * The parents are answered on the LINE and never on the price, because that is
- * the fact that is theirs: a house counts carriers and a parent is looking at
- * their own grandchildren. A parent with no line to carry is answered on the
- * gap instead, in `REGARD_BANDS`' own vocabulary, which is how far apart two
- * parties are everywhere else in this engine.
  */
 export function whoAgreesAndWhoDoesNot(
     answer: WhatAHouseWouldTake
@@ -460,13 +300,10 @@ export function whoAgreesAndWhoDoesNot(
 }
 
 /**
- * The bands at which a family objects on distance alone.
- *
- * The two ends, and only the two ends. A match across a gulf is remarked on in
- * both directions - the higher family is giving something away and the lower
- * one is being taken from - and everything in between is ordinary. Pinned by
- * `a-family-objects-at-the-ends-and-nowhere-else.test.ts` because it is a
- * decision that would otherwise live only as a list.
+ * The bands at which a family objects on distance alone. The two ends, and only
+ * the two ends: a match across a gulf is remarked on in both directions and
+ * everything in between is ordinary. Pinned by
+ * `a-family-objects-at-the-ends-and-nowhere-else.test.ts`.
  */
 export const PARENTS_BALK_AT: readonly RegardBand[] = Object.freeze([
     'unreachable',

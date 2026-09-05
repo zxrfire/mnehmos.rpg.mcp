@@ -64,7 +64,7 @@ the world layer's history, and no character-facing query is allowed to read it d
 The governing instruction is a prohibition: **do not reduce relationships to one
 reputation number.** A single scalar can express "likes you 0.7". It cannot express "my
 former disciple, who I taught for eleven years, who left without a word after the
-Sweptground affair, who I would still take back" - and that sentence is the actual unit of
+Burnt Earth affair, who I would still take back" - and that sentence is the actual unit of
 drama in this world.
 
 So a relationship is a record with a type, a strength, a running history, the events that

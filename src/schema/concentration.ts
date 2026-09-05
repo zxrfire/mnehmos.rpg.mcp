@@ -25,9 +25,7 @@ export const ConcentrationStateSchema = z.object({
 
 export type ConcentrationState = z.infer<typeof ConcentrationStateSchema>;
 
-/**
- * Result of a concentration check (saving throw)
- */
+/** Result of a concentration check (saving throw) */
 export const ConcentrationCheckResultSchema = z.object({
     characterId: z.string(),
     spell: z.string(),
@@ -42,9 +40,7 @@ export const ConcentrationCheckResultSchema = z.object({
 
 export type ConcentrationCheckResult = z.infer<typeof ConcentrationCheckResultSchema>;
 
-/**
- * Request to break concentration (manual or automatic)
- */
+/** Request to break concentration (manual or automatic) */
 export const BreakConcentrationRequestSchema = z.object({
     characterId: z.string(),
     reason: z.enum(['damage', 'incapacitated', 'death', 'new_spell', 'voluntary', 'duration']),

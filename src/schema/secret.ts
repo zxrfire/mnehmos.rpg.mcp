@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Reveal condition types - when secrets can be uncovered
- */
+/** Reveal condition types - when secrets can be uncovered */
 export const RevealConditionSchema = z.object({
     type: z.enum([
         'skill_check',      // Player passes a skill check
@@ -42,9 +40,7 @@ export const RevealConditionSchema = z.object({
     partialText: z.string().optional()      // "You sense something is off..."
 });
 
-/**
- * Secret schema - hidden information the DM knows but players shouldn't see
- */
+/** Secret schema - hidden information the DM knows but players shouldn't see */
 export const SecretSchema = z.object({
     id: z.string(),
     worldId: z.string(),
@@ -82,9 +78,7 @@ export const SecretSchema = z.object({
     updatedAt: z.string().datetime()
 });
 
-/**
- * Game event that might trigger a reveal
- */
+/** Game event that might trigger a reveal */
 export const GameEventSchema = z.object({
     type: z.enum([
         'skill_check',
@@ -120,9 +114,7 @@ export const GameEventSchema = z.object({
     encounterId: z.string().optional()
 });
 
-/**
- * Result of a reveal operation
- */
+/** Result of a reveal operation */
 export const RevealResultSchema = z.object({
     success: z.boolean(),
     secret: SecretSchema.optional(),

@@ -231,17 +231,10 @@ export class RunRepository {
     }
 
     /**
-     * Finished runs, newest first - the "how cultivators die" screen. Ordered
-     * by ended_at so the ledger reads as a chronicle of endings rather than of
-     * beginnings.
-     */
-    /**
-     * The death ledger: finished runs, admin-flagged ones left out.
-     *
-     * `includeAdmin` exists for the one caller that legitimately wants them -
-     * `run_manage.ledger({ includeAdminRuns: true })`, an operator asking to
-     * see the rigged runs on purpose. Everything else gets the ledger the rest
-     * of the codebase already describes.
+     * The death ledger: finished runs newest first, admin-flagged ones left out.
+     * Ordered by ended_at, so it reads as a chronicle of endings rather than of
+     * beginnings. `includeAdmin` exists for the one caller that legitimately
+     * wants them - `run_manage.ledger({ includeAdminRuns: true })`.
      */
     deathLedger(limit = 20, options: { includeAdmin?: boolean } = {}): Run[] {
         const stmt = options.includeAdmin ? this.ledgerStmt : this.cleanLedgerStmt;
@@ -252,12 +245,10 @@ export class RunRepository {
     /**
      * The most recent finished run, whatever it was - rigged runs included.
      *
-     * NOT the ledger, and deliberately a separate method. Several callers want
-     * "the run that just ended" so they can keep showing its world, its roster
-     * marker or its lineage after it closes, and they had been reaching for
-     * `deathLedger(1)[0]` to get it. That is a different question from "what
-     * does this world's record of deaths say", and answering both from one
-     * statement is how an admin-flagged run ended up in the statistics.
+     * NOT the ledger, and deliberately a separate method. "The run that just
+     * ended" is a different question from "what does this world's record of
+     * deaths say", and answering both from one statement is how an admin-flagged
+     * run ended up in the statistics. Do not reach for `deathLedger(1)[0]`.
      */
     latestFinishedRun(): Run | null {
         const row = this.latestFinishedStmt.get() as RunRow | undefined;

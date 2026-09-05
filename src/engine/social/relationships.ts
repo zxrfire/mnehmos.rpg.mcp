@@ -1,60 +1,18 @@
 /**
- * Relationships as first-class persistent state.
- *
- * The governing instruction is a prohibition: **do not reduce relationships to
- * one reputation number.** A single scalar can express "likes you 0.7". It
- * cannot express "my former disciple, who I taught for eleven years, who left
- * without a word after the Sweptground affair, who I would still take back" -
- * and that sentence is the actual unit of drama in this world. So a
- * relationship here is a record with a type, a strength, a running history, a
- * list of the events that made it what it is, and a current attitude in plain
- * words.
- *
- * Four properties are load-bearing:
- *
- * ── Directed ─────────────────────────────────────────────────────────────
- * `from -> to`. Two rows, not one. A master's view of a disciple and that
- * disciple's view of the master are different objects with different
- * attitudes, and the interesting cases are exactly the asymmetric ones: he
- * thinks they are friends; she has been waiting nine years for an opening.
- * {@link RelationshipLedger.mutual} returns both halves so a caller can see the
- * mismatch, and nothing in this module ever forces them to agree.
- *
- * ── Between any two characters ────────────────────────────────────────────
- * There is no player id anywhere in this file. NPC-to-NPC relationships are
- * the same kind of record as NPC-to-player, stored in the same table, queried
- * the same way. A sect's internal politics is just the subgraph among its
- * members, and it keeps running while the player is in seclusion for thirty
- * years because nothing in it references the player.
- *
- * ── Importance is stored, never derived from power ────────────────────────
- * {@link Relationship.significance} and {@link Relationship.roles} say why
- * someone matters. Neither is a function of cultivation, and this module does
- * not import realms, ordinals or power at all. A mortal grandmother can be
- * `defining`; a Nascent Soul stranger is `incidental`. That is the whole
- * reason a character who has been surpassed stays important - as mentor,
- * family, faction head, or the last person who remembers how something worked.
- *
- * ── Append, don't overwrite ───────────────────────────────────────────────
- * Attitudes change by writing a new event and a new attitude, with the old one
- * kept in `history`. The engine never silently mutates what a relationship
- * used to be, because "he was not always like this" has to be answerable.
+ * Relationships as first-class persistent state. The governing prohibition: do not
+ * reduce a relationship to one reputation number. A scalar can say "likes you 0.7";
+ * it cannot say "my former disciple, who I taught for eleven years, who left
+ * without a word after the Burnt Earth affair, who I would still take back" - and
+ * that sentence is the unit of drama in this world.
  */
 
 import { byId, clamp01, round4, stableId, type DayIndex } from './common.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * The nature of the tie.
- *
- * Deliberately a wide, concrete vocabulary rather than a small abstract one.
- * `former_disciple` is a separate type from `disciple` because the difference
- * is the entire story; `sworn_sibling` is separate from `friend` because in
- * this world one of them is an oath. Nothing is ranked: the list has no order
- * and no type is "stronger" than another.
+ * The nature of the tie. Deliberately wide and concrete rather than small and
+ * abstract: `former_disciple` is separate from `disciple` because the
+ * difference is the entire story, and `sworn_sibling` from `friend` because one
+ * of them is an oath. The list has no order and no type is stronger.
  */
 export type RelationshipType =
     // Blood and household
@@ -111,13 +69,9 @@ export type Significance = 'incidental' | 'notable' | 'defining';
 export type EventSignificance = 'minor' | 'notable' | 'defining';
 
 /**
- * One thing that happened between these two, kept forever.
- *
- * `summary` is prose because that is what it is for: the LLM writes what
- * happened and reads it back decades later. The engine does not parse it,
- * score it, or decide what it means. `tags` exist so the engine can still
- * answer structured questions ("has this person ever saved that one's life")
- * without pretending to understand the sentence.
+ * One thing that happened between these two, kept forever. `summary` is prose
+ * the engine never parses or scores; `tags` are how it answers structured
+ * questions without pretending to understand the sentence.
  */
 export interface RelationshipEvent {
     id: string;
@@ -133,21 +87,9 @@ export interface RelationshipEvent {
 }
 
 /**
- * A directed relationship.
- *
- * Everything a caller might otherwise be tempted to squeeze into one number
- * lives in a separate field here, on purpose:
- *
- *   `type`        what they are to each other
- *   `roles`       what they do for each other, in this person's eyes
- *   `strength`    how consequential the tie is - NOT how warm it is
- *   `attitude`    how they currently feel, in words
- *   `history`     the running account, maintained by the narrator
- *   `events`      the specific things that made it this way
- *
- * `strength` and `attitude` are separate because they routinely disagree. A
- * bitter former disciple has a very strong relationship and a hostile
- * attitude; that combination is a plot, and one scalar would erase it.
+ * A directed relationship. `strength` and `attitude` are separate fields
+ * because they routinely disagree: a bitter former disciple has a very strong
+ * relationship and a hostile attitude, and one scalar would erase the plot.
  */
 export interface Relationship {
     id: string;
@@ -175,19 +117,14 @@ export interface Relationship {
     establishedOnDay: DayIndex;
     lastUpdatedOnDay: DayIndex;
     /**
-     * Ended ties are kept, not deleted. A dead master is still a master, and
-     * their disciple's relationship to them keeps driving behaviour for the
-     * rest of that disciple's very long life.
+     * Ended ties are kept and not deleted. A dead master is still a master, and
+     * keeps driving behaviour for the rest of a very long life.
      */
     active: boolean;
     /** Why it ended: 'death', 'expelled', 'estranged', 'severed'. */
     endedReason: string | null;
     endedOnDay: DayIndex | null;
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// CREATION AND UPDATE
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface RelationshipInput {
     fromId: string;
@@ -233,12 +170,8 @@ export interface RelationshipEventInput {
 }
 
 /**
- * Append an event.
- *
- * Pure: returns a new relationship and does not mutate the input. The event
- * list is only ever appended to - there is no path in this module that
- * removes one, because the record of how a thing became true is the part that
- * makes it narratable later.
+ * Append an event, without mutating the input. There is no path in this module
+ * that removes one: how a thing became true is what makes it narratable later.
  */
 export function recordRelationshipEvent(
     relationship: Relationship,
@@ -275,9 +208,7 @@ export interface RelationshipUpdate {
 }
 
 /**
- * Change what the relationship currently is.
- *
- * The old attitude is not thrown away: when `appendHistory` is used, the
+ * Change what the relationship currently is. With `appendHistory` the
  * narrator's account grows rather than being replaced, so "he was not always
  * like this" stays answerable from the record alone.
  */
@@ -325,10 +256,6 @@ export function endRelationship(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE LEDGER
-// ─────────────────────────────────────────────────────────────────────────
-
 export interface RelationshipQuery {
     type?: RelationshipType;
     types?: readonly RelationshipType[];
@@ -342,12 +269,9 @@ export interface RelationshipQuery {
 }
 
 /**
- * Indexed store of directed relationships.
- *
- * Mirrors the SQLite indexes in `migrations.social.ts`, so a repository built
- * on the same shape behaves identically. Every lookup is O(matches) through a
- * Map; nothing scans the whole graph, which is what keeps a world of thousands
- * of NPCs with their own private webs of obligation queryable.
+ * Indexed store of directed relationships. Mirrors the SQLite indexes in
+ * `migrations.social.ts`, so a repository on the same shape behaves
+ * identically. Every lookup is O(matches); nothing scans the whole graph.
  */
 export class RelationshipLedger {
     private readonly byPair = new Map<string, Relationship>();
@@ -373,11 +297,8 @@ export class RelationshipLedger {
     }
 
     /**
-     * Both halves of a tie, which are allowed to disagree completely.
-     *
-     * The asymmetry is the point: this is how the engine can hold "he considers
-     * her a friend / she considers him a mark" without either side being
-     * wrong about their own feelings.
+     * Both halves of a tie, which are allowed to disagree completely: he
+     * considers her a friend, she considers him a mark, neither is wrong.
      */
     mutual(a: string, b: string): { forward: Relationship | null; reverse: Relationship | null } {
         return { forward: this.between(a, b), reverse: this.between(b, a) };
@@ -393,12 +314,7 @@ export class RelationshipLedger {
         return this.resolve(this.incomingIndex.get(toId), query);
     }
 
-    /**
-     * Ties in either direction involving this character.
-     *
-     * The query a narrator asks when a character walks on stage: who is in
-     * this person's life, and who counts them as part of theirs.
-     */
+    /** Ties in either direction involving this character. */
     involving(characterId: string, query: RelationshipQuery = {}): Relationship[] {
         const keys = new Set<string>([
             ...(this.outgoingIndex.get(characterId) ?? []),

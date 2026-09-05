@@ -1,43 +1,15 @@
 /**
  * What grade of medicine will close a given wound on a given body.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * THE RULING THIS IMPLEMENTS
- * ═════════════════════════════════════════════════════════════════════════
+ * The design owner's, in two axes: *the rarity of the medicine scales with the
+ * severity of the injury and the realm of the injured.* Neither was in the
+ * resolver - `treatWorstInjury` gated on `isPermanentWound` and nothing else, so a
+ * Nascent Soul at ordinal 26 carrying CRIPPLING torn meridians bought thirty days
+ * of mortal splints for fourteen spirit stones and was fully healed.
  *
- * The design owner's, in two axes: **the rarity of the medicine scales with
- * the severity of the injury and the realm of the injured.** Neither was in the
- * resolver. `treatWorstInjury` gated on `isPermanentWound` and nothing else, so
- * a Nascent Soul cultivator at ordinal 26 carrying CRIPPLING torn meridians
- * walked into a village, bought thirty days of mortal splints for fourteen
- * spirit stones, and was fully healed.
- *
- * The ladder it should have been reading was already written, in full, and
- * nothing consulted it: `pills.ts` grades the treat-injury line 60 -> 420 ->
- * 5,200 -> 42,000 -> 480,000 cash, and the Meridian Rebirth Pill's own
- * description says it is "the only medicine below immortal grade that touches
- * crippling damage". So this file adds no content and invents no threshold. It
- * reads what the catalog already says and returns the grade.
- *
- * ── The bottom of the ladder stays open, deliberately ────────────────────
- *
- * Untreated meridian injuries were the leading cause of death in this game -
- * eleven of eighteen sampled runs, median age at death 22 - and the whole of
- * that was the cure being invisible rather than absent. Making it visible moved
- * the median peak from rung 2 to rung 9 and the median age at death from 22 to
- * 100. NOTHING HERE MAY UNDO THAT. A minor tear at Qi Condensation is still an
- * afternoon and a handful of stones, which is what `severityFloor` says and
- * what the tests pin.
- *
- * What is gated is HEIGHT and SEVERITY, which is exactly what was asked for.
- *
- * ── Why `pillBandOrdinal` and not a table of my own ──────────────────────
- *
- * Because there is already one mapping from grade to the realm it belongs to,
- * `PILL_GRADE_REALM`, and a second one beside it is how two readers come to
- * disagree about the same fact. This project has had that twice today alone -
- * a second qi banding table and a second market slice - and both were found by
- * a player rather than by a test.
+ * The ladder was already written and nothing consulted it: `pills.ts` grades the
+ * treat-injury line 60 -> 420 -> 5,200 -> 42,000 -> 480,000 cash. This file adds
+ * no content and invents no threshold; it reads the catalog and returns the grade.
  */
 
 import { pillBandOrdinal } from './breakthrough.js';
@@ -50,13 +22,6 @@ export const MEDICINE_GRADES: readonly TechniqueGrade[] =
 
 /**
  * Where a grade sits on the medicine ladder.
- *
- * `gradeRank`, and NOT this array's index. The two stopped agreeing when
- * immortal and chaos became peers, and the disagreement was not cosmetic:
- * indexing put chaos above immortal, so once chaos moved down to the same band
- * a Void Refinement body would have been told it needed chaos-grade medicine
- * and an immortal-grade pill would have stopped reaching it. Two peer grades
- * are interchangeable as medicine, which is what a tie here means.
  */
 export function medicineRank(grade: TechniqueGrade): number {
     return gradeRank(grade);
@@ -64,17 +29,6 @@ export function medicineRank(grade: TechniqueGrade): number {
 
 /**
  * The floor set by how bad the wound is, independent of who is carrying it.
- *
- * `crippling` is heaven because the catalog says so in as many words, on the
- * Meridian Rebirth Pill: "the only medicine below immortal grade that touches
- * crippling damage". Minor and serious sit at the bottom because nothing in the
- * catalog says otherwise, and because the realm axis below does the lifting for
- * anybody far enough up to need it.
- *
- * Crippling is about six per cent of what `rollInjurySeverity` produces, so
- * this is a rare crisis rather than an ordinary tax - and a cultivator carrying
- * one can still clear the other two by ordinary means and stay under the lethal
- * count while they go and find what it costs.
  */
 export function severityFloor(severity: InjurySeverity): TechniqueGrade {
     switch (severity) {
@@ -86,10 +40,6 @@ export function severityFloor(severity: InjurySeverity): TechniqueGrade {
 
 /**
  * The floor set by the body itself.
- *
- * A larger body is not mended by a village splint, whatever is wrong with it.
- * Read off `pillBandOrdinal`, which is the existing grade-to-realm mapping, so
- * this moves if the bands move and cannot drift from them.
  */
 export function realmFloor(realmOrdinal: number): TechniqueGrade {
     let floor: TechniqueGrade = 'mortal';
@@ -108,10 +58,6 @@ export function realmFloor(realmOrdinal: number): TechniqueGrade {
 
 /**
  * The grade that will actually close this wound on this body: the higher floor.
- *
- * Both axes, and the rarer of the two wins - a minor scratch on a Nascent Soul
- * needs what a Nascent Soul body needs, and a crippling tear on a novice needs
- * what crippling damage needs.
  */
 export function medicineNeededFor(
     severity: InjurySeverity,

@@ -1,12 +1,7 @@
 /**
- * Constraint-Perception subsystem schemas.
- *
- * Layer-1 SubsystemDef artifact for the Operator's lens - the
- * Hierarchy-of-Controls model wired into the engine as a queryable
- * primitive. The Operator does not get to know everything; the cost
- * of looking is real, and the looking can fail in disciplined ways.
- *
- * Four dispositions encode the entire failure surface:
+ * Constraint-Perception subsystem schemas: the Hierarchy-of-Controls model as a
+ * queryable primitive. The cost of looking is real and the looking can fail, and
+ * four dispositions encode the whole failure surface:
  *   commit       - wrote rows, mutated state, honest answer.
  *   reject_inert - refused before mutation; no cost paid.
  *   no_op_spoken - attempted, but the looking returned nothing usable
@@ -17,9 +12,7 @@
 
 import { z } from 'zod';
 
-// ─────────────────────────────────────────────────────────────────
 // Hierarchy of Controls (mining safety canonical ranking)
-// ─────────────────────────────────────────────────────────────────
 
 export const HierarchyOfControlsLevelSchema = z.enum([
     'elimination',
@@ -30,10 +23,6 @@ export const HierarchyOfControlsLevelSchema = z.enum([
 ]);
 export type HierarchyOfControlsLevel = z.infer<typeof HierarchyOfControlsLevelSchema>;
 
-// ─────────────────────────────────────────────────────────────────
-// Disposition - the four colours of an engine answer
-// ─────────────────────────────────────────────────────────────────
-
 export const DispositionSchema = z.enum([
     'commit',
     'reject_inert',
@@ -42,9 +31,7 @@ export const DispositionSchema = z.enum([
 ]);
 export type Disposition = z.infer<typeof DispositionSchema>;
 
-// ─────────────────────────────────────────────────────────────────
 // Source evidence - every hazard must trace to a committed row
-// ─────────────────────────────────────────────────────────────────
 
 export const SourceEvidenceSchema = z.object({
     tool: z.string().describe('Tool name that committed the source row'),
@@ -53,9 +40,7 @@ export const SourceEvidenceSchema = z.object({
 });
 export type SourceEvidence = z.infer<typeof SourceEvidenceSchema>;
 
-// ─────────────────────────────────────────────────────────────────
 // Hazard - something in the room/encounter/scene that could hurt
-// ─────────────────────────────────────────────────────────────────
 
 export const HazardKindSchema = z.enum([
     'mechanical',
@@ -82,9 +67,7 @@ export const HazardSchema = z.object({
 });
 export type Hazard = z.infer<typeof HazardSchema>;
 
-// ─────────────────────────────────────────────────────────────────
 // Applicable control - the ranked countermeasure
-// ─────────────────────────────────────────────────────────────────
 
 export const ConfidenceSchema = z.enum(['high', 'partial', 'low']);
 export type Confidence = z.infer<typeof ConfidenceSchema>;
@@ -100,9 +83,7 @@ export const ApplicableControlSchema = z.object({
 });
 export type ApplicableControl = z.infer<typeof ApplicableControlSchema>;
 
-// ─────────────────────────────────────────────────────────────────
-// Blind spot - the §3.5 fog-as-information thesis encoded
-// ─────────────────────────────────────────────────────────────────
+// Blind spot: what the looking could not see, as information rather than silence.
 
 export const BlindSpotSchema = z.object({
     whatKindOfDataIsMissing: z.string(),
@@ -111,9 +92,7 @@ export const BlindSpotSchema = z.object({
 });
 export type BlindSpot = z.infer<typeof BlindSpotSchema>;
 
-// ─────────────────────────────────────────────────────────────────
 // Attentional capacity - the resource the Operator spends to look
-// ─────────────────────────────────────────────────────────────────
 
 export const AttentionalCapacitySchema = z.object({
     current: z.number().int().min(0),
@@ -122,9 +101,7 @@ export const AttentionalCapacitySchema = z.object({
 });
 export type AttentionalCapacity = z.infer<typeof AttentionalCapacitySchema>;
 
-// ─────────────────────────────────────────────────────────────────
 // Perception assessment - the ledger row
-// ─────────────────────────────────────────────────────────────────
 
 export const RejectReasonSchema = z.object({
     rule: z.string(),

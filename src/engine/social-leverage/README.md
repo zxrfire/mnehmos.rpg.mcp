@@ -179,8 +179,8 @@ as the latter was a real defect. `GroundHolding` resolves FOUR answers and its o
 says they are not interchangeable - *"`unrecorded` ... is NOT the same as unheld, and a
 caller that treats it as such has invented a vacuum out of a missing row"*. `theGroundUnderYou`
 passed only `ranked: holding === 'held'`, so three of the four collapsed onto the floor:
-The Blown Ground and Scarwater produced a byte-identical `why` and identical weights, and
-Scarwater is a ford town inside a province with a survey, a bench, a Ledger and an assay
+The Burial Sands and Clear River Ford produced a byte-identical `why` and identical weights, and
+Clear River Ford is a ford town inside a province with a survey, a bench, a Ledger and an assay
 house. **Measured on a seeded world: of 435 people alive, 204 stood on ground that is not
 held and every one of them was priced as eleven days of sand - 113 of them on ground the
 record merely does not describe.**
@@ -230,7 +230,7 @@ none                      -0.12      +0.12
   cross". A body that holds ground and can be crossed deters force about as well as any other,
   so it sits beside `collected` and stays NEGATIVE. What matters to somebody weighing a threat
   is whether anybody holds this ground at all.
-- **Scarwater is not the mirror of Scarwater.** The un-appointed keepers of an unheld ford have
+- **Clear River Ford is not the mirror of Clear River Ford.** The un-appointed keepers of an unheld ford have
   more reason to move against violence - it is exactly what stops the road working - than to
   vouch for somebody they do not know, so it is worth less to a threatener than it costs a
   stranger.
@@ -285,7 +285,7 @@ the term in the mechanical channel without it.
 The other half, and the worse one, because the term is already moving the player's odds off
 a fact the game will not say. `whoHoldsTheGround` has two callers in `src/` and both are in
 the NPC simulation; the played `look` never asks it and `ask` does not route to it. Measured
-on a fresh run, which opens at the Meet on **The Blown Ground** - so a player stands on the
+on a fresh run, which opens at Wind Market on **The Burial Sands** - so a player stands on the
 one province in the world nobody holds, on turn one, and cannot find out:
 
 ```text

@@ -1,30 +1,5 @@
 /**
  * Existence states - what happens when "body destroyed = dead" stops being true.
- *
- * At low realms that equivalence holds absolutely, and it is most of what makes
- * the early game frightening. Nascent Soul is the qualitative break: the soul
- * can persist without the body, and from there a cultivator is better modelled
- * as a persistent identity that may occupy several physical states over time
- * than as one body plus one row.
- *
- * Two rules keep this from becoming automatic immortality, which would wreck
- * the game:
- *
- *  1. NASCENT SOUL IS A GATE, NOT A GRANT. Below ordinal 21 essentially none of
- *     these states are reachable. Above it they become *possible*, and nothing
- *     more. Not every Nascent Soul cultivator can do all of it.
- *
- *  2. SURVIVAL IS CONDITIONAL, NEVER AUTOMATIC. Surviving your own death takes
- *     soul strength, a compatible vessel, a treasure, a technique, an
- *     environment, outside help, or - most often - having prepared in advance.
- *     A powerful cultivator can still die permanently, and most do. The purpose
- *     is not to stop killing people; it is to make death and identity more
- *     interesting the deeper cultivation goes.
- *
- * This module decides whether a transition is LEGAL and what it costs. It never
- * decides that one happens for narrative reasons, and it holds no database: the
- * caller supplies what the run actually has (a prepared vessel, a soul-lantern,
- * a sect elder standing by) and applies what comes back.
  */
 
 import {
@@ -46,9 +21,7 @@ import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import { TRIBULATION_LETHAL_STRIKES, tribulationStrikeSurvival } from './breakthrough.js';
 import type { CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE GATE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * First ordinal of Nascent Soul: the rank at which the core births an infant
@@ -80,27 +53,18 @@ export function requiresNascentSoul(state: ExistenceState): boolean {
     return (PROFOUND_EXISTENCE_STATES as readonly ExistenceState[]).includes(state);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // READING A STATE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The only terminal state. Everything else is either playable or unresolved.
- *
- * Note that 'missing' and 'unknown' are deliberately NOT terminal: they are
- * correct answers rather than placeholders, and a cultivator who vanished into
- * a ruin in year 50 may be found sealed in year 4000 with their grudges intact.
  */
 export function isTerminal(state: ExistenceState): boolean {
     return state === 'physically_dead';
 }
 
 /**
- * Whether this identity is still a going concern - the honest replacement for
- * the `alive` boolean, and what that boolean should be recomputed from.
- *
- * A remnant is excluded on purpose. A remnant is not the person; it is
- * something the person left behind that can talk.
+ * Whether this identity is still a going concern - the honest replacement for the
+ * `alive` boolean, and what that boolean should be recomputed from.
  */
 export function isGoingConcern(state: ExistenceState): boolean {
     switch (state) {
@@ -165,9 +129,7 @@ export function aliveFlagFor(state: ExistenceState): boolean {
     return isGoingConcern(state);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // LEGALITY OF A TRANSITION
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What the run has actually arranged. The engine holds no database, so the
@@ -239,10 +201,6 @@ function deny(reason: string, detail: string): TransitionCheck {
 
 /**
  * Whether this cultivator may enter `target` right now.
- *
- * Refuses below Nascent Soul for every profound state, and refuses above it
- * whenever the conditions were not actually arranged. "You are strong enough"
- * is necessary and never sufficient.
  */
 export function canEnterExistenceState(
     cultivator: Pick<Cultivator, 'realmOrdinal'> & Partial<Pick<Cultivator, 'existenceState' | 'soulState'>>,
@@ -283,9 +241,7 @@ export function canEnterExistenceState(
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SURVIVING YOUR OWN DEATH
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface DestructionOutcome {
     state: ExistenceState;
@@ -303,13 +259,6 @@ export interface DestructionOutcome {
 
 /**
  * Resolve the destruction of a cultivator's body.
- *
- * The default answer is death, at every realm, and it stays the default above
- * Nascent Soul too. Survival requires that the cultivator BE at Nascent Soul,
- * that something was actually arranged, and then that a roll go their way.
- * "Most do" die permanently, and this function is where that is enforced.
- *
- * Consumes exactly two samples on every path, so the stream stays aligned.
  */
 export function resolveBodilyDestruction(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'injuries'> &
@@ -423,16 +372,10 @@ const SOUL_STATE_PENALTY: Record<SoulState, number> = {
     fading: 0.5
 };
 
-// ─────────────────────────────────────────────────────────────────────────
 // REMNANTS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Continuity ceiling for anything left behind rather than carried across.
- *
- * A remnant will, projection, obsession or inheritance guardian may say "I
- * founded this sect" in perfect sincerity and be wrong. Capping continuity here
- * is what stops the rest of the engine treating it as the founder.
  */
 export const MAX_REMNANT_CONTINUITY = 0.35;
 
@@ -452,7 +395,6 @@ export function isTheSamePerson(
     return (cultivator.identityContinuity ?? 1) >= 0.5;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LID, AND WHAT IT DOES TO PEOPLE ON THE WRONG SIDE OF IT
 //
 // Neither crossing is impossible and both are ruinously expensive, which is
@@ -460,14 +402,9 @@ export function isTheSamePerson(
 // crossing is not a fight - it is a pressure a body at that realm cannot
 // exist at. Coming back down draws lightning, because the Lid does not
 // distinguish a hole made outward from one made inward.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Whether this cultivator can exist beyond the Lid at all.
- *
- * Only a True Immortal. Anyone else who reaches the other side is crushed -
- * not attacked, simply unable to hold together at that pressure. This is a
- * refusal, not a difficulty, and callers must gate on it rather than rolling.
  */
 export function canExistBeyondTheLid(
     cultivator: Partial<Pick<Cultivator, 'immortalStatus'>>
@@ -492,12 +429,6 @@ export const DESCENT_TRIBULATION_STRIKES = 9;
 
 /**
  * Price a passage through the Lid.
- *
- * Upward for anyone below True Immortal: refused outright. Downward for a True
- * Immortal: permitted, and it draws the heaviest tribulation in the game,
- * because a hole made inward is still a hole. The caller resolves the strikes
- * through the normal tribulation machinery and applies the result; nothing
- * about this is a free travel option.
  */
 export function evaluateLidTransit(
     cultivator: Partial<Pick<Cultivator, 'immortalStatus'>>,
@@ -546,23 +477,6 @@ export function evaluateLidTransit(
 
 /**
  * What the descent actually does to the body making it.
- *
- * `evaluateLidTransit` prices the passage and stops there, deliberately: it is
- * a ruling, not a resolution, and the strikes it names have to be weathered
- * through the same machinery every other tribulation in the game runs on. This
- * is that call, and it exists because the alternative was a caller in the
- * narration tier deciding what nine strikes of lightning are worth.
- *
- * ONE IMPLEMENTATION OF WHAT A STRIKE COSTS. `tribulationStrikeSurvival` is
- * `breakthrough.ts`'s, `TRIBULATION_LETHAL_STRIKES` is its constant, and the
- * injuries come out of `createInjury` on the caller's seeded stream. Nothing
- * here is a second opinion about lightning; the only thing this file
- * contributes is HOW MANY, and that number is `DESCENT_TRIBULATION_STRIKES`,
- * which is above the heaviest crossing in the game.
- *
- * The result is meant to be survivable and probably not. Nine strikes at the
- * per-strike odds a True Immortal carries is a decision somebody makes once
- * about something they care about more than continuing.
  */
 export interface DescentOutcome {
     strikes: number;
@@ -626,27 +540,10 @@ export function resolveDescentStrikes(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ENDING A RUN DELIBERATELY
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Whether this cultivator may end their run by choice rather than by dying.
- *
- * True Immortal only, and deliberately not generalised. Permadeath everywhere
- * else is untouched: there is no quit action at Qi Condensation, no honourable
- * retirement at Core Formation. Being able to stop is part of what ascension
- * IS - go through, settle affairs, leave what you leave, step off the ladder.
- *
- * Reaching the top does not force it. A player may keep playing as a True
- * Immortal indefinitely, and that is a different game rather than an epilogue:
- * the concerns become obligation, legacy, what to leave behind, and what is
- * worth the price of reaching back down.
- *
- * The run ledger is the caller's business; this is only the eligibility rule.
- * A run closed this way is recorded as ended by ascension rather than by
- * death, which in a game where nearly every run ends in a corpse is the rarest
- * line in the ledger.
  */
 export function canEndRunVoluntarily(
     cultivator: Partial<Pick<Cultivator, 'immortalStatus' | 'existenceState'>>

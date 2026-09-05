@@ -22,9 +22,6 @@ export interface LeakCheck {
 export class SecretRepository {
     constructor(private db: Database.Database) {}
 
-    /**
-     * Create a new secret
-     */
     create(secret: Secret): Secret {
         const validSecret = SecretSchema.parse(secret);
 
@@ -70,9 +67,6 @@ export class SecretRepository {
         return validSecret;
     }
 
-    /**
-     * Find a secret by ID
-     */
     findById(id: string): Secret | null {
         const stmt = this.db.prepare('SELECT * FROM secrets WHERE id = ?');
         const row = stmt.get(id) as SecretRow | undefined;
@@ -81,9 +75,6 @@ export class SecretRepository {
         return this.rowToSecret(row);
     }
 
-    /**
-     * Find all secrets matching filter criteria
-     */
     find(filter: SecretFilter = {}): Secret[] {
         let query = 'SELECT * FROM secrets WHERE 1=1';
         const params: Record<string, unknown> = {};
@@ -122,16 +113,11 @@ export class SecretRepository {
         return rows.map(row => this.rowToSecret(row));
     }
 
-    /**
-     * Get all unrevealed secrets for a world (for LLM context injection)
-     */
+    /** Get all unrevealed secrets for a world (for LLM context injection) */
     getActiveSecrets(worldId: string): Secret[] {
         return this.find({ worldId, revealed: false });
     }
 
-    /**
-     * Update a secret
-     */
     update(id: string, updates: Partial<Secret>): Secret | null {
         const existing = this.findById(id);
         if (!existing) return null;
@@ -186,9 +172,6 @@ export class SecretRepository {
         return validSecret;
     }
 
-    /**
-     * Reveal a secret
-     */
     reveal(id: string, triggeredBy: string): Secret | null {
         return this.update(id, {
             revealed: true,
@@ -197,18 +180,13 @@ export class SecretRepository {
         });
     }
 
-    /**
-     * Delete a secret
-     */
     delete(id: string): boolean {
         const stmt = this.db.prepare('DELETE FROM secrets WHERE id = ?');
         const result = stmt.run(id);
         return result.changes > 0;
     }
 
-    /**
-     * Check if any secrets should be revealed based on a game event
-     */
+    /** Check if any secrets should be revealed based on a game event */
     checkRevealConditions(worldId: string, event: GameEvent): Secret[] {
         const secrets = this.getActiveSecrets(worldId);
         const toReveal: Secret[] = [];
@@ -266,9 +244,7 @@ export class SecretRepository {
         }
     }
 
-    /**
-     * Check text for potential secret leaks
-     */
+    /** Check text for potential secret leaks */
     checkForLeaks(text: string, worldId: string): LeakCheck[] {
         const secrets = this.getActiveSecrets(worldId);
         const leaks: LeakCheck[] = [];
@@ -300,9 +276,7 @@ export class SecretRepository {
         return leaks;
     }
 
-    /**
-     * Format secrets for LLM context injection
-     */
+    /** Format secrets for LLM context injection */
     formatForLLM(worldId: string): string {
         const secrets = this.getActiveSecrets(worldId);
         

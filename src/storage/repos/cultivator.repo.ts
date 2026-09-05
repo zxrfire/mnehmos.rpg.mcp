@@ -18,6 +18,7 @@ import {
     maxHpForOrdinal,
     maxQiForOrdinal
 } from '../../engine/cultivation/realms.js';
+import { physiqueOrNull } from '../../engine/cultivation/physiques.js';
 import { isTraceable } from '../../engine/cultivation/understanding.js';
 
 /**
@@ -33,6 +34,7 @@ interface CultivatorRow {
     spirit_root: string;
     origin_tier: string;
     sex: string;
+    physique: string | null;
     tradition_id: string;
     attributes: string;
     realm_ordinal: number;
@@ -104,15 +106,8 @@ export interface AddInjuryInput {
     treated?: boolean;
     /**
      * Which authored wound this is, as a key into `data/cultivation/wounds.ts`.
-     *
-     * Pass it through wherever the engine minted one. `resolveDeviation` and
-     * the crossing path have both been setting it since `ordinaryWoundFor`
-     * landed, and this layer had nowhere to put it - so every wound a player
-     * carried came back unnamed. A live qi-deviation injury read
-     * `woundType: null` and nothing could say what it was.
-     *
-     * Null still means an ordinary wound of its severity, which is what every
-     * row written before the column was.
+     * Pass it through wherever the engine minted one. Null means an ordinary
+     * wound of its severity.
      */
     woundType?: string | null;
 }
@@ -135,16 +130,12 @@ export interface CultivatorDeltas {
 }
 
 /**
- * One row of the admin roster: every cultivator in the world, flattened
- * against their sect and their injury count.
+ * One row of the admin roster, flattened against sect and injury count.
  *
- * Deliberately *not* a Cultivator. This is a read-only projection for a
- * listing screen, and returning full domain objects would mean loading every
- * injury of every cultivator to render a column that only needs a number.
- *
- * Display fields derived from these values - rankName, realmName,
- * spiritRootName, lifespanYears, isPlayer - are the web layer's job. The repo
- * ships the facts; presentation is not persistence.
+ * Deliberately NOT a Cultivator: returning full domain objects would mean
+ * loading every injury of every cultivator to render a column that needs a
+ * number. Display fields (rankName, realmName, lifespanYears, isPlayer) are the
+ * web layer's job.
  */
 export interface RosterEntry {
     id: string;
@@ -152,13 +143,16 @@ export interface RosterEntry {
     kind: Cultivator['kind'];
     spiritRoot: Cultivator['spiritRoot'];
     /**
-     * Carried so that somebody can be asked about themselves.
-     *
-     * A plain fact a person holds about their own body, which is exactly the
-     * class of question `asked.ts` must not route through the could-they-know
-     * gate. Nothing on this projection branches on it.
+     * A plain fact a person holds about their own body, which `asked.ts` must not
+     * route through the could-they-know gate. Nothing here branches on it.
      */
     sex: Cultivator['sex'];
+    /**
+     * The body they were born as, carried for the same reason `sex` is. Whether a
+     * reader is entitled to it is asked in `entities.ts`; nothing here branches
+     * on it.
+     */
+    physique: Cultivator['physique'];
     realmOrdinal: number;
     location: string | null;
     sectId: string | null;
@@ -167,11 +161,9 @@ export interface RosterEntry {
     age: number;
     alive: boolean;
     /**
-     * Authoritative. `alive` is the convenience boolean beside it, and the two
-     * genuinely differ: a `soul_preserved` cultivator is not alive and is
-     * still playing, a `missing` one has no resolved answer either way. The
-     * roster is the one screen a player would ever see those on, so it ships
-     * the real state rather than collapsing everything into a checkbox.
+     * Authoritative; `alive` beside it is the convenience boolean, and the two
+     * genuinely differ - a `soul_preserved` cultivator is not alive and is still
+     * playing, a `missing` one has no resolved answer either way.
      */
     existenceState: Cultivator['existenceState'];
     soulState: Cultivator['soulState'];
@@ -188,6 +180,7 @@ interface RosterRow {
     kind: string;
     spirit_root: string;
     sex: string;
+    physique: string | null;
     realm_ordinal: number;
     location: string | null;
     sect_id: string | null;
@@ -213,18 +206,9 @@ export interface ListCultivatorsFilter {
 
 /**
  * Carry a pool across a change of rung, keeping the share rather than the number.
- *
- * RE-EXPORTED, NOT DEFINED HERE. It moved to `engine/cultivation/realms.ts`, next
- * to `maxHpForOrdinal` and `maxQiForOrdinal` - "the one derivation of a
- * cultivator's HP pool. Nobody may write another" - because how a pool survives
- * a rung change is that same rule asked at the moment the rung moves, and the
- * world layer needs it too. An engine-layer rule addressed inside a module that
- * opens a database is a rule `engine/` cannot import without dragging SQLite in
- * behind it, and the world would have grown its own copy instead.
- *
- * The name stays reachable here because `advanceRealm` below is not, in fact, the
- * only place a rung changes: `GameService.strikeBarrier` writes the ordinal
- * directly and asks for this by this address.
+ * Defined in `engine/cultivation/realms.ts` beside `maxHpForOrdinal`, because
+ * `engine/` cannot import a module that opens a database. Re-exported here
+ * because `GameService.strikeBarrier` asks for it by this address.
  */
 export { carriedAcross };
 
@@ -258,7 +242,7 @@ export class CultivatorRepository {
     constructor(private db: Database.Database) {
         this.insertStmt = db.prepare(`
             INSERT INTO cultivators (
-                id, run_id, name, kind, spirit_root, origin_tier, sex, tradition_id, attributes,
+                id, run_id, name, kind, spirit_root, origin_tier, sex, physique, tradition_id, attributes,
                 realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns, bleeding_turns,
                 age, years_at_current_realm,
@@ -268,7 +252,7 @@ export class CultivatorRepository {
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
             ) VALUES (
-                @id, @runId, @name, @kind, @spiritRoot, @origin, @sex, @traditionId, @attributes,
+                @id, @runId, @name, @kind, @spiritRoot, @origin, @sex, @physique, @traditionId, @attributes,
                 @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns, @bleedingTurns,
                 @age, @yearsAtCurrentRealm,
@@ -283,7 +267,7 @@ export class CultivatorRepository {
         this.updateStmt = db.prepare(`
             UPDATE cultivators SET
                 run_id = @runId, name = @name, kind = @kind,
-                spirit_root = @spiritRoot, origin_tier = @origin, sex = @sex,
+                spirit_root = @spiritRoot, origin_tier = @origin, sex = @sex, physique = @physique,
                 tradition_id = @traditionId, attributes = @attributes,
                 realm_ordinal = @realmOrdinal, cultivation_progress = @cultivationProgress,
                 foundation_quality = @foundationQuality, immortal_status = @immortalStatus,
@@ -358,7 +342,7 @@ export class CultivatorRepository {
         // cultivators is worse than useless.
         this.rosterStmt = db.prepare(`
             SELECT
-                c.id, c.name, c.kind, c.spirit_root, c.sex, c.realm_ordinal, c.location,
+                c.id, c.name, c.kind, c.spirit_root, c.sex, c.physique, c.realm_ordinal, c.location,
                 c.sect_id, s.name AS sect_name, c.sect_rank,
                 c.age, c.alive, c.existence_state, c.soul_state, c.identity_continuity,
                 c.death_cause, c.spirit_stones, c.feuds,
@@ -372,7 +356,7 @@ export class CultivatorRepository {
         `);
     }
 
-    // ── CRUD ─────────────────────────────────────────────────────────────
+    // CRUD
 
     /**
      * Insert a cultivator plus any injuries it was born with (a corpse
@@ -450,6 +434,7 @@ export class CultivatorRepository {
             kind: row.kind as Cultivator['kind'],
             spiritRoot: row.spirit_root as Cultivator['spiritRoot'],
             sex: row.sex as Cultivator['sex'],
+            physique: physiqueOrNull(row.physique)?.key ?? null,
             realmOrdinal: row.realm_ordinal,
             location: row.location,
             sectId: row.sect_id,
@@ -492,7 +477,7 @@ export class CultivatorRepository {
         return this.deleteStmt.run(id).changes > 0;
     }
 
-    // ── DOMAIN OPERATIONS ────────────────────────────────────────────────
+    // DOMAIN OPERATIONS
 
     /**
      * Apply signed deltas, clamped to the bounds the schema would otherwise
@@ -528,14 +513,10 @@ export class CultivatorRepository {
     }
 
     /**
-     * Lay the foundation established at the 12 -> 13 crossing.
-     *
-     * Separate from `update` because a foundation is laid ONCE and is the thing
-     * every realm above it is built on. Refusing to overwrite an existing one
-     * here means no later write - a bulk update, a location change, a future
-     * caller that did not know - can quietly upgrade a cracked foundation into
-     * a flawless one. Returns null when the id is unknown or a foundation was
-     * already laid.
+     * Lay the foundation established at the 12 -> 13 crossing. Separate from
+     * `update` because a foundation is laid ONCE: refusing to overwrite one here
+     * means no later write can quietly upgrade a cracked foundation into a
+     * flawless one. Null when the id is unknown or a foundation was already laid.
      */
     establishFoundation(id: string, quality: Cultivator['foundationQuality']): Cultivator | null {
         const existing = this.getById(id);
@@ -553,14 +534,10 @@ export class CultivatorRepository {
     }
 
     /**
-     * Record the result of the last crossing.
-     *
-     * Separate from `update` for the same reason `establishFoundation` is: both
-     * non-'none' values are permanent and load-bearing. A 'false_immortal' is
-     * what bars every further attempt, and refusing to overwrite it here means
-     * no later write can quietly clear the bar and let the Lid open twice for
-     * the same name. Returns null when the id is unknown or a status is already
-     * recorded.
+     * Record the result of the last crossing. Separate from `update` for the same
+     * reason `establishFoundation` is: a 'false_immortal' bars every further
+     * attempt, and refusing to overwrite it means no later write can clear the
+     * bar. Null when the id is unknown or a status is already recorded.
      */
     recordImmortalStatus(
         id: string,
@@ -581,44 +558,24 @@ export class CultivatorRepository {
     }
 
     /**
-     * Move up the ladder. The repo owns only the bookkeeping - clamping to
-     * MAX_ORDINAL, clearing accumulated progress, and restarting the
-     * stagnation clock that kills cultivators who sit at one realm for fifty
-     * years. Whether the breakthrough *succeeded* is the engine's call.
+     * Move up the ladder. Bookkeeping only - clamping to MAX_ORDINAL, clearing
+     * progress, restarting the stagnation clock. `foundationQuality` is
+     * deliberately untouched and carried through by the spread.
      *
-     * `foundationQuality` is deliberately untouched: it is carried through by
-     * the spread, because the foundation survives every later advance and is
-     * never re-laid.
+     * THE POOLS ARE RE-DERIVED HERE AND THIS IS THE ONLY PLACE. `maxHp` and
+     * `maxQi` are a function of the attributes and the rung, so a stored pool
+     * goes stale the moment anybody climbs - a played run reached False Immortal
+     * holding 50 HP and 30 qi, a newborn's body. Every rank change in the
+     * codebase passes through here (the played layer, the MCP tool surface, the
+     * admin panel), which is what makes it enforceable in one place.
      *
-     * ── THE POOLS ARE RE-DERIVED HERE, AND THIS IS THE ONLY PLACE ────────
-     *
-     * `maxHp` and `maxQi` are a function of the attributes and the rung, and
-     * the rung is the half that moves - so a stored pool is a value nothing
-     * maintains and it goes stale the moment anybody climbs. It did: a played
-     * run reached False Immortal holding 50 HP and 30 qi, a newborn's body,
-     * while the world's NPCs were built with the ordinal in the formula.
-     *
-     * This is the one function every rank change in the codebase passes
-     * through - the played layer, the MCP tool surface and the admin panel all
-     * land here - which is what makes it the place the derivation can be
-     * enforced for everybody at once rather than repeated at four call sites
-     * that will disagree.
-     *
-     * Current HP and qi are carried across AS A FRACTION, never refilled. A
-     * crossing enlarges the vessel; it does not fill it, and it is emphatically
-     * not a heal - somebody who crosses at half is still at half afterwards.
-     *
-     * The fraction rather than the absolute, because the absolute made climbing
-     * an injury. A vessel that grows from 40 to 1707 around an unchanged 40
-     * leaves a whole cultivator at two per cent of themselves, which trips the
-     * pre-combat check that refuses a fight nobody could survive - so the next
-     * confrontation after any large advance was unconditional death, and an
-     * operator arranging a rung to watch a fight got a corpse and a narration
-     * of the fight that never happened. Nothing in this world says that
-     * climbing wounds you.
-     *
-     * Going DOWN the ladder shrinks the vessel, and the fraction handles that
-     * too: half of a smaller pool is still half.
+     * Current HP and qi are carried across AS A FRACTION, never refilled: a
+     * crossing enlarges the vessel and does not fill it. A fraction rather than
+     * the absolute because the absolute made climbing an injury - a vessel
+     * growing from 40 to 1707 around an unchanged 40 leaves a cultivator at two
+     * per cent, which trips the pre-combat check that refuses an unsurvivable
+     * fight, so the next confrontation after any large advance was unconditional
+     * death. Going DOWN shrinks the vessel and the fraction handles that too.
      */
     advanceRealm(id: string, ranks = 1): Cultivator | null {
         const existing = this.getById(id);
@@ -713,7 +670,7 @@ export class CultivatorRepository {
         return valid;
     }
 
-    // ── INJURIES ─────────────────────────────────────────────────────────
+    // INJURIES
 
     /** Record a new meridian injury. Returns the stored, validated injury. */
     addInjury(cultivatorId: string, input: AddInjuryInput): Injury {
@@ -748,12 +705,10 @@ export class CultivatorRepository {
      * needs to know the difference between "healed" and "wasted".
      *
      * Closing a wound that drops the untreated count back under
-     * CRIPPLING_UNTREATED_INJURIES also clears `bleeding_turns` - how long the
-     * channels have been open - in the same transaction. Nothing dies of that
-     * counter any more, but it is still a claim about the body's current state
-     * rather than its history, and a counter that kept running after the wound
-     * was closed would be the database disagreeing with the engine about
-     * whether somebody is still carrying anything.
+     * CRIPPLING_UNTREATED_INJURIES also clears `bleeding_turns` in the same
+     * transaction: it is a claim about the body's current state, and a counter
+     * still running after the wound closed would be the database disagreeing
+     * with the engine about whether somebody is carrying anything.
      */
     treatInjury(injuryId: string, treatedOnTurn?: number): Injury | null {
         const treat = this.db.transaction((): InjuryRow | undefined => {
@@ -788,7 +743,7 @@ export class CultivatorRepository {
         return row.n;
     }
 
-    // ── MAPPING ──────────────────────────────────────────────────────────
+    // MAPPING
 
     private toParams(c: Cultivator): Record<string, unknown> {
         return {
@@ -799,6 +754,7 @@ export class CultivatorRepository {
             spiritRoot: c.spiritRoot,
             origin: c.origin,
             sex: c.sex,
+            physique: c.physique ?? null,
             traditionId: c.traditionId,
             attributes: JSON.stringify(c.attributes),
             realmOrdinal: c.realmOrdinal,
@@ -864,6 +820,7 @@ export class CultivatorRepository {
             spiritRoot: row.spirit_root,
             origin: row.origin_tier,
             sex: row.sex,
+            physique: row.physique ?? null,
             traditionId: row.tradition_id,
             attributes: JSON.parse(row.attributes),
             realmOrdinal: row.realm_ordinal,
@@ -922,19 +879,14 @@ export class CultivatorRepository {
 /**
  * Reject, do not repair, an insight that cannot say where it came from.
  *
- * `InsightSchema` already refuses a missing provenance - it has no default and
- * no `.optional()` - so what survives parse and still fails here is the
- * structural check: `formInsight` DERIVES an insight's id from its origin
- * achievement, so an id that no longer contains its own `achievementId` means
- * the provenance was swapped out after the fact.
+ * `InsightSchema` already refuses a missing provenance, so what survives parse
+ * and fails here is the structural check: `formInsight` DERIVES an insight's id
+ * from its origin achievement, and an id that no longer contains its own
+ * `achievementId` means the provenance was swapped out after the fact.
  *
- * Repairing that would be worse than failing on it. The only repairs available
- * are inventing an achievement (fabricating history the simulation never
- * produced) or dropping the provenance (which the schema forbids precisely
- * because an insight with no history behind it is, in the design's own words,
- * a bug). An untraceable insight arriving from the database is a corruption
- * signal about the writer, and quietly normalising it would hide the writer
- * while leaving a cultivator holding comprehension nothing ever earned.
+ * Do not add a repair path. The only repairs available are inventing an
+ * achievement or dropping the provenance the schema forbids, and both would hide
+ * the writer that produced the corruption.
  */
 function assertTraceableInsights(cultivator: Cultivator): void {
     if (isTraceable(cultivator.insights)) return;

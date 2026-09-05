@@ -1,21 +1,11 @@
 /**
  * Which direction an encounter points.
  *
- * The catalog does not carry a good/bad column and should not: an entry is
- * written as a situation, and whether it was a windfall or a disaster is
- * frequently the player's own doing. What it does carry is enough to answer
- * the coarse question - is there something hostile in it, what SimEvent kind
- * does it emit, and what did the author tag it - and that is what is read here.
- *
- * The classification exists for one reason. A draw that respects only the
- * catalog's own weights is dominated by hostile and ruin entries, because the
- * table was authored for the time-skip digest where that emphasis is correct.
- * A table that only hurts you is exactly as monotonous as one that never
- * touches you, so the play draw picks a DIRECTION first and an entry second.
- * See `select.ts`.
- *
- * Nothing here is a second combat system or a reward table. It reads columns
- * that already exist and returns one of three words.
+ * A draw that respects only the catalog's own weights is dominated by hostile
+ * and ruin entries, because the table was authored for the time-skip digest
+ * where that emphasis is correct. A table that only hurts you is as monotonous
+ * as one that never touches you, so the play draw picks a DIRECTION first and an
+ * entry second. See `select.ts`.
  */
 
 import type { EncounterEntry } from '../../data/cultivation/encounters.js';
@@ -72,11 +62,6 @@ const BAD_EVENT_KINDS = new Set([
 
 /**
  * How an entry points, before anybody acts on it.
- *
- * Order matters and is deliberate: an entry can be both an opportunity and a
- * fight - a guarded spirit herb, a tomb with rivals camped outside it - and
- * those are counted as GOOD, because the thing on offer is why the player is
- * there. What makes an entry bad is that the encounter itself is the loss.
  */
 export function valenceOf(entry: EncounterEntry): EncounterValence {
     if (BAD_EVENT_KINDS.has(entry.simEventKind)) return 'bad';

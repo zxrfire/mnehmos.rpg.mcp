@@ -44,9 +44,7 @@ export interface CustomEffectRow {
 export class CustomEffectsRepository {
     constructor(private db: Database.Database) {}
 
-    /**
-     * Apply a new custom effect to a target
-     */
+    /** Apply a new custom effect to a target */
     apply(args: ApplyCustomEffectArgs): CustomEffect {
         const now = new Date().toISOString();
 
@@ -155,18 +153,12 @@ export class CustomEffectsRepository {
         return insertAndRead(params);
     }
 
-    /**
-     * Find an effect by ID
-     */
     findById(id: number): CustomEffect | null {
         const stmt = this.db.prepare('SELECT * FROM custom_effects WHERE id = ?');
         const row = stmt.get(id) as CustomEffectRow | undefined;
         return row ? this.rowToEffect(row) : null;
     }
 
-    /**
-     * Find effect by target and name
-     */
     findByTargetAndName(targetId: string, targetType: ActorType, name: string): CustomEffect | null {
         const stmt = this.db.prepare(`
             SELECT * FROM custom_effects
@@ -189,9 +181,6 @@ export class CustomEffectsRepository {
         return stmt.get(targetId, targetType, name) as CustomEffectRow | undefined;
     }
 
-    /**
-     * Get all active effects on a target
-     */
     getEffectsOnTarget(targetId: string, targetType: ActorType, filters?: {
         category?: string;
         source_type?: string;
@@ -221,9 +210,6 @@ export class CustomEffectsRepository {
         return rows.map(row => this.rowToEffect(row));
     }
 
-    /**
-     * Get effects by trigger event
-     */
     getEffectsByTrigger(targetId: string, targetType: ActorType, event: TriggerEvent): CustomEffect[] {
         const effects = this.getEffectsOnTarget(targetId, targetType);
         return effects.filter(effect =>
@@ -231,18 +217,12 @@ export class CustomEffectsRepository {
         );
     }
 
-    /**
-     * Remove an effect by ID
-     */
     remove(id: number): boolean {
         const stmt = this.db.prepare('DELETE FROM custom_effects WHERE id = ?');
         const result = stmt.run(id);
         return result.changes > 0;
     }
 
-    /**
-     * Remove effect by target and name
-     */
     removeByName(targetId: string, targetType: ActorType, name: string): boolean {
         const stmt = this.db.prepare(`
             DELETE FROM custom_effects
@@ -252,18 +232,14 @@ export class CustomEffectsRepository {
         return result.changes > 0;
     }
 
-    /**
-     * Deactivate an effect (keep record but mark inactive)
-     */
+    /** Deactivate an effect (keep record but mark inactive) */
     deactivate(id: number): CustomEffect | null {
         const stmt = this.db.prepare('UPDATE custom_effects SET is_active = 0 WHERE id = ?');
         stmt.run(id);
         return this.findById(id);
     }
 
-    /**
-     * Advance round-based durations, deactivating expired effects
-     */
+    /** Advance round-based durations, deactivating expired effects */
     advanceRounds(targetId: string, targetType: ActorType, rounds: number = 1): {
         advanced: CustomEffect[];
         expired: CustomEffect[];
@@ -294,9 +270,6 @@ export class CustomEffectsRepository {
         return { advanced, expired };
     }
 
-    /**
-     * Refresh duration on an existing effect
-     */
     refreshDuration(id: number, newDurationValue: number | null): CustomEffect {
         const effect = this.findById(id);
         if (!effect) {
@@ -328,9 +301,6 @@ export class CustomEffectsRepository {
         return this.findById(id)!;
     }
 
-    /**
-     * Increment stacks on a stackable effect
-     */
     incrementStacks(id: number): CustomEffect {
         const effect = this.findById(id);
         if (!effect) {
@@ -349,9 +319,7 @@ export class CustomEffectsRepository {
         return this.findById(id)!;
     }
 
-    /**
-     * Decrement stacks on a stackable effect (removes if reaches 0)
-     */
+    /** Decrement stacks on a stackable effect (removes if reaches 0) */
     decrementStacks(id: number): CustomEffect | null {
         const effect = this.findById(id);
         if (!effect) {
@@ -368,9 +336,7 @@ export class CustomEffectsRepository {
         return this.findById(id);
     }
 
-    /**
-     * Check and remove expired time-based effects
-     */
+    /** Check and remove expired time-based effects */
     cleanupExpired(): number {
         const now = new Date().toISOString();
         const stmt = this.db.prepare(`
@@ -382,9 +348,6 @@ export class CustomEffectsRepository {
         return result.changes;
     }
 
-    /**
-     * Get all active effects with a specific mechanic type
-     */
     getEffectsByMechanicType(targetId: string, targetType: ActorType, mechanicType: string): CustomEffect[] {
         const effects = this.getEffectsOnTarget(targetId, targetType);
         return effects.filter(effect =>
@@ -392,9 +355,7 @@ export class CustomEffectsRepository {
         );
     }
 
-    /**
-     * Calculate total bonus from all effects of a given mechanic type
-     */
+    /** Calculate total bonus from all effects of a given mechanic type */
     calculateTotalBonus(targetId: string, targetType: ActorType, mechanicType: string, condition?: string): number {
         const effects = this.getEffectsByMechanicType(targetId, targetType, mechanicType);
         let total = 0;
@@ -416,9 +377,6 @@ export class CustomEffectsRepository {
         return total;
     }
 
-    /**
-     * Convert database row to CustomEffect object
-     */
     private rowToEffect(row: CustomEffectRow): CustomEffect {
         return CustomEffectSchema.parse({
             id: row.id,

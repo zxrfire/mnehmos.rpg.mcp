@@ -1,41 +1,5 @@
 /**
  * The cadence: when the world gets a chance to do something.
- *
- * ── Two denominators, because there are two kinds of span ────────────────
- *
- * A turn spent walking to the next village and a decade spent sitting in a
- * cave are both "a window of days", and a single per-day rate serves neither.
- * Rated per day, the walk is almost eventless and the decade is relentless. So:
- *
- *   OCCASION   one check for the act itself, whatever it took. Doing a thing
- *              is what exposes you; the clock is not the exposure.
- *   SPAN       one check per `ENCOUNTER_GRID_DAYS` of elapsed time, for the
- *              part that is genuinely about duration - what finds a cave, what
- *              crosses the valley, what turns up while nobody is watching.
- *
- * A one-day action gets the occasion check and no grid points. A twenty-year
- * seclusion gets the occasion check at almost zero exposure and four hundred
- * and eighty grid points at a very low rate each, which is where its handful of
- * arrivals comes from.
- *
- * ── Why every roll is keyed to an absolute day ───────────────────────────
- *
- * The same reason `time-skip.ts` does it. A check on day 900 is the same check
- * whether the simulation arrived there in one jump or three hundred, so a
- * caller may compute a window, truncate it at the first interruption, and
- * recompute the remainder without any of the surviving days changing what they
- * were going to produce. That property is what makes the truncation wiring
- * legal rather than merely convenient.
- *
- * ── Fortune ──────────────────────────────────────────────────────────────
- *
- * The narrow rule from `time-skip.ts`, unchanged and deliberately not extended:
- * Fortune moves whether a thing ARRIVES and whether a window is still OPEN. It
- * never touches damage, never softens a resolution, and never manufactures a
- * branch. Here that is exactly two places - a good thing may already have been
- * taken, and an avoidable bad thing may go past - and the samples for both are
- * drawn unconditionally so that two cultivators of different Fortune stay on
- * the same stream.
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -74,9 +38,7 @@ import type {
     Scene
 } from './types.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // FORTUNE
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Chance a good thing has already been taken, before Fortune. */
 export const WINDOW_SHUT_BASE = 0.34;
@@ -85,7 +47,6 @@ export const WINDOW_SHUT_PER_FORTUNE = -0.09;
 export const PASSES_BY_BASE = 0.1;
 export const PASSES_BY_PER_FORTUNE = 0.1;
 
-// ─────────────────────────────────────────────────────────────────────────
 // BEING SENT FOR
 //
 // A separate check from everything else, because an institution acts on its
@@ -97,7 +58,6 @@ export const PASSES_BY_PER_FORTUNE = 0.1;
 // `sealed` still produces nothing, because its arrival exposure is zero. The
 // formation holds against the house too, which is the bargain and is also the
 // honest reading - nobody gets a message through a closed-door seclusion.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Chance the house sends for somebody over the act of doing something. */
 export const SUMMONS_TURN_CHANCE = 0.028;
@@ -109,16 +69,17 @@ function fortuneOf(fortune: number): number {
     return Number.isFinite(fortune) ? Math.max(0, Math.min(3, fortune)) : 0;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE ROLL
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Everything that happens to one cultivator across one window of days.
  *
- * Stops at the first interruption and reports the day. Occurrences after an
- * interruption would be predictions about a span the cultivator is not going to
- * spend, and returning them would invite a caller to apply them.
+ * The narrow Fortune rule from `time-skip.ts`, unchanged and deliberately not
+ * extended: Fortune moves whether a thing ARRIVES and whether a window is still
+ * OPEN. It never touches damage, never softens a resolution and never
+ * manufactures a branch. Here that is exactly two places, and the samples for
+ * both are drawn unconditionally so two cultivators of different Fortune stay on
+ * the same stream.
  */
 export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     const startDay = Math.max(0, Math.floor(input.startDay));
@@ -145,7 +106,7 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
     const occurrences: EncounterOccurrence[] = [];
     let checks = 0;
 
-    // ── the occasion ────────────────────────────────────────────────────
+    // the occasion
     // Day zero of the window, so a one-day turn has exactly one chance and a
     // long span is not charged twice for its first fortnight.
     const occasionChance = TURN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
@@ -173,7 +134,7 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
         if (met) occurrences.push(met);
     }
 
-    // ── the span ────────────────────────────────────────────────────────
+    // the span
     if (!interruptedIn(occurrences)) {
         const spanChance = SPAN_ENCOUNTER_CHANCE * profile.exposure * placeRate;
         const firstGrid = nextGridDay(startDay);
@@ -207,7 +168,7 @@ export function rollEncounters(input: EncounterRollInput): EncounterRoll {
         }
     }
 
-    // ── what arrived ────────────────────────────────────────────────────
+    // what arrived
     // Rolled per candidate rather than per day, then merged into the timeline,
     // so the world's own event volume is what decides how often it reaches
     // anybody. Merged after the grid loop and re-cut below, because an arrival
@@ -239,9 +200,7 @@ function nextGridDay(startDay: number): number {
     return (Math.floor(startDay / ENCOUNTER_GRID_DAYS) + 1) * ENCOUNTER_GRID_DAYS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ONE CHECK
-// ─────────────────────────────────────────────────────────────────────────
 
 function attempt(
     input: EncounterRollInput,
@@ -315,21 +274,10 @@ function attempt(
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // BEING SENT FOR
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The house asking for this person by name.
- *
- * Returns null for anybody in no house, which is most people, and for anybody
- * the house would not spend on the problem - `summonsPool` has already applied
- * the regard bands, so an elder is not called out over a nest and a servant is
- * not sent against something nine rungs up. Neither of those is a rule about
- * elders or servants; both are the same band table everything else reads.
- *
- * An occurrence carrying a duty always interrupts. Whether it is answered is
- * the player's, and that is the entire point of the mechanism.
  */
 function attemptSummons(
     input: EncounterRollInput,
@@ -437,11 +385,6 @@ function clampSample(sample: number): number {
 
 /**
  * Who brought the order.
- *
- * Somebody senior on the house's own roster, because that is who carries one.
- * Falls back to null when no roster was supplied, and a duty with no mouth
- * reads as the institution speaking - which is correct for a notice pinned to
- * a board and wrong for everything else, so callers should supply the roster.
  */
 function mouthFor(
     input: EncounterRollInput,
@@ -465,17 +408,10 @@ function mouthFor(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SOMEBODY FROM THE HOUSE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Ordinary contact with the people you live with.
- *
- * Drawn last and only when nothing else happened, because company yields to
- * everything: a day with a muster in it is not also a day somebody dropped by.
- * It is by far the most frequent check in this layer, which is the intent -
- * danger should be rare and belonging should not.
  */
 function attemptContact(
     input: EncounterRollInput,
@@ -554,27 +490,18 @@ function attemptContact(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AN ARRIVAL
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Magnitude at or above which a thing that turns up stops the day.
- *
- * Between `SECT_MAGNITUDE` and `MARKET_MAGNITUDE` in `digest.ts`, deliberately.
- * A thing big enough that the market would have talked about it is big enough
- * to stop somebody when it happens on top of them instead.
+ * Magnitude at or above which a thing that turns up stops the day. Between
+ * `SECT_MAGNITUDE` and `MARKET_MAGNITUDE` in `digest.ts`, deliberately: a thing
+ * big enough that the market would have talked about it is big enough to stop
+ * somebody when it happens on top of them instead.
  */
 export const ARRIVAL_INTERRUPT_MAGNITUDE = 0.6;
 
 /**
  * Which of the things already happening in the world turned up here.
- *
- * One roll per candidate, keyed to the fact's own id, so the answer for a given
- * fact does not depend on how many other facts were in the list or on which day
- * the window happened to start. Each arrives at most once. A big thing stops
- * the day; a middling one is a digest line with the one difference that it
- * happened to them rather than somewhere else.
  */
 function rollArrivals(
     input: EncounterRollInput,
@@ -585,7 +512,7 @@ function rollArrivals(
     const exposure = arrivalExposure(input.activity);
     if (arrivable.length === 0 || exposure <= 0) return [];
 
-    // ── THE BACKLOG IS NOT THE WORLD'S EVENT VOLUME ─────────────────────
+    // THE BACKLOG IS NOT THE WORLD'S EVENT VOLUME
     //
     // See MAX_ARRIVAL_CANDIDATES. The per-fact rate is calibrated on what is
     // HAPPENING; the list handed in is everything that ever happened and never
@@ -717,10 +644,6 @@ function rollArrivals(
 
 /**
  * What may be said about a thing that turned up.
- *
- * Still name-free. A scene adds where and how long, which are observable to
- * anybody standing in it, and nothing about who is doing it - a player can see
- * a raid without being able to say whose raid it is.
  */
 function sceneSummary(text: string, scene: Scene | null): string {
     const base = `${text} It reached this cultivator directly rather than as a report, ` +

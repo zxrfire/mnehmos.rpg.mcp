@@ -164,9 +164,7 @@ export class SpatialRepository {
         });
     }
 
-    // ============================================================
     // LOCAL COORDINATE QUERIES (within networks)
-    // ============================================================
 
     findRoomsByLocalCoordinates(networkId: string, x: number, y: number): RoomNode[] {
         const stmt = this.db.prepare(
@@ -176,9 +174,7 @@ export class SpatialRepository {
         return rows.map(row => this.rowToRoomNode(row));
     }
 
-    // ============================================================
     // NETWORK COORDINATE QUERIES (world map coordinates)
-    // ============================================================
 
     findNetworksInBoundingBox(minX: number, maxX: number, minY: number, maxY: number): NodeNetwork[] {
         const stmt = this.db.prepare(`
@@ -205,9 +201,7 @@ export class SpatialRepository {
         return this.rowToNodeNetwork(row);
     }
 
-    // ============================================================
     // NODE NETWORK METHODS
-    // ============================================================
 
     createNetwork(network: NodeNetwork): void {
         const validNetwork = NodeNetworkSchema.parse(network);

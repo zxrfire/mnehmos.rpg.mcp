@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Biome type enumeration
- */
+/** Biome type enumeration */
 export enum BiomeType {
   // Water biomes
   OCEAN = 'ocean',

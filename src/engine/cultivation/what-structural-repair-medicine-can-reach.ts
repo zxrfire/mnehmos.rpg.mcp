@@ -1,78 +1,5 @@
 /**
  * How far a structural repair reaches, what one costs, and what moves it.
- *
- * The catalog next door says what exists. This says what it does, and every
- * number here is READ OFF THE LADDER rather than chosen, for the reason
- * AGENTS.md gives: a figure with a measurement behind it survives the next
- * content pass and a figure somebody picked does not.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE TWO CEILINGS, AND THEY ARE ENFORCED HERE RATHER THAN DESCRIBED
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * NOTHING BELOW IMMORTAL GRADE REACHES ABOVE THE END OF DEITY TRANSFORMATION.
- * Not expensively, not at auction, not from a house that owes you. A Void
- * Refinement cultivator with a torn spirit sense and every stone in the province
- * is looking at a shelf with nothing on it, and the only object in the world
- * that answers them is one nobody here can make.
- *
- * AND NOTHING REACHES THE CROSSING INTO TRIBULATION TRANSCENDENCE. This one is
- * a RULE rather than a shortage and the distinction is load-bearing: getting to
- * ordinal 41 is your own effort, helpers are allowed at that crossing and
- * medicine is not, so the object that would answer a broken step is barred at
- * exactly the rung that needs it. `REPAIRED_IN_THE_CRUCIBLE` states the same
- * rule from the tribulation's side and the two are checked against each other
- * in the tests - if they ever disagree, one of them is a bug rather than a
- * design difference.
- *
- * Both are functions, not comments. `mendsThisBreak` is the gate every caller
- * goes through, and there is no path around it.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE PRICE, AND WHY IT IS QUOTED IN LIFETIMES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * A number of spirit stones is meaningless on its own; the whole of what a
- * price means in this world is how it sits against what somebody can actually
- * accumulate. So the unit here is A LIFETIME'S ACCUMULATION: what a cultivator
- * at a given rung clears, after upkeep, across the whole of the span their realm
- * grants them. Both halves already exist - `netEarningsPerYear` and
- * `lifespanForOrdinal` - and neither of them is retyped here.
- *
- * {@link REPAIR_PRICE_IN_LIFETIMES} is the one authored number in this module,
- * and it is authored where it can be argued with: A DOSE COSTS TWELVE TIMES
- * EVERYTHING THE PERSON IT WOULD SAVE COULD EARN IN THE WHOLE OF THE LIFE THEIR
- * RUNG GRANTED THEM. That single sentence produces the entire design:
- *
- *   NO PATIENT EVER BUYS THEIR OWN. Twelve lifetimes is not a saving plan. It
- *   is why this is a thing houses do to people rather than a thing people do.
- *
- *   THE LOW GRADES ARE A RICH FAMILY'S PURCHASE AND NOTHING ELSE'S. The mortal
- *   grade is about twelve Foundation Establishment lifetimes and the earth grade
- *   about twelve Core Formation ones, which is out of reach of every individual
- *   at those rungs and inside what a wealthy house can find. That is the
- *   concrete mechanism behind the advantage of birth: a well-born child who
- *   cracks is mended and goes on, and everybody else stops there.
- *
- *   THE MIDDLE GRADE IS PRICED AGAINST THE TOP OF THE LADDER, and it falls out
- *   rather than being set. Measured against what a Grand Ascension cultivator
- *   could accumulate across thirty thousand years, a Soul-Seating Pill is about
- *   a third of everything they will ever have, and against a Tribulation
- *   Transcender it is about a tenth. So the price is payable at exactly two
- *   heights in the world and it hurts at the lower of them, which is what
- *   {@link shareOfALifetimeAt} exists to state as a number rather than a claim.
- *
- *   AND THE DEITY-TRANSFORMATION REPAIR IS INSTITUTIONS-ONLY BY ARITHMETIC.
- *   Nothing declares that. It is simply that the figure exceeds what any
- *   individual below the Lid accumulates, so the only bodies that can hold one
- *   are bodies rather than people.
- *
- * The income curve caps (`EARNINGS_RANK_CAP`), which means the accumulation
- * curve above Nascent Soul is driven by lifespan alone. That is correct and it
- * is the setting: rank stops making anybody richer per year quite early, and
- * what the top of the ladder actually has more of is time.
- *
- * Pure. State in, numbers out. No world types, no I/O, no rolling.
  */
 
 import {
@@ -95,9 +22,7 @@ import {
 } from './what-goes-wrong-at-a-realm-boundary.js';
 import type { Injury } from '../../schema/cultivation.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE CEILINGS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The last rung anything at all repairs at.
@@ -110,11 +35,6 @@ export const NOTHING_REPAIRS_ABOVE_ORDINAL =
 
 /**
  * The last rung anything made on this side of the Lid repairs at.
- *
- * Computed off the catalog rather than written down: the highest reach among
- * the medicines that can actually be refined here. Today that is the end of
- * Deity Transformation, and a catalog edit that changed it would move this by
- * itself rather than leaving a constant behind to disagree.
  */
 export function ordinaryGradeCeiling(): number {
     let top = -1;
@@ -127,19 +47,6 @@ export function ordinaryGradeCeiling(): number {
 
 /**
  * Whether this medicine mends this break, in this body, at this rung.
- *
- * THE ONE GATE. Every caller goes through it and there is no path around it.
- * Four things have to be true and each of them is a different refusal:
- *
- *   the wound is structural at all      a heart demon is not this table's
- *                                       business, and neither is a torn
- *                                       meridian
- *   the medicine names it, or outranks   a grade reaches everything a lower
- *   something that names it              grade reaches
- *   the rung is under the medicine's     nothing below immortal grade above 28
- *   own ceiling
- *   the rung is under the world's        nothing at all above 40
- *   ceiling
  */
 export function mendsThisBreak(
     medicine: StructuralRepairMedicine,
@@ -151,11 +58,6 @@ export function mendsThisBreak(
 
 /**
  * Why it will not work, in words a physician would use, or null where it will.
- *
- * A refusal is data. Somebody who asks a physician about a torn spirit sense
- * should be told which of these it is - that nothing made here reaches it is a
- * completely different answer from that the pill in the box is the wrong grade,
- * and the second one has a next step.
  */
 export function repairRefusalReason(
     medicine: StructuralRepairMedicine,
@@ -191,10 +93,6 @@ export function repairRefusalReason(
 
 /**
  * Whether a higher-graded medicine reaches a break a lower one is named for.
- *
- * The "or better" in `wounds.ts`: a Core-Knitting Pill answers a cracked core,
- * and so does everything above it. Expressed as a reach comparison rather than
- * as a grade ladder, so a new row declares its own coverage.
  */
 function reachesFromBelow(medicine: StructuralRepairMedicine, woundKey: string): boolean {
     for (const other of STRUCTURAL_REPAIR_MEDICINES) {
@@ -206,11 +104,9 @@ function reachesFromBelow(medicine: StructuralRepairMedicine, woundKey: string):
 
 /**
  * The cheapest thing in the world that would mend this, or null where there is
- * nothing.
- *
- * Null is the important answer and callers must not soften it. For a broken
- * step it is null forever; for a torn spirit sense it is an object nobody on
- * this side can make, which is a different kind of null and is why the refusal
+ * nothing. Null is the important answer and callers must not soften it: for a
+ * broken step it is null forever; for a torn spirit sense it is an object nobody
+ * on this side can make, which is a different kind of null and is why the refusal
  * reason exists beside this.
  */
 export function cheapestMedicineFor(
@@ -227,16 +123,6 @@ export function cheapestMedicineFor(
 
 /**
  * Take the dose. The break is gone from the wound list.
- *
- * DROPPED rather than marked treated, and it is `clearBrokenStatus` next door
- * that does it rather than a second copy here - because it was not treated. The
- * structure was reseated and the injury is no longer a fact about this person.
- * Marking it treated would leave it counting as scar tissue against
- * `SCAR_PLATEAU` and charge somebody attrition for a wound they no longer have.
- *
- * Returns the wound list unchanged where the medicine does not reach, which is
- * the honest outcome: the dose is gone and the person is exactly where they
- * were. Check `mendsThisBreak` first if you need to know which happened.
  */
 export function applyStructuralRepair(
     injuries: readonly Injury[],
@@ -248,71 +134,41 @@ export function applyStructuralRepair(
     return clearBrokenStatus(injuries, woundKey);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE PRICE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How many whole lifetimes of the patient's own accumulation a dose costs.
- *
- * The one authored number here. Twelve, because it has to be a figure no
- * individual can ever reach by saving and a figure a wealthy institution can
- * reach by deciding - and twelve puts the low grades inside what a great house
- * holds and the middle grade at a third of what the strongest cultivator in the
- * world will ever accumulate. Anything from about eight to about twenty tells
- * the same story; the round number in the middle is the one that does not have
- * to be defended against a content edit.
  */
 export const REPAIR_PRICE_IN_LIFETIMES = 12;
 
 /**
  * Everything somebody at this rung clears, after upkeep, across the whole span
  * their realm grants them.
- *
- * The unit every price on this page is quoted in. Note that it flattens above
- * Nascent Soul on the income side - `EARNINGS_RANK_CAP` - so what makes the top
- * of the ladder rich is span rather than rank, which is the setting stated as
- * arithmetic.
  */
 export function lifetimeAccumulationAt(ordinal: number): number {
     return Math.max(0, netEarningsPerYear(ordinal)) * lifespanForOrdinal(ordinal);
 }
 
 /**
- * What a dose is WORTH in spirit stones - which is not always what it can be
- * bought for, and for two of the four it never is.
- *
- * Quoted at the rung the grade is the cheapest answer for, because that is the
- * rung the market for it exists at. Rounded to whole stones, because nobody
- * quotes a fraction of one at this scale.
+ * What a dose is WORTH in spirit stones - which is not always what it can be bought
+ * for, and for two of the four it never is.
  */
 export function repairWeightInStones(medicine: StructuralRepairMedicine): number {
     return Math.round(REPAIR_PRICE_IN_LIFETIMES * lifetimeAccumulationAt(medicine.pricedAtOrdinal));
 }
 
 /**
- * What one actually costs to buy, or null where money is not the medium.
- *
- * Null for the immortal grade always, and null for the middle grade in the
- * ordinary case: there is no standing price for a Soul-Seating Pill, and the
- * only event that puts one in front of a buyer is a court body under enough
- * financial pressure to put its own up. {@link auctionReserveInStones} is what
- * that court would be looking for when it happens.
- *
- * Callers must not fall back to {@link repairWeightInStones} on a null. A thing
- * with a weight and no price is the entire point of the barter tier.
+ * What one actually costs to buy, or null where money is not the medium. Callers
+ * must not fall back to {@link repairWeightInStones} on a null: a thing with a
+ * weight and no price is the entire point of the barter tier.
  */
 export function repairCashPrice(medicine: StructuralRepairMedicine): number | null {
     return medicine.terms === 'private_sale' ? repairWeightInStones(medicine) : null;
 }
 
 /**
- * What a court putting one up would be looking for, or null where no auction
- * could ever happen.
- *
- * The same weight, because a distressed seller does not get a premium and the
- * bodies that could bid know exactly what the seller's position is. The reserve
- * existing at all is the concession; the price is not.
+ * What a court putting one up would be looking for, or null where no auction could
+ * ever happen.
  */
 export function auctionReserveInStones(medicine: StructuralRepairMedicine): number | null {
     return medicine.terms === 'court_auction_only' ? repairWeightInStones(medicine) : null;
@@ -332,11 +188,11 @@ export function cashRefusalReason(medicine: StructuralRepairMedicine): string | 
 
 /**
  * A dose priced as a share of everything a cultivator at this rung will ever
- * accumulate. 1 means it costs their whole life's earnings.
- *
- * The number that makes "for a Grand Ascension cultivator the price would hurt"
- * a fact rather than a phrase, and the one to quote when somebody asks whether a
- * person - as opposed to an institution - could pay.
+ * accumulate. THE MIDDLE GRADE IS PRICED AGAINST THE TOP OF THE LADDER and it
+ * falls out rather than being set: a Soul-Seating Pill is about a third of
+ * everything a Grand Ascension cultivator will ever have across thirty thousand
+ * years, and about a tenth of a Tribulation Transcender's. So the price is payable
+ * at exactly two heights in the world and it hurts at the lower of them.
  */
 export function shareOfALifetimeAt(medicine: StructuralRepairMedicine, ordinal: number): number {
     const lifetime = lifetimeAccumulationAt(ordinal);
@@ -345,11 +201,8 @@ export function shareOfALifetimeAt(medicine: StructuralRepairMedicine, ordinal: 
 }
 
 /**
- * Whether an individual standing at this rung could ever pay for this out of
- * their own accumulation, spending everything they will ever have.
- *
- * The apex-only rule, computed rather than declared. Nobody anywhere passes this
- * for the Deity-Transformation repair, which is why only institutions hold one.
+ * Whether an individual standing at this rung could ever pay for this out of their
+ * own accumulation, spending everything they will ever have.
  */
 export function anIndividualCouldPay(
     medicine: StructuralRepairMedicine,
@@ -359,11 +212,8 @@ export function anIndividualCouldPay(
 }
 
 /**
- * The lowest rung at which one whole lifetime's accumulation would cover this,
- * or null where no rung on the ladder ever does.
- *
- * Reads out as the sentence the design asked for: the middle grade is payable
- * at the top of the ladder and nowhere else.
+ * The lowest rung at which one whole lifetime's accumulation would cover this, or
+ * null where no rung on the ladder ever does.
  */
 export function lowestRungThatCouldPay(medicine: StructuralRepairMedicine): number | null {
     for (let o = 0; o <= NOTHING_REPAIRS_ABOVE_ORDINAL; o++) {
@@ -378,12 +228,10 @@ export function lowestRealmThatCouldPay(medicine: StructuralRepairMedicine): str
     return o === null ? null : realmForOrdinal(o).name;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SENT-DOWN COUNT
 //
 // The figure the standing register carries. Added up here rather than in the
 // catalog, so the catalog stays inert and so the parts are forced to reconcile.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SentDownLedger {
     /** Everything the record says has ever come down. */
@@ -422,10 +270,8 @@ export function sentDownLedgerTotals(): SentDownLedger {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // A READING OF THE WHOLE TABLE
 // One row per medicine, everything derived, for the register and the probes.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface RepairMedicineReading {
     id: string;
@@ -477,11 +323,6 @@ export function readAllRepairMedicine(): RepairMedicineReading[] {
 
 /**
  * Every structural break, and what the world has for it.
- *
- * The physician's answer sheet, and the honest one: three of these rows have no
- * medicine below the Lid and one has none anywhere. Derived from the wound keys
- * the crossing layer actually produces, so a break added there turns up here
- * with a null instead of being silently missing.
  */
 export interface BreakCoverage {
     woundKey: string;
@@ -509,12 +350,6 @@ export function coverageOfEveryBreak(): BreakCoverage[] {
 
 /**
  * The rung a cultivator carrying this break is standing at.
- *
- * A break is left by a crossing that LANDED, so the carrier is standing one
- * rung above the wall that broke them. Found by walking the ladder and asking
- * the crossing layer's own `brokenStatusFor` which status each wall leaves -
- * there is no second map of walls to breaks anywhere, and adding a realm
- * therefore does not require touching this file.
  */
 export function ordinalCarrying(woundKey: string): number {
     for (let from = 0; from < MAX_ORDINAL; from++) {

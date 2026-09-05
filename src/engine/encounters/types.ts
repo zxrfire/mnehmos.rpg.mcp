@@ -1,12 +1,5 @@
 /**
  * The vocabulary of the encounter layer.
- *
- * Deliberately structural rather than imported. This module is engine-pure -
- * state in, deltas out, no database, no world layer, no `src/web` - so
- * everything it needs about a place, a person or a name arrives as a plain
- * record the caller assembles from whatever it actually has. That is what lets
- * the same selection run against a live world, a fixture, and a test with three
- * hand-written people in it.
  */
 
 import type { SimEvent } from '../../schema/cultivation.js';
@@ -14,17 +7,10 @@ import type { DutyAccess, DutyOrigin, DutyPosture, DutyScale, RefusalTerms } fro
 import type { Contact, ContactPerson, TieChange } from './contact.js';
 import type { EncounterEntry, EncounterKind } from '../../data/cultivation/encounters.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE CULTIVATOR IS DOING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The activity an encounter interrupts.
- *
- * Not the game's verb list - a coarsening of it. Six of the web layer's verbs
- * are "you are standing in a settlement doing something ordinary" and they all
- * have the same exposure to the world, so they are one activity here. What
- * separates the rows is how much of the world can reach you while you do it.
  */
 export type EncounterActivity =
     /** Meditating. A door, shut, but only a door. */
@@ -44,15 +30,6 @@ export type EncounterActivity =
 
 /**
  * Whether anybody could find you.
- *
- * A seclusion on your sect's ground and a seclusion in a cave nobody has a
- * name for are not the same act, and the difference is not danger - it is
- * WHO can reach you. Being findable is the cost and the benefit of belonging:
- * a senior sister comes to check on you, and so does everything else your
- * house is inside.
- *
- * Nothing here is about how remote a place is. It is about whether somebody
- * looking for this person would know where to start.
  */
 export type Locatability =
     /** On your house's ground, or where people know to look for you. */
@@ -66,12 +43,11 @@ export type Locatability =
 export type EncounterValence = 'good' | 'bad' | 'neutral';
 
 /**
- * How the hostile half of an encounter stands relative to the cultivator.
- *
- * Read off `regard.ts` bands and nothing else, which is why there is no branch
- * anywhere on faction, title or importance. `above` is the one that carries
- * `docs/world/houses/discovery.md`: something far enough up is not a fight that was
- * lost, it is a fight that was never offered.
+ * How the hostile half of an encounter stands relative to the cultivator. Read
+ * off `regard.ts` bands and nothing else, which is why there is no branch
+ * anywhere on faction, title or importance. `above` carries
+ * `docs/world/houses/discovery.md`: something far enough up is not a fight that
+ * was lost, it is a fight that was never offered.
  */
 export type EncounterStance =
     /** Nothing hostile in this entry at all. */
@@ -83,9 +59,7 @@ export type EncounterStance =
     /** So far below that it costs nothing. The room rearranges itself. */
     | 'beneath';
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE WORLD LOOKS LIKE FROM HERE
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Where they are standing, reduced to what the draw actually reads. */
 export interface EncounterPlace {
@@ -101,23 +75,16 @@ export interface EncounterPlace {
     controllingFactionId?: string | null;
     /** A sealed pocket. Nothing walks in; the site itself is the hazard. */
     sealed?: boolean;
-    /**
-     * How many are standing on this ground, and how many of them are sitting.
-     *
-     * The design owner's rule, in their words: "the encounter rate isn't simply
-     * a function of people - it's a function of people / people in seclusion."
-     * People behind their own doors are inert. They are not walking into
-     * anybody's cave, and their presence is the mass that makes the place
-     * unattractive to anybody who might.
-     *
-     * Both halves are needed because the same headcount means opposite things:
-     * a mountain of a hundred all sealed is almost nobody moving, and a market
-     * town of a hundred is everybody moving. Population alone cannot tell them
-     * apart, which is why a sect's own cultivation ground came out as the most
-     * dangerous place in the world to sit - measured, and exactly backwards.
-     *
-     * Omitted is legal and reads as ordinary traffic. See `companyEffect`.
-     */
+/**
+ * How many are standing on this ground, and how many of them are sitting.
+ *
+ * The design owner's rule, in their words: *"the encounter rate isn't simply a
+ * function of people - it's a function of people / people in seclusion."* Both
+ * halves are needed because the same headcount means opposite things: a mountain
+ * of a hundred all sealed is almost nobody moving, and a market town of a hundred
+ * is everybody moving. Population alone made a sect's own cultivation ground the
+ * most dangerous place in the world to sit - measured, and exactly backwards.
+ */
     company?: {
         /** Bodies on this ground, the cultivator included. */
         heads: number;
@@ -128,11 +95,6 @@ export interface EncounterPlace {
 
 /**
  * Somebody who is actually standing there.
- *
- * The cast an encounter draws from. It is supplied, never invented: an
- * encounter that needs a person and is handed nobody produces a person-free
- * entry instead, because inventing one at the moment of the encounter is the
- * bespoke path.
  */
 export interface EncounterPerson {
     id: string;
@@ -147,11 +109,6 @@ export interface EncounterPerson {
 
 /**
  * What the cultivator belongs to.
- *
- * The three independent axes of standing, as `sects.ts` and `sect_members`
- * already hold them: which house, how far up its ladder, and how much of its
- * ledger is in your favour. Null membership is the ordinary case and every
- * institutional path degrades to nothing rather than to a default house.
  */
 export interface Membership {
     factionId: string;
@@ -171,12 +128,11 @@ export interface EncounterName {
 }
 
 /**
- * Names and content the caller can substantiate.
- *
- * Everything filled into a `{token}` slot comes from here or from arithmetic.
- * Nothing in this module composes a proper noun, which is the mechanical form
- * of "never reference an entity the player has no knowledge record for": if
- * the caller does not hand over a faction, no faction is named.
+ * Names and content the caller can substantiate. Supplied, never invented: an
+ * encounter that needs a person and is handed nobody produces a person-free
+ * entry instead. Nothing in this module composes a proper noun, which is the
+ * mechanical form of "never reference an entity the player has no knowledge
+ * record for".
  */
 export interface EncounterNamePools {
     factions?: readonly EncounterName[];
@@ -191,10 +147,6 @@ export interface EncounterNamePools {
 
 /**
  * One line the world digest already produced, offered for arrival.
- *
- * The digest's own attribution gating has already run by the time a line gets
- * here, so `text` is safe to hand to a narrator verbatim. What this layer adds
- * is that a thing reported at a distance sometimes turns up instead.
  */
 export interface ArrivableFact {
     factId: string;
@@ -208,12 +160,6 @@ export interface ArrivableFact {
     namableNpcIds?: readonly string[];
     /**
      * Still happening, with somewhere to be and a clock on it.
-     *
-     * The difference between reading that a caravan was raided and walking
-     * into the raid. A fact with this set arrives as a SCENE the player can
-     * join, ignore or exploit; one without it arrives as a consequence that
-     * has already finished happening. The world layer decides which it is,
-     * because the world layer is what knows whether the thing is over.
      */
     inProgress?: InProgress;
 }
@@ -230,17 +176,10 @@ export interface InProgress {
     involved?: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE DISCOVERY SEAM
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * A name that entered the player's world because of this encounter.
- *
- * Shaped to be spread straight into `KnowledgeGate.learnIfNew` with a holder
- * and a day added. The knowledge layer owns the ladder of knowing; this layer
- * only ever reports that a source existed and what it said, which is the one
- * thing a selection can honestly know.
  */
 export interface KnowledgeGrant {
     kind: 'cultivator' | 'sect' | 'place' | 'event';
@@ -254,9 +193,7 @@ export interface KnowledgeGrant {
     statement?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT COMES BACK
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Net change the engine decided on its own. Everything else is a decision. */
 export interface EncounterDeltas {
@@ -269,11 +206,6 @@ export interface EncounterDeltas {
 
 /**
  * A fight this encounter offers, described but not resolved.
- *
- * Resolution needs artifact rows and a battle history the pure layer does not
- * hold, so the encounter layer prices the opposition and stops. The caller
- * builds `CombatantInput`s from this and calls `resolveMelee`, or does not,
- * because the player was handed control back and may simply leave.
  */
 export interface Confrontation {
     threatOrdinal: number;
@@ -284,35 +216,24 @@ export interface Confrontation {
     damageMultiplier: number;
     /** Regard's own factual line about the gap. Never narration. */
     reaction: string;
-    /**
-     * Walking away is available.
-     *
-     * True whenever the stance is anything but `engaged`, whatever the entry's
-     * tags say. An `unavoidable` tag means the EVENT happens to you; it has
-     * never meant that fighting is compulsory, and a resolver that read it
-     * that way was putting cultivators into fights against things nine rungs
-     * above them and calling the result a defeat.
-     */
+/**
+ * Walking away is available. True whenever the stance is anything but `engaged`,
+ * whatever the entry's tags say. An `unavoidable` tag means the EVENT happens to
+ * you; it has never meant that fighting is compulsory.
+ */
     avoidable: boolean;
-    /**
-     * There is a fight here that this cultivator could actually have.
-     *
-     * False for `above` and `beneath`. A driver must not call the combat
-     * resolver on a confrontation where this is false: one is a thing that did
-     * not look up, and the other is a thing that cannot reach them. Neither is
-     * a battle, and scoring either as one is how the encounter layer became
-     * the leading cause of death in the game.
-     */
+/**
+ * There is a fight here that this cultivator could actually have. False for
+ * `above` and `beneath`. A driver must NOT call the combat resolver where this is
+ * false: one is a thing that did not look up and the other cannot reach them.
+ * Scoring either as a battle is how the encounter layer became the leading cause
+ * of death in the game.
+ */
     engageable: boolean;
 }
 
 /**
  * An institution asking for this person by name.
- *
- * Present on an occurrence when the thing that happened was a call rather than
- * a coincidence. Everything here is settled - how long, what it pays, what the
- * ledger says if it is walked away from - EXCEPT whether it is taken, which is
- * the player's and is why an occurrence carrying one always interrupts.
  */
 export interface Duty {
     origin: DutyOrigin;
@@ -337,11 +258,6 @@ export interface Duty {
     access: DutyAccess;
     /**
      * Who actually said it.
-     *
-     * An order carries very differently from a named elder who has an opinion
-     * about you than from "the sect", and the house has a roster, so there is
-     * no reason for it ever to be the second. Null only when the caller
-     * supplied no roster.
      */
     spokenBy: DutyMouth | null;
 }
@@ -361,10 +277,6 @@ export interface DutyMouth {
 
 /**
  * Something still happening, that the cultivator is standing in.
- *
- * The difference between reading that a caravan was raided and walking into
- * the raid. A scene has somewhere to be and a clock, and the clock runs whether
- * or not anybody joins - which is what stops it being a quest marker.
  */
 export interface Scene {
     locationId: string;
@@ -400,10 +312,6 @@ export interface EncounterOccurrence {
     scene: Scene | null;
     /**
      * Set when this was ordinary contact with somebody from their own house.
-     *
-     * Not a duty and not danger. It carries a `tie` describing what it does to
-     * the relationships record, which is how repeated contact with the same
-     * person accumulates instead of resetting.
      */
     contact: Contact | null;
     grants: KnowledgeGrant[];
@@ -447,10 +355,6 @@ export interface EncounterRollInput {
     place: EncounterPlace;
     /**
      * What they belong to, when they belong to anything.
-     *
-     * Null is the ordinary case. With it, the house can call on them; without
-     * it, nothing here changes except that no summons is ever drawn - a rogue
-     * simply is not sent for.
      */
     membership?: Membership | null;
     /**
@@ -462,10 +366,6 @@ export interface EncounterRollInput {
     locatability?: Locatability;
     /**
      * The house's own roster, with whatever the record already says about each.
-     *
-     * Supplied by the caller from `members.ts` plus the `relationships` table.
-     * Without it there is no ordinary contact and no named mouth on a summons -
-     * both degrade to silence rather than to an invented person.
      */
     roster?: readonly ContactPerson[];
     /** Who is standing there. Empty is legal and is honestly handled. */

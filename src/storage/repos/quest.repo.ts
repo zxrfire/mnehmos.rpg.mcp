@@ -152,9 +152,7 @@ export class QuestRepository {
         };
     }
 
-    /**
-     * Find all quests, optionally filtered by world
-     */
+    /** Find all quests, optionally filtered by world */
     findAll(worldId?: string): Quest[] {
         let stmt;
         if (worldId) {
@@ -168,9 +166,7 @@ export class QuestRepository {
         }
     }
 
-    /**
-     * Update a specific objective's progress
-     */
+    /** Update a specific objective's progress */
     updateObjectiveProgress(questId: string, objectiveId: string, progress: number): Quest | null {
         const quest = this.findById(questId);
         if (!quest) return null;
@@ -188,18 +184,14 @@ export class QuestRepository {
         return this.update(quest.id, { objectives: quest.objectives });
     }
 
-    /**
-     * Check if all objectives for a quest are completed
-     */
+    /** Check if all objectives for a quest are completed */
     areAllObjectivesComplete(questId: string): boolean {
         const quest = this.findById(questId);
         if (!quest) return false;
         return quest.objectives.every(o => o.completed);
     }
 
-    /**
-     * Complete a specific objective (set current = required)
-     */
+    /** Complete a specific objective (set current = required) */
     completeObjective(questId: string, objectiveId: string): Quest | null {
         const quest = this.findById(questId);
         if (!quest) return null;

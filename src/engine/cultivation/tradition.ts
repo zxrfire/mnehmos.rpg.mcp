@@ -1,38 +1,8 @@
 /**
- * The two traditions, as the engine sees them.
- *
- * The world holds two genuinely different ways of cultivating and exactly one
- * ladder. Both climb the same rungs; a fourth-realm practitioner of either is
- * Core Formation and `realmOrdinal` means what it means everywhere else. There
- * is no second scale in this file and there must never be one.
- *
- * WHY THIS IS ENGINE AND NOT CONTENT
- * ----------------------------------
- * Everything about the two traditions is flavour except one thing, and that one
- * thing decides fights: they have different answers to being killed, and the
- * answers are inverses of each other.
- *
- *   A Drawn cultivator at Nascent Soul or above survives the destruction of
- *   their body - the soul leaves intact and can be re-embodied, slowly and at
- *   ruinous cost. They cannot take anyone else's body; that door does not exist
- *   for them. What ends one is ending the soul.
- *
- *   A Cut cultivator has no detachable soul at any rank, so soul-directed arts
- *   do nothing to them whatsoever - not "less", nothing. Destroying the body
- *   usually finishes them, but the seam is worked into material, so a large
- *   enough seam-bearing piece regrows over years into somebody who is not
- *   reliably the same person. What ends one for good is quarrying the seam out
- *   and scattering it.
- *
- * That is a resolution rule, not a description, so it lives beside the code
- * that resolves. `killRequirement` is consulted by `combat.ts` at the moment a
- * lethal blow lands, and by nothing else - `survival.ts` remains the only place
- * a cultivator is actually declared dead.
- *
- * The catalog in `src/data/cultivation/traditions.ts` keeps everything else:
- * the prose, the method, the recognition cues, the war, the cross-tradition
- * errors people die of. It imports the id and this rule from here rather than
- * declaring its own, so the catalog and the engine cannot drift.
+ * The two traditions, as the engine sees them. The world holds two genuinely
+ * different ways of cultivating and exactly one ladder: both climb the same
+ * rungs, and a fourth-realm practitioner of either is Core Formation. There is no
+ * second scale in this file and there must never be one.
  */
 
 import { z } from 'zod';
@@ -45,10 +15,6 @@ export type TraditionId = z.infer<typeof TraditionIdSchema>;
 
 /**
  * The tradition a cultivator is assumed to walk when nothing says otherwise.
- *
- * The Drawn road, because it is the one the ladder was described from and the
- * one every rank name in `realms.ts` is phrased for. A row written before
- * traditions existed is a Drawn cultivator, which is what it always was.
  */
 export const DEFAULT_TRADITION: TraditionId = 'tradition-drawn';
 
@@ -102,15 +68,6 @@ export interface KillRequirement {
 
 /**
  * Whether this body is holding a nascent soul that cannot leave it.
- *
- * A realm-boundary wound locks the thing its realm exists to grant, and what
- * Nascent Soul grants is surviving the loss of your own body. `wounds.ts` says
- * so in the row itself - "mortal in the way that matters: destroy the body and
- * they are gone" - and this is the one live door that sentence can arrive
- * through.
- *
- * Untreated only, and through `currentWoundKey`, so a cultivator saved under
- * the old name for this wound is still carrying it after the rename.
  */
 function nascentSoulCannotLeave(injuries: readonly Injury[] | undefined): boolean {
     return (injuries ?? []).some(injury =>
@@ -118,30 +75,8 @@ function nascentSoulCannotLeave(injuries: readonly Injury[] | undefined): boolea
 }
 
 /**
- * What ending this cultivator actually requires, given their tradition, rank,
- * and what they are carrying.
- *
- * Two people standing at the same ordinal can need entirely different things
- * done to them, which is why knowing which tradition you are facing is worth
- * more than knowing their rank, and why everyone competent knows this.
- *
- * ── AND WHY THE THIRD ARGUMENT ───────────────────────────────────────────
- *
- * Because a rung is a claim about what somebody can do, and a realm-boundary
- * wound is the claim failing. The Drawn rule above reads the LADDER: at or
- * above Nascent Soul the soul persists and destroying the body is an expense.
- * A crippled nascent soul is precisely the case where that is false about a
- * person the ladder says it is true of, and the difference is the whole of
- * what the wound is for.
- *
- * `injuries` is optional and its absence is not a claim of health - it means
- * the caller did not know, and an unknown carries the ordinary rule. The only
- * caller that does know is `assessPower` in `combat.ts`, which is the moment
- * the question is actually asked.
- *
- * Nothing changes for the Cut: their answer was never about a soul leaving a
- * body, and no wound to a nascent soul reaches a person who has not got one
- * to detach.
+ * What ending this cultivator actually requires, given their tradition, rank, and
+ * what they are carrying.
  */
 export function killRequirement(
     traditionId: TraditionId,
@@ -185,10 +120,6 @@ export function killRequirement(
 
 /**
  * Whether a soul-directed art does anything at all to this cultivator.
- *
- * Separate from `killRequirement` because it is asked at a different moment:
- * this decides whether the strike lands, that decides whether the killing
- * counts.
  */
 export function soulAttacksAffect(traditionId: TraditionId): boolean {
     return TRADITION_DEATH_RULES[traditionId].soulAttackWorks;

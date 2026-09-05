@@ -1,125 +1,9 @@
 /**
  * What a grade's effect turns out to be, drawn at the moment it is used.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE RULING THIS EXISTS FOR
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Chaos grade is **immortal grade's peer, not its superior**. The two are the
- * same magnitude of power. What separates them is that an immortal-grade thing
- * does what it says on the tin every time, and a chaos-grade thing does not:
- *
- *   > a herb should be chaos cuz eating it gives you random effects (good or
- *   > bad) same for the canon, you don't know if the canon gives you the
- *   > ability that you want until you practice it. its not the fact that its
- *   > split that makes it chaos, but practicing it could turn you into a
- *   > cactus.
- *
- * So the grade is defined by ONE property and nothing else: **the effect is
- * settled when the thing is used, not when it was made.** Not rarity, not
- * price, not where it came from, not whether the canon it belongs to is
- * complete. Those are facts about particular objects and say nothing about
- * grade.
- *
- * An immortal pill gives you a rung cleanly. A chaos pill gives you a rung, a
- * window in which you are briefly dangerous, and a body that will not be what
- * it was. **Same power, different shape.**
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY THERE IS NO BRANCH ON THE WORD `chaos` ANYWHERE BELOW
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `GRADE_SPREAD` gives EVERY grade a spread. Four of the five are a single row
- * - a point mass at "it did what it said" - so drawing from them is total and
- * costs nothing, and `isSettledOnUse` is derived from the shape of the spread
- * rather than from the grade's name.
- *
- * A sixth grade added tomorrow with a spread of its own gets all of this for
- * free, and an object moved between grades changes behaviour without anybody
- * editing a resolver.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE TABLE IS OPEN AND MUST STAY OPEN
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The design owner listed outcomes and then said, in as many words, **"non
- * exhaustive examples, again"**. So this is not a closed union with seven
- * members, and nothing downstream may switch on the set.
- *
- * The shape that keeps it open: **an outcome carries its own consequence.** A
- * row is `{ weight, multipliers, account, consequence }` where `consequence` is
- * the function that applies it to a sheet. Adding an outcome next month is
- * adding one entry to one array. If anybody ever has to edit a resolver to add
- * "your meridians reroute", the shape has gone wrong - that is the
- * no-branch-on-chaos rule one level up.
- *
- * `key` is a bare `string` rather than a union for the same reason. A union
- * would compile-error the moment somebody added a row, which is precisely the
- * pressure this is built to remove.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE OUTCOMES ARE NOT A GOOD/BAD AXIS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- *   > a chaos pill might give you comprehension in a dao which is the total
- *   > opposite of your current one (which is useless) or change your root
- *   > (which might be devastating, cuz you have to restart, or good, if you
- *   > were a 5 elements root), or it might give you a bloodline, or turn you
- *   > into a spirit beast
- *
- * Read what that says about severity. **The severity is not in the effect. It
- * is in who it lands on, and where they were standing.** A redrawn root ruins a
- * Single Metal Root and rescues a muddled five-element one, and it is the SAME
- * outcome. A detonation in an empty field is a story; the same detonation in
- * the inner court of a house you hate is *"situationally useful if you were in
- * a sect you hated"*. So nothing here decides in advance which tail is bad. The
- * draw applies the change and the world prices it, which is also the only way
- * "good if you were a five-elements root" comes out right with no special case.
- *
- * And every one of them is irreversible. A chaos object that cannot actually
- * ruin somebody is not a chaos object, so a redrawn root really does take the
- * accumulation with it - that is what "you have to restart" means - and the
- * detonation really does end the run.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT ANYBODY KNOWS ABOUT IT BEFOREHAND
- * ═══════════════════════════════════════════════════════════════════════════
- *
- *   > like you have SOME idea of what it does, based on past records
- *   > which may or may not be complete
- *
- * So this is NOT an unknowable, and researching one is a real thing to do -
- * which is what makes a chaos object a decision you can prepare for rather than
- * a coin flip. `whatTheRecordsSay` is that surface, and its incompleteness is
- * structural rather than a hedge, for two separate reasons:
- *
- * - **Somebody has to have lived to write the account.** `recordedAs` carries
- *   that on the row itself, so the archive is systematically missing its own
- *   worst tail rather than missing a random sample of it.
- * - **The set is open.** Nobody has seen all of what this material does,
- *   because there is no all. An archive holding nine accounts holds nine out of
- *   an unknown number, NOT nine out of eleven - which is why `RecordOfAGrade`
- *   deliberately refuses to report a denominator. A count with a total beside
- *   it would be a lie the data cannot support.
- *
- * The honest archivist's sentence is *these are the ones we have accounts of*,
- * and here it is true rather than modest.
- *
- * **And an absence from the record is not the same as a silence.** The third
- * standing, `unattributed`, is the important one: an account of a compound
- * going up, with a year and a place and a number of dead, and no established
- * cause. The event is visible and the causation is not - which is a clue rather
- * than a hole, and it is the knowledge layer's ordinary business, since it
- * already reports things reaching people in unattributed and in partial form.
- *
- * It also means **the record can be confidently wrong rather than merely
- * short**. Whoever wrote the annal needed a reason and had one to hand, so the
- * Cinnabar hall was "lost to a formation failure in the year 812" and the entry
- * looks exactly like a settled fact. `blamedOn` carries that, and anything
- * rendering a record must not present an unexplained event as an explained one.
- *
- * Knowing changes nothing about what happens. It only changes whether the
- * person chose it with their eyes open, so nothing here gates the draw on it.
+ * The design owner listed outcomes and then said, in as many words, *"non
+ * exhaustive examples, again"*. So this is not a closed union and nothing
+ * downstream may switch on the set.
  */
 
 import type {
@@ -158,9 +42,7 @@ import { whatADetonationCosts } from '../social-leverage/what-somebody-does-abou
 // The tier vocabulary belongs to the bloodline layer and is not restated here.
 import type { AbilityTier } from '../world/hunting-a-spirit-beast.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A DRAW CAN DO TO A SHEET
-// ─────────────────────────────────────────────────────────────────────────
 
 /** The parts of a cultivator a consequence reads. Nothing else is needed. */
 export interface SheetForOutcome {
@@ -173,11 +55,6 @@ export interface SheetForOutcome {
 export interface OutcomeContext {
     /**
      * The rung the OBJECT is pitched at.
-     *
-     * Read by the outcomes that are the object's power rather than the
-     * holder's - "empowered" detonation means the blast carries the thing's
-     * weight, so a nobody who swallows the wrong pill takes out something a
-     * nobody could never touch.
      */
     sourceOrdinal: number;
 }
@@ -197,30 +74,14 @@ export interface Overdraw {
     residueRungs: number;
     /**
      * What the residue's structure is, and it is the Unearned Step's word.
-     *
-     * A rung arrived at this way had no crossing under it, which is the
-     * schema's own definition of `incomplete`: "rushed; part of the structure
-     * was never formed". Reusing the constant rather than the string means the
-     * world reads somebody carrying this exactly the way it reads somebody who
-     * took a Step.
      */
     foundation: FoundationQuality;
     /**
      * The price paid DURING the window, and it is control rather than damage.
-     *
-     * Whether what they do with the burst is what they would have chosen is the
-     * whole of what is in question. Note this is a state to be SHOWN, never an
-     * excuse for a surface to refuse what somebody types: they bought this, and
-     * a cost you bought reads as what you paid rather than as the parser saying
-     * no.
      */
     halfMad: boolean;
     /**
      * What the body is left carrying, as a fraction of the pool.
-     *
-     * The crossing toll's own currency, off `BODY_COST_OF_A_CROSSING`, so
-     * "damaged" is priced in the units this engine already charges for
-     * climbing instead of inventing a second kind of harm.
      */
     bodyCost: number;
 }
@@ -258,21 +119,10 @@ export interface SheetChange {
     line: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TABLE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * How an outcome stands in the archives, and the middle one is the interesting
- * one.
- *
- *   attributed    somebody it happened to said so afterwards, and the account
- *                 names the cause. Most of the table.
- *   unattributed  the EVENT is in the annals - a year, a place, a number of
- *                 dead - and the cause is not. A clue, not a hole, and usually
- *                 filed under somebody's confident wrong answer.
- *   unrecorded    nothing at all. Whoever it happened to was in no position to
- *                 write anything down and nobody outside saw enough to guess.
+ * How an outcome stands in the archives, and the middle one is the interesting one.
  */
 export type RecordStanding = 'attributed' | 'unattributed' | 'unrecorded';
 
@@ -291,10 +141,6 @@ export interface GradeOutcome {
     toxicityMultiplier: number;
     /**
      * How this outcome stands in the archives.
-     *
-     * The one axis the record layer reads, and it is not "how bad is it" - a
-     * redrawn root is ruinous and thoroughly documented, because the people it
-     * ruined were still there to be asked.
      */
     recordedAs: RecordStanding;
     /**
@@ -304,35 +150,15 @@ export interface GradeOutcome {
      * because that is genuinely all the annal says.
      */
     account: string;
-    /**
-     * What the archives put an `unattributed` event down to instead.
-     *
-     * A confident wrong answer, not a blank: whoever wrote the entry needed a
-     * reason and had one to hand. Present only where there is such an entry.
-     */
+/**
+ * What the archives put an `unattributed` event down to instead. The record can
+ * be confidently WRONG rather than merely short - whoever wrote the annal needed
+ * a reason and had one to hand - so anything rendering a record must not present
+ * an unexplained event as an explained one.
+ */
     blamedOn?: string;
     /**
      * Extra weight this row gains per rung the body is UNDER the pitch.
-     *
-     * ── A WEIGHTING, NOT A GATE, AND IT MOVES ONE ROW ────────────────────
-     *
-     *   > anyone lesser taking a chaos pill is again very risky (and they
-     *   > increase the odds of self detonation)
-     *
-     * The owner names one outcome, and this field is on one row. A body too far
-     * under what it swallowed does not get a subtly worse version of the good
-     * result - it cannot hold what is in the thing and the thing lets go. So
-     * nothing here scales "bad outcomes"; every other row keeps its weight
-     * unchanged and therefore its proportion to every other row unchanged, and
-     * only the detonation's share of the total grows.
-     *
-     * A weak drinker can still get the root redraw or the line. There is no
-     * floor anywhere and there must not be one: the spread is the spread, and
-     * the gap moves the weights.
-     *
-     * Absent on every row that is not about a body failing to hold what is in
-     * it - which is what keeps the table open, because a future row that also
-     * answers to being under-pitched sets this and needs nothing else.
      */
     underweightPerRung?: number;
     /**
@@ -368,14 +194,6 @@ function isElement(value: string): value is Element {
 
 /**
  * The element that destroys this one, or null where nothing does.
- *
- * `OVERCOMES` is written the other way round - it maps an element to the one it
- * destroys - so this inverts it rather than restating it, and the inversion is
- * where the honest gap shows: **lightning and ice are values of nothing**, so a
- * mutated root has no opposing element at all. That is not an oversight to
- * paper over. It is the existing table saying nothing in the five-element cycle
- * stands against a mutation, and this returns null and lets the caller deal
- * with it rather than inventing an opposite.
  */
 export function whatStandsAgainst(element: Element): Element | null {
     for (const candidate of ELEMENTS) {
@@ -386,10 +204,6 @@ export function whatStandsAgainst(element: Element): Element | null {
 
 /**
  * The element this person's road is actually built on.
- *
- * Their comprehension first, because a cultivator who has understood water is
- * walking the water road whatever they were born with; their root only where
- * they have understood nothing yet.
  */
 export function theRoadTheyWalk(sheet: SheetForOutcome): Element | null {
     for (const insight of sheet.insights) {
@@ -401,7 +215,6 @@ export function theRoadTheyWalk(sheet: SheetForOutcome): Element | null {
 /** Beasts with a core, which is the bar for there being anything to carry down. */
 const LINES_THAT_COULD_START = BEASTS.filter(b => b.ordinal >= BEAST_CORE_ORDINAL);
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE THING IS A BATTERY, AND THAT ONE FACT EXPLAINS ALL OF IT
 //
 //   > that means that a grade 5 swallowing it is not 2x grade 5, but a 29 + a
@@ -415,7 +228,7 @@ const LINES_THAT_COULD_START = BEASTS.filter(b => b.ordinal >= BEAST_CORE_ORDINA
 // at the rung it is pitched at is worth - and that quantity does not scale to
 // whoever drinks it.** Everything else here is arithmetic on that sentence.
 //
-// ── WHY THERE IS NO `29` ANYWHERE BELOW, AND MUST NOT BE ─────────────────
+// WHY THERE IS NO `29` ANYWHERE BELOW, AND MUST NOT BE
 //
 // The pitch comes from `PILL_GRADE_REALM` through the caller, so it is a value
 // rather than a number written down twice. And the two halves of the ruling
@@ -434,14 +247,13 @@ const LINES_THAT_COULD_START = BEASTS.filter(b => b.ordinal >= BEAST_CORE_ORDINA
 // One derivation, three answers, no branch - and a chaos pill pitched at some
 // other rung tomorrow behaves correctly without an edit.
 //
-// ── AND IT IS THE SAME NUMBER THE BLAST IS PRICED FROM ───────────────────
+// AND IT IS THE SAME NUMBER THE BLAST IS PRICED FROM
 //
 // `ctx.sourceOrdinal` feeds the overdraw and the detonation both, because they
 // are the same stored energy let go two different ways. That is also the whole
 // explanation of why a weak drinker goes off: a 5 who survives BECOMES a 29 -
 // a body built for 5 holding what a 29 holds - and the ones who do not survive
 // are the crater. One quantity explains the boost, the risk and the blast.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** How long the window lasts. Long enough to spend, short enough to be a window. */
 export const OVERDRAW_DAYS = 30;
@@ -450,10 +262,6 @@ export const OVERDRAW_RESIDUE_RUNGS = 1;
 
 /**
  * How much body this person is holding while they carry the thing's worth too.
- *
- * The addition, and the only place it happens. `bodyMultiplierForOrdinal` and
- * not the combat curve, because the body curve is the one the ruling is stated
- * in: `BODY_REALM_MULTIPLIER` is the 2 in "2x their own realm".
  */
 export function bodyWhileCarrying(ordinal: number, pitchOrdinal: number): number {
     return bodyMultiplierForOrdinal(ordinal) + bodyMultiplierForOrdinal(pitchOrdinal);
@@ -461,10 +269,6 @@ export function bodyWhileCarrying(ordinal: number, pitchOrdinal: number): number
 
 /**
  * How much larger than their own body they read. 1 is no change at all.
- *
- * The honest quantity, and the one every effect should scale by, because at the
- * top of the ladder the gain is real and smaller than a rung - a body that has
- * to be reported as a whole number reports a 41 as having drunk nothing.
  */
 export function liftFromCarrying(ordinal: number, pitchOrdinal: number): number {
     const own = bodyMultiplierForOrdinal(ordinal);
@@ -473,12 +277,6 @@ export function liftFromCarrying(ordinal: number, pitchOrdinal: number): number 
 
 /**
  * The rung a body of `ordinal` reads as while it carries `pitchOrdinal`'s worth.
- *
- * The addition above, inverted back onto the ladder and interpolated BETWEEN
- * the whole rungs it falls between. `bodyMultiplierForOrdinal` floors its
- * argument, so it is a staircase on integers and inverting it naively would
- * round every answer up to the next rung - which reads as the battery being
- * worth more than it is, in the direction that flatters the drinker.
  */
 export function standingWhileCarrying(ordinal: number, pitchOrdinal: number): number {
     const carried = bodyWhileCarrying(ordinal, pitchOrdinal);
@@ -514,17 +312,6 @@ function beginsALine(tier: AbilityTier) {
 
 /**
  * What each grade's effect is drawn from at the moment of use.
- *
- * Four point masses and one open spread. The four are not an omission: an
- * immortal-grade object being uniformly positive is a design statement, and
- * writing it as a one-row table rather than as an absence is what lets every
- * consumer take one code path.
- *
- * The weights on the open one are relative, not percentages, precisely because
- * the set is open - a total that reads as 100 invites somebody to treat it as
- * complete. Roughly half the mass is still the object doing its job: a
- * chaos-grade thing is genuinely powerful and the ordinary case has to be worth
- * reaching for, or the grade is a trap rather than a decision.
  */
 export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome[]>> = {
     mortal: AS_MADE,
@@ -652,7 +439,7 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
             weight: 4,
             potencyMultiplier: 0,
             toxicityMultiplier: 1,
-            // ── A HOLE IN THE RECORD, AND IT IS NOT RANDOM ────────────────
+            // A HOLE IN THE RECORD, AND IT IS NOT RANDOM
             // Whoever this happened to did not come back and file an account.
             recordedAs: 'unrecorded',
             account:
@@ -679,7 +466,7 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
             consequence: (sheet, ctx): SheetChange => {
                 const stands = standingWhileCarrying(sheet.realmOrdinal, ctx.sourceOrdinal);
                 const lift = liftFromCarrying(sheet.realmOrdinal, ctx.sourceOrdinal);
-                // ── THE RESIDUE OBEYS THE LADDER'S OWN RULE ABOUT GIFTS ──
+                // THE RESIDUE OBEYS THE LADDER'S OWN RULE ABOUT GIFTS
                 //
                 // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Unearned Step's bound
                 // and it is not about pills: nothing hands anybody a rung up
@@ -727,14 +514,14 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
             weight: 4,
             potencyMultiplier: 0,
             toxicityMultiplier: 1,
-            // ── THE EVENT IS IN THE ANNALS. THE CAUSE IS NOT ─────────────
+            // THE EVENT IS IN THE ANNALS. THE CAUSE IS NOT
             // Not a silence: a compound going up is the most visible thing on
             // this table and gets written down every time. What is missing is
             // WHY, because the only person who knew swallowed it. So a
             // researcher gets a real entry to follow rather than a gap - and
             // gets it under whatever explanation the annalist reached for.
             recordedAs: 'unattributed',
-            // ── HOW STEEP, AND WHY THAT NUMBER ───────────────────────────
+            // HOW STEEP, AND WHY THAT NUMBER
             //
             // The base weights total 100, so a rung under the pitch is worth
             // eight points of a hundred. Against a pitch of 29 that produces
@@ -766,11 +553,8 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
 };
 
 /**
- * Whether this grade's effect is settled when the thing is USED rather than
- * when it was made.
- *
- * Derived from the shape of the spread and never from the grade's name, which
- * is the whole of how "no bespoke branch on chaos" is kept true.
+ * Whether this grade's effect is settled when the thing is USED rather than when it
+ * was made.
  */
 export function isSettledOnUse(grade: TechniqueGrade): boolean {
     return GRADE_SPREAD[grade].length > 1;
@@ -793,16 +577,6 @@ export function weightOf(outcome: GradeOutcome, rungsUnder: number): number {
 
 /**
  * Draw what this thing turns out to do.
- *
- * Total over every grade. A grade with a point-mass spread returns its single
- * row and consumes exactly one sample, so the call site needs no branch and the
- * stream advances identically whatever is being swallowed.
- *
- * `rungsUnder` defaults to 0, which is a body standing at or above the rung the
- * thing is pitched at - the base table. It is a default rather than a required
- * argument because a reliable grade's point mass cannot be moved by it, and a
- * caller that has no rung to hand should get the honest base spread rather than
- * be forced to invent one.
  */
 export function drawGradeOutcome(
     grade: TechniqueGrade,
@@ -835,9 +609,7 @@ export function whatItDoesToTheSheet(
     return outcome.consequence(sheet, ctx, rng);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE BLAST REACHES
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Which major realm an ordinal sits in. Index, for counting realms apart. */
 function realmIndexOf(ordinal: number): number {
@@ -847,18 +619,6 @@ function realmIndexOf(ordinal: number): number {
 
 /**
  * What an empowered detonation takes off somebody standing there, 0..1 of pool.
- *
- * `whatADetonationCosts` is the one pricing and is not reimplemented; all this
- * adds is WHERE the power is read from. An ordinary detonation is priced from
- * the detonator's rung. This one is priced from the object's, which is the
- * whole of what "empowered" means: a Qi Condensation nobody who swallows the
- * wrong pill takes out something a Qi Condensation nobody could never touch.
- *
- * The falloff runs one way only, which is the existing table's own shape:
- * anybody AT or BELOW the blast's weight is finished by it, and only somebody
- * standing above it takes a reduced share. So the interesting number is never
- * what it does to the crowd - it is what it reaches on whoever the room was
- * built around.
  */
 export function whatTheBlastTakesFrom(
     poweredFromOrdinal: number,
@@ -868,16 +628,10 @@ export function whatTheBlastTakesFrom(
     return whatADetonationCosts(realmsBelow);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE RECORDS SAY
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The sentence a good archivist ends on, and it is not "we do not know".
- *
- * "These are the ones we have accounts of" and "these are the ones there are"
- * are different claims, and the difference is the whole of what makes a chaos
- * object worth researching and still worth being frightened of.
  */
 export const RECORD_CAVEAT =
     'These are the accounts that exist, which is not the same as the outcomes that exist. '
@@ -890,10 +644,6 @@ export interface RecordedAccount {
     account: string;
     /**
      * Whether this entry names a cause.
-     *
-     * Carried through so a renderer CANNOT present an unexplained event as an
-     * explained one. An `unattributed` entry read out flat is exactly the lie
-     * this field exists to prevent.
      */
     standing: RecordStanding;
     /** The confident wrong answer the archive files it under, where there is one. */
@@ -905,26 +655,16 @@ export interface RecordOfAGrade {
     accounts: readonly RecordedAccount[];
     /**
      * True where this grade has nothing to research: it does one thing.
-     *
-     * NOTE WHAT IS NOT HERE. There is no total, no denominator and no "n of m",
-     * because the set is open and a count with a total beside it would be a lie
-     * the data cannot support. Anything rendering this must not invent one.
      */
     settledWhenMade: boolean;
     caveat: string;
 }
 
 /**
- * What somebody with this much reach into the archives can find out.
- *
- * `depth` is how many separate accounts the asker can actually get to - a
- * village elder is one, a house with four hundred years of shelves is most of
- * them. Deliberately a COUNT rather than a probability, because who you ask is
- * a real question with a real answer, and rolling for it would put a second
- * lottery in front of the first one.
- *
- * The commonest outcomes surface first, which needs no rule: an outcome that
- * happens often is an outcome many people wrote about.
+ * What somebody with this much reach into the archives can find out. NOTE WHAT IS
+ * NOT HERE: no total, no denominator and no "n of m", because the set is open and
+ * a count with a total beside it would be a lie the data cannot support. Anything
+ * rendering this must not invent one.
  */
 export function whatTheRecordsSay(grade: TechniqueGrade, depth: number): RecordOfAGrade {
     const written = GRADE_SPREAD[grade]

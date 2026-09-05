@@ -1,110 +1,10 @@
 /**
- * What a house does about somebody it has caught, once it can put a name to
- * them.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * ALMOST NOTHING HERE IS NEW, AND THE LIST IS THE ARGUMENT
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   "IF THEY CATCH YOU"   `canPointAt` and `REACHABLE_FROM` in
- *                         `social/discovery.ts`. A record is held AGAINST
- *                         somebody, so opening one needs a name, and the ladder
- *                         of knowing already has the rung where a name arrives.
- *                         There is no witness system here and there must not be
- *                         one. `Deed.knownTo` is the field, and a deed nobody
- *                         has worked out already answers *"nobody has worked it
- *                         out"* on its own.
- *   HOW HEAVY IT WAS      `whatItWasWorth` in `what-a-deed-leaves.ts`. What it
- *                         cost against what they had, whether it comes back,
- *                         whether a word was given first. Never what it was
- *                         called.
- *   HOW FAR APART THEY    `regardFor` and `REGARD_BANDS`. The vocabulary this
- *   ARE                   world already uses for the distance between two
- *                         parties, read here in the one direction that matters:
- *                         the house looking down at the person.
- *   WHERE IT GOES         `Reach` in `what-a-deed-leaves.ts`. `answerable` is
- *                         the redirect - the account goes between houses rather
- *                         than landing on the person - and it was already the
- *                         field for it.
- *   THE CRIPPLING         `brokenStatusFor` and `WOUND_TYPES`. Every crippling
- *                         this can inflict is a broken status that already
- *                         exists, already has a presentation, and already has a
- *                         medicine that almost nobody ever sees.
- *   THE INDENTURE         `service_term` on `OathCause`, which has been in the
- *                         ledger since it was written and which nothing has
- *                         ever produced. See
- *                         `data/cultivation/what-an-indenture-is-and-what-
- *                         happens-when-it-ends.ts`.
- *
- * What this file adds is the order the three questions are asked in.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THREE AXES, ASKED IN THIS ORDER, AND CROSSING THEM IS THE FAILURE
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   1. CAN THE OFFENDED PARTY BE MADE TO PAY FOR ACTING?
- *      Asked first because it can remove the other two. An elder inside a house
- *      is constrained by that house's interests, and laying hands on an apex's
- *      disciple starts something their own house pays for. So they complain.
- *
- *   2. ARE YOU WORTH THE TROUBLE?
- *      Taking somebody means feeding, housing and watching them for decades.
- *      Crippling somebody means going and doing it. Neither is free, and a
- *      house does neither for a nobody who gave offence.
- *
- *   3. WHAT KIND OF HOUSE CAUGHT YOU?
- *      And this decides the KIND, never the severity. The magnitude is what the
- *      deed was worth, which the engine already computes.
- *
- * **Getting 2 and 3 crossed produces a punishment table where righteous is mild
- * and demonic is severe, which is exactly what this design is not.** Righteous,
- * neutral and demonic do not punish harder or softer than each other. Sixty
- * years of somebody's life taken by a house that sincerely believes it is
- * correcting them is not a lighter thing than a cracked core.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE FIRST AXIS IS NOT "WHO BACKS YOU"
- * ═════════════════════════════════════════════════════════════════════════
- *
- * It is CAN THE PERSON WHO WANTS TO ACT BE MADE TO PAY FOR IT. Backing is how
- * that is usually true and rogueness is how it is usually false, and naming the
- * axis the other way invites a special case for every unaffiliated party in the
- * world. The design owner's sentence, and it is the good world rule in here:
- *
- *   > BACKING PROTECTS YOU FROM EXACTLY THE PEOPLE WHO HAVE SOMETHING TO LOSE.
- *   > IT IS WORTH NOTHING AGAINST SOMEBODY WHO HAS NOTHING.
- *
- * So an apex house's disciple is safest among institutions and least safe on an
- * empty road. Their name works on anybody reachable through a house and does
- * nothing whatever to somebody who is not. `rogues.ts` is where the unaffiliated
- * are written and it says the same thing from the other side: no protection and
- * nobody to complain to are one fact, not two, and so are a rogue's freedom to
- * act and a rogue's exposure to being acted on.
- *
- * AND "DOES NOT CARE" IS A VARIABLE RATHER THAN A STATUS. Somebody nominally
- * inside a house who has decided they no longer care what it costs is, for this
- * question, a rogue - and a far more dangerous one, because they read as backed
- * right up until they act. It is {@link SomethingToLose.hasStoppedCaring} and
- * it is supplied by the caller, because whether a person has stopped caring is
- * a fact about them and not a rung.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE REDIRECT IS `Reach`, AND WHAT YOUR HOUSE THEN DOES IS THIS FUNCTION
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A complaint is not you getting away with it. It is the matter being handed to
- * the one party with a genuine right to punish you, and that party may well be
- * harsher, because what you cost them is standing. It should read as an adult
- * settling something over a child's head, which is more humiliating and more
- * dangerous than a beating.
- *
- * And what your own house does about the complaint needs no branch here: it is
- * the same three questions asked again with your house standing where the
- * offended house stood. {@link theComplaintYourHouseReceives} builds that second
- * call. **The redirect is recursion, not a second mechanism**, which is also
- * what stops it becoming a chain of bespoke rules one level down.
- *
- * Pure. No state, no rolls, no I/O.
+ * What a house does about somebody it has caught, once it can put a name to them.
+ * Almost nothing here is new: `canPointAt` decides who has a name, `whatItWasWorth`
+ * decides how heavy it was, `regardFor` decides how far apart they stand, `Reach`
+ * decides where it goes, and every crippling is a `brokenStatusFor` status that
+ * already exists. What this file adds is THE ORDER THE THREE QUESTIONS ARE ASKED
+ * IN.
  */
 
 import type { InjurySeverity, SectAlignment } from '../../schema/cultivation.js';
@@ -127,18 +27,12 @@ import {
 } from '../../data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.js';
 import { whatItWasWorth, type Deed, type Party, type Reach } from './what-a-deed-leaves.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// AXIS 1 - CAN THEY BE MADE TO PAY FOR ACTING
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * What the offender's house is actually worth to them, on this question only.
- *
- * Three values rather than a boolean because the middle one is the interesting
- * position and this world already draws it: somebody nominally attached who
- * cannot claim the house's protection is in the worst place of anybody -
- * visible enough to be worth a reprisal, unbacked enough to receive it in
- * person.
+ * What the offender's house is worth to them, on this question only. Three values
+ * and not a boolean because the middle one is the interesting position: somebody
+ * nominally attached who cannot claim the protection is in the worst place of
+ * anybody, visible enough to be worth a reprisal and unbacked enough to receive it
+ * in person.
  */
 export type Backing =
     /** Nobody answers for them. A rogue, and most of the player's peers. */
@@ -153,11 +47,9 @@ export interface SomethingToLose {
     /** The house that would carry the cost of what they do. Null for a rogue. */
     houseId: string | null;
     /**
-     * They have decided they no longer care what it costs.
-     *
-     * A variable and not a status: it is a fact about a person's state rather
-     * than about their position, it can be true of an elder in good standing,
-     * and it is the single most dangerous thing about the person carrying it.
+     * They no longer care what it costs. A VARIABLE, not a status: it can be
+     * true of an elder in good standing, who then reads as backed right up until
+     * they act.
      */
     hasStoppedCaring?: boolean;
 }
@@ -173,12 +65,9 @@ export type WhetherActingIsAvailable =
     | 'it_goes_to_your_house';
 
 /**
- * The first question, and it can remove the other two.
- *
- * Note there is no rung anywhere in here. This is not about who would win - it
- * is about whether starting something is a thing the aggrieved party is in a
- * position to do, and the strongest elder in the province is not, if their house
- * would have to answer for it.
+ * The first question, and it can remove the other two. NO RUNG APPEARS HERE:
+ * this is not about who would win, and the strongest elder in the province
+ * cannot act if their house would have to answer for it.
  */
 export function canTheyBeMadeToPayForActing(input: {
     /** The party that has been wronged and wants to do something about it. */
@@ -195,15 +84,9 @@ export function reachFor(available: WhetherActingIsAvailable): Reach {
     return available === 'it_goes_to_your_house' ? 'answerable' : 'unbacked';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// AXIS 2 - ARE YOU WORTH THE TROUBLE
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * The small facts that make somebody worth spending something on.
- *
- * DERIVED AND NOT A SCORE. Three booleans the caller already holds, counted,
- * and used to step the regard band. Anything richer than this becomes a second
+ * The small facts that make somebody worth spending something on. DERIVED AND
+ * NOT A SCORE: anything richer than three counted booleans becomes a second
  * measure of a person beside the ladder, and the ladder is the measure.
  */
 export interface WhatMakesThemWorthIt {
@@ -224,28 +107,16 @@ export function countsInTheirFavour(worth: WhatMakesThemWorthIt): number {
 export type WhetherToBother =
     /** They stand above what this house could answer. Nothing is mounted. */
     | 'beyond_them'
-    /**
-     * Not worth the rice.
-     *
-     * **Contempt rather than leniency, and it is a real outcome to be able to
-     * come back from.** Being beneath a reprisal is information about where you
-     * stand, and a player who can genuinely get away with something because
-     * nobody thought them worth the trouble has learned more about this world
-     * than a scaling punishment could have told them.
-     */
+    /** Not worth the rice. CONTEMPT rather than leniency, and a real outcome. */
     | 'beneath_notice'
     /** Worth answering. Axis 3 decides what kind of answer. */
     | 'worth_mounting';
 
 /**
- * The band the house reads the offender at.
- *
- * `regardFor(gate, asker)` computes `asker - gate`, so the house is the asker
- * and the offender is the gate: the gap is how far the house stands above the
- * person it has caught, and the band names it in the world's existing
- * vocabulary. `dismissed` and `beneath` are the two the owner's ruling turns on
- * and they already mean the right things - *"so far below them it is not put to
- * them at all"* and *"not treated as a thing being attempted"*.
+ * The band the house reads the offender at. ARGUMENT ORDER MATTERS:
+ * `regardFor(gate, asker)` computes `asker - gate`, so the house goes in as the
+ * asker and the offender as the gate, and the gap is how far the house stands
+ * ABOVE the person it caught.
  */
 export function howTheHouseReadsYou(input: {
     theirOrdinal: number;
@@ -255,29 +126,22 @@ export function howTheHouseReadsYou(input: {
 }
 
 /**
- * Worth steps the band toward `matched` and never past it.
- *
- * Being worth something makes a house look harder at somebody far below it. It
- * does not make somebody standing ABOVE the house into a smaller problem, which
- * is why the clamp is there: what is above you is above you whatever it is
- * holding.
+ * Worth steps the band toward `matched` and NEVER PAST IT. Being worth something
+ * makes a house look harder at somebody far below it; it does not make somebody
+ * standing above the house into a smaller problem.
  */
 export function bandAfterWorth(band: RegardBand, worthCount: number): RegardBand {
     const matched = REGARD_BAND_ORDER.indexOf('matched');
     const at = REGARD_BAND_ORDER.indexOf(band);
-    // At or above them already. Worth has nothing to say about somebody the
-    // house is looking up at, in either direction.
     if (at < 0 || at <= matched) return band;
     return REGARD_BAND_ORDER[Math.max(matched, at - Math.max(0, worthCount))] ?? band;
 }
 
 /**
- * The second question.
- *
- * The owner's calibration, and the table already lands on it: a Core Formation
- * cultivator who offends a Void Refinement elder reads `beneath` and is worth
- * answering; a Qi Condensation nobody reads `dismissed` and is not. Nothing in
- * here was chosen to produce that - it is where the existing band windows fall.
+ * The second question. The owner's calibration, which the existing band windows
+ * already land on with nothing chosen to produce it: a Core Formation cultivator
+ * who offends a Void Refinement elder reads `beneath` and is worth answering; a
+ * Qi Condensation nobody reads `dismissed` and is not.
  */
 export function whetherYouAreWorthTheTrouble(input: {
     theirOrdinal: number;
@@ -291,22 +155,9 @@ export function whetherYouAreWorthTheTrouble(input: {
     return 'worth_mounting';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT THERE IS TO TAKE
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * The structure this cultivator has built that could be broken, or null.
- *
- * Derived, with no table of its own: the broken status of the crossing they
- * most recently completed. A Core Formation cultivator has a core, and the row
- * for a core that will not open again is `cracked-core`, which already exists,
- * already carries its own presentation and already has a medicine that almost
- * nobody ever sees.
- *
- * NULL AT QI CONDENSATION, and that is the whole of the owner's point about
- * crippling. Somebody who has crossed nothing has built nothing, so there is
- * nothing to remove and no house gains anything by going and removing it.
+ * The structure this cultivator has built that could be broken. Derived with no
+ * table of its own: the broken status of their most recent crossing.
  */
 export function theStructureTheyHave(ordinal: number): string | null {
     const realm = realmForOrdinal(ordinal);
@@ -322,20 +173,10 @@ export type WhatIsTaken =
     | 'the capability';
 
 /**
- * What a house takes, given that it has decided the person is worth answering.
- *
- * NOT KEYED ON ALIGNMENT. Both answers are available to every house in the
- * world, and which one lands is an investment question asked one level down
- * from the last one:
- *
- *   WORTH KEEPING       There is something in them the house can use for years -
- *                       a root, a rate, a thing they hold. Feeding and watching
- *                       them buys that. It takes the years.
- *   NOT WORTH KEEPING   They had something worth removing and nothing worth
- *                       keeping. It takes the capability, which costs the house
- *                       one afternoon and nothing afterwards.
- *   NEITHER             They had nothing to take and are no use kept. There is
- *                       no answer here worth a house's time, whatever it feels.
+ * What a house takes, once it has decided the person is worth answering. NOT
+ * KEYED ON ALIGNMENT - both answers are available to every house, and which one
+ * lands is an investment question: somebody worth keeping costs years of
+ * feeding and watching, somebody not costs one afternoon.
  */
 export function whatTheHouseTakes(input: {
     weight: Severity;
@@ -348,10 +189,6 @@ export function whatTheHouseTakes(input: {
     if (worthKeeping && !tooLightToBeWorthTaking(input.weight)) return 'the years';
     return theStructureTheyHave(input.yourOrdinal) === null ? 'nothing' : 'the capability';
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// THE ANSWER
-// ─────────────────────────────────────────────────────────────────────────
 
 /** The crippling, as the row it already is. */
 export interface TheCapabilityTaken {
@@ -392,13 +229,9 @@ export interface WhatTheHouseDoes {
     cripples: TheCapabilityTaken | null;
     indenture: TheYearsTaken | null;
     /**
-     * The reprisal itself, as a deed.
-     *
-     * A house crippling somebody is a transfer like any other and is priced by
-     * the same call a gift is: they paid, it does not come back, and they hold a
-     * record about the house afterwards. Null where nothing was done. **Hand it
-     * to `whatADeedLeaves` and the loop closes** - a reprisal can be answered,
-     * and nothing had to be written to make that true.
+     * The reprisal itself, as a deed. Hand it to `whatADeedLeaves` and the loop
+     * closes: a reprisal can be answered, and nothing had to be written to make
+     * that true.
      */
     theReprisalAsADeed: Deed | null;
     /** Engine truth, one line, for the mechanical channel. Never narration. */
@@ -406,13 +239,10 @@ export interface WhatTheHouseDoes {
 }
 
 /**
- * What the house does, in the order the argument runs.
- *
- * `stages` is where every party stands on the ladder of knowing about THIS
- * DEED, supplied and never derived - the knowledge layer writes stages from
- * whatever source it had, and `stageCeilingFor` already caps what each source
- * can deliver. Anybody absent is `unaware`. If nobody has reached `placed`,
- * nothing below runs, because there is no name to hold anything against.
+ * What the house does. `stages` is SUPPLIED, never derived - the knowledge layer
+ * writes them and `stageCeilingFor` caps what each source can deliver. Anybody
+ * absent is `unaware`, and if nobody has reached `placed` nothing below runs,
+ * because there is no name to hold anything against.
  */
 export function whatTheHouseDoesAboutIt(input: {
     deed: Deed;
@@ -523,10 +353,9 @@ export function whatTheHouseDoesAboutIt(input: {
             deed: input.deed
         })
         : null;
-    // A term is held BY a house. Somebody answering for nobody has nowhere to
-    // put a person and no one to watch them, so the years are not available to
-    // them however worth keeping the offender is - which is the same investment
-    // logic one step further down and needs no rule of its own.
+    // A term is held BY a house, so somebody answering for nobody has nowhere to
+    // put a person and the years are not available to them however worth keeping
+    // the offender is.
     const cripples = wanted === 'the capability' || indenture === null
         ? theCapabilityTaken(input.offender.name, input.yourOrdinal)
         : null;
@@ -564,17 +393,13 @@ export function whatTheHouseDoesAboutIt(input: {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE TWO THINGS A HOUSE TAKES
-// ─────────────────────────────────────────────────────────────────────────
-
 function theCapabilityTaken(name: string, ordinal: number): TheCapabilityTaken | null {
     const woundKey = theStructureTheyHave(ordinal);
     if (woundKey === null) return null;
     return {
         woundKey,
-        // Every broken status in the table is authored at this severity and at
-        // no other. The row says so; nothing here decides it.
+        // Every broken status in the table is authored at this severity and no
+        // other. Nothing here decides it.
         severity: 'crippling',
         line: `What ${name} climbed is taken off them, and it does not come back.`
     };
@@ -610,12 +435,12 @@ function theYearsTaken(input: {
             : WHAT_THE_END_OF_A_TERM_LEAVES.standing,
         oath: {
             kind: 'oath',
-            // The person bound holds it. Same direction as `settleItWithABinding`:
-            // they are the one answerable, and the house is who comes looking.
+            // The person bound holds it: they are the one answerable, and the
+            // house is who comes looking.
             holderId: input.offender.id,
             subjectId: input.houseId,
             cause: 'service_term',
-            // Exactly as heavy as what it is answering. A lighter oath would be
+            // Exactly as heavy as what it answers. A lighter oath would be
             // cheaper to break than the account it replaced.
             severity: input.weight,
             onDay: input.onDay,
@@ -647,12 +472,9 @@ function theYearsTaken(input: {
 }
 
 /**
- * The reprisal, as an ordinary deed the ordinary machinery can price.
- *
- * The offender paid, it does not come back, and the house holds nothing
- * afterwards except somebody who has a reason. Handing this to `whatADeedLeaves`
- * with the two parties reversed opens the account the reprisal itself deserves,
- * and no rule anywhere had to say that a reprisal can be resented.
+ * The reprisal, as an ordinary deed the ordinary machinery can price. Handing it
+ * to `whatADeedLeaves` opens the account the reprisal deserves, so no rule
+ * anywhere had to say that a reprisal can be resented.
  */
 function theReprisalAsADeed(input: {
     takes: WhatIsTaken;
@@ -667,8 +489,8 @@ function theReprisalAsADeed(input: {
     const taken = input.takes === 'the capability';
     return {
         cause: taken ? 'crippled' : 'blocked_advancement',
-        // The house is the actor and the offender is the subject, so the
-        // offender paid. Same field, same direction, no second expression of it.
+        // The house is the actor and the offender the subject, so the offender
+        // paid.
         paidBy: 'subject',
         cost: taken ? 1 : 0.6,
         irreversible: taken,
@@ -688,20 +510,10 @@ function theReprisalAsADeed(input: {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// AND WHAT YOUR OWN HOUSE DOES ABOUT THE COMPLAINT
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * The second call, when a matter went over somebody's head.
- *
- * Your house is now the answering party and you are the one it has caught, so
- * the same three questions run with the parties moved along one. It is not a
- * gentler pass: a house given a complaint about its own is being told that one
- * of its people cost it standing, and what it does about that is its own
- * decision on its own terms.
- *
- * Returns null where there was no redirect, so a caller can chain unconditionally.
+ * The second call, when a matter went over somebody's head: the same three
+ * questions with the parties moved along one. NOT A GENTLER PASS - a house given a
+ * complaint about its own is being told one of its people cost it standing.
  */
 export function theComplaintYourHouseReceives(
     answer: WhatTheHouseDoes,
@@ -712,48 +524,14 @@ export function theComplaintYourHouseReceives(
     return {
         answering: yourHouse,
         theirOrdinal,
-        // Your own house is not deterred by your own house. There is nothing
-        // between it and you, which is the whole of why a complaint is worse
-        // than a beating.
+        // Your own house is not deterred by your own house. Nothing stands
+        // between it and you, which is why a complaint is worse than a beating.
         backing: 'none'
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHEN THE PERSON CAUGHT IS ONE OF YOUR OWN
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
  * What a house does about somebody it has caught at something it punishes.
- *
- * ── THIS IS `ifCaughtPractising` GENERALISED, NOT A SECOND FUNCTION ──────
- *
- * `world/manuals.ts` has answered this since long before portfolios existed,
- * scoped to exactly one offence - practising an art off somebody's shelf - and
- * the answer was already the right shape: one switch on alignment turning into
- * three genuinely different situations, with no branch on any faction's name.
- * What was wrong with it was only its reach.
- *
- * So the switch is lifted here unchanged and the offence-specific half becomes
- * a parameter. `ifCaughtPractising` now calls this and supplies the property
- * question it always asked; anything else a house punishes supplies its own.
- * **There is no second punishment table and there must not be one** - a tenth
- * offence is a caller, not a case.
- *
- * The three readings, in the words `manuals.ts` wrote for them:
- *
- *   A DEMONIC HOUSE     may simply kill you. There is no process to fail and
- *                       nobody to explain yourself to.
- *   A RIGHTEOUS HOUSE   asks where you got it. There is a conversation, it has
- *                       a right answer, and you may walk away having given up
- *                       somebody else.
- *   A NEUTRAL HOUSE     prices it. Which of a loss and a lever it becomes
- *                       depends on what you are worth to them.
- *
- * `theirsToPunish` is the whole of the offence-specific half, and it is a
- * PROPERTY question rather than a moral one: does this house have a claim on
- * the thing at all. A house does not punish somebody for a thing that was never
- * its business, whatever it thinks of them.
  */
 export type IfCaught = 'killed' | 'questioned_about_the_source' | 'priced' | 'nothing';
 
@@ -767,33 +545,15 @@ export function ifCaughtAtSomethingTheHousePunishes(input: {
         case 'demonic': return 'killed';
         case 'righteous': return 'questioned_about_the_source';
         case 'neutral': return 'priced';
-        // No house is no punisher. A wrong against nobody's claim is nobody's
-        // to answer, which is the same answer the property question gives.
+        // No house is no punisher: a wrong against nobody's claim is nobody's.
         default: return 'nothing';
     }
 }
 
 /**
- * The record a house opens about one of its OWN, as the offender.
- *
- * ── THE DIRECTION IS THE WHOLE OF THIS ───────────────────────────────────
- *
- * `what-a-deed-leaves.ts` already makes a house a holder - `holderId:
- * subject.houseId` - but only in one direction: the house is aggrieved when its
- * member is the VICTIM, and it takes their part. Nothing anywhere wrote the
- * mirror, where the house holds a record about its member as the one who did
- * it. Both are two strings and nothing guarded either.
- *
- * What makes it a different thing from an ordinary grudge is not the weight and
- * not the cause. It is that **the party with a claim on you is the party you
- * serve**, and a player has to be able to tell that at a glance - so the row
- * carries `AGAINST_THEIR_OWN` and the holder is the house rather than a person.
- * `theComplaintYourHouseReceives` above already says why it is worse: your own
- * house is not deterred by your own house, there is nothing standing between it
- * and you, and that is the whole of why a complaint beats a beating.
- *
- * Severity is the caller's, exactly as `grudges.ts` requires - it is decided
- * once, by whoever knows what was done. Nothing is scored here.
+ * The record a house opens about one of its OWN, as the offender. THE DIRECTION IS
+ * THE WHOLE OF THIS: `what-a-deed-leaves.ts` makes a house a holder only when its
+ * member is the VICTIM, and this is the mirror.
  */
 export const AGAINST_THEIR_OWN = 'against_their_own';
 

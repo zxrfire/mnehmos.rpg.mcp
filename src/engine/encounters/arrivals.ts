@@ -1,26 +1,5 @@
 /**
  * The world arriving instead of being reported.
- *
- * `digest.ts` already answers "what would have reached them", and it counts
- * what did not: a five-year seclusion in a live run produced one line that
- * reached the player and thirty-five events that reached them by no channel at
- * all. That counter is correct and should stay correct - a world that is mostly
- * none of your business is the design. What was missing is the other door.
- *
- * A channel is somebody telling you. ARRIVAL is not a channel: it is the thing
- * turning up. `docs/world/houses/discovery.md` is explicit that this is allowed and is
- * in fact the preferred shape -
- *
- *   > The consequence arrives without attribution: a road is closed, a price
- *   > moves, a village is empty, a body is found. The world may act on a player
- *   > who cannot name what acted.
- *
- * - so the text an arrival carries is the fact's own authored, name-free
- * consequence, which is exactly what `unattributedTextOf` returns and exactly
- * what the digest hands to a player who can name nobody involved. No name the
- * player lacks a record for can appear, because no name appears at all.
- *
- * This module holds no world types on purpose. The caller does the join.
  */
 
 import type { ArrivableFact } from './types.js';
@@ -46,11 +25,6 @@ export interface ArrivableInput<F extends FactLike> {
 
 /**
  * Default magnitude floor for arrival.
- *
- * Above `SECT_MAGNITUDE` and below `MARKET_MAGNITUDE` in `digest.ts`, which
- * puts it in the exact band the digest is worst at: too big to be nothing, too
- * small for anybody to mention. Those are the events that should stop being
- * silent by turning up instead.
  */
 export const ARRIVAL_MIN_MAGNITUDE = 0.3;
 

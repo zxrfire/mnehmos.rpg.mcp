@@ -1,75 +1,45 @@
 import type Database from 'better-sqlite3';
 
 /**
- * World persistence subsystem.
+ * World persistence subsystem: the date, locations and what has been done to
+ * them, factions, NPC records, actor hard state, the historical ledger, durable
+ * memories, and the schedule of dated consequences. Idempotent, safe on every
+ * startup, and run LAST in `migrate()`.
  *
- * SQLite is the source of truth for the world layer: the date, locations and
- * everything that has been done to them, factions, NPC records, actor hard
- * state, the historical ledger, durable memories, and the schedule of dated
- * consequences. The runtime agent reasons from these rows; it never asserts
- * them.
+ * EVERY TABLE HERE MUST CARRY THE `world_` PREFIX, and a new one must be checked
+ * against the ~65 tables the other four migrations create. Every statement is
+ * CREATE TABLE IF NOT EXISTS, so a name collision does not error - the second
+ * definition silently no-ops and the loser's columns never exist, surfacing
+ * hundreds of lines away as `no such column` on a table that looks fine. Two
+ * collisions were found this way: the base schema's `worlds` (this module's
+ * runtime row is `world_runtime`) and the social layer's `world_facts` (this
+ * module's dated event log is `world_chronicle`). The full-migrate test in
+ * tests/engine/world/world.test.ts is what enforces it, and it runs `migrate(db)`
+ * rather than `migrateWorld(db)` because standalone is exactly the arrangement in
+ * which this class of bug is invisible.
  *
- * Idempotent; safe on every startup. Wired into migrate() in migrations.ts:
- *   import { migrateWorld } from './migrations.world.js';
- *   // ...at the end of migrate():
- *   migrateWorld(db);
- *
- * ── NAMING: EVERY TABLE HERE IS PREFIXED, AND THAT IS LOAD-BEARING ────────
- *
- * This module runs LAST in migrate(), after the base schema, the cultivation
- * schema and the social schema. Every statement is CREATE TABLE IF NOT EXISTS,
- * so a name collision does not error - the second definition silently no-ops
- * and the loser's columns simply never exist. The failure then surfaces
- * hundreds of lines away as `no such column`, on a table that looks fine.
- *
- * Two collisions were found and fixed this way:
- *
- *   worlds       the base schema's worlds(id, name, seed, width, height, ...).
- *                This module's runtime row is `world_runtime`.
- *   world_facts  the social layer's claim-keyed objective-reality table, which
- *                beliefs file against. This module's dated event log is
- *                `world_chronicle`; the social layer keeps `world_facts`, and
- *                a chronicle row is referenced from there by id.
- *
- * So: every table added here MUST carry the `world_` prefix AND must be
- * checked against the ~65 tables the other four migrations create. The
- * full-migrate test in tests/engine/world/world.test.ts is what enforces it -
- * it runs migrate(db), not migrateWorld(db) alone, because standalone is
- * exactly the arrangement in which this class of bug is invisible.
- *
- * Five shape decisions worth stating up front, because they are load-bearing:
+ * Four shape decisions that are load-bearing:
  *
  * 1. LOCATION HISTORY IS ITS OWN TABLE, not a JSON blob on `world_locations`.
- *    A location is stored as `origin -> changes -> current state`, and the
- *    layers must be SEPARATELY QUERYABLE: "what happened at Blackwater Valley",
- *    "which changes here have no recorded cause", "what did this place look
- *    like in year 8,412". A blob answers none of those without loading and
- *    parsing every location in the region.
+ *    The origin/changes/current layers must be separately queryable - "what
+ *    happened at Blackwater Valley", "what did this place look like in year
+ *    8,412" - and a blob answers none of those without parsing every location in
+ *    the region. The ORIGIN is denormalised onto the location row rather than
+ *    stored as change index 0, because replaying needs it every time.
  *
- * 2. THE ORIGIN IS DENORMALISED ONTO THE LOCATION ROW rather than stored as a
- *    change with index 0. Replaying to a past state needs the origin every
- *    time and the changes only sometimes, so one row read beats a join for the
- *    common case, and "what was this before anyone touched it" stays a single
- *    column read.
+ * 2. FACT IDS ARE SEQUENTIAL TEXT (`f7`), not UUIDs, and the same for memories
+ *    (`m7`), effects (`e7`) and location changes (`loc-x-c7`). The layer has to
+ *    be byte-identical across replays of one seed, and a random id quietly
+ *    destroys that guarantee.
  *
- * 3. FACT IDS ARE SEQUENTIAL TEXT (`f7`), not UUIDs. Seeding several prior ages
- *    writes thousands of facts, and the whole layer has to be byte-identical
- *    across replays of the same seed. A random id makes two runs of one seed
- *    incomparable and quietly destroys the determinism guarantee. Same for
- *    memories (`m7`), effects (`e7`) and location changes (`loc-x-c7`).
+ * 3. BELIEF IS NOT HERE. These tables hold ground truth and the surviving record.
+ *    What anybody knows, believes or suspects lives in the social layer's
+ *    knowledge tables and references `world_chronicle.id`.
  *
- * 4. BELIEF IS NOT HERE. These tables hold ground truth and the surviving
- *    record - `fidelity` and `cause_known`. What an NPC knows, believes or
- *    suspects, and what the public believes, live in the social layer's
- *    knowledge tables and reference `world_chronicle.id`. One place to be wrong
- *    about who thinks what.
- *
- * 5. MEMORY COMPRESSION IS LOSSY BY DESIGN AND AUDITED ANYWAY.
- *    `world_memories.compressed_from` keeps the ids a compressed record
- *    absorbed even though those rows are gone, so a compression pass can be
- *    inspected after the fact. Protected kinds are enforced in the engine, not
- *    by a constraint here, because the kind list is content and a CHECK would
- *    have to be migrated every time it grew.
+ * 4. MEMORY COMPRESSION IS LOSSY BY DESIGN AND AUDITED ANYWAY.
+ *    `world_memories.compressed_from` keeps the ids a compressed record absorbed.
+ *    Protected kinds are enforced in the engine rather than by a CHECK here,
+ *    because the kind list is content and would need migrating as it grew.
  */
 export function migrateWorld(db: Database.Database): void {
     db.exec(`
@@ -342,6 +312,10 @@ export function migrateWorld(db: Database.Database): void {
       -- A plain fact, carried so a child can have two parents. It answers a
       -- parentage question and nothing else; nothing branches on it.
       sex TEXT NOT NULL DEFAULT 'female',
+      -- The body they were born as, out of the frozen catalog in
+      -- engine/cultivation/physiques.ts. NULL is 98 births in a hundred.
+      -- Nothing anywhere branches on which one it is.
+      physique TEXT,
       -- A line that came down from an ancestor who was a beast before it was a
       -- person. Two columns rather than JSON because both are looked up: the
       -- species is a beasts.ts id and the tier is the dilution ladder's own
@@ -1081,6 +1055,14 @@ function addWorldColumns(db: Database.Database): void {
     // NULL is the answer for everybody who was already in a saved world, and
     // it is the right one: a line is written at a birth or by the catalog, and
     // neither had happened.
+    // NULL for everybody in a saved world, and it reads correctly: nobody was
+    // born with anything, because until this column there was nothing to be
+    // born with. Unlike sex there is a genuine majority to default to.
+    if (!columnsOf('world_npcs').includes('physique')) {
+        console.error('[Migration] Adding physique column to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN physique TEXT;');
+    }
+
     if (!columnsOf('world_npcs').includes('bloodline_species')) {
         console.error('[Migration] Adding bloodline columns to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_species TEXT;');

@@ -1,46 +1,5 @@
 /**
  * Understanding - the axis that is not accumulation.
- *
- * Three quantities are kept separate and are allowed to be wildly out of step:
- *
- *   accumulation   how much qi has been gathered      (cultivationProgress)
- *   quality        what it was built on               (foundationQuality)
- *   understanding  what the cultivator comprehends    (this file)
- *
- * A cultivator with an enormous reserve and shallow understanding hits a wall
- * no further accumulation clears. A cultivator with less raw power and a deep
- * grasp of their own path crosses the moment they find the missing piece, and
- * fights well above where their rank suggests. Before this module, two
- * cultivators at identical progress had identical prospects, which made the
- * ladder the only story a run could tell.
- *
- * Three constraints matter more than any of the numbers below.
- *
- *  1. IT IS NOT A SKILL TREE. There is no menu and no fixed list. What a
- *     cultivator can discover is computed from their spirit root, attributes,
- *     techniques, location and what has actually happened to them - see
- *     `discoverableInsights`. Two cultivators may hold sets with no overlap,
- *     and the engine never enumerates "all insights" anywhere.
- *
- *  2. IT CANNOT BE BOUGHT. Nothing here takes spirit stones, nothing is
- *     granted by rank, and nothing arrives on a schedule. There is no function
- *     in this file that awards an insight for time served. If it could be
- *     ground, it would be designed wrong.
- *
- *  3. IT IS ALWAYS TRACEABLE. Every insight carries the achievement that
- *     produced it, and the achievement carries the event. This is enforced
- *     structurally rather than by convention: `formInsight` is the only
- *     constructor, it requires an Achievement, and the insight's own id is
- *     DERIVED from the achievement's. An insight with no provenance cannot be
- *     built by this module and cannot survive `InsightSchema.parse` at the
- *     storage boundary, because `provenance` has no default and no optional.
- *
- * Note what is absent: Fortune. Insight the ATTRIBUTE gates comprehension,
- * because reading a life you did not live is exactly what it measures. Fortune
- * does not appear anywhere in this file. Luck may generate the opportunity to
- * be somewhere interesting, but understanding is capability, and letting luck
- * buy capability through a side door is the trap this whole subsystem is
- * shaped to avoid.
  */
 
 import {
@@ -65,12 +24,10 @@ import { forStream, type CultivationRNG } from './rng.js';
 // without the edge. See TEMPORAL PHENOMENA at the bottom of the file.
 import type { KnowledgeInput } from '../social/knowledge.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // DEGREES
 // The genre's own ladder, and the reason "sword intent" and "sword heart" are
 // different things rather than the same thing with a bigger number. A degree
 // is a qualitative state with a name, not a level.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const DEGREE_NAMES: Record<InsightDegree, string> = {
     1: 'glimpse',
@@ -90,7 +47,6 @@ export function insightName(insight: Pick<Insight, 'subject' | 'degree'>): strin
     return `${insight.subject} ${DEGREE_NAMES[insight.degree]}`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // RELEVANCE
 //
 // An insight helps with what it is actually about. A profound grasp of the
@@ -100,7 +56,6 @@ export function insightName(insight: Pick<Insight, 'subject' | 'degree'>): strin
 // Universal domains are the exception, and deliberately so: karma, life and
 // death, time and void are comprehensions about existence rather than about a
 // craft, so they bear on everything a cultivator does.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const UNIVERSAL_DOMAINS: readonly InsightDomain[] = [
     'karma', 'life_death', 'time', 'void'
@@ -112,11 +67,6 @@ export function isUniversalDomain(domain: InsightDomain): boolean {
 
 /**
  * How much this insight bears on a bottleneck in the cultivator's OWN path.
- *
- * A bottleneck is a question about your own dao, so insights about existence
- * count fully, insights about your own elements count fully, and a mastery of
- * some craft counts for something but not for everything. A sword saint does
- * not get to skip Core Formation on swordsmanship alone.
  */
 export const PATH_WEIGHT: Record<InsightDomain, number> = {
     karma: 1,
@@ -168,14 +118,12 @@ export function pathWeightOf(insight: Insight, ctx: RelevanceContext): number {
     return PATH_WEIGHT[insight.domain];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // EFFECTS
 //
 // Deliberately modest per insight and hard-capped in aggregate. Understanding
 // is meant to decide WHICH of two similar cultivators crosses, not to replace
 // the ladder. A cultivator with five insights should be formidable; one with
 // fifteen should not be unrecognisable.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Cultivation-rate bonus per degree of a relevant insight. */
 export const RATE_PER_DEGREE = 0.03;
@@ -198,12 +146,11 @@ export const MAX_TECHNIQUE_BONUS = 1.0;
  */
 export const SUBSTITUTION_PER_DEGREE = 0.04;
 /**
- * Ceiling on substitution.
- *
- * A third, and not a sliver more. Understanding must be able to decide a
- * crossing that accumulation alone would lose, and must never be able to
- * replace the climb: a cultivator with no progress and profound understanding
- * still cannot cross, because 35% of the requirement is not the requirement.
+ * Ceiling on substitution. A third, and not a sliver more: understanding must be
+ * able to decide a crossing that accumulation alone would lose, and must never be
+ * able to replace the climb - a cultivator with no progress and profound
+ * understanding still cannot cross, because 35% of the requirement is not the
+ * requirement.
  */
 export const MAX_SUBSTITUTION = 0.35;
 
@@ -250,10 +197,6 @@ export function understandingEffects(
 /**
  * How effective a technique is, combining spirit-root affinity with actual
  * comprehension of what the technique is about.
- *
- * This is where "fights far above where their rank suggests" lives: two
- * cultivators with the same manual at the same mastery do not hit equally hard
- * if one of them understands the sword and the other has been copying forms.
  */
 export function techniqueEffectiveness(
     cultivator: Pick<Cultivator, 'spiritRoot'> & { insights?: readonly Insight[] },
@@ -285,10 +228,8 @@ export function techniqueEffectiveness(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SUBSTITUTION AT A BOTTLENECK
 // The whole point of the subsystem.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SubstitutionResult {
     /** Qi-units of the requirement that understanding stands in for. */
@@ -303,12 +244,6 @@ export interface SubstitutionResult {
 
 /**
  * How much of the next bottleneck understanding can stand in for.
- *
- * The substitution is expressed in qi-units against the CURRENT ordinal's
- * requirement, so it scales with the ladder rather than becoming irrelevant
- * at high realms or overwhelming at low ones. It is capped at
- * MAX_SUBSTITUTION, so understanding decides marginal crossings and never
- * replaces the climb.
  */
 export function bottleneckSubstitution(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot'> & { insights?: readonly Insight[] },
@@ -337,10 +272,6 @@ export function bottleneckSubstitution(
 /**
  * Progress as a bottleneck actually sees it: what was accumulated, plus what
  * understanding stands in for.
- *
- * Every eligibility question in the engine routes through this rather than
- * reading `cultivationProgress` directly, which is what makes the substitution
- * real instead of decorative.
  */
 export function effectiveProgress(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'spiritRoot' | 'cultivationProgress'> & {
@@ -363,7 +294,6 @@ function relevanceFor(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // DISCOVERY, AND THE ACCESS THAT GATES IT
 //
 // You cannot comprehend what you have never been near.
@@ -393,7 +323,6 @@ function relevanceFor(
 // reach what a mediocre inner disciple got by walking into a room. It is also
 // why the Late Age bites - every lost manual and every dead teacher is a Dao
 // that has left the world, not merely a technique nobody can cast.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** How a cultivator came to be near enough to comprehend something. */
 export type AccessKind =
@@ -464,18 +393,6 @@ export interface DiscoveryContext {
     locationTags?: readonly string[];
     /**
      * Ground that teaches a road, and that this cultivator can actually reach.
-     *
-     * Its own channel rather than a `locationTag`, because a tag carries only
-     * a name and `LOCATION_OPENINGS` then decides what it opens - which works
-     * for nine fixed kinds of place and cannot carry twenty authored grounds
-     * that each name their own domain AND their own subject. Flattening them
-     * through the tag table would throw the subject away and force eight
-     * synthetic tags, one per domain.
-     *
-     * The CALLER decides reachability. Whether a house lets somebody onto its
-     * cliff, whether a province leaves its ford open, and whether a buried one
-     * has been dug out are all facts about the world, and this module holds no
-     * map - the same division every other field here observes.
      */
     daoGrounds?: readonly {
         domain: InsightDomain;
@@ -484,17 +401,6 @@ export interface DiscoveryContext {
         id?: string | null;
         /**
          * HOW they can get at it, which is what the road costs them in years.
-         *
-         * Carried here rather than in a second field beside `understanding`
-         * because this list is already the player's half of the reach set, and
-         * `src/web/game.ts` passes only `.context` from `discoveryContextFor` -
-         * so a new top-level field would have reached the MCP surface and not
-         * the played game, which is the exact split the one-rule change exists
-         * to close. `simulateTimeSkip` reads it back out.
-         *
-         * Omitted reads as open ground, the dearest of the ground prices,
-         * which is the safe default: a caller that does not know how somebody
-         * got in should not be the one making it cheap.
          */
         how?: HowARoadCameWithinReach;
     }[];
@@ -523,7 +429,6 @@ export interface DiscoveryContext {
     affinityOf?: AffinityResolver;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SUITABILITY
 //
 // Access is necessary and it is NOT sufficient. A manual is not universally
@@ -547,7 +452,7 @@ export interface DiscoveryContext {
 // access to A library, never to THEIR library, which is exactly why the birth
 // axis is loud at the opening and quiet in the outcome.
 //
-// ── What is always suited, and why it must be ────────────────────────────
+// What is always suited, and why it must be
 //
 //   own_root     you are always suited to your own aperture. Anything else
 //                breaks the game at ordinal 0.
@@ -555,7 +460,7 @@ export interface DiscoveryContext {
 //                deviation felt the circulation turn whether or not the
 //                subject was ever going to suit them.
 //
-// ── What is drawn ────────────────────────────────────────────────────────
+// What is drawn
 //
 // Everything reached through a manual, teacher, artifact, inheritance,
 // tradition or site, at SUITABILITY_BASE - unless the cultivator already holds
@@ -569,27 +474,20 @@ export interface DiscoveryContext {
 // you does not start fitting you because you tried again, and a player must be
 // able to learn that by trying twice.
 //
-// ── A miss is stated, never silent ───────────────────────────────────────
+// A miss is stated, never silent
 //
 // `assessAccess` returns what did NOT fit alongside what did, with the reason
 // attached, so a caller can say "you read it through twice and it stayed a
 // list of somebody else's conclusions" rather than reporting nothing at all. A
 // silent miss teaches a player to sit longer, which is the exact opposite of
 // the lesson.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Access kinds that are suited by their nature and are never drawn for. */
 const ALWAYS_SUITED: readonly AccessKind[] = ['own_root', 'phenomenon'];
 
 /**
- * Chance an unrelated thing turns out to fit a cultivator who has no foothold
- * on that road.
- *
- * 0.2 - so a room of five unrelated manuals yields about one that means
- * anything, and a life turns on finding one or two things rather than on
- * finding a shelf. Low enough that a cultivator can be rich, well-placed and
- * still stuck because the fit was never there; high enough that going out to
- * look is a rational plan rather than a lottery.
+ * Chance an unrelated thing turns out to fit a cultivator who has no foothold on
+ * that road.
  */
 export const SUITABILITY_BASE = 0.2;
 
@@ -675,10 +573,6 @@ export interface AccessAssessment {
 
 /**
  * Everything in reach, split by whether it fits.
- *
- * The legible form. Callers that want to tell a player why the manual on their
- * knee is doing nothing use this; callers that only need the usable list use
- * `discoverableInsights`.
  */
 export function assessAccess(
     cultivator: Pick<Cultivator, 'spiritRoot'> & Partial<Pick<Cultivator, 'id' | 'insights'>>,
@@ -698,17 +592,6 @@ export function assessAccess(
 
 /**
  * Everything this cultivator is near enough to comprehend.
- *
- * Every entry names the source that put it within reach. An empty-ish result
- * is the ordinary case and the honest one: a hermit with no library, no
- * teacher and nothing remarkable underfoot can reach their own root and
- * nothing else, however long they sit.
- *
- * When `ctx.runSeed` is supplied the list is also filtered by SUITABILITY -
- * see the banner above. Without it nothing is filtered, which is the old
- * behaviour and the right answer for a caller with no run to seed from
- * (odds harnesses, NPC stubs). Anything resolving a real cultivator's real
- * turn should pass it.
  */
 export function discoverableInsights(
     cultivator: Pick<Cultivator, 'spiritRoot'> & Partial<Pick<Cultivator, 'id' | 'insights'>>,
@@ -878,12 +761,6 @@ const SUBJECT_DOMAINS: Record<string, InsightDomain> = {
 
 /**
  * Which domain a free-form subject belongs to.
- *
- * Exported because a fight is another way of coming near something - see
- * `what-a-fight-teaches.ts` - and the alternative was a second copy of this
- * table beside the first. Two tables that answer "is the sword a weapon" would
- * drift, and the one that drifted would be whichever was not in front of the
- * next person to add a subject.
  */
 export function domainForSubject(subject: string): InsightDomain {
     return SUBJECT_DOMAINS[subject] ?? 'weapon';
@@ -903,11 +780,6 @@ function dedupe(candidates: InsightCandidate[]): InsightCandidate[] {
 
 /**
  * Whether a cultivator can reach a given comprehension at all.
- *
- * The predicate behind "absent, not harder". Exported so the sect, ruin and
- * tool layers can answer "would joining this house put anything new within
- * reach" without duplicating the derivation - which is, mechanically, the
- * thing a sect is actually selling.
  */
 export function hasAccessTo(
     cultivator: Pick<Cultivator, 'spiritRoot'>,
@@ -920,11 +792,9 @@ export function hasAccessTo(
     return match ? match.access : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ACHIEVEMENTS AND PROVENANCE
 //
 // The only way an insight comes into existence.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface AchievementInput {
     kind: AchievementKind;
@@ -939,10 +809,6 @@ export interface AchievementInput {
 
 /**
  * Record that something remarkable actually happened.
- *
- * An achievement is a record of an EVENT, not a reward. Nothing in this engine
- * creates one on a schedule; every call site is a place where the simulation
- * had already resolved something out of the ordinary.
  */
 export function recordAchievement(input: AchievementInput, rng: CultivationRNG): Achievement {
     return {
@@ -957,12 +823,6 @@ export function recordAchievement(input: AchievementInput, rng: CultivationRNG):
 
 /**
  * Form an insight from an achievement.
- *
- * The ONLY constructor, and it takes the achievement by value rather than by
- * id so a caller cannot invent a provenance that points at nothing. The
- * insight's id is derived from the achievement's, which makes an untraceable
- * insight not merely discouraged but unrepresentable: there is no id to give
- * it.
  */
 export function formInsight(
     candidate: InsightCandidate,
@@ -1001,12 +861,6 @@ export function formInsight(
 
 /**
  * Deepen an insight already held, keeping the WHOLE history legible.
- *
- * Comprehension does not restart at a higher degree; it goes further. So the
- * origin achievement stays put - it is what the insight's id is derived from,
- * and repointing it would sever the trace - and the later event is appended to
- * `deepenedBy` and to the account. A fifth-degree insight can still name every
- * event that built it, in order.
  */
 export function deepenInsight(existing: Insight, achievement: Achievement): Insight {
     if (existing.degree >= MAX_DEGREE) return existing;
@@ -1047,10 +901,6 @@ export function integrateInsight(
 
 /**
  * Whether every insight in a set can say where it came from.
- *
- * Should be vacuously true for anything this module built. Exported so the
- * storage and tool layers can assert it at their own boundaries rather than
- * trusting that nothing upstream hand-rolled a row.
  */
 export function isTraceable(insights: readonly Insight[]): boolean {
     return insights.every(
@@ -1091,20 +941,14 @@ function clamp01(n: number): number {
 
 /**
  * Days between checks for a rare meditative state.
- *
- * Once a year. A shorter grid was tried and was wrong: twenty checks a decade
- * turned a deliberately-arranged decade into a coin flip, which made
- * understanding something a patient player accumulates rather than something
- * that happens to them.
  */
 export const INSIGHT_CHECK_DAYS = 360;
 
 /**
- * Days between checks for a temporal phenomenon. Two years, and deliberately
- * NOT a multiple of INSIGHT_CHECK_DAYS: coincident grids put a vision and a
- * comprehension on the same day of the digest over and over, which reads as
- * the vision having granted the insight. It never does, and the digest should
- * not keep implying it.
+ * Days between checks for a temporal phenomenon. Two years, and deliberately NOT a
+ * multiple of INSIGHT_CHECK_DAYS: coincident grids put a vision and a comprehension
+ * on the same day of the digest over and over, which reads as the vision having
+ * granted the insight. It never does, and the digest should not keep implying it.
  */
 export const VISION_CHECK_DAYS = 730;
 
@@ -1148,11 +992,6 @@ export interface ChanceBreakdown {
 
 /**
  * Chance that a check produces a rare meditative state.
- *
- * Zero for a cultivator sitting in ordinary qi practising nothing in
- * particular, which is most of them, most of the time. That zero is the
- * feature: understanding is not on a timer, and there is no term here that
- * time alone can advance.
  */
 export function meditativeStateChance(input: MeditativeChanceInput): ChanceBreakdown {
     const terms: { source: string; delta: number }[] = [];
@@ -1237,12 +1076,6 @@ const VISION_STATEMENTS: Record<VisionKind, { claim: string; statement: string; 
 /**
  * Compile-time proof that a VisionSeed can be handed straight to the knowledge
  * layer's `recordKnowledge` with no adapter.
- *
- * This is the entire reason the type-only import at the top of the file
- * exists. If either shape drifts, this alias stops resolving to `true` and the
- * build says so - which is a great deal better than discovering at runtime
- * that visions cannot be filed. It costs nothing at runtime: both the import
- * and the alias are erased.
  */
 export type VisionSeedFitsKnowledgeLayer = VisionSeed extends KnowledgeInput ? true : never;
 

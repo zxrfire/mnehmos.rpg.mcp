@@ -7,9 +7,7 @@ export interface DatabaseIntegrityResult {
     errors: string[];
 }
 
-/**
- * Check database integrity using SQLite's integrity_check pragma.
- */
+/** Check database integrity using SQLite's integrity_check pragma. */
 export function checkDatabaseIntegrity(db: Database.Database): DatabaseIntegrityResult {
     try {
         const result = db.pragma('integrity_check') as { integrity_check: string }[];

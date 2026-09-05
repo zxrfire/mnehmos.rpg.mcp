@@ -36,30 +36,21 @@ const MAX_OPEN_DATABASES = 64;
  */
 const CAMPAIGN_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Get the platform-specific app data directory for rpg-mcp.
- * - Windows: %APPDATA%/rpg-mcp
- * - macOS: ~/Library/Application Support/rpg-mcp
- * - Linux: ~/.local/share/rpg-mcp
- */
+/** %APPDATA%/rpg-mcp, ~/Library/Application Support/rpg-mcp, or ~/.local/share/rpg-mcp. */
 function getAppDataDir(): string {
     const platform = process.platform;
     let appDataDir: string;
 
     if (platform === 'win32') {
-        // Windows: %APPDATA% (typically C:\Users\<user>\AppData\Roaming)
         appDataDir = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
     } else if (platform === 'darwin') {
-        // macOS: ~/Library/Application Support
         appDataDir = join(homedir(), 'Library', 'Application Support');
     } else {
-        // Linux/Unix: ~/.local/share (XDG Base Directory spec)
         appDataDir = process.env.XDG_DATA_HOME || join(homedir(), '.local', 'share');
     }
 
     const rpgMcpDir = join(appDataDir, 'rpg-mcp');
     
-    // Ensure the directory exists
     if (!existsSync(rpgMcpDir)) {
         mkdirSync(rpgMcpDir, { recursive: true });
         console.error(`[Database] Created app data directory: ${rpgMcpDir}`);
@@ -68,17 +59,8 @@ function getAppDataDir(): string {
     return rpgMcpDir;
 }
 
-/**
- * Get the default database path.
- * Uses environment variable, CLI argument, or falls back to app data directory.
- *
- * Priority:
- * 1. RPG_MCP_DB_PATH environment variable
- * 2. --db-path CLI argument
- * 3. Platform-specific app data directory (%APPDATA%/rpg-mcp on Windows)
- */
+/** RPG_MCP_DB_PATH, then RPG_DATA_DIR, then `--db-path`, then the app data directory. */
 function getDefaultDbPath(): string {
-    // Check for environment variable first
     if (process.env.RPG_MCP_DB_PATH) {
         return process.env.RPG_MCP_DB_PATH;
     }
@@ -87,24 +69,19 @@ function getDefaultDbPath(): string {
         return join(process.env.RPG_DATA_DIR, 'rpg.db');
     }
 
-    // Check for CLI argument --db-path
     const args = process.argv;
     const dbPathIndex = args.indexOf('--db-path');
     if (dbPathIndex !== -1 && args[dbPathIndex + 1]) {
         return args[dbPathIndex + 1];
     }
 
-    // Use platform-specific app data directory
     return join(getAppDataDir(), 'rpg.db');
 }
 
-/**
- * Resolve database path, ensuring it's absolute.
- */
+/** Resolves to an absolute path, or the literal `:memory:`. */
 function resolveDbPath(path?: string): string {
     const dbPath = path || configuredDbPath || getDefaultDbPath();
 
-    // Special case: SQLite in-memory database
     if (dbPath === ':memory:') {
         return dbPath;
     }
@@ -119,14 +96,10 @@ function resolveDbPath(path?: string): string {
         return join(getAppDataDir(), 'rpg.db');
     }
 
-    // Make relative paths absolute based on CWD
     return join(process.cwd(), dbPath);
 }
 
-/**
- * Configure the database path before initialization.
- * Call this before getDb() to set a custom path.
- */
+/** Sets a custom path. Must be called before the first `getDb()`. */
 export function configureDbPath(path: string): void {
     if (overrideDb) {
         throw new Error('Cannot configure database path after database has been initialized');
@@ -134,9 +107,7 @@ export function configureDbPath(path: string): void {
     configuredDbPath = isAbsolute(path) ? path : join(process.cwd(), path);
 }
 
-/**
- * Get the configured or default database path (for logging/debugging).
- */
+/** The configured or default path, for logging and diagnostics. */
 export function getDbPath(): string {
     return resolveDbPath();
 }

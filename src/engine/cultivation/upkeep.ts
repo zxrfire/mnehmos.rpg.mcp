@@ -1,43 +1,6 @@
 /**
- * Upkeep - what a practitioner can actually be supplied with, and therefore
- * how far into an art they can get.
- *
- * THIS EXISTS TO MAKE AN NPC RIGHT.
- * ---------------------------------
- * `AncientArt.worldSupplyCeiling` in `data/cultivation/lost-ages.ts` records
- * where the world's remaining supply of a consumed material stops, on the
- * engine's own `mastery` scale of [0, 1]. Until now nothing read it, and the
- * module said so in place: an elder saying "you will not cultivate this past
- * the fifth level, there is not enough of it left on the ground anywhere" was
- * stating a fact the catalog believed and the engine did not produce. A world
- * whose experts are demonstrably wrong is a world whose experts a player learns
- * to stop listening to, which is a worse loss than any single mechanic.
- *
- * THE SHAPE MATTERS MORE THAN THE NUMBER.
- * ---------------------------------------
- * This is an UPKEEP NOBODY CAN MEET, never a rule saying you may not. There is
- * no branch here on who somebody is, what house they belong to, or whether they
- * are entitled. The art works. The practitioner is not refused anything. They
- * simply run out of the thing the practice consumes, at the point the world ran
- * out of it, and stand there holding a book they can read and cannot go further
- * into. Take the material away and nothing else about them changes; supply them
- * and they keep going. That is the whole mechanism.
- *
- * WHICH IS ALSO WHY THE COUNTERPART SURVIVES.
- * -------------------------------------------
- * "You must be somebody" is a design claim this file has to keep true from the
- * other direction. Somebody who IS provisioned - a dead man's stocked cellar, a
- * house spending on them, a remnant nobody knows exists - goes further than the
- * world's ceiling, and goes exactly as far as their supply goes. There are two
- * such provisionings in the world and both are authored in `lost-ages.ts`. This
- * module reads them; it does not add any.
- *
- * WHAT IT DOES NOT DO.
- * --------------------
- * Nothing here decides whether an art is learnable, legal, wise, or worth the
- * years. It answers one question - how far does the supply carry - and the
- * answer is a number between zero and one or `null` for "the world's supply is
- * not what limits this one".
+ * Upkeep - what a practitioner can actually be supplied with, and therefore how far
+ * into an art they can get.
  */
 
 import {
@@ -49,12 +12,6 @@ import {
 
 /**
  * Who is feeding this practitioner.
- *
- * `world` is the default and the overwhelming case: nobody is, so they buy what
- * anybody can buy, which is what is left on the ground. The other two are the
- * authored exceptions, addressed by the object they came out of rather than by
- * a flag on the cultivator - because that is what they are. A stocked cellar is
- * a place. A remnant is a house's cupboard.
  */
 export type Provisioning =
     | { kind: 'world' }
@@ -93,11 +50,6 @@ export function hasUpkeep(techniqueId: string): boolean {
 
 /**
  * How far the supply carries somebody into this art.
- *
- * Ordered so the exceptions can only ever RAISE the figure. A provisioning that
- * turns out not to apply - the wrong site, a house with no remnant - falls
- * through to the world's supply rather than to nothing, so a caller passing a
- * hopeful argument cannot accidentally lift the ceiling.
  */
 export function masteryCeilingFor(
     techniqueId: string,
@@ -181,10 +133,6 @@ export function masteryCeilingFor(
 
 /**
  * The practical form: the highest mastery a practise session may reach.
- *
- * Returns 1 where nothing limits the art, so callers can use it as a
- * saturation point without a null check, which is what
- * `Math.min(ceiling - mastery, gain)` wants.
  */
 export function practiceCeilingFor(
     techniqueId: string,
@@ -194,13 +142,8 @@ export function practiceCeilingFor(
 }
 
 /**
- * True when a practitioner is at the end of their supply rather than at the end
- * of the art.
- *
- * Worth distinguishing at the point of narration: "there is nothing further to
- * understand" and "there is nothing left to feed it with" are different
- * sentences about the same stalled number, and only one of them is a problem
- * somebody can do something about.
+ * True when a practitioner is at the end of their supply rather than at the end of
+ * the art.
  */
 export function isSupplyStalled(
     techniqueId: string,
@@ -213,10 +156,6 @@ export function isSupplyStalled(
 
 /**
  * Every art the supply actually stops somebody in, with the figure.
- *
- * For reference tooling and for the register, so the world's own claim about
- * itself can be read off the same function that enforces it rather than off a
- * second table that will drift from it.
  */
 export function supplyLimitedArts(
     provisioning: Provisioning = UNPROVISIONED

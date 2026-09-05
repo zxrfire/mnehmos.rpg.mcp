@@ -1,133 +1,15 @@
 /**
  * Where a probation ends, and who is placed where.
  *
- * The other half of `what-a-house-will-teach-somebody-it-has-not-taken.ts`.
- * That file is how somebody gets onto a published door and what they are shown
- * while they are on it. This one is what happens at the far end, and until it
- * existed the far end did not: `guestWouldBeOfferedAPlace` - described in its
- * own comment as "the payoff for the whole arrangement" - had no caller
- * anywhere in `src/`, so the Pavilion took people in at the floor and nothing
- * in the world ever decided about them.
+ * Every threshold below is an existing engine quantity, and none of them is a
+ * round number picked to feel right, which is the standard `AGENTS.md` sets for a
+ * first age gate. The bar behind the door - `publishedDoor.membershipOrdinal` (3)
+ * - is unmoved and decides only the failure branch; it never bends.
  *
- * ── NOTHING HERE IS NEW DESIGN ───────────────────────────────────────────
- *
- * `AZURE_INTAKE` in `src/data/cultivation/sects.ts` is the complete written
- * specification and was read by nothing at all - it is on the reachability
- * table in `docs/world/INDEX.md` under the sixteen constants with no consumer.
- * Its own words:
- *
- *   exceptional   probation at the Azure Cloud Pavilion itself, immediately
- *   promising     the Azure Mist Sect, which teaches the same forms more
- *                 slowly to people who have time to be taught
- *   unformed      the Azure Dew Sect, or more often found by it first and
- *                 admitted afterwards
- *
- * And the structure it sorts into is not invented here either. The Mist holds
- * from the Pavilion with `relation: 'subsidiary'` and is described in
- * `governance-and-water-rights.ts` as a feeder that holds "probationers, late
- * admissions, the refused-but-not-disqualified"; the Dew holds from the Mist,
- * one remove further. So the three-way sort is A READING OF THE AZURE GRANT
- * CHAIN, walked with `getSubsidiariesOf`, and not a table written next to it.
- * A fourth house granted under the Dew tomorrow lengthens the ladder here with
- * no edit - see {@link placementLadderFrom}.
- *
- * ── THE FOUR THINGS THAT DECIDE IT, AND WHERE EACH NUMBER COMES FROM ─────
- *
- * Every threshold below is an existing engine quantity. None of them is a
- * round number picked to feel right, which is the standard `AGENTS.md` sets
- * for a first age gate.
- *
- *   THE CROSSING           `FOUNDATION_ORDINAL` (13). The judgement is at
- *                          Foundation Establishment because that is the first
- *                          rung that is a realm rather than a layer, and it is
- *                          already the ladder's own name for it.
- *
- *   WHAT THE HOUSE SPENT   `guestTermYears` of the house holding the door.
- *                          At the Pavilion this is 24, and it is not a policy:
- *                          it is `shelfTop - WORKING_ROAD_CAP`, how much the
- *                          house is holding back, which is exactly what the
- *                          watching was careful about. Crossing inside it is
- *                          crossing inside what the terraces had already
- *                          committed to spending on you.
- *
- *   WHETHER IT IS STILL    `stagnationYearsForOrdinal(0)` (50). The world's own
- *   A CAREER               statement of how long a body may stand at one rung
- *                          before standing still kills it. Past this, a Qi
- *                          Condensation life is not a trajectory any more, and
- *                          this is the line at which the house stops waiting
- *                          and decides.
- *
- *   AND THE BAR BEHIND     `publishedDoor.membershipOrdinal` (3). Unchanged,
- *   THE DOOR               unmoved, and the one thing everybody misreads as
- *                          the door. It decides only the failure branch - see
- *                          below - and it never bends. `houseWouldOfferMembership`
- *                          already refuses to move it and says why.
- *
- * ── THE AGE GATE, AND WHY IT IS NOT A NUMBER OF YEARS OLD ────────────────
- *
- * This is the first age gate in the game and the precedent worth matching is
- * the Hollow Court's, whose cap is "a rate test wearing an age limit": it
- * reads trajectory, not youth, because reaching a rung inside a given span
- * says something the rung alone does not.
- *
- * So the ceiling here is an age and it is computed per person:
- *
- *     ceiling = the age they were when the house took them + the house's span
- *
- * A flat "under forty" would get the interesting cases backwards in both
- * directions. Somebody picked up off the road at sixty who crosses in eight
- * years has shown the terraces exactly what they watch for, and a flat cap
- * refuses them. A child taken at twelve who takes forty years has shown the
- * opposite, and a flat cap keeps them. The span test keeps the first and
- * places the second, which is what the catalog says the Pavilion is for.
- *
- * And selectivity descends the chain, which is the shape the owner asked for
- * and falls out of the two spans rather than being asserted:
- *
- *   Pavilion   24 years on the roll. Strictest, because it is the house
- *              paying, and the span is its own committed spend.
- *   Mist       50 years. Selective, and the selection is only that the person
- *              is still on a career at all - which is the Mist exactly: it
- *              teaches the same forms more slowly to people who have time.
- *   Dew        No span. The Dew's trade is finding rather than selecting, it
- *              measures itself in people it no longer has, and a house that
- *              works a village for two years before it asks anybody anything
- *              is not holding a clock.
- *
- * THE TWO SPANS ARE ATTACHED IN ORDER AND THERE ARE ONLY TWO, and that is
- * worth saying plainly rather than dressing up. Each answers a different
- * question - "did the house get what it paid for" and "is this still a
- * career" - and the chain happens to have exactly the right number of steps
- * for them. A fourth house under the Dew would inherit the Dew's answer, which
- * is no test, because there is no third question and inventing one here would
- * be exactly the arithmetic-in-a-lore-file that `AGENTS.md` forbids.
- *
- * ── THE FAILURE BRANCH, WHICH THE CATALOG ALREADY CONTAINS AN EXAMPLE OF ─
- *
- * Somebody who has not crossed when the house decides is turned out or kept
- * on, and the split is the membership bar: a probationer who reached it is a
- * cultivator the house can use and is kept at rank index 0, the menial and
- * probationary tier that 33 of 34 houses have and that
- * `FIRST_RANK_THE_BAR_GOVERNS` in `members.ts` already exempts from the
- * admission bar by design. Somebody who never reached it is turned out.
- *
- * This is not invented either. `member-yan-shuling` is on the Pavilion's roll
- * at `rankIndex: 0`, titled 'Sword Servant', standing at ordinal 5 - above the
- * bar of 3 and a long way below Foundation. That row is what the rule
- * produces, and `tests/` asserts that it still is.
- *
- * ── AND YOU CAN CLIMB OUT AFTERWARDS ─────────────────────────────────────
- *
- * "Movement is upward and it is ordinary... the Mist keeps a recall roll."
- * Read off the shelf rather than off a number: a house recalls somebody the
- * moment they have gone past what it can teach them, which is `shelfTopOf`.
- * Both the Mist and the Dew stop at 17, so somebody who reaches Core Formation
- * at either has outrun the house holding them and goes back up the gorge. It
- * needs no constant and no second table, and a house that acquires a deeper
- * book keeps its people longer without anybody editing this file.
- *
- * Being sent down is not a disgrace, and the reason is in `AZURE_INTAKE`: the
- * alternative everywhere else is the gate, with no record that you were there.
+ * THE TWO SPANS ARE ATTACHED IN ORDER AND THERE ARE ONLY TWO. Each answers a
+ * different question - "did the house get what it paid for" and "is this still a
+ * career" - and a fourth house under the Dew would inherit the Dew's answer,
+ * which is no test, because there is no third question.
  */
 
 import {
@@ -143,24 +25,10 @@ import {
     shelfTopOf
 } from './what-a-house-will-teach-somebody-it-has-not-taken.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LADDER, WALKED RATHER THAN LISTED
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The chain of places somebody can be put, apex first.
- *
- * Walks `getSubsidiariesOf` downward from the house that holds the door. At
- * the Azure grant this returns the Pavilion, the Mist and the Dew, in that
- * order, because that is the order the grant chain is in - the Mist holds from
- * the Pavilion and the Dew holds from the Mist.
- *
- * Where a house has more than one subsidiary the ladder takes the one with the
- * lowest admission bar, because the sort is downward and the next rung down is
- * the one that asks least. Ties break on id so the ladder is stable.
- *
- * Cycles are guarded because the parentage table is authored and a loop in it
- * would hang the judgement rather than fail it.
  */
 export function placementLadderFrom(apexId: string): string[] {
     const ladder = [apexId];
@@ -183,17 +51,11 @@ export function placementLadderFrom(apexId: string): string[] {
     return ladder;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SPANS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How long each house on the ladder will have spent before it stops being
  * impressed, in years on the roll. `null` is no test at all.
- *
- * Two spans and no third, for the two questions stated in the file header. The
- * array is as long as the ladder; everything past the second step inherits the
- * bottom house's answer, which is no test.
  */
 export function spansAlong(ladder: readonly string[]): (number | null)[] {
     const apex = ladder[0];
@@ -205,11 +67,8 @@ export function spansAlong(ladder: readonly string[]): (number | null)[] {
 }
 
 /**
- * The age at which this house stops being impressed by this particular
- * person, or null where it has no view.
- *
- * An age rather than a span, because an age is what a house at a gate can see -
- * and it is computed from the age they were taken at, so it is a rate test.
+ * The age at which this house stops being impressed by this particular person, or
+ * null where it has no view.
  */
 export function ageCeilingFor(
     ladder: readonly string[],
@@ -220,9 +79,7 @@ export function ageCeilingFor(
     return span === null ? null : ageAtIntake + span;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE JUDGEMENT
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What the house decided, in one word. */
 export type ProbationOutcome =
@@ -272,16 +129,11 @@ export interface ProbationFacts {
 }
 
 /**
- * What the house does about this person today.
- *
- * Pure, total, and deterministic - there is no draw in here, because the
- * catalog does not describe one. The Pavilion scores and places; it does not
- * roll. Everything the answer depends on is in {@link ProbationFacts} and the
- * catalogs.
- *
- * Returns `carried` while the house is still spending, which is the ordinary
- * answer for almost the whole of a probation and is why this is safe to call
- * on every read.
+ * What the house does about this person today. Somebody who has not crossed when
+ * the house decides is turned out or kept on, and the split is the membership
+ * bar: a probationer who reached it is kept at rank index 0, the menial tier that
+ * 33 of 34 houses have and that `FIRST_RANK_THE_BAR_GOVERNS` in `members.ts`
+ * already exempts from the admission bar by design.
  */
 export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
     const ladder = placementLadderFrom(facts.hostFactionId);
@@ -306,7 +158,7 @@ export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
         rankIndex: 0
     };
 
-    // ── They crossed ─────────────────────────────────────────────────────
+    // They crossed
     if (facts.ordinal >= FOUNDATION_ORDINAL) {
         // The first house on the ladder whose span still covers them. A house
         // with no span covers everybody, which is why the walk always lands.
@@ -340,7 +192,7 @@ export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
         };
     }
 
-    // ── They have not crossed, and the house is still spending ───────────
+    // They have not crossed, and the house is still spending
     if (facts.yearsOnTheRoll < decidesAt) {
         return {
             ...base,
@@ -358,7 +210,7 @@ export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
         };
     }
 
-    // ── The house decides, and they did not cross ────────────────────────
+    // The house decides, and they did not cross
     //
     // The bar behind the door is what splits it, and this is the one place in
     // the whole arrangement where that number does anything. It has not moved
@@ -397,21 +249,10 @@ export function judgeProbation(facts: ProbationFacts): ProbationJudgement {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE RECALL ROLL
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Whether somebody placed down the chain has outrun the house holding them.
- *
- * Read off the shelf, not off a rung: a house recalls somebody the moment
- * there is nothing left it can teach them, which is `shelfTopOf`. That is what
- * "somebody exceptional emerging at the Mist or the Dew" means in a world
- * where a house's depth is a number - and a house that acquires a deeper book
- * keeps its people longer with no edit here.
- *
- * Returns null for somebody at the apex already, or for a house whose shelf
- * still covers them.
  */
 export function recallFrom(
     factionId: string,
@@ -432,10 +273,6 @@ export function recallFrom(
 
 /**
  * The house holding a published door somewhere above this one, or null.
- *
- * Walks the parentage upward the way `chainToApex` does, using the same table,
- * and stops at the first body that publishes a door. Null everywhere else,
- * which is almost everywhere - one house in the world publishes one.
  */
 export function apexHoldingTheDoorOver(factionId: string): string | null {
     const seen = new Set<string>();

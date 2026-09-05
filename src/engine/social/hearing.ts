@@ -1,10 +1,6 @@
 /**
- * PHASE-2: Social Hearing Mechanics - Hearing Range Engine
- *
- * Calculates how far sound travels based on:
- * - Volume (WHISPER, TALK, SHOUT)
- * - Environment/Biome (urban tavern vs quiet forest)
- * - Atmospheric effects (SILENCE, etc.)
+ * How far sound travels, off volume, biome and atmospherics. Older substrate:
+ * deliberately not re-exported from `index.js`.
  */
 
 import { BiomeType, Atmospheric } from '../../schema/spatial.js';
@@ -17,24 +13,14 @@ export interface HearingRangeConfig {
     atmospherics: Atmospheric[];
 }
 
-/**
- * Base hearing ranges by environment (in feet)
- *
- * Design philosophy:
- * - Urban = noisy (taverns, markets) → shorter ranges
- * - Forest/Mountain = quiet → longer ranges
- * - Divine/Arcane = magical acoustics → moderate ranges
- * - Dungeon = echo chambers → moderate ranges
- */
+/** Base hearing ranges by biome, in feet. Noise shortens, open air carries. */
 const BASE_HEARING_RANGES: Record<BiomeType, { WHISPER: number; TALK: number; SHOUT: number }> = {
-    // Noisy environments
     urban: {
         WHISPER: 5,    // Crowded tavern, market chatter
         TALK: 15,      // Need to speak up
         SHOUT: 40      // Cuts through noise
     },
 
-    // Quiet natural environments
     forest: {
         WHISPER: 10,   // Birds, wind, but mostly quiet
         TALK: 60,      // Sound carries well
@@ -51,7 +37,6 @@ const BASE_HEARING_RANGES: Record<BiomeType, { WHISPER: number; TALK: number; SH
         SHOUT: 150     // Carries over water
     },
 
-    // Underground/enclosed
     dungeon: {
         WHISPER: 10,   // Stone echoes whispers
         TALK: 40,      // Moderate echo
@@ -63,7 +48,6 @@ const BASE_HEARING_RANGES: Record<BiomeType, { WHISPER: number; TALK: number; SH
         SHOUT: 400     // Massive echo
     },
 
-    // Magical environments
     divine: {
         WHISPER: 10,   // Sacred silence
         TALK: 50,      // Reverent acoustics
@@ -76,51 +60,27 @@ const BASE_HEARING_RANGES: Record<BiomeType, { WHISPER: number; TALK: number; SH
     }
 };
 
-/**
- * Calculate how far sound travels in feet
- *
- * @param config - Volume, biome, and atmospheric conditions
- * @returns Distance in feet that sound can be heard
- */
+/** How far sound travels, in feet. */
 export function calculateHearingRadius(config: HearingRangeConfig): number {
-    // Start with base range for biome + volume
     let range = BASE_HEARING_RANGES[config.biomeContext][config.volume];
 
-    // Apply atmospheric modifiers
     if (config.atmospherics.includes('SILENCE')) {
-        // SILENCE reduces all hearing ranges by 50%
         range = Math.floor(range * 0.5);
     }
 
-    // DARKNESS doesn't affect hearing (sound still works in dark)
-    // FOG might muffle sound slightly, but we'll leave this for future expansion
-    // ANTIMAGIC doesn't affect natural hearing
-    // MAGICAL could amplify (but we keep it neutral for now)
+    // DARKNESS, FOG, ANTIMAGIC and MAGICAL are deliberately left alone: none of
+    // them touch natural hearing.
 
     return range;
 }
 
-/**
- * Determine if a listener can hear based on distance
- *
- * @param distance - Distance between speaker and listener in feet
- * @param hearingRadius - Maximum hearing range calculated above
- * @returns true if within hearing range
- */
 export function canHearAtDistance(distance: number, hearingRadius: number): boolean {
     return distance <= hearingRadius;
 }
 
 /**
- * Calculate distance penalty for adjacent rooms
- *
- * Sound travels through walls/doors, but with degradation:
- * - SHOUT can be heard in adjacent rooms (muffled)
- * - TALK can sometimes be heard (requires good perception)
- * - WHISPER never penetrates walls
- *
- * @param volume - Volume level of speech
- * @returns Distance penalty in feet (added to actual distance)
+ * Feet ADDED to the real distance when a wall is in the way, not subtracted
+ * from the radius. Whispers get a penalty large enough to never carry.
  */
 export function getAdjacentRoomPenalty(volume: VolumeLevel): number {
     switch (volume) {
@@ -133,11 +93,7 @@ export function getAdjacentRoomPenalty(volume: VolumeLevel): number {
     }
 }
 
-/**
- * Get a description of hearing quality based on distance
- *
- * Used for flavor text in conversation memories
- */
+/** Hearing quality as a word, for flavour text in conversation memories. */
 export function getHearingQuality(distance: number, hearingRadius: number): string {
     const ratio = distance / hearingRadius;
 

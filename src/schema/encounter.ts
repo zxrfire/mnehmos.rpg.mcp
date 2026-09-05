@@ -37,9 +37,7 @@ export const GridBoundsSchema = z.object({
 
 export type GridBounds = z.infer<typeof GridBoundsSchema>;
 
-/**
- * Default grid bounds (101x101 grid from 0-100)
- */
+/** Default grid bounds (101x101 grid from 0-100) */
 export const DEFAULT_GRID_BOUNDS: GridBounds = {
     minX: 0,
     maxX: 100,

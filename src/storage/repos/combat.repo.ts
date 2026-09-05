@@ -127,7 +127,7 @@ interface RecordRow {
 export class CombatRepository {
     constructor(private db: Database.Database) { }
 
-    // ── ENCOUNTERS ───────────────────────────────────────────────────────
+    // ENCOUNTERS
 
     /**
      * Open an encounter with its order already rolled.
@@ -240,7 +240,7 @@ export class CombatRepository {
         return this.getEncounter(encounterId);
     }
 
-    // ── THE RECORD ───────────────────────────────────────────────────────
+    // THE RECORD
 
     /**
      * Write down that this happened, and bump the denormalised counters.

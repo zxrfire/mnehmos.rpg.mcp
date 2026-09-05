@@ -22,6 +22,7 @@ import { makeAscensionRecord, toLayerKey, type AscensionRecord } from '../../eng
 import { yearOfDay } from '../../engine/world/history.js';
 import { maxHpForOrdinal } from '../../engine/cultivation/realms.js';
 import { DEFAULT_ORIGIN, isOriginTierKey } from '../../engine/cultivation/origin.js';
+import { physiqueOrNull } from '../../engine/cultivation/physiques.js';
 import {
     SEX_A_LEGACY_ROW_READS_AS,
     isSex
@@ -30,42 +31,20 @@ import { isAbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
 import type { Injury } from '../../schema/cultivation.js';
 
 /**
- * Persistence for the world layer.
+ * Persistence for the world layer. Named `world-state.repo.ts` because
+ * `repos/world.repo.ts` is the base schema's `WorldRepository` - the same
+ * collision `migrations.world.ts` documents in its own header.
  *
- * ── WHY THIS IS NOT `world.repo.ts` ──────────────────────────────────────
+ * Persists a whole `WorldState`, clock included, so a restart resumes rather than
+ * reseeds. There is no separate legacy write path and there should not be one:
+ * two ways to persist a consequence is two ways to persist half of it.
  *
- * `repos/world.repo.ts` is already taken by the base schema's
- * `WorldRepository`, which owns the `worlds` table and is imported by four
- * files under `src/server/`. Overwriting it would have been the same collision
- * `migrations.world.ts` documents in its own header - the one that renamed
- * `worlds` to `world_runtime` and `world_facts` to `world_chronicle`. So this
- * is `world-state.repo.ts`, mirroring `engine/world/world-state.ts` and the
- * `world_` table prefix.
+ * NO ZOD, unlike the other repos here: the world layer is plain TypeScript
+ * interfaces across ~14k lines and a Zod mirror would be a second source of truth
+ * to keep in lockstep forever. The boundary is defended instead by
+ * `assertLoadable` and `assertNoResurrection`, which throw rather than repair.
  *
- * ── WHAT IT PERSISTS ─────────────────────────────────────────────────────
- *
- * A whole `WorldState`, clock included, so a restart resumes rather than
- * reseeds. `enshrineRun` mutates the world in place, so everything legacy.ts
- * writes - the grave as a real location, the chronicle facts, the ancestral
- * hall count on the faction, the inherited goals, the remembrance
- * relationships - is inside `WorldState` and is covered by saving it. There is
- * no separate legacy write path, and there should not be one: two ways to
- * persist a consequence is two ways to persist half of it.
- *
- * ── ON ZOD ───────────────────────────────────────────────────────────────
- *
- * The other repos here round-trip through Zod because their domains have Zod
- * schemas. The world layer does not: it is plain TypeScript interfaces across
- * ~14k lines, and mirroring them in Zod would create a second source of truth
- * that drifts from the first and must be updated in lockstep forever. Instead
- * the boundary is defended by `assertLoadable` and `assertNoResurrection`,
- * which check the invariants that actually break - a missing world, a row that
- * lost its id, and the dead coming back - and throw rather than repair, the
- * same way the cultivator repo treats an untraceable insight.
- *
- * ── WHAT IS WRITTEN WHEN ─────────────────────────────────────────────────
- *
- * See `saveWorld` and `appendWorld`.
+ * What is written when: see `saveWorld` and `appendWorld`.
  */
 export class WorldStateRepository {
     private readonly upsertRuntimeStmt: Database.Statement;
@@ -236,7 +215,7 @@ export class WorldStateRepository {
         this.insertNpcStmt = db.prepare(`
             INSERT OR REPLACE INTO world_npcs (
                 id, world_id, name,
-                born_on_day, origin_tier, sex, bloodline_species, bloodline_tier,
+                born_on_day, origin_tier, sex, physique, bloodline_species, bloodline_tier,
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
@@ -247,7 +226,7 @@ export class WorldStateRepository {
                 history_fact_ids, memory_ids
             ) VALUES (
                 @id, @worldId, @name,
-                @bornOnDay, @origin, @sex, @bloodlineSpecies, @bloodlineTier,
+                @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
@@ -507,20 +486,13 @@ export class WorldStateRepository {
         this.countFactsStmt = this.maxFactSeqStmt;
     }
 
-    // ── SAVE ─────────────────────────────────────────────────────────────
+    // SAVE
 
     /**
-     * Write a whole world.
-     *
-     * One transaction, delete-then-insert per table. The delete is what makes
-     * it a snapshot rather than a merge: a location that was removed from the
-     * state, a claim that was withdrawn and dropped, an effect that fired and
-     * was pruned all have to disappear, and an upsert-only save would leave
-     * them behind to be loaded back next time. Correctness first; the cost is
-     * measured rather than assumed, and the numbers are in the test.
-     *
-     * Use this at checkpoints - world creation, run start, run end, and
-     * whenever the player saves. Use `appendWorld` on the per-tick path.
+     * Write a whole world: one transaction, delete-then-insert per table. The
+     * delete is what makes it a snapshot rather than a merge - anything removed
+     * from the state has to disappear, and an upsert-only save would load it back
+     * next time. Use this at checkpoints; use `appendWorld` on the per-tick path.
      */
     saveWorld(state: WorldState): void {
         const write = this.db.transaction((s: WorldState) => {
@@ -535,23 +507,15 @@ export class WorldStateRepository {
     /**
      * Write only what a tick can have changed.
      *
-     * The append-only bulk - chronicle facts, memories, location changes,
-     * object provenance - is skipped below its high-water mark: those tables
-     * are never rewritten in place, so a row already stored is a row already
-     * correct. A 500-year advance writes ~2818 facts once and then never
-     * touches them again, and re-writing them on every subsequent save is the
-     * single biggest avoidable cost in this layer.
+     * The append-only bulk - chronicle facts, memories, location changes, object
+     * provenance - is skipped below its high-water mark, because those tables are
+     * never rewritten in place. A 500-year advance writes ~2818 facts once, and
+     * re-writing them on every subsequent save is the single biggest avoidable
+     * cost in this layer. Everything genuinely mutable is upserted, because any of
+     * it can change without changing its id and the engine has no dirty flag.
      *
-     * Everything genuinely mutable - the clock, locations, factions, NPCs and
-     * their goals, actors, opportunities, objects, effects, processes - is
-     * upserted, because any of it can change without changing its id, and
-     * there is no dirty flag in the engine to narrow it further. The engine is
-     * pure data with no change log, and inventing one here would mean this
-     * repo silently disagreeing with a mutation somebody adds later.
-     *
-     * Rows removed from the state are NOT pruned by this path; that is what
-     * makes it cheap, and it is why `saveWorld` exists. Removal is rare and
-     * belongs to a checkpoint.
+     * Rows removed from the state are NOT pruned by this path - that is what makes
+     * it cheap, and it is why `saveWorld` exists.
      */
     appendWorld(state: WorldState): void {
         const write = this.db.transaction((s: WorldState) => {
@@ -586,7 +550,7 @@ export class WorldStateRepository {
         write(state);
     }
 
-    // ── LOAD ─────────────────────────────────────────────────────────────
+    // LOAD
 
     /** The whole world, clock included, or null when the id is unknown. */
     loadWorld(worldId: string): WorldState | null {
@@ -693,7 +657,7 @@ export class WorldStateRepository {
         return this.deleteRuntimeStmt.run(worldId).changes > 0;
     }
 
-    // ── RUNS ─────────────────────────────────────────────────────────────
+    // RUNS
 
     /**
      * Record that a life was lived here.
@@ -726,7 +690,7 @@ export class WorldStateRepository {
         return { index, seed: runSeedFor(runtime.seed, index) };
     }
 
-    // ── WRITE HELPERS ────────────────────────────────────────────────────
+    // WRITE HELPERS
 
     private clearWorld(worldId: string): void {
         // Ordered child-first for readability; every table is world-scoped and
@@ -956,6 +920,7 @@ export class WorldStateRepository {
                 bornOnDay: npc.identity.bornOnDay,
                 origin: npc.identity.origin,
                 sex: npc.identity.sex,
+                physique: npc.identity.physique ?? null,
                 bloodlineSpecies: npc.identity.bloodline?.speciesId ?? null,
                 bloodlineTier: npc.identity.bloodline?.tier ?? null,
                 occupation: npc.identity.occupation,
@@ -1296,10 +1261,8 @@ export class WorldStateRepository {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // PARAMETER BUILDERS
 // Shared by the full save and the append path so the two cannot drift.
-// ─────────────────────────────────────────────────────────────────────────
 
 function runtimeParams(s: WorldState): Record<string, unknown> {
     return {
@@ -1380,9 +1343,7 @@ function relationshipParams(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ROW MAPPING
-// ─────────────────────────────────────────────────────────────────────────
 
 function parseArray<T>(json: string): T[] {
     return JSON.parse(json) as T[];
@@ -1568,6 +1529,11 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
             bornOnDay: row.born_on_day,
             origin: isOriginTierKey(row.origin_tier) ? row.origin_tier : DEFAULT_ORIGIN,
             sex: isSex(row.sex) ? row.sex : SEX_A_LEGACY_ROW_READS_AS,
+            // Null for an unreadable key as well as for an absent one: the
+            // catalog is the authority on what a physique is, and a row
+            // naming one it has retired is a body with nothing unusual
+            // about it rather than a parse failure.
+            physique: physiqueOrNull(row.physique)?.key ?? null,
             // Both halves or neither. A species with no tier is a line that
             // diluted away and is correctly no line at all; a tier with no
             // species is a row nothing could read, because what a line DOES is
@@ -1988,11 +1954,9 @@ function assertLoadable(state: WorldState): void {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ROW SHAPES
 // Declared explicitly so a column rename in the migration fails compilation
 // here rather than producing `undefined` at the boundary.
-// ─────────────────────────────────────────────────────────────────────────
 
 interface RuntimeRow {
     id: string;
@@ -2160,6 +2124,7 @@ interface NpcRow {
     born_on_day: number;
     origin_tier: string;
     sex: string;
+    physique: string | null;
     bloodline_species: string | null;
     bloodline_tier: string | null;
     occupation: string;

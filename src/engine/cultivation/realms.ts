@@ -1,14 +1,5 @@
 /**
  * The Cultivation Ladder - 47 ranks, ordinal 0 through 46.
- *
- * This is the spine of the entire game. Every other cultivation system
- * (breakthrough odds, lifespan, combat power, sect standing, technique tiers)
- * is expressed as a function of a cultivator's ordinal rank.
- *
- * The ladder is deliberately flat and ordinal-addressed rather than a tree of
- * named enums: "is Core Formation stronger than Foundation Perfection" is a
- * question the engine answers thousands of times per session, and integer
- * comparison is the only representation that never gets it wrong.
  */
 
 export type RealmKey =
@@ -39,11 +30,11 @@ export interface RealmTier {
     lifespanYears: number;
     /**
      * Per-rung overrides, indexed from `ordinalStart`, for the one realm whose
-     * rungs do not share a grant. Sparse: an absent or undefined entry means
-     * the realm's headline figure applies. Only the Immortal realm needs these,
-     * and it needs them because its two rungs are landings of one attempt
-     * rather than steps of a climb - a False Immortal's span is enormous and
-     * countable, a True Immortal's is not a number that means anything.
+     * rungs do not share a grant. Sparse: an absent or undefined entry means the
+     * realm's headline figure applies. Only the Immortal realm needs these, and it
+     * needs them because its two rungs are landings of one attempt rather than
+     * steps of a climb - a False Immortal's span is enormous and countable, a True
+     * Immortal's is not a number that means anything.
      */
     rungLifespanYears?: readonly (number | undefined)[];
     rungPowerMultiplier?: readonly (number | undefined)[];
@@ -58,11 +49,6 @@ export interface RealmTier {
 
 /**
  * Lifespan stand-in for True Immortal.
- *
- * A billion years rather than `Infinity`: the value is carried in result
- * objects that get serialised, and `JSON.stringify(Infinity)` is `null`, which
- * would arrive downstream as "no lifespan recorded" rather than "unbounded".
- * Nothing in this engine ages anywhere near it.
  */
 export const UNBOUNDED_LIFESPAN_YEARS = 1_000_000_000;
 
@@ -223,10 +209,6 @@ export const REALM_TIERS: readonly RealmTier[] = [
 
 /**
  * Highest legal ordinal on the ladder: True Immortal.
- *
- * Reachable only by completing the last crossing. The rung below it, 45, is the
- * other outcome of the same attempt and is reachable no other way either - so
- * the top of the ladder is the one stretch of it that cannot be climbed into.
  */
 export const MAX_ORDINAL = 46;
 /** Total number of ranks, including ordinal 0. */
@@ -242,73 +224,19 @@ export const TRUE_IMMORTAL_ORDINAL = 46;
 
 /**
  * How long anything above the Lid may remain below it, in breaths.
- *
- * The rule that stops the whole setting collapsing, and it applies to people
- * and to objects alike: cross, and the lower realm stops being somewhere you
- * can be. Come back down and tribulation lightning takes you back up again in
- * ten to fifteen breaths - not as a punishment, not as an enforcement anybody
- * arranges, but the way water finds a level. A True Immortal in the mortal
- * world is a thing being expelled, and the expulsion is already happening for
- * the whole time they are here.
- *
- * FORTY-FIVE IS THE LINE, AND IT IS WHY THE LINE IS THERE
- * A False Immortal is at forty-five and may stay. That is the entire practical
- * difference between the two rungs, and it is why the world has False
- * Immortals living in it and has never had a True one living in it. Lu Sheng
- * can hold an office, teach, carve a legacy and be met. Somebody one rung above
- * him gets a quarter of a minute.
- *
- * WHAT THAT MAKES OF THE LARGEST THREAT IN THE WORLD
- * A retaliation from above the Lid is absolute and is also over almost before
- * it starts. Ten to fifteen breaths at that rung is enough to end a faction and
- * is not enough to take one, hold ground, occupy a province, install anybody or
- * govern for an afternoon. It cannot conquer. It can only answer, once, very
- * fast, and then it is gone whether it finished or not - which is exactly why
- * it deters and exactly why nobody above the Lid rules anything down here.
  */
 export const BREATHS_IN_THE_LOWER_REALM = { min: 10, max: 15 } as const;
 
 /**
  * What a technique can and cannot buy you, measured.
  *
- * A cultivator may practise an art rated above their own rung - there is no
- * rule against it and the catalog contains arts nobody in the world can use
- * properly. The question is what that is worth, and the answer is sharp:
- *
  *   a 44 with the best art in the world beats a bare 44        97%
  *   the same 44 against a bare 45                               0%
  *   the same 44 against a 45 who also has the art               0%
  *   a 44 with the art AND an object of the immortal band      100%
- *
- * So an art is worth an enormous amount INSIDE a realm and buys nothing
- * across the Lid. Practise the highest art in existence at full mastery and
- * you are still a mortal thing to a False Immortal. Hand the same person an
- * object made on the other side and they win.
- *
- * That is the whole shape of the boundary: it is not a power threshold that
- * enough training crosses, it is a category, and the only things that cross
- * it are things that were made on the far side. Dao and technique are how far
- * you get up the ladder. They are not how you get off it.
  */
 /**
  * Why a manual may be rated at forty-six and a weapon may not.
- *
- * They are not the same kind of object and the difference is what the thing
- * DOES in a hand. A manual is paper: an immortal can send one down, somebody
- * below the Lid can study it, and what they get is an art they can practise
- * to its full depth while remaining exactly as strong as they were. Nothing
- * about holding it makes them anything. The measurement above is the proof -
- * the best art in the world at full mastery buys nothing across the Lid.
- *
- * A weapon is the opposite by definition. A weapon rated at a rung is a thing
- * that lets whoever holds it strike at that rung, which is exactly why an
- * object crosses where an art does not. So a forty-six weapon in the lower
- * realm would be a way for somebody at forty-four to injure a True Immortal,
- * and there is no such thing: what a True Immortal carries goes back up with
- * them inside fifteen breaths, and nothing at that rung is ever left behind,
- * lost, looted or inherited. The ceiling on any object that can be HELD down
- * here is forty-five, and it is a ceiling for a reason rather than by
- * accident of what has turned up.
  */
 export const OBJECT_CEILING_BELOW_THE_LID = FALSE_IMMORTAL_ORDINAL;
 
@@ -357,10 +285,6 @@ export function subRankForOrdinal(ordinal: number): string {
 
 /**
  * Full display name, e.g. "Qi Condensation Layer 7", "Body Integration Marrow".
- *
- * A realm holding exactly one rank is named by the realm alone: "True Immortal"
- * rather than "True Immortal Ascended". There is nothing to be partway through
- * up there, so the sub-rank carries no information.
  */
 export function rankName(ordinal: number): string {
     const tier = realmForOrdinal(ordinal);
@@ -384,13 +308,12 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
     return tier.rungPowerMultiplier?.[clamped - tier.ordinalStart] ?? tier.powerMultiplier;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A RUNG BUYS IN BODY
 //
 // The third curve on the ladder, beside power and lifespan, and the one that
 // says how much a cultivator can HOLD: hit points and the qi in the aperture.
 //
-// ── WHY THE POOL HAS TO GROW AT ALL ──────────────────────────────────────
+// WHY THE POOL HAS TO GROW AT ALL
 //
 // Not because a bigger pool wins fights. It does not, and that is worth
 // stating plainly because it is the intuition everybody arrives with:
@@ -408,7 +331,7 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 // curve is not free: at the rung a grade opens, the aperture must hold that
 // grade's costs, or the catalog above that line is unreachable by anybody.
 //
-// ── THE CALIBRATION, AND WHERE THE NUMBER COMES FROM ─────────────────────
+// THE CALIBRATION, AND WHERE THE NUMBER COMES FROM
 //
 // A grade band opens every eight rungs and its ceiling rises about x3.5 each
 // time (14, 49, 129, 349, 1500). x3.5 over eight rungs is x1.165 a rung, which
@@ -418,7 +341,7 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 // chosen: measured before this existed, 86 of the 138 arts in the catalog cost
 // more qi than any player could ever hold, and 38 of them more than any NPC.
 //
-// ── AND WHY IT IS TWO AND NOT FOUR ───────────────────────────────────────
+// AND WHY IT IS TWO AND NOT FOUR
 //
 // Power is x4 a realm. The body is x2. The gap between them is deliberate and
 // it is the whole reason a cultivation world stays lethal as it climbs: force
@@ -427,36 +350,19 @@ export function powerMultiplierForOrdinal(ordinal: number): number {
 // the bottom, and nobody anywhere accumulates enough body to stop dying. See
 // AGENTS.md, "nothing in this world is invincible" - this is that law
 // expressed as a curve rather than as a branch.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What a major realm multiplies the body and the aperture by.
- *
- * Against `powerMultiplier`'s x4. Changing this without re-reading
- * `GRADE_QI_BANDS` will silently put part of the technique catalog out of
- * reach of everybody in the world, which is the state this constant was added
- * to end.
  */
 export const BODY_REALM_MULTIPLIER = 2;
 
 /**
  * What the sub-ranks of one realm are worth to the body.
- *
- * The same shape as `WITHIN_REALM_PEAK` in `combat.ts`, and set to the same
- * value for a reason that is arithmetic rather than aesthetic: at 2 against a
- * realm multiplier of 2, a realm's Perfection lands exactly on the next
- * realm's Early, so the pool curve is CONTINUOUS across every boundary. A
- * crossing enlarges nothing on its own; the rungs did it. Power is
- * deliberately not continuous - there the step is the point.
  */
 export const WITHIN_REALM_BODY_PEAK = 2;
 
 /**
- * How much body a cultivator at this ordinal holds, as a multiple of a
- * newborn's.
- *
- * Interpolated across the sub-ranks rather than stepped at the realm, so that
- * every rung buys something. `combatPowerForOrdinal` is the model.
+ * How much body a cultivator at this ordinal holds, as a multiple of a newborn's.
  */
 export function bodyMultiplierForOrdinal(ordinal: number): number {
     const clamped = clampOrdinal(ordinal);
@@ -471,11 +377,6 @@ export function bodyMultiplierForOrdinal(ordinal: number): number {
 
 /**
  * A newborn's body, before the ladder multiplies it.
- *
- * These four are the values a run opens on at ordinal 0, and
- * `maxHpForOrdinal(might, 0)` must equal what the birth path writes.
- * `tests/engine/cultivation/what-a-rung-buys-in-body.test.ts` pins that
- * equality against the played layer's own constants.
  */
 export const BASE_BODY_HP = 20;
 export const HP_PER_MIGHT = 10;
@@ -484,11 +385,6 @@ export const QI_PER_INSIGHT = 5;
 
 /**
  * The one derivation of a cultivator's HP pool. Nobody may write another.
- *
- * Derived, not chosen: a body holds what Might and the rung it stands on let
- * it hold. Everything that mints or advances a cultivator - the player's birth,
- * an NPC spawn, a rank change - goes through this, which is what stops the
- * world running one formula and the player another.
  */
 export function maxHpForOrdinal(might: number, ordinal: number): number {
     return Math.round((BASE_BODY_HP + might * HP_PER_MIGHT) * bodyMultiplierForOrdinal(ordinal));
@@ -501,21 +397,6 @@ export function maxQiForOrdinal(insight: number, ordinal: number): number {
 
 /**
  * Carry a pool across a change of rung, keeping the share rather than the number.
- *
- * A crossing is not a heal and never fills anybody, so the fraction is what
- * survives: whole stays whole, half stays half, and somebody who was nearly
- * finished is still nearly finished in a larger body. Rounds up off zero so a
- * living cultivator cannot be rounded into a corpse, and returns the new
- * maximum when the old one is missing or zero, which is the only reading
- * available when there is no share to take.
- *
- * IT LIVES HERE BECAUSE THE POOLS DO. The two functions above are "the one
- * derivation of a cultivator's HP pool. Nobody may write another", and how that
- * pool survives a rung change is the same question asked at the moment the rung
- * moves. It was in `storage/repos/cultivator.repo.ts`, which still re-exports it
- * for the callers that ask there, and that address put an engine-layer rule
- * behind a module that opens a database - so the world layer could not reach it
- * without pulling SQLite into `engine/`, and would have written a second copy.
  */
 export function carriedAcross(current: number, wasMax: number, nowMax: number): number {
     if (!Number.isFinite(wasMax) || wasMax <= 0) return nowMax;
@@ -523,7 +404,6 @@ export function carriedAcross(current: number, wasMax: number, nowMax: number): 
     return Math.min(nowMax, Math.max(current > 0 ? 1 : 0, Math.round(share * nowMax)));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE FALSE IMMORTAL
 //
 // The half-failure of the last crossing, and deliberately NOT an ordinal. The
@@ -539,7 +419,6 @@ export function carriedAcross(current: number, wasMax: number, nowMax: number): 
 // because the Lid does not open twice for the same name. `immortalStatus`
 // still records which way the crossing went, since 'has crossed' is what bars
 // the re-attempt, and an ordinal alone cannot say it.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Whether a cultivator completed the last crossing, half-completed it, or has not tried. */
 export type ImmortalStatus = 'none' | 'false_immortal' | 'true_immortal';
@@ -558,10 +437,6 @@ export function effectiveLifespanYears(ordinal: number, status: ImmortalStatus =
 
 /**
  * True for anyone who has already been through the last crossing, either way.
- *
- * The Lid does not open twice for the same name, so this is also the predicate
- * that permanently bars a re-attempt. It is a refusal by the engine, not a
- * small probability.
  */
 export function hasCrossedTheLid(status: ImmortalStatus = 'none'): boolean {
     return status !== 'none';
@@ -604,60 +479,24 @@ export const PROGRESS_GROWTH = 1.35;
 /**
  * What the crossing itself costs, over and above the rung's position.
  *
- * This is the wall. A cultivator does not fail at a realm boundary because the
- * curve got gently steeper; they fail because one specific rung costs several
- * times what the rung below it did, and the years that takes run past what the
- * realm allows them to stand still. Flattening it into the growth rate spreads
- * the same total across four rungs and dissolves the wall - which is exactly
- * what the ceiling tests catch.
+ * Came DOWN from 2.5, because at 2.5 the boundary rung of the upper realms cost
+ * between two thirds and three quarters of everything the settling clock at that
+ * rung would ever allow. That does not make the wall harder to cross - it makes a
+ * single bad roll at the wall unrecoverable, so a cultivator who took a qi
+ * deviation at Body Integration Marrow was not killed by it, they were STRANDED
+ * by it. Measured, it produced more than twice as many people plateaued halfway
+ * up as the setting wants, by arithmetic rather than by anything that happened.
  */
 export const CROSSING_TAX = 2.5;
 
 /**
- * What the LAST crossing costs, replacing the ordinary crossing tax at
- * ordinal 44.
- *
- * The two numbers moved together and for opposite reasons, so they are worth
- * reading as a pair.
- *
- * The ordinary tax came DOWN, from 2.5, because at 2.5 the boundary rung of the
- * upper realms cost between two thirds and three quarters of everything the
- * settling clock at that rung would ever allow. That does not make the wall
- * harder to cross - it makes a single bad roll at the wall unrecoverable, and a
- * cultivator who took a qi deviation at Body Integration Marrow was not killed
- * by it, they were STRANDED by it. Measured, that was producing more than twice
- * as many people plateaued halfway up as the setting wants, and it was doing it
- * by arithmetic rather than by anything that happened to them. A wall should
- * kill; being unable to afford another go at it is a different and much duller
- * story.
- *
- * The last crossing's went UP, because there the price IS the story. Nothing
- * about ordinal 44 is a wall to be re-struck: it is a sum of qi so large that
- * gathering it consumes most of the century-thousand the rung grants, and the
- * commonest end at the top of the ladder is a cultivator who stood on the last
- * rung for their whole enormous life and never gathered enough to summon
- * anything. Three times the untaxed rung is what puts the price at roughly
- * seven eighths of that clock for a cultivator in perfect condition - which
- * means anyone who arrived worn cannot pay it at all, and knows it.
+ * What the LAST crossing costs, replacing the ordinary crossing tax at ordinal 44.
  */
 export const LAST_CROSSING_TAX = 3;
 
 /**
- * The least a rung may cost relative to the rung below it, once the crossing
- * tax has been paid.
- *
- * The tax makes the boundary rung a local spike, and a local spike used to mean
- * the first rung of the next realm cost roughly half the last rung of the one
- * below it. Nine times up the ladder, advancing got cheaper as the cultivator
- * got stronger; the monotonicity test carved the boundaries out rather than
- * reporting it.
- *
- * A price that has been paid does not come back down. Once the crossing has set
- * the level, the rungs after it hold at that level and creep, until the
- * underlying curve overtakes them again partway through the realm. Those first
- * rungs above a boundary are consolidation - re-earning what the crossing cost
- * before making any actual headway - and they are the cheapest part of a realm
- * only in the sense that they are not more expensive than getting into it.
+ * The least a rung may cost relative to the rung below it, once the crossing tax
+ * has been paid.
  */
 export const FLOOR_GROWTH = 1.02;
 
@@ -691,22 +530,8 @@ const PROGRESS_LADDER: readonly number[] = (() => {
 })();
 
 /**
- * Cultivation progress (in qi-units) required to attempt a breakthrough from
- * this ordinal, or `null` above the Lid.
- *
- * Strictly increasing across all 45 climbable rungs - a higher rung is never
- * cheaper than a lower one. That is a property of how `PROGRESS_LADDER` is
- * built rather than of the numbers in it, so the ladder test asserts it over
- * the whole range instead of skipping the boundaries the way it used to.
- *
- * It grows super-linearly, which is why the overwhelming majority of runs end
- * somewhere in Qi Condensation, and it spikes at each realm boundary, which is
- * why most of the rest end at one.
- *
- * Above the Lid it returns `null` rather than a number. Immortal qi is not this
- * currency and there is no exchange rate worth writing down - a figure here
- * would be a lie with a lot of digits in it. Nothing can attempt from 45 or 46
- * in any case: 46 is the summit and 45 is barred by `hasCrossedTheLid`.
+ * Cultivation progress (in qi-units) required to attempt a breakthrough from this
+ * ordinal, or `null` above the Lid.
  */
 export function progressRequiredForOrdinal(ordinal: number): number | null {
     const clamped = clampOrdinal(ordinal);
@@ -737,18 +562,6 @@ export function baseBreakthroughChance(ordinal: number): number {
 
 /**
  * Whether an attempt FROM this ordinal summons heavenly lightning.
- *
- * Lightning is the Lid's seam discharging while it decides whether the hole you
- * are about to punch is worth the qi it will cost to seal behind you. It
- * therefore fires on every crossing INTO Tribulation Transcendence (40 -> 41),
- * on every step WITHIN it, and on the last crossing OUT of it (44 -> 45), which
- * is the one the whole realm is named for and the heaviest tribulation in the
- * game.
- *
- * Expressed as "origin or destination is Tribulation Transcendence" so that
- * both ends of the realm are covered. An earlier revision tested the origin
- * alone, which meant the entry crossing summoned nothing; testing only the
- * destination would now miss the exit crossing instead.
  */
 export function triggersHeavenlyTribulation(ordinal: number): boolean {
     const clamped = clampOrdinal(ordinal);

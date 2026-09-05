@@ -9,9 +9,7 @@
 
 import { z } from 'zod';
 
-// ============================================================================
 // SHARED TYPES
-// ============================================================================
 
 export const SkillNameSchema = z.enum([
     'athletics', 'acrobatics', 'sleight_of_hand', 'stealth',
@@ -49,9 +47,7 @@ export type SpellSchool = z.infer<typeof SpellSchoolSchema>;
 export const ActorTypeSchema = z.enum(['character', 'npc']);
 export type ActorType = z.infer<typeof ActorTypeSchema>;
 
-// ============================================================================
 // RULE OF COOL - IMPROVISED STUNTS
-// ============================================================================
 
 export const SkillCheckSchema = z.object({
     skill: SkillNameSchema,
@@ -122,9 +118,7 @@ export const StuntResultSchema = z.object({
 });
 export type StuntResult = z.infer<typeof StuntResultSchema>;
 
-// ============================================================================
 // CUSTOM EFFECTS SYSTEM
-// ============================================================================
 
 export const SourceTypeSchema = z.enum(['divine', 'arcane', 'natural', 'cursed', 'psionic', 'unknown']);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
@@ -235,9 +229,7 @@ export const CustomEffectSchema = z.object({
 });
 export type CustomEffect = z.infer<typeof CustomEffectSchema>;
 
-// ============================================================================
 // ARCANE SYNTHESIS - DYNAMIC SPELL CREATION
-// ============================================================================
 
 export const SpellEffectTypeSchema = z.enum(['damage', 'healing', 'status', 'utility', 'summon', 'hybrid']);
 export type SpellEffectType = z.infer<typeof SpellEffectTypeSchema>;
@@ -373,9 +365,7 @@ export const SynthesizedSpellSchema = z.object({
 });
 export type SynthesizedSpell = z.infer<typeof SynthesizedSpellSchema>;
 
-// ============================================================================
 // WILD SURGE TABLE
-// ============================================================================
 
 export const WILD_SURGE_TABLE: WildSurgeEffect[] = [
     { roll: 1, name: 'Inverted Intent', effect: 'Damage heals, healing damages. All effects are reversed for 1 minute.' },
@@ -400,9 +390,7 @@ export const WILD_SURGE_TABLE: WildSurgeEffect[] = [
     { roll: 20, name: 'Complete Magical Inversion', effect: 'Dispel all magic within 60ft. Magic items suppressed for 1 hour.' }
 ];
 
-// ============================================================================
 // DC AND DAMAGE GUIDELINES (for LLM reference)
-// ============================================================================
 
 export const DC_GUIDELINES = {
     TRIVIAL: 5,      // Kick open unlocked door

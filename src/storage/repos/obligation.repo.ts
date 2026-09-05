@@ -1,49 +1,26 @@
 /**
- * The obligation ledger's rows, read back.
+ * The obligation ledger's rows, read back. The only place the `snake_case`
+ * column / `camelCase` domain translation happens.
  *
- * `src/web/encounters.ts` asks for this file by name, in a comment above the
- * only insert anybody has ever written to these tables:
- *
- *   > There is no obligations repository yet - the tables have existed since
- *   > the social migration and nothing has ever written to them - so the insert
- *   > lives here beside its only caller. It wants lifting into
- *   > `src/storage/repos/obligation.repo.ts` by whoever owns that directory.
- *
- * This is the READ half of that file. The write and the two pair-shaped reads
- * are still in `encounters.ts` and want moving here when its owner is free; the
- * row shape and the mapper below are the ones they use, so the move is a cut
- * and a re-import rather than a rewrite.
- *
- * Why the read half arrived first: nothing anywhere asked the ledger the
- * question *what does the world hold about this person*. Both existing reads
- * are pair-shaped - what stands between these two, what oaths does this one
- * carry - and neither can answer a question about somebody's whole record. So
- * the ledger was a table the world wrote to, and read back only when it already
- * knew who the other party was.
- *
- * Columns are `snake_case` and the domain model is `camelCase`, and this is the
- * only place the translation happens.
+ * The WRITE half and the two pair-shaped reads are still in `src/web/encounters.ts`
+ * and want moving here when its owner is free; they use the row shape and mapper
+ * below, so the move is a cut and a re-import rather than a rewrite.
  */
 
 import type { ObligationRecord } from '../../engine/social/grudges.js';
 
 /**
- * The minimal handle these reads need.
- *
- * Declared here rather than imported from `better-sqlite3` for the same reason
- * every other consumer of this shape declares it: a value import of the driver
- * pulls a native module into every file that only wanted to name a type.
+ * The minimal handle these reads need. Declared rather than imported from
+ * `better-sqlite3`: a value import of the driver pulls a native module into every
+ * file that only wanted to name a type.
  */
 export interface ObligationDb {
     prepare(sql: string): { all(...params: unknown[]): unknown };
 }
 
 /**
- * The row, declared rather than inferred.
- *
- * Storage's own convention and its own reason: a column renamed in the
- * migration fails compilation here instead of silently producing `undefined`
- * at the schema boundary.
+ * The row, declared rather than inferred, so a column renamed in the migration
+ * fails compilation here instead of producing `undefined` at the boundary.
  */
 export interface ObligationRow {
     id: string;
@@ -73,19 +50,15 @@ export interface ObligationRow {
 
 /**
  * Everything the ledger holds where this person is one of the two principals.
+ * BOTH DIRECTIONS AND BOTH STATUSES: the caller decides which it wants, and
+ * "what somebody IS" reads only the open ledger while a caller looking at a life
+ * reads the closed ones too.
  *
- * BOTH DIRECTIONS AND BOTH STATUSES, because the caller decides which it wants
- * and the two questions that read this differ on it. What somebody IS reads the
- * open ledger only - a settled record has been answered - and a caller looking
- * at a life reads the closed ones too.
+ * `participants` is deliberately NOT searched. A bystander is findable FROM a
+ * record and is not a party to it, and treating them as one would put a house's
+ * whole roster on the hook for a thing one member did in front of them.
  *
- * `participants` is deliberately not searched. A bystander named on a record is
- * findable FROM it, which is what that column is for; they are not a party to
- * it, and treating them as one would put a house's whole roster on the hook for
- * a thing one member did in front of them.
- *
- * Ordered oldest first, so a listing reads as a history and two reads of the
- * same ledger are the same list.
+ * Ordered oldest first, so two reads of the same ledger are the same list.
  */
 export function ledgerAbout(db: ObligationDb, personId: string): ObligationRecord[] {
     const rows = db.prepare(`

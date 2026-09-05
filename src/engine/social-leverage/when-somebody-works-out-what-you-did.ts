@@ -1,39 +1,6 @@
 /**
- * The day somebody understands what an attachment actually was, and the grudge
- * that opens then.
- *
- * WHY THIS IS ITS OWN EVENT AND NOT A SIDE EFFECT
- * ----------------------------------------------
- * A grudge that opens the instant a manoeuvre succeeds is a different thing
- * from one that opens eleven years later when somebody finally works out what
- * happened - and the second is far better, because the intervening years are
- * years the player spent believing it had worked cleanly. The tie was real
- * state the whole time, readable, decaying nothing, sitting in the same table
- * as every other tie. Then one day it is read differently.
- *
- * So the discovery is a dated event with its own roll, on its own schedule,
- * and it can perfectly well never fire. Somebody dying still attached and
- * still wrong about it is a legitimate outcome and the commonest one.
- *
- * A FAILED ATTEMPT AND A DISCOVERED SUCCESSFUL ONE ARE DIFFERENT INJURIES
- * ----------------------------------------------------------------------
- * `an-attempt-to-move-somebody.ts` writes refusals at `slight` or `serious`
- * and can write nothing heavier. Everything `grave` and `unforgivable` in this
- * subsystem is written here. That gap is the design: being turned down is an
- * embarrassment, and being used and finding out afterwards is what makes
- * somebody an enemy for three hundred years. The cause is `betrayal` rather
- * than `humiliation` for the same reason.
- *
- * NOTHING NEW IS BEING BUILT
- * --------------------------
- * The consequence layer is `grudges.ts`, unchanged. `grudge_opened` is already
- * one of the commonest events in a live world, already upstream of killings
- * and of houses moving on houses, and already inherited on death. An
- * instrumental attachment that is worked out just adds a row to a ledger that
- * three hundred years of machinery is already reading. The direction is the
- * one the rest of the codebase already uses: the AGGRIEVED party holds it.
- *
- * Pure and seeded. Same seed, same tie, same day, same answer.
+ * The day somebody understands what an attachment actually was, and the grudge that
+ * opens then.
  */
 
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -44,26 +11,16 @@ import type { AskWeight, UnspokenTruth } from './an-attempt-to-move-somebody.js'
 import { severityWithHouse, whenItIsDoneToOneOfOurs } from './what-a-house-will-do-about-it.js';
 import type { SectAlignment } from '../../schema/cultivation.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT MAKES IT COME OUT
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * Chance per year that nothing in particular gives it away.
- *
- * Low, and it has to be: the ordinary case is that people do not find out.
- * Ten years of quiet is roughly even money at this rate, which is about right
- * for something that only ever surfaces because somebody eventually compares
- * two things they were told.
+ * Chance per year that nothing in particular gives it away. Low, and it has to
+ * be: ten years of quiet is roughly even money at this rate.
  */
 const PER_YEAR_BASE = 0.06;
 
 /**
- * Added per year when the actor never returned it.
- *
- * The real tell, and it is read straight off the two halves of the tie. Being
- * the only one who ever crosses the distance is a thing a person notices, and
- * it accumulates.
+ * Added per year when the actor never returned it. The real tell, read straight
+ * off the two halves of the tie: being the only one who ever crosses the distance
+ * is a thing a person notices, and it accumulates.
  */
 const PER_YEAR_UNRETURNED = 0.05;
 
@@ -81,21 +38,12 @@ const AUDIENCE_PER_YEAR: Record<UnspokenTruth['audience'], number> = {
 
 /**
  * A single jump, applied on the day the actor spends the attachment.
- *
- * Calling the favour in is the loudest thing that can happen to a lie like
- * this, because it is the moment the ask stops being deniable. Whether it
- * lands is still a roll - people forgive a great deal from somebody they are
- * attached to, and that is exactly why this is worth risking.
  */
 const ON_BEING_SPENT = 0.35;
 
 /** Nobody is ever certain, and nobody is ever safe. */
 const YEARLY_FLOOR = 0.01;
 const YEARLY_CEILING = 0.6;
-
-// ─────────────────────────────────────────────────────────────────────────
-// THE ROLL
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface DiscoveryCheck {
     truth: UnspokenTruth;
@@ -109,8 +57,7 @@ export interface DiscoveryCheck {
      */
     justSpent?: boolean;
     /**
-     * The subject's `insight`, 1..4, when the caller has an attribute row.
-     * Comprehension is the attribute for working a thing out, and it is worth
+     * The subject's `insight`, 1..4, when the caller has an attribute row. Worth
      * about as little here as charm is worth on the other side.
      */
     subjectInsight?: number;
@@ -119,10 +66,6 @@ export interface DiscoveryCheck {
 
 /**
  * The chance, for this stretch of days, that they put it together.
- *
- * Exported so a probe can print the curve. The yearly rate is scaled by the
- * span actually elapsed rather than being applied per tick, so a world that
- * advances in ten-year chunks and one that advances yearly agree.
  */
 export function oddsOfWorkingItOut(check: DiscoveryCheck): number {
     const years = Math.max(0, check.daysElapsed) / DAYS_PER_YEAR;
@@ -150,18 +93,9 @@ export function haveTheyWorkedItOut(check: DiscoveryCheck): boolean {
     return check.rng.next() < oddsOfWorkingItOut(check);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// WHAT IT OPENS
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * How badly they take it, decided once, here, at creation.
- *
- * Two things set it and both are stored numbers rather than judgements: how
- * far in they were, and what was riding on it. Somebody who gave up nothing
- * over a courtesy has been embarrassed. Somebody who was `defining`-strong and
- * did something against their own interest for it has lost years of their life
- * to a thing that was not what they were told.
+ * How badly they take it, decided once, here, at creation. Two stored numbers
+ * rather than judgements: how far in they were, and what was riding on it.
  */
 function severityOfBeingUsed(theirStrength: number, ask: AskWeight): Severity {
     if (theirStrength >= 0.75 && ask === 'a_betrayal') return 'unforgivable';
@@ -188,10 +122,8 @@ export interface DiscoveryOutcome {
 /**
  * The records the day produces.
  *
- * `subjectName` and `actorName` are carried into the description because a
- * record nobody can read in two centuries is the exact failure `grudges.ts`
- * exists to prevent, and by then there may be nobody left who could look the
- * ids up.
+ * The names are carried into the description because by the time somebody reads
+ * it there may be nobody left who could look the ids up.
  */
 export function whatTheyDoAboutIt(input: {
     truth: UnspokenTruth;
@@ -243,8 +175,6 @@ export function whatTheyDoAboutIt(input: {
             verdict.note
     };
 }
-
-// ─────────────────────────────────────────────────────────────────────────
 
 function clamp(n: number, lo: number, hi: number): number {
     if (!Number.isFinite(n)) return lo;

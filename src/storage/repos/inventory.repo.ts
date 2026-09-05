@@ -73,9 +73,7 @@ export class InventoryRepository {
         stmt.run(characterId, itemId);
     }
 
-    /**
-     * Find all characters who own a specific item (for world-unique enforcement)
-     */
+    /** Find all characters who own a specific item (for world-unique enforcement) */
     findItemOwners(itemId: string): string[] {
         const stmt = this.db.prepare('SELECT character_id FROM inventory_items WHERE item_id = ?');
         const rows = stmt.all(itemId) as { character_id: string }[];
@@ -169,13 +167,9 @@ export class InventoryRepository {
         }
     }
 
-    // ============================================================
     // CURRENCY OPERATIONS
-    // ============================================================
 
-    /**
-     * Get currency for a character
-     */
+    /** Get currency for a character */
     getCurrency(characterId: string): { gold: number; silver: number; copper: number } {
         const stmt = this.db.prepare('SELECT currency FROM characters WHERE id = ?');
         const row = stmt.get(characterId) as { currency: string | null } | undefined;
@@ -196,9 +190,7 @@ export class InventoryRepository {
         }
     }
 
-    /**
-     * Set currency for a character (replaces existing)
-     */
+    /** Set currency for a character (replaces existing) */
     setCurrency(characterId: string, currency: { gold?: number; silver?: number; copper?: number }): void {
         const current = this.getCurrency(characterId);
         const updated = {
@@ -211,9 +203,7 @@ export class InventoryRepository {
         stmt.run(JSON.stringify(updated), characterId);
     }
 
-    /**
-     * Add currency to a character
-     */
+    /** Add currency to a character */
     addCurrency(characterId: string, currency: { gold?: number; silver?: number; copper?: number }): { gold: number; silver: number; copper: number } {
         const current = this.getCurrency(characterId);
         const updated = {
@@ -288,9 +278,7 @@ export class InventoryRepository {
         return transfer();
     }
 
-    /**
-     * Check if character has at least this much currency
-     */
+    /** Check if character has at least this much currency */
     hasCurrency(characterId: string, currency: { gold?: number; silver?: number; copper?: number }): boolean {
         const current = this.getCurrency(characterId);
         const currentTotal = current.gold * 100 + current.silver * 10 + current.copper;

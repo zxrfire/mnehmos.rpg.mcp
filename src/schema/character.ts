@@ -1,16 +1,11 @@
 /**
- * The character record.
+ * The identity row for NPCs the agent runtime drives, the social layer overhears
+ * and the perception subsystem meters. NOT the player's sheet - a cultivator
+ * lives in `schema/cultivation.ts` and is the only thing the game advances.
  *
- * What this is now: the identity row for NPCs the agent runtime drives, the
- * social layer overhears and the perception subsystem meters. It is NOT the
- * player's sheet - a cultivator lives in `schema/cultivation.ts` and is the
- * only thing the game proper advances, injures or kills.
- *
- * The spellcasting block (slots, prepared spells, save DC, attack bonus,
- * concentration) and the legendary-action block were removed with the D&D magic
- * and combat engines they existed to feed. Nothing reads them any more, and
- * leaving them in the schema kept putting spell slots in front of a narrator
- * whose world has techniques and a qi pool instead.
+ * Do not re-add the spellcasting or legendary-action blocks. They fed D&D magic
+ * and combat engines that no longer exist, and put spell slots in front of a
+ * narrator whose world has techniques and a qi pool.
  */
 
 import { z } from 'zod';
@@ -32,12 +27,8 @@ export const CurrencySchema = z.object({
 });
 
 /**
- * Bastion world-brief origin tracker.
- *
- * The world's central conceit is that almost no one is native to Bastion -
- * the population is summoned from every fictional universe (Forgotten Realms,
- * Konoha, contemporary Earth, ...). origin records where a soul came from
- * and when it arrived, so tools can enforce/expose that fact.
+ * Where a soul came from and when it arrived. Almost no one is native to
+ * Bastion; the population is summoned from every fictional universe.
  */
 export const CharacterOriginSchema = z.object({
     universe: z.string().min(1)

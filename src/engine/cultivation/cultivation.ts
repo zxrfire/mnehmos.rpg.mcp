@@ -1,23 +1,11 @@
 /**
  * Cultivation progress accrual.
  *
- * Progress is the XP replacement, and unlike XP it is earned by *time*, not by
- * events. A cultivator sitting in a cave accrues a rate per day; that rate is
- * the product of a handful of multipliers, and the ladder's cost curve
- * (`progressRequiredForOrdinal`) grows at 1.35^ordinal. Multiplying a rate
- * against an exponential cost is what produces the genre's core shape: talent
- * does not add a bonus, it decides which realms are reachable inside a lifespan
- * at all.
- *
- * Worked example, at BASE_PROGRESS_PER_DAY = 1 and normal ambient qi:
- *   - single root (1.5x): clearing all of Qi Condensation costs ~40 years.
- *   - muddled root (0.55x): the same climb costs ~110 years, which exceeds
- *     STAGNATION_YEARS and a 100-year mortal lifespan. A muddled root does not
- *     get a penalty; a muddled root loses.
- * That asymmetry is the design, not a tuning accident.
- *
- * Everything here is pure. Take state in, return deltas out. Nothing in this
- * file mutates a cultivator, touches the database, or knows what a turn is.
+ * Measured on the build before this: twelve honest lives, played correctly,
+ * ended eleven times in stagnation at ordinal 0, age 66, after fifty years of
+ * two-year seclusions at 0/100 progress. Nothing anywhere said why - the only
+ * tell was a deviation reporting "0 qi-units of cultivation destroyed", because
+ * there was nothing to destroy.
  */
 
 import {
@@ -27,6 +15,7 @@ import {
     type ManualQuality
 } from '../../schema/cultivation.js';
 import { getSpiritRoot } from './spirit-roots.js';
+import { physiqueOrNull } from './physiques.js';
 import { readManual } from './manual-quality.js';
 import {
     FOUNDATION_ORDINAL,
@@ -45,23 +34,17 @@ import {
     type RelevanceContext
 } from './understanding.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // BASE RATE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Qi-units a cultivator with no modifiers at all gains per day of dedicated
  * cultivation. The unit that `progressRequiredForOrdinal` is denominated in.
- *
- * Fixed at 1 on purpose: it makes progress requirements readable directly as
- * "unmodified days", which is the number a balance discussion actually wants.
  */
 export const BASE_PROGRESS_PER_DAY = 1;
 
 /** Days per in-world year. No calendars, no leap years, no argument. */
 export const DAYS_PER_YEAR = 365;
 
-// ─────────────────────────────────────────────────────────────────────────
 // REALM INTAKE
 //
 // A bigger body is a bigger aperture. This is the term that says so, and until
@@ -81,7 +64,7 @@ export const DAYS_PER_YEAR = 365;
 // without raising the intake left ordinal 20 needing 185 years against a
 // 100-year clock, so the fix did not reach.
 //
-// ── Why the square root of the power multiplier ──────────────────────────
+// Why the square root of the power multiplier
 //
 // Not a new curve, and deliberately not a new table: the ladder already
 // publishes what a realm is worth, and this reads it. One realm is x4 power;
@@ -114,180 +97,87 @@ export const DAYS_PER_YEAR = 365;
 // power multiplier is 1 across all thirteen rungs of Qi Condensation. Nothing
 // below Foundation Establishment moves by a single qi-unit, which is where 84%
 // of runs end and where the cruelty is load-bearing.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How much of a realm's power multiplier becomes intake.
- *
- * See the banner above for the measurement that selected it. Changing this
- * changes whether the ladder can be climbed at all, so it is guarded by
- * `tests/engine/cultivation/realm-intake.test.ts` against the criterion rather
- * than against its current value.
  */
 export const REALM_INTAKE_EXPONENT = 0.5;
 
 /**
  * Qi intake multiplier for standing at this rung.
- *
- * Exactly 1 through the whole of Qi Condensation, by construction rather than
- * by a special case: that realm's power multiplier is 1, and anything to the
- * power of a half is still 1.
  */
 export function realmIntakeMultiplier(realmOrdinal: number): number {
     return Math.pow(powerMultiplierForOrdinal(realmOrdinal), REALM_INTAKE_EXPONENT);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TECHNIQUE CEILING, AND THE MASTER
 //
-// Two progression gates with DELIBERATELY DIFFERENT SHAPES, and the asymmetry
-// is the design rather than an accident of implementation:
+// Two progression gates with DELIBERATELY DIFFERENT SHAPES:
 //
-//   no proper cultivation technique  ->  progress is IMPOSSIBLE. A hard
-//                                        ceiling. No amount of time passes it.
-//   no suitable master               ->  progress SLOWS. A soft brake:
-//                                        survivable, and expensive in years.
+//   no proper cultivation technique  ->  progress is IMPOSSIBLE. A hard ceiling.
+//   no suitable master               ->  progress SLOWS. A soft brake.
 //
 // One axis can be ground through at a cost; the other cannot be ground through
-// at all. Collapsing them into one term - two penalties of different sizes -
-// would lose exactly the thing that makes them worth having.
+// at all. Collapsing them into two penalties of different sizes would lose the
+// thing that makes them worth having.
 //
-// ── The ceiling ──────────────────────────────────────────────────────────
+// THE CEILING is what makes the faction catalog's `reliableOrdinal` and
+// `peakOrdinal` TRUE BY CONSTRUCTION rather than by assertion: a low-tier sect
+// teaches a low-tier manual, so it structurally cannot produce a high-realm
+// cultivator, and nothing branches on the sect. Deliberately NOT a slow taper
+// toward the cap - a ceiling that gets gradually stickier reads as bad luck,
+// where one that stops dead reads as a fact about the book in your hands and is
+// the one that sends a player looking.
 //
-// A cultivation manual carries a rung past which it cannot take anybody,
-// however long they practise. That is what makes the faction catalog's
-// `reliableOrdinal` and `peakOrdinal` TRUE BY CONSTRUCTION rather than by
-// assertion: a low-tier sect teaches a low-tier manual, so a low-tier sect
-// structurally cannot produce a high-realm cultivator. Nothing branches on the
-// sect. The manual is simply the manual.
-//
-// Three ways out when you cap, and the engine takes no view on which:
-//   - find the later volumes. They are somewhere, and possibly nowhere you
-//     can reach. This composes with suitability: the volumes may not suit you
-//     either.
-//   - write one yourself, which is a question about dao standing rather than
-//     about resources.
-//   - switch to another art, abandoning what a century of practice built.
-//
-// Deliberately NOT modelled as a slow taper toward the cap. A ceiling that
-// gets gradually stickier reads as bad luck; a ceiling that stops dead reads
-// as a fact about the book in your hands, which is what it is, and it is the
-// one that sends a player looking.
-//
-// ── The master ───────────────────────────────────────────────────────────
-//
-// Guidance is priced on the gap between the guide and the guided, so a master
-// who was a great help at Qi Condensation is worth nothing by Core Formation.
-// You cannot reach ordinal 44 guided by an ordinal 10 for the whole game,
-// which was previously not merely possible but free.
-//
-// Absence of a master is the BASELINE (multiplier 1), not a penalty, so no
-// existing cultivator gets slower than they were - "progress slows without a
-// suitable master" is true comparatively, which is the sense that matters, and
-// it avoids a silent across-the-board nerf to every caller that does not yet
-// supply a guide. A suitable master is a real bonus on top.
-// ─────────────────────────────────────────────────────────────────────────
+// THE MASTER is priced on the gap between guide and guided, so a master who was
+// a great help at Qi Condensation is worth nothing by Core Formation. Absence of
+// a master is the BASELINE (multiplier 1) and not a penalty, so no existing
+// cultivator gets slower than they were and no caller without a guide is
+// silently nerfed.
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE GROUND: CONTESTED QI, AND GROUND THAT STOPS YOU
 //
-// Two rules from `docs/world/climbing/qi.md`, both of which the engine promised and
-// neither of which it had. Both read the same input - what the ground holds and
-// who is standing on it - so they take one option rather than two.
+// Two rules from `docs/world/climbing/qi.md`. Both read the same input - what
+// the ground holds and who is standing on it - so they take one option.
 //
-// ── Qi is contested ──────────────────────────────────────────────────────
+// QI IS CONTESTED. *"A valley that comfortably carries thirty cultivators
+// carries three hundred badly."* That is the stated motive for every
+// territorial conflict in the setting and nothing modelled it: rate at ordinal
+// 10 was 1.500/day whether the valley held one person or three hundred.
 //
-//   "a region supports only so many cultivators. Qi drawn by one person is not
-//    available to another. A valley that comfortably carries thirty cultivators
-//    carries three hundred badly, and everyone in it progresses more slowly for
-//    every additional person."
+// The doc's own example is the calibration point - an ordinary valley, density
+// `BAND_DENSITY_CENTRE.normal` of 0.42, carries thirty - which fixes
+// QI_CARRYING_CAPACITY at 72, so thin ground carries seven and a rich vein
+// fifty-six. Crowding is a SHARE, so it is smooth and has no cliff: thirty in a
+// thirty-valley is 1.0 and three hundred is 0.1.
 //
-// That is the stated motive for every territorial conflict in the setting - a
-// sect limiting its intake is prudent, a sect culling a rival's outer disciples
-// is efficient, a massacre is an investment that genuinely works - and nothing
-// modelled it. Rate at ordinal 10 was 1.500/day whether the valley held one
-// person or three hundred.
-//
-// The doc's own example is the calibration point: an ordinary valley - density
-// at `BAND_DENSITY_CENTRE.normal`, 0.42 - carries thirty. That fixes
-// QI_CARRYING_CAPACITY at 72, and everything else falls out of it: thin ground
-// carries seven, a rich vein carries fifty-six.
-//
-// Crowding is a SHARE, so it is smooth and has no cliff: at or under capacity
-// nothing happens, and over it everyone divides what there is. Thirty in a
-// thirty-valley is 1.0; three hundred is 0.1, which is the doc's "badly".
-//
-// ── Occupancy is measured in DRAW, not in heads ──────────────────────────
-//
-// "Qi drawn by one person is not available to another" - and a Nascent Soul
-// cultivator does not draw what an outer disciple draws. So occupancy is summed
-// as `realmIntakeMultiplier`, the same number that decides how fast each of
-// them gathers. One Deity Transformation elder crowds out sixteen mortals,
-// which is why placing an ancient on your own vein is a real decision and why a
+// OCCUPANCY IS MEASURED IN DRAW, NOT IN HEADS, summed as `realmIntakeMultiplier`.
+// One Deity Transformation elder crowds out sixteen mortals, which is why a
 // sect's elders live apart from its disciples.
 //
-// ── Thin regions have a ceiling ──────────────────────────────────────────
+// THIN REGIONS HAVE A CEILING, not a slower multiplier. A multiplier scales and
+// never stops, so with `thin` at x0.5 everybody passed Qi Condensation
+// eventually and the province where the higher realms are stories could not
+// exist. So ground poorer than the centre of the thin band cannot carry anybody
+// past Qi Condensation, ever - a hard zero with its own line in the breakdown.
 //
-//   "In a genuinely qi-poor region, a cultivator does not merely progress
-//    slowly. They stop. There is not enough ambient qi to condense, and no
-//    amount of talent, discipline or years will manufacture it. Whole provinces
-//    exist where nobody has passed Qi Condensation in living memory."
+// The ceiling is ordinal 12 and the comparison is `>=`, so a cultivator on dead
+// ground GATHERS on 0 to 11 and gathers nothing at all on 12. All thirteen rungs
+// stay REACHABLE; what they cannot do is accumulate on the last one, which is
+// the only way out of the realm. Twelve rungs of runway, so the answer is to
+// move rather than to try harder.
 //
-// The heading on that passage is "Thin regions have a CEILING", and a ceiling
-// is what it is - not a slower multiplier. A multiplier scales and never stops,
-// so with `thin` at x0.5 everybody passed Qi Condensation eventually and the
-// province where the higher realms are stories could not exist.
-//
-// So: ground poorer than the centre of the thin band cannot carry anybody past
-// Qi Condensation, ever. Exactly the same shape as the technique ceiling - a
-// hard zero with its own line in the breakdown - because it is the same kind of
-// fact.
-//
-// ── Exactly where it bites, because one rung matters to a reader ─────────
-//
-// The ceiling is ordinal 12, and the comparison is `>=`, so a cultivator on
-// dead ground GATHERS on ordinals 0 to 11 and gathers nothing at all on 12.
-//
-// They can still stand on 12 - reaching it only requires gathering on 11 - so
-// all thirteen rungs of Qi Condensation remain REACHABLE. What they cannot do
-// is accumulate on the last one, and accumulating on the last one is the only
-// way out of the realm. That is the lore sentence exactly: nobody has passed
-// Qi Condensation, and people plainly still live and cultivate there.
-//
-// An earlier version of this comment said "all thirteen rungs stay climbable",
-// which is true of reaching them and false of gathering on the thirteenth, and
-// the ambiguity cost a reviewer two passes to resolve. It is written out
-// longhand here for that reason.
-//
-// The runway is the point: twelve rungs of ordinary progress before the ground
-// is the thing in the way, so the answer is to move rather than to try harder.
-// "Getting out of a poor region is the first real goal of most cultivators who
-// ever amount to anything."
-//
-// ── The threshold is STRICT, deliberately ────────────────────────────────
-//
-// `density < QI_BARREN_DENSITY`, so ground sitting exactly on the constant is
-// ordinary ground and not barren. "Poorer than the centre of the thin band"
-// reads as strict and is meant as strict. It does leave a sharp edge for any
-// catalog entry authored at exactly 0.1, which is why it is said here and
-// pinned in `contested-qi.test.ts` rather than left to be rediscovered.
-// ─────────────────────────────────────────────────────────────────────────
+// The threshold is STRICT (`density < QI_BARREN_DENSITY`), so ground sitting
+// exactly on the constant is ordinary. That leaves a sharp edge for any catalog
+// entry authored at exactly 0.1, which is pinned in `contested-qi.test.ts`.
 
 /**
  * Mortal-equivalent draws an entirely saturated location would support.
- *
- * Calibrated on the doc's own worked example rather than picked: an ordinary
- * valley sits at `BAND_DENSITY_CENTRE.normal` = 0.42 and "comfortably carries
- * thirty cultivators", so 30 / 0.42 = 72.
  */
 export const QI_CARRYING_CAPACITY = 72;
 
 /**
- * Usable density below which the ground cannot carry anyone out of Qi
- * Condensation.
- *
- * `BAND_DENSITY_CENTRE.thin` - ground poorer than the middle of the thin band
- * itself. Derived rather than invented, so it moves if the bands move.
+ * Usable density below which the ground cannot carry anyone out of Qi Condensation.
  */
 export const QI_BARREN_DENSITY = BAND_DENSITY_CENTRE.thin;
 
@@ -349,20 +239,11 @@ export const GUIDANCE_MAX_BONUS = 0.5;
 
 /**
  * Rungs of seniority at which a guide is worth everything they can be worth.
- *
- * Eight - about two realms. Nearer than that and they are still ahead of you
- * but no longer seeing much you cannot; further and there is nothing left to
- * add, because the limit is what you can receive rather than what they hold.
  */
 export const GUIDANCE_FULL_GAP = 8;
 
 /**
  * What being guided by somebody at `guideOrdinal` is worth at `realmOrdinal`.
- *
- * 1 with no guide, and 1 with a guide at or below the cultivator: somebody who
- * has not stood where you are standing cannot tell you anything about it. This
- * is why a master's send-off is a real beat - they can perceive the moment
- * they stop being able to help.
  */
 export function guidanceMultiplier(
     realmOrdinal: number,
@@ -392,52 +273,11 @@ export function techniqueExhausted(
 
 /**
  * The rung a cultivator practising NO METHOD AT ALL is carried to.
- *
- * Zero, and it is a real number rather than an absence. `techniqueExhausted`
- * reads null as "no ceiling declared", so handing it null for somebody
- * practising nothing gives them an unlimited climb and makes learning a first
- * book strictly harmful.
- *
- * It lives here rather than in a caller because it is the engine's number: the
- * rule it encodes - "no proper cultivation technique, progress is impossible" -
- * is the hard half of the asymmetry in the banner above, and a caller that
- * picked its own floor would be deciding a mechanic. `src/web/game.ts` should
- * import this rather than define its own copy; reported rather than reached
- * across for.
  */
 export const NO_MANUAL_CEILING = 0;
 
 /**
  * Why the manual is or is not carrying this cultivator any further.
- *
- * ── THE SENTENCE THAT WAS MISSING ────────────────────────────────────────
- *
- * A cap of zero and a cap of thirteen are different facts and used to read the
- * same. `techniqueExhausted` returned true for both, so the breakdown said
- * "The manual ends at Qi Condensation Layer 1" to somebody holding no manual
- * at all - naming a book that does not exist, at the one moment the player most
- * needed to be told there wasn't one.
- *
- * Measured on the build before this: twelve honest lives, playing correctly -
- * stipend, work, food, treat wounds, sit, strike when the gate opens - ended
- * eleven times in stagnation at ordinal 0, age 66, after fifty years of
- * two-year seclusions at 0/100 progress. Nothing anywhere said why. The only
- * tell was inverted and buried: a deviation reporting "0 qi-units of
- * cultivation destroyed", because there was nothing to destroy.
- *
- * The rule is right and is not weakened here. What was missing was the
- * sentence, and the two ends of this axis want OPPOSITE advice:
- *
- *   no_method   nothing has been learned. Sitting is not the answer and more
- *               years are not the answer. WHAT IS is either "find a book" or
- *               "open the one you are carrying", and those are not the same
- *               errand - see `holdsAnUnlearnedCopy`.
- *   exhausted   there is a book and it has ended. Go and find the next volume.
- *
- * This is the fourth of the four reasons a manual can fail somebody - no
- * method, wrong root, insufficient dao, ends here - and the only one that is an
- * ABSENCE rather than a refusal, which is exactly why nobody wrote a sentence
- * for it.
  */
 export type TechniqueCeilingState = 'no_method' | 'exhausted' | 'teaching';
 
@@ -449,12 +289,6 @@ export interface TechniqueCeiling {
     label: string;
     /**
      * A complete sentence for the PLAYER, or null when nothing is wrong.
-     *
-     * Engine-authored and factual, in the idiom `Suitability.line` established:
-     * it says what is true and what would change it, and it never softens the
-     * answer into a maybe. The rate factors are visible in an inspector; the
-     * person sitting in a cave for fifty years is reading prose, so this exists
-     * to be carried into narration rather than to be looked up.
      */
     line: string | null;
 }
@@ -483,7 +317,7 @@ export function techniqueCeiling(
     // which is one or more at every rung on the ladder. Zero is therefore not a
     // book that teaches nothing; it is the absence of a book, and it is
     // reserved for exactly that.
-    // ── ABOVE THE LID, A BOOK IS NOT THE ANSWER AND SAYING SO IS A LIE ───
+    // ABOVE THE LID, A BOOK IS NOT THE ANSWER AND SAYING SO IS A LIE
     //
     // Both sentences below name a route - find a book, find the next volume -
     // and above the Lid neither route leads anywhere, because
@@ -504,7 +338,7 @@ export function techniqueCeiling(
     // `who-would-teach-this-cultivator.ts`, so widening it here breaks a caller
     // rather than teaching it something. Only the advice was wrong.
     //
-    // ── AND A COPY IN THE BAG IS NOT A ROAD, BUT IT IS NOT AN ABSENCE ────
+    // AND A COPY IN THE BAG IS NOT A ROAD, BUT IT IS NOT AN ABSENCE
     //
     // This branch used to end "It is a book, or somebody willing to teach them
     // one" unconditionally, on the reasoning that `NO_MANUAL_CEILING` means
@@ -523,7 +357,7 @@ export function techniqueCeiling(
     // lists to know it. The parameter defaults false, which keeps every caller
     // that cannot see the pouch saying exactly what it said before.
     //
-    // ── AND THE PHRASE IS SHARED, SO IT IS NOT FREE TO REWORD ────────────
+    // AND THE PHRASE IS SHARED, SO IT IS NOT FREE TO REWORD
     //
     // The false half was "without a manual", which claims something about the
     // bag. "no road for the qi to take" is the true half and it is SHARED:
@@ -581,7 +415,6 @@ export function techniqueCeiling(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HOW FAR A MANUAL REACHES, AND WHAT REACHING FURTHER COSTS
 //
 // The corridor above the middle of the ladder is single-file: at several rungs
@@ -606,18 +439,12 @@ export function techniqueCeiling(
 // `shardPower` in the world layer, which imports this file - putting them there
 // and importing them back would close a runtime cycle. `escapes.ts` re-exports
 // them so callers still have one import site.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What an ordinary manual spans. Every book in the catalog today. */
 export const ORDINARY_REALM_SPAN = 1;
 
 /**
  * The cap an ORDINARY manual beginning at this rung would carry.
- *
- * `capOf` in `src/data/cultivation/techniques.ts` is this same rule and should
- * delegate here rather than restate it: the data layer owns which books exist,
- * and realm geometry is the engine's. Null when the band runs off the top of
- * the ladder, matching `capOf`.
  */
 export function ordinaryCapFor(requiredOrdinal: number): number | null {
     const band = realmForOrdinal(clampToLadder(requiredOrdinal));
@@ -627,10 +454,6 @@ export function ordinaryCapFor(requiredOrdinal: number): number | null {
 
 /**
  * How many realms this manual carries a reader across.
- *
- * One for every book in the world today. Two or more is what "an exceptional
- * manual that skips a stretch of the corridor" means. An uncapped manual is
- * measured to the top of the ladder, because that is what uncapped means.
  */
 export function realmsSpannedBy(
     manual: { requiredOrdinal: number; cap: number | null }
@@ -653,18 +476,6 @@ export function realmsSpannedBy(
 
 /**
  * How much of the rate an extra realm of reach costs at the very start.
- *
- * A legendary method does not simply work when you sit down with it. 0.75 per
- * realm beyond the first, as a divisor: a two-realm manual opens at 1/1.75 =
- * 0.57 of the ordinary rate and a three-realm one at 0.4. Sized against the
- * terms that already exist - the whole legal attribute range is worth about
- * x1.5 and one realm is x4 - so this is roughly a doubling of the years to the
- * first boundary, and nowhere near a wall.
- *
- * The point of it is that the ordinary book a house teaches is GENUINELY
- * BETTER for the next realm, and the treasure only wins over the long run.
- * That is a real decision rather than a strict upgrade, and it is what stops
- * "find the best book" from being the whole game.
  */
 export const OPENING_COST_PER_EXCESS_REALM = 0.75;
 
@@ -702,18 +513,6 @@ export interface OpeningPenalty {
 
 /**
  * What the opening stretch of this manual is costing at this rung.
- *
- * Worst at the rung the manual can first be taken up at, and gone by the far
- * end of the hard stretch - which is precisely "harder to start". Keyed on
- * where the reader stands, so there is no new state, no mastery column and
- * nothing to persist.
- *
- * AUTHORED FIRST, DERIVED OTHERWISE. When the catalog states an `opening` on
- * the row, that is the answer: an author who has decided a particular treasure
- * is brutal for six rungs gets exactly that. When it does not, realm geometry
- * supplies a default, so a wide manual authored WITHOUT an opening is not
- * quietly a free treasure. There is one penalty and two ways of sourcing its
- * numbers, rather than two penalties that will drift apart.
  */
 export function openingPenalty(manual: ManualBand, realmOrdinal: number): OpeningPenalty {
     const from = clampToLadder(manual.requiredOrdinal);
@@ -786,12 +585,10 @@ function clamp01(n: number): number {
     return Math.max(0, Math.min(1, n));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // RATE BREAKDOWN
 // Every factor is itemised. The UI must be able to answer "why am I so slow?"
 // without the player guessing, and a balance pass must be able to read the
 // contribution of each system without instrumenting the engine.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface RateFactor {
     /** Stable machine-readable key, e.g. `spirit_root`. */
@@ -842,41 +639,21 @@ export interface CultivationOptions {
     /** Subject of the art being practised, e.g. 'sword'. Same purpose. */
     techniqueSubject?: string | null;
     /**
-     * The highest ordinal the CULTIVATION MANUAL being practised can carry
-     * this cultivator to. A hard ceiling, not a penalty - see the TECHNIQUE
-     * CEILING banner.
-     *
-     * Omitted means "no manual declared", which is the old behaviour and
-     * imposes no ceiling. The data layer must supply a `cap` per cultivation
-     * manual for this to bite.
+     * The highest ordinal the CULTIVATION MANUAL being practised can carry this
+     * cultivator to. A hard ceiling, not a penalty - see the TECHNIQUE CEILING
+     * banner.
      */
     techniqueCap?: number | null;
     /**
-     * The band the manual being practised was written for, as catalog facts
-     * rather than as a computed number.
-     *
-     * Drives the opening penalty - see the MANUAL REACH banner. The caller
-     * supplies `requiredOrdinal` and `cap` off the catalog row and the engine
-     * decides what they are worth; a caller that could hand in the multiplier
-     * directly would be a caller that could invent it.
-     *
-     * Omitted means "no span declared", which imposes no penalty and is the old
-     * behaviour. Note this is the manual's OWN cap, which is not necessarily
-     * `techniqueCap` - a partial volume set lowers the ceiling via
-     * `effectiveCapOf` without making the book's opening any easier.
+     * The band the manual being practised was written for, as catalog facts rather
+     * than as a computed number.
      */
     techniqueSpan?: ManualBand | null;
     /**
-     * HOW WELL THE MANUAL IS WRITTEN, as the catalog fact rather than as a
-     * computed number - the same contract `techniqueSpan` uses, and for the
-     * same reason: a caller that could hand in the multiplier directly would be
-     * a caller that could invent it.
-     *
-     * The engine prices it against what the reader can take out of it, which is
-     * why this is a tier name and not a bonus. See `manual-quality.ts`.
-     *
-     * Omitted reads as `sound`, the identity element, so every existing caller
-     * keeps exactly the behaviour it had.
+     * HOW WELL THE MANUAL IS WRITTEN, as the catalog fact rather than as a computed
+     * number - the same contract `techniqueSpan` uses, and for the same reason: a
+     * caller that could hand in the multiplier directly would be a caller that
+     * could invent it.
      */
     techniqueQuality?: ManualQuality | null;
     /**
@@ -887,29 +664,11 @@ export interface CultivationOptions {
     guideOrdinal?: number | null;
     /**
      * Multiplier from somebody practising the SAME art beside them.
-     *
-     * Named for what it measures and not for who supplies it: a dao
-     * partnership is the one thing that supplies it today, and the channel is
-     * open to any art that `requiresPeople` more than one. The peer-level term
-     * `guideOrdinal` cannot express this and was never meant to - guidance is
-     * worth a great deal from above and nothing at all from a peer, by design,
-     * so somebody at the same rung reads as zero through it. What practising
-     * alongside supplies is not instruction; it is the other half of a
-     * mechanism.
-     *
-     * Who is eligible and what the pairing is worth are decided by
-     * `cultivateWithADaoPartner`
-     * (`engine/social-leverage/an-art-that-needs-two-people.ts`). This field
-     * only carries the answer in. 1 - the default - is practising alone.
      */
     sharedPracticeBonus?: number | null;
     /**
-     * The ground under them and who else is drawing on it. Drives crowding and
-     * the barren-ground ceiling - see the THE GROUND banner.
-     *
-     * Omitted means "nobody is competing and the ground is not known to be
-     * poor", which is the old behaviour and imposes neither. The world layer
-     * must supply it for either rule to bite.
+     * The ground under them and who else is drawing on it. Drives crowding and the
+     * barren-ground ceiling - see the THE GROUND banner.
      */
     ground?: GroundConditions | null;
 }
@@ -929,25 +688,21 @@ const DEFAULT_OPTIONS: Required<
 
 /**
  * The itemised per-day cultivation rate.
- *
- * Order of factors is fixed (root, realm, foundation, understanding, ambient,
- * injuries, scars, technique, sect, location, focus) so that two breakdowns
- * from the same state compare equal element-by-element - a property the
- * determinism tests lean on.
- *
- * `foundationQuality` is optional on the input because most callers - the
- * time-skip's internal snapshot, NPC stubs, rows written before foundations
- * existed - legitimately do not carry it. Missing reads as 'none', whose
- * multiplier is 1.
  */
 export function computeCultivationRate(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'> &
-        Partial<Pick<Cultivator, 'foundationQuality' | 'insights' | 'realmOrdinal' | 'attributes'>>,
+        Partial<Pick<Cultivator,
+            'foundationQuality' | 'insights' | 'realmOrdinal' | 'attributes' | 'physique'>>,
     ambient: AmbientQi,
     opts: CultivationOptions = {}
 ): CultivationRateBreakdown {
     const options = { ...DEFAULT_OPTIONS, ...opts };
     const root = getSpiritRoot(cultivator.spiritRoot);
+    // Read off the PERSON and never off `opts`, which is the whole of what
+    // makes a physique a property of a body rather than something a caller
+    // hands in. Omitted, and for 98 people in a hundred, this is null and the
+    // factor below is 1.
+    const physique = physiqueOrNull(cultivator.physique);
     const injuries = aggregateInjuryPenalties(cultivator.injuries);
     const scars = scarTempering(cultivator.injuries);
     const foundation = foundationOf(cultivator);
@@ -978,6 +733,15 @@ export function computeCultivationRate(
             source: 'spirit_root',
             label: root.name,
             multiplier: root.cultivationSpeed
+        },
+        {
+            // The body itself, beside the root because it is the same kind of
+            // fact: dealt once, never earned, and never chosen. A row is on
+            // the breakdown even when it is 1, so a player reading the line
+            // can see the term exists and is doing nothing to them.
+            source: 'physique',
+            label: physique ? physique.name : 'An ordinary body',
+            multiplier: physique?.cultivationSpeed ?? 1
         },
         {
             // A bigger body is a bigger aperture. Without this the ladder is
@@ -1156,9 +920,7 @@ function nonNegative(n: number): number {
     return Number.isFinite(n) && n > 0 ? n : n === 0 ? 0 : 1;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ACCRUAL
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface AccrualContext {
     ambient: AmbientQi;
@@ -1176,12 +938,8 @@ export interface AccrualResult {
 }
 
 /**
- * Accrue `days` of cultivation. Returns the delta and the breakdown that
- * produced it; the caller applies the delta to state.
- *
- * Linear in `days` by construction - there is no per-day loop, because there is
- * nothing in the rate that varies within a constant-ambient stretch. That is
- * exactly what lets `simulateTimeSkip` resolve a decade in a hundred steps.
+ * Accrue `days` of cultivation. Returns the delta and the breakdown that produced
+ * it; the caller applies the delta to state.
  */
 export function accrueProgress(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries' | 'cultivationProgress'> &
@@ -1202,14 +960,6 @@ export function accrueProgress(
 
 /**
  * Whether the next rank can be attempted.
- *
- * Reads EFFECTIVE progress - what was accumulated plus what understanding
- * stands in for - which is where "a cultivator with less raw power and a deeper
- * grasp crosses where a better-supplied rival cannot" actually happens. Every
- * eligibility question routes through here for exactly that reason.
- *
- * "Eligible" is not "advisable". The engine will happily let a cultivator with
- * three torn meridians attempt a realm boundary in thin qi.
  */
 export function isBreakthroughEligible(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &
@@ -1236,11 +986,10 @@ export function progressRemaining(
 }
 
 /**
- * Whole days at `perDay` before the next breakthrough becomes legal.
- *
- * `Infinity` when the rate is zero - a cultivator whose meridians are shut and
- * whose qi is thin is not slow, they are stopped, and the simulation must not
- * pretend a finite number of days will fix it.
+ * Whole days at `perDay` before the next breakthrough becomes legal. `Infinity`
+ * when the rate is zero: a cultivator whose meridians are shut and whose qi is
+ * thin is not slow, they are stopped, and the simulation must not pretend a
+ * finite number of days will fix it.
  */
 export function daysToNextBreakthrough(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'cultivationProgress' | 'spiritRoot'> &

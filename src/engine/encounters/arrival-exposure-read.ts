@@ -1,64 +1,16 @@
 /**
  * What somebody standing here can be told about being reached, before they
- * commit a span to it.
+ * commit to a span.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY THIS EXISTS
- * ═══════════════════════════════════════════════════════════════════════════
+ * The arrival machinery is ONE-DIRECTIONAL without this: every input to it is
+ * consulted at execution and nowhere else, so a player weighing a decade in a
+ * cave could learn what the ground would do to them only by spending the decade.
  *
- * Arrivals into an idle span were built on the ruling that *sitting still keeps
- * you from giving anybody a reason; it does not keep anybody from having one*.
- * The machinery is live and it is ONE-DIRECTIONAL: the player can be found, and
- * had no way to ask about being found. Every input to it -
- * {@link arrivalExposure}, {@link concealmentScale}, {@link socialReach},
- * `locatabilityFor` - is consulted at execution and nowhere else, so a player
- * weighing a decade in a cave could learn what the ground would do to them only
- * by spending the decade.
- *
- * Found by playing, and it was `assess` answering only half a question that
- * made it visible:
- *
- *   > is it safe to sit and cultivate here, or will someone bother me?
- *   "Coming out of The Sounding alive: certain."
- *
- * The survivability half is answered well. Nothing answered the other half,
- * because nothing could. That is `AGENTS.md`'s own test for a half-built
- * system - the world does a thing to the player and no verb lets them ask about
- * it - applied to a subsystem one commit old.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE CONSTRAINT: THE INPUTS, NEVER THE ROLL
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `encountersFor` takes the span length as a parameter and is deterministic, so
- * running it forward for a span nobody has committed to is trivially possible
- * and is exactly what this must not do. Reporting what it drew would hand the
- * player an OUTCOME the engine has not filed - the objection `request`'s `weigh`
- * mode already settled by running everything up to the roll and stopping there.
- *
- * So nothing here rolls, nothing here samples, and nothing here is keyed to a
- * seed. It reports the standing facts the roll is built out of, all of which are
- * true whether or not anybody ever sits down: what kind of ground this is for
- * being found on, who is on it, how much of the world a shut door actually
- * stops, and what hiding one would filter at this rung.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * AND NO FIGURES, FOR ANYBODY
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `what-you-can-tell-about-the-ground.ts` establishes that what a cultivator
- * PERCEIVES is gated by their rung, and a surveyor's number in the hands of
- * somebody a year into Qi Condensation is the defect it exists to stop.
- *
- * This read sidesteps that gate rather than reimplementing it, by carrying no
- * numbers at all. `0.55 against 0.03` is a mechanism and the narrator is
- * forbidden to state one; "a shut door is the quietest thing you can do here,
- * and it is not silence" is the same fact in the register the game speaks. The
- * one thing that does move with the rung is what hiding a door buys, and that is
- * a fact about the asker's own standing rather than a measurement of the ground,
- * so it needs no gate: they know what rung they are.
- *
- * Single reason to change: what somebody can be told about being reached.
+ * THE CONSTRAINT: THE INPUTS, NEVER THE ROLL. `encountersFor` is deterministic,
+ * so running it forward for an uncommitted span is trivially possible and is
+ * exactly what this must not do - reporting what it drew would hand the player
+ * an OUTCOME the engine has not filed. Same settlement as `request`'s `weigh`
+ * mode: run everything up to the roll and stop there.
  */
 
 import { arrivalExposure, concealmentScale, sealedDoorFraction, socialReach } from './activity.js';
@@ -66,13 +18,6 @@ import type { EncounterActivity, Locatability } from './types.js';
 
 /**
  * The columns locatability is read off, and nothing else.
- *
- * Narrowed to an interface rather than taking a `LocationRecord` so this can
- * live in the engine layer and be called from both sides. `src/web/encounters.ts`
- * keeps `locatabilityFor` as its entry point and delegates here, so there is one
- * implementation and no importer had to move - the alternative was a second copy
- * of these five lines in the assess handler, which is the drift this repository
- * keeps finding.
  */
 export interface GroundAsFoundOn {
     kind: string;
@@ -82,10 +27,6 @@ export interface GroundAsFoundOn {
 
 /**
  * Whether somebody looking for this person would know where to start.
- *
- * Moved down from `src/web/encounters.ts` unchanged. Read off columns the world
- * layer already maintains, so a new place inherits an answer without anybody
- * deciding one for it.
  */
 export function locatabilityFrom(
     ground: GroundAsFoundOn | null,
@@ -130,17 +71,13 @@ export interface ArrivalReadInput {
 
 /**
  * What this ground is like for being found on, as sentences.
- *
- * Ordered the way somebody would want them: the ground first, then who is
- * already on it, then what the two things they could do about it are actually
- * worth. Every line is a standing fact; none of them is a prediction.
  */
 export function theArrivalReadFor(input: ArrivalReadInput): string[] {
     const lines: string[] = [];
     const where = input.placeName;
     const activity = input.activity ?? 'seclusion';
 
-    // ── THE GROUND, AS SOMEBODY LOOKING FOR YOU WOULD FIND IT ────────────
+    // THE GROUND, AS SOMEBODY LOOKING FOR YOU WOULD FIND IT
     lines.push(
         input.locatability === 'known'
             ? `${where} is ground people know to look on. Anybody with a reason to find you `
@@ -152,7 +89,7 @@ export function theArrivalReadFor(input: ArrivalReadInput): string[] {
                   + 'you if they set out to.'
     );
 
-    // ── WHO IS ALREADY ON IT ─────────────────────────────────────────────
+    // WHO IS ALREADY ON IT
     //
     // Not a roll and not a forecast: these are people standing here now. The
     // count is the same one the ground read prints, so the two cannot disagree.
@@ -164,7 +101,7 @@ export function theArrivalReadFor(input: ArrivalReadInput): string[] {
                 : `${input.heads} people are standing on it with you, and know you are here.`
     );
 
-    // ── WHAT A SHUT DOOR IS WORTH, WHICH IS THE THING NOBODY BELIEVES ────
+    // WHAT A SHUT DOOR IS WORTH, WHICH IS THE THING NOBODY BELIEVES
     //
     // Stated as an ordering rather than as a ratio. What matters to somebody
     // deciding is that sealing is the quietest option AND that it is not a ward:
@@ -188,7 +125,7 @@ export function theArrivalReadFor(input: ArrivalReadInput): string[] {
         + '.'
     );
 
-    // ── AND WHAT HIDING THE ENTRANCE WOULD BUY AT THIS RUNG ──────────────
+    // AND WHAT HIDING THE ENTRANCE WOULD BUY AT THIS RUNG
     //
     // The one line that moves with the asker, and the reason it is worth
     // printing: hiding a door is a RUNG FILTER rather than a rate cut, so its
@@ -206,7 +143,7 @@ export function theArrivalReadFor(input: ArrivalReadInput): string[] {
                   + 'few it would not stop are the few you could not refuse anyway.'
     );
 
-    // ── AND THE HONEST CLOSE ─────────────────────────────────────────────
+    // AND THE HONEST CLOSE
     //
     // The read stops short of the roll deliberately and says so, because a
     // player told everything above and given no verdict will otherwise read the

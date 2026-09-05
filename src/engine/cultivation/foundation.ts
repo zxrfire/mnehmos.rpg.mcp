@@ -1,28 +1,12 @@
 /**
  * Foundation quality - why two cultivators at the same ordinal have different
- * futures, and how the engine says so.
+ * prospects.
  *
- * The charter is explicit that progression must not read as
- * `XP -> XP -> next realm`, and the single largest lever on that is the
- * Foundation Establishment crossing at ordinal 12 -> 13. Everything above it is
- * built on whatever got laid down there. A cultivator who spent two years
- * finding a dense-qi cave, bought the right pill, healed their meridians first
- * and crossed unhurried is not "slightly ahead" of one who crossed in a ditch
- * with three torn meridians because something was chasing them - they are on a
+ * The charter is explicit that progression must not read as `XP -> XP -> next
+ * realm`, and the single largest lever on that is the 12 -> 13 crossing.
+ * Somebody who crossed unhurried on prepared ground is not slightly ahead of
+ * somebody who crossed in a ditch with three torn meridians - they are on a
  * different curve for the rest of the run.
- *
- * The quality is a permanent multiplier on cultivation rate, a permanent
- * modifier on breakthrough odds, and - because a crossing reaches into structure -
- * a modifier on the toll. A damaged foundation is not a debuff that wears off.
- * It is what the rest of the life is built on.
- *
- * IMPORTANT, and it is a charter rule: none of this is rubber-banded. The
- * assessment reads only preparation, ambient qi, injuries, pills, talent and
- * one seeded sample. It does not know how the run is going and it does not
- * care. A prodigy who rushes lays a bad foundation; a muddled root who prepares
- * for a decade lays a good one. That asymmetry is the point - it is the
- * mechanism by which "talent is not destiny" is actually true rather than
- * merely asserted.
  */
 
 import {
@@ -34,13 +18,11 @@ import { FOUNDATION_ORDINAL } from './realms.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { aggregateInjuryPenalties } from './injuries.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // EFFECTS
 // One table, read by cultivation.ts, breakthrough.ts and toll.ts. Keeping the
 // three consequences of a foundation in one place is what stops them drifting
 // apart into a rate penalty that nobody feels and an odds penalty nobody can
 // find.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface FoundationEffect {
     /** Multiplier folded into the per-day cultivation rate. */
@@ -125,11 +107,6 @@ export function describeFoundation(quality: FoundationQuality): string {
 
 /**
  * Read a cultivator's foundation defensively.
- *
- * Everything that consumes a foundation accepts a partial cultivator, because
- * most callers - the time-skip's internal snapshot, an NPC stub, a row written
- * before foundations existed - legitimately do not carry the field. Missing
- * reads as 'none', which is the identity element in every table above.
  */
 export function foundationOf(
     cultivator: Partial<Pick<Cultivator, 'foundationQuality'>>
@@ -137,11 +114,9 @@ export function foundationOf(
     return cultivator.foundationQuality ?? 'none';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // LAYING THE FOUNDATION
 // Scored, not rolled from a flat table: the inputs are things the player
 // actually spent, so the outcome is earned rather than dealt.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Ambient qi contribution. Thin qi cannot fill a structure this size. */
 export const FOUNDATION_AMBIENT_SCORE: Record<AmbientQi, number> = {
@@ -196,11 +171,6 @@ export interface FoundationConditions {
 
 /**
  * Assess the foundation laid by a successful 12 -> 13 crossing.
- *
- * Takes a uniform [0,1) `sample` rather than an RNG, matching `rollSpiritRoot`
- * and `rollAmbientQi`: the caller owns seeding, always. Exactly one sample is
- * consumed, which is what lets `attemptBreakthrough` draw it from its own
- * stream without desynchronising anything downstream.
  */
 export function assessFoundation(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'attributes' | 'injuries'>,
@@ -305,17 +275,6 @@ export function laysFoundation(fromOrdinal: number): boolean {
 
 /**
  * Rebuild a destroyed foundation.
- *
- * The charter's "loss branches rather than subtracts": a cultivator whose
- * foundation was shattered is not simply a smaller number, they are someone
- * who now has to lay one again from wreckage and will carry the seam forever.
- * 'rebuilt' is strictly worse than 'stable' and strictly better than the
- * 'damaged' it usually replaces, which is what makes the attempt worth making.
- *
- * The other two qualities this module does not assign - 'transformed' and
- * 'sacrificed' - are set by events outside the cultivation layer (a body
- * refining inheritance, a deliberate expenditure), and are listed in the
- * effects table so those systems have somewhere to write to.
  */
 export function rebuildFoundation(previous: FoundationQuality): FoundationQuality {
     if (previous === 'none') return 'none';

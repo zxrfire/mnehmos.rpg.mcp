@@ -1,62 +1,11 @@
 /**
- * What a house does about a manoeuvre run on one of its own, and what it does
- * about one of its own running one.
- *
- * THE ATTEMPT IS NOT GATED. THIS IS WHERE THE DIFFERENCE LIVES.
- * -----------------------------------------------------------
- * The design owner's ruling, and it is the load-bearing sentence for this
- * whole directory: *"obviously charm works anywhere, the fallout just hits
- * different."* So `an-attempt-to-move-somebody.ts` reads no faction and no
- * alignment at all - a righteous elder, a demonic cultivator and a free-port
- * factor are resolved by the same function against the same terms, and there
- * is no house anywhere in this world where somebody cannot be asked.
- *
- * Everything that varies is downstream and is in this file: who finds out,
- * what they call it, whether it opens a grudge and how heavy, and whether the
- * person's own house treats them as a victim, an embarrassment or a liability.
- *
- * TWO QUESTIONS, AND THEY ARE ALLOWED TO DISAGREE
- * -----------------------------------------------
- * A house that would refuse to do this to somebody still has to decide what
- * it does when it is done to one of its own, and those two answers need not
- * match. That mismatch is more interesting than either answer alone, so they
- * are two functions rather than one alignment table.
- *
- *   WILL IT BACK YOU RUNNING ONE          {@link willTheHouseBackThis}
- *   WHAT DOES IT DO WHEN IT IS DONE TO
- *   SOMEBODY OF ITS OWN                   {@link whenItIsDoneToOneOfOurs}
- *
- * The shape is `ifCaughtPractising` in `world/manuals.ts`, deliberately: one
- * rule keyed on alignment turning into three quite different situations with
- * no branch on any faction's name. Nothing here is bespoke to a house. Take
- * the alignment column away and this file has nothing to say, which is the
- * test AGENTS.md sets for whether a piece of lore is a real system.
- *
- * WHY A RIGHTEOUS HOUSE REFUSING IS NOT A MORAL GESTURE
- * ----------------------------------------------------
- * It is a rule with a price attached, and the price is what makes it play. A
- * righteous cultivator running an instrumental attachment is doing it WITHOUT
- * their house: no leverage supplied, nobody to take a refusal to, and a second
- * exposure waiting if their own people ever work out what they did. They can
- * still do it. It is simply more expensive for them than for somebody at a
- * house that would have handed them the money.
- *
- * And the demonic answer is the ugly one on purpose. A demonic house does not
- * avenge a member who was worked; it prices them. Somebody who was moved and
- * did not notice has demonstrated something about themselves, and the house's
- * answer lands on THEM. It is the reason a demonic house is dangerous to
- * belong to and not only to cross.
- *
- * Pure lookup. No state, no rolls, no I/O.
+ * What a house does about a manoeuvre run on one of its own, and what it does about
+ * one of its own running one.
  */
 
 import type { ApproachLeverage, SectAlignment } from '../../schema/cultivation.js';
 import type { Severity } from '../social/grudges.js';
 import type { AskWeight } from './an-attempt-to-move-somebody.js';
-
-// ─────────────────────────────────────────────────────────────────────────
-// WILL YOUR HOUSE BACK YOU
-// ─────────────────────────────────────────────────────────────────────────
 
 export type HouseBacking =
     /** It supplies the leverage and may have set the task. */
@@ -73,19 +22,13 @@ export type HouseBacking =
 
 /**
  * Whether the actor's own house stands behind the method they are using.
- *
- * Keyed on WHAT IS ON THE TABLE, never on the verb. The channels a house
- * objects to are the ones that use a person as the instrument - an attachment
- * spent on an ask, and a held secret - and not the ones that spend a thing.
- * Coin is coin at every house in the world.
  */
 export function willTheHouseBackThis(
     alignment: SectAlignment | null,
     leverage: ApproachLeverage,
     ask: AskWeight
 ): HouseBacking {
-    // No house, no position. A wanderer answers to nobody, which is most of
-    // what being a wanderer is worth.
+    // No house, no position. A wanderer answers to nobody.
     if (alignment === null) return 'tolerated';
 
     const usesAPerson = leverage === 'attachment' || leverage === 'secret';
@@ -93,8 +36,7 @@ export function willTheHouseBackThis(
 
     switch (alignment) {
         case 'demonic':
-            // Nothing is off the table, and a heavy ask run on a person is the
-            // method the house is best at. It will fund it.
+            // A heavy ask run on a person is the method the house is best at.
             return usesAPerson && heavy ? 'supplied' : 'tolerated';
         case 'righteous':
             // The objection is to the instrument, not to the ambition. A
@@ -105,10 +47,6 @@ export function willTheHouseBackThis(
             return usesAPerson ? 'priced' : 'tolerated';
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// WHEN IT IS DONE TO SOMEBODY OF OURS
-// ─────────────────────────────────────────────────────────────────────────
 
 export type HouseResponse =
     /**
@@ -129,8 +67,7 @@ export type HouseResponse =
     | 'collected'
     /**
      * Nothing institutional. Somebody's private business is somebody's private
-     * business until the peace is affected - the free port's answer, and the
-     * answer of any body with no interest in what its people do at home.
+     * business until the peace is affected.
      */
     | 'none';
 
@@ -155,12 +92,6 @@ export interface HouseVerdict {
 
 /**
  * What the subject's house does, once it knows.
- *
- * `known` is the gate and it is not automatic: a manoeuvre nobody worked out
- * produces no verdict at all, which is why the discovery module and this one
- * are separate. `ranked` matters because a house has an interest in what
- * happens to the people it has invested in and very little in what happens to
- * the people it pays by the season.
  */
 export function whenItIsDoneToOneOfOurs(input: {
     alignment: SectAlignment | null;
@@ -221,11 +152,6 @@ export function whenItIsDoneToOneOfOurs(input: {
 /**
  * The severity a record should be written at, given the aggrieved party's own
  * reading and whatever floor their house imposes.
- *
- * This is not a recalculation and `grudges.ts` is not being violated: severity
- * is still decided once, at the moment the record is created, by whoever
- * creates it. This is that decision, made in one place so two callers cannot
- * make it differently.
  */
 export function severityWithHouse(
     personal: Severity,

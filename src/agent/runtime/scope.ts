@@ -1,10 +1,8 @@
 /**
- * Scene-scope gate (SYSTEM.md Standing Rule 5: "Respect fog. Never leak one
- * agent's private state into another agent's context.")
- *
- * An agent must not be invoked into a scene their character is not in. The
- * only override is an in-fiction distance-contact mechanism passed as
- * `remoteContact` (sending spell, scrying, divine voice, telepathy, etc.).
+ * Scene-scope gate. An agent must not be invoked into a scene their character is
+ * not in; the only override is an in-fiction distance-contact mechanism passed
+ * as `remoteContact`. SYSTEM.md Standing Rule 5: "Respect fog. Never leak one
+ * agent's private state into another agent's context."
  *
  * Scope resolution order:
  *   1. remoteContact present                 → honored, no presence check

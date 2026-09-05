@@ -1,63 +1,5 @@
 /**
  * How far you went to make somebody comply.
- *
- * Design owner: **"coerce is using violence directly, different levels of the
- * same thing."** And, on the level above that: *"that's where the mind control
- * ancient arts come into play."*
- *
- * So this is ONE act at a level, not three mechanisms. The target is the same,
- * the want is the same, the record is the same; what differs is how far up you
- * went and therefore what it costs both of you. The level is a VALUE, which is
- * the discipline the rest of this codebase runs on - a tenth reason for doing
- * it should need no code, and a fourth level should need a row rather than a
- * branch.
- *
- * ── THE LADDER ───────────────────────────────────────────────────────────
- *
- *   said     Words. A promise of harm, and nothing has happened yet.
- *            `what-somebody-does-about-being-wronged.ts` states the definition
- *            in as many words: "a threat costs its target nothing until it is
- *            made good on." That is why threatening lives among the `interact`
- *            intents, beside talking and bargaining. It is a thing you SAY.
- *
- *   done     Hands. The harm actually applied to get compliance, or the thing
- *            taken while they are held. Not a heavier threat - the point at
- *            which the target stops being somebody being talked to. It fails
- *            the way a fight fails rather than the way a conversation fails,
- *            which is why it resolves through `resolveConfrontation` and not
- *            through the social layer.
- *
- *   taken    The will itself, which no elemental art reaches. This is an
- *            ANCIENT art and it is deliberately not a verb - see the section
- *            at the bottom - and it is the only level where what you are left
- *            with is worth less than what the level below leaves you.
- *
- * ── WHY THE TOP OF THE LADDER IS NOT THE BEST PLACE ON IT ────────────────
- *
- * `docs/world/history/ancient.md` forbids a strict upgrade by name - "an
- * ancient art that is better in every situation... then the abandonment makes
- * no sense and the whole tier collapses into 'old is stronger'" - and this is
- * exactly the shape that walks into one, because taking the will beats every
- * refusal. So the thing it is useless for has to be named, and it is:
- *
- *   IT TAKES THE WILL AND LEAVES NOTHING UNDERNEATH IT. Somebody who submitted
- *   because you beat them has a REASON to keep complying and knows what happens
- *   if they stop, so the compliance survives you leaving the room and can be
- *   traded on later. Somebody whose will was taken complies while the art holds
- *   and for not one moment after, is no better at anything than they were, and
- *   owes you nothing - because they never decided anything. The level that
- *   cannot be refused is the level that buys nothing durable.
- *
- *   AND IT CAN BE READ OFF THEM. `ancient.md`'s own trigger list includes "a
- *   player picks up, is offered, or is seen practising an ancient art", and the
- *   unauthorised-practice path already answers who wants a word about it. An
- *   art that leaves a legible mark on a living person who then walks around is
- *   the most findable thing in the world. That is a permanent cost rather than
- *   a per-use one, which is what stops it being situationally free.
- *
- * Neither of those is a penalty bolted on. They both fall out of what the level
- * IS: compliance with nobody behind it, and a thing done to a person who
- * survives to be examined.
  */
 
 // TYPE-ONLY, and must stay so. `grudges.ts` is the ledger's vocabulary and this
@@ -65,9 +7,7 @@
 // import would tie the cultivation package to the social package for nothing.
 import type { ObligationCause } from '../social/grudges.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LEVEL
-// ─────────────────────────────────────────────────────────────────────────
 
 export type PressureLevel =
     /** Words. A promise of harm. Costs the target nothing yet. */
@@ -105,11 +45,6 @@ export interface WhatALevelLeaves {
     /**
      * True when what was done to them does not come back. Fed straight to
      * `whatItWasWorth`, which counts irreversibility as a step of severity.
-     *
-     * Never true for `said` - nothing happened. Never true for `done` on its
-     * own: whether a beating was irreversible is a fact about the WOUND, and
-     * `permanent` on the wound row is what answers it, which is why this field
-     * takes the wound rather than guessing from the level.
      */
     irreversible: boolean;
     holds: HowLongItHolds;
@@ -126,16 +61,6 @@ export interface WhatALevelLeaves {
 
 /**
  * What one level leaves behind.
- *
- * `permanentWound` is the wound layer's own answer about the harm actually
- * done, passed in rather than inferred: a bruise and a maiming are the same
- * verb at the same level and are not the same deed, and `isPermanentWound` is
- * already the thing that separates them.
- *
- * `wordGivenFirst` is the pair the owner named: somebody who threatened, was
- * refused, and then used force HAS DONE THE THING THEY SAID THEY WOULD. That is
- * `promised` in the deed model, pointed the other way, and it costs a step of
- * severity through `whatItWasWorth` with no code of its own.
  */
 export function whatALevelLeaves(input: {
     level: PressureLevel;
@@ -216,10 +141,6 @@ export function whatALevelLeaves(input: {
 
 /**
  * The facts `whatItWasWorth` in the deed model asks for, from a level.
- *
- * A convenience so a caller writing the record does not have to remember which
- * of the three fields the deed model reads. It writes no record itself - this
- * module knows nothing about ledgers - it only answers.
  */
 export function theDeedFactsFor(input: {
     level: PressureLevel;
@@ -234,7 +155,6 @@ export function theDeedFactsFor(input: {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHETHER THEY YIELD AT ALL
 //
 // Design owner: **"depending on some character traits some would rather die.
@@ -257,7 +177,6 @@ export function theDeedFactsFor(input: {
 //
 // This module holds the SHAPE of that answer and the consequence of it, so that
 // both callers say it the same way and neither invents a scale.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface WhetherTheyYield {
     /** False when they would rather die, and they then do. */
@@ -273,10 +192,6 @@ export interface WhetherTheyYield {
 
 /**
  * The ordinary reading, for a caller with nothing to go on.
- *
- * Most people beaten badly enough do yield, so the default is that they do -
- * and it is a DEFAULT rather than a rule, which is what leaves the interesting
- * case reachable. A caller that holds the record says otherwise and is believed.
  */
 export const ORDINARILY_YIELDS: WhetherTheyYield = Object.freeze({
     willYield: true,

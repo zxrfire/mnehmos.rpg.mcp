@@ -1,15 +1,7 @@
 /**
- * LLM provider interface for the agent runtime.
- *
- * Implementations:
- *   - Anthropic Messages API  (Claude - primary/default runtime agent)
- *   - Ollama /api/chat        (local/self-hosted alternative, no API key, no cost)
- *   - OpenAI Chat Completions
- *   - OpenRouter              (OpenAI wire format, different base URL)
- *
- * Plain-text responses only - no structured-output / JSON schema enforcement.
- * Every provider-specific request/response quirk lives behind this interface;
- * nothing outside src/agent/provider/ may branch on which provider is in use.
+ * LLM provider interface for the agent runtime. Plain-text responses only, no
+ * structured output. Every provider-specific quirk lives behind this interface;
+ * NOTHING OUTSIDE src/agent/provider/ MAY BRANCH ON WHICH PROVIDER IS IN USE.
  */
 
 import type { ProviderName } from './config.js';
@@ -102,9 +94,7 @@ export function classifyFetchError(err: unknown): ProviderError {
     return new ProviderError(String(err), 'unknown');
 }
 
-/**
- * Classify an HTTP status code into a ProviderError kind.
- */
+/** Classify an HTTP status code into a ProviderError kind. */
 export function classifyHttpStatus(status: number, body: string): ProviderError {
     if (status === 401 || status === 403) {
         return new ProviderError(`Auth failed (${status}): ${body.slice(0, 200)}`, 'auth', status, body);

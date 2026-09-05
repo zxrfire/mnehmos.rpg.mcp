@@ -1,144 +1,19 @@
 /**
- * Authority inside a house: what a rung can make other people do, and what it
- * costs with the people it does it to.
- *
- * Found by playtesting, twice over. A cultivator driven to the top rung of a
- * sect could do nothing with it - "I order the disciples to gather herbs"
- * routed to a personal foraging action and the head of the house went and
- * picked herbs himself, "I expel an elder" did not parse, and `promote` refused
- * a further step with `at_highest_rank` and left nothing behind that refusal.
- * The top of the ladder was a title and a bigger stipend.
- *
- * ── THE GENERAL RULE ──────────────────────────────────────────────────────
- *
- * AUTHORITY IS THE RANK INDEX, AND IT REACHES EVERY LOWER ONE IN THE SAME
- * HOUSE. Not a tier table with special cases. An Outer Disciple can send
- * servants; an Inner Disciple can send outer disciples and servants; the head
- * of the house can send anybody. That single rule is the first thing membership
- * actually buys, and it arrives at rung one rather than at the end of a run.
- *
- * Two additions sit on top of it, both derived from the ladder rather than
- * hardcoded, because houses here run three rungs to six and the elder rung sits
- * at a different index in each:
- *
- *   ELDER RUNGS       may take disciples in under their own line.
- *   THE TOP RUNG      may set the recruitment standard, change the foundational
- *                     methods, hire and fire elders, and grow the house.
- *
- * `ELDER_RUNG_FRACTION` is the same two thirds `canReachReserves` uses in
- * `embezzlement.ts`, and that is not a coincidence worth hiding: the rungs that
- * can sign for the reserves are the rungs that run something. Checked against
- * the catalog it lands exactly on Dew Elder, Sword Elder, Road Elder and the
- * Hollow Court's Elder without a single special case.
- *
- * ── STANDING IS THE RESOURCE, AND IT IS ONE RESOURCE ──────────────────────
- *
- * Every act here is an act against people. Ordering somebody spends a little of
- * what they think of you. Raising the admission bar insults everyone who came
- * in under the old one; lowering it insults everyone who thinks the house is
- * being cheapened. Retiring a foundational method tells every elder who teaches
- * it that their life's work is being wound up. Bringing an elder in from
- * outside tells the internal candidate what they are worth. Firing one tells
- * the rest they can be next.
- *
- * So there is one number per house per cultivator - credit with the people
- * below you - and it is spent by an Outer Disciple sending servants for herbs
- * and by a Sect Warden retiring a scripture, on the same scale, against the
- * same escalation.
- *
- * ── FOLLOWINGS ARE WHY ANY OF THIS HAS ARITHMETIC ─────────────────────────
- *
- * Because elders recruit, every elder has a following, and its size is a real
- * number. Three things fall out of that and they are the load-bearing half of
- * the design:
- *
- *   FIRING AN ELDER COSTS YOU THEIR DISCIPLES. They do not leave alone.
- *   Dismissing one who brought in forty people is not the same act as
- *   dismissing one who brought in two, and the player can price both before
- *   acting.
- *
- *   AN ELDER'S WEIGHT AGAINST YOU IS THEIR FOLLOWING. A house where one elder
- *   recruited half the roster has a head who cannot touch them. That is a
- *   genuinely interesting house to inherit and it needed no new state to say.
- *
- *   YOUR OWN FOLLOWING IS YOUR ARMOUR. Every cost here is discounted by the
- *   share of the house you personally brought in, which is the whole reason to
- *   spend decades as an elder recruiting before making a bid for the top.
- *   Growth can be done from the head, slowly and to your own credit, or handed
- *   to the elders, which is faster and builds exactly the power base that will
- *   later refuse you. That trade is the best decision in this file.
- *
- * ── BACKLASH IS GRADUATED, AND IT ESCALATES ───────────────────────────────
- *
- *   grumbling     nothing happens yet. This is the telegraph, and it fires
- *                 while standing is still positive so nobody is ambushed.
- *   obstruction   the order is simply not carried out, or is carried out
- *                 slowly. The only rung of the ladder that is a roll, and the
- *                 odds come from accumulated standing rather than a table.
- *   departure     elders leave and take their followings with them, which
- *                 shrinks the house the leader was trying to grow. Read off
- *                 state: the elders with the largest followings go first,
- *                 because an elder with somewhere to go is the one who can
- *                 afford to walk.
- *   challenge     the head is challenged. Deterministic at its threshold.
- *   removal       the patron replaces you, and there is no fight to win.
- *
- * The last rung is why the governance stack matters. A head who answers to
- * somebody has one more and worse thing above them than a head who does not:
- * an apex or an unbacked house tops out at a challenge, which can be survived,
- * and a client sect tops out at a letter, which cannot.
- *
- * ── NONE OF IT IS INSTANT ─────────────────────────────────────────────────
- *
- * Time is the other cost and it is charged per act. An expulsion lands the day
- * it is spoken, which is exactly why it is the dearest thing in the file to pay
- * for. Changing what a house teaches is generational and does not reach the
- * house's own strength for `CURRICULUM_GENERATION_YEARS`, because the effect of
- * a curriculum is the intake raised on it.
- *
- * Pure throughout. State in, deltas out, no I/O, no rolls: the caller supplies
- * the seeded stream for the one place a roll is needed.
+ * Authority inside a house: what a rung can make other people do, and what it costs
+ * with the people it does it to.
  */
 
-// ═══════════════════════════════════════════════════════════════════════════
 // AUTHORITY
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * The fraction of a house's ladder above which a rung runs something.
- *
- * SUPERSEDED, and kept only because other files still import the constant.
- * Two thirds was an approximation of "the top few rungs" that happened to land
- * correctly on the ladders as they were shaped before the grand elder existed.
- * It is no longer how the elder rung is found - see {@link elderRungOf} - and
- * nothing should re-derive a rung from it.
- *
- * @deprecated Read `elderRungOf`. This number no longer defines anything.
  */
 export const ELDER_RUNG_FRACTION = 2 / 3;
 
 /**
- * The elders are the top three rungs, and never the bottom two.
- *
- * Counted from the top rather than taken as a fraction of the ladder, which is
- * the first time this function has actually delivered what its old docstring
- * promised: "the elders" now means the same thing in every house exactly,
- * rather than approximately. Every house that has a grand elder is shaped
- *
- *     ... disciples, ELDER, GRAND ELDER, HEAD
- *
- * so the elder rung is three from the top wherever that shape holds.
- *
- * THE FLOOR AT 2 IS LOAD-BEARING AND IS NOT A GUARD AGAINST SMALL NUMBERS.
- * Four bodies have no grand elder - see the exclusions in `sects.ts` - and are
- * shaped `... ELDER, HEAD`, two from the top. A bare `rankCount - 3` makes the
- * Hollow Court's INNER DISCIPLE an elder, which is both wrong and the sort of
- * wrong that reads as correct in a diff. Two is the floor because the only
- * rank words every house shares are outer disciple and inner disciple, and
- * neither of those is ever an elder anywhere.
- *
- * Measured across the catalog when this landed: unchanged for the four
- * four-rung bodies, and correct for all thirty-one that took a grand elder.
+ * The elders are the top three rungs, and never the bottom two. Measured across
+ * the catalog when this landed: unchanged for the four four-rung bodies, and
+ * correct for all thirty-one that took a grand elder.
  */
 export function elderRungOf(rankCount: number): number {
     if (rankCount <= 0) return 0;
@@ -161,14 +36,10 @@ export function isElderRank(rankIndex: number, rankCount: number): boolean {
 }
 
 /**
- * Whether this rung is the head of the house.
- *
- * Named for the position, not for anybody's title for it. What a house CALLS
- * the person standing here is that house's own business and is already
- * authored: `ranks[rankCount - 1]` is Clan Chief in the Cinder Clan, Abbot in
- * the Quiet Hall, Order Patriarch on the mountain, and Seat at the Hollow
- * Court - which is the whole reason this predicate must not be called
- * `holdsTheSeat`. One house's word was standing in for all of them.
+ * Whether this rung is the head of the house. Named for the position, not for
+ * anybody's title: `ranks[rankCount - 1]` is Clan Chief in the Cinder Clan, Abbot
+ * in the Quiet Hall, Order Patriarch on the mountain and Seat at the Hollow
+ * Court, which is why this must not be called `holdsTheSeat`.
  */
 export function isHeadOfHouse(rankIndex: number, rankCount: number): boolean {
     return rankCount > 0 && rankIndex === rankCount - 1;
@@ -182,14 +53,6 @@ export const holdsTheSeat = isHeadOfHouse;
 
 /**
  * What a rung is, in one word, for the narrator.
- *
- *   ordered   the bottom rung. Everybody above can send you somewhere.
- *   ordering  can send the rungs below and nothing more.
- *   elder     the above, and takes disciples in under their own line.
- *   head      the above, and the standard, the methods, and who is an elder.
- *
- * `head` is the POSITION. The narrator says the house's own title for it -
- * see `headTitleOf` in `web/standing.ts` - and never this word.
  */
 export type AuthorityTier = 'ordered' | 'ordering' | 'elder' | 'head';
 
@@ -244,11 +107,9 @@ export function canOrder(giverRankIndex: number, receiverRankIndex: number): boo
     return receiverRankIndex >= 0 && receiverRankIndex < giverRankIndex;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // THE SHAPE OF A HOUSE
 // A roster is bottom-heavy, which is the only reason authority is worth
 // anything: the rung you can send has more people on it than the rung you hold.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Share of the rung below that each rung up holds. A pyramid, not a column. */
 export const ROSTER_TAPER = 0.4;
@@ -277,15 +138,6 @@ export function rosterAtRung(houseSize: number, rung: number, rankCount: number)
 
 /**
  * How many people a house of this many rungs holds, before anybody grows it.
- *
- * The member catalog is a named cast rather than a census - eight people at the
- * Azure Cloud Pavilion, three at the Azure Dew Sect - and a head count taken
- * from it would say that a sect running four villages is three people. So the
- * census is derived from the ladder instead, by the same taper the roster uses,
- * with exactly one person on the top rung. A five-rung house comes out around
- * sixty and a six-rung house around a hundred and fifty, which is the right
- * order of magnitude for a world where a sect describes itself as having eleven
- * disciples and a courtyard cut for two hundred.
  */
 export function impliedHouseSize(rankCount: number): number {
     if (rankCount <= 0) return 0;
@@ -295,13 +147,8 @@ export function impliedHouseSize(rankCount: number): number {
 }
 
 /**
- * Share of a rung one giver can actually call on, per rung of seniority
- * between them.
- *
- * A quarter per rung of gap. An Outer Disciple one rung above the servants gets
- * a quarter of them; an Inner Disciple two rungs up gets half; the head of a
- * five-rung house gets all of them. This is the mechanical answer to why
- * climbing is worth anything before the top.
+ * Share of a rung one giver can actually call on, per rung of seniority between
+ * them.
  */
 export const CALL_FRACTION_PER_RUNG = 0.25;
 
@@ -319,12 +166,10 @@ export function commandableHands(
     return Math.max(0, Math.floor(onTheRung * share));
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ERRANDS
 // What ordering somebody actually buys, which is their time instead of yours.
 // The herbs get gathered while the player cultivates, and time is the currency
 // this whole game runs on.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export type Errand = 'gather' | 'carry' | 'labour';
 
@@ -383,10 +228,6 @@ export interface ErrandResult {
 
 /**
  * What an order is worth and what it costs, before backlash.
- *
- * Deliberately linear in hands and days: this is delegation, not a wish, and a
- * player who wants ten times the herbs has to be senior enough to send ten
- * times the people.
  */
 export function resolveErrand(order: ErrandOrder): ErrandResult {
     const profile = ERRANDS[order.errand];
@@ -403,16 +244,10 @@ export function resolveErrand(order: ErrandOrder): ErrandResult {
 
 /**
  * What fraction of an order gets done anyway when the rung below is obstructing.
- *
- * Not zero, because an obstructed order is not a mutiny - it is people being
- * slow, losing the message, and doing the part that was witnessed. That is what
- * an unpopular Inner Disciple actually experiences.
  */
 export const OBSTRUCTED_DELIVERY_FRACTION = 0.25;
 
-// ═══════════════════════════════════════════════════════════════════════════
 // STANDING
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Credit at its best. Nobody is more popular than this. */
 export const STANDING_CEILING = 100;
@@ -435,11 +270,6 @@ export function standingAfterYears(standing: number, years: number): number {
 /**
  * How much of a cost a personal following absorbs, and the share past which it
  * stops helping.
- *
- * Capped because a following is insulation and never immunity: even a head who
- * recruited most of the house pays real money to retire a scripture, and the
- * people they did not recruit are exactly the ones who will not be talked
- * round.
  */
 export const FOLLOWING_SHIELD = 0.9;
 export const SHIELD_SHARE_CAP = 0.6;
@@ -455,10 +285,8 @@ export function shieldedCost(rawCost: number, ownFollowing: number, houseSize: n
     return Math.max(0, rawCost) * (1 - FOLLOWING_SHIELD * share);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // FOLLOWINGS
 // Who brought whom in. The link matters more than the individuals.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export interface ElderFollowing {
     /** Member id, or a synthetic id for an elder taken on from outside. */
@@ -475,11 +303,6 @@ export const FOLLOWING_SENIORITY_EXPONENT = 2;
 
 /**
  * Divide a house's unattached disciples among its elders.
- *
- * Deterministic, because a player has to be able to inherit a house and read
- * off which elder they cannot afford to cross before they cross them. Weighted
- * by the square of the rung so a house with one senior elder and three junior
- * ones lands in the interesting position by itself rather than by authoring.
  */
 export function distributeFollowing(
     elderRungs: readonly number[],
@@ -506,10 +329,8 @@ export function distributeFollowing(
     return out;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // WHAT THE ACTS COST
 // Every number here is a statement about whose life's work is being touched.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export type LeadershipAct =
     | 'order'
@@ -520,22 +341,8 @@ export type LeadershipAct =
     | 'expel_elder'
     | 'grow'
     /**
-     * Being asked and saying no, which is the only act on this list that the
-     * bottom rung can perform.
-     *
-     * Every other member of this type is something a rank BUYS - `POWERS_BY_TIER`
-     * gates all seven, and `ordered` holds none of them. That asymmetry was the
-     * whole shape of the defect: standing is spent by people who run things and
-     * recovers at `STANDING_PER_YEAR` for everybody else, so an ordinary member's
-     * credit with their house only ever went up, and `backlashLevel`,
-     * `obstructionChance` and `dismissedFromTheHouse` were unreachable for the
-     * people the house actually holds.
-     *
-     * Refusing is not gated, because being asked is not gated. It runs through
-     * `resolveAct` beside the seven so that a house's answer to being turned down
-     * is the same escalation as its answer to anything else - and the non-head
-     * branch of that ladder, which nothing could previously reach, is what a
-     * member being thrown out of their own house IS.
+     * Being asked and saying no, which is the only act on this list that the bottom
+     * rung can perform.
      */
     | 'refuse';
 
@@ -558,12 +365,6 @@ export const ADMISSION_YEARS = 3;
 
 /**
  * The recruitment standard, and why moving it either way is an insult.
- *
- * Raising it says that everybody admitted under the old bar would not be
- * admitted now. Lowering it says the house is being cheapened, to the people
- * whose only distinction is having cleared a bar that no longer exists. There
- * is no free direction, which is the point of charging the distance rather than
- * the sign.
  */
 export function admissionChangeCost(from: number, to: number): ActCost {
     const moved = Math.abs(Math.round(to) - Math.round(from));
@@ -581,10 +382,6 @@ export function admissionChangeCost(from: number, to: number): ActCost {
 
 /**
  * The highest bar a house can set without stranding its own top rung.
- *
- * `promote` requires the admission ordinal plus a fixed step per rung, so a bar
- * set too high makes the last promotion unreachable and quietly breaks the
- * ladder for everybody. The engine refuses rather than discovering it later.
  */
 export function admissionCeilingFor(
     rankCount: number,
@@ -602,10 +399,6 @@ export const COST_PER_METHOD_RETIRED = 14;
 export const COST_SIGNATURE_RETIRED = 30;
 /**
  * Years before a changed curriculum is what the house is.
- *
- * A generation, because the effect of a curriculum is the intake raised on it,
- * and nothing about the people already standing in the yard changes on the day
- * the decree is read.
  */
 export const CURRICULUM_GENERATION_YEARS = 30;
 
@@ -679,12 +472,6 @@ export const EXPULSION_ESCALATION = 1.6;
 
 /**
  * Firing an elder.
- *
- * The only act in the file that lands the day it is spoken, which is exactly
- * why the whole of its cost is on the other side of it. Priced off the
- * following rather than a flat penalty, so dismissing an elder who brought in
- * half the roster is visibly a different act from dismissing one who brought in
- * two - and the player can read both prices before choosing.
  */
 export function expulsionCost(
     following: number,
@@ -708,17 +495,11 @@ export function expulsionCost(
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // GROWTH
 // The one act that earns standing, which is why it is slow and expensive.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Who does the recruiting, which is the best decision available to a leader.
- *
- * `head` is the person at the top of the house, whatever that house calls
- * them. It was `seat` until somebody noticed that is the Hollow Court's word
- * and no other house's.
  */
 export type GrowthChannel = 'head' | 'elders';
 
@@ -747,16 +528,6 @@ export interface GrowthPlan {
 
 /**
  * What a decade of deliberate growth costs and returns.
- *
- * Compounding, because a house recruits through the people it already has, so
- * the first decade of a small house is grindingly slow and the fifth is not.
- * That is the honest shape and it is also the one that rewards a patient
- * leader over a loud one.
- *
- * Delegating is roughly three times faster and earns a third of the credit, and
- * every head it brings in attaches to an elder rather than to you. A leader who
- * grows the house that way gets the bigger house and the smaller shield, and
- * finds out what that means the first time they try to fire somebody.
  */
 export function planGrowth(
     houseSize: number,
@@ -793,12 +564,6 @@ export function planGrowth(
 export const RECRUIT_BASE_YEARS = 1;
 /**
  * Additional years per ordinal of the house's own admission bar.
- *
- * This is the coupling between the two powers, and it is the reason the
- * standard is a decision rather than a preference. A house that admits at
- * nothing fills its yard in a year a head; a house that admits at Void
- * Refinement waits fifteen for each one, and the head who raised the bar is the
- * person who has to live in the emptier compound.
  */
 export const RECRUIT_YEARS_PER_ADMISSION_ORDINAL = 0.5;
 
@@ -810,10 +575,6 @@ export interface IntakePlan {
 
 /**
  * Taking disciples in under your own line, which is what an elder rung is for.
- *
- * Priced per head rather than as a share of the house, because this is one
- * person going out and finding people, and it is how a player builds the
- * following that will later make a bid for the top of the house survivable.
  */
 export function planDiscipleIntake(
     count: number,
@@ -833,12 +594,6 @@ export function planDiscipleIntake(
 
 /**
  * Whether the head of the house holds it when they are challenged.
- *
- * Read off state rather than rolled, because a challenge for the leadership of
- * a cultivation sect is not a negotiation: the strongest elder in the house
- * stands up, and either the head is above them or they are not. A leader who
- * spent a century governing and no time cultivating loses the house to arithmetic
- * they could have checked at any point.
  */
 export function challengeOutcome(
     defenderOrdinal: number,
@@ -855,12 +610,6 @@ export const MAX_POWER_DRIFT = 4;
 
 /**
  * What a change in size does to how hard the house hits.
- *
- * A doubling is worth one rung, which is deliberately unimpressive: numbers are
- * not power in this setting, and a leader who wants a stronger house rather than
- * a bigger one is going to have to change what it teaches. Bounded in both
- * directions, because a sect that quadruples is still the same sect and one
- * that halves has not stopped existing.
  */
 export function powerOrdinalDrift(size: number, baseSize: number): number {
     if (size <= 0 || baseSize <= 0) return 0;
@@ -868,9 +617,7 @@ export function powerOrdinalDrift(size: number, baseSize: number): number {
     return Math.max(-MAX_POWER_DRIFT, Math.min(MAX_POWER_DRIFT, rungs));
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // BACKLASH
-// ═══════════════════════════════════════════════════════════════════════════
 
 export type BacklashLevel =
     | 'none'
@@ -899,11 +646,6 @@ export const REMOVAL_AT = -90;
 
 /**
  * Where the house currently is, read straight off standing.
- *
- * `hasPatron` is the governance stack doing real work: an unbacked house or an
- * apex tops out at a challenge to the head, which is a fight and can be won. A
- * house that holds its ground from somebody else has one more rung above that,
- * and it is a letter rather than a fight.
  */
 export function backlashLevel(standing: number, hasPatron: boolean): BacklashLevel {
     if (hasPatron && standing <= REMOVAL_AT) return 'removal';
@@ -922,11 +664,6 @@ export const OBSTRUCTION_RAMP_EXPONENT = 1;
 
 /**
  * Odds an order is not carried out.
- *
- * Zero while standing is positive, certain by the point elders start leaving.
- * The only roll in the file, and its odds come entirely from accumulated
- * standing, so a player who reads the number before acting has been told
- * exactly what they are gambling.
  */
 export function obstructionChance(standing: number): number {
     if (standing > OBSTRUCTION_AT) return 0;
@@ -937,12 +674,6 @@ export function obstructionChance(standing: number): number {
 
 /**
  * Who walks, read off state rather than rolled.
- *
- * The elders with the largest followings go first, which is not cruelty for its
- * own sake: an elder with forty disciples behind them has somewhere to go and a
- * reason to be wanted there, and an elder with two does not. So the departures
- * take the biggest bite out of the house first, and the leader loses precisely
- * the part they were trying to build.
  */
 export function departureDepth(standing: number): number {
     if (standing > DEPARTURE_AT) return 0;
@@ -982,12 +713,6 @@ export interface HouseState {
     hasPatron: boolean;
     /**
      * Whether this cultivator is the head of the house.
-     *
-     * The escalation runs the same numbers either way and lands on different
-     * people. A head who has spent their credit loses elders and then the house.
-     * An Inner Disciple who has spent theirs loses the disciples they brought in
-     * and then their place, because a house does not keep a rung nobody below it
-     * will work for. Same ladder, same thresholds, different thing at the end.
      */
     isHead: boolean;
 }
@@ -1017,12 +742,6 @@ export interface ActOutcome {
 
 /**
  * Price an act, spend the standing, and report what the house does about it.
- *
- * Pure. The obstruction roll belongs to the caller, which is what keeps every
- * stochastic outcome on a seeded stream and out of this module.
- *
- * The standing is spent whether or not the act lands, and that is deliberate:
- * an order that was ignored was still given, and the giving is what cost.
  */
 export function resolveAct(house: HouseState, cost: ActCost): ActOutcome {
     const spent = shieldedCost(cost.standingCost, house.ownFollowing, house.houseSize);
@@ -1056,60 +775,16 @@ export function resolveAct(house: HouseState, cost: ActCost): ActOutcome {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // SAYING NO
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * How bad the house wrote it down as.
- *
- * Structurally the `Severity` of `engine/social/grudges.ts`, declared rather
- * than imported because this module has no imports at all and is worth keeping
- * that way. The caller passes `duty.refusal.severity`, which `refusalFor` in
- * `encounters/duties.ts` has already derived from the scale and the tags - so
- * the band is decided once, where the duty is priced, and read here.
  */
 export type RefusalSeverity = 'slight' | 'serious' | 'grave' | 'unforgivable';
 
 /**
- * What being turned down costs the person who did it, by the band the house
- * itself wrote on the ask.
- *
- * ── WHY A TABLE AND NOT A FORMULA ────────────────────────────────────────
- *
- * The other six costs in this file multiply a named constant by a quantity the
- * world already carries - ordinals moved, methods retired, elders hired,
- * hand-days spent. A refusal has no such quantity. What is available on a
- * `Duty` is `contribution` and `stones`, which are LEDGER units, and turning
- * either of them into standing would be inventing a conversion between two
- * currencies the game has deliberately kept apart. `cohort` is available too
- * and runs the wrong way: it falls with rank, so pricing on it would make a
- * senior's refusal cheaper than a servant's.
- *
- * So the quantity is the band, and the band is derived rather than authored -
- * `refusalFor` reads `scale` and the catalog's own tags and never the house.
- * A fifth band is a row here and nothing else, which is the test this file
- * applies to everything else in it.
- *
- * ── THE CALIBRATION, AGAINST THE LADDER THAT ALREADY EXISTS ──────────────
- *
- * A member joins at `STANDING_ON_JOINING` (50) and recovers `STANDING_PER_YEAR`.
- * `OBSTRUCTION_AT` is 0 and `CHALLENGE_AT` is -60, which for somebody who is not
- * the head is `dismissedFromTheHouse`. So the distance from a fresh membership to
- * being thrown out is 110, and these four numbers are chosen to divide it into a
- * legible count of refusals:
- *
- *     slight        6   an errand on a local road. ~18 of them to be dismissed
- *     serious      14   something with a threat in it, or somebody needing help
- *     grave        30   a tide, a recall, an obligation the house is under
- *     unforgivable 60   desertion from a war. The first puts a new member past
- *                       obstruction; the second puts them out of the house
- *
- * None of it is free and none of it is instant, which is the two things the
- * design owner asked for: standing must move down, and one bad day must not be
- * the end of a membership. `shieldedCost` still applies on top, so somebody with
- * a following of their own survives longer than somebody without one - the
- * existing model doing its own work rather than a special case for refusal.
+ * What being turned down costs the person who did it, by the band the house itself
+ * wrote on the ask.
  */
 export const REFUSAL_COST_BY_SEVERITY: Readonly<Record<RefusalSeverity, number>> = {
     slight: 6,
@@ -1120,23 +795,16 @@ export const REFUSAL_COST_BY_SEVERITY: Readonly<Record<RefusalSeverity, number>>
 
 /**
  * Price a refusal as an act, so being turned down and being obeyed run on one
- * spine - the same reason {@link errandCost} exists.
- *
- * `years` is zero on purpose. Saying no takes an afternoon; what takes years is
- * what the house does about it afterwards, and that is the escalation ladder's
- * to spend rather than this function's to charge.
+ * spine - the same reason {@link errandCost} exists. None of it is free and none
+ * of it is instant, which is the two things the design owner asked for: standing
+ * must move down, and one bad day must not be the end of a membership.
+ * `shieldedCost` still applies on top.
  */
 export function refusalCost(
     severity: RefusalSeverity,
     /**
-     * Whether the house asked for this person by name, or they signed for it
-     * off a wall.
-     *
-     * It changes only the sentence. A summons refused and a commission dropped
-     * are the same size of thing to the ledger - `refusalFor` has already
-     * folded the difference into the band - but they are not the same act to
-     * the person who has to write it down, and the narrator should not have to
-     * guess which happened.
+     * Whether the house asked for this person by name, or they signed for it off a
+     * wall.
      */
     origin: 'summons' | 'commission'
 ): ActCost {

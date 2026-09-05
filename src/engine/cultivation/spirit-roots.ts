@@ -1,17 +1,12 @@
 /**
  * Spirit Roots - the talent you are dealt once and never get to redraw.
  *
- * A spirit root is rolled at character creation and is permanent. There is no
- * respec, no reroll, no item that changes it. This is the single most
- * consequential number in a run, and the player has no agency over it: that is
- * the point of the genre, and of this engine.
- *
- * Weights are expressed as integers out of WEIGHT_TOTAL rather than floats, so
- * the distribution is exactly reproducible from a seed and can be asserted in
- * tests without float tolerance. Every weight is a multiple of 9 and they sum
- * to 999, so a weight read aloud is very nearly its own percentage: 81 is
- * 8.1%, 144 is 14.4%. Adding a root means taking its share out of the
- * neighbouring buckets, never restating the total.
+ * Weights are integers out of WEIGHT_TOTAL rather than floats, so the
+ * distribution is exactly reproducible from a seed and assertable without float
+ * tolerance. Every weight is a multiple of 9 and they sum to 999, so a weight
+ * read aloud is very nearly its own percentage: 81 is 8.1%, 144 is 14.4%. Adding
+ * a root means taking its share out of the neighbouring buckets, never restating
+ * the total.
  */
 
 export type Element = 'metal' | 'wood' | 'water' | 'fire' | 'earth' | 'lightning' | 'ice';
@@ -32,10 +27,10 @@ export type SpiritRootKey =
 
 /**
  * Grades run worst-to-best in element count, not in element count's favour:
- * `single` is the prize, and every element after the first is one more mouth
- * on the same intake. `dual` through `muddled` is a single descending gradient
- * - speed, matched-art bonus and breakthrough odds all fall along it, and
- * commonness rises along it. `mutated` is off that axis entirely.
+ * `single` is the prize, and every element after the first is one more mouth on the
+ * same intake. `dual` through `muddled` is a single descending gradient - speed,
+ * matched-art bonus and breakthrough odds all fall along it, and commonness rises
+ * along it. `mutated` is off that axis entirely.
  */
 export type SpiritRootGrade = 'single' | 'dual' | 'triple' | 'quad' | 'muddled' | 'mutated';
 
@@ -275,25 +270,17 @@ export function rootProbability(key: SpiritRootKey): number {
 }
 
 /**
- * Whether cultivating a technique of `element` conflicts with this root.
- * Conflict means the technique's element overcomes one the root holds, or the
- * root is internally conflicted (dual) and the element is one of its own.
- *
- * The dual clause exists because two opposed elements are too few for the
- * cycle to catch on its own - water overcomes fire, but nothing in the pair
- * overcomes water. Triple, quad and muddled roots need no such clause: they
- * hold enough of the cycle that it turns on them by itself, which is exactly
- * what having more elements costs.
+ * Whether cultivating a technique of `element` conflicts with this root. Conflict
+ * means the technique's element overcomes one the root holds, or the root is
+ * internally conflicted (dual) and the element is one of its own.
  */
 export function conflictsWithRoot(root: SpiritRoot, element: Element): boolean {
     if (root.grade === 'dual' && root.elements.includes(element)) return true;
     return root.elements.some(own => OVERCOMES[element] === own);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // INNATE ATTRIBUTES
 // Rolled once at creation, locked forever. There is no training montage.
-// ─────────────────────────────────────────────────────────────────────────
 
 export type AttributeKey = 'might' | 'insight' | 'fortune' | 'charm';
 
