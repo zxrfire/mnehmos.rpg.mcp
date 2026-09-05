@@ -477,22 +477,50 @@ export function strikesForABrokenDaoOath(realmIndex: number): number {
 export const EACH_STRIKE_HARDER_BY = 0.04;
 
 /**
- * What a strike takes off a body that WEATHERED it, as a fraction of full HP.
+ * What a strike takes off a body that weathered it, as a fraction of full HP.
+ *
+ * A TRIBULATION DOES NOT MISS. The design owner, correcting exactly this file:
+ * *tribulations don't miss. that's not how it works. it only misses by hitting
+ * someone else unlucky enough to be near you.* So there is no outcome here
+ * where nothing happened. Every strike lands on somebody; the roll decides
+ * whether it opens a wound or is merely worn, and `strikesTakenByBystanders`
+ * decides whether the body it lands on is yours.
  *
  * The design owner: *even if you survive it's not free. you'd have to be lucky
  * (or dao protected by a dao protector) to get off scot-free.*
  *
  * Before this, a strike that was survived cost nothing whatever, so a
  * tribulation was a sequence of coin flips that either wounded you or did not
- * happen. That is not what standing in one is. Surviving a bolt of heavenly
- * lightning is surviving a bolt of heavenly lightning, and the reason getting
- * off clean is possible at all is that the roll can simply miss - which is
- * luck, and is exactly the word the design owner used for it.
+ * happen. That is not what standing in one is, and it is why the word
+ * "survival" below is about what the strike DOES rather than whether it
+ * arrives.
  *
  * A fraction rather than a figure, because HP is realm-scaled and a flat number
  * would be a scratch at the top of the ladder and a death at the bottom.
  */
 export const WHAT_A_WEATHERED_STRIKE_STILL_TAKES = 0.12;
+
+/**
+ * The chance one strike goes into somebody standing nearby instead.
+ *
+ * The design owner, on the only way a tribulation fails to land on the person
+ * who drew it: *it only misses by hitting someone else unlucky enough to be
+ * near you (or you screwed them over on purpose).*
+ *
+ * Both halves of that are the same rule read from two ends, which is why there
+ * is no second one for the deliberate case: standing near somebody who is about
+ * to be struck is dangerous, and walking somebody there is what a person does
+ * with a dangerous place. `who-is-left-when-somebody-dies.ts` and the ledger
+ * price what it costs afterwards, exactly as they do for any other body the
+ * player put in front of something.
+ *
+ * Rises with the crowd and never past half, because the bolt is coming for one
+ * person and a crowd is cover rather than a substitute.
+ */
+export function strikesTakenByBystanders(nearby: number): number {
+    if (nearby <= 0) return 0;
+    return Math.min(0.5, 0.12 * nearby);
+}
 
 /**
  * Price a passage through the Lid.
@@ -555,6 +583,19 @@ export interface DescentOutcome {
      * against the body it happened to.
      */
     weathered: number;
+    /**
+     * Strikes that landed on somebody else, by id, in the order they went.
+     *
+     * One of the two ways a strike does not land on the person who drew it.
+     * See {@link strikesTakenByBystanders}.
+     */
+    tookItInstead: string[];
+    /**
+     * Things that were destroyed taking a strike meant for the body, by id.
+     *
+     * The other way, and the only one the person being struck is glad of.
+     */
+    brokeInstead: string[];
     survived: boolean;
     /** Per-strike survival, so a caller can show the price before it is paid. */
     perStrike: number;
@@ -601,7 +642,34 @@ export function weatherTheStrikes(
     /** What the strikes were drawn by, for the wound's own description. */
     doing: string,
     survivedNote: string,
-    diedNote: string
+    diedNote: string,
+    /**
+     * Anybody standing close enough to be hit by one of these, by id.
+     *
+     * Empty for a crossing, which is why `resolveDescentStrikes` passes
+     * nothing: somebody going down through their own hole in the Lid is on
+     * their own by definition. A tribulation drawn in a square full of people
+     * is a different scene, and this is the whole of the difference.
+     */
+    bystanders: readonly string[] = [],
+    /**
+     * Treasures being WIELDED, which will take a strike and come apart doing it.
+     *
+     * The design owner: *or the tribulation landing on your treasures and
+     * blowing them up, right? like you can imagine someone defending with their
+     * sword - unless you purposely don't. like you have to be wielding it.*
+     *
+     * Equipped and not merely carried, which is the whole of what makes this a
+     * DECISION rather than a windfall. A sword in the hand is between the bolt
+     * and the body and will be destroyed being there; the same sword in the
+     * pouch is safe and is not protecting anybody. The player choosing which
+     * needs no new verb - `inventory_items.equipped` already says it, and
+     * putting a thing away is a thing they can already do.
+     *
+     * Ordered first against a bystander, because what is in the hand is between
+     * the bolt and the body and a person standing nearby is not.
+     */
+    treasures: readonly string[] = []
 ): DescentOutcome {
     const perStrike = tribulationStrikeSurvival(cultivator, ambient);
 
@@ -609,7 +677,28 @@ export function weatherTheStrikes(
     let struck = 0;
 
     let weathered = 0;
+    const tookItInstead: string[] = [];
+    const brokeInstead: string[] = [];
+    const unspent = [...treasures];
     for (let strike = 0; strike < strikes; strike++) {
+        // WHAT WAS ON THE BODY, FIRST. A treasure is between the bolt and the
+        // person; a bystander is beside them. Each one takes a single strike
+        // and is gone, so a rack of them is a rack of strikes and no more.
+        if (unspent.length > 0) {
+            brokeInstead.push(unspent.shift()!);
+            continue;
+        }
+        // SOMEBODY ELSE, WHERE THERE IS SOMEBODY ELSE. Asked first, because a
+        // strike that went into a bystander did not arrive here at all, and
+        // asking afterwards would be a strike landing twice.
+        if (bystanders.length > 0
+            && rng.next() < strikesTakenByBystanders(bystanders.length)) {
+            tookItInstead.push(
+                bystanders[Math.min(bystanders.length - 1,
+                    Math.floor(rng.next() * bystanders.length))]!
+            );
+            continue;
+        }
         // AND EACH ONE IS HEAVIER THAN THE LAST. See `EACH_STRIKE_HARDER_BY`.
         const thisOne = Math.max(
             MIN_TRIBULATION_SURVIVAL,
@@ -640,6 +729,8 @@ export function weatherTheStrikes(
         strikes,
         struck,
         weathered,
+        tookItInstead,
+        brokeInstead,
         survived,
         perStrike,
         injuries,

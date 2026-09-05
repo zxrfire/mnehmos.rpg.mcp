@@ -3463,7 +3463,22 @@ ${noticed}`;
                     strikesForABrokenDaoOath(realmIndexOf(cultivator.realmOrdinal)),
                     'for the word you gave',
                     'They are still standing, and the word is gone.',
-                    'The last of them went with it.'
+                    'The last of them went with it.',
+                    // ANYBODY STANDING TOO CLOSE. A tribulation does not miss;
+                    // the one way it fails to land on the person who drew it is
+                    // by landing on somebody beside them, and a square is full
+                    // of people who did not swear anything.
+                    this.present(cultivator).map(row => row.id)
+                    // TREASURES ARE NOT PASSED, and the reason is a missing
+                    // column rather than a decision. `weatherTheStrikes` takes
+                    // a list of WIELDED things that interpose and are destroyed
+                    // doing it - a sword in the hand takes the bolt, the same
+                    // sword in the pouch is safe and protects nobody, and the
+                    // player choosing between those is the point. The
+                    // cultivation pouch has no equipped flag; `inventory_items`
+                    // has one and holds different things. Until they are one
+                    // table, or the pouch grows the column, there is nothing
+                    // truthful to pass here.
                 )
                 : null;
 
@@ -3475,6 +3490,29 @@ ${noticed}`;
                 const takenOff = Math.round(
                     cultivator.maxHp * WHAT_A_WEATHERED_STRIKE_STILL_TAKES * struck.weathered
                 );
+                // AND WHAT IT DID TO THE PEOPLE WHO DID NOT SWEAR ANYTHING.
+                // Written as an ordinary wrong, because it is one: they were
+                // standing there and somebody's broken word came down on them.
+                for (const hitId of new Set(struck.tookItInstead)) {
+                    const them = this.repos.cultivators.getById(hitId);
+                    if (!them) continue;
+                    writeObligation(
+                        this.db as unknown as DatabaseHandle,
+                        createObligation({
+                            kind: 'grudge',
+                            cause: 'injury',
+                            severity: 'serious',
+                            holderId: hitId,
+                            subjectId: cultivator.id,
+                            onDay: today,
+                            description:
+                                `${them.name} was standing beside ${cultivator.name} when the `
+                                + 'sky came for a word they had nothing to do with.',
+                            participants: [cultivator.id],
+                            tags: ['tribulation', 'bystander']
+                        })
+                    );
+                }
                 this.db.transaction((): void => {
                     if (takenOff > 0 && struck.survived) {
                         this.repos.cultivators.applyDeltas(cultivator.id, { hp: -takenOff });
