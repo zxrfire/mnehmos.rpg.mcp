@@ -390,3 +390,49 @@ describe('the person it happened to hardest', () => {
         expect(first).toContain('The Dead');
     });
 });
+
+describe('what they feel about the person in front of them', () => {
+    /**
+     * The design owner: *emotion needs to be tracked ... for every npc you do
+     * stuff to, of course. and emotions can change - like if i rob her, she's
+     * sad. if i kill her father she's despondent (and acts that way).*
+     *
+     * ACTS THAT WAY is why it is rendered here rather than kept on a sheet:
+     * this is the channel that puts a person in front of the narrator, and
+     * somebody who was robbed by whoever is standing in front of them is not
+     * the same person as one who was not.
+     */
+    it('carries the feeling into the sentence about them', () => {
+        const her = person({ id: 'her', name: 'Ning Ronghe' });
+        const lines = whatThePeopleHereAreAnswering({
+            before: [her],
+            now: [her],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver(['her']),
+            declared: [{ personId: 'her', dealtWith: true }],
+            feels: id => (id === 'her'
+                ? 'They are carrying what this one took out of them.'
+                : null)
+        }).join(' ');
+
+        expect(lines).toContain('carrying what this one took out of them');
+    });
+
+    /** And says nothing where nothing has passed, which is nearly everybody. */
+    it('says nothing about somebody nothing has passed with', () => {
+        const them = person({ id: 'them', name: 'A Stranger' });
+        const lines = whatThePeopleHereAreAnswering({
+            before: [them],
+            now: [them],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver(['them']),
+            declared: [{ personId: 'them', dealtWith: true }],
+            feels: () => null
+        }).join(' ');
+
+        expect(lines).toContain('A Stranger');
+        expect(lines).not.toContain('carrying what');
+    });
+});

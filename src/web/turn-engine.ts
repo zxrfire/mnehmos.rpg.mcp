@@ -575,6 +575,10 @@ import type { LocationRecord } from '../engine/world/locations.js';
 // about the same ground; this read is not going to be the third.
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
 import { whatDidNotHappen } from './unresolved-attempt-denials.js';
+import {
+    howTheyCarryIt,
+    whatTheyFeelAboutYou
+} from '../engine/social-leverage/what-they-feel-about-you.js';
 import { theSetThisNames } from './acts-over-a-set.js';
 import {
     theDescriptionThisIs,
@@ -10757,6 +10761,36 @@ ${fit.line}`;
     }
 
     /**
+     * What each person here feels about the player, ready to be asked per face.
+     *
+     * The ledger is read ONCE and the pairwise question is a filter over it -
+     * `ledgerAbout` already returns every row naming the player, and a square
+     * of forty would otherwise be forty queries for one turn's prose.
+     */
+    private whatTheSquareFeelsAbout(cultivator: Cultivator): (id: string) => string | null {
+        const ledger = ledgerAbout(this.db as never, cultivator.id);
+        if (ledger.length === 0) return () => null;
+        // NO `asOfDay`, DELIBERATELY, and it is not an oversight.
+        //
+        // `obligations.incurred_on_day` is written on TWO different clocks.
+        // Measured on one played turn: a robbery through `interact` recorded
+        // day 0 and a gift through `handOver` recorded day 365001, in the same
+        // table, about the same pair. 36 writers pass `Math.floor(run.elapsedDays)`
+        // and 4 pass the world's `currentDay`, and the schema's own comment says
+        // the column "stays comparable across any span of world time" - so the
+        // world clock is what was meant and most of the writers are wrong.
+        //
+        // Until that is one clock, any `asOfDay` here would silently drop every
+        // row written on the other one. Reading the whole ledger is correct
+        // today and stays correct afterwards.
+        return (personId: string) => howTheyCarryIt(whatTheyFeelAboutYou({
+            theirId: personId,
+            aboutId: cultivator.id,
+            ledger
+        }));
+    }
+
+    /**
      * Anybody who was standing here as the turn opened and is now dead.
      */
     private theFallenAmong(
@@ -10795,7 +10829,14 @@ ${fit.line}`;
             playerBefore,
             playerNow,
             gate: this.knowledge,
-            declared
+            declared,
+            // AND WHAT EACH OF THEM FEELS ABOUT THE PLAYER. One read of the
+            // player's own ledger, shared by everybody in the square, because
+            // `ledgerAbout` returns every row naming them and the pairwise
+            // question is a filter over it. Nothing is stored: see
+            // `what-they-feel-about-you.ts` on why an emotion column drifts and
+            // a read cannot.
+            feels: this.whatTheSquareFeelsAbout(playerNow)
         })) {
             execution.facts.lines.push(said);
             execution.facts.prose = execution.facts.prose.length > 0
