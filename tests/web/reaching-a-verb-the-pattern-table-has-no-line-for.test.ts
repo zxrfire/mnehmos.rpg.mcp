@@ -220,3 +220,36 @@ describe('the vectors beside the weights', () => {
         expect(manifest.corpusHash).toBe(corpusFingerprint());
     });
 });
+
+describe('the one verb a guess may not reach', () => {
+    /**
+     * `descend` is nine strikes of the heaviest tribulation in the game, off
+     * somebody who spent a life reaching the point where they could be struck
+     * by it, and it has no cheap branch to default to the way `posture` and
+     * `oath` do.
+     *
+     * Measured before the exemplars named the crossing: "I back away slowly"
+     * and "I step back" both reached it. Correcting them fixed the first and
+     * not the second - two words, no content beyond a direction, over the
+     * acceptance floor for the one verb that cannot be taken back. So the tier
+     * is shut off it entirely, and nothing is lost: every way of saying it
+     * names the Lid or the world below, and the pattern table holds those.
+     */
+    it('never guesses a descent out of a sentence about stepping backwards', async () => {
+        for (const said of ['I step back', 'I back away slowly', 'I take a step backwards']) {
+            const plan = await verbForASentenceThePatternsMissed(said, { action: 'unclear' });
+            expect(plan.action, `"${said}" must not reach descend`).not.toBe('descend');
+        }
+    });
+
+    /** And the pattern table still answers every real way of saying it. */
+    it('leaves the phrasings that name the crossing to the table', async () => {
+        for (const said of [
+            'I go back down through the Lid',
+            'I descend through the Lid',
+            'I return to the lower world'
+        ]) {
+            expect(parseIntent(said).action, said).toBe('descend');
+        }
+    });
+});

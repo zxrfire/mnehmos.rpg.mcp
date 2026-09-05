@@ -395,12 +395,19 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I send a word down the line to them',
         'what is the line up to our ancestor'
     ],
+    // EVERY ONE OF THESE HAS TO NAME THE CROSSING. `DESCENT_UNAMBIGUOUS` in
+    // `institution-phrasings.ts` already had the rule and said why - *nobody
+    // says "I descend through the Lid" about a staircase* - and these did not
+    // follow it. "I step down off it" and "I come back down" are sentences
+    // about stepping off a rock, and measured against them "I step back" and
+    // "I back away slowly" both reached this verb: nine strikes of the heaviest
+    // tribulation in the game, off somebody backing away from an argument.
     descend: [
-        'I come back down',
-        'I go down from up there',
-        'I return to the ground below',
-        'I step down off it',
-        'I make the descent'
+        'I go back down through the Lid',
+        'I leave the immortal world and return to the province',
+        'I go down to the mortal world myself',
+        'I take the way I came, back below the Lid',
+        'I make the descent back below'
     ],
     look: [
         'I look around',

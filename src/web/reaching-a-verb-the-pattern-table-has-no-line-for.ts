@@ -123,6 +123,31 @@ const CLEAR_OF_RUNNER_UP_BY = 0.01;
 const ACCEPT_TIME_SPENDING_AT = 0.76;
 
 /**
+ * VERBS THIS TIER MAY NOT REACH AT ALL, however well it scores.
+ *
+ * The floors above are the answer where a wrong guess is expensive. They are
+ * not the answer where a wrong guess is FINAL and the right guess was never
+ * needed, and `descend` is both.
+ *
+ * Both halves matter. A misparse into it is nine strikes of the heaviest
+ * tribulation in the game, weathered by somebody who spent a life getting where
+ * they could be struck by it - `action-set.ts` says so in its own comment. And
+ * nothing is lost by shutting the tier off it: every way of saying it names the
+ * Lid or the world below, `DESCENT_UNAMBIGUOUS` and `THE_WAY_BACK_DOWN` in
+ * `institution-phrasings.ts` hold those phrasings exactly, and that file's own
+ * note is the reason - *nobody says "I descend through the Lid" about a
+ * staircase*. A verb whose sentences are enumerable does not need a tier that
+ * exists for sentences nobody wrote down.
+ *
+ * Measured, and this is why it is a list rather than a higher floor: with the
+ * exemplars corrected to name the crossing, "I back away slowly" stopped
+ * reaching it and "I step back" did not. Two words, no content beyond a
+ * direction, and above the acceptance floor for the one verb that cannot be
+ * taken back.
+ */
+const A_GUESS_MAY_NOT_REACH: readonly ActionName[] = ['descend'];
+
+/**
  * A SENTENCE THAT NAMES NOTHING CANNOT MEAN SOMETHING.
  *
  * "I do the thing with the thing" reached `sell` at a score over the floor,
@@ -363,6 +388,8 @@ export async function verbForASentenceThePatternsMissed(
 
     const nearest = await nearestVerbByMeaning(input);
     if (nearest === null) return fromTable;
+
+    if (A_GUESS_MAY_NOT_REACH.includes(nearest.action)) return fromTable;
 
     const spendsTime = (TIME_CONSUMING_ACTIONS as readonly ActionName[]).includes(nearest.action);
     if (nearest.score < (spendsTime ? ACCEPT_TIME_SPENDING_AT : ACCEPT_AT)) return fromTable;
