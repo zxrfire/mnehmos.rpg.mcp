@@ -241,8 +241,8 @@ describe('local residue of the deep past', () => {
         // written down. If one drops out of the residue it has gone back to
         // being a label.
         const told = new Set(LOCAL_RESIDUE.map(r => r.siteName));
-        for (const name of ['Nine Bells', 'Quan\'s Shelf', 'The Warm Gate', 'Cold Well',
-            'Half Roof', 'Nothing Grows', 'Cut Bank', 'Hemu\'s Rest']) {
+        for (const name of ['Nine Bell Terrace', 'Quan Terrace', 'The Warm Gate', 'Cold Spring',
+            'Half Eaves', 'Nothing Grows', 'Knife Edge', 'Hemu\'s Post']) {
             expect(told.has(name), `${name} has no story attached`).toBe(true);
         }
     });

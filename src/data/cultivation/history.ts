@@ -1223,7 +1223,7 @@ export type LocalResidue = z.infer<typeof LocalResidueSchema>;
 export const LOCAL_RESIDUE: readonly LocalResidue[] = [
     // ── sealed compounds ──────────────────────────────────────────────
     {
-        siteName: 'Nine Bells',
+        siteName: 'Nine Bell Terrace',
         kind: 'ruin',
         whatTheySay:
             'They rang them out on the last night so the country would know. Nine bells, one for each hall, and when the last one stopped that was the seal taken.',
@@ -1236,7 +1236,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The count that was passed outward on the night was seven, and it is recorded as seven. Where the ninth and the name came from is not recoverable: the name may predate the sealing, the count may have been miscarried, or two of the halls may have had no bell. All three have been proposed by people with nothing to go on.'
     },
     {
-        siteName: 'Quan\'s Shelf',
+        siteName: 'Quan Terrace',
         kind: 'ruin',
         whatTheySay:
             'Quan held it. That is all anybody has ever said about Quan, and if you ask what Quan held it against, or when, or which Quan, you get told again that Quan held it.',
@@ -1262,7 +1262,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The ground there has been cold for centuries and the name is older than the sealing, so the name is not a claim about the present and never was. What the diggers are reading is real temperature variation in a wall that catches sun, and the rule they built on it is a rule about weather that works.'
     },
     {
-        siteName: 'Cold Well',
+        siteName: 'Cold Spring',
         kind: 'ruin',
         whatTheySay:
             'The well is good and the well is theirs. They left it outside the wall on purpose, for whoever came after, and that is why it has never gone bad.',
@@ -1275,7 +1275,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The well is outside the wall, it is still good, and it is the only reason anybody camps there. Whether it was left deliberately cannot be established and the courtesy is maintained by people who have never met and do not need the answer.'
     },
     {
-        siteName: 'Half Roof',
+        siteName: 'Half Eaves',
         kind: 'ruin',
         whatTheySay:
             'What is standing is what they wanted standing. A house that is shut properly does not come down by halves.',
@@ -1288,7 +1288,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'About half of one roof is above the wall line and the rest is not. Selective collapse is what an unmaintained inherited compound does and needs no intent behind it. The family\'s rule is superstition and is also the reason there is anything left to look at.'
     },
     {
-        siteName: 'The Long Rota',
+        siteName: 'The Long Roll',
         kind: 'ruin',
         whatTheySay:
             'They kept the duty list going after they shut the door. Two years of it. Somebody was still writing down who had the gate, and there was no gate, and there was nobody to relieve them.',
@@ -1301,7 +1301,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The roster was kept for two years after the sealing and the last page is legible. What is not established is who was keeping it or why they stopped, and the two years is the only interior fact about a sealed compound that anybody in the present can read directly.'
     },
     {
-        siteName: 'Five Winters',
+        siteName: 'The Fifth Winter',
         kind: 'ruin',
         whatTheySay:
             'It answered for five winters. People went up each year to see, and the fifth year it answered and the sixth year it did not, and the ones who went up the sixth year came back and said so and were not believed.',
@@ -1314,7 +1314,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The interval in the name is what the people who kept coming back to check counted, and the practice is the check, still running. The annual walk is the longest continuously observed act of measurement in either province and no institution has ever heard of it.'
     },
     {
-        siteName: 'Bai\'s Shortcut',
+        siteName: 'Bai\'s Turning',
         kind: 'ruin',
         whatTheySay:
             'Bai was the last steward and Bai walked the path every day and Bai was not going anywhere. He was checking the wall. He did it until he did not.',
@@ -1327,7 +1327,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name is possessive and therefore records a holder who is gone, and the path goes round rather than anywhere, which is consistent with a patrol and with several other things. Nobody has established that there was a wall to check by the time the walking started.'
     },
     {
-        siteName: 'The Millet Yard',
+        siteName: 'The Millet Garden',
         kind: 'ruin',
         whatTheySay:
             'It was the millet yard. It will be again. The ground is only resting and my grandmother said her grandmother saw it green.',
@@ -1381,7 +1381,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The statement is a fact, has been used as a name for two centuries, and the margin the families keep is far wider than the affected ground. Overcaution passed down as measurement is the commonest form deep-past knowledge takes, and it is why they have never lost an animal.'
     },
     {
-        siteName: 'Hemu\'s Rest',
+        siteName: 'Hemu\'s Post',
         kind: 'scar',
         whatTheySay:
             'Hemu kept the waystation and would not leave it. The road went and the station went and Hemu stayed, and the name stayed with him.',
@@ -1394,7 +1394,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name is possessive, records a keeper, and has outlasted both the waystation and the road it served. Whether Hemu declined to leave or simply died before the road did is not recoverable and the practice does not depend on which.'
     },
     {
-        siteName: 'Cut Bank',
+        siteName: 'Knife Edge',
         kind: 'scar',
         whatTheySay:
             'Look at the edge. Ground does not do that. Something cut it and whatever cut it was not weather and it was not water.',
@@ -1433,7 +1433,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The old entry survives in the surveys and every local knows better. A stale record that is still authoritative because it is the record is the ordinary way the deep past reaches a mortal household, and it reaches it as a bill.'
     },
     {
-        siteName: 'Three Years',
+        siteName: 'Three Year Ground',
         kind: 'scar',
         whatTheySay:
             'Three years before anybody would cross. Nobody decided that. Everybody waited three years and then somebody went and then everybody went.',
@@ -1446,7 +1446,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The interval was agreed by nobody and observed by everybody, which is what the name records. It is the clearest instance in the catalog of a rule with no author, and it is enforced by nothing but the fact that the first person to cross would be the first person to cross.'
     },
     {
-        siteName: 'White Water',
+        siteName: 'White Creek',
         kind: 'scar',
         whatTheySay:
             'The stream off it runs pale. It has always run pale. You can drink it and people do and there is a family that will tell you their children are the better for it.',

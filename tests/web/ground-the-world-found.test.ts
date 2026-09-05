@@ -203,7 +203,7 @@ describe('the account it gives', () => {
 function priorAgeRuin(over: Record<string, unknown> = {}) {
     return {
         id: 'loc-ruin-2-3',
-        name: 'Three Stones',
+        name: 'Three Stone Array',
         kind: 'ruin',
         // `locationFromRuin` sets no parentId. That is the seeding pass, and it
         // is what `findUndiscoveredUnder` documents from the other side.

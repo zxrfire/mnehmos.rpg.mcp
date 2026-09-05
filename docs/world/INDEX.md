@@ -417,7 +417,7 @@ it describes.
 | [`regions/rank-translation.ts`](../../src/data/cultivation/regions/rank-translation.ts) | Who translates one province's rank vocabulary into another's, what they have riding on the answer, and what being wrong about it costs. | 132 | - |
 | [`regions/region-ids.ts`](../../src/data/cultivation/regions/region-ids.ts) | The stable ids of every province and of the ground between them. | 29 | - |
 | [`regions/region-schema.ts`](../../src/data/cultivation/regions/region-schema.ts) | The Region contract: every Zod shape a province row is built out of. | 343 | - |
-| [`regions/ruin-and-scar-names.ts`](../../src/data/cultivation/regions/ruin-and-scar-names.ts) | Names for the generated half of the map: what a sealed compound and a scar get called, so that neither is called by its kind. | 134 | - |
+| [`regions/ruin-and-scar-names.ts`](../../src/data/cultivation/regions/ruin-and-scar-names.ts) | Names for the generated half of the map: what a sealed compound and a scar get called, so that neither is called by its kind. | 138 | - |
 | [`regions/the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) | The Burial Sands: a rich vein under loose cover that moves, in the wedge the four arms leave between them, held by nobody because nothing here lasts long enough to be granted. | 508 | - |
 | [`regions/the-map.ts`](../../src/data/cultivation/regions/the-map.ts) | Regions - five of them, and the contrast between them is the content. | 225 | - |
 | [`regions/white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. | 288 | - |
