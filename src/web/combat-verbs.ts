@@ -1072,7 +1072,236 @@ export const combatVerbs = {
             }
         }
 
-        return this.afterAFight(run, cultivator, held, settled, execution);
+        // ── AND WHAT LETTING SOMEBODY GO OPENS ───────────────────────────
+        //
+        // The other direction of the same event, and the engine had only one.
+        // `seedObligations` has always opened the grave grudge a spared person
+        // holds - `combat.ts`, in its own words, "beaten and deliberately let
+        // go" - and nothing anywhere opened the FAVOUR, though `spared` has
+        // been a `FavorCause` since the ledger was written.
+        //
+        // Both, on the same act, is the whole of what makes mercy a decision
+        // rather than a good deed: they owe you their life AND they hold an
+        // account against you for how they came to owe it, and they are alive
+        // to act on the second. Nothing here weighs the two against each other
+        // and nothing here makes the grudge smaller.
+        if (lastRound?.playerAct === 'spare' && result.outcome === 'humiliation') {
+            this.whatSparingThemLeft(run, cultivator, held, execution);
+        }
+
+        // LAST, and the order is load-bearing. `afterAFight` writes the
+        // accounts a bout opens because it went past what was agreed, and
+        // `a-bout-two-people-agreed-to.test.ts` reads the ledger in insertion
+        // order to find them. This adds a row for every ending rather than for
+        // the rare one, so writing it first would put it in front of the row
+        // that test is about and hide a real assertion behind an ordering
+        // accident.
+        const done = this.afterAFight(run, cultivator, held, settled, execution);
+        this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);
+        return done;
+    },
+
+    /**
+     * The account the person you beat now holds, written down.
+     *
+     * ── A FIELD NOTHING WROTE, FOUND BY PLAYING ──────────────────────────
+     *
+     * `seedObligations` in `combat.ts` decides this for every ending a fight
+     * can have and has done since it was written: *"an NPC must be able to
+     * conclude 'I cannot defeat him now, I will remember this' and act on it
+     * forty years later."* Nothing wrote it. `combat_manage.resolve` walks
+     * `result.obligations` and touches only the rows the PLAYER holds, to
+     * update their `feuds` column, so every account pointed the other way was
+     * decided, returned, and dropped.
+     *
+     * Measured on a pinned world, sparing somebody: the ledger held the favour
+     * this file had just opened and nothing else, and the person who had been
+     * beaten and deliberately let go carried a `rival` tie at -0.15 with the
+     * note *"Lost to them."* The engine had priced that moment as a GRAVE
+     * grudge and the database did not contain it.
+     *
+     * That is the softening AGENTS.md names, arriving from the direction
+     * nobody watches: it made every ending a player can reach - a capture, a
+     * submission, a humiliation, a sparing - free of consequence, and it made
+     * mercy free along with the rest.
+     *
+     * ── WHY IT IS NOT NARROWED TO SPARING ────────────────────────────────
+     *
+     * Because the gap is not about sparing. A rule that fired for one outcome
+     * would be the bespoke rule this repo forbids, and the demonstration
+     * covers the whole table: `seedObligations` keys on the outcome and every
+     * one of its rows was going nowhere. This writes what that function
+     * decided, unmodified, and decides nothing itself.
+     *
+     * `whatFollowsFromTheBout` is deliberately not touched and does not
+     * overlap: its own header says *"whatever the loser holds about it is the
+     * resolver's own record and is not this one"*, and it answers the separate
+     * question of who ELSE is owed something because the fight went past what
+     * was agreed.
+     */
+    whatTheLoserNowHoldsAboutYou(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        result: ConfrontationResult,
+        execution: Execution
+    ): void {
+        const onDay = Math.floor(run.elapsedDays);
+        for (const seed of result.obligations) {
+            // The player's own side is already handled where it always was -
+            // `settleAFight` puts it on the `feuds` column - and writing it
+            // here as well would put one grievance in two places.
+            if (seed.holderId === cultivator.id) continue;
+
+            // The resolver names the two of them by their COMBAT ids, and a
+            // described opponent fights under a synthetic one. The ledger is
+            // keyed on who people are, so the row is written against the party
+            // this turn actually resolved.
+            const holderId = seed.holderId === held.opponent.id ? held.party.id : seed.holderId;
+            const subjectId = seed.subjectId === held.self.id ? cultivator.id : seed.subjectId;
+
+            const record = createObligation({
+                kind: seed.kind,
+                holderId,
+                subjectId,
+                cause: seed.cause,
+                severity: seed.severity,
+                onDay,
+                description: seed.description
+            });
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            execution.calls.push({
+                name: 'social.createObligation',
+                action: held.verb,
+                summary:
+                    `${record.id}: ${record.holderId} holds a ${record.severity} ${record.kind} `
+                    + `about ${record.subjectId} for ${record.cause}, off a `
+                    + `${result.outcome}. Decided by seedObligations and written here; nothing `
+                    + 'about the weight is re-decided.',
+                ok: true
+            });
+        }
+    },
+
+    /**
+     * The favour a spared person owes, written the way every other kindness is.
+     *
+     * No second pricer and no second ledger: `aDeedEntersTheWorld` hands the
+     * deed to `whatADeedLeaves` at `paidBy: 'actor'`, which is what makes it a
+     * favour rather than a grudge, and every row it decides is written with the
+     * fact's id on it. The cost is `irreversible` because what was given back
+     * was a life, which is the field's own definition.
+     *
+     * WITNESSES ARE THE PEOPLE WHO WERE ACTUALLY THERE, and they move the
+     * weight the opposite way from the grudge's: `whatItWasWorth` weighs an
+     * UNwitnessed kindness a step higher, because public virtue is already paid
+     * for by reputation. So sparing somebody in an empty alley is worth more to
+     * them than sparing them in a courtyard, and the grudge they hold for it is
+     * worth less. Neither of those is a rule written here - it is one function
+     * reading two fields.
+     */
+    whatSparingThemLeft(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        held: StandingFight,
+        execution: Execution
+    ): void {
+        if (!this.atHand) return;
+        const them = held.theirRecord;
+        const onDay = Math.floor(run.elapsedDays);
+        const watching = this.present(cultivator)
+            .filter(row => row.id !== held.party.id && row.id !== cultivator.id).length;
+        const mine = positionIn(this.repos, cultivator.id);
+        const theirHouseId = them?.factionId
+            ?? this.repos.cultivators.getById(held.party.id)?.sectId ?? null;
+
+        const deed = aDeedEntersTheWorld(this.atHand, {
+            kind: 'debt_incurred',
+            day: Math.floor(this.atHand.currentDay),
+            locationId: this.worldPlaceOf(cultivator),
+            place: placeName(cultivator),
+            actors: [
+                { id: cultivator.id, name: cultivator.name, role: 'stopped' },
+                { id: held.party.id, name: held.party.name, role: 'was let go' }
+            ],
+            factionIds: theirHouseId ? [theirHouseId] : [],
+            summary:
+                `${cultivator.name} beat ${held.party.name} and let them go alive.`,
+            unattributed:
+                'Somebody walked away from a fight they had already lost, and would not say '
+                + 'why they were still walking.',
+            price: {
+                deed: {
+                    cause: 'spared',
+                    paidBy: 'actor',
+                    // Against what the sparer had to give, which at the end of
+                    // a fight is the finish they had already earned. One, and
+                    // the ledger's own bands take it from there.
+                    cost: 1,
+                    irreversible: true,
+                    onDay,
+                    description:
+                        `${held.party.name} was beaten and let go by ${cultivator.name}, and is `
+                        + 'alive because of a decision somebody else made.',
+                    witnesses: watching,
+                    participants: [held.party.id]
+                },
+                actor: {
+                    id: cultivator.id,
+                    name: cultivator.name,
+                    houseId: mine?.sectId ?? cultivator.sectId ?? null,
+                    houseName: null,
+                    alignment: null,
+                    ranked: mine !== null
+                },
+                subject: {
+                    id: held.party.id,
+                    name: held.party.name,
+                    houseId: theirHouseId,
+                    houseName: null,
+                    alignment: null,
+                    ranked: (them?.factionRankIndex ?? 0) > 0
+                }
+            },
+            data: { outcome: 'humiliation', spared: true }
+        });
+        if (!deed) return;
+        this.worldDirty = true;
+
+        for (const opens of deed.leaves?.opens ?? []) {
+            const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
+            writeObligation(this.db as unknown as DatabaseHandle, record);
+            execution.calls.push({
+                name: 'social.createObligation',
+                action: 'attack',
+                summary:
+                    `${record.id}: ${record.holderId} holds a ${record.severity} ${record.kind} `
+                    + `about ${record.subjectId} for ${record.cause}, off ${deed.fact.id}. `
+                    + 'The favour side of a sparing. The grudge side was seeded by '
+                    + '`seedObligations` and is not touched here.',
+                ok: true
+            });
+        }
+
+        // ── AND THE PLAYER IS TOLD WHAT THEY HAVE JUST BOUGHT ────────────
+        //
+        // `required`, because a player who is not told will read the prose as
+        // the fight ending well. What actually happened is that somebody who
+        // holds a grave account against them is walking away able to act on it,
+        // and the engine says so rather than leaving it to be discovered.
+        const owed = `${held.party.name} is alive and owes you for it.`;
+        const open = `${held.party.name} also walks away holding what was done to them, `
+            + 'and being spared is not the same as being forgiven.';
+        execution.facts.lines.push(owed, open);
+        execution.facts.required = [...(execution.facts.required ?? []), owed, open];
+        execution.facts.structure.push(
+            `spare: ${deed.fact.id} (debt_incurred, ${deed.weight}) priced by whatADeedLeaves at `
+            + `cost 1.00, irreversible, ${watching} witness(es); it reached `
+            + `${deed.leaves?.reached}. ${deed.leaves?.opens.length ?? 0} favour row(s). The `
+            + 'grave grudge from `seedObligations` stands separately and unmodified.'
+        );
     },
 
     /**

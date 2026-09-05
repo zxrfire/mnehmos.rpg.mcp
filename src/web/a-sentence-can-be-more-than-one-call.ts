@@ -1317,7 +1317,7 @@ export function whatThisTurnMayRun(
  *
  * ── FOUND BY PLAYING, AND IT IS THE QUESTION'S OWN LIMIT ─────────────────
  *
- *   > I go to Ninewatch and then sit down and cultivate for a year
+ *   > I go to Cloud Gate and then sit down and cultivate for a year
  *
  * Two costly acts, and asking "which comes first?" is asking somebody to
  * repeat themselves: they wrote **and then**. The question earns its place
@@ -1401,7 +1401,7 @@ export function theSentenceSaysItsOwnOrder(input: string): boolean {
  * (`to pay for`, `to afford`), or a threshold (`enough for`).
  *
  * Kept to subordinators that genuinely bind one act to another. Bare `to` is
- * deliberately absent - "I go to Ninewatch" would match it, and an infinitive
+ * deliberately absent - "I go to Cloud Gate" would match it, and an infinitive
  * of motion is not a purpose clause.
  *
  * ── AND A BARE `so` JOINING A REASON TO A CONSEQUENCE ────────────────────
@@ -1518,7 +1518,7 @@ const JOINS_TO_AN_OBJECT = /\b(?:to|with|at|on|for|of|into|from)$/i;
  *
  * **"the purchase a physician's visit" is not English.** `PLAINLY` holds two
  * kinds of name and the code glued the target onto both: the object-taking ones
- * read correctly - "the journey to Halfwater", "the approach to Bai Xuping" -
+ * read correctly - "the journey to Silver Island", "the approach to Bai Xuping" -
  * and the self-contained ones did not. "the sale a manual", "the hunt a boar"
  * and "the gathering herbs" were all one played turn away.
  *
@@ -1539,13 +1539,18 @@ const PLAINLY_WITH_AN_OBJECT: Partial<Record<ActionName, string>> = {
     hunt: 'the hunt for',
     gather: 'the gathering of',
     refine: 'the refining of',
+    craft: 'the building of',
     offer: 'the offering of',
     consume_pill: 'taking',
     learn_technique: 'taking up',
     site: 'going into',
     seal: 'what is under',
     sect: 'the business with',
-    propose: 'the match with'
+    propose: 'the match with',
+    // 护法. Not "guarding", which is the word the fight layer already owns for
+    // a posture inside a round, rather than a span spent standing over
+    // somebody else's crossing.
+    guard: 'standing over the crossing of'
 };
 
 export function whatThisStepIsCalled(step: PlanStep): string {
@@ -1618,6 +1623,9 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     treat: 'having the wound seen to',
     gather: 'the gathering',
     refine: 'the refining',
+    // Not "the craft", which is the noun for the thing rather than for the
+    // work, and would read as the question asking whether they want a boat.
+    craft: 'the work at the bench',
     site: 'going in',
     legacy: 'putting it beyond your own death',
     sect: 'the business with the house',
@@ -1632,7 +1640,8 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     // Not "telling", which reads as the question asking whether the player
     // wants to be told something. What the step actually is, from the outside,
     // is somebody being given news they did not have.
-    tell: 'carrying the news to'
+    tell: 'carrying the news to',
+    guard: 'standing guard over the crossing'
 };
 
 function plainNameOf(action: ActionName): string {
@@ -1888,7 +1897,7 @@ export interface ToolCallRecordish {
  *   > I look over the stalls, ask who is selling a manual, and buy the
  *   > cheapest one they have
  *
- *   market(Sixmile)          43 things on offer, four manuals priced
+ *   market(Six Li)          43 things on offer, four manuals priced
  *   interact(merchants)      "merchants" matched nobody
  *   buy(the cheapest manual) NEVER RAN
  *
@@ -1926,7 +1935,7 @@ export function theWorldStoppedHere(
  *
  * Played live, and reported by the coordinator verbatim:
  *
- *   > I rob Cao Antao and then run away to Ninewatch
+ *   > I rob Cao Antao and then run away to Cloud Gate
  *
  *   Cao Antao: taken.
  *   Reprisal: injured. Weighed as serious robbery against Shen Kuo.

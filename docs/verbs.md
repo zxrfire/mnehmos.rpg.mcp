@@ -74,8 +74,8 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**54 verbs.** 17 of them take nothing from the player,
-25 spend in-world time and can therefore kill, and
+**56 verbs.** 17 of them take nothing from the player,
+27 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -98,6 +98,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`breakthrough`](#breakthrough) | - | time | yes | - | - |
 | [`train_technique`](#train_technique) | `target` | time | yes | - | - |
 | [`refine`](#refine) | `target` | time | yes | - | - |
+| [`craft`](#craft) | `target` `days` | time | yes | - | - |
 | [`gather`](#gather) | `target` | time | yes | - | - |
 | [`hunt`](#hunt) | `target` | time | yes | - | - |
 | [`eat`](#eat) | - | time | yes | - | - |
@@ -134,6 +135,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
 | [`request`](#request) | `target` `intent` `topic` | time | yes | - | [9](#request) |
+| [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
 | [`child`](#child) | `days` `target` `intent` | time | yes | - | [2](#child) |
@@ -246,7 +248,7 @@ Intents: `submit`, `hand_over`, `talk`, `tame`.
 
 sit and gather qi. "days" (1-36500); "ten years" is 3650, default 30.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'cultivate'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.runSeclusion` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'cultivate'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
 Takes `days`.
 
@@ -279,6 +281,14 @@ work the cauldron. "target" names the formula or the pill wanted.
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'refine'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.refine` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`.
+
+### `craft`
+
+build a thing at a bench out of material a hunt brought back - a carriage or a spirit boat. "target" names what is being built; naming nothing carries on with whatever is already on the stocks, or lists the bills if there is nothing. "days" is how long they said they would spend at it. NOT refine, which is the cauldron and wants a named herb for a named pill; a bill wants a quantity at a grade and does not care which animal it came off. Saying they abandon or scrap what is on the stocks comes here too, and clears it. It spends days and it can fail, and a failure keeps the materials.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'craft'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`, `days`.
 
 ### `gather`
 
@@ -565,6 +575,14 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 Takes `target`, `intent`, `topic`.
 
 Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `terms`, `a_trade`, `nothing`, `unstated`.
+
+### `guard`
+
+STAND GUARD OVER SOMEBODY ELSE'S BREAKTHROUGH - the dao protector. "target" is who is crossing and must be somebody standing here; "days" is how long they said they would stand there. A cultivator making a crossing cannot defend themselves at all, and a protector is the only defence that exists. This is not the speaker's own crossing, which is breakthrough. Naming nobody asks the free question instead - who standing here would keep a watch over YOUR next crossing. It spends the span, it resolves the other person's attempt, and it can leave the guard carrying a crippling wound taken for somebody else.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'guard'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`, `days`.
 
 ### `propose`
 

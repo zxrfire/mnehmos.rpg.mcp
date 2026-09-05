@@ -233,6 +233,53 @@ export type FightAnswer =
     | { kind: 'guard' }
     /** "I let him hit me." Spend the round on the blow and wear what comes. */
     | { kind: 'press'; vector?: AttackVector }
+    /**
+     * "I spare him." Stop, with them still alive, because you chose to.
+     *
+     * ── MERCY IS A RISK YOU TAKE, NOT A VIRTUE THAT IS REWARDED ─────────
+     *
+     * Nothing here makes it safe and nothing here makes it good. What it does
+     * is give the sentence a route, because the engine had none: `attack` with
+     * `goal: 'humiliate'` has always been able to end a fight at
+     * `'humiliation'` - this engine's own words, *"beaten and deliberately let
+     * go"* - and the only way to ask for it was to declare at the outset that
+     * humiliating them was the point. Somebody who set out to kill and then
+     * did not could not stop.
+     *
+     * TWO ANSWERS, AND THE ENGINE PICKS BETWEEN THEM BY COMPARING WHAT IS LEFT
+     * OF THE TWO BODIES. No new constant: the fight already holds both running
+     * totals and both pools, and the question is the plain one.
+     *
+     *   you are ahead and     there is something to let go of. The fight ends
+     *   they have been hurt   at `finishOutcome`'s `humiliation`, they live,
+     *                         and `seedObligations` opens the GRAVE grudge it
+     *                         has always opened for that outcome. A spared
+     *                         enemy walks away holding an account against you,
+     *                         and every mechanism in this engine that reads a
+     *                         living person with a grudge now has somebody to
+     *                         run.
+     *   anything else         they are still standing over you, or untouched,
+     *                         and there is nothing yet to spare. The round is
+     *                         spent with your hand held - `guard`, exactly as
+     *                         a shout is - and they swing into it. Offering
+     *                         mercy to somebody who has not finished with you
+     *                         costs you a round and buys nothing, which is the
+     *                         honest answer rather than a punishment.
+     *
+     * ── WHY IT IS NOT A CHEAP WAY OUT OF A FIGHT ────────────────────────
+     *
+     * Because of what it leaves standing. `break_off` prices getting away and
+     * leaves a `slight` or `serious` grudge from somebody who ran; this ends a
+     * fight you are winning and leaves a `grave` one from somebody who was
+     * beaten and knows whose decision it was that they are alive. The trade is
+     * a fight you might have finished against a permanent enemy who can act,
+     * and the engine does not have a view about which of those is better.
+     *
+     * The grudge is not softened for the sparing and must never be. This
+     * engine already says being let go is worse than being finished for some
+     * people, and `wouldTheyKneel` reads the state that produces.
+     */
+    | { kind: 'spare' }
     /** "I back off." Turn your back, at a price, toward somewhere or nowhere. */
     | { kind: 'break_off'; toward?: string | null }
     /** "I shout for the wardens." Spend the round on a shout. */
@@ -600,6 +647,69 @@ export function takeAFightTurn(
             flight,
             fleeingToward: toward,
             preamble: flight.narrationHint
+        });
+    }
+
+    // ── LETTING SOMEBODY GO ──────────────────────────────────────────────
+    //
+    // See {@link FightAnswer}'s `spare` member for the argument. The gate is a
+    // comparison of the two bodies as they now stand and introduces no number
+    // of its own, and the ending is `finishOutcome`'s rather than one chosen
+    // here: the player says they are stopping, and the engine says what
+    // stopping means - `humiliation`, and the grave grudge that has always
+    // come with it.
+    //
+    // `WITHDRAW_HP_FRACTION` is deliberately NOT the gate, and the reason is
+    // worth writing down because it looks like the obvious choice. That line
+    // is where `resolveConfrontationRound` makes the beaten side break off, so
+    // a fight ENDS the moment anybody crosses it: a body under it and still
+    // standing in front of you is a state ordinary play cannot reach, and
+    // gating on it would have made this answer unreachable and reviewed as
+    // finished.
+    if (answer.kind === 'spare') {
+        const mineLeft = fight.hp[mine.input.id] / Math.max(1, mine.input.maxHp);
+        const theirsLeft = fight.hp[theirs.input.id] / Math.max(1, theirs.input.maxHp);
+        // Ahead, and they have actually paid something. Sparing somebody who
+        // has not been touched is not mercy, it is leaving.
+        const theirsToLose = theirsLeft < mineLeft
+            && fight.hp[theirs.input.id] < theirs.input.maxHp;
+
+        if (theirsToLose) {
+            return {
+                fight: null,
+                // The intent is re-stated, not re-decided. `concludeConfrontation`
+                // reads the goal to pick which ending the winner permitted, and
+                // the player has just said which one they are permitting. A
+                // killing goal carried into this branch would end somebody the
+                // player had chosen not to end.
+                finished: concludeFrom(
+                    { ...fight, intent: { ...fight.intent, goal: 'humiliate' } },
+                    mine.input.id, theirs.input.id, 'down', ctx
+                ),
+                playerAct: 'spare',
+                theirAct,
+                exchanges: [],
+                flight: null,
+                fleeingToward: null,
+                shout: null,
+                line:
+                    `You stop. ${theirs.input.name} is still alive, and both of you know `
+                    + 'whose decision that was.'
+            };
+        }
+
+        // Nothing to let go of yet. The round is spent with the hand held, and
+        // they take it.
+        const held = resolveConfrontationRound(
+            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
+            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
+            fight.hp, fight.injuries,
+            roundCtx(fight, ctx, rng)
+        );
+        return afterRound(fight, held, 'spare', theirAct, ctx, {
+            preamble:
+                `${theirs.input.name} is not beaten, so there is nothing yet to spare. `
+                + 'The round goes on your guard.'
         });
     }
 

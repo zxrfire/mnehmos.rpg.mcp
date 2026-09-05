@@ -64,9 +64,9 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ],
     move: [
         'I travel to Barrow Hand',
-        'I set out for Scarwater',
+        'I set out for Clear River Ford',
         'I head north',
-        'I make my way to Scarwater'
+        'I make my way to Clear River Ford'
     ],
     /**
      * Hands rather than words, and the same resolver a fight uses. Written
@@ -89,24 +89,24 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
      * its own verb and out of `MOVE_PHRASINGS` below.
      */
     ride: [
-        'I ride to Scarwater',
+        'I ride to Clear River Ford',
         'I ride the horse',
-        'I saddle a beast and ride for Kettle',
-        'I take a carriage to Scarwater',
-        'I take a spirit boat to Halfwater',
-        'I fly to Scarwater on my sword'
+        'I saddle a beast and ride for Iron Gate',
+        'I take a carriage to Clear River Ford',
+        'I take a spirit boat to Silver Island',
+        'I fly to Clear River Ford on my sword'
     ],
     fold: [
-        'I fold space to Scarwater',
-        'I step through space to Kettle',
-        'I fold to the Quiet Marches',
-        'I tear open space and go to Kettle',
+        'I fold space to Clear River Ford',
+        'I step through space to Iron Gate',
+        'I fold to the Silent Cliffs',
+        'I tear open space and go to Iron Gate',
         'I cross the distance in one step'
     ],
     passage: [
-        'I buy passage to Kettle',
+        'I buy passage to Iron Gate',
         'what does the Span board say',
-        'what would a ticket to Kettle cost',
+        'what would a ticket to Iron Gate cost',
         'I book a place on the next span',
         'is there a Span counter here'
     ],
@@ -146,6 +146,18 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I refine a pill',
         'I brew the elixir',
         'I concoct a healing pill'
+    ],
+    // The bench. Every phrasing names the thing, because `build`, `make` and
+    // `craft` on their own are how somebody says half a dozen other
+    // intentions - and the sentences next door that must NOT come here are in
+    // `refine` above and in `ride`'s block: "I take the carriage to Iron Gate" is
+    // a journey and "I buy a carriage" is a purchase.
+    craft: [
+        'I build a carriage',
+        'I make a cart',
+        'I put together a wagon',
+        'I lay down the keel of a spirit boat',
+        'I go back to the carriage and finish it'
     ],
     // Spirit beasts are where a material comes from, so the verb that goes
     // out after one has to answer to more than the single word it was
@@ -513,6 +525,23 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // clause saying something was done, which is what keeps them apart from
     // "tell me about X" and from ordinary conversation - both of which are
     // pinned in `telling-somebody-opens-the-account.test.ts`.
+    // 护法. Every one of these needs a guarding phrase AND a word for the
+    // thing being crossed, or one of the two idioms that cannot mean anything
+    // else - which is what keeps them off `breakthrough` (the speaker's OWN
+    // crossing), off `seclude`, and off the three commonest uses of the words
+    // `guard`, `watch` and `protect`, all of which are pinned as `unclear` in
+    // `a-verb-must-not-swallow-the-verb-next-door.test.ts`.
+    guard: [
+        'I stand guard while she crosses',
+        'I watch over his breakthrough',
+        'I protect her while she attempts it',
+        'I act as her dao protector',
+        'I stand guard over Wei Lanya while she breaks through',
+        'I guard Wei Lanya during her crossing',
+        'I keep watch over Wei Lanya for a year',
+        'who would stand guard for me',
+        'do I have a dao protector'
+    ],
     tell: [
         'I tell him that Cao Antao killed his brother',
         'I let He Peiyi know who killed his brother',
@@ -615,7 +644,7 @@ describe('every intent behind a door is reachable from plain English too', () =>
     });
 
     const MOVE_PHRASINGS: Record<string, readonly string[]> = {
-        travel: ['I travel to Nine Peaks', 'I set out for Scarwater'],
+        travel: ['I travel to Nine Peaks', 'I set out for Clear River Ford'],
         flee: ['I flee', 'I run away from the fight'],
         approach: ['I approach the elder', 'I walk up to the gate warden'],
         enter: ['I enter the village', 'I go into the courtyard'],
@@ -659,8 +688,8 @@ describe('every intent behind a door is reachable from plain English too', () =>
      * feature nobody has or a price nobody can avoid.
      */
     const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
-        board: ['what does the Span board say', 'what would a ticket to Kettle cost'],
-        buy: ['I buy passage to Kettle', 'I book a place on the next span']
+        board: ['what does the Span board say', 'what would a ticket to Iron Gate cost'],
+        buy: ['I buy passage to Iron Gate', 'I book a place on the next span']
     };
 
     for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
@@ -1073,7 +1102,7 @@ describe('the setting\'s nouns are not commands', () => {
 
 describe('a destination has to be somewhere', () => {
     it('reads a trailing noun as a destination, which is why the engine must check it', () => {
-        // The parser cannot tell "Scarwater" from "cultivator" - both are just
+        // The parser cannot tell "Clear River Ford" from "cultivator" - both are just
         // words after a movement verb - so it does not try. What it must not
         // do is stop producing a target, because then real travel breaks. The
         // check belongs in the engine, where the location registers are.

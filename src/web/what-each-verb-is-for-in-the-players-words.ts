@@ -243,6 +243,17 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         takes: ['target'],
         says: `work the cauldron. "target" names the formula or the pill wanted.`
     },
+    craft: {
+        takes: ['target', 'days'],
+        says: `build a thing at a bench out of material a hunt brought back - a carriage or a
+            spirit boat. "target" names what is being built; naming nothing carries on with
+            whatever is already on the stocks, or lists the bills if there is nothing.
+            "days" is how long they said they would spend at it. NOT refine, which is the
+            cauldron and wants a named herb for a named pill; a bill wants a quantity at a
+            grade and does not care which animal it came off. Saying they abandon or scrap
+            what is on the stocks comes here too, and clears it. It spends days and it can
+            fail, and a failure keeps the materials.`
+    },
     gather: {
         takes: ['target'],
         says: `forage for herbs and materials. "target" may name what is wanted.`
@@ -545,6 +556,17 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             which the engine says repeatedly is one of the two ways past a manual's ceiling. It
             spends days and can spend the purse, so choose it only when the player is actually
             asking somebody for something rather than asking about them.`
+    },
+    guard: {
+        takes: ['target', 'days'],
+        says: `STAND GUARD OVER SOMEBODY ELSE'S BREAKTHROUGH - the dao protector. "target" is
+            who is crossing and must be somebody standing here; "days" is how long they said
+            they would stand there. A cultivator making a crossing cannot defend themselves at
+            all, and a protector is the only defence that exists. This is not the speaker's own
+            crossing, which is breakthrough. Naming nobody asks the free question instead - who
+            standing here would keep a watch over YOUR next crossing. It spends the span, it
+            resolves the other person's attempt, and it can leave the guard carrying a
+            crippling wound taken for somebody else.`
     },
     propose: {
         takes: ['target', 'intent', 'topic'],

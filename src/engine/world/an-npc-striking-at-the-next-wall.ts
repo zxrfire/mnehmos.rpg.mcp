@@ -401,7 +401,22 @@ export function strikeAtTheWall(
      * `roadsInReachOf`; the technique channel cannot on its own reach past
      * three roads, and `alchemy` is taught by no art in the catalog at all.
      */
-    roads: readonly RoadWithinReach[] = []
+    roads: readonly RoadWithinReach[] = [],
+    /**
+     * Who is standing over this crossing, when anybody is.
+     *
+     * Omitted on the yearly pass, which is why nobody in the world has a
+     * protector: an arrangement is made between two people who are both
+     * standing there, and a pass that visits one person cannot see the other.
+     * A caller that HAS both - the played `guard` verb - passes what
+     * `standing-guard-over-somebody-elses-crossing.ts` priced, and this hands
+     * it to `attemptBreakthrough` under the field that file's own header
+     * names as its integration point.
+     *
+     * Absent leaves the context byte-identical to what it was, so no world
+     * that has ever been advanced rolls differently for this being here.
+     */
+    watch?: { share: number; by: readonly string[] }
 ): Strike | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const required = progressRequiredForOrdinal(ordinal);
@@ -440,7 +455,14 @@ export function strikeAtTheWall(
     const result = attemptBreakthrough(subject, {
         rng,
         ambient,
-        turn: Math.floor(day)
+        turn: Math.floor(day),
+        // The watch, or nothing. `protection` is a share of a full watch and
+        // `protectionBy` is the label the ledger line carries, both of them
+        // `BreakthroughContext`'s own fields - so there is one protection term
+        // in the odds and this supplies it rather than adding a second.
+        ...(watch && watch.share > 0
+            ? { protection: watch.share, protectionBy: watch.by }
+            : {})
     });
 
     if (result.outcome === 'death') {

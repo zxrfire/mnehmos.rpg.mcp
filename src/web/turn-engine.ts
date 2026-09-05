@@ -819,6 +819,10 @@ import { crossingVerb } from './crossing.js';
 // is. Re-exported so this module's export surface is what it was.
 export { doorScaleOverStretch } from './seclusion-verbs.js';
 import { combatVerbs } from './combat-verbs.js';
+import {
+    theirHalfOfTheArt,
+    whyTheArtWillNotAnswer
+} from './an-art-that-needs-both-of-them.js';
 // 护法 - standing over somebody else's crossing. The giving half of the verb
 // surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
 // which had no caller anywhere in `src/`.
@@ -923,7 +927,7 @@ let ambientDb: Database.Database | null = null;
  * demonstrative - words that cannot be somebody's name - so a misspelled
  * real name never lands here and quietly gets the wrong person.
  */
-const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they)(?: here| nearby| about| around| present| in the room| in front of me)?$/i;
+const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they|everyone|everybody|all of them|the lot of them|every person|the rest of them)(?: here| nearby| about| around| present| in the room| in front of me| in the square)?$/i;
 
 /**
  * A word that refers BACK to somebody, rather than describing anybody.
@@ -3492,7 +3496,38 @@ export class GameService {
                     action.terms ?? 'open', action.opening ?? 'open'
                 );
 
-            case 'coerce':
+            case 'coerce': {
+                // ── THE ART NEEDS BOTH OF THEM ───────────────────────────
+                //
+                // Before the resolver, because a furnace use that cannot open
+                // is not a fight somebody lost - it is a thing that was never
+                // available, and saying so is the answer. See
+                // `an-art-that-needs-both-of-them.ts`.
+                if (action.intent === 'furnace') {
+                    const whoWith = this.somebodyAtHand(action.target ?? '', cultivator)
+                        ?? (action.target
+                            ? this.present(cultivator).find(row =>
+                                row.name.toLowerCase() === action.target!.trim().toLowerCase())
+                            : undefined);
+                    const why = whyTheArtWillNotAnswer(
+                        theirHalfOfTheArt(this.repos, cultivator.id),
+                        whoWith
+                            ? theirHalfOfTheArt(this.repos, whoWith.id)
+                            : { cultivating: false, stage: 0 },
+                        whoWith?.name ?? 'them'
+                    );
+                    if (why) {
+                        return this.freeAction(run, 'coerce', factsForRefusal(
+                            why.headline, why.said, why.account
+                        ));
+                    }
+                }
+                return this.attack(
+                    run, cultivator, ambient, action.target, 'coerce', 'open',
+                    action.opening ?? 'open', action.intent ?? 'submit'
+                );
+            }
+
                 // The same resolver as `attack`, at a different goal. Hands
                 // rather than words, and the aggressor wants them complying and
                 // still standing rather than stopped - see the header on
@@ -14357,6 +14392,24 @@ ${fit.line}`;
         };
     }
 
+    /**
+     * A face they can place, nearest their own height, and only then anybody.
+     *
+     * The pick two branches of `somebodyAtHand` both want, kept in one place so
+     * a pronoun and an indefinite resolve to the same person. NOT the crowd
+     * order, which sorts deepest-first and would hand a Qi Condensation
+     * disciple the strongest body in the square.
+     */
+    whoTheNearestFaceIs(cultivator: Cultivator, here: readonly RosterEntry[]): RosterEntry | null {
+        if (here.length === 0) return null;
+        const byHeight = [...here].sort((a, b) =>
+            Math.abs(a.realmOrdinal - cultivator.realmOrdinal)
+            - Math.abs(b.realmOrdinal - cultivator.realmOrdinal)
+            || (a.id < b.id ? -1 : 1));
+        return byHeight.find(row =>
+            this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)) ?? byHeight[0];
+    }
+
     somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
         const wanted = query.trim();
         if (!POINTING.test(wanted)) return null;
@@ -14370,7 +14423,29 @@ ${fit.line}`;
         // mentioned.
         if (A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED.test(wanted)) {
             const last = readFlag(this.db, cultivator.id, FLAG_LAST_ADDRESSED);
-            return (last ? here.find(row => row.id === last) : undefined) ?? null;
+            const addressed = last ? here.find(row => row.id === last) : undefined;
+            if (addressed) return addressed;
+
+            // ── AND OTHERWISE THE NEAREST, WHICH IS NOT THE CROWD ORDER ──
+            //
+            // The design owner's rule: a pronoun is whoever you spoke to last,
+            // or the nearest person otherwise. This used to return null here,
+            // and the reason given above is sound about the CROWD ORDER - that
+            // returns the deepest person in the square, so "I force her to
+            // marry me" proposed to the strongest stranger present.
+            //
+            // Falling to `whoTheNearestFaceIs` is a different fallback and does
+            // not reopen it: it prefers somebody whose face the player can
+            // already place, nearest their own height, which is the same pick
+            // `POINTING_AT_NOBODY_IN_PARTICULAR` makes below and for the same
+            // reason. A pronoun with nobody behind it now means the person in
+            // front of you rather than nobody at all.
+            //
+            // Measured before this: four played scenarios - a forced marriage,
+            // a furnace, taking a disciple, and a killing - all parsed to the
+            // right verb and then died here, because a sentence saying "her"
+            // after a sentence that named nobody had nothing to bind to.
+            return this.whoTheNearestFaceIs(cultivator, here);
         }
 
         // A rank pointer has to land on somebody who holds the rank. See
@@ -14390,12 +14465,7 @@ ${fit.line}`;
         // starting-knowledge seeding pays for - a player who opens a run
         // knowing three people from home has three people "someone" can mean.
         if (POINTING_AT_NOBODY_IN_PARTICULAR.test(wanted) && here.length > 0) {
-            const byHeight = [...here].sort((a, b) =>
-                Math.abs(a.realmOrdinal - cultivator.realmOrdinal)
-                - Math.abs(b.realmOrdinal - cultivator.realmOrdinal)
-                || (a.id < b.id ? -1 : 1));
-            return byHeight.find(row =>
-                this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)) ?? byHeight[0];
+            return this.whoTheNearestFaceIs(cultivator, here);
         }
 
         // The last of a list that has ONE order, which is the whole of what
