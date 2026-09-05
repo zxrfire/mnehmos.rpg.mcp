@@ -636,7 +636,7 @@ function mockEdge(from, to, kind, travelDays, over = {}) {
 function placesPayload() {
   // A famine over the province, inherited by everything in it, and a war on
   // the one piece of ground somebody is fighting over.
-  const famine = mockStatus('st-famine', 'r-fall', 'The Low Fall', 'famine',
+  const famine = mockStatus('st-famine', 'r-fall', 'The Jade Gorge', 'famine',
     'The rice went in the second year running and the province is eating its seed.', {
       signs: ['the mills are idle by noon', 'grain is being sold by weight rather than by measure'],
       stops: ['millet', 'a night at an inn'],
@@ -661,9 +661,9 @@ function placesPayload() {
   const inherited = (s) => ({ ...s, ownArea: false });
 
   const L = [
-    mockPlace('r-fall', 'The Low Fall', 'region', { qiDensity: 35, childIds: ['s-azure', 't-sweptground', 'v-fall'], linkCount: 3, statuses: [famine] }),
-    mockPlace('v-fall', 'the Low Fall vein', 'vein', { parentId: 'r-fall', depth: 1, qiDensity: 65, linkCount: 1 }),
-    mockPlace('t-sweptground', 'Sweptground', 'settlement', { parentId: 'r-fall', depth: 1, qiDensity: 31, linkCount: 3, politicalControl: 'a magistrate who is owed favours', heldBy: 'a magistrate who is owed favours', statuses: [inherited(famine)],
+    mockPlace('r-fall', 'The Jade Gorge', 'region', { qiDensity: 35, childIds: ['s-azure', 't-sweptground', 'v-fall'], linkCount: 3, statuses: [famine] }),
+    mockPlace('v-fall', 'the Jade Gorge vein', 'vein', { parentId: 'r-fall', depth: 1, qiDensity: 65, linkCount: 1 }),
+    mockPlace('t-sweptground', 'Burnt Earth', 'settlement', { parentId: 'r-fall', depth: 1, qiDensity: 31, linkCount: 3, politicalControl: 'a magistrate who is owed favours', heldBy: 'a magistrate who is owed favours', statuses: [inherited(famine)],
       // Stamped with its province's geology and carrying its own band, which
       // is the shape that made Nine Peaks and a thin ford town read alike.
       ambient: 'dense', description: 'Temple ground on a vein nobody has finished arguing about.' }),

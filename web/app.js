@@ -3573,7 +3573,7 @@ const MAP = {
    * The place the cultivator is standing on, when the world holds one by that
    * name. Distinct from `originId`: the player is very often somewhere nothing
    * records a road to, and the panel has to be able to say BOTH "they are at
-   * Sixmile" and "distances are measured from somewhere else, because Sixmile
+   * Six Li" and "distances are measured from somewhere else, because Six Li
    * has no priced road". Conflating them is what made the player invisible.
    */
   hereId: null,
@@ -3865,7 +3865,7 @@ function mapNodeOrder(a, b) {
  *
  * `cultivator.location` is deliberately free text in `schema/cultivation.ts` -
  * the engine does not own a map - so it is used only on an exact name match
- * and never fuzzily. Guessing which place `Sixmile` means would be the client
+ * and never fuzzily. Guessing which place `Six Li` means would be the client
  * inventing geography.
  */
 function mapChooseOrigin() {
@@ -3873,9 +3873,9 @@ function mapChooseOrigin() {
   if (container !== MAP_ROOT) return container.id;
 
   // The player's own place, but only when something is recorded as leading
-  // out of it. Measured against a live world, `Sixmile` matched a real
+  // out of it. Measured against a live world, `Six Li` matched a real
   // settlement that holds no links at all, and every distance on the page came
-  // back "no route" - a true statement about Sixmile presented as a fact about
+  // back "no route" - a true statement about Six Li presented as a fact about
   // the world. An origin nothing connects to is not an origin.
   //
   // WHERE THEY ARE IS STILL RECORDED, and that is the correction. This
