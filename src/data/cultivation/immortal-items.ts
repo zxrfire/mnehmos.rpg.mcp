@@ -148,9 +148,9 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         notForSale:
             'It has never appeared in a Thousand Treasure catalogue, and the Stone Marrow Hall declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
         grades: {
-            higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Deep Survey holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
+            higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Earth Vein Tower holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
             middle: 'May deliver a cultivator into Void Refinement and no higher: at best Deity Transformation Final Turn to Void Refinement First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
-            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Deep Survey, one on the Long Cut schedule.'
+            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Earth Vein Tower, one on the Long Cut schedule.'
         },
         effectNote:
             'It carries a cultivator across exactly one realm boundary, from Perfection of their current realm into Early of the next, and it does nothing else at all. It is not a ride from wherever somebody happens to be standing: what it moves is one rung, from where the recipient stands to Early of the next realm, and Perfection is where that is worth the most rather than where it is required. The grade caps how high that destination may be. What would have been forty years of sitting at Perfection, or a century, or a lifetime that ran out at the boundary, is simply done - and the body arrives without having built the road to it, which every physician who has examined a recipient has remarked on and none can quantify. See `THE_STEP_AND_THE_BOUNDARY` and `ONCE_IN_A_LIFE`.',
@@ -218,7 +218,7 @@ export const THE_LAST_REALM_IS_UNBUYABLE = {
     whatItProtects:
         'The meaning of the top of the ladder. If any grade could hand somebody 41, everything above 40 would be a statement about what an institution had in a vault rather than about a person, and every Tribulation Transcender in the world would be an open question about who paid for them. Instead the answer is known in advance and is the same for all of them: they walked. That is why the last realm still means something, and why the four seated at the Hollow Court are impressive in a way no holding can imitate.',
     theConsequenceForHolders:
-        'It also caps what any of this buys politically. The Deep Survey holds the only higher-grade pill in existence and could not manufacture a peer for the Hollow Court with it - the best it can do is move somebody who has already climbed to 36 onto the first rung of the last mortal realm. An apex spending its rarest object still cannot buy its way into the last realm, every apex knows it, and that takes a great deal of heat out of the cold war.'
+        'It also caps what any of this buys politically. The Earth Vein Tower holds the only higher-grade pill in existence and could not manufacture a peer for the Hollow Court with it - the best it can do is move somebody who has already climbed to 36 onto the first rung of the last mortal realm. An apex spending its rarest object still cannot buy its way into the last realm, every apex knows it, and that takes a great deal of heat out of the cold war.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -277,7 +277,7 @@ export const WHAT_SERVICE_ACTUALLY_BUYS = {
     whyItIsTheRealMotivation:
         'Which is the actual reason a great many people cultivate, and the catalog should say so plainly. For somebody out of a thin county - no placement, no teacher, no readable manual, nobody outside the valley who knows the family name - the summit is an abstraction and glory is somebody else\'s word. What is not abstract is that if they serve well enough, their people stop being poor. Permanently. That is a clean, sufficient, entirely admirable motive, it has nothing to do with power, and it is available to somebody who will never see ordinal 20.',
     theSameAtEveryScale:
-        'And it is not an apex practice. Fallen Grain Caravan pays a dead digger\'s share to their family without exception and has never once defaulted, on a salvage contract, in the poorest province in the world - see `unitOfValue` in `faction-character.ts`. That is the same institution as an apex endowing an elder\'s grandchildren, at the only scale the Company has. An apex honouring it is not being kind; it is doing what every sect does, with more to spend.',
+        'And it is not an apex practice. Fallen Grain Caravan pays a dead digger\'s share to their family without exception and has never once defaulted, on a salvage contract, in the poorest province in the world - see `unitOfValue` in `faction-character.ts`. That is the same institution as an apex endowing an elder\'s grandchildren, at the only scale the Caravan has. An apex honouring it is not being kind; it is doing what every sect does, with more to spend.',
     soTheRefusalIsNarrow:
         'Which is what makes the refusal in `THE_TWO_CLAIMS` land where it does. Nobody deserving is turned away with nothing. They are given everything the sect can replace, sincerely and in full, and refused the single category it cannot - and being told no about one irreplaceable object by people who have just given you everything else is a much harder thing to be angry about than a snub would be.'
 } as const;
@@ -398,9 +398,9 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         savingTheSect: null
     },
 
-    // ── the Deep Survey: a line item, minuted, with a form ─────────────
+    // ── the Earth Vein Tower: a line item, minuted, with a form ─────────────
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         itemId: 'immortal-heaven-ascending-golden-pill',
         count: 3,
         byGrade: { higher: 1, middle: 1, lower: 1 },
@@ -430,10 +430,10 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
                 'The Wardens acknowledged the debt in writing themselves, in numbers, and are still honouring it a hundred and forty years later in small ways nobody has totalled - her line has never been refused passage, water, shelter or a warning. The Survey saved a line item and its own court has been paying the bill by instalments ever since.'
         },
         savingTheSect:
-            'Saving the Survey does not buy one and no Surveyor will pretend otherwise. What it does is remove the argument the instruction rests on: if the arterial system itself was at stake and an outsider is the reason it held, then refusing them is indefensible to at least two of the four. Two is not four. It is entirely possible to save the Deep Survey, be minuted for it permanently, and be refused by one Surveyor who does not give a reason, and a player standing in that outcome has been treated honestly.'
+            'Saving the Survey does not buy one and no Surveyor will pretend otherwise. What it does is remove the argument the instruction rests on: if the arterial system itself was at stake and an outsider is the reason it held, then refusing them is indefensible to at least two of the four. Two is not four. It is entirely possible to save the Earth Vein Tower, be minuted for it permanently, and be refused by one Surveyor who does not give a reason, and a player standing in that outcome has been treated honestly.'
     },
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         itemId: 'immortal-root-recasting-talisman',
         count: 1,
         byGrade: { higher: 0, middle: 1, lower: 0 },
@@ -494,7 +494,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
         count: 1,
         byGrade: { higher: 1, middle: 0, lower: 0 },
         countIsKnownTo:
-            'The Course Keepers. Outside the administration it is not known at all, and the Deep Survey does not know the Long Cut holds the only higher-grade one in existence, which is the single largest gap in either register.',
+            'The Course Keepers. Outside the administration it is not known at all, and the Earth Vein Tower does not know the Long Cut holds the only higher-grade one in existence, which is the single largest gap in either register.',
         releaseMode: 'collective_consent',
         decidedBy:
             'The Course Keepers together, unanimously, at a revision, exactly as with the pill - the Long Cut draws no procedural distinction between the two objects, which outsiders find either admirable or alarming depending on what they came for.',
@@ -580,13 +580,13 @@ export const STOCK_VERSUS_FLOW = {
     whyFlowIsSoRare:
         'Because flow needs a benefactor who both answers often and still remembers that answering matters, and that means a recent crossing with a living tie. There is one of those in the world. Every other line upward runs to somebody who crossed millennia ago, answers at intervals measured in ages, and can no longer feel what a request costs the people making it - see `THE_DECAY_OF_MEMORY` in `named-figures.ts`.',
     theTwoAxesDoNotAlign: [
-        'The old lines - the Hollow Court, the Deep Survey, the Long Cut - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
+        'The old lines - the Hollow Court, the Earth Vein Tower, the Long Cut - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
         'The Azure Cloud Pavilion holds more objects than anybody else in the world and not one of them above lower grade. Flow without quality.'
     ],
     whyAzureCloudIsAllLower:
         'And that is the decay rule running in the other direction, which is the part worth stating plainly. Ru Anjing answers often and sends often because she is new. Lower grade is what a new immortal can reach. The same three hundred and eighty years that make her generous make her limited, and there is no version of the Pavilion position where the flow is large and the grade is high, because the two properties have one cause.',
     theHardConsequence:
-        'So the Pavilion can never put anybody past Deity Transformation with medicine. A lower Step tops out at ordinal 28 and 28 is the ceiling of everything the Pavilion will ever hold. The Deep Survey, which is poor in this currency, holds one higher Step that could deliver somebody to Grand Ascension at 37. Abundance buys breadth. Poverty, in exactly one case, bought height.',
+        'So the Pavilion can never put anybody past Deity Transformation with medicine. A lower Step tops out at ordinal 28 and 28 is the ceiling of everything the Pavilion will ever hold. The Earth Vein Tower, which is poor in this currency, holds one higher Step that could deliver somebody to Grand Ascension at 37. Abundance buys breadth. Poverty, in exactly one case, bought height.',
     theyAreDifferentBetsAndOneIsBetter:
         'These are different bets and for most purposes there is no exchange rate between them. On the one question that actually matters there is, and it does not favour the shelf everybody envies.',
     theArgument: [
@@ -604,7 +604,7 @@ export const STOCK_VERSUS_FLOW = {
     itIsALongBet:
         'The admirable part is that nobody now living will see it resolve. Seven crossings at 24 to 25, over decades, feeding a climb that takes millennia and that the Pavilion cannot assist past 28 in any case. They are spending everything they have on raising the odds for somebody who has not been born, in an institution that will not know whether it worked. That is not cleverness. It is an institution behaving as though the future is real.',
     whoElseHasWorkedItOut:
-        'The Deep Survey has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Long Cut has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
+        'The Earth Vein Tower has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Long Cut has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -630,7 +630,7 @@ export const THE_SENDING_PYRAMID = {
 
 export const REGISTERS_COUNT_WHAT_THEY_CAN_SEE = {
     theCaveat:
-        '`knownCount` is a knowledge claim rather than a census. It is what the Immovable Mountain Temple survey standard and the Deep Survey register can between them point at, and both are honest about the limit: thirteen Steps and four Dealings are what the world can name, not what the world contains.',
+        '`knownCount` is a knowledge claim rather than a census. It is what the Immovable Mountain Temple survey standard and the Earth Vein Tower register can between them point at, and both are honest about the limit: thirteen Steps and four Dealings are what the world can name, not what the world contains.',
     soItIsAFloor:
         'The true figure is at least that and probably a little higher, and the two parties most likely to hold something uncounted are exactly the ones the registers cannot reach: an institution that will not discuss its shelf, and an institution that keeps no accounts of any kind.',
     andEverKnownIsToo:
@@ -704,7 +704,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
         itemId: 'immortal-heaven-ascending-golden-pill',
-        throughLine: 'The Long Cut line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Deep Survey holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
+        throughLine: 'The Long Cut line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Earth Vein Tower holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
         everReceived: { higher: 0, middle: 0, lower: 3 },
         stillHeld: { higher: 0, middle: 0, lower: 1 },
         countedByTheRegisters: false,
@@ -773,7 +773,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
         spentOn:
             'The middle Root-Recasting Talisman spent nine hundred years ago, whose file the Ninefold Karma Palace still holds. The Hall gambled it on its most promising alchemist, a muddled five-root who leaned toward fire, expecting a single fire root. A middle Dealing goes to a one or a two on luck and nothing else. It produced a dual water and metal, which is a real and useful root and is close to useless at a furnace.',
         judgedInHindsight:
-            'The object did exactly what it does. The Hall bet on the half of the outcome it wanted and lost, and the alchemist - who was not meaningfully consulted, and who became a perfectly successful formation contractor two provinces away - is the reason every institution that has held a middle Dealing since has declined to spend it. The Deep Survey has never submitted a requisition against its own, and its clerks are taught the form without ever being told why nobody uses it.'
+            'The object did exactly what it does. The Hall bet on the half of the outcome it wanted and lost, and the alchemist - who was not meaningfully consulted, and who became a perfectly successful formation contractor two provinces away - is the reason every institution that has held a middle Dealing since has declined to spend it. The Earth Vein Tower has never submitted a requisition against its own, and its clerks are taught the form without ever being told why nobody uses it.'
     }
 ];
 

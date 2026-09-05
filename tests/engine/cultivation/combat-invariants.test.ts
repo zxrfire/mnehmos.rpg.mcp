@@ -213,7 +213,7 @@ describe('the gap reads the same from both ends', () => {
 
     it('prices a ladder-rated object as a second body, not as a cap-busting bonus', () => {
         // The standoff claim. Long Cut: head 42 carrying an object rated 45.
-        // Deep Survey: head 43 carrying one rated 43. Measured composite ratio
+        // Earth Vein Tower: head 43 carrying one rated 43. Measured composite ratio
         // is 1.60 to 1 - modest - so a 100-to-1 outcome is the resolver's
         // sensitivity to power ratio, NOT the artifact term dominating.
         // Composed off the same primitive assessPower prices the term with:

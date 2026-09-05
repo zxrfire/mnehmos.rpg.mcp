@@ -108,8 +108,8 @@ describe('Spatial Coordinate System', () => {
                 biomeContext: 'urban'
             });
 
-            const castleDistrict = createRoom({
-                name: 'Castle District',
+            const castlePrefecture = createRoom({
+                name: 'Castle Prefecture',
                 networkId: city.id,
                 localX: 10,
                 localY: 10,
@@ -118,7 +118,7 @@ describe('Spatial Coordinate System', () => {
 
             // Local coordinates are relative to network, not world tiles
             expect(mainGate.localX).toBe(0);
-            expect(castleDistrict.localX).toBe(10);
+            expect(castlePrefecture.localX).toBe(10);
         });
     });
 

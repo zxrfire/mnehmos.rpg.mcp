@@ -575,7 +575,7 @@ export const ApexInstitutionSchema = z.object({
         /** What becomes possible the moment the seat is empty. */
         ifUncovered: z.string().min(80),
         /**
-         * Optional, and it is the whole shape of the Deep Survey: the object is
+         * Optional, and it is the whole shape of the Earth Vein Tower: the object is
          * portable, its effects would travel, and it is never going anywhere.
          *
          * The reason is mundane and should be written that way. Nothing
@@ -616,13 +616,13 @@ export const ApexInstitutionSchema = z.object({
      * The prose field above says what an apex holds; this says where, and the
      * two of them together make the shape of each apex legible for the first
      * time. The Long Cut is broad and shallow - five driven provinces, forty
-     * posted staff, nothing delegated. The Deep Survey is narrow and deep -
+     * posted staff, nothing delegated. The Earth Vein Tower is narrow and deep -
      * ONE province, four arterials under it, and a court on the only arterial
      * anything branches from that answers to the other apex.
      *
      * And the Azure Cloud Pavilion holds NO province, which is not an omission.
      * It is the territorial statement of `heritage: 'recent'`: an apex three
-     * hundred and eighty years old holds a catchment, because a province is
+     * hundred and eighty years old holds a basin, because a province is
      * something a house accumulates over an age and the Pavilion has not had
      * one.
      */
@@ -681,7 +681,7 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 //   - EVERY OFFICER HOLDS TWO STANDINGS. The court office is what they do, and
 //     `apexRank` is where they stand inside the institution that posted them -
 //     a title from that apex's own `ranks`. That is what a posting means. The
-//     Deep Survey's ladder says outright that Sill-Sworn is an appointment to a
+//     Earth Vein Tower's ladder says outright that Sill-Sworn is an appointment to a
 //     court rather than an honour, and this field is the other end of that
 //     sentence: the people in these rosters are Survey and Long Cut staff on a
 //     posting, not a local body that grew where it stands.
@@ -861,7 +861,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 // APEX INSTITUTIONS
 //
-// THREE. The Azure Cloud Pavilion, The Long Cut, and The Deep Survey.
+// THREE. The Azure Cloud Pavilion, The Long Cut, and The Earth Vein Tower.
 //
 // This comment said "two, one per tradition" for a long time while the array
 // below held three, which is worth more than a correction, because both halves
@@ -877,7 +877,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 //     why it is three.
 //
 //   - "ONE PER TRADITION" CANNOT BE TRUE OF THREE BODIES AND TWO TRADITIONS.
-//     Two of them are `tradition-drawn` - the Deep Survey and the Azure Cloud
+//     Two of them are `tradition-drawn` - the Earth Vein Tower and the Azure Cloud
 //     Pavilion - and the Long Cut is the only `tradition-cut` apex. Which is
 //     itself a fact rather than an untidiness: the Cut has one and the Drawn
 //     have two, and the two Drawn apexes are the pair with the least in common.
@@ -892,7 +892,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 //                          a stated position makes it the only one whose
 //                          behaviour the other two can predict - which is
 //                          most of why nobody moves on it.
-//   The Deep Survey        neutral by indifference. It recognises whoever holds
+//   The Earth Vein Tower        neutral by indifference. It recognises whoever holds
 //                          the ground and prices delivery and backlash. It does
 //                          not read an alignment field at all.
 //   The Long Cut           neutral by procedure. It prices the schedule and the
@@ -913,9 +913,9 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 
 export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
     {
-        id: 'apex-deep-survey',
+        id: 'apex-earth-vein-tower',
         factionId: null,
-        name: 'The Deep Survey',
+        name: 'The Earth Vein Tower',
         traditionId: 'tradition-drawn',
         // Tribulation Transcendence Late. Above the Hollow Court, which is the
         // ceiling of the visible world, and above every court and tenant beneath
@@ -1048,7 +1048,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         factionId: null,
         name: 'The Long Cut',
         traditionId: 'tradition-cut',
-        // One rung below the Deep Survey and by the same logic. The Long Cut
+        // One rung below the Earth Vein Tower and by the same logic. The Long Cut
         // administers everything itself, so its floor is not what its tenants
         // can field - it has none - but what it must be able to walk into.
         powerOrdinal: 42,
@@ -1079,7 +1079,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         instability:
             'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
-            'One of the Deep Survey\'s administrations, in living memory, and it did not send anybody for it. Deeproot Court walked rather than fought, over a reposting nobody standing in it had been consulted about, and it was offered a place and took it. What the Long Cut got was a claim on the strongest sealed thing anybody has established the existence of, acquired by taking in some disaffected appointees, without a word having to be said out loud. It is the only administration in the world that has ever changed patrons. The Long Cut has never acknowledged it and neither has the Survey, and both of them understand that as the arrangement working rather than as hostility.',
+            'One of the Earth Vein Tower\'s administrations, in living memory, and it did not send anybody for it. Deeproot Court walked rather than fought, over a reposting nobody standing in it had been consulted about, and it was offered a place and took it. What the Long Cut got was a claim on the strongest sealed thing anybody has established the existence of, acquired by taking in some disaffected appointees, without a word having to be said out loud. It is the only administration in the world that has ever changed patrons. The Long Cut has never acknowledged it and neither has the Survey, and both of them understand that as the arrangement working rather than as hostility.',
         lastRealm: {
             count: 1,
             pinned: true,
@@ -1137,7 +1137,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'a face nobody could work is found open, worked out and abandoned, with the spoil stacked in courses too neat for a local crew'
         ],
         description:
-            'The other apex, over the other tradition, and it does not do any of this the way the Deep Survey does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
+            'The other apex, over the other tradition, and it does not do any of this the way the Earth Vein Tower does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     },
     {
         id: 'apex-azure-cloud',
@@ -1164,7 +1164,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         // hundred and eighty years without either side moving.
         alignment: 'righteous',
         alignmentDoctrine:
-            'It cares, on precisely the axis the Deep Survey refuses to price, and it has never once got anywhere. The Pavilion\'s position is that a contract with three terms and no fourth is a contract that will eventually be met by something nobody should be dealing with, and the Survey\'s answer has been the same for three centuries and is the reason the argument does not move: the Survey is not defending demonic sects, it is defending the contract, and it would defend a righteous sect on identical terms - which the Pavilion cannot attack without attacking the principle its own grantless standing rests on. So the Pavilion does the four things available to a body with an objection and no free hand. It takes in the people the contract ruins, which is the Mist Court\'s entire trade and is why the terraces have a recall roll nobody has asked to see. It has an admission standard, publishes it, and refuses on it - the only apex whose gate is a position rather than a procedure. It teaches its forms to houses that will not take a demonic grant, at a rate that does not cover the teaching. And it keeps a list, which it has never published and has never denied keeping. What it does not do is move, because any two apexes can end any third and both of the others know exactly what the Pavilion would do afterwards, which is the price of being the only one of the three whose behaviour can be predicted from its doctrine.',
+            'It cares, on precisely the axis the Earth Vein Tower refuses to price, and it has never once got anywhere. The Pavilion\'s position is that a contract with three terms and no fourth is a contract that will eventually be met by something nobody should be dealing with, and the Survey\'s answer has been the same for three centuries and is the reason the argument does not move: the Survey is not defending demonic sects, it is defending the contract, and it would defend a righteous sect on identical terms - which the Pavilion cannot attack without attacking the principle its own grantless standing rests on. So the Pavilion does the four things available to a body with an objection and no free hand. It takes in the people the contract ruins, which is the Mist Court\'s entire trade and is why the terraces have a recall roll nobody has asked to see. It has an admission standard, publishes it, and refuses on it - the only apex whose gate is a position rather than a procedure. It teaches its forms to houses that will not take a demonic grant, at a rate that does not cover the teaching. And it keeps a list, which it has never published and has never denied keeping. What it does not do is move, because any two apexes can end any third and both of the others know exactly what the Pavilion would do afterwards, which is the price of being the only one of the three whose behaviour can be predicted from its doctrine.',
         whetherItsWordSkipsABar:
             'No, and it is the only one of the three that can say so. Its own door needs no favour - it has the only probation gate in the world, standing at the floor, and it will take an uncultivated mortal off the road and spend years finding out what they are, so being handed that child by somebody powerful gets you exactly what walking up the mountain gets you. And it will not spend a word on anybody else\'s bar either, on the stated ground that it would then be doing to another house what it refuses to do to itself: its disciple bar has never moved, for anyone, ever. The standing is real and would move almost any bar in the province. It has never been used. That is a currency the other two spend freely and it is paid annually, in candidates who go elsewhere, and it is also why the Pavilion is the only one of the three that never has to wonder what a placement is going to be worth to somebody later.',
         howItConductsItselfWithTheOtherApexes:
@@ -1236,7 +1236,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'It does not need to. Alone among the three it acts in its own name, which is a luxury and, increasingly, a liability - every refusal it makes is attributable, dated and remembered by whoever was refused.'
         ],
         description:
-            'The third apex, the youngest by an order of magnitude, and the only one anybody can walk to. It holds the gorge outright on no grant, having been made independent by Ru Anjing in the decades before her crossing, and it holds the newest object in the world sent down from the other side of the Lid. Everything the Deep Survey and the Long Cut achieve through being unnameable, the Pavilion achieves through being unambiguous - and it is the one position of the three that can be lost without a fight, because prestige from a single event decays on a schedule nobody controls.'
+            'The third apex, the youngest by an order of magnitude, and the only one anybody can walk to. It holds the gorge outright on no grant, having been made independent by Ru Anjing in the decades before her crossing, and it holds the newest object in the world sent down from the other side of the Lid. Everything the Earth Vein Tower and the Long Cut achieve through being unnameable, the Pavilion achieves through being unambiguous - and it is the one position of the three that can be lost without a fight, because prestige from a single event decays on a schedule nobody controls.'
     }
 ];
 
@@ -1247,7 +1247,7 @@ export const COURTS: readonly Court[] = [
         name: 'The Third Sill Court',
         // Not transferred, and this comment used to say it was. The Third Sill
         // has administered the third arterial under the Long Cut for longer
-        // than either apex keeps a record of, inside a province the Deep Survey
+        // than either apex keeps a record of, inside a province the Earth Vein Tower
         // holds - which is an anomaly nobody has ever raised and is the closest
         // thing in the catalog to a fact about how the two old apexes actually
         // get on. Both list it in their own papers as ordinary. Neither has
@@ -1275,7 +1275,7 @@ export const COURTS: readonly Court[] = [
         },
         administers: 'The third arterial vein, which the eleven surveyed veins of the Jade Gorge branch from.',
         grantsInRegionId: 'region-low-fall',
-        // Two catchments and the sects beneath them. The Gorge Head is NOT
+        // Two basins and the sects beneath them. The Gorge Head is NOT
         // here and is still on the Sill's own book: the page was never struck
         // and the ground has not been the Sill's for three hundred and eighty
         // years, which is the difference between a grant book and a map.
@@ -1285,7 +1285,7 @@ export const COURTS: readonly Court[] = [
         ],
         embodiedByFactionId: null,
         officesNote:
-            'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Deep Survey the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
+            'Four things happen to a grant and the Sill has one person for each: it is measured, it is apportioned, it is drafted, and it is carried. Nobody here is anybody\'s disciple and nobody here teaches, so there is no ladder and never has been - an Assessor does not become a Keeper of the Eleven by being good at assessing, he becomes one because the office fell vacant and somebody had to hold it. Inside the Earth Vein Tower the same five people are a Surveyor, a Sill-Sworn, two First Marks and a Second Mark, which is the standing that would decide a room if they were ever all in one, and they have not been in one in ninety years. The two columns do not agree and the Survey does not expect them to: the courier stands a mark above the man who measures the vein and eight rungs below him on the ladder, which is exactly what a body that ranks by service rather than by realm looks like from close up.',
         roster: [
             {
                 id: 'court-officer-ruan-kezhen',
@@ -1358,20 +1358,20 @@ export const COURTS: readonly Court[] = [
         // The old name, kept by the half that stayed. For nine hundred years
         // this court had two of them - the Survey called it the Deeproot Court and
         // the province called it the Kiln - and nobody had to choose, because
-        // a Keeper of the Kiln was a Sill-Sworn of the Deep Survey and both
+        // a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower and both
         // sentences described one person. When the house split, each half took
         // one of the names, and the one that kept the ground kept the older.
         // They are two institutions now and have been since, with no
         // correspondence in either direction. What the other half kept is on
         // its own entry in `FACTION_PARENTAGE['sect-kiln-wardens']`.
         name: 'The Kiln Court',
-        apexId: 'apex-deep-survey',
+        apexId: 'apex-earth-vein-tower',
         powerOrdinal: 37,
         highWaterMark: null,
         administers: 'The datum itself: the deep vein at the world\'s root that the arterial system is measured from.',
         grantsInRegionId: 'region-low-fall',
         // Empty, and the emptiness is the Kiln. It issues no grants, has no
-        // tenants and holds no catchment: a datum, nine hundred lit nodes and a
+        // tenants and holds no basin: a datum, nine hundred lit nodes and a
         // perimeter. Everything the province finds inexplicable about the
         // Wardens is this array being empty.
         grantsInPrefectureIds: [],
@@ -1385,7 +1385,7 @@ export const COURTS: readonly Court[] = [
         // do at all - see `PostingSchema`.
         posting: {
             appointedBy:
-                'The Deep Survey, by letter, or a sect under the Survey or friendly to it, by nomination. There is no application, no bar, no admission ordinal and no gate anybody has ever been through - Che Yuan has turned away something over four thousand people and can name the eleven who came back, and not one of the four thousand was ever going to be admitted, because there is no procedure by which they could have been. What the bar looks like from outside is fifteen rungs of distance. What it actually is, is that the question is decided elsewhere, about you.',
+                'The Earth Vein Tower, by letter, or a sect under the Survey or friendly to it, by nomination. There is no application, no bar, no admission ordinal and no gate anybody has ever been through - Che Yuan has turned away something over four thousand people and can name the eleven who came back, and not one of the four thousand was ever going to be admitted, because there is no procedure by which they could have been. What the bar looks like from outside is fifteen rungs of distance. What it actually is, is that the question is decided elsewhere, about you.',
             whatItIsWorthFromBelow:
                 'The only rung of standing in the province that a house cannot give anybody and can nevertheless get for them. A Warden sent up from a sect below arrives holding a title the province has been reading off this gate for nine hundred years, which their own ladder does not contain and could not have reached - and their house has done something for them it had no other way of doing, which is what makes the nomination worth having and why the sects that hold it are careful about the friendship that supplies it.',
             whatItIsWorthFromAbove:
@@ -1409,7 +1409,7 @@ export const COURTS: readonly Court[] = [
         // relationship in `faction-relationships.ts` rather than two
         // irreconcilable claims about who is real.
         officesNote:
-            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Deep Survey, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Long Cut took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
+            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Long Cut took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
         roster: [
             {
                 id: 'court-officer-ji-wanluo',
@@ -1481,7 +1481,7 @@ export const COURTS: readonly Court[] = [
         administers: 'The mist terraces below the gorge and the runoff of the Pavilion\'s own vein, which is water nobody else wanted and which turns out to have carried two people to the top of the world in one lifetime.',
         grantsInRegionId: 'region-low-fall',
         // Inside the Gorge Head rather than beside it. The youngest court in
-        // the world administers a sub-holding of its own apex's catchment,
+        // the world administers a sub-holding of its own apex's basin,
         // which is why the Jade Gorge keeps calling it a feeder.
         grantsInPrefectureIds: ['prefecture-gorge-head'],
         embodiedByFactionId: 'sect-azure-mist-court',
@@ -1799,7 +1799,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // ── THE ONLY BODY IN THE WORLD THAT WAS OFFERED A BACKER AND SAID NO ──
     //
     // Read it against the two above it. Both northern courts hold directly
-    // from the Deep Survey, on the one arterial with no administrator, and
+    // from the Earth Vein Tower, on the one arterial with no administrator, and
     // that is what pays for following the ice uphill every year. This house
     // was offered the same, on the same terms, and declined - so it is
     // `unbacked` for a reason no other row in this table carries.
@@ -1835,7 +1835,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         factionId: 'sect-frostmirror-court',
         governance: 'federated',
         relation: 'court',
-        parentFactionId: 'apex-deep-survey',
+        parentFactionId: 'apex-earth-vein-tower',
         holds: 'The glacier and the cold vein under it, on a grant nobody else has ever applied for.',
         terms: {
             tributeStonesPerYear: 3_000,
@@ -1875,7 +1875,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         factionId: 'sect-storm-tyrant-court',
         governance: 'federated',
         relation: 'court',
-        parentFactionId: 'apex-deep-survey',
+        parentFactionId: 'apex-earth-vein-tower',
         holds: 'The floating stone, and a vein the Ward can no longer reach the bottom of.',
         terms: {
             tributeStonesPerYear: 30_000,
@@ -1889,7 +1889,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Deep Survey\'s second body in the Jade Gorge, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
+        note: 'The Earth Vein Tower\'s second body in the Jade Gorge, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
     },
     'sect-crimson-abyss-fortress': {
         factionId: 'sect-crimson-abyss-fortress',
@@ -1981,7 +1981,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             whatItIsWorthFromBelow:
                 'The same step up, from a different set of houses. A carver sent from a Long Cut face arrives holding a Warden rank that the Long Cut\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Long Cut, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
             whatItIsWorthFromAbove:
-                'More, not less, and for a reason the Kiln cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Deep Survey has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
+                'More, not less, and for a reason the Kiln cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Earth Vein Tower has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
             andAfterwards:
                 'They go back higher, into a Long Cut arrangement that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
@@ -1997,7 +1997,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // and harder: they split, and they have run independently ever since.
         // This body took the roll and the founding posting order and answers
         // the Long Cut; the Kiln Court kept the datum, the nodes and the
-        // perimeter and answers the Deep Survey. Neither writes to the other
+        // perimeter and answers the Earth Vein Tower. Neither writes to the other
         // and neither has asked to. See `faction-relationships.ts` for how
         // they stand, which is one relationship rather than two claims.
         note: 'Not a faction. A posting, and since the schism a posting under a different apex. It holds the roll and the founding posting order that names the first four Wardens; the ground, the datum, the nine hundred nodes and the perimeter stayed behind with the half that accepted the reposting, and the two have had no correspondence since. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
@@ -2029,14 +2029,14 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             inKind: ['a share of every find above a threshold, assessed at the administration\'s valuation', 'crew rolls submitted quarterly, by name, including the dead'],
             disciplesPerCycle: 0,
             buys: ['access to the burn zones, which is a permission rather than a holding', 'nothing else whatsoever - a contractor is not protected, arbitrated for, or spoken for'],
-            renewal: 'Annual, and a contract is not a lease: there is no standing to renew, only a decision to contract again. The Company has never once disputed a valuation, because there is no forum in which a contractor could.'
+            renewal: 'Annual, and a contract is not a lease: there is no standing to renew, only a decision to contract again. The Caravan has never once disputed a valuation, because there is no forum in which a contractor could.'
         },
         standing: 'good',
         awarenessOfApex: 'unaware',
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Under direct rule there are no client sects, so the Company is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to, because appeal means addressing the clerk who decided.'
+        note: 'Under direct rule there are no client sects, so the Caravan is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to, because appeal means addressing the clerk who decided.'
     },
     'sect-six-li-patrol': {
         factionId: 'sect-six-li-patrol',
@@ -2210,7 +2210,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Nothing. This is the entry that makes the column mean something: every other independent faction in the catalog pays for its independence continuously, and the Court pays nothing, because there is no instrument by which a bill could be presented.',
         unbackedReason: null,
         independenceStance: 'indifferent',
-        note: 'The Deep Survey has written to the Court once. The letter was answered and the Ward has not discussed it, and the province has spent two hundred years deciding what that means. Both institutions know the thing nobody says aloud: the Survey administers the vein system, and the one vein it does not administer is the best one.'
+        note: 'The Earth Vein Tower has written to the Court once. The letter was answered and the Ward has not discussed it, and the province has spent two hundred years deciding what that means. Both institutions know the thing nobody says aloud: the Survey administers the vein system, and the one vein it does not administer is the best one.'
     },
 
     // ── outside the vein stack entirely: the Dao houses ───────────────
@@ -2484,9 +2484,9 @@ export const AZURE_CLOUD_INTAKE = {
     theTrade:
         'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
     whyNobodyElseCanDoIt:
-        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Deep Survey and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
     itIsCircumstanceNotValues:
-        'Nothing here is a difference of principle. Put the Deep Survey in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
+        'Nothing here is a difference of principle. Put the Earth Vein Tower in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
     theOtherReason:
         'There is a second motive, it is patient, and it is the strongest link between this programme and the vault. The Pavilion holds seven lower Heaven-Ascending Golden Pills. Each one carries a cultivator standing at Nascent Soul Perfection across the boundary into Deity Transformation - which is worth seven of the most valuable acts available anywhere in the province, and is worth nothing at all unless there are seven people standing at ordinal 24. There are not. The Pavilion produces reliably at Core Formation, with six people at that height and about ninety disciples below it, so the constraint on the largest stock in the world is not medicine and never was. It is people. An intake taken young, taught properly and pushed hard is how a sect manufactures the specific candidates its own holdings require, and that is what the probation programme is actually for underneath everything else. The payoff is twenty to forty years out, everybody senior understands it, and it is written in no document.',
     theBottleneckIsPeople:
@@ -2531,7 +2531,7 @@ export const AZURE_CLOUD_INTAKE = {
         theRound:
             'The mechanism, and it is deliberate breadth: a probationer is rotated past the sword yard, the formation floor, the pill rooms, the array works, the archive, the beast pens and the outer edge of the inner hall, in a cycle that repeats with variations for as long as they are held. The stated reason is that the sect does not want narrow servants. The working reason is that a probationer who has only ever been shown one thing has only ever been offered one chance, and the Pavilion learned that the hard way long enough ago that the lesson is now just the schedule.',
         stagedCommitment:
-            'And this is the concrete affordability mechanism, which is the whole reason the programme exists at their resource level and not at anybody else. Probation is cheap: a bed, food, a share of a teacher who is teaching a room anyway, and time. Full admission is expensive: a sponsor who stakes their standing, a place on the disciple list every rival reads the week it changes, a share of the stock, and medicine that comes off a shelf that only ever goes down. So the sect commits nothing scarce until exposure has done its work, and it can be wrong nine times out of ten at the cheap stage. The Deep Survey and the Long Cut could not run even the cheap stage, because for them the bed and the teacher are the scarce things.',
+            'And this is the concrete affordability mechanism, which is the whole reason the programme exists at their resource level and not at anybody else. Probation is cheap: a bed, food, a share of a teacher who is teaching a room anyway, and time. Full admission is expensive: a sponsor who stakes their standing, a place on the disciple list every rival reads the week it changes, a share of the stock, and medicine that comes off a shelf that only ever goes down. So the sect commits nothing scarce until exposure has done its work, and it can be wrong nine times out of ten at the cheap stage. The Earth Vein Tower and the Long Cut could not run even the cheap stage, because for them the bed and the teacher are the scarce things.',
         theLength:
             'Four to seven years, occasionally nine, and the length is not padding. Exposure needs repetition and chance, so the instrument only works if it runs long, which means the Pavilion is carrying a dozen people at any time it has not decided about and may never keep. That is a real and continuous cost, it is visible to every rival who counts the compound, and it is a large part of why this programme is unique to them rather than obvious to everybody.',
         notAllForPromise:
@@ -2577,7 +2577,7 @@ export const AZURE_CLOUD_INTAKE = {
 
     // ── wide intake, narrow conversion ────────────────────────────────
     theFunnel:
-        'And here is the thing the whole programme is most often misread as, so it is stated flatly: the bar at the narrow end has not moved. Becoming an actual disciple of the Azure Cloud Pavilion is exactly as hard as it has always been, and an Azure Cloud disciple is precisely as impressive as anybody the Hollow Court or the Deep Survey keeps. There is no discount anywhere in this. What is wide is the mouth of the funnel, not its throat.',
+        'And here is the thing the whole programme is most often misread as, so it is stated flatly: the bar at the narrow end has not moved. Becoming an actual disciple of the Azure Cloud Pavilion is exactly as hard as it has always been, and an Azure Cloud disciple is precisely as impressive as anybody the Hollow Court or the Earth Vein Tower keeps. There is no discount anywhere in this. What is wide is the mouth of the funnel, not its throat.',
     notTheSoftApex:
         'So do not read them as the charitable apex, the easy apex or the kind one. They are the apex that can afford to look at everybody, which is an entirely different thing from admitting them, and the people they eventually keep have been through a longer and more searching filter than anybody at the other two. Washing out is the ordinary outcome. Being kept is the remarkable one, and the sect behaves accordingly.',
 
@@ -2680,7 +2680,7 @@ export const REGION_GOVERNANCE: Record<string, {
 }> = {
     'region-low-fall': {
         model: 'federated',
-        apexId: 'apex-deep-survey',
+        apexId: 'apex-earth-vein-tower',
         fromBelow:
             'Twenty-seven institutions, cross-cutting feuds, a local sect for every valley and somebody nearby to petition about anything. Nobody is strong enough to stop anyone else, which is loud, exploitable and survivable.',
         joining: 'Joining a federated power means joining a sect: an admission day, a queue, an elder who looks at you, and a name on an outer-gate roll.'
@@ -2977,7 +2977,7 @@ export function idsForFaction(id: string): string[] {
 //
 // What is true is plainer. There was a schism, and there are two bodies. The
 // Kiln Court holds the datum, the nine hundred lit nodes and the perimeter,
-// under the Deep Survey. Deeproot Court holds the roll and the founding
+// under the Earth Vein Tower. Deeproot Court holds the roll and the founding
 // posting order, four provinces away, under the Long Cut. They do not
 // correspond and neither has asked to. Each fact sits on the body it belongs
 // to; the third party's share - what the Long Cut got out of taking them in -

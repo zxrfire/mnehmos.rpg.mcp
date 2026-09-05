@@ -144,7 +144,7 @@ describe('the ceiling on his behaviour', () => {
     it('leaves the apex institutions alone for no reason at all', () => {
         const r = getWanderer(LU_SHENG)!.restraint;
         expect(r.noMotiveNote).toMatch(/no reason|nothing against|boring|not caution/i);
-        expect(r.willNotDo.join(' ')).toMatch(/Deep Survey|Long Cut/);
+        expect(r.willNotDo.join(' ')).toMatch(/Earth Vein Tower|Long Cut/);
     });
 
     it('keeps the occasion consistent with the Pavilion holding three', () => {
@@ -384,7 +384,7 @@ describe('who knows what', () => {
         expect(k.fullTruth.join(' ')).toMatch(/inheritors/);
         expect(k.fragments).toMatch(/outer ring|incompatible/i);
         expect(k.nothing).toMatch(/everybody else|no archive/i);
-        expect(k.whatItIsWorth).toMatch(/Deep Survey does not have|dangerous/i);
+        expect(k.whatItIsWorth).toMatch(/Earth Vein Tower does not have|dangerous/i);
     });
 
     it('confirms the category and cannot resolve the instance', () => {

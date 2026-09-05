@@ -645,7 +645,7 @@ export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
         'resting place: occupied. Not this file. Opening it wakes somebody, and what happens next is a conversation rather than a recovery.'
     ],
     theOverlapThatIsRealAnyway:
-        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Fallen Grain Caravan\' sealed part, and the Company sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
+        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Fallen Grain Caravan\' sealed part, and the Caravan sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
     howToTell:
         'The marker. A resting place has maintenance on it - a swept floor, a repaired channel, a schedule somebody keeps - because somebody is keeping something alive. A grave has weather on it.'
 } as const;
@@ -1349,15 +1349,15 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         access: {
             admits: 'elders_and_above',
             floorOrdinal: 33,
-            whyNobodyBelowComesBack: 'The descent, not the station. The stair goes down further than the gallery is high, does not turn, and is what kills in almost every recorded case; the sump gate at the bottom takes the rest. The Deep Survey staffed it continuously for two hundred and ten years with people who walked it daily and it has killed everybody who has tried it since on the way down.',
+            whyNobodyBelowComesBack: 'The descent, not the station. The stair goes down further than the gallery is high, does not turn, and is what kills in almost every recorded case; the sump gate at the bottom takes the rest. The Earth Vein Tower staffed it continuously for two hundred and ten years with people who walked it daily and it has killed everybody who has tried it since on the way down.',
             whoTheyGoFor: 'The Survey\'s own readers-in-training, who will spend their careers on the branch sequence and cannot make the descent to fetch it, and who are the reason a seated surveyor goes down at all.',
             whatComesBackForThatPerson: 'The station\'s working sequence, which is the thing a reader needs before the fourth branch is anything but a hole, and which is carried up by somebody who will never use it themselves.'
         },
-        factionIds: ['apex-deep-survey', 'court-kiln'],
+        factionIds: ['apex-earth-vein-tower', 'court-kiln'],
         outside: {
             marker: 'A stair head cut into the floor of a dry arterial gallery, treads worn on the left side only, with a bracket for a rail every four paces and no rail. A depth figure is cut at every hundredth tread. The stair goes down further than the gallery is high and does not turn.',
             rumour: 'Gallery crews call it the counting stair and will tell you it goes to a pumping chamber, which is what a stair with depth marks on it usually goes to. What is at the bottom of it is a survey station, and the house that cut it does not answer questions about the fourth branch from anybody who is not already in it.',
-            attributedTo: 'The Deep Survey',
+            attributedTo: 'The Earth Vein Tower',
             lastPartySaid: 'A Gleaner crew took a paid descent nine years ago on a contract that specified the first thousand treads and no further. They came back up on schedule, were paid, and one of them has since twice refused to say what the air was like below the eight hundredth.',
             whatAKnowledgeablePartyReads: 'Depth marks on a stair are not decoration, they are a working instrument, and an instrument is cut by somebody who intended to take readings for a long time. A stair with a figure at every hundredth tread and no rail was used by people who went down it constantly and were not carrying anything. What is at the bottom is therefore an occupied post rather than a store, and a post at the bottom of an arterial branch was abandoned for a reason that is still down there.',
             whatAnIgnorantPartyConcludes: 'That a maintained stair with numbers on it goes somewhere administrative, and that the danger of a deep gallery is the walk. The walk is not the danger and never was: the stair is in good order the whole way down because nothing has been able to get up it to damage anything, and the party that reads good order as safety has drawn exactly the wrong conclusion from exactly the right observation.',
@@ -1366,7 +1366,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         interior: {
             chamber: 'A cut room at the foot of the stair, twelve paces by nine, with a working bench along one wall and a sump gate in the floor. The gate is a hand span across, faced in worked stone, and shut. Beyond it is water the branch has never lifted and no light has ever been in. The far wall is the station record, cut rather than written, in two courses: the upper course is how the gate is opened and shut, and the lower course is the anatomy of the thing the station spent two hundred years measuring through it.',
-            setBy: 'The Deep Survey, as a working station rather than as a test, calibrated for its own surveyors and for nobody else. It was staffed continuously for two hundred and ten years by people who went down that stair every day, took a reading through the sump gate, and came back up, and it does not adjust for anybody: the room is the room it was, the water is at the pressure it is at, and the last surveyor to leave shut the gate behind her and went up.',
+            setBy: 'The Earth Vein Tower, as a working station rather than as a test, calibrated for its own surveyors and for nobody else. It was staffed continuously for two hundred and ten years by people who went down that stair every day, took a reading through the sump gate, and came back up, and it does not adjust for anybody: the room is the room it was, the water is at the pressure it is at, and the last surveyor to leave shut the gate behind her and went up.',
             gates: [
                 {
                     kind: 'strength',
@@ -1405,7 +1405,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     'abyssal-gate-torrent', 'dragonbone-severing-decree',
                 ],
                 other: [
-                    'Two hundred and ten years of readings off the fourth branch, in sequence, which is the only continuous record of an arterial branch anybody has ever taken and is the document the Deep Survey has been quietly reconstructing from memory for eight hundred years.',
+                    'Two hundred and ten years of readings off the fourth branch, in sequence, which is the only continuous record of an arterial branch anybody has ever taken and is the document the Earth Vein Tower has been quietly reconstructing from memory for eight hundred years.',
                     'The last surveyor\'s closing note, four lines, giving the date the station was shut and the reason, and the reason is not the one the Survey now records.'
                 ],
                 immortalItemId: null
@@ -1562,7 +1562,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ceilingOrdinal: 28,
             whatReadsThePerson: 'The floor, which is two spans of dressed slab laid across the head of a worked-out shaft on the understanding that nobody would ever need to stand on it for long, and which is holding up a ceiling as well as a walkway.',
             whyItRefusesPower: 'Weight here is not a number in a ledger, it is a load on stone. A cultivator past Deity Transformation does not walk on a floor so much as press on it, and the slab over the shaft head has about the margin a two-hundred-year-old slab has. Three parties have gone through it and the shaft under it is four hundred paces of nothing.',
-            soWhoGoesInstead: 'Whoever in the party is smallest, roped, with everybody heavy standing on the gallery side of the door. This is the ordinary practice of every survey house and it is written into the Deep Survey\'s own procedure, which does not explain why and does not have to.'
+            soWhoGoesInstead: 'Whoever in the party is smallest, roped, with everybody heavy standing on the gallery side of the door. This is the ordinary practice of every survey house and it is written into the Earth Vein Tower\'s own procedure, which does not explain why and does not have to.'
         },
         factionIds: ['house-immovable-mountain', 'house-shrinking-earth'],
         outside: {
@@ -2257,9 +2257,9 @@ export const GRAVES: readonly Grave[] = [
             admits: 'nobody_above_the_line',
             floorOrdinal: 8,
             ceilingOrdinal: 24,
-            whatReadsThePerson: 'The gap the Company left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
+            whatReadsThePerson: 'The gap the Caravan left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
             whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Fallen Grain Caravan have died going in the correct way round and one very strong outsider has died going in sideways.',
-            soWhoGoesInstead: 'The Company sends its own small people, which is a sentence the Company would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
+            soWhoGoesInstead: 'The Caravan sends its own small people, which is a sentence the Caravan would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
         },
         factionIds: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
         occupantOrdinal: 12,
@@ -2267,12 +2267,12 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'killed_in_a_fight',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'The resealed part of the sorting-yard ruin at Willow Village, which is a wall the Company put back thirty years ago with its own hands and works alongside every day. There is no marker. His name is on the Company\'s wager board, which was never taken down, with the amount still written next to it.',
-            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Company sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Silent Cliffs.',
+            marker: 'The resealed part of the sorting-yard ruin at Willow Village, which is a wall the Caravan put back thirty years ago with its own hands and works alongside every day. There is no marker. His name is on the Caravan\'s wager board, which was never taken down, with the amount still written next to it.',
+            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Caravan sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Silent Cliffs.',
             attributedTo: 'Deep Gleaner Xun',
-            lastPartySaid: 'Nobody has gone in after him in thirty years. Two crews have discussed it seriously and both stopped at the same place, which is that a recovery is indistinguishable from an entry and the Company would have to decide which it was afterwards.',
+            lastPartySaid: 'Nobody has gone in after him in thirty years. Two crews have discussed it seriously and both stopped at the same place, which is that a recovery is indistinguishable from an entry and the Caravan would have to decide which it was afterwards.',
             whatAKnowledgeablePartyReads: 'That there is a grave immediately behind the wall and something else deeper in, and that they are two different things. He is a man who died thirty years ago carrying a full deep-diving kit; what is further in is not a grave and is not his and is not in this catalog. Confusing the two is the specific error that gets a recovery crew killed, because a party that has decided it is going in to fetch a body treats the far chambers as background.',
-            whatAnIgnorantPartyConcludes: 'That the sealed part is one thing with one hazard in it, and that thirty years is long enough for whatever took him to have moved on. Outsiders do not know the sealed part exists, so this is a conclusion available only to the Company itself, and two crews have reached it.',
+            whatAnIgnorantPartyConcludes: 'That the sealed part is one thing with one hazard in it, and that thirty years is long enough for whatever took him to have moved on. Outsiders do not know the sealed part exists, so this is a conclusion available only to the Caravan itself, and two crews have reached it.',
             startingAwareness: 'named',
             advertisedOrdinal: null
         },
@@ -2283,9 +2283,9 @@ export const GRAVES: readonly Grave[] = [
                 {
                     kind: 'strength',
                     ordinal: 24,
-                    test: 'Whatever is in the fourth chamber is still in the fourth chamber and did to him what it does. The Company has never established what it is, and the only measurement anybody has is that it went through a Deep Gleaner at Qi Condensation Layer 13 in less time than it took him to get his lamp lit twice.',
+                    test: 'Whatever is in the fourth chamber is still in the fourth chamber and did to him what it does. The Caravan has never established what it is, and the only measurement anybody has is that it went through a Deep Gleaner at Qi Condensation Layer 13 in less time than it took him to get his lamp lit twice.',
                     below: 'The same thing happens. It has happened once in living memory and the sample is one, which is the entirety of what anybody knows and is why the two crews that discussed it stopped: there is no way to size it from outside and the only party who could report is on the floor.',
-                    noWorkaround: 'The wall is the Company\'s own and can be taken down in a morning by anybody with a hammer, which is what makes this a strength gate rather than a sealed one. Nothing is stopping entry. Something is stopping exit.'
+                    noWorkaround: 'The wall is the Caravan\'s own and can be taken down in a morning by anybody with a hammer, which is what makes this a strength gate rather than a sealed one. Nothing is stopping entry. Something is stopping exit.'
                 }
             ],
             gateOrigin: 'accreted',
@@ -2305,7 +2305,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'His sorting notes for the three front chambers, which are better than the Company\'s current ones and cover two nodes the Company has since decided are dead.',
+                    what: 'His sorting notes for the three front chambers, which are better than the Caravan\'s current ones and cover two nodes the Caravan has since decided are dead.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2326,14 +2326,14 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'The wager, in writing, folded, which names the four people who put money on it and is the reason the Company has never formally investigated.',
+                    what: 'The wager, in writing, folded, which names the four people who put money on it and is the reason the Caravan has never formally investigated.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
                     immortalItemId: null
                 },
                 {
-                    what: 'His lamp, burned out, which the Company would want back and would not say why.',
+                    what: 'His lamp, burned out, which the Caravan would want back and would not say why.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2341,7 +2341,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing, and the sealed room preserved it. He was killed in a fight in an enclosed space thirty years ago, so his kit is a thirty-year-old kit in good condition, none of it tested by anything except the six paces he got, and the most valuable object in the inventory is eleven characters he copied off a wall on the way past.',
-            afterwards: 'The Company would have to decide what a recovery was, and the Clearwater Ward would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later. What is deeper in the building is unaffected by any of this and is not in this catalog.'
+            afterwards: 'The Caravan would have to decide what a recovery was, and the Clearwater Ward would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later. What is deeper in the building is unaffected by any of this and is not in this catalog.'
         }
     },
     {

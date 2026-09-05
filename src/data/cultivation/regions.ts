@@ -13,7 +13,7 @@
  *   regions/rank-translation.ts     who disputes a title, and what it costs
  *   regions/ruin-and-scar-names.ts  names for the half of the map worldgen makes
  *
- *   regions/low-fall.ts             the centre, its vocabulary, its nine catchments
+ *   regions/low-fall.ts             the centre, its vocabulary, its nine basins
  *   regions/quiet-marches.ts        the west, its vocabulary, its six face districts
  *   regions/wide-field.ts           the east
  *   regions/white-stair.ts          the north

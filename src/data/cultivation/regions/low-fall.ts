@@ -3,7 +3,7 @@
  * and the only one in the world with no ceiling on it.
  *
  * Everything the world has that is about this province is here - the map row,
- * the vocabulary it wrote and everybody else borrowed, and the nine catchment
+ * the vocabulary it wrote and everybody else borrowed, and the nine basin
  * prefectures inside it. A prefecture is a subdivision of the province that
  * holds it, so it lives with the province rather than in a table of its own:
  * Nine Peaks is IN the Jade Gorge, and a change to the Jade Gorge should touch one
@@ -145,7 +145,7 @@ export const THE_LOW_FALL: Region = {
             // for it, the same day it charged for stepping anywhere else
             // inside a province, and the catalog had no way to say
             // otherwise: `Prefecture.places[]` puts two names in one
-            // catchment without saying either is near the other.
+            // basin without saying either is near the other.
             //
             // Two days, and it is authored here the way `travelDays: 11`
             // is authored twenty lines down - a gazetteer is where a
@@ -263,14 +263,14 @@ export const THE_LOW_FALL: Region = {
     ]
 };
 
-// ─── prefectures of the Jade Gorge: catchments ─────────────────────────────
+// ─── prefectures of the Jade Gorge: basins ─────────────────────────────
 
 export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     {
         id: 'prefecture-gorge-head',
         name: 'The Gorge Head',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: PLACE.GREEN_FALL,
         places: [PLACE.GREEN_FALL],
         heldByFactionId: 'sect-azure-cloud-pavilion',
@@ -293,13 +293,13 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'Held outright and openly since the year Ru Anjing crossed, on no grant from anyone, with a front gate, a recruitment cycle and a published rank list.',
         discrepancy: 'record_names_the_wrong_holder',
         note:
-            'The only catchment in the province where the paper says tenant and the ground says apex. Both parties have found the silence comfortable for three hundred and eighty years and the Jade Gorge reads it as whatever suits the speaker.'
+            'The only basin in the province where the paper says tenant and the ground says apex. Both parties have found the silence comfortable for three hundred and eighty years and the Jade Gorge reads it as whatever suits the speaker.'
     },
     {
         id: 'prefecture-nine-peaks',
-        name: 'The Nine Peaks Catchment',
+        name: 'The Nine Peaks Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: PLACE.NINE_PEAKS,
         places: [PLACE.NINE_PEAKS],
         heldByFactionId: 'sect-nine-peaks-ascetic-order',
@@ -321,9 +321,9 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-ashfall',
-        name: 'The Ashfall Catchment',
+        name: 'The Ashfall Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: 'the furnace on the volcanic flank',
         places: [],
         heldByFactionId: 'sect-ashen-forge-clan',
@@ -349,14 +349,14 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The clearest case in the province of the map and the paper disagreeing without anybody lying. The Crucible Hall stands inside the Ashfall and holds from a court on the fourth arterial, so the flank has no single line anybody could draw around it.'
     },
     {
-        id: 'prefecture-cold-head',
-        name: 'The Cold Head',
+        id: 'prefecture-frost-head',
+        name: 'Frost Head',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: 'the glacier terrace',
         places: [],
         heldByFactionId: 'sect-frostmirror-court',
-        delegatedFromId: 'apex-deep-survey',
+        delegatedFromId: 'apex-earth-vein-tower',
         subHoldings: [],
         onPaper:
             'The glacier and the cold vein under it, on a grant nobody else has ever applied for, held directly from the Survey rather than through the Sill.',
@@ -364,17 +364,17 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
         discrepancy: 'none',
         note:
-            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Black Ice Vein runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
+            'One of the two basins that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Black Ice Vein runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two basins over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
     },
     {
         id: 'prefecture-floating-stone',
         name: 'The Floating Stone',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: 'the stone itself',
         places: [],
         heldByFactionId: 'sect-storm-tyrant-court',
-        delegatedFromId: 'apex-deep-survey',
+        delegatedFromId: 'apex-earth-vein-tower',
         subHoldings: [
             {
                 factionId: 'sect-crimson-abyss-fortress',
@@ -392,9 +392,9 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-scarwater',
-        name: 'The Clear River Ford Catchment',
+        name: 'The Clear River Ford Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: PLACE.STONE_FORD,
         places: [PLACE.STONE_FORD],
         heldByFactionId: null,
@@ -412,7 +412,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             }
         ],
         onPaper:
-            'Surveyed by the Immovable Mountain Temple to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the catchment has no closing line.',
+            'Surveyed by the Immovable Mountain Temple to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the basin has no closing line.',
         onTheGround:
             'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
@@ -423,7 +423,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         id: 'prefecture-sweptground',
         name: PLACE.BURNT_EARTH,
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: PLACE.BURNT_EARTH,
         places: [PLACE.BURNT_EARTH],
         heldByFactionId: 'sect-sweptground-temple',
@@ -441,13 +441,13 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'A temple, a treaty vault, and the largest concentration of Silent Cliffs refugees in the province, on ground chosen for having nothing anybody needs to grant.',
         discrepancy: 'none',
         note:
-            'The one catchment whose security is that it is worthless. Everything else in the province is defended by a document or by a belief; this is defended by a zero in a column.'
+            'The one basin whose security is that it is worthless. Everything else in the province is defended by a document or by a belief; this is defended by a zero in a column.'
     },
     {
         id: 'prefecture-grove-verge',
         name: 'The Grove Verge',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: 'the valley of old trees',
         places: [],
         heldByFactionId: 'sect-ancient-bough-grove',
@@ -465,18 +465,18 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         id: 'prefecture-hollow-reach',
         name: 'The Hollow Reach',
         provinceId: LOW_FALL_PROVINCE_ID,
-        kind: 'catchment',
+        kind: 'basin',
         seat: 'the four mountains',
         places: [],
         heldByFactionId: 'sect-hollow-court',
         delegatedFromId: null,
         subHoldings: [],
         onPaper:
-            'The first arterial\'s catchment, apportioned annually by the Keeper of the Eleven to nobody, on a figure that has not changed in living memory because there is nothing to revise it against.',
+            'The first arterial\'s basin, apportioned annually by the Keeper of the Eleven to nobody, on a figure that has not changed in living memory because there is nothing to revise it against.',
         onTheGround:
             'Occupied. Four mountains standing on the richest vein anyone has ever surveyed, held by people nothing in the world can make leave, who were not granted it, do not pay for it, and have never been asked.',
         discrepancy: 'no_holder_of_record',
         note:
-            'Not a lease, not a claim and not a belief that could decay. Every party in the province has done the arithmetic and nobody raises it, so the register carries a catchment with a blank where the holder goes, and prints it again every twelve years.'
+            'Not a lease, not a claim and not a belief that could decay. Every party in the province has done the arithmetic and nobody raises it, so the register carries a basin with a blank where the holder goes, and prints it again every twelve years.'
     }
 ];

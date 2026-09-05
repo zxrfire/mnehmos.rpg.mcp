@@ -38,7 +38,7 @@ describe('the deepest roads - the catalog', () => {
     it('gives one road to each of the four bodies at the top of the world', () => {
         const holders = THE_DEEPEST_ROADS.map(r => r.factionId).sort();
         expect(holders).toEqual([
-            'apex-deep-survey',
+            'apex-earth-vein-tower',
             'apex-long-cut',
             'sect-azure-cloud-pavilion',
             HOLLOW
@@ -187,7 +187,7 @@ describe('the deepest roads - the shelves they sit on', () => {
     });
 
     it('leaves the two hidden apexes with a holding and no shelf, which is the point', () => {
-        for (const id of ['apex-deep-survey', 'apex-long-cut']) {
+        for (const id of ['apex-earth-vein-tower', 'apex-long-cut']) {
             const apex = APEX_INSTITUTIONS.find(a => a.id === id)!;
             expect(apex.factionId, `${id} has acquired a sect row`).toBeNull();
             expect(deepRoadOf(id), `${id} holds no road`).toBeDefined();

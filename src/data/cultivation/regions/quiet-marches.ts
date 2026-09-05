@@ -4,7 +4,7 @@
  *
  * The map row, the vocabulary the Cut Road named for itself, and the six face
  * districts inside it. The districts are a different kind of object from the
- * Jade Gorge's catchments and the argument for why is kept here, where it was
+ * Jade Gorge's basins and the argument for why is kept here, where it was
  * written - see the banner above `QUIET_MARCHES_PREFECTURES` below.
  */
 
@@ -269,7 +269,7 @@ export const THE_QUIET_MARCHES: Region = {
 export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
     {
         id: 'district-gapwater',
-        name: 'The Jade Face District',
+        name: 'The Jade Face Prefecture',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
         seat: PLACE.IRON_GATE,
@@ -287,7 +287,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'district-fourth-face',
-        name: 'The Fourth Face District',
+        name: 'The Fourth Face Prefecture',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
         seat: PLACE.IRON_GATE,
@@ -305,7 +305,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'district-hollowmarket',
-        name: 'The Willow Village District',
+        name: 'The Willow Village Prefecture',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
         seat: PLACE.GRAVE_MARKET,
@@ -323,7 +323,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'district-sixmile',
-        name: 'The Six Li District',
+        name: 'The Six Li Prefecture',
         provinceId: QUIET_MARCHES_PROVINCE_ID,
         kind: 'face_district',
         seat: PLACE.SIX_LI,
@@ -361,7 +361,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
             'It has moved about nine hundred paces since the survey was drawn, at roughly a pace a year, faster after wet winters, and it has taken about a fifth of the arable land with it.',
         discrepancy: 'no_holder_of_record',
         note:
-            'A Jade Gorge catchment is argued about because two parties both want it. This is argued about by nobody, because what is in dispute is not who holds it but how much of the province it will be next century.'
+            'A Jade Gorge basin is argued about because two parties both want it. This is argued about by nobody, because what is in dispute is not who holds it but how much of the province it will be next century.'
     },
     {
         id: 'district-eleven-li',

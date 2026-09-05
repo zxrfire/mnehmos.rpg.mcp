@@ -296,7 +296,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         risk: 'lethal',
         whoPays: 'Nobody. A diver is paid by what comes out, sold at the barrow yard or the kerb, and the buyer sets the price knowing precisely how much the seller needs to eat this month.',
         unbackedCost: 'A Company crew has rules, a manifest and somebody who comes looking. An independent crew has an agreement made at the mouth of the shaft, which is exactly as durable as the people who made it.',
-        deathRate: 'About one independent diver in four does not see the year out, against roughly one Company gleaner in nine a season on comparable ground. The Company is not safer; it is more selective about which holes.',
+        deathRate: 'About one independent diver in four does not see the year out, against roughly one Company gleaner in nine a season on comparable ground. The Caravan is not safer; it is more selective about which holes.',
         factionIds: ['sect-fallen-grain-caravan', 'sect-hollow-bell-wanderers']
     },
     {
@@ -541,7 +541,7 @@ export const BOUNTIES: readonly Bounty[] = [
         id: 'bounty-crew-recovery',
         what: 'Bringing out the pouch and manifest of a crew that did not come back',
         posterFactionId: 'sect-fallen-grain-caravan',
-        posterNote: 'The Company, which posts these itself and pays them itself, and considers the practice load-bearing.',
+        posterNote: 'The Caravan, which posts these itself and pays them itself, and considers the practice load-bearing.',
         purseCash: 3_000,
         evidence: 'The pouch, checked against the manifest in front of you.',
         honoured: 'reliably',
@@ -809,7 +809,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         cadence: 'Whenever the sorting yard is full, which is about every six weeks.',
         entryBondStones: 0,
         protections: [
-            'The manifest, which is the Company\'s own record and is the only warranty offered',
+            'The manifest, which is the Caravan\'s own record and is the only warranty offered',
             'Weight is checked in front of the buyer, and disputes are settled by reweighing and nothing else'
         ],
         whatSells: 'Salvage by weight, in lots too large for an individual, to dealers who will break them up.',
@@ -863,7 +863,7 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
     {
         id: 'custom-shares',
         custom: 'Equal shares to everyone who went in, one extra share to whoever brought the site, and a dead hand\'s share goes to whoever carried their pouch out.',
-        keptBy: 'Independent crews, copied off the Company manifest rule and kept because it settles the argument before it starts.',
+        keptBy: 'Independent crews, copied off the Caravan manifest rule and kept because it settles the argument before it starts.',
         breakingIt: 'A crew that shorts a share does not get another crew. The Silent Cliffs is small and the sorting yard is one yard.'
     },
     {

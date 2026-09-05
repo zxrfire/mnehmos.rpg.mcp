@@ -1811,7 +1811,7 @@ describe('asking what my dao is', () => {
  *     DEAD          I wake our sealed ancestor
  *     DEAD          I file a Requisition Against Standing Stock
  *     DEAD          I declare war on the Nine Abyss Flame Sect
- *     -> interact   I ask the Deep Survey for one of its pills
+ *     -> interact   I ask the Earth Vein Tower for one of its pills
  *     -> interact   I offer an alliance to the Frostmirror Court
  *     -> recall     I carve my dao into the stone
  *
@@ -1905,7 +1905,7 @@ describe('institutions acting on each other', () => {
 
     /** The two bodies these tests name that have no row in `SECTS`. */
     const NAMES_OF: Record<string, string> = {
-        'apex-deep-survey': 'The Deep Survey',
+        'apex-earth-vein-tower': 'The Earth Vein Tower',
         'court-third-sill': 'The Third Sill Court'
     };
 
@@ -1935,8 +1935,8 @@ describe('institutions acting on each other', () => {
         ['I file a Requisition Against Standing Stock', 'petition', 'stock'],
         ['I declare war on the Nine Abyss Flame Sect', 'posture', 'war'],
         ['I claim descent from Ru Anjing', 'petition', 'descent'],
-        ['I ask the Deep Survey for one of its pills', 'petition', 'stock'],
-        ['I ask the Deep Survey for an Heaven-Ascending Golden Pill', 'petition', 'stock'],
+        ['I ask the Earth Vein Tower for one of its pills', 'petition', 'stock'],
+        ['I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill', 'petition', 'stock'],
         ['I offer an alliance to the Frostmirror Court', 'posture', 'alliance'],
         ['I petition the Third Sill Court for a grant', 'petition', 'grant'],
         ['I demand tribute from the Azure Dew Sect', 'posture', 'tribute'],
@@ -2162,10 +2162,10 @@ describe('institutions acting on each other', () => {
 
     it('answers a Requisition in the terms the form itself uses, and refuses', async () => {
         const { game } = await standing(theSeatOf(), {
-            knows: ['apex-deep-survey'], seed: 'requisition'
+            knows: ['apex-earth-vein-tower'], seed: 'requisition'
         });
         const result = await game.act(
-            'I file a Requisition Against Standing Stock with the Deep Survey'
+            'I file a Requisition Against Standing Stock with the Earth Vein Tower'
         );
 
         // The instrument's own standard, verbatim from the catalog, which is
@@ -2177,9 +2177,9 @@ describe('institutions acting on each other', () => {
 
     it('never discloses what is on the standing stock, in either direction', async () => {
         const { game } = await standing(theSeatOf(), {
-            knows: ['apex-deep-survey'], seed: 'requisition-counts'
+            knows: ['apex-earth-vein-tower'], seed: 'requisition-counts'
         });
-        const result = await game.act('I ask the Deep Survey for one of its pills');
+        const result = await game.act('I ask the Earth Vein Tower for one of its pills');
         // `countIsKnownTo` names four people and a register, and an outsider is
         // none of them. The form is public; the count is not.
         expect(result.narration).not.toMatch(/one higher, one middle/i);

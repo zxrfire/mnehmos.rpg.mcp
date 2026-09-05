@@ -13,7 +13,7 @@ import { LOW_FALL_PROVINCE_ID } from './region-ids.js';
 
 /**
  * An arterial vein. Not a place - a thing under places, which is why it has a
- * holder and no prefectures. The Deep Survey's whole position is four of these
+ * holder and no prefectures. The Earth Vein Tower's whole position is four of these
  * and the one province standing on top of them.
  */
 export const ArterialSchema = z.object({
@@ -47,7 +47,7 @@ export const ARTERIALS: readonly Arterial[] = [
     },
     {
         id: 'arterial-the-root',
-        name: 'The Root',
+        name: 'Root Hollow',
         ordinalInSystem: 2,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: 'court-kiln',
@@ -57,13 +57,13 @@ export const ARTERIALS: readonly Arterial[] = [
     },
     {
         id: 'arterial-the-eleven',
-        name: 'The Eleven',
+        name: 'Eleven Stones',
         ordinalInSystem: 3,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: 'court-third-sill',
         drawnOnBy: 'The eleven surveyed veins of the Jade Gorge, and through them every granted sect in the province.',
         note:
-            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Deep Survey has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
+            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Earth Vein Tower has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
     },
     {
         id: 'arterial-the-black-ice-vein',

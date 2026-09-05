@@ -60,7 +60,7 @@ const KILLER: Party = {
 
 /** A district that had one of the thing and answers to a righteous house. */
 const DISTRICT: Party = {
-    id: 'p-district',
+    id: 'p-prefecture',
     name: 'the Six Li hill districts',
     houseId: 'sect-six-li-patrol',
     houseName: 'the Six Li Patrol',
@@ -127,7 +127,7 @@ describe('whether there is anything to answer for at all', () => {
             beast,
             standing: null,
             killer: KILLER,
-            stages: stagesOf([['p-district', 'known']]),
+            stages: stagesOf([['p-prefecture', 'known']]),
             onDay: DAY,
             description: 'Killed on open ground.'
         });
@@ -135,7 +135,7 @@ describe('whether there is anything to answer for at all', () => {
         expect(left.leaves).toBeNull();
         // The knowing is still reported. People knowing is not the same fact as
         // there being anybody it wronged.
-        expect(left.knownTo).toEqual(['p-district']);
+        expect(left.knownTo).toEqual(['p-prefecture']);
         expect(left.line).toMatch(/nobody's/i);
     });
 });
@@ -148,7 +148,7 @@ describe('the consequence is downstream of the knowing, never of the killing', (
             standing: DISTRICT,
             killer: KILLER,
             // They know the thing is dead. Nobody knows whose doing it was.
-            stages: stagesOf([['p-district', 'named']]),
+            stages: stagesOf([['p-prefecture', 'named']]),
             onDay: DAY,
             description: 'The hound at the cairns was killed and the core taken.',
             cost: 1
@@ -166,7 +166,7 @@ describe('the consequence is downstream of the knowing, never of the killing', (
             beast,
             standing: DISTRICT,
             killer: KILLER,
-            stages: stagesOf([['p-district', stage]]),
+            stages: stagesOf([['p-prefecture', stage]]),
             onDay: DAY,
             description: 'The hound at the cairns was killed and the core taken.',
             cost: 1
@@ -209,10 +209,10 @@ describe('the consequence is downstream of the knowing, never of the killing', (
             description: 'The hound at the cairns was killed and the core taken.',
             cost: 1
         } as const;
-        const quiet = whatTheKillLeft({ ...shared, stages: stagesOf([['p-district', 'named']]) });
+        const quiet = whatTheKillLeft({ ...shared, stages: stagesOf([['p-prefecture', 'named']]) });
         // Somebody who was there tells them. `told` reaches `placed`, and
         // stages never fall, so the account opens now and is dated to the deed.
-        const later = whatTheKillLeft({ ...shared, stages: stagesOf([['p-district', 'placed']]) });
+        const later = whatTheKillLeft({ ...shared, stages: stagesOf([['p-prefecture', 'placed']]) });
 
         expect(quiet.leaves!.opens).toEqual([]);
         expect(later.leaves!.opens.length).toBeGreaterThan(0);
@@ -220,7 +220,7 @@ describe('the consequence is downstream of the knowing, never of the killing', (
         expect(later.leaves!.weight, 'the delay discounted it').toBe(
             whatTheKillLeft({
                 ...shared,
-                stages: stagesOf([['p-district', 'known']])
+                stages: stagesOf([['p-prefecture', 'known']])
             }).leaves!.weight
         );
     });
@@ -236,7 +236,7 @@ describe('the disposition decides the sign, and the caller decides the size', ()
             beast,
             standing: DISTRICT,
             killer: KILLER,
-            stages: stagesOf([['p-district', 'known']]),
+            stages: stagesOf([['p-prefecture', 'known']]),
             onDay: DAY,
             description: 'The hound at the cairns was killed and the core taken.',
             cost: 1
@@ -257,7 +257,7 @@ describe('the disposition decides the sign, and the caller decides the size', ()
             beast,
             standing: DISTRICT,
             killer: KILLER,
-            stages: stagesOf([['p-district', 'known'], ['p-killer', 'known']]),
+            stages: stagesOf([['p-prefecture', 'known'], ['p-killer', 'known']]),
             onDay: DAY,
             description: 'The thing that had been counting the parties is dead.',
             cost: 1
@@ -285,7 +285,7 @@ describe('the disposition decides the sign, and the caller decides the size', ()
             beast,
             standing: DISTRICT,
             killer: KILLER,
-            stages: stagesOf([['p-district', 'known']]),
+            stages: stagesOf([['p-prefecture', 'known']]),
             onDay: DAY,
             description: 'Killed for the core.',
             cost: 0.5
@@ -314,7 +314,7 @@ describe('nothing is refused, and nothing branches on it being a beast', () => {
                 beast,
                 standing: DISTRICT,
                 killer: KILLER,
-                stages: stagesOf([['p-district', 'known']]),
+                stages: stagesOf([['p-prefecture', 'known']]),
                 onDay: DAY,
                 description: 'It is dead.',
                 cost: 0.5
@@ -334,7 +334,7 @@ describe('nothing is refused, and nothing branches on it being a beast', () => {
             beast,
             standing: DISTRICT,
             killer: KILLER,
-            stages: stagesOf([['p-district', 'known']]),
+            stages: stagesOf([['p-prefecture', 'known']]),
             onDay: DAY,
             description: 'Killed for the core.',
             cost: 1

@@ -120,7 +120,7 @@ console.log(
 // THE SCENARIOS
 // ─────────────────────────────────────────────────────────────────────────
 
-const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-deep-survey')!;
+const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!;
 const lamp = ARTIFACTS.find(a => a.id === 'sent-datum-lamp')!;
 const surveyCourts = COURTS.filter(c => c.apexId === survey.id);
 
@@ -265,7 +265,7 @@ console.log(
         : fullPool.map(m => `${m.combatant.name} (${m.combatant.realmOrdinal})`).join(', '))
 );
 
-console.log('\n  Against the Deep Survey (head 43, Datum Lamp 45). Two runs each:');
+console.log('\n  Against the Earth Vein Tower (head 43, Datum Lamp 45). Two runs each:');
 console.log('  alone = the fight the plot would like. helped = everyone who unseals is in it.\n');
 console.log('    ' + 'assault'.padEnd(34) + 'help  alone  helped  what it is');
 console.log('    ' + '-'.repeat(86));

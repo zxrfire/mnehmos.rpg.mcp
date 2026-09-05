@@ -1019,7 +1019,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Chai Xilian',
         factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 1,
-        rank: 'Apprentice Alchemist',
+        rank: 'Outer Alchemist',
         realmOrdinal: 10,
         role: 'peer',
         wants: 'permission to read the fourth line of the method-script on the refining hall wall',
@@ -1036,7 +1036,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Ruan Jiangming',
         factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 2,
-        rank: 'Journeyman Alchemist',
+        rank: 'Inner Alchemist',
         realmOrdinal: 15,
         role: 'rival',
         wants: 'the Cauldron Master\'s furnace, which is allocated on results and nothing else',
@@ -1672,7 +1672,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 12,
         role: 'rival',
         wants: 'the Fallen Grain Caravan driven off the border sites entirely',
-        fears: 'the Company\'s factor at Clear River Ford, personally and by name',
+        fears: 'the Caravan\'s factor at Clear River Ford, personally and by name',
         detail: 'Has killed two Fallen Grain Caravan in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
@@ -2007,7 +2007,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Yan Changshi',
         factionId: 'house-ninefold-karma',
         rankIndex: 3,
-        rank: 'Circuit Arbiter',
+        rank: 'Circuit Envoy',
         realmOrdinal: 18,
         role: 'master',
         wants: 'the Clearwater Ward to submit its rank table for certification, which it has never done',
@@ -2370,7 +2370,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Xu Suzhi',
         factionId: 'house-immovable-mountain',
         rankIndex: 3,
-        rank: 'Warden of the Survey',
+        rank: 'Warden of the Vein',
         realmOrdinal: 23,
         role: 'master',
         wants: 'the last forty li surveyed and certified',
@@ -2565,7 +2565,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Longstake Mu',
         factionId: 'sect-six-li-patrol',
         rankIndex: 3,
-        rank: 'Warden of the Six Mile',
+        rank: 'Warden of the Six Li',
         realmOrdinal: 13,
         role: 'senior',
         wants: 'the Clearwater Ward to pay for the paint its grantees walk in on',
@@ -2650,7 +2650,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: {
             grievance: 'Two robberies, one of which cost a crew member, and a sixty-year feud he has decided to settle personally.',
-            beatableBecause: 'He takes the ground everybody else refuses, which means he is usually already hurt by the time anyone meets him. The Company will not follow him either: it loses one in nine a season and does not spend people on grudges.'
+            beatableBecause: 'He takes the ground everybody else refuses, which means he is usually already hurt by the time anyone meets him. The Caravan will not follow him either: it loses one in nine a season and does not spend people on grudges.'
         },
         teaching: null
     },
@@ -2659,7 +2659,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Willow Village Zhai',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 3,
-        rank: 'Company Factor',
+        rank: 'Caravan Factor',
         // 14 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
@@ -2675,7 +2675,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: {
             knows: 'Sealed-site work, what a burn zone does to a body over a season, and the price of everything the region produces.',
-            mayNotSay: 'The layout of the three worked nodes at the front of the ruin, because being the ones who know the way in is the Company\'s only advantage.',
+            mayNotSay: 'The layout of the three worked nodes at the front of the ruin, because being the ones who know the way in is the Caravan\'s only advantage.',
             costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Clear River Ford, and eleven have.'
         }
     },
@@ -2965,7 +2965,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Warden-General Mo Ai',
         factionId: 'sect-lantern-hall',
         rankIndex: 6,
-        rank: 'Hall Warden-General',
+        rank: 'Grand Hall Warden',
         realmOrdinal: 31,
         role: 'senior',
         wants: 'the register consulted rather than admired',
@@ -2982,7 +2982,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Principal Hou Sanyi',
         factionId: 'sect-stone-marrow-hall',
         rankIndex: 6,
-        rank: 'Stone Marrow Hall Principal',
+        rank: 'Marrow Master',
         realmOrdinal: 33,
         role: 'senior',
         wants: 'one more press, built rather than repaired',
@@ -3081,7 +3081,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     // The one outlier here who is not the last of a richer age. The Wardens are
     // staff on a posting rather than a lineage - `hierarchy.ts` files them under
-    // the Deep Survey - and the top rung was filled from outside the perimeter,
+    // the Earth Vein Tower - and the top rung was filled from outside the perimeter,
     // which is what `arrived` means and what nobody in the province has ever
     // been able to price.
     {
@@ -3225,7 +3225,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         name: 'Warden Ai Sanniang',
         factionId: 'sect-six-li-patrol',
         rankIndex: 3,
-        rank: 'Warden of the Six Mile',
+        rank: 'Warden of the Six Li',
         realmOrdinal: 14,
         role: 'senior',
         wants: 'six more miles held',
@@ -3239,10 +3239,10 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-company-master-xun-erlang',
-        name: 'Company Master Xun Erlang',
+        name: 'Caravan Master Xun Erlang',
         factionId: 'sect-fallen-grain-caravan',
         rankIndex: 5,
-        rank: 'Company Master',
+        rank: 'Caravan Master',
         realmOrdinal: 17,
         role: 'senior',
         wants: 'a season without a death on the yard',

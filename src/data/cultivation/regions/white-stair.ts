@@ -205,7 +205,7 @@ export const THE_WHITE_STAIR: Region = {
             // `RegionPlaceConnectionSchema` landed. It is a day down and the
             // Court walks it twice a day in the setting weeks, which is a fact
             // about a house and its ground that a prefecture list cannot
-            // carry: `places[]` says two names are in one catchment without
+            // carry: `places[]` says two names are in one basin without
             // saying either is near the other, and the North has no
             // prefectures at all.
             //

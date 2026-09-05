@@ -253,7 +253,7 @@ house that can reach it decides who goes in.
   mechanism.
 
 **Charging is not controlling.** `regions.ts` separates what a house holds `onPaper` from
-what it holds `onTheGround`. A ruin in a catchment somebody holds on paper only is the
+what it holds `onTheGround`. A ruin in a basin somebody holds on paper only is the
 best case in the set: they will bill you and they cannot stop you. Going in anyway is a
 whole style of play, and it composes with the clock - because the holder knows the
 schedule too.

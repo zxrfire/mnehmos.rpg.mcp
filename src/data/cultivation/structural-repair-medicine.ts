@@ -169,7 +169,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         description:
             'A spirit sense torn in the emptiness, a seam in a body joining that did not close, an ascension where two of the four axes went up and two did not. One object answers all three, which is either a fact about the medicine or a fact about what those three injuries have in common, and nobody on this side knows which.',
         takingIt:
-            'Reported by the three people known to have taken one as brief, and none of the three has ever elaborated. The Deep Survey has all three accounts in the same file and they do not agree about anything except the brevity.',
+            'Reported by the three people known to have taken one as brief, and none of the three has ever elaborated. The Earth Vein Tower has all three accounts in the same file and they do not agree about anything except the brevity.',
         theRecord:
             'Three are known to have been used in the whole of the dated record. One of them was for a failed body joining, and it worked. The other two entries record the object being spent and do not record an outcome.'
     }
@@ -197,7 +197,7 @@ export const SENT_DOWN_EVER_ARRIVED = 11;
 export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
     {
         yearsAgo: 1_180,
-        spentByFactionId: 'apex-deep-survey',
+        spentByFactionId: 'apex-earth-vein-tower',
         onWoundKey: 'failed-integration',
         entry:
             'A First Mark of the Survey came back from the joining with one seam open and the Survey released one against a quorum that took eleven months to assemble. It worked. He served another four hundred years and the file on him is the reason anybody knows the medicine does anything at all.'
@@ -252,7 +252,7 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
     // apexes; it is what "sent down" means, and the same three bodies hold the
     // other sent-down consumables in `immortal-items.ts` for the same reason.
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         medicineId: 'repair-unbroken-pattern',
         count: 3,
         howGot:
@@ -291,7 +291,7 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
     // of the life their rung granted them, so no individual anywhere is a
     // buyer and only an institution can hold one at all.
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         medicineId: 'repair-soul-seating',
         count: 1,
         howGot:

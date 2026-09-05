@@ -186,7 +186,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         whatOrderWouldTake:
             'A standing occupation. Not a garrison on a place, because there is no place: a body large enough to be at every surfacing within a season of it opening, across eleven days of ground, permanently, with a survey that is redrawn every year and a court sitting on top of the survey to issue whatever the redrawn thing is issued as.',
         whatItWouldCost:
-            'An institution that exists nowhere in the world. The Long Cut administers five provinces with forty staff on a course schedule measured in centuries. The Deep Survey has four Surveyors for four arterials. Neither is a body that could re-survey a province annually, and neither could become one without inventing a cadence, a court and a register that nothing else in its system uses - which is the same as saying an apex would have to run this ground on a different clock from everything else it holds. The pass-through cost is worse: an occupation is defended by force and a holding is defended by paper, and paper is what the whole tier above the provinces is made of. An apex that governed the Burial Sands would be doing it with people rather than with documents, indefinitely, and would have proved in public that it can be made to.',
+            'An institution that exists nowhere in the world. The Long Cut administers five provinces with forty staff on a course schedule measured in centuries. The Earth Vein Tower has four Surveyors for four arterials. Neither is a body that could re-survey a province annually, and neither could become one without inventing a cadence, a court and a register that nothing else in its system uses - which is the same as saying an apex would have to run this ground on a different clock from everything else it holds. The pass-through cost is worse: an occupation is defended by force and a holding is defended by paper, and paper is what the whole tier above the provinces is made of. An apex that governed the Burial Sands would be doing it with people rather than with documents, indefinitely, and would have proved in public that it can be made to.',
         whatItWouldReturn:
             'What a finder can carry. There is no crop, no quarry, no city, no toll road and nothing to tax, because there is no traffic to tax and no fixed party to tax it at. The province exports material out of surfacings that close, and a show taken by force returns what one show returns and then stops.',
         theInterestedReason:
@@ -238,9 +238,9 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: 'sect-fallen-grain-caravan',
             holds: 'nothing',
             doesHere:
-                'Buys at Wind Market, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Company is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
+                'Buys at Wind Market, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Caravan is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
             whyHere:
-                'A yard four days away in Iron Ridge and a market with one buyer at it is the same trade the Company already runs, with the sorting done by somebody else and the losses taken by somebody else.'
+                'A yard four days away in Iron Ridge and a market with one buyer at it is the same trade the Caravan already runs, with the sorting done by somebody else and the losses taken by somebody else.'
         },
         {
             who: 'The Shrinking Earth Pavilion',

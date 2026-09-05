@@ -130,7 +130,7 @@ describe('who holds them', () => {
         expect(holders.size).toBe(3);
         expect(holders.has('sect-azure-cloud-pavilion')).toBe(true);
         // The other two are the administrators of the world, not sects.
-        expect(holders.has('apex-deep-survey')).toBe(true);
+        expect(holders.has('apex-earth-vein-tower')).toBe(true);
         expect(holders.has('apex-long-cut')).toBe(true);
         // Nobody else holds anything.
         for (const sect of SECTS) {
@@ -186,7 +186,7 @@ describe('who holds them', () => {
         }
         // The Hollow Court has no patriarch to appeal over.
         // Rank does not help: a Surveyor asking is one voice among four.
-        const survey = collective.find(h => h.factionId === 'apex-deep-survey')!;
+        const survey = collective.find(h => h.factionId === 'apex-earth-vein-tower')!;
         expect(survey.decidedBy).toMatch(/no office above|one voice/i);
         // And the bureaucracies have a form, which has been submitted.
         for (const h of collective) {
@@ -295,14 +295,14 @@ describe('three grades, and the comparison they make', () => {
         const higher = IMMORTAL_ITEMS.reduce((n, i) => n + i.knownByGrade.higher, 0);
         expect(higher, 'the top of the range must stay vanishing').toBeLessThanOrEqual(2);
         // One each to the two ancient channels, and none to the fresh one.
-        expect(gradeCeilingOf('apex-deep-survey')).toBe('higher');
+        expect(gradeCeilingOf('apex-earth-vein-tower')).toBe('higher');
         expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
         expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
     });
 
     it('inverts the table: the Pavilion is deepest and worst', () => {
         const pavilion = totalHeldBy('sect-azure-cloud-pavilion');
-        const survey = totalHeldBy('apex-deep-survey');
+        const survey = totalHeldBy('apex-earth-vein-tower');
         const longCut = totalHeldBy('apex-long-cut');
         // Most in total, by a distance.
         expect(pavilion.total).toBeGreaterThan(survey.total + longCut.total - 2);
@@ -611,7 +611,7 @@ describe('stock versus flow', () => {
             expect(h.byGrade.higher, 'the Pavilion must hold no higher grade').toBe(0);
             expect(h.byGrade.middle, 'the Pavilion must hold no middle grade').toBe(0);
         }
-        expect(gradeCeilingOf('apex-deep-survey')).toBe('higher');
+        expect(gradeCeilingOf('apex-earth-vein-tower')).toBe('higher');
         expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
         expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
     });
@@ -648,8 +648,8 @@ describe('stock versus flow', () => {
         expect(STOCK_VERSUS_FLOW.thePavilionPlanIsWide).toMatch(/on purpose/i);
     });
 
-    it('gives the Deep Survey the argument and the wrong inventory', () => {
-        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Deep Survey has, exactly and independently/i);
+    it('gives the Earth Vein Tower the argument and the wrong inventory', () => {
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Earth Vein Tower has, exactly and independently/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/converts a higher into six lowers/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Long Cut has not raised the question/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Hollow Court does not need to/i);

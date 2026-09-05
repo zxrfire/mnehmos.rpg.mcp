@@ -270,7 +270,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-forty-one-nodes',
-        name: 'The Forty-One Node Diagram',
+        name: 'The Forty-One Point Array',
         regionId: 'region-low-fall',
         domain: 'formation',
         subject: 'the diagram',
@@ -468,8 +468,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
             'Getting to the floor of it and looking down through the joints. The Reach\'s whole governing fact is that there is no ground, and the hall is the one object in the world that argues with it, from the wrong side.'
     },
     {
-        id: 'dao-ground-frozen-assay',
-        name: 'The Frozen Assay',
+        id: 'dao-ground-frozen-crucible',
+        name: 'The Frozen Crucible',
         regionId: 'region-white-stair',
         domain: 'alchemy',
         subject: 'the interrupted run',

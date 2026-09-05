@@ -3,7 +3,7 @@
  * two provinces that have any.
  *
  * The rows are not here. A prefecture is a subdivision of one province, so the
- * Jade Gorge's nine catchments live in `low-fall.ts` and the Silent Cliffs' six
+ * Jade Gorge's nine basins live in `low-fall.ts` and the Silent Cliffs' six
  * face districts live in `quiet-marches.ts`, and this file is the contract and
  * the joining. The other four provinces have no prefectures because there is
  * nothing under them to subdivide, which is a fact about those provinces
@@ -18,7 +18,7 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
  * The two kinds of prefecture, and they are not two words for one thing.
  * See the section comment: the kind follows from the region's governing fact.
  */
-export const PrefectureKindSchema = z.enum(['catchment', 'face_district']);
+export const PrefectureKindSchema = z.enum(['basin', 'face_district']);
 export type PrefectureKind = z.infer<typeof PrefectureKindSchema>;
 
 /** Which direction the record and the ground disagree in. */
@@ -63,7 +63,7 @@ export const PrefectureSchema = z.object({
         /**
          * Whose gift THAT is in, which is not always the prefecture's holder.
          * Set to the faction's own id where nobody granted it, which is how an
-         * unbacked body standing inside somebody else's catchment is recorded.
+         * unbacked body standing inside somebody else's basin is recorded.
          */
         delegatedFromId: z.string()
     })),

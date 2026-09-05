@@ -779,7 +779,7 @@ Three consequences, and they make the Court unlike every other institution in th
 is open; what is not open is the living False Immortal, and the seats, and an elder's time.
 A disciple's ceiling there is set by whose attention they can get, not by what they are
 allowed to read - which is the exact reverse of the problem everywhere else, where the reader
-is willing and the book is shut. It is the same scarcity the Deep Survey states about its own
+is willing and the book is shut. It is the same scarcity the Earth Vein Tower states about its own
 Assessor: the hours he could give a student are the hours he is not doing everything else,
 and nobody is told in advance whether the answer will be yes.
 

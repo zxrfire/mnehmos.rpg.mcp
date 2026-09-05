@@ -201,7 +201,7 @@ describe('spatial_manage consolidated tool', () => {
         it('should create, get, and list node networks', async () => {
             const created = await handleSpatialManage({
                 action: 'network_create',
-                name: 'Market District',
+                name: 'Market Prefecture',
                 networkType: 'cluster',
                 worldId: 'world-1',
                 centerX: 12,
@@ -219,7 +219,7 @@ describe('spatial_manage consolidated tool', () => {
             }, ctx);
             const gotData = parseResult(got);
             expect(gotData.success).toBe(true);
-            expect(gotData.name).toBe('Market District');
+            expect(gotData.name).toBe('Market Prefecture');
             expect(gotData.boundingBox.maxX).toBe(14);
 
             const listed = await handleSpatialManage({

@@ -521,7 +521,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'The other two to price what a house does on the axis they refuse to price, and to say so where it can be quoted. It is not asking either of them to change; it is asking them to answer in their own words instead of in a silence, which is the only move available to a body that objects and cannot act.',
-            blockedBy: ['apex-deep-survey', 'apex-long-cut'],
+            blockedBy: ['apex-earth-vein-tower', 'apex-long-cut'],
             wouldCost:
                 'Nothing it can be made to pay, and everything it would rather not spend. Any two apexes can end any third, both of the others know exactly what the Pavilion would do afterwards, and being the only one of the three whose behaviour follows from its doctrine is what keeps it safe and what makes it useless in a room. Pressing harder converts a standing objection into an event, and an event is the one thing a house three hundred and eighty years old cannot afford against two nobody can date.',
             contestedWith: [],
@@ -767,7 +767,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Lantern Hall',
         alignment: 'righteous',
         powerOrdinal: 31,
-        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Names', 'Senior Keeper', 'Grand Keeper', 'Hall Warden-General'],
+        ranks: ['Copyist', 'Reader', 'Hall Archivist', 'Keeper of Names', 'Senior Keeper', 'Grand Keeper', 'Grand Hall Warden'],
         admissionOrdinal: 2,
         stipend: [6, 16, 44, 140, 460, 830, 1_500],
         teaches: [
@@ -939,7 +939,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Stone Marrow Hall',
         alignment: 'neutral',
         powerOrdinal: 33,
-        ranks: ['Weigher', 'Refiner', 'Factor', 'House Factor', 'Rate-Setter', 'Grand Rate-Setter', 'Stone Marrow Hall Principal'],
+        ranks: ['Weigher', 'Refiner', 'Factor', 'House Factor', 'Rate Elder', 'Grand Rate Elder', 'Marrow Master'],
         admissionOrdinal: 6,
         stipend: [10, 30, 90, 300, 1_000, 1_700, 3_000],
         teaches: [
@@ -1028,7 +1028,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Cinnabar Crucible Sect',
         alignment: 'neutral',
         powerOrdinal: 25,
-        ranks: ['Bellows Hand', 'Apprentice Alchemist', 'Journeyman Alchemist', 'Cauldron Master', 'Furnace Elder', 'Grand Furnace Elder', 'Hall Grandmaster'],
+        ranks: ['Bellows Hand', 'Outer Alchemist', 'Inner Alchemist', 'Cauldron Master', 'Furnace Elder', 'Grand Furnace Elder', 'Hall Grandmaster'],
         admissionOrdinal: 6,
         stipend: [6, 18, 55, 180, 560, 950, 1_600],
         teaches: [
@@ -1238,7 +1238,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'To be left where it is. Not recognition, not a grant, not a seat at anything - simply for nobody to arrive with a reason why a body holding a fixed band below the face is an anomaly that ought to be resolved.',
-            blockedBy: ['sect-frostmirror-court', 'apex-deep-survey'],
+            blockedBy: ['sect-frostmirror-court', 'apex-earth-vein-tower'],
             wouldCost:
                 'Nothing it can pay and everything it would have to stop doing. Being left alone is only available while nobody has a reason to insist, and the Court sells into a Hall that has to account for what it buys. Every season it sells is a season somebody could work backwards from to a valley that is on nobody\'s figure.',
             contestedWith: [],
@@ -1298,7 +1298,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'The third arterial, and the eleven grants that hang off it, administered by the Frostmirror instead of the Third Sill - or failing that, standing as a peer rather than a junior.',
-            blockedBy: ['court-third-sill', 'apex-deep-survey'],
+            blockedBy: ['court-third-sill', 'apex-earth-vein-tower'],
             wouldCost:
                 'Everything it has, spent on a body that has not replied to eleven years of correspondence. The Court reads the silence as weakness and the province reads it as the Sill having read the Court correctly, and both readings cannot be right.',
             contestedWith: [
@@ -1313,7 +1313,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     {
         id: 'sect-kiln-wardens',
         // Renamed. This is the half that left the datum, and it took the
-        // Deep Survey's own administrative name for the posting with it - see
+        // Earth Vein Tower's own administrative name for the posting with it - see
         // THE_KILN_SCHISM. The body still standing on the ground is the Kiln
         // Court, under the Survey, and says this one is not the house.
         name: 'Deeproot Court',
@@ -1561,7 +1561,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'A rotation slot in the Silent Cliffs burn zones, which are the only unworked ground left within reach.',
             blockedBy: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
             wouldCost:
-                'Crossing a border neither region polices into ground the Fallen Grain Caravan have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Company located, which is the grievance from the other side.',
+                'Crossing a border neither region polices into ground the Fallen Grain Caravan have worked for forty years, against a company that has never defaulted on a dead digger\'s share and would be defending its people\'s living. The Cult already undercuts them there using finds the Caravan located, which is the grievance from the other side.',
             contestedWith: ['sect-fallen-grain-caravan', 'sect-sand-well-caravan'],
             movedOn:
                 'Two Lantern Bearers have been working the Silent Cliffs edge for three seasons without a rotation entry, which the Pale Elders have not sanctioned and have not stopped.'
@@ -1623,11 +1623,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nineteen nodes lit along the caldera rim and nineteen dark, in an alternating ring, because the sect could only read every other line of the diagram.'
         },
         description:
-            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the one demonic sect in the province that holds from the Long Cut rather than the Deep Survey, which means the apex with a doctrine about who holds ground has no instrument on it at all, and it is the only body of any alignment that hands an applicant the full text of a transformation contract before they sign - total honesty about a monstrous bargain, which reads to everybody as recruitment. Its pipeline works for a reason nobody else can copy, because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
+            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the one demonic sect in the province that holds from the Long Cut rather than the Earth Vein Tower, which means the apex with a doctrine about who holds ground has no instrument on it at all, and it is the only body of any alignment that hands an applicant the full text of a transformation contract before they sign - total honesty about a monstrous bargain, which reads to everybody as recruitment. Its pipeline works for a reason nobody else can copy, because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
         ambition: {
             wants:
                 'A court of its own, on the grounds that the transformation curriculum is the third irreplaceable thing in the province and the other two were promoted for exactly that.',
-            blockedBy: ['court-third-sill', 'apex-deep-survey'],
+            blockedBy: ['court-third-sill', 'apex-earth-vein-tower'],
             wouldCost:
                 'The Frostmirror was promoted for ice and the Storm Tyrant for lightning, and both are neutral or worse rather than openly demonic, which is the distinction the sect insists is not one. Pressing it means an assay of the vent, and the vent has thinned measurably.',
             contestedWith: ['sect-frostmirror-court', 'sect-storm-tyrant-court', 'sect-ashen-forge-clan'],
@@ -1685,7 +1685,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'To find out whether the ancestor is still there. The Court was one of the three once and cannot reach the founder who made it one, because reaching upward takes materials and an object it no longer has - and the object it needs is the one that is not in the room. An apex could open that channel. Asking one means telling it what was lost, to a body that would then know.',
-            blockedBy: ['apex-deep-survey', 'apex-azure-cloud'],
+            blockedBy: ['apex-earth-vein-tower', 'apex-azure-cloud'],
             wouldCost:
                 'The admission. Nobody above has refused the Court and nobody below can ask, which is a silence it has been able to describe as anything it liked for a hundred and forty years; a request for help ends that permanently, and it ends it in front of a body that renews its grant. The cheaper alternative, which the Court keeps choosing, is a demonstration of the curriculum\'s depth - somebody produced above Nascent Soul - which it has not managed in a century.',
             contestedWith: ['sect-frostmirror-court', 'sect-nine-abyss-flame-sect', 'sect-crimson-abyss-fortress'],
@@ -1753,7 +1753,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Clearwater Ward',
         alignment: 'neutral',
         powerOrdinal: 21,
-        ranks: ['Applicant', 'Ticketed', 'Standing Grant', 'Under-Warden of the Weir', 'Office Warden', 'Senior Office Warden', 'Weir Master'],
+        ranks: ['Applicant', 'Ticketed', 'Standing Grant', 'Under-Warden of the Weir', 'Water Warden', 'Senior Water Warden', 'Weir Master'],
         admissionOrdinal: 2,
         stipend: [2, 6, 20, 70, 240, 440, 800],
         teaches: [
@@ -1791,7 +1791,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Six Li Patrol',
         alignment: 'righteous',
         powerOrdinal: 14,
-        ranks: ['Marker', 'Warden', 'Road Warden', 'Warden of the Six Mile'],
+        ranks: ['Marker', 'Warden', 'Road Warden', 'Warden of the Six Li'],
         admissionOrdinal: 0,
         stipend: [1, 3, 9, 30],
         teaches: [
@@ -1830,7 +1830,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         name: 'Fallen Grain Caravan',
         alignment: 'neutral',
         powerOrdinal: 17,
-        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Company Factor', 'First Factor', 'Company Master'],
+        ranks: ['Barrow Hand', 'Gleaner', 'Deep Gleaner', 'Caravan Factor', 'First Factor', 'Caravan Master'],
         admissionOrdinal: 0,
         stipend: [2, 7, 26, 90, 160, 300],
         teaches: [
@@ -1849,16 +1849,16 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             inherited: true,
             formationNodesTotal: 14,
             formationNodesLit: 3,
-            remnant: 'A sorting yard laid out inside a ruin the Company did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
+            remnant: 'A sorting yard laid out inside a ruin the Caravan did not build and has never fully entered, working three nodes at the front of it and leaving the rest sealed on the reasonable grounds that they were sealed for a reason.'
         },
         description:
-            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Ridge. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Silent Cliffs also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Company brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Company has never defaulted.',
+            'The burn zones, worked in rotation on a nine-year cycle, and the barrow yard at Willow Village where the finds are sorted before they go to Iron Ridge. It teaches what keeps a digger alive - the cross-meridian strike, the shadow gait, the stone hide, detoxification, the gathering manual - and nothing at all that would help in a fight with a person, because the thing that kills gleaners is a door. The catastrophe that emptied the Silent Cliffs also sealed a great deal of it and nobody strong enough to strip it properly has bothered to come, so the region\'s only real export is what the Caravan brings out; losses run about one in nine a season, and it is understood locally as a way of dying slightly later than the alternative. What it actually is, underneath the pay everybody talks about, is the only body in a region administered by an eleven-person bureau that has never once broken its word: a dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted.',
         ambition: {
             wants:
-                'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Company has misremembered.',
+                'Permission to work live burn edges, which pay triple, instead of holding to a nine-year rotation whose stated purpose the Caravan has misremembered.',
             blockedBy: ['sect-clearwater-ward', 'sect-bone-lantern-cult'],
             wouldCost:
-                'The Company Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Company has, so a season of unpaid families would end it.',
+                'The Caravan Master holds the rotation and the argument reopens every time a face runs out. Working live edges would raise losses from one in nine to something nobody has costed, and the share promise is the only thing the Caravan has, so a season of unpaid families would end it.',
             contestedWith: ['sect-bone-lantern-cult'],
             movedOn:
                 'The Factors have worked two live edges without an entry and paid the shares out of the general fund, which is the first time the fund has been used for anything.'
@@ -2014,7 +2014,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'Ninefold Karma Palace',
         alignment: 'neutral',
         powerOrdinal: 32,
-        ranks: ['Tallyhand', 'Reader of Threads', 'Reckoner', 'Circuit Arbiter', 'Karma Elder', 'Grand Karma Elder', 'Keeper of the Ninefold Register'],
+        ranks: ['Tallyhand', 'Reader of Threads', 'Reckoner', 'Circuit Envoy', 'Karma Elder', 'Grand Karma Elder', 'Keeper of the Ninefold Register'],
         admissionOrdinal: 4,
         stipend: [12, 36, 110, 340, 1_100, 1_900, 3_400],
         teaches: [
@@ -2141,7 +2141,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'Flowing Light Tower',
         alignment: 'neutral',
         powerOrdinal: 30,
-        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Hours', 'Convergence Master', 'Elder of the Flowing Light Tower', 'First Elder of the Flowing Light Tower', 'First Sighting'],
+        ranks: ['Watcher', 'Sighting Disciple', 'Reader of Hours', 'Convergence Master', 'Elder of the Hour', 'First Elder of the Hour', 'First Sighting'],
         admissionOrdinal: 6,
         stipend: [14, 42, 130, 400, 1_300, 2_200, 3_800],
         teaches: [
@@ -2685,7 +2685,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         name: 'Immovable Mountain Temple',
         alignment: 'righteous',
         powerOrdinal: 35,
-        ranks: ['Peg', 'Holder', 'Nail Warden', 'Warden of the Survey', 'Elder of the Fixed Ground', 'First Elder of the Fixed Ground', 'The Standing Anchor'],
+        ranks: ['Peg', 'Holder', 'Nail Warden', 'Warden of the Vein', 'Elder of the Fixed Ground', 'First Elder of the Fixed Ground', 'The Standing Anchor'],
         admissionOrdinal: 10,
         stipend: [15, 46, 145, 460, 1_450, 2_500, 4_400],
         teaches: [

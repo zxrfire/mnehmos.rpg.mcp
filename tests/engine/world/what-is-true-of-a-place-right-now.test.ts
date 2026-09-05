@@ -64,7 +64,7 @@ function places(): LocationRecord[] {
             id: 'loc-town', name: 'Iron Ridge', kind: 'settlement', parentId: 'loc-province'
         }),
         makeLocation({
-            id: 'loc-district', name: 'The Six Li Cut', kind: 'wilderness', parentId: 'loc-town'
+            id: 'loc-prefecture', name: 'The Six Li Cut', kind: 'wilderness', parentId: 'loc-town'
         }),
         makeLocation({
             id: 'loc-elsewhere', name: 'Willow Village', kind: 'settlement', parentId: 'loc-province'
@@ -180,15 +180,15 @@ describe('a status has to end, and the type will not let you write one that does
 
 describe('a status is true of an area and of everything under it', () => {
     it('walks the chain innermost first', () => {
-        expect(areaChainOf(places(), 'loc-district'))
-            .toEqual(['loc-district', 'loc-town', 'loc-province']);
+        expect(areaChainOf(places(), 'loc-prefecture'))
+            .toEqual(['loc-prefecture', 'loc-town', 'loc-province']);
         expect(areaChainOf(places(), 'loc-province')).toEqual(['loc-province']);
         expect(areaChainOf(places(), null)).toEqual([]);
         expect(areaChainOf(places(), 'loc-nothing')).toEqual([]);
     });
 
     it('reaches down from a province into a town in it', () => {
-        const found = statusesInArea([famine('loc-province')], places(), 'loc-district', AT);
+        const found = statusesInArea([famine('loc-province')], places(), 'loc-prefecture', AT);
         expect(found.map(s => s.id)).toEqual(['status-famine']);
     });
 
@@ -200,7 +200,7 @@ describe('a status is true of an area and of everything under it', () => {
         // took in consequence, which no count recovers.
         const closed = makeAreaStatus({
             id: 'status-cut-closed',
-            areaId: 'loc-district',
+            areaId: 'loc-prefecture',
             kind: 'closed_to_gathering',
             statement: 'The cut is closed and the crews have been called off it.',
             cause: {
@@ -211,7 +211,7 @@ describe('a status is true of an area and of everything under it', () => {
             beganOnDay: FAMINE_BEGAN,
             reviewOnDay: FAMINE_BEGAN + 3650
         });
-        expect(statusesInArea([closed], places(), 'loc-district', AT).map(s => s.id))
+        expect(statusesInArea([closed], places(), 'loc-prefecture', AT).map(s => s.id))
             .toEqual(['status-cut-closed']);
         expect(statusesInArea([closed], places(), 'loc-town', AT)).toEqual([]);
         expect(statusesInArea([closed], places(), 'loc-province', AT)).toEqual([]);
@@ -222,7 +222,7 @@ describe('a status is true of an area and of everything under it', () => {
     });
 
     it('orders innermost first, so the most local answer is read first', () => {
-        const found = statusesInArea([famine('loc-province'), war('loc-town')], places(), 'loc-district', AT);
+        const found = statusesInArea([famine('loc-province'), war('loc-town')], places(), 'loc-prefecture', AT);
         expect(found.map(s => s.id)).toEqual(['status-war', 'status-famine']);
     });
 });
@@ -342,7 +342,7 @@ describe('what is true, what is visible, and what anybody has worked out', () =>
 
     it('answers the standing question with the prose of every status true here', () => {
         const said = whatIsGoingOnHere(
-            [famine(), war()], places(), 'loc-district', AT,
+            [famine(), war()], places(), 'loc-prefecture', AT,
             id => (id === 'status-war' ? 'known' : 'named')
         );
         expect(said.map(r => r.statusId)).toEqual(['status-war', 'status-famine']);
@@ -408,8 +408,8 @@ describe('presence is read off locationId and stored nowhere else', () => {
     it('finds who is in an area through the ordinary NPC record', () => {
         const world = places();
         const day = 3600;
-        const inDistrict = createNpc('seed-status-test', {
-            id: 'npc-in-district', bornOnDay: 0, onDay: day, locationId: 'loc-district'
+        const inPrefecture = createNpc('seed-status-test', {
+            id: 'npc-in-prefecture', bornOnDay: 0, onDay: day, locationId: 'loc-prefecture'
         });
         const inTown = createNpc('seed-status-test', {
             id: 'npc-in-town', bornOnDay: 0, onDay: day, locationId: 'loc-town'
@@ -420,13 +420,13 @@ describe('presence is read off locationId and stored nowhere else', () => {
         const nowhere = createNpc('seed-status-test', {
             id: 'npc-nowhere', bornOnDay: 0, onDay: day, locationId: null
         });
-        const npcs = [inDistrict, inTown, elsewhere, nowhere];
+        const npcs = [inPrefecture, inTown, elsewhere, nowhere];
 
-        expect(whoIsInArea(npcs, world, 'loc-district').map(n => n.id)).toEqual(['npc-in-district']);
+        expect(whoIsInArea(npcs, world, 'loc-prefecture').map(n => n.id)).toEqual(['npc-in-prefecture']);
         expect(whoIsInArea(npcs, world, 'loc-town').map(n => n.id).sort())
-            .toEqual(['npc-in-district', 'npc-in-town']);
+            .toEqual(['npc-in-prefecture', 'npc-in-town']);
         expect(whoIsInArea(npcs, world, 'loc-province').map(n => n.id).sort())
-            .toEqual(['npc-elsewhere', 'npc-in-district', 'npc-in-town']);
+            .toEqual(['npc-elsewhere', 'npc-in-prefecture', 'npc-in-town']);
         // Somebody whose location is unknown is in no area. `layers.ts` already
         // reasons about this person; they are not quietly assigned anywhere.
         expect(whoIsInArea(npcs, world, 'loc-far')).toEqual([]);
@@ -437,13 +437,13 @@ describe('presence is read off locationId and stored nowhere else', () => {
         const day = FAMINE_BEGAN + 30;
         const npcs = [
             createNpc('seed-status-test', {
-                id: 'npc-a', bornOnDay: 0, onDay: day, locationId: 'loc-district'
+                id: 'npc-a', bornOnDay: 0, onDay: day, locationId: 'loc-prefecture'
             }),
             createNpc('seed-status-test', {
                 id: 'npc-b', bornOnDay: 0, onDay: day, locationId: 'loc-elsewhere'
             })
         ];
-        const running = statusesInArea([war('loc-town')], world, 'loc-district', day);
+        const running = statusesInArea([war('loc-town')], world, 'loc-prefecture', day);
         expect(running).toHaveLength(1);
         expect(whoIsInArea(npcs, world, running[0].areaId).map(n => n.id)).toEqual(['npc-a']);
     });
@@ -465,8 +465,8 @@ describe('nothing here is stochastic', () => {
 
     it('is a pure function of its arguments', () => {
         const world = [famine(), war()];
-        const once = whatIsGoingOnHere(world, places(), 'loc-district', AT, () => 'known');
-        const again = whatIsGoingOnHere(world, places(), 'loc-district', AT, () => 'known');
+        const once = whatIsGoingOnHere(world, places(), 'loc-prefecture', AT, () => 'known');
+        const again = whatIsGoingOnHere(world, places(), 'loc-prefecture', AT, () => 'known');
         expect(again).toEqual(once);
         // And it does not mutate what it was handed.
         expect(world[0]).toEqual(famine());

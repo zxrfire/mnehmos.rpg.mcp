@@ -67,7 +67,7 @@ export function bearingOfFaction(factionId: string): Bearing | undefined {
  * do not divide the compass between them.
  *
  * Two of the three are in the centre and one is in the west, and that is the
- * arrangement rather than an untidiness: the Deep Survey administers the
+ * arrangement rather than an untidiness: the Earth Vein Tower administers the
  * arterial system the eleven Jade Gorge veins branch from, the Pavilion holds
  * the gorge outright, and the Long Cut holds driven ground of which the
  * Silent Cliffs is one province and not the largest. Nothing seats an apex in the
@@ -87,8 +87,8 @@ export function apexSeats(): {
 }[] {
     return [
         {
-            apexId: 'apex-deep-survey',
-            name: 'The Deep Survey',
+            apexId: 'apex-earth-vein-tower',
+            name: 'The Earth Vein Tower',
             bearing: 'centre',
             seatedIn: null,
             why: 'It holds the four arterial veins the eleven surveyed ones branch from, and the datum every survey in the province is measured against. Its seat is a vault under the centre and it appears in no province\'s seating list, because a province seats houses and the Survey is what the houses hold from.'

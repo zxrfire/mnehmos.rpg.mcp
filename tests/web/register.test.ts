@@ -1039,7 +1039,7 @@ describe('a body with a row in two catalogs', () => {
     // The duplicate the user reported, and the over-correction that replaced
     // it. Merging the two nodes is right; deleting one of the two NAMES is not
     // - the province has called the Kiln Court that for nine hundred years and
-    // the Deeproot Court is what the Deep Survey calls the posting, and which one is
+    // the Deeproot Court is what the Earth Vein Tower calls the posting, and which one is
     // real is exactly what the catalog says has never been settled.
     const embodied = COURTS.filter(c => c.embodiedByFactionId !== null);
 

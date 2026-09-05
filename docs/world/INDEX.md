@@ -719,22 +719,22 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `FACTION_CHARACTER` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | 7 | 32 |
 | `SECT_ANCESTRY` | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | 7 | 45 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 8 | 19 |
-| `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 8 | 80 |
+| `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 8 | 82 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 10 | 21 |
-| `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 13 | 27 |
+| `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 13 | 29 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 45 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 14 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
-| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 17 | 20 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 21 |
-| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 17 | 38 |
+| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 17 | 22 |
+| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 17 | 40 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 72 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 20 | 87 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 118 |
-| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 30 | 47 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 31 | 142 |
+| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 30 | 49 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 31 | 144 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 40 | 56 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 289 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 291 |
 
 <!-- END GENERATED: design-constants -->
 

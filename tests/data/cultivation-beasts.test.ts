@@ -580,7 +580,7 @@ describe('lookups', () => {
 
 describe('wired into the encounter table', () => {
     const ADDED = [
-        'enc-thin-district-beasts',
+        'enc-thin-prefecture-beasts',
         'enc-culling-notice-mispriced',
         'enc-beast-hunting-cultivators',
         'enc-beast-holding-a-vein',
@@ -618,7 +618,7 @@ describe('wired into the encounter table', () => {
         // The contract is expensive on the cultivator's own draw.
         expect(getEncounter('enc-beast-contract-offered')!.summaryTemplate).toMatch(/own draw/i);
         // The Late Age version: thin ground, small animals, poor pay.
-        expect(getEncounter('enc-thin-district-beasts')!.tags).toContain('late-age');
+        expect(getEncounter('enc-thin-prefecture-beasts')!.tags).toContain('late-age');
         // And an ancient sleeper under somebody's compound.
         expect(getEncounter('enc-old-thing-under-the-compound')!.summaryTemplate)
             .toMatch(/before .* was founded/i);

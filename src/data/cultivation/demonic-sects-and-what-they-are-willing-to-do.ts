@@ -42,7 +42,7 @@
  * A demonic sect on granted ground is not tolerated because anybody approves of
  * it. It holds a grant, a grant is a contract with three obligations - tribute,
  * the levy, and fighting when its patron fights - and alignment is not one of
- * them. See `alignmentDoctrine` on `apex-deep-survey`. Meet the three and the
+ * them. See `alignmentDoctrine` on `apex-earth-vein-tower`. Meet the three and the
  * Survey does not care what you are; fail them and the protection evaporates
  * without anybody having changed their mind about morality.
  *
@@ -153,7 +153,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whatItKeepsLocal:
             'It cuts nobody who has not asked. Six cities, all rented, no ground, no recruitment table and no approach to anybody who has not walked in - and the restraint is not principle, it is the only reason a body of that strength with no grant and no patron has never had a province decide about it. The moment a Severed cultivator cuts something off somebody else, the doctrine stops being a philosophy and becomes an incident, and the house knows precisely which of its arts would make that argument for it.',
         standingOnTheContract:
-            'None of it applies and that is the whole of its position. It holds no grant, so there is no tribute, no levy and no obligation to fight, and there is correspondingly nothing anybody can withhold. The Deep Survey has never approached it, which the Severed have noticed and have never been able to read: it is either the largest compliment the Survey has paid anybody or evidence that a body which cannot be granted to cannot be dealt with at all, and both readings are available.',
+            'None of it applies and that is the whole of its position. It holds no grant, so there is no tribute, no levy and no obligation to fight, and there is correspondingly nothing anybody can withhold. The Earth Vein Tower has never approached it, which the Severed have noticed and have never been able to read: it is either the largest compliment the Survey has paid anybody or evidence that a body which cannot be granted to cannot be dealt with at all, and both readings are available.',
         ifItWereDestroyed:
             'Nothing is inherited, because there is nothing to inherit - six rented halls, three portable nodes and a ledger. No vacancy opens on any vein, so the recognition doctrine has nothing to recognise, and the Survey\'s procedure produces no response of any kind. What would actually happen is that the fastest pipeline in the catalog stops, and the six cities that have been quietly sending it their refusals for four hundred years find out what they were doing with them.'
     },
@@ -185,7 +185,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whatItKeepsLocal:
             'It collects mutated lightning roots and nothing else. There are perhaps a handful in a generation, most of them die young in houses that cannot teach them, and the Court takes those - so its intake is measured in people per century and is invisible to anybody not watching for it. A body that took ordinarily talented disciples at that rate would have been ended long ago, and the Court is entirely clear that its restraint is what buys the arrangement.',
         standingOnTheContract:
-            'Probationary, and the province can read the warning if it knows the vocabulary. It is a court answering directly to the Deep Survey, raised past the Kiln Court - the Survey\'s other body in the province, which issues nothing and answers nothing downward - because the curriculum is the one thing in the Jade Gorge nobody can replace and the Survey would rather administer such a thing than lease it. The last two renewals were issued for six years instead of twelve, which in the grant vocabulary is a warning delivered without a word, and the Court has not established which of the three terms it is being warned about.',
+            'Probationary, and the province can read the warning if it knows the vocabulary. It is a court answering directly to the Earth Vein Tower, raised past the Kiln Court - the Survey\'s other body in the province, which issues nothing and answers nothing downward - because the curriculum is the one thing in the Jade Gorge nobody can replace and the Survey would rather administer such a thing than lease it. The last two renewals were issued for six years instead of twelve, which in the grant vocabulary is a warning delivered without a word, and the Court has not established which of the three terms it is being warned about.',
         ifItWereDestroyed:
             'The floating stone is tethered to a peak by a chain that is inspected annually and cannot be repaired, so what a successor inherits is a maintenance liability with the world\'s only lightning curriculum inside it. The Survey would recognise whoever held it, and the honest problem is that almost nobody could: the curriculum can only be worn by a mutated root, so the ground would pass to a body that could hold the stone and not read the library, and the one thing in the province nobody can replace would stop being replaced by anybody.'
     },
@@ -246,7 +246,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
 /**
  * Why recognising whoever holds the ground says nothing about a dao house.
  *
- * The Deep Survey's doctrine is territorial all the way down: the instrument is
+ * The Earth Vein Tower's doctrine is territorial all the way down: the instrument is
  * a grant, a grant is on a vein, and the three obligations it carries - tribute,
  * the levy, fighting when the Survey fights - are all things a body standing on
  * something can be made to do. A dao house holds no ground. It holds a
@@ -275,7 +275,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
  */
 export const DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE = {
     whyItDoesNotReachThem:
-        'The Deep Survey\'s doctrine is territorial in every part: the instrument is a grant, a grant sits on a vein, and its three obligations are things a body standing on something can be held to. A dao house stands on nothing. It holds a specialisation and a civil standing, and neither can be granted, withheld, renewed short as a warning, or passed to a successor - so there is no version of "recognise whoever holds the ground" that has a subject.',
+        'The Earth Vein Tower\'s doctrine is territorial in every part: the instrument is a grant, a grant sits on a vein, and its three obligations are things a body standing on something can be held to. A dao house stands on nothing. It holds a specialisation and a civil standing, and neither can be granted, withheld, renewed short as a warning, or passed to a successor - so there is no version of "recognise whoever holds the ground" that has a subject.',
     soWhatTheApexDoesInstead:
         'It uses them, through intermediaries, in a way that creates standing in neither direction. That is not recognition and it is not patronage: it is a transaction between two parties who have both arranged not to be identifiable to the other, and it leaves no record on either side, which is exactly what both of them are paying for.',
     andWhyThatIsWorseForTheHouses:

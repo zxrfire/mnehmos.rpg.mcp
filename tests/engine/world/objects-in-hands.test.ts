@@ -96,7 +96,7 @@ describe('a rated object reaches the person the catalog says is holding it', () 
         // In its owner's hold. `war-melee.ts` excludes a house's stores from
         // breakage on exactly this test, so moving one out of the vault is a
         // decision and not a tidy-up.
-        expect(byId.get('sent-datum-lamp')?.possessorId).toBe('apex-deep-survey');
+        expect(byId.get('sent-datum-lamp')?.possessorId).toBe('apex-earth-vein-tower');
         expect(byId.get('artifact-the-standing-weight')?.possessorId).toBe('house-immovable-mountain');
 
         // Held by nobody, which is a real state and not a gap.

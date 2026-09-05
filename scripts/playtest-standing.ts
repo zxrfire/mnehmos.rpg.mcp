@@ -26,7 +26,7 @@
  *    `done`. Above the Lid the engine answers "Not from here." - a correct,
  *    deliberate, structurally-grounded refusal that matches none of those
  *    alternatives - so every mortal-world verb at ordinals 45 and 46 scored as
- *    having HAPPENED. `I attack the Deep Survey` scored `done` while the engine
+ *    having HAPPENED. `I attack the Earth Vein Tower` scored `done` while the engine
  *    was saying "No exchange was run." The refusal vocabulary of this codebase
  *    is not a closed set and never will be, because it is written per situation
  *    on purpose.
@@ -272,7 +272,7 @@ const ASKS: [string, string][] = [
     ['I apply to the Azure Dew Sect', 'an ordinary door'],
     ['I apply to the Azure Cloud Pavilion', 'an apex with a front gate'],
     ['I apply to the Hollow Court', 'the highest bar in the world'],
-    ['I apply to the Deep Survey', 'an apex nobody can join at all'],
+    ['I apply to the Earth Vein Tower', 'an apex nobody can join at all'],
     ['I ask the Jade Register Hall to adopt me', 'the only way into a dao house'],
 
     // ── violence ─────────────────────────────────────────────────────────
@@ -280,7 +280,7 @@ const ASKS: [string, string][] = [
     ['I murder a disciple of the Nine Abyss Flame Sect', 'murder, outside it'],
     ['I attack the Nine Abyss Flame Sect', 'assaulting a whole house'],
     ['I assassinate the Third Lord', 'killing a named court officer'],
-    ['I attack the Deep Survey', 'walking at an apex'],
+    ['I attack the Earth Vein Tower', 'walking at an apex'],
 
     // ── theft ────────────────────────────────────────────────────────────
     ['I steal the sect treasury and leave in the night', 'the theft that already works'],
@@ -289,10 +289,10 @@ const ASKS: [string, string][] = [
     ['I break the seal under the Kiln Court', 'stealing an ancestor that is not yours'],
 
     // ── asking for what cannot be bought ─────────────────────────────────
-    ['I ask the Deep Survey for an Heaven-Ascending Golden Pill', 'the pill that carries you a realm'],
+    ['I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill', 'the pill that carries you a realm'],
     ['I ask the Azure Cloud Pavilion for a Root-Recasting Talisman', 'the talisman that rewrites a root'],
     ['I file a Requisition Against Standing Stock', 'the form, by name'],
-    ['I ask the Deep Survey for one of its pills', 'the same thing in plain words'],
+    ['I ask the Earth Vein Tower for one of its pills', 'the same thing in plain words'],
     ['I ask the Hollow Court for a dao protector', 'asking the top of the world for a favour'],
 
     // ── the world's institutions ─────────────────────────────────────────
@@ -390,9 +390,9 @@ type Verdict = 'WROTE' | 'RULED' | 'UNFOUND' | 'SHRUG' | 'SILENT' | 'THREW';
  *
  * This is a THIRD thing, and collapsing it into `refused` is how the previous
  * report came to say that attacking a sect and attacking an apex were "two
- * correct refusals". They are not refusals. `I attack the Deep Survey` files
+ * correct refusals". They are not refusals. `I attack the Earth Vein Tower` files
  *
- *     Unresolved party "Deep Survey" for a confrontation. No exchange was run.
+ *     Unresolved party "Earth Vein Tower" for a confrontation. No exchange was run.
  *
  * at every position from ordinal 0 to a descended True Immortal. Nothing about
  * standing was consulted, because the ask never reached anything that could
@@ -522,8 +522,8 @@ async function seat(position: Position): Promise<{ game: Game; db: Database.Data
     // Learning `SECTS` alone is not enough and the first version of this file
     // did exactly that. `factionMeant` resolves a name against THREE catalogs -
     // `SECTS`, `COURTS` and `APEX_INSTITUTIONS` - and `DAO_HOUSES` is a fourth,
-    // all under the `sect` awareness kind. So `I ask the Deep Survey for an
-    // Heaven-Ascending Golden Pill` came back "Unresolved faction 'Deep Survey': no knowledge
+    // all under the `sect` awareness kind. So `I ask the Earth Vein Tower for an
+    // Heaven-Ascending Golden Pill` came back "Unresolved faction 'Earth Vein Tower': no knowledge
     // record. 32 faction name(s) held by this cultivator" at every single
     // position, and read as a flat row about the immortal pills when it was a
     // flat row about a catalog the harness had not taught.

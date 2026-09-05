@@ -145,7 +145,7 @@ Two consequences:
   attempt at a fix put a space in and stopped there. The design owner's verdict on that:
   **HALF ROOF IS NOT XIANXIA**, and he was right. Roof, Well, Bank, Yard, Hollow, Rota,
   Landing, Shortcut and Reach are English domestic and agricultural words, and a space
-  between two of them is still an English village. *Half Eaves Hall*, *Cold Spring*,
+  between two of them is still an English village. *Cloud Eaves Hall*, *Cold Spring*,
   *Knife Edge*, *Iron Hook Slope* are the same places under the nouns the authored map
   already uses.
 - **A gerund is the same failure in a third coat.** *Digging* and *Gleaning* are English

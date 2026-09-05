@@ -184,7 +184,7 @@ describe('a duty runs under the words a person uses for it', () => {
      * `AGENTS.md` cites this by name under "if a near-synonym works, the
      * phrasing that fails is a bug". Played: `I take a duty`, `I take the duty`
      * and `I accept the commission` all re-listed the wall, and only
-     * `I take What a Poor District Has Instead of Monsters` ran - so the whole
+     * `I take What a Poor Prefecture Has Instead of Monsters` ran - so the whole
      * subsystem was reachable by retyping a seven-word title.
      *
      * The discriminator was in the plan the whole time and was thrown away one

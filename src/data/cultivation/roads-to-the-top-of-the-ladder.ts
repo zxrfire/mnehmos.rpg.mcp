@@ -140,7 +140,7 @@ export const THE_DEEPEST_ROADS: readonly DeepRoadHolding[] = [
             'From the author, directly, and from nobody since. Ru Anjing taught the road to her sister in the decades before she crossed and to no one else, so everything the Pavilion knows about walking it is one woman\'s memory of being taught by one woman, three hundred and eighty years ago.'
     },
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         techniqueId: 'arterial-sounding-canon',
         copies: 1,
         whyThatManyCopies:

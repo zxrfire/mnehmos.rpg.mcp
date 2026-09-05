@@ -44,7 +44,7 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 // number somewhere else in the catalog and has simply never been said out
 // loud:
 //
-//   - the Deep Survey `holds` four arterials beneath the Jade Gorge, and there
+//   - the Earth Vein Tower `holds` four arterials beneath the Jade Gorge, and there
 //     are four Surveyors, one per arterial. So there are four arterials, and
 //     they are named here.
 //   - the Long Cut holds driven ground across FIVE provinces and the Ninth
@@ -53,13 +53,13 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 //     apart.
 //   - `court-third-sill` administers the third arterial, sits in the Jade Gorge,
 //     and its `apexId` is `apex-long-cut`. That is not a note about a court.
-//     It means the arterial that every surveyed vein in the Deep Survey's one
+//     It means the arterial that every surveyed vein in the Earth Vein Tower's one
 //     province branches from is administered by the other apex, and neither
 //     of them has ever said so in a document.
 //
 // THE ASYMMETRY IS THE FINDING, and it was sitting in the data. The Long Cut
 // is broad and shallow: five provinces, forty staff, everything administered
-// directly, nothing delegated. The Deep Survey is narrow and deep: ONE
+// directly, nothing delegated. The Earth Vein Tower is narrow and deep: ONE
 // province, four arterials under it, a filled ladder, and a storehouse it has
 // already spent. An apex is not a bigger sect, and the two of them are not
 // even the same shape.
@@ -101,7 +101,7 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 // `none` really does read the same in both fields.
 //
 // NO ARITHMETIC HERE. Nothing in this section decides who would win a dispute
-// over a boundary, what a catchment is worth, or how many houses it takes to
+// over a boundary, what a basin is worth, or how many houses it takes to
 // move one. Those are questions for the resolvers. This is a statement about
 // what is standing where.
 // ─────────────────────────────────────────────────────────────────────────
@@ -158,14 +158,14 @@ export const PROVINCES: readonly Province[] = [
         name: REGION_NAME.JADE_GORGE,
         standing: 'played',
         regionId: HOME_REGION_ID,
-        heldByApexId: 'apex-deep-survey',
+        heldByApexId: 'apex-earth-vein-tower',
         administeredByCourtId: 'court-kiln',
         governingFact:
             'The veins here are horizontal, shallow and surveyable, so the qi belongs to whoever holds the surface above it - and the surface has been held continuously for four hundred years.',
         onPaper:
-            'The Deep Survey holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, seventeen institutions, and a datum nobody local can place.',
+            'The Earth Vein Tower holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, seventeen institutions, and a datum nobody local can place.',
         onTheGround:
-            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two catchments of it, and both of those two are over the northern watershed and have been for as long as anybody has walked them.',
+            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two basins of it, and both of those two are over the northern watershed and have been for as long as anybody has walked them.',
         prefectureIds: LOW_FALL_PREFECTURES.map(p => p.id),
         whatIsKnownOfIt: null,
         startingAwareness: 'known'

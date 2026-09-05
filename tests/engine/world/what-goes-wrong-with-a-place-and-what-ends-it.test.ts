@@ -48,7 +48,7 @@ const WORLD_SEED = 'what-goes-wrong';
 
 function ground(qiDensity = QI_DENSITY_DEFAULT) {
     return makeLocation({
-        id: 'loc-district', name: 'Iron Ridge', kind: 'settlement', qiDensity
+        id: 'loc-prefecture', name: 'Iron Ridge', kind: 'settlement', qiDensity
     });
 }
 
@@ -238,9 +238,9 @@ describe('what goes wrong with a place', () => {
                 ground: twice, regions: [], onDay: 0, rng: forStream('x', 'y')
             });
             expect([...proposed.keys()])
-                .toContain(statusKey('loc-district', 'closed_to_gathering'));
+                .toContain(statusKey('loc-prefecture', 'closed_to_gathering'));
             expect([...proposed.keys()].filter(
-                k => k === statusKey('loc-district', 'closed_to_gathering')
+                k => k === statusKey('loc-prefecture', 'closed_to_gathering')
             )).toHaveLength(1);
         });
     });

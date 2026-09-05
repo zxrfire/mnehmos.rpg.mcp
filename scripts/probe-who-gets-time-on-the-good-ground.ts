@@ -10,7 +10,7 @@
  * Both have to bite. If only the second does, the fix has produced an internal
  * hierarchy and nothing else. If only the first does, rank stopped mattering.
  *
- * Run: npx tsx scripts/probe-who-gets-time-on-the-good-ground.ts
+ * Run: npx tsx scripts/probe-who-gets-time-on-the-rich-soil.ts
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';

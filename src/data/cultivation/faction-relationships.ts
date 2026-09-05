@@ -122,9 +122,9 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
         what:
-            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Deep Survey, the Deeproot Court took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
+            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Earth Vein Tower, the Deeproot Court took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
         since:
-            'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Deep Survey reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
+            'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Earth Vein Tower reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
         a: {
             warmth: 'cold',
             howTheyPutIt:
@@ -145,12 +145,12 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     },
     {
         id: 'rel-the-root-sill-and-the-survey-that-reposted-it',
-        aId: 'apex-deep-survey',
+        aId: 'apex-earth-vein-tower',
         bId: 'sect-kiln-wardens',
         aStandsTo: 'above',
         kind: 'severed_patronage',
         what:
-            'The Deep Survey posted this body, named it, and staffed it for nine hundred years, and it does not any more. It is the only administration in the world that has ever changed patrons, and what moved was people rather than ground: the roll and the founding posting order walked out and the datum stayed where it was. The Survey has never referred to the departed body in correspondence, which leaves the sharpest fact in the arrangement standing unaddressed - the name being ignored is the Survey own word, invented by the Survey, for a posting the Survey created.',
+            'The Earth Vein Tower posted this body, named it, and staffed it for nine hundred years, and it does not any more. It is the only administration in the world that has ever changed patrons, and what moved was people rather than ground: the roll and the founding posting order walked out and the datum stayed where it was. The Survey has never referred to the departed body in correspondence, which leaves the sharpest fact in the arrangement standing unaddressed - the name being ignored is the Survey own word, invented by the Survey, for a posting the Survey created.',
         since:
             'The reposting, and the walk that followed it. Living memory by the standards of the bodies involved, and the second administration the Long Cut has taken from the Survey in that span.',
         a: {
@@ -200,12 +200,12 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     },
     {
         id: 'rel-the-kiln-and-the-survey-it-still-answers',
-        aId: 'apex-deep-survey',
+        aId: 'apex-earth-vein-tower',
         bId: 'court-kiln',
         aStandsTo: 'above',
         kind: 'apex_and_court',
         what:
-            'The Kiln administers the datum - the deep vein at the world root that the whole arterial system is measured from - on the Deep Survey behalf, and it is the one court in the Survey arrangement that issues no grants, holds no tenants and has no catchment. The whole of the reporting relation is one figure a year, and the figure has not changed in the current Keeper tenure.',
+            'The Kiln administers the datum - the deep vein at the world root that the whole arterial system is measured from - on the Earth Vein Tower behalf, and it is the one court in the Survey arrangement that issues no grants, holds no tenants and has no basin. The whole of the reporting relation is one figure a year, and the figure has not changed in the current Keeper tenure.',
         since:
             'Nine hundred years, uninterrupted from the Survey side of the record: it posted the court, it named the court, and it lists this body as its court on the datum today.',
         a: {
@@ -261,7 +261,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'same_patron',
         what:
-            'Two bodies answering the Deep Survey directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Jade Gorge nobody can replace, and the probation was carried across rather than lifted. The Kiln was not consulted about the raising, which is unremarkable, because the Kiln is not consulted about anything.',
+            'Two bodies answering the Earth Vein Tower directly in the same province, and the only pair of them anywhere. One administers a datum nobody draws on, issues nothing and answers nothing downward. The other was raised out of two centuries of probation to answer as a court because the lightning curriculum is the one thing in the Jade Gorge nobody can replace, and the probation was carried across rather than lifted. The Kiln was not consulted about the raising, which is unremarkable, because the Kiln is not consulted about anything.',
         since:
             'The raising of the Storm Tyrant Court to answer the Survey directly, which made it the second Survey body in the province and gave the province its first pair to compare.',
         a: {
@@ -286,14 +286,14 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     // THE TOP OF THE WORLD
     {
         id: 'rel-the-two-old-apexes',
-        aId: 'apex-deep-survey',
+        aId: 'apex-earth-vein-tower',
         bId: 'apex-long-cut',
         aStandsTo: 'alongside',
         kind: 'rivals',
         what:
             'The two apexes nobody can date. They agree entirely that what a house believes is not a term of any contract, and disagree entirely about whether you delegate at all: one grants veins to tenants on twelve-year terms and reads the reports, and the other holds every face itself with a posted staff of about forty and has no tenants to have a view about. Both have known the other answer for eleven hundred years and neither has ever raised it. In that span one of them has taken two of the other administrations and neither has acknowledged it.',
         since:
-            'Longer than either keeps a record of. The Third Sill has administered an arterial for the Long Cut inside a province the Deep Survey holds for longer than either apex can date, and neither has ever explained or raised that either.',
+            'Longer than either keeps a record of. The Third Sill has administered an arterial for the Long Cut inside a province the Earth Vein Tower holds for longer than either apex can date, and neither has ever explained or raised that either.',
         a: {
             warmth: 'civil',
             howTheyPutIt:
@@ -314,7 +314,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-pavilion-and-the-survey',
         aId: 'apex-azure-cloud',
-        bId: 'apex-deep-survey',
+        bId: 'apex-earth-vein-tower',
         aStandsTo: 'alongside',
         kind: 'rivals',
         what:
@@ -367,9 +367,9 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
     {
-        id: 'rel-the-hollow-court-and-the-deep-survey',
+        id: 'rel-the-hollow-court-and-the-earth-vein-tower',
         aId: 'sect-hollow-court',
-        bId: 'apex-deep-survey',
+        bId: 'apex-earth-vein-tower',
         aStandsTo: 'alongside',
         kind: 'tolerated',
         what:
@@ -479,7 +479,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     },
     {
         id: 'rel-the-frostmirror-and-the-apex-that-stopped-writing',
-        aId: 'apex-deep-survey',
+        aId: 'apex-earth-vein-tower',
         bId: 'sect-frostmirror-court',
         aStandsTo: 'above',
         kind: 'apex_and_court',

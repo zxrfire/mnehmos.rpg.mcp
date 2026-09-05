@@ -138,12 +138,12 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     },
     {
         factionId: 'sect-fallen-grain-caravan',
-        craft: 'Not making - recovering. The Company is the one body here whose product was made by somebody who is dead.',
+        craft: 'Not making - recovering. The Caravan is the one body here whose product was made by somebody who is dead.',
         whoTheyAre: 'Diggers and sorters. The barrow yard at Willow Village is a sorting floor rather than a workshop and the distinction is the whole of the Silent Cliffs: a province that cuts its qi out of stone does not have artisans in the ordinary sense, it has extractors.',
         makes: [
             'sorted sealed-site salvage, priced at Willow Village before it goes to Iron Ridge',
             'scar-ground herbs that only fruit on dead ground, which are the Jade Gorge\'s single largest import from the west',
-            'nothing that did not already exist, which is stated plainly in the Company\'s own manifest rule'
+            'nothing that did not already exist, which is stated plainly in the Caravan\'s own manifest rule'
         ],
         cannotMake: 'Anything whatsoever. There is no forge, no furnace and no bed in the Silent Cliffs that works, because alchemy will not set and the ambient will not hold a refinement - so the region\'s entire economy is moving other people\'s finished goods and other ages\' leavings.',
         soldOutside: 'By weight, on a published manifest rule, to the Iron Ridge Assay House and to its own factor at Clear River Ford, and to the Thousand Treasure Pavilion when the Pavilion sends a buyer.'

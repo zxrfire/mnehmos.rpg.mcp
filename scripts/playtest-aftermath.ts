@@ -121,7 +121,7 @@ async function main(): Promise<void> {
         const dead = said.startsWith('THREW:')
             || /does not resolve|nothing you could actually do/i.test(said);
         // Nobody at this rung may learn who did it.
-        const leaks = /tribulation transcendence|forty-one|apex|Deep Survey|Long Cut|Hollow Court/i.test(said);
+        const leaks = /tribulation transcendence|forty-one|apex|Earth Vein Tower|Long Cut|Hollow Court/i.test(said);
         if (leaks) leaked++;
         if (!dead) answered++;
         line(`  ${dead ? 'DEAD' : leaks ? 'LEAK' : 'ok  '}  ${text.padEnd(38)} ${why}`);

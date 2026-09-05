@@ -215,10 +215,10 @@ describe('the worked contingency', () => {
         }
         const mirror = getContingency('contingency-cold-hall-for-a-vault')!;
         expect(contingenciesHeldBy('sect-frostmirror-court')).toContain(mirror);
-        expect(contingenciesAgainst('apex-deep-survey')).toContain(mirror);
+        expect(contingenciesAgainst('apex-earth-vein-tower')).toContain(mirror);
         // The holder does not name the target in its own records.
         expect(mirror.namesTheTarget).toBe(false);
-        expect(mirror.inTheirWords).not.toMatch(/Deep Survey/);
+        expect(mirror.inTheirWords).not.toMatch(/Earth Vein Tower/);
     });
 
     it('reaches the target by arithmetic rather than by valuation', () => {
@@ -347,7 +347,7 @@ describe('the law of sealing', () => {
 
     it('makes reading a seal the scarce skill, and decay the likeliest event', () => {
         expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Immovable Mountain Temple/);
-        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Deep Survey/);
+        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Earth Vein Tower/);
         expect(SEALING_LAW.sealsDoNotCheckWhoIsStanding).toMatch(/outsider/i);
         expect(SEALING_LAW.unmaintainedSealsDecay).toMatch(/erodes|degrades/i);
         // Every unowned one is under that decay, by construction.
@@ -491,7 +491,7 @@ describe('when the record is lost', () => {
     });
 
     it('lets an outsider know more than the holder, by archives rather than power', () => {
-        expect(LOST_RECORDS.somebodyElseMayKnow).toMatch(/Deep Survey/);
+        expect(LOST_RECORDS.somebodyElseMayKnow).toMatch(/Earth Vein Tower/);
         expect(LOST_RECORDS.somebodyElseMayKnow).toMatch(/no strength at all/i);
     });
 

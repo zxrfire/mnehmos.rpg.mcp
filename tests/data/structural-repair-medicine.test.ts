@@ -209,7 +209,7 @@ describe('the sent-down ledger', () => {
             .flatMap(m => openingHoldersOf(m.id))
             .map(h => h.factionId);
         expect(new Set(holders)).toEqual(new Set([
-            'apex-deep-survey',
+            'apex-earth-vein-tower',
             'apex-long-cut',
             'sect-azure-cloud-pavilion'
         ]));

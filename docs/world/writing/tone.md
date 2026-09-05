@@ -158,7 +158,7 @@ Pill*; a healing pill must never become an elixir of nine heavens. Herbs run fro
 (*Corpse Silver Flower*) to the flat (*Qi Grass*), and both ends are correct.
 
 **A ruin has two names, and which one you get is a fact about the reader.** The colloquial
-name is what people who only ever saw it call it - *Nothing Standing*, *Half a Roof*, *The
+name is what people who only ever saw it call it - *Fallen Wall*, *Half a Roof*, *The
 Burn* - generated from what somebody saw, what happened there, or a name that is simply wrong.
 It carries no type noun and no poetry, **because a person naming something they are afraid of
 reaches for neither.** Do not formalise these.

@@ -454,7 +454,7 @@ export interface MedicineHolding {
  */
 export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         standing: 'holds_one',
         howItIsKnown:
             'It does not appear in the annual inventory of the storehouse under the datum vault, because it is older than the founder and was never part of the divestment. The clerk who has never had to change a figure has never counted it either.',

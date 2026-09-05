@@ -91,7 +91,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: '',
         possessorId: 'figure-tao-jingwei',
         description:
-            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Polestar Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
+            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Polestar Lamp in the Earth Vein Tower vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     // 45: three of them, and no two are held by allies
@@ -162,7 +162,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: 'The Hollow Court',
         possessorId: 'hollow-court-third-seat',
         description:
-            'Held by the Third Seat, who stands level with the Deep Survey\'s head and is better equipped than him, and who has never had a reason to be within a province of the man.',
+            'Held by the Third Seat, who stands level with the Earth Vein Tower\'s head and is better equipped than him, and who has never had a reason to be within a province of the man.',
         tags: ['immortal-made', 'carried', 'undeclared']
     }),
     makeObject({
@@ -185,9 +185,9 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         kind: 'artifact',
         significance: 'legendary',
         power: 43,
-        ownerId: 'apex-deep-survey',
-        ownerName: 'The Deep Survey',
-        possessorId: 'apex-deep-survey',
+        ownerId: 'apex-earth-vein-tower',
+        ownerName: 'The Earth Vein Tower',
+        possessorId: 'apex-earth-vein-tower',
         description:
             'A reference that is not local. Its holder cannot be lied to about where anything is: formations do not resolve against it and concealment does not hold in front of it. It has not left the vault in nine hundred years, and the reason is logistics rather than doctrine - the seat is full of valuable things and the defence is presence.',
         tags: ['immortal-made', 'sent-down', 'never-carried', 'known-to-exist']
@@ -268,7 +268,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: 'Storm Tyrant Court',
         possessorId: 'sect-storm-tyrant-court',
         description:
-            'A lightning curriculum written into a bar of something that was struck often enough to remember it. The Court was held on probation for two centuries and raised to answer the Deep Survey directly because of what is in this object, and it has never let anybody outside read it - which is the entire reason the probation was imposed and the entire reason it was not lifted with the promotion.',
+            'A lightning curriculum written into a bar of something that was struck often enough to remember it. The Court was held on probation for two centuries and raised to answer the Earth Vein Tower directly because of what is in this object, and it has never let anybody outside read it - which is the entire reason the probation was imposed and the entire reason it was not lifted with the promotion.',
         tags: ['forged', 'curriculum-bearing', 'never-shown']
     }),
     // ── 22-14: what an ordinary strong house fields ───────────────────────
@@ -391,7 +391,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         possessorId: 'sect-fallen-grain-caravan',
         knownOwnershipBy: [],
         description:
-            'Came out of a burn zone in a bundle of forty-one salvaged documents, was priced by weight, and has been holding a window open in a back office for a hundred and ten years. Nobody in the Company can read it and nobody has asked anybody who can. It is the cheapest of the three to acquire and the hardest to find, which is the ordinary shape of salvage.',
+            'Came out of a burn zone in a bundle of forty-one salvaged documents, was priced by weight, and has been holding a window open in a back office for a hundred and ten years. Nobody in the Caravan can read it and nobody has asked anybody who can. It is the cheapest of the three to acquire and the hardest to find, which is the ordinary shape of salvage.',
         tags: ['shard', 'from:heaven-conversing-primordial-canon', 'volume:2', 'unidentified', 'looted']
     }),
     makeObject({

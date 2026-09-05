@@ -442,7 +442,7 @@ const NAMES_BY_CHARACTER: Readonly<Record<RuinCharacter, readonly string[]>> = {
     teaching_hall: ['The Curriculum Cut Into the Face', 'The Hall They Taught Out Of', 'The Wall Above %P With the Exercises On It'],
     cut: ['The Working Face At %P', 'The Shaft With the Ladders Out', 'The Cut They Laid a Lid Over'],
     dwelling: ['The Rooms Somebody Lived In', 'The Cave Above %P With the Lintel Cut', 'The Seat Chamber Nobody Emptied'],
-    open_ground: ['The Ground Above %P', 'The Stone in the Long Field', 'The Depression Nothing Grows In']
+    open_ground: ['The Ground Above %P', 'The Stone in the Long Field', 'The Depression Bitter Soil In']
 };
 
 /** A place name a person would use, derived from the province and the character. */

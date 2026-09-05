@@ -195,11 +195,11 @@ describe('provinces, arterials and prefectures', () => {
     it('CONTRAST BEATS ADDITION: a prefecture is a different kind of object in each province', () => {
         // The claim `making-places-different.md` makes and the one this whole
         // section is most likely to violate. A Jade Gorge holding is a surveyed
-        // catchment; a Silent Cliffs holding is a face district. If somebody ever
-        // adds a catchment to the Silent Cliffs, the two provinces have started to
+        // basin; a Silent Cliffs holding is a face district. If somebody ever
+        // adds a basin to the Silent Cliffs, the two provinces have started to
         // blur and this is where it shows.
         for (const pref of prefecturesOf(LOW_FALL_PROVINCE_ID)) {
-            expect(pref.kind, `${pref.id} is in the Jade Gorge and is not a catchment`).toBe('catchment');
+            expect(pref.kind, `${pref.id} is in the Jade Gorge and is not a basin`).toBe('basin');
         }
         for (const pref of prefecturesOf(QUIET_MARCHES_PROVINCE_ID)) {
             expect(pref.kind, `${pref.id} is in the Silent Cliffs and is not a face district`)
@@ -252,7 +252,7 @@ describe('provinces, arterials and prefectures', () => {
 
     it('THE ASYMMETRY: the Long Cut is broad, the Survey is deep, and the Pavilion holds no province', () => {
         const byId = new Map(APEX_INSTITUTIONS.map(a => [a.id, a]));
-        const survey = byId.get('apex-deep-survey')!;
+        const survey = byId.get('apex-earth-vein-tower')!;
         const longCut = byId.get('apex-long-cut')!;
         const pavilion = byId.get('apex-azure-cloud')!;
 

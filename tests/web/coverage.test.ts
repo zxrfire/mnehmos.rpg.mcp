@@ -327,8 +327,8 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // player would reach for in the same breath.
     petition: [
         'I file a Requisition Against Standing Stock',
-        'I ask the Deep Survey for one of its pills',
-        'I ask the Deep Survey for an Heaven-Ascending Golden Pill',
+        'I ask the Earth Vein Tower for one of its pills',
+        'I ask the Earth Vein Tower for an Heaven-Ascending Golden Pill',
         'I petition the Third Sill Court for a grant',
         'I appeal to the court for protection',
         'I claim descent from Ru Anjing'

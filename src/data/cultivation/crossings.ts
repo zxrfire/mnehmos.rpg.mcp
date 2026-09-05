@@ -129,7 +129,7 @@ export type ImmortalChannel = z.infer<typeof ImmortalChannelSchema>;
 
 export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         kind: 'answering_channel',
         ancestor: {
             name: 'The First Surveyor, whose name the Survey records and does not use',
@@ -175,7 +175,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         whatItExplains: [
             'why a body administering five provinces on forty staff is nonetheless an apex',
             'why a schedule amendment against the standing entry has been submitted three times and answered by restating the entry',
-            'why the Long Cut does not compare notes with the Deep Survey about any of it'
+            'why the Long Cut does not compare notes with the Earth Vein Tower about any of it'
         ],
         note:
             'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. Flowing Light Tower would give a great deal for the answer and has no instrument that reaches it.'
@@ -206,7 +206,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'and, with the protector arrangement, why they are a collaboration rather than four recluses - see HOLLOW_COURT_COLLABORATION'
         ],
         note:
-            'The Deep Survey and the Long Cut get objects; the Court gets accounts of the crossing. Neither apex can ask for what the Court has and the Court has never offered - not out of secrecy, but because it has not occurred to any of them that anybody else would find it useful. They are not withholding. They are simply not thinking about anyone else at all.'
+            'The Earth Vein Tower and the Long Cut get objects; the Court gets accounts of the crossing. Neither apex can ask for what the Court has and the Court has never offered - not out of secrecy, but because it has not occurred to any of them that anybody else would find it useful. They are not withholding. They are simply not thinking about anyone else at all.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -237,7 +237,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'why the two apexes find its position alarming without being able to say it is better than theirs'
         ],
         note:
-            'The difference the apexes understand and almost nobody else does. Azure Cloud has an income, from a person, at the bottom of the range. The Deep Survey and the Long Cut have a relationship with something ancient that answers rarely and sends the top of the range. Neither is straightforwardly better and the four cannot be put in a single order, which is why every attempt to rank them produces an argument.'
+            'The difference the apexes understand and almost nobody else does. Azure Cloud has an income, from a person, at the bottom of the range. The Earth Vein Tower and the Long Cut have a relationship with something ancient that answers rarely and sends the top of the range. Neither is straightforwardly better and the four cannot be put in a single order, which is why every attempt to rank them produces an argument.'
     }
 ];
 
@@ -267,7 +267,7 @@ export const IMMORTAL_MOTIVE = {
     theExceptionAndWhy:
         'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the one holder in the world whose stock rises - because of sisterly love rather than because of anything the sect did.',
     readTheApexesThisWay: [
-        'Deep Survey: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
+        'Earth Vein Tower: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
         'Long Cut: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
         'Hollow Court: six, and what comes back is accounts of the crossing rather than objects - because the tie there is professional interest rather than affection. They are being answered by people who find the question interesting, which is a weaker tie than love and a stronger one than reverence.',
         'Azure Cloud: one ancestor, three hundred and eighty years, and a living sister. The highest answer rate in the world, the lowest grade in the world, and both are the same fact.'
@@ -345,7 +345,7 @@ export const PAVILION_SURPLUS = {
         'The Stone Marrow Hall, whose Iron Ridge and Green Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
         'Ninefold Karma Palace, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
         'The Thousand Treasure Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
-        'The Deep Survey, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
+        'The Earth Vein Tower, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
     ],
     whatNobodyHasWorkedOut:
         'That the flow has a name and an address, and that the name is in the Pavilion.'
@@ -446,7 +446,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             'Medium depletion at four thousand four hundred years is the anomaly, and the explanation is admissions. A Void Refinement floor plus evidence of a plausible crossing means the Court disproportionately admits people who then cross, so it is functionally the one institution in the world that converts admissions into ancestors. Age would have drained anybody else by now; volume has kept it mid-scale, and it is the top tier by the world\'s own reckoning - the single objective claim about the Court that nobody disputes.'
     },
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         count: 3,
         tier: 'legendary',
         mostRecentCrossingYearsAgo: 1_900,
@@ -457,7 +457,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             { title: 'The First Surveyor, whose name the Survey records and does not use', yearsAgo: 3_100, was: 'the founder of the arterial survey, who crossed from a site the register locates and does not describe', afterCrossing: 'still_above' },
             // The middle crossing, and the reason the Survey files people by
             // district rather than by anything else. He is a line in a ledger
-            // that was never closed, which is the most Deep Survey thing about
+            // that was never closed, which is the most Earth Vein Tower thing about
             // him and the whole of what is known.
             { title: 'The surveyor of the fourth branch, entered under the district and never under his own name', yearsAgo: 2_400, was: 'a working surveyor on the fourth arterial branch, who filed for seven hundred years and stopped mid-return', afterCrossing: 'still_above' },
             { title: 'Qiao Yan', yearsAgo: 1_900, was: 'a field surveyor for two centuries before anybody suggested she was anything else', afterCrossing: 'still_above' }

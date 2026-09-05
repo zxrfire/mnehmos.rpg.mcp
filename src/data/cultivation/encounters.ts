@@ -395,8 +395,8 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // `threatOrdinal` means for a beast exactly what it means for a person. The
     // catalog behind these entries is `beasts.ts`.
     {
-        id: 'enc-thin-district-beasts',
-        name: 'What a Poor District Has Instead of Monsters',
+        id: 'enc-thin-prefecture-beasts',
+        name: 'What a Poor Prefecture Has Instead of Monsters',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 38,

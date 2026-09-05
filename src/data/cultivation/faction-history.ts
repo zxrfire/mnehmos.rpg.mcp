@@ -166,14 +166,14 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-reposting',
         yearsAgo: 900,
         provinceId: 'province-low-fall',
-        what: 'The Deep Survey reposted the court on the datum. Most of the Wardens declined the reposting and left, and the two halves each kept one of the names the body had been carrying for nine hundred years.',
-        parties: ['court-kiln', 'sect-kiln-wardens', 'apex-deep-survey', 'apex-long-cut'],
+        what: 'The Earth Vein Tower reposted the court on the datum. Most of the Wardens declined the reposting and left, and the two halves each kept one of the names the body had been carrying for nine hundred years.',
+        parties: ['court-kiln', 'sect-kiln-wardens', 'apex-earth-vein-tower', 'apex-long-cut'],
         accounts: {
             'court-kiln':
                 'The ground did not move. Everything the Kiln is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
             'sect-kiln-wardens':
                 'Nobody was asked, about a thing every one of them had wanted. That is the fact the Deeproot Court puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
-            'apex-deep-survey':
+            'apex-earth-vein-tower':
                 'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Kiln Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
             'apex-long-cut':
                 'Some people became available and a schedule had room. The Long Cut did not send anybody, did not solicit, and did not say a word in public; it offered a posting to a body that had walked out of another one, which is the second time it has done exactly that, and it has acknowledged neither.'
@@ -184,14 +184,14 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-promotion-past-the-kiln',
         yearsAgo: 200,
         provinceId: 'province-low-fall',
-        what: 'The Deep Survey raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Jade Gorge beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
-        parties: ['sect-storm-tyrant-court', 'court-kiln', 'apex-deep-survey'],
+        what: 'The Earth Vein Tower raised the Storm Tyrant Court to answer to it directly, making it the Survey\'s second body in the Jade Gorge beside the Kiln Court. The probation it had held under for two centuries was carried across rather than lifted, and the Kiln was not consulted.',
+        parties: ['sect-storm-tyrant-court', 'court-kiln', 'apex-earth-vein-tower'],
         accounts: {
             'sect-storm-tyrant-court':
                 'A recognition, and a century overdue - the Court reads it as the Survey acknowledging that a body holding the only working lightning curriculum in the world is not a tenant, and as the nearest thing to a restoration available to a house that was once one of the three. What it does not read, and has never once discussed in a room where it could be minuted, is that the probation came with it, that the last two renewals were issued short, and that the other body the Survey keeps in this province was not asked and would not have cared.',
             'court-kiln':
                 'Nothing about it concerns the Kiln, which issues no grants, holds no tenants and has never had a book for one to be removed from - and the Ward has said as much, once, in the only sentence it has ever contributed to the subject. What it did not say, and what the Storm Tyrant has never stopped hearing, is that the Survey now keeps two bodies in this province: one that administers the richest arrangement in the world and takes nothing out of it, and one that administers a broken tether and cannot stop asking to be looked at.',
-            'apex-deep-survey':
+            'apex-earth-vein-tower':
                 'The curriculum is the one thing in the Jade Gorge that cannot be replaced, and the Survey would rather administer such a thing than lease it. That is the whole of the reasoning and it was stated in one line. What the sect is, and what the province calls it, did not appear in the decision and there is no line on the form where it would have.'
         },
         explains: 'the holding'
@@ -200,14 +200,14 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-one-letter-for-both',
         yearsAgo: 40,
         provinceId: 'province-low-fall',
-        what: 'The Deep Survey moved the Crimson Abyss Fortress\'s grant under the Storm Tyrant Court, stating in one line that one letter should cover both demonic holdings. Neither party was consulted.',
-        parties: ['sect-crimson-abyss-fortress', 'sect-storm-tyrant-court', 'apex-deep-survey'],
+        what: 'The Earth Vein Tower moved the Crimson Abyss Fortress\'s grant under the Storm Tyrant Court, stating in one line that one letter should cover both demonic holdings. Neither party was consulted.',
+        parties: ['sect-crimson-abyss-fortress', 'sect-storm-tyrant-court', 'apex-earth-vein-tower'],
         accounts: {
             'sect-crimson-abyss-fortress':
                 'A landlord it did not choose, taking a tithe it had been paying elsewhere, over a sinkhole the Ward has never visited. The Hall resents it in exactly the words the Court resents it in, which neither of them knows, and it has been under-declaring by about a fifth for six years and has drawn no conclusion about why nobody has checked.',
             'sect-storm-tyrant-court':
                 'A tenant it did not ask for, on a vein worth nothing, requiring a clerk it does not have. The Court regards the arrangement as an administrative insult and has never said so, and the two Storm Elders who have privately worked out what the Hall is under-declaring have both decided that raising it would invite an inventory.',
-            'apex-deep-survey':
+            'apex-earth-vein-tower':
                 'Two files on adjacent ground became one file. It was a filing decision, made by a clerk with a schedule, and the word in it was the province\'s word rather than the Survey\'s - the Survey needed a term to describe two grants and used the one everybody else was using. Forty years of intent have been read into a sentence that was about correspondence volume.'
         },
         explains: 'the holding'
@@ -292,7 +292,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'sect-bone-lantern-cult':
                 'The Cult works sites nobody has been granted, which is its entire operating rule and the reason nobody with standing has ever been wronged by it. Whether a company on the other side of a line nobody patrols had walked over the same ground first is not a distinction that exists in the rotation, and the Cult has never been asked to recognise one.',
             'sect-fallen-grain-caravan':
-                'The Company locates. That is the skill, it is expensive, it costs about one in nine a season, and it is being sold at a discount by a body that does not pay for it. There is no forum in which a contractor can raise this, because raising it means addressing the clerk who decided, and the Company has never once disputed anything with the Clearwater Ward for that reason.'
+                'The Caravan locates. That is the skill, it is expensive, it costs about one in nine a season, and it is being sold at a discount by a body that does not pay for it. There is no forum in which a contractor can raise this, because raising it means addressing the clerk who decided, and the Caravan has never once disputed anything with the Clearwater Ward for that reason.'
         },
         explains: 'the rivalry'
     },
@@ -441,11 +441,11 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         yearsAgo: 140,
         provinceId: 'province-low-fall',
         what: 'The Storm Tyrant Court stopped opening its storeroom at successions and began reading the contents aloud from the record instead. Nothing has been physically checked against the list since, and at least two Storm Elders privately doubt the room matches it.',
-        parties: ['sect-storm-tyrant-court', 'apex-deep-survey'],
+        parties: ['sect-storm-tyrant-court', 'apex-earth-vein-tower'],
         accounts: {
             'sect-storm-tyrant-court':
                 'A dignity, adopted for a succession where the outgoing Tyrant was too ill to descend, kept for the next one because it had been done before, and doctrine by the third. The Court has never framed the practice as a decision. What it has is a list, read aloud with great ceremony, of things nobody has laid eyes on in fourteen decades - and two Elders who have worked out that the reading is the only evidence and have both concluded, separately and for the same reason, that asking would be the end of them.',
-            'apex-deep-survey':
+            'apex-earth-vein-tower':
                 'The Survey does not certify vaults and has never been asked to. What it does hold is the only thing it needs: a curriculum that cannot be replaced is worth administering directly whatever else is or is not in the room, and the two short renewals it has issued were about the three obligations rather than about an inventory. Whether the Survey knows what is missing is a question it has arranged never to be asked in a form requiring an answer.'
         },
         explains: 'the peak'
@@ -657,7 +657,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-kiln-wardens': {
         factionId: 'sect-kiln-wardens',
         origin:
-            'It was a posting rather than a house for nine hundred years, and the province mistook staff for an institution the entire time. What is standing four provinces away now is the roll, most of the Wardens, and the founding posting order naming the first four - and the Deep Survey\'s own administrative word for a posting it no longer holds.',
+            'It was a posting rather than a house for nine hundred years, and the province mistook staff for an institution the entire time. What is standing four provinces away now is the roll, most of the Wardens, and the founding posting order naming the first four - and the Earth Vein Tower\'s own administrative word for a posting it no longer holds.',
         whyTheGapIs:
             'Nobody has ever counted them and the figures are the Immovable Mountain Temple\'s estimate from what walks the perimeter. A posting does not have a pipeline: there is no intake, no admission that has ever been used, and no applicant in nine hundred years, so what the register shows as production is an outside body\'s arithmetic about a rota.',
         whatTheUnlitNodesWere: null,
@@ -769,13 +769,13 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'sect-fallen-grain-caravan': {
         factionId: 'sect-fallen-grain-caravan',
         origin:
-            'A salvage contract on burn zones, renewed annually, and a barrow yard at Willow Village laid out inside somebody else\'s building. Under direct rule there are no client sects, so the Company is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to.',
+            'A salvage contract on burn zones, renewed annually, and a barrow yard at Willow Village laid out inside somebody else\'s building. Under direct rule there are no client sects, so the Caravan is not a subsidiary - it is a supplier with a renewable contract, and the difference is invisible until the year it is not renewed and there is nobody to appeal to.',
         whyTheGapIs:
             'It loses about one in nine a season and its one Keystone left for the Jade Gorge within a year, and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund. Live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is one season where the losses outrun the fund.',
         whatTheUnlitNodesWere:
-            'All fourteen are at the front of a ruin the Company has never fully entered, and the three that are lit are the three within reach of the entrance. The yard is laid out inside somebody else\'s building for the same reason: the Company works the edges of things it does not own and has never had a season spare to go further in, which is a fact about salvage economics and not about courage.',
+            'All fourteen are at the front of a ruin the Caravan has never fully entered, and the three that are lit are the three within reach of the entrance. The yard is laid out inside somebody else\'s building for the same reason: the Caravan works the edges of things it does not own and has never had a season spare to go further in, which is a fact about salvage economics and not about courage.',
         whereTheWrongBeliefComesFrom:
-            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Company reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Bone Lantern Cult, which neither body knows.',
+            'Bo Ai\'s founding note says the nine-year rotation exists to let the previous crew\'s survivors die off before the next pass. The Caravan reads it as metaphor and holds that the rotation lets a site recover - and reading it as metaphor is not stupidity, it is what you do with a sentence that would otherwise mean your founder scheduled around your own losses. The same substitution has happened independently to the Bone Lantern Cult, which neither body knows.',
         sharedEvents: ['event-the-undercut-border']
     },
 

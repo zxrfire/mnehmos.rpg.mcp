@@ -64,7 +64,7 @@ function routesTo(techniqueId: string): Route[] {
     }
     // The four roads to the top of the ladder, which two of the four holders
     // cannot express as a teach list because they have no sect row at all.
-    // Without this the Deep Survey's and the Long Cut's roads read as arts
+    // Without this the Earth Vein Tower's and the Long Cut's roads read as arts
     // nothing in the world can hand to anybody, which is the opposite of what
     // is true about them: each is held by one of the four bodies with somebody
     // standing in the band the book is written for, and lent, on terms, to

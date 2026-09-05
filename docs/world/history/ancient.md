@@ -516,7 +516,7 @@ Three consequences, each better than the dependency version:
 A house that finds the flower in a sealed site **can** send it up through an answering
 channel and receive a finished pill, because the method survives above and only the material
 is gone. It composes entirely out of parts that already exist - `IMMORTAL_CHANNELS`,
-`MillennialOffering`, and a Deep Survey channel that already returns objects nobody below can
+`MillennialOffering`, and a Earth Vein Tower channel that already returns objects nobody below can
 make. Nothing new is being modelled. What is new is that there is finally something worth
 sending that is not devotion.
 

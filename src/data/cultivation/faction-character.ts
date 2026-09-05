@@ -67,7 +67,7 @@ export interface FactionCharacter {
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     // THE TWO THAT CANNOT BE JOINED
 
-    'apex-deep-survey': {
+    'apex-earth-vein-tower': {
         knownFor: {
             outside: 'Nothing, to almost everybody. Below a certain height the Survey is not a name people decline to say, it is a name they have never heard - and what they have instead is the sense that boundary disputes in some provinces end faster than they should.',
             actuallyGoodAt: 'Being unable to be lied to about where anything is, and having been so for nine hundred years without interruption. Every arterial figure in the region descends from a measurement it took and has never had to retake.',
@@ -99,7 +99,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Its two most consequential acquisitions in living memory both walked in on their own, so there is nothing for the province to have witnessed. A house that gains by being the better option leaves no story behind it.'
         },
         practice: 'Four titles cover every practitioner in every driven province, ranked by work and nothing else, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred. Carvers consider this obvious. Every visiting Drawn cultivator finds it insulting, and the Long Cut has never adjusted for a visitor.',
-        grievance: 'That the Deep Survey has never once referred to either defection in correspondence, which denies the Long Cut the acknowledgement that would make them mean something.',
+        grievance: 'That the Earth Vein Tower has never once referred to either defection in correspondence, which denies the Long Cut the acknowledgement that would make them mean something.',
         fear: 'That the two courts it took will discover they dislike each other more than either dislikes the Survey. One left over a grant book and one over a name, and neither rates the other\'s reason.',
         lateness: 'Never, and it is not a virtue. The Nail cannot be moved, so the Long Cut is already wherever it is going to be, and everything it does has the flat quality of a thing that did not have to travel.',
         disagreement: 'Whether taking in the Deeproot Court was a gain or a precedent. It acquired a forty-four and a body of people who have proved they will walk out of an arrangement they dislike, and nobody senior has said the second half out loud.',
@@ -796,20 +796,20 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
     'sect-fallen-grain-caravan': {
         knownFor: {
             outside: 'Dying. The best-paid work available in the Silent Cliffs, understood locally as a way of dying slightly later than the alternative.',
-            actuallyGoodAt: 'Keeping its word. A dead digger\'s share goes to their family, without exception, and the Company has never defaulted once - which in a region administered by a bureau with eleven staff is the only reliable institution anybody deals with.',
+            actuallyGoodAt: 'Keeping its word. A dead digger\'s share goes to their family, without exception, and the Caravan has never defaulted once - which in a region administered by a bureau with eleven staff is the only reliable institution anybody deals with.',
             theGap: 'The pay is the thing everybody repeats, so the promise underneath it is treated as a detail of the pay.'
         },
         practice: 'Gleaners rinse their mouths with vinegar on a fixed schedule and spit before speaking, and they will not enter a sealed door in the first hour of a shift on the grounds that nobody is careful yet.',
-        grievance: 'That the Bone Lantern Cult undercuts them across a border neither region polices, using finds the Company located.',
-        fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Company sealed it again and raised the wager, and nobody has taken it.',
+        grievance: 'That the Bone Lantern Cult undercuts them across a border neither region polices, using finds the Caravan located.',
+        fear: 'The sealed part of their own sorting yard. Xun went in on a wager thirty years ago and the Caravan sealed it again and raised the wager, and nobody has taken it.',
         lateness: 'Three of fourteen nodes lit, all at the front of a ruin they have never fully entered; the yard is laid out inside somebody else\'s building; and the rotation they follow was justified by a note whose reasoning they have lost.',
-        disagreement: 'The Company Factors want to work live burn edges, which pays triple. The Company Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
-        wrongAbout: 'They hold that the nine-year rotation lets a site recover. Bo Ai\'s founding note says it exists to let the previous crew\'s survivors die off before the next pass, and the Company reads the note as metaphor.',
-        unitOfValue: 'Shares in a find, allocated before the shift and honoured after a death - a dead gleaner\'s share goes to their family, and the Company has never once defaulted on that.',
+        disagreement: 'The Caravan Factors want to work live burn edges, which pays triple. The Caravan Master holds the nine-year rotation, and the argument reopens every time a face runs out.',
+        wrongAbout: 'They hold that the nine-year rotation lets a site recover. Bo Ai\'s founding note says it exists to let the previous crew\'s survivors die off before the next pass, and the Caravan reads the note as metaphor.',
+        unitOfValue: 'Shares in a find, allocated before the shift and honoured after a death - a dead gleaner\'s share goes to their family, and the Caravan has never once defaulted on that.',
         production: {
             reliableOrdinal: 8, currentCount: 9, peakOrdinal: 17, peakCount: 1, yearsSinceLastPeak: 40,
             climbingToward: 13, waitingOn: 'access',
-            note: 'It loses about one in nine a season and the one Keystone in its history left for the Jade Gorge within a year - and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund; live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is not the Clearwater Ward. It is one season where the losses outrun the fund and a family goes unpaid, which has never happened and is the whole of what the Company is.'
+            note: 'It loses about one in nine a season and the one Keystone in its history left for the Jade Gorge within a year - and it is rising anyway, on ground it is not supposed to be on. The Factors have worked two live burn edges without a rotation entry and paid the shares out of the general fund; live ground yields grades the nine-year cycle never turns up, and on that material a gleaner reaches Foundation Establishment instead of stopping at Chipping. What ends it is not the Clearwater Ward. It is one season where the losses outrun the fund and a family goes unpaid, which has never happened and is the whole of what the Caravan is.'
         },
         distinctSentence: 'Pays a dead digger\'s share to their family without exception, will not open a sealed door in the first hour of a shift, and works a rotation whose stated purpose it has misremembered as mercy.'
     },

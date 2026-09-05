@@ -453,7 +453,7 @@ could simply have been asked, and pays the whole of what reading costs.
 And **he holds no object at all**, of any rung. He was of the Hollow Court once and is
 not, so nothing of theirs is his to carry, and nothing else in the world would be handed
 to him. That makes the arts the entire account of why he is dangerous - and it is
-measurable: against the three mobilised apexes he takes the Deep Survey every time, the
+measurable: against the three mobilised apexes he takes the Earth Vein Tower every time, the
 Azure Cloud Pavilion about seven times in eight, and the Long Cut four times in five. The
 ordering tracks the object each house is holding rather than the head's rung, so the
 strongest person below the Lid can be fought to a standstill one time in five by somebody

@@ -249,7 +249,7 @@ describe('questions held in reserve', () => {
     });
 
     it('has one institution refining for centuries and one refusing to ask at all', () => {
-        const survey = HELD_QUESTIONS.find(q => q.factionId === 'apex-deep-survey')!;
+        const survey = HELD_QUESTIONS.find(q => q.factionId === 'apex-earth-vein-tower')!;
         expect(survey.heldForYears).toBeGreaterThanOrEqual(400);
         expect(survey.drafts).toBeGreaterThan(20);
         expect(survey.whyItIsStillNotSent).toMatch(/never taking the risk|clock resets/i);

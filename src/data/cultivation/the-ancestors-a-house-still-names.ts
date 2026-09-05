@@ -925,7 +925,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-silver-island-market': {
         ancestors: [
             { name: 'Weigher Duan Xi', fate: 'dead', realmOrdinal: 19, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Set the rate at a fortieth and refused four separate offers to raise it, on the argument that the port is worth what passes through it and nothing else. The rate has not moved since and the argument is repeated at every Factors\' table as though somebody had just thought of it.' },
-            { name: 'The Market Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Silver Island is worth remarking on.' }
+            { name: 'The Market Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Earth Vein Tower was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Silver Island is worth remarking on.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -965,8 +965,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-fallen-grain-caravan': {
         ancestors: [
-            { name: 'Company Master Bo Ai', fate: 'dead', realmOrdinal: null, yearsAgo: 140, afterCrossing: null, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
-            { name: 'Deep Gleaner Xun', fate: 'lost', realmOrdinal: null, yearsAgo: 30, afterCrossing: null, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Company sealed it again and raised the wager.' }
+            { name: 'Caravan Master Bo Ai', fate: 'dead', realmOrdinal: null, yearsAgo: 140, afterCrossing: null, rememberedFor: 'Established the rotation that keeps a burn zone unworked for nine years between passes, which halved the losses and is still resented.' },
+            { name: 'Deep Gleaner Xun', fate: 'lost', realmOrdinal: null, yearsAgo: 30, afterCrossing: null, rememberedFor: 'Went through the sealed part of the sorting-yard ruin on a wager and did not come back. The Caravan sealed it again and raised the wager.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,

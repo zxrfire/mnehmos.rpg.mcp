@@ -5,7 +5,7 @@
  * `Region.connections` prices a crossing between provinces. Until
  * `RegionPlaceConnectionSchema` landed there was nothing that could price a
  * road inside one: the only containment was `Prefecture.places[]`, which puts
- * two names in one catchment without saying that either is near the other, and
+ * two names in one basin without saying that either is near the other, and
  * prefectures exist in two of the six provinces anyway. So the played game
  * charged one flat day for stepping across a valley and one flat day for
  * crossing to the next town, and the catalog had no way to disagree.

@@ -2930,7 +2930,7 @@ function buildDossiers(
         };
     });
 
-    // The Deep Survey and the Long Cut hold no sect row because they are not sects.
+    // The Earth Vein Tower and the Long Cut hold no sect row because they are not sects.
     // Synthesising an entry for them is not padding: they are the first and second
     // factions on this list, and a register whose top two entries are missing
     // describes a different world.
@@ -5117,7 +5117,7 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
         // for the same reason: this sheet gets copied out of the browser, and
         // separation that lives only in a gap or a border does not survive
         // that. Flattened, a strip of styled spans came out as
-        // "The Deep Surveycold civilNine Abyss Flame Sect...".
+        // "The Earth Vein Towercold civilNine Abyss Flame Sect...".
         .map(r => {
             // WARMTH IN THE WARMTH COLOURS, WHICH ALREADY EXIST. `.warm-*` is the
             // vocabulary the Ties tab has always used for these six words, built
@@ -6212,7 +6212,7 @@ function dossier(d: SectDossier): string {
       </h3>
       <!-- WHAT IT IS, BEFORE WHAT IS SAID ABOUT IT. The entry opened on the
            passerby line, which is the catalog's outside view - reputation. On
-           the Deep Survey that reads "Nothing, to almost everybody", which is
+           the Earth Vein Tower that reads "Nothing, to almost everybody", which is
            an answer about the NAME and leaves a stranger with no idea what
            kind of body they are looking at. The identity line was already
            being written; it was sitting at the head of the precis, inside a
@@ -6455,7 +6455,7 @@ function treeNode(
     const card = court && entry
         // Named for the house, not for the posting. The province has called this
         // body the Kiln Court for nine hundred years and the Deeproot Court is what the
-        // Deep Survey calls the job; leading with the apex's word for it made the
+        // Earth Vein Tower calls the job; leading with the apex's word for it made the
         // name every reader arrives with disappear off the sheet entirely, which is
         // worse than the duplicate it replaced. Both names are on the one node,
         // because which one is real is precisely what the catalog says has never

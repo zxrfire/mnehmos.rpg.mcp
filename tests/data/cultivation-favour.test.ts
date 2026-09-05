@@ -121,7 +121,7 @@ describe('the Pavilion takes the child and grants no favour', () => {
         expect(pavilion.whetherItsWordSkipsABar).toMatch(/\bNo\b/);
 
         // And the other two say the opposite, which is the distinction.
-        for (const id of ['apex-deep-survey', 'apex-long-cut']) {
+        for (const id of ['apex-earth-vein-tower', 'apex-long-cut']) {
             const a = getApexInstitution(id)!;
             expect(a.whetherItsWordSkipsABar, `${id} has no position on a favour`).toBeTruthy();
             expect(a.whetherItsWordSkipsABar, `${id} should trade`).toMatch(/will|price|trade/i);

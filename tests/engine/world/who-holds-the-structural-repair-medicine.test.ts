@@ -74,13 +74,13 @@ describe('the holdings are live state', () => {
     });
 
     it('places tracked doses on holders the world does not instantiate as factions', () => {
-        // The Deep Survey and the Long Cut carry `factionId: null` in the
+        // The Earth Vein Tower and the Long Cut carry `factionId: null` in the
         // governance catalog on purpose, so they never become faction rows -
         // and they hold most of the sent-down stock. If this ever returns zero,
         // the seeder has started requiring a faction and the count is wrong.
         const state = world();
         expect(worldCountOfRepairMedicine(state, 'repair-unbroken-pattern')).toBeGreaterThan(2);
-        expect(repairMedicineHeldBy(state, 'apex-deep-survey').length).toBeGreaterThan(0);
+        expect(repairMedicineHeldBy(state, 'apex-earth-vein-tower').length).toBeGreaterThan(0);
     });
 
     it('answers what a house holds today, and the answer changes when it spends', () => {
@@ -102,7 +102,7 @@ describe('the holdings are live state', () => {
     it('leaves the spent row behind, with who took it and when', () => {
         const state = world();
         const spent = spendRepairDose(
-            state, 'apex-deep-survey', 'npc-first-mark', 'A First Mark',
+            state, 'apex-earth-vein-tower', 'npc-first-mark', 'A First Mark',
             'failed-integration', 33, 900
         );
         expect(spent?.doseId).not.toBeNull();

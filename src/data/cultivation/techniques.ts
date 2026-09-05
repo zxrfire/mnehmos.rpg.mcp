@@ -2131,7 +2131,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 0,
         opening: { rungs: 4, rateMultiplier: 0.35 },
         description:
-            'The Deep Survey\'s own road, and a survey instrument before it is a method of advancement. It teaches a cultivator at the top of the ladder to take the measure of the vein they are standing on rather than to draw harder on it, on the argument that at this height the limit is never the qi and is always what the reader has understood about where it comes from. The opening is four rungs of unannotated figures, because the Survey writes everything the way it writes a datum.'
+            'The Earth Vein Tower\'s own road, and a survey instrument before it is a method of advancement. It teaches a cultivator at the top of the ladder to take the measure of the vein they are standing on rather than to draw harder on it, on the argument that at this height the limit is never the qi and is always what the reader has understood about where it comes from. The opening is four rungs of unannotated figures, because the Survey writes everything the way it writes a datum.'
     }),
     art({
         id: 'driven-ground-endurance-canon',

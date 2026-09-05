@@ -195,7 +195,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
         expect(long?.warmth).toBe('warm');
         expect(long?.theirWarmth).toBe('civil');
 
-        const survey = relationshipBetween(ROOT_SILL, 'apex-deep-survey');
+        const survey = relationshipBetween(ROOT_SILL, 'apex-earth-vein-tower');
         expect(survey?.kind).toBe('severed_patronage');
         expect(survey?.grievance).not.toBeNull();
     });
@@ -204,7 +204,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
         expect(FACTION_PARENTAGE[ROOT_SILL]?.parentFactionId).toBe('apex-long-cut');
         const above = relsFor(ROOT_SILL).filter(r => r.stance === 'above').map(r => r.otherId);
         expect(above).toContain('apex-long-cut');
-        expect(above).toContain('apex-deep-survey');
+        expect(above).toContain('apex-earth-vein-tower');
     });
 });
 

@@ -379,7 +379,7 @@ describe('the standoff at the top of the world', () => {
     it('makes a court defection worth more than any object', () => {
         // The lever the setting says is the real one, checked. Losing your
         // court has to matter, or "the courts might defect" is decoration.
-        const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-deep-survey')!;
+        const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!;
         const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-long-cut')!;
         const loyal = winRate(survey.id, longCut.id, true);
         const defected = winRateWithDefection(survey.id, longCut.id);
@@ -453,7 +453,7 @@ describe('the prose matches what was measured', () => {
         // long as this claim existed. The Third Sill has answered the Long Cut
         // for longer than either apex keeps a record of and has never changed
         // patrons; the one administration in the catalog that ever did is the
-        // Deeproot Court, which walked when the Deep Survey reposted it - and a
+        // Deeproot Court, which walked when the Earth Vein Tower reposted it - and a
         // reposting is a thing you can do to a posting and to nothing else in
         // the world, which is why this has happened exactly once.
         expect(WHY_NOBODY_MOVES.andItHasHappenedOnce).toMatch(/Deeproot Court/);

@@ -248,7 +248,7 @@ export const HELD_QUESTIONS: readonly {
     whyItIsStillNotSent: string;
 }[] = [
     {
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         heldForYears: 400,
         drafts: 31,
         theProblem:
@@ -373,7 +373,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         whatTheyWere: 'A Seat who held the guard at two crossings before making her own, which is the pattern the Court now expects of anybody it admits.',
         yearsAgo: 3100,
         attestation: 'secure',
-        attestationNote: 'Tablet, dated, and corroborated by a Deep Survey register entry recording her at a site the Survey was working at the time.',
+        attestationNote: 'Tablet, dated, and corroborated by a Earth Vein Tower register entry recording her at a site the Survey was working at the time.',
         answers: 'silent',
         juniority: 4,
         manner:
@@ -436,7 +436,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         name: 'Tao Jingwei',
         alsoCalled: 'the First Surveyor, whose name the Survey records and does not use',
         kind: 'immortal_ancestor',
-        factionId: 'apex-deep-survey',
+        factionId: 'apex-earth-vein-tower',
         whatTheyWere: 'The founder of the arterial survey, who crossed from a site the register locates precisely and describes not at all.',
         yearsAgo: 3100,
         attestation: 'secure',
@@ -929,14 +929,14 @@ export const FOUNDERS: readonly NamedFigure[] = [
     },
     {
         id: 'figure-bo-ai',
-        name: 'Company Master Bo Ai',
+        name: 'Caravan Master Bo Ai',
         alsoCalled: null,
         kind: 'founder',
         factionId: 'sect-fallen-grain-caravan',
         whatTheyWere: 'The digger who instituted shares allocated before a shift and paid to a dead gleaner\'s family after it.',
         yearsAgo: 300,
         attestation: 'secure',
-        attestationNote: 'In the shares book, which the Company has never once defaulted on and consequently has never had a reason to lose.',
+        attestationNote: 'In the shares book, which the Caravan has never once defaulted on and consequently has never had a reason to lose.',
         answers: null,
         juniority: null,
         note: 'The founding act was a promise about money, and three hundred years of keeping it is why the record is intact.'

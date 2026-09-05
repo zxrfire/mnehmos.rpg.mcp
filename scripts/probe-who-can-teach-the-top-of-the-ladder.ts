@@ -2,7 +2,7 @@
  * Which arts have somebody who can personally carry a student through them, and
  * how far up the ladder that reaches.
  *
- * THE COMPLAINT THIS ANSWERS. The register printed, for the Deep Survey:
+ * THE COMPLAINT THIS ANSWERS. The register printed, for the Earth Vein Tower:
  * "How far they can take you: 43 ... the book ends at 45 ... the last 2 rungs
  * have no teacher anywhere and have to be walked alone." A world that contains
  * people standing at 44 and contains nobody who can teach to 44 is incoherent

@@ -95,7 +95,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Wide Age ended over a period nobody can bound, and the gates closed. Nine terminals still answer and twenty-two do not, and no account survives of a decision to close any of them.',
             truth: 'unresolved',
-            heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-deep-survey'],
+            heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-earth-vein-tower'],
             evidence: [
                 'thirty-one terminals exist, nine of which still answer when worked, which is not the behaviour of a network that was destroyed',
                 'four of the nine open somewhere a person can breathe and five do not, and nothing distinguishes the two groups in any surviving figure',
@@ -138,7 +138,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Standing Age ended without a war. The works required more people able to cut and hold nodes than the age could produce, the shortfall compounded for several centuries, and districts were abandoned in an order that follows the difficulty of their networks rather than the wealth of their ground.',
             truth: 'reconstructed',
-            heldBy: ['house-immovable-mountain', 'apex-deep-survey', 'house-shrinking-earth'],
+            heldBy: ['house-immovable-mountain', 'apex-earth-vein-tower', 'house-shrinking-earth'],
             evidence: [
                 'abandonment order tracks node count and not vein quality: the richest ground with the largest networks emptied first, which no invasion produces',
                 'no scar layer, no burned seats and no mass graves anywhere in the Standing survey, in five and a half thousand years of it',
@@ -176,7 +176,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Counting Age ended when the first arterial surveys were published and the great powers of the age acted on them. There is no single event and no date anybody defends; there is a century in which leases stopped being renewed everywhere at once and were not replaced by anything.',
             truth: 'reconstructed',
-            heldBy: ['house-ninefold-karma', 'house-immovable-mountain', 'apex-deep-survey', 'house-flowing-light'],
+            heldBy: ['house-ninefold-karma', 'house-immovable-mountain', 'apex-earth-vein-tower', 'house-flowing-light'],
             evidence: [
                 'three surviving arterial figures from that century, from three institutions, agreeing to within a tenth, which is the only time in the record that any three surveys have agreed about anything',
                 'lease and grant instruments from the Karma Pavilion\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
@@ -213,7 +213,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Burning Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Vermilion Seal Terrace does not hold one.',
             truth: 'unresolved',
-            heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-deep-survey', 'apex-long-cut'],
+            heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-earth-vein-tower', 'apex-long-cut'],
             evidence: [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
                 'the Vermilion Seal Terrace holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
@@ -250,10 +250,10 @@ export const AGES: readonly Age[] = [
         livingThere:
             'Thin, ordinary and survivable, and for most people uneventful in a way the earlier ages were not. Progress is slow, the ceiling arrives early, and the ruins are so common that a village granary is built against a wall nobody remembers building. What the present has that no earlier age had is the wreckage of four ages lying open, and the whole exploration economy is people digging in it.',
         didTheyKnow:
-            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Burning Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Immovable Mountain Temple, which can read the numerals and has the datum, and the Deep Survey, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
+            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Burning Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Immovable Mountain Temple, which can read the numerals and has the datum, and the Earth Vein Tower, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
         howItEnded: {
             statement:
-                'It has not ended. Ambient qi is still falling at a rate the Deep Survey measures and does not publish, and no institution in either province has a plan that addresses it rather than positions against it.',
+                'It has not ended. Ambient qi is still falling at a rate the Earth Vein Tower measures and does not publish, and no institution in either province has a plan that addresses it rather than positions against it.',
             truth: 'objective',
             heldBy: [],
             evidence: [
@@ -424,7 +424,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             statement:
                 'The Standing Works ran short of people who could cut and hold nodes, for several centuries, and abandoned districts in an order that follows network difficulty rather than ground quality.',
             truth: 'reconstructed',
-            heldBy: ['house-immovable-mountain', 'apex-deep-survey'],
+            heldBy: ['house-immovable-mountain', 'apex-earth-vein-tower'],
             evidence: [
                 'the abandonment order tracks node count, not vein quality, which no invasion produces',
                 'the last dated Standing documents are staffing returns and the returns get shorter',
@@ -581,14 +581,14 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             refutation:
                 'The shared structure is a copying artifact and not a doctrine. The Standing Works standardised manual formatting the way they standardised weights: section order, stage marks and head phrases are Standing survey conventions applied to instructional documents, and they appear in every manual in the world because every manual in the world descends from a Standing-era recopying programme. Pre-Standing manual fragments exist, they do not share the structure, and they do not share it in exactly the places the convention would predict.',
             whyItIsStillHeld:
-                'Because the fragments that refute it are in two collections and neither will lend. The Deep Survey holds a set it has never described to anybody, and the Cinnabar Crucible Sect holds three sheets it believes to be a defective alchemy text and has never shown to a person who reads the Standing hand. Nobody has ever put a pre-Standing and a post-Standing manual on the same table, so the argument has never been made in a room, and the account is far too useful to a sect that wants to be descended from a teacher for anybody inside one to go looking.',
-            whoCouldDemonstrateIt: ['apex-deep-survey', 'house-immovable-mountain', 'sect-cinnabar-crucible-sect']
+                'Because the fragments that refute it are in two collections and neither will lend. The Earth Vein Tower holds a set it has never described to anybody, and the Cinnabar Crucible Sect holds three sheets it believes to be a defective alchemy text and has never shown to a person who reads the Standing hand. Nobody has ever put a pre-Standing and a post-Standing manual on the same table, so the argument has never been made in a room, and the account is far too useful to a sect that wants to be descended from a teacher for anybody inside one to go looking.',
+            whoCouldDemonstrateIt: ['apex-earth-vein-tower', 'house-immovable-mountain', 'sect-cinnabar-crucible-sect']
         }
     },
     {
         id: 'origin-found',
         name: 'The Found Account',
-        heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-deep-survey', 'sect-six-li-patrol'],
+        heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-earth-vein-tower', 'sect-six-li-patrol'],
         currency: 'institutional',
         account:
             'That cultivation was not invented and not given. It is a property of the world, the way a vein is, and the first cultivators were the first people to notice a thing that had always been there. The surveying houses hold this because it is what a surveyor believes about everything: the world has features, features can be measured, and the question of who put them there is not a question a survey can be asked.',
@@ -652,7 +652,7 @@ export const THE_FIRST_CULTIVATORS: Claim = {
     statement:
         'Nobody can name a first cultivator, place one, or date one. What exists is three pieces of evidence, and they cannot all be about the same beginning.',
     truth: 'unresolved',
-    heldBy: ['house-immovable-mountain', 'house-shrinking-earth', 'sect-hollow-court', 'apex-deep-survey'],
+    heldBy: ['house-immovable-mountain', 'house-shrinking-earth', 'sect-hollow-court', 'apex-earth-vein-tower'],
     evidence: [
         'the Standing hand has a sign group for a practitioner that appears in documents older than any manual anybody holds, in survey contexts, treated as an ordinary occupation alongside masons and weighers',
         'the gate terminals cannot be worked by anyone now living, and the Shrinking Earth Pavilion\'s own estimate of what operating one would require is a realm nobody in the world currently occupies, which means the Wide Age already had people above the present ceiling',
@@ -1275,7 +1275,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The well is outside the wall, it is still good, and it is the only reason anybody camps there. Whether it was left deliberately cannot be established and the courtesy is maintained by people who have never met and do not need the answer.'
     },
     {
-        siteName: 'Half Eaves',
+        siteName: 'Cloud Eaves',
         kind: 'ruin',
         whatTheySay:
             'What is standing is what they wanted standing. A house that is shut properly does not come down by halves.',
@@ -1288,7 +1288,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'About half of one roof is above the wall line and the rest is not. Selective collapse is what an unmaintained inherited compound does and needs no intent behind it. The family\'s rule is superstition and is also the reason there is anything left to look at.'
     },
     {
-        siteName: 'The Long Roll',
+        siteName: 'Long Ridge',
         kind: 'ruin',
         whatTheySay:
             'They kept the duty list going after they shut the door. Two years of it. Somebody was still writing down who had the gate, and there was no gate, and there was nobody to relieve them.',
@@ -1340,7 +1340,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'Nothing has grown in it for an age. The grandmother chain is longer than any mortal lifespan will support and is therefore a story about the name rather than a memory of the yard, which is the ordinary fate of a name that is wrong.'
     },
     {
-        siteName: 'Went Under',
+        siteName: 'Sunken Ford',
         kind: 'ruin',
         whatTheySay:
             'It went under. Same as a man goes under. You do not say it drowned and you do not say it fell, you say it went under, and everybody knows what you mean.',
@@ -1368,7 +1368,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
 
     // ── scars ─────────────────────────────────────────────────────────
     {
-        siteName: 'Nothing Grows',
+        siteName: 'Bitter Soil',
         kind: 'scar',
         whatTheySay:
             'Nothing grows. It is not a name, it is what I am telling you. Do not put anything in it and do not put anything near it and do not let the stock over the line.',
@@ -1420,7 +1420,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name records the holder because nobody could name the cause, which the naming convention states outright. The district\'s insistence on the distinction is the residue: it is a community that has been careful with an attribution for two centuries and has forgotten that it is being careful.'
     },
     {
-        siteName: 'The Good Ground',
+        siteName: 'Rich Soil',
         kind: 'scar',
         whatTheySay:
             'It is on the survey as good. It has never been good in anybody\'s memory. The survey is old and the survey is what the tax is worked out from, so we pay on good ground and farm none.',
@@ -1459,7 +1459,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The colour is the name and it has not changed. Whether the water carries anything has never been tested by anybody competent, and the population that has been drinking it for generations is the only evidence in existence and has never been looked at.'
     },
     {
-        siteName: 'The Short Way',
+        siteName: 'Near Pass',
         kind: 'scar',
         whatTheySay:
             'It is the short way. It costs you a day. Say it to a stranger and see whether they laugh, because if they laugh they are not from here.',

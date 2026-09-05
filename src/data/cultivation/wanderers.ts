@@ -394,7 +394,7 @@ export const WANDERERS: readonly Wanderer[] = [
             casualNotTactical:
                 'He is not hiding, not maintaining aliases and not running anything. He changes when it suits him, for reasons that are barely reasons, in the way another man might change which road he takes out of a town. There is no scheme to uncover because there is no scheme.',
             whyItDefeatsARegister:
-                'Deliberate deception would be far easier to handle: deception has patterns, and a body like the Deep Survey is extremely good at patterns. Whim has none. There is nothing to model, no alias set to correlate, and no behaviour that recurs - so the sightings can be neither linked nor separated, and the register cannot even say how many people it is looking at.',
+                'Deliberate deception would be far easier to handle: deception has patterns, and a body like the Earth Vein Tower is extremely good at patterns. Whim has none. There is nothing to model, no alias set to correlate, and no behaviour that recurs - so the sightings can be neither linked nor separated, and the register cannot even say how many people it is looking at.',
             whoCouldTell:
                 'His inheritors, because they know him rather than his face - the way he asks a second question, what he finds funny, the specific quality of not being in a hurry. It is one more reason he would rather they did not gossip, and it has never been the reason he gave.'
         },
@@ -579,7 +579,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'Everybody else in the world, including every institution that would pay enormously for it and several that have tried. There is no archive anywhere with a correct account, because the correct accounts are held by people who do not write things down and people who have been asked not to.',
             apexBlindSpot: {
                 categoryConfirmed:
-                    'Both the Deep Survey and the Long Cut know that a False Immortal is wandering. Neither disputes it and neither ever has: the sightings are too consistent in kind, the incidents require the category, and both institutions established it independently and wrote it down. The category is not the problem.',
+                    'Both the Earth Vein Tower and the Long Cut know that a False Immortal is wandering. Neither disputes it and neither ever has: the sightings are too consistent in kind, the incidents require the category, and both institutions established it independently and wrote it down. The category is not the problem.',
                 theOpenQuestion:
                     'Whether it is the same one. Sightings across three centuries, in provinces that do not connect, described by people who never met and who describe different men - and no way to establish continuity of identity between any two of them. It could be one existence walking for three hundred years. It could be four, in sequence. The evidence supports both equally and has never leaned.',
                 bothConcluded:
@@ -617,7 +617,7 @@ export const WANDERERS: readonly Wanderer[] = [
                     'Five names, of which two are verifiably dead with the scars to prove it, one was never a person at all, one is unresolvable, and one is him - and his is indistinguishable from the noise. Failing the crossing leaves a scar and nothing else, so a name on this list is usually just a man who died and was misfiled, and both institutions know that and keep the list anyway because there is nothing better to keep. Different names attached to different faces, some of which were the same man, and no way to sort them: the two verifiably dead ones may have been him twice.'
             },
             whatItIsWorth:
-                'A player who assembles even part of it is holding something the Deep Survey does not have, about a party the Deep Survey has miscategorised, in a world where that institution sets the terms on everything else. It is worth more than any object in the catalogs and is considerably more dangerous to be known to possess, because the only parties who could confirm it are the ones who will not talk and the ones who would very much like to know how you found out.'
+                'A player who assembles even part of it is holding something the Earth Vein Tower does not have, about a party the Earth Vein Tower has miscategorised, in a world where that institution sets the terms on everything else. It is worth more than any object in the catalogs and is considerably more dangerous to be known to possess, because the only parties who could confirm it are the ones who will not talk and the ones who would very much like to know how you found out.'
         },
         courtOpinions: [
             {
@@ -682,7 +682,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'Touch the Standing Edge, for the same reason and more directly: it is the object she left, and the Pavilion is only holding it',
                 'Interfere with a crossing in progress anywhere, since what waits at the far side of one is the one constituency he cannot be indifferent to',
                 'Break anything that a party above the Lid arranged deliberately, at any size, including arrangements he finds ridiculous',
-                'Touch the Deep Survey or the Long Cut, which is not restraint at all - he has nothing against either, wants nothing they hold, and finds administration boring'
+                'Touch the Earth Vein Tower or the Long Cut, which is not restraint at all - he has nothing against either, wants nothing they hold, and finds administration boring'
             ],
             theDeterrent:
                 'Something would come down and settle it. That is the whole of what he knows: not who, not what, not how many, and not whether it would be anybody he could name. He is aware that Ru Anjing went through and reasons about her arrangements accordingly, but he does not know that she would come, or that it would be her, or that what came would be a person at all. He has declined to find out, which is a different thing from being afraid of a known punishment.',

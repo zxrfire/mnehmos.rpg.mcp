@@ -91,7 +91,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-stone-marrow-hall` · its entry: [`sects.ts:938`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 24 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 10 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
   …and 20 more files.
 
 **Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 6 more
@@ -269,7 +269,7 @@ session somebody wrote down design that was already in the catalog.
 
 `house-flowing-light` · its entry: [`sects.ts:2140`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 15 · [`history.ts`](../../src/data/cultivation/history.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 13 · [`history.ts`](../../src/data/cultivation/history.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2 · [`place-names.md`](../../docs/world/writing/place-names.md) 1
   …and 10 more files.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `THE_LID`, `TITLE_TRANSLATIONS`

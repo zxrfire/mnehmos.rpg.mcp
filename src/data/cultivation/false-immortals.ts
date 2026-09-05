@@ -372,7 +372,7 @@ export const DEPARTURE = {
     theArithmeticItServes:
         'The world layer prices the standing population as production times mean residence, and puts mean residence at five hundred years against a rung that grants three hundred thousand. That is not a lifespan and must never be read as one: nobody is dying of age at five hundred. They are leaving at five hundred, and this is what the leaving is.',
     theHazard:
-        'Going looking is what kills them, and their span is not what ends them. The places worth a False Immortal\'s attention are exactly the places that were closed by parties who could close things against a False Immortal - closed terminals, arterial seams below anything the Deep Survey has instrumented, the dead provinces, sealed sites nobody living can open, and whatever is past the last surveyed ground in any direction. The odds out there are not written down anywhere, by anybody, and the people who could have written them down are the ones who went.',
+        'Going looking is what kills them, and their span is not what ends them. The places worth a False Immortal\'s attention are exactly the places that were closed by parties who could close things against a False Immortal - closed terminals, arterial seams below anything the Earth Vein Tower has instrumented, the dead provinces, sealed sites nobody living can open, and whatever is past the last surveyed ground in any direction. The odds out there are not written down anywhere, by anybody, and the people who could have written them down are the ones who went.',
     itIsNotSightseeing:
         'Write it as path two rather than as restlessness. Somebody at the bottom of their own dao who wants the next thing has to go where the next thing is, and none of it is here. It is the most reasonable act available to a person in their situation and it is the reason there are not forty of them standing about.',
     nobodyBelowCanTellTheDifference:
@@ -410,9 +410,9 @@ export const DEPARTURE_DESTINATIONS: readonly {
         whyThere:
             'It is the question under every other question in the world - the ground is thinning, everybody has measured it, and nobody has been to the bottom. A False Immortal is the only kind of being that could go and look, and the ones who care about the answer are the ones with nothing else left to care about.',
         whoWent:
-            'The Standing Sum, two thousand four hundred years ago, at a branch the Deep Survey now numbers as the fourth. She said where she was going and why. There is no further entry of any kind.',
+            'The Standing Sum, two thousand four hundred years ago, at a branch the Earth Vein Tower now numbers as the fourth. She said where she was going and why. There is no further entry of any kind.',
         whatComesBack:
-            'Nothing yet. The Deep Survey holds the only records that would show a return and its arterial register has no category for a person, so an ascent out of a seam would be filed as an anomaly in the ground reading and nothing else.'
+            'Nothing yet. The Earth Vein Tower holds the only records that would show a return and its arterial register has no category for a person, so an ascent out of a seam would be filed as an anomaly in the ground reading and nothing else.'
     },
     {
         id: 'departure-past-the-survey',
@@ -430,7 +430,7 @@ export const DEPARTURE_DESTINATIONS: readonly {
         whyThere:
             'Because a site sealed against a False Immortal was sealed by somebody who had a reason, and the reason is the most interesting object in the world to the one category of person the seal was aimed at.',
         whoWent:
-            'Not recorded anywhere, and this is the destination the institutions would most like a list of. The Deep Survey holds site records it sealed itself and never published, and has never cross-referenced them against anybody\'s disappearance.',
+            'Not recorded anywhere, and this is the destination the institutions would most like a list of. The Earth Vein Tower holds site records it sealed itself and never published, and has never cross-referenced them against anybody\'s disappearance.',
         whatComesBack:
             'A seal that has been opened and closed again looks exactly like a seal, which is the whole difficulty. At least one site in the two provinces has almost certainly been entered this way and nobody has any means of establishing which.'
     }
@@ -698,7 +698,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         end: 'went_looking',
         endedYearsAgo: 2_400,
         endNote:
-            'She went down the arterial system to find out where the qi comes from. She said so, gave a reason, and the reason was correct - the question is the one every survey in the world has been circling for four thousand years, she was the only being alive who could have gone and looked, and going and looking was the obvious thing to do. She went down at a branch the Deep Survey now numbers as the fourth and has not been reported since. There is no scar, no body and no account. Nothing about her departure was confused, hurried or strange, and it is the cleanest instance of path two in the record.',
+            'She went down the arterial system to find out where the qi comes from. She said so, gave a reason, and the reason was correct - the question is the one every survey in the world has been circling for four thousand years, she was the only being alive who could have gone and looked, and going and looking was the obvious thing to do. She went down at a branch the Earth Vein Tower now numbers as the fourth and has not been reported since. There is no scar, no body and no account. Nothing about her departure was confused, hurried or strange, and it is the cleanest instance of path two in the record.',
         whichExitItReallyWas: null,
         stageAtEndId: 'stage-the-long-work',
         legacyAtEnd: 'holding',
@@ -808,7 +808,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Nothing. No students are traceable, no house claims the site, no art is attributed to him and no carving of his has ever been found. He is the one entry in this catalog with no legacy of any kind, which is what happens to path three when the transmission is held in people and the people are in the courtyard.',
         whatSurvives: [
             'three accounts in three unrelated archives, agreeing on the duration and on nothing else, none of which has ever been placed beside the other two',
-            'a Deep Survey register entry for the site filed under weather, which is the closest any institution has come to writing it down as an event',
+            'a Earth Vein Tower register entry for the site filed under weather, which is the closest any institution has come to writing it down as an event',
             'the only evidence in the world that there is a ceiling above a False Immortal and that it is occupied'
         ],
         servingNow: false
@@ -1113,7 +1113,7 @@ export const THE_PRESENT_COUNT = {
     servingProtectors:
         'Zero, in the sense this file counts. No sect, house, court or apex in the world has a False Immortal standing on it and none has had one for eight hundred years. Plenty of ordinary houses have a dao protector in post today and every one of those is a strong elder doing a job, which is the same phrase doing different work - see `THE_OFFICE.theWordDoesTwoJobs`. What is empty is the reserved post at the houses that will not fill it with anybody else, and that post is open rather than abolished.',
     residentFalseImmortals:
-        'One that anybody can point to: Lu Sheng, who crossed six hundred and forty years ago, walks the two provinces, and is in `wanderers.ts` in full. The Deep Survey and the Long Cut have both independently established that a False Immortal is wandering and neither can establish whether the sightings are one existence or four in sequence, which is what real institutional knowledge looks like at this distance.',
+        'One that anybody can point to: Lu Sheng, who crossed six hundred and forty years ago, walks the two provinces, and is in `wanderers.ts` in full. The Earth Vein Tower and the Long Cut have both independently established that a False Immortal is wandering and neither can establish whether the sightings are one existence or four in sequence, which is what real institutional knowledge looks like at this distance.',
     theOneEligiblePerson: {
         theSituation:
             'He is the only person alive who could fill a reserved post, he came up through the one house whose chair he would be filling, and he does not hold it. That is not an oversight, it is not a question nobody thought of, and it is not a judgement anybody made about him.',
@@ -1194,7 +1194,7 @@ export const THE_ARTS_ARE_THE_WHOLE_INVENTORY = {
     soTheArtsAreTheAccount:
         'Which is why the three entries at ordinal forty-five in the technique catalog carry more than a strong man\'s arts usually would. They are not the flourish on top of an object doing the real work; they are the whole of why he is dangerous, and taking them away leaves a man at a rung and nothing else. Read `WHAT_AN_ART_BUYS` beside this: an art is worth most of a rung inside a realm and nothing at all across the Lid, and he is the one case in the world where somebody is standing on the art alone.',
     andItIsMeasuredRatherThanClaimed:
-        'Against the three mobilised apexes, run through the ordinary resolver with nothing special-cased anywhere: he takes the Deep Survey every time, the Azure Cloud Pavilion about seven times in eight, and the Long Cut four times in five. Nothing in that ordering tracks the head\'s rung. It tracks the object each house is holding - a forty-three lamp, a forty-five edge under a head at forty-one, and a forty-five nail - which is exactly what the catalog says force is made of.',
+        'Against the three mobilised apexes, run through the ordinary resolver with nothing special-cased anywhere: he takes the Earth Vein Tower every time, the Azure Cloud Pavilion about seven times in eight, and the Long Cut four times in five. Nothing in that ordering tracks the head\'s rung. It tracks the object each house is holding - a forty-three lamp, a forty-five edge under a head at forty-one, and a forty-five nail - which is exactly what the catalog says force is made of.',
     andTheOneInFiveIsThePoint:
         'So the strongest person below the Lid can be fought to a standstill one time in five by an apex head three rungs beneath him, and the whole of the difference is that somebody sent them a nail and nobody has ever sent him anything. That is not a flaw in the arithmetic to be corrected by giving him something. It is the arithmetic saying what the setting says: objects cross where arts do not, `OBJECT_CEILING_BELOW_THE_LID` is forty-five and he is at forty-five with empty hands.',
     doNotFixIt:

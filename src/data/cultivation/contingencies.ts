@@ -13,7 +13,7 @@
  * The first entry was not designed. It fell out of two catalog entries written
  * months apart for unrelated reasons:
  *
- *   `hierarchy.ts`  the Deep Survey vault is defended by presence, and the
+ *   `hierarchy.ts`  the Earth Vein Tower vault is defended by presence, and the
  *                   Survey therefore cannot leave, because leaving means being
  *                   robbed by an ordinary ambitious sect with time and an
  *                   absence to work in.
@@ -34,7 +34,7 @@ import { z } from 'zod';
 // ─────────────────────────────────────────────────────────────────────────
 
 export const VAULT_CONTENTS = {
-    factionId: 'apex-deep-survey',
+    factionId: 'apex-earth-vein-tower',
     summary:
         'Several centuries of an apex institution keeping everything it was ever given in one building, because the building has never been entered and there has never been a reason to disperse it.',
     whatARaiderWouldActuallyTake: [
@@ -195,7 +195,7 @@ export const CONTINGENCIES: readonly Contingency[] = [
         ],
         inTheirWords:
             'The Court records it as a question rather than a plan, which is how it has stayed unwritten for a hundred and ninety years: what is worth waking her for. The answer the Court has arrived at, and has never put on paper in this form, is that she is worth waking for a room that has stood unopened for four hundred years and is not being sat on. Not for a border. Not for a raid on a rival. For one act, against an accumulation nobody is guarding, taken in a single night by something that was never going to be used for anything smaller.',
-        targetFactionId: 'apex-deep-survey',
+        targetFactionId: 'apex-earth-vein-tower',
         namesTheTarget: false,
         theArithmetic:
             'A hundred and ninety years of thinking produced a sum, and the sum is why the plan is not aimed at the Lamp. The Lamp is the best prize in the world and it is guarded by somebody seated, and against a seated defender a sealed ancestor loses even when it is the stronger of the two - because they are not playing the same game. The Mirror is one-shot: she wakes, she has a window, the hall burns in the waking, and she must convert decisively inside that window or the whole instrument is spent for nothing. The one under the vault is spending nothing at all. She does not have to win, or prevail, or leave, or achieve anything. She has to still be there with the intruder still there and nothing done. The Court put a number on it - about one in a hundred, and the one is the defender erring catastrophically rather than the Mirror performing - and then observed that nobody sane spends two thousand years of instrument at ninety-nine to one. So they did the sum, the sum said no, and they went looking for what the sum said yes to.',
@@ -246,7 +246,7 @@ export const CONTINGENCIES: readonly Contingency[] = [
                 divergence: 'unknowable'
             },
             {
-                factionId: 'apex-deep-survey',
+                factionId: 'apex-earth-vein-tower',
                 holds: 'Whatever else is out there. The Survey has never enumerated its own coverage and could not.',
                 wouldTheyWakeForThePatron:
                     'Unknown, and this is the row that actually stops the plan. Frostmirror can name two allied holders and rule out a third, and cannot rule out a fourth it has never heard of - a quiet mountain, a subsidiary that has never mentioned what is under it, or a party with an old obligation nobody has written down. The Court has concluded, correctly, that this cannot be resolved from outside.',

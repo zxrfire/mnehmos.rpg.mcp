@@ -1177,7 +1177,7 @@ describe('cultivation MCP tool surface', () => {
                 // its two names. The half that kept the GROUND is the Kiln
                 // Court and is a court record, not a sect - so it is correctly
                 // absent from this list. What is in `SECTS` is the half that
-                // WALKED, which took the Deep Survey's own administrative word
+                // WALKED, which took the Earth Vein Tower's own administrative word
                 // for the posting with it.
                 'Deeproot Court'
             ]) {

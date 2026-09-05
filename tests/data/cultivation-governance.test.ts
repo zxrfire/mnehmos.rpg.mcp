@@ -315,7 +315,7 @@ describe('above the map', () => {
             expect(a.ranksByRealmAboveOrdinal).toBeGreaterThanOrEqual(21);
         }
         // Stated plainly: a stronger cultivator can be junior to a weaker one.
-        expect(getApexInstitution('apex-deep-survey')!.rankNote)
+        expect(getApexInstitution('apex-earth-vein-tower')!.rankNote)
             .toMatch(/Core Formation .*Foundation Establishment/i);
     });
 
@@ -355,7 +355,7 @@ describe('the feeder and arrival', () => {
         expect(ARRIVAL_RULES.doesNotCarry.length).toBeGreaterThanOrEqual(5);
         for (const line of ARRIVAL_RULES.doesNotCarry) expect(line.length).toBeGreaterThan(40);
 
-        const arrival = arrivalStateFor('sect-azure-cloud-pavilion', 'apex-deep-survey');
+        const arrival = arrivalStateFor('sect-azure-cloud-pavilion', 'apex-earth-vein-tower');
         expect(arrival.rankIndex).toBe(0);
         expect(arrival.rankTitle).toBe('Unplaced');
         expect(arrival.contributionCarried).toBe(0);
@@ -365,7 +365,7 @@ describe('the feeder and arrival', () => {
 
         // The same, from anywhere, including the most prestigious sect there is.
         for (const from of ['sect-hollow-bell-wanderers', 'sect-nine-peaks-ascetic-order', 'sect-ancient-bough-grove']) {
-            const a = arrivalStateFor(from, 'apex-deep-survey');
+            const a = arrivalStateFor(from, 'apex-earth-vein-tower');
             expect(a.rankIndex).toBe(0);
             expect(a.contributionCarried).toBe(0);
         }
@@ -581,7 +581,7 @@ describe('holding ground by being unanswerable', () => {
     });
 
     it('puts the strongest acting power in the world outside the stack', () => {
-        // The Deep Survey administers the vein system. The one vein it does not
+        // The Earth Vein Tower administers the vein system. The one vein it does not
         // administer is the best one, and the reason is standing on it.
         const court = getSect(HOLLOW_COURT)!;
         const strongestApex = Math.max(...APEX_INSTITUTIONS.map(a => a.powerOrdinal));
@@ -773,7 +773,7 @@ describe('the sent-down treasures', () => {
         const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a.sentDown]));
         // And the two are good at different things, so they are not one prize
         // described twice.
-        expect(byId['apex-deep-survey'].asAnArtifact).toMatch(/conceal|formation|arbitration|lied to/i);
+        expect(byId['apex-earth-vein-tower'].asAnArtifact).toMatch(/conceal|formation|arbitration|lied to/i);
         expect(byId['apex-long-cut'].asAnArtifact).toMatch(/fixed|ground|perimeter/i);
     });
 
@@ -794,7 +794,7 @@ describe('the sent-down treasures', () => {
         const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a.sentDown]));
         // One can be carried off. One cannot, and has to be used in place -
         // which is a different heist and a different kind of siege.
-        expect(byId['apex-deep-survey'].ifUncovered).toMatch(/taken|carried/i);
+        expect(byId['apex-earth-vein-tower'].ifUncovered).toMatch(/taken|carried/i);
         expect(byId['apex-long-cut'].ifUncovered).toMatch(/cannot be carried|in place/i);
     });
 });
@@ -901,7 +901,7 @@ describe('the third apex: young, visible, and holding outright', () => {
         // three in a short exchange.
         const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a]));
         expect(byId['apex-azure-cloud'].stock.remaining).toBe('nearly_intact');
-        expect(byId['apex-deep-survey'].stock.remaining).toBe('spent');
+        expect(byId['apex-earth-vein-tower'].stock.remaining).toBe('spent');
         expect(byId['apex-long-cut'].stock.remaining).toBe('depleted');
         // And nobody can restock, for the same reason every time.
         for (const a of APEX_INSTITUTIONS) {
@@ -959,7 +959,7 @@ describe('the Azure Cloud intake', () => {
     it('explains why no other apex can copy it, in their own terms', () => {
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Hollow Court/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Refinement/);
-        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Deep Survey/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Earth Vein Tower/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Long Cut/);
         // And it does not contradict the Long Cut, which tests everybody already.
         expect(DIRECT_RULE.intakeModel).toBe('tests everyone');
@@ -1002,7 +1002,7 @@ describe('the Azure Cloud intake', () => {
         const pr = AZURE_CLOUD_INTAKE.probation;
         expect(pr.stagedCommitment).toMatch(/Probation is cheap/i);
         expect(pr.stagedCommitment).toMatch(/Full admission is expensive/i);
-        expect(pr.stagedCommitment).toMatch(/Deep Survey and the Long Cut could not/i);
+        expect(pr.stagedCommitment).toMatch(/Earth Vein Tower and the Long Cut could not/i);
         expect(pr.theLength).toMatch(/four to seven years/i);
         expect(pr.theLength).toMatch(/continuous cost/i);
     });
