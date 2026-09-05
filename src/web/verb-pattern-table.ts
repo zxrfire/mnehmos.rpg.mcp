@@ -1579,7 +1579,7 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // the same event with a different word on the log while a whole conveyance
     // layer sat with no caller. It is its own verb now - see {@link RIDING} -
     // and its branch is tested ahead of this table.
-    ['travel', /\b(?:travel|go to|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
+    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
 ];
 
 // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
@@ -1650,7 +1650,21 @@ export const FOLDING_SPACE = new RegExp([
     '\\b(?:step|steps|stepping|stepped)\\s+(?:through|across)\\s+(?:space|the\\s+distance)\\b',
     '\\b(?:tear|tears|tearing|tore)\\s+(?:through|open)\\s+space\\b',
     '\\b(?:fold|folds|folding|folded)\\s+(?:my\\s+way\\s+|myself\\s+)?(?:to|across|over|straight\\s+to)\\b',
-    '\\b(?:cross|crosses|crossing|cover|covers|covering)\\s+the\\s+distance\\s+in\\s+one\\s+step\\b'
+    '\\b(?:cross|crosses|crossing|cover|covers|covering)\\s+the\\s+distance\\s+in\\s+one\\s+step\\b',
+    // AND THE WORDS SOMEBODY WHO HAS NEVER READ THIS SETTING WOULD USE.
+    //
+    // The design owner: *i don't type "i touch the crosswalk button", i just
+    // type "i cross the road safely"*. Every phrasing above is the setting's
+    // own vocabulary, and a player who has not read the setting types the word
+    // they know. Measured: "I teleport to the capital" reached no verb at all
+    // and came back as an unreadable sentence, when the engine holds a whole
+    // priced answer for it - a floor, a grant and a cost - and the only thing
+    // standing between the two was a synonym.
+    '\\bteleport(?:s|ing|ed|ation)?\\b',
+    '\\b(?:warp|warps|warping|warped)\\s+(?:to|across|myself|straight)\\b',
+    '\\b(?:blink|blinks|blinking|blinked)\\s+(?:to|across|straight)\\b',
+    '\\b(?:phase|phases|phasing|phased)\\s+(?:to|across|through)\\b',
+    '\\binstant\\s+(?:transmission|travel)\\b'
 ].join('|'));
 
 /**
@@ -1697,7 +1711,7 @@ export const OATH_SUBJECT_VERBS =
 
 /** Where somebody is stepping, when the phrasing puts the place after the fold. */
 export const FOLD_SUBJECT_VERBS =
-    /fold space to|fold to|fold across to|step through space to|step across to|fold myself to|fold my way to|space to/;
+    /fold space to|fold to|fold across to|step through space to|step across to|fold myself to|fold my way to|space to|teleport to|teleport myself to|warp to|blink to|phase to/;
 
 const OATH_INTENT_PATTERNS: ReadonlyArray<[OathIntent, RegExp]> = [
     // Breaking, first, because every sentence about breaking one contains the
@@ -1768,6 +1782,22 @@ const CRIPPLING_SOMEBODY =
 /**
  * The fight was opened from cover, which is a different act from squaring up.
  */
+/**
+ * Going through what somebody is CARRYING, which takes things.
+ *
+ * The investigate row owns `loot`, `search`, `go through` and `rifle`, and it
+ * is a look: it takes nothing and writes nothing. So the commonest thing
+ * anybody does after a fight came back as a description of a body with the
+ * purse still on it. What separates the two is the object, not the verb.
+ */
+export const GOING_THROUGH_WHAT_THEY_CARRY = new RegExp(
+    '\\b(?:loot|loots|looting|looted|strip|strips|stripping|stripped|rifle|rifles|rifling|rifled|'
+    + 'go through|goes through|going through|went through|search|searches|searching|searched|'
+    + 'pick over|picks over|picking over|empty|empties|emptying|emptied|take from|takes from)'
+    + '\\s+(?:the\\s+|his\\s+|her\\s+|their\\s+|a\\s+|an\\s+)?'
+    + '(?:body|bodies|corpse|corpses|remains|dead|pockets?|purse|pouch|belongings|effects)\\b'
+);
+
 const OPENED_FROM_COVER = new RegExp(
     '\\b(?:'
     + 'sneak up on|sneaks up on|sneaking up on|creep up on|creeps up on|'
@@ -1786,7 +1816,7 @@ const OPENED_FROM_COVER = new RegExp(
  * The tail of a sentence that says HOW a fight was opened, cut off the target.
  */
 const HOW_THE_FIGHT_OPENED_TAIL =
-    /\s+(?:from (?:behind|cover|the shadows|hiding|concealment)|by surprise|unseen|unnoticed|while (?:he|she|they|it)\b.*|before (?:he|she|they|it)\b.*|without (?:being seen|warning)|and (?:strike|strikes|hit|hits|attack|attacks|kill|kills|cut|go for)\b.*)\s*$/i;
+    /\s+(?:from (?:behind|cover|the shadows|hiding|concealment)|in the back|by surprise|unseen|unnoticed|while (?:he|she|they|it)\b.*|before (?:he|she|they|it)\b.*|without (?:being seen|warning)|and (?:strike|strikes|hit|hits|attack|attacks|kill|kills|cut|go for)\b.*)\s*$/i;
 
 /**
  * Making somebody do something, with hands rather than with words.
@@ -1819,6 +1849,14 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['marry', /\b(?:force|forces|forcing|forced|make|makes|making|made|compel|compels|compelling)\b[^.!?]*\b(?:marry|marries|marrying|wed|weds|wedding|take me as (?:his|her|their) (?:dao )?partner|be my (?:dao )?partner|into (?:a |the )?(?:match|marriage|betrothal|union))\b|\b(?:marry|marries|marrying|wed|weds)\b[^.!?]*(?:\bwhether (?:he|she|they) (?:wants?|likes?) (?:it|to) or not\b|\bagainst (?:his|her|their) will\b)/],
     // BEING SAT AS SOMEBODY ELSE'S FURNACE
     ['furnace', /\b(?:as|for) (?:a|my|his|her|their) (?:furnace|cauldron)\b|\bfurnace (?:art|arts|technique|techniques|method|methods|rite)\b|\bdraw(?:s|ing)? off (?:his|her|their) cultivation\b/],
+    // TAKEN AND HELD. "I kidnap her", "I tie him up", "I take him prisoner"
+    // all reached nothing, and all three are the same act the yielding path
+    // already prices: somebody is made to go where they were not going and
+    // stay there. The design owner's rule about the words a player reaches
+    // for applies hardest here - nobody types "I coerce her".
+    ['submit', /\b(?:kidnap|kidnaps|kidnapping|kidnapped|abduct|abducts|abducting|abducted|seize|seizes|seizing|seized|carry off|carries off|carrying off|drag(?:s|ging)? (?:him|her|them|it) off)\b/],
+    ['submit', /\b(?:tie|ties|tying|tied|bind|binds|binding|bound|chain|chains|chaining|chained|shackle|shackles|shackling|shackled|rope|ropes|roping|roped)\s+(?:him|her|them|it)\s*(?:up|down)?\b/],
+    ['submit', /\btake(?:s|n|ing)?\s+(?:him|her|them|it)\s+(?:prisoner|captive|hostage)\b/],
     ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
     ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
     ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
@@ -1861,6 +1899,11 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
      */
     ['steal', new RegExp([
         /\b(?:steal|steals|stealing|stole|rob|robs|robbing|mug|mugs|mugging|pickpocket)\b/,
+        // GOING THROUGH WHAT SOMEBODY IS CARRYING, dead or alive. Both
+        // reached `investigate`, which is a look and takes nothing - so the
+        // commonest thing anybody does after a fight came back as a
+        // description of a body with the purse still on it.
+        /\b(?:loot|loots|looting|looted|strip|strips|stripping|stripped|rifle|rifles|rifling|go through|goes through|going through|search|searches|searching|searched)\s+(?:the|his|her|their|a|an)?\s*(?:body|bodies|corpse|corpses|remains|dead|pockets|purse|pouch|belongings)\b/,
         /\bhelp myself to (?:his|her|their)\b/,
         /\btake (?:it )?off (?:him|her|them)\b/,
         POCKET_PICKING,
@@ -1891,7 +1934,7 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // `AN_ATTACK_WORD_INSIDE_AN_IDIOM`, which stops it swinging. Exempting it there
     // and not claiming it here would trade a wrong act for a refusal, which is
     // better and is not the answer.
-    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|strike(?:s|ing)? up a conversation|bows? to|bowing to|nods? to|pay my respects to|salutes?)\b/]
+    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|strike(?:s|ing)? up a conversation|bows? to|bowing to|nods? to|pay my respects to|chat|chats|chatting|chat with|make small talk|small talk|call for help|calls for help|calling for help|shout for help|scream for help|cry for help|yell for help)\b/]
 ];
 
 // `warn` is in the threaten intent and was not here, so "I warn him to stay
@@ -2150,7 +2193,7 @@ function planIntent(input: string): PlannedAction {
             + 'cut (?:him|her|them) down|cuts (?:him|her|them) down|'
             + 'draw (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
             + 'draws (?:my|his|her|the) (?:sword|blade|sabre|saber|weapon|knife) on|'
-            + 'start a fight|starts a fight|pick a fight|picks a fight|make an example of')
+            + 'start a fight|starts a fight|pick a fight|picks a fight|make an example of|backstab|backstabs|backstabbing|backstabbed|stab (?:him|her|them|it) in the back|garrotte|garrottes|garotte|knife (?:him|her|them)')
             || /\bstrike (?:at )?(?:him|her|them|the [a-z])/.test(text)
             // Said the way a person says it, where the body part is what makes
             // it violence rather than the verb. See `VIOLENCE_TO_A_BODY`.
@@ -2367,7 +2410,7 @@ function planIntent(input: string): PlannedAction {
 
     // striking the barrier, and not everything with the word in it
     if (usedAsVerb(text, 'break\\s*through|breakthrough|breaks through|breaking through')
-        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)) {
+        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|level up|levels up|levelling up|leveling up|power up|powers up|powering up|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
@@ -2603,7 +2646,7 @@ function planIntent(input: string): PlannedAction {
     // word-number table is spliced in instead of a hand-written list, so it cannot
     // go stale against `parseCount`, which already knows all of them.
     if (new RegExp(
-        '\\b(?:stock up|lay in|load up|provision myself|buy provisions|'
+        '\\b(?:stock up|lay in|load up|provision myself|buy provisions|go shopping|goes shopping|going shopping|do my shopping|'
         // A COUNT BEFORE THE NOUN. "buy rations" reached provisioning and
         // "buy 20 rations" did not - the clause had no numeric alternative, so
         // it fell through to the eat rule, which matches any `rations?` and
@@ -2997,7 +3040,8 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── investigate: examining, reading, searching a place ──
-    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)) {
+    if (/\b(?:investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read the|check the|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look (?:over|through)|go through|walk the|climb (?:into|down into)|venture into|case the|scavenge|loot|salvage)\b/.test(text)
+        && !GOING_THROUGH_WHAT_THEY_CARRY.test(text)) {
         return {
             action: 'investigate',
             target: extractSubject(input, /investigate|examine|inspect|study|decipher|appraise|look into|find out about|go looking for|goes looking for|went looking for|search|scour|comb|explore|delve|survey|read|check|poke (?:about|around)|nose (?:about|around)|rummage|sift|pick through|dig through|dig about|look over|look through|go through|walk|climb into|venture into|case|scavenge|loot|salvage/)
@@ -3080,7 +3124,16 @@ function planIntent(input: string): PlannedAction {
     if (usedAsVerb(text, 'cultivate|cultivates|cultivating|meditate|meditates|meditating|'
         + 'seclude|secludes|circulate|circulates|circulating|absorb|absorbs|absorbing|'
         + 'breathe|breathes|breathing|sit|sits|settle|settles')
-        || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)) {
+        || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)
+        // AND THE WORDS SOMEBODY WHO HAS NOT READ THIS SETTING WOULD USE.
+        // "I train for ten years" and "I make camp" reached nothing at all,
+        // and a thrown-away turn is the most expensive thing this table can do.
+        // Anything naming a technique is caught above this line, so a bare
+        // `train` here is training at nothing in particular - which is what
+        // cultivating is.
+        || /\b(?:train|trains|training|rest|rests|resting)\s+for\b/.test(text)
+        || /\b(?:make|makes|making|set|sets|setting)\s+(?:up\s+)?camp\b/.test(text)
+        || /\b(?:go|goes|going)\s+to\s+sleep\b/.test(text)) {
         // -- AND WHETHER SOMEBODY IS SITTING IT WITH THEM -----------------
         const alongside = whoIsSittingWithThem(input);
         return {
