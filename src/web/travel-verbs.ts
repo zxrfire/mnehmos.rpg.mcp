@@ -406,23 +406,38 @@ export const travelVerbs = {
             { conveyance: requireConveyance('conv-on-foot'), power: null }
         ];
 
-        const flightArt = TECHNIQUES.find(t => t.id === 'gale-riding-sword-flight');
-        if (flightArt) {
-            const known = cultivator.knownTechniques
-                .map(id => TECHNIQUES.find(t => t.id === id))
-                .filter((t): t is NonNullable<typeof t> => t !== undefined)
-                // `HeldArt.subject` is a scalar and the flight gate reads one
-                // road, so this is `primaryRoadOf`. Sword is written first on
-                // every sword row, so the gate sees exactly what it saw before.
-                .map(t => ({ id: t.id, subject: primaryRoadOf(t) }));
-            const gate = couldFlyOnTheirOwnBlade({
+        // WHATEVER THEY HOLD THAT CARRIES THEM, and not one art by id.
+        //
+        // This read `gale-riding-sword-flight` by name, so the catalog's other
+        // fifteen movement arts could not put a road under anybody - and the
+        // design note on that row says exactly why that is wrong: the design
+        // owner named flight as the ANALOGY for an incidental ability, so the
+        // row is the EXAMPLE and not the case. `category: 'movement'` is the
+        // catalog's own statement of which arts these are, and the gate asks
+        // each one what road it stands on.
+        const held = cultivator.knownTechniques
+            .map(id => TECHNIQUES.find(t => t.id === id))
+            .filter((t): t is NonNullable<typeof t> => t !== undefined)
+            // `HeldArt.subject` is a scalar where a row carries several, so
+            // this is `primaryRoadOf` - the road the row is written under.
+            .map(t => ({ ...t, subject: primaryRoadOf(t) }));
+
+        const carriesThem = held
+            .filter(art => art.category === 'movement')
+            // Deepest first, so the strongest thing they hold decides it.
+            .sort((a, b) => b.requiredOrdinal - a.requiredOrdinal)
+            .some(art => couldFlyOnTheirOwnBlade({
                 realmOrdinal: cultivator.realmOrdinal,
-                known,
-                flightArt: { id: flightArt.id, requiredOrdinal: flightArt.requiredOrdinal }
-            });
-            if (gate.can) {
-                available.push({ conveyance: requireConveyance('conv-sword-flight'), power: null });
-            }
+                known: held.map(t => ({ id: t.id, subject: t.subject })),
+                flightArt: {
+                    id: art.id,
+                    requiredOrdinal: art.requiredOrdinal,
+                    subject: art.subject
+                }
+            }).can);
+
+        if (carriesThem) {
+            available.push({ conveyance: requireConveyance('conv-sword-flight'), power: null });
         }
 
         for (const row of this.atHand?.objects ?? []) {

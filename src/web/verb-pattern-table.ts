@@ -1864,8 +1864,14 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['hand_over', /\bforce (?:him|her|them|it) (?:to|into)\b[^.!?]*\b(?:hand|hands|handing|give|gives|giving|pay|pays|paying|open|opens|opening|surrender|surrenders|surrendering|turn out|empty|part with|cough up)\b/]
 ];
 
+/**
+ * The verbs the TARGET is read after. A verb on the intent table and not on
+ * this one is an act with nobody in it: "I kidnap the youngest woman here"
+ * routed to `coerce/submit` correctly and then resolved to nobody, because the
+ * extractor did not know where the name started.
+ */
 const COERCE_SUBJECT_VERBS =
-    /coerce|coerces|coercing|browbeat|strong-?arm|extort|shake down|subjugate|tame|tames|taming|break|force|forces|forcing|make|makes|making|beat (?:it|the truth|an answer) out of|wring|use|uses|using|draw off|draws off|drawing off/;
+    /coerce|coerces|coercing|browbeat|strong-?arm|extort|shake down|subjugate|tame|tames|taming|break|force|forces|forcing|make|makes|making|beat (?:it|the truth|an answer) out of|wring|use|uses|using|draw off|draws off|drawing off|kidnap|kidnaps|kidnapping|kidnapped|abduct|abducts|abducting|abducted|seize|seizes|seizing|seized|carry off|carries off|carrying off|tie|ties|tying|tied|bind|binds|binding|chain|chains|chaining|shackle|shackles|shackling|rope|ropes|roping|take|takes|taking/;
 
 /**
  * The tail of a coercion that says what the compliance was FOR, cut off the target
@@ -1873,7 +1879,7 @@ const COERCE_SUBJECT_VERBS =
  * over the ledger" names a merchant, not a merchant-to-hand- over-the-ledger.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
-    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as)\b.*$/i;
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage)\b.*$/i;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 

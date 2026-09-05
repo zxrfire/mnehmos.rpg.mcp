@@ -44,6 +44,7 @@ import { CUSTOMARY_PROVISIONING_MARGIN } from '../../../src/engine/world/what-a-
 import { OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { getTechnique, isSwordArt, SWORD_ARTS } from '../../../src/data/cultivation/techniques.js';
+import { primaryRoadOf } from '../../../src/schema/cultivation.js';
 import { techniqueEffectiveness } from '../../../src/engine/cultivation/understanding.js';
 
 const FOOT = requireConveyance('conv-on-foot');
@@ -215,7 +216,14 @@ describe('putting a party on the road', () => {
  * `daoMatches` always read.
  */
 describe('flight on one\'s own blade', () => {
-    const FLIGHT_ART = getTechnique('gale-riding-sword-flight')!;
+    // The row plus the road it stands on, which is what the caller passes and
+    // what the gate now reads instead of a `'sword'` constant. A catalog row
+    // carries `subjects` and the gate takes the scalar, the same way
+    // `whatTheyCouldRide` does.
+    const FLIGHT_ART = {
+        ...getTechnique('gale-riding-sword-flight')!,
+        subject: primaryRoadOf(getTechnique('gale-riding-sword-flight')!)
+    };
     const OTHER_SWORD_ART = SWORD_ARTS.find(a => a.id !== FLIGHT_ART.id)!;
 
     it('is the one conveyance that is nobody\'s property', () => {

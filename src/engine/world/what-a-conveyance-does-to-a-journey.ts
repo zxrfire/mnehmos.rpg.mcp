@@ -191,9 +191,22 @@ export function couldArriveUnremarked(conveyance: Conveyance): boolean {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The art whose subject decides whether flight is open to somebody.
+ * The road a flight art asks you to have come up through, where it asks at all.
+ *
+ * This was `'sword'`, a constant, and the ONE art the caller consulted was the
+ * sword one - so the rule read "you need a sword road" for every art in the
+ * game, and there are sixteen movement arts. The design note on the sword row
+ * says it plainly: the design owner named flight as the ANALOGY for what an
+ * incidental ability looks like, so that row is the EXAMPLE and not the case.
+ *
+ * The rule is the same rule; what it asks about is the art in front of it.
+ * Standing on a blade is what a sword school does with the whole of its
+ * practice; treading cloud is what a wind school does with the whole of its
+ * practice. An art with no subject at all asks nobody for anything.
  */
-export const FLIGHT_SUBJECT = 'sword';
+export function roadAFlightArtAsksFor(art: { subject?: string | null }): string | null {
+    return art.subject ?? null;
+}
 
 /** What the gate needs to know about an art somebody holds. */
 export interface HeldArt {
@@ -216,8 +229,8 @@ export function couldFlyOnTheirOwnBlade(input: {
     realmOrdinal: number;
     /** Every art they hold, with its subject. Order is not read. */
     known: readonly HeldArt[];
-    /** The flight art itself, and the rung it opens at. */
-    flightArt: { id: string; requiredOrdinal: number };
+    /** The flight art itself: the rung it opens at, and the road it stands on. */
+    flightArt: { id: string; requiredOrdinal: number; subject?: string | null };
     /** `dao.subject` from `assessDao`. Null for almost everybody. */
     daoSubject?: string | null;
 }): FlightGateResult {
@@ -238,26 +251,36 @@ export function couldFlyOnTheirOwnBlade(input: {
                 + `${input.flightArt.requiredOrdinal} and they stand at ${input.realmOrdinal}.`
         };
     }
-    const roadIsTheSword = input.daoSubject === FLIGHT_SUBJECT;
-    const shelfIsTheSword = input.known.some(
-        a => a.id !== input.flightArt.id && a.subject === FLIGHT_SUBJECT
+    // WHAT THE ART ITSELF STANDS ON, not a constant. An art with no subject
+    // asks for nothing and carries whoever holds it.
+    const asksFor = roadAFlightArtAsksFor(input.flightArt);
+    if (asksFor === null) {
+        return {
+            can: true,
+            reason: 'flies',
+            detail: 'The art stands on nothing in particular, so holding it is the whole of it.'
+        };
+    }
+    const roadIsTheirs = input.daoSubject === asksFor;
+    const shelfIsTheirs = input.known.some(
+        a => a.id !== input.flightArt.id && a.subject === asksFor
     );
-    if (!roadIsTheSword && !shelfIsTheSword) {
+    if (!roadIsTheirs && !shelfIsTheirs) {
         return {
             can: false,
             reason: 'not_of_the_school',
-            detail: 'Standing on a blade is not a trick performed with a blade, it is what a '
-                + 'sword school does with the whole of its practice, and this is somebody '
-                + 'holding one page out of it. Another art of the school, or a road that is '
-                + 'the sword, and the page stops being a page.'
+            detail: `Carrying yourself on ${asksFor} is not a trick performed with ${asksFor}, `
+                + 'it is what such a school does with the whole of its practice, and this is '
+                + `somebody holding one page out of it. Another art of the ${asksFor}, or a road `
+                + `that is the ${asksFor}, and the page stops being a page.`
         };
     }
     return {
         can: true,
         reason: 'flies',
-        detail: roadIsTheSword
-            ? 'The road is the sword, so the sword holds them up.'
-            : 'They came up through a sword school and the flight is the rest of what they were taught.'
+        detail: roadIsTheirs
+            ? `The road is the ${asksFor}, so the ${asksFor} holds them up.`
+            : `They came up through a ${asksFor} school and this is the rest of what they were taught.`
     };
 }
 

@@ -393,7 +393,7 @@ it describes.
 | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | Spirit herbs - the ingredient layer under alchemy. | 829 | [`the-late-age.md`](history/the-late-age.md) |
 | [`hierarchy.ts`](../../src/data/cultivation/hierarchy.ts) | Moved to `governance-and-water-rights.ts`. | 11 | - |
 | [`history.ts`](../../src/data/cultivation/history.ts) | The deep past: four ages, two civilisations that are gone, and the four or five questions about all of it that nobody can answer. | 1679 | - |
-| [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 335 | - |
+| [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | Who is actually standing on the four mountains, and how the world sees them. | 347 | - |
 | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | Things that came down from above. | 868 | [`items.md`](things/items.md) |
 | [`index.ts`](../../src/data/cultivation/index.ts) | Cultivation content catalog - barrel export and cross-catalog lookups. | 643 | - |
 | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | Inheritance trials and graves: what is actually behind the door, and the three completely different questions a door can ask. | 3089 | - |
@@ -454,7 +454,7 @@ it describes.
 <!-- BEGIN GENERATED: design-constants -->
 
 **272 design constants in the catalog. 27 are read by nothing at all,
-and 145 more are read only by a test.**
+and 146 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -560,6 +560,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DEALERS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | **nothing** | 6 |
 | `FUNERARY_PRACTICE` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | **nothing** | 6 |
 | `HERB_RARITY_CEILING` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | **nothing** | 6 |
+| `HOW_THE_COURT_IS_SEEN` | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | **nothing** | 6 |
 | `LU_SHENG_CARVINGS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 6 |
 | `PILL_VALUE_BANDS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | **nothing** | 6 |
 | `SEA_TRADERS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | 6 |
@@ -710,7 +711,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 6 | 12 |
 | `GRAVE_CONTENTS_BANDS` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 6 | 14 |
 | `SENT_DOWN_UNACCOUNTED` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 7 | - |
-| `HOW_THE_COURT_IS_SEEN` | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | 7 | 6 |
 | `GRADE_ORDER` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 7 | 8 |
 | `LOST_MATERIALS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 7 | 13 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 7 | 14 |
@@ -732,7 +732,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 20 | 87 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 118 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 30 | 47 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 32 | 142 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 31 | 142 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 40 | 56 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 50 | 286 |
 
