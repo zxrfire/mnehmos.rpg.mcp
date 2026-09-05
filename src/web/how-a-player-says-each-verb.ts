@@ -88,13 +88,23 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'is there a counter here that sells a crossing',
         'I book a place on the next span'
     ],
+    // A DAO OATH IS NOT AGREEING TO SOMETHING. The design owner: *nodding is
+    // not an oath. that's just agreeing to an NPC proposal, or saying yes. a
+    // dao oath is specifically like "I swear a dao oath" or something equal in
+    // magnitude. it's serious.*
+    //
+    // "I give my word on it" was on this list, and it is the register of
+    // somebody agreeing to meet on Tuesday. Measured against it, "I nod"
+    // reached this verb. Every exemplar now names the oath, the house that
+    // witnesses it, or the breaking of one, because those are the only
+    // sentences that should.
     oath: [
-        'I swear an oath to them',
-        'I give my word on it',
+        'I swear a dao oath to them',
+        'I swear a dao oath before the Bound Word',
         'what oaths am I carrying',
-        'I break the vow I gave',
-        'I want out of the word I gave them',
-        'who witnessed the oath I am under'
+        'I break the dao oath I swore',
+        'I want out of the oath I am under',
+        'who witnessed the oath I am bound by'
     ],
     attack: [
         'I strike at him',

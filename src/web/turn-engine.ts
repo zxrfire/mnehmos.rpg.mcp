@@ -618,7 +618,10 @@ import {
 import {
     canExistBeyondTheLid,
     evaluateLidTransit,
-    resolveDescentStrikes
+    resolveDescentStrikes,
+    strikesForABrokenDaoOath,
+    weatherTheStrikes,
+    WHAT_A_WEATHERED_STRIKE_STILL_TAKES
 } from '../engine/cultivation/existence.js';
 import {
     BREATHS_IN_THE_LOWER_REALM,
@@ -1480,6 +1483,7 @@ export class GameService {
 
         // What this life starts holding, in two layers that do different jobs.
         this.knowledge.seedStartingAwareness(created.cultivator.id, 0, birth.place.name, null);
+
         for (const row of birth.knowledge) {
             this.knowledge.learn({ ...row, holderId: created.cultivator.id, onDay: 0 });
         }
@@ -3435,15 +3439,83 @@ ${noticed}`;
                 })
             );
 
+            // ── AND WHETHER THE SKY ANSWERS ──────────────────────────────
+            //
+            // A dao oath is one sworn TO the house whose whole business is
+            // witnessing that it happened, and breaking one of those is not a
+            // social event. The design owner: *swearing to the dao house, you
+            // suffer the tribulation punishment*, and on why the heavens are in
+            // it at all - *heaven doesn't care, but you did promise. it doesn't
+            // care what you promised.*
+            //
+            // COUNTED FROM WHAT THEY ARE NOW, not from what they were when they
+            // swore, which is the case the design owner reached for: *you can
+            // imagine someone making an oath pre immortal, not being able to
+            // fulfil it.* Rising makes an unkept word more dangerous rather
+            // than less, and nothing had to be written to make that true.
+            const daoOath = binding.subjectId === THE_OATHWRIGHT_HOUSE;
+            const struck = daoOath
+                ? weatherTheStrikes(
+                    cultivator,
+                    this.ambientFor(cultivator, run),
+                    forStream(run.id, 'oath', `broke-${binding.id}`),
+                    run.turn,
+                    strikesForABrokenDaoOath(realmIndexOf(cultivator.realmOrdinal)),
+                    'for the word you gave',
+                    'They are still standing, and the word is gone.',
+                    'The last of them went with it.'
+                )
+                : null;
+
+            if (struck) {
+                // AND WEATHERING ONE IS NOT WALKING BETWEEN THEM. A strike that
+                // did not wound still landed on somebody, and only a strike
+                // that MISSED is free - which is luck, and is the only way out
+                // of a tribulation without a mark on you.
+                const takenOff = Math.round(
+                    cultivator.maxHp * WHAT_A_WEATHERED_STRIKE_STILL_TAKES * struck.weathered
+                );
+                this.db.transaction((): void => {
+                    if (takenOff > 0 && struck.survived) {
+                        this.repos.cultivators.applyDeltas(cultivator.id, { hp: -takenOff });
+                    }
+                    for (const injury of struck.injuries) {
+                        this.repos.cultivators.addInjury(cultivator.id, {
+                            id: injury.id,
+                            severity: injury.severity,
+                            source: injury.source,
+                            description: injury.description,
+                            sustainedOnTurn: injury.sustainedOnTurn,
+                            woundType: injury.woundType
+                        });
+                    }
+                    if (!struck.survived) {
+                        this.repos.cultivators.markDead(
+                            cultivator.id, 'heavenly_tribulation', run.turn + 1,
+                            'The sky collected on a word they had stopped keeping.'
+                        );
+                    }
+                })();
+            }
+
             const facts = factsForToolResult(
                 `The word to ${nameOf(binding.subjectId)} is not being kept.`,
                 [
                     cost.note,
                     cost.opened.description,
-                    WHAT_RUNNING_COSTS,
-                    'Nothing came out to stop you, and nothing was going to. What the witnessing '
-                    + 'house does about a broken word is structural rather than punitive, and it '
-                    + 'is not a thing that happens in an afternoon.'
+                    // `WHAT_RUNNING_COSTS` says the penalty is structural
+                    // rather than punitive, which is true of an indenture and
+                    // is the opposite of true when the sky has just answered.
+                    // One of the two, never both.
+                    ...(struck ? [] : [WHAT_RUNNING_COSTS]),
+                    struck
+                        ? `${struck.detail} Nothing decided this and nothing was weighing what `
+                          + 'the word had been for. A dao oath is a structure fastened to '
+                          + 'something that does not take an interest, and walking out of one '
+                          + 'is the structure coming apart with you inside it.'
+                        : 'Nothing came out of the sky. The word was given to a house rather '
+                          + 'than to the heavens, so what happens now is a decision somebody '
+                          + 'makes, and houses are slower than lightning and longer.'
                 ]
             );
             facts.structure.push(
@@ -3464,9 +3536,25 @@ ${noticed}`;
                     summary:
                         `${binding.id} released; a ${cost.opened.severity} grudge for broken_oath `
                         + `now stands with ${cost.opened.holderId} against ${cultivator.name}`
-                        + `${cost.reopened ? ', and what it was closing is open again' : ''}.`,
+                        + `${cost.reopened ? ', and what it was closing is open again' : ''}. `
+                        + 'Whether they act on it is theirs to decide, and the ledger is what '
+                        + 'they would be deciding from.',
                     ok: true
-                }]
+                }, ...(struck ? [{
+                    name: 'engine.weatherTheStrikes',
+                    action: 'oath' as const,
+                    summary:
+                        `Sworn to ${THE_OATHWRIGHT_HOUSE}, so the sky answered: `
+                        + `${struck.strikes} strike(s) at realm index `
+                        + `${realmIndexOf(cultivator.realmOrdinal)}, `
+                        + `${struck.struck} landed and ${struck.weathered} were weathered, `
+                        + `${(struck.perStrike * 100).toFixed(0)}% survival on the first and `
+                        + `each after it harder. Weathering cost `
+                        + `${Math.round(cultivator.maxHp * WHAT_A_WEATHERED_STRIKE_STILL_TAKES
+                            * struck.weathered)} HP. `
+                        + `${struck.survived ? 'Survived' : 'Killed'}.`,
+                    ok: struck.survived
+                }] : [])]
             };
         }
 
@@ -3481,7 +3569,32 @@ ${noticed}`;
                 'Unresolved party: oath sworn with no subject named. No time passed.'
             ));
         }
-        const party = this.partyPutTo(cultivator, query, scope);
+        // THE HOUSE AN OATH IS SWORN IN FRONT OF NEEDS NO INTRODUCTION, and it
+        // is the only party in the game that does not.
+        //
+        // Everything else a sentence names has to have been heard of first, and
+        // that gate is the whole knowledge model. This one is exempt because a
+        // dao oath is defined as one sworn TO this house - the design owner:
+        // *just for simplicity make them have to swear to the oath dao house* -
+        // and a house you must swear to, that nobody has heard of, is a verb
+        // with no way in. Measured: "I swear a dao oath to the Bound Word"
+        // came back as a stranger asking who that is.
+        //
+        // Exempted HERE and not by seeding awareness, which was tried. The
+        // house is called The House of the Bound Word, `bound word` is oath
+        // vocabulary, and putting it in the player's known-sect list sent every
+        // sentence naming it to this verb instead of `sect`.
+        const oathHouse = getSect(THE_OATHWRIGHT_HOUSE);
+        const party = (oathHouse && matchScore(query, oathHouse.name) >= MATCH_THRESHOLD
+            ? {
+                kind: 'sect' as const,
+                id: oathHouse.id,
+                name: oathHouse.name,
+                facts: [],
+                structure: []
+            }
+            : null)
+            ?? this.partyPutTo(cultivator, query, scope);
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'oath');
 
         const said = `${topic ?? ''} ${rawInput}`.toLowerCase();

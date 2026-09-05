@@ -1693,16 +1693,33 @@ const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 /**
  * A word given, carried or not kept.
  */
+/**
+ * A word given, and the bar for one is HIGH.
+ *
+ * The design owner: *a dao oath is specifically like "I swear a dao oath" or
+ * something equal in magnitude. it's serious.* So the oath has to be NAMED -
+ * as an oath, a vow, a pact, an indenture, a brotherhood, or the house that
+ * witnesses one. A bare `swear to` and a bare `pledge to` used to be enough,
+ * which made "I swear to be more careful" a contract with a house in it.
+ *
+ * `my word` stays only WITH A RECIPIENT. Giving your word to a house is the
+ * ordinary way this is said and `coverage.test.ts` pins it; "I give my word on
+ * it" is somebody promising to be careful, and it was writing a contract.
+ */
 export const AN_OATH = new RegExp([
     '\\b(?:oath|oaths|oathwright|vow|vows|indenture|indentured)\\b',
-    '\\b(?:my|our|his|her|their)\\s+word\\b',
+    '\\b(?:my|our|his|her|their)\\s+word\\s+to\\b',
+    // And the READ of one already given, which names no recipient because the
+    // whole question is who the recipient was: "who holds my word".
+    '\\b(?:holds?|holding|held)\\s+(?:my|our|his|her|their)\\s+word\\b',
     '\\bword\\s+of\\s+honou?r\\b',
     '\\bbound\\s+word\\b',
     '\\bterm\\s+of\\s+service\\b',
-    '\\b(?:swear|swears|swearing|swore|sworn)\\s+(?:to|by|myself|it|that|before|brotherhood|an?\\b)',
+    '\\b(?:swear|swears|swearing|swore|sworn)\\s+(?:before|brotherhood)\\b',
+    '\\b(?:swear|swears|swearing|swore|sworn)\\s+(?:an?|the|my|our)\\s+(?:dao|blood|binding|great)\\b',
     '\\b(?:sworn|blood)\\s+(?:brother|brotherhood|sister|siblings?)\\b',
     '\\bblood\\s+pact\\b',
-    '\\bpledge\\s+(?:myself|my|to)\\b'
+    '\\bpledge\\s+myself\\b'
 ].join('|'));
 
 /** Who the word is given to, or who holds the one being broken. */

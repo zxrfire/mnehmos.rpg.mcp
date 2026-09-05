@@ -18,7 +18,11 @@ import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 // `breakthrough.ts` or its transitive imports reaches back here, so this is a
 // dependency rather than a cycle - checked, and worth re-checking if either
 // file grows an import.
-import { TRIBULATION_LETHAL_STRIKES, tribulationStrikeSurvival } from './breakthrough.js';
+import {
+    MIN_TRIBULATION_SURVIVAL,
+    TRIBULATION_LETHAL_STRIKES,
+    tribulationStrikeSurvival
+} from './breakthrough.js';
 import type { CultivationRNG } from './rng.js';
 
 // THE GATE
@@ -428,6 +432,69 @@ export interface LidTransitCheck {
 export const DESCENT_TRIBULATION_STRIKES = 9;
 
 /**
+ * What the heavens draw on somebody who breaks a dao oath, by what they are.
+ *
+ * THE PUNISHMENT OF A CROSSING, SCALED. The design owner asked for the crossing
+ * punishment and then caught the obvious thing about it: nine strikes is what
+ * an immortal weathers coming down through their own hole, and handed to a Qi
+ * Condensation disciple it is not a punishment, it is a delete. So the count is
+ * the major realm they stand in - one strike at the bottom of the ladder, and
+ * at the top it is exactly `DESCENT_TRIBULATION_STRIKES`, which is the whole
+ * point: the full crossing punishment is the ceiling, and the only people who
+ * reach it are the only people who could have survived a crossing.
+ *
+ * ── WHY THE HEAVENS ARE INVOLVED AT ALL ──────────────────────────────────
+ *
+ * The design owner, and it is the reason this is not simply a house sending
+ * enforcers: *i do like how the lore meshes, that's when heaven punishes.
+ * heaven doesn't care, but you did promise.*
+ *
+ * That is 天道无情 stated exactly. Nothing here is heaven taking an interest in
+ * whether somebody is good. A dao oath is a structure a cultivator reaches up
+ * and fastens themselves into, in front of a house whose whole business is
+ * witnessing that it happened, and breaking it is the structure coming apart
+ * with them inside it. Indifference is not absence: the lightning is the same
+ * lightning a crossing draws, and it is drawn for the same reason, which is
+ * that something load-bearing was asked of the sky and then withdrawn.
+ */
+export function strikesForABrokenDaoOath(realmIndex: number): number {
+    return Math.min(DESCENT_TRIBULATION_STRIKES, Math.max(1, realmIndex + 1));
+}
+
+/**
+ * How much harder each strike is than the one before it.
+ *
+ * The design owner: *each strike gets stronger.* It is the genre's own shape -
+ * nobody describes a tribulation as nine of the same bolt - and it changes what
+ * a tribulation IS to the person in it: a flat roll is a coin flipped nine
+ * times, and an escalating one is a thing you are watching arrive. The last
+ * strike of a nine is the one that kills people, and it should be.
+ *
+ * Subtracted from the per-strike survival, floored at
+ * `MIN_TRIBULATION_SURVIVAL` so the ninth is never certain death for somebody
+ * who had no business surviving the first.
+ */
+export const EACH_STRIKE_HARDER_BY = 0.04;
+
+/**
+ * What a strike takes off a body that WEATHERED it, as a fraction of full HP.
+ *
+ * The design owner: *even if you survive it's not free. you'd have to be lucky
+ * (or dao protected by a dao protector) to get off scot-free.*
+ *
+ * Before this, a strike that was survived cost nothing whatever, so a
+ * tribulation was a sequence of coin flips that either wounded you or did not
+ * happen. That is not what standing in one is. Surviving a bolt of heavenly
+ * lightning is surviving a bolt of heavenly lightning, and the reason getting
+ * off clean is possible at all is that the roll can simply miss - which is
+ * luck, and is exactly the word the design owner used for it.
+ *
+ * A fraction rather than a figure, because HP is realm-scaled and a flat number
+ * would be a scratch at the top of the ladder and a death at the bottom.
+ */
+export const WHAT_A_WEATHERED_STRIKE_STILL_TAKES = 0.12;
+
+/**
  * Price a passage through the Lid.
  */
 export function evaluateLidTransit(
@@ -482,6 +549,12 @@ export interface DescentOutcome {
     strikes: number;
     /** How many landed. Three is fatal, exactly as it is on the way up. */
     struck: number;
+    /**
+     * Strikes weathered rather than taken. Not free - see
+     * {@link WHAT_A_WEATHERED_STRIKE_STILL_TAKES}, which the caller prices
+     * against the body it happened to.
+     */
+    weathered: number;
     survived: boolean;
     /** Per-strike survival, so a caller can show the price before it is paid. */
     perStrike: number;
@@ -495,18 +568,54 @@ export function resolveDescentStrikes(
     rng: CultivationRNG,
     turn: number
 ): DescentOutcome {
-    const transit = evaluateLidTransit(cultivator, 'down');
-    const strikes = transit.strikes;
+    return weatherTheStrikes(
+        cultivator,
+        ambient,
+        rng,
+        turn,
+        evaluateLidTransit(cultivator, 'down').strikes,
+        'coming down',
+        'They arrived.',
+        'They did not arrive, and there is nothing at the bottom of it for anybody to find.'
+    );
+}
+
+/**
+ * The heavens answering something, in the one shape they answer anything.
+ *
+ * Lifted whole out of `resolveDescentStrikes` when a second caller wanted the
+ * same lightning: breaking a dao oath draws THE PUNISHMENT OF A CROSSING, and
+ * a crossing is what this is. Copying the loop would have given the setting two
+ * accounts of what a tribulation does to a body, and they would have drifted.
+ *
+ * Every strike is rolled even after the fatal one, so the number of samples
+ * drawn depends only on `strikes` and the stream stays aligned for anything the
+ * caller rolls next. Same discipline as `resolveTribulation`.
+ */
+export function weatherTheStrikes(
+    cultivator: Pick<Cultivator, 'attributes' | 'injuries'>,
+    ambient: AmbientQi,
+    rng: CultivationRNG,
+    turn: number,
+    strikes: number,
+    /** What the strikes were drawn by, for the wound's own description. */
+    doing: string,
+    survivedNote: string,
+    diedNote: string
+): DescentOutcome {
     const perStrike = tribulationStrikeSurvival(cultivator, ambient);
 
     const injuries: Injury[] = [];
     let struck = 0;
 
-    // Every strike is rolled even after the fatal one, so the number of samples
-    // drawn depends only on the transit and the stream stays aligned for
-    // anything the caller rolls next. Same discipline as `resolveTribulation`.
+    let weathered = 0;
     for (let strike = 0; strike < strikes; strike++) {
-        if (rng.next() < perStrike) continue;
+        // AND EACH ONE IS HEAVIER THAN THE LAST. See `EACH_STRIKE_HARDER_BY`.
+        const thisOne = Math.max(
+            MIN_TRIBULATION_SURVIVAL,
+            perStrike - strike * EACH_STRIKE_HARDER_BY
+        );
+        if (rng.next() < thisOne) { weathered++; continue; }
         struck++;
         if (struck <= TRIBULATION_LETHAL_STRIKES) {
             const severity = struck >= TRIBULATION_LETHAL_STRIKES ? 'crippling' : 'serious';
@@ -517,7 +626,7 @@ export function resolveDescentStrikes(
                     turn,
                     woundType: ordinaryWoundFor('tribulation', severity),
                     description:
-                        `The seam discharged: strike ${strike + 1} of ${strikes}, coming down.`
+                        `The seam discharged: strike ${strike + 1} of ${strikes}, ${doing}.`
                 },
                 rng
             ));
@@ -525,18 +634,16 @@ export function resolveDescentStrikes(
     }
 
     const survived = struck < TRIBULATION_LETHAL_STRIKES;
+    const counted = `${struck} of ${strikes} strikes struck home ${doing} `
+        + `(${(perStrike * 100).toFixed(0)}% survival per strike).`;
     return {
         strikes,
         struck,
+        weathered,
         survived,
         perStrike,
         injuries,
-        detail: survived
-            ? `${struck} of ${strikes} strikes struck home coming down `
-              + `(${(perStrike * 100).toFixed(0)}% survival per strike). They arrived.`
-            : `${struck} of ${strikes} strikes struck home coming down `
-              + `(${(perStrike * 100).toFixed(0)}% survival per strike). They did not arrive, and `
-              + 'there is nothing at the bottom of it for anybody to find.'
+        detail: `${counted} ${survived ? survivedNote : diedNote}`
     };
 }
 
