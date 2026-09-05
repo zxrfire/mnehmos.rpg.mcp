@@ -1,46 +1,5 @@
 /**
  * Time.
- *
- * `advanceTime(state, days)` moves the world clock and returns what changed. It
- * does NOT simulate anybody. There is no per-NPC loop over days, no behaviour
- * model, no world tick. What it does is exactly four things:
- *
- *   1. moves the date;
- *   2. fires the SCHEDULED consequences that fell due in the span;
- *   3. applies the DURABLE processes that were running, as a rate times a span;
- *   4. hands back enough state for the LLM to reason about what happened.
- *
- * ── Why a thirty-year seclusion is cheap ──────────────────────────────────
- *
- * Every cost here is a function of how much is ON THE BOOKS, never of how many
- * days passed:
- *
- *   scheduled effects   O(effects due in the span)
- *   durable processes   O(open processes) - one multiplication each
- *   lifespans           O(NPCs), one pass, because a death date is a stored
- *                       number and not something that has to be arrived at
- *   location cycles     O(locations with a cycle), closed-form, capped
- *
- * Advancing ten thousand days costs the same as advancing ten, plus whatever
- * fell due in between. That is the entire performance argument, and it is why
- * the durable-rate representation in `DurableProcess` exists rather than a
- * cultivation tick.
- *
- * ── The player is not the world's clock ───────────────────────────────────
- *
- * Effects of kind `concurrent_event` are how major things happen while the
- * player is in seclusion, travelling, or somewhere else entirely. They fire on
- * their own date whether or not anyone is watching, and they become facts with
- * the player absent from `witnessIds` - so `classifyForObserver` reports them
- * as `concurrent` forever after. A player who never asks the right person never
- * learns about them, and that is correct: they will miss things, permanently.
- *
- * ── Randomness stays with the engine ──────────────────────────────────────
- *
- * A scheduled effect may carry a `chance`. It is resolved here from the world
- * seed via `forStream(seed, 'schedule', effectId, dueDay)` - not by the LLM,
- * which would decide its own war came out the way the story wanted. The same
- * seed and the same books produce the same outcome, every time.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
@@ -132,19 +91,6 @@ export interface LocationOpening {
 
 /**
  * Why an in-progress long action was handed back to the player.
- *
- * "Cultivate for ten years" must never mean "skip 3,650 days and compute the
- * endpoint". The events during the action are the content, and the
- * interruptions are the world arriving:
- *
- *     day 400   someone discovers the location
- *     day 622   a sect war reaches the region
- *     day 900   the spiritual vein collapses
- *     day 1200  continue, or not?
- *
- * The cultivation time-skip already interrupts on the things happening INSIDE
- * the cultivator - death, a wounding breakthrough, a major encounter, the
- * lethal-injury threshold. These are the things happening outside them.
  */
 export type InterruptCause =
     | 'scheduled_interrupt'
@@ -165,11 +111,6 @@ export interface WorldInterrupt {
 
 /**
  * What should stop a long action.
- *
- * Everything is opt-in and scoped, because a player sealed in a cave for thirty
- * years should not be handed control every time a market opens two provinces
- * away - and should absolutely be handed control when a war reaches the valley
- * they are sitting in.
  */
 export interface InterruptPolicy {
     /** The action being run, for the digest. */
@@ -240,16 +181,6 @@ export interface TimeAdvanceResult {
 
 /**
  * Everything one death hands on.
- *
- * The social layer owns grudges, debts and oaths, and asked this layer for one
- * thing: a call to `inheritLedgerOnDeath(records, deceasedId, heirs, onDay)`.
- * `heirs` is produced here from the lineage edge, in that layer's own shape and
- * priority order, so no mapping step exists to get out of step.
- *
- * `goals` is the other half, and it is this layer's own: a disciple continues
- * the revenge, a descendant inherits the search. Goals with a primary heir are
- * already applied to that heir by the time this is handed over; the list is
- * included so the caller can see what moved.
  */
 export interface DeathHandoff {
     deceasedId: string;
@@ -283,25 +214,10 @@ export interface AdvanceTimeOptions {
     interruptPolicy?: InterruptPolicy;
     /**
      * Mutate the given state instead of deep-copying it first.
-     *
-     * The default is to clone, which is right for a caller that wants to keep
-     * the old world and is wrong for a driver that advances the same world
-     * hundreds of times. A five-century soak at one call per year clones a
-     * world of four hundred NPCs five hundred times, and the copying dominates
-     * everything the simulation actually does.
-     *
-     * Pass true only when the caller owns the state and does not need the
-     * previous version - which is the normal case inside a play loop, where
-     * the world is the world.
      */
     inPlace?: boolean;
     /**
      * Called once per death, after heirs and goals have been resolved.
-     *
-     * This is the wiring point for the social layer's `inheritLedgerOnDeath`.
-     * It is a callback rather than a direct import so that this layer does not
-     * depend on that one: the caller owns the obligation records and passes
-     * them, which keeps the two modules independently testable.
      */
     onDeath?: (handoff: DeathHandoff) => void;
 }
@@ -312,10 +228,6 @@ export interface AdvanceTimeOptions {
 
 /**
  * Advance the world clock by `days`.
- *
- * Pure with respect to the input: a new state comes back and the original is
- * untouched. The span may be shortened by an interrupting effect, in which case
- * `daysAdvanced` is less than `daysRequested` and the reason is stated.
  */
 export function advanceTime(
     stateIn: WorldState,
@@ -603,10 +515,6 @@ export function advanceTime(
 
 /**
  * Whether this effect should hand control back, and why.
- *
- * Scoped by the policy, so an effect two provinces away does not interrupt a
- * seclusion and one in the valley does. Returns null when the effect simply
- * happened and nobody involved needs to be told about it now.
  */
 function interruptCauseFor(
     effect: ScheduledEffect,
@@ -697,14 +605,6 @@ function earliestOpportunityInterrupt(
 
 /**
  * Settle one death: heirs, and the goals that outlive their holder.
- *
- * Applies the goal inheritance immediately to the primary heir, because that is
- * this layer's own state. The obligation ledger belongs to the social layer, so
- * the heirs are handed back rather than acted on - `onDeath` is where the caller
- * wires `inheritLedgerOnDeath(records, deceasedId, heirs, onDay)`.
- *
- * A death with no lineage edge produces an empty handoff, which is correct: an
- * unattached person's unfinished business ends with them.
  */
 export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: number): DeathHandoff {
     const lineage = lineageOf(state, deceased.id);
@@ -726,53 +626,6 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
                 inherited = state.npcs[at].goals.slice(before);
             }
             // And the accounts, in BOTH directions.
-            //
-            // A grudge outlives its owner: the charter is explicit that they
-            // are inherited, and an heir who took the holdings and the
-            // unfinished business but not the enemies would be inheriting the
-            // easy half. But for a long time this loop inherited only the
-            // enemies, and that asymmetry was doing real damage to the world it
-            // produced. Measured over five centuries, eighteen grudges born at
-            // gatherings had passed to heirs and not one friendship had, so a
-            // family accumulated nothing but debts owed against it: every
-            // alliance died with the person who made it and every feud
-            // compounded. Five hundred years of that is a world where nobody
-            // has a friend their grandfather made, which is the opposite of
-            // the setting's own claim that gratitude persists and is repaid to
-            // a benefactor's descendants.
-            //
-            // So the bar is symmetric: an account is inherited when it reached
-            // the standing at which the world calls it something, in either
-            // direction. `GRUDGE_STANDING` and `FRIENDSHIP_STANDING` are the
-            // same number with the sign flipped and they are imported rather
-            // than retyped, because a threshold that exists in two places has
-            // already started to drift.
-            //
-            // AND ONLY WHERE THE HEIR HAS NO VIEW OF THEIR OWN.
-            //
-            // `upsertRelationship` REPLACES `kind` and `standing`, so an
-            // unguarded loop does not add an inherited account, it overwrites
-            // whatever the heir already thought. The primary heir is normally a
-            // child of the deceased, which means the deceased's other children
-            // are the heir's siblings and the deceased's spouse is the heir's
-            // other parent - so every one of those rows landed on a tie the heir
-            // already held, converted it to `ally` via `inheritedKind`, and
-            // thinned it by fifteen percent. A son inherited his own mother as
-            // an acquaintance of his father's.
-            //
-            // It compounded, too. Each heir took on the whole of the previous
-            // holder's address book, then handed the union of both to theirs.
-            // Measured the moment households existed to inherit: 4,691 ties
-            // among 498 living people, 1,916 of them carrying an inherited
-            // account, and the number kept climbing with every generation.
-            // Nothing had ever shown it because until now there were no positive
-            // ties in the world to inherit - the asymmetry this loop was fixed
-            // for was hiding a second defect underneath it.
-            //
-            // What is inherited is therefore only what the heir did NOT already
-            // have a view about, which is also the honest reading: you do not
-            // inherit a relationship with somebody you already know. You inherit
-            // the strangers who now have a claim on you.
             for (const account of deceased.relationships) {
                 if (account.standing > GRUDGE_STANDING && account.standing < FRIENDSHIP_STANDING) {
                     continue;
@@ -794,16 +647,6 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     }
 
     // A teaching line that ended today.
-    //
-    // The other half of `applyTeachingLines`, which records the day a master was
-    // taken and had no way to record the day one was lost. Written here rather
-    // than in the teaching pass because a death settles exactly once, so the row
-    // is written exactly once, and because the reason is knowable here and not
-    // there: this is a master who died, which is a different ending from a
-    // disciple who outgrew one.
-    //
-    // Read off the DECEASED's own disciple ties, so one walk covers every
-    // student they were carrying.
     for (const tie of deceased.relationships) {
         if (tie.kind !== 'disciple') continue;
         const student = state.npcs.find(n => n.id === tie.targetId);
@@ -851,13 +694,6 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
 
 /**
  * What a tie becomes in the next pair of hands.
- *
- * An heir did not marry their parent's spouse and was never anybody's disciple
- * by inheritance, so the household and teaching kinds cannot pass down as
- * themselves. What passes down is the OBLIGATION, and `ally` is this
- * vocabulary's word for it - the same way a feud passes down as a feud without
- * the heir having been the one insulted. Everything else keeps its kind,
- * because a debt inherited is still a debt.
  */
 function inheritedKind(kind: RelationshipKind, standing: number): RelationshipKind {
     if (standing < 0) return kind;
@@ -901,16 +737,8 @@ export interface ConcurrentEventInput {
 }
 
 /**
- * Put a major event on the books for a date the player may or may not be
- * around for.
- *
- * This is how the world stays in motion. The LLM decides that the Cold Kiln
- * Hall will move on the Salt Bell vein in eleven years; the engine writes it
- * down, and in eleven years it happens whether the player is in a cave, in a
- * secret realm, or dead. Nothing about the firing consults where the player is.
- *
- * Returns the state with the effect scheduled; the effect id is on the result
- * so a caller can cancel it if the world changes underneath it.
+ * Put a major event on the books for a date the player may or may not be around
+ * for.
  */
 export function scheduleConcurrentEvent(
     state: WorldState,
@@ -946,10 +774,6 @@ export function scheduleConcurrentEvent(
 
 /**
  * How an observer stands in relation to everything in a window.
- *
- * The reporting side of the historical / concurrent / witnessed distinction.
- * Handed to the narrator so it knows whether to describe a thing as a memory,
- * a rumour, or something the character watched happen.
  */
 export function classifyWindow(
     state: WorldState,

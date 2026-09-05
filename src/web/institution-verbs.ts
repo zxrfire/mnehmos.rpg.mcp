@@ -1,36 +1,5 @@
 /**
- * One party asking something of another, of the dead, or of somebody above
- * the Lid.
- *
- * Four verbs, one shape, and most of them are supposed to be REFUSED. A
- * refusal that names its reason is the win condition here rather than a
- * consolation: the Requisition Against Standing Stock has been granted once in
- * four hundred years and refused ten times, and the catalog says the refusals
- * are filed with the same care as the grant.
- *
- * So the gate is the feature. `standing.ts` owns it, and two things it must
- * keep getting right are worth repeating where the callers are:
- *
- * - RANK IS NOT REALM. `realmOrdinal` says how hard somebody is to kill;
- *   `rankIndex` says whether anybody has to do what they say. The catalog is
- *   emphatic that the two come apart, so every gate here is on the rank.
- * - The gate goes BEFORE the target resolves, for the acting branches. Both
- *   refusals are about the speaker and disclose nothing about who was named,
- *   so a rogue at the bottom of the ladder learns what a declaration would
- *   take - which is a thing they can go and get.
- *
- * Three of these commit a house to something it cannot walk back, and one
- * changes a power ordinal permanently, so each has a default intent that is
- * the cheapest branch it has: a model answering `{"action":"posture"}` gets
- * the standing between two houses rather than a war.
- *
- * ── HOW THIS IS ATTACHED ───────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.petition(...)` resolves and typechecks exactly as it did
- * when the bodies sat in the class, and every line below is the line it was.
- * `src/web/README.md` has the argument and the warning about `private`.
+ * One party asking something of another, of the dead, or of somebody above the Lid.
  */
 
 import { DISASTER_RESPONSES } from '../data/cultivation/catastrophe.js';
@@ -88,14 +57,8 @@ import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 
 /**
- * What a house's declaration would actually require, said to somebody who has
- * no house to declare with.
- *
- * The refusal a rogue gets has to be about POSITION rather than about rank -
- * they are not junior, they are outside - and it has to name the thing they
- * would have to go and get. "You lack authority" tells a player nothing they
- * can act on; "a war is a thing between two houses, and you are one person"
- * tells them what the missing piece is.
+ * What a house's declaration would actually require, said to somebody who has no
+ * house to declare with.
  */
 const THE_DECLARATION_REQUIRES: Readonly<Record<'war' | 'alliance' | 'defect' | 'tribute', string>> = {
     tribute:
@@ -126,32 +89,12 @@ const DECLARED: Readonly<Record<'war' | 'alliance' | 'defect' | 'tribute', (mine
 
 /**
  * Months of a house's own payroll that an offering costs.
- *
- * A decade, which is the figure `IMMORTAL_MOTIVE.whatTheOfferingActuallyIs`
- * states in so many words: a body that spends its principal for a decade to
- * receive two words is being answered at the minimum rate. It is expressed in
- * months so that it sits in the same unit as `RESERVE_MONTHS` in
- * `embezzlement.ts`, which is twelve years of the same payroll - so the rite
- * costs five sixths of everything a house is holding, and a house that makes
- * one is a house that could not survive a bad decade afterwards.
- *
- * Here rather than in `schema/cultivation.ts` for the reason the leadership and
- * embezzlement constants are where they are: it prices one act, and it belongs
- * beside the act it prices.
  */
 const OFFERING_MONTHS = 120;
 
 export const institutionVerbs = {
     /**
      * Asking an institution for a thing.
-     *
-     * Three forms, selected by the label and never by what the answer turns out
-     * to be. `grant` sends it up the chain through `handlePetition`, which has
-     * been in `sect-politics.ts` the whole time and which nothing typed could
-     * reach; `stock` is the application against something the holder cannot
-     * reorder, which is the Requisition and the schedule amendment and anything
-     * else shaped like them; `descent` is a claim of a line, which is an
-     * application for recognition and is adjudicated rather than granted.
      */
     async petition(
         this: GameService,
@@ -250,21 +193,6 @@ export const institutionVerbs = {
 
     /**
      * The application against something a holder cannot reorder.
-     *
-     * The Requisition Against Standing Stock is the named instance and it is
-     * DATA rather than a rule: `theForm`, `sufficientReason`, `decidedBy`,
-     * `releaseMode` and `recordedRefusal` are fields on `Holding`, so a
-     * schedule amendment at another body runs through the same code and comes
-     * back in that body's own terms. Nothing here names a faction.
-     *
-     * IT IS ALWAYS REFUSED, and the refusal is the content. Not because a grant
-     * is forbidden - one has been made - but because the engine holds no state
-     * that satisfies `sufficientReason`, and a caller asserting that it does is
-     * exactly the affordance the authority boundary exists to refuse. So the
-     * form's own standard comes back, with the applicant's own words beside it,
-     * and with the recorded precedent where the holder kept one. `savingTheSect`
-     * says what would actually change the answer, which makes the refusal a
-     * route rather than a wall.
      */
     requisition(
         this: GameService,
@@ -384,17 +312,6 @@ export const institutionVerbs = {
 
     /**
      * Claiming a line, which is an application for recognition.
-     *
-     * `auditAncestralClaim` exists to adjudicate a FACTION's claim and the
-     * Ninefold Ledger opens a lineage audit unasked, so the world already had
-     * both halves of this - and a player had no way to make the claim that
-     * would be audited.
-     *
-     * The gate is the knowledge gate and it is the whole of it: the ancestor is
-     * matched against the ancestral records of houses this cultivator can
-     * already name, so there is no path from a name they type to a name they
-     * have not been told. An unheard ancestor and an invented one come back
-     * identical, and only the quoted string differs.
      */
     claimDescent(
         this: GameService,
@@ -488,20 +405,6 @@ export const institutionVerbs = {
 
     /**
      * What one house is to another: war, alliance, defection - or the read.
-     *
-     * The three that commit are the head of the house's, for one reason stated once: each of
-     * them binds the house to something it cannot quietly walk back, and there
-     * is exactly one person in a house entitled to do that. A rogue is told what
-     * a declaration would require; a junior is told the rung it opens at in
-     * their own house's title; the head's declaration happens and is recorded.
-     *
-     * WHAT IT COSTS IS STATED AND NOT INVENTED. `DISASTER_RESPONSES` prices war
-     * and aid in consequences rather than numbers, and `sectThreat` supplies the
-     * two ordinals that decide whether this was sane. No standing figure is
-     * charged, deliberately: the catalog holds no number for what a declaration
-     * costs a head with their own people, and manufacturing one here would be a
-     * balance decision made in the narration tier - the specific thing AGENTS.md
-     * forbids. It is a real gap and it belongs in `leadership.ts`.
      */
     posture(
         this: GameService,
@@ -776,21 +679,6 @@ export const institutionVerbs = {
 
     /**
      * The thing under the mountain.
-     *
-     * WHOSE mountain it is decides which act this is, and it is read off the
-     * membership row rather than off the sentence - so no phrasing can choose
-     * between a legal decision and a crime. Waking your own house's is a
-     * decision with a stated cost. Breaking somebody else's is not a decision at
-     * all: it is theft of the most dangerous object in the region, and it is
-     * gated on GETTING TO IT rather than on standing, which is exactly what
-     * `handleWake`'s capability assessment against the seal already answers.
-     *
-     * The read is the default and the read is `handleWake` unchanged, which has
-     * been in `sect-politics.ts` the whole time: it discloses nothing about a
-     * house whose seal is not public unless the caller is senior in that house,
-     * and it says "nothing this cultivator knows of" for a house with nothing
-     * under it in exactly the same words - so the shape of the answer is not the
-     * answer. None of that is weakened here.
      */
     async seal(
         this: GameService,
@@ -904,18 +792,6 @@ export const institutionVerbs = {
 
     /**
      * The head of the house spends the house's last card.
-     *
-     * The one method in this package that changes a `powerOrdinal`, and the
-     * sharpest expression of what `sectThreat` has always modelled: `acting` is
-     * the strongest member who will answer, `ceiling` is the strongest thing the
-     * house can put in the world at all including one it can spend once, and
-     * waking is the event that turns the second into the first. Permanently,
-     * and once.
-     *
-     * The cost is the catalog's, verbatim, because the catalog wrote it as a
-     * cost rather than as colour: nearly every `wakeCost` in the file says the
-     * ancestor is spent, and several say the arrangement that made the house
-     * survivable ends with them.
      */
     breakTheGlass(
         this: GameService,
@@ -1032,20 +908,6 @@ export const institutionVerbs = {
 
     /**
      * The offering upward, and the reading of a silence.
-     *
-     * `IMMORTAL_MOTIVE` is unusually blunt about what this is: not a great
-     * honour a sect has earned, but the cheapest possible acknowledgement,
-     * costing the giver nothing whatsoever, which the sects have built entire
-     * ceremonies around because it is all they were ever going to get. A body
-     * that spends its principal for a decade to receive two words is being
-     * answered at the minimum rate.
-     *
-     * So this method charges the decade and produces the silence, and says
-     * plainly that the silence is consistent with several things without saying
-     * which. `afterCrossing` and `claimIsTrue` are ground truth the catalog
-     * holds precisely so that nobody in the world can read them, and nothing
-     * here looks at either. There is no roll, because there is nothing to roll:
-     * whether an ancestor answers is not a thing this engine decides.
      */
     offer(
         this: GameService,

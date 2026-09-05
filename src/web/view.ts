@@ -1,16 +1,5 @@
 /**
  * Domain shapes to wire shapes.
- *
- * The browser is a display, not a second engine, so nothing here computes a
- * game value. Every field is either copied from a domain object or derived by
- * calling the engine's own function for it - `rankName`,
- * `effectiveLifespanYears`, `canAttemptBreakthrough`. If a number appears on
- * the wire that this module invented, that number is a bug.
- *
- * The one thing this layer does own is *omission*: `run.seed` is not sent. It
- * is not a secret in a single-operator deployment, but nothing in the client
- * needs it and a value the client cannot use is a value it cannot be wrong
- * about.
  */
 
 import {
@@ -19,13 +8,14 @@ import {
     understandingEffects
 } from '../engine/cultivation/understanding.js';
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
+import { lifespanWithPhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
+import { lifespanCeilingFor } from '../engine/cultivation/survival.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import type { Affordance } from './what-is-worth-doing-standing-here.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
     MAX_ORDINAL,
-    effectiveLifespanYears,
     fullLadder,
     lifespanForOrdinal,
     rankName,
@@ -142,10 +132,6 @@ export function runView(run: Run): RunView {
 
 /**
  * The cultivator, unchanged.
- *
- * Passed through rather than re-shaped on purpose: the client's character sheet
- * shows exactly what the database holds, so a discrepancy between the two is
- * impossible by construction rather than by care.
  */
 export function cultivatorView(cultivator: Cultivator): Cultivator {
     return cultivator;
@@ -162,13 +148,6 @@ export interface DaoInsightView {
 
 /**
  * The other axis.
- *
- * Rank and dao are separate, and only one of them can be shut. `realmOrdinal`
- * stops at the Lid; understanding does not - `discoverableInsights` reads the
- * spirit root and nothing else, and degree has no ceiling tied to the ladder.
- * So a False Immortal, whose rank is finished permanently, still has this one
- * open in front of them, and it is the only thing a span that long can be spent
- * on. The sheet has to show it or their whole page reads as absences.
  */
 export interface DaoView {
     insights: DaoInsightView[];
@@ -194,47 +173,23 @@ export interface DerivedView {
     progressRequired: number | null;
     breakthroughReady: boolean;
     /**
-     * Years left before the ceiling, which may be negative for a cultivator
-     * living past it.
-     *
-     * Read through `effectiveLifespanYears` rather than `lifespanForOrdinal`,
-     * because a False Immortal sits at ordinal 45 and does NOT carry
-     * Tribulation Transcendence's ceiling: they carry the False Immortal one.
-     * That number is the whole point of the state - vast, finite, and
-     * countable - so it has to be right here rather than corrected downstream.
+     * Years left before the ceiling, which may be negative for a cultivator living
+     * past it.
      */
     lifespanRemaining: number;
     /**
-     * The whole span this cultivator is measured against, so a client can show
-     * "16 of 100" without knowing 100. A denominator the browser invents is a
-     * bug; this is the engine's.
-     *
-     * `effectiveLifespanYears`, not `lifespanForOrdinal`, for the False
-     * Immortal reason given on `lifespanRemaining`: the two have to be the same
-     * span or the meter and its own remainder disagree.
+     * The whole span this cultivator is measured against, so a client can show "16
+     * of 100" without knowing 100. A denominator the browser invents is a bug; this
+     * is the engine's.
      */
     lifespanYears: number;
     /**
      * Years at one rung before the climb ends there, at THIS rung.
-     *
-     * The client had 50 written into it. That is the floor and it is true only
-     * through Foundation Establishment: `stagnationYearsForOrdinal` is a fifth
-     * of the realm's own span above that, so the panel was telling a Core
-     * Formation cultivator they had 50 years when the ladder credits 100, and
-     * a Tribulation Transcendence cultivator the same when it credits 20,000.
-     * A number the browser invents is a bug; this is the engine's.
      */
     stagnationYears: number;
     /**
      * What the span already spent is worth to the NEXT crossing, as the flat
      * modifier `computeBreakthroughOdds` will book - zero or negative.
-     *
-     * Sent because the two clocks in the mortality panel are two halves of one
-     * decision and the panel could only show one of them. Lifespan was a
-     * countdown with no consequence attached; this is the consequence, and it
-     * is what makes waiting cost something before the span actually runs out.
-     * Needs only ordinal and age, so it is honest here without the ambient the
-     * full odds line would require.
      */
     lifespanPressure: number;
     /**
@@ -245,47 +200,24 @@ export interface DerivedView {
     lifespanPressureFromAge: number;
     untreatedInjuries: number;
     /**
-     * How long the open channels have been carried, in days. Zero when there
-     * are none, and it resets the moment the count drops below the threshold.
-     *
-     * This replaced `turnsUntilBleedOut` and `bleedOutTurns`, which were a
-     * countdown to a death that no longer happens. A channel wound is a torn
-     * muscle and does not kill anybody (`docs/world/climbing/injuries.md`), so the
-     * honest number to give a client is how long this has been going on rather
-     * than how long is left.
+     * How long the open channels have been carried, in days. Zero when there are
+     * none, and it resets the moment the count drops below the threshold.
      */
     daysChannelsOpen: number;
     /**
-     * The fraction of the cultivation rate the open wounds are currently
-     * taking, in [0, 1].
-     *
-     * Sent because the panel needs something true and alarming to say now that
-     * it cannot say "this will kill you". This is the number that makes a
-     * player want the wounds gone, and it is the engine's own - the same figure
-     * `computeCultivationRate` folds into the rate - rather than one the
-     * browser works out from a severity count.
+     * The fraction of the cultivation rate the open wounds are currently taking, in
+     * [0, 1].
      */
     injuryRatePenalty: number;
     /** What is still moving, whether or not the rank is. */
     dao: DaoView;
     /**
      * The sect's display name, resolved server-side from `cultivator.sectId`.
-     *
-     * Null when unaffiliated, and null rather than the id when the id resolves
-     * to nothing: a sheet showing `sect_azure` to a player is showing them a
-     * database key, and a missing name is a smaller lie than a raw identifier.
      */
     sectName: string | null;
     /**
-     * Why the engine will not permit an attempt right now, in plain English,
-     * or null when it will.
-     *
-     * `canAttemptBreakthrough` returns a machine-readable `reason` and only
-     * `eligible` used to reach the client, so every refusal rendered as a
-     * generic "progress incomplete" and the control could not state its own
-     * case. A refused breakthrough that explains itself is the difference
-     * between a game that feels arbitrary and one that feels rule-bound, and
-     * the explanation is the engine's, not the interface's.
+     * Why the engine will not permit an attempt right now, in plain English, or
+     * null when it will.
      */
     breakthroughBlockedReason: string | null;
     /** What the rank is standing on. 'none' below Foundation Establishment. */
@@ -294,33 +226,10 @@ export interface DerivedView {
     nameTaken: boolean;
     /**
      * Who else is drawing on the ground under them, and what it costs.
-     *
-     * Null when there is no world loaded to read it from - a state the sheet
-     * renders as absent rather than as "nobody", because those are different
-     * facts and only one of them is measured. See
-     * `how-crowded-this-ground-is.ts` for why this is on the sheet at all: it
-     * is the strongest environmental lever in the game and was invisible.
      */
     ground: CrowdingRead | null;
     /**
      * What is live standing here, most pressing first.
-     *
-     * Sent because the interface offered three buttons - Cultivate, Status,
-     * Attempt Breakthrough - and a rich verb space with no discovery path
-     * behind them. Measured by playing a full run: a cultivator who is broke,
-     * starving and carrying three untreated wounds has a way out through work,
-     * gathering and food, and a player who reads only what the screen shows
-     * them presses Cultivate and dies without ever seeing it.
-     *
-     * These are PROMPTS, not the interface. The client offers two or three
-     * beside the standing controls; free text is still the whole game, and a
-     * player must always be able to type something nobody listed. Each entry
-     * carries the sentence to insert verbatim (`say`), the engine action it
-     * routes to, and the state fact that made it live.
-     *
-     * Nothing here changes an outcome, a price or a probability. Empty is a
-     * legitimate value: a state read taken with no world loaded cannot see who
-     * is standing here, and an empty list is a smaller lie than a guessed one.
      */
     standingHere: Affordance[];
 }
@@ -340,20 +249,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
     return {
         rankName: rankName(ordinal),
         /**
-         * Null where there is no next rank, which is TWO different states and
-         * used to be one.
-         *
-         * The obvious one is the top of the ladder. The other is a cultivator
-         * whose ladder is shut below it: a False Immortal survived the crossing
-         * without completing it, the Lid does not open twice for the same name,
-         * and there is no second attempt. Found by playing at ordinal 45, where
-         * the sheet read "next: True Immortal" while `breakthrough` said in as
-         * many words that this crossing was survived and not completed - the
-         * engine right and the label promising a rung that is gone.
-         *
-         * Read off the same predicate `DaoView.theOnlyAxisLeft` uses, which is
-         * the same one the engine gates the re-attempt with, so the label, the
-         * panel and the refusal cannot disagree.
+         * Null where there is no next rank, which is TWO different states and used
+         * to be one.
          */
         nextRankName: ordinal >= MAX_ORDINAL || hasCrossedTheLid(cultivator.immortalStatus ?? 'none')
             ? null
@@ -369,9 +266,8 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
                 eligibility.progressRequired,
                 { held: eligibility.daoHeld, required: eligibility.daoRequired }
             ),
-        lifespanRemaining:
-            effectiveLifespanYears(ordinal, cultivator.immortalStatus) - cultivator.age,
-        lifespanYears: effectiveLifespanYears(ordinal, cultivator.immortalStatus),
+        lifespanRemaining: lifespanCeilingFor(cultivator) - cultivator.age,
+        lifespanYears: lifespanCeilingFor(cultivator),
         stagnationYears: stagnationYearsForOrdinal(ordinal),
         lifespanPressure: lifespanPressure(ordinal, cultivator.age),
         lifespanPressureFromAge: lifespanPressureOnsetAge(ordinal),
@@ -389,12 +285,6 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
 
 /**
  * The dao side of the sheet.
- *
- * The effects are computed against the cultivator's own root and no technique,
- * which is the honest neutral reading: what their understanding is worth to
- * them standing still, rather than what it would be worth mid-practice of some
- * particular art. Anything element-specific that does not match their own root
- * is listed but not counted, because it is not doing anything at this moment.
  */
 export function daoView(cultivator: Cultivator): DaoView {
     const insights = cultivator.insights ?? [];
@@ -421,11 +311,6 @@ export function daoView(cultivator: Cultivator): DaoView {
 
 /**
  * Plain English for the engine's machine-readable ineligibility reasons.
- *
- * Lives here rather than in game.ts because both the refusal a player gets from
- * `POST /api/breakthrough` and the reason the disabled control shows have to be
- * the same sentence. Two wordings for one engine verdict is how a UI starts
- * disagreeing with the rules it is displaying.
  */
 export function refusalText(
     reason: string | null,
@@ -433,11 +318,6 @@ export function refusalText(
     required: number | null,
     /**
      * `daoHeld` and `daoRequired` off the same {@link EligibilityCheck}.
-     *
-     * Optional so the three-argument callers keep compiling while they are
-     * migrated. The route is named either way - what this buys is the two
-     * figures, and a refusal that names the bar without a number is still a
-     * refusal that names a route.
      */
     dao?: { held: number; required: number }
 ): string {
@@ -469,18 +349,11 @@ export function refusalText(
         case 'rank_cap_reached_this_turn':
             return 'One rank a turn. Bottlenecks are meant to be lived through.';
         case 'insufficient_dao':
-            // `canAttemptBreakthrough` checks progress BEFORE this and says why
-            // in its own comment: somebody short of both should hear about the
-            // qi first, because that is the one sitting still fixes. So by the
-            // time this reason exists the accumulation is already there, and
-            // "the qi is there" is read off the ordering rather than guessed.
-            //
-            // This was the shrug the whole case exists to replace. Measured by
-            // playing: at ordinal 40 with the accumulator full, the attempt came
-            // back "The engine refused the attempt." and the sheet's
-            // `breakthroughBlockedReason` carried the same eleven words - no
-            // bar, no figure, and no route, over the gate that stops most of
-            // the upper half of the ladder.
+            // `canAttemptBreakthrough` checks progress BEFORE this and says why in
+            // its own comment: somebody short of both should hear about the qi
+            // first, because that is the one sitting still fixes. So by the time
+            // this reason exists the accumulation is already there, and "the qi is
+            // there" is read off the ordering rather than guessed.
             return 'The qi is there and the understanding is not. '
                 + (dao
                     ? `This crossing asks for ${dao.required} road${dao.required === 1 ? '' : 's'} `
@@ -499,19 +372,6 @@ export function refusalText(
 
 /**
  * What a cracked structure says, and what is left to do about it.
- *
- * The reason code is `barred:<status>` and the status is one of
- * `BROKEN_STATUSES` - a broken foundation, a cracked core, a crippled nascent
- * soul, and so on. It is a REALM CROSSING that is refused; the sub-rank steps
- * inside the realm are not gated, and `canAttemptBreakthrough` says so where it
- * sets the gate. That distinction is the whole of the route, so it is what this
- * sentence leads with.
- *
- * The break is named rather than described because the engine's own key already
- * reads as a diagnosis - `crippled-nascent-soul` is a sentence with the hyphens
- * taken out. Nothing here decides anything: no repair is priced and no
- * reachability is claimed, because `what-structural-repair-medicine-can-reach.ts`
- * owns both and a second opinion here would drift from it.
  */
 function structuralRefusalText(status: string): string {
     const named = status.replace(/-/g, ' ');
@@ -555,12 +415,6 @@ export function ledgerRowView(run: Run, name: string): LedgerRowView {
 
 /**
  * A world NPC as a roster row.
- *
- * The database holds the player and whoever a run has written down. The world
- * holds the other four hundred people, who exist whether or not anybody has met
- * them - which is the entire point of seeding a population rather than spawning
- * one on demand. Both go in the same list because an operator looking at "who
- * is in this world" does not care which table somebody came out of.
  */
 /** The faction's own name for itself, when the catalog knows the id. */
 function factionNameFor(factionId: string | null): string | null {
@@ -583,11 +437,6 @@ function factionRankTitle(factionId: string | null, index: number): string | nul
 
 /**
  * The people this one has a standing grievance with.
- *
- * Read off the relationships that already exist rather than stored twice: a
- * `rival` or an `enemy` with negative standing is a feud by any reading, and
- * the tie already carries when it opened, what it is about and whether it was
- * inherited.
  */
 function feudsFrom(npc: NpcRecord): string[] {
     return npc.relationships
@@ -612,10 +461,17 @@ export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowVie
         // other did not would make the answer depend on which table somebody
         // came out of.
         sex: npc.identity.sex,
+        physique: npc.identity.physique,
         realmOrdinal: ordinal,
         rankName: rankName(ordinal),
         realmName: realmForOrdinal(ordinal).name,
-        lifespanYears: lifespanForOrdinal(ordinal),
+        // The rung's ceiling as this body actually gets it. A world person
+        // whose lifespan stamp already carries the physique and whose roster
+        // row did not would read as somebody with decades they do not have.
+        lifespanYears: lifespanWithPhysique(
+            lifespanForOrdinal(ordinal),
+            physiqueOrNull(npc.identity.physique)
+        ),
         location: npc.locationId,
         sectId: npc.factionId,
         // Resolved, not blanked. The roster showed ninety-six members of a
@@ -666,6 +522,9 @@ export function rosterRowView(entry: RosterEntry, playerCultivatorId: string | n
         spiritRootName: getSpiritRoot(entry.spiritRoot).name,
         rankName: rankName(entry.realmOrdinal),
         realmName: realmForOrdinal(entry.realmOrdinal).name,
-        lifespanYears: lifespanForOrdinal(entry.realmOrdinal)
+        lifespanYears: lifespanWithPhysique(
+            lifespanForOrdinal(entry.realmOrdinal),
+            physiqueOrNull(entry.physique)
+        )
     };
 }

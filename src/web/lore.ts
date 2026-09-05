@@ -1,51 +1,6 @@
 /**
- * The speakable world: every name a person in this world could put in a
- * sentence, and the conditions under which they would.
- *
- * ── The problem this file exists to fix ───────────────────────────────────
- * `src/data/cultivation/` holds tens of thousands of lines of world. Almost
- * none of it was reachable in play. `hearsay.ts` drew names from exactly one
- * catalog - `SECTS` - and everything else was read only by the admin register,
- * which means the deep material was visible to the operator and invisible to
- * the player. The world was alive in the test suite and static in the game.
- *
- * Nothing here adds content. It is wiring: one table, built once at module
- * load from the catalogs that already exist, that answers the only question
- * the discovery channels need answered -
- *
- *     what could THIS speaker, standing HERE, plausibly mention right now?
- *
- * ── Reachable means acquirable, never printed ─────────────────────────────
- * docs/world/houses/discovery.md is the constitution: never reference an entity the
- * player has no knowledge record for. So nothing in this file makes a name
- * visible. It makes a name *sayable by somebody in the world*, which is how
- * the player acquires the record, which is what then licenses the name. The
- * order is load-bearing and it is the opposite of the obvious one.
- *
- * ── Three gates, and none of them consult the player ──────────────────────
- * A speaker is not adjusting for their audience. It does not occur to them
- * that explanation is required. So the gates are all facts about the SPEAKER
- * and the PLACE:
- *
- *   floor      the standing at which this name is in a person's working
- *              vocabulary. A carter does not know what an apex sect is; he is
- *              not being cagey, he has never needed the word.
- *   insider    a faction's own people hold their own names whatever their
- *              standing. An outer disciple can name their own sect's sealed
- *              ancestor and a patriarch three provinces away cannot.
- *   locality   where the name belongs. Used for WEIGHT and never for
- *              exclusion, because names do travel - just rarely, and wrong.
- *
- * ── Weighting, so the common case stays common ────────────────────────────
- * Most talk is local, mundane and about sects. The deep material - the ages,
- * the dead civilisations, the Lid theories, what is sealed under somebody's
- * floor - has to stay rare or it stops being deep. Bands are picked first and
- * weighted, then a name is drawn uniformly inside the band, so a catalog with
- * four hundred entries cannot swamp one with four.
- *
- * The deep band is weighted higher for the OVERHEARD channel than for the
- * told one, which is the whole texture discovery.md asks for: deep material
- * arriving mostly as fragments the player cannot resolve and cannot ask about.
+ * The speakable world: every name a person in this world could put in a sentence,
+ * and the conditions under which they would.
  */
 
 import { MAX_ORDINAL } from '../engine/cultivation/realms.js';
@@ -83,32 +38,16 @@ import type { KnownEntityKind } from './knowledge.js';
 
 /**
  * How far above their own standing a person's working knowledge reaches.
- *
- * A cultivator deals with, competes against and is bullied by things within
- * roughly two realms of themselves, and can name them the way anyone names
- * their own trade.
  */
 export const WORKING_KNOWLEDGE_MARGIN = 8;
 
 /**
- * Power at which a faction becomes common currency regardless of who is
- * speaking.
- *
- * This is what makes the register work. A carter has no business knowing
- * anything about Body Integration politics, and still says "Hollow Court
- * business" the way you would say a bank holiday, because some names are simply
- * in the air. The mundane and the enormous sound identical when both are
- * assumed knowledge, and the speaker's tone cannot distinguish them - because
- * to them both are ordinary.
+ * Power at which a faction becomes common currency regardless of who is speaking.
  */
 export const COMMON_CURRENCY_ORDINAL = 33;
 
 /**
  * A floor no speaker can clear, for names only an insider holds.
- *
- * An institution's own dead, its own channel upward and its own reading of the
- * Lid are not things that circulate. They are said inside the walls or they are
- * not said, and `insiderFactionId` is the only way past this number.
  */
 export const INSIDER_ONLY_FLOOR = MAX_ORDINAL + WORKING_KNOWLEDGE_MARGIN + 1;
 
@@ -118,20 +57,11 @@ export const INSIDER_ONLY_FLOOR = MAX_ORDINAL + WORKING_KNOWLEDGE_MARGIN + 1;
 
 /**
  * How far from ordinary life a name sits, which decides how often it surfaces.
- *
- * Computed against the listener's location rather than baked in, because the
- * Weir Office is local talk in the Marches and a curiosity in the Low Fall,
- * and the same row has to be able to be both.
  */
 export type LoreBand = 'local' | 'regional' | 'world' | 'deep';
 
 /**
  * Which catalog a name came out of.
- *
- * Carried on every row for one reason: it is the assertion that stops this
- * regressing. A test can demand that every catalog still has at least one
- * reachable row, so "written but unreachable" fails the build instead of
- * being discovered months later.
  */
 export type LoreCatalog =
     | 'sects'
@@ -163,15 +93,6 @@ export const LORE_CATALOGS: readonly LoreCatalog[] = [
 
 /**
  * One name, and the conditions under which somebody would say it.
- *
- * `kind` is a GATE, not a taxonomy. discovery.md names four things the rule
- * covers - a faction, a famous cultivator, a distant city, a historical event -
- * and the knowledge layer has exactly those four kinds. So an age, a dead
- * civilisation, a reading of the Lid and an object that came down from above
- * all file as `event`: they are things that happened or were made, they gate
- * identically, and a player who has heard one of the names cannot tell which
- * category it belongs to anyway. That last part is the point rather than a
- * compromise.
  */
 export interface Mentionable {
     kind: KnownEntityKind;
@@ -214,11 +135,8 @@ function regionOfFaction(factionId: string): string | null {
 }
 
 /**
- * Factions in the sect catalog, plus the ancient houses, which are sects to
- * the engine.
- *
- * The floor reproduces the rule `speakableFor` has always applied: your own
- * working range, plus anything large enough to be in the air regardless.
+ * Factions in the sect catalog, plus the ancient houses, which are sects to the
+ * engine.
  */
 function sectRows(): Mentionable[] {
     return SECTS.map(sect => ({
@@ -254,11 +172,6 @@ function destroyedHouseRows(): Mentionable[] {
 
 /**
  * The institutions above the map.
- *
- * `powerOrdinal` is the floor unmodified, which puts them out of reach of
- * everybody the player will meet for a very long time. That is the design:
- * "nobody at an apex is ever seen, which is the whole reason no sect can name
- * what is above it."
  */
 function apexRows(): Mentionable[] {
     return APEX_INSTITUTIONS.map(apex => ({
@@ -275,14 +188,6 @@ function apexRows(): Mentionable[] {
 
 /**
  * The courts, and the one case discovery.md works through itself.
- *
- *     "Road's shut past the ford. Sill business, so it'll be shut a while."
- *
- * He says it the way you would say a bank holiday. So a court's NAME is in the
- * air at floor zero even though every court's `startingAwareness` is `unaware`
- * - which is not a contradiction but the entire mechanism. The name is
- * ordinary; what it refers to is not, and the player gets the first without
- * the second and no way to convert one into the other by thinking about it.
  */
 function courtRows(): Mentionable[] {
     return COURTS.map(court => ({
@@ -299,10 +204,6 @@ function courtRows(): Mentionable[] {
 
 /**
  * Guests seated at a faction, who are visible in a way a distant power is not.
- *
- * Floor zero, because a Void Refinement cultivator sitting on the gorge vein
- * eleven months a year is a thing the town knows about. It is local knowledge
- * rather than elevated knowledge, and the region gate is what keeps it honest.
  */
 function guestElderRows(): Mentionable[] {
     return GUEST_ELDERS.map(elder => ({
@@ -319,10 +220,6 @@ function guestElderRows(): Mentionable[] {
 
 /**
  * Named people inside the factions.
- *
- * Their own realm is the floor, so a Sword Servant is common gossip and a
- * Sword Elder is not - and their faction is an insider key, so the people they
- * actually stand next to can name them whatever their own standing.
  */
 function memberRows(): Mentionable[] {
     return MEMBERS.map(member => ({
@@ -339,13 +236,6 @@ function memberRows(): Mentionable[] {
 
 /**
  * The unattached, and the versions of them that circulate.
- *
- * Two rows of different kinds per wanderer, and the difference is the whole
- * value. The record name sits at his real standing, which is out of everyone's
- * reach. The legends sit low, because a legend is precisely the thing that
- * travels down to people who could never meet him - and they are mutually
- * incompatible, so a player who collects two of them holds two names for
- * something and no reason to connect them.
  */
 function wandererRows(): Mentionable[] {
     const out: Mentionable[] = [];
@@ -377,15 +267,8 @@ function wandererRows(): Mentionable[] {
 }
 
 /**
- * How far a sealed ancestor's existence has travelled, read off the catalog's
- * own `awareness` field rather than invented here.
- *
- * `published` is a deterrent and is meant to be known by the parties it is
- * aimed at, which are institutions rather than carters. `rumoured` is the
- * opposite shape: circulating, unverified, mostly right, and exactly the sort
- * of thing an ordinary person repeats. `holder_only` never leaves the walls.
- * `unknown_to_holder` and `forgotten` return null and are unsayable by
- * anybody, which is the correct and permanent state for both.
+ * How far a sealed ancestor's existence has travelled, read off the catalog's own
+ * `awareness` field rather than invented here.
  */
 function sealedFloor(awareness: string): number | null {
     switch (awareness) {
@@ -436,11 +319,6 @@ function unownedAncestorRows(): Mentionable[] {
 
 /**
  * The ancestors on the far side of the Lid who still answer.
- *
- * Insider only, without exception. A channel is the single most valuable thing
- * an institution has and none of them discuss it; the name of who is on the
- * other end is said inside the walls or nowhere, and the catalog's own naming
- * says as much - "named on the schedule and nowhere else".
  */
 function immortalChannelRows(): Mentionable[] {
     return IMMORTAL_CHANNELS.map(channel => ({
@@ -476,11 +354,6 @@ function immortalItemRows(): Mentionable[] {
 
 /**
  * The named ages, floored by how well the record survives them.
- *
- * `AGE_FIDELITY` already grades this and is used for nothing else outside the
- * data tests. The present age is the calendar everyone dates by, so it costs
- * nothing to name. An age that survives only as rumour is a name held by
- * people who read.
  */
 function ageRows(): Mentionable[] {
     return AGES.map(age => {
@@ -518,11 +391,6 @@ function deadCivilisationRows(): Mentionable[] {
 
 /**
  * The incompatible readings of the Lid, each held by a serious institution.
- *
- * Insider only, plus a very high floor, because a house's reading of the Lid
- * is its position rather than a fact in circulation. Somebody hearing "the
- * Containment" said flatly has heard a name for a disagreement they have no
- * idea exists.
  */
 function lidTheoryRows(): Mentionable[] {
     return LID_THEORIES.map(theory => ({
@@ -611,11 +479,6 @@ function slug(text: string): string {
 
 /**
  * One name is one name, however many catalogs it appears in.
- *
- * The Azure Cloud Pavilion is a sect row and an apex row and they are the same
- * words. Two rows would let the player acquire the name twice, from two
- * sources, under two ids, which would read as two things - so the shallower
- * one wins and the build order below decides which that is.
  */
 function normaliseName(name: string): string {
     return name.toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -623,11 +486,6 @@ function normaliseName(name: string): string {
 
 /**
  * The table, built once.
- *
- * Ordered shallow to deep on purpose: the dedupe keeps the first row for a
- * name, and where a name is reachable two ways it should be reachable the
- * ordinary way. Somebody who has heard of the Azure Cloud Pavilion has heard
- * of a sect with a front gate, not of the third apex.
  */
 function buildLore(): Mentionable[] {
     const rows = [
@@ -683,11 +541,6 @@ export function bandFor(entry: Mentionable, locale: Locale): LoreBand {
 
 /**
  * How often each band should surface when somebody is talking TO the player.
- *
- * Most talk is local, mundane and about sects. The numbers are shares of a
- * band draw rather than per-row weights, so a catalog's size cannot buy it
- * airtime: four hundred members and four ages compete as two bands, not as
- * four hundred rows against four.
  */
 export const TOLD_BAND_WEIGHTS: Record<LoreBand, number> = {
     local: 62,
@@ -698,11 +551,6 @@ export const TOLD_BAND_WEIGHTS: Record<LoreBand, number> = {
 
 /**
  * And when they are talking to each other.
- *
- * The deep share is six times the told one, which is the texture discovery.md
- * asks for: the material the world does not explain arrives mostly as
- * fragments from a conversation that was not for the player, where the option
- * to ask is gone and what they end up holding is compromising to admit.
  */
 export const OVERHEARD_BAND_WEIGHTS: Record<LoreBand, number> = {
     local: 44,
@@ -713,10 +561,6 @@ export const OVERHEARD_BAND_WEIGHTS: Record<LoreBand, number> = {
 
 /**
  * Whether this speaker holds this name at all.
- *
- * Nothing here consults the player. That is the whole point: the speaker is
- * not adjusting for their audience, because it has not occurred to them that
- * they need to.
  */
 export function holds(entry: Mentionable, speaker: Speaker): boolean {
     if (entry.insiderFactionId !== null && entry.insiderFactionId === speaker.factionId) return true;
@@ -725,12 +569,6 @@ export function holds(entry: Mentionable, speaker: Speaker): boolean {
 
 /**
  * Everything this speaker could drop into a sentence without thinking.
- *
- * Deliberately not narrowed by place. Where a name belongs is a question about
- * how OFTEN it gets said, not about whether it can be, and that is settled by
- * `bandFor` at the point of the draw. A name that belongs somewhere else is a
- * name that travels rarely and arrives garbled, which is a thing that happens
- * rather than a thing to forbid.
  */
 export function mentionableFor(speaker: Speaker): Mentionable[] {
     return LORE.filter(entry => holds(entry, speaker));
@@ -742,19 +580,6 @@ export function mentionableFor(speaker: Speaker): Mentionable[] {
 
 /**
  * The geography an ordinary person born in a place grew up holding.
- *
- * discovery.md draws the line at the county: "Their world is the county, the
- * local sect that takes disciples, the market town, and whatever their
- * grandmother believed." The county is not one village. Somebody raised in a
- * temple town can name the market town two days off, the province seat, and
- * the fact that there is a border and something on the other side of it -
- * because everybody around them could, since before they could walk.
- *
- * This is not a revelation and must not be dressed as one. It is the floor the
- * ladder starts from, and the reason it exists is that a cultivator who cannot
- * name anywhere cannot leave, and a cultivator who cannot leave dies on thin
- * ground at the bottom of the ladder without ever having been told there was
- * anywhere else.
  */
 export interface LocalGeography {
     /** The region the home place sits in, or null when it is off the map. */
@@ -765,10 +590,6 @@ export interface LocalGeography {
     neighbours: GeographyPlace[];
     /**
      * Regions the home region has a road to.
-     *
-     * A name and a direction and nothing else. Everybody knows there is a
-     * border and roughly what is over it; nobody local can tell you anything
-     * useful about it, and several of them are wrong.
      */
     further: GeographyPlace[];
 }
@@ -783,14 +604,6 @@ export interface GeographyPlace {
 
 /**
  * What somebody from `home` can point at without being told.
- *
- * Read straight off `REGIONS` rather than off {@link LORE}, and that is not an
- * oversight. The lore table deduplicates by NAME so that a thing reachable two
- * ways is acquired once - which is right for hearsay and wrong here: a province
- * and the town it is named after collapse into a single row there, and a
- * cultivator seeded from that row would hold "The Low Fall" and then be unable
- * to travel to "Low Fall". The names a person grew up saying are the catalog's
- * own, and this is the one caller that needs them exactly.
  */
 export function localGeographyFor(home: string | null | undefined): LocalGeography {
     const regionId = regionOfPlace(home);
@@ -838,10 +651,6 @@ export function localGeographyFor(home: string | null | undefined): LocalGeograp
 
 /**
  * Every place in the table this speaker could name, as plain rows.
- *
- * The traveller channel's candidate list. Places only, because a traveller's
- * value is geography: they are the one source a cultivator who never leaves
- * has for the existence of anywhere else.
  */
 export function placesInLore(): Mentionable[] {
     return LORE.filter(entry => entry.kind === 'place');
@@ -849,11 +658,6 @@ export function placesInLore(): Mentionable[] {
 
 /**
  * The region a free-text place name belongs to.
- *
- * A cultivator's `location` is free text by design and the catalogs key on
- * region ids, so this is the join, done by name because the name is what both
- * sides agree on. Returns null rather than guessing, and null means "do not
- * narrow by place" everywhere downstream.
  */
 export function regionOfPlace(place: string | null | undefined): string | null {
     const wanted = (place ?? '').trim().toLowerCase();
@@ -875,12 +679,6 @@ export interface LoreRng {
 
 /**
  * Draw one name: band first by weight, then uniformly inside the band.
- *
- * Two stages rather than one because they answer different questions. The band
- * roll decides how far from ordinary life this sentence is going to reach,
- * which is a property of conversations. The row roll decides which name, which
- * is a property of the catalog. Collapsing them would let whichever catalog
- * happens to be largest decide the register of the world.
  */
 export function pickWeighted(
     candidates: readonly Mentionable[],

@@ -1,34 +1,5 @@
 /**
  * Sitting down for a long time, and everything that can interrupt it.
- *
- * `runSeclusion` is the verb the whole game is about: a cultivator sits, the
- * time-skip resolves the span in one deterministic pass, and what comes back
- * is a digest rather than a day-by-day simulation. Nobody is ever required to
- * live a decade an evening at a time.
- *
- * The rest of the module is what happens when the span does NOT run to the
- * end, and it is one subject because it is one decision taken twice. A broken
- * seclusion is a FORK, not an event: somebody interrupted a long sitting, and
- * the two things that were always physically available - go, or sit back down
- * - are both still open. The engine used to narrate that dilemma and then
- * resolve it silently, which is the engine deciding on a lucid character's
- * behalf, and it is a defect rather than a mode. `raiseTheCrossroads` puts the
- * question; `sitBackDown` and `getUpAndGo` are the two answers;
- * `settleAnyStandingCrossroads` is what happens when the player says something
- * else entirely, which is also an answer.
- *
- * `handBackWhatNeverHappened` is the one to be careful with. A span that was
- * cut short did not happen for its whole length, and what it returns is the
- * difference - so an error here is a player paying for years they did not
- * live.
- *
- * ── HOW THIS IS ATTACHED ──────────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.runSeclusion(...)` resolves and typechecks exactly as it
- * did when the bodies sat in the class, and every line below is the line it
- * was. `src/web/README.md` has the argument and the warning about `private`.
  */
 
 import { combatPowerForOrdinal } from '../engine/cultivation/combat.js';
@@ -103,22 +74,6 @@ import type { GameService } from './turn-engine.js';
 
 /**
  * How much of an open seclusion gets through a door over the whole sitting.
- *
- * A shut door is not a ward, and it is not a constant either. `wardIntegrityOf`
- * halves a formation every `wardHalfLifeYears`, so the door somebody sat down
- * behind is weaker every year they stay behind it - which is the same clock the
- * world reads when it decides that an old sealed place has become enterable.
- *
- * Averaged across the stretch rather than sampled at either end, because the
- * time-skip takes ONE scale for the whole span: sampling at the start would
- * price a three-hundred-year sitting as though the ward were still fresh, and
- * sampling at the end would price the first decade as though it were already
- * gone. The mean of a halving curve over [0, Y] has a closed form and there is
- * no reason to approximate it.
- *
- * At full integrity this is the flat fraction the encounter tables use. At zero
- * integrity it is 1 - no reduction at all - because a formation that is
- * entirely gone is a person sitting in an open cave who believes otherwise.
  */
 export function doorScaleOverStretch(
     setByOrdinal: number,
@@ -135,30 +90,11 @@ export function doorScaleOverStretch(
     // Linear between "the door is as set" and "there is no door".
     const throughTheDoor = fraction + (1 - fraction) * (1 - held);
     // A HIDDEN DOOR IS A DIFFERENT KIND OF PROTECTION AND MULTIPLIES WITH IT.
-    //
-    // The ward decides whether somebody who is standing at the door gets
-    // through it. Concealment decides whether they are standing there at all,
-    // and it filters by RUNG rather than by rate - hide the entrance and only
-    // somebody at your own realm or above finds the place. The two are
-    // independent, so they multiply: a decayed ward on a hidden cave is still
-    // hidden, and a fresh ward on an obvious one is still obvious.
     return hidden ? throughTheDoor * concealmentScale(setByOrdinal) : throughTheDoor;
 }
 
 /**
  * The comprehension a dao partner further along the road hands over.
- *
- * Written through `integrateInsight` and `persistUnderstanding` and not by
- * touching the insight array: those two are the one place a comprehension is
- * formed and the one place it is saved, and the keying by (domain, subject) is
- * what makes a second sitting on the same road a DEEPENING rather than a
- * duplicate. So a partnership that lasts years walks somebody up one road
- * instead of handing them the same glimpse repeatedly.
- *
- * `'teacher'` access and `'extraordinary_instruction'`, which is the existing
- * kind for being taught by somebody who did not have to. Returns the sentence
- * to print, or null where the road was already carried as far as it goes -
- * nothing was granted in that case and nothing should be claimed.
  */
 function grantAnInsightFromAPartner(
     repos: CultivationRepos,
@@ -197,18 +133,6 @@ function grantAnInsightFromAPartner(
 export const seclusionVerbs = {
     /**
      * Cultivating, provisioned out of the purse.
-     *
-     * The engine's food clock is not a nuisance to be routed around: a full
-     * belly covers fifty turn-consuming actions, so a decade of unattended
-     * cultivation genuinely is impossible without provisions, and buying them
-     * is the "eat, or keep the stones" choice made concrete. Provisions are
-     * bought up front at whatever the purse covers; when it does not cover the
-     * whole stretch, the engine starves the remainder, which is correct.
-     *
-     * `sealed` is what separates `seclude` from `cultivate`, and it is a real
-     * bargain rather than a flavour: closed-door seclusion turns off random
-     * events, which buys safety from encounters at the price of every
-     * opportunity that would have found you. Both halves are the engine's.
      */
     async runSeclusion(
         this: GameService,
@@ -222,30 +146,11 @@ export const seclusionVerbs = {
             askedFor?: number;
             /**
              * The fork this sitting is the second half of, when it is one.
-             *
-             * Set only by `sitBackDown`. It carries the rations the interrupted
-             * half left in the pack, so the resumed span is not charged a
-             * second time for food that was already bought, and it carries the
-             * sentence saying what the player committed to.
              */
             resuming?: SeclusionCrossroads;
             /**
              * The dao partner sitting the same art beside them for the whole
              * stretch.
-             *
-             * Set only by `cultivateWithYourDaoPartner`, which is the one
-             * place that establishes a partnership - married, on one roll,
-             * walking one dao, and the art able to work between them. Nothing
-             * here rechecks any of that.
-             *
-             * `bonusDays` is what `cultivateWithADaoPartner` returned for the
-             * PLAYER and `theirBonusDays` what it returned for the partner;
-             * the two differ whenever one of them is behind the other, which
-             * is the point of the mechanic. This method's only job with either
-             * is to turn a flat day figure into the rate term that spends it
-             * over the span actually lived - the stretch is not lengthened by
-             * having company. `insight` is non-null only where the draw landed
-             * and the player is the one who was behind.
              */
             daoPartner?: {
                 id: string;
@@ -259,39 +164,7 @@ export const seclusionVerbs = {
         const sealed = options.sealed ?? false;
         const startDay = Math.floor(run.elapsedDays);
 
-        // ── A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY ──────────
-        //
-        // `techniqueCeiling` is a HARD zero, not a taper, and the engine knows
-        // it on day zero. It used to say so on day zero and then spend the
-        // years anyway, at full hazard, which is the single worst thing this
-        // game does to a player. Two live runs, at opposite ends of the ladder:
-        //
-        //   a beginner with no manual sat 900 days for exactly 0 progress,
-        //   collected a disturbance and a serious deviation on the way, then
-        //   found a manual and died on the next action of the wounds the
-        //   pointless stretch had given them. Turn 9.
-        //
-        //   ordinal 13, healthy, 100 years of rations, sat down for thirty
-        //   years against an exhausted manual. The engine printed "it is
-        //   stopped, and no amount of sitting with it changes that" on Day 0,
-        //   ran thirteen more years, aged them 122 to 148 and killed them by
-        //   stagnation.
-        //
-        // The second case is the general one and it will hit every player
-        // repeatedly, because every cultivator reaches the end of a book many
-        // times in a career. The cost is lifespan, which is the resource the
-        // whole game is about.
-        //
-        // A refusal rather than a free pass. Making a zero-return stretch cost
-        // nothing would be worse: it turns "sit until something happens" into a
-        // dominant move and it lies about the cave, which is dangerous whether
-        // or not anybody is making progress. So the years are still real and
-        // still spendable - the player just has to mean it. Same shape as the
-        // wasted-pill override, and for the same reason: this layer cannot ask
-        // a question and wait for an answer.
-        // This refusal is the single most useful place in the game to know
-        // whether a copy is already in the bag: the errand is `learn` and it
-        // is free, against years in a cave that would return nothing.
+        // A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY
         const wall = techniqueCeiling(
             cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
             copiesHeldBy(this.db, cultivator.id).length > 0
@@ -360,44 +233,11 @@ export const seclusionVerbs = {
             grainAbstinence: false,
             autoBreakthrough: true,
             // A SHUT DOOR IS NOT A WARD.
-            //
-            // Sealing used to switch the encounter tables off entirely, and
-            // that made closed-door seclusion a dominant strategy rather than
-            // a trade: everything that can kill a cultivator in a long stretch
-            // arrives through those tables, so a player who sealed was simply
-            // safe. Found by playing - three runs died to wounds and to a
-            // fight, and the fourth survived by never opening the door.
-            //
-            // The world does not stop at the threshold. A rogue cultivator
-            // barges into the cave; somebody arrives at it needing help. Being
-            // behind a door changes what happens next and does not decide
-            // whether anything happens at all.
-            //
-            // What sealing still buys is real and is priced below: a sealed
-            // crossing is a PREPARED one - the door is shut, the site was
-            // chosen, and `SEALED_PREPARATION` is worth more than
-            // `PROVISIONED_PREPARATION` at the toll and at the foundation.
-            //
-            // Nothing wanders into a True Immortal's seclusion, and that guard
-            // stays: the encounter tables are the mortal world's and they do
-            // not reach above the Lid.
             randomEvents: !canExistBeyondTheLid(cultivator),
-            // The door is a rate, not a switch, and the rate is not constant:
-            // a formation is a thing somebody built, and it goes. Over a long
-            // enough sitting the ward the cultivator set on their own door
-            // decays under them, and a door that is gone is not a door.
-            //
-            // Both ends of this now read the SAME arithmetic. A prospector
-            // standing at a sealed ruin asking whether they can get in, and a
-            // cultivator sitting behind their own seal wondering what can
-            // reach them, are asking one question about one object - from
-            // outside, a live cultivator's sealed cave and a dead one's are
-            // indistinguishable, which is most of why anybody opens either.
-            //
-            // The half-life carries the cultivator's own rung, so this scales
-            // with power the way the setting says it should: a seal set near
-            // the bottom is largely gone within a lifetime, and one set near
-            // the top holds for tens of thousands of years.
+            // The door is a rate, not a switch, and the rate is not constant: a
+            // formation is a thing somebody built, and it goes. Over a long enough
+            // sitting the ward the cultivator set on their own door decays under
+            // them, and a door that is gone is not a door.
             randomEventScale: sealed ? doorScaleOverStretch(cultivator.realmOrdinal, lived) : 1,
             // 道心. A wall crossed inside a stretch weighs the record exactly as
             // a deliberate strike does. `daoHeartConditions` is the one
@@ -428,17 +268,7 @@ export const seclusionVerbs = {
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
-        // ── WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO ───────────
-        //
-        // `lived` is the encounter layer's own truncation and it is not the
-        // last word: `simulateTimeSkip` then stops wherever IT likes - a wound,
-        // a deviation threshold, a major encounter, a death - and everything
-        // rolled between the two is a span nobody reached. Until this cut, all
-        // of it was recorded, narrated and consumed off the arrivals list
-        // anyway. Three playtests found it independently; the plainest was a
-        // cultivator who died on day 5 and read a mission board on day 2995.
-        //
-        // Everything downstream reads `happened` rather than `enc`.
+        // WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO
         const happened = cutTo(enc, startDay, skip.simulatedDays);
         this.handBackWhatNeverHappened(applied.cultivator, enc, happened);
 
@@ -465,38 +295,10 @@ export const seclusionVerbs = {
         );
         facts.lines.unshift(provisioning.line);
 
-        // ── WHAT THE CAVE MOUTH CHARGED, SAID OUT LOUD ───────────────────
-        //
-        // This line has been built and thrown away since it was written, and it
-        // killed runs. `buyProvisions` tops the pack up at the door and charges
-        // for it; the sentence describing the purchase went into `lines`, which
-        // is a LICENCE, and a narrator that would rather write about the
-        // mountain simply did not use it. Observed on a live server: a purse
-        // going 24 -> 6 -> 0 across two seclusions with nothing said either
-        // time, then starvation on the third turn, by a sixteen-year-old who
-        // started with thirty stones.
-        //
-        // The playtester who found it first logged those two deaths as their
-        // own harness error, which is the measure of how invisible it was.
-        //
-        // A purse being spent is the definition of a fact a player cannot play
-        // without, so it takes the same treatment `method_ceiling` already has.
+        // WHAT THE CAVE MOUTH CHARGED, SAID OUT LOUD
         (facts.required ??= []).push(provisioning.line);
 
-        // ── AND WHO WAS SITTING THERE WITH THEM ──────────────────────────
-        //
-        // Required for the same reason the purse is: most of what a dao partner
-        // is worth is a rate term, and a rate term nobody prints is a rate term
-        // nobody has. The sentences say what it bought and decide none of it -
-        // `sharedPracticeBonus` above and `cultivateWithADaoPartner` before it already
-        // did.
-        //
-        // BOTH figures, because they are routinely different and the difference
-        // is the mechanic. A player who is the one behind should be able to see
-        // that they got the larger share, and a player who is the one ahead
-        // should be able to see that they did not - otherwise the reason to
-        // take a partner from lower down the ladder is invisible from either
-        // side of it.
+        // AND WHO WAS SITTING THERE WITH THEM
         if (options.daoPartner) {
             const partner = options.daoPartner;
             const days_ = (n: number) => `${n} day${n === 1 ? '' : 's'}' progress`;
@@ -527,39 +329,12 @@ export const seclusionVerbs = {
             }
         }
 
-        // ── AND ANYTHING THAT STOPPED THE STRETCH ────────────────────────
-        //
-        // Same failure, same span, and worse. A serious qi deviation was rolled
-        // with `interrupts: true` - "cultivation is halted until the deviation
-        // is cleansed" - and did not appear in the narration at all. An event
-        // that ENDED the thing the player paid for is not a detail a stylist
-        // may drop for pacing: it is the reason the stretch came back short,
-        // and without it the player reads a truncated seclusion as the engine
-        // miscounting.
-        //
-        // Only the interrupting ones. A digest of forty lines all marked
-        // required is a digest with nothing required in it.
+        // AND ANYTHING THAT STOPPED THE STRETCH
         for (const event of skip.events) {
             if (event.interrupts) facts.required.push(event.summary);
         }
 
-        // ── AND IF IT STOPPED BECAUSE OF SOMEBODY, IT IS A QUESTION ──────
-        //
-        // The one interrupt in the whole file that is not a fact about the
-        // cultivator's own body. A wound, a deviation, an empty pack - those
-        // have happened and the only honest thing to do is report them. A
-        // person at the cave mouth has not happened yet, and `time-skip.ts`
-        // already writes two sentences saying so and naming both costs.
-        //
-        // What it could not do was hold the question open, so the engine
-        // answered it: "You came out early. 5.3 years of the 40 years were
-        // spent; the rest was not yours to spend." The player was told they had
-        // a choice and then shown the outcome of a choice somebody else made.
-        //
-        // `raiseTheCrossroads` puts it back. Nothing here changes what was
-        // rolled, what it cost, or the chance of anything - the stretch stopped
-        // exactly where it stopped, and both branches out of it were always
-        // physically there. What changes is who takes one.
+        // AND IF IT STOPPED BECAUSE OF SOMEBODY, IT IS A QUESTION
         if (options.resuming) {
             // Said before the fork is possibly raised again, so a second
             // interruption reads as a second question rather than as the first
@@ -586,18 +361,7 @@ export const seclusionVerbs = {
             startDay
         });
 
-        // ── THE CEILING, BEFORE THE DECADE RATHER THAN AFTER ─────────────
-        //
-        // The engine files a `method_ceiling` event and it arrives inside a
-        // digest of forty other lines, which is the worst possible place for
-        // the only fact in the span a player can act on. Said here as well, at
-        // the top, in its own right - and marked required, so it survives a
-        // narrator that would rather write about the weather.
-        //
-        // Not an interrupt, deliberately. Being told is not a reason to stop a
-        // seclusion out from under somebody who chose it knowingly, and an
-        // interrupt every chunk would leave a stalled cultivator unable to pass
-        // time at all.
+        // THE CEILING, BEFORE THE DECADE RATHER THAN AFTER
         const ceiling = techniqueCeiling(
             cultivator.realmOrdinal, terms.techniqueCap,
             copiesHeldBy(this.db, cultivator.id).length > 0
@@ -608,20 +372,7 @@ export const seclusionVerbs = {
         }
 
         if (sealed) {
-            // ── THE PROSE YIELDS TO THE MEASUREMENT ──────────────────────
-            //
-            // This used to read "no encounter and no opportunity could reach
-            // this stretch", and it had been false since the door became a rate
-            // rather than a switch. `randomEvents` is on behind a seal, scaled
-            // by `doorScaleOverStretch`, and the comment at that call site says
-            // in full why: a door that made a cultivator simply safe made
-            // closed-door seclusion the dominant strategy rather than a trade.
-            //
-            // A player who reads the old sentence and is then interrupted has
-            // been told the engine lied to them, which is worse than being
-            // interrupted. So this says what the seal actually buys - a rate,
-            // and a better crossing - and it says that the rate is not zero and
-            // does not stay where it was set.
+            // THE PROSE YIELDS TO THE MEASUREMENT
             facts.lines.unshift(
                 'The door was sealed. Less reaches you behind it and it is not nothing: a seal '
                 + 'is a thing somebody built, it thins what finds you rather than stopping it, '
@@ -656,21 +407,6 @@ export const seclusionVerbs = {
 
     /**
      * Take back what the cultivator was credited for a span they never spent.
-     *
-     * `withEncounterDeltas` runs BEFORE the skip, because the skip needs a
-     * starting HP and a starting purse. So by the time `cutTo` works out which
-     * days were actually lived, the HP and stones of occurrences that never
-     * happened are already folded in. Left alone, the sheet would disagree with
-     * the account the player just read - which is the same defect as the events
-     * themselves, one layer down.
-     *
-     * A write rather than a re-run of the skip: re-running it with different
-     * starting HP is a balance change wearing a bug fix's clothes, and it can
-     * shift where the skip stops, which is the very thing being measured here.
-     *
-     * Silent when nothing was dropped, which is the ordinary case. Never on a
-     * cultivator the run has already closed: a death is final and the repo
-     * refuses the write in any case.
      */
     handBackWhatNeverHappened(
         this: GameService,
@@ -687,29 +423,10 @@ export const seclusionVerbs = {
         });
     },
 
-    // ── A BROKEN SECLUSION IS A QUESTION ─────────────────────────────────
-    //
-    // Everything from here to `settleAnyStandingCrossroads` is one feature and
-    // it is described in full in
-    // `choosing-what-to-do-when-a-seclusion-is-broken.ts`. The short version:
-    // the engine stops a long sitting when somebody comes near, writes two very
-    // good sentences about the two things the cultivator could do, and then did
-    // one of them without asking. These four methods are the asking.
+    // A BROKEN SECLUSION IS A QUESTION
 
     /**
      * Hold the fork open for one turn, if the stretch stopped because of a person.
-     *
-     * Only `major_encounter`. Every other interrupt is a fact about the
-     * cultivator's own body that has already happened - a torn channel, a
-     * deviation, an empty pack - and there is nothing to decide about a thing
-     * that is already true. A person at the cave mouth has not arrived yet, and
-     * that is the entire difference.
-     *
-     * `canWithdraw` is READ off the event the engine filed, never re-rolled. It
-     * was decided by a sample drawn against the cultivator's own Fortune inside
-     * `simulateTimeSkip` and re-deciding it here would be a second opinion on
-     * something that already has one - the exact shape of defect the authority
-     * rule exists to forbid.
      */
     raiseTheCrossroads(
         this: GameService,
@@ -759,22 +476,7 @@ export const seclusionVerbs = {
         };
         this.crossroads = crossroads;
 
-        // ── AND THE SENTENCE THAT USED TO ANSWER IT COMES OUT ────────────
-        //
-        // `factsForTimeSkip` closes every interrupted stretch with "You came
-        // out early. 5.3 years of the 40 years were spent; the rest was not
-        // yours to spend." That is exactly right for a torn channel or an empty
-        // pack, where the stretch ended because something already happened. It
-        // is the defect itself when the stretch ended on a QUESTION: read live,
-        // it announced the outcome of a decision two paragraphs before the
-        // decision was put to the player, and it says the years are not theirs
-        // in the same breath as offering them.
-        //
-        // Removed here rather than conditioned at source because the condition
-        // is not knowable there - `factsForTimeSkip` sees an interrupt and not
-        // whether anybody is going to be asked about it. When these two files
-        // are next open together the branch belongs in `facts.ts`, keyed on the
-        // same fact this method tests.
+        // AND THE SENTENCE THAT USED TO ANSWER IT COMES OUT
         const CAME_OUT_EARLY = 'You came out early.';
         facts.prose = facts.prose
             .split('\n\n')
@@ -793,23 +495,6 @@ export const seclusionVerbs = {
 
     /**
      * Who the world says is close enough to matter.
-     *
-     * A READ, and nothing but a read. `present` is the same crowd the hearsay
-     * layer and every pointing phrase resolve against, in the same single total
-     * order, and the last of it is what `somebodyAtHand` already means by "the
-     * nearest cultivator" - see `oneCrowd` for why that order exists and why it
-     * must not be recomputed here.
-     *
-     * `combatPowerForOrdinal` prices both of them off the ladder alone. Deeper
-     * pricing would need attributes, wounds and what they are carrying, and the
-     * roster carries none of those - `assessPower` on a half-built combatant
-     * would be a worse number than an honest coarse one. What this is for is
-     * the operator's line saying who was outside and roughly what they were
-     * worth; nothing reads it back and nothing resolves against it.
-     *
-     * Null when the world is off or the place holds nobody, and the sentences
-     * degrade to the engine's own "whoever that is" rather than inventing a
-     * person to fill the slot.
      */
     whoIsCloseNow(this: GameService, cultivator: Cultivator): WhoIsClose | null {
         const here = this.present(cultivator);
@@ -835,17 +520,6 @@ export const seclusionVerbs = {
 
     /**
      * The player sat back down. Spend the rest of the sitting.
-     *
-     * The whole of staying is one call into the ordinary seclusion path for the
-     * remaining days, starting from the day it stopped - which the run's clock
-     * is already standing on, because the first half advanced it. Every roll in
-     * `time-skip.ts` and in `src/engine/encounters/` is keyed to an ABSOLUTE
-     * day, so the surviving days give exactly what they were always going to
-     * give and a forty-year sitting split into 5.3 and 34.7 is the same forty
-     * years. There is no second simulation and no modifier anywhere in it.
-     *
-     * It can be interrupted again, and if it is, that is a second question and
-     * not the first one repeating.
      */
     async sitBackDown(
         this: GameService,
@@ -866,10 +540,6 @@ export const seclusionVerbs = {
 
     /**
      * The player got up. Say what that cost, and take no day for saying it.
-     *
-     * A turn of attention and nothing else. The remaining days are already
-     * gone - they were never spent, and this is the sentence that says so - and
-     * charging a day on top would be billing somebody for the act of answering.
      */
     getUpAndGo(
         this: GameService,
@@ -912,26 +582,6 @@ export const seclusionVerbs = {
 
     /**
      * Anything that spends a day instead of sitting is going, and it says so.
-     *
-     * The fork is not a modal jail. A player who answers it by travelling, by
-     * eating, by taking work or by walking down the mountain has made the
-     * decision - they are not sitting any more - and the engine's job is to say
-     * what that cost rather than to refuse every verb until the question has
-     * been answered in the approved words. AGENTS.md, agency: do not ban.
-     *
-     * A FREE ACTION IS NOT GOING. The test is whether THE CLOCK MOVED, not
-     * whether a turn was taken. `freeAction` exists because "looking around
-     * must never be able to kill you, and in a permadeath game that is a rule,
-     * not a courtesy" - and charging thirty-four years for "what am I
-     * carrying", for a refusal, or for a sentence the parser could not resolve
-     * would break that rule harder than anything it was written against. None
-     * of those take the cultivator off the seat and none of them bring the
-     * person outside a day closer, so the question is still open and still
-     * theirs.
-     *
-     * Called after phase 2 and before phase 3 on every path that can take a
-     * turn, so the sentence is in the facts the narrator is handed rather than
-     * bolted onto prose that has already been written.
      */
     settleAnyStandingCrossroads(
         this: GameService,
@@ -963,20 +613,6 @@ export const seclusionVerbs = {
 
     /**
      * The zero-return refusal, and where the next volume is.
-     *
-     * Honest was never the problem - `techniqueCeiling.line` is one of the best
-     * sentences in the game and it was already being printed. The problem was
-     * that it was printed and then ignored, and that it stopped at the
-     * diagnosis. "What is missing is the next volume" is true and leaves the
-     * player standing in the same cave with no idea where a volume comes from.
-     *
-     * So the refusal carries the pointer. The candidates come out of the same
-     * catalog read `list_techniques` uses, filtered to cultivation arts that
-     * carry FURTHER than this cultivator currently stands, which is the exact
-     * definition of "the next volume". Naming one is worth more than naming
-     * four: a player who has been stopped needs a next step, not a menu.
-     *
-     * Free, like every refusal: no time, no food, no roll.
      */
     async sittingWouldReturnNothing(
         this: GameService,
@@ -1011,11 +647,6 @@ export const seclusionVerbs = {
 
     /**
      * The best art in reach that carries further than this cultivator stands.
-     *
-     * Returns a NAME or null, and nothing else - this is a pointer inside a
-     * refusal, not a second listing verb. Reads through the same handler
-     * `list_techniques` uses so the two cannot come to disagree about what is
-     * available, and stays silent rather than guessing if that read fails.
      */
     async theNextVolume(this: GameService, cultivator: Cultivator): Promise<string | null> {
         try {
@@ -1119,31 +750,7 @@ export const seclusionVerbs = {
         );
         this.pendingArrivals = consumeArrivals(this.pendingArrivals, happened);
 
-        // ── WHAT THE PLAYER ASKED FOR, NOT WHAT WAS LEFT OF IT ───────────
-        //
-        // The same defect `runSeclusion` was fixed for, on the path that serves
-        // every other span-spending verb: wait, work, a sect duty, a ride, a
-        // fold, a passage and a proposal all arrive here.
-        //
-        // `days` is the player's own figure. `lived` is what the encounter
-        // layer left of it, and `simulateTimeSkip` records THAT as its
-        // `requestedDays` - so with nothing passed, `factsForTimeSkip` falls
-        // back to the truncated span and tells the player their own intention,
-        // wrongly. Played, on a fresh nobody:
-        //
-        //   > I wait a year
-        //   "Waiting of 4 months was intended." ... and fifty days were spent.
-        //
-        // Worse than a cosmetic misreport: because `asked` equalled
-        // `requestedDays`, the paragraph that exists to say "it was never going
-        // to be a year, something was already coming" could not fire at all.
-        // The player is told a shorter span than they asked for AND is not told
-        // why it was shortened.
-        //
-        // Travel and foraging cannot drift this way - both hand
-        // `simulateTimeSkip` the same figure they were asked for, with no
-        // encounter cut in between - so they are left alone rather than given a
-        // parameter that could only ever repeat itself.
+        // WHAT THE PLAYER ASKED FOR, NOT WHAT WAS LEFT OF IT
         const facts = factsForTimeSkip(before, applied.cultivator, skip, ambient, label, days);
         facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);

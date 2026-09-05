@@ -52,7 +52,7 @@
  *     an ambiguity here is the refusal the player was already getting.
  *   - It leaves capitalised words alone. Those are names - a place, a person,
  *     a house - and a name is the one thing in the sentence the parser hands
- *     to the engine verbatim. `Low Fall` repaired into a verb is a corrupted
+ *     to the engine verbatim. `Green Water City` repaired into a verb is a corrupted
  *     destination, not a fixed typo.
  *   - It leaves alone any word that a vocabulary word is a prefix of. The
  *     patterns carry stems - `injur`, `centur`, `practi` - so that they match

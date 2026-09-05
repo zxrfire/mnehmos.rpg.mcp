@@ -1,37 +1,5 @@
 /**
  * NPCs as small durable records.
- *
- * This is storage, not simulation. There is no tick loop here, no behaviour
- * tree, no per-NPC decision model, and no scheduler that wakes anybody up. The
- * LLM is the reasoning engine: given an NPC's record it can work out what that
- * person would do. The database's job is to make sure the record is still there
- * in thirty years and still says the same thing.
- *
- * The whole required shape is eight fields:
- *
- *   identity        who they are
- *   cultivation     where they stand on the ladder, and what they were dealt
- *   location        where they are
- *   faction         who they answer to
- *   goals           what they are currently trying to do
- *   relationships   who they are bound to, and how
- *   history         fact ids in the world ledger - what has happened to them
- *   memories        memory record ids - what they are carrying
- *
- * A trajectory is therefore stored as A FEW DURABLE FACTS rather than as a
- * simulated life: current goals plus recent significant events. "He has spent
- * eleven years trying to get into the Cold Kiln Hall and has been refused
- * twice" is two goal rows and two fact ids, and it is enough for the LLM to
- * reason about what he does when the player offers him a way in. Simulating
- * those eleven years would produce the same sentence at a thousand times the
- * cost.
- *
- * ── What the engine still owns ────────────────────────────────────────────
- *
- * Randomness. Talent is rolled here, from the run seed, via the cultivation
- * engine's own `rollSpiritRoot` and `rollAttributes` - never by the LLM, which
- * would unconsciously pick the answer it wanted. Everything stochastic about an
- * NPC comes out of `forStream(seed, ...)` and is reproducible.
  */
 
 import { forStream } from '../cultivation/rng.js';
@@ -52,6 +20,12 @@ import {
 } from '../cultivation/spirit-roots.js';
 import { rollOrigin, type OriginTierKey } from '../cultivation/origin.js';
 import { rollSex, type Sex } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
+import {
+    lifespanWithPhysique,
+    physiqueOrNull,
+    rollPhysique,
+    type PhysiqueKey
+} from '../cultivation/physiques.js';
 import type { Bloodline } from './hunting-a-spirit-beast.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
@@ -79,11 +53,6 @@ export type GoalStatus = 'active' | 'achieved' | 'abandoned' | 'blocked' | 'impo
 
 /**
  * One thing an NPC is trying to do.
- *
- * A goal is durable state and is the main thing the LLM reads to decide how
- * somebody behaves. It carries its own history - when it was opened, what
- * blocked it, when it closed - because "he has wanted this for forty years" is
- * a fact about the world and not a mood.
  */
 export interface NpcGoal {
     id: string;
@@ -115,11 +84,6 @@ export interface NpcGoal {
     note: string;
     /**
      * Set when this goal was inherited rather than formed.
-     *
-     * A goal does not end with its holder. A disciple continues the revenge; a
-     * descendant inherits the search. Three hundred years later the goal can
-     * still be live, and the chain back to whose it originally was is what makes
-     * that legible rather than arbitrary.
      */
     inheritedFromId: string | null;
     /** The person who first opened it, however many hands ago. */
@@ -150,11 +114,6 @@ export type RelationshipKind =
 
 /**
  * A durable tie between two people.
- *
- * `standing` runs -1 (wants them dead) to +1 (would die for them). It is a
- * stored number rather than an inferred one so that a grudge opened in year 744
- * still reads -0.9 in year 812, and so that inheritance can carry it forward
- * without anyone having to re-derive why.
  */
 export interface NpcRelationship {
     targetId: string;
@@ -177,32 +136,6 @@ export interface NpcRelationship {
 
 /**
  * Existence is multi-valued once cultivation is profound.
- *
- * At low realms `body destroyed = dead`. Above Nascent Soul that equivalence
- * breaks, and a cultivator stops being one body plus one row plus one
- * continuous physical existence. A person is a persistent identity that may
- * occupy several physical states over time.
- *
- * `missing` and `unknown` are the two this layer cares about most, and they are
- * NOT placeholders for a decision the engine is avoiding. They are correct
- * answers. If a cultivator vanishes into a ruin the engine does not have to
- * adjudicate what happened to them, and the world may hold several incompatible
- * beliefs at once - died, soul escaped, reincarnated, in seclusion, sealed,
- * became a remnant - with the truth genuinely unresolved until something
- * settles it. The belief side lives in the social layer; the unresolved fact
- * lives in `history.ts` with `truth: 'unresolved'`; this field is where the
- * person's own record says "nobody knows".
- *
- *     year 50     a powerful cultivator disappears        missing
- *     year 500    still missing                           missing
- *     year 2000   civilisation treats them as long dead   missing (belief: dead)
- *     year 4000   a sealed body is found                  sealed
- *     year 4020   they wake, memories and grudges intact  alive
- *
- * Absence is not removal. A dead or missing character's inheritance, remnant,
- * disciples, descendants, enemies, artifacts, techniques and reputation keep
- * acting on the world: death changes their mode of existence, it does not take
- * them out of the simulation.
  */
 export type ExistenceState =
     | 'alive'
@@ -239,38 +172,18 @@ export interface NpcIdentity {
     bornOnDay: number;
     /**
      * Where they were born, drawn from the run seed exactly as the player's is.
-     *
-     * This is also the honest explanation for why a Dao house has the members
-     * it does: nobody is assigned to one. Origins are rolled, the weights are
-     * the same weights, and the derivation that follows spends what the birth
-     * actually supplied. It carries no rank - an NPC born into one still has to
-     * have walked the ladder to be anywhere on it.
      */
     origin: OriginTierKey;
     /**
      * A plain fact, carried so a child can have two parents.
-     *
-     * `what-sex-somebody-is-and-what-it-is-for.ts` is the whole of the design
-     * and the short version is that it answers a PARENTAGE question and nothing
-     * else. It has no authority over who may match with whom - the household
-     * layer neither imports this nor names it, and a test scans that directory
-     * for the vocabulary - and nothing anywhere branches on it except
-     * `canBeTheTwoParentsOf`.
      */
     sex: Sex;
     /**
+     * The body they were born as, or null for 98 people in a hundred.
+     */
+    physique: PhysiqueKey | null;
+    /**
      * What a line left in them, or null for the overwhelming majority.
-     *
-     * A species ability that came down from an ancestor who was a beast before
-     * it was a person, at the strength it has diluted to. `AbilityTier` and its
-     * ladder are `hunting-a-spirit-beast.ts`'s and are not restated here; what
-     * this field adds is a place for the answer to live, which is what that
-     * whole half of the design was missing.
-     *
-     * Two carriers hold the line, one carrier and an outsider steps it down,
-     * and it is gone in three generations. **Every one of those sentences is
-     * `bloodlineTierForChild`'s** - nothing here decides any of it, and there is
-     * no dilution constant on this record or anywhere near it.
      */
     bloodline: Bloodline | null;
     /** What they do when they are not cultivating. The economy is made of these. */
@@ -295,79 +208,18 @@ export interface NpcCultivation {
     foundation: string;
     /**
      * How many of the wounds below are still untreated.
-     *
-     * Kept as a stored field because the roster view, the repo and the web
-     * layer all read it, and derived from `injuries` at every write in this
-     * layer - see `carryingWounds`. It is a cache of a count, never a second
-     * opinion about what somebody is carrying.
      */
     untreatedInjuries: number;
     /**
      * WHAT THEY ARE ACTUALLY CARRYING, as rows rather than as a number.
-     *
-     * The world layer kept only the count, and everything that needed a wound
-     * fabricated one: `combatantOf` in `gatherings.ts` and the opponent stub in
-     * `combat-manage.ts` both expanded the integer into that many identical
-     * generic `Injury` objects with `woundType: null`, because there was nothing
-     * else to expand it into.
-     *
-     * That made a whole authored layer unreachable from the world. A broken
-     * foundation, a cracked core, an imperfect tribulation body and an
-     * unfinished cultivation base are rows in `data/cultivation/wounds.ts`
-     * with names, permanence
-     * and stated treatments, and `what-goes-wrong-at-a-realm-boundary.ts`
-     * decides which one a failed crossing leaves - but no NPC could hold any of
-     * it, so the population the setting most wanted could not exist: somebody
-     * who struck at a wall, cracked, survived, and is standing at their rung
-     * finished.
-     *
-     * Ordinary wounds live here too. One list, two natures, exactly as
-     * `InjurySchema.woundType` describes - a second list beside this one is a
-     * list nothing downstream would read.
      */
     injuries: Injury[];
     /**
      * WHAT IS STANDING IN THE BODY, as of `bodyOnDay`.
-     *
-     * ── WHY THE WORLD HOLDS ONE AT ALL ───────────────────────────────────
-     *
-     * A crossing costs the body - `bodyCost` on `BreakthroughResult`, a share of
-     * the pool at every rung and three times that at a realm boundary - and
-     * there was nothing on an NPC for it to come out of, so it bound the player
-     * and nobody else. That is `AGENTS.md`'s commonest defect running backwards:
-     * the player paid blood for every rung and every cultivator in the world
-     * climbed for free, and every comparison the world then made between them
-     * was against a population that had never been charged.
-     *
-     * ── AND IT IS NOT A SECOND BODY MODEL ────────────────────────────────
-     *
-     * The MAXIMUM is not stored. `maxBodyOf` derives it from Might and the rung
-     * through `maxHpForOrdinal`, which `realms.ts` states is the one derivation
-     * of a pool and forbids a second of - so the number cannot drift from the
-     * ordinal beside it, and a rung change re-derives rather than migrating a
-     * cache. What is stored is the absolute standing in that pool, which is the
-     * only part the world cannot recompute.
-     *
-     * `gatherings.ts` still prices a bout on one normalised body for both sides
-     * and that ruling is untouched: what it now reads off here is the SHARE, so
-     * a cultivator who crossed a wall last spring fights at what is left of
-     * themselves rather than at full.
      */
     hp: number;
     /**
      * The day `hp` was last true. Mending runs forward from here on read.
-     *
-     * DERIVED ON READ RATHER THAN SWEPT. `HP_RECOVERY_FRACTION_PER_DAY` is a
-     * fraction of the pool per day and nothing about it is stochastic, so what
-     * is standing on any later day is arithmetic - and a stored value that
-     * nothing maintains is the slower version of a field nothing writes. There
-     * is no mending pass over the roster and there must not be one: it would be
-     * a per-person cost every simulated year to compute a number two
-     * multiplications answer, and it would go stale between years anyway.
-     *
-     * A separate anchor rather than `updatedOnDay`, because that moves when
-     * somebody changes house or walks to another town, and mending accrued
-     * before an unrelated write would be lost at the next read.
      */
     bodyOnDay: number;
     /** Technique ids they can actually use. */
@@ -380,22 +232,6 @@ export interface NpcCultivation {
     lastAdvancedOnDay: number;
     /**
      * Absolute day their current stock of progress started building.
-     *
-     * TWO CLOCKS RUN AT A RUNG AND THEY ARE NOT THE SAME CLOCK.
-     * `lastAdvancedOnDay` is the settling clock: how long they have been stuck
-     * here at all, and a plateau longer than the realm allows ends the climb.
-     * This one is the accumulation clock: how much of the next rung's
-     * requirement they are currently holding.
-     *
-     * A failed crossing burns part of what was accumulated and leaves the
-     * settling clock alone - so this moves and that does not. Without the
-     * distinction a failure at a high rung costs nothing but a review cycle,
-     * and somebody who reached the wall once would strike at it every twelve
-     * years until it opened, which turns a thousand-year crossing into a
-     * formality.
-     *
-     * Zero means "the same as `lastAdvancedOnDay`", which is the honest reading
-     * of every row written before the world struck at anything.
      */
     accumulatingSinceDay: number;
 }
@@ -409,14 +245,6 @@ export interface NpcRecord {
     locationId: string | null;
     /**
      * Which layer of the world this person is on.
-     *
-     * Stored rather than derived from `locationId`, because the question "who
-     * is above the Lid" has to keep having an answer for somebody whose
-     * location is unknown - and because a person's layer is a fact about them
-     * rather than about where they were last seen. Ascension is the only thing
-     * that changes it, and it changes nothing else about the record: the same
-     * id, the same lineage edges, the same grudges, the same history. See
-     * `layers.ts` and `immortal-world.ts`.
      */
     layer: LayerKey;
     factionId: string | null;
@@ -425,13 +253,6 @@ export interface NpcRecord {
 
     /**
      * What they are actually holding.
-     *
-     * Not invented for a roster: it is what `deriveOrdinal` already spent a
-     * whole life computing - an origin's purse, plus a stipend, minus the
-     * upkeep of every year at a rank and every pill bought on the way - and
-     * then discarded. Without it nobody in the world held a single stone, so
-     * nothing could be bought, sold, stolen, bribed, inherited or extorted and
-     * the economy content had no participants at all.
      */
     spiritStones: number;
 
@@ -452,12 +273,6 @@ export interface NpcRecord {
     soulState: SoulState;
     /**
      * How much of the original person this actually is, 0..1.
-     *
-     * A remnant is not the person. A will, a projection, an obsession, a
-     * recorded consciousness or an inheritance guardian may say "I was the
-     * founder of this sect" without being the founder's consciousness, and that
-     * distinction is frequently the whole point of the encounter - so it is
-     * preserved in state rather than left to the narrator to remember.
      */
     identityContinuity: number;
     /** Absolute day of the transition out of `alive`. Not always a death. */
@@ -478,39 +293,6 @@ export interface NpcRecord {
 
 /**
  * The tag on the player's own row.
- *
- * Below the Lid the player had no `NpcRecord` at all, which made them
- * structurally invisible to every system keyed on the roster - most sharply to
- * `gatherings.ts`, whose entire invitation list is drawn from `state.npcs`, so
- * the person playing could not be invited to anything. `web/the-player-as-a-
- * row-the-world-can-invite.ts` puts one there, with the SAME ID as the
- * cultivator, the way `residentAbove` already does above the Lid.
- *
- * A row on the roster is a row the simulation will try to move, and that is the
- * one thing it must not do here: the player's rung, wounds and lifespan live on
- * their `Cultivator` sheet and are advanced by `time-skip.ts`. A world pass
- * that also advanced them would climb the ladder twice and write a chronicle
- * entry for a breakthrough that never happened.
- *
- * So the row is REFRESHED from the sheet at the top of every turn, which makes
- * drift impossible - and the four passes that decide something FOR a cultivator
- * skip it by this tag:
- *
- *     applyAdvancement       would climb the ladder a second time, and would
- *                            chronicle a breakthrough that never happened
- *     the lifespan pass      would declare the player dead mid-run
- *     applyRecruitment       would enrol them in a house they never entered
- *     applyBookAcquisition   would hand them a manual they never earned
- *
- * The last two also matter for reproducibility rather than only for
- * correctness: both draw a RANDOM INDEX over the roster, so a row sitting in
- * their candidate lists shifts every draw after it and quietly reseeds the
- * world. Any pass that samples the roster by index needs this guard even where
- * the write itself would be harmless.
- *
- * Everything else the world does to this row is deliberately left alone. Being
- * met, ranked, resented, owed something, named in a goal or seated at a
- * gathering is the entire point of it being there.
  */
 export const PLAYER_ROW_TAG = 'the-player';
 
@@ -560,34 +342,21 @@ export interface CreateNpcOptions {
     origin?: OriginTierKey;
     /**
      * Override the rolled sex.
-     *
-     * Supplied by the two callers that already know the answer: a birth, which
-     * has two parents and a child of theirs, and anything importing a person
-     * who already exists. Seeding leaves it alone and takes the roll.
      */
     sex?: Sex;
     /**
      * A line this person carries, where somebody has decided they carry one.
-     *
-     * Nobody is born with one by accident: the world writes it at a birth from
-     * `bloodlineForChild`, and the catalog writes it on the people descended
-     * from something that changed. There is no roll here and there must not be
-     * one - a rolled bloodline would put fire in a farm family for no reason
-     * anybody could trace.
      */
     bloodline?: Bloodline | null;
+    /**
+     * Override the rolled physique. For importing somebody who already exists.
+     */
+    physique?: PhysiqueKey | null;
     tags?: string[];
 }
 
 /**
  * Create an NPC record, with talent rolled by the engine.
- *
- * Spirit root and attributes come out of the run seed through the cultivation
- * engine's own roll functions, in separate named sub-streams keyed on the id.
- * That matters for a reason beyond reproducibility: if the LLM chose these, it
- * would give the interesting NPC the good root every time, and the world's
- * distribution of talent would quietly become a distribution of narrative
- * convenience.
  */
 export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
     const rootRng = forStream(seed, 'npc-root', opts.id);
@@ -601,12 +370,26 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
     // every seeded world. Proved byte-identical rather than assumed - see
     // `tests/engine/world/everybody-has-a-sex.test.ts`.
     const sexRng = forStream(seed, 'npc-sex', opts.id);
+    // The same discipline again, and it must stay the LAST stream declared and
+    // the last draw taken: a stream added above any line here shifts every root
+    // and every attribute in every world that has already been seeded.
+    const physiqueRng = forStream(seed, 'npc-physique', opts.id);
 
     const root = rollSpiritRoot(rootRng.next());
     const attributes = rollAttributes([
         attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
     ]);
     const ordinal = clampOrdinal(opts.cultivation?.realmOrdinal ?? 0);
+
+    // THE BODY, AND THE ONE THING THAT CAN TAKE IT BACK
+    const rolled = opts.physique !== undefined
+        ? physiqueOrNull(opts.physique)
+        : rollPhysique(physiqueRng.next());
+    const ageYearsNow = Math.max(0, (opts.onDay - opts.bornOnDay) / DAYS_PER_YEAR);
+    const physique =
+        rolled && lifespanWithPhysique(lifespanForOrdinal(ordinal), rolled) <= ageYearsNow
+            ? null
+            : rolled;
 
     const cultivation: NpcCultivation = {
         realmOrdinal: ordinal,
@@ -622,7 +405,8 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         bodyOnDay: opts.onDay,
         techniqueIds: [],
         specialties: root.elements.slice(),
-        lifespanEndsOnDay: opts.bornOnDay + lifespanForOrdinal(ordinal) * DAYS_PER_YEAR,
+        lifespanEndsOnDay: opts.bornOnDay
+            + lifespanWithPhysique(lifespanForOrdinal(ordinal), physique) * DAYS_PER_YEAR,
         lastAdvancedOnDay: opts.onDay,
         accumulatingSinceDay: opts.onDay,
         ...(opts.cultivation ?? {})
@@ -633,7 +417,9 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
     // newborn's pool would read as a body nine tenths spent.
     if (opts.cultivation?.lifespanEndsOnDay === undefined) {
         cultivation.lifespanEndsOnDay =
-            opts.bornOnDay + lifespanForOrdinal(cultivation.realmOrdinal) * DAYS_PER_YEAR;
+            opts.bornOnDay
+            + lifespanWithPhysique(lifespanForOrdinal(cultivation.realmOrdinal), physique)
+              * DAYS_PER_YEAR;
     }
     if (opts.cultivation?.hp === undefined) {
         cultivation.hp = maxHpForOrdinal(
@@ -649,6 +435,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
             bornOnDay: opts.bornOnDay,
             origin: opts.origin ?? rollOrigin(originRng.next()).key,
             sex: opts.sex ?? rollSex(sexRng.next()),
+            physique: physique?.key ?? null,
             bloodline: opts.bloodline ?? null,
             occupation: opts.occupation ?? 'unknown',
             titles: [],
@@ -701,15 +488,7 @@ export function setFaction(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE BODY
-//
-// Three functions, and between them they are the whole of what the world knows
-// about a body. Every one of them defers: the pool to `maxHpForOrdinal`, the
-// carry to `carriedAcross`, the mending rate to `HP_RECOVERY_FRACTION_PER_DAY`.
-// Nothing here decides a number of its own, which is the only way a body on the
-// roster is the same body the player has rather than a second one beside it.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The pool this person holds at the rung they are standing on.
@@ -723,18 +502,6 @@ export function maxBodyOf(npc: NpcRecord): number {
 
 /**
  * What is actually standing in the body on a given day.
- *
- * `hp` is what was left on `bodyOnDay`; the days since are mending at the same
- * rate a player's body mends, which is denominated in years on purpose - a
- * whole pool back from empty takes about five and a half of them. So a crossing
- * that took a realm boundary's share is repaid in a little under a year and
- * costs nothing that lasts, and a cultivator met inside that year is met at
- * what the wall left them.
- *
- * Floored, so it never reads above the pool and never reads below zero. A day
- * BEFORE the anchor mends nothing rather than un-mending: time does not run
- * backwards for anybody, and a caller asking what was standing last year is
- * asking a question the record does not keep the answer to.
  */
 export function bodyStandingOn(npc: NpcRecord, day: number): number {
     const max = maxBodyOf(npc);
@@ -753,11 +520,6 @@ export function bodyStandingOn(npc: NpcRecord, day: number): number {
 
 /**
  * Take something out of the body, and stamp the day it was taken.
- *
- * The caller decides HOW MUCH - for a crossing that is
- * `whatACrossingTakesFrom`, which is the same clamp the played verb runs - and
- * this only writes it down. Mending accrued up to `onDay` is banked first, so
- * charging somebody does not silently discard the months they spent healing.
  */
 export function bodyTaken(npc: NpcRecord, amount: number, onDay: number): NpcRecord {
     const standing = bodyStandingOn(npc, onDay);
@@ -771,17 +533,6 @@ export function bodyTaken(npc: NpcRecord, amount: number, onDay: number): NpcRec
 
 /**
  * Move a cultivator up the ladder.
- *
- * Recomputes lifespan and resets the settling clock, because both are functions
- * of the realm and neither should ever be stored inconsistently with it.
- *
- * AND CARRIES THE BODY ACROSS AS A SHARE. The pool is derived from the ordinal,
- * so a rung change enlarges it underneath whatever absolute is stored - and an
- * absolute left alone would read as a body suddenly half spent. `carriedAcross`
- * is the same arithmetic the played path runs at a crossing, so whole stays
- * whole and half stays half on both sides of the game. What ARRIVING costs is a
- * separate question and is charged after this, by the caller that resolved the
- * attempt.
  */
 export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRecord {
     const realmOrdinal = clampOrdinal(ordinal);
@@ -794,8 +545,15 @@ export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRec
             realmOrdinal,
             hp: carriedAcross(bodyStandingOn(npc, onDay), wasMax, nowMax),
             bodyOnDay: onDay,
+            // The rung moved and the body did not. `lifespanWithPhysique` is
+            // read at every stamp rather than folded in once, so a physique
+            // is still worth what it is worth after a crossing.
             lifespanEndsOnDay:
-                npc.identity.bornOnDay + lifespanForOrdinal(realmOrdinal) * DAYS_PER_YEAR,
+                npc.identity.bornOnDay
+                + lifespanWithPhysique(
+                    lifespanForOrdinal(realmOrdinal),
+                    physiqueOrNull(npc.identity.physique)
+                ) * DAYS_PER_YEAR,
             lastAdvancedOnDay: onDay,
             // A new rung is a new requirement and nothing carries over.
             accumulatingSinceDay: onDay
@@ -806,10 +564,6 @@ export function setRealm(npc: NpcRecord, ordinal: number, onDay: number): NpcRec
 
 /**
  * Add wounds to a record and keep the count honest.
- *
- * The ONE write path for `injuries`, so `untreatedInjuries` cannot drift from
- * the list it is a count of. Everything in the world layer that hurts somebody
- * comes through here: a bout at a gathering, a failed crossing, a tribulation.
  */
 export function carryingWounds(
     npc: NpcRecord,
@@ -831,13 +585,6 @@ export function carryingWounds(
 
 /**
  * The wounds to hand to anything that prices a body.
- *
- * Rows where the world has them, and generic stand-ins only for a shortfall
- * between the stored count and the stored list. That shortfall is legacy: rows
- * written before wounds were kept as rows have a count and no list, and a
- * combat resolver that ignored them would quietly heal every NPC in an old save
- * on load. It is the last home of the fabrication that used to live in two
- * callers, and it shrinks to nothing as saves turn over.
  */
 export function woundsCarriedBy(npc: NpcRecord): Injury[] {
     const rows = npc.cultivation.injuries;
@@ -934,10 +681,6 @@ export interface RelationshipInput {
 
 /**
  * Create or update a tie.
- *
- * Merges rather than replaces: the `sinceDay` of an existing relationship is
- * preserved, so a forty-year friendship that turns hostile is still forty years
- * old. That is the whole reason betrayal reads as betrayal.
  */
 export function upsertRelationship(
     npc: NpcRecord,
@@ -1031,18 +774,6 @@ export function detachMemories(npc: NpcRecord, memoryIds: readonly string[], onD
 
 /**
  * The body is gone.
- *
- * Note what this does NOT do: it does not close the record, and above Nascent
- * Soul it may not even be the end of the person. Goals are marked `impossible`
- * for this holder specifically so that {@link legacyGoals} can pick them up and
- * hand them on - the goal is not deleted, because a disciple continuing a
- * revenge three hundred years later is the continuity the whole design is for.
- *
- * The soul goes through {@link ruinSoul} rather than being assigned, because
- * `soulState` and `identityContinuity` are two readings of one thing and this
- * function used to move only the first. Every corpse in a four-hundred-year run
- * - 2,054 of them - was a fading soul at 100% continuity, which is not a
- * borderline case but the two fields never having been joined.
  */
 export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRecord {
     return {
@@ -1062,11 +793,6 @@ export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRec
 
 /**
  * Nobody has seen them.
- *
- * Not dead, not confirmed alive, and deliberately not adjudicated. Goals stay
- * ACTIVE, because a missing person's goals are not known to have stopped -
- * which is the difference between this and death, and is what makes the
- * fifty-year-old search still a live thread.
  */
 export function markMissing(npc: NpcRecord, onDay: number, endNote = ''): NpcRecord {
     return {
@@ -1089,20 +815,6 @@ export interface ExistenceTransition {
 
 /**
  * Change the mode of existence.
- *
- * The engine decides whether a transition is legal; the narrator interprets it.
- * Legality is not enforced here on purpose - `capability.ts` answers whether a
- * cultivator can do this, and this is the write path once the answer is yes, so
- * the check lives in one place instead of two that can disagree.
- *
- * Reconstruction and possession normally cost something: pass a lowered
- * `identityContinuity` and a `soulState` to say so. The rebuilt body is rarely
- * identical, and a powerful soul does not make every vessel suitable.
- *
- * A caller that passes only one of the two gets both moved. The soul is taken as
- * given and continuity is capped to what that soul can hold - see
- * `reconcileSoulAndSelf` - so a transition that fragments somebody cannot leave
- * them wholly themselves just because the caller did not think to say so.
  */
 export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord {
     const leavingLife = npc.status === 'alive' && t.to !== 'alive';
@@ -1126,12 +838,7 @@ export function setExistence(npc: NpcRecord, t: ExistenceTransition): NpcRecord 
 }
 
 /**
- * Goals that should be handed on when this person stops being able to pursue
- * them.
- *
- * Anything that was live and mattered. Low-priority goals die with their
- * holder, which is correct: nobody inherits somebody else's intention to buy a
- * better cauldron.
+ * Goals that should be handed on when this person stops being able to pursue them.
  */
 export function legacyGoals(npc: NpcRecord, minPriority = 0.5): NpcGoal[] {
     return npc.goals
@@ -1145,11 +852,6 @@ export function legacyGoals(npc: NpcRecord, minPriority = 0.5): NpcGoal[] {
 
 /**
  * Take up somebody else's unfinished business.
- *
- * The goal keeps its ORIGINAL opening date, its progress and its obstacles, and
- * gains a generation. Three hundred years later the record still says when it
- * was opened and by whom, which is what makes an inherited revenge read as
- * inherited rather than as a fresh grievance somebody invented.
  */
 export function inheritGoals(
     heir: NpcRecord,
@@ -1245,14 +947,6 @@ export interface NpcBrief {
     }[];
     /**
      * Ties that matter, strongest feeling first.
-     *
-     * `name` is what the tie stored. `whoTheyAreNow` is that name read against
-     * the roster, and it is the field that stops the LLM being handed a master
-     * who died two centuries ago as somebody it could go and talk to. Four ties
-     * in five in an advanced world point at somebody who is not alive, so
-     * without it the most common case renders as the rarest one.
-     *
-     * Present only when {@link npcBrief} was given a roster to read against.
      */
     relationships: {
         name: string;
@@ -1270,16 +964,6 @@ export interface NpcBrief {
 
 /**
  * The compact bundle the LLM is handed to reason about this person.
- *
- * Deliberately small. An NPC's behaviour comes out of goals, relationships and
- * a handful of recent events; handing over the full record every time is how a
- * context window gets spent on nothing.
- *
- * Pass `roster` - the world's own `state.npcs` - and every tie is read against
- * it. Without it the brief says only the name a tie stored, which in an advanced
- * world is the wrong reading four times in five: 84% of all ties point at
- * somebody who is dead, missing or no longer in their own body, and an agent
- * handed "Chu Zhenkuan, master, +0.6" with nothing else will go looking for him.
  */
 export function npcBrief(
     npc: NpcRecord,

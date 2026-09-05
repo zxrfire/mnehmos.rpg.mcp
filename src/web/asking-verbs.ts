@@ -1,39 +1,5 @@
 /**
  * Asking somebody for something, and what saying yes would cost them.
- *
- * The verb the design rests on. There are exactly two ways past a manual's
- * ceiling - another book, or somebody willing to teach you - and until
- * `request` existed the book half worked and the teacher half reached four
- * different lookups, none of which was a person.
- *
- * Three channels onto one resolver, which is why they are one module rather
- * than three. `request` is the ask; `demandOf` is an ask with weight behind it
- * and no resolver of its own, reading the ordinary ask for its verdict before
- * handing the whole thing to `resolveAttempt`; `whatWouldItTake` is the same
- * arithmetic stopped at the roll, so "could I ask her to teach me" answers
- * with the real number rather than a description of it. They cannot drift
- * because there is nothing to drift from.
- *
- * Four rules the module keeps, all of them older than this file:
- *
- * - The ask is DERIVED, never asserted. Whether teaching somebody an art is an
- *   afternoon or the end of their standing is a fact about the book and the
- *   house, and nothing reads the word the player typed - bribing, begging and
- *   asking politely produce the same weight for the same thing.
- * - Money is priced by the line the catalog already draws, so a purse buys an
- *   introduction and does not buy a house's canon.
- * - A take changes a row. Being taught still meets the manual's own entry
- *   requirement, because being favoured does not lift it.
- * - A refusal names what would work. Every one, without exception. "No" is a
- *   bug.
- *
- * ── HOW THIS IS ATTACHED ────────────────────────────────────
- *
- * `GameService` methods living in another file, merged onto the prototype at
- * the bottom of `game.ts` with their signatures merged into the class
- * declaration. `this.request(...)` resolves and typechecks exactly as it did
- * when the bodies sat in the class, and every line below is the line it was.
- * `src/web/README.md` has the argument and the warning about `private`.
  */
 
 import { getSect } from '../data/cultivation/index.js';
@@ -50,6 +16,12 @@ import {
 } from '../engine/social-leverage/index.js';
 import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
 import {
+    liftIt,
+    whatIsWithinReachOf,
+    whichThingTheyMeant,
+    type LiftedThing
+} from './object-theft.js';
+import {
     theGroundUnderYou,
     type TheGroundUnderYou
 } from '../engine/social-leverage/ground-trust.js';
@@ -60,6 +32,19 @@ import {
     whatItWouldTake
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
+
+/**
+ * What one lift came away with.
+ *
+ * `taken` is a number of spirit stones and `thing` is one row. Exactly one of
+ * the two is ever non-zero, because a lift is one act - see `whatALiftTook`.
+ */
+export interface WhatALiftTook {
+    taken: number;
+    hadBefore: number;
+    loose: number;
+    thing: LiftedThing | null;
+}
 import {
     selfFactFromTopic,
     whatTheySayAboutThemselves
@@ -151,16 +136,6 @@ import type { GameService } from './turn-engine.js';
 
 /**
  * How heavy the thing being asked for is, from the player's own sentence.
- *
- * `AskWeight` is what the resolver prices resistance and duration off, and it
- * must come from what was asked rather than from the verb: bribing somebody for
- * directions and bribing them to open their house's vault are the same verb and
- * are not the same ask.
- *
- * Defaults to `a_courtesy`, which is the forgiving direction. Reading a
- * betrayal into a sentence that asked for directions would price an afternoon
- * as a season and a half, and the cost of being wrong the other way is that an
- * attempt is cheaper than it should have been.
  */
 function askWeightOf(text: string): AskWeight {
     const said = text.toLowerCase();
@@ -192,33 +167,12 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
 
 /**
  * How many times this cultivator has already put a request to somebody.
- *
- * Per pair, and it is what stops six identical refusals in a row. The state was
- * changing under all six - a refusal writes a record and the next attempt reads
- * it - and the text did not know, which reads as a broken loop rather than as a
- * person saying no again. The same defect was fixed in the wound warning
- * earlier, and the fix is the same: let the text know what the state knows.
  */
 const askedBeforeKey = (personId: string, kind: string): string => `asked:${kind}:${personId}`;
 
 /**
  * The ground the two of them are standing on, priced for whether a stranger is
  * believed on it.
- *
- * The design owner's ruling that trust depends on WHERE YOU ARE. The world
- * simulation has filled `AttemptInput.where` at both of its `resolveAttempt`
- * calls since the term landed, and the PLAYED calls did not - so every
- * manoeuvre any NPC ran on any other was priced on its ground and every
- * manoeuvre the player ran was priced nowhere. That is this repository's
- * commonest defect with the arms reversed, and it is one function rather than
- * three copies for the obvious reason.
- *
- * Null is a real answer and weighs nothing: it means the caller does not know
- * where this is happening, which is not the same as ground nobody holds. See
- * `GroundHolding`, where the four ways of having no holder are four rows.
- *
- * The statuses are read on the WORLD clock rather than the run's, because a
- * famine is dated in the world and `run.elapsedDays` is a different number.
  */
 function theGroundBetweenThem(
     world: { locations: Parameters<typeof whoHoldsTheGround>[0]; statuses: Parameters<typeof statusesInArea>[0]; currentDay: number } | null,
@@ -235,44 +189,9 @@ function theGroundBetweenThem(
 export const askingVerbs = {
     /**
      * An attempt to move somebody, resolved rather than described.
-     *
-     * `engine/social-leverage/` has been finished and unreachable: a pressure
-     * model with four outcomes - taken, refused, reported, turned - tone,
-     * leverage, audience, concealment, patience, alignment-dependent fallout
-     * and delayed discovery, with 34 passing tests and no player route into it.
-     * NPCs ran it on each other while "I bribe the gate guard" came back "they
-     * look at you the way people look at a sentence with a hole in it".
-     *
-     * Three things this has to get right, all learned elsewhere the hard way:
-     *
-     *   THE DAYS REACH THE CLOCK. An attempt that costs nothing is not play,
-     *   and `result.days` is the engine's own figure for what it took.
-     *   THE TERMS REACH THE INSPECTOR. `result.terms` is the only thing that
-     *   will ever reveal that a term has gone wrong.
-     *   THE OUTCOME REACHES THE PROSE. A `turned` result coming back as "It is
-     *   done. Nothing about it drew attention." is the invisible-fallback
-     *   failure this codebase has now had four times.
-     *
-     * The ask is read from the player's sentence and defaults to `a_courtesy`,
-     * which is the forgiving direction: assuming somebody asked for a betrayal
-     * when they asked for directions would price an afternoon as a season.
      */
     /**
      * A demand for something somebody knows, resolved by standing.
-     *
-     * The third discovery channel and the shortest method in it, which is the
-     * point: **there is no resolver here.** `resolveAttempt` prices the gap in
-     * standing, the charm, the tie, what is owed your way, what they want from
-     * you, the audience and how freely this particular person parts with
-     * anything, and that list IS the ruling - "either via power or something
-     * else", where the something else is most of the arithmetic.
-     *
-     * What this adds is the one thing the resolver cannot know: whether there
-     * was anything to be got in the first place. An ordinary ask is run first,
-     * unpressed, purely to read which of `asking.md`'s three limits is in the
-     * way - and a demand that runs into limit one is refused before anybody's
-     * day is spent, because standing moves what a person will SAY and never
-     * what they hold.
      */
     async demandOf(
         this: GameService,
@@ -352,18 +271,17 @@ export const askingVerbs = {
         spoken: Hearing | null,
         /**
          * Present when what is being demanded is an ANSWER.
-         *
-         * The whole of what makes a demand a demand rather than a second verb:
-         * it changes what the ask weighs and it gives the landed attempt
-         * something to actually hand over. Everything else on this path - the
-         * resolver, the days, the stones, the marks - is identical.
          */
         demand?: {
             who: RosterEntry;
             topic: string;
             scope: KnowledgeScope;
             standing: WhatStandsInTheWay;
-        }
+        },
+        /**
+         * The thing the sentence named, when it named one.
+         */
+        named?: string
     ): Promise<Execution> {
         // What the ask weighs. A name somebody is sitting on is not a courtesy,
         // whatever the sentence around it looked like - and the constant is
@@ -376,24 +294,7 @@ export const askingVerbs = {
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = them.factionId ? getSect(them.factionId) : null;
 
-        // ── A BRIBE IS A NUMBER ──────────────────────────────────────────
-        //
-        // Measured in play: "I bribe Kong Kelin" came back "Kong Kelin agreed.
-        // It was taken." with the purse at 6043 before and 6043 after. Nothing
-        // was named, nothing was priced, nothing moved. That is the softening
-        // the agency rule forbids and it is the invisible kind - the player
-        // believes they spent something.
-        //
-        // The resolver's own contract has carried `stonesOffered` from the
-        // start, documented as "spirit stones actually put down. Only spent
-        // when the attempt lands", and this caller never filled it. So the sum
-        // comes off the player's own sentence, which is where it belongs: what
-        // somebody is willing to put down is a decision and not a derivation,
-        // and an engine that picked a figure would be choosing for them.
-        //
-        // Not banning. A coin approach with no sum in it is a sentence with a
-        // hole in it, and the refusal names the hole and the purse rather than
-        // shrugging - the same shape as every other guiding refusal here.
+        // A BRIBE IS A NUMBER
         const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
         if (leverage === 'coin' && offered === null) {
             return refused('engine.resolveAttempt', 'interact', factsForRefusal(
@@ -451,17 +352,9 @@ export const askingVerbs = {
             theirTie: tieFrom(this.repos, party.id, cultivator.id),
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
-            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
-            // whatever tie the subject already holds, because the ruling is
-            // about the same STRANGER saying the same thing.
-            //
-            // The world simulation reads the SUBJECT's ground, because the
-            // approach goes to them. Here it is the player's, and the two are
-            // the same square by construction - somebody has to be present to
-            // be pressed - so this is the same rule and not a second one.
-            // Resolving the subject's own world row instead would be the
-            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
-            // presence belongs to the play layer.
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
+            // tie the subject already holds, because the ruling is about the same
+            // STRANGER saying the same thing.
             where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
             // And the fourth, which was the last term with no caller at all.
             theyWantSomethingFromYou: this.whatTheyWantOfYou(cultivator, party.id) !== null,
@@ -509,28 +402,16 @@ export const askingVerbs = {
         // of the grudge, and whether their house ends up carrying it.
         const lifted = wrong === 'robbed'
             && (result.outcome === 'taken' || result.outcome === 'turned')
-            ? this.whatALiftTook(cultivator, party)
+            ? this.whatALiftTook(
+                cultivator, party, named ?? '', Math.floor(run.elapsedDays)
+            )
             : null;
 
         const marks = this.recordWhatTheAskLeft(
             run, cultivator, party, result, 'interact', true, wrong
         ).calls;
 
-        // ── HOW MANY TIMES THEY HAVE HAD THIS FROM YOU ───────────────────
-        //
-        // `request` has counted this since it was written and this path never
-        // did, so `factsForAttempt` was handed a hardcoded zero and printed
-        // "and this was the first try" on every attempt for ever. Played: three
-        // thefts off one person, the odds correctly falling 5% -> 2% as the
-        // grudge landed, all three reported as the first.
-        //
-        // The same key shape `request` uses - the person AND what was put to
-        // them - because "they have heard this from you before" is a claim
-        // about the thing being attempted. Somebody who has been bribed twice
-        // has not been robbed before.
-        //
-        // Read before the count is written, and written whether or not it came
-        // off: an attempt they caught is an attempt they remember.
+        // HOW MANY TIMES THEY HAVE HAD THIS FROM YOU
         const triedKey = askedBeforeKey(party.id, intent);
         const priorTries = Number(readFlag(this.db, cultivator.id, triedKey) ?? '0');
         writeFlag(this.db, cultivator.id, triedKey, String(priorTries + 1));
@@ -539,19 +420,7 @@ export const askingVerbs = {
             party.name, intent, result, party.facts, wrong, priorTries
         );
 
-        // ── AND THEN THEY DO SOMETHING ABOUT IT ──────────────────────────
-        //
-        // Measured in play, and it is the reason this call exists: a player
-        // stood in front of a Void Refinement stranger, threatened them and
-        // robbed them, and BOTH LANDED - and the only record either left was a
-        // social TIE, which is what this engine writes for people who are
-        // getting on. Coercion registered as relationship-building.
-        //
-        // The reprisal is decided AFTER the attempt and reads only what the
-        // resolver already decided, so nothing here re-prices the ask and
-        // nothing branches on the player's wording. See
-        // `what-somebody-does-about-being-wronged.ts` for why it is the lesser
-        // of what they can do and what they would do, floored at a warning.
+        // AND THEN THEY DO SOMETHING ABOUT IT
         const reprisal = await this.whatTheWrongedPartyDid(
             run, cultivator, party, intent,
             // `turned` is a landing too - they did it AND took hold of you -
@@ -565,25 +434,7 @@ export const askingVerbs = {
         // Whatever the answering half of a demand did, on the engine channel.
         const demandCalls: ToolCallRecord[] = [];
 
-        // ── AND WHAT, EXACTLY, DID THEY AGREE TO ─────────────────────────
-        //
-        // Measured: `I bribe Han Peiru with 60 spirit stones` came back "Han
-        // Peiru agreed." - agreed to WHAT, and nothing followed. The resolver
-        // is right not to know; it prices the weight of an ask and must never
-        // read the player's verb. What was missing is that the sentence never
-        // said. `request` is the verb that carries an object, so a sentence
-        // that reaches HERE is one that put something on the table and named
-        // nothing to spend it on, and the honest answer is to say so and say
-        // what the sentence with an object looks like.
-        //
-        // A line and not a refusal. `AGENTS.md` forbids the removed verb: the
-        // approach still happens, the stones still move, and what is added is
-        // the thing the player needs in order to ask for something next time.
-        //
-        // A demand takes neither branch: something WAS named, and what was
-        // named was an answer. What follows is the answer being handed over, or
-        // not, plus the sentence that makes leaning on somebody a different
-        // event from asking them.
+        // AND WHAT, EXACTLY, DID THEY AGREE TO
         if (demand) {
             // The ordinary ask, run for real this time, with `compelled` set
             // off what the resolver decided. Everything downstream is the
@@ -603,32 +454,40 @@ export const askingVerbs = {
             facts.structure.push(...answered.facts.structure, ...cost.structure);
             demandCalls.push(...answered.calls);
         }
-        // ── AND WHAT A TAKING DID NOT MOVE ───────────────────────────────
-        //
-        // Said plainly rather than left to the hint below, which offers the
-        // player the three shapes of a REQUEST - be taught, be introduced, be
-        // taken as a disciple - and is exactly the wrong prompt to end a
-        // robbery on. It is also the honest state of the engine: the attempt
-        // resolves, the reprisal lands and the ledger is written, and no goods
-        // move, because nothing in this layer takes an object off a person.
-        // `AGENTS.md`: "the engine has no answer for this yet" is a legitimate
-        // sentence, and it is a better one than a hint that reads like a menu.
+        // AND WHAT A TAKING DID NOT MOVE
         if (!demand && wrong !== null) {
             const took = lifted === null
                 ? `Nothing came away in a hand. The world has what was done written down and `
                   + `${party.name} is carrying it; what they were holding is still theirs.`
-                : lifted.taken === 0
-                    ? `${party.name} was carrying nothing worth the trouble, and that is the whole `
-                      + 'of what came of it - except that they know.'
-                    : `${lifted.taken} spirit stones off ${party.name}, out of the `
-                      + `${lifted.hadBefore} they were carrying. It is in your own purse now, `
-                      + 'with nothing in the ledger to say it was ever theirs.';
+                // AND WHERE A THING CAME AWAY, IT IS NAMED
+                : lifted.thing !== null
+                    ? `${lifted.thing.object.name} `
+                      + (lifted.thing.because === 'moored'
+                          ? 'comes off its mooring and is standing where you are. '
+                          : 'is out of their hands and into yours. ')
+                      + `It is still ${party.name}'s - taking a thing does not make it yours - `
+                      + 'and the record of how it came to you travels with it.'
+                    : lifted.taken === 0
+                        ? `${party.name} was carrying nothing worth the trouble, and that is the `
+                          + 'whole of what came of it - except that they know.'
+                        : `${lifted.taken} spirit stones off ${party.name}, out of the `
+                          + `${lifted.hadBefore} they were carrying. It is in your own purse now, `
+                          + 'with nothing in the ledger to say it was ever theirs.';
             facts.lines.push(took);
             facts.prose = `${facts.prose}\n\n${took}`;
             facts.structure.push(
                 lifted === null
                     ? 'No possession moved. This wrong takes nothing by its nature; what it '
                       + 'leaves is the reprisal and the grudge.'
+                    : lifted.thing !== null
+                    ? `possessions.transferPossession: ${lifted.thing.object.id} possessor `
+                      + `${party.id} -> ${cultivator.id}, how=stolen, transfersOwnership=false so `
+                      + `owner stays ${lifted.thing.object.ownerId}. Held as `
+                      + `${lifted.thing.because}; provenance now `
+                      + `${lifted.thing.object.provenance.length} link(s). Missed as `
+                      + `${lifted.thing.severity}, off significance `
+                      + `${lifted.thing.object.significance}. The purse was not touched: a lift `
+                      + 'is one act.'
                     : `Lift: ${lifted.taken} of ${lifted.hadBefore} stones, capped at `
                       + `${lifted.loose} - a year of what somebody at ordinal `
                       + `${them.realmOrdinal} earns, which is what bounds how much money is ON a `
@@ -697,53 +556,9 @@ ${unnamed}`;
 
     /**
      * What the person on the other end of a coercive attempt does about it.
-     *
-     * WHICH VERBS REACH THIS, and why it is a lookup rather than a judgement:
-     * three of the ten interact intents put something on the table that a
-     * person answers rather than merely declines - a threat, a lie and answers
-     * taken under pressure. `bribe`, `seduce`, `recruit`, `negotiate`, `trade`,
-     * `talk` and `apologise` are not wrongs, however badly they land, and a
-     * refused bribe leaves a grudge and nothing else. The mapping is a closed
-     * table and not a string test, so a verb added to the parser does not
-     * silently acquire consequences nobody chose for it.
-     *
-     * ORDER MATTERS: this runs after `resolveAttempt` and reads only what the
-     * resolver already decided. It re-prices nothing, rolls nothing, and reads
-     * no part of the player's sentence.
      */
     /**
      * What a theft that came off actually takes, and why it is bounded.
-     *
-     * ── WHAT A THEFT CAN TAKE ────────────────────────────────────────────
-     *
-     * SPIRIT STONES, AND NOTHING TRACKED. `docs/world/things/items.md` splits
-     * the world's things into counted stock and singular tracked objects, and
-     * the two move by different machinery for a reason the barter path in this
-     * file states at length: `transferPossession` reassigns the possessor on
-     * the SINGLE row rather than inserting a copy, because a copy manufactures
-     * the scarcest class of object in the world out of nothing. Stones are a
-     * number on a row. They are moved as a number on two rows, and this method
-     * deliberately never touches an object.
-     *
-     * Taking a tracked thing off somebody is a different event and is not done
-     * here: it needs a provenance entry saying whose it was and how it moved -
-     * the trade path writes one - and "stolen" is a story about the object that
-     * outlives everybody involved. That is worth building and it is worth
-     * building deliberately.
-     *
-     * ── AND WHY IT IS CAPPED AT A YEAR OF THEIR OWN EARNINGS ─────────────
-     *
-     * A lift takes what somebody has ON them. Above that, money is not on a
-     * person - it is somewhere with a door and a ledger, and taking it is
-     * already a different verb with a different clock: `sect.siphon` runs over
-     * months and gets found out. So the cap is `earningsPerYear` at THEIR rung,
-     * which is the engine's existing answer to "what is a year of this person's
-     * life worth" and the same function `purseWeight` prices a bribe against.
-     * It scales the right way on its own: a farm child has almost nothing loose
-     * and an elder has a great deal, with no second table saying so.
-     *
-     * Nothing is rolled. The resolver already decided whether it came off, and
-     * re-rolling the amount would price the same event twice.
      */
     whatALiftTook(
         this: GameService,
@@ -751,20 +566,49 @@ ${unnamed}`;
         // An id and a name is all this reads, and widening it to that is what
         // lets the coercion path take a purse without a second lift. A
         // `ResolvedEntity` still satisfies it.
-        party: { id: string; name: string }
-    ): { taken: number; hadBefore: number; loose: number } | null {
-        // ── TWO PLACES A PERSON CAN LIVE, AND BOTH HAVE TO BE ROBBABLE ───
-        //
-        // `resolveCultivator` matches against the `cultivators` table PLUS
-        // whoever is standing in front of the player, and the second half is
-        // where the world's several hundred people come in - they have no
-        // stored row at all until something materialises one. So a lift that
-        // only knew about the table would work on the handful of stored people
-        // and silently take nothing from everybody else, which is the "a rule
-        // that binds one and not the other" failure with the halves swapped.
+        party: { id: string; name: string },
+        /**
+         * The player's own sentence, where the caller has it.
+         */
+        said = '',
+        /** The run's own clock, for the provenance link. */
+        onDay = 0
+    ): WhatALiftTook | null {
+        // TWO PLACES A PERSON CAN LIVE, AND BOTH HAVE TO BE ROBBABLE
         const stored = this.repos.cultivators.getById(party.id);
         const npc = stored ? null : (this.atHand?.npcs ?? []).find(row => row.id === party.id);
         if (!stored && !npc) return null;
+
+        // ── DID THEY NAME A THING, AND IS IT WITHIN REACH ────────────────
+        //
+        // Ahead of the purse, because a lift is one act: somebody who said they
+        // are taking the boat is taking the boat, and emptying their pocket as
+        // well would spend something the player did not say.
+        const named = said.trim();
+        const reach = named.length >= 3
+            ? whichThingTheyMeant(
+                whatIsWithinReachOf(this.atHand, party.id, cultivator.location),
+                named
+            )
+            : null;
+        if (reach) {
+            const lifted = liftIt(reach, {
+                thiefId: cultivator.id,
+                thiefName: cultivator.name,
+                fromName: party.name,
+                onDay,
+                here: cultivator.location
+            });
+            const at = this.atHand!.objects.findIndex(row => row.id === reach.object.id);
+            if (at >= 0) this.atHand!.objects[at] = lifted.object;
+            this.worldDirty = true;
+            return {
+                taken: 0,
+                hadBefore: Math.max(0, Math.floor(stored ? stored.spiritStones : npc!.spiritStones)),
+                loose: 0,
+                thing: lifted
+            };
+        }
 
         const hadBefore = Math.max(0, Math.floor(
             stored ? stored.spiritStones : npc!.spiritStones
@@ -788,7 +632,7 @@ ${unnamed}`;
                 this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
             }
         }
-        return { taken, hadBefore, loose };
+        return { taken, hadBefore, loose, thing: null };
     },
 
     async whatTheWrongedPartyDid(
@@ -802,7 +646,7 @@ ${unnamed}`;
         alignment: SectAlignment | null,
         facts: EngineFacts,
         /** What the deed took off them, when it took anything. */
-        lifted: { taken: number; hadBefore: number; loose: number } | null = null
+        lifted: WhatALiftTook | null = null
     ): Promise<ToolCallRecord[]> {
         const wrong = WRONG_BEHIND_INTENT[intent];
         if (!wrong) return [];
@@ -842,39 +686,7 @@ ${unnamed}`;
             ok: true
         }];
 
-        // ── AND IT GOES ON THE LEDGER, WHICH IS THE HALF THAT LASTS ──────
-        //
-        // The reprisal is what happened in the room and it is over in a turn.
-        // The grudge is what the world still holds in forty years, and it is
-        // the record that makes `recordWhatTheAskLeft` withholding the tie a
-        // correction rather than a deletion: the event does not vanish, it
-        // changes sides. `oddsOf` reads the worst open grudge the subject holds
-        // against the actor, so this is also what makes robbing somebody make
-        // the next thing you want off them HARDER, which is the whole of what
-        // was wrong.
-        //
-        // The id is derived from the pair and the cause and NOT the day, on the
-        // same reasoning the refusal grudge gives next door: "X robbed me" is
-        // one standing fact about two people however many times it happens, and
-        // a resolver that read a count would have read six thefts as six
-        // separate injuries. Severity is decided once, here, and never
-        // recomputed afterwards - `grudges.ts` requires exactly that.
-        //
-        // ── AND WHAT IT COST THEM IS PART OF THAT DECISION ───────────────
-        //
-        // `whatTheyDoAboutBeingWronged` weighs the DEED - what was put on the
-        // table, whether it came off, whether anybody watched - and that is
-        // the right input for what somebody does in the room. It has no way to
-        // know what the deed took, so a lift of somebody's last stone and a
-        // lift of an elder's small change came out identical.
-        //
-        // `whatItWasWorth` is the other half and is exported for exactly this:
-        // it prices a deed from `cost`, RELATIVE TO WHAT THE PAYER HAD, which
-        // is the whole of what makes the model fair in both directions. So the
-        // two are read together and the HEAVIER stands. Not an average and not
-        // an override: neither module can make the record lighter than the
-        // other thought it was, which is the only combination that cannot lose
-        // a fact.
+        // AND IT GOES ON THE LEDGER, WHICH IS THE HALF THAT LASTS
         const cost = lifted !== null && lifted.hadBefore > 0
             ? lifted.taken / lifted.hadBefore
             : 0;
@@ -885,19 +697,14 @@ ${unnamed}`;
             onDay: Math.floor(run.elapsedDays),
             description: verdict.line
         });
-        const severity = severityRank(worthOfTheLoss) > severityRank(verdict.grudge.severity)
-            ? worthOfTheLoss
-            : verdict.grudge.severity;
+        // AND A THING HAS A THIRD READING OF THE SAME QUESTION
+        const readings = [verdict.grudge.severity, worthOfTheLoss]
+            .concat(lifted?.thing ? [lifted.thing.severity] : []);
+        const severity = readings.reduce(
+            (worst, one) => (severityRank(one) > severityRank(worst) ? one : worst)
+        );
 
-        // ── AND WHO ELSE ENDS UP CARRYING IT ─────────────────────────────
-        //
-        // THE ROOM, not the wound. A house is a party to a thing done to one of
-        // its own IN FRONT OF PEOPLE, because that is when it becomes a fact
-        // about the house rather than about the member - the same reading
-        // `AUDIENCE_RESISTANCE` takes of an audience and the same one the
-        // reprisal above takes of it. A wrong done where nobody could see stays
-        // between the two of them however hard it landed, which is what leaves
-        // room for a thing nobody has worked out yet.
+        // AND WHO ELSE ENDS UP CARRYING IT
         const held = createObligation({
             kind: 'grudge',
             id: `grudge_${party.id}_${cultivator.id}_${verdict.grudge.cause}`,
@@ -913,7 +720,8 @@ ${unnamed}`;
                 `reprisal:${verdict.response}`,
                 landed ? 'landed' : 'attempted',
                 ...(inPublic ? ['witnessed'] : []),
-                ...(lifted !== null ? [`took:${lifted.taken}`] : [])
+                ...(lifted?.thing ? [`took:${lifted.thing.object.id}`]
+                    : lifted !== null ? [`took:${lifted.taken}`] : [])
             ]
         });
         writeObligation(this.db as unknown as DatabaseHandle, held);
@@ -941,19 +749,7 @@ ${unnamed}`;
         // is the point: the floor of this system is that something is SAID.
         if (verdict.wound === null && !verdict.fatal) return calls;
 
-        // ── A WOUND THAT IS NOT A KILLING MUST NOT KILL ──────────────────
-        //
-        // The fraction is of the POOL, because that is the only figure that
-        // means the same thing at every rung. What it must not do is finish
-        // somebody the verdict did not sentence: `injured` and `crippled` are
-        // separate answers from `killed` precisely so that surviving them is
-        // the point, and a verdict that killed by arithmetic would collapse
-        // three outcomes into one.
-        //
-        // It bites today rather than in theory: current health does not rise
-        // when the pool does, so a cultivator standing at 30 of 15,360 takes
-        // an `injured` verdict worth 7,680. Left unclamped, every reprisal
-        // above Foundation was a death sentence.
+        // A WOUND THAT IS NOT A KILLING MUST NOT KILL
         const wanted = Math.max(1, Math.round(cultivator.maxHp * verdict.hpFraction));
         const damage = verdict.fatal ? wanted : Math.min(wanted, Math.max(0, cultivator.hp - 1));
         this.db.transaction(() => {
@@ -982,19 +778,7 @@ ${unnamed}`;
             ok: true
         });
 
-        // ── THE WOUND, NAMED, AND WHAT IS LEFT IN THE BODY ───────────────
-        //
-        // `verdict.line` is what the room saw - "Fang Shutao answers being
-        // robbed in the body. Shen Wu does not walk away from it whole." - and
-        // that is the right sentence for what it is. What it is not is a
-        // statement of the injury, and this layer wrote one, took half the
-        // pool, and said neither. Played: two thefts off one person took a
-        // cultivator 40 -> 20 -> 1 and no turn mentioned a number, a wound, or
-        // that the next blow of any kind would finish it.
-        //
-        // Required rather than merely offered, on the rule `AGENTS.md` states
-        // for exactly this: a wound is something the player must be told, and
-        // the channel that survives a model is where it belongs.
+        // THE WOUND, NAMED, AND WHAT IS LEFT IN THE BODY
         const standing = this.repos.cultivators.getById(cultivator.id) ?? cultivator;
         if (!verdict.fatal) {
             sayThisWhateverTheNarratorDoes(
@@ -1013,27 +797,13 @@ ${unnamed}`;
                 + ' Nothing closes it on its own - a month under a physician does, in any '
                 + 'settlement.'
             );
-            // ── AND THE EDGE, MARKED ─────────────────────────────────────
-            //
-            // The clamp above deliberately leaves somebody alive on 1 rather
-            // than letting an `injured` verdict kill, and that is right. It
-            // also produced the state a player is least able to see and most
-            // needs to: standing on a single point, where any encounter at all
-            // is fatal, with the prose reading exactly as it read at half
-            // health. The same sentence a long stretch closes with, from the
-            // same function, so the two surfaces cannot drift.
+            // AND THE EDGE, MARKED
             if (nearlyGone(standing)) {
                 sayThisWhateverTheNarratorDoes(facts, theBodyIsNearlyGone(standing, standing.spiritStones));
             }
         }
 
-        // ── AND IT CAN BE THE END ────────────────────────────────────────
-        //
-        // Death goes through `markDead` like every other death in this engine -
-        // there is no second road, and `endRun` is closed in the same
-        // transaction so the ledger can never show a live run whose cultivator
-        // is a corpse. `combat_defeat` because it was one, decided by the
-        // stronger party alone.
+        // AND IT CAN BE THE END
         if (verdict.fatal) {
             this.repos.cultivators.markDead(
                 cultivator.id, 'combat_defeat', run.turn, verdict.line
@@ -1058,38 +828,6 @@ ${unnamed}`;
 
     /**
      * A request put to a person, with an object.
-     *
-     * THE VERB THE DESIGN RESTS ON, and it did not exist. The engine says,
-     * correctly and often, that there are exactly two ways past a manual's
-     * ceiling - another book, or somebody willing to teach you - and it says it
-     * well: *"You have no name to ask for, which is the whole of what is
-     * stopping you"*, *"A book or a teacher is the only thing that does."* The
-     * book half works; a common primer costs about eight spirit stones at a
-     * stall. The teacher half had no verb at all, and four phrasings of it
-     * reached four different lookups, none of which was a person.
-     *
-     * THREE THINGS THIS HAS TO GET RIGHT.
-     *
-     *   THE REQUEST HAS AN OBJECT. `resolveAttempt` has always priced the ask
-     *   and never known what the ask WAS, so a landed bribe came back as
-     *   "Han Peiru agreed." - agreed to what, and nothing followed. What is
-     *   being asked for is resolved here, said in the prose, and carried into
-     *   the mechanical channel.
-     *
-     *   A TAKE CHANGES SOMETHING. `handleLearn` has carried
-     *   `provenance: 'taught_by_a_person'` since it was written and nothing in
-     *   the codebase has ever passed it. This is that caller. A teaching that
-     *   lands puts the art on the sheet through the same gate every other route
-     *   uses, so being taught is still subject to rank, root, dao and what has
-     *   surfaced in this run - `manuals.md`'s two gates and not one: *"rank says
-     *   what the house will give you; the manual's own entry requirement says
-     *   what you can open, and being favoured does not lift it."*
-     *
-     *   A REFUSAL NAMES WHAT WOULD WORK. Every one of them, without exception.
-     *   `what-asking-this-person-for-this-would-cost-them.ts` owns those
-     *   sentences and each carries the next move: what they are actually
-     *   carrying, who teaches it, that a stall sells a copy, that an
-     *   introduction runs along a line somebody is already standing on.
      */
     async request(
         this: GameService,
@@ -1129,13 +867,7 @@ ${unnamed}`;
         const party = this.partyPutTo(cultivator, query, scope);
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
 
-        // ── A HOUSE IS NOT A PERSON ──────────────────────────────────────
-        //
-        // Asking an institution for something is `petition`, which has its own
-        // record and its own refusal, and asking one informally is the approach
-        // that describes it. Neither is this: `resolveAttempt` prices one person
-        // against another, and a faction has no rung, no charm and no afternoon
-        // to spend.
+        // A HOUSE IS NOT A PERSON
         if (party.kind !== 'cultivator' || !party.party) {
             return this.interact(
                 run, cultivator, ambient, query, 'negotiate',
@@ -1143,16 +875,7 @@ ${unnamed}`;
             );
         }
 
-        // ── WHAT THEY ARE AFTER, WHICH IS A READ AND NOT A REQUEST ───────
-        //
-        // "What does Kong Kelin want" reached nothing at all before this - the
-        // parser answered `unclear` - while the resolver was already pricing a
-        // term for exactly that fact and getting `false` for it from every
-        // caller. Wiring the term without the verb would have left the odds
-        // moving for a reason no player could see, let alone play toward.
-        //
-        // Free, and above `noteEncounter` on purpose: wondering what somebody
-        // is after is not an approach and must not be recorded as one.
+        // WHAT THEY ARE AFTER, WHICH IS A READ AND NOT A REQUEST
         if (intent === 'wants') {
             return this.freeAction(run, 'request', this.whatIsThisPersonAfter(cultivator, party));
         }
@@ -1173,15 +896,7 @@ ${unnamed}`;
             if (who) return this.askAround(run, cultivator, who, named, scope);
         }
 
-        // ── WHAT WOULD IT TAKE, AND WHAT IS BEING PUT DOWN FOR IT ────────
-        //
-        // Ahead of the art read, because both of these name a thing that is
-        // not an art and the fall-through below sends anything that is not an
-        // art to `interact`. That fall-through is where every barter-tier
-        // object in the catalog stopped: the comment under it says the honest
-        // thing - it does not invent a way to hand objects over - and the
-        // consequence was that a heaven-grade cure could be NAMED by the
-        // physician, named by the wound read, and reached by nothing.
+        // WHAT WOULD IT TAKE, AND WHAT IS BEING PUT DOWN FOR IT
         if (kind === 'terms' || kind === 'a_trade') {
             return await this.whatWouldItTake(
                 run, cultivator, ambient, party, kind, named,
@@ -1208,16 +923,7 @@ ${unnamed}`;
             }
         }
 
-        // ── AND HOW MANY TIMES THEY HAVE HEARD IT ────────────────────────
-        //
-        // Read before anything is decided, so the outcome can be described as
-        // the second time rather than as the first again. Incremented once the
-        // attempt is actually made, which is why it is read here and written
-        // below rather than in one place.
-        // Keyed on the KIND as well as the person, because "they have heard this
-        // from you before" is a claim about the thing being asked for. Somebody
-        // who bought a stranger three drinks and then asks to be taught has
-        // asked for that once.
+        // AND HOW MANY TIMES THEY HAVE HEARD IT
         const askedKey = askedBeforeKey(party.id, kind);
         const priorAsks = Number(readFlag(this.db, cultivator.id, askedKey) ?? '0');
 
@@ -1262,14 +968,7 @@ ${unnamed}`;
             namedButUnresolved: named
         });
 
-        // ── A REQUEST THAT CANNOT BE PUT ─────────────────────────────────
-        //
-        // Not a ban. Every one of these is the sentence having a hole in it -
-        // no such art, nobody of that name to be introduced to, they are
-        // carrying nothing you have not got - and every one names what would
-        // work instead. Refused BEFORE the resolver, so no day is spent and no
-        // mark is written, which is the same shape the missing-sum refusal on a
-        // bribe already has.
+        // A REQUEST THAT CANNOT BE PUT
         if (costing.refusal) {
             return refused('engine.priceTheAsk', 'request', factsForRefusal(
                 costing.refusal.headline,
@@ -1300,17 +999,7 @@ ${unnamed}`;
         const heldTie = tieFrom(this.repos, party.id, cultivator.id);
         const tieStrength = heldTie?.active ? heldTie.strength : 0;
 
-        // ── AND WHO THIS PARTICULAR PERSON IS ────────────────────────────
-        //
-        // Read from their id and from nothing else, which is the whole of the
-        // ruling: *"kind elders exist just as greedy demonic cultivators
-        // exist."* Two people at the same rung of the same house, equally owed
-        // and equally fond of you, answered identically before this.
-        //
-        // The resolver would derive the same number on its own if this were not
-        // passed; it is read here so the SENTENCES can say it, in the facts
-        // before the outcome and in the refusal after it. A term nobody can see
-        // is a term nobody can play against.
+        // AND WHO THIS PARTICULAR PERSON IS
         const openHandedness = openHandednessOf(party.id);
         const holdsThings = howTheyHoldWhatTheyHave(openHandedness);
         const aboutThem = holdsThings === null
@@ -1323,17 +1012,7 @@ ${unnamed}`;
         // they are holding.
         const wanted = this.whatTheyWantOfYou(cultivator, party.id);
 
-        // ── AND WHAT A REFUSAL WOULD LEAVE BEHIND ────────────────────────
-        //
-        // Ruled by the design owner: a refusal is not automatically an
-        // offence. Three of these four are the inputs that decide whether it
-        // was one, and every one is read off a row rather than off the
-        // sentence somebody typed.
-        //
-        // THE ASKER'S NEED. A crippling wound nobody has closed is the case
-        // the ruling names - *"an injury that is blocking their own path"* -
-        // and it is the one the ladder actually stops somebody for. A wound
-        // that costs a life is survivable; one that costs a rung is not.
+        // AND WHAT A REFUSAL WOULD LEAVE BEHIND
         const pressing = cultivator.injuries.some(
             wound => !wound.treated && wound.severity === 'crippling'
         );
@@ -1363,14 +1042,7 @@ ${unnamed}`;
         // much they wanted to. A refusal from them is not a wrong.
         const theirsToGive = !(costing.ask === 'a_betrayal' && !party.party.ranked);
 
-        // ── ONE INPUT, PRICED ONCE, ROLLED AT MOST ONCE ──────────────────
-        //
-        // Built before the read branches off, because the read and the attempt
-        // have to be the same arithmetic or the read is a second opinion. The
-        // resolver exports `oddsOf` for exactly this - "a probe that cannot see
-        // the breakdown cannot tell a tuning problem from a bug" - so weighing
-        // an approach runs every term the attempt would run and stops at the
-        // roll. Nothing can drift, because there is nothing to drift from.
+        // ONE INPUT, PRICED ONCE, ROLLED AT MOST ONCE
         const attempt = {
             actor: {
                 id: cultivator.id,
@@ -1392,43 +1064,15 @@ ${unnamed}`;
                 openHandedness
             },
             onDay: Math.floor(run.elapsedDays),
-            // ── AND WHAT THE TWO OF THEM ALREADY ARE TO EACH OTHER ───────
-            //
-            // Three of the resolver's seven terms - their view of you, what is
-            // owed either way, and what they hold against you - are worth up to
-            // half again as much as the purse put together, and NO CALLER IN
-            // THIS LAYER HAS EVER SUPPLIED ONE. So every approach any player
-            // has ever made was made by a stranger, however many times the two
-            // of them had dealt with each other, and `asking.md`'s "cheapest
-            // lever in the game, available to a cultivator with nothing"
-            // reached nothing at all.
-            //
-            // Both are read off rows and neither is invented: the ledger is the
-            // obligations table, and the tie is what THIS resolver wrote the
-            // last time an attempt landed.
+            // AND WHAT THE TWO OF THEM ALREADY ARE TO EACH OTHER
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
-            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
-            // whatever tie the subject already holds, because the ruling is
-            // about the same STRANGER saying the same thing.
-            //
-            // The world simulation reads the SUBJECT's ground, because the
-            // approach goes to them. Here it is the player's, and the two are
-            // the same square by construction - somebody has to be present to
-            // be pressed - so this is the same rule and not a second one.
-            // Resolving the subject's own world row instead would be the
-            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
-            // presence belongs to the play layer.
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
+            // tie the subject already holds, because the ruling is about the same
+            // STRANGER saying the same thing.
             where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
-            // ── AND WHAT THEY WANT THAT YOU ARE PART OF ──────────────────
-            //
-            // The last of the seven with no caller anywhere in this layer.
-            // Read off goal rows and never off an opinion about what somebody
-            // probably wants, and deliberately blind to the gap in rung: the
-            // resolver already has a standing term, and a second reading of it
-            // would turn the one lever a cultivator with nothing can carry
-            // into one more advantage for the people who have every other one.
+            // AND WHAT THEY WANT THAT YOU ARE PART OF
             theyWantSomethingFromYou: wanted !== null,
             // The three that decide whether a refusal is an offence, and the
             // count that decides whether patience has run out. Read above.
@@ -1450,13 +1094,7 @@ ${unnamed}`;
             rng: forStream(run.seed, 'social_leverage', Math.floor(run.elapsedDays), party.id)
         };
 
-        // ── WHAT IT WOULD TAKE, WITHOUT DOING IT ─────────────────────────
-        //
-        // "Could I ask her to teach me" is a question, and `request` spends days
-        // and can spend the purse. The read now carries the REAL odds and the
-        // real breakdown rather than a description of them, which is the whole
-        // reason it is worth having: a player who is told a thing comes off one
-        // time in eight can decide whether to spend the afternoon.
+        // WHAT IT WOULD TAKE, WITHOUT DOING IT
         if (weighing) {
             const weighed = oddsOf(attempt);
             const weighing = this.freeAction(run, 'request', factsForWeighingARequest(
@@ -1522,13 +1160,7 @@ ${unnamed}`;
             ...spent.calls
         ];
 
-        // ── AND WHAT THE ATTEMPT LEFT BEHIND ─────────────────────────────
-        //
-        // `factsForAttempt` has said "it is on somebody's ledger now, and
-        // ledgers here are kept" since it was written, and nothing wrote to the
-        // ledger. That is the narrator asserting an outcome the database never
-        // took, which is the one thing this codebase forbids outright. The
-        // resolver hands back the records; this persists them.
+        // AND WHAT THE ATTEMPT LEFT BEHIND
         const left = this.recordWhatTheAskLeft(
             run, cultivator, party, result, 'request', shape !== 'nothing'
         );
@@ -1562,18 +1194,7 @@ ${unnamed}`;
             left.wroteToTheLedger, tieStrength, openHandedness
         );
 
-        // ── AND WHETHER THEY WANTED ANYTHING OF YOU ──────────────────────
-        //
-        // Said either way, because the arithmetic says it either way: the
-        // channel prints "nothing came from something they want that the asker
-        // could reach" on every attempt where this reads zero, and a player who
-        // is shown a term that never moves and is never told what moves it has
-        // been shown a field name.
-        //
-        // The refusal names a door that exists. It did not before this change -
-        // "find out what they want" was a sentence the parser answered
-        // `unclear` - and `asking.md` is exact about why that matters: a
-        // refusal is the one place the player is being told what to do next.
+        // AND WHETHER THEY WANTED ANYTHING OF YOU
         const alsoSaid: string[] = [];
         if (wanted !== null) {
             const carried =
@@ -1599,18 +1220,7 @@ ${unnamed}`;
             );
         }
 
-        // ── A REFUSAL THAT NAMES A TRADE IS NOT A REBUFF ─────────────────
-        //
-        // The design owner's correction to the grudge model, said in the
-        // prose rather than only in the record: *"someone could trade someone
-        // for something else"*. A no that comes with what they ARE after is an
-        // opening, and the sentence is emergent rather than authored - the
-        // want is `text` off their own goal row, written by whoever opened it,
-        // so a want nobody has thought of yet reads correctly here with no
-        // code.
-        //
-        // Said on a refusal only. Somebody who agreed has no counter-offer to
-        // make, and telling them what else they wanted would be noise.
+        // A REFUSAL THAT NAMES A TRADE IS NOT A REBUFF
         if (result.outcome !== 'taken' && theirTopWant !== null) {
             alsoSaid.push(
                 `It is not a door closing. ${party.name} is carrying something of their own - `
@@ -1672,14 +1282,8 @@ ${done.lines.join(' ')}`;
     },
 
     /**
-     * Every art a person could actually walk somebody down, from both of the
-     * places one is written.
-     *
-     * A cultivator row carries `knownTechniques` and a world NPC carries
-     * `cultivation.techniqueIds`, and most of the people standing in a square
-     * are the second kind - `othersPresent` unions the two, and a reader that
-     * looked at only one of them would find the roster empty in exactly the
-     * places a player actually stands.
+     * Every art a person could actually walk somebody down, from both of the places
+     * one is written.
      */
     whatTheyAreCarrying(this: GameService, personId: string): string[] {
         const held = new Set<string>(
@@ -1704,11 +1308,6 @@ ${done.lines.join(' ')}`;
 
     /**
      * What a person standing here is currently trying to do, off their rows.
-     *
-     * Null when there is nothing to read: the world is off, or this is a
-     * cultivator row rather than somebody the world holds. Both are honest
-     * absences and neither is an empty goal list, which would say "they want
-     * nothing" about somebody the record has never had an opinion on.
      */
     theirOpenBusiness(this: GameService, personId: string): SomebodyWithGoals | null {
         if (!this.atHand) return null;
@@ -1726,18 +1325,6 @@ ${done.lines.join(' ')}`;
 
     /**
      * The clocks a person is under, which is where a want's date comes from.
-     *
-     * Found by playing: NOTHING IN THIS WORLD HAS EVER WRITTEN A
-     * `deadlineOnDay`. Not the seeder, not `openAmbition`, not the birth goal.
-     * So every want read as open-ended, every holder was negotiable, and the
-     * case the design owner cared about most - somebody who cannot wait -
-     * could not occur at all. Same defect as a module nothing calls, one size
-     * down: a field nothing writes.
-     *
-     * The date is DERIVED here rather than stamped on the row, because a
-     * stamped one is wrong by the second year - the settling clock resets on
-     * every advance, and a stored deadline would go on reading true. Both
-     * numbers are already on the record and are already moved by the world.
      */
     clocksUnder(this: GameService, npc: NpcRecord): TheClocksSomebodyIsUnder {
         return {
@@ -1761,18 +1348,6 @@ ${done.lines.join(' ')}`;
 
     /**
      * What somebody is after, said to the player, behind the gate that owns it.
-     *
-     * THE GATE IS THEIR SIDE OF THE TIE, and it is the strict one on purpose.
-     * `recordContact` writes the PLAYER's side every time the player notices
-     * anybody, so gating on that would hand the business of everybody in the
-     * square to somebody who had merely looked at them. Their side is written
-     * only by an attempt that LANDED - a drink stood, a visit paid, a favour
-     * done - which is `asking.md`'s "someone who has reason to talk to you"
-     * exactly, and it is reachable by a cultivator with nothing because every
-     * one of those costs a day and no stones.
-     *
-     * An open obligation either way counts too, for the same reason and off the
-     * same rows the resolver reads: a debtor talks to their creditor.
      */
     whatIsThisPersonAfter(this: GameService, cultivator: Cultivator, party: ResolvedEntity): EngineFacts {
         const theirTie = tieFrom(this.repos, party.id, cultivator.id);
@@ -1799,43 +1374,6 @@ ${done.lines.join(' ')}`;
 
     /**
      * WHAT WOULD IT TAKE, AND WHAT HAPPENS WHEN SOMETHING IS PUT DOWN.
-     *
-     * ── THE GAP THIS IS THE LIVE END OF ──────────────────────────────────
-     *
-     * Played, at a crippling meridian tear. The physician's refusal is correct
-     * and complete - it names the medicine, its grade, and then says *"Nobody
-     * sells one of these for stones... a favour owed, something out of a hole
-     * nobody else has been down, or an art"* - and **nothing in the game
-     * accepted that sentence.** `request` sends anything that is not an art to
-     * `interact`, whose own comment says the honest thing: it does not invent a
-     * way to hand objects over. So every heaven-grade and above cure in the
-     * catalog was nameable, priced, seeded onto real houses, and unobtainable,
-     * with the refusal that said so as the closest the game came to admitting
-     * it.
-     *
-     * ── WHAT IT READS, AND WHOSE ANSWER EACH PIECE IS ────────────────────
-     *
-     *   the thing        `theThingAskedFor` off the pill catalog: how high it
-     *                    carries somebody, and whether money buys one at all.
-     *   who is holding   `heldByTheirHouse` off `state.objects`, which is the
-     *                    one possessions table. Barter pills are seeded onto
-     *                    HOUSES, so this asks about the shelf behind the person.
-     *   their need       `whatTheirNeedDoesToThePriceOf`, which is the ONE
-     *                    model of what somebody needs and how urgently. Nothing
-     *                    here second-guesses it and nothing here reads a goal
-     *                    row.
-     *   the price        `whatItWouldTake`, which prices both sides on one
-     *                    scale and never asks what kind of thing either is.
-     *
-     * ── AND WHY A RANK DECIDES WHETHER IT IS THEIRS TO GIVE ──────────────
-     *
-     * `party.ranked` and not their rung. Somebody standing in a house without a
-     * rank in it is not deciding what leaves its vault, and telling that apart
-     * from a refusal is the distinction `immortal-items.ts` insists on:
-     * *"arithmetic rather than a lever"*, where there is no version of the
-     * problem in which the right person is found and enough pressure applied. A
-     * player who cannot draw that line spends a run looking for a lever that
-     * does not exist.
      */
     async whatWouldItTake(
         this: GameService,
@@ -1892,13 +1430,7 @@ ${done.lines.join(' ')}`;
         const theirFaction = party.party?.factionId ?? null;
         const onShelf = heldByTheirHouse(world, theirFaction, asPill.id);
 
-        // ── NOT HOLDING ONE, AND WHO IS ─────────────────────────────────
-        //
-        // A dead end and a next move are different answers, which is the
-        // reasoning `nobodyByThatName` already runs on. Who holds a tracked
-        // object is not a secret - the standing register prints it - so naming
-        // the houses that do leaks nothing, and it is the whole difference
-        // between a refusal that ends a run and one that starts a journey.
+        // NOT HOLDING ONE, AND WHO IS
         if (!onShelf) {
             const elsewhere = (world?.objects ?? [])
                 .filter(o => o.kind === 'pill' && o.data?.pillId === asPill.id
@@ -1945,9 +1477,9 @@ ${done.lines.join(' ')}`;
             // function cannot honour its own contract. A medicine carries the
             // person who takes it somewhere, and where that is depends on where
             // they already stand: an Unearned Step whose grade tops out beneath
-            // somebody carries them nowhere at all. Measured against a receiver
-            // at rung 29, a middle Step is worth 0 to them and a higher one is
-            // worth 33 - and with no receiver passed, both read 29.
+            // somebody carries them nowhere at all. Measured against a receiver at
+            // rung 29, a middle Step is worth 0 to them and a higher one is worth
+            // 33 - and with no receiver passed, both read 29.
             : [whatIsBeingPutDown(
                 putDown, cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id),
                 party.party?.realmOrdinal
@@ -1965,13 +1497,7 @@ ${done.lines.join(' ')}`;
             + `${answer.theBestOnTheTable} against a bar of ${answer.theHeightToReach}.`
         ];
 
-        // ── ASKING THE PRICE IS A QUESTION, NOT AN ATTEMPT ───────────────
-        //
-        // It costs them a sentence, so it costs no day and rolls nothing. What
-        // it is NOT is free of consequence: they now know somebody is looking
-        // for one of these, and that is worth something to the sort of person
-        // who holds one. Filed as an encounter rather than as a mark, because
-        // nothing was asked of them.
+        // ASKING THE PRICE IS A QUESTION, NOT AN ATTEMPT
         if (kind === 'terms') {
             const facts = factsForToolResult(
                 `${party.name}, on what it would take.`,
@@ -2025,17 +1551,9 @@ ${done.lines.join(' ')}`;
             theirTie: heldTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
-            // WHERE THIS IS HAPPENING. A term and never a gate, damped by
-            // whatever tie the subject already holds, because the ruling is
-            // about the same STRANGER saying the same thing.
-            //
-            // The world simulation reads the SUBJECT's ground, because the
-            // approach goes to them. Here it is the player's, and the two are
-            // the same square by construction - somebody has to be present to
-            // be pressed - so this is the same rule and not a second one.
-            // Resolving the subject's own world row instead would be the
-            // mistake `the-player-as-a-row-the-world-can-invite.ts` names:
-            // presence belongs to the play layer.
+            // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
+            // tie the subject already holds, because the ruling is about the same
+            // STRANGER saying the same thing.
             where: theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator)),
             // A trade whose price is met is an ordinary favour. One whose price
             // is not met asks them to end up worse off and see it while
@@ -2068,40 +1586,7 @@ ${done.lines.join(' ')}`;
 
         const took = result.outcome === 'taken' || result.outcome === 'turned';
         if (took) {
-            // ── THE ROW MOVES. IT IS NOT COPIED ──────────────────────────
-            //
-            // A pouch row inserted while the shelf keeps its own lets the same
-            // house be traded with twice, and the world gains a second one of
-            // the scarcest class of object it has. That is not untidiness - it
-            // is manufacturing, from nothing, the exact thing this economy is
-            // built around not having.
-            //
-            // HOW SCARCE, AND WHERE IT NOW COMES FROM. Cultivator deaths supply
-            // none of it: 2373 deaths over six seeds and forty years, not one at
-            // the heaven band or above. That was once the whole argument and it
-            // is only half of one now - `hunting-a-spirit-beast.ts` made beasts
-            // a live supply, and a played run brought a heaven-grade core worth
-            // about 2900 stones out of one. So the material exists, it is hunted
-            // rather than inherited, and every unit of it was paid for by
-            // somebody going out and killing something.
-            //
-            // Which sharpens this rule rather than relaxing it. A supply that
-            // has to be earned is exactly the supply a duplication bug destroys
-            // the meaning of.
-            //
-            // `transferPossession` is what the rest of the world already uses -
-            // `immortal-world.ts` in four places, `legacy.ts`, and the repair
-            // dose next door. It reassigns the possessor on the SINGLE record
-            // rather than making another, and `transfersOwnership` moves the
-            // legal half too, which a trade should and a loan should not: the
-            // house sold it, so it is not theirs any more in either sense.
-            //
-            // AND THE PROVENANCE IS THE POINT RATHER THAN BOOKKEEPING. What
-            // `items.md` cares about is that somebody can ask, two centuries
-            // on, whose this was and how it moved - so the entry carries the
-            // house it came off, the day, and the terms. An object that arrives
-            // in a pouch with no history is the signature of something stolen,
-            // and this one was not.
+            // THE ROW MOVES. IT IS NOT COPIED
             const index = (world?.objects ?? []).findIndex(o => o.id === onShelf.id);
             if (world && index >= 0) {
                 world.objects[index] = transferPossession(world.objects[index], {

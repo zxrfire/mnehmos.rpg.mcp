@@ -1,104 +1,5 @@
 /**
  * When somebody does not come back.
- *
- * The world layer already makes things happen while a cultivator is sealed in a
- * cave: `the-world-changing-on-its-own.ts` kills elders, moves borders, folds
- * houses and promotes people, and `advanceTime` fires whatever was on the books.
- * What none of it does is notice that the cultivator is GONE. The events happen
- * near the ties to an absent person and never TO them, so forty years of
- * seclusion costs exactly forty years and nothing else, and coming out is a
- * status update rather than a homecoming.
- *
- * This module is that missing half, and it is deliberately not a second world
- * simulation. It does three things and no more:
- *
- *   1. it opens an ABSENCE - a dated object holding who was gone, from when,
- *      who saw them go and who was told, and a snapshot of every tie that
- *      pointed at them on the day they left;
- *   2. once a year, it lets the people holding those ties reach the conclusions
- *      the passage of time actually forces - somebody stops waiting, a house
- *      writes a member off, a register is struck through;
- *   3. it reports, on return, what is materially different and where the
- *      surviving accounts of the absence DISAGREE.
- *
- * ── Where the list lives, and who puts things on it ───────────────────────
- *
- * `WorldState.absences`, persisted in `world_absences`. The world owns them
- * because the world is what cannot account for somebody, and because a play
- * loop that had to carry the list beside the world would lose it at the first
- * restart - which is what happened for as long as the list was an argument to
- * `driver.ts` that nothing in `src/` ever filled.
- *
- * Two writers, and the split is on one question - can anybody say where they
- * went?
- *
- *   NO   {@link openAbsencesForTheUnaccountedFor} sweeps everybody the world
- *        has marked `missing` or `unknown` and opens one, once, per person.
- *        `driver.ts` runs it on the same yearly line as everything else, so
- *        every road into `markMissing` reaches this pass, present and future.
- *   YES  whoever explained it calls {@link beginAbsence} directly with the
- *        witness and told lists, because only they know who was standing
- *        there. That is the seclusion road, and it is the player's.
- *
- * ── And an unexplained absence leaves an account with nobody's name on it ──
- *
- * The middle state of `accounts-with-no-name.ts` - *something is wrong and
- * nobody knows who* - and this is the road most people take into it. See
- * {@link openTheAccountItLeaves}. Most of those never resolve, which is the
- * design owner's ruling and not a loose end.
- *
- * ── The product is the disagreement ───────────────────────────────────────
- *
- * Every account this module writes is somebody's, dated, sourced, and allowed
- * to be wrong, because they are ordinary `knowledge.ts` rows on one shared
- * `claimKey`. After a long enough absence a single person's fate reads:
- *
- *     truth (engine)             in seclusion under Stone Fall, alive throughout
- *     the enemy who watched      knows      witnessed    still alive, still in there
- *     the sect                   believes   inferred     died, year 47
- *     the register at the town   believes   read         struck out, year 47
- *     the woman who waited       believes   inferred     he left and did not come back
- *     her heir                   believes   told         there was somebody, once
- *
- * Six positions, six dates, six provenances, one of them right. None of that
- * needed a new table: `disagreementsAbout(claimKey)` already returns exactly
- * this, and the only thing missing was anybody writing the rows.
- *
- * ── No meter ──────────────────────────────────────────────────────────────
- *
- * There is no abandonment score and no decay curve. A person who stopped
- * waiting did so ON A DAY, for a stated number of years of silence, and what
- * changed is a closed goal, a rewritten tie, a fact in the chronicle and a
- * knowledge row - all of them things the engine already stored. Ask the world
- * "how much has she given up on him" and it has no answer; ask it "did she stop,
- * and when" and it has a date.
- *
- * The social layer's prohibition on decay is not violated by this, and the
- * distinction is worth stating because it is easy to get backwards. That layer
- * is STORAGE and must never quietly shrink a record. This is the world layer,
- * whose whole job is to make dated events happen from seeded rolls, exactly as
- * `applyPressure` does. The event is generated here; the record of it never
- * moves again.
- *
- * ── Proportional, and bought off by telling people ────────────────────────
- *
- * The per-year rates are small enough that a two-year absence usually costs
- * nothing and a forty-year one usually costs somebody. Two of them are halved
- * for a tie that was defining and halved again for somebody who was TOLD where
- * the absentee was going, which is the one lever a player has: an absence
- * nobody was warned about is written off roughly twice as fast, and the people
- * who cared give up in about a quarter of the time. Telling three people before
- * you seal the door is a real decision with a real price attached to skipping
- * it.
- *
- * ── Nothing bespoke, and nothing about the player ─────────────────────────
- *
- * The absentee is an id and a name. Nothing here reads a run, a cultivator or a
- * player flag, and nothing branches on whether the absentee has an `NpcRecord`
- * at all - which is what lets the same pass serve both a sealed player and the
- * ordinary `disappearance` event, where an NPC walks into the hills and the
- * chronicle already says "treated as dead by everyone except one person"
- * without anybody ever having been that person.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
@@ -140,12 +41,6 @@ import type { WorldState } from './world-state.js';
 
 /**
  * Chance per year that somebody who was waiting stops.
- *
- * Chosen so that the shape of the curve matches the shape of the fiction rather
- * than to hit a target: at 0.045 an ordinary tie has about a one-in-eleven
- * chance of being given up inside two years, better than even odds by twenty,
- * and is nearly certain to have been let go by a hundred. Two years stings,
- * forty is devastating, and ten is survivable - which is the whole requirement.
  */
 export const STOP_WAITING_PER_YEAR = 0.045;
 
@@ -154,20 +49,11 @@ export const DEFINING_STANDING = 0.8;
 
 /**
  * What a defining tie multiplies the give-up rate by. They wait twice as long.
- *
- * Patience factors take the SMALLER of whatever applies rather than the
- * product - see the comment at the roll. Two reasons to keep a door open are
- * usually the same reason twice.
  */
 export const DEFINING_TIE_PATIENCE = 0.5;
 
 /**
  * What being told where the absentee went multiplies the rates by.
- *
- * The one lever the absentee has, and it is symmetrical: somebody who knows
- * this was a seclusion and not a disappearance waits about twice as long, and a
- * house with a member who filed their intentions writes them off about twice as
- * slowly.
  */
 export const INFORMED_PATIENCE = 0.5;
 
@@ -176,21 +62,11 @@ export const WRITTEN_OFF_PER_YEAR = 0.035;
 
 /**
  * Years before anybody starts drawing conclusions.
- *
- * A three-year seclusion is a normal thing for a cultivator to do and produces
- * no paperwork anywhere. Without a grace period the write-off roll fires on a
- * two-year retreat about seven percent of the time, which is not a world where
- * cultivators routinely sit down for a decade.
  */
 export const WRITTEN_OFF_GRACE_YEARS = 3;
 
 /**
  * Chance that somebody who stopped waiting on a household tie takes another.
- *
- * Only reached by a tie that WAS a household - a spouse, or kin at a defining
- * standing - and only after the giving-up event, so it is a consequence of one
- * rather than an independent event about marriage. This module does not marry
- * anybody who was not already somebody's.
  */
 export const NEW_HOUSEHOLD_CHANCE = 0.5;
 
@@ -203,11 +79,6 @@ export function fateClaimKey(absenteeId: string): string {
 
 /**
  * Ties that carry an expectation of return.
- *
- * A household or a teaching line waits; a business partner does not. Kept as a
- * set rather than a standing threshold because the two questions are different:
- * how much somebody matters to you is `standing`, and whether their absence is
- * the kind you sit up for is what they are to you.
  */
 const WAITING_KINDS = new Set<RelationshipKind>([
     'spouse', 'kin', 'parent', 'child', 'master', 'disciple', 'ally'
@@ -218,16 +89,6 @@ const HOUSEHOLD_KINDS = new Set<RelationshipKind>(['spouse', 'kin']);
 
 /**
  * What the person holding the tie thinks was done, when nobody can say.
- *
- * The word is the HOLDER'S reading and not the engine's finding - the row is
- * written `fromBelief`, and `grudges.ts` keeps that flag precisely so a record
- * founded on an inference can be settled as `proven_false` if the truth ever
- * surfaces. The engine knows only that it cannot account for somebody.
- *
- * `RelationshipKind` names what the TARGET is to the holder, so `master` here
- * is a tie whose far end was this person's teacher. A disciple and an ally are
- * both people of your house rather than of your blood, which is the whole of
- * why they share a row.
  */
 const WHAT_THEY_THINK_WAS_DONE: Readonly<Partial<Record<RelationshipKind, GrudgeCause>>> =
     Object.freeze({
@@ -242,19 +103,6 @@ const WHAT_THEY_THINK_WAS_DONE: Readonly<Partial<Record<RelationshipKind, Grudge
 
 /**
  * Whether anybody at all can say where the absentee went.
- *
- * The one fact that decides both halves of what an absence does, and it is
- * read off the lists rather than stored: an absence somebody witnessed or was
- * told about is EXPLAINED, and an absence nobody can account for is not.
- *
- * An explained absence is a seclusion. The people who were told wait; the rest
- * of the province knows perfectly well the man is in a cave and has no reason
- * to sit up, and nobody holds a wrong, because the person chose to go.
- *
- * An unexplained one is somebody who did not come home. Everybody whose life
- * they were in waits - not because they were told anything, but because that
- * is what a household does - and when one of them finally gives up, what they
- * are left holding is a wrong with nobody's name on it.
  */
 function nobodyCanSayWhereTheyWent(absence: {
     witnessIds: readonly string[];
@@ -301,12 +149,6 @@ export interface AbsenceConsequence {
 
 /**
  * One tie as it stood on the day the absentee left.
- *
- * Snapshotted rather than re-read, because the whole question this module
- * answers is what CHANGED, and a comparison against the current record is the
- * only way to answer it after the world has spent forty years moving people
- * around. `settledAs` is how a tie is only decided once: a woman who stopped
- * waiting in year nineteen does not stop waiting again in year twenty.
  */
 export interface TieAtDeparture {
     holderId: string;
@@ -377,15 +219,6 @@ export interface AbsenceOpening {
 
 /**
  * Open an absence, and write down what the few people who know actually know.
- *
- * Mutates `state` to open a `reunion` goal on everybody who has reason to
- * expect a return. That goal is the representation of waiting, and it is not
- * new machinery: `GoalKind` has carried `'reunion'` since the NPC record was
- * written and nothing in the engine had ever produced one, so a world could
- * contain a disciple who had waited three hundred years for a master and no
- * query anywhere could find them. Goals also INHERIT, which means a search can
- * outlive the searcher - the childhood friend's grandchild still looking is a
- * consequence of using this shape rather than a feature written for it.
  */
 export function beginAbsence(state: WorldState, input: BeginAbsenceInput): AbsenceOpening {
     const claimKey = fateClaimKey(input.absenteeId);
@@ -554,34 +387,8 @@ export function beginAbsence(state: WorldState, input: BeginAbsenceInput): Absen
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Open an absence for everybody the world cannot account for and has not
- * opened one for yet.
- *
- * ── WHY A SWEEP AND NOT A CALL AT EACH `markMissing` ─────────────────────
- *
- * `markMissing` is reached from four places today - the `disappearance`
- * event, `technique_lost`, a party that went out and did not come back, and
- * the pressure layer - and the number only goes up. Calling `beginAbsence`
- * beside each of them is four call sites that have to be kept in step, and
- * the fifth road somebody adds next month silently costs nothing again, which
- * is the exact defect this whole module was found by. One sweep binds every
- * road into `missing`, including the ones nobody has written.
- *
- * It is keyed on `isUnadjudicated`, which is `npc-state.ts`'s own name for
- * "the engine genuinely does not know what happened" - so this pass follows
- * that definition rather than keeping a second copy of it.
- *
- * ── EVERY ABSENCE THIS OPENS IS UNEXPLAINED, BY CONSTRUCTION ─────────────
- *
- * No witnesses and nobody told, because that is the truth of it: the world
- * has no idea. An absence somebody CAN account for is opened by whoever can -
- * the person sealing the door, who knows who they told - through
- * `beginAbsence` directly. That split is the whole ownership rule here, and
- * it is why this function takes no witness list and offers no way to pass one.
- *
- * Idempotent. An absentee already on `state.absences` is skipped, so running
- * this every year for five centuries opens one absence per person and not
- * five hundred.
+ * Open an absence for everybody the world cannot account for and has not opened one
+ * for yet.
  */
 export function openAbsencesForTheUnaccountedFor(
     state: WorldState,
@@ -653,13 +460,6 @@ export interface AbsencePass {
     accounts: KnowledgeRecord[];
     /**
      * Ledger rows the pass decided, for whoever holds a database.
-     *
-     * Named and shaped exactly as `PressureEvent.opens` is, and handed back for
-     * the same reason: there is no obligation ledger in `WorldState`, so the
-     * world layer decides an account and its caller writes it.
-     *
-     * Every row here has NO NAME ON IT - `subjectId` is null. See
-     * `openTheAccountItLeaves`.
      */
     opens: ObligationInput[];
     /** Absence-years actually processed. */
@@ -668,16 +468,6 @@ export interface AbsencePass {
 
 /**
  * Run the absence forward to `toDay`.
- *
- * Keyed on the ABSENCE-year rather than the calendar year, and idempotent
- * against `settledThroughDay`, so running ten years and then thirty produces
- * the same world as running forty in one call. That is the same decomposability
- * property `driver.ts` protects for the rest of the layer, and it is what lets
- * this be called once per yearly slice from inside the play loop.
- *
- * Mutates `state` and `absence`, as its neighbours in this directory do: a play
- * loop advances one world hundreds of times and cloning it each time costs more
- * than the whole simulation.
  */
 export function applyAbsence(state: WorldState, absence: Absence, toDay: number): AbsencePass {
     const consequences: AbsenceConsequence[] = [];
@@ -870,45 +660,6 @@ function stepTies(
 
 /**
  * What somebody is left holding when they finally stop waiting.
- *
- * ── THE OTHER ROAD INTO AN ACCOUNT WITH NO NAME ON IT ────────────────────
- *
- * `accounts-with-no-name.ts` describes three states, of which the middle one
- * is the design: *something is wrong and nobody knows who*. The obvious road
- * into it is a killing with no witness, where the wronged party works it out
- * because the letters stopped. THIS is that road, and it is the one most
- * people take: you do not learn your brother is dead because somebody tells
- * you, you learn it because he never came back and one day you stop expecting
- * him.
- *
- * Three rules, and each of them is a fact the module already had:
- *
- * **Only an unexplained absence opens one.** Somebody who was told he was
- * sitting down for forty years and did not come out has not been wronged by
- * anybody - he chose to go, and if there is an account it has his name on it.
- * An absence nobody can account for is the other thing, and the disappearance
- * event's own claimed outcomes already include *was killed over an old
- * account*. `nobodyCanSayWhereTheyWent` is the whole test.
- *
- * **It has no subject and never acquires one here.** `withNoNameOnIt` is the
- * shared shape - null subject, `NO_NAME_TAG` - and a name arriving later is
- * `aNameAttaches` on the same row at the same id, which is somebody else's
- * moment. Nothing in this file guesses at who.
- *
- * **And it makes them do something.** `theSearchItOpens` turns the row into
- * the `revenge` goal of a person who is asking questions and has no name to
- * ask about, and it had no caller until this one. Note what that buys for
- * free: goals INHERIT, so a search opened here can outlive the searcher and
- * the grandchild is still looking.
- *
- * ── MOST OF THESE NEVER RESOLVE, AND THAT IS THE POINT ───────────────────
- *
- * Ruled by the design owner: *you can die never knowing and then it just
- * dies, that's fine too.* There is deliberately no mechanism anywhere that
- * tries to close one, and a world holding several hundred open rows is not a
- * backlog - it is several hundred people who went to their graves not knowing.
- * See `grudges.ts` on why the holder dying is a DERIVED reading rather than a
- * second status.
  */
 function openTheAccountItLeaves(
     state: WorldState,
@@ -968,12 +719,6 @@ function openTheAccountItLeaves(
 
 /**
  * Somebody whose household ended takes another one.
- *
- * Reached only from a household tie that was just given up, and bound to real
- * state the same way every pressure template is: it looks for somebody living,
- * in the same place, unattached, and if the world does not currently offer one
- * then nothing happens and the person simply stays alone. That is a legitimate
- * and common outcome, and it is why this is not a marriage generator.
  */
 function maybeNewHousehold(
     state: WorldState,
@@ -1076,14 +821,6 @@ function maybeNewHousehold(
 
 /**
  * The world decides the absence was a death.
- *
- * Three things come out of it and they are deliberately three, because they can
- * disagree with each other and routinely will: an UNRESOLVED chronicle fact,
- * which is the engine declining to pretend it knows; what the surrounding
- * public came to hold; and what the written register says, which is a document
- * with its own date and its own author and outlives everybody who agreed with
- * it. "The local records say you died thirty-one years ago" is that third row,
- * and it is wrong in exactly the way a record can be wrong.
  */
 function stepWriteOff(
     state: WorldState,
@@ -1226,11 +963,6 @@ function stepWriteOff(
 
 /**
  * Higher rank indices are further up a house's ladder.
- *
- * `FactionRecord.ranks` runs Outer Disciple at 0 to Patriarch at the end, and
- * `-1` means unaffiliated. So a rise is an increase, a fall is a decrease, and
- * leaving is a different event from both - which is worth stating because the
- * first version of this reported "rank 4 then, -1 now" as a promotion.
  */
 export type TieOutcome =
     | 'dead'
@@ -1285,14 +1017,6 @@ export interface Homecoming {
 
 /**
  * What the absentee walks back into.
- *
- * Pure reporting. Reads the snapshot against the world as it now stands and
- * says what is materially different, without touching anything - a homecoming
- * is a question, and asking it must not change the answer. It reports the
- * WORLD's state, not what anybody believes: the belief side is
- * `disagreementsAbout(absence.claimKey)` on whatever ledger the accounts were
- * filed in, and keeping them separate is the same separation `knowledge.ts`
- * enforces between the fact and the claim.
  */
 export function homecoming(
     state: WorldState,
@@ -1427,11 +1151,6 @@ interface AccountInput {
 
 /**
  * One account, written the way `discovery.ts` says it has to be written.
- *
- * Stance and confidence come off the stage rather than being chosen at the call
- * site, so an account written here is indistinguishable from one written by a
- * traveller or by an archive, and every query in the social layer reads it
- * without knowing this module exists.
  */
 function account(input: AccountInput): KnowledgeRecord {
     return recordKnowledge({

@@ -1,40 +1,5 @@
 /**
  * Consolidated Combat Tool - `combat_manage`
- *
- * Confrontation, as a cultivation world has it.
- *
- * THE FIRST THING THIS TOOL DOES IS REFUSE
- * ----------------------------------------
- * `assess` exists so a narrator can find out, before anything is committed,
- * that what they were about to describe is not a fight. Two major realms apart
- * and the engine returns `no_contest` and a list of the things that would
- * actually work: flee, hide, negotiate, seek protection, exploit terrain, find
- * the specialised counter, manipulate a third party, prepare, or simply not be
- * found. Those are not consolations. They are the encounter.
- *
- * AUTHORITY BOUNDARY
- * ------------------
- * - No action accepts an outcome. Callers supply intent - who, against whom,
- *   with which art, aiming at what, carrying which advantages - and never a
- *   result. There is no `action: 'declare_victory'` and there must never be.
- * - Every draw comes from `forStream(run.seed, ...)`. The same call against the
- *   same state returns the same fight, and a player who died can replay it.
- * - `edges` are claims about the world that the caller must have earned
- *   elsewhere: an ambush is a position, a formation is weeks of work and a
- *   fortune in stones, an artifact is an inventory row. This tool prices them;
- *   it does not grant them.
- * - Nothing here declares anyone dead. The engine reports damage, injuries and
- *   whether the finishing requirement was met; `survival.ts` decides death and
- *   the persistence step asks it.
- *
- * THE TRADITIONS
- * --------------
- * `strike` and `resolve` consult `killRequirement` at the moment a killing blow
- * would land. A soul-directed art against a Cut cultivator is nullified outright
- * - not reduced, nullified - and a body-directed killing of a Drawn cultivator
- * above Nascent Soul destroys a body and does not end a person. Both results are
- * reported plainly, because the winner walking away with the wrong belief is
- * exactly how a feud outlives a funeral.
  */
 
 import { z } from 'zod';
@@ -190,11 +155,6 @@ const ResolveSchema = z.object({
         ),
     /**
      * Whether the beaten party yields, read by the CALLER off who they are.
-     *
-     * The engine holds no will-to-submit number and must not: whether somebody
-     * kneels is a fact about their wants and their standing, or about a beast's
-     * own nature, and those live in the layer that holds the records. Omitted
-     * reads as the ordinary case, which is that they do.
      */
     submission: z.object({
         yields: z.boolean(),
@@ -252,40 +212,6 @@ const EndSchema = z.object({
 
 /**
  * Who a stream is drawn FOR, said in a way that survives leaving the process.
- *
- * ── THE BUG THIS EXISTS TO CLOSE ─────────────────────────────────────────
- *
- * Every draw in this file comes from `forStream(run.seed, ...)`, and the file
- * header promises that "the same call against the same state returns the same
- * fight, and a player who died can replay it". It did not. The three combat
- * streams mixed in `cultivator.id` and `opponent.id`, and EVERY cultivator row
- * id in this engine is a `randomUUID()` - `game.ts` mints the player's,
- * `cultivation-manage` mints a created one, `admin-manage` mints a staged
- * opponent's. So the id is stable within a process and meaningless across one,
- * and the same seed, the same sentence and the same starting state produced a
- * different fight from one run to the next: measured at 2188 HP against 2325
- * HP on seed `probe-seed`, with the row id as the only differing input.
- *
- * That is the same defect `oneCrowd` in `hearsay.ts` was written to fix, one
- * layer further in. There the crowd's ORDER was unstated and the opponent it
- * handed to `resolve` moved; here the opponent was right and the STREAM moved.
- * `resolveConfrontation` was byte-identical the whole time in both cases.
- *
- * ── WHAT REPLACES THEM ───────────────────────────────────────────────────
- *
- * The acting cultivator is `PLAYER_ROLL_IDENTITY`, on exactly the reasoning
- * `cultivation-manage` already records for the time-skip: these handlers reach
- * their subject through `resolveActiveRun`, which resolves a RUN, and a run has
- * exactly one player. The "two cultivators must not draw alike" case that
- * justifies a per-cultivator component cannot arise.
- *
- * An opponent is named rather than identified, because a name and a rung are
- * the only things about a combatant that a replay of the same seed reproduces.
- * A described opponent already had a stable id built this way; a real row's id
- * never was, and reading its name instead makes both populations behave the
- * same. Collisions are harmless: the turn number is already in every stream and
- * increments on every resolve, so two people cannot draw the same stream in one
- * run however alike they are.
  */
 export function opponentRollIdentity(opponent: CombatantInput): string {
     const name = opponent.name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -294,32 +220,6 @@ export function opponentRollIdentity(opponent: CombatantInput): string {
 
 /**
  * Build the engine's view of the acting cultivator from real persisted state.
- *
- * Nothing is invented here.
- *
- * ── WHAT THEY ARE CARRYING ───────────────────────────────────────────────
- *
- * The single rated object out of their own pouch, through `carriedArtifact`,
- * which was written for this and had no caller. `assessPower` prices
- * `weapon.power` as the rated ordinal when no explicit `artifactOrdinal` is
- * given, so there is one statement of what the thing is worth and not two.
- *
- * This is the player's half of the same seam `bestObjectHeldBy` is the world's
- * half of, and it must stay that way: an NPC's blade and a player's blade are
- * priced by the same line in the same resolver, and a second answer for the
- * player is the softening AGENTS.md forbids. What differs is only where the
- * holding is written down - `state.objects` for the world, `cultivator_pouch`
- * for the player - and neither of those is a claim on the other. A pouch row is
- * not a claim on the world's register: the world can go on holding that a house
- * owns a thing while the player carries it, which is what a stolen artifact IS
- * (`docs/world/things/items.md`, "holding a thing and owning it are two facts").
- * So nothing here writes ownership anywhere, and it must not start.
- *
- * A fight can end the object, which is the point of passing the identity rather
- * than only the number: `resolveExchange` reports it by id in `brokenObjects`,
- * and `whatTheFightBroke` in `web/combat-verbs.ts` is what writes the loss -
- * the pouch row goes and the world row is ruined and kept. This module does not
- * do it, and must not: it owns one store and has no world handle.
  */
 export function combatantFromCultivator(
     cultivator: Cultivator,
@@ -328,25 +228,7 @@ export function combatantFromCultivator(
 ): CombatantInput {
     const known = techniqueId ? repos.techniques.getKnown(cultivator.id, techniqueId) : null;
 
-    // ── WHAT THE ART IS ABOUT, WHICH THE STORED ROW DOES NOT CARRY ───────
-    //
-    // `techniques` has no `subject` column and `rowToTechnique` does not read
-    // one, so an art loaded out of the database comes back with `subject:
-    // null` however the catalog authored it. That is not cosmetic. Two systems
-    // key on it:
-    //
-    //   `techniqueEffectiveness` matches `insight.subject === technique.subject`,
-    //   which is the whole of how comprehension of the sword makes a sword art
-    //   land harder. Against a null it never matches, so understanding bore on
-    //   NO stored art for anybody.
-    //
-    //   `whatAFightTaught` asks what a fight taught about the art it was fought
-    //   with, and a fight with no subject in it teaches nothing about any art.
-    //
-    // The catalog is where a subject is authored and the row is a copy that
-    // lost the field, so the catalog is read for it here. That closes it for
-    // this handler; the column itself is a storage change on a shared registry
-    // and is reported rather than made in passing.
+    // WHAT THE ART IS ABOUT, WHICH THE STORED ROW DOES NOT CARRY
     const catalog = techniqueId ? getTechnique(techniqueId) ?? null : null;
     const art = known === null
         ? catalog
@@ -383,10 +265,6 @@ export function combatantFromCultivator(
 
 /**
  * Build the engine's view of an opponent.
- *
- * Prefers a real cultivator row. When the caller describes one instead, every
- * unstated field takes the honest neutral value rather than something flattering
- * to either side: a described opponent is an ordinary person at the stated rank.
  */
 export function combatantFromOpponent(
     spec: z.infer<typeof OpponentSchema>,
@@ -615,23 +493,9 @@ export async function handleStrike(args: z.infer<typeof StrikeSchema>): Promise<
         defenderEdges: args.opponentEdges ?? []
     });
 
-    // Persist what the strike actually cost the striker, and what it did to a
-    // real opponent when the opponent is a real row.
-    // ── WHY THERE IS NO DEATH GATE IN THIS HANDLER ───────────────────────
-    //
-    // Checked rather than assumed, because `resolve` was missing half of one.
-    // Neither party can die here and neither should:
-    //
-    //   THE STRIKER   nothing takes their HP. A strike costs qi and a cooldown,
-    //                 so there is no bar to empty and no ending to record.
-    //   THE STRUCK    a strike is ONE EXCHANGE. `resolve` can end somebody
-    //                 because it takes a `goal` and `finishOutcome` says which
-    //                 endings that goal reaches; `strike` takes no goal and
-    //                 `resolveExchange` has no `finished` to return, so there
-    //                 is no engine word here for "that was the end of them".
-    //                 Killing somebody with repeated strikes is a real gap and
-    //                 the fix is a finishing intent on this action, not a gate
-    //                 that reads an empty bar and infers one.
+    // Persist what the strike actually cost the striker, and what it did to a real
+    // opponent when the opponent is a real row. WHY THERE IS NO DEATH GATE IN THIS
+    // HANDLER
     const persist = repos.db.transaction(() => {
         repos.cultivators.applyDeltas(cultivator.id, { qi: -technique.qiCost });
         repos.techniques.markUsed(cultivator.id, technique.id, nextTurn);
@@ -754,25 +618,8 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
 }
 
 /**
- * Everything that happens AFTER a fight is over: what it taught, what it cost,
- * what was written down, and what the caller is told.
- *
- * ── WHY THIS IS ITS OWN FUNCTION ─────────────────────────────────────────
- *
- * Because there are now two ways to have a fight and there must not be two ways
- * to record one. `resolveConfrontation` settles a whole fight in a single call,
- * which is right for the simulation; a player stands inside one and answers it a
- * round at a time through `unfinished-fight.ts`, on the design owner's ruling
- * that a death you could not have acted against is unsatisfying. Both produce a
- * `ConfrontationResult`, and both come here.
- *
- * A second persistence path is exactly the drift the transaction below exists to
- * prevent, one level up: a fight taken over six turns that wrote the wounds but
- * not the feud, or the death but not the lesson, would be indistinguishable from
- * a working feature until somebody went looking.
- *
- * Everything in here reads the RESULT and never how it was reached. There is no
- * argument for how many turns it took and there must not be one.
+ * Everything that happens AFTER a fight is over: what it taught, what it cost, what
+ * was written down, and what the caller is told.
  */
 export function settleAFight(input: {
     repos: CultivationRepos;
@@ -794,21 +641,7 @@ export function settleAFight(input: {
         repos, run, cultivator, self, opponent, technique, result, nextTurn, day
     } = input;
 
-    // ── WHAT THE FIGHT TAUGHT ────────────────────────────────────────────
-    //
-    // Design owner: "Fighting should give you comprehension of your art (and
-    // your cultivation too, to some extent)."
-    //
-    // Read AFTER the resolution and applied below, so the lesson is about the
-    // fight that actually happened rather than the one that was intended.
-    // `what-a-fight-teaches.ts` decides how much and whether at all; nothing
-    // here has an opinion about the numbers.
-    //
-    // ITS OWN STREAM, and that is not a stylistic choice. Adding a draw to
-    // `combat_resolve` would shift every later draw on it and change fights
-    // that have nothing to do with this - AGENTS.md, a new RNG draw is a
-    // regression until proved otherwise. Seeded on the same parts as the fight
-    // so a replay of a run produces the same lesson.
+    // WHAT THE FIGHT TAUGHT
     const lesson = whatAFightTaught({
         yourOrdinal: cultivator.realmOrdinal,
         theirOrdinal: opponent.realmOrdinal,
@@ -819,15 +652,8 @@ export function settleAFight(input: {
             x => x.attackerId === cultivator.id || x.defenderId === cultivator.id
         ).length,
         outcome: result.outcome,
-        // The art actually swung. Somebody who fought bare learned nothing
-        // about the sword they left at home.
-        //
-        // Read off `self`, which is the priced combatant, rather than off the
-        // stored row: the row has no `subject` column and comes back null - see
-        // the note in `combatantFromCultivator`, which is the one place that
-        // repair is made so the two readings cannot disagree.
-        // A scalar consumer: `techniqueSubject` matches ONE road for a bonus.
-        // `primaryRoadOf` is the documented scalar read of the widened field.
+        // The art actually swung. Somebody who fought bare learned nothing about
+        // the sword they left at home.
         subject: self.technique ? primaryRoadOf(self.technique) : null,
         element: self.technique?.element ?? null,
         cultivationProgress: cultivator.cultivationProgress
@@ -866,18 +692,7 @@ export function settleAFight(input: {
             });
         }
 
-        // ── AN OPPONENT WITH NO ROW IS NOT WRITTEN TO AT ALL ─────────────
-        //
-        // Not a wound, not a point of HP, and now not a death either. Worth
-        // knowing because it is the case the PLAYED layer almost always hits:
-        // most of the people standing in a square exist only in world state,
-        // `game.ts` describes them to this tool rather than passing an id
-        // (there is no row to pass), and everything the resolver decided about
-        // them evaporates when this block declines to run.
-        //
-        // Closing that means this tool learning to write to the world, which it
-        // does not do today and which is a boundary decision rather than a bug
-        // fix. The gate below is the half that can be closed here.
+        // AN OPPONENT WITH NO ROW IS NOT WRITTEN TO AT ALL
         if (input.opponentIdOnRecord) {
             const opponentRow = repos.cultivators.getById(input.opponentIdOnRecord);
             if (opponentRow) {
@@ -898,42 +713,7 @@ export function settleAFight(input: {
                     });
                 }
 
-                // ── THE OTHER HALF OF THE DEATH GATE ─────────────────────
-                //
-                // The gate below is asked about the cultivator whose run this
-                // is and, until now, about NOBODY ELSE. So an opponent driven
-                // to nothing was AT nothing rather than dead: the player could
-                // not kill anybody on record, every system that answers a
-                // killing was unreachable from the player's side, and the
-                // world's rules bound the player and not the world.
-                //
-                // ── WHY THIS IS NOT "ASK THE GATE ABOUT BOTH PARTIES" ────
-                //
-                // Because that would make every ordinary fight start killing
-                // people. The bar reaches zero in bouts nobody meant to be
-                // fatal, and `evaluateDeathConditions` reads an empty bar as
-                // `combat_defeat` by default - so widening the gate would turn
-                // a spar into a homicide and a mugging into a murder.
-                //
-                // The answer was already in the resolver and did not need
-                // inventing. `finishOutcome` reads the aggressor's `goal`:
-                // `subdue` ends at `capture`, `humiliate` at `humiliation`,
-                // `drive_off` at `withdrawal`, and ONLY `kill` against a body
-                // the tradition says is enough returns `lethal` - which is
-                // exactly what `result.finished` means. So a bout that empties
-                // somebody's bar without meaning to leaves them beaten, and a
-                // killing is a killing because the killer went there.
-                //
-                // What is NOT decided here: this asks `survival.ts` and obeys
-                // it, the same as the player's half, because nothing in this
-                // file may declare anybody dead. And `forcingCombat` is
-                // deliberately absent - that flag prices the recklessness of
-                // walking into a fight half-dead, and it belongs to whoever
-                // chose the fight, never to the person who was swung at.
-                //
-                // `body_destroyed` is left alone on purpose. The body went and
-                // the person did not; what becomes of the remnant is the
-                // existence layer's ruling and not a death to record here.
+                // THE OTHER HALF OF THE DEATH GATE
                 if (result.finished && result.loserId === opponent.id) {
                     const beaten = repos.cultivators.getById(opponentRow.id)!;
                     const theirCause = evaluateDeathConditions(beaten);
@@ -950,15 +730,7 @@ export function settleAFight(input: {
             }
         }
 
-        // ── WHAT THE FIGHT TAUGHT, WRITTEN DOWN ──────────────────────────
-        //
-        // In the same transaction as the wounds, for the reason the block above
-        // gives: a fight that recorded what it cost and not what it taught is
-        // the same drift in the other direction.
-        //
-        // Zero for most fights, and zero always for a fight against somebody
-        // four or more rungs below - `what-a-fight-teaches.ts` reads that off
-        // REGARD_BANDS and there is no branch here that could disagree with it.
+        // WHAT THE FIGHT TAUGHT, WRITTEN DOWN
         if (lesson.progress > 0) {
             repos.cultivators.applyDeltas(cultivator.id, {
                 cultivationProgress: lesson.progress

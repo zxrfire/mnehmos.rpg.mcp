@@ -87,7 +87,7 @@ export interface TheCure {
      * `affordable` is a claim about THIS PURSE against THIS PRICE, and a purse
      * is only ever spent at a real counter - so an "about" that is not the
      * number the counter charges makes the affordability line a falsehood
-     * rather than an approximation. Measured in the Quiet Marches, whose
+     * rather than an approximation. Measured in the Silent Cliffs, whose
      * multiplier is 2.2: the advice read "about 420 spirit stones. You are
      * carrying enough for one" and `buy` then asked 924. Pre-existing, and
      * invisible until a catalog row put it on a large enough absolute number to

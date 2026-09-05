@@ -223,7 +223,7 @@ export const daoPartnerVerbs = {
 
         // ── THE THREE CONDITIONS, READ OFF THE WORLD AND REPORTED ────────
         //
-        // Reported and not decided, in the same way `FurnaceConsent` is: the
+        // Reported and not decided, in the same way `FurnaceUseType` is: the
         // membership row and the tie table are where this world already keeps
         // "of one house" and "married", and the engine module compares the two
         // dao itself because comparing two dao is a structural question about a

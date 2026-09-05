@@ -340,7 +340,7 @@ export async function nearestVerbByMeaning(input: string): Promise<NearestVerb |
  * plausible-looking answer to a different one, on a difference of two words. A
  * new player cannot tell those apart from a game that has no such surface.
  */
-function theTableMeantIt(input: string): boolean {
+export function theTableMeantIt(input: string): boolean {
     return ASKING_WHAT_IS_POSSIBLE.test(input);
 }
 

@@ -1,33 +1,5 @@
 /**
  * Shared plumbing for the cultivation MCP tool surface.
- *
- * THE AUTHORITY BOUNDARY
- * ----------------------
- * Everything in this file exists to keep one rule true: the narrating agent may
- * describe an outcome only after the engine has already decided it and SQLite
- * has already recorded it. Concretely that means:
- *
- *   - No tool accepts an outcome. Callers supply intent (who, how long, which
- *     recipe) and never a result (succeeded, gained, died).
- *   - Every stochastic draw comes from `forStream(run.seed, ...)`. There is no
- *     `Math.random()` anywhere in the cultivation tools, so two identical calls
- *     against the same run state produce identical results.
- *   - Multi-write operations run inside one better-sqlite3 transaction, so a
- *     half-applied breakthrough cannot exist.
- *
- * SCHEMA AND SEEDING
- * ------------------
- * Every table this module reads is declared in
- * `src/storage/migrations.cultivation.ts` and created by `migrate()` when the
- * database is opened: `cultivator_flags`, `cultivator_pouch`,
- * `cultivation_sites`, `ambient_aliases` and `cultivation_tolls`, alongside the
- * cultivator, run, injury, technique, alchemy and sect tables.
- *
- * What this module does own is CONTENT SEEDING. The sect catalog is compiled-in
- * data; the `sects` table is state. `ensureSectsSeeded` copies one into the
- * other, idempotently, on first touch - so a fresh world has the nineteen sects
- * of the region in it without anyone having to remember a setup step, and an
- * existing world is refreshed rather than duplicated.
  */
 
 import Database from 'better-sqlite3';
@@ -144,17 +116,6 @@ export function ensureCultivationDb(): CultivationRepos {
 
 /**
  * Copy the compiled-in sect catalog into the `sects` table.
- *
- * Idempotent twice over: guarded per database handle so it runs once per
- * process, and built on `SectRepository.upsert`, so running it again on a world
- * that already has sects refreshes their rows rather than duplicating them. A
- * disciple's membership survives, because `sect_members` keys on the sect id
- * and the ids are stable catalog constants.
- *
- * `SectSchema.parse` inside `upsert` strips the content-side fields - what a
- * sect teaches, who it feuds with, the state of its inherited compound - which
- * stay in the catalog and are read from there at request time. The database
- * holds what changes; the catalog holds what does not.
  */
 export function ensureSectsSeeded(repos: CultivationRepos): void {
     if (seededDatabases.has(repos.db)) return;
@@ -208,10 +169,6 @@ export interface ResolvedRun {
 
 /**
  * Resolve the run and cultivator a tool call is about.
- *
- * Both ids are optional: with neither, the single live run is used, which is
- * what a single-player deployment always wants and removes an entire class of
- * "the agent invented an id" failures.
  */
 export function resolveActiveRun(
     repos: CultivationRepos,
@@ -285,20 +242,11 @@ export function resolveActiveRun(
 
 /**
  * That this run ended by a soul being put out rather than by a body failing.
- *
- * The player has no `NpcRecord`, which is where the soul state of everybody
- * else lives, so the same fact needs a home on this side. Read by whatever
- * asks what a corpse still holds - and by nothing that decides an outcome,
- * because the outcome already happened.
  */
 export const FLAG_SOUL_ENDED = 'soul_ended';
 
 /**
  * That this body is still walking and there is nobody in it.
- *
- * The player's side of what `identityContinuity: 0` records for everybody
- * else. Distinct from {@link FLAG_SOUL_ENDED}, which is a soul put out along
- * with the body; this one leaves the body.
  */
 export const FLAG_SOUL_HOLLOWED = 'soul_hollowed';
 
@@ -308,22 +256,10 @@ export const FLAG_RANKS_THIS_TURN = 'ranks_this_turn';
 export const FLAG_PILL_TOXICITY = 'pill_toxicity';
 /**
  * Breakthrough pills swallowed in this life, ever.
- *
- * Separate from toxicity, which decays against a tolerance and is about the
- * body. This is the count `pillToleranceDecay` reads, and it never goes down:
- * the fifth pill is worth less than the first for the rest of a life.
  */
 export const FLAG_BREAKTHROUGH_PILLS_TAKEN = 'breakthrough_pills_taken';
 export const FLAG_STIPEND_PAID_DAY = 'stipend_paid_day';
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT AN OBJECT WHOSE EFFECT IS SETTLED AT USE CAN LEAVE ON A PERSON
-//
-// `engine/cultivation/grade-spread.ts` draws these; the pill path writes them.
-// They are flags rather than columns because two of the three are things the
-// world already stores for NPCs and has never had a column for on a PLAYER -
-// see the report on `world_npcs.bloodline_species`, which is the same fact one
-// table over.
-// ─────────────────────────────────────────────────────────────────────────
 /** A `Beast` id. What the line IS is read from `beasts.ts`, never copied here. */
 export const FLAG_BLOODLINE_SPECIES = 'bloodline_species';
 /** `latent` | `grown` | `final`. `final` is a person who is also a beast. */
@@ -394,33 +330,17 @@ export interface PendingPill {
     potency: number;
     /**
      * The catalog row's grade.
-     *
-     * THE input that matters to `attemptBreakthrough`: it selects the real
-     * graded curve - base multiplier and the realm band the pill was made for -
-     * instead of the legacy flat `potency` path. Optional so a record written
-     * before this existed still loads, and so a synthesised pill with no
-     * catalog row behind it stays honest about having none.
      */
     grade?: TechniqueGrade;
     /**
-     * How many breakthrough pills this cultivator had already taken when this
-     * one was swallowed.
-     *
-     * Drives permanent tolerance. Stamped at CONSUMPTION rather than read at
-     * the attempt, because the tolerance a pill is subject to is a fact about
-     * the body that swallowed it on the day it swallowed it - and a pill held
-     * for twenty years through four other pills should not quietly become
-     * weaker in the pouch.
+     * How many breakthrough pills this cultivator had already taken when this one
+     * was swallowed.
      */
     priorPillsTaken?: number;
 }
 
 /**
  * Whether the cultivator is currently on grain abstinence.
- *
- * Stored as an absolute in-world day rather than a boolean so a pill with a
- * finite duration expires by the passage of time and not by anyone remembering
- * to clear a flag.
  */
 export function isOnGrainAbstinence(
     db: Database.Database,
@@ -460,22 +380,7 @@ export function recordRankGained(
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // POUCH - what a cultivator carries
-//
-// Pills and herbs are COUNTED stock: a holder and a number, and nobody cares
-// which one you took. An artifact is not. `docs/world/things/items.md` draws the line
-// on whether this specific object moving is an event somebody should be able to
-// find out about two centuries later, and for a rated object it always is.
-//
-// It is in the same table anyway, and that is deliberate rather than lazy: the
-// pouch is the only store the played game has for "what is on this person", and
-// a second one beside it would be the parallel-catalog mistake AGENTS.md
-// forbids. What the row does NOT carry is provenance - `world_objects` owns
-// that, and an artifact reaching a player through the world rather than through
-// ADMIN should be written there too. See `carriedArtifact` below for what reads
-// this, which today is less than it should be.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export type PouchItemKind = 'pill' | 'herb' | 'artifact';
 
@@ -487,31 +392,6 @@ export interface PouchEntry {
 
 /**
  * The COUNTED stock in a pouch: pills and herbs, and nothing else.
- *
- * ── WHY THIS FILTERS ─────────────────────────────────────────────────────
- *
- * Every existing reader of this function was written when there were exactly
- * two kinds, and two of them branch on `pill` and treat EVERYTHING ELSE as a
- * herb - `projectPouch` in `alchemy-manage.ts` does it in one `else`, and
- * `pouchNames` in `entities.ts` falls back to the raw item id. Widening the
- * kind without widening this made a granted artifact print as
- * "Herbs: 1 x hollow-unwritten-length" in the player's own pouch listing, which
- * is the surface lying about a write it really performed.
- *
- * So the counted list stays counted, every existing caller behaves exactly as
- * it did, and a rated object is reached through {@link listCarriedArtifacts}
- * instead. It IS in the table, `carriedArtifact` reads it back by name, and it
- * is deliberately out of the sale quote as well - `items.md` is explicit that
- * above the line cash is not the medium.
- *
- * AND THE LISTING NOW EXISTS. The `inventory` verb in `game.ts` reads
- * `listCarriedArtifacts` alongside the medicine, because for a while a granted
- * rated object was in this table and invisible to every sentence a player could
- * type - `what am I carrying` answered "Nothing in the pouch at all" over a
- * row that was really there, which is indistinguishable from the write never
- * having happened. It is read there rather than inside `handleInventory`
- * because that handler is the ALCHEMY tool and the filter above is right: what
- * was missing was a reader for the other kind, not a wider counted list.
  */
 export function listPouch(db: Database.Database, cultivatorId: string): PouchEntry[] {
     return allPouchRows(db, cultivatorId).filter(
@@ -570,25 +450,6 @@ export function addToPouch(
 
 /**
  * The best rated object this cultivator is carrying, or null for none.
- *
- * "Best" is highest `power`, which is the artifact catalog's own ordering and
- * the only ordering it has. Two objects do not stack: `CombatantInput.artifactOrdinal`
- * is documented as A SINGLE object priced as a second body of that rank, and
- * summing two of them would be inventing a rule the catalog does not have.
- *
- * ── WHAT READS THIS ──────────────────────────────────────────────────────
- *
- * `combatantFromCultivator` in `combat-manage.ts`, which is the one place the
- * played game prices the player for a fight. It goes into
- * `CombatantInput.weapon`, and `assessPower` reads `weapon.power` as the rated
- * ordinal when the caller states no explicit `artifactOrdinal` - so there is
- * one statement of what an object is worth rather than two.
- *
- * THE WORLD'S HALF IS `bestObjectHeldBy` IN `gatherings.ts`, filling the same
- * field off `state.objects`. Two readers because a player's holdings and an
- * NPC's are written down in different tables; ONE resolver, because a player's
- * blade and an NPC's blade must not be priced by different code. If a second
- * price for either ever appears, the softer one will be the player's.
  */
 export function carriedArtifact(
     db: Database.Database,
@@ -624,17 +485,7 @@ export function removeFromPouch(
     return true;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // AMBIENT QI
-//
-// Ambient qi is a pure function of (seed, location, day) inside the engine, and
-// `simulateTimeSkip` recomputes it internally from the location id it is given.
-// The only way to change what a cultivator breathes without lying about it is
-// therefore to change WHERE they are - which is exactly what an ambient gate
-// lift means in the fiction. `aliasForAmbient` searches for a place name whose
-// engine-computed band is the requested one, so the number the engine returns
-// afterwards is one the engine genuinely derived.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const DEFAULT_LOCATION = 'the open road';
 
@@ -690,23 +541,6 @@ export function effectiveLocationId(
 
 /**
  * The band the ground gives today, anchored to the ground it actually is.
- *
- * `ambientForLocationOnDay` takes a `density` and says of it: "This is the
- * CENTRE the month's weather varies around. Omit it only when the location
- * genuinely is not known." This call omitted it always, so every square in the
- * game fell through to `impliedDensityFor` - a hash of the run seed and the
- * location string. The catalog has declared a band for every named settlement
- * since it was written and nothing read it here.
- *
- * Found by playing. Nine Peaks is "the deepest vein anyone has kept, and the
- * Ascetic Order sitting on it", and standing in it was arithmetically
- * indistinguishable from standing in a thin market town - which makes the
- * choice of where to cultivate, one of the few real decisions a low cultivator
- * has, into noise.
- *
- * Unknown places still get the guess, and that is correct rather than a
- * fallback: a compound, a site or an admin alias genuinely has no declared
- * ground, and `aliasForAmbient` depends on the implied path continuing to work.
  */
 export function currentAmbient(
     db: Database.Database,
@@ -725,12 +559,8 @@ export function currentAmbient(
 }
 
 /**
- * Find a place name of the form `${location}#${n}` whose engine-derived band on
- * the block containing `day` is `band`.
- *
- * Bounded: `thin` and `normal` land within a couple of tries, `dense` (5% of
- * the distribution) within a few dozen. Returns null rather than looping if the
- * search is somehow unlucky, and the caller reports that honestly.
+ * Find a place name of the form `${location}#${n}` whose engine-derived band on the
+ * block containing `day` is `band`.
  */
 export function aliasForAmbient(
     seed: string,
@@ -749,18 +579,7 @@ export function aliasForAmbient(
 
 export const AMBIENT_BLOCK_DAYS = AMBIENT_REFRESH_DAYS;
 
-// ═══════════════════════════════════════════════════════════════════════════
 // THE GROUND THEY ARE STANDING ON
-//
-// `locations.ts` has carried four thresholds - entry, survival, operational,
-// mastery - since it was written, calibrated across every place in the world,
-// and nothing read them at the point where a cultivator was actually standing
-// somewhere. Measured: an ordinal 0 cultivator inside a compound whose survival
-// bar is 19 cultivated for seven months, gained a rank, and was never touched.
-//
-// This is the join. The engine holds no map, so the map layer prices the gap
-// and hands the time skip two numbers and a reason.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export interface GroundStanding {
     location: LocationRecord;
@@ -770,12 +589,8 @@ export interface GroundStanding {
 }
 
 /**
- * What the world says about the ground under this cultivator, if it knows the
- * place at all.
- *
- * Null when the world is not running or the location is a road, a hillside or
- * anywhere else the gazetteer does not name - which is the honest answer and
- * exactly the behaviour every caller had before this existed.
+ * What the world says about the ground under this cultivator, if it knows the place
+ * at all.
  */
 export async function groundStandingFor(
     run: Run,
@@ -859,19 +674,8 @@ export function describeGround(standing: GroundStanding): Record<string, unknown
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Absolute end-state the caller must write so that persistence and simulation
- * agree exactly.
- *
- * Three of these fields come from `result.endState` rather than from a delta,
- * and that distinction is load-bearing. `starvationTurns`, `bleedingTurns` and
- * `yearsAtCurrentRealm` all RESET mid-skip - the starvation clock clears the
- * moment there is food again, the bleed clock clears the moment the untreated
- * count drops back under the lethal threshold, the stagnation clock returns to
- * zero on any rank advance - so a delta against the starting value is not
- * merely imprecise, it is uninvertible. The engine reports where they actually
- * ended and this writes that straight down.
- *
- * Everything else is a genuine accumulation and is applied as a delta.
+ * Absolute end-state the caller must write so that persistence and simulation agree
+ * exactly.
  */
 export interface SkipEndState {
     hp: number;
@@ -912,26 +716,10 @@ function roundYears(years: number): number {
     return Math.round(years * 1e6) / 1e6;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // THE VAULT'S TOLL
-//
-// "The cultivator does not choose what is taken. The engine chooses,
-// deterministically, from what the run has actually accumulated: real bonds
-// with real NPCs, real memories, real techniques in the database."
-//
-// The engine layer holds no database, so assembling those candidates from real
-// rows is this layer's job - and so is deleting exactly the row the engine
-// named afterwards. A toll the engine charged that the database does not show
-// is the same failure as a breakthrough the narrator invented.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * The claim key a holder's knowledge ABOUT a cultivator is filed under.
- *
- * A convention rather than a schema constraint, because `claim_key` is free
- * text by design. Anything filed here, plus anything whose underlying fact
- * names the cultivator as a subject, is "what this person knows about you" -
- * and that is exactly the set a taken bond removes.
  */
 export function cultivatorClaimKey(cultivatorId: string): string {
     return `person:${cultivatorId}`;
@@ -957,15 +745,6 @@ interface BondRow {
 
 /**
  * Everyone who currently knows this cultivator, as real `relationships` rows.
- *
- * Direction matters and is the whole point: these are ties held BY other people
- * ABOUT the cultivator (`to_character_id = cultivator`). The world bible's
- * phrasing is "a person who knew you stops knowing you", so what the crossing
- * reaches for is somebody else's hold on you, not your feelings about them.
- *
- * The holder's display name is resolved across both `cultivators` and
- * `characters`, because a bond may be held by either and the ledger has to be
- * able to say whose it was.
  */
 function bondCandidates(db: Database.Database, cultivatorId: string): TollCandidate[] {
     const rows = db
@@ -1002,11 +781,6 @@ interface MemoryRow {
 
 /**
  * Memories the cultivator is actually holding, as real `knowledge_records`.
- *
- * Restricted to positive first-person stances held by a character: `ignorant`
- * is the absence of a memory rather than one, and a `public` holder is a body
- * of opinion, not somebody's recollection. A witnessed memory weighs more than
- * a reported one because being there is what makes it yours.
  */
 function memoryCandidates(db: Database.Database, cultivatorId: string): TollCandidate[] {
     const rows = db
@@ -1031,15 +805,6 @@ function memoryCandidates(db: Database.Database, cultivatorId: string): TollCand
 
 /**
  * What this run has that a realm boundary could take.
- *
- * Every candidate is a real row with a real id, so `persistToll` can act on
- * precisely what was named. Weights say how much a thing MATTERED - the price
- * is paid in what mattered, so higher is more likely to go.
- *
- * All three kinds are drawn from tables: `cultivator_techniques` for arts,
- * `relationships` for bonds, `knowledge_records` for memories. A run that has
- * accumulated none of them offers nothing, and the engine correctly returns
- * `nothing_left` - the Hollow Court condition, arriving early.
  */
 export function tollCandidatesFor(
     repos: CultivationRepos,
@@ -1087,15 +852,6 @@ export function tollConditionsFor(
 
 /**
  * 道心 - what this cultivator's own record weighs at a wall.
- *
- * THE ONE DERIVATION, and it is here rather than in either caller for the
- * reason `whatACrossingTakesFrom` gives about the body cost: the played verb
- * and the auto-breakthrough inside a seclusion must not be able to come to
- * different answers about the same price, because the player who found the
- * cheaper door would be playing a different game from the world.
- *
- * `ledgerAbout` is both directions and both statuses; the filtering is the
- * engine module's and is not repeated here.
  */
 export function daoHeartFor(
     db: Database.Database,
@@ -1111,10 +867,6 @@ export function daoHeartFor(
 
 /**
  * The same read, as the two fields a breakthrough or a time skip takes.
- *
- * Spread into a context rather than assigned field by field, so that a caller
- * cannot supply the share and forget the count - which would book the bare
- * `dao_heart` label and lose the only thing the line tells a player.
  */
 export function daoHeartConditions(
     db: Database.Database,
@@ -1125,38 +877,10 @@ export function daoHeartConditions(
     return { daoHeart: read.share, daoHeartOpen: read.open };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // TAKING IT
-//
-// These are direct writes against the social layer's tables because that layer
-// has no repository yet. They belong in a `social.repo.ts` the moment one
-// exists; the SQL is kept small and the transitions are computed by the social
-// engine's own functions so the behaviour moves across unchanged.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Sever a bond: the person who knew this cultivator stops knowing them.
- *
- * Two writes, because the setting is specific about which half goes.
- *
- * 1. THE KNOWLEDGE IS DELETED. Every positive-stance thing the holder held
- *    about the cultivator is removed, and a single `ignorant` row is written in
- *    its place - the knowledge layer's own documented way to say "has no idea",
- *    as distinct from having no record at all. This is the honest
- *    representation of "a person who knew you stops knowing you": what the
- *    crossing takes is their hold on you, and the row that used to carry it is
- *    genuinely gone.
- *
- * 2. THE TIE IS ENDED, NOT DELETED, via the social engine's own
- *    `endRelationship`. `relationships.ts` is explicit that ended ties are
- *    kept - "a dead master is still a master" - and here that contract does
- *    real work: the record stays, referring to somebody the holder can no
- *    longer account for. That residue is the point. The bond itself is gone:
- *    the row is inactive, reasoned `toll`, and no longer answers any live query.
- *
- * The world's `world_facts` are untouched throughout. The thing still happened;
- * this person simply no longer holds it. The world remembers and they do not,
- * which is the shape of the whole setting.
  */
 export function severBond(
     db: Database.Database,
@@ -1276,12 +1000,6 @@ export function severBond(
 
 /**
  * Take a memory: the record is deleted outright.
- *
- * No tombstone and no `superseded` flag, because superseding is for changing
- * your mind and this is not that. The underlying `world_facts` row survives
- * untouched - the thing still happened, and the cultivator simply no longer
- * holds it. Anyone else who witnessed it still does, which is how the player
- * finds out what they lost.
  */
 export function forgetMemory(db: Database.Database, knowledgeRecordId: string): boolean {
     const changes = db
@@ -1292,23 +1010,6 @@ export function forgetMemory(db: Database.Database, knowledgeRecordId: string): 
 
 /**
  * Write down what the crossing took, and actually take it.
- *
- * THE INVARIANT: if the ledger says it was taken, it is gone from the database.
- * A ledger entry claiming somebody's brother was taken while nothing was
- * removed is an outcome asserted without a state change, which is the one thing
- * this engine exists to make impossible.
- *
- * `takenAll` is the authoritative list and the ONLY field this reads. `taken`
- * is a convenience view of `takenAll[0]` and using it to decide what to delete
- * would silently under-report the ascension crossing, which collects the
- * cultivator's whole remaining ledger at once rather than one instalment. Every
- * entry is applied, every application is reported, and an entry that could not
- * be applied is surfaced rather than swallowed - an unapplied take is a bug,
- * not a game outcome.
- *
- * MUST be called inside the caller's transaction: the rank advance and the
- * price are one event, and a crossing that recorded the rank but not the cost
- * would be exactly the drift this guards against.
  */
 export interface TollApplication {
     /** True when every entry in `takenAll` was actually removed or ended. */
@@ -1471,19 +1172,9 @@ export function listTolls(db: Database.Database, cultivatorId: string): TollLedg
 
 /**
  * Record the foundation the engine laid, on the cultivator row itself.
- *
- * `BreakthroughResult.foundationEstablished` is documented as something the
- * caller must persist, and this is that. `establishFoundation` refuses to
- * overwrite an existing foundation, so a repeated or out-of-order write cannot
- * upgrade a cracked foundation into a flawless one.
  */
 /**
  * Record the result of the last crossing.
- *
- * Both non-'none' values are permanent and load-bearing, so
- * `recordImmortalStatus` refuses to overwrite an existing one: a
- * 'false_immortal' is precisely what bars any further attempt, and a write that
- * could clear it would let the Lid open twice for the same name.
  */
 export function persistImmortalStatus(
     repos: CultivationRepos,
@@ -1501,28 +1192,12 @@ export function persistFoundation(
     repos.cultivators.establishFoundation(cultivatorId, quality);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // AUDIT + ADMIN RUN FLAGGING
-//
-// context.md: "Every admin action is written to the audit log, and runs that
-// used admin are flagged so they are excluded from the death ledger."
-//
-// The audit row IS the flag. `target_id` carries the run id, so "did this run
-// use admin" is a single indexed-ish lookup with no schema change and no way
-// for the flag to drift out of step with the log that justifies it.
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const ADMIN_AUDIT_PREFIX = 'admin_manage.';
 
 /**
  * Record an admin action and flag its run.
- *
- * The audit row is written FIRST and is the authoritative justification: it
- * says what was done, to what, with what arguments. `runs.admin` is then set as
- * an index over that fact, so the ledger's exclusion is a single indexed read
- * rather than a LIKE scan across every audit row in the campaign. Both happen
- * in one transaction, so a flagged run always has the log entry that explains
- * it, and a logged action always leaves its run flagged.
  */
 export function writeAdminAudit(
     repos: CultivationRepos,
@@ -1721,15 +1396,15 @@ export function summariseInjury(injury: Injury): Record<string, unknown> {
         cultivationPenalty: injury.cultivationPenalty,
         breakthroughPenalty: injury.breakthroughPenalty,
         // The field that says WHICH wound this is, and the only one the summary
-        // used to drop. Two things wanted it back. A narrator handed a
-        // `severity` and a sentence was being asked to describe a severed
-        // meridian without being told it was one, when the catalog has a name, a
-        // permanence and a stated treatment for it. And a summary missing this
-        // is not a wound any more - it is a wound of its severity, which is
-        // exactly the reconstruction-from-a-count that `woundsCarriedBy` exists
-        // to apologise for - so nothing downstream could put a resolver's wound
-        // onto a record without inventing the half that had been thrown away.
-        // With it, this projection is lossless and `InjurySchema` parses it.
+        // used to drop. Two things wanted it back. A narrator handed a `severity`
+        // and a sentence was being asked to describe a severed meridian without
+        // being told it was one, when the catalog has a name, a permanence and a
+        // stated treatment for it. And a summary missing this is not a wound any
+        // more - it is a wound of its severity, which is exactly the
+        // reconstruction-from-a-count that `woundsCarriedBy` exists to apologise
+        // for - so nothing downstream could put a resolver's wound onto a record
+        // without inventing the half that had been thrown away. With it, this
+        // projection is lossless and `InjurySchema` parses it.
         woundType: injury.woundType
     };
 }
@@ -1784,27 +1459,10 @@ export function sectCatalogFacts(sectId: string): Record<string, unknown> | null
     };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // UNDERSTANDING: ACCESS ASSEMBLED FROM REAL ROWS
-//
-// `discoverableInsights` is a hard filter, not a modifier: a comprehension with
-// no access behind it never enters the candidate set, so it can never be
-// rolled. The engine holds no library and no map, which means the whole of that
-// filter is decided HERE, by what the database actually shows. A caller that
-// omits the context gets a cultivator who can reach their own root and nothing
-// else - which is correct for a hermit and wrong for an inner disciple, so the
-// assembly has to be shared rather than repeated per tool.
-//
-// Nothing in this section consults affinity. Affinity is the slope and access
-// is the filter; see `dao.ts` for why the two must never be joined.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Site kinds that have something to teach, and what they open.
- *
- * The keys on the right are `understanding.ts`'s own LOCATION_OPENINGS tags.
- * Mapping is one-way and explicit rather than free-text, so a site kind that
- * teaches nothing teaches nothing rather than quietly matching a tag.
  */
 const SITE_KIND_TAGS: Readonly<Record<string, string>> = {
     grave: 'sealed_tomb',
@@ -1852,13 +1510,8 @@ export interface DiscoveryAssembly {
 type UnderstandingContext = Omit<DiscoveryContext, 'survived'>;
 
 /**
- * Everything this cultivator is currently near enough to comprehend, assembled
- * from rows that exist.
- *
- * Manuals are the arts they have actually learned - a text on the shelf they
- * cannot read is not listed here and grants nothing. A teacher is a sect that
- * has admitted them and has a signature art to pass on. A site is ground
- * somebody has already found.
+ * Everything this cultivator is currently near enough to comprehend, assembled from
+ * rows that exist.
  */
 export function discoveryContextFor(
     repos: CultivationRepos,
@@ -1902,32 +1555,9 @@ export function discoveryContextFor(
         sources.push({ kind: 'site', label: tag.replace(/_/g, ' '), id: tag });
     }
 
-    // ── GROUND THAT TEACHES A ROAD, for the player ──
-    //
-    // Twenty authored grounds each teach one domain. The world layer reaches
-    // them through `roadsInReachOf`; the player reached none of them, because
-    // this function built its location exposure from `siteTagsAt` - the
-    // `cultivation_sites` table - and a dao ground is a place in the region
-    // catalog. So the dao gate could be satisfied by every NPC in the world
-    // and by nobody holding the controller, which is the split this repo keeps
-    // finding and AGENTS.md now names first.
-    //
-    // Reachability is `howSomebodyStandsToAGround`, which is the WORLD'S OWN
-    // rule and not a second copy of it. It used to be a second copy - the
-    // floor, the membership check and the standing check were written out again
-    // here against the catalog while `daoGroundsInReachOf` ran the same three
-    // against the location table - and two copies of a rule is how the world's
-    // answer and the player's drift apart. Now the refusal a player reads, the
-    // exposure they get and the roads an NPC walks all come off one function.
+    // GROUND THAT TEACHES A ROAD, for the player
     const daoGrounds: NonNullable<DiscoveryContext['daoGrounds']>[number][] = [];
-    // ── WHICH PROVINCE THEY ARE ACTUALLY STANDING IN ─────────────────────
-    //
-    // `regionIdOfPlace` reads the region gazetteer, and A DAO GROUND IS NOT IN
-    // IT: the seeder plants these as world locations under a region node, so
-    // the catalog has never heard of "The Glass Field". A cultivator who had
-    // walked to one therefore resolved to no province at all and got NOTHING -
-    // the one place in the world guaranteed to teach them was the one place
-    // that could not. The catalog's own rows answer for themselves.
+    // WHICH PROVINCE THEY ARE ACTUALLY STANDING IN
     const standingRegion = regionIdOfPlace(cultivator.location)
         ?? daoGroundNamed(cultivator.location)?.regionId;
     if (standingRegion) {
@@ -2007,11 +1637,6 @@ export function discoveryContextFor(
 
 /**
  * Write comprehension back.
- *
- * The one place understanding is persisted. `insights` and `achievements` are
- * whole-array columns on the cultivator row, so the caller hands the merged
- * arrays the engine produced rather than a delta - and the schema's provenance
- * requirement fails loudly at this boundary if anything untraceable got in.
  */
 export function persistUnderstanding(
     repos: CultivationRepos,
@@ -2056,12 +1681,6 @@ export function persistUnderstanding(
 
 /**
  * File a temporal phenomenon as a belief.
- *
- * A vision has no fact behind it and may never have one, so it is written to
- * the knowledge layer with `fact_id` NULL and a `divined` source. Nothing reads
- * these back as a bonus: they grant information and never capability, so
- * dropping them would silently delete content rather than silently grant it -
- * which is why they are written here rather than left to the caller.
  */
 export function persistVisions(
     db: Database.Database,
@@ -2072,12 +1691,6 @@ export function persistVisions(
 
 /**
  * Write beliefs to the knowledge layer.
- *
- * The one insert path for anything a cultivator comes to hold outside the
- * existence gate in `web/knowledge.ts`. Ids are stable and derived from the
- * content, so re-recording the same belief on the same day is idempotent and
- * a genuinely new acquisition is a new row - which is correct, because how
- * somebody came to hold something twice is worth keeping.
  */
 export function persistBeliefs(
     db: Database.Database,

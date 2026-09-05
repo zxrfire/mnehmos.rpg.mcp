@@ -1,44 +1,6 @@
 /**
- * World seeding: turning the content catalogs into a world that is already
- * running when the player arrives.
- *
- * Before this existed the roster returned exactly one row - the player - and a
- * forty-year seclusion changed nothing, because there was nothing there to
- * change. Seeding instantiates the starting world: regions with veins and
- * gating, factions with real members, several hundred NPCs, lineages, dated
- * opportunities, and the grant renewals that will fall due while the player is
- * in a cave.
- *
- * Everything derives from the run seed. Two runs of the same seed produce
- * byte-identical worlds.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * NOBODY IS FLAGGED IMPORTANT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * This is the rule the charter cares most about and the easiest place to break
- * it, because seeding is exactly where a lazy implementation writes
- * `leader.realmOrdinal = 24`.
- *
- * What happens instead: every NPC is generated the way the player is - spirit
- * root rolled, attributes rolled, personality-free but goal-bearing - and then
- * their CURRENT REALM IS DERIVED from what those inputs would actually have
- * produced over the years they have been alive, using the real cultivation
- * math: `computeCultivationRate` against `progressRequiredForOrdinal`, walked
- * up the ladder. A muddled root who has been at it for eighty years lands where
- * a muddled root who has been at it for eighty years lands.
- *
- * ONLY THEN are roles assigned, by sorting the faction's members on the realm
- * they turned out to have. The strongest is the leader because they are the
- * strongest, not because the seeder decided who mattered. A faction whose draw
- * came out weak gets a weak patriarch and will struggle, and that is a correct
- * outcome rather than a bug.
- *
- * The region ceiling is the other half of it. `localCeilingOrdinal` says what
- * nobody here has passed in living memory, and it is applied as a real cap on
- * the derived ordinal - so where you are born decides more about your life than
- * anything you will ever do, which is the setting's whole position on the
- * matter.
+ * World seeding: turning the content catalogs into a world that is already running
+ * when the player arrives.
  */
 
 import { DAYS_PER_YEAR, computeCultivationRate } from '../cultivation/cultivation.js';
@@ -63,7 +25,7 @@ import {
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { rosterByRung, elderRungOf } from '../cultivation/leadership.js';
 import { MEMBERS } from '../../data/cultivation/members.js';
-import { THE_LINE_AT_MILLRUN } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
+import { THE_LINE_AT_OLD_RIVER } from '../../data/cultivation/a-family-that-came-down-from-a-changed-beast.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
 import { rollOf } from '../../data/cultivation/faction-roll.js';
 import { whoAHouseWillTake } from '../../data/cultivation/the-three-floors-a-house-admits-at.js';
@@ -197,23 +159,11 @@ const APEX_SEED_FLOOR = 17;
 
 /**
  * What a year of work is worth to somebody at this rank.
- *
- * MOVED, unchanged, to `engine/cultivation/origin.ts`, where the rest of the
- * economy's constants already live and where the pill market can read it
- * without the cultivation layer importing the world layer. Re-exported here
- * because a dozen call sites and two probes name it at this path, and because
- * the income curve is half of every price in the game.
  */
 export { earningsPerYear } from '../cultivation/origin.js';
 
 /**
  * What a catalog figure is holding.
- *
- * Named people do not get their purse from the life walk, because their rank
- * and realm are curated rather than derived - so it is composed from the two
- * things that decide earning power in this world: what they are, and where
- * they stand in the institution. Wide, because a senior figure who is poor is
- * a story and the catalog should be allowed to produce one.
  */
 function holdingsFor(ordinal: number, rankIndex: number, rng: CultivationRNG): number {
     const perYear = earningsPerYear(clampOrdinal(ordinal));
@@ -229,11 +179,7 @@ const APEX_AGE_FRACTION = 0.25;
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * "the The Low Fall vein".
- *
- * Region names in the catalog carry their own article - The Low Fall, The Wide
- * Field, The Quiet Marches - so prefixing another one doubles it. Visible in
- * `probe-places.ts` output and in the map panel.
+ * "the The Jade Gorge vein".
  */
 function withoutArticle(name: string): string {
     return name.replace(/^[Tt]he\s+/, '');
@@ -282,14 +228,9 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const effects = seedGrantSchedule(state, opts.catalog, presentDay);
 
     // Books last, because who holds what depends on everything above it: the
-    // factions have to be seated before their libraries have anywhere to sit,
-    // and the people have to be placed and ranked before the shelf can be
-    // gated by rank.
-    //
-    // Until this ran, a seeded world contained no objects at all and every NPC
-    // held `techniqueIds: []` - so `applyAdvancement` had no manual to read,
-    // fell back on `deriveOrdinal`, and nobody in the world gained a rung in
-    // two hundred years. See `manuals.ts`.
+    // factions have to be seated before their libraries have anywhere to sit, and
+    // the people have to be placed and ranked before the shelf can be gated by
+    // rank.
     state.objects.push(...seedSectLibraries(state));
     // And the things that are not books. `artifacts.ts` has been a complete
     // table of ObjectRecords since it was written and the seeder never put one
@@ -300,10 +241,10 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // And the ground that teaches a road, which is the other half of the same
     // problem: a material is spent and gone, a terrace is not, and the gate in
     // `breakthrough.ts` asks for comprehension the world had no way at all to
-    // supply. Seeded AFTER the population so it cannot perturb where anybody
-    // was born, and after the materials so their ruin draw is unchanged - both
-    // of those are deliberate, and both keep every existing seeded world
-    // identical up to this line. See `how-a-cultivator-comes-by-a-road.ts`.
+    // supply. Seeded AFTER the population so it cannot perturb where anybody was
+    // born, and after the materials so their ruin draw is unchanged - both of those
+    // are deliberate, and both keep every existing seeded world identical up to
+    // this line. See `how-a-cultivator-comes-by-a-road.ts`.
     state.locations.push(...seedPlacesThatTeachADao(state));
     // And the medicine, which the same catalog-nothing-read defect applied to:
     // a world with no pills in it is a world where the crossing pill is a price
@@ -361,14 +302,8 @@ function placeLocationId(regionId: string, placeName: string): string {
 }
 
 /**
- * One location per region, one per named place inside it, and one vein per
- * region that has one.
- *
- * The region carries the gating: `localCeilingOrdinal` becomes the mastery
- * threshold, because holding a province means being above what the province has
- * ever produced. Places inherit their parent's hazards and override the ambient
- * band, which is how a rich pocket inside a thin province is representable
- * without a second mechanism.
+ * One location per region, one per named place inside it, and one vein per region
+ * that has one.
  */
 function seedRegions(
     state: WorldState,
@@ -426,20 +361,6 @@ function seedRegions(
                 hazards: region.hazards.slice(),
                 environment: makeEnvironment({
                     // THE PLACE'S OWN GROUND, not its province's average.
-                    //
-                    // This read `qiFraction(region.qiDensity)`, so every
-                    // settlement in a province got an identical density and the
-                    // `ambient` band two lines up was written to the record and
-                    // never used for anything. Measured: Nine Peaks - "the
-                    // deepest vein anyone has kept, and the Ascetic Order
-                    // sitting on it" - and Scarwater, a thin ford town, both
-                    // came out at 0.35, and `Game.ambientFor` prefers this
-                    // record over the catalog, so the played game described
-                    // both as air that neither helps nor gets in the way.
-                    //
-                    // Found by playing: two looks at the same square, one
-                    // calling the air thick enough to notice on the first
-                    // breath and the next calling it unremarkable.
                     spiritualDensity: densityForBand(place.ambient),
                     danger: place.kind === 'site' ? 0.5 : 0.1,
                     resources: region.exports.slice(0, 2),
@@ -492,23 +413,7 @@ function seedRegions(
         }
     }
 
-    // ── AND ROADS BETWEEN PLACES OF ONE REGION ───────────────────────────
-    //
-    // Until this existed a place had no links at all: places hang off their
-    // province by `parentId` and regions link to regions, so `travelOptions`
-    // at a settlement returned an empty list and nothing in the world could
-    // say that two towns were near each other.
-    //
-    // The catalog states each road on ONE of its two ends and `linkLocations`
-    // writes both directions, so the runtime graph is symmetric by
-    // construction from a single row - which is why the catalog does not
-    // carry a second row that could disagree with the first.
-    //
-    // `conn.kind` is a `LinkKind` and goes through untranslated, unlike the
-    // region loop above, which flattens six social relations to 'road'
-    // because a province connection is a relationship rather than a way. A
-    // sea crossing arriving as a road is the defect `what-a-sea-crossing-
-    // costs.ts` records against that line; this loop does not repeat it.
+    // AND ROADS BETWEEN PLACES OF ONE REGION
     const byLocationId = new Map(state.locations.map(l => [l.id, l]));
     for (const region of catalog.regions) {
         // Resolved per province rather than in one global table, because a
@@ -541,16 +446,6 @@ function seedRegions(
 
 /**
  * Relative headcount by settlement kind, for weighting births.
- *
- * Anchored on the gazetteer's own `typicalPopulation` bands in
- * `mortal-world.ts` - 20-80 for a hamlet up to 80,000-plus for a city -
- * flattened to a ratio, because the demography only ever needs the shape.
- * Compressed hard against the real spread: a city genuinely holds a thousand
- * hamlets' worth of people, and a world where every birth lands in one is not
- * the world this setting describes.
- *
- * A `site` is not a settlement and holds nobody. It is 0, and `birthplacesIn`
- * reads that as uninhabitable rather than as unset.
  */
 const PLACE_POPULATION_WEIGHT: Readonly<Record<string, number>> = {
     hamlet: 3,
@@ -564,11 +459,6 @@ const PLACE_POPULATION_WEIGHT: Readonly<Record<string, number>> = {
 
 /**
  * A house's ground holds its household, not a town.
- *
- * Deliberately near the bottom of the scale. There are far more houses in the
- * catalog than there are towns, and drawing births uniformly over habitable
- * ground put 61% of the living world inside a compound within a hundred and
- * fifty years - which is not a setting where a sect is a thing you can join.
  */
 const SECT_GROUND_POPULATION_WEIGHT = 1;
 
@@ -601,11 +491,6 @@ function politicalControlOf(region: CatalogRegion): string {
 
 /**
  * Factions as entities with a seat, a treasury, rivalries and a vein.
- *
- * Treasury is derived from what the faction can make for itself and what it
- * owes upward - a federated sect paying forty thousand a year in tribute runs
- * closer to the line than an unbacked one that pays nobody, which is exactly
- * the pressure the governance models exist to create.
  */
 /** Stable id for a faction's ground, so a caller can go from one to the other. */
 export function sectGroundId(factionId: string): string {
@@ -614,26 +499,11 @@ export function sectGroundId(factionId: string): string {
 
 /**
  * How steeply held ground improves with the standing that holds it.
- *
- * Above 1, so the top of the ladder holds disproportionately better ground -
- * which is the same shape as everything else in this engine, where a realm is
- * four times over and the gaps widen going up.
  */
 const SECT_GROUND_CURVE = 1.6;
 
 /**
  * What ground a sect of this standing holds, 1..100.
- *
- * Measured against the strongest faction IN THE CATALOG rather than against a
- * named house, which is the whole of why this is not bespoke: the top of the
- * scale belongs to whoever is actually at the top, and today that is the Hollow
- * Court at ordinal 44. Rename it, unseat it, or write something stronger, and
- * the 100 moves with the arithmetic instead of being left behind pointing at a
- * house that no longer deserves it.
- *
- * Floored at the region's own ground: a weak sect sitting in a thin province
- * offers a disciple nothing the province did not already offer, and a stipend
- * is then honestly the whole of what joining bought them.
  */
 export function sectGroundDensity(
     powerOrdinal: number,
@@ -648,26 +518,6 @@ export function sectGroundDensity(
 
 /**
  * The ground a sect actually holds.
- *
- * Why a sect must be a place, in one paragraph: a sect's whole value to a
- * disciple is what standing on its mountain does to a cultivation rate. The
- * home region runs thin - Sweptground sits at 0.35, which is "half rate and a
- * penalty to breakthrough odds" - and fifty years of that stops climbing the
- * ladder somewhere around ordinal 16. A sect that is only a row in
- * `sect_members` gives a disciple nothing that a rogue does not already have.
- *
- * Everything about this location is derived from columns the faction already
- * carries, so there is no sect-specific rule anywhere:
- *
- *   qiDensity      the region's ground, plus what the sect's own standing has
- *                  bought it. A sect took the best ground it could hold, and
- *                  `powerOrdinal` is exactly how much it could hold.
- *   thresholds     entry is 0 - anyone may walk up to a gate. `operational` is
- *                  the admission bar, which is what makes the gate mean
- *                  something: a rogue can stand in the forecourt and cannot
- *                  work there. `mastery` is the sect's own power.
- *   discovered     false. A sect's ground is a name you have to be given, and
- *                  the knowledge gate does the rest.
  */
 function seedSectGround(
     state: WorldState,
@@ -731,14 +581,14 @@ function seedSectGround(
     // The road from the province to the gate. Ordinary link, ordinary travel.
     linkLocations(region, ground, 'road', 2);
 
-    // And the inside of it. A sect seat with no interior is a name with two
-    // roads out of it: measured before this existed, the Azure Cloud Pavilion -
-    // the house with a newly ascended immortal attached - was exactly that, and
-    // nesting in a whole seeded world bottomed out at depth 1. `growCompound`
-    // is pure and deterministic off the world seed, so calling it here and
-    // calling it the first time somebody walks through the gate produce the
-    // same compound; it is called here because seeding 32 of them costs less
-    // than the branch that would decide not to.
+    // And the inside of it. A sect seat with no interior is a name with two roads
+    // out of it: measured before this existed, the Azure Cloud Pavilion - the house
+    // with a newly ascended immortal attached - was exactly that, and nesting in a
+    // whole seeded world bottomed out at depth 1. `growCompound` is pure and
+    // deterministic off the world seed, so calling it here and calling it the first
+    // time somebody walks through the gate produce the same compound; it is called
+    // here because seeding 32 of them costs less than the branch that would decide
+    // not to.
     const compound = growCompound(ground, compoundInputFor(cf), {
         seed: state.seed,
         presentDay
@@ -750,12 +600,6 @@ function seedSectGround(
 
 /**
  * The generator's flat input, read straight off the catalog row.
- *
- * Every field the architecture layer added to `CatalogFaction` is defaulted
- * here rather than assumed. A great many fixtures across the suite build a
- * catalog faction by hand and predate those fields; a hand-built house should
- * come out as an ordinary compound with no elemental character, not take world
- * seeding down with it.
  */
 function compoundInputFor(cf: CatalogFaction): CompoundInput {
     return {
@@ -890,17 +734,6 @@ function seedFactions(
 
 /**
  * What a cultivator with these inputs would actually be, after this long.
- *
- * The whole anti-flag mechanism. Runs the real cultivation rate against the
- * real ladder cost and walks up as far as the arithmetic reaches. Talent
- * dominates, time matters, and the region's ceiling is a hard cap - so the
- * distribution that comes out is the one the game's own numbers imply rather
- * than one a seeder chose.
- *
- * The `effort` draw is the only stochastic term and it is deliberately wide:
- * it stands for everything this layer does not model about a life - diligence,
- * a decade lost to an injury, a patron, a war. It is drawn once per NPC from
- * their own stream and never re-rolled.
  */
 export interface DeriveOrdinalOptions {
     /**
@@ -909,48 +742,25 @@ export interface DeriveOrdinalOptions {
      */
     ambient?: AmbientQi;
     /**
-     * Qi density of the ERA this cultivator climbed in, 0..1, from
-     * `world_eras`. This is how an ancient is derived honestly: a Grand
-     * Ascension survivor is not an exemption in the maths, they are somebody
-     * who walked the same cost curve when the open air was richer. Omitted
-     * means the present day.
+     * Qi density of the ERA this cultivator climbed in, 0..1, from `world_eras`.
+     * This is how an ancient is derived honestly: a Grand Ascension survivor is not
+     * an exemption in the maths, they are somebody who walked the same cost curve
+     * when the open air was richer. Omitted means the present day.
      */
     eraQiDensity?: number;
     /** Retry ceiling per rank. A safety net; settling normally binds first. */
     maxAttemptsPerRank?: number;
     /**
      * Where this person was born.
-     *
-     * NPCs get an origin the same way the player does, and it is spent here the
-     * same way: it moves the ground under them, whether a house stands behind
-     * them, what the family can pay for in pills, and whether the province's own
-     * ceiling is theirs. It moves NOTHING else, and in particular it never adds
-     * a rank - a Dao house child who draws a muddled root lands where a
-     * muddled root lands, only better fed.
-     *
-     * Omitted reads as 'thin_county', which is nine births in ten.
      */
     origin?: OriginTierKey;
     /**
      * Told what every crossing attempt cost and what it was carrying.
-     *
-     * Measurement only, and it must stay that way: the walk never reads back
-     * anything it hands out here, so a probe can watch the pill economy without
-     * a second copy of this loop existing somewhere to drift away from it.
-     * `scripts/probe-pill-affordability.ts` is the caller, and the reason it
-     * exists is that the affordability question - whether anybody at the bottom
-     * of the ladder can actually buy one - is not answerable from the ordinal
-     * this function returns.
      */
     onAttempt?: (attempt: CrossingAttemptObservation) => void;
     /**
-     * Turn the commodity pill market off, so a probe can measure what it is
-     * worth rather than argue about it.
-     *
-     * Defaults to on, which is the world. It exists because "did the pill
-     * economy cause this" is a question that gets asked of every balance
-     * finding from here on, and answering it by reverting the branch and
-     * re-running is how a comparison ends up being between two different trees.
+     * Turn the commodity pill market off, so a probe can measure what it is worth
+     * rather than argue about it.
      */
     buysProgress?: boolean;
 }
@@ -978,29 +788,6 @@ function betterAmbient(a: AmbientQi, b: AmbientQi): AmbientQi {
 
 /**
  * How far this life actually got.
- *
- * ── Why this is not a budget subtraction ─────────────────────────────────
- *
- * It used to be: accumulate `rate x years`, spend it down the cost curve, stop
- * when it runs out. That made NPCs systematically luckier than the player,
- * because the player pays for every rank with a breakthrough roll, a settling
- * clock and a lifespan, and the NPC paid with none of them. It is the
- * no-bias rule broken in the player's disfavour, which is the direction that
- * is easiest to miss.
- *
- * So this now walks the SAME gates the player walks, rank by rank:
- *
- *   - accumulate at `computeCultivationRate`, the player's own function;
- *   - refuse the rank if it would take longer than settling permits at that
- *     ordinal (`stagnationYearsForOrdinal`, which scales with the realm);
- *   - refuse it if the cultivator would die of old age first;
- *   - roll it against `computeBreakthroughOdds`, the player's own odds, and
- *     make failures cost real time by re-accumulating what they burned.
- *
- * The upper stratum thins sharply as a result, and that is the correct
- * outcome: in the Late Age almost nobody climbs past Core Formation on ambient
- * qi. The world's ancients are explained by `eraQiDensity` - they climbed when
- * the air was richer - rather than by anybody being exempt from the arithmetic.
  */
 export interface DerivedLife {
     ordinal: number;
@@ -1033,21 +820,6 @@ export function deriveLife(
     const focus = Math.min(1, effort);
 
     // Priced at the rung the walker is standing on, not at the bottom.
-    //
-    // This was computed ONCE, before the climb, and `realmOrdinal` was never
-    // passed - which `computeCultivationRate` documents as reading "as ordinal
-    // 0... a multiplier of 1". So an entire life ran at Qi Condensation intake
-    // while `progressRequiredForOrdinal` climbed underneath it, and the walk
-    // stalled the moment the cost curve outran a rate that could never move.
-    //
-    // Measured before this fix: the best spirit root in the catalog reached
-    // ordinal 16 at age 120 and never moved again - not at 300, not at 3000 -
-    // and no NPC anywhere in the world gained a single rung in two hundred
-    // simulated years. It is the same defect that was found and fixed on the
-    // player's side; the derivation kept its own copy of it.
-    // What this person was actually handed, and can actually work. A shelf is
-    // not a book: an origin reaches a level of shelf, and the reader takes the
-    // best thing on it they can read. See `bestReadable`.
     const road = bestReadable(origin.roadQuality, { spiritRoot: root, attributes });
 
     const perYearAt = (at: number): number => computeCultivationRate(
@@ -1061,13 +833,6 @@ export function deriveLife(
             focusMultiplier: focus,
             locationBonus: Math.max(0.1, regionRateMultiplier) * era,
             // AN ACTUAL BOOK, rather than the insight proxy that stood here.
-            //
-            // `1 + insight * 0.06` was a placeholder for a manual nobody was
-            // holding, and it did two things wrong at once: it counted insight
-            // a second time (insight is already in the odds and is now in what
-            // a reader can take off a page), and it made every life in the
-            // world practise the same imaginary average book. What somebody was
-            // handed is a fact about their origin, so the origin says it.
             techniqueQuality: road,
             // Placement: arrays, elder guidance, and a stipend that means this
             // person is not foraging. 1 for the nine births in ten that have none.
@@ -1079,14 +844,6 @@ export function deriveLife(
         return { ordinal: 0, spiritStones: Math.max(0, Math.round(origin.spiritStones)) };
     }
     // The province's ceiling is absolute, and placement does NOT lift it.
-    //
-    // That is deliberate and it is the harder of the two readings. A fostered
-    // child is somewhere else, and this derivation is for the people who are
-    // here: `localCeilingOrdinal` means nobody in this province has passed it
-    // in living memory, and an origin that could quietly exceed it would make
-    // the statement false for the exact people the province is least likely to
-    // have produced. What being placed is worth here is the support and the
-    // stipend, which are already in the rate above.
     const cap = Math.min(clampOrdinal(ceiling), MAX_ORDINAL);
 
     let ordinal = 0;
@@ -1105,36 +862,7 @@ export function deriveLife(
         const allowance = stagnationYearsForOrdinal(ordinal);
         const lifespan = lifespanForOrdinal(ordinal);
 
-        // ── MONEY IS THE SECOND ROAD UP, AND IT WAS NEVER CONNECTED ──────
-        //
-        // What actually empties the middle of the ladder is not the crossing
-        // roll. `scripts/probe-pill-affordability.ts` watches this loop over
-        // four thousand lives: inside Qi Condensation the mean odds are 0.899
-        // and a pill is already being bought at mean potency 0.39. Nobody is
-        // failing crossings and nobody is failing to afford a pill.
-        //
-        // What runs out is YEARS. Ordinal 12 needs 10,661 qi-units at 86 a
-        // year for an ordinary cultivator, which is 123.6 years against a Qi
-        // Condensation lifespan of 100 - the last rung of the realm costs more
-        // time than the realm grants, so the histogram piles up at 12 and
-        // Foundation reads zero. See `probe-what-a-crossing-costs-in-years.ts`.
-        //
-        // The lever the catalog already had and nothing read is
-        // `advance_progress`. A cultivator's spare income converts to qi at
-        // whatever the open market charges, and the market is the commodity
-        // tier and only the commodity tier - see
-        // `engine/cultivation/buying-and-bartering-pills.ts`. Nothing above
-        // earth grade is for sale for money, so no fortune buys the last
-        // realms, and `pillBandDecay` inside `stonesPerQiUnitAt` makes a cheap
-        // pill quietly stop being a bargain to somebody strong.
-        //
-        // The shape this produces is not tuned; it falls out of two curves that
-        // already existed. At ordinal 0 a cultivator clears 2.7 stones a year
-        // and buys 2 qi against 86 accrued, which is nothing - the bottom of
-        // the ladder is untouched. At ordinal 12 they clear 127 and buy 109
-        // against 86, which is the rung that was impossible becoming merely
-        // very hard. Above Core Formation the income cap and the band decay
-        // between them make it irrelevant again.
+        // MONEY IS THE SECOND ROAD UP, AND IT WAS NEVER CONNECTED
         const netPerYear =
             origin.placement.stipendPerYear
             + (1 - focus) * earningsPerYear(ordinal)
@@ -1167,16 +895,9 @@ export function deriveLife(
             yearsAtRank += yearsNeeded;
             age += yearsNeeded;
             spent += yearsNeeded;
-            // Upkeep, stipend, and the work. A year at a rank costs stones
-            // whether or not anything comes of it - but a life is not spent
-            // entirely in a cave, and the part that is not IS the earning.
-            //
-            // `effort` already says what fraction of the time this person
-            // actually cultivates, so the remainder is the fraction they spend
-            // gathering, escorting, refining, or being useful to somebody who
-            // pays. Without this term the walk modelled pure burn and every
-            // NPC in the world finished holding nothing, which left the
-            // economy with no participants at all.
+            // Upkeep, stipend, and the work. A year at a rank costs stones whether
+            // or not anything comes of it - but a life is not spent entirely in a
+            // cave, and the part that is not IS the earning.
             const secludedYears = yearsNeeded * focus;
             const workingYears = yearsNeeded - secludedYears;
             stones = Math.max(
@@ -1245,11 +966,6 @@ export function deriveLife(
 
 /**
  * What the life walk left them holding, alongside where it left them.
- *
- * The stones were always computed - upkeep, stipend and pills are what decide
- * how many attempts a life gets - and were thrown away at the end, which is
- * why every NPC in the world held nothing. Returning them costs nothing and
- * gives the economy its participants.
  */
 export function deriveOrdinal(
     root: SpiritRootKey,
@@ -1281,21 +997,7 @@ function seedPopulation(
     const catalogById = new Map(catalog.factions.map(f => [f.id, f]));
     const created: NpcRecord[] = [];
 
-    // ── Names have to be unique, and nothing else in the engine enforces it ──
-    //
-    // Knowledge is keyed by id; everything the player ever READS is keyed by
-    // name. Two people called Shen Wuyou in one province therefore does not
-    // read as a coincidence, it silently breaks the guarantee the knowledge
-    // system rests on - a name you were told is a name you have - because the
-    // wrong one standing in the room satisfies it.
-    //
-    // The name space is 20 x 20 x 20, so at a few hundred people the birthday
-    // paradox produces collisions every single seed. Carried as ONE mutable
-    // set for the whole pass rather than rebuilt per NPC, which would be
-    // quadratic over a few hundred creations for no gain, and pre-charged with
-    // the catalog's names: those figures are created later and are ASSIGNED
-    // their names, so a procedural roll that lands on one would never be seen
-    // to collide until a player met both.
+    // Names have to be unique, and nothing else in the engine enforces it
     const taken = new Set<string>(state.npcs.map(n => n.name));
     for (const member of MEMBERS) taken.add(member.name);
 
@@ -1359,20 +1061,6 @@ function seedPopulation(
             npc = addGoal(npc, goalFor(npc, region, rng), presentDay - years(rng.int(1, 20)));
 
             // Affiliation is offered to those a faction here would look at.
-            //
-            // THE CAUSALITY RUNS THE OTHER WAY HERE, AND IT HAS TO. A derived
-            // provincial's root was rolled from the untouched table before any
-            // of this and is an INPUT to `deriveLife`, so conditioning it on
-            // the house would invert the derivation the same way conditioning
-            // their origin would. Instead the HOUSE is chosen to suit the root
-            // they already have: people go where their root can be taught,
-            // which is the same sentence as the placement conditioning read
-            // from the other end.
-            //
-            // Somebody every local house refuses still joins one - that is the
-            // servant rung, and it is the honest answer for a person with
-            // nowhere else in the province to go. `assignFactionRoles` is what
-            // keeps them on it.
             if (regionFactions.length > 0 && rng.chance(AFFILIATION_RATE)) {
                 const open = regionFactions.filter(f => {
                     const cf = catalogById.get(f.id);
@@ -1406,53 +1094,16 @@ function seedPopulation(
 
 /**
  * Instantiate the named people the content catalogs already describe.
- *
- * ── Why this exists ──────────────────────────────────────────────────────
- *
- * `deriveOrdinal` walks the real cost curve against the real clocks, which is
- * correct and which means a present-day cultivator with a hundred and twenty
- * years cannot get past Foundation Establishment in the Late Age. Left to it,
- * a seeded world's strongest inhabitant was ordinal 16 - so the catalogs could
- * describe Dao houses, apex institutions and sealed ancestors while the world
- * contained no instance of any of them, and nothing in the discovery ladder
- * could fire because there was nobody from a higher stratum to walk past.
- *
- * The answer is not to loosen the derivation. It is that the upper stratum was
- * never a procedural product in the first place: those people are CONTENT, with
- * names, factions, ranks and reasons, and `members.ts` holds a hundred and
- * fifteen of them. Seeding them is instantiating what the world already says
- * is true, rather than generating a second, luckier population beside the one
- * the arithmetic produced.
- *
- * They are placed at their faction's seat, not scattered through market towns:
- * the stratum has to EXIST so it can act, be referred to and be encountered
- * rarely, without becoming something a beginner trips over.
  */
 /**
  * The one family in the world that came down from something that changed.
- *
- * Instantiating what the catalog says is true, exactly as `seedNamedFigures`
- * does for the upper stratum, and for the same reason: **the dilution ladder is
- * a rule with no writer until somebody in the world carries a line.** The birth
- * pass writes one from a match, but the event that starts a line is a beast
- * reaching `BEAST_CHANGE_ORDINAL` and then marrying, which no run will see. So
- * one family already exists, and the ladder is being read from the first day.
- *
- * Nothing about the seeding is special. They are ordinary people in an ordinary
- * village on an ordinary province's roster, and the only authored facts are who
- * they are, what they carry, and the ancestor's rung - which is authored because
- * standing above the change is what being the ancestor MEANS rather than a
- * rating. Everybody else's rung comes off `deriveLife` like anybody's.
- *
- * Its own stream, keyed on ids nothing else uses, so every other person in every
- * already-seeded world draws exactly what they drew before this existed.
  */
 function seedTheLineThatCameDown(
     state: WorldState,
     catalog: WorldCatalog,
     presentDay: number
 ): NpcRecord[] {
-    const line = THE_LINE_AT_MILLRUN;
+    const line = THE_LINE_AT_OLD_RIVER;
     const region = catalog.regions.find(r => r.id === line.regionId);
     if (!region) return [];
     const place = region.places.find(p => p.name === line.place);
@@ -1528,13 +1179,13 @@ function seedNamedFigures(
             MIN_AGE + Math.round(member.realmOrdinal * NAMED_YEARS_PER_ORDINAL) + rng.int(0, 40)
         );
 
-        // Their birth follows from the seat they are already sitting in, not
-        // from a lottery that knows nothing about it. See
-        // `where-the-seeded-population-was-born.ts`: this person is not being
-        // born here, they already exist and already hold this rank, so the
-        // question is which births PRODUCE somebody standing at this rung -
-        // which is the birth table reweighted, not replaced. Its own stream, so
-        // no root, attribute, name or ordinal in any existing world moves.
+        // Their birth follows from the seat they are already sitting in, not from a
+        // lottery that knows nothing about it. See
+        // `where-the-seeded-population-was-born.ts`: this person is not being born
+        // here, they already exist and already hold this rank, so the question is
+        // which births PRODUCE somebody standing at this rung - which is the birth
+        // table reweighted, not replaced. Its own stream, so no root, attribute,
+        // name or ordinal in any existing world moves.
         const ordinal = clampOrdinal(member.realmOrdinal);
         const rankIndex = Math.min(member.rankIndex, Math.max(0, faction.ranks.length - 1));
         // And their root follows from the road the house teaches, for the same
@@ -1591,22 +1242,6 @@ function seedNamedFigures(
 
 /**
  * Nobody was born before the world had a history to be born into.
- *
- * A lifespan at the top of the ladder is tens of thousands of years, so an age
- * drawn as a fraction of one - which is the right way to draw it, because the
- * point is that this person climbed when the climbing was possible - runs
- * straight past the world's own first era. A seeded world produced an ordinal 44
- * born in year -24,008 while the earliest era in its ledger opened in year
- * -1,700: somebody twenty-two thousand years older than anything that could be
- * said to have happened, whose whole life is off the end of the record.
- *
- * So the age is bounded by the span the ledger covers, less one generation, and
- * the excess is simply not drawn. What that means in the world is not a
- * compromise: the oldest people alive are as old as history, which is the claim
- * the apex tier was making all along.
- *
- * Returns the age unchanged where the ledger has no era, which is the honest
- * reading of a world with no recorded past to be older than.
  */
 export function ageInsideRecordedHistory(
     state: WorldState,
@@ -1626,40 +1261,6 @@ export function ageInsideRecordedHistory(
 /**
  * Stand up whatever a house's own contents say is there and the world has not
  * produced.
- *
- * ── WHY THIS NO LONGER READS `powerOrdinal` ──────────────────────────────
- *
- * It used to, and there was a second nearly identical function beside it for
- * the one faction whose roster the seeder could not see. Two code paths for one
- * question - who is standing in this house - and it cost what that shape always
- * costs here: the world held eleven anonymous bodies at the Hollow Court while
- * the register printed eleven named ones, and they were different people.
- *
- * The fix is not to generalise the second plan. It is that a house's strength
- * should be READ OFF WHAT IT HOLDS rather than off an adjective, for the same
- * reason `items.md` says scarcity is measured rather than authored. So the
- * figure comes from the house's own roll.
- *
- * ── AND THE MEASUREMENT SAYS THE TWO ALREADY AGREE ───────────────────────
- *
- * Measured across all 34 houses in the catalog:
- * `powerOrdinal === max(realmOrdinal on rollOf(id))` for every one of them,
- * with a single exception that is not a disagreement - the Hollow Court's roll
- * reaches 45 because the Guest of the Court is on it, and he stands off the
- * ladder entirely. Nothing declared is above everything the house holds; no
- * house holds somebody above what it declares.
- *
- * So this is not a retune and it changes no world. It is the same number taken
- * from the thing that determines it instead of from a copy of it, which means
- * it cannot go stale when somebody edits a roster and forgets the header.
- *
- * The other two things a house holds are deliberately NOT read here, and the
- * reason is a law rather than an omission. Its shelf says what it can TEACH,
- * and holding a thing and being able to pass it on are different facts - 28 of
- * 34 houses teach below their own strongest member, which is the Late Age
- * working rather than an error. Its objects say what it can SPEND. Neither is
- * a claim that a person of that height is standing in the compound, and reading
- * either as one would put people in the world nothing in the catalog names.
  */
 function seedWhatAHouseActuallyHolds(
     state: WorldState,
@@ -1671,17 +1272,9 @@ function seedWhatAHouseActuallyHolds(
     const created: NpcRecord[] = [];
 
     for (const faction of catalog.factions) {
-        // What the house's own roll says its strongest person stands at. Not
-        // what its row claims - the roll IS the claim, and everything else is
-        // a restatement of it.
-        //
-        // ON THE LADDER ONLY, and that is not a filter of convenience. A roll
-        // also carries people standing OUTSIDE a house's ranks - a court's
-        // parallel offices, and the honorary title the Hollow Court gave
-        // somebody at the rung above the ladder - and none of them answers for
-        // the house. Counting the Guest would have the seeder stand a False
-        // Immortal up on those mountains as the Court's own strength, which is
-        // the opposite of what his whole record says he is.
+        // What the house's own roll says its strongest person stands at. Not what
+        // its row claims - the roll IS the claim, and everything else is a
+        // restatement of it.
         const onTheRoll = rollOf(faction.id)
             .filter(r => r.rankIndex !== null)
             .reduce((best, r) => Math.max(best, r.realmOrdinal), -1);
@@ -1752,37 +1345,8 @@ function seedWhatAHouseActuallyHolds(
 }
 
 /**
- * The ground a house's own people are standing on: its gate, forecourt and
- * halls, which `seedSectGround` has already built and linked by road.
- *
- * ── WHAT THIS USED TO DO, AND WHY IT WAS NOT A SMALL BUG ─────────────────
- *
- * It matched `faction.territory` against region ids and place names. But
- * `territory` is PROSE - "Terraced peaks above Low Fall gorge, and the vein
- * under it, taken off somebody else nineteen centuries ago." - so no branch of
- * that search could ever fire, and every catalog figure in the world fell
- * through to the region node.
- *
- * That is not "placed a little vaguely". `the-world-changing-on-its-own.ts`
- * states the law in its own banner: **a region is a container, nobody stands in
- * one, and `npcsAt` matches on an exact `locationId`, so anything placed on a
- * region node is placed nowhere anybody can meet it.** The newborn path was
- * fixed for exactly that reason and the seeder was never brought in line, so
- * the entire upper stratum of the world - measured at 88 people at ordinal 17
- * and above, on three seeds, every one of them a catalog figure - was standing
- * somewhere no player and no NPC could ever be. Meanwhile all 34 `sect_seat`
- * locations, each with a generated compound inside it, held nobody at all.
- *
- * The seat is the answer the seeder had already computed. `seedSectGround` runs
- * before this and puts the ground in `state.locations` under `sectGroundId`,
- * `seedFactions` writes the same id to `FactionRecord.seatLocationId`, and it is
- * road-linked to the province - a place somebody can walk to. Reading it here
- * makes this function do what its own callers' comment always said it did:
- * "They are placed at their faction's seat."
- *
- * The old region fallback is kept for the case it was actually written for - a
- * catalog whose faction has no region, so no ground was built - because a body
- * on a container is still better than a body on a string.
+ * The ground a house's own people are standing on: its gate, forecourt and halls,
+ * which `seedSectGround` has already built and linked by road.
  */
 function groundAHouseFiguresStandOn(
     state: WorldState,
@@ -1797,14 +1361,8 @@ function groundAHouseFiguresStandOn(
 }
 
 /**
- * Rank every faction's members on the realm they turned out to have, and hand
- * out the titles in that order.
- *
- * This is where "no important NPC flag" is actually enforced: the leader is
- * whoever came out strongest, and if a faction's draw was poor its patriarch is
- * a Foundation Establishment cultivator holding a seat that used to want Core
- * Formation. That faction is now in trouble, nobody decided it should be, and
- * the pressure layer will make it somebody's opportunity.
+ * Rank every faction's members on the realm they turned out to have, and hand out
+ * the titles in that order.
  */
 function assignFactionRoles(
     state: WorldState,
@@ -1825,25 +1383,7 @@ function assignFactionRoles(
         const cf = catalogById.get(faction.id);
         const ladder = faction.ranks.length;
 
-        // ── THE SERVANT RUNG IS A RUNG, NOT A WAITING ROOM ────────────────
-        //
-        // A house whose whole teaching is one road cannot promote somebody that
-        // road refuses, however strong they came out: there is nothing for them
-        // to have been promoted ON. They are taken OUT of the pyramid rather
-        // than demoted inside it, so the house still has a coherent head and
-        // `power_ordinal` below still reads off somebody who can actually
-        // practise what the house does.
-        //
-        // What it produces is the thing the catalog's own ladders have always
-        // implied - `Sword Servant`, `Dew Servant`, `Herb Boy` - a rung holding
-        // people who are in the house, of the house, possibly born to it, and
-        // who will not climb it. They are exactly who leaves, resents, or takes
-        // a rival's offer, and the world has machinery for all three.
-        // They stay in the house and in its society - a servant knows the head,
-        // and being passed over by somebody is a tie rather than the absence of
-        // one. What they are taken out of is the PYRAMID, so the rungs above
-        // zero are filled from people who can actually practise what the house
-        // does, and `power_ordinal` reads off one of them.
+        // THE SERVANT RUNG IS A RUNG, NOT A WAITING ROOM
         const road = cf ? houseRoadOf(cf) : null;
         // Only a house that can teach nothing else. A stated preference is not
         // a bar - see the note in `what-root-a-seeded-house-member-has.ts`.
@@ -1871,35 +1411,9 @@ function assignFactionRoles(
         const climbing = members.filter(n => !refused(n));
         if (climbing.length === 0) continue;
 
-        // A pyramid: one at the top, fewer at each rung down. Indexed on the
-        // people who can climb, so a servant standing between two elders in raw
-        // ordinal does not push everyone below them down a rung.
-        //
-        // THE SHAPE COMES FROM `rosterByRung` AND IS NOT COMPUTED HERE. What
-        // stood here was a hand-rolled cascade - top 8% elders, next 25%, next
-        // 50%, rest at the bottom - which is a second answer to a question
-        // `leadership.ts` already answers with the house taper, and the two
-        // were free to disagree. They did:
-        //
-        //   `Math.max(elderFloor, ladder - 2)` named the elder rung while the
-        //   second rung from the top WAS the elder rung. The grand elder landed
-        //   between them, and without a line changing here the band started
-        //   seating people into a seat that is explicitly ONE SPOT ONLY - and
-        //   seating several, because the 8% is a count rather than a cap. The
-        //   curated clamp below did the same thing from the other side, capping
-        //   an authored head at `ladder - 2` and pushing them down into it.
-        //
-        // Measured before the fix: the grand elder rung read occupied in all
-        // thirty-one houses that have one, against one in the authored catalog,
-        // and two houses had two people in it.
-        //
-        // AND AN EMPTY RUNG IS AN ANSWER. The taper is steep - a rung holds
-        // four tenths of the one below - so a house with a dozen seeded people
-        // genuinely does not reach the top of its own ladder, and the honest
-        // result is a seat nobody is standing in. That is a decision the code
-        // can state rather than a gap: nobody was seated there because the
-        // house is not big enough to carry one, and only a curated author or a
-        // later promotion puts somebody in it.
+        // A pyramid: one at the top, fewer at each rung down. Indexed on the people
+        // who can climb, so a servant standing between two elders in raw ordinal
+        // does not push everyone below them down a rung.
         const seats = rosterByRung(climbing.length, ladder);
         const derived = new Array<number>(climbing.length);
         {
@@ -2045,11 +1559,6 @@ function goalFor(
 
 /**
  * Families, so that a death has somewhere to send what it leaves.
- *
- * Pairs are formed by surname and age gap: two people who share a name and are
- * a generation apart are recorded as parent and child. That is cheap, it is
- * deterministic, and it produces exactly what long time-skips need to land on -
- * without simulating anybody's marriage.
  */
 function seedLineages(state: WorldState, npcs: readonly NpcRecord[], presentDay: number): LineageRecord[] {
     const bySurname = new Map<string, NpcRecord[]>();
@@ -2112,11 +1621,6 @@ function seedLineages(state: WorldState, npcs: readonly NpcRecord[], presentDay:
 /**
  * Windows that were already going to open and close whether or not the player
  * turned up.
- *
- * Recruitment on an annual cycle, veins that surface for a season, and a sealed
- * pocket per region that opens rarely enough that missing it costs a lifetime.
- * Nobody is told about any of them: `knownToIds` is empty, which is the state
- * that lets a window come and go with the world entirely unaware.
  */
 function seedOpportunities(
     state: WorldState,
@@ -2198,11 +1702,6 @@ function seedOpportunities(
 
 /**
  * Grant renewals.
- *
- * A federated faction's hold on its vein expires on a date somebody else
- * controls. Putting those on the books at seeding is what makes a renewal
- * capable of failing while the player is in a cave - and the pressure layer
- * decides, when the day comes, whether it did.
  */
 function seedGrantSchedule(
     state: WorldState,

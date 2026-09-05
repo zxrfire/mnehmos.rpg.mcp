@@ -1,114 +1,5 @@
 /**
  * How far somebody can fold space, what it costs them, and what it does not buy.
- *
- * THE RULING THIS IMPLEMENTS
- * --------------------------
- * High cultivators do not travel. They fold space, and the range increases with
- * ordinal. `spatial_folding` has been a `CapabilityGrant` on the Void Refinement
- * class since the capability layer was written, and until now it was a switch
- * with exactly one consumer - `convergence.ts`, which uses it as the way to
- * leave a closing window late. This module is the other half: the thing it is
- * FOR, which is getting somewhere.
- *
- * THE CURVE HAS NO EXCEPTIONS. Every fold in the world is priced on
- * {@link foldRangeInWalkingDays}, `convergence.ts` included, so there is no
- * place on the map or in the engine where somebody at 44 reaches exactly as far
- * as somebody at 29.
- *
- * The unit is a WALKING DAY, because that is what every road in this world is
- * already quoted in - `travelDays` on a `RegionConnection` - and inventing a
- * second unit for distance would be a second opinion about how far apart two
- * places are.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE HOUSE OF THE MEASURED SPAN DOES THIS FOR A LIVING, AND IT MATTERS
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Read `data/cultivation/history.ts` before changing anything here. An entire
- * institution already moves people without crossing the distance, and its
- * shape decides what a personal fold is allowed to be.
- *
- *   WHAT THE SPAN CAN DO      SEND OTHER PEOPLE THROUGH. That is the whole
- *                             difference and it is why they are a Dao house:
- *                             everybody else who folds space does it only for
- *                             themselves, because a personal fold is your own
- *                             refinement doing the work. The house's
- *                             UNDERSTANDING does the work instead, so a courier
- *                             at ordinal 10 can be sent, and so can somebody
- *                             who will never fold in their life.
- *   WHAT IT CANNOT DO         produce an original true-distance measurement, or
- *                             reopen one of the twenty-two closed terminals.
- *                             Both are Wide Age work.
- *   WHAT IT SELLS             the FIX, not the fold, and therefore the one
- *                             journey nothing else in the world offers at any
- *                             price: to somewhere the buyer has never been.
- *
- * So the binding scarcity in this world is not power. It is knowing where the
- * far end is. That is the constraint this module is built on, and it is why the
- * range curve below is not the whole answer: a fold needs a {@link FoldFix},
- * and there are exactly two, both of them things the folder did themselves.
- *
- * ── The two are different shapes, and neither makes the other pointless ──
- *
- * A PASSENGER NEEDS NO FIX OF THEIR OWN; they need the Span to have one. A
- * cultivator folding themselves needs their own, and their own rung. So the
- * ladder does not have the Span at the top of it - the Span cuts ACROSS it,
- * available to anybody standing at a counter with the stones, and it is the
- * only door somebody below {@link FOLD_FLOOR_ORDINAL} has to the far half of
- * the map. `buying-passage-at-a-measured-span-counter.ts` is that half.
- *
- * ── And the Span's reliable rung is not an embarrassment ─────────────────
- *
- * `reliableOrdinal` 25 sits below the folding floor and that is not a house
- * failing at its own trade, because its trade was never "our members fold" -
- * it is moving other people, which is work a member below the floor does all
- * day. The house is in a weak period against its own past and is working its
- * way back up; `faction-character.ts` carries that as a live internal split
- * rather than a mood. Do not write them as clerks maintaining a table they
- * cannot use. Nothing here may hand a cultivator that table.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT RANGE DOES NOT BUY
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `docs/world/places/ruins.md` already reasons this way - "somebody who can
- * fold space is not a person who explores ruins" - and the discipline is worth
- * keeping, because a capability with no stated limit grows one accidentally.
- *
- *   NOT A KEY          a fold is not a way through a seal, a shut window or a
- *                      barrier. Those are `attempt` blockers in `capability.ts`
- *                      and they are physical. Somewhere that will not open does
- *                      not open because you arrived by a different road.
- *   NOT A SURVEY       you cannot fold to somewhere you have never been and
- *                      cannot see. Being TOLD about a place is not a fix. This
- *                      is the Span's own limit, met from the personal side.
- *   NOT A CARRIER      one person, themselves, and what is on them. No cargo,
- *                      no party, no passenger.
- *   NOT AN ESCAPE      it moves you between places, not out of a grip. Nothing
- *                      here is consulted by combat and nothing here should be.
- *   NOT A LIFE         the sharpest cost, and the one no number carries. A road
- *                      is where encounters, hearsay, and everything AGENTS.md
- *                      means by "having been places and survived things" come
- *                      from. Somebody who folds everywhere has been nowhere,
- *                      and arrives at a crossing that asks what they understood
- *                      with nothing to bring to it. That is the greenhouse rule
- *                      applied to transport, and it needs no penalty because it
- *                      is not one - the experiences simply did not happen.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * IT IS THE LOUDEST ARRIVAL IN THE WORLD
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `what-a-conveyance-does-to-a-journey.ts` establishes that what a party
- * arrives on is read at the gate before anybody speaks, and that the read runs
- * in both directions. A fold is the top of that ladder - on foot, mount or
- * drawn carriage, boat, flight on a blade, fold - and it is also the end of it:
- * there is no quiet version. Nobody saw you on the road, no station logged you,
- * and nothing on the true-distance table was paid for the journey you did not
- * make. See {@link whatArrivingByFoldSays}.
- *
- * PURE. State in, deltas out. No I/O, no DB, no mutation of inputs, and nothing
- * stochastic - how far a fold reaches is not a roll.
  */
 
 import { clampOrdinal } from '../cultivation/realms.js';
@@ -123,77 +14,23 @@ export const FOLD_GRANT: CapabilityGrant = 'spatial_folding';
 
 /**
  * The rung at which folding becomes possible at all.
- *
- * Void Refinement, which is where `CLASS_GRANTS` puts `spatial_folding`. Stated
- * here rather than imported from the class table because it is the anchor the
- * curve below is fitted at, and a test asserts the two agree so that moving the
- * class floor fails loudly and points at this file.
  */
 export const FOLD_FLOOR_ORDINAL = 29;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE RANGE
-//
-// Two anchors and one growth constant, which is the same shape
-// `what-you-can-see-from-up-there.ts` uses for the sight horizon - and that is
-// the precedent rather than a design invented here. Both curves are in travel
-// days, both are fitted through figures the region catalog already states, and
-// both saturate against the map instead of against a cap somebody maintains.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How far a fold reaches at the rung where folding starts, in walking days.
- *
- * Six, and the figure is the catalog's rather than a choice: the shortest
- * stated road between any two provinces is six days. So somebody who has just
- * refined themselves against emptiness can step to the province next door and
- * nowhere else, which is the honest reading of the grant's own word for itself,
- * "short-range".
- *
- * `convergence.ts` reads this rather than restating it, because the two were
- * the same physical fact carried in two constants. It is the FLOOR of this
- * curve there as it is here: a rescuer folding into a closing site reaches as
- * far as their own rung buys, and only somebody standing exactly at the floor
- * gets this figure.
  */
 export const FOLD_RANGE_AT_THE_FLOOR = 6;
 
 /**
  * What one more rung is worth, multiplicatively.
- *
- * Fitted through a second anchor rather than picked. The widest road in the
- * world is thirty-four days, and the rung at which somebody stops being gated
- * by places is Grand Ascension at ordinal 37 - `gates_places`, which the
- * capability layer already grants there. Solving 6 x g^8 = 34 gives 1.242, and
- * 1.24 is what is used.
- *
- * What that produces, and none of it was tuned: the reach at the floor of Grand
- * Ascension is 33.5 days, so the widest road in the world is still just out of
- * one step, and one rung further in it is comfortably inside. The realm that
- * stops being gated by places is the realm in which the world stops being wide.
- *
- * The rungs in between land on the roads the catalog actually states - 6, 9,
- * 11, 17, 21 - close enough that almost every rung from the floor to Grand
- * Ascension opens a road that was shut the rung before, which is what makes the
- * curve legible to somebody climbing it rather than merely monotonic.
- *
- * Growth is unbounded and needs no cap. Past ordinal 38 the whole map is inside
- * one step and the differences above that are not measurable in this world's
- * geography, so the curve saturates against the map exactly as the sight
- * horizon does. It has nine rungs of range to say anything with, and it says
- * all of it between Void Refinement and Grand Ascension - which is roughly one
- * person in twenty in a seeded world. A curve that mattered to most people
- * would be a curve fitted to the wrong population.
  */
 export const FOLD_RANGE_GROWTH_PER_RUNG = 1.24;
 
 /**
  * How far this rung can fold, in walking days. Zero below the floor.
- *
- * The whole of what the ordinal buys here, and there is no other threshold
- * anywhere in this file. A tenth thing that becomes reachable at a tenth rung
- * needs no branch, because there are no branches on rung at all: there is a
- * curve, and there is a comparison.
  */
 export function foldRangeInWalkingDays(ordinal: number): number {
     const o = clampOrdinal(ordinal);
@@ -202,43 +39,16 @@ export function foldRangeInWalkingDays(ordinal: number): number {
         * FOLD_RANGE_GROWTH_PER_RUNG ** (o - FOLD_FLOOR_ORDINAL);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE FIX
-//
-// The Span's constraint, met from the personal side, and the single most
-// important thing in this module: range says how far, and a fix says whether
-// there is anywhere to aim.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How the folder knows where the far end is.
- *
- * Exactly two, and both are things they did themselves. There is deliberately
- * no third for being told, reading a record, or buying a figure: a fix that
- * could be acquired is the Wide Age true-distance table, and an entire house
- * has spent five thousand years failing to reproduce it. Handing one to any
- * cultivator who asks a clerk would delete that house's whole business and the
- * Late Age premise it expresses.
- *
- *   `stood`  they have been there. Exact, and this is what standing somewhere
- *            buys that hearing about it never does.
- *   `seen`   they have made it out from height - a shape on ground, a bearing
- *            and a distance, which is what `what-you-can-see-from-up-there.ts`
- *            yields and is deliberately all it yields. Good enough to arrive
- *            near, never good enough to arrive at.
  */
 export type FoldFix = 'stood' | 'seen';
 
 /**
  * How far short a fold lands when the fix is a sighting, as a fraction of the
  * distance folded.
- *
- * A tenth. Note what it is NOT a function of: the folder's rung. The error is
- * in the fix and not in the folder, which is the same reason the Span cannot
- * improve its table by being good at surveying - it can read a distance and it
- * cannot state one. Somebody at the top of the ladder folding twenty days to a
- * valley they have only looked at lands two days out, exactly as somebody at
- * the floor does, and walks the rest.
  */
 export const SEEN_FIX_ERROR = 0.1;
 
@@ -259,28 +69,11 @@ export function landsShortByDays(walkingDays: number, fix: FoldFix): number {
 
 /**
  * Days spent settling after a fold at the very edge of the range.
- *
- * The price is how hard they reached and not how far they went, which is why it
- * is relative to the range rather than absolute: a Grand Ascension cultivator
- * stepping across a district pays nothing worth counting, and somebody at the
- * floor stepping the whole six days pays three.
- *
- * The shape being defended is that A FOLD AT FULL STRETCH IS NOT THE FAST
- * OPTION. Three days over a six-day road is about what a mortal-grade cart
- * does, and a heaven-grade hull beats it outright - so the conveyance ladder
- * keeps its top rungs, and folding stays what it is: the thing you do when
- * there is no road, no hull, no time and nobody you want to be seen by.
  */
 export const SETTLING_DAYS_AT_FULL_STRETCH = 3;
 
 /**
  * Days lost to settling, quadratic in how much of the range was spent.
- *
- * Quadratic rather than linear on purpose, and it is what stops the range being
- * a cliff: comfortably inside the range a fold costs the one day everything in
- * this engine costs, near the edge it costs real time, and past the edge it is
- * simply a distance the folder does not have. Three answers where the grant
- * used to give two.
  */
 export function settlingDaysFor(walkingDays: number, rangeDays: number): number {
     if (rangeDays <= 0) return 0;
@@ -296,10 +89,6 @@ export interface FoldInput {
     ordinal: number;
     /**
      * What this cultivator actually holds.
-     *
-     * Potential is decided by realm and possession is decided here, the same
-     * division `capability.ts` keeps. A partial refinement is at the rung with
-     * the grant taken back, and this is where that reaches the road.
      */
     heldGrants?: readonly CapabilityGrant[];
     /** What the road costs on foot. `travelDays` on a `RegionConnection`. */
@@ -330,14 +119,6 @@ export interface FoldCost {
 
 /**
  * Price one fold.
- *
- * Deterministic. How far somebody can fold is not a roll, and neither is what
- * it takes out of them.
- *
- * Beyond the range this returns `withinRange: false` and is NOT a refusal - it
- * is a distance. Nothing anywhere stops the cultivator setting out on the road
- * like everybody else, and the engine's job here is to say what each way of
- * getting there costs rather than to decide which one they take.
  */
 export function priceFold(input: FoldInput): FoldCost {
     const rangeDays = foldRangeInWalkingDays(input.ordinal);
@@ -435,39 +216,9 @@ export function couldFoldThere(
 
 /**
  * Recorded rather than quietly left, the way `SEA_CROSSING_ENGINE_GAP` is.
- *
- * The seam this belongs in does not carry distance yet. `move` in
- * `src/web/game.ts` spends a flat `SHORT_ACTION_DAYS = 1` for any journey to
- * anywhere, so the player's own travel has no length in it at all - while
- * `destinations` in the same file prints the catalog's `travelDays` beside
- * every province, which is the honest figure. Nothing in the running world
- * currently spends a walking day.
- *
- * So a saving cannot be shown to a player without printing a number the engine
- * does not charge. `priceFold` returns the same shape `priceJourney` does -
- * days one way, days saved, what the arrival reads - so that the fold drops in
- * as the top rung of the conveyance ladder the moment that seam prices a road,
- * and not before.
  */
 /**
  * Why only one of the two fixes is reachable, and what the other one wants.
- *
- * `stood` has a writer: a knowledge row at `encountered` for a place, which
- * arriving in it is the only thing that produces. `seen` has none, and it is
- * not an oversight in this module - `what-you-can-see-from-up-there.ts` gives a
- * `Sighting` a shape, a bearing and a distance and DELIBERATELY no name,
- * because a silhouette is not an introduction. So nothing in the world records
- * that somebody made out a NAMED place from a height, and the fold verb refuses
- * a name they were only told rather than pretending otherwise.
- *
- * Do not close it by reading the sight horizon. That was tried and it is the
- * attractive wrong turn: the horizon dwarfs the range at every rung on the
- * curve - 78.7 days of sight against 6.0 days of reach at the floor - so every
- * destination inside a fold's range is inside the horizon, the fix check
- * becomes a no-op, and the third fix this module forbids arrives by accident.
- * What it would actually take is a record of a sighting against a named place,
- * written where an overlook is actually performed, at a stage that is not the
- * one being told about somewhere produces.
  */
 export const A_SIGHTING_HAS_NO_NAME_ON_IT = {
     what: 'Nothing in the world records that somebody made out a named place from a height, so the `seen` fix has no writer and only `stood` is reachable.',

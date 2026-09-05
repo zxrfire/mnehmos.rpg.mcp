@@ -1,16 +1,5 @@
 /**
  * Consolidated agent_manage tool
- *
- * LLM-driven NPCs bound to characters. Each agent owns a private mind state
- * (modular prompt slices, secrets, journal) and a configured provider/model.
- * Outputs plain text intent declarations; the DM dispatches downstream tools.
- *
- * Actions: 22 total
- *   Lifecycle (8): create, get, list, update, delete, resume, health, budget
- *   Prompt assembly (7): set_slice, remove_slice, toggle_slice, list_slices,
- *                        narrate, broadcast, preview_prompt
- *   Mind state (5): add_secret, list_secrets, remove_secret, add_journal, get_journal
- *   Invocation (2): invoke, replay
  */
 
 import { z } from 'zod';

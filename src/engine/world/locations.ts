@@ -1,97 +1,5 @@
 /**
  * Locations: mutable places that carry their own history as queryable state.
- *
- * A location is a stored record, not a simulation. It holds what the database
- * must be authoritative about - where a place is, who controls it, what is
- * dangerous about it, whether it is open, and everything that has been done to
- * it - and nothing interpretive. The LLM describes the valley; this module says
- * whether you can walk into it, whether it will kill you, and what it used to
- * be.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * ORIGIN → CHANGES → CURRENT STATE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * The map is not sacred. A place can be destroyed, abandoned, conquered,
- * rebuilt, forbidden, corrupted, enriched, sunk, raised, split, merged, sealed,
- * turned into a secret realm, or have its spiritual conditions and ecosystem
- * transformed. So a location is stored as three separately queryable layers:
- *
- *   `origin`   what it was before anything happened to it
- *   `changes`  an append-only, dated list of what has been done to it
- *   the record itself - the materialised current state
- *
- *     Blackwater Valley
- *       origin           an ordinary river valley
- *       3000 years ago   a sect established here
- *       1800 years ago   the sect destroyed
- *       500 years ago    a battle moved the river
- *       100 years ago    a merchant city built on the ruin
- *       now              a half-ruined city beside a corrupted river
- *
- * `stateAsOfDay` replays origin plus changes to reconstruct the place as it
- * stood at any past date, which is how a returning player's memory of a
- * mountain can be checked against a world that no longer has one.
- *
- * ── Catastrophes modify; they never spawn a new map ───────────────────────
- *
- * {@link applyLocationChange} is the only write path for a physical event, and
- * it patches the existing record. There is no create-a-new-region-on-disaster
- * path anywhere in this module, deliberately: the map does not grow, it scars.
- * A destroyed place becomes ruins, a forbidden zone, a treasure site, an
- * excavation or a secret-realm entrance - a transition, not a deletion.
- *
- * ── "Nobody knows why" is a stored state ──────────────────────────────────
- *
- * A change carries `causeFactId` and `causeKnown` separately from
- * `attributedCauses`, which is the list of competing explanations the current
- * inhabitants hold. The record can therefore say, truthfully, that a forest is
- * forbidden, that three villages disagree about why, and that the actual reason
- * is not written anywhere - right up until {@link explainLocationChange} is
- * called because somebody found out.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * ENVIRONMENTAL GATING
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Four thresholds, because they fail differently:
- *
- *   entry        can get through the door at all
- *   survival     will not simply be killed by the ambient conditions
- *   operational  can act here - fight, cultivate, work, search
- *   mastery      can exploit or hold the place
- *
- * Below `entry` you are turned away and nothing happens. Below `survival` you
- * get in and die. Between `survival` and `operational` you are alive and
- * useless, standing in the vault unable to open anything.
- *
- * **`entry` is the only one of the four that is a person.** Somebody stands on
- * the road and sends you back, and a refusal with nobody behind it is not a
- * refusal - so a ruin nobody holds does not turn anybody away, and reads
- * `lethal` rather than `barred`. `ruin-gatekeepers.ts` owns that rule, states
- * why it is scoped to ruins, and is the only thing `evaluateAccess` consults
- * before deciding the level. The other three are geology and apply to
- * everybody, which is what keeps an open ruin dangerous rather than free.
- *
- * Thresholds are lowered by what a character actually has - a technique built
- * for this hazard, an artifact, a physique, a formation, or knowing what the
- * door says - and by ENVIRONMENTAL AFFINITY, which is the place itself
- * favouring or suppressing a kind of cultivator. A poison specialist is
- * stronger in a corrupted region; a soul cultivator is weaker in a
- * soul-suppressing domain. So a specialist four realms below a rival can walk
- * into a domain that kills the rival outright. Where you are changes what you
- * are worth, and that inversion is designed rather than accidental.
- *
- * Every assessment shows its work: `AccessAssessment.applied` itemises which
- * modifier moved which threshold by how much, so a character who dies at a door
- * can read exactly what would have got them through it.
- *
- * ── Secret realms, sealed domains and portals ─────────────────────────────
- *
- * All of it is on the same planet. A portal links two places on this world and
- * nowhere else. A secret realm is a sealed pocket with a durable opening CYCLE
- * stored as a period and a phase, so "is it open in year 900" is arithmetic
- * rather than three centuries of ticking.
  */
 
 import type { AmbientQi } from '../../schema/cultivation.js';
@@ -164,11 +72,6 @@ export type ThresholdModifierSource =
 
 /**
  * Something a character has that makes a place easier.
- *
- * `offsets` are stated in ordinals and are SUBTRACTED from the requirement, so
- * a positive number is a benefit. A modifier gated on a hazard applies only
- * where that hazard is present, which is the mechanism by which a specialist
- * outperforms someone stronger.
  */
 export interface ThresholdModifier {
     id: string;
@@ -202,14 +105,6 @@ export function makeModifier(
 
 /**
  * The place favouring or suppressing a kind of cultivator.
- *
- * `tag` is free-form content ('poison', 'fire', 'soul', 'sword', 'ice',
- * 'corrupt', 'formation'), matched by string against what a character
- * specialises in. `multiplier` scales their effectiveness while they are here;
- * `thresholdOffset` moves the survival and operational bars for them
- * specifically. A negative multiplier band and a negative offset together are a
- * suppression domain: a soul cultivator inside one is weaker AND finds it
- * harder to stay upright.
  */
 export interface EnvironmentAffinity {
     tag: string;
@@ -247,11 +142,6 @@ export interface CompatibilityResult {
 
 /**
  * How well this character and this place get on.
- *
- * Pure lookup over stored data. Specialty matches apply the affinity as
- * written; vulnerability matches invert a boon into a bane, which is how a
- * soul-suppressing domain is stored once and read correctly by both the soul
- * cultivator it punishes and the body cultivator it ignores.
  */
 export function environmentalCompatibility(
     location: LocationRecord,
@@ -284,13 +174,7 @@ export function environmentalCompatibility(
 // LOCATIONS
 // ─────────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE QI SCALE
-//
-// Lives in `qi-scale.ts` because `history.ts` needs it too and the two modules
-// already point at each other. Re-exported here so every existing importer of
-// the location module keeps working unchanged.
-// ─────────────────────────────────────────────────────────────────────────
 
 export {
     QI_BAND_FLOORS,
@@ -322,11 +206,11 @@ export type LocationKind =
     // which is content, and the kind is only what the engine switches on.
     // See `architecture.ts`.
     /**
-     * A walled division of a compound, one per rank in the holder's own
-     * ladder. It is the rung the access chain is walked over: crossing into
-     * one is what `reachThrough` charges for, and it is deliberately NOT a
-     * settlement, so `birthplacesIn` and the crowding pass do not count the
-     * same people once per wall they live behind.
+     * A walled division of a compound, one per rank in the holder's own ladder. It
+     * is the rung the access chain is walked over: crossing into one is what
+     * `reachThrough` charges for, and it is deliberately NOT a settlement, so
+     * `birthplacesIn` and the crowding pass do not count the same people once per
+     * wall they live behind.
      */
     | 'precinct'
     /**
@@ -337,13 +221,13 @@ export type LocationKind =
      */
     | 'hall'
     /**
-     * An interior room that CONCENTRATES qi above the ground it sits on. A
-     * vein chamber, a furnace floor, a meditation cell. A `hall` and a
-     * `precinct` never are - they sit on the ground the compound sits on - so
-     * a chamber is the only OPEN room being crowded out of costs anything. (A
-     * `vault` may also run high, but a sealed pocket offers nobody any of it
-     * until the seal is off: that is `qiDensity` against
-     * `environment.spiritualDensity`, and they are deliberately different.)
+     * An interior room that CONCENTRATES qi above the ground it sits on. A vein
+     * chamber, a furnace floor, a meditation cell. A `hall` and a `precinct` never
+     * are - they sit on the ground the compound sits on - so a chamber is the only
+     * OPEN room being crowded out of costs anything. (A `vault` may also run high,
+     * but a sealed pocket offers nobody any of it until the seal is off: that is
+     * `qiDensity` against `environment.spiritualDensity`, and they are deliberately
+     * different.)
      */
     | 'chamber'
     /**
@@ -377,12 +261,6 @@ export interface OpeningCycle {
 
 /**
  * A location is an environmental modifier, not just a name.
- *
- * "Cultivate for ten years" must resolve differently in a city, in wilderness,
- * on a spirit mountain, on a poisoned battlefield, inside a ruin, in sect
- * territory, and in a forbidden zone. These eight fields are what make that
- * true, and they are kept deliberately lightweight: enough for the capability
- * predicates and a rate multiplier to read, not an ecology model.
  */
 export interface LocationEnvironment {
     /**
@@ -471,10 +349,6 @@ export type LocationChangeKind =
 
 /**
  * A patch applied to the current state of a location.
- *
- * Deliberately additive/subtractive on the list fields rather than
- * whole-list replacement, because a catastrophe usually adds a hazard without
- * knowing what was already there.
  */
 export interface LocationPatch {
     name?: string;
@@ -534,12 +408,6 @@ export interface LocationRecord {
     kind: LocationKind;
     /**
      * Which layer of the world this place is on.
-     *
-     * The one point where progression is geographic: the far side of the Lid is
-     * a place, and reaching ordinal 46 moves you there. A place never changes
-     * layer - there is no patch for it and none should be added, because a
-     * mountain that migrated across the Lid is not a thing that can happen.
-     * See `layers.ts`.
      */
     layer: LayerKey;
     parentId: string | null;
@@ -576,21 +444,6 @@ export interface LocationRecord {
 
     /**
      * The house whose name is on THIS row, and null is not "nobody holds it".
-     *
-     * A trap worth stating where the field is, because reading it as the whole
-     * answer is the obvious mistake and it produces a confident wrong one.
-     * `whoHoldsTheGround` walks the containment chain AND the prefecture
-     * register, so a settlement carrying nothing here can still be held by the
-     * house that holds its district - and walking into the district IS standing
-     * on their ground.
-     *
-     * Found by a negative test going red for the right reason: a case picked as
-     * "unheld" on `controllingFactionId === null` was held on the register, and
-     * the writer that fires on held ground fired correctly.
-     *
-     * So ask `whoHoldsTheGround` whenever the question is whose ground this is.
-     * Read this field directly only when the question is genuinely about what
-     * this row itself records.
      */
     controllingFactionId: string | null;
     originFactId: string | null;
@@ -672,14 +525,6 @@ export interface ChangeResult {
 
 /**
  * Apply a change to a place.
- *
- * Appends the change to the location's history AND materialises its patch onto
- * the current state, in one operation, so the two can never disagree. This is
- * the whole of "a witnessed catastrophe writes real state": if a mountain is
- * destroyed the record says the mountain is destroyed, and the history gains
- * the entry that says when and, if anybody knows, why.
- *
- * Pure - a new record comes back and the input is untouched.
  */
 export function applyLocationChange(location: LocationRecord, input: ChangeInput): ChangeResult {
     const change: LocationChange = {
@@ -797,10 +642,6 @@ function applyPatch(location: LocationRecord, patch: LocationPatch, onDay: numbe
 
 /**
  * Somebody found out why.
- *
- * Attaches the recovered cause to a change that did not have one. The mirror of
- * `explainFact` in the ledger, and the reason "nobody knows why" is a state
- * rather than a dead end.
  */
 export function explainLocationChange(
     location: LocationRecord,
@@ -865,10 +706,6 @@ export interface LocationHistoryEntry {
 
 /**
  * The place's own history, origin first.
- *
- * This is the `origin → changes → current state` view, rendered as rows. The
- * first row is always the origin; everything after it is something that was
- * done to the place, in order.
  */
 export function locationHistory(location: LocationRecord): LocationHistoryEntry[] {
     const rows: LocationHistoryEntry[] = [
@@ -915,11 +752,6 @@ export function unexplainedChanges(location: LocationRecord): LocationChange[] {
 
 /**
  * The place as it stood on a past day.
- *
- * Replays the origin plus every change up to `day`. This is how the world
- * answers "was there a mountain here" for a player who remembers one - and how
- * it can answer "yes, until year 8,412" without the current record having to
- * carry a note about it.
  */
 export function stateAsOfDay(location: LocationRecord, day: number): LocationRecord {
     const origin = location.origin;
@@ -1014,12 +846,8 @@ function gateFor(
 }
 
 /**
- * Thresholds after everything the character is carrying and everything the
- * place thinks of them.
- *
- * Modifiers stack additively and the result is clamped to the legal ordinal
- * range, so no stack of trinkets can take a requirement below zero and quietly
- * turn a lethal domain into a road.
+ * Thresholds after everything the character is carrying and everything the place
+ * thinks of them.
  */
 export function effectiveThresholds(
     location: LocationRecord,
@@ -1108,13 +936,7 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
     const cycleOpen = query.onDay === undefined ? true : isOpenOn(location, query.onDay);
     const closed = (location.sealed && !keyed) || !cycleOpen;
 
-    // ── AN ENTRY BAR IS A PERSON, AND A RUIN HAS NOBODY LEFT IN IT ───────
-    //
-    // `ruin-gatekeepers.ts` holds the rule and the measurement behind it. In
-    // one line: a ruin nobody holds refuses nobody, because everybody who
-    // could have refused you is why it is a ruin. It does not become safe -
-    // `survival` is geology and still applies - so the reading falls through
-    // to `lethal`, which is admitted and being taken apart by the day.
+    // AN ENTRY BAR IS A PERSON, AND A RUIN HAS NOBODY LEFT IN IT
     const gate = whoTurnsYouAwayFrom(location);
 
     let level: AccessLevel;
@@ -1137,31 +959,10 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE THRESHOLDS ACTUALLY DO
-//
-// The four bars have been calibrated across every place in the world for a
-// long time and NOTHING READ THEM at the point where somebody was standing
-// somewhere. Measured: an ordinal 0 cultivator was put inside a compound whose
-// bars read entry 15 / survival 19 / operational 23 / mastery 25. They walked
-// in, cultivated for seven months, gained a full rank, and were never touched.
-// The doc comment at the top of this file said "below survival you get in and
-// die" and there was no code path that could make that true.
-//
-// `evaluateAccess` answers "what level are they at". This answers "so what",
-// in the two currencies a span is actually paid in - HP per day and whether
-// progress accrues - so a caller can hand it straight to the time skip. It is
-// pure comparison arithmetic like everything else here; it kills nobody.
-// `survival.ts` remains the only place a run ends.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How much of a body the ground takes per day, per rung below its survival bar.
- *
- * Four rungs under and a season is fatal; one rung under and a determined
- * cultivator can be dragged out. It is deliberately steep, because the whole
- * point of the ladder of places is that the next one up is a decision with a
- * price rather than a free upgrade.
  */
 export const HOSTILE_GROUND_HP_PER_RUNG = 0.035;
 
@@ -1185,13 +986,6 @@ export interface StandingConsequence {
 
 /**
  * What standing here does to this person, ready to hand to `simulateTimeSkip`.
- *
- * The three failures are different in kind and are reported as such:
- *
- *   barred      turned away. Nothing happens, no time passes, and the refusal
- *               names both bars so the player learns the system exists.
- *   lethal      admitted, and the ground is taking them apart by the day.
- *   surviving   admitted, alive, and the ground gives up nothing.
  */
 export function standingConsequence(
     location: LocationRecord,
@@ -1247,13 +1041,13 @@ function describeAccess(
     }
     switch (level) {
         case 'barred': {
-            // A REFUSAL NAMES ITS AUTHOR, OR SAYS IT CANNOT. Being turned away
-            // is somebody doing the turning; a bar with nobody behind it never
-            // reaches here, because `whoTurnsYouAwayFrom` drops it before the
-            // level is decided. What is left is the two cases that were being
-            // printed identically - told who, and too low to be told - and the
-            // second one still says that somebody is there, because that is the
-            // half of the answer that keeps a person alive.
+            // A REFUSAL NAMES ITS AUTHOR, OR SAYS IT CANNOT. Being turned away is
+            // somebody doing the turning; a bar with nobody behind it never reaches
+            // here, because `whoTurnsYouAwayFrom` drops it before the level is
+            // decided. What is left is the two cases that were being printed
+            // identically - told who, and too low to be told - and the second one
+            // still says that somebody is there, because that is the half of the
+            // answer that keeps a person alive.
             const keeper = whoTurnsYouAwayFrom(location, ordinal);
             const by = keeper.factionName
                 ? ` ${keeper.factionName} holds it`
@@ -1319,15 +1113,6 @@ const AMBIENT_RATE: Record<AmbientQi, number> = {
 
 /**
  * What ten years here is worth.
- *
- * A pure read over stored environment plus the actor's own specialties. It
- * returns a multiplier and its breakdown; it does not apply anything, because
- * applying it is the cultivation engine's job and the durable-process rate is
- * where it lands.
- *
- * Sealed places are the interesting case: a ruin can hold enormous undrawn qi
- * and still return a low multiplier, because until the seal is broken the
- * density is not available to anybody standing outside it.
  */
 export function cultivationContext(
     location: LocationRecord,
@@ -1423,10 +1208,6 @@ export interface OpeningWindow {
 
 /**
  * Every opening window between two days, capped.
- *
- * The cap is not a shortcut: a caller asking about ten thousand days of a
- * thirty-day cycle wants the next few windows, not three hundred of them, and
- * an uncapped list is how a cheap time advance stops being cheap.
  */
 export function openingsBetween(
     location: LocationRecord,
@@ -1503,11 +1284,6 @@ function upsertLink(location: LocationRecord, link: LocationLink): void {
 
 /**
  * A normal place becomes forbidden because something happened there.
- *
- * Forbidden zones are made, not placed. The thresholds jump, hazards appear,
- * the ecosystem tag goes on, and the cause may or may not be recorded - which
- * is how a fertile forest ends up a forbidden forest that three villages
- * explain three different ways.
  */
 export function forbidZone(
     location: LocationRecord,
@@ -1547,10 +1323,6 @@ export function forbidZone(
 
 /**
  * Something large broke.
- *
- * Scale of destruction tracks the power involved, so the caller states the
- * scale and this only records it: the engine does not decide how big a fight
- * was, it stores how big the LLM said it was and what that did to the ground.
  */
 export function recordCatastrophe(
     location: LocationRecord,
@@ -1596,12 +1368,6 @@ export function transformOnDestruction(
 
 /**
  * Turn the remnants of the seeded past into locations.
- *
- * This is what makes ruins ordinary rather than special: every sealed compound
- * and every dead patch of ground on the map is the leftover of a dated fact
- * with names attached, and `originFactId` points straight back at it. Each
- * place is created in its ORIGINAL condition and then changed into what it is
- * now, so the layered history is populated rather than asserted.
  */
 export function locationsFromPriorAges(prior: PriorAges): LocationRecord[] {
     const out: LocationRecord[] = [];
@@ -1622,56 +1388,6 @@ export function locationsFromPriorAges(prior: PriorAges): LocationRecord[] {
 
 /**
  * What a completed crossing left in the ground under it.
- *
- * ── IT IS A CONTRIBUTION, NOT AN EXPLANATION ─────────────────────────────
- *
- * **This is not why a place is rich.** How much qi a place offers is mostly the
- * vein under it and how much has been taken out of it - `capacityFor` in
- * `what-a-place-still-has-in-the-ground.ts` reads `qiDensity` as the capacity
- * term and subtracts what has been drawn since. Ground is worked and drawn
- * down, and that is the primary story of a thinning age.
- *
- * A crossing is the cherry on top: a rare, decaying addition laid over a
- * baseline that is going down anyway. The interesting places are where the two
- * coincide - a good vein that has not been worked out, that somebody also
- * finished on recently enough to still matter - and this function supplies
- * exactly one of those two facts.
- *
- * ── HOW IT COMPOSES WITH DEPLETION, WHICH IS ALREADY LIVE ────────────────
- *
- * They do not collide, because they are different fields with one writer each.
- * The vein is `qiDensity`; what has been taken is a pair of scalars on
- * `LocationRecord.data`, written only by drawing on the place. So enriching the
- * vein raises the CAPACITY and leaves the shortfall exactly where it was - a
- * worked-out place with a fresh crossing on it has more to give and is still as
- * far behind as it was. That falls out of the existing arithmetic rather than
- * being arranged here, and nothing in this function reads or writes a count.
- *
- * ── SEALED GROUND IS RICH AND UNDRAWABLE ─────────────────────────────────
- *
- * `spiritualDensity` is left at whatever the ruin's own seal decided. A sealed
- * pocket sits on a vein nobody can touch, which is the existing economy of
- * exploration and not something a crossing changes: the loan is in the rock,
- * and somebody has to get in to spend it.
- *
- * ── THE MARKS, AND WHY HALF OF THEM COST NOTHING TO WIRE ─────────────────
- *
- * Somebody crossing left marks, and reading marks is what comprehension IS. The
- * band is what carries that here, through a rule that already exists:
- * `INSIGHT_AMBIENT_CHANCE` in `understanding.ts` prices the meditative state at
- * 0 on thin and normal ground, 0.005 on dense and 0.01 in a spirit tide. So
- * lifting the vein makes comprehension likelier on exactly this ground, at
- * exactly the places the loan is still paying, with no branch anywhere that has
- * heard of crossings. `ambient` is patched alongside `qiDensity` so the record
- * agrees with itself rather than saying two things about one place.
- *
- * What is NOT wired, and is a finding rather than an omission: the OTHER half
- * of comprehension-from-ground, `atSiteOfUnderstanding`, does not read a
- * `LocationRecord` tag at all. It runs off `siteTagsAt` over the separate
- * `cultivation_sites` table for a player and off a dealt tag vocabulary for an
- * NPC, and the world layer writes neither. Joining those is a cross-layer job
- * with its own blast radius; inventing a tag here would be a hook that only
- * looks connected.
  */
 function groundACrossingLifted(
     ruinGround: LocationRecord,
@@ -1790,18 +1506,7 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
     return { ...location, cycle: cycleForRuin(ruin) };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // NOT EVERY RUIN IS ANONYMOUS, AND NOT EVERY ONE IS REACHABLE
-//
-// Two independent draws off the ruin's own id, so a site is the same site in
-// every run of the same world and the two axes do not correlate: a documented
-// ruin is as likely to be on a four-hundred-year cycle as a nameless one, and
-// a site nobody can place may be one anybody can walk to.
-//
-// The consumers are `provenance.ts` and `convergence.ts`; everything written
-// here is plain scalars on `data` plus the `cycle` field that has been on the
-// record since the location layer was written and has never been populated.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Shares of the ruin population at each provenance standing. */
 const PROVENANCE_MIX = { documented: 12, attributed: 28, rumoured: 30, anonymous: 30 };

@@ -1,11 +1,5 @@
 /**
  * RPG-MCP Server - Dynamic Loader Pattern Implementation
- * 
- * Token reduction: ~50K → ~6-8K (85%+ reduction)
- * 
- * Meta-tools (search_tools, load_tool_schema) enable:
- * - Tool discovery by keyword/category
- * - On-demand schema loading
  */
 
 import { config as loadDotenv } from 'dotenv';
@@ -17,17 +11,6 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 // Load .env BEFORE anything reads process.env (provider keys, agent config, etc.)
-//
-// IMPORTANT: dotenv's default behavior is to read `.env` relative to
-// process.cwd(). MCP hosts almost universally spawn server binaries with
-// the host's cwd, not the project root - so a vanilla `loadDotenv()` would
-// silently load nothing and the operator gets the misleading
-// "Provider 'X' is not configured" error even when their .env is correct.
-//
-// Anchor the lookup to this file's location instead. dist/server/index.js
-// and src/server/index.ts both resolve `../../.env` to the project root.
-// We also keep a fallback to the cwd-relative load for non-standard layouts
-// (custom builds, alternate config paths).
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const envFromFile = resolve(__dirname, '..', '..', '.env');
@@ -119,13 +102,13 @@ function setupShutdownHandlers(): void {
 }
 
 /**
- * Builds a fresh McpServer with every tool registered. Cheap (no I/O) -
- * safe to call once for the long-lived stdio/tcp/unix/websocket transports,
- * or per-request for the stateless HTTP transport, which requires a new
- * McpServer + StreamableHTTPServerTransport pair per request (the SDK
- * throws "Stateless transport cannot be reused across requests" otherwise).
- * `pubsub` and `auditLogger` are app-level singletons shared across calls -
- * only the protocol-level McpServer/tool-registration wrapper is rebuilt.
+ * Builds a fresh McpServer with every tool registered. Cheap (no I/O) - safe to
+ * call once for the long-lived stdio/tcp/unix/websocket transports, or per-request
+ * for the stateless HTTP transport, which requires a new McpServer +
+ * StreamableHTTPServerTransport pair per request (the SDK throws "Stateless
+ * transport cannot be reused across requests" otherwise). `pubsub` and
+ * `auditLogger` are app-level singletons shared across calls - only the
+ * protocol-level McpServer/tool-registration wrapper is rebuilt.
  */
 function buildServer(pubsub: PubSub, auditLogger: AuditLogger): McpServer {
   const server = new McpServer({
@@ -193,12 +176,12 @@ async function main() {
   // =========================================================================
   try {
     // Deliberately no setAgentRuntime() here any more. Runtime deps bind eight
-    // repositories to a single database, and under per-campaign databases the
-    // right one is not known until a request arrives with a verified tenant.
-    // agent_manage and combat_manage already build the runtime lazily from the
-    // request's own database, which is now the only correct place to do it.
-    // Provider initialization stays at boot: it is genuinely process-wide, and
-    // surfacing misconfiguration early is worth keeping.
+    // repositories to a single database, and under per-campaign databases the right
+    // one is not known until a request arrives with a verified tenant. agent_manage
+    // and combat_manage already build the runtime lazily from the request's own
+    // database, which is now the only correct place to do it. Provider
+    // initialization stays at boot: it is genuinely process-wide, and surfacing
+    // misconfiguration early is worth keeping.
     const providerFactory = new ProviderFactory();
     const providers = providerFactory.initialize();
 
@@ -249,15 +232,11 @@ async function main() {
     const index = args.indexOf(name);
     return index !== -1 ? args[index + 1] : undefined;
   };
-  // Only the HTTP transport is multi-tenant; it establishes a verified tenant
-  // per request. Every other transport serves one local operator, so it opens a
-  // single database up front. Without this, getDb() would find no tenant and
-  // every storage tool would fail for local users of the npm package, the
-  // standalone binaries, and MCP client configs.
-  //
-  // The legacy-database assertion is likewise HTTP-only: for a hosted server a
-  // pre-split file means an incomplete cutover, but in single-user mode that
-  // same file is simply the operator's database.
+  // Only the HTTP transport is multi-tenant; it establishes a verified tenant per
+  // request. Every other transport serves one local operator, so it opens a single
+  // database up front. Without this, getDb() would find no tenant and every storage
+  // tool would fail for local users of the npm package, the standalone binaries,
+  // and MCP client configs.
   if (transportType === 'http') {
     assertNoLegacyDatabase();
     console.error(`[Server] Campaign databases: ${campaignDbPath('<campaign-id>')}`);

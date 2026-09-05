@@ -90,7 +90,7 @@ export const investigateVerb = {
             //
             // The same defect as "the ruins", one noun over, and it hid a whole
             // subsystem. `resolveKnownPlace` matches the current location BY
-            // NAME, so "I examine Wheatgate" resolves and "I examine the
+            // NAME, so "I examine Autumn Gate" resolves and "I examine the
             // province", "what is the ground here like" and "I look over this
             // place" resolve to nothing - and the refusal then reads as though
             // the player had asked for an object that is not here.
@@ -108,8 +108,8 @@ export const investigateVerb = {
             // ── A NAME THEY HOLD IS NOT A PLACE THAT HAS NO SUCH THING ───
             //
             // FOUND BY PLAYING, one town from somebody known since childhood.
-            // "I look at Fang Nuoshan", typed in Fourhands with Fang Nuoshan in
-            // Sixmile, came back as *"You go over Fourhands looking for it and
+            // "I look at Fang Nuoshan", typed in Four Graves with Fang Nuoshan in
+            // Six Li, came back as *"You go over Four Graves looking for it and
             // it is not the kind of place that has one"* - and the inspector
             // line printed underneath it read *"Unresolved subject "Fang
             // Nuoshan": no knowledge record and nothing co-located. Known to

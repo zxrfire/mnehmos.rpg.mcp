@@ -1,29 +1,5 @@
 /**
  * Getting somewhere: on foot, on something, by folding, or on somebody's span.
- *
- * `move` is the walk and the other three are the ways of covering ground that
- * are not walking. Each was built, argued out and left with no caller in
- * `src/` - `FOLD_TRAVEL_ENGINE_GAP` names this handler by name - and the four
- * verbs here are what read them. They share one thing that makes them a
- * module rather than four: `daysOnTheRoadTo` is the single reader of the
- * catalog's `travelDays`, and every verb below goes through it, so a fold that
- * saves ten days saves ten days that were being spent.
- *
- * ── HOW THIS IS ATTACHED, AND WHY IT LOOKS LIKE THIS ─────────────────────
- *
- * These are `GameService` methods that live in another file. They are merged
- * onto the prototype at the bottom of `game.ts`, and the interface is
- * merged into the class declaration there, so `this.move(...)` resolves and
- * typechecks exactly as it did when the body sat inside the class.
- *
- * The shape exists to make the move REVIEWABLE. Every line of every body below
- * is the line it was in `game.ts`, `this` included - the alternative, passing
- * the service in as `self`, would have rewritten about twelve hundred
- * expressions and turned a move into a rewrite nobody can check. What it costs
- * is that the members these reach are no longer marked `private`, which is a
- * compile-time annotation with no runtime meaning: `private` is erased, and
- * nothing here is reachable that was not already reachable by writing
- * `(service as any)`.
  */
 
 import { cashToStones } from '../data/cultivation/mortal-world.js';
@@ -100,31 +76,6 @@ import type { GameService } from './turn-engine.js';
 
 /**
  * The house whose ground somebody has just walked onto, written down.
- *
- * ── WHY ARRIVAL AND NOT `look` ───────────────────────────────────────────
- *
- * `being-on-their-ground.ts` landed with one caller, in the `look` path, and the
- * gap was reported at the time: a player who walks in and acts without looking
- * still holds nothing. It bit within the hour. Standing on Azure Cloud Pavilion
- * grounds, with the house named to the player three times in the session -
- * including `whoHoldsTheGround: held by Azure Cloud Pavilion` in an engine
- * ruling - **"I ask the elders to put my name forward"** came back:
- *
- *   No such door.
- *   Unresolved faction "Azure Cloud Pavilion": no knowledge record.
- *
- * **Arrival is the honest trigger and `look` is the optional one.** A player
- * learns whose ground they are on by getting there; looking is something they
- * may never type. So this sits beside the `noteEncounter` that already records
- * the PLACE on arrival - same event, same source, one more fact about it.
- *
- * ── AND IT IS THE SAME NARROW RULE, NOT A WIDER ONE ──────────────────────
- *
- * `named` from `witnessed`, deliberately below `stageCeilingFor('witnessed')`,
- * exactly as the `look` caller grants it. Being somewhere tells you whose it is
- * and nothing about their politics. Only a `held` reading introduces anybody and
- * only one the catalog can name - `whoBeingHereIntroducesYouTo` owns both
- * refusals, so the two callers cannot drift.
  */
 function noteWhoseGroundThisIs(
     game: GameService,
@@ -158,14 +109,6 @@ function noteWhoseGroundThisIs(
 
 /**
  * Who of your own house is standing where you have just arrived.
- *
- * A local function rather than a `GameService` method for the ordinary reason:
- * adding a method means editing `turn-engine.ts`, which several agents are in at
- * once, and this needs nothing from the class but three readers.
- *
- * `the-people-you-serve-with.ts` holds the rule - on the same roll AND in the
- * same room, height gate first - and `meeting-your-own-house.ts` turns it into
- * the declaration the turn boundary writes.
  */
 function meetingYourOwnHouse(game: GameService, cultivator: Cultivator) {
     const membership = game.repos.sects.getMembership(cultivator.id);
@@ -184,11 +127,6 @@ function meetingYourOwnHouse(game: GameService, cultivator: Cultivator) {
 
 /**
  * And the structure being enrolled told them, which needs nobody present.
- *
- * Separate from the reading above because it is a different claim from a
- * different source: `told` rather than `witnessed`, so `stageFromSource`
- * clamps it at `placed` and knowing the head's name never becomes having met
- * them. `what-joining-tells-you.ts` carries the ruling and its three edges.
  */
 function theStructureYouWereTold(game: GameService, cultivator: Cultivator) {
     const membership = game.repos.sects.getMembership(cultivator.id);
@@ -212,16 +150,6 @@ function theStructureYouWereTold(game: GameService, cultivator: Cultivator) {
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
-     *
-     * One engine path for every intent. `flee`, `enter`, `approach` and
-     * `travel` all resolve identically because the engine has no basis yet for
-     * treating them differently, and manufacturing one in this layer would be a
-     * mechanic invented in the narration tier.
-     *
-     * TODO(world): route through `assessCapability` once `world_locations` is
-     * populated, so entering a sealed ruin is answered by "can attempt / can
-     * survive / can succeed" against that location's thresholds. The rule then
-     * stays the same: the attempt is always permitted, circumstances decide.
      */
     async move(
         this: GameService,
@@ -442,38 +370,7 @@ export const travelVerbs = {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * What the catalog says this road costs on foot, or null where it says
-     * nothing.
-     *
-     * Null means "unpriced", never "free". A place the gazetteer does not
-     * contain has no stated road, and that is most of the ground a player can
-     * legitimately stand on.
-     *
-     * ── TWO SOURCES, ONE ANSWER, AND NO SECOND DISTANCE ─────────────────
-     *
-     * There are two scales at which the catalog states a road and this is the
-     * only function that reads either, which is the whole of why they cannot
-     * disagree:
-     *
-     *   place road    `placeRoadDays`, between two named settlements INSIDE
-     *                 one province. Sparse - most pairs have none.
-     *   province road `region.connections`, BETWEEN two provinces.
-     *
-     * Their domains are disjoint by rule - a place road may not cross a
-     * province boundary, and `regions.ts` carries a test that asserts it - so
-     * no pair of places has an answer from both. This is not a fallback chain
-     * where a nearer number overrides a farther one; it is one question asked
-     * of whichever layer is the one that answers it.
-     *
-     * Both are quoted in WALKING DAYS, which is the unit
-     * `how-far-somebody-can-fold-space-and-what-it-costs.ts` insists on for
-     * exactly this reason: a second unit for distance would be a second
-     * opinion about how far apart two places are, and `priceFold` compares
-     * its reach against whatever comes out of here.
-     *
-     * A pair with no row anywhere still falls through to the flat
-     * `SHORT_ACTION_DAYS` at the call site, unchanged. Absence of an
-     * adjacency has never meant unreachable and does not start meaning it.
+     * What the catalog says this road costs on foot, or null where it says nothing.
      */
     daysOnTheRoadTo(this: GameService, cultivator: Cultivator, destination: string): number | null {
         const bare = (name: string) => name.replace(/^the\s+/i, '').trim().toLowerCase();
@@ -500,14 +397,6 @@ export const travelVerbs = {
 
     /**
      * What this cultivator could actually put under them for a road, best last.
-     *
-     * TWO THINGS, AND THE FLOOR. Their own blade, which is not property and
-     * cannot be bought, lent or taken; and a tracked craft they own, which is
-     * an ordinary object row with a `conveyanceId` on it. Everything else in
-     * `CONVEYANCES` is a COUNTED holding - a house has four of these and could
-     * not tell you which went to Iron Gate last spring - and there is nowhere in
-     * this engine that counts them for a person. See
-     * {@link A_HIRED_BEAST_IS_NOT_MODELLED}.
      */
     whatTheyCouldRide(
         this: GameService,
@@ -564,18 +453,6 @@ export const travelVerbs = {
     /**
      * What this cultivator has of the counted conveyances, in the shape the
      * catalog's four functions read.
-     *
-     * The pouch is where it lives, and it is the right place rather than a
-     * convenient one: the pouch is already what this person holds as an
-     * AMOUNT, fungible, with no identity and no past - which is the whole
-     * definition of the counted tier. `countedHoldingKey` is the key those
-     * four functions agree on, so a person and a house answer "what is in the
-     * yard" with the same code over the same shape, and nothing new is stored
-     * anywhere.
-     *
-     * `what-a-house-moves-its-people-on.ts` says of its own counted section
-     * that when a general counted-stock model lands these are the adapter to
-     * delete. This is that adapter on the player's side.
      */
     whatIsInTheirYard(this: GameService, cultivator: Cultivator): Record<string, number> {
         const yard: Record<string, number> = {};
@@ -595,12 +472,6 @@ export const travelVerbs = {
 
     /**
      * Spend a journey and arrive, which is the half every one of these shares.
-     *
-     * Extracted rather than repeated so that the four verbs cannot drift: the
-     * food clock, the toll, the world tick and the `witnessed` record are the
-     * same for somebody who walked, rode, folded or bought a ticket. What
-     * differs between them is only what the days were and what the arrival
-     * reads as.
      */
     async arriveAfterSpending(
         this: GameService,
@@ -651,10 +522,6 @@ export const travelVerbs = {
 
     /**
      * Where this journey is going, or the refusal that says why it is nowhere.
-     *
-     * The same three registers `move` checks, in one place, because a verb that
-     * could travel somewhere `move` refuses would be a way round the discovery
-     * gate rather than a new way of getting there.
      */
     whereThisJourneyGoes(
         this: GameService,
@@ -697,16 +564,6 @@ export const travelVerbs = {
 
     /**
      * Going somewhere ON something.
-     *
-     * The conveyance layer, reached. What this does that `move` does not is
-     * ask what is under the traveller, price the road against it, and say what
-     * a watcher at the far gate reads off the arrival - which
-     * `docs/world/houses/trust.md` treats as an expensive signal and which was
-     * a figure of speech for as long as nothing produced one.
-     *
-     * It never refuses for having nothing to ride. Walking is a row in the
-     * table, it is the floor, and arriving on foot tells everybody at the gate
-     * what this party can afford exactly as loudly as arriving on a hull does.
      */
     async ride(
         this: GameService,
@@ -805,36 +662,6 @@ export const travelVerbs = {
 
     /**
      * Stepping across the distance instead of covering it.
-     *
-     * Three answers rather than two, which is the whole shape of `priceFold`: a
-     * fold inside the range, a distance the folder does not have, and a rung
-     * that does not fold at all. None of them is a ban - the road is still
-     * there in every case, and the refusals say so.
-     *
-     * ── THE FIX IS THE HARD PART AND IT IS NOT NEGOTIABLE ────────────────
-     *
-     * There are exactly two, both things the folder did themselves, and there
-     * is deliberately no third for having been told. Only ONE of them is
-     * writable in this world, and the reason is worth having:
-     *
-     *   `stood`  the knowledge row for the place is at `encountered` or above,
-     *            which for a PLACE has exactly one writer - arriving in it. It
-     *            is what standing somewhere buys that hearing about it never
-     *            does, and it is the whole of the player's path to a fold.
-     *   `seen`   NOT REACHABLE, and see {@link A_SIGHTING_HAS_NO_NAME_ON_IT}.
-     *
-     * THE OBVIOUS WRONG ANSWER, AND IT WAS MEASURED. The first build read
-     * `seen` off `horizonInDays` - "you can fly and look around" - on the
-     * reasoning that a rung which can see that far has made it out. The sight
-     * horizon dwarfs the fold range at every rung on the curve: 78.7 days of
-     * sight against 6.0 days of reach at the floor, 642 against 33.5 at Grand
-     * Ascension. So EVERY destination inside a fold's range is inside the
-     * horizon, always, and the fix check becomes a no-op that hands anybody
-     * above the floor a fix on every name they have ever been told. That is the
-     * third fix the module forbids, arrived at by accident, and it would delete
-     * the Measured Span's entire business and the Late Age premise it
-     * expresses. It is written down here because it is an attractive wrong turn
-     * and somebody will otherwise take it again.
      */
     async fold(
         this: GameService,
@@ -940,19 +767,6 @@ export const travelVerbs = {
 
     /**
      * A counter, a board, and a place on somebody else's span.
-     *
-     * THE BOARD IS THE MORE IMPORTANT HALF and it is free. A board is a map
-     * somebody can read without owning a map - a list of places, a distance to
-     * each in the unit every road in this world is quoted in, and a price - and
-     * reading one writes a `read` knowledge record against every destination on
-     * it, which reaches `placed`. `placed` is `REACHABLE_FROM`: the exact rung
-     * that makes a province a legal destination and a listable one. Somebody
-     * who has never left their province learns at a board that there are
-     * others, and can then go.
-     *
-     * A place read off a board is a place HEARD ABOUT and not a place stood in,
-     * which is why the source is `read` and not `witnessed`, and why a fold
-     * still refuses to aim at it.
      */
     async passage(
         this: GameService,

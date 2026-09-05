@@ -1,39 +1,5 @@
 /**
  * How many people ever get this far.
- *
- * The realm ladder is a fact about the world before it is a progression bar,
- * and the number that makes it one is the share of cultivators who ever reach
- * each rung. "Foundation Establishment" means nothing on its own; "perhaps one
- * in forty of the people who ever gather qi" means everything, and it is what
- * makes a player understand what they are looking at when an elder walks past.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THREE NUMBERS, AND THEY ARE ALLOWED TO DISAGREE
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   BELIEVED    what people in the world say. Vague, round, phrased the way a
- *               sect elder would phrase it, and NOT NECESSARILY TRUE. This is
- *               the only one the player ever sees, and it is a knowledge claim
- *               like any other - it can be out of date, regionally wrong, or
- *               something a Dao house will sell you a correction to.
- *
- *   THEORETICAL what the engine's own constants imply: `baseBreakthroughChance`
- *               compounded up the ladder. Cheap, closed-form, and wrong in the
- *               interesting way - it assumes everyone attempts every rank, has
- *               unlimited time, and never dies of anything else.
- *
- *   MEASURED    what the engine ACTUALLY does, from a seeded sweep that runs
- *               cultivators through the real `attemptBreakthrough` against the
- *               real rate and the real lifespan, and counts where they stopped.
- *
- * The admin panel gets all three. The gap between theoretical and measured is
- * the honest measure of how much the survival layer - lifespan, settling, the
- * cost curve, a bad root - takes out of the ladder over and above the
- * breakthrough roll, and it is reported rather than hidden because a designer
- * who cannot see it will tune the wrong number.
- *
- * Nothing in this module feeds back into the simulation. It measures and it
- * reports.
  */
 
 import { forStream } from '../cultivation/rng.js';
@@ -60,27 +26,6 @@ import type { WorldState } from './world-state.js';
 
 /**
  * How many people in the two regions ever gather qi at all.
- *
- * The denominator every "one in N" in this file is secretly quoting, written
- * down because leaving it implicit is how the table went wrong.
- *
- * Nobody in the world has counted, so it is triangulated from two things the
- * setting does commit to, which agree:
- *
- *   - Foundation Establishment is believed to be one in forty, and the two
- *     provinces between them hold on the order of twenty houses with something
- *     like twenty-five Foundation-and-above members each. Five hundred people
- *     at one in forty is twenty thousand.
- *   - Core Formation is believed to be one in five hundred, and "a sect with
- *     two at Core Formation considers itself well off". Forty such people at
- *     one in five hundred is twenty thousand.
- *
- * TWENTY THOUSAND, not billions. That number is the whole reason the top of
- * this table had to be rewritten: it used to descend by a factor of ten per
- * realm all the way to two per billion at Tribulation Transcendence, which is
- * a figure that requires three and a half billion cultivators before it
- * describes a single person. Two provinces do not contain three and a half
- * billion of anything.
  */
 export const CULTIVATOR_POPULATION = 20_000;
 
@@ -94,14 +39,6 @@ export interface BelievedReach {
     approximateShare: number;
     /**
      * What people are actually doing when they quote this realm.
-     *
-     * Below Nascent Soul they divide: they have met enough cultivators for a
-     * proportion to mean something, and they say "one in forty". Above it they
-     * COUNT, because a share stops carrying information the moment the true
-     * figure is smaller than one person - "one in five million" and "one in
-     * fifty million" are the same sentence to everybody who says either, and
-     * neither of them is how a real person describes the four people at Void
-     * Refinement they could name if pressed.
      */
     statedAs: BeliefUnit;
     /**
@@ -131,37 +68,6 @@ interface BeliefRow {
 
 /**
  * The believed figures, keyed by realm.
- *
- * These are what a reasonably informed cultivator would tell you, and they are
- * deliberately not the measured numbers. Where they are wrong, they are wrong
- * in the direction people are wrong: optimistic near the bottom, where everyone
- * knows somebody who made it, and LOW at the top, which is the correction this
- * table needed most.
- *
- * ── Why the top of this table was rebuilt ────────────────────────────────
- *
- * It used to fall by a clean factor of ten per realm from Nascent Soul upward,
- * ending at two per billion for Tribulation Transcendence. That is a tidy
- * curve and it describes a different world: it needs three and a half billion
- * cultivators before it produces one such person, and the setting is two
- * provinces holding perhaps twenty thousand people who ever gather qi at all
- * (see {@link CULTIVATOR_POPULATION}). Against that denominator the old top
- * rows were not pessimistic, they were unreadable - every one of them rounded
- * to nobody, including the realms whose members the Standing Register lists by
- * name.
- *
- * So above Core Formation the belief is now a TALLY, which is what people
- * actually trade in up there. Nobody says "one in five million" about the Void
- * Refinement cultivators in their province; they say "there are four, and three
- * of them are at the Pavilion". And the tally is deliberately LOW against what
- * the world actually holds, because most of the stratum is sealed, withdrawn or
- * pinned and has been for centuries. The mountains guess, and they guess low,
- * because the people up there are not visible on purpose.
- *
- * Keyed rather than positional, and {@link BELIEVED_REACH} is built from
- * `REALM_TIERS` rather than written out beside it. The ladder has already grown
- * a rung once while this file existed; a positional array would have silently
- * mismatched every row above the insertion point instead of failing.
  */
 const BELIEVED_BY_REALM: Partial<Record<RealmKey, BeliefRow>> = Object.fromEntries(([
     {
@@ -197,7 +103,7 @@ const BELIEVED_BY_REALM: Partial<Record<RealmKey, BeliefRow>> = Object.fromEntri
     {
         realm: 'void_refinement',
         count: 4,
-        statement: 'Four, if you count the one under the Marches, and people argue about whether to.',
+        statement: 'Four, if you count the one under the Silent Cliffs, and people argue about whether to.',
         withinTier: 'Not distinguishable from outside, and asking is considered rude.'
     },
     {
@@ -259,50 +165,12 @@ export function believedReachFor(realm: RealmKey): BelievedReach | null {
 
 /**
  * What the player is shown.
- *
- * The vague in-world sentence, never a figure to three decimal places. If a
- * player wants better than this they should have to buy it from somebody whose
- * business is knowing, and that transaction is a knowledge record.
  */
 export function believedStatement(realm: RealmKey): string {
     return believedReachFor(realm)?.statement ?? 'Nobody says.';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TOP OF THE TABLE IS A STOCK, NOT A SHARE
-//
-// Every row above is a share of a population. The two rungs above the Lid are
-// not, and treating them as one is the mistake that made the last crossing look
-// unbalanced.
-//
-// A True Immortal LEAVES. They are not in the world any more, so no count of
-// people in the world constrains how many the crossing produces - only the
-// ancestral records do, and those are kept by the houses that produced them.
-//
-// A False Immortal does not leave, and has three hundred thousand years. For a
-// long time that was read as "they accumulate and never die off", which forces
-// the production rate to be almost zero: any ordinary rate, integrated over the
-// four and a half thousand years the records cover, gives a dozen of them
-// standing about, and the setting has exactly one.
-//
-// THAT READING WAS WRONG, and the correction is the most interesting fact about
-// the rank. A False Immortal has an unattemptable eternity: the one thing they
-// were built to do is permanently shut against them, and no amount of the
-// enormous time they have left changes it. So they do not sit still. They go
-// looking - down old seams, out past the edge of anywhere with a name, at
-// whatever they can find that might be an answer - and going looking is what
-// kills them. Their span is not what ends them; the search is.
-//
-// So residence is production times how long they stay, and they do not stay
-// long. Lu Sheng is not the only False Immortal the world has ever made. He is
-// the one who STAYED, which is a much better fact about him and fits everything
-// already written: barred from the only work that mattered, six hundred years
-// of nothing to attempt, and a stated want of knowing what the far side
-// declined. Everyone else with his problem went to find out.
-//
-// Nothing here feeds back into the simulation. It is the arithmetic that says
-// what the world should contain, so a designer can check whether it does.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Years of record the two regions can actually date a crossing across.
@@ -314,25 +182,11 @@ export const CROSSING_RECORD_YEARS = 4_400;
 
 /**
  * Crossings ATTEMPTED per thousand years, in the present age.
- *
- * Read off the datable entries rather than modelled: a declined crossing 160
- * years ago, an attempt that killed the candidate 90 years ago, Lu Sheng 640
- * years ago, a completion 380 years ago. Four events a court could put a year
- * on inside seven centuries is roughly one every hundred and sixty years, and
- * the courts do not hear about all of them. Six per thousand years is the
- * conservative reading of that.
  */
 export const CROSSINGS_ATTEMPTED_PER_MILLENNIUM = 6;
 
 /**
  * How long a False Immortal stays in the world before going looking.
- *
- * Five hundred years against a span of three hundred thousand, which is the
- * number that makes the residence count come out at one to three. It is not a
- * lifespan and must never be read as one: they are not dying of age at five
- * hundred, they are LEAVING at five hundred, and most of them do not come back.
- * Lu Sheng at six hundred and forty years resident is already unusual, which is
- * exactly what the setting says about him.
  */
 export const FALSE_IMMORTAL_MEAN_RESIDENCE_YEARS = 500;
 
@@ -355,10 +209,6 @@ export interface ImmortalStock {
 
 /**
  * What the world should be holding, given a measured per-attempt outcome split.
- *
- * The caller supplies the landings - from a sweep, or from
- * `assessLastCrossing` - so this function never guesses at the engine's own
- * numbers and cannot drift away from them.
  */
 export function immortalStock(
     landings: ImmortalStock['landings'],
@@ -398,12 +248,6 @@ export interface TierReach {
 
 /**
  * The ladder as its own constants describe it.
- *
- * The product of `baseBreakthroughChance` from ordinal zero up. Deliberately
- * naive: it assumes everybody attempts every rank, that a failure costs
- * nothing but a retry, and that nobody runs out of life. It is the number a
- * spreadsheet would give, and the point of computing it is to have something
- * for the measured sweep to disagree with.
  */
 export function computeTheoreticalReach(): TierReach[] {
     const out: TierReach[] = [];
@@ -462,14 +306,6 @@ export interface SweepResult {
 
 /**
  * Run cultivators through the real engine and count where they stopped.
- *
- * This is the honest measurement: it calls `attemptBreakthrough`, accrues at
- * `computeCultivationRate`, and dies of lifespan and settling exactly the way
- * the survival layer does. It is not a model of the ladder; it is the ladder,
- * run a few thousand times.
- *
- * Deterministic from the seed, so a balance change can be compared against a
- * previous sweep rather than argued about.
  */
 export function measureLadderReach(seed: string, opts: SweepOptions = {}): SweepResult {
     const sampleSize = Math.max(1, opts.sampleSize ?? 2000);
@@ -501,24 +337,6 @@ export function measureLadderReach(seed: string, opts: SweepOptions = {}): Sweep
 
         while (age < maxYears) {
             // THE RUNG THEY ARE STANDING ON, which this omitted.
-            //
-            // `computeCultivationRate` reads a missing `realmOrdinal` as zero
-            // and says so in its own comment: "it is WRONG for anybody standing
-            // higher... rather than discovering it as a flat ladder six months
-            // later." This sweep is the authoritative measurement of the ladder
-            // and it was discovering exactly that.
-            //
-            // The realm intake multiplier doubles every realm - 1, 2, 4, 8, up
-            // to 256 at Tribulation Transcendence - and it exists precisely to
-            // offset a progress requirement that grows at the same pace. Priced
-            // flat, ordinal 44 needs 442,644 years against a 20,000-year
-            // settling clock; priced at the rung, it needs 1,729. So the sweep
-            // reported a ladder that stops dead at Core Formation, with nobody
-            // in nine thousand lives reaching Nascent Soul at any ambient band.
-            //
-            // Every calibration read off this sweep before now understated the
-            // ladder, and the same defect is documented and fixed in
-            // `seeding.ts`'s `deriveLife`.
             const rate = computeCultivationRate({
                 spiritRoot: root.key, injuries, realmOrdinal: ordinal
             }, ambient, {
@@ -558,13 +376,13 @@ export function measureLadderReach(seed: string, opts: SweepOptions = {}): Sweep
             const eligible = canAttemptBreakthrough({
                 realmOrdinal: ordinal,
                 cultivationProgress: progress,
-                // The wounds have to be here. `attemptBreakthrough` runs this
-                // same gate against the full cultivator, so a check made
-                // against a subject missing a field the gate reads says
-                // "eligible" and is then refused a line later - which is a
-                // throw rather than an outcome. That went unnoticed while every
-                // refusal was about progress; a cultivator halted at a wall
-                // carries the reason in their wound list.
+                // The wounds have to be here. `attemptBreakthrough` runs this same
+                // gate against the full cultivator, so a check made against a
+                // subject missing a field the gate reads says "eligible" and is
+                // then refused a line later - which is a throw rather than an
+                // outcome. That went unnoticed while every refusal was about
+                // progress; a cultivator halted at a wall carries the reason in
+                // their wound list.
                 injuries,
                 alive: true
             });
@@ -662,10 +480,6 @@ export interface LadderOddsReport {
 
 /**
  * All three numbers, side by side. Admin only.
- *
- * Pass a world and the observed column is filled from the living population,
- * which is the fourth number and the only one that is neither a belief nor a
- * model: it is what this particular world actually contains today.
  */
 export function ladderOddsReport(
     seed: string,

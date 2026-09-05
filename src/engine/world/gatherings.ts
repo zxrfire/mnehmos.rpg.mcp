@@ -1,105 +1,5 @@
 /**
  * The chosen of allied houses meet each other.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT A GATHERING IS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- *   AN EVENT THAT PUTS A DEFINED SET OF PEOPLE IN ONE PLACE FOR A DEFINED
- *   TIME AND PRODUCES OUTCOMES THAT PERSIST.
- *
- * Four kinds, and they differ in what they write rather than in their name:
- *
- *   MEETING       introductions. Writes ties, and nothing else. The floor, and
- *                 the commonest, because most of what a generation knows about
- *                 the next house along is who they have shaken hands with.
- *   CHALLENGE     two people test each other with nobody meant to be hurt. The
- *                 interesting outcomes are the ones where that fails - a real
- *                 injury, a humiliation in front of people - and the one where
- *                 the gap turns out to be categorical and somebody finds out
- *                 in an afternoon that a peer is out of reach.
- *   COMPETITION   ranked, public, standing on the line. A house's prestige
- *                 moves with its chosen's placing, and the winner may be
- *                 SELECTED UPWARD into the host - the feeder relationship
- *                 `docs/world/houses/sects.md` documents, which is the single most
- *                 consequential thing that can happen to a promising
- *                 cultivator and is the reason inter-sect competitions matter.
- *   EXPEDITION    several houses' chosen enter a site together and are scored,
- *                 on one of two modes that produce genuinely different
- *                 behaviour - see THE TWO SCORING MODES.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * NOTHING HERE IS BESPOKE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * There is no branch on a faction id anywhere in this file, no table saying
- * which house holds a tournament, and no new record of who is friends with
- * whom. A gathering happens because of numbers that already exist:
- *
- *   WHO IS ALLIED   `FactionRecord.standing`, seeded from the catalog's
- *                   `rivalIds` (-0.6) and `parentFactionId` (+0.4). Read at
- *                   `ALLIED_STANDING`, which is `rivalsOf`'s -0.3 with the
- *                   sign flipped, and nothing else.
- *   WHO IS INVITED  the `chosen` tag `refreshChosen` maintains. A house with
- *                   no living chosen sends nobody.
- *   WHO CAN HOST    `resources.spirit_stones` against `HOSTING_COST_PER_HEAD`.
- *                   A circle whose senior house cannot pay does not gather.
- *   WHO WINS        `assessPower`, the combat layer's own pricing function,
- *                   and `resolveConfrontation`, its own resolver. There is no
- *                   second fight model in this file.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * EXCLUSION IS THE POINT, NOT AN EDGE CASE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Measured on a seeded world, 21 of 32 houses are allied to nobody at all -
- * they hold no `parentFactionId` and nobody holds one to them - so they are
- * never in a circle and their chosen never meet anybody. That is not a gap in
- * the feature. It is the feature: the difference between a house inside the
- * pyramid and a house outside it is that the first one's disciples have known
- * the next generation of five other houses since they were forty, and the
- * second one's have not.
- *
- * Every gathering records the live houses in the host's region that were NOT
- * invited, on the fact, by id. It is readable from the record afterwards and
- * it costs those houses exactly what it should: no ties, no placings, no
- * prestige and no route upward.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE TWO SCORING MODES
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The user's requirement, and they must not collapse into one another.
- *
- *   HAUL    who brings the most out. Scored on wings worked, weighted by
- *           depth. Rewards SPREADING OUT - two entrants in one hall duplicate
- *           each other, and a house that fans across the site outscores one
- *           that follows its best cultivator around - and it rewards grinding,
- *           because every wing inside `expeditionBudget`'s reach is worth
- *           something to whoever gets to it.
- *   PROOF   who reaches a named room first. Scored on arrival, not on volume.
- *           Rewards READING THE PLACE: `identifyBuilder` either places the
- *           builder or does not, and somebody who places it gets
- *           `expectationsFor`'s pointer and walks straight there, while
- *           somebody who cannot searches from the door outward and pays the
- *           depth of every wrong room. A weaker cultivator who can read the
- *           site beats a stronger one who cannot, which is the whole reason
- *           the mode exists.
- *
- * A site offers `proof` only when there is something to prove - a builder the
- * provenance layer can name - and `haul` only when there is enough of it left
- * to be worth spreading across. Sites that offer both draw between them.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * COST
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The driver walks five centuries routinely, so the yearly cost has to be a
- * constant. It is: the circle scan is one pass over the faction list per year
- * (32 live houses, so about a thousand standing lookups), and everything after
- * the roll is bounded - `MAX_ATTENDEES` people, `MAX_INTRODUCTIONS` pairs,
- * `MAX_BOUTS` confrontations, `MAX_ENTRANTS` in a site. Nothing scales with
- * the roster, the history or the year.
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -144,40 +44,16 @@ import { isRuined, ruin } from './possessions.js';
 
 /**
  * Standing at which two houses count as allied.
- *
- * `pressure.ts` reads hostility at -0.3 in `rivalsOf`. This is the same line
- * with the sign flipped, so the two questions - who would move against this
- * house, who would send their people to it - are answered off one number and
- * cannot drift apart. The catalog's feeder edge is seeded at +0.4, comfortably
- * over it, and a rivalry at -0.6 is comfortably under.
  */
 export const ALLIED_STANDING = 0.3;
 
 /**
  * How often a circle gathers, in years.
- *
- * A generation rather than a season. A gathering is the thing a disciple has
- * been preparing for since the last one, and a world that holds one every
- * spring makes it furniture; measured against the settling clock, one every
- * fifteen years puts three or four in an ordinary cultivator's climb through
- * the middle of the ladder and one or two before their first real rank.
- *
- * Rolled per circle per year rather than scheduled, so the rate is a property
- * of how many circles the world still has rather than of how eventful the year
- * was - the same argument `applyConvergences` makes for staying outside the
- * event budget.
  */
 export const GATHERING_YEARS = 15;
 
 /**
  * What hosting costs the house in the chair, per head.
- *
- * Somebody feeds and houses forty disciples of five other houses for a season,
- * and it is not free. Against a seeded treasury of twenty to forty thousand
- * stones this is a real bill and not a rounding error, which is what makes
- * "who can afford it" one of the three things that decide whether a circle
- * gathers at all. A house that has lost its vein stops holding these long
- * before it stops existing, and its juniors stop knowing anybody.
  */
 export const HOSTING_COST_PER_HEAD = 400;
 
@@ -203,49 +79,16 @@ export const FRIENDSHIP_STANDING = 0.4;
 
 /**
  * Where an account becomes an account.
- *
- * `settleNpcDeath` inherits a relationship at -0.4 or worse and drops
- * everything above it. So this is not a display threshold: it is the line
- * between a dislike that dies with the person who felt it and a grudge their
- * heir is still carrying two hundred years later, and a gathering that wants
- * to produce the second has to reach it.
  */
 export const GRUDGE_STANDING = -0.4;
 
 /**
  * Both sides of a bout are priced on the same normalised MAXIMUM.
- *
- * `resolveExchange` computes damage as a FRACTION of the defender's maximum
- * precisely so the arithmetic works at Qi Condensation and at Grand Ascension
- * alike, and `WITHDRAW_HP_FRACTION` and `EXHAUSTED_QI_FRACTION` are fractions
- * too. So a bout between two equal-sized pools resolves on the advantage ratio
- * and the rolls, and the absolute number is arbitrary.
- *
- * THE MAXIMUM IS NORMALISED; WHAT IS STANDING IN IT IS NOT. The world now holds
- * a body - `NpcCultivation.hp`, against a pool derived from `maxHpForOrdinal`
- * and never a formula of this module's - so `combatantOf` scales the SHARE onto
- * this figure rather than handing both sides a full one. That is not a second
- * body model arriving by the back door: nothing here decides how large a body
- * is, and the only thing that changed is that a cultivator who paid a realm
- * boundary's toll last spring turns up to a bout with what the wall left them.
- *
- * `assessPower`'s condition line reads the same fraction, so it is also what a
- * competition scores and what the world means when it says somebody is
- * overmatched.
  */
 const BOUT_BODY = 100;
 
 /**
  * How much a day of showing can swing a placing.
- *
- * Not a fudge factor for drama: without it a competition is `assessPower`
- * sorted descending, the same house wins every time for four centuries, and
- * the ranking carries no information a caller could not have got from
- * `power_ordinal`. With it, entrants within about a third of each other can
- * change places and entrants a realm apart cannot, which is the correct shape -
- * a competition should be able to surprise you about who among the good ones
- * is best and should never suggest a Qi Condensation disciple beat a Core
- * Formation one.
  */
 const SHOWING_SPREAD = 0.35;
 
@@ -305,12 +148,6 @@ export interface Gathering {
 
 /**
  * A set of houses that would send their people to each other.
- *
- * Not stored anywhere and deliberately not: it is recomputed from `standing`
- * every year, so a circle dissolves the moment the house at its centre folds,
- * which is what actually happens to a feeder pyramid when the court above it
- * goes. See the harness for what that does to the gathering rate over five
- * centuries - it is the single largest thing this module measured.
  */
 export interface Circle {
     /** The house in the chair: most allies, then strongest, then by id. */
@@ -325,16 +162,6 @@ export interface Circle {
 
 /**
  * Houses this one would sit down with.
- *
- * Either direction counts. The catalog only ever writes the feeder edge
- * upward - a branch holds +0.4 toward its court and the court holds nothing
- * back - and reading only the outbound half would mean a court never invited
- * anybody while every branch invited a court that was not holding a gathering.
- * An alliance is a fact about a pair, and one side asserting it is enough for
- * the two to be in a room.
- *
- * Hostility in either direction vetoes it, so a house that is somebody's feeder
- * and somebody's enemy at once is not in that circle.
  */
 export function alliesOf(state: WorldState, faction: FactionRecord): FactionRecord[] {
     const out: FactionRecord[] = [];
@@ -351,33 +178,6 @@ export function alliesOf(state: WorldState, faction: FactionRecord): FactionReco
 
 /**
  * Houses this one would sit down with because they share a province.
- *
- * ── The measurement this exists for ──────────────────────────────────────
- *
- * A gathering fired nineteen times in two thousand years, and the frequency
- * constant was not why. Circles were counted:
- *
- *     year    0   32 live houses, 15 ally edges, 4 circles
- *     year  200   28 live houses,  8 ally edges, 1 circle
- *     year 1000   19 live houses,  5 ally edges, 1 circle
- *
- * Every ally edge in the world is written by the catalog at seeding, and NOTHING
- * creates one afterwards. Houses dissolve and take their edges with them, and
- * `applyFactionFounding` raises new houses that hold no catalog standing toward
- * anybody - so a house founded in year 300 could never be in a circle for the
- * rest of the run. The alliance graph is a fixed endowment being spent, and by
- * the middle of a long world it is spent.
- *
- * Raising `GATHERING_YEARS` would have hidden that behind a bigger number while
- * leaving one circle in the world holding every gathering in it, which is a
- * worse world than the rare one. What the supply needed was a source that
- * regenerates, and the world already has one: houses that hold ground in the
- * same province know each other, whether or not a catalog ever said so.
- *
- * Hostility still vetoes, in either direction and by the same bar as an
- * alliance, so this cannot put two houses at war in a room. It is a weaker claim
- * than an alliance and deliberately so - neighbours who are not enemies, which
- * is the ordinary case and the reason a provincial gathering exists at all.
  */
 export function neighboursOf(state: WorldState, faction: FactionRecord): FactionRecord[] {
     const home = regionOf(state, faction.seatLocationId);
@@ -405,15 +205,6 @@ export function circleCandidatesFor(state: WorldState, faction: FactionRecord): 
 
 /**
  * Every circle the world currently contains, one per group.
- *
- * A house hosts when it has more allies than anybody else in its own circle,
- * and ties break on power and then on id. That is not a rule about courts: it
- * is arithmetic that lands on courts because a court is the house five branches
- * point at, which is what `parentFactionId` means. If a branch ever accumulates
- * more alliances than its court it hosts instead, and nothing here notices.
- *
- * One host per group, so a three-house chain does not hold three gatherings in
- * the same season under three different chairs.
  */
 export function circlesOf(state: WorldState): Circle[] {
     const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
@@ -445,12 +236,6 @@ export function circlesOf(state: WorldState): Circle[] {
 
 /**
  * Who a house would actually send.
- *
- * The `chosen` tag and nothing else. `refreshChosen` maintains it yearly and a
- * house that has lost its favourite names another, so this list refills itself
- * without anything here knowing how - and a house that cannot name one, because
- * it teaches nothing or has nobody at a rank low enough to be promoted over,
- * sends nobody and is simply absent from the record.
  */
 export function chosenOf(state: WorldState, factionId: string): NpcRecord[] {
     return state.npcs
@@ -466,14 +251,6 @@ export function chosenOf(state: WorldState, factionId: string): NpcRecord[] {
 
 /**
  * Hold whatever gatherings this year holds.
- *
- * Called from `applyPressure` alongside `applyAdvancement` and
- * `applyRecruitment`: the parts of a year that are arithmetic rather than
- * incident. Deliberately outside the weighted event table, for the reason
- * `applyConvergences` states - a gathering that only happens when the year had
- * a slot free is not a calendar.
- *
- * Mutates `state` in place, the same way every other pass in the driver does.
  */
 export function applyGatherings(state: WorldState, year: number, day: number): Gathering[] {
     const out: Gathering[] = [];
@@ -488,10 +265,6 @@ export function applyGatherings(state: WorldState, year: number, day: number): G
 
 /**
  * Run one gathering, or decline.
- *
- * Three ways it does not happen, and all three are outcomes rather than
- * failures: nobody was sent, only one house sent anybody, or the house in the
- * chair could not pay for it.
  */
 export function holdGathering(
     state: WorldState,
@@ -653,12 +426,6 @@ export function holdGathering(
 
 /**
  * Which of the four this circle can actually hold.
- *
- * Derived from what the circle has, never declared. A site the party can get
- * into puts an expedition on the table; enough entrants from enough houses to
- * be worth ranking puts a competition on it; two people are enough for a bout.
- * A meeting is always available and is weighted heaviest, because it is the
- * ordinary thing and the other three are what a good year looks like.
  */
 function drawKind(
     state: WorldState,
@@ -689,11 +456,6 @@ function drawKind(
 
 /**
  * Live houses standing near the host that were not asked.
- *
- * "Near" is the host's own region, because a house on the other side of the
- * province was not snubbed, it was simply somewhere else. Everything left is
- * either a rival - which is the ordinary and legible reason - or a house
- * nobody is allied to at all, which is the quieter and more permanent one.
  */
 function uninvitedNear(state: WorldState, circle: Circle): FactionRecord[] {
     const home = regionOf(state, circle.host.seatLocationId);
@@ -725,26 +487,6 @@ function regionOf(state: WorldState, locationId: string | null): string | null {
 
 /**
  * Introductions, and what they leave behind.
- *
- * Only across houses: two disciples of the same sect already know each other
- * and being in the same hall is not news. What decides whether it goes well is
- * three things the world already stores and one roll:
- *
- *   HOW CLOSE THEY ARE ON THE LADDER   people within reach of each other take
- *                                      each other seriously, in both
- *                                      directions. A gap of a realm produces
- *                                      an acquaintance rather than a friend or
- *                                      an enemy, because neither of them is
- *                                      really the other's problem.
- *   WHAT THEIR HOUSES THINK            two branches of the same court start
- *                                      warm; two houses that only just clear
- *                                      the hostility line do not.
- *   WHAT IS ALREADY ON THE BOOKS       an inherited grudge does not evaporate
- *                                      because somebody was polite at dinner.
- *
- * Two rolls, not one, because the halves are allowed to disagree completely and
- * the asymmetric cases are the interesting ones: he thinks they got on, she has
- * been counting.
  */
 function runMeeting(
     state: WorldState,
@@ -774,11 +516,6 @@ function runMeeting(
 
 /**
  * What one person came away thinking of another.
- *
- * Deliberately small in range. A first impression is not a life: it opens the
- * account somewhere between mild warmth and mild dislike, and everything after
- * it - a bout that went badly, a wing somebody took first - is what pushes it
- * past a threshold that matters.
  */
 function impression(state: WorldState, from: NpcRecord, to: NpcRecord, rng: CultivationRNG): number {
     const existing = relationshipWith(from, to.id);
@@ -807,27 +544,6 @@ function impression(state: WorldState, from: NpcRecord, to: NpcRecord, rng: Cult
 
 /**
  * Two people test each other and nobody is meant to be hurt.
- *
- * `resolveConfrontation` with `goal: 'subdue'` and `willWithdraw: true`, which
- * is the engine's own description of exactly this: the aggressor is not trying
- * to finish anybody and the loser breaks off rather than being finished. There
- * is no second resolver here and there must not be one - what makes a challenge
- * different from a killing is the INTENT handed to the same function, and the
- * outcomes it can reach follow from that.
- *
- * Three endings are worth more than the win:
- *
- *   NO CONTEST   the gap was categorical and the resolver refused to roll. The
- *                loser did not lose a fight; they found out in an afternoon
- *                that somebody they came up alongside is out of reach. That
- *                opens a GOAL, which outlives them and passes to an heir.
- *   CRIPPLED     nobody was meant to be hurt and somebody was. The injury goes
- *                on the record as an untreated one, which the survival layer
- *                and every future breakthrough will read, and it opens a real
- *                account at inheritable depth.
- *   HUMILIATION  beaten and let go in front of people, which the combat layer
- *                already calls the genre's engine, and which seeds its own
- *                obligation.
  */
 function runChallenge(
     state: WorldState,
@@ -936,11 +652,6 @@ function runChallenge(
 
 /**
  * Somebody decides they are not going to be this far behind for ever.
- *
- * A goal rather than a relationship, because goals INHERIT - `settleNpcDeath`
- * hands the unfinished ones to an heir with the generation counter bumped - so
- * an afternoon in which a nineteen-year-old discovered a peer was out of reach
- * can still be driving somebody's great-grandchild.
  */
 function openAmbition(state: WorldState, behind: NpcRecord, ahead: NpcRecord, day: number): void {
     const at = state.npcs.findIndex(n => n.id === behind.id);
@@ -979,26 +690,6 @@ function applyWounds(
 
 /**
  * Ranked, public, with standing on the line.
- *
- * Scored on `assessPower` - the combat layer's own pricing, which reads realm,
- * attributes, foundation, injuries, insights and what they are carrying - times
- * one seeded showing per entrant. The showing is what stops the ranking being
- * `power_ordinal` sorted descending, which would carry no information and would
- * mean the same house won for five centuries. See `SHOWING_SPREAD`.
- *
- * Two things move afterwards, and the second is the important one:
- *
- *   PRESTIGE   `resources.prestige` on the placing houses. A free-form resource
- *              key, which is what `resources` is for, rather than a new table.
- *   SELECTION  the winner, if they came from a house that answers to the host,
- *              is TAKEN UP. `docs/world/houses/sects.md`: "a generation's outstanding
- *              disciple is selected upward... you arrive at the higher sect at
- *              the bottom." So they change faction, land at rank 0, and LOSE
- *              the chosen tag - their reputation does not travel and neither
- *              does their rank. Their old house then names a replacement on the
- *              next pass of `refreshChosen`, without anything here telling it
- *              to, which is the two systems composing rather than a special
- *              case.
  */
 function runCompetition(
     state: WorldState,
@@ -1042,13 +733,6 @@ function runCompetition(
     }
 
     // And the winner goes up, if there is anywhere above them to go.
-    //
-    // AFTER the ties are written, deliberately. A tie recorded between two
-    // people of different houses reads as a same-house tie the moment the
-    // champion changes colours, which is not a bug - it is what selection
-    // upward DOES, and the row keeps the gathering's fact id so the history is
-    // still legible. Anything reading `factionId` to reconstruct who met whom
-    // has to know that.
     let selectedUpwardId: string | null = null;
     const champion = scored[0]?.npc ?? null;
     if (champion && champion.factionId !== null && champion.factionId !== circle.host.id) {
@@ -1089,11 +773,6 @@ function runCompetition(
 
 /**
  * Several houses' chosen go into a hole together and are scored.
- *
- * The site, the wings, the depth clock and the read are all
- * `provenance.ts`/`convergence.ts` and none of it is reimplemented here. What
- * this adds is the CONTEST: who got what, in one of two modes that reward
- * opposite behaviour. See THE TWO SCORING MODES at the top of the file.
  */
 function runExpedition(
     state: WorldState,
@@ -1146,15 +825,6 @@ interface Scored { npc: NpcRecord; score: number }
 
 /**
  * HAUL: who brings the most out.
- *
- * Each entrant takes the best wing nobody in the party has claimed yet, which
- * is what makes this reward spreading out: the second person into a hall gets
- * the next one down, so a party that fans across the site covers more of it
- * than one that queues behind its strongest member. Depth is the weight,
- * because the far rooms are the ones with anything left, and
- * `expeditionBudget` decides which of them anybody can reach and walk back out
- * of - so a short window is a small haul for everybody and a long one is a
- * grind that pays.
  */
 function contestTheHaul(
     state: WorldState,
@@ -1217,22 +887,6 @@ function contestTheHaul(
 
 /**
  * PROOF: who reaches a named room first.
- *
- * The target is what the site's own habits point at - `expectationsFor` returns
- * the wing the builder's behaviour implies, so the answer is IN the place and
- * is not invented here. Then:
- *
- *   somebody who can PLACE the builder walks the target's depth and no further
- *   somebody who cannot searches from the door outward and pays every wrong
- *   room's depth before they get to the right one
- *
- * That is the whole difference, and it is why this mode rewards reading rather
- * than realm: `identifyBuilder` is `assessCapability`'s `understand` predicate,
- * which Insight and knowledge move and raw ordinal only partly does, so a
- * scholar three rungs down can beat the strongest person in the party to it.
- * Anybody whose walk runs past `expeditionBudget`'s safe depth does not get
- * there at all, and if nobody does the site keeps its secret, which is a real
- * outcome and should stay reachable.
  */
 function raceForTheProof(
     state: WorldState,
@@ -1307,12 +961,6 @@ function raceForTheProof(
 
 /**
  * A site this circle could actually go into.
- *
- * Open, found, with a wing nobody has opened, and inside somebody's reach. All
- * four are questions the location record already answers. A world whose ruins
- * are all sealed offers no expeditions, which is the correct answer for a
- * seeded world - every ruin starts sealed and undiscovered, and it takes the
- * `ruin_opened` template or a convergence to change that.
  */
 function reachableSite(
     state: WorldState,
@@ -1351,13 +999,6 @@ function replaceLocation(state: WorldState, next: LocationRecord): void {
 
 /**
  * Move one person's account of another, and stamp the gathering on it.
- *
- * `upsertRelationship` replaces `kind` and `standing` outright, so calling it
- * blind would let a polite dinner in year 700 overwrite an inherited blood
- * feud with an acquaintance. So the delta is applied to whatever is already
- * there, the structural kinds are never overwritten, and the fact id is merged
- * into `factIds` rather than replacing it - which is what makes "did this tie
- * begin at a gathering or at a death" answerable from the row itself, forever.
  */
 function write(
     state: WorldState,
@@ -1408,16 +1049,6 @@ function kindFor(standing: number): RelationshipKind {
 
 /**
  * Two houses' standing moves because their juniors' did.
- *
- * The one constructive force in the world's alliance graph. Every other write
- * to `standing` in `pressure.ts` is a subtraction - a vein taken, a border
- * moved, a house ended - so without this the graph can only shrink, and the
- * measured consequence is that gatherings become rarer every century until
- * they stop. See the harness.
- *
- * Bounded on both sides. A circle that meets every fifteen years for five
- * centuries would otherwise saturate into a permanent bloc, which is the
- * opposite failure and just as wrong.
  */
 function settleHouseStanding(state: WorldState, circle: Circle, ties: readonly GatheringTie[]): void {
     const byPair = new Map<string, number>();
@@ -1456,10 +1087,6 @@ function settleHouseStanding(state: WorldState, circle: Circle, ties: readonly G
 
 /**
  * Every pair of attendees from different houses, deterministically ordered.
- *
- * Same-house pairs are dropped: two disciples of one sect being in the same
- * hall is not an introduction, and counting it would make a large delegation
- * look like a social success.
  */
 function crossHousePairs(attendees: readonly NpcRecord[]): [NpcRecord, NpcRecord][] {
     const out: [NpcRecord, NpcRecord][] = [];
@@ -1478,28 +1105,6 @@ function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
 
 /**
  * Price an NPC for the combat layer.
- *
- * Exported because it is the world layer's ONE answer to "how big is this
- * person in a fight", and a second one would be two answers to the same
- * question. `war-melee.ts` builds a war's parties with it, so a house's people
- * are priced in a war exactly as they are priced at a gathering.
- *
- * Everything the world layer actually stores, and nothing invented. One of the
- * combat layer's inputs has no world-layer equivalent and is handled rather
- * than faked:
- *
- *   THE BODY  normalised. See `BOUT_BODY`.
- *
- * Injuries used to be the second. The world kept a COUNT, so this expanded it
- * into that many identical `serious` wounds with `woundType: null` - which is
- * what `combat-manage.ts` still does for an opponent described rather than
- * stored. NPCs now carry rows, so the rows are what a bout prices; the only
- * synthesis left is in `woundsCarriedBy`, for a save written before they did.
- *
- * And the body is no longer normalised in full. The MAXIMUM still is - see
- * `BOUT_BODY` - but what is standing in it is the record's own, mended forward
- * to today, so a crossing paid for last spring is still being carried into this
- * hall. Qi has no world-layer equivalent at all and stays whole.
  */
 export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
     const wounds: Injury[] = woundsCarriedBy(npc);
@@ -1524,28 +1129,14 @@ export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
 
 /**
  * The rated object this person is actually holding, or null.
- *
- * Read off `state.objects`, which is where `seedArtifacts` put the whole
- * catalog - so a bout is fought with what somebody has rather than with what
- * their rung says they should have, and an object in a hand is worth what the
- * catalog says it is worth in ANY hand.
- *
- * Naming it here is also what puts it in danger. A weapon far under the rung it
- * is swung into comes apart
- * (`engine/cultivation/whether-a-weapon-survives-being-used.ts`), which is why
- * this returns the object rather than only its number: the confrontation
- * reports `brokenObjects` by id, and `applyBoutBreakages` below writes the loss
- * to the row without deleting it.
- *
- * Best is highest `power`, which is the catalog's own and only ordering, and
- * two objects do not stack - `CombatantInput.weapon` is a single object priced
- * as a second body of its rank, and summing two would invent a rule.
  */
 function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['weapon'] {
     let best: CombatantInput['weapon'] = null;
     for (const object of state.objects) {
         if (object.possessorId !== npc.id) continue;
         if (object.power === null || isRuined(object)) continue;
+        // A CARRIAGE IS NOT A WEAPON
+        if (object.tags.includes('conveyance')) continue;
         if (best === null || object.power > best.power) {
             best = { id: object.id, name: object.name, power: object.power };
         }
@@ -1555,18 +1146,6 @@ function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['we
 
 /**
  * Write what the bout did to the objects in it.
- *
- * `docs/world/things/items.md`'s "spent is not gone": a ruined object keeps its row,
- * its owner, its claims and every link of its provenance, and gains one more
- * saying where it ended. A house that cannot account for something should have
- * a record that says so, and a sect artifact broken by an outsider is a
- * situation rather than a missing entry.
- *
- * `shatter` is deliberately not reachable from here. Everything below
- * `FRAGMENTS_AT_OR_ABOVE` is ruined outright and mints nothing - a world where
- * every bout leaves two tracked shards is a ledger full of rubble - and nothing
- * at or above it can be unmade by anybody at a gathering, because the gate is
- * the holder's own rung.
  */
 function applyBoutBreakages(
     state: WorldState,
@@ -1590,12 +1169,6 @@ function applyBoutBreakages(
 
 /**
  * The art they would actually bring.
- *
- * Both sides of every bout are built the same way from the same field, which is
- * the rule AGENTS.md states from the other end: handing one side a technique
- * and not the other is a 1.4x swing that will look like whatever you were
- * measuring. What differs between two entrants here is what their house's shelf
- * gave them, which is the difference that is supposed to matter.
  */
 function bestArt(npc: NpcRecord): CombatantInput['technique'] {
     let best: CombatantInput['technique'] = null;

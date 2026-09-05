@@ -1,87 +1,5 @@
 /**
  * Consolidated Admin Tool - `admin_manage`
- *
- * Exploratory testing surface. Gated behind `ADMIN_MODE=true` in the process
- * environment and refused, clearly, otherwise.
- *
- * `docs/admin.md` IS THE OTHER HALF OF THIS COMMENT
- * -------------------------------------------------
- * This header is the LAW - what admin may and may not do, and why. The doc is
- * the MAP - what each action is for, which phrasings reach it, the intent
- * table, and the world laws that turned out not to fire when somebody went
- * looking for them. Neither restates the other, on purpose.
- *
- * The pointer runs both ways deliberately. The best description of immortal
- * medicine in this project is a comment at the top of a data file that `docs/`
- * never mentions, and an agent was told it was undocumented and believed it: a
- * doc nobody can find is the same as no doc, and so is a header nothing points
- * at.
- *
- * WHAT ADMIN IS FOR
- * -----------------
- * The design owner: "The admin panel can set preconditions, but it allows me to
- * test outcomes." The `but` is the load-bearing word. The restriction below is
- * not a limit on this tool - it is what makes it worth having, because if admin
- * could set outcomes there would be nothing left to test.
- *
- * The test for anything added here follows straight from it: DOES THIS ACTION
- * ARRANGE A SITUATION, OR DOES IT ASSERT A RESULT? Arrange, and it belongs.
- *
- * WHAT ADMIN IS
- * -------------
- * From context.md: "ADMIN bypasses GATES, not TRUTH."
- *
- * Spawning the grave of a Tribulation Transcender while the player sits at Qi
- * Condensation Layer 2 is a content gate being lifted. The engine genuinely
- * creates that site, writes it to SQLite, and hands it back; the agent then
- * narrates something that actually exists. That is the entire distinction, and
- * every action here honours it:
- *
- *   roster           read-only observability
- *   spawn_site       lifts the AWARENESS gate on a real catalogued site, so the
- *                    player can name it. Every gate inside it still stands.
- *   spawn_encounter  a REAL NPC cultivator is created, with talent rolled from
- *                    the run seed, advanced through `advanceRealm` like anyone
- *                    else, and persisted.
- *   grant_item       only catalog pills and herbs, into the real pouch
- *   set_ambient      lifts the "you must happen to be somewhere dense" gate by
- *                    relocating to a place the engine really does compute that
- *                    band for. The band is still the engine's number.
- *   set_location     a plain move, to a place that is really on the map
- *   advance_days     real time passes through `simulateTimeSkip`, with real
- *                    aging, real starvation and real death checks
- *   grant_progress   fills the qi-unit accumulator the engine already reads.
- *                    It rolls no breakthrough and claims none.
- *   set_realm        goes through `advanceRealm` like every other rank change,
- *                    stamping peak_ordinal and restarting the stagnation clock
- *   set_age          moves one number through the repository's own delta path,
- *                    and refuses an age the rung's lifespan cannot hold
- *   force            runs an ORDINARY VERB, in play, through the same code the
- *                    played game runs, with the ATTEMPT LANDING and every gate
- *                    still standing. See `forcing-an-attempt-to-land.ts`.
- *
- * WHAT ADMIN IS NOT
- * -----------------
- * There is NO action here that takes an outcome as input and RECORDS it. No
- * `set_breakthrough_result`, no `declare`, no `revive`, no `set_hp`. That
- * affordance must never be added: it is precisely the one that invites the
- * model to narrate a world that does not exist.
- *
- * `force` is not that, and the distinction is worth being exact about because
- * it is one word away. It takes no outcome as input. It names a VERB, runs the
- * verb, and answers ONE question the engine was already going to ask - the
- * uncertain one - as landed. Everything the verb then does, it does itself: the
- * days, the stones, the wound, the record, the refusal. And a refusal that was
- * a PRECONDITION rather than a roll still refuses, because a state reached by
- * removing a precondition is a state the world cannot produce, and an operator
- * looking at one is looking at a lie. The whole rule, from the design owner:
- *
- *   ADMIN WRITES THROUGH THE PATHS ORDINARY PLAY WRITES THROUGH. IT DECIDES
- *   UNCERTAIN OUTCOMES; IT NEVER WRITES A STATE THOSE PATHS WOULD REFUSE.
- *
- * Every call is written to the audit log with the run id as its target, which
- * is also how a run is flagged as admin-touched - `run_manage.ledger` reads the
- * same rows to exclude those runs from the death ledger and from balance data.
  */
 
 import { z } from 'zod';
@@ -154,19 +72,7 @@ const ACTIONS = [
 ] as const;
 type AdminAction = typeof ACTIONS[number];
 
-// ═══════════════════════════════════════════════════════════════════════════
 // WHAT ADMIN CAN DO, IN THE WORDS SOMEBODY WOULD TYPE
-//
-// A refusal has to name what would have worked. That is the standard everywhere
-// else in this build and the admin errors were failing it badly: the fuzzy
-// matcher answered `spawn NPC tribulation transcender in front of me` with
-// three action names and a percentage each, and answered `I` with "audit_log
-// (11%)". A ranked list of things the operator did not ask for is not an
-// answer, and 11% is not a suggestion - it is a number apologising for itself.
-//
-// So the refusal shows THIS instead: a worked line per capability, which is
-// what somebody actually needs, and which doubles as `admin help`.
-// ═══════════════════════════════════════════════════════════════════════════
 
 interface Recipe {
     /** What an operator wants, said as a want rather than as an action name. */
@@ -189,7 +95,7 @@ const RECIPES: readonly Recipe[] = Object.freeze([
     { want: 'Make a catalogued grave or trial nameable',
       line: 'ADMIN spawn_site ordinal=41 kind=grave' },
     { want: 'Stand somewhere else on the map',
-      line: 'ADMIN set_location location=The Dead Verge' },
+      line: 'ADMIN set_location location=The Jade Face' },
     { want: 'Stand somewhere the engine derives a chosen ambient band for',
       line: 'ADMIN set_ambient band=dense' },
     { want: 'Move myself on the ladder',
@@ -216,12 +122,6 @@ const RECIPES: readonly Recipe[] = Object.freeze([
 
 /**
  * The things ADMIN deliberately cannot do, and the honest route to each.
- *
- * Listed because a refusal that only says "no" teaches nothing, and because
- * these are the four an operator reaches for first when they want to test a bad
- * ending. Every one of them is reachable - through the engine, at its own price.
- * `admin-manage`'s header is the law: there is no action here that takes an
- * outcome as input and records it, and none may ever be added.
  */
 const NOT_HERE: ReadonlyArray<{ asked: string; instead: string }> = Object.freeze([
     {
@@ -269,12 +169,6 @@ const HelpSchema = z.object({
 
 /**
  * Which part of the sheet was asked for.
- *
- * All of it at once is more than anybody reads - twelve capabilities, four
- * refusals and eleven action descriptions - and the design owner stopped
- * reading it, which is the correct response to a wall. So `about` picks a
- * section first and only then filters, and the two most useful sections have
- * short names an operator would guess.
  */
 function sectionAsked(about?: string): 'what' | 'refusals' | 'actions' | null {
     const word = (about ?? '').trim().toLowerCase();
@@ -336,16 +230,7 @@ export async function handleHelp(args: z.infer<typeof HelpSchema>): Promise<obje
     // though the request was honoured.
     const twoWays = args.ambiguity === 'two_subjects';
 
-    // ── A CHANGE TO SOMEBODY ALREADY THERE IS AN ABSENCE, NOT A MISREADING ─
-    //
-    // "set the fox cultivator to fox bloodline" is a perfectly reasonable
-    // operator sentence and this surface has no action for it: `set_realm` and
-    // `set_age` move the PLAYER, and `spawn_encounter` creates somebody new.
-    // The reader used to answer it by creating a person called "set fox fox
-    // bloodline", which is the worst of the three possible outcomes - the
-    // second worst being a generic refusal. Naming the absence is the useful
-    // one, and it is the same standard as everywhere else here: a refusal must
-    // say what would work, and where nothing would, it must say so plainly.
+    // A CHANGE TO SOMEBODY ALREADY THERE IS AN ABSENCE, NOT A MISREADING
     if (args.ambiguity === 'a_change_not_a_creation') {
         return guidingError(
             'no_action_for_changing_somebody_present',
@@ -413,31 +298,10 @@ function adminDisabled(action: string) {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // THE COMMAND LINE
-//
-// ADMIN is typed as a sentence and arrives here as `key=value` pairs. It is
-// worth being explicit about why this lives beside the handlers rather than
-// beside the caller that reads the keystrokes: the caller split the request on
-// whitespace and took everything after `=` up to the next space, so
-// `location=The Dead Verge` set the location to "The", and quoting it set the
-// location to `"The`.
-//
-// That is not a cosmetic defect. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD -
-// The Dead Verge, Nine Peaks, The Low Fall, The Drowned Reach, Salt Reach - so
-// a parser that stops at the first space can reach almost none of the map, and
-// forbidden-zone and environmental gating cannot be exercised at all. The
-// engine then narrated "The. The air here is unremarkable" for a place that
-// does not exist, which is the surface lying about a write it really performed.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * A key boundary: `key=` at the start of the string or after whitespace.
- *
- * A value therefore runs to the NEXT key rather than to the next space, which
- * is what makes an unquoted multi-word value work. `a=1 b=2` still splits into
- * two pairs, because ` b=` is a boundary; `location=The Dead Verge` does not,
- * because "Dead" and "Verge" are not followed by an equals sign.
  */
 const ADMIN_ARG_KEY = /(?:^|\s)([A-Za-z_][A-Za-z0-9_]*)=/g;
 
@@ -456,11 +320,6 @@ function unquote(value: string): string {
 export interface ParsedAdminCommand {
     /**
      * The action to route to.
-     *
-     * The leading word when that word is an action or an alias. Otherwise the
-     * action a SENTENCE was read as - see `readAdminSentence` - or `help`,
-     * carrying `__unreadable`, when the sentence said nothing this surface does.
-     * Empty only when the operator typed a bare ADMIN.
      */
     action: string;
     /** Every `key=value` pair, numbers coerced where the whole value is one. */
@@ -469,10 +328,6 @@ export interface ParsedAdminCommand {
 
 /**
  * The action names and aliases a leading word may be, for the sentence check.
- *
- * Built from the router's own definitions rather than restated, so an action
- * added below is understood here without anybody remembering to update a list.
- * Assembled lazily because `definitions` is declared at the bottom of the file.
  */
 let LEADING_WORDS: Map<string, string> | null = null;
 function actionWordFor(word: string): string | null {
@@ -488,33 +343,14 @@ function actionWordFor(word: string): string | null {
 
 /**
  * Key under which an inferred reading rides along to the renderer.
- *
- * Every admin schema is a plain `z.object`, which STRIPS unknown keys rather
- * than rejecting them, so this reaches `handleAdminManage` and reaches no
- * handler. That is the property being relied on: the inference is printed back
- * to the operator and changes nothing about what any handler receives.
  */
 export const INFERRED_KEY = '__inferredFromASentence';
 
 /**
  * The one free-text argument each action would mean, when prose follows its name.
- *
- * Not a guess about the words - a property of the action. `set_location` has
- * exactly one string field somebody could be naming, and so does every entry
- * here; an action absent from this table takes no prose at all and refuses in
- * its own words instead, which is the honest outcome for `advance_days 50 years`.
  */
 /**
  * `<field> <value>` pairs written without the equals sign.
- *
- * The same grammar as `key=value` and the same boundary rule: a value runs to
- * the NEXT FIELD NAME, not to the next space, so `name Yun Shizhen disposition
- * wary` splits into two pairs and a multi-word name needs no quoting here
- * either. Fields come off the action's own schema, never from a list.
- *
- * A value is coerced the way `parseAdminCommand` coerces one - the two words
- * that are booleans, a number where the whole value is one, and otherwise the
- * text - so `fill true` and `fill=true` mean the same thing.
  */
 function bareFieldPairs(
     action: AdminAction,
@@ -556,25 +392,6 @@ function bareFieldPairs(
 /**
  * Where a bare number goes, when the action is named and a number is all that
  * follows it.
- *
- * `ADMIN spawn_encounter 41` and `ADMIN encounter 41` are the two shortest
- * ways to ask for the thing this surface is used for most, and both were
- * refused with "ordinal: Required" - because `PRIMARY_ARG` below is a
- * free-TEXT rule, it put "41" in `name`, and the rung the operator actually
- * typed was left unset. AN INTEGER IS NOT A NAME.
- *
- * Spelled out per action rather than read off the schema, for the same reason
- * `PRIMARY_ARG` is: which field the operator meant is a property of the
- * action, not of the digits, and an action with two numeric fields must not be
- * guessed at. An action absent from this table leaves its number to the
- * free-text rule, unchanged.
- *
- * This is not inference. The action is already known, the remainder is one
- * token, and that token is a number - there is no second reading of it for
- * this to get wrong. A NAMED rung ("Core Formation") is deliberately NOT read
- * here: that string is ambiguous with a site or item name, and it already has
- * two paths that are not - `ordinal=Core Formation` and `ordinal Core
- * Formation` both resolve through `ordinalNamed`.
  */
 const BARE_NUMBER_ARG: Partial<Record<AdminAction, string>> = {
     spawn_encounter: 'ordinal',
@@ -594,33 +411,7 @@ const PRIMARY_ARG: Partial<Record<AdminAction, string>> = {
     spawn_encounter: 'name'
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ADMIN <VERB> - AN ORDINARY VERB, WITH THE ATTEMPT LANDING
-//
-// The law is in `forcing-an-attempt-to-land.ts` and is not restated here.
-// This is the READING: how a typed line becomes "which of the forty-six
-// playable verbs, and against what sentence".
-//
-// ── THE WORD IS A LOOKUP, NOT A GUESS ────────────────────────────────────
-//
-// `ACTION_NAMES` is a closed enum and the operator's word either is a member
-// of it or is not. No fuzzy matching, no inference from the rest of the line,
-// and no reading of a verb out of prose - which is the same discipline
-// `BARE_NUMBER_ARG` and `PRIMARY_ARG` follow, and for the reason recorded
-// beside the withdrawn alignment draft further down this file: a word lifted
-// out of a sentence cannot be told from a word that is part of a name.
-//
-// ── AND A CANONICAL ADMIN ACTION STILL WINS ──────────────────────────────
-//
-// Three playable verbs are also admin words: `move` and `site` are aliases of
-// `set_location` and `spawn_site`, and `wait` is an alias of `advance_days`.
-// Those keep their admin meanings, because the action list is a contract and
-// an operator who has been typing `ADMIN move Nine Peaks` for months must not
-// find it means something else. `ADMIN force move <somewhere>` is the
-// unambiguous spelling, and spelling `force` is what says the playable verb
-// was meant. Same rule as the sentence reader's: a named action beats a
-// reading, and the operator's own word decides.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** The words that say "run the verb after this, and let the attempt land". */
 const FORCE_WORDS = /^(?:force|force_action|forced|succeed|land|do|play)(?![a-z_])[:\s-]*/i;
@@ -630,10 +421,6 @@ export interface ForcedVerbLine {
     verb: ActionName;
     /**
      * The sentence the verb resolves against, as a player would have typed it.
-     *
-     * See {@link theSentenceTheVerbResolvesAgainst} for which half of the line
-     * this is, and why the operator's own word is sometimes in it and sometimes
-     * not.
      */
     sentence: string;
     /** The whole line after the force word, exactly as the operator typed it. */
@@ -644,48 +431,6 @@ export interface ForcedVerbLine {
 
 /**
  * Which half of `ADMIN <verb> <rest>` the verb reads its ARGUMENTS out of.
- *
- * ── THE TWO THINGS AN OPERATOR WRITES ─────────────────────────────────────
- *
- * The verb word says WHICH VERB and it is settled by the time this is asked.
- * What is still open is whether that word is also part of the sentence:
- *
- *   ADMIN sect join the Azure Dew Sect      the word is the sentence's own head
- *   ADMIN coerce I threaten the nearest cultivator
- *                                           the word is a LABEL, and what
- *                                           follows is a whole player sentence
- *
- * Taking the whole line every time is what this used to do, and it is wrong for
- * exactly the verbs whose NAME is also an ordinary English verb. Measured, on
- * the line the design owner reported:
- *
- *   coerce I threaten the nearest cultivator
- *     -> {action: coerce, target: "I threaten the nearest cultivator"}
- *     -> engine.resolveParty: Unresolved party. No exchange was run.
- *
- * `COERCE_SUBJECT_VERBS` matches the operator's own word at position zero and
- * `extractSubject` hands back everything after it, so the player's sentence
- * became the name of a person nobody answers to. The same happens to `attack`,
- * `give`, `move`, `buy` and every other verb named after the word a person would
- * use, and it never happens to `sect`, `interact` or `breakthrough`. So forcing
- * reached the verbs that need no target out of a sentence and could not reach
- * the ones that do - coercion, theft, an attack on a named person, which are the
- * acts most worth forcing.
- *
- * ── AND THE TEST IS A LOOKUP, NOT A READING OF PROSE ─────────────────────
- *
- * The ordinary deterministic parser is asked about the remainder ON ITS OWN. A
- * remainder that reaches a verb IS a sentence and the operator's word was a
- * label; a remainder that reaches {@link FALLBACK_ACTION} is not one, so the
- * word was the sentence's own head and the whole line stands. Nothing here
- * reads a word for what it might mean - it runs the same closed parser that
- * would have read the line if a player had typed it, and prefers the reading in
- * which ADMIN's vocabulary is ADMIN's.
- *
- * That is also what makes it safe: every line whose remainder parses to nothing
- * is untouched, and the ones that do parse are the ones where the two readings
- * agreed already (`sect join ...`, `interact I steal from ...`) or where the old
- * one resolved nobody.
  */
 function theSentenceTheVerbResolvesAgainst(rest: string): string {
     const head = rest.split(/\s+/)[0] ?? '';
@@ -696,15 +441,6 @@ function theSentenceTheVerbResolvesAgainst(rest: string): string {
 
 /**
  * Read `ADMIN <verb> ...` - or `ADMIN force <verb> ...` - into a playable verb.
- *
- * Null when the line names no playable verb, or names one that is also an admin
- * word and the operator did not spell `force`. Both of those mean the ordinary
- * admin surface should answer, and it does.
- *
- * Exported because `game.ts` is the only place a playable verb can be run - the
- * verbs ARE the play surface - and the grammar lives beside the actions it
- * belongs to rather than beside the keystrokes, exactly as `parseAdminCommand`
- * does and for the same reason.
  */
 export function readAForcedVerb(request: string): ForcedVerbLine | null {
     const line = request.trim();
@@ -740,12 +476,6 @@ const ForceSchema = z.object({
 
 /**
  * `force` on the TOOL path, which is the one place it cannot run.
- *
- * A playable verb runs inside a run, through `GameService`, and the MCP tool
- * has no run pipeline - it holds repositories. Rather than build a second way
- * to execute a verb, which is the exact duplication the whole design forbids,
- * this says where the door is. `docs/admin.md` says the same thing in the
- * operator's own terms.
  */
 export async function handleForce(args: z.infer<typeof ForceSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('force');
@@ -769,19 +499,6 @@ export async function handleForce(args: z.infer<typeof ForceSchema>): Promise<ob
 
 /**
  * Parse an ADMIN command line into an action and its arguments.
- *
- * Exported so the surface that reads the keystrokes has one place to call and
- * this file owns the grammar it documents. Three shapes, all of which a person
- * writes without thinking about it:
- *
- *   set_location location=Nine Peaks             bare, multi-word
- *   set_location location="The Dead Verge"       quoted
- *   spawn_site ordinal=41 kind=grave             several pairs on one line
- *
- * A value is text between one key and the next, so quoting is a convenience
- * rather than a requirement and a stray quote is removed rather than stored.
- * Numbers are coerced only when the ENTIRE value is one: "Nine Peaks" stays a
- * string, and so does "3 Mile Ford".
  */
 export function parseAdminCommand(request: string): ParsedAdminCommand {
     const line = request.trim();
@@ -817,20 +534,7 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         args[keys[i].name] = Number.isFinite(asNumber) && raw.trim() !== '' ? asNumber : raw;
     }
 
-    // ── A LINE THAT DOES NOT BEGIN WITH AN ACTION IS A SENTENCE ───────────
-    //
-    // `spawn NPC tribulation transcender in front of me` and `I run into a 45
-    // weapon` both arrive here, and both used to leave with `spawn` and `I` as
-    // their action and everything after the first word discarded. The rest of
-    // this game answers a player in their own words; there is no reason the
-    // operator surface should be the one place that does not, provided the
-    // reading is printed back rather than acted on silently. See
-    // `admin-said-as-a-sentence.ts` for why that proviso is the whole safety
-    // property, and why an ambiguous line refuses instead of picking.
-    //
-    // Only the PROSE half is read. Anything the operator spelled as key=value
-    // is already in the schema's own vocabulary and wins over any inference, so
-    // `spawn npc ordinal=41` reads the noun and takes the rung as typed.
+    // A LINE THAT DOES NOT BEGIN WITH AN ACTION IS A SENTENCE
     const prose = (keys.length > 0 ? line.slice(0, keys[0].keyFrom) : line).trim();
     const known = action === '' ? null : actionWordFor(action);
     const hasProse = /\s/.test(prose);
@@ -863,17 +567,9 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
             !isSentenceRefusal(reading) &&
             // A NAMED action wins over an inferred one. When the operator wrote
             // `audit log`, the action is `audit_log` and the sentence reader's
-            // opinion about the rest is not wanted; when they wrote `npc at
-            // Core Formation`, the alias and the reading agree and the reading
-            // is carrying the argument.
-            //
-            // BUT AN ALIAS IS NOT A NAMED ACTION. "give me knowledge of every
-            // sect" begins with `give`, which is an alias of `grant_item`, and
-            // was refused with "nothing in the pill, herb or artifact catalogs
-            // answers to 'me knowledge of every sect'". The operator did not
-            // name an action there - they used an ordinary verb, and the NOUN
-            // is what says which action they meant. So a canonical action name
-            // still wins, and a generic verb yields to an explicit subject.
+            // opinion about the rest is not wanted; when they wrote `npc at Core
+            // Formation`, the alias and the reading agree and the reading is
+            // carrying the argument.
             (known === null
                 || known === reading.action
                 || !ACTIONS.includes(action.trim().toLowerCase() as AdminAction));
@@ -895,24 +591,7 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
                 }
             };
         }
-        // ── THE ACTION WAS NAMED AND PROSE FOLLOWED IT ────────────────────
-        //
-        // `ADMIN help refusals` reached `help` with no arguments and printed
-        // the default sheet, because "refusals" was neither a key=value pair
-        // nor a subject noun and so was simply dropped. Every action that takes
-        // one free-text argument has the same hole: `ADMIN move Nine Peaks`,
-        // `ADMIN grave the count that outlived him`, `ADMIN give The Standing
-        // Edge`.
-        //
-        // So when the operator has NAMED the action, whatever prose follows is
-        // that action's principal argument. Which argument is a property of the
-        // action rather than a guess about the words, which is what keeps this
-        // from being an inference at all - there is exactly one free-text field
-        // it could mean, and if an action has none the prose is left alone and
-        // the action refuses in its own words.
-        // Only when the prose held no pairs at all. `ENCOUNTER ORDINAL 19` has
-        // its rung read above, and taking the leftovers as a name on top of
-        // that would put "ORDINAL 19" in the field the world calls somebody by.
+        // THE ACTION WAS NAMED AND PROSE FOLLOWED IT
         if (known !== null && hasProse && bare.pairs.length === 0) {
             const field = PRIMARY_ARG[known as AdminAction];
             const rest = prose.slice(prose.indexOf(action) + action.length).trim();
@@ -928,12 +607,12 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
 
         // A prose line that named no action AND could not be read gets the
         // capability sheet rather than a ranked list of action names. A SINGLE
-        // unknown word falls through to the router instead, because a single
-        // word is usually a typo and the fuzzy matcher is genuinely good at
-        // those - `spawn_encountr` should be corrected, not answered with a
-        // menu. And a line that DID name an action is routed as that action,
-        // so `advance_days 50 years` still reaches `advance_days` and is
-        // refused there, by the action, in that action's own words.
+        // unknown word falls through to the router instead, because a single word
+        // is usually a typo and the fuzzy matcher is genuinely good at those -
+        // `spawn_encountr` should be corrected, not answered with a menu. And a
+        // line that DID name an action is routed as that action, so `advance_days
+        // 50 years` still reaches `advance_days` and is refused there, by the
+        // action, in that action's own words.
         if (known === null && hasProse) {
             return {
                 action: 'help',
@@ -946,65 +625,21 @@ export function parseAdminCommand(request: string): ParsedAdminCommand {
         }
     }
 
-    // ── A RUNG MAY BE NAMED RATHER THAN NUMBERED ──────────────────────────
-    //
-    // `ordinal=Core Formation` is how somebody who has been reading the game's
-    // own output writes it - the ladder prints rank names everywhere and prints
-    // ordinals almost nowhere - and every schema here wants a number, so it
-    // arrived as a string and was rejected with "expected number, received
-    // string". AGENTS.md: any name the game prints is a name the game must
-    // accept. Resolved once, here, so `set_realm`, `spawn_encounter`,
-    // `spawn_site` and `grant_item` all gain it without four separate coercions.
+    // A RUNG MAY BE NAMED RATHER THAN NUMBERED
     if (typeof args.ordinal === 'string') {
         const named = ordinalNamed(args.ordinal);
         if (named) args.ordinal = named.ordinal;
     }
 
-    // ── AND NO LEANING IS READ OUT OF LOOSE PROSE ─────────────────────────
-    //
-    // A draft of this scanned the line for "demonic", "orthodox" and the rest,
-    // so that `spawn a demonic elder at 29` would set the argument. It was
-    // withdrawn on its own test output: `spawn_encounter name=Devil Tortoise
-    // ordinal=29` came back demonically aligned, because the word was in the
-    // NAME. This world is full of names like that, and a scan of the whole
-    // line cannot tell a leaning from a noun somebody was christened with.
-    //
-    // The two spellings that are not ambiguous both work already - the field
-    // named, `alignment=demonic`, and the field named without the equals sign,
-    // `alignment demonic` - and both are read above by the machinery that
-    // reads every other argument. AGENTS.md: ambiguity refuses rather than
-    // picks, and the reading has to be printed back. A word lifted out of a
-    // name satisfies neither.
+    // AND NO LEANING IS READ OUT OF LOOSE PROSE
 
     return { action, args };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // SCHEMAS
-//
-// ── A RUNG MAY BE NAMED, NOT ONLY NUMBERED ───────────────────────────────
-//
-// The single highest-value argument change on this surface. Everything that
-// prints a rank in this game prints a NAME - "Core Formation Early", "Qi
-// Condensation Layer 5" - and almost nothing prints an ordinal, so both a
-// person and a model asking for a Core Formation opponent have the realm and
-// not the number. `ordinal: z.number()` rejected that with "expected number,
-// received string", which asks the caller to know that Core Formation is 17-20.
-// Nothing should have to know that: `realms.ts` knows it, and it is the
-// authority.
-//
-// AGENTS.md: any name the game prints is a name the game must accept. So every
-// ordinal argument on this surface is preprocessed through `ordinalNamed`,
-// which reads a bare number, a realm by name, or a realm-plus-sub-rank, and is
-// the same function the sentence layer uses. One definition, four actions.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * A rung, as a number or as a name the ladder knows.
- *
- * A realm names a band, and this takes its FIRST rung - the weakest reading of
- * a claim made without a rung. A caller who wants the top of the band says a
- * number, or names the sub-rank.
  */
 function ordinalArg(description: string) {
     return z.preprocess(
@@ -1013,24 +648,7 @@ function ordinalArg(description: string) {
             const named = ordinalNamed(value);
             return named === null ? value : named.ordinal;
         },
-        // ── "THERE IS NO SUCH RUNG", NOT "TOO HIGH" ───────────────────────
-        //
-        // The design owner: "admin can't create a level 47 weapon, because it
-        // doesn't exist". The refusal has to say that and not the other thing.
-        // A message reading "must be less than or equal to 46" describes a
-        // LIMIT, and a limit is something somebody raises; what is actually
-        // true is that the ladder ends at MAX_ORDINAL and 47 is not a number
-        // this world has a meaning for. Nothing anywhere would know what to do
-        // with a thing rated there, so everything observed downstream of one
-        // would be about a world that does not exist.
-        //
-        // Note what this does NOT refuse. 46 is a real rung and
-        // `ADMIN grant_item ordinal=46` is legal, even though
-        // `OBJECT_CEILING_BELOW_THE_LID` is 45 and such a thing cannot stay
-        // below the Lid. That is not an impossible precondition - it is a
-        // precondition the world has a violent opinion about, and watching the
-        // world answer is the whole purpose. `artifacts.ts` has already written
-        // what happens.
+        // "THERE IS NO SUCH RUNG", NOT "TOO HIGH"
         z.number().int()
             .min(0, { message: `The ladder starts at 0. There is no rung below it.` })
             .max(MAX_ORDINAL, {
@@ -1057,14 +675,14 @@ const SpawnEncounterSchema = z.object({
         .describe('What to call them. Defaults to "A <realm> cultivator".'),
     location: z.string().optional()
         .describe('Where they are standing. DEFAULTS TO WHERE THE PLAYER IS - "in front of me" needs no argument.'),
-    // `friendly` is here because the surface could not arrange a kind
-    // encounter at all: every person ADMIN could stand in front of the player
-    // was hostile, wary or indifferent, so "spawn somebody who will help me"
-    // had no spelling and the whole cooperative half of the game was
-    // unreachable from the operator side. It reaches exactly what the other
-    // three reach - the knowledge record, and nothing else. See
-    // `dispositionReaches`: there is still no store for how somebody is
-    // disposed toward the player right now, and this does not invent one.
+    // `friendly` is here because the surface could not arrange a kind encounter at
+    // all: every person ADMIN could stand in front of the player was hostile, wary
+    // or indifferent, so "spawn somebody who will help me" had no spelling and the
+    // whole cooperative half of the game was unreachable from the operator side. It
+    // reaches exactly what the other three reach - the knowledge record, and
+    // nothing else. See `dispositionReaches`: there is still no store for how
+    // somebody is disposed toward the player right now, and this does not invent
+    // one.
     disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional().default('hostile')
         .describe('How they are disposed toward the player. Defaults to hostile.'),
     // Which house answers for them, and so how far they go when wronged. See
@@ -1086,11 +704,11 @@ const GrantItemSchema = z.object({
     itemId: z.string().optional()
         .describe('A catalog pill, herb or artifact id. Nothing outside the catalogs exists.'),
     /**
-     * Aim at a rung instead of naming an id. The nearest catalogued ARTIFACT to
-     * it is granted, exactly the way `spawn_site` aims at a site: a rated object
-     * is on the realm ladder and "a 45 weapon" is how anybody asks for one.
-     * Pills and herbs are graded 1-9, not laddered, so this is artifact-only and
-     * says so rather than quietly meaning something different per kind.
+     * Aim at a rung instead of naming an id. The nearest catalogued ARTIFACT to it
+     * is granted, exactly the way `spawn_site` aims at a site: a rated object is on
+     * the realm ladder and "a 45 weapon" is how anybody asks for one. Pills and
+     * herbs are graded 1-9, not laddered, so this is artifact-only and says so
+     * rather than quietly meaning something different per kind.
      */
     ordinal: ordinalArg('ARTIFACTS ONLY: grant the catalogued object nearest this rung. This is how "a 45 weapon" is asked for.').optional(),
     /** Narrow what a name or an ordinal is searched against. */
@@ -1146,32 +764,6 @@ const SetRealmSchema = z.object({
 
 /**
  * How old the cultivator is.
- *
- * ── WHY THIS EXISTS, AND IT IS A REFUSAL'S FAULT ─────────────────────────
- *
- * A bar in this world is not always a rung. `AZURE_CLOUD_INTAKE` sorts its
- * intake on age as well as ordinal, and the Hollow Court's fostering terms -
- * `returnOrdinal: 29`, `returnByAge: 250` - are a pair. So a refusal that
- * honestly names what somebody is short by can name an AGE, and until this
- * existed such a refusal pointed at an action that was not on the surface: the
- * only way to age anybody was `advance_days`, which also feeds them, ages the
- * world, runs death checks and cannot go backwards.
- *
- * ── IT IS A BOOKKEEPING WRITE AND IT SAYS SO ─────────────────────────────
- *
- * The same shape as `set_realm`: it moves one number through the repository's
- * own delta path, it rolls nothing, and it claims nothing about a life having
- * been lived. Years the cultivator did not live are years in which nothing
- * happened to them - no wounds, no hunger, no stagnation, no world. If what is
- * wanted is a life, `advance_days` is the action that actually spends one.
- *
- * ── AND IT CANNOT WRITE A BODY THE WORLD WOULD NOT HOLD ──────────────────
- *
- * A lifespan is a real bound, `lifespan_exhausted` is a real death, and an age
- * at or past the rung's span is not an arranged situation - it is a corpse the
- * survival check has not been asked about yet. So it refuses there and names
- * the two honest routes: a higher rung buys more span, and `advance_days` is
- * how somebody actually reaches the end of theirs.
  */
 const SetAgeSchema = z.object({
     action: z.literal('set_age'),
@@ -1184,17 +776,6 @@ const GrantKnowledgeSchema = z.object({
     action: z.literal('grant_knowledge'),
     /**
      * PLACES AND HOUSES ONLY, AND THE OMISSION IS THE POINT.
-     *
-     * `KnownEntityKind` has four members and this takes two. `cultivator` is
-     * left out because who is standing where is a fact about the present that
-     * `spawn_encounter` already writes for somebody it actually put there, and
-     * granting the whole roster would hand the player a census nobody has.
-     *
-     * `event` is left out and must stay out. An event is a thing that HAPPENED,
-     * so a knowledge record of one is a claim about history - and "give me
-     * knowledge that I killed him" is an outcome wearing an awareness gate as a
-     * costume. A place and a house are standing there whether anybody has heard
-     * of them; that is exactly what makes naming them a gate and not a truth.
      */
     kind: z.enum(['place', 'sect', 'any']).optional().default('any')
         .describe('Narrow to places or to houses. Omit for both. Never events: an event is a claim about history.'),
@@ -1208,21 +789,7 @@ const AuditLogSchema = z.object({
     limit: z.number().int().min(1).max(200).optional().default(50)
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
 // THE GAZETTEER
-//
-// `set_location` used to take any string at all, so "Nowhereville" reported
-// "moved" and flagged the run, and the engine then described the ambient qi of
-// a place that does not exist. ADMIN lifts gates, not truth: a place the world
-// has never heard of is not a gate, it is a typo with a location row behind it.
-//
-// AGENTS.md: "a guard that only exists when the world is enabled is not a
-// guard". The world driver can be off, and it is off in every test harness, so
-// the register below is built primarily from the AUTHORED region catalog, which
-// is present in every configuration. The world's own locations and the places
-// people are actually standing are added on top when they exist - they can only
-// ever widen what is accepted, never narrow it.
-// ═══════════════════════════════════════════════════════════════════════════
 
 interface Gazetteer {
     /** Canonical display names, deduplicated, in catalog order. */
@@ -1277,12 +844,6 @@ interface PlaceLookup {
 
 /**
  * Which place on the map a typed name means.
- *
- * Loose-key equality first and it is not a fallback: `placeKey` keeps a leading
- * article and most operators drop it, so "Dead Verge" and "The Dead Verge" must
- * be the same place. Only then the fuzzy score, at the same threshold every
- * other resolver in this engine uses - a near miss that moves the cultivator
- * somewhere they did not ask for is worse than a refusal that lists the names.
  */
 function lookUpPlace(wanted: string, gazetteer: Gazetteer): PlaceLookup {
     const needle = wanted.trim();
@@ -1339,11 +900,6 @@ export async function handleRoster(args: z.infer<typeof RosterSchema>): Promise<
 
 /**
  * What rung a catalogued site is pitched at.
- *
- * A grave's occupant, or the hardest strength gate inside a trial, or what the
- * outside advertises. Read off the catalog rather than stored, so a site added
- * to `inheritance-trials.ts` is aimable at without anybody remembering to
- * update a table here.
  */
 function siteOrdinalOf(site: Site): number {
     if (site.kind === 'grave') return site.occupantOrdinal;
@@ -1361,27 +917,6 @@ function sitePhrase(siteId: string): string {
 
 /**
  * ADMIN over the sites the player can actually reach.
- *
- * ══ WHY THIS DOES NOT INVENT A SITE ANY MORE ══════════════════════════════
- *
- * It used to write a fresh row into `cultivation_sites` with engine-rolled
- * contents, report `spawned: true`, and hand back an id. Nothing player-facing
- * has ever read those rows. The whole site surface - approach, outside, enter,
- * take - runs over the AUTHORED catalog in `inheritance-trials.ts`, gated on
- * whether the cultivator holds a knowledge record for the site, and
- * `SiteLedger` keys its rows `${runId}::${catalogId}` and drops anything whose
- * id is not a catalog id. So a spawned site was written, was real in SQLite,
- * and was unreachable: "Cave of a Tribulation Transcendence Cultivator" spawned
- * at Sweptground, and going to look for it answered "it is not the kind of
- * place that has one", twice, correctly.
- *
- * A tool that reports success for work it did not do is worse than one that
- * fails. So the gate this lifts is the one that was actually in the way -
- * AWARENESS. The site is a real catalogued site, its face is the face the
- * content authored, and every gate inside it still stands: the strength bar,
- * the comprehension bar, the claim conditions, all of them. What ADMIN removes
- * is "you have to have happened to hear about it", which is exactly a content
- * gate and exactly what this surface is for.
  */
 export async function handleSpawnSite(args: z.infer<typeof SpawnSiteSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('spawn_site');
@@ -1582,48 +1117,14 @@ export async function handleSpawnEncounter(
             maxQi,
             age: 20 + args.ordinal * 4,
             location,
-            // ── AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU ────
-            //
-            // A house is not decoration on this row. Alignment is the axis
-            // `what-somebody-does-about-being-wronged.ts` turns on, and every
-            // person this surface could stand in front of the player was on
-            // nobody's roll - so the whole righteous/demonic half of the
-            // reprisal model was unreachable from the operator side, and a
-            // robbed stranger could never do more than drive somebody off.
-            //
-            // The house is a REAL one out of the catalog, found by the
-            // alignment asked for rather than minted to order. Nothing is
-            // invented: the person genuinely belongs to a house that genuinely
-            // holds that line, which is what makes what follows a fact about
-            // the world rather than a flag on a row.
+            // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU
             ...(house ? { sectId: house.id } : {}),
             spiritStones: STARTING_SPIRIT_STONES * (1 + args.ordinal)
         });
         // The rank change takes the same road every rank change takes.
         if (args.ordinal > 0) repos.cultivators.advanceRealm(opponentId, args.ordinal);
 
-        // ── THE PLAYER HAS TO BE ABLE TO NAME THEM ────────────────────────
-        //
-        // The defect this closes, found by playing the owner's own sentence:
-        // the row was created correctly, at the player's exact location, alive,
-        // in the right run - and `who is here` did not mention them. Measured:
-        // `othersPresent` DOES return them, so nothing was wrong with the write
-        // or the read. What was wrong is that `company()` in `game.ts` splits
-        // the people present on `knowledge.isAwareOf(..., 'cultivator', id)`,
-        // and an opponent nobody had ever heard of has no such record. So they
-        // fell into `strangers` and were rendered as an anonymous band reading -
-        // "one of them is so far above" - indistinguishable from the crowd, with
-        // no name to point at, no name to attack, and nothing to say back.
-        //
-        // THIS IS THE SAME BUG `spawn_site` ALREADY FIXED, one table over, and
-        // the header of that handler explains it in full: what ADMIN lifts is
-        // the AWARENESS gate, and lifting it is a knowledge write. A site got
-        // one; a person never did. That asymmetry is the whole defect.
-        //
-        // Written the same honest way: `witnessed`, because an operator really
-        // did put this person in front of this cultivator, and the audit row in
-        // the same transaction says so. Nothing else is granted - not their
-        // history, not their sect, not what they are carrying.
+        // THE PLAYER HAS TO BE ABLE TO NAME THEM
         knowledge.learnIfNew({
             holderId: cultivator.id,
             kind: 'cultivator',
@@ -1677,27 +1178,7 @@ export async function handleSpawnEncounter(
         // These reach the person through the ordinary player verbs, and they
         // work because the knowledge record above made them nameable.
         sayThis: [`who is here`, `look at ${name}`, `talk to ${name}`, `attack ${name}`],
-        // ── WHAT THE DISPOSITION REACHES, AND WHAT IT DOES NOT ────────────
-        //
-        // It is on the knowledge record, so "what do I know about them" answers
-        // "and means harm" with the provenance attached. It is NOT volunteered:
-        // nothing in the play layer says a hostile cultivator is standing in
-        // front of you until you ask, and nothing makes them act.
-        //
-        // WHY NO GRUDGE WAS WRITTEN, which is the obvious place to reach for:
-        // `GrudgeCause` in `engine/social/grudges.ts` is "concrete and specific
-        // by design - a record whose cause is 'conflict' is a record nobody can
-        // narrate from in forty years", and grudges are inherited and outlive
-        // everybody in them. There is no cause here, because nothing happened;
-        // an operator placed somebody. Writing `other` would put a fabricated
-        // grievance into the world's causal record permanently, which is a
-        // worse lie than the disposition being quiet, and it is exactly the
-        // kind of assertion this surface exists not to make.
-        //
-        // The real absence, stated rather than papered over: THERE IS NO STORE
-        // FOR HOW A PERSON IS DISPOSED TOWARD THE PLAYER RIGHT NOW, separate
-        // from what they are owed and what they hold against them - and no loop
-        // in which a co-located hostile cultivator does anything about it.
+        // WHAT THE DISPOSITION REACHES, AND WHAT IT DOES NOT
         dispositionReaches: {
             said: 'On the knowledge record. "what do I know about them" answers it.',
             notSaid:
@@ -1709,14 +1190,7 @@ export async function handleSpawnEncounter(
         gateLifted: {
             playerOrdinal: cultivator.realmOrdinal,
             opponentOrdinal: args.ordinal,
-            // ── A RATIO IS NOT TWELVE DECIMAL PLACES ──────────────────────
-            //
-            // This printed `0.000244140625` at a Core Formation opponent, which
-            // is 4 to the minus six rendered raw. The figure is worth keeping
-            // and the precision is worth none of it: the same defect the engine
-            // channel spent three passes fixing, arriving here. So the number
-            // is rounded to something a person can hold, and it is said as well
-            // as shown, in the direction the reader is standing.
+            // A RATIO IS NOT TWELVE DECIMAL PLACES
             powerRatio: roundRatio(
                 realmForOrdinal(args.ordinal).powerMultiplier /
                 realmForOrdinal(cultivator.realmOrdinal).powerMultiplier
@@ -1735,11 +1209,6 @@ export async function handleSpawnEncounter(
 
 /**
  * A catalog artifact by name, or by the rung it was made at.
- *
- * The same shape `spawn_site` uses for sites, and for the same reason: the
- * catalog is authored, it has no entry at every rung, and aiming at 45 should
- * land on the nearest thing that really exists rather than refuse or invent.
- * Ties break toward the STRONGER object, so aiming high never lands low.
  */
 function artifactNearest(
     wanted: number
@@ -1759,52 +1228,9 @@ function artifactNearest(
 
 /**
  * Put something the catalogs really hold into the real pouch.
- *
- * ══ WHY ARTIFACTS ARE HERE NOW ════════════════════════════════════════════
- *
- * This used to be pills and herbs only, and the header above this file said so
- * as though it were a design position. It was not - it was the whole set of
- * things anybody had wired. `artifacts.ts` is the catalog the setting's entire
- * hierarchy of force is legible in, from a notched sabre to something an
- * ascended founder sent back down, and there was no route from it into a
- * player's hands from ANY surface, admin or otherwise. An operator asking for
- * "a 45 weapon" was asking for a row that exists, by the number the catalog
- * itself sorts on, and got told no pill has that id.
- *
- * Nothing is invented. `ordinal=N` picks the nearest catalogued object the same
- * way `spawn_site` picks the nearest catalogued site, `name=` matches the
- * catalog's own name, and a miss is refused with what is actually there.
- *
- * ══ AND WHAT CARRYING IT IS WORTH ═════════════════════════════════════════
- *
- * What the catalog says it is worth, and the response says which line of the
- * engine says so. `combatantFromCultivator` in `combat-manage.ts` reads
- * `carriedArtifact` into `CombatantInput.weapon`, and `assessPower` prices
- * `weapon.power` as the rated ordinal - "a second body of that rank, standing
- * beside them". The same field an NPC's blade arrives in through
- * `bestObjectHeldBy`, read by the same resolver, which is the point.
- *
- * A granted object can therefore also be BROKEN, by the ordinary rule: swung
- * far under the rung it is swung into, it comes apart. Nothing about that is
- * special to a granted one.
- *
- * ══ WHAT THE GRANT DOES NOT DO, AND MUST NOT ══════════════════════════════
- *
- * It writes a pouch row and it writes nothing to the world's register. That is
- * not a gap: holding a thing and owning it are two facts
- * (`docs/world/things/items.md`), and the world going on saying a house owns
- * something a player is carrying is what a stolen artifact IS. A surface that
- * rewrote the register off a pouch row would be asserting a fact nobody
- * established, and would erase the thread that makes a taken thing findable.
  */
 /**
  * A power ratio at a precision somebody can hold.
- *
- * `0.000244140625` is a real figure and an unreadable one. Two significant
- * figures is all any of these carry - the multipliers are powers of four, so
- * the interesting fact is always the order of magnitude - and a ratio under one
- * is reported as the fraction it is rather than as a decimal with a run of
- * zeroes in front of it.
  */
 function roundRatio(ratio: number): number {
     if (!Number.isFinite(ratio) || ratio <= 0) return 0;
@@ -1815,11 +1241,6 @@ function roundRatio(ratio: number): number {
 
 /**
  * The same ratio as a sentence, because a number alone answers nothing.
- *
- * Written from the PLAYER's side, which is the side the reader is standing on:
- * a ratio of 16 means the other one is worth sixteen of you, and a ratio of
- * 1/16 means you are worth sixteen of them. Both are the same fact and only one
- * of them is the fact anybody wanted.
  */
 function comparePower(ratio: number): string {
     if (!Number.isFinite(ratio) || ratio <= 0) return 'not comparable';
@@ -1832,42 +1253,10 @@ function comparePower(ratio: number): string {
     return 'you are worth about the same as each other';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // SAYING WHICH THING, IN THE WORDS SOMEBODY WOULD USE
-//
-// Found by playing. `ADMIN give myself chaos healing pill` was read as
-// `grant_item kind=pill name="myself chaos healing"` and refused with "nothing
-// in the pill, herb or artifact catalogs answers to 'myself chaos healing'".
-// The reading was honest and the refusal was still a failure: the design owner
-// does not know the catalog spells it `pill-soul-returning-clarity`, and
-// should not have to.
-//
-//   "I don't know the exact names, but the LLM should be able to adapt it to
-//    fit - that's the point of an LLM (and of the embedding to the same
-//    extent)."
-//
-// The whole of that sentence is a DESCRIPTION that identifies rows, and
-// resolving a description against a closed catalog is a lookup rather than an
-// invention. Three of its four words are members of closed sets this file
-// already owns - `chaos` is a grade, `pill` is a kind, `myself` is not an
-// argument at all - and only "healing" is free text.
-//
-// ── AND THE GUARD THAT MADE THE ORIGINAL REFUSAL CORRECT STAYS ───────────
-//
-// ADMIN DOES NOT INVENT ITEMS. If nothing in the catalog is close, it still
-// refuses. What changes is that "close" is measured properly, and that the
-// refusal lists the actual near misses spelled the way this surface takes
-// them, instead of three unrelated examples. A refusal that names candidates
-// teaches the catalog; one that names none teaches nothing.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Words in a `name=` that are not part of any name.
- *
- * `grant_item` has no holder argument - the pouch is the player's, always - so
- * a pronoun in the name is noise the sentence layer swept up, not a thing to
- * match against. Closed, and deliberately only pronouns: a word outside this
- * list is content and is matched, so "The Standing Edge" is untouched.
  */
 const NOT_PART_OF_A_NAME = new Set([
     'me', 'my', 'myself', 'i', 'mine', 'us', 'our', 'ourselves', 'player',
@@ -1881,12 +1270,6 @@ const NOT_PART_OF_A_NAME = new Set([
 
 /**
  * Words that say which CATALOG rather than which row.
- *
- * The sentence reader already sets `kind` from most of these; they survive
- * into the name when the operator said one twice ("give me a pill, a healing
- * pill") or when the reader took a different word as the subject. Either way
- * they narrow rather than name, so they are removed from what is matched and
- * folded into the kind.
  */
 const A_WORD_FOR_A_CATALOG: Readonly<Record<string, 'pill' | 'herb' | 'artifact'>> = Object.freeze({
     pill: 'pill', pills: 'pill', medicine: 'pill', elixir: 'pill', pellet: 'pill',
@@ -1902,14 +1285,6 @@ function wordsOf(text: string): string[] {
 
 /**
  * What an operator's description of an item actually said.
- *
- * Every part of this is a lookup against a closed set that already exists -
- * `TechniqueGradeSchema` for the grade ladder, the two tables above - and none
- * of it is an inference about English. That matters for the same reason the
- * withdrawn alignment draft further up this file matters: a word lifted out of
- * loose prose cannot be told from a word somebody was christened with. Here it
- * can, because the vocabulary is closed and the leftovers are matched rather
- * than interpreted.
  */
 interface WhatWasDescribed {
     /** Grade words found, e.g. `chaos`. Narrows the pool; never names a row. */
@@ -1974,12 +1349,6 @@ function everyItemRow(): CatalogRow[] {
 
 /**
  * How well one row answers a description.
- *
- * Word overlap first and the character matcher only as the tie-break, because
- * the two disagree in exactly the case this exists for: "healing" against
- * "Soul-Returning Clarity Pill" scores something on shared letters and nothing
- * on shared words, and a shared WORD is evidence while a shared letter run is
- * a coincidence. `matchScore` keeps its job of surviving a typo.
  */
 function howWellItAnswers(described: WhatWasDescribed, row: CatalogRow): number {
     if (described.words.length === 0) return 0;
@@ -2016,21 +1385,7 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
     if (!pill && !herb && !artifact && args.name) {
         const named = args.name;
 
-        // ── WHICH OF THE TWO THIS IS, DECIDED BY A CLOSED SET ─────────────
-        //
-        // A NAME is matched whole - "The Standing Edge" must not be taken
-        // apart and rebuilt, or a catalog name that happens to contain a grade
-        // word loses it. A DESCRIPTION is narrowed and then matched on words.
-        //
-        // What says which is whether the line contains a word from a closed
-        // set - a grade or a catalog word - and nothing else. That is not a
-        // judgement about English: a grade word in the line is a FACT about
-        // which rows can answer, and it has to beat letter similarity, because
-        // letter similarity gets it wrong in exactly this case. Measured: "a
-        // heaven grade herb" matched Heavenly Tribulation Cinder Fruit at
-        // 80/100 on the letters of "heaven", and the fruit is chaos grade -
-        // a confident, plausible, wrong resolution, which is the failure mode
-        // this whole surface's echo exists to catch.
+        // WHICH OF THE TWO THIS IS, DECIDED BY A CLOSED SET
         described = readAnItemDescription(named);
         const isADescription = described.grades.length > 0 || described.kinds.length > 0;
 
@@ -2065,12 +1420,12 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
                 .sort((a, b) => b.score - a.score);
 
             // A WHOLE WORD, OR NOTHING. The bar is that every free word in the
-            // description is in the row's own name or id, and that no second
-            // row answers as well - two rows tied on the same words is an
-            // ambiguity and this surface refuses those rather than picking, the
-            // same rule the sentence reader follows. Under the bar, the pool is
-            // listed instead, which is the useful answer: "these seven are what
-            // chaos-grade pills there are" teaches the catalog.
+            // description is in the row's own name or id, and that no second row
+            // answers as well - two rows tied on the same words is an ambiguity and
+            // this surface refuses those rather than picking, the same rule the
+            // sentence reader follows. Under the bar, the pool is listed instead,
+            // which is the useful answer: "these seven are what chaos-grade pills
+            // there are" teaches the catalog.
             const clear = scored.length > 0
                 && scored[0].score >= 100
                 && (scored.length === 1 || scored[1].score < 100);
@@ -2121,15 +1476,7 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
     }
 
     if (!pill && !herb && !artifact) {
-        // ── A REFUSAL LISTS THE CANDIDATES IT WEIGHED ─────────────────────
-        //
-        // Three unrelated worked lines taught nothing about the catalog, which
-        // is what the operator was actually short of. What a description
-        // narrowed to IS the answer to "which one did you mean" - a
-        // chaos-grade pill request that matched no name should come back with
-        // the chaos-grade pills, spelled the way this surface takes them, and
-        // asking which. That is a good answer at a rung with no model in it,
-        // rather than a failure to be one.
+        // A REFUSAL LISTS THE CANDIDATES IT WEIGHED
         const nearMisses = (narrowed.length > 0
             ? narrowed
             : everyItemRow().filter(row => want === 'any' || row.kind === want)
@@ -2230,20 +1577,7 @@ export async function handleGrantItem(args: z.infer<typeof GrantItemSchema>): Pr
         carrying: carried
             ? { id: carried.id, name: carried.name, ordinal: carried.power, rank: rankName(carried.power) }
             : null,
-        // ── A RUNG THE WORLD SAYS CANNOT STAY HERE ────────────────────────
-        //
-        // `OBJECT_CEILING_BELOW_THE_LID` is 45 and the catalog holds three
-        // objects above it. The rule that an object over the ceiling cannot
-        // remain below the Lid is real and written - `evaluateLayerCrossing` in
-        // `layers.ts` refuses it by name - and it is consulted ONLY from
-        // `immortal-world.ts`, for NPC descents in the world simulation.
-        // Nothing anywhere looks at what a player is carrying.
-        //
-        // So the grant is allowed and the discrepancy is reported, rather than
-        // the surface either refusing on a law nothing enforces or pretending
-        // to enforce it. ADMIN's job is to arrange the situation; if the world
-        // then fails to do what it says it does, THAT IS THE FINDING, and a
-        // surface that faked the departure would have destroyed it.
+        // A RUNG THE WORLD SAYS CANNOT STAY HERE
         aboveTheCeiling: kind === 'artifact' && (artifact!.power ?? 0) > OBJECT_CEILING_BELOW_THE_LID
             ? {
                 ceiling: OBJECT_CEILING_BELOW_THE_LID,
@@ -2432,36 +1766,7 @@ export async function handleAdvanceDays(
         );
     }
 
-    // ── ONE SPAN, AS MANY STRETCHES AS IT TAKES ───────────────────────────
-    //
-    // Real time, through the real simulation, at `idle` focus - which grants no
-    // cultivation progress and takes nothing else away. The body ages, the
-    // belly empties, the stagnation clock runs, the death checks fire, AND THE
-    // QI DEVIATION CHECK STILL ROLLS EVERY THIRTY DAYS. See `THE IDLE ROLL`
-    // below for why that last one is correct and why it used to be missing from
-    // this list.
-    //
-    // Because it rolls, a long span used to end almost immediately. Measured on
-    // four world seeds, `years=120` at ordinal 20: 780 of 43800 days, stopped on
-    // `lethal_injury_threshold`, three untreated `qi_deviation` wounds. Every
-    // measurement anybody took through this surface was silently a fortnight of
-    // the century they asked for, and the shortfall was a line in the engine
-    // channel that nothing made anybody read.
-    //
-    // The interrupt itself is right and stays. It exists so a PLAYER gets
-    // control back at the moment they would want to go and do something - which
-    // is `time-skip.ts`'s own ruling and is why it announces once and not every
-    // fortnight. An operator standing a world up is not playing a character:
-    // they asked for a century and the honest answer to a bulletin is to read
-    // it, keep it, and carry on. So this drives the stretch to its end the way
-    // an operator would - `ADMIN advance_days` again, and again - and reports
-    // every stretch it drove through.
-    //
-    // WHAT IT WILL NOT DRIVE THROUGH is anything that needs a decision the
-    // operator has not made: death, an empty pack, and ground that is killing
-    // them. Those are not bulletins, they each have a named fix, and looping
-    // past an empty pack would be the one thing `time-skip.ts` says the skip
-    // must never be - the place somebody dies without being asked.
+    // ONE SPAN, AS MANY STRETCHES AS IT TAKES
     const totals = {
         requested: null as number | null,
         simulated: 0,
@@ -2558,15 +1863,7 @@ export async function handleAdvanceDays(
         { hint: 'ADMIN advance_days days=30' }
     );
 
-    // ── THE SPAN THAT WAS ASKED FOR AND THE SPAN THAT HAPPENED ────────────
-    //
-    // `years=50` moved 1.73 years and `days=200000` moved 180, and the caller
-    // was told neither figure. Both numbers were in the result object the whole
-    // time; nothing rendered them, and the note underneath asserted "Nothing
-    // was skipped", which is the "fallbacks in ordinary English are invisible"
-    // lesson wearing a reassurance. There is no arbitrary clamp here: the
-    // simulation stops when something stops it, and what stopped it is a fact
-    // the operator needs more than the day count.
+    // THE SPAN THAT WAS ASKED FOR AND THE SPAN THAT HAPPENED
     const requested = totals.requested;
     const simulated = totals.simulated;
     const reason = typeof last.interruptReason === 'string' ? last.interruptReason : null;
@@ -2604,18 +1901,10 @@ export async function handleAdvanceDays(
                 reason,
                 explanation: explainInterrupt(reason),
                 limit: interruptLimitFor(reason),
-                // THE LINE THAT WOULD HAVE WORKED, WITH ITS NUMBER IN IT.
-                // "Pass rations=N" left the operator to work N out, and N is a
-                // division this side already has both terms of. A refusal that
-                // names what would work should name it exactly.
-                //
-                // AND IT HAS TO BE AFFORDABLE TO BE A FIX. Rations are bought
-                // out of the ordinary purse, so a span long enough to need
-                // hundreds of them prints an instruction that comes straight
-                // back as `insufficient_stones` - measured: `years=120` on a
-                // fresh run named `rations=876`, which is 1752 stones against a
-                // purse of 30. A line that names an unaffordable number is the
-                // "fallback in ordinary English" defect with arithmetic on it.
+                // THE LINE THAT WOULD HAVE WORKED, WITH ITS NUMBER IN IT. "Pass
+                // rations=N" left the operator to work N out, and N is a division
+                // this side already has both terms of. A refusal that names what
+                // would work should name it exactly.
                 tryThis: reason === 'provisions_exhausted' || reason === 'starvation_begun'
                     ? provisioningLine(repos, cultivator.id, requested!)
                     : reason === 'iteration_limit'
@@ -2629,9 +1918,8 @@ export async function handleAdvanceDays(
               'it is the simulation refusing to run past something that happened. '
             : 'The whole span asked for was simulated; nothing was skipped except the gain. ') +
             'Time was advanced through simulateTimeSkip at idle focus: no cultivation progress, but ' +
-            'real aging, real hunger, real stagnation, real death checks, and the real qi deviation ' +
-            'roll every thirty days - a deviating root does not stop deviating because nobody is ' +
-            'cultivating.' +
+            'real aging, real hunger, real stagnation and real death checks. No qi deviation - that ' +
+            'is the price of drawing qi, and a body that is not draws no wounds out of the air.' +
             (resumedPast.length > 0
                 ? ` Carried on past ${resumedPast.length} interrupt(s) that hand a PLAYER control back ` +
                   `and do not stop an operator: ${resumedPast.join(', ')}.`
@@ -2642,68 +1930,11 @@ export async function handleAdvanceDays(
 
 /**
  * How many stretches one `advance_days` will drive before it stops.
- *
- * A ceiling rather than a budget: with `randomEvents` and `autoBreakthrough`
- * both off, the only bulletin an admin span can actually meet is
- * `lethal_injury_threshold`, which `time-skip.ts` announces once per call and
- * suppresses on re-entry for a body already over the line - so the real figure
- * is one or two. This exists so that a reason nobody has thought of yet cannot
- * turn a loop into a hang.
  */
 const MAX_ADVANCE_STRETCHES = 64;
 
 /**
  * Whether an interrupt is a bulletin an operator may be carried past.
- *
- * ══ THE IDLE ROLL, AND WHY THIS IS THE FIX RATHER THAN SILENCING IT ═══════
- *
- * The question this answers is a design one and it was put properly before
- * anything was changed: SHOULD a span at `idle` focus roll qi deviation at all?
- * Nobody is cultivating. Deviation is cultivation going wrong.
- *
- * It should, and the repo already says so in four places written by people who
- * found it by playing rather than by reading:
- *
- *  - `deviation.ts` names two causes and only ONE of them is an act. The other
- *    is who you are: a conflicting root "is not a situation you can leave; it
- *    is standing inside your own meridians for the entire run", which
- *    `engine/cultivation/README.md` states again as "not a rare accident but a
- *    standing condition, a low fever that never resolves". The remaining
- *    contributors - untreated wounds, qi accumulated past a bottleneck - are
- *    facts about a body and not about a schedule. Only
- *    `CONFLICTING_TECHNIQUE_RISK` needs somebody to be practising something,
- *    and it is already gated on `techniqueElement`, which is null here.
- *  - `work` (`cultivation-mortal.ts`) fixes `focus: 'idle'` and is the mortal
- *    economy's whole loop. If idle were safe, a poor cultivator with a bad root
- *    could labour for a century and never deviate, and `RISK_PER_UNTREATED_INJURY`
- *    - a ruling with its own guard in `root-cliff.test.ts` - would be escapable
- *    for free by the cheapest verb in the game.
- *  - Two test files record the behaviour as a FINDING about the world rather
- *    than a defect: "an idle body accumulates untreated channels at rather more
- *    than one a year" (`walking-up-the-terraces.test.ts`,
- *    `a-probation-ends-in-a-placement.test.ts`), both of which then designed
- *    around it.
- *  - And `learn_technique` routes through the same deviation engine on the
- *    spot, which settles it: deviation is not exclusive to time spent
- *    cultivating, and never was.
- *
- * So the roll is correct and the defect was here: this action stated three
- * times what idle preserves and left the deviation check out of every list, so
- * the one thing that actually stopped the span was the one thing the surface
- * never mentioned. The lists now name it, and the span drives past the
- * bulletin.
- *
- * The split below is the same one `time-skip.ts` draws in its own comments.
- * `lethal_injury_threshold` and `major_encounter` say in as many words that
- * they exist to hand control back for a decision; a toll and a wounding
- * breakthrough are things that already happened and are being reported;
- * `iteration_limit` is a per-call ceiling whose own explanation says to call
- * again. None of them is the simulation being unable to continue.
- *
- * Everything absent from this list stops the span, and each has a named fix
- * the response already prints: death ends the run, an empty pack wants
- * `rations=N`, hostile ground wants `set_location`. Driving past those would be
- * ADMIN deciding an outcome, which is the one thing this surface may not do.
  */
 function isResumableInterrupt(reason: string | null): boolean {
     if (reason === null) return false;
@@ -2719,16 +1950,6 @@ function isResumableInterrupt(reason: string | null): boolean {
 
 /**
  * How many rations cover a span, so the refusal can print the number.
- *
- * `ACTIONS_PER_FULL_SATIETY` is the engine's own figure and is imported rather
- * than retyped - AGENTS.md is explicit that balance numbers live in one place.
- * Rounded UP and never below one: a span short by a single ration stops for the
- * same reason a span short by a thousand does.
- *
- * This is an ESTIMATE and the response says so, because hunger tapers by realm
- * and a body high enough on the ladder needs fewer. Over-provisioning is
- * harmless - unspent rations stay in the purse's worth of goods - and
- * under-provisioning is the thing that wasted the operator's call.
  */
 function rationsForDays(days: number): number {
     return Math.max(1, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
@@ -2736,13 +1957,6 @@ function rationsForDays(days: number): number {
 
 /**
  * The provisioning line, priced against the purse that would have to pay it.
- *
- * Rations are bought, and `handleCultivate` refuses the whole call when the
- * stones are not there - so the fix a shortfall prints has to be one the
- * operator can actually type. Where the purse covers it this is the command;
- * where it does not, it is the command AND the fact that it will be refused,
- * with both figures, because the surface knowing and not saying is worse than
- * the surface not knowing.
  */
 function provisioningLine(repos: CultivationRepos, cultivatorId: string, days: number): string {
     const needed = rationsForDays(days);
@@ -2757,11 +1971,6 @@ function provisioningLine(repos: CultivationRepos, cultivatorId: string, days: n
 
 /**
  * What stopped the span, in a sentence.
- *
- * The engine's reason codes are precise and unreadable. Every one of these is
- * a real thing that happened to the cultivator rather than a budget - which is
- * the point, and the reason the response says so instead of reporting a limit
- * that does not exist.
  */
 function explainInterrupt(reason: string | null): string {
     if (reason === null) return 'The simulation stopped without recording a reason, which is itself worth a look.';
@@ -2779,13 +1988,10 @@ function explainInterrupt(reason: string | null): string {
         case 'hostile_ground':
             return 'The ground where the cultivator is standing is killing them. Move somewhere survivable first with ADMIN set_location.';
         case 'lethal_injury_threshold':
-            // The name is the engine's and is older than the ruling. Open
-            // channels are not fatal any more - `engine/cultivation/README.md`
-            // records the retirement - so this says what is actually true: the
-            // body has stopped coping, at idle focus the qi deviation roll is
-            // what put it there, and it does not improve on its own. A span
-            // that met this was carried on past it; a span that ENDED here met
-            // it on its last stretch.
+            // The name is the engine's and is older than the ruling. Open channels
+            // are not fatal any more - `engine/cultivation/README.md` records the
+            // retirement - so this says what is actually true: the body has stopped
+            // coping, and it does not improve on its own.
             return 'Untreated meridian wounds reached the count at which the body stops coping. ' +
                 'Nothing about it is fatal and nothing about it heals on its own - a physician or a ' +
                 'healing pill is what closes them.';
@@ -2813,21 +2019,6 @@ function interruptLimitFor(reason: string | null): number | null {
 
 /**
  * Fill the accumulator the engine already reads, and roll nothing.
- *
- * ══ WHY THIS EXISTS ═══════════════════════════════════════════════════════
- *
- * The surface could put a cultivator at any rung and could not test a crossing
- * FROM one. `set_realm` goes through `advanceRealm`, which clears accumulated
- * progress by design, and `advance_days` runs at idle focus and grants none by
- * design - so an operator could stand somebody at ordinal 41 and then had no
- * way at all to reach the attempt, which is the single thing anybody would use
- * this surface for.
- *
- * This does not take an outcome as input. Cultivation progress is an
- * accumulator, not a result: the engine decides what happens when it is spent,
- * and `canAttemptBreakthrough` is consulted here only to report, never to
- * change anything. It is the weaker sibling of `set_realm`, and it is the
- * honest one - it fills the tank and leaves the roll where it belongs.
  */
 export async function handleGrantProgress(
     args: z.infer<typeof GrantProgressSchema>
@@ -2934,23 +2125,7 @@ export async function handleSetRealm(args: z.infer<typeof SetRealmSchema>): Prom
         );
     }
 
-    // ── THE RUNG AND THE CROSSING ARE TWO SEPARATE FACTS ──────────────────
-    //
-    // `immortalStatus` is written in exactly one place in the engine: by an
-    // actual last crossing, through `result.immortalStatusGained`. `set_realm`
-    // is a bookkeeping write through `advanceRealm`, which does not touch it -
-    // so placing somebody at 45 gave the right rank, the right lifespan and the
-    // right refusal, and left `immortalStatus: "none"` behind them. Everything
-    // downstream then misread it: `theOnlyAxisLeft` was false for a False
-    // Immortal where the code says it is literally true, a False Immortal was
-    // offered "True Immortal" as a next rank though the Lid never opens twice,
-    // and a True Immortal standing in Undersnow was offered farmhand work.
-    //
-    // The distinction between STANDING at a rung and HAVING CROSSED is real and
-    // load-bearing elsewhere - `canExistBeyondTheLid` reads the status on
-    // purpose and is deliberately left alone. What was wrong is that admin set
-    // one of the two facts and not the other. It sets both now, at this layer,
-    // and says so.
+    // THE RUNG AND THE CROSSING ARE TWO SEPARATE FACTS
     const status =
         args.ordinal === TRUE_IMMORTAL_ORDINAL
             ? ('true_immortal' as const)
@@ -3030,15 +2205,7 @@ export async function handleSetAge(args: z.infer<typeof SetAgeSchema>): Promise<
         );
     }
 
-    // ── AN AGE PAST THE SPAN IS A CORPSE, NOT AN ARRANGEMENT ──────────────
-    //
-    // `lifespan_exhausted` is a real death cause and `resolveSurvival` reads
-    // exactly this comparison. Writing an age at or past the rung's span would
-    // put a body in the database that the very next survival check kills, and
-    // an operator would be looking at a state the world does not hold. Admin
-    // never writes a state the ordinary write paths would refuse - and the
-    // route is named, because a rung buys span and time is how anybody
-    // actually reaches the end of theirs.
+    // AN AGE PAST THE SPAN IS A CORPSE, NOT AN ARRANGEMENT
     const immortal = cultivator.immortalStatus === 'true_immortal';
     if (!immortal && wanted >= span) {
         return guidingError(
@@ -3100,32 +2267,6 @@ export async function handleSetAge(args: z.infer<typeof SetAgeSchema>): Promise<
 
 /**
  * Every place, or every house, or one of either, made nameable.
- *
- * ══ WHY THIS IS THE SAME ACTION AS `spawn_site` ═══════════════════════════
- *
- * The knowledge gate IS a gate, so lifting it is exactly what this surface is
- * for. `spawn_site` already does this for one catalogued site and its header
- * explains the whole of it: what ADMIN removes is "you have to have happened to
- * hear about it", which is a content gate and nothing else. This is that action
- * with a wider selection.
- *
- * IT ASSERTS NOTHING. The places and the houses already exist, seeded, with
- * their own admission bars, their own trial requirements and their own opinions
- * about whoever turns up. What changes is whether THIS cultivator may say their
- * names. Every other gate stands: knowing the name of an apex does not open its
- * door, and `a-favour-skips-the-admission-bar.ts` still decides who gets in.
- *
- * ── ORDINARY ROWS, NOT A BYPASS FLAG ─────────────────────────────────────
- *
- * Written through `KnowledgeGate.learnIfNew` at the stage the discovery system
- * already uses for having been told something, so the register and every gated
- * read see rows exactly like any other. There is deliberately no "admin knows
- * everything" boolean anywhere: a flag that reads as knowledge would be a second
- * source of truth beside the table, and the first surface to forget to check it
- * would quietly disagree with the rest of the game.
- *
- * `learnIfNew` is a FLOOR, so anything already held at a firmer stance keeps it
- * and calling this twice writes nothing the second time.
  */
 export async function handleGrantKnowledge(
     args: z.infer<typeof GrantKnowledgeSchema>
@@ -3207,26 +2348,7 @@ export async function handleGrantKnowledge(
                 // actually happened - an operator said the name in front of
                 // this cultivator. The note carries the rest.
                 sourceKind: 'told',
-                // ── AND `placed`, WHICH IS WHERE THE ACTION MEANT TO PUT THEM ──
-                //
-                // Measured before it was named: this wrote 992 place rows and
-                // the game could point at 10 of them - `where can I go`, which
-                // is one of the two lines this action tells the operator to
-                // type next, answered with eight names and *"there are 982
-                // further names you are carrying that you cannot place"*.
-                //
-                // `stageFromStance` derives `named` from a stance nobody set,
-                // and `REACHABLE_FROM` is `placed`, so the gate this lifts was
-                // the naming half and the setting-out half stayed shut. The
-                // stage is stated rather than derived now, and `placed` is
-                // exactly what `stageCeilingFor('told')` permits: somebody who
-                // says where a thing is has placed it, and that is what an
-                // operator saying the name did.
-                //
-                // Nothing above `placed` is available here and nothing should
-                // be: `encountered` and `known` are claims about having been
-                // there and having dealt with it, which are claims about a life
-                // this cultivator did not live.
+                // AND `placed`, WHICH IS WHERE THE ACTION MEANT TO PUT THEM
                 stage: 'placed',
                 sourceNote:
                     'ADMIN lifted the awareness gate. Nothing about admission, standing or what ' +
@@ -3287,19 +2409,7 @@ export async function handleAuditLog(args: z.infer<typeof AuditLogSchema>): Prom
 // ROUTER
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── ALIASES ARE THE CHEAPEST FIX ON THIS SURFACE ─────────────────────────
-//
-// Four of the owner's attempts failed and only one was a missing capability.
-// `spawn_encounter` in particular was losing to `spawn_site` on the one thing
-// it is best at, because the word an operator reaches for is "spawn" and the
-// two names differ only in a suffix. A name that loses to its neighbour on its
-// own subject is a name problem, and the fix is not to rename the action - the
-// action list is a contract - but to make every word somebody would actually
-// type land on it.
-//
-// AGENTS.md: "if a near-synonym works, the phrasing that fails is a bug". Each
-// list below is the three or four ways somebody would say the thing, tried
-// rather than imagined.
+// ALIASES ARE THE CHEAPEST FIX ON THIS SURFACE
 const definitions: Record<AdminAction, ActionDefinition> = {
     roster: {
         schema: RosterSchema,
@@ -3433,7 +2543,7 @@ was a precondition still refuses and names the action that arranges it; a refusa
 roll is the thing force reaches.
 
 Arguments are key=value. A value runs to the next key, so a multi-word name needs no quoting:
-  ADMIN set_location location=The Dead Verge
+  ADMIN set_location location=The Jade Face
   ADMIN spawn_site ordinal=41 kind=grave
 
 A line that does not begin with an action is read as a SENTENCE instead, by the kind of thing in
@@ -3485,12 +2595,6 @@ Actions: ${ACTIONS.join(', ')}`,
 
 /**
  * The routed result as an object, before it is written out for a reader.
- *
- * Exported because `handleAdminManage` no longer embeds a machine payload in
- * its text (see the note at the bottom of it), and a programmatic caller - a
- * test, a harness, another tool - should be reading the result rather than
- * parsing prose out of it. This is that door, and it is the honest one:
- * `read state, not prose`.
  */
 export async function adminResult(args: unknown): Promise<Record<string, unknown>> {
     const response = await router(args as Record<string, unknown>);
@@ -3502,39 +2606,7 @@ export async function adminResult(args: unknown): Promise<Record<string, unknown
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // RENDERING - PLAIN TEXT, BECAUSE THAT IS WHAT THE SURFACE RENDERS
-//
-// ── WHY NOT `RichFormatter` ──────────────────────────────────────────────
-//
-// It used to use it, and the design owner's verdict on the result was "very
-// ugly and leaky". They were right, and the reason is one line in `web/app.js`:
-//
-//     const paras = text.split(/\n\s*\n/) ... map(p => html`<p>${p.trim()}</p>`)
-//
-// A narrator entry is HTML-ESCAPED and split on BLANK LINES. There is no
-// markdown renderer anywhere on that path. So every `**bold**`, every backtick,
-// every `- ` bullet and every `|` table pipe arrived as literal characters, and
-// - worse - a SINGLE newline is not a paragraph break, so consecutive lines of
-// a list collapsed onto one another into a wall of text. `.entry--engine` has
-// `white-space: pre-wrap` and would have preserved them; `.entry--narrator`,
-// which is what ADMIN is logged as, does not.
-//
-// So the rules this renderer follows, and they are the whole of it:
-//
-//   1. NO MARKUP. Not emphasis, not code fences, not tables. It is not rendered
-//      and it is read as noise by the person the output is for.
-//   2. A BLANK LINE IS THE ONLY STRUCTURE. Anything that must appear on its own
-//      line gets a blank line around it, because that is the one separator the
-//      surface honours.
-//   3. INDENTATION SURVIVES within a paragraph only as a leading space run,
-//      which HTML collapses - so a copyable command line gets its own block
-//      rather than an indent.
-//
-// This is the "a fallback written in ordinary English is invisible" lesson
-// pointed at markup instead of prose: output that only renders in a viewer
-// nobody is using is output nobody reads.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Join blocks with the blank line that is this surface's only separator. */
 function blocks(...parts: Array<string | null | undefined>): string {
@@ -3561,12 +2633,6 @@ function recipeBlock(want: string, line: string): string {
 
 /**
  * What an ADMIN call did, beside the prose describing it.
- *
- * `changed` is the difference between arranging the world and asking about
- * it, and it exists because the surface that calls this has to decide whether
- * to run a narrator afterwards. Widened here rather than in
- * `action-router.ts` because no other tool needs the distinction, and every
- * existing caller keeps typechecking against `McpResponse`.
  */
 export interface AdminOutcome extends McpResponse {
     /** Whether this call altered anything, as opposed to reporting on it. */
@@ -3650,14 +2716,7 @@ export async function handleAdminManage(
                     for (const r of worked) out.push(`    ${r.line}`);
                 }
             }
-            // ── A REFUSAL THAT WAS A PRECONDITION CARRIES ITS ROUTE ───────
-            //
-            // The design owner, on being refused an admission below the bar:
-            // "it should say no, you can do it by setting your realm to 29 and
-            // your age." Every one, not the first - an operator handed both
-            // does the thing in two calls, and one handed "refused" goes and
-            // reads a catalog. The lines are built by whatever did the
-            // refusing, so a bar with three conditions names three.
+            // A REFUSAL THAT WAS A PRECONDITION CARRIES ITS ROUTE
             if (Array.isArray(data.arrangeInstead) && data.arrangeInstead.length > 0) {
                 out.push('What would arrange it:');
                 for (const line of data.arrangeInstead as string[]) out.push(`    ${line}`);
@@ -3848,29 +2907,13 @@ export async function handleAdminManage(
 
         if (data.note) out.push(String(data.note));
 
-        // ── NO SERIALISED STATE OBJECT ────────────────────────────────────
-        //
-        // This used to append the whole result blob through
-        // `RichFormatter.embedJson`. The wrapper is an HTML comment, which is
-        // invisible in a browser and NOT invisible in the game's narrative log,
-        // where it is rendered as text - so every admin call dumped several
-        // kilobytes of internal state into the player's story. Admin output is
-        // out-of-world and it is legible; it is not a machine payload wearing
-        // prose as a hat. Anything an operator needs is rendered above by name,
-        // and `audit_log` holds the record.
+        // NO SERIALISED STATE OBJECT
         out.push(
             'ADMIN - out of world. Nothing above is narration, and no part of it is a claim about ' +
             `what a character perceives. Run flagged: ${data.runFlagged === true ? 'yes' : 'no'}.`
         );
 
-        // ── DID THE WORLD MOVE, OR WAS IT ONLY ASKED ABOUT ────────────────
-        //
-        // `runFlagged` is the engine's own answer: it is set by exactly the
-        // calls that alter a run, and it is what keeps such a run out of the
-        // death ledger. The key list beside it covers the calls that change the
-        // world AROUND the cultivator without touching the run row - a person
-        // stood in front of them, a site made nameable - which the flag alone
-        // does not see. A refusal changed nothing whatever it names.
+        // DID THE WORLD MOVE, OR WAS IT ONLY ASKED ABOUT
         const changed = !data.error && (
             data.runFlagged === true ||
             ['granted', 'moved', 'set', 'advanced', 'spawned', 'encounterId', 'site']
@@ -3885,11 +2928,6 @@ export async function handleAdminManage(
 
 /**
  * Help, in sections, because all of it at once is more than anybody reads.
- *
- * Twelve capabilities, four refusals, eleven action descriptions and two
- * footnotes arrived as a single wall and the design owner stopped reading it,
- * which is the correct response to a wall. `about` chooses a section, and the
- * default one is short enough to finish - the others say how to reach them.
  */
 function renderHelp(data: Record<string, any>): string[] {
     const section = String(data.section ?? 'what');

@@ -1,52 +1,5 @@
 /**
  * Pressure: the world changing on its own.
- *
- * This is the driver the world layer was missing. Seeding produces a populated
- * world; `advanceTime` moves the clock and fires what was already on the books;
- * neither of them makes anything NEW happen. Without this module a player sits
- * in seclusion for forty years, comes out, and finds that the only thing that
- * occurred is that some old people died of old age.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE LINE THIS MODULE HOLDS
- * ═════════════════════════════════════════════════════════════════════════
- *
- * It schedules THAT SOMETHING HAPPENED. It does not decide WHY anyone did it.
- *
- *   in scope      a sect loses a vein; an elder dies; a ruin is opened by
- *                 somebody else; a border moves; a deference zone is tested; a
- *                 faction folds; a war opens and, years later, settles
- *   out of scope  what the elder was thinking; whether the rival was right to
- *                 move; what anybody says about it afterwards
- *
- * The first list is weighted tables, seeded rolls and state updates, which is
- * code's job. The second is the LLM's, and it reads the resulting facts and
- * reasons from them. There is deliberately no personality model, no incentive
- * scoring and no decision tree here - that engine was written once, deleted on
- * purpose, and is not coming back.
- *
- * ── Binding to real things ───────────────────────────────────────────────
- *
- * Every template BINDS before it applies. `vein_lost` does not invent a vein:
- * it looks for a faction that actually holds one and a rival that actually
- * wants it, and if the world does not currently offer that pair, the template
- * declines and another is drawn. So the events that happen are the ones the
- * world's own state makes available, and a province with one faction left stops
- * producing sect wars because there is nobody to fight.
- *
- * ── Every event writes real state ────────────────────────────────────────
- *
- * A vein changing hands moves `controllingFactionId`, appends a
- * `LocationChange`, moves both treasuries, and deepens the standing between the
- * two factions - and only then writes the chronicle fact. Narration describes a
- * state change that actually happened, or there was no event.
- *
- * ── Determinism ──────────────────────────────────────────────────────────
- *
- * Keyed per YEAR, from `forStream(seed, 'pressure', year)`. The events of year
- * 1,412 are the same whether the simulation reached it in one advance or forty,
- * which is what keeps the split-advance property true once the driver is in the
- * loop.
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -232,33 +185,16 @@ import {
 export type PressureKind =
     /**
      * A house is ended by another house, and then the survivors choose.
-     *
-     * The one template that does not resolve in a single step: it hands off to
-     * `cascade.ts`, which runs a chain of forced choices out to its end. The
-     * chain usually stops at the first link, because doing nothing is on every
-     * table and is usually the heaviest entry on it. When it does not, the map
-     * is permanently different afterwards.
      */
     | 'house_destroyed'
     /**
-     * Something sealed came open on its own schedule, with nobody's intent
-     * behind it.
-     *
-     * Not drawn from the table at all - see `applyConvergences`. A window that
-     * only opens when the year's event budget happens to allow it is not a
-     * schedule, and the whole point of this one is that the world does it
-     * whether or not anybody is watching or interested.
+     * Something sealed came open on its own schedule, with nobody's intent behind
+     * it.
      */
     | 'convergence_opened'
     | 'convergence_closed'
     /**
      * The chosen of allied houses met, and something came of it.
-     *
-     * Not in TEMPLATES either, and for the same reason as `convergence_opened`:
-     * a circle's calendar is a property of the circle, not of how eventful the
-     * year happened to be. `gatherings.ts` owns everything about it and this
-     * module only calls it, on the same yearly line as advancement and
-     * recruitment.
      */
     | 'gathering'
     | 'vein_lost'
@@ -276,24 +212,10 @@ export type PressureKind =
     | 'war_settled'
     /**
      * A year of a war was fought, and the resolver said what happened.
-     *
-     * Not in TEMPLATES, for the same reason `gathering` is not: whether two
-     * houses at war met this year is a property of the war rather than of how
-     * eventful the year happened to be. `war-melee.ts` owns all of it - a war
-     * is `resolveMelee` over the parties the two sides put in the field, and
-     * this module only calls it on the same yearly line the settlement runs on.
-     *
-     * It replaces `thing_broken`, which was a raid party standing in for a
-     * fight nobody was simulating. Things still break in a war; they break in
-     * the fighting now, off the melee's own strike record.
      */
     | 'war_fought'
     /**
      * A war ended and the losing side's hold changed hands.
-     *
-     * Also not in TEMPLATES. `war-spoils.ts` owns it, and it fires off the same
-     * yearly line as the breakage above because a settlement is the last day of
-     * a war rather than an event of its own.
      */
     | 'spoils_taken'
     | 'zone_forbidden'
@@ -301,21 +223,12 @@ export type PressureKind =
     | 'disappearance'
     /**
      * Somebody worked on somebody: a purse, a house's weight, an account, or
-     * nothing but themselves, put down in front of a person to get something
-     * out of them.
-     *
-     * Here rather than only on the player's side because the reverse is this
-     * repo's commonest defect. The identical resolver in
-     * `engine/social-leverage/` runs on both.
+     * nothing but themselves, put down in front of a person to get something out of
+     * them.
      */
     | 'leverage_applied'
     /**
      * And years later, the other party understood what it had been for.
-     *
-     * Its own event and not a side effect of the one above, because the years
-     * in between are the whole of what makes it worth anything: being turned
-     * down is an embarrassment, and being used and finding out afterwards is
-     * what opens a grudge somebody's grandchildren are still carrying.
      */
     | 'leverage_understood';
 
@@ -328,12 +241,6 @@ export interface PressureEvent {
     deaths: DeathHandoff[];
     /**
      * Accounts this event opened, ready for the ledger. Usually none.
-     *
-     * Handed up rather than written, exactly as `deaths` is: there is no
-     * obligation ledger in `WorldState`, so a tick decides the rows and
-     * whoever holds a database persists them. A war's dead are the first
-     * things to use it - see `war-melee.ts` and the design owner's ruling that
-     * a war death is a grudge like any other.
      */
     opens?: ObligationInput[];
 }
@@ -348,10 +255,6 @@ export interface PressureResult {
 
 /**
  * Events per year for a world of this size.
- *
- * Scaled off live factions rather than fixed, so a world that has lost most of
- * its institutions goes quiet - which is the correct behaviour and is also what
- * a late age is supposed to feel like.
  */
 export const EVENTS_PER_FACTION_YEAR = 0.055;
 /** Floor, so even a nearly dead world is not silent. */
@@ -361,13 +264,6 @@ export const MAX_EVENTS_PER_YEAR = 3;
 
 /**
  * What a house feels toward the people who just embarrassed its rival.
- *
- * Deliberately just under `gatherings.ts`'s `ALLIED_STANDING` of 0.3. See the
- * comment at the founding template: this is the only positive edge the yearly
- * pass creates between two houses, and it has to be the beginning of an
- * alliance rather than a finished one, so that `settleHouseStanding`'s slow
- * drift has somewhere to take it and a schism does not instantly manufacture a
- * bloc.
  */
 export const SYMPATHY_AT_A_SCHISM = 0.25;
 
@@ -384,10 +280,6 @@ export interface PressureOptions {
 
 /**
  * Advance the world's own affairs across a span.
- *
- * Mutates `state` in place. It is called from the driver after the clock has
- * moved, over exactly the span that was actually advanced, so an interrupted
- * seclusion does not get a decade of consequences it never lived through.
  */
 export function applyPressure(
     state: WorldState,
@@ -413,15 +305,10 @@ export function applyPressure(
         yearsStepped++;
         const rng = forStream(state.seed, 'pressure', year);
 
-        // People go out looking, and sometimes they find something the Late
-        // Age left. BEFORE the event draw, so a ruin found this year is a ruin
-        // this year's `ruin_opened` can open - discovery and opening are two
-        // stages of one thing and the ordering is what makes them separable.
-        //
-        // This pass is the reason `ruin_opened` no longer runs the world out of
-        // ground. See `how-the-world-keeps-finding-more-ruins.ts` for the
-        // measured baseline it replaced, which was zero openings per century in
-        // the last fifth of a five-thousand-year run, in three seeds of three.
+        // People go out looking, and sometimes they find something the Late Age
+        // left. BEFORE the event draw, so a ruin found this year is a ruin this
+        // year's `ruin_opened` can open - discovery and opening are two stages of
+        // one thing and the ordering is what makes them separable.
         applyRuinProspecting(state, year, withinSpan(year * 365 + 40, fromDay, toDay));
 
         const live = state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f)).length;
@@ -453,27 +340,18 @@ export function applyPressure(
         // entire content of this one.
         events.push(...applyConvergences(state, year, fromDay, toDay));
 
-        // Then the parts of a year that are arithmetic rather than incident:
-        // people advance, institutions pay their bills, and children are born.
-        // Births last, so a year's dead are counted before its replacements.
-        // The ground under everybody, worked for a year by the people standing
-        // on it. FIRST of the arithmetic passes, so what a place has left is
-        // true of it before anybody advances, is recruited or is born onto it.
-        //
-        // This is the writer the depletion model never had. See
-        // `whatThePeopleHereTake`: every call site in the game asks the ground
-        // for ONE unit against a band that regrows forty-four over the same
-        // span, so mortal stock could not fall by any actor and a thousand
-        // world-years produced no worked-out band anywhere.
+        // Then the parts of a year that are arithmetic rather than incident: people
+        // advance, institutions pay their bills, and children are born. Births
+        // last, so a year's dead are counted before its replacements. The ground
+        // under everybody, worked for a year by the people standing on it. FIRST of
+        // the arithmetic passes, so what a place has left is true of it before
+        // anybody advances, is recruited or is born onto it.
         applyGroundPressure(state, withinSpan(year * 365 + 60, fromDay, toDay));
         // And the wars themselves, fought. A war is a group fight between the
-        // parties the two houses put in the field, and `war-melee.ts` is the
-        // whole of it: it decides nothing and only puts the two rosters in
-        // front of `resolveMelee`. On its own seeded stream so no existing draw
-        // anywhere moves.
-        //
-        // BEFORE the settlement, so a war ending this year still had this year,
-        // and the settlement reads the rosters this year's fighting left.
+        // parties the two houses put in the field, and `war-melee.ts` is the whole
+        // of it: it decides nothing and only puts the two rosters in front of
+        // `resolveMelee`. On its own seeded stream so no existing draw anywhere
+        // moves.
         const war = fightTheWarsThisYear(
             state,
             withinSpan(year * 365 + 61, fromDay, toDay),
@@ -526,12 +404,12 @@ export function applyPressure(
         applyFoundRoads(state, year, withinSpan(year * 365 + 80, fromDay, toDay));
         applyPromotions(state, withinSpan(year * 365 + 90, fromDay, toDay));
         // Somebody who mastered an art writes it out for the people coming up
-        // behind them. BEFORE the handout, so a copy written this year is a
-        // copy somebody can be given this year - and before advancement, so the
-        // ceiling it raises is the ceiling this year's review reads. See
-        // `applyManualCopying`: it is the only thing in the engine that puts a
-        // book back into circulation, and the only route to the top of the
-        // ladder that runs through a person rather than through luck.
+        // behind them. BEFORE the handout, so a copy written this year is a copy
+        // somebody can be given this year - and before advancement, so the ceiling
+        // it raises is the ceiling this year's review reads. See
+        // `applyManualCopying`: it is the only thing in the engine that puts a book
+        // back into circulation, and the only route to the top of the ladder that
+        // runs through a person rather than through luck.
         applyManualCopying(state, year, withinSpan(year * 365 + 95, fromDay, toDay));
         applyBookAcquisition(state, year, withinSpan(year * 365 + 100, fromDay, toDay));
         // Ground gets dug open, a material comes out of a hole, and a house
@@ -568,14 +446,6 @@ export function applyPressure(
             });
         }
         // And then the ties an ordinary life produces, on the same yearly line.
-        //
-        // AFTER recruitment and books, because a teaching line binds a student
-        // to whoever in their house can actually carry them and both of those
-        // passes decide who that is. BEFORE demography, so a household formed
-        // this year is a household a child can be born into this year rather
-        // than next. See `the-ties-an-ordinary-life-produces.ts` for what each
-        // of these is a by-product of - none of them is a new subsystem, and
-        // every one writes a row the world already had the state for.
         applyOrdinaryLifeTies(state, year, withinSpan(year * 365 + 170, fromDay, toDay));
         applyFactionEconomy(state);
         // And then the house spends some of what it just counted on putting
@@ -597,32 +467,7 @@ export function applyPressure(
     return { events, yearsStepped, born };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHERE PEOPLE ARE
-//
-// A region is a container. Nobody stands in one, and `npcsAt` matches on an
-// exact `locationId`, so anything placed on a region node is placed nowhere
-// anybody can meet it.
-//
-// This was placing every newborn there, and the result was a province that
-// hollowed out while its headcount held steady. Measured over a seeded,
-// advanced world:
-//
-//   day 0   Sweptground 25   Low Fall 30   Kettle 14   Sixmile 13
-//   +20y    Sweptground 18   Low Fall 18   Kettle  6   Sixmile  6
-//   +50y    Sweptground  7   Low Fall  4   Kettle  0   Sixmile  1
-//
-// Total alive held at about 350 the whole time - nobody was dying off. "The
-// Quiet Marches (region)" went from 39 to 170 over the same span. Every
-// settlement was draining into a node nobody can walk into, and the encounter
-// system draws its cast from who is present, so the end state is person-free
-// events forever.
-//
-// The two helpers below are the fix, and they are also the fix for a second
-// bug of the same shape: three separate filters compared things to `region.id`
-// - a newborn's home, a parent's whereabouts, and a faction's seat. All three
-// wanted "under this region", and none of them said so.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The region a location sits in, or itself when it is one.
@@ -663,15 +508,6 @@ function locationIdsUnder(state: WorldState, regionId: string): Set<string> {
 
 /**
  * Somewhere in this region a person can actually be born.
- *
- * Habitability is read off columns that already exist rather than a new tag:
- *
- *   kind        a settlement, or ground a house holds. Not a vein, a ruin, a
- *               scar or a region node - nobody lives in any of those.
- *   thresholds  survivable by a newborn, which means at ordinal zero. The same
- *               `survival` bar everything else reads, so a place calibrated
- *               for Nascent Soul does not quietly acquire villagers.
- *   sealed      a sealed pocket has no births in it, by definition.
  */
 function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecord[] {
     const under = locationIdsUnder(state, region.id);
@@ -688,15 +524,6 @@ function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecor
 
 /**
  * How many people a place holds, relative to the others.
- *
- * Set at seeding from the settlement kind the gazetteer already carries, and
- * read here. The draw HAS to be weighted: there are far more houses in the
- * catalog than there are towns, so drawing uniformly over habitable children
- * put 61% of the living world inside a compound within a hundred and fifty
- * years. A city is not a hamlet and a sect's ground is a household.
- *
- * Defaults to 1 rather than 0, so a location seeded before this column existed
- * still receives people instead of silently becoming uninhabitable.
  */
 function populationWeightOf(location: LocationRecord): number {
     const raw = Number(location.data.populationWeight ?? 1);
@@ -721,21 +548,6 @@ function drawBirthplace(
 
 /**
  * People keep being born.
- *
- * Not a weighted event - a steady demographic floor, run every year, closing
- * the gap between the living population and what the world can carry. Without
- * it five centuries produce an empty province and a set of factions that folded
- * for want of members, which is a modelling artefact rather than history.
- *
- * They are born IN A PLACE - a village, a market town, the ground a house
- * holds - and never on the region node that contains those. See the block
- * above for what happened while they were.
- *
- * Newcomers are generated exactly the way everybody else is: root and
- * attributes rolled from the world seed, realm DERIVED from those inputs over
- * the years they have lived, capped by the province they were born in. Where a
- * living parent is available they are attached to that lineage, which is what
- * makes a descendant three centuries later something the world can point at.
  */
 function applyDemography(
     state: WorldState,
@@ -770,21 +582,6 @@ function applyDemography(
         const age = own.int(16, 22);
 
         // A place, not the container - and never the container.
-        //
-        // This used to fall back to the region node when a province had nowhere
-        // habitable left, described as a loud last resort. It was loud, and it
-        // was also wrong: sealings and rising thresholds empty a province's
-        // habitable list over centuries, so past a few hundred years EVERY birth
-        // in that province landed on its container. Measured, the count of
-        // people standing on containers fell 243 -> 14 by year 250 and then
-        // climbed to 265 by year 600, which is not a last resort firing, it is
-        // the normal path.
-        //
-        // People are born where people can live. So the province is chosen from
-        // the ones that HAVE somewhere, and if nowhere in the world does, then
-        // no child is born - which is the honest reading of a world with no
-        // habitable ground left, and is far louder than quietly stacking a
-        // generation onto a map node nobody can stand on.
         const habitable = birthplacesIn(state, region);
         const somewhere = habitable.length > 0
             ? { region, places: habitable }
@@ -831,32 +628,8 @@ function applyDemography(
             obstacles: ['Born here.']
         }, day);
 
-        // A parent, where the world has one to offer: same region, old enough,
-        // and alive. Lineage is what long time-skips land on.
-        //
-        // This said `n.locationId === region.id`, which was only ever true of
-        // the cohort the placement bug had parked on the container. Once births
-        // land in real settlements that filter matches nobody and every child
-        // is born without a surname or a line - so the same bug would have
-        // silently taken lineage with it. It is the region, not the node.
-        //
-        // AND A HOUSEHOLD, NOT ONLY A LINEAGE EDGE.
-        //
-        // This wrote the edge and threw the person away, so a world could hold
-        // four hundred descendants and zero families: after 120 years and 498
-        // living people the entire world held 0 kin ties, 0 spouse ties and 6
-        // friendships, and every absence run against it reported nothing to
-        // lose. The edge is the bloodline; the ties are the people, and the
-        // absence pass reads the ties.
-        //
-        // The parent is drawn from the child's OWN PLACE where the place has
-        // anybody eligible, and only falls back to the province when it does
-        // not. A household is people who live together, and a parent two days'
-        // walk away is not one - it also breaks every consumer that asks who
-        // was standing near somebody when they disappeared. `couldParent` is
-        // the eligibility, and it caps how many children one person can be the
-        // parent of, because an unbounded draw over three centuries makes a
-        // long-lived cultivator the parent of forty people.
+        // A parent, where the world has one to offer: same region, old enough, and
+        // alive. Lineage is what long time-skips land on.
         const oldEnough = (n: NpcRecord) => day - n.identity.bornOnDay >= years(age + 18);
         const here = couldParent(
             roster.living.filter(n => oldEnough(n) && n.locationId === home.id), age, day);
@@ -869,26 +642,7 @@ function applyDemography(
             ? candidates[own.int(0, candidates.length - 1)]
             : null;
         if (parent) {
-            // ── WHAT THE LINE COMES TO IN THIS CHILD ─────────────────────
-            //
-            // `bloodlineTierForChild` was argued out in detail, tested, and had
-            // NO WRITER ANYWHERE. Nothing in the world ever put an `AbilityTier`
-            // on a person, so it returned null for everybody alive and the whole
-            // half of the design that rests on it - dilution, the clan that will
-            // not marry out, the clan pricing its own decay, the child who runs
-            // - could not occur. This is the writer.
-            //
-            // Both parents, and the second one is where the parentage field
-            // earns its place: a household is whoever two people are, and the
-            // two who could have had this child between them is a narrower
-            // question. Where the household's other half is not one of them the
-            // child has one blood parent as far as the world knows, which is
-            // the ordinary case for most of the population anyway - and a line
-            // with one carrier steps down, which is exactly right.
-            //
-            // Nothing here decides the ladder. `bloodlineForChild` reads both
-            // parents and nothing else, there is no dilution constant, and a
-            // child of two carriers holds the line because there are two of it.
+            // WHAT THE LINE COMES TO IN THIS CHILD
             const spouseTie = parent.relationships.find(r => r.kind === 'spouse');
             const spouseAt = spouseTie ? roster.at.get(spouseTie.targetId) : undefined;
             const spouse = spouseAt === undefined ? null : state.npcs[spouseAt];
@@ -927,19 +681,11 @@ function applyDemography(
             if (at >= 0) state.lineages[at] = next;
         }
 
-        // A faction that takes applicants takes applicants. Without this the
-        // rolls only ever shrink: every founding member dies inside two
-        // centuries and nobody replaces them, and the institutions fold for a
-        // reason that is arithmetic rather than history.
-        // Seats moved, and this did not follow them.
-        //
-        // `f.seatLocationId === region.id` was true while a faction's seat WAS
-        // the region node. Sects now hold ground of their own - a `sect_seat`
-        // child of the region - so that comparison became false for every
-        // faction in the world, `admitting` was always empty, and the rolls
-        // could only ever shrink. A regression introduced with the sect-ground
-        // work and not caught, because nothing in that suite advanced a world.
-        // The question was always "is its seat in this region".
+        // A faction that takes applicants takes applicants. Without this the rolls
+        // only ever shrink: every founding member dies inside two centuries and
+        // nobody replaces them, and the institutions fold for a reason that is
+        // arithmetic rather than history. Seats moved, and this did not follow
+        // them.
         const admitting = state.factions.filter(
             f => f.dissolvedOnDay === null && isBelowTheLid(f) &&
                 f.tags.includes('recruits') &&
@@ -954,31 +700,21 @@ function applyDemography(
             npc = { ...npc, factionId: joined.id, factionRankIndex: 0 };
         }
 
-        // FOSTERING, before the household is written and after the lineage edge
-        // is. A child whose parent's own house will not keep them, or whose
-        // birth the household will not own, is placed with somebody the parent
-        // personally knows - which is the whole of where they end up, and is
-        // decided by the parent's ties rather than by any list.
-        //
-        // On its own seeded stream, so a world with nobody to foster draws
-        // exactly what it drew before this pass existed.
+        // FOSTERING, before the household is written and after the lineage edge is.
+        // A child whose parent's own house will not keep them, or whose birth the
+        // household will not own, is placed with somebody the parent personally
+        // knows - which is the whole of where they end up, and is decided by the
+        // parent's ties rather than by any list.
         const fostered = parent
             ? placeAChildTheirHouseWillNotKeep(
                 state, npc, parent, ordinal, day, forStream(state.seed, 'fostering', id), roster)
             : null;
         if (fostered) npc = fostered;
 
-        // The household the birth actually created, written last so the child's
-        // own record is finished before anybody is bound to it. The parent's
-        // half and the siblings' halves go into `state.npcs` in place; the
-        // child's half comes back on the record about to be pushed.
-        //
-        // NOT WRITTEN FOR A FOSTERED CHILD, and that omission is the mechanic
-        // rather than a gap. The lineage edge above stands - blood is blood,
-        // and an heir still inherits down it - while the personal `parent` tie
-        // does not, because the two of them never met and the child is not told
-        // whose they are. Somebody can therefore inherit a grudge from a parent
-        // whose name they do not hold, which needed no new field to say.
+        // The household the birth actually created, written last so the child's own
+        // record is finished before anybody is bound to it. The parent's half and
+        // the siblings' halves go into `state.npcs` in place; the child's half
+        // comes back on the record about to be pushed.
         if (parent && !fostered) {
             npc = bindNewbornToHousehold(state, npc, parent.id, day, roster).child;
         }
@@ -999,25 +735,11 @@ function applyDemography(
 
 /**
  * How often a birth is one the household will not own.
- *
- * Applied only where the parent ALREADY HAS A HOUSEHOLD, which is what makes
- * the number small without anybody tuning it small: spouses are rare in this
- * world - `applyHouseholds` pairs at three percent a year - so the product is
- * a handful of people a century rather than a category. A child born to
- * somebody unattached is nobody's scandal and gets none of this.
- *
- * It is a rate on a circumstance, not a judgement. What follows from it is a
- * placement and one shame record; nothing here scores anybody.
  */
 const BORN_OUTSIDE_THE_HOUSEHOLD = 0.05;
 
 /**
  * The world's own reason a child has to go somewhere else, or null.
- *
- * Two, and they are opposites: an institution with a bar its own members'
- * children cannot clear, and a birth a household will not own. The first is
- * derived from the catalog and is nobody's fault; the second is drawn, and it
- * is the one that carries a shame.
  */
 function whyThisChildCannotStay(
     parent: NpcRecord,
@@ -1041,21 +763,6 @@ const ASSESSED = 'assessed:';
 
 /**
  * A child placed with somebody their parent knows, in the running world.
- *
- * The glue, and only the glue: every decision in it belongs to
- * `a-child-their-own-house-will-not-keep.ts`, which is pure and knows nothing
- * about a `WorldState`. What happens here is reading the parent's own ties off
- * their record, handing them over, and writing the answer down.
- *
- * Returns the child with their placement on it, or null when nothing happened -
- * which is nearly every birth in the world and must stay that way.
- *
- * WHAT IS NOT WRITTEN. There is no obligation ledger in `WorldState` - this
- * layer hands social rows back to its caller rather than storing them, the way
- * `driver.ts` does with absences and deaths - so the receipt `fosterTheChild`
- * produces is not persisted by the world. What the world keeps is what the
- * world can keep: the placement, the ties, the once-only mark, the shame on the
- * person carrying it, and a secret fact naming everybody who knows.
  */
 function placeAChildTheirHouseWillNotKeep(
     state: WorldState,
@@ -1130,11 +837,6 @@ function placeAChildTheirHouseWillNotKeep(
     // The child is on the receiving house's roll, at the bottom of it, WITHOUT
     // having met its admission ordinal. That exception is the whole of what the
     // word bought, and `barSkipped` on the result is the figure it skipped.
-    //
-    // `fostered-from` names the SENDING house, which is the only thing the
-    // child's own record can carry that the assessment below needs. It is not
-    // the child knowing anything - a tag is the world's bookkeeping, and the
-    // child holds no knowledge row at all.
     let updated: NpcRecord = {
         ...child,
         factionId: placed.houseId,
@@ -1221,19 +923,8 @@ function placeAChildTheirHouseWillNotKeep(
 }
 
 /**
- * The one assessment a fostered person ever gets, on the terms their own house
- * set when it sent them away.
- *
- * Almost every house in the world attaches no terms at all, so this pass has
- * nothing to do on almost every world - `fosterageTermsOf` returns undefined
- * and the person is simply where they were raised, for good. Where there ARE
- * terms, both halves are read off the terms object and neither number appears
- * in this file.
- *
- * It fires at the first of two moments: the day they reach the rung, or the day
- * the deadline arrives. Reaching the rung after the deadline is a magnificent
- * career answering the wrong question, and the assessment says so - which is
- * the whole reason `metOrdinal` and `inTime` are reported separately.
+ * The one assessment a fostered person ever gets, on the terms their own house set
+ * when it sent them away.
  */
 function applyFosterageReturns(state: WorldState, day: number): number {
     let assessed = 0;
@@ -1300,61 +991,6 @@ function reasonSummary(reason: FosteringReason): string {
 
 /**
  * People keep cultivating.
- *
- * TWO PASSES OVER ONE ROTATION, and the split is the whole design:
- *
- *   THE DERIVATION   the same closed-form walk seeding uses, run again against
- *                    the age they have now. It is right about what it is for -
- *                    an ordinary life on an ordinary budget arriving at an
- *                    ordinary rung - and it is what carries almost everybody
- *                    from nothing to wherever their talent and their book stop
- *                    them. Without it the population's realms are frozen at the
- *                    moment of seeding.
- *   THE LADDER       when the derivation has nothing further to give and they
- *                    are still below what their book and their province permit,
- *                    the world strikes at the wall FOR REAL - the same
- *                    `attemptBreakthrough` the player gets, with the same
- *                    odds, the same failure table, the same wounds and the same
- *                    deaths. See `an-npc-striking-at-the-next-wall.ts` for what
- *                    that closes and why the derivation alone could never
- *                    produce an apex.
- *
- * A slice of the roster per year rather than the whole of it, so the cost is a
- * constant and the outcome is decomposable. A realm only ever goes up; a person
- * can now come out of a review WORSE - wounded, cracked, halted or dead - which
- * is what a real wall does and what the derivation could not express.
- *
- * ── A ROTATION, NOT A DRAW ────────────────────────────────────────────────
- *
- * This used to pick `living / 40` people at random each year. A draw with
- * replacement over a hundred-year lifespan leaves a seventh of everybody NEVER
- * LOOKED AT, and it gives nobody a guaranteed look at the age their walk
- * finally clears a rung. That bites hardest at exactly one place: ordinal 12 to
- * 13, where lifespan goes from a hundred years to two hundred. Somebody whose
- * walk would carry them across at age ninety and who is not drawn in their last
- * decade dies at a hundred, in Qi Condensation, having been able to cross the
- * whole time - and the rung they failed to reach was the one that would have
- * bought them the years to go further.
- *
- * Measured on a live world at three thousand years, before this: 356 of 492
- * living people were standing BELOW the ordinal the rules already granted them
- * at their own age, ceiling and rank. The distribution was not being produced by
- * the ladder, it was being produced by a coin.
- *
- * So the roster is sliced by a stable hash of the id and one slice is walked per
- * year: every living person is reviewed once every `ADVANCEMENT_REVIEW_YEARS`
- * whatever else happens, and nobody is skipped for a century. Nothing about it
- * is stochastic, so nothing about it draws on the world seed - a schedule is not
- * a sample, and running it off `forStream` would have implied otherwise to the
- * next reader.
- *
- * The period is shorter than the old expected interval and that part IS a tuning
- * change, so it was measured rather than picked: a Qi Condensation life is about
- * eighty adult years, so twelve gives somebody six reviews inside it instead of
- * a Poisson two. The cost is still a constant per year and still flat across
- * five centuries - 0.45 to 0.75 seconds per simulated century on the reference
- * world, against three and a bit times as many walks, because the walk was never
- * the whole of the pass.
  */
 const ADVANCEMENT_REVIEW_YEARS = 12;
 
@@ -1423,17 +1059,6 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         ) ?? state.locations.find(l => l.id === npc.locationId);
         const regionCeiling = Number(region?.data.localCeilingOrdinal ?? 20);
         // THE GROUND THEY ACTUALLY GET, WHICH IS A FRACTION OF A YEAR.
-        //
-        // This read the region's ambient off the `region:` tag and nothing
-        // else, so a house's own chambers were not an input to how fast its
-        // people climbed. Ground is the largest term in the model at x8 and
-        // measured, not one person in the world was drawing on any of the good
-        // ground - 434 dense and spirit-tide locations stood empty, and those
-        // locations ARE the sect chambers.
-        //
-        // A house grants days rather than a residence, so this is the year
-        // averaged over the chamber and ordinary ground. Somebody in no house
-        // gets a share of zero and the region rate exactly, unchanged.
         const provinceRate = Number(region?.data.ambientRateMultiplier ?? 1);
 
         // The days they are NOT in the vein chamber are spent on their own
@@ -1458,44 +1083,11 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         const age = Math.floor((day - npc.identity.bornOnDay) / 365);
 
         // THE BOOK IS THE HARDER OF THE TWO CEILINGS.
-        //
-        // The province says what has ever been done here; the manual says what
-        // THIS person can do at all. Without a road there is no progress - not
-        // slow progress, none - which is the player's rule (`NO_MANUAL_CEILING`)
-        // and the world was not playing by it, because until `manuals.ts` ran
-        // nobody in the world held a book at all.
-        //
-        // A capped cultivator is not stuck by accident. They are standing in
-        // the situation acquiring a new manual exists for, and the right outcome is
-        // that they stop here until they find a later volume, are taught, or
-        // write one.
-        // What they can be CARRIED to, which for a disciple of a house that
-        // teaches in person is the shelf they are being taught off rather
-        // than the nothing they are holding. See `reachableCeilingFor`.
         const manualCeiling = reachableCeilingFor(state, npc) || BOOKLESS_CEILING;
         const ceiling = Math.min(regionCeiling, manualCeiling);
         if (ceiling <= npc.cultivation.realmOrdinal) continue;
 
         // THE SHELF THEY CAN ACTUALLY REACH, not a default one.
-        //
-        // `deriveLife` prices the whole climb on `origin.roadQuality`, and
-        // `bestReadable` describes an origin as a level of SHELF - "an origin
-        // reaches a level of shelf, and the reader takes the best thing on it
-        // they can read". This call passed no origin at all, so every
-        // cultivator in the world climbed on the default one whatever house
-        // they were in, whatever rank they held and whatever they were holding.
-        //
-        // Measured with that in place: six of the twelve spirit roots
-        // asymptoted at ordinal 12, one rung below Foundation Establishment,
-        // and across five hundred years the world recorded 53 crossings INTO
-        // rung 12 and exactly ZERO into 13. Not a thin flow - a wall, and it
-        // stood one rung under the first realm boundary.
-        //
-        // Membership is the shelf. Somebody inside a house reads that house's
-        // working book; somebody senior in it reaches further up; somebody with
-        // no house has whatever a market stall sold them. That is the same
-        // gradient `manuals.ts` already applies to WHICH book they hold, and it
-        // is why joining a house is worth forty years of sweeping.
         const membership: OriginTierKey = !npc.factionId
             ? 'thin_county'
             : npc.factionRankIndex >= 3 ? 'dao_house_bloodline'
@@ -1503,28 +1095,6 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
                     : 'sect_retainer';
 
         // AND THE BETTER OF THAT AND WHAT THEY WERE BORN WITH.
-        //
-        // The block above reinterpreted `origin` as the shelf a MEMBERSHIP
-        // reaches, which fixed a real wall - before it, every cultivator in the
-        // world climbed on the default origin and six of twelve spirit roots
-        // asymptoted one rung under Foundation Establishment. What it also did,
-        // silently, was overwrite the origin a person was actually born with.
-        //
-        // So a child of an apex house standing at rank 0 climbed as a
-        // `sect_retainer`, and a farm child at rank 3 climbed as a
-        // `dao_house_bloodline`. Birth never touched the climb at all. Measured
-        // on people who actually completed a band transition, origin showed no
-        // consistent effect and REVERSED between transitions - market_town
-        // faster from 13-16 to 17-20 and slower from 17-20 to 21-24 - which is
-        // what a variable being overwritten by an unrelated one looks like.
-        //
-        // The honest reading is that both are true at once and neither replaces
-        // the other. AGENTS.md states the thesis: an origin buys INPUTS and
-        // never rank. A family does not stop funding somebody the day they
-        // sweep a courtyard, and a house does not withhold its shelf from a
-        // pauper it promoted. So take whichever supplies the better road, which
-        // is what `deriveLife` prices the climb on, and let the other one be
-        // the floor rather than the answer.
         const born = npc.identity.origin;
         const shelf: OriginTierKey =
             manualQualityRank(getOrigin(born).roadQuality)
@@ -1547,16 +1117,7 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
             continue;
         }
 
-        // ── THE DERIVATION HAS RUN OUT. THE LADDER TAKES OVER. ────────────
-        //
-        // Everybody who reaches this line has a rung the walk cannot improve
-        // and a ceiling above them they are still allowed to reach. That is the
-        // entire high band of the world: a life-walk saturates in its first few
-        // centuries and the realm it reached grants thousands of years more.
-        //
-        // The conditions are the three the design says decide the top of the
-        // ladder, and all three are read rather than invented: the ground under
-        // them, the book in their hands, and whoever is teaching them.
+        // THE DERIVATION HAS RUN OUT. THE LADDER TAKES OVER.
         const conditions = {
             ambient: ambientAround(state, npc, region),
             rateMultiplier,
@@ -1586,25 +1147,25 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
 
         // The ledger gets the crossing whichever way it went. This is the single
         // richest event in a cultivator's life and it used to leave no trace at
-        // all: `attemptBreakthrough` returned the trial, the roll, the wound,
-        // the years burned and whether they would ever cross again, the record
-        // took every one of them, and the world's own history said nothing
-        // happened. A failure is written as fully as a success, because a
-        // cultivator who cracked at a wall and is standing at their rung
-        // finished is the population the failure table exists to produce.
-        //   See `recording-what-a-crossing-did.ts`.
+        // all: `attemptBreakthrough` returned the trial, the roll, the wound, the
+        // years burned and whether they would ever cross again, the record took
+        // every one of them, and the world's own history said nothing happened. A
+        // failure is written as fully as a success, because a cultivator who
+        // cracked at a wall and is standing at their rung finished is the
+        // population the failure table exists to produce. See
+        // `recording-what-a-crossing-did.ts`.
         if (strike.died) {
             state.npcs[at] = markDead(
                 npc,
                 day,
-                // NAME WHAT KILLED THEM. A death at this height has to be an
-                // event the world can account for rather than an entry in a
-                // pool: the design's rule is that nothing ordinary may end
-                // somebody at Tribulation Transcendence, and "the wall did not
-                // open" said nothing about which wall or what came down. At
-                // ordinals 40 to 44 every step summons lightning, so a death
-                // there IS the tribulation - one of the ends the design
-                // permits - and below that it is the crossing itself.
+                // NAME WHAT KILLED THEM. A death at this height has to be an event
+                // the world can account for rather than an entry in a pool: the
+                // design's rule is that nothing ordinary may end somebody at
+                // Tribulation Transcendence, and "the wall did not open" said
+                // nothing about which wall or what came down. At ordinals 40 to 44
+                // every step summons lightning, so a death there IS the tribulation
+                // - one of the ends the design permits - and below that it is the
+                // crossing itself.
                 triggersHeavenlyTribulation(npc.cultivation.realmOrdinal)
                     ? `Called down the tribulation at ${rankName(npc.cultivation.realmOrdinal)} `
                       + 'and did not hold it.'
@@ -1623,10 +1184,6 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
 
 /**
  * The band of the ground somebody is actually standing on.
- *
- * Their own place first, because a sect seat inside a thin province is not a
- * thin place and the location record already says so; the province second; and
- * 'normal' last, which is what `deriveLife` has always defaulted to.
  */
 function ambientAround(
     state: WorldState,
@@ -1641,103 +1198,21 @@ function ambientAround(
 
 /**
  * Sects take people on as they become worth taking on.
- *
- * Admission is a realm threshold, and a newcomer is almost never over it: a
- * sect that only ever looked at people on the day they were born would empty
- * within a generation, and then fold for want of members. So the rolls are
- * refreshed each year from whoever has since become admissible - which is what
- * a recruitment cycle IS, and is why every faction has one on the books.
- *
- * A flow, not a decision: nobody here weighs whether to apply.
  */
 /**
  * Books move after seeding, and not because anybody joined anything.
- *
- * Promotion inside a house reaches further up its shelf; the unbacked buy what
- * a stall sells. Both are additions only, so this is safe to run over and over,
- * and it is what turns a static shelf into the thing that lets a population
- * pyramid actually flow - somebody climbs to a house's admission bar, is taken
- * on, sweeps for forty years, and only then is handed the book that lets them
- * pass the ceiling the last one gave them.
  */
 /**
  * Houses raise people, and the seats above them run out.
- *
- * Ordered BEFORE `applyBookAcquisition` in the year, deliberately: a promotion
- * is what entitles somebody to the next book, and running these the other way
- * round would make every disciple wait a full year between the rank and the
- * manual it was supposed to buy them.
- *
- * See `promotion-inside-a-house.ts`. `factionRankIndex` was written at seeding
- * and at recruitment and never advanced again, so 340 of 364 house members sat
- * at rank 0 by year 500 - and since a rank-0 member is entitled to exactly one
- * book however deep their house's shelf is, nobody alive held a manual reaching
- * past ordinal 17.
  */
 /**
  * Somebody standing at the end of their shelf finds a way past it.
- *
- * Its own pass, and deliberately NOT part of the advancement sample.
- * `applyAdvancement` looks at roughly one living cultivator in forty each year
- * because a life-walk is expensive; asking whether somebody found a book is two
- * comparisons. Putting the check inside that sample would multiply its odds by
- * a fortieth without anybody intending it - and did, in the first version of
- * this, which never got wired at all and so fired zero times.
- *
- * The capped are a small set at any moment, so visiting all of them yearly
- * costs nothing and the stated odds are the real odds. Without this the world
- * has no route out of a house's library whatsoever: isolated lives reach
- * ordinal 41, and nobody in a living world had ever exceeded 29.
  */
 /**
  * People move back into ruined ground, because they have nowhere else to go.
- *
- * The world consumed places and never made one. Every settlement and sect seat
- * in a seeded world is eventually turned into a ruin or a forbidden zone by
- * disasters, falls and expenditures - and nothing anywhere put a habitable
- * place back. Measured before this existed:
- *
- *     years   living   habitable places
- *         0      565           49 of 49
- *       500      493           25 of 25
- *      1000      502           11 of 11
- *      1500      147            0 of 0
- *      2500        0            0 of 0
- *
- * The world went extinct, and the ladder collapsing to ordinal 11 on the way
- * was a symptom rather than the disease. Births need somewhere a person can
- * stand; when the last habitable place became a ruin, nobody was born again.
- *
- * Resettlement is the honest fix rather than slowing the destruction, because
- * the destruction is correct - houses do fall and ground does go bad. What was
- * missing is the other half of what people actually do, which is move into the
- * wreckage and live in it. A ruin with nobody in it is a site to be dug; a ruin
- * somebody has moved back into is a village with very old walls, and this world
- * should have both.
- *
- * Deliberately does NOT resettle a forbidden zone. Ground that kills you is not
- * somewhere desperation solves, and keeping that distinction is what stops this
- * from quietly undoing the catastrophe layer.
  */
 /**
  * A year of the world's own people working the ground they stand on.
- *
- * THE WRITER THE DEPLETION MODEL DID NOT HAVE. `what-a-place-still-has-in-the
- * -ground.ts` was reachable from three verbs and all three asked for a single
- * unit against a band that grows back forty-four over the same span, so the
- * `drawn` column read as a working model over an input too small to move it.
- * The pressure is the population, and it always was - a player's herb is a
- * rounding error against a district's year and is supposed to be.
- *
- * Where people ARE is `NpcRecord.locationId` and nothing else, which is the
- * one record of presence this world keeps. So a place nobody stands on is
- * pressed on by nobody, and that is the mechanism rather than an omission: the
- * wilds keep what the ground around the towns has lost, and going further out
- * is the answer to a district that has been worked out. Both halves of that
- * sentence are now true of the same table.
- *
- * Nothing is drawn. One walk of the roster, one pass over the places that have
- * anybody on them, and arithmetic on a headcount and a clock.
  */
 function applyGroundPressure(state: WorldState, day: number): number {
     const standing = new Map<string, number[]>();
@@ -1767,44 +1242,9 @@ function applyGroundPressure(state: WorldState, day: number): number {
 
 /**
  * What is wrong with the world's places, opened, extended and lifted.
- *
- * THE WRITER THE STATUS LAYER NEVER HAD. `what-is-true-of-a-place-right-now.ts`
- * is complete - the record, the clock, the join, the price multiplier, the
- * stopped passage, the ceiling on what anybody local can tell you - and until
- * now nothing in `src/` ever made one. Measured: a thousand world-years, zero
- * rows, with the played `investigate` verb reading off the empty column and
- * reporting with confidence that nothing was wrong anywhere.
- *
- * What opens one is in `what-goes-wrong-with-a-place-and-what-ends-it.ts` and
- * every opener binds to something else the world already wrote. What LIFTS one
- * is the same question asked again: a status the world would still propose
- * today is extended, and one it would not is over. So there is no reviewer and
- * no table keyed on `kind`, which is what keeps the eleventh kind costing a row
- * and no branch.
- *
- * ── The draw ─────────────────────────────────────────────────────────────
- *
- * One stream, keyed `area-status`, which no other pass uses. A world in which
- * no harvest fails draws exactly what it drew before this pass existed.
  */
 /**
  * Wars that have reached the day they were scheduled to end, ended.
- *
- * A FINDING RATHER THAN A FEATURE, and it was found by wiring the status layer
- * on top of it. `war_opened` tags both houses `at_war` and schedules a
- * `war_resolves` effect two to twenty-five years out. **Nothing anywhere ever
- * removed the tag.** The effect fired, `factKindFor` turned it into a fact
- * saying the war had come to an end, and both houses went on carrying the tag
- * for the rest of the world's life - so by year five hundred practically every
- * institution in the world was permanently at war with somebody, and
- * `war_settled` was a `PressureKind` with no producer anywhere in `src/`.
- *
- * Nothing noticed because nothing read the tag. The moment a status was hung
- * off it the world grew 440 live wars, which is what an unended state looks
- * like when something finally consults it.
- *
- * So this is the other half of `war_opened`, on the same yearly line, and it is
- * where `war_settled` comes from.
  */
 function settleWarsThatAreOver(state: WorldState, day: number): PressureEvent[] {
     const events: PressureEvent[] = [];
@@ -1886,14 +1326,7 @@ function applyAreaStatuses(state: WorldState, year: number, day: number): AreaSt
         rng: forStream(state.seed, 'area-status', year)
     });
 
-    // ── WHAT IS ALREADY TRUE ──
-    //
-    // Extended where the world still says so, lifted where it does not, and
-    // left alone until its own review day arrives. A status is not re-examined
-    // every year: `reviewOnDay` is when the world looks again, and looking
-    // early would make the date decoration.
-    // When each key last stopped being true, so a capped status cannot simply
-    // reopen the following spring and run out its whole life in instalments.
+    // WHAT IS ALREADY TRUE
     const endedToday = new Map<string, number>();
     for (const status of state.statuses) {
         if (status.liftedOnDay === null) continue;
@@ -1914,15 +1347,6 @@ function applyAreaStatuses(state: WorldState, year: number, day: number): AreaSt
         // thing in the same place is one thing, not two.
         proposed.delete(key);
         // THE REVIEW WINDOW IS THE PASS INTERVAL, AND IT HAS TO BE.
-        //
-        // `isStatusRunningOn` is deliberately false ON the review day - an
-        // unattended status expires rather than persisting, which is the right
-        // default and the reason a famine cannot outlive the world. But this
-        // pass runs once a year and most review dates are a year out, so
-        // looking only at rows that are still running meant every status fell
-        // exactly through the gap: measured, 196,914 rows opened over five
-        // centuries and NOT ONE was ever extended or lifted. Reviewing a year
-        // either side is the world actually looking.
         if (day + DAYS_PER_YEAR < status.reviewOnDay) continue;
         // AND A CAUSE THAT NEVER GOES AWAY DOES NOT BUY A STATUS THAT NEVER
         // ENDS. The layer's own line is that a status is what is true of a
@@ -2140,11 +1564,10 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 
         // In reach of the gate, which means the same province.
         //
-        // This used to accept a seat that WAS the npc's location or its direct
-        // parent. Both of those were true only while factions were seated on
-        // region nodes and everybody was standing on one; with real settlements
-        // and real sect grounds the seat is a sibling of the npc's village, not
-        // its parent, and the filter matched nobody.
+        // Not "the seat IS the npc's location, or its direct parent". That
+        // holds only while factions sit on region nodes and everybody stands
+        // on one; with real settlements and real sect grounds the seat is a
+        // SIBLING of the npc's village, and such a filter matches nobody.
         const home = regionOf(state, npc.locationId);
         const options = admitting.filter(f =>
             npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
@@ -2168,88 +1591,24 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 
 /**
  * Factions pay for themselves, or they do not.
- *
- * A vein is income; members and tribute are cost. That is the whole model, and
- * it is enough: a sect holding a vein it can work stays solvent, one that has
- * lost its vein starts dying immediately, and one that pays a large tribute
- * upward lives closer to the line than one that answers to nobody. The
- * `faction_fell` template then binds to whoever the arithmetic has already
- * ruined, rather than picking a victim.
  */
 /**
  * How often a house puts a party on the road, per year.
- *
- * A rate on the INSTITUTION rather than on the event budget: a sending is
- * ordinary business, and putting it on the fifty-five-events-a-century table
- * would have made it rare for the wrong reason. What this counts is a sending
- * the world RESOLVES - a party assembled, sent, and either back or not - and
- * not every errand anybody runs, which is why it is one every five years for a
- * house rather than several a year.
- *
- * MEASURED AGAINST THE PYRAMID, WHICH IS WHAT SETS IT. Sendings cost people,
- * and `whoTheHouseCanSend` sends the strongest a house can spare, so the rate
- * is the term that decides how hard this pass leans on the top of the ladder.
- * Pooled over five seeds at five centuries:
- *
- *   without this pass    2363 / 248 /  88
- *   0.55 a house-year    2427 / 165 /  53
- *   0.35                 2389 / 203 /  72
- *   0.2                  2366 / 231 /  84
- *
- * A wiring change is not allowed to restructure the population. At 0.2 the
- * world loses people on the road - which it could not before - and the shape
- * survives it.
  */
 const SENDINGS_PER_HOUSE_YEAR = 0.2;
 
 /**
  * What a house pays for a carriage, and the rung at which one is worth having.
- *
- * A cheap decision deliberately: the interesting conveyance is the tracked one
- * a house BUILDS, and a drawn carriage is a line on the ledger that a solvent
- * institution simply has. What it buys is the only thing a conveyance ever
- * buys - the term of a posting, through `daysByConveyance` - so a house with
- * one gets its people back sooner and can send again.
  */
 const A_CARRIAGE_COSTS = 8_000;
 
 /**
  * How heavy a finished sending has to be before anybody repeats it.
- *
- * `magnitudeOf` reads 0.2 for a posting at or below the party's own rung and
- * climbs with the gap, so this keeps the errands a house does every year off
- * the chronicle and lets the hard ones on. Nothing that went WRONG is filtered
- * by it: a party that did not come back is news whatever it was sent at.
  */
 const WORTH_REPEATING = 0.35;
 
 /**
  * Houses put people on the road, and what comes back is news.
- *
- * THE WHOLE OF `who-goes-out-for-a-house-and-what-comes-back.ts` HAD NO
- * CALLER. `resolveSending`, `newsOfASending`, `tierFor`, `tierNameFor`,
- * `whoTheHouseCanSend`, `magnitudeOf` and `postingFor` were zero-reference
- * exports, so a module that decides who a house can spare, what the gap costs,
- * who does not come back and what the ledger says about it never ran - and
- * nothing a house did ever became a fact anybody could repeat.
- *
- * Every decision belongs to that module. What happens here is reading a
- * `FactionRecord` into the shape it asks for, handing over the roster, and
- * writing down what it says: the fact through `appendWorldFact`, which is what
- * `circulating`, `retell`, the digest and `whatIsSaidAbout` all already read,
- * and the people who did not come back through `markMissing`.
- *
- * ── Missing, not dead ────────────────────────────────────────────────────
- *
- * A party that did not come back is a party nobody has heard from. `absence`
- * already owns what happens next - how long before anybody says it out loud,
- * who inherits, whether they turn up - and declaring them dead here would take
- * that decision away from the layer that has it.
- *
- * ── The draw ─────────────────────────────────────────────────────────────
- *
- * One stream, keyed `sendings`, which no other pass uses. A world in which no
- * house sends anybody draws exactly what it drew before this pass existed.
  */
 function applySendings(state: WorldState, year: number, day: number): number {
     const rng = forStream(state.seed, 'sendings', year);
@@ -2305,18 +1664,11 @@ function applySendings(state: WorldState, year: number, day: number): number {
         const reason = weighted(rng, reasons, r => r.weight);
         if (!reason) continue;
 
-        // What the errand is pitched at. AT OR BELOW THE HOUSE'S OWN BEST,
-        // mostly, and that skew is the whole of `summonable`'s ruling applied
-        // to a pitch instead of to an offer: a house sends people at work it
-        // expects them to come back from. The draw still reaches a rung above
-        // them now and again, which is where a sending becomes a story.
-        //
-        // Measured with the draw centred instead - `best + rng.int(-3, 6)`,
-        // then `-3, 3` - the pyramid's top third fell from 92 to 53 over five
-        // pooled seeds, because half of every house's errands were pitched
-        // above its own people and `whoTheHouseCanSend` sends the strongest.
-        // A wiring change is not allowed to restructure the population, and
-        // this is the term that decides whether it does.
+        // What the errand is pitched at. AT OR BELOW THE HOUSE'S OWN BEST, mostly,
+        // and that skew is the whole of `summonable`'s ruling applied to a pitch
+        // instead of to an offer: a house sends people at work it expects them to
+        // come back from. The draw still reaches a rung above them now and again,
+        // which is where a sending becomes a story.
         const best = party0.reduce((n, c) => Math.max(n, c.ordinal), 0);
         const posting = postingFor({
             reason,
@@ -2330,19 +1682,13 @@ function applySendings(state: WorldState, year: number, day: number): number {
         const party = whoTheHouseCanSend(posting, party0);
         if (party.length === 0) continue;
 
-        // A HOUSE DOES NOT SEND PEOPLE AT SOMETHING IT EXPECTS TO LOSE THEM
-        // TO. `duties.ts` has said so since it was written and the sending
-        // module names the same two bands - the difference between the two
-        // files is the whole ruling: the house declines to send, and a board
-        // may still carry one, and the world declines to stop somebody taking
-        // it off the wall. This is the house's half, and it is the module's
-        // own predicate rather than a threshold invented here.
-        //
-        // Measured without it, at a pitch drawn up to six rungs above the
-        // party's best: 3,396 people went missing over five centuries against
-        // a standing population under six hundred. That is not a world with
-        // dangerous errands in it, it is a world whose institutions feed
-        // themselves to their own noticeboards.
+        // A HOUSE DOES NOT SEND PEOPLE AT SOMETHING IT EXPECTS TO LOSE THEM TO.
+        // `duties.ts` has said so since it was written and the sending module names
+        // the same two bands - the difference between the two files is the whole
+        // ruling: the house declines to send, and a board may still carry one, and
+        // the world declines to stop somebody taking it off the wall. This is the
+        // house's half, and it is the module's own predicate rather than a
+        // threshold invented here.
         if (isImpossibleTier(tierFor(posting, party).band)) continue;
 
         const sending = resolveSending({
@@ -2366,21 +1712,7 @@ function applySendings(state: WorldState, year: number, day: number): number {
             );
         }
 
-        // ── AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS ────────────
-        //
-        // `magnitudeOf`'s own sentence: an errand three rungs below the party
-        // is one nobody mentions twice. A house has somebody out most of the
-        // time and the ledger is not a newsfeed - measured with every routine
-        // errand written, sendings were 7,275 of 15,519 facts in the world,
-        // which is a chronicle that is half other people's paperwork.
-        //
-        // What is kept is what the module already decides is heavy, plus
-        // anything that did not go as stated, because a party that did not
-        // come back is news at any tier.
-        // WHAT CAME HOME GOES IN THE YARD. The second destination a beast
-        // material has, which until now did not exist: it went into a pill or
-        // into something somebody fights with, and that made the whole
-        // material economy a single pipe. See `applyConveyanceBuilding`.
+        // AND ONLY WHAT IS WORTH REPEATING BECOMES NEWS
         if (sending.outcome === 'finished' && reason.id === 'sending-for-materials') {
             creditWhatCameBack(faction, partyOrdinal(party), party.length);
         }
@@ -2393,39 +1725,10 @@ function applySendings(state: WorldState, year: number, day: number): number {
     return sent;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE YARD
-//
-// `building-a-conveyance-out-of-what-a-hunt-brings-back.ts` had no consumer
-// anywhere in `src/` - `layDownKeel`, `deliver`, `workOn`, `readyToLaunch`,
-// `lotSatisfies`, `whatIsStillShort`, `conveyanceKeptAs` and `mintCraft` were
-// all zero-reference - so the second destination that file exists to give a
-// beast material did not exist, and `TRACKED_CRAFT` was a catalog of hulls
-// nobody in the world had ever built.
-//
-// THE LOOP IS THE ONE THAT FILE ARGUES FOR, AND NOTHING ABOUT IT IS NEW.
-// A house sends people out after materials; what comes back is a grade and a
-// count and a core or not; the bill wants a quantity at a grade rather than a
-// named thing; and a house that gets one craft gets its next one faster,
-// because the craft carries the party that takes the next core. That is the
-// whole economy and every term of it was already written.
-//
-// WHERE IT IS KEPT. `FactionRecord.resources` is a free-form
-// `Record<string, number>` with a stated convention, and both halves of this
-// are numbers: what the yard holds, and how far along the slip is. No new
-// field, no migration, and `describeCountedHoldings` already answers what a
-// house has. A `Berth` is reconstructed from those cells each pass rather than
-// stored as an object, which is the same "derive rather than store" the ground
-// module keeps.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How many of one kind a house keeps before it starts building the next one up.
- *
- * A yard builds what the house is short of. Without a ceiling a house builds
- * the same carriage forever and never reaches for the bill above it - measured
- * at five centuries, one house standing on eight of them and no house in the
- * world having ever laid a keel for anything tracked.
  */
 const ENOUGH_IN_THE_YARD = 2;
 
@@ -2441,12 +1744,6 @@ function berthKey(recipeId: string, what: string): string {
 
 /**
  * What a finished sending after materials brought home.
- *
- * The party's own rung decides the grade, through `gradeForOrdinal` and
- * nothing else - the same gate the ground pressure reads, for the same reason:
- * you bring back what answers your hand. A core only where the party stood at
- * `BEAST_CORE_ORDINAL` or above, which is the catalog's own line and is why a
- * core is the one entry in a bill a house cannot buy its way past cheaply.
  */
 const WHAT_A_PARTY_BRINGS_BACK = 6;
 
@@ -2475,15 +1772,6 @@ function lotsInTheYard(faction: FactionRecord): MaterialLot[] {
 
 /**
  * Houses build, and now and again one of them launches.
- *
- * Every decision belongs to the craft module. What happens here is reading the
- * yard off the ledger into `MaterialLot`s, reconstructing the slip from the
- * cells that hold it, handing both over, and writing the answer down.
- *
- * A house works at ONE recipe - the best its own hands can take, which is
- * `canRefineGrade`'s question and not this file's - because a yard split
- * across three slips finishes none of them, which is the same reason the
- * module makes work unable to outrun the materials.
  */
 function applyConveyanceBuilding(state: WorldState, year: number, day: number): number {
     let launched = 0;
@@ -2499,16 +1787,10 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
         if (hands.length === 0) continue;
         const best = hands.reduce((n, o) => Math.max(n, o), 0);
 
-        // The deepest bill this house could work at all. `canRefineGrade` is
-        // the gate and it is the same one that decides who refines a grade of
-        // medicine - a hull is made of the same four grades a pill is, and a
-        // second table here would be a second opinion about the ladder.
-        //
-        // AND NOT ONE IT ALREADY HAS ENOUGH OF. Without this a house builds
-        // the same carriage forever - measured, one house held eight of them
-        // at five centuries - and never reaches for the bill above it, which
-        // is the bill that produces the only tracked craft anybody makes. A
-        // yard builds what the house is short of.
+        // The deepest bill this house could work at all. `canRefineGrade` is the
+        // gate and it is the same one that decides who refines a grade of medicine
+        // - a hull is made of the same four grades a pill is, and a second table
+        // here would be a second opinion about the ladder.
         const recipe = [...CONVEYANCE_RECIPES]
             .filter(r => canRefineGrade(r.grade, best))
             .filter(r => conveyanceKeptAs(r.grade) === 'tracked'
@@ -2516,13 +1798,12 @@ function applyConveyanceBuilding(state: WorldState, year: number, day: number): 
                     o.ownerId === faction.id
                     && o.data.conveyanceId === r.producesConveyanceId)
                 : countedHolding(faction.resources, r.producesConveyanceId) < ENOUGH_IN_THE_YARD)
-            // CHEAPEST FIRST, which is the progression the craft module
-            // describes rather than an ordering chosen here: a house that gets
-            // one craft gets its next one faster, because the craft carries
-            // the party that takes the next core. Deepest-first had every
-            // qualified house laying a keel for a spirit boat on day one and
-            // still short of the bill five centuries later, so no tracked
-            // craft was ever built by anybody.
+            // CHEAPEST FIRST, which is the progression the craft module describes
+            // rather than an ordering chosen here: a house that gets one craft gets
+            // its next one faster, because the craft carries the party that takes
+            // the next core. Deepest-first had every qualified house laying a keel
+            // for a spirit boat on day one and still short of the bill five
+            // centuries later, so no tracked craft was ever built by anybody.
             .sort((a, b) => a.workDays - b.workDays)[0];
         if (!recipe) continue;
 
@@ -2666,11 +1947,6 @@ function applyFactionEconomy(state: WorldState): void {
 
 /**
  * Draw a template, bind it, apply it.
- *
- * Templates that cannot bind are skipped and the draw is retried a bounded
- * number of times. Returning null is a legitimate outcome: a year in which the
- * world offered nothing worth recording is a year in which nothing happened,
- * and long mundane stretches are correct.
  */
 function fireOne(state: WorldState, day: number, rng: CultivationRNG): PressureEvent | null {
     const table = TEMPLATES;
@@ -2707,68 +1983,15 @@ function liveFactions(state: WorldState): FactionRecord[] {
     return state.factions.filter(f => f.dissolvedOnDay === null && isBelowTheLid(f));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHO IS OLD ENOUGH TO DIE OF BEING OLD
-//
-// The `elder_died` event picked uniformly from everybody at a senior rank and
-// killed them, and it never looked at how long they had left. That is fatal to
-// the setting, and measurably so: seeded and advanced, the world's six
-// strongest went 44,41,38,37,36,36 at seeding to a flat 12 by year 300, with
-// every apex head, court seat and named figure dead and nothing above ordinal
-// 20 alive anywhere.
-//
-// The cause was not that cultivation fails to advance. It is that a realm's
-// LIFESPAN is the whole of what a high realm buys, and this event ignored it.
-// An ordinal 44 has a hundred thousand years and is seeded a quarter of the
-// way through, so it should be effectively permanent on any horizon a run
-// reaches - and it was being ground out by the same roll that retires a
-// Foundation Establishment elder at four hundred.
-//
-// `the-late-age.md` says figures older than anything now living walk through
-// this world constantly. The simulation was producing the exact opposite: a
-// world that had giants at seeding and none a century later.
-//
-// The fix is to read the number that already exists. Weighted by how much of
-// their own span somebody has spent, squared, so it falls away fast:
-//
-//   spent  5%  ->  0.0025   effectively never
-//   spent 50%  ->  0.25
-//   spent 95%  ->  0.90     the ordinary answer to "an elder died"
-//
-// A weighting rather than a filter, because the causes this event names are
-// not all age - "an old wound" and "a breakthrough that did not hold" can
-// reach somebody early, and should stay possible and rare. What must not
-// happen is a hundred-thousand-year being dying of age at twenty-five
-// thousand, which is what was happening.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The most rungs a killer can give away and still manage it.
- *
- * Three, and it is the combat layer's own number rather than a new one:
- * `MAX_EDGE_MULTIPLIER` caps everything a person can bring to a fight at about
- * two rungs' worth, so somebody four or more below cannot get there however
- * the day goes. AGENTS.md states the same thing from the other side - a
- * four-rank gap is not a hard fight, it is a death.
- *
- * This event was not checking at all. It picked a victim uniformly from every
- * living person in the world and then a killer from whoever was standing
- * nearby, so an ordinal 44 was exactly as murderable as a farmhand, by a
- * farmhand. That is the single largest contradiction the world layer contained:
- * `standoff.ts` spends four hundred lines measuring who could kill an apex
- * head and concluding almost nobody, off the real resolver, while this rolled
- * eleven times a century and did it for free.
  */
 const CASUAL_KILL_MAX_GAP = 3;
 
 /**
  * The advantage at which one house can simply end another.
- *
- * The same number from the same place: `CASUAL_KILL_MAX_GAP` is the most a
- * killer can give away and still manage it, so a house that is that much
- * stronger than another can reach everybody in it. It is not a new margin and
- * it must not become one - if the combat layer's edge cap moves, this moves
- * with it, because they are the same fact stated twice.
  */
 const DECISIVE_MARGIN = CASUAL_KILL_MAX_GAP + 1;
 
@@ -2777,46 +2000,7 @@ function couldKill(killer: NpcRecord, victim: NpcRecord): boolean {
     return killer.cultivation.realmOrdinal >= victim.cultivation.realmOrdinal - CASUAL_KILL_MAX_GAP;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LONGEST PROJECT IN THE WORLD
-//
-// A cultivator at Tribulation Transcendence has a hundred thousand years and
-// is spending twenty to fifty thousand of them on one attempt at the last
-// crossing - twenty only for a prodigy. Five centuries is half a per cent of
-// that. So the top of the ladder should be very nearly STATIC across any
-// horizon a run reaches, and a figure dropping off it should be a named event
-// with a cause somebody could tell you, not attrition.
-//
-// It was attrition. Measured over 500 years, the strongest went 44 to 38, and
-// the two that went were taken by generic pools: an ordinal 41 by
-// `technique_lost` ("went out and did not come back") and an ordinal 38 by
-// `elder_died`. Those events are about ordinary institutional life - a senior
-// retires, somebody wanders off, an art stops being transmitted - and somebody
-// in the middle of the last crossing is not in that category and should not be
-// in those pools.
-//
-// Two things follow, and they are the whole of this block.
-//
-// FIRST, they come out of the AGE pool, and only that one. Dying of age at a
-// quarter of a hundred-thousand-year span is not a thing that happens.
-//
-// They stay in the disappearance and lost-art pools deliberately, because being
-// unaccounted for is the ORDINARY condition of somebody at this height: at 44
-// almost nobody is seen from one century to the next, and `missing` says
-// exactly that - whereabouts unknown, aliveness genuinely unresolved. What had
-// to change for that to be survivable was the INSTRUMENT rather than the event.
-// `worldShape` counted only `alive`, so an ordinary disappearance read as the
-// ceiling dropping. See `EXTANT_STATES` in `driver.ts`.
-//
-// SECOND, they get the project. Nothing advanced a high-ordinal NPC at all -
-// `applyAdvancement` caps everybody at their region's `localCeilingOrdinal`,
-// which is about twenty - so a 44 was a body waiting to die rather than
-// somebody a long way into something. `applyLastCrossing` is that something,
-// and it fires at the rate the attempt actually takes, which means it will
-// almost never fire in five hundred years. That is the point: the event exists
-// so that when the top of the world does change, there is a reason with a name
-// on it.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** The realm at which somebody stops being ordinary institutional life. */
 const LAST_PROJECT_REALM = 'tribulation_transcendence';
@@ -2828,32 +2012,11 @@ function isOnTheLastProject(npc: NpcRecord): boolean {
 
 /**
  * Years one attempt at the last crossing consumes.
- *
- * The user's figure, and it is the number the whole timescale rests on: twenty
- * thousand for a prodigy, fifty for everybody else, out of a hundred thousand
- * year lifespan. The midpoint is used because the world layer does not model
- * who is a prodigy; `deriveLife` already spent that distinction at creation.
  */
 const LAST_CROSSING_YEARS = 35_000;
 
 /**
  * The attempt, and its three endings.
- *
- * Rare to the point of being almost theoretical on a five-century horizon -
- * about one chance in seventy per figure - which is exactly right. The value of
- * this pass is not that it fires; it is that when the top of the world changes
- * there is a named cause rather than a pool.
- *
- * The three outcomes are the ones the setting already models:
- *
- *   TRUE IMMORTAL   they cross, and leave. `IMMORTAL_LAYER` takes them out of
- *                   every below-the-Lid pool in the engine, which is what
- *                   crossing means - the world does not keep them.
- *   FALSE IMMORTAL  the half-failure `false-immortals.ts` is about. They
- *                   survive, they are still here, and they are no longer on
- *                   the ladder. A house has not lost them; it has lost what
- *                   they were FOR, which is a better story than a headcount.
- *   DEATH           the tribulation takes them, which is the ordinary result.
  */
 function applyLastCrossing(
     state: WorldState,
@@ -2903,23 +2066,7 @@ function applyLastCrossing(
     return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE WORLD OPENS SOMETHING, AND NOBODY DID IT
-//
-// An immortal's pavilion, sealed for four hundred years, with its owner long
-// dead. It opens because the cycle came round. There is no actor, no motive and
-// no beneficiary until somebody happens to be near enough to walk in - and the
-// event fires identically whether anybody is or not.
-//
-// That indifference is the design. Every other template in this file is
-// somebody doing something to somebody; this one is the world's own clock, and
-// it should read as the world doing something rather than the world doing
-// something TO YOU. It is also the only template that creates an opportunity
-// rather than a loss.
-//
-// It is not in TEMPLATES and must not be added to it. A weighted draw would
-// make the schedule a function of how eventful the year was.
-// ─────────────────────────────────────────────────────────────────────────
 
 function applyConvergences(
     state: WorldState,
@@ -3038,10 +2185,6 @@ function lifeSpent(npc: NpcRecord, day: number): number {
 
 /**
  * Pick somebody to have died of their own mortality, or nobody.
- *
- * Weighted by spent lifespan squared. Returns null when the pool is empty or
- * when the roll lands in the enormous slack held by people with centuries in
- * front of them, which is the correct and common answer.
  */
 function pickByMortality(
     rng: CultivationRNG,
@@ -3065,17 +2208,6 @@ function pickByMortality(
     }
 
     // AND AN ACCEPTANCE ROLL, which is the half that matters.
-    //
-    // A weighting only re-orders a pool; it never lets the event decline to
-    // fire. The senior pool is small and at times consists entirely of people
-    // with most of themselves left, and a pure weighting still killed one of
-    // them every time the roll came up - which is why the first version of
-    // this fix moved the numbers and did not save anybody.
-    //
-    // Rolling again against the chosen person's own spent fraction makes the
-    // absolute rate scale with how old the pool actually is. A cohort with
-    // centuries in front of it produces almost no deaths, which is the correct
-    // answer and was the missing one.
     return rng.chance(lifeSpent(chosen, day)) ? chosen : null;
 }
 
@@ -3085,18 +2217,6 @@ function pick<T>(rng: CultivationRNG, items: readonly T[]): T | null {
 
 /**
  * The people the world may pick to DO something.
- *
- * Everybody except the player's own mirror row. An event template that draws an
- * actor is the world deciding that somebody opened a hall, took an opportunity,
- * killed somebody, walked into the hills or worked on a neighbour - and it
- * writes a chronicle fact saying so. Drawn on the player, that is the engine
- * asserting the player did a thing they never did, in a layer the play loop
- * never saw, and the next refresh silently discards the state while the fact
- * stays. See `PLAYER_ROW_TAG`.
- *
- * The world may still COUNT them - how many people live in this province,
- * whether anybody alive still holds this art - because those are true about
- * them. What it may not do is act as them.
  */
 function theWorldsPeople(state: WorldState): NpcRecord[] {
     return state.npcs.filter(isTheWorldsToMove);
@@ -3126,15 +2246,6 @@ function replaceNpc(state: WorldState, next: NpcRecord): void {
 
 /**
  * Somebody takes it personally.
- *
- * Institutions hold positions; people hold accounts, and only the personal row
- * is inheritable - a faction's hostility dies with the faction, whereas a
- * grudge outlives its owner and lands on an heir. So whenever one faction takes
- * something from another, one named member of each side ends up in a row
- * together. Which two is a draw; that it happens at all is not.
- *
- * This is a state update, not a decision model: nobody here reasons about
- * whether to be aggrieved.
  */
 function openPersonalAccount(
     state: WorldState,
@@ -3208,11 +2319,6 @@ function emit(
 
 /**
  * Keep a generated date inside the span that was actually advanced.
- *
- * A year is stepped as a whole even when the caller asked for part of one, so
- * an event drawn late in the year can fall past the clock. Clamping the date
- * rather than skipping the event keeps the year's content intact and the
- * ledger coherent - nothing is ever dated after the day the world has reached.
  */
 function withinSpan(day: number, fromDay: number, toDay: number): number {
     return Math.max(fromDay, Math.min(toDay, day));
@@ -3220,11 +2326,6 @@ function withinSpan(day: number, fromDay: number, toDay: number): number {
 
 /**
  * A house name with its article stripped, for summaries that supply their own.
- *
- * Catalog names are inconsistent about it by design - "the Kang Hall", "The
- * Severed", "Bone Lantern Cult" - and a summary that writes "of the ${name}"
- * against the first two produced "of the the Kang Hall" in the middle of
- * somebody's biography.
  */
 function houseName(name: string): string {
     return name.replace(/^[Tt]he\s+/, '');
@@ -3242,17 +2343,7 @@ function clamp(n: number, lo: number, hi: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 
 const TEMPLATES: Template[] = [
-    // ── A house is ended by another house, and then the survivors choose.
-    //
-    //    The only template that does not finish in one step. Everything after
-    //    the binding is `cascade.ts`: what the survivors do, and if they wake
-    //    what is under the hall, what THAT does. The chain is priced off state
-    //    that already exists and stops wherever the arithmetic stops it, which
-    //    is usually immediately.
-    //
-    //    Rare on purpose - weight 2, the same as a region turning forbidden -
-    //    because this is the event that can permanently remove ground from the
-    //    map, and the map has to be worth something for that to matter.
+    // A house is ended by another house, and then the survivors choose.
     {
         kind: 'house_destroyed',
         weight: 2,
@@ -3498,50 +2589,14 @@ const TEMPLATES: Template[] = [
         }
     },
 
-    // ── Somebody killed somebody. ───────────────────────────────────────
-    //
-    // The canonical grudge source, and the reason the world has inherited
-    // accounts at all: a death by natural causes leaves an estate, and a death
-    // at a named hand leaves an estate AND somebody to blame. The account is
-    // written onto the victim before they die, so the ordinary inheritance path
-    // carries it to the heir without a second mechanism.
-    //
-    // Who and why is not modelled. That two people in feuding sects ended up
-    // in a room is a fact; what was said is the narrator's.
+    // Somebody killed somebody.
     {
         kind: 'killing',
         weight: 11,
         apply(state, day, rng) {
             const living = theWorldsPeople(state).filter(n => n.status === 'alive' && isBelowTheLid(n));
 
-            // ── THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX. ──
-            //
-            // This used to draw the VICTIM uniformly from everybody alive and
-            // then look for somebody who could do it. `couldKill` kept the
-            // killer commensurate, so the result was never absurd - but the
-            // RATE was, because a Void Refinement cultivator was picked as
-            // often as a Qi Condensation one while having fifty times the span
-            // to lose. A realm's lifespan is the whole of what a high realm
-            // buys, and this was quietly cancelling it.
-            //
-            // Measured over forty centuries on two seeds, residence in a band
-            // as a share of that realm's own span:
-            //
-            //     Qi Cond 100%   Foundation 55%   Core 38%   Nascent 23%
-            //     Deity 16%      Void 10%         Body 15%   Grand 20%
-            //
-            // and at Void Refinement 77% of departures were violent against
-            // 10% of age. The higher the realm, the less of its span anybody
-            // was getting to stand in it, which is the opposite of the ladder's
-            // central promise.
-            //
-            // Drawing the killer first inverts it with no rule about tiers and
-            // no exception for anybody: a killing needs somebody who can do it,
-            // most people are at the bottom, so most killings happen there.
-            // Somebody at Grand Ascension has perhaps one person in the world
-            // who could reach them, and is therefore reached about as often as
-            // that fact implies. `couldKill` is still the gate, unchanged, so
-            // the guarantee `demography.test.ts` pins is untouched.
+            // THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX.
             const killer = pick(rng, living);
             if (!killer) return null;
 
@@ -3619,32 +2674,7 @@ const TEMPLATES: Template[] = [
         kind: 'ruin_opened',
         weight: 8,
         apply(state, day, rng) {
-            // ── What is left to be opened ────────────────────────────────
-            //
-            // This used to read the sealed ruins alone, which is a FIXED
-            // endowment: the prior ages seed them, nothing ever makes another,
-            // and the template empties one per firing. Measured over two
-            // thousand years it fired thirteen times, which is not a weight
-            // problem - it is the stock running out around year four hundred
-            // and the template returning null for the rest of the run.
-            //
-            // The world does keep making places worth going into; it just was
-            // not counting them. `faction_fell` leaves a compound standing and
-            // empty with its formations unlit and tagged `ruined`, which is a
-            // ruin by every reading except the one this filter used. Adding it
-            // makes the supply regenerate from something the world already does,
-            // which is the same shape as the fix in `neighboursOf`.
-            //
-            // AND OPENING IS NOT FINDING. This filter used to take undiscovered
-            // ground, which collapses two events into one: somebody cannot open
-            // a sealed hall nobody has located. So the supply this template
-            // draws on is now the STANDING RESERVE - ground the world has found
-            // and not yet emptied - and the thing that replenishes it is
-            // `applyRuinProspecting`, which runs earlier in the same year.
-            // Measured before that pass existed: openings went to zero per
-            // century in the last fifth of a five-thousand-year run, in every
-            // seed, because the endowment was fixed and this template consumed
-            // it. See `how-the-world-keeps-finding-more-ruins.ts`.
+            // What is left to be opened
             const openable = state.locations.filter(l =>
                 isBelowTheLid(l) && !l.tags.includes('emptied') && l.discovered &&
                 ((l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
@@ -3879,14 +2909,13 @@ const TEMPLATES: Template[] = [
                 ((f.resources.spirit_stones ?? 0) < 400 ||
                     membersOf(state, f.id).length < 3 ||
                     (f.tags.includes('lost_vein') && membersOf(state, f.id).length < 6))
-                // AND NOT A BODY WHOSE PEOPLE OUTLAST INSTITUTIONS. Counting
-                // heads is the right test for a house that runs on succession
-                // and the wrong one at the top of the ladder, where a single
-                // survivor holds tens of thousands of years and rebuilding
-                // after losing three of four Seats to a crossing is not a body
-                // dying - it is the only thing that body does. The Hollow Court
-                // dissolved on every seed inside three centuries against
-                // members who cannot die of time.
+                // AND NOT A BODY WHOSE PEOPLE OUTLAST INSTITUTIONS. Counting heads
+                // is the right test for a house that runs on succession and the
+                // wrong one at the top of the ladder, where a single survivor holds
+                // tens of thousands of years and rebuilding after losing three of
+                // four Seats to a crossing is not a body dying - it is the only
+                // thing that body does. The Hollow Court dissolved on every seed
+                // inside three centuries against members who cannot die of time.
                 && !standsOnAnUnreachableClock(state, f.id)
             );
             const faction = pick(rng, failing);
@@ -3992,31 +3021,8 @@ const TEMPLATES: Template[] = [
             splinter.standing[parent.id] = -0.5;
             parent.standing[splinter.id] = -0.5;
 
-            // THE ENEMY OF THEIR ENEMY, AND THE ONLY THING IN THIS PASS THAT
-            // ADDS A POSITIVE EDGE BETWEEN TWO HOUSES.
-            //
-            // Founding produced enmity and nothing else, so the alliance graph
-            // could only lose partners to dissolution and never gain one. It
-            // reached zero and stayed there - measured over five thousand years
-            // on `scripts/probe-houses-over-time.ts`, allied pairs went 4, 3, 1,
-            // 1, 0, 0, 0 while houses churned healthily throughout, 25 of them
-            // founded in the last era alone. The gatherings layer found the same
-            // hole from the other side: 13 of its 15 alliance edges had a
-            // dissolved partner, its circles ran 11 down to 1, and a circle
-            // needs two houses that can stand each other. Inter-house gatherings
-            // are one of the few sources of cross-house ties in the world, so
-            // the institutional shortage was producing the personal one.
-            //
-            // A house that has just walked out on somebody has immediate common
-            // ground with everybody else that somebody has wronged, and both
-            // sides know it on the day. `rivalsOf` is already that list.
-            //
-            // WARM, NOT ALLIED. It stops just under `ALLIED_STANDING` on
-            // purpose: being glad somebody embarrassed your rival is the
-            // beginning of an alliance, not one, and it leaves the gatherings
-            // layer's slow drift something to finish rather than handing it a
-            // completed friendship. It also costs nothing per year, because it
-            // fires only on a founding.
+            // THE ENEMY OF THEIR ENEMY, AND THE ONLY THING IN THIS PASS THAT ADDS A
+            // POSITIVE EDGE BETWEEN TWO HOUSES.
             for (const glad of rivalsOf(state, parent)) {
                 if (glad.id === splinter.id) continue;
                 splinter.standing[glad.id] = SYMPATHY_AT_A_SCHISM;
@@ -4026,22 +3032,8 @@ const TEMPLATES: Template[] = [
             parent.resources.spirit_stones = Math.round((parent.resources.spirit_stones ?? 0) * 0.8);
             state.factions.push(splinter);
 
-            // AND THE BOOKS THEY WALKED OUT WITH, WHICH IS WHY THIS IS A HOUSE
-            // AND NOT A BUILDING.
-            //
-            // A founded house had no catalog entry, so `manualsOf` read back an
-            // empty shelf and it could teach nobody anything for as long as it
-            // stood - which made ordinary institutional churn a one-way ratchet
-            // on the world's literacy. Measured over three thousand years:
-            // houses standing 32 -> 47 while houses holding a shelf went 30 ->
-            // 5, distinct books held by anybody alive 68 -> 6, and the standing
-            // distribution collapsed to 96% at or below Qi Condensation with
-            // four consecutive empty bands above the middle.
-            //
-            // The founders are already carrying their methods. Writing the
-            // library rows here is the physical fact of the schism rather than
-            // a new rule, and `shelfOf` reads them the same way it reads any
-            // other house's.
+            // AND THE BOOKS THEY WALKED OUT WITH, WHICH IS WHY THIS IS A HOUSE AND
+            // NOT A BUILDING.
             state.objects.push(
                 ...librariesCarriedOutBy(state, splinter, [founder, ...leavers])
             );
@@ -4179,17 +3171,9 @@ const TEMPLATES: Template[] = [
                     ? 'Everything in the market costs more than it did and nobody can say why.'
                     : 'The market is full of things nobody is buying.',
                 // The factor is NOT repeated here. It is stored on the location
-                // change this fact cites, which is the record that owns it and
-                // the one anybody reading a price actually consults - nothing
-                // has ever read it off the fact.
-                //
-                // Copying it onto the fact as well had a second cost that was
-                // not obvious: it made every price move a different row from
-                // every other, so a province's market produced forty
-                // indistinguishable statements over two thousand years and the
-                // ledger could not fold them. The change ids concatenate on a
-                // fold, so every occurrence's own factor survives where it lives.
-                //   See `a-fact-that-keeps-happening-is-one-row.ts`.
+                // change this fact cites, which is the record that owns it and the
+                // one anybody reading a price actually consults - nothing has ever
+                // read it off the fact.
                 consequences: {
                     immediate: 'Prices moved.',
                     tenYearsLater: 'The old price is what people quote when they are complaining.'
@@ -4228,19 +3212,14 @@ const TEMPLATES: Template[] = [
                 chance: 1,
                 fired: false,
                 firedOnDay: null,
-                // THE BASELINE, AND WHY IT IS STORED RATHER THAN DERIVED.
-                // How badly a house is losing is what it can put out now
-                // against what it could put out on the day the fighting
-                // started, and that second figure stops being recoverable the
-                // moment somebody dies. It is a fact about ONE DAY, so it
-                // cannot go stale - which is the case where storing is right
-                // and deriving is impossible. Everything computed from it is
-                // derived on demand: see `howAHouseIsFaring` in `war-melee.ts`.
-                //
-                // `led` is the highest rank either house had anybody standing
-                // at. A house whose war takes everybody it was led by has
-                // living members and nobody to hold them, which is the one
-                // input `war-spoils.ts`'s third fate was waiting for.
+                // THE BASELINE, AND WHY IT IS STORED RATHER THAN DERIVED. How badly
+                // a house is losing is what it can put out now against what it
+                // could put out on the day the fighting started, and that second
+                // figure stops being recoverable the moment somebody dies. It is a
+                // fact about ONE DAY, so it cannot go stale - which is the case
+                // where storing is right and deriving is impossible. Everything
+                // computed from it is derived on demand: see `howAHouseIsFaring` in
+                // `war-melee.ts`.
                 data: {
                     kind: 'war_resolution',
                     sideA: a.id,
@@ -4386,14 +3365,14 @@ const TEMPLATES: Template[] = [
             const candidates = theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) && n.cultivation.realmOrdinal >= 13
             );
-            // Weighted by how much of themselves is left, and this is the one
-            // that mattered most: the pool is everybody above ordinal 13,
-            // which is about fifty people, and the world's entire high-realm
-            // cohort lives in it. Picking uniformly meant thirteen of the
-            // seventeen strongest people alive walked into the hills inside
-            // three centuries. An elder vanishing into seclusion and never
-            // being seen again is good xianxia and should stay possible; it
-            // should not be the ordinary fate of everybody who ever climbed.
+            // Weighted by how much of themselves is left, and this is the one that
+            // mattered most: the pool is everybody above ordinal 13, which is about
+            // fifty people, and the world's entire high-realm cohort lives in it.
+            // Picking uniformly meant thirteen of the seventeen strongest people
+            // alive walked into the hills inside three centuries. An elder
+            // vanishing into seclusion and never being seen again is good xianxia
+            // and should stay possible; it should not be the ordinary fate of
+            // everybody who ever climbed.
             const npc = pickByMortality(rng, candidates, day);
             if (!npc) return null;
             replaceNpc(state, markMissing(npc, day, 'Went into the hills and was not seen again.'));
@@ -4429,46 +3408,14 @@ const TEMPLATES: Template[] = [
         }
     },
 
-    // ── Somebody worked on somebody. ─────────────────────────────────────
-    //
-    //    The world's half of `engine/social-leverage/`. It matters that this
-    //    is here and not only on the player's side: the repo's commonest
-    //    defect by a distance is a system that binds every NPC and never
-    //    reaches the played game, and the reverse - a verb the player has and
-    //    nobody else does - is the same bug wearing different clothes. So the
-    //    identical resolver runs on both, from the same seeded stream, against
-    //    the same terms, and the world is full of people who have bought each
-    //    other and been bought.
-    //
-    //    Nothing here reads an alignment to decide the roll. What is on the
-    //    table is read off what the actor actually HAS - a purse, a house
-    //    behind them, an account they can call in, or nothing but themselves -
-    //    and the ask is read off what stands between the two houses. Charm
-    //    works everywhere; the fallout is what differs, and the fallout is
-    //    `leverage_understood` below.
+    // Somebody worked on somebody.
     {
         kind: 'leverage_applied',
         weight: 12,
         apply(state, day, rng) {
             const living = theWorldsPeople(state).filter(n => n.status === 'alive' && isBelowTheLid(n));
 
-            // ── A MANOEUVRE ALREADY RUNNING IS PICKED UP AGAIN. ──────────
-            //
-            // Measured, and the reason this is not a uniform draw. With the
-            // actor drawn uniformly from everybody alive, three seeds over
-            // five hundred years gave 2-3 manoeuvres a century and ZERO
-            // discoveries, because a first attachment lands at 0.22 and the
-            // discovery half will not look at a tie below 0.45. Every
-            // manoeuvre in the world was somebody's first one, so the second
-            // stage was unreachable and this whole subsystem was a weight in
-            // a table. Biasing after the draw did not help either: about eight
-            // people in two hundred and fifty were working anybody, so the
-            // continuation branch came up roughly half a time per run.
-            //
-            // The floor is not the thing to move - 0.45 is the honest reading
-            // of "attached enough that finding out would hurt". What was wrong
-            // is that somebody working a person COMES BACK TO THAT PERSON, and
-            // the draw did not know it.
+            // A MANOEUVRE ALREADY RUNNING IS PICKED UP AGAIN.
             const continuations: { actor: NpcRecord; subjectId: string }[] = [];
             for (const person of living) {
                 for (const tie of person.relationships) {
@@ -4527,23 +3474,7 @@ const TEMPLATES: Template[] = [
                 ? 'attachment'
                 : pick(rng, available) ?? 'none';
 
-            // ── WHAT IS BEING ASKED ESCALATES WITH THE TIE. ─────────────
-            //
-            // Measured, and this was the defect that kept the whole subsystem
-            // at zero. The ask used to be read off faction hostility alone, so
-            // anybody who belonged to a house was opened with
-            // `against_their_interest` - 0.5 of resistance against a base of
-            // 0.35, which floors the odds at 2% before a single other term is
-            // read. Five hundred years produced twenty-three refusals, five
-            // agreements and NOT ONE attachment that ever landed. The world
-            // was running a subsystem that could only fail.
-            //
-            // Nobody opens by asking a stranger to betray their house. They
-            // ask for something small, and the size of what they ask next is a
-            // function of what they have built, which is a number already
-            // sitting on the tie. Hostility between the houses still decides
-            // how far it can eventually go; it no longer decides where it
-            // starts.
+            // WHAT IS BEING ASKED ESCALATES WITH THE TIE.
             const built = Math.max(0, theirExisting?.standing ?? 0);
             const ask: AskWeight =
                 built >= 0.6
@@ -4552,15 +3483,7 @@ const TEMPLATES: Template[] = [
                     : built >= 0.25 ? 'a_real_favour'
                         : 'a_courtesy';
 
-            // ── AND WHERE THIS IS HAPPENING. ────────────────────────────
-            //
-            // The design owner's ruling that trust depends on where you are
-            // standing. Read off the subject's ground, because the approach
-            // goes to them: `whoHoldsTheGround` walks the containment chain
-            // and the prefecture register, and `theGroundUnderYou` prices it
-            // on whether anybody here answers for what is done. Computed once
-            // and reused across the campaign's visits - a year of calling on
-            // the same person is a year in the same town.
+            // AND WHERE THIS IS HAPPENING.
             const ground = theGroundUnderYou(
                 whoHoldsTheGround(state.locations, subject.locationId),
                 statusesInArea(state.statuses, state.locations, subject.locationId, day)
@@ -4597,24 +3520,7 @@ const TEMPLATES: Template[] = [
                 rng
             });
 
-            // ── ONE EVENT IS A CAMPAIGN, NOT A CONVERSATION. ─────────────
-            //
-            // Measured, and the last of the three gates that kept this at
-            // zero. An attachment needs three landings to become worth
-            // anything, and relying on the global draw to come back to the
-            // same pair does not work at this scale: five manoeuvres a century
-            // across two hundred and fifty people, against lifespans that end
-            // long before the draw returns. Attachments landed - exactly one
-            // per seed in five hundred years - and every one of them sat at
-            // 0.22 forever because nobody ever came back.
-            //
-            // The world's tick is a YEAR, so an event here is already a span
-            // rather than a moment, and somebody working a person works them
-            // over that span. Each visit is its own roll off the same stream
-            // against the tie as it then stands, and the ask escalates with
-            // it exactly as it does on the player's side. The resolver is
-            // untouched: this is the caller doing what a caller with a year to
-            // spend would do.
+            // ONE EVENT IS A CAMPAIGN, NOT A CONVERSATION.
             let campaign = result;
             // The furthest the tie actually got. Kept apart from the final
             // outcome because a campaign that builds an attachment over three
@@ -4744,16 +3650,7 @@ const TEMPLATES: Template[] = [
         }
     },
 
-    // ── And years later, somebody works out what it was. ─────────────────
-    //
-    //    The delayed half, and the reason the whole subsystem is worth having.
-    //    A grudge that opens the instant a manoeuvre succeeds is not the same
-    //    thing as one that opens eleven years later, because the intervening
-    //    years are years somebody spent believing it had worked cleanly.
-    //
-    //    What it looks for needs no new column: a tie one side reads as strong
-    //    and the other has never returned, with a `leverage_applied` fact in
-    //    its causal chain. The asymmetry is the evidence.
+    // And years later, somebody works out what it was.
     {
         kind: 'leverage_understood',
         weight: 5,
@@ -4765,15 +3662,15 @@ const TEMPLATES: Template[] = [
                     if (tie.kind !== 'ally') continue;
                     if (tie.standing < LEVERAGE_ATTACHED_FLOOR) continue;
                     if (!tie.factIds.some(id => isLeverageFact(state, id))) continue;
-                    // The actor does NOT have to still be alive, and requiring
-                    // it was measured to be the gate that kept this template
-                    // at zero firings in five hundred years: qualifying ties
-                    // existed, and by the time anybody looked at them the
-                    // person who had built them was dead. Working out that
-                    // somebody used you does not require them to be breathing,
-                    // and in a world where the ledger is inherited it is the
-                    // more interesting case - the account opens against a name
-                    // whose heirs are the ones who will have to answer it.
+                    // The actor does NOT have to still be alive, and requiring it
+                    // was measured to be the gate that kept this template at zero
+                    // firings in five hundred years: qualifying ties existed, and
+                    // by the time anybody looked at them the person who had built
+                    // them was dead. Working out that somebody used you does not
+                    // require them to be breathing, and in a world where the ledger
+                    // is inherited it is the more interesting case - the account
+                    // opens against a name whose heirs are the ones who will have
+                    // to answer it.
                     const actor = state.npcs.find(n => n.id === tie.targetId);
                     if (!actor) continue;
                     // Did they ever return it. This is the whole tell.

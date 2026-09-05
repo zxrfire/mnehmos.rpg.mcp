@@ -1,59 +1,6 @@
 /**
- * What a party arrives on, what that does to the days, and what anybody
- * watching the gate reads off it.
- *
- * THE RULING THIS IMPLEMENTS
- * --------------------------
- * Walking is the floor. Above it sit a tamed beast and a drawn carriage, which
- * are COUNTED - a house has some number of them and nobody records which one -
- * and above those sit a very small number of TRACKED craft, which are objects
- * with an ordinal on the same 0..46 ladder a person stands on. That split is
- * not a rule about transport. It is `docs/world/things/items.md`'s
- * counted-or-tracked line met from the travel side, and the grade at which it
- * flips is the grade at which it flips for everything else.
- *
- * `docs/world/houses/trust.md` already names a retinue of spirit boats as the
- * canonical expensive signal - believed because assembling one is beyond almost
- * everybody, and worth exactly what it costs to fake. That passage was
- * aspirational while a boat was a figure of speech. This module and
- * `data/cultivation/what-a-house-moves-its-people-on.ts` are the half that
- * makes it true: the craft is an object, somebody built it, and arriving on one
- * is a fact a witness can read.
- *
- * RANGE IS AN AXIS, NOT A RUNG
- * ----------------------------
- * The commonest way to get this wrong is to read the table as worst-to-best and
- * conclude that a house holding a carriage is a house too poor for a boat. It
- * is not. A carriage is for getting across a district without mounting an
- * expedition, and a boat is for crossing a province; a house at the top of the
- * world holds both, because nobody takes the expensive thing out for the short
- * trip. That is an ordinary economy and it is why the drawn carriage stays
- * common at every level of wealth.
- *
- * So `range` and `power` are separate fields and neither implies the other, and
- * `unsuitedFor` below is the function that says what the wrong choice costs.
- *
- * ONE ROW IS NOT AN OBJECT AT ALL
- * -------------------------------
- * Flight on a blade is a technique somebody knows - `gale-riding-sword-flight`
- * in `data/cultivation/techniques.ts`, `requiredOrdinal` 15, taught by the
- * region's orthodox sword house and already written into that house's character
- * as daily practice. It is in this table because it is a way of getting there,
- * and it is unlike every other row: it cannot be bought, lent, inherited,
- * moored, taken off you or found abandoned, and it carries exactly one person.
- * Nothing here re-implements it. `ownership` says `personal` and the technique
- * catalog stays the authority on what it is and who may learn it.
- *
- * WHAT THE ORDINAL BUYS, AND WHAT IT DELIBERATELY DOES NOT
- * -------------------------------------------------------
- * A craft rated at N is worth what a cultivator at N is worth, the same
- * sentence `artifacts.ts` writes about `power`. It buys days, heads, the ground
- * it can cross and how far it goes before it has to be fed. It does not buy a
- * fight: a craft is moored rather than carried, which is why `possessorId` is
- * null on every one of them in the catalog and why `bestObjectHeldBy` in
- * `gatherings.ts` can never hand somebody a boat to swing.
- *
- * PURE. State in, deltas out. No I/O, no DB, no mutation of inputs.
+ * What a party arrives on, what that does to the days, and what anybody watching
+ * the gate reads off it.
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
@@ -66,48 +13,22 @@ import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-med
 
 /**
  * What distance a conveyance is FOR.
- *
- * Not how good it is. A house holds one of each because the jobs are different,
- * and taking the wrong one is a real and ordinary mistake rather than an error
- * the engine refuses.
  */
 export type ConveyanceRange = 'district' | 'province' | 'crossing';
 
 /**
  * How a conveyance is held, which decides everything about how it is stored.
- *
- * `none`     nothing is held. Walking, which is the floor and is free.
- * `counted`  a line on the entity: this house has four at earth grade. No id,
- *            no provenance, nothing to recognise. Losing one decrements a
- *            number. These must never be routed through `transferPossession`.
- * `tracked`  an `ObjectRecord` with an id, an ordinal and a history somebody
- *            can be asked about two centuries later.
- * `personal` neither. A technique in somebody's head, which is nobody's
- *            property and cannot change hands at all.
  */
 export type ConveyanceHolding = 'none' | 'counted' | 'tracked' | 'personal';
 
 /**
  * A KIND of conveyance. Not an instance.
- *
- * The counted kinds have no instances anywhere by design - a house's holding of
- * them is a number. The tracked kinds have instances, and those instances are
- * ordinary `ObjectRecord`s in the catalog.
  */
 export interface Conveyance {
     id: string;
     name: string;
     /**
-     * What the thing is made of. Null only for walking, which is made of
-     * nothing.
-     *
-     * This is the field the counted/tracked split reads: heaven grade and above
-     * is tracked, everything under it is a quantity.
-     *
-     * For a `personal` row it is the ART'S grade rather than a material, which
-     * is not a fudge - an art is graded on the same four-step ladder a material
-     * is, by the same catalog, and reading the technique's own grade is the
-     * alternative to inventing a speed number for it.
+     * What the thing is made of. Null only for walking, which is made of nothing.
      */
     grade: TechniqueGrade | null;
     range: ConveyanceRange;
@@ -136,30 +57,10 @@ export interface Conveyance {
     description: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SPEED
-//
-// The unit is a walking day, because that is the unit every road in the
-// catalog is already quoted in: `travelDays` on a `RegionConnection` is what
-// it takes on foot.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Walking days done in one day, by what the thing is made of.
- *
- * Four numbers and they are a decision rather than a measurement, so
- * `tests/engine/world/what-a-conveyance-does-to-a-journey.test.ts` states the
- * decision in the names of its cases. The shape being defended is that the
- * ordinary rungs are worth having and none of them is worth a boat: a mule and
- * a cart genuinely halve a road, an earth-grade carriage genuinely thirds it,
- * and the gap that matters opens at heaven grade where almost nobody is.
- *
- * The hazard if you move these: `what-a-sea-crossing-costs.ts` is a whole
- * subsystem whose stakes are a lane running longer than it was provisioned
- * for. Push the top of this table high enough and a passage is over before the
- * water runs out, which deletes that module's entire threat model for whoever
- * holds the craft. At the figures below the best hull in the world still takes
- * four days over the longest lane, so the sum still has to be right.
  */
 export const WALKING_DAYS_PER_DAY_BY_GRADE: Readonly<Record<TechniqueGrade, number>> = {
     mortal: 2,
@@ -174,11 +75,6 @@ export const ON_FOOT_SPEED = 1;
 
 /**
  * Realms a rating stands above the floor at which a craft becomes trackable.
- *
- * The increment is per REALM rather than per rung, and that is the whole reason
- * this is not an invented curve: the ladder already has boundaries in it, they
- * are where everything else in the engine steps, and a per-rung figure would be
- * a second opinion about how far apart two rungs are.
  */
 export function realmsAboveTheTrackedFloor(power: number): number {
     const floor = refiningOrdinalFor('heaven');
@@ -191,11 +87,6 @@ export function realmsAboveTheTrackedFloor(power: number): number {
 
 /**
  * Walking days this conveyance covers in one day.
- *
- * `power` is read only for a tracked craft, and it is the one place the ordinal
- * touches speed. Everything below heaven grade has no ordinal at all, which is
- * not a gap in the data - it is the counted side of the line, where the
- * question "which one" has no answer.
  */
 export function walkingDaysPerDay(conveyance: Conveyance, power: number | null = null): number {
     if (conveyance.grade === null) return ON_FOOT_SPEED;
@@ -206,11 +97,6 @@ export function walkingDaysPerDay(conveyance: Conveyance, power: number | null =
 
 /**
  * What a journey quoted in walking days actually takes.
- *
- * Never less than one day, and never fractional. A road is a road: arriving in
- * a third of a day and arriving in a day are the same day to everybody waiting
- * at the other end, and pretending otherwise invents a precision the world does
- * not have.
  */
 export function daysByConveyance(
     walkingDays: number,
@@ -228,11 +114,6 @@ export function daysByConveyance(
 
 /**
  * How far a range reaches, in walking days, before the choice is the wrong one.
- *
- * These are not refusals. A party may take a district carriage across a
- * province and the engine will price it; what it will not do is pretend the
- * choice was sensible. AGENTS.md: the correct answer to "may I" is always "yes,
- * and here is what it costs".
  */
 export const REACH_IN_WALKING_DAYS: Readonly<Record<ConveyanceRange, number>> = {
     district: 3,
@@ -242,11 +123,6 @@ export const REACH_IN_WALKING_DAYS: Readonly<Record<ConveyanceRange, number>> = 
 
 /**
  * Why this is the wrong thing to have taken, in words, or null where it is not.
- *
- * Both directions are named, because taking too much is as real a mistake as
- * taking too little and is the one a rich house actually makes. A boat brought
- * out for an afternoon's errand is a boat everybody in the district saw, and
- * being seen is not free.
  */
 export function unsuitedFor(
     conveyance: Conveyance,
@@ -282,15 +158,6 @@ export function unsuitedFor(
 
 /**
  * What arriving on this says about the party, before a word is spoken.
- *
- * This is the same read as a token or a retinue and belongs on the same axis,
- * so it points at `docs/world/houses/trust.md`'s expensive-signal section
- * rather than restating it. The one thing worth saying here that is not said
- * there: the read runs in BOTH directions. A delegation on foot has told
- * everybody at the gate what its house can afford, and it did not get to choose
- * whether to.
- *
- * Engine-authored, one sentence, no branch on faction or alignment anywhere.
  */
 export function whatArrivingOnThisSays(conveyance: Conveyance, power: number | null = null): string {
     if (conveyance.holding === 'personal') {
@@ -314,12 +181,6 @@ export function whatArrivingOnThisSays(conveyance: Conveyance, power: number | n
 
 /**
  * Whether a party on this can arrive without the district knowing.
- *
- * The inverse of `seenComing`, stated as its own function because it is the
- * question a party actually has, and because a boat's single largest drawback
- * is that the answer is no. There is no version of a spirit boat that arrives
- * quietly, and that is a condition on the capability rather than an oversight -
- * every advantage in this world has one.
  */
 export function couldArriveUnremarked(conveyance: Conveyance): boolean {
     return !conveyance.seenComing;
@@ -331,10 +192,6 @@ export function couldArriveUnremarked(conveyance: Conveyance): boolean {
 
 /**
  * The art whose subject decides whether flight is open to somebody.
- *
- * Named here rather than imported so this module stays free of the content
- * layer, the same discipline `SeaLane` keeps next door: the engine says what
- * the rule is and the catalog says which rows satisfy it.
  */
 export const FLIGHT_SUBJECT = 'sword';
 
@@ -354,23 +211,6 @@ export interface FlightGateResult {
 
 /**
  * Whether this cultivator can put themselves in the air on their own blade.
- *
- * Ruled by the design owner: flight on a sword belongs to sword cultivators, to
- * sword schools with sword arts. Not to anybody with a metal root who has
- * reached the rung. `techniques.ts` carries the gate as `subject` on five rows
- * and the argument for why those five; this is the predicate that reads it.
- *
- * Two ways to be of the school and they are the ordinary two: your road is the
- * sword, or your shelf is. The first is `dao.ts`'s standing in the weapon
- * domain and costs a life to acquire; the second is having been taught by
- * somebody who teaches this, which is how almost every flier in the world got
- * there. Requiring the first alone would close the art to the house that
- * invented it, since a Foundation disciple has no Dao standing at all.
- *
- * THIS IS THE ONE CONVEYANCE THAT IS NOT PROPERTY. It cannot be bought, lent,
- * inherited, moored, taken off a body or found abandoned, which is why it sits
- * in the ladder as `holding: 'personal'` and why a sword house that cannot
- * afford a hull still moves faster than a richer neighbour that can.
  */
 export function couldFlyOnTheirOwnBlade(input: {
     realmOrdinal: number;
@@ -456,12 +296,6 @@ export interface JourneyCost {
 
 /**
  * Price one journey.
- *
- * Deterministic, and deliberately so: how long a road takes is not a roll.
- * What happens ON the road is somebody else's question and is asked by the
- * systems that already ask it - the encounter layer for what is met, and
- * `what-a-sea-crossing-costs.ts` for the one route where the duration itself
- * is a distribution because the weather is.
  */
 export function priceJourney(input: JourneyInput): JourneyCost {
     const power = input.power ?? null;
@@ -488,18 +322,8 @@ export function priceJourney(input: JourneyInput): JourneyCost {
 }
 
 /**
- * The best of what is available for this road, or null where nothing offered
- * suits it and the party is walking.
- *
- * "Best" IS NOT FASTEST, and that is the whole of this function. A hull is
- * faster than a named carriage over a district and no house sends one, because
- * the days saved are two and the cost is that everybody between here and there
- * now knows what this house owns and that it is out. So the right conveyance
- * for the road is chosen first, and something `unsuitedFor` has flagged is
- * reached for only when nothing suitable is held at all.
- *
- * Within the suitable ones it is fewest days, then the one that carries more,
- * then the one not seen coming.
+ * The best of what is available for this road, or null where nothing offered suits
+ * it and the party is walking.
  */
 export function bestForThisRoad(
     available: readonly { conveyance: Conveyance; power: number | null }[],

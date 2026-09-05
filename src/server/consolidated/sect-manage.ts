@@ -1,29 +1,5 @@
 /**
  * Consolidated Sect Tool - `sect_manage`
- *
- * Sects are the difference between cultivating alone on a cold mountain and
- * cultivating with a spirit-gathering array, an elder who answers questions,
- * and a stipend that means you are not foraging.
- *
- * AUTHORITY BOUNDARY
- * ------------------
- * - `join` enforces the sect's own `admissionOrdinal` and the catalog's
- *   engine-checkable attribute minimums. A caller cannot talk their way past a
- *   realm gate by asserting that the elders were impressed. Two of the region's
- *   standing powers take no applicants at all (`recruits: false`); for those,
- *   `join` refuses outright rather than negotiating.
- *
- * The `sects` table is seeded from `src/data/cultivation/sects.ts` on first
- * touch. Membership, rank and contribution are STATE and live in the database;
- * territory, what a sect teaches, who it feuds with and the condition of its
- * inherited compound are WORLD and stay in the catalog. Both are read here and
- * handed to the narrator together; neither is copied into the other.
- * - `promote` computes the requirement for the next rank from the sect's ladder
- *   and the cultivator's realm and contribution, and refuses when it is unmet.
- *   The rank index the caller wants is not an input.
- * - `stipend` pays what has ACCRUED since the last payment, computed from the
- *   run's in-world clock. Calling it twice in a row pays nothing the second
- *   time, because no time has passed.
  */
 
 import { z } from 'zod';
@@ -87,6 +63,12 @@ import {
 import { offerAtTheDoorOf } from '../../engine/social-leverage/entry-offer.js';
 import { publishedDoorOf } from '../../engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 import {
+    houseElementalCharacterOf,
+    rootAtTheDoor
+} from '../../engine/world/house-elemental-character.js';
+import { getSpiritRoot } from '../../engine/cultivation/spirit-roots.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
+import {
     servantBarOf,
     theDoorIsShutTo,
     whoAHouseWillTake
@@ -144,19 +126,6 @@ type SectAction = typeof ACTIONS[number];
 
 /**
  * Chosen, not measured. The one number here without a catalog behind it.
- *
- * High rather than even, and the reasoning is the reason it is not lower: a
- * house that publishes an `admissionOrdinal` and takes applicants is
- * ADVERTISING, and the bar is the filter. Somebody who clears a published bar
- * and walks up is usually taken - what the walk-up costs them is the bottom
- * rank and the absence of anybody vouching, both of which the engine already
- * charges elsewhere. The minority of refusals here are the ordinary ones: the
- * intake is closed this season, the elder who does it is away, they did not
- * take to you.
- *
- * A flat coin flip was tried first at 0.6 and is wrong for a different reason
- * than being harsh: it makes admission a thing that happens TO a player rather
- * than something they did, which is the same softening from the other side.
  */
 const WALKING_UP_UNANNOUNCED = 0.8;
 
@@ -172,6 +141,11 @@ const PER_POINT_OF_CHARM = 0.08;
 /** A house that watched somebody leave remembers which door they used. */
 const WATCHED_YOU_WALK_OUT = -0.3;
 
+/**
+ * The applicant's root is not the one the house's books are written for.
+ */
+const NOT_THE_ROOT_THEY_WANTED = -0.3;
+
 // The ladder a house's own rungs are priced on lives in the engine, because it
 // is mechanics rather than tool plumbing - and because the probation placement
 // needs the same rank rule and importing it from here closed an init cycle
@@ -186,26 +160,7 @@ export {
     entryRankIndexFor
 } from '../../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ON THE ROLL, AT NO RANK IN IT
-//
-// A person can be of a house without being on its ladder, and it is not an
-// edge case: it is what being born to a Dao house's line is, and what a house
-// that took a child in has on its books. `Cultivator.sectId` says whose they
-// are; `sectRank` and the `sect_members` row say what they have done, and only
-// the second of those is climbed.
-//
-// The verbs below all began by asking `getMembership`, so every one of them
-// told a person standing inside the house they were born in that they "serve
-// no sect". Found by playing: a run opened at The House of the Bound Word, and
-// `look` said "The House of the Bound Word has you down as a member" while
-// `promote` said "Yu Wenshan serves no sect" in the next breath.
-//
-// The answer is not to write them a rank row - that would place somebody at
-// ordinal zero on a rung with a floor of five, which is the bar-skip the whole
-// design refuses. It is to say the true thing, which is more useful anyway:
-// you are on the roll, you are on no rung, and here is the rung's floor.
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * The honest refusal for somebody the house's roll carries at no rank, or null
@@ -290,22 +245,14 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
     const repos = ensureCultivationDb();
     const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
     const ordinal = isGuidingErrorBody(resolved) ? null : resolved.cultivator.realmOrdinal;
+    const askerRoot = isGuidingErrorBody(resolved)
+        ? undefined
+        : getSpiritRoot(resolved.cultivator.spiritRoot);
 
     let sects = repos.sects.list();
     if (args.alignment) sects = sects.filter(s => s.alignment === args.alignment);
     if ((args.admissibleOnly ?? false) && ordinal !== null) {
-        // ── A HOUSE WHOSE DOOR IS OPEN IS NOT AN INADMISSIBLE HOUSE ──────
-        //
-        // Found by playing. A nobody standing in the Low Fall gorge, holding
-        // the Pavilion's name, asked "what sects are there" and was not told
-        // it - because the filter reads `admissionOrdinal`, which at that one
-        // house is the bar at the far end of the probation rather than the
-        // doorway. So the listing of houses somebody could put themselves in
-        // front of omitted the only house in the world whose entire intake is
-        // people walking up the mountain.
-        //
-        // The bar is not softened and the house is not marked admissible; it
-        // is simply not hidden from a person it would take today.
+        // A HOUSE WHOSE DOOR IS OPEN IS NOT AN INADMISSIBLE HOUSE
         sects = sects.filter(s => {
             const facts = getSect(s.id);
             const door = publishedDoorOf(s.id);
@@ -321,6 +268,16 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
         sects: sects.map(sect => {
             const facts = sectCatalogFacts(sect.id);
             const recruits = (facts?.recruits as boolean | undefined) ?? true;
+            // AND WHAT ROAD THE HOUSE ACTUALLY TEACHES
+            const shelf = houseElementalCharacterOf({
+                manuals: (getSect(sect.id)?.teaches ?? []).map(id => {
+                    const art = getTechnique(id);
+                    return { element: art?.element ?? null, cap: art?.cap ?? 0 };
+                }),
+                admissionOrdinal: sect.admissionOrdinal,
+                statedRoots: getSectAdmission(sect.id)?.preferredRoots ?? []
+            });
+            const door = rootAtTheDoor(shelf, askerRoot);
             return {
                 id: sect.id,
                 name: sect.name,
@@ -329,29 +286,16 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
                 powerRank: rankName(sect.powerOrdinal),
                 admissionOrdinal: sect.admissionOrdinal,
                 admissionRank: rankName(sect.admissionOrdinal),
+                /** The element of its books, and whether it can teach anything else. */
+                teachesElement: shelf.element,
+                elementalStance: shelf.stance,
+                /** How this asker's own root reads at that door. */
+                rootAtTheDoor: askerRoot ? door : null,
                 admissible:
-                    ordinal === null ? null : recruits && ordinal >= sect.admissionOrdinal,
-                // ── AND WHERE THEY WOULD PUT YOU, WHICH IS THE TERMS ─────
-                //
-                // `admissible` answers "would they have me" and nothing
-                // answered "on what footing". Both halves are required, in the
-                // design owner's own words for the reply this listing owes:
-                // *"they would, at Outer Disciple. Do you want to"*. A player
-                // told only that they would be taken has to ask again; the rung
-                // is what makes the answer worth having, because entering a
-                // house at its floor and entering it near its top are different
-                // decisions.
-                //
-                // `offerAtTheDoorOf` is the SAME call `handleJoin` and
-                // `applyProbation` seat by, so what this read promises and what
-                // either door actually gives can never disagree. That property
-                // is the reason it is one shared helper in the engine rather
-                // than a rule each caller reimplements: the last time they held
-                // separate copies of the call, the walk-up moved to the roster
-                // rule and the probation placement silently did not.
-                //
-                // Null when they would not be taken: there is no rung to name,
-                // and naming one would read as an offer.
+                    ordinal === null
+                        ? null
+                        : recruits && ordinal >= sect.admissionOrdinal && door !== 'refused',
+                // AND WHERE THEY WOULD PUT YOU, WHICH IS THE TERMS
                 wouldEnterAtRank:
                     ordinal === null || !recruits || ordinal < sect.admissionOrdinal
                         ? null
@@ -382,18 +326,7 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
 }
 
 /**
- * What the house's own deciders make of this person, when the caller has read
- * them.
- *
- * NOT ON `JoinSchema`, deliberately. The schema is what a player or a model may
- * SAY, and how a house feels about somebody is not sayable - putting it there
- * would let a narrator assert the one thing this whole path exists to have the
- * engine decide. It is a second function parameter instead, supplied only by a
- * caller that has already read the council off state it holds.
- *
- * Absent for the MCP tool path, which has no world handle: that door gets the
- * ordinary offer, which is the correct answer for a caller with no council
- * rather than a degraded one.
+ * What the house's own deciders make of this person, when the caller has read them.
  */
 export interface WhatTheHouseMakesOfThem {
     /** `WhereTheBodyLands.leaning`, on -1..+1. */
@@ -444,17 +377,6 @@ export async function handleJoin(
     }
 
     // And the houses that have a way in which is not a door.
-    //
-    // Found by the exhaustive sweep rather than by reading: a dao house is a
-    // FAMILY, and the stated way in is adoption - you are taken in as a prodigy
-    // in their dao and very often married to one of theirs. Nothing was
-    // checking that. Two of the seven admitted a stranger who walked up and
-    // asked, and the other five refused only because their admission ordinal
-    // happened to be above the applicant, which is a different rule producing
-    // the right answer by accident.
-    //
-    // `recruits` above cannot express this: it is a boolean, and a house is
-    // neither open nor closed. `intakeRouteOf` is the field that can.
     if (facts && intakeRouteOf(sect.id) === 'adoption') {
         const house = getDaoHouse(sect.id);
         return guidingError(
@@ -473,18 +395,7 @@ export async function handleJoin(
         );
     }
 
-    // ── THE ONE FLOOR THAT IS NOT A RUNG ─────────────────────────────────
-    //
-    // A house that takes one sex and not the other refuses here, in the same
-    // place every other condition it states is checked, and the refusal names
-    // the reason the way every refusal here does. It is deliberately ABOVE the
-    // ordinal gate: a bar somebody could climb to and a door that is shut are
-    // different answers, and reporting the first to somebody facing the second
-    // would send them off to spend a century on a rung that changes nothing.
-    //
-    // The route it names is the honest one - there is not one. That is allowed:
-    // `AGENTS.md` asks a refusal to name a route, and "no version of this exists
-    // and the other houses do" is a route in the only sense that matters.
+    // THE ONE FLOOR THAT IS NOT A RUNG
     const shut = theDoorIsShutTo(sect.id, cultivator.sex);
     if (shut !== null) {
         return guidingError('house_takes_one_sex_only', shut, {
@@ -499,19 +410,7 @@ export async function handleJoin(
     // tool. A Qi Condensation cultivator does not get into a Core Formation
     // sect by being narrated impressively.
     if (cultivator.realmOrdinal < sect.admissionOrdinal) {
-        // ── AND WHERE THE HOUSE HAS A SECOND DOOR, SAY SO ────────────────
-        //
-        // "I join the Azure Cloud Pavilion", typed by somebody at the floor,
-        // used to come back as "admits from Qi Condensation Layer 4" and
-        // nothing else - a bar, correctly stated, in front of a person for
-        // whom the house's whole published intake is standing wide open one
-        // sentence away. That is the same defect as a verb that only works
-        // under one phrasing: the failing half is the more natural sentence,
-        // and there is no way to find the working half except by guessing.
-        //
-        // The bar itself does not move and is not being softened here. What is
-        // added is that the refusal names what would work, which `AGENTS.md`
-        // requires of every refusal.
+        // AND WHERE THE HOUSE HAS A SECOND DOOR, SAY SO
         const secondDoor = publishedDoorOf(sect.id);
         return guidingError(
             'below_admission_ordinal',
@@ -536,12 +435,34 @@ export async function handleJoin(
         );
     }
 
+    // AND WHAT THE HOUSE'S OWN BOOKS CAN DO WITH THIS ROOT
+    const shelf = houseElementalCharacterOf({
+        manuals: (getSect(sect.id)?.teaches ?? []).map(id => {
+            const art = getTechnique(id);
+            return { element: art?.element ?? null, cap: art?.cap ?? 0 };
+        }),
+        admissionOrdinal: sect.admissionOrdinal,
+        statedRoots: getSectAdmission(sect.id)?.preferredRoots ?? []
+    });
+    const atTheDoor = rootAtTheDoor(shelf, getSpiritRoot(cultivator.spiritRoot));
+    if (atTheDoor === 'refused') {
+        return guidingError(
+            'root_the_house_cannot_teach',
+            `${sect.name} teaches one road and it is not one ${cultivator.name} can walk. `
+            + `${getSectAdmission(sect.id)?.requirement ?? ''}`.trim(),
+            {
+                sectId: sect.id,
+                houseElement: shelf.element,
+                spiritRoot: cultivator.spiritRoot,
+                hint: 'A spirit root is rolled once and never changes. This is not a bar that '
+                    + 'rises with rank - the house has no second book to put you on.'
+            }
+        );
+    }
+
     // The catalog's entrance examination, where it has one. Only the
     // engine-checkable half is enforced here - a minimum in an innate attribute
-    // is a number the engine already owns. `preferredRoots` is deliberately NOT
-    // a gate: the catalog says the sect actively recruits those roots, not that
-    // it turns the others away, and reading it as a refusal would invent a
-    // policy the content does not state.
+    // is a number the engine already owns.
     const admission = getSectAdmission(sect.id);
     if (admission) {
         const unmet: Array<{ attribute: string; required: number; actual: number }> = [];
@@ -569,57 +490,7 @@ export async function handleJoin(
         }
     }
 
-    // ── AND THEN SOMEBODY HAS TO SAY YES ─────────────────────────────────
-    //
-    // Every gate above is a threshold, and clearing all of them used to mean
-    // being admitted, on the spot, with no journey and nobody's opinion in it.
-    // Played, that read exactly as badly as it sounds: "which sects would
-    // accept me" answered, correctly, "knowing a name is not an introduction -
-    // somebody would have to put you in front of them, or you would have to
-    // walk up on your own", and the very next input joined a house.
-    //
-    // Walking up on your own is not removed, and must not be: `AGENTS.md` is
-    // explicit that anybody may attempt anything and that the engine's job is
-    // to price the attempt rather than forbid it. What is added is that it is
-    // an ATTEMPT. A house looking at a stranger with nobody speaking for them
-    // is making a judgement, and judgements go both ways.
-    //
-    // Three things move it and all three are already on the row:
-    //
-    //   HOW FAR PAST THE BAR   The margin above `admissionOrdinal`, which is
-    //                          the only thing about a stranger a house can
-    //                          actually see. Capped, because a house pitched at
-    //                          Qi Condensation is not more impressed by the
-    //                          twentieth rung than by the fifth.
-    //   HOW THEY COME ACROSS   `charm` is described in the schema as social
-    //                          first impression and is locked at creation. This
-    //                          is the moment it is for, and it had no consumer.
-    //   WHETHER THEY WALKED    A house that watched somebody leave remembers.
-    //   OUT OF HERE BEFORE     The rank cap below already says a returning
-    //                          member is not a stranger; this says the same
-    //                          thing about the door itself.
-    //
-    // THE BASE FIGURE IS THE ONE JUDGEMENT IN HERE and it is worth saying so
-    // rather than dressing it up. Nothing in the catalogs says how often an
-    // ordinary house takes a stranger who clears its bar, so 0.6 is chosen and
-    // not measured. What would replace it is a count off the world: the share
-    // of a house's roster that arrived unaffiliated rather than being placed.
-    // Until somebody measures that, this is an honest guess with its own
-    // provenance attached.
-    //
-    // Keyed on the DAY, which is the anti-retry and the whole reason this is
-    // not a slot machine. A refusal passes no time, so asking the same house
-    // again on the same day returns the same answer, word for word; going away
-    // and doing something - a season of work, a stretch of cultivation, a rung
-    // - is what buys another look. The player is never blocked and never
-    // rerolls for free.
-    // ── UNLESS THEY WERE SENT FOR ─────────────────────────────────────────
-    //
-    // Somebody on the recall roll is not a stranger walking up unannounced,
-    // and rolling for them would be the house deciding twice about a decision
-    // it has already made. The Mist owes the terraces "every disciple the
-    // terraces ask for, on the day they ask" - it is in the grant terms - so
-    // there is nothing here for the Pavilion to be impressed by or not.
+    // AND THEN SOMEBODY HAS TO SAY YES
     const sentFor = recallDueFor(repos, cultivator);
     const recalledHere = sentFor !== null && sentFor.toFactionId === sect.id;
 
@@ -632,14 +503,9 @@ export async function handleJoin(
         )
         + PER_POINT_OF_CHARM * (cultivator.attributes.charm - 1)
         + (beforeHere !== null ? WATCHED_YOU_WALK_OUT : 0)
+        + (atTheDoor === 'weighted' ? NOT_THE_ROOT_THEY_WANTED : 0)
     ));
     // THE CULTIVATOR'S ID IS DELIBERATELY NOT A STREAM PART.
-    //
-    // It is a `randomUUID`, so keying on it makes the roll irreproducible from
-    // the run seed - which `AGENTS.md` forbids outright, and which showed up
-    // immediately: the same seed accepted an applicant one run and refused
-    // them the next. The run seed, the day and the house are the whole of what
-    // decides it, and a run has one player.
     const look = forStream(
         run.seed, 'sect_admission', Math.floor(run.elapsedDays), sect.id
     ).next();
@@ -682,67 +548,10 @@ export async function handleJoin(
         );
     }
 
-    // ── The rung they come in at ─────────────────────────────────────────
-    //
-    // This had a floor and no ceiling. `below_admission_ordinal` correctly
-    // refuses somebody standing under the gate, and then EVERYBODY who cleared
-    // it was seated at index 0 - so a False Immortal who walked up to a
-    // Foundation-tier sect enrolled as an Outer Disciple, on the sweeping
-    // roster, drawing the bottom stipend. Nothing was wrong at the bottom;
-    // the whole defect was at the top.
-    //
-    // The fix is the promotion ladder read backwards. `requiredOrdinalForRank`
-    // already states what realm each rung is pitched at, and it is the same
-    // function `handlePromote` gates on, so the rank somebody is given on
-    // arrival and the rank they could be raised to afterwards can never
-    // disagree. Contribution is deliberately NOT read here: it is service
-    // rendered to THIS house and a newcomer has none, which is exactly why
-    // this is entry and not promotion - what a stranger is seated by is what
-    // they visibly are.
-    //
-    // AND THE HEADSHIP IS NOT AN ENTRY RANK.
-    //
-    // This loop started at the last index, so a strong enough stranger was
-    // seated at the TOP of the ladder on the day they walked up - at the Azure
-    // Dew Sect, whose ladder is pitched from ordinal 0, that is anybody at
-    // ordinal 16 becoming Sect Warden over a living head. The world already
-    // refuses this to its own people and says why: `seatsAtRank` returns 0 for
-    // the top rank because "the top rank is not a promotion, it is a
-    // succession, it happens when the person in it dies or leaves", and filling
-    // it by the ordinary route "would quietly install a weaker head over a
-    // living master, which is not a thing a house does".
-    //
-    // A rule the world enforces on everybody else and not on the player is the
-    // oldest defect in this codebase. Entry stops one below the top; the
-    // headship changes hands by succession or not at all.
-    // ── AND WHAT THE HOUSE'S OWN PEOPLE AT THAT RUNG HOLD ────────────────
-    //
-    // Everything above is right and is not the whole rule. The lookup reads the
-    // asker's rung and nothing else, which seated a cultivator at ordinal 25 as
-    // a Sword Elder over a house whose own Core Disciple stands at 20 and
-    // earned it by years inside. Measured across the catalog it runs a mean
-    // 0.89 ranks high - above the house's own standard in 234 cases against 5
-    // below. An outsider has the cultivation and not the standing, so they are
-    // seated one under their peers. See `entry-offer.ts`.
+    // The rung they come in at
     const offer = offerAtTheDoorOf(sect.id, cultivator.realmOrdinal, house?.leaning);
 
-    // ── AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK ─────────────────
-    //
-    // This branch was drafted as `?? entryRankIndexFor(...)` and that is the
-    // exact shape that hides a regression: a fallback to the over-generous
-    // answer fires precisely when the new path declines to give one, so the
-    // one case nobody has measured silently gets the number the whole change
-    // exists to stop using.
-    //
-    // It is unreachable TODAY - no council is read at this door, so the band is
-    // always the ordinary offer - and it is written as a refusal anyway,
-    // because the day a caller does pass a leaning, the alternatives are a
-    // house seating somebody it just refused or a house saying so.
-    //
-    // `offerAtTheDoorOf` returning null at all is a different fact again: the
-    // faction is not in the catalog. `sect` came out of the repository, so a
-    // row can exist that the catalog has no entry for, and that is an
-    // incoherent world rather than a house with an opinion.
+    // AND A CLOSED DOOR IS A REFUSAL, NEVER A FALLBACK
     if (!offer) {
         return guidingError(
             'unknown_sect',
@@ -766,27 +575,7 @@ export async function handleJoin(
     }
     let entryIndex = offer.offered;
 
-    // ── AND A RETURNING MEMBER IS NOT A STRANGER ─────────────────────────
-    //
-    // Entry rank is computed from ordinal alone, deliberately, for the reason
-    // stated above: what a stranger is seated by is what they visibly are.
-    // Promotion additionally requires contribution, and SPENDS it. Put those
-    // together with a `removeMember` that deleted the row outright and leaving
-    // was a free promotion - measured in play, Dew Servant out and Dew Elder
-    // back in on the same turn, three ranks for nothing, bypassing the entire
-    // contribution economy that missions exist to feed. Worse in a world where
-    // 244 NPCs sit qualified-and-blocked behind ranks while the player ranks up
-    // by using the door twice.
-    //
-    // The entry rule is right and is untouched. What was wrong is that somebody
-    // who walked out last week read as a stranger to the house they walked out
-    // of, and the house knows exactly what they were. So: a returning member
-    // cannot re-enter above the rank they left. Their contribution was
-    // forfeited on the way out - the game says so - and it has to be re-earned.
-    //
-    // This caps and never raises: somebody who left as a servant and has since
-    // climbed several rungs still enters at servant, and somebody who left a
-    // house they had never risen in is unaffected.
+    // AND A RETURNING MEMBER IS NOT A STRANGER
     const before = repos.sects.formerMembership(sect.id, cultivator.id);
     const cappedByReturn = before !== null && entryIndex > before.rankIndex;
     if (cappedByReturn) entryIndex = before!.rankIndex;
@@ -1092,11 +881,6 @@ export const FLAG_MARKED_THIEF = 'marked_as_thief';
 
 /**
  * Take from the house, quietly, over time.
- *
- * The whole of the betrayal the setting supports. There is no smash-and-grab -
- * see the header of `embezzlement.ts` for why - so this is a rate, a clock and
- * a risk, and the interesting decision is when to stop rather than whether to
- * start.
  */
 export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<object> {
     const repos = ensureCultivationDb();
@@ -1266,15 +1050,7 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
     const { run, cultivator } = resolved;
     const membership = repos.sects.getMembership(cultivator.id);
     if (!membership) {
-        // ── A PROBATIONER IS NOT NOBODY, AND THIS USED TO SAY THEY WERE ──
-        //
-        // "Unaffiliated. No stipend, no array, no elder, and nobody to notice
-        // if this run ends badly" is every word true of somebody on an apex's
-        // published door, and it omits the only interesting fact about them.
-        // It is also the sentence a person in that position types - "where do
-        // I stand" - so this is where the far end of a probation has to be
-        // reachable, or somebody who never says the word "guest" again sits in
-        // a decided probation forever.
+        // A PROBATIONER IS NOT NOBODY, AND THIS USED TO SAY THEY WERE
         const probation = probationOf(repos, cultivator, run);
         if (probation && probation.outcome !== 'carried') {
             const applied = applyProbation(repos, cultivator, run, probation);
@@ -1296,10 +1072,18 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
                     + 'standing, and no party who will come and ask about you on the road.'
             };
         }
+        // A standing read for somebody with no house has to name the route out of
+        // that, because it is the answer a player gets when what they asked was
+        // whether anybody would take them. Stating the absence and stopping is a
+        // dead end at the one rung where the whole question is how to leave it.
         return {
             member: false,
             cultivator: { id: cultivator.id, name: cultivator.name, rank: rankName(cultivator.realmOrdinal) },
-            note: 'Unaffiliated. No stipend, no array, no elder, and nobody to notice if this run ends badly.'
+            note:
+                'Unaffiliated. No stipend, no array, no elder, and nobody to notice if this run '
+                + 'ends badly. Houses short of people advertise rather than wait, so what is '
+                + 'nailed up locally is where an intake with a bar and a date on it would be '
+                + 'found - "what is posted here" reads it, and costs nothing.'
         };
     }
 
@@ -1313,13 +1097,7 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
     const lastPaidDay = readNumberFlag(repos.db, cultivator.id, FLAG_STIPEND_PAID_DAY, 0);
     const elapsed = Math.max(0, run.elapsedDays - lastPaidDay);
 
-    // ── THE RECALL ROLL ──────────────────────────────────────────────────
-    //
-    // "Movement is upward and it is ordinary." Somebody placed down the Azure
-    // chain who has outrun what the house holding them can teach is on the
-    // roll to go back up the gorge, and the Mist keeps it. Read off the shelf
-    // rather than off a rung, so a house that acquires a deeper book keeps its
-    // people longer with nothing edited anywhere.
+    // THE RECALL ROLL
     const recall = recallDueFor(repos, cultivator);
 
     return {

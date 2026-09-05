@@ -1,175 +1,5 @@
 /**
  * The ties an ordinary life produces.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE MEASUREMENT THIS EXISTS FOR
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `when-somebody-does-not-come-back.ts` models what a long seclusion costs the
- * people who knew you. On a controlled cast of four it works: 63% of the ties
- * are given up across a forty-year absence. On a real seeded world it fired
- * almost never, and `scripts/audit-absence.ts` reported why. After 120 years,
- * 498 living people:
- *
- *     73 ties in the entire world
- *        33 enemies   19 rivals   18 allies at 0.3 ("Serves under")   3 acquaintances
- *
- *     ties at or above the friendship standing:  6
- *     spouse ties:   0
- *     kin ties:      0
- *     master ties:   0
- *     disciple ties: 0
- *
- * A world of five hundred people with six friendships and no families at all.
- * The absence pass was correct and inert, because there was nobody to lose.
- * The right response was not to lower the waiting bar until the number moved -
- * that would have made a shortage of relationships look like a working
- * mechanic - it was to supply the ties.
- *
- * ── The rule this module holds ───────────────────────────────────────────
- *
- * **Nothing here is authored between two named people.** Every tie is the
- * by-product of something the world was already doing and already had state
- * for, and every one of them is written by a pass whose cost per year does not
- * grow with the population:
- *
- *   KIN            `applyDemography` already picks a living parent for every
- *                  newborn and writes a lineage edge. It threw the person away.
- *                  Now the birth writes the household: parent, child, the other
- *                  parent when there is a household, and the siblings already
- *                  in it.
- *   HOUSEHOLDS     Two unattached adults standing in the same place. The only
- *                  source of `spouse`, which is the tie the absence pass treats
- *                  as defining and the only one that can be replaced.
- *   TEACHING       `manuals.ts` has always modelled being carried over a gap in
- *                  a shelf by "somebody in the house who holds it", as an
- *                  anonymous set of technique ids. That somebody is a person.
- *                  Naming them is the whole of `applyTeachingLines`, and
- *                  `reachableCeilingFor`'s own comment asked for it: a disciple
- *                  on a house's teaching terms is "not stuck, they are
- *                  dependent, which is a different and more interesting problem,
- *                  and it is the relationship layer's."
- *   SERVED         People at the same rank in the same house, year after year.
- *   TOGETHER       Slow, and it has to be: it is the only tie here that is
- *                  earned by nothing but time.
- *   PASSED OVER    `assessPromotions` already returns everybody it could not
- *                  raise and why. `outranked` means a specific person took the
- *                  seat, and that person had a name the whole time.
- *
- * ── Who teaches you is what a house's name actually buys ─────────────────
- *
- * The teacher is **the lowest-ranked person in the house who can actually carry
- * this student**, and that one rule produces two completely different social
- * textures without branching on how good the house is.
- *
- * A child admitted at rank 0 to an apex sect is not taught by an elder. They are
- * taught by that house's outer disciples - and an apex's outer disciples are
- * formidable people, because `rankRealmBand` puts a rank's expected ordinal
- * against what the house can produce. So the search stops one rung up, and the
- * tie is between people close in rank and often close in age.
- *
- * A farmer's child at a small sect is taught by that sect's masters and elders,
- * because a shallow shelf (`admissionOffer` forces `a_teacher` at one book) has
- * a high `requiredOrdinal` on the only thing it holds, and nobody below the
- * elders stands at it. The search climbs, and the tie is deep and vertical.
- *
- * The instruction the poor sect's elder gives is WORSE than the instruction the
- * apex's outer disciple gives, and neither this module nor any other says so
- * anywhere. It falls out of who is standing there. That is why placement in a
- * strong house is worth so much at an identical admission bar: the name does not
- * buy a rank, it buys who is in front of you on the first morning, and that
- * shows up in outcomes decades later.
- *
- * A near-peer teacher is also still climbing, so the tie has a clock on it. They
- * are promoted, posted, or die. Being abandoned by the person who was teaching
- * you is an outcome, not a bug.
- *
- * ── A STUDENT HOLDS SEVERAL MASTERS, AND THAT IS THE CHAIN ───────────────
- *
- * This module used to pair a student ONCE and never again, and that single rule
- * is what made teaching worthless in this world. Measured: guidance was worth
- * x1.05 against a term that offers x1.5, and 39-75% of every master tie in the
- * world pointed at a grave. Two reasons, and one fix answers both. The tie was
- * taken at intake against the LOWEST person who could carry the student, so the
- * gap decayed to nothing as they climbed past that teacher; and the day the
- * teacher died the student had nobody, forever.
- *
- * On the design owner's ruling - *"a student can have multiple masters, this is
- * a xianxia thing"* - a student now accumulates up to {@link MASTERS_AT_ONCE}
- * masters, and {@link GUIDANCE_FULL_GAP} decides when another is worth taking.
- * They are bound UPWARD ONLY: a new master must stand deeper than the deepest
- * living one already there, because that is the only one the rate term reads.
- * So outgrowing your intake teacher leaves you with the others rather than with
- * nothing, and a house adds a deeper teacher when the student is ready for one.
- * Losing a master is still a real loss. It is no longer career-ending.
- *
- * The set is also meant to be READABLE: one for the house's own road, one for a
- * technique, one who simply took an interest. They are not interchangeable
- * slots, and what somebody ended up holding is an account of how they got where
- * they are - the same thing the origin and shelf work produce elsewhere.
- *
- * WHAT STOPS THIS BECOMING A RATE CHANGE is {@link studentsAtOnce}, not the cap
- * on slots. The scarce thing is an elder's hours, so capacity falls as the gap
- * widens: a near-peer carries six, somebody eight rungs up carries one. Without
- * that, letting everybody accumulate masters would hand the whole world the
- * x1.5 that is supposed to be its rarest advantage.
- *
- * ── What that makes a favour worth, and why the ladder is recursive ──────
- *
- * Two consequences follow from "the teacher's calibre is a fact about the
- * house". Neither is code in this file; both are things this file's output is
- * the evidence for, written down here because the arrangement is one mechanism
- * and reading half of it explains nothing.
- *
- * A FAVOUR BUYS THE TEACHERS, NOT THE RANK. A favour from somebody high enough
- * skips an admission bar - it can place a child at the Frostmirror Court, which
- * admits at Foundation Establishment and would otherwise refuse them outright,
- * or at an apex. What it does NOT buy is a rank: they still enter at the bottom.
- * What it buys is who is standing in front of them on the first morning, and at
- * a house like that the outer disciples doing the teaching outclass the elders
- * of a small sect entirely. That is the whole return on the favour, and it is
- * why one from a Tribulation Transcendence cultivator is worth what it is: a
- * decade of instruction from people who are themselves going somewhere.
- *
- * The Azure Cloud Pavilion is the exception and should stay one. Its bar is
- * already 0 and it refuses nobody at the gate, so a favour buys nothing there
- * and it will not grant one either. A child placed there arrives on exactly the
- * terms a farmer's child does and gets the same formidable teachers - the one
- * house in the world where the favour is worthless and the outcome is identical.
- *
- * EACH TIER'S FLOOR IS STOCKED FROM THE TIER BELOW'S CEILING. An apex's outer
- * disciples are not novices who wandered in; a large share of them were the
- * chosen, or near it, at a court, and were taken upward. A court's are a sect's
- * chosen, and so on down. `gatherings.ts` already does this - a competition
- * winner from a house that answers to the host changes colours, lands at rank 0
- * and loses the `chosen` tag - and because relationships live on the person's
- * own record, everyone selected upward arrives still holding their ties to the
- * house they left. Cross-house supply, for free, out of movement that already
- * happens.
- *
- * The claim is about PROPORTION, not composition. Most people at the bottom of
- * an apex are ordinary intake who walked in the gate, and this module must not
- * turn every outer disciple into a former favourite. What rises with the house
- * is the share of formidable people at a given rank, which is exactly what
- * `rankRealmBand` already encodes and what the supply table reports: teacher
- * rank and teacher ordinal bucketed by house `power_ordinal`.
- *
- * ── Not inflating ────────────────────────────────────────────────────────
- *
- * A world where everybody has twenty friends is worse than one with six. Every
- * pass here is bounded so that a person ends with A FEW people who would notice
- * they were gone: a household is capped at {@link SIBLINGS_PER_HOUSEHOLD}
- * children, a teacher at {@link STUDENTS_AT_ONCE} students, and the marriage and
- * service rolls are per-year chances rather than sweeps. Some people finish with
- * nobody at all, which is a real state and an interesting one.
- *
- * ── Cost ─────────────────────────────────────────────────────────────────
- *
- * The world driver walks 500 years routinely and 12,000 in some probes, so ties
- * are the classic O(people²) trap. Nothing here compares two arbitrary people.
- * Each pass builds one index over the roster (O(n)), then does bounded work per
- * house or per drawn person. The measured per-year cost is flat in the
- * population - see `scripts/audit-absence.ts`.
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -209,11 +39,6 @@ import type { FactionRecord, WorldState } from './world-state.js';
 
 /**
  * A household, and the only tie in this file placed above the defining line.
- *
- * Deliberately the highest number here. It is the one the absence pass can
- * REPLACE - `NEW_HOUSEHOLD_CHANCE` only reaches a tie that was a household -
- * so a spouse both waits the longest and is the one whose giving up costs the
- * most, which is the shape the fiction wants.
  */
 export const SPOUSE_STANDING = 0.85;
 
@@ -245,11 +70,6 @@ export const PASSED_OVER_STANDING = -0.3;
 
 /**
  * Children in one household before the world stops offering that parent.
- *
- * The bound exists because the birth pass draws a parent from whoever is
- * standing in the right place, and over three centuries an unbounded draw makes
- * one long-lived cultivator the parent of forty people. Four is a household;
- * forty is a bug wearing a family.
  */
 export const SIBLINGS_PER_HOUSEHOLD = 4;
 
@@ -258,57 +78,22 @@ export const HOUSEHOLD_MIN_AGE = 18;
 
 /**
  * Chance per unattached adult per year of forming a household.
- *
- * Low on purpose. At 0.03 somebody who reaches adulthood unattached is about
- * evens to still be unattached twenty-three years later, and a meaningful
- * minority never pair at all - which is the population this whole module is
- * trying not to erase, because "nobody would notice" has to remain a state a
- * person can be in.
  */
 export const HOUSEHOLD_PER_YEAR = 0.03;
 
 /**
  * Students one person is carrying at a time.
- *
- * `members.ts` gives every teaching figure in the catalog a `teaching` object
- * with three limits on it - what they know, what they may not say, and what a
- * straight answer costs them - and the third is the one that binds here. Nobody
- * teaches an unbounded number of people, because the hours come off something.
- * Counted against students who are still alive and still in the house, so a
- * teacher whose disciples have died or left is free again.
  */
 export const STUDENTS_AT_ONCE = 3;
 
 /**
  * Master ties one student may hold at once.
- *
- * On the design owner's ruling: *"a student can have multiple masters, this is
- * a xianxia thing."* One for the house's own road, one for a technique, one who
- * simply took an interest - they are not interchangeable slots, and the set a
- * person ends up with is a readable account of how they got where they are.
- *
- * Three, because the point is a CHAIN and not a collection. A student who has
- * outgrown their intake teacher keeps them and gains a deeper one; the cap
- * stops that becoming "everybody is taught by everybody", which would make the
- * guidance term universal and therefore worth nothing as a distinction.
  */
 export const MASTERS_AT_ONCE = 3;
 
 /**
- * Students one person carries at a time, priced by how far they are reaching
- * DOWN to do it.
- *
- * The hours are the scarce thing, not the books - the shelf inside a deep house
- * is open and it is the elders' time that is rationed. Teaching across a wide
- * gap costs the teacher far more of themselves than teaching somebody a rung
- * below, so capacity falls as the gap grows: an outer disciple passing on what
- * they learned last decade carries many, and an elder eight rungs up carries
- * one.
- *
- * This is what keeps a full ladder of teachers the property of two or three
- * houses rather than of everybody. Without it, letting students accumulate
- * masters would hand the whole world the x1.5 that is supposed to be the
- * rarest advantage in it - a rate change wearing a tail's clothes.
+ * Students one person carries at a time, priced by how far they are reaching DOWN
+ * to do it.
  */
 export function studentsAtOnce(gap: number): number {
     if (gap >= 8) return 1;
@@ -319,11 +104,6 @@ export function studentsAtOnce(gap: number): number {
 
 /**
  * Chance per year that a pair who serve together get any further with it.
- *
- * The slowest thing in the file. Two people at the same rank in the same house
- * need roughly five of these to reach the standing at which the world calls it
- * a friendship, so a service tie that matters is a tie somebody spent decades
- * standing next to.
  */
 export const SERVICE_PER_YEAR = 0.08;
 
@@ -347,17 +127,6 @@ function isHere(npc: NpcRecord): boolean {
 
 /**
  * One walk of the roster, shared by every pass in the file.
- *
- * `state.npcs` holds the dead as well as the living and grows without bound -
- * by year 500 it is about four thousand records behind five hundred living
- * people - so a pass that walks it is O(the whole history), not O(the world.)
- * Four passes each taking their own walk showed up directly in the harness:
- * `audit-gatherings.ts`'s cost row went from a flat 0.4-0.5 seconds per hundred
- * simulated years to 0.5 rising to 0.7 across five centuries, and a rising row
- * is the exact thing that column exists to catch.
- *
- * So the walk happens once a year and everything downstream reads `living`,
- * which is bounded by the population target.
  */
 export interface Roster {
     /** Index into `state.npcs`, for writing a record back in place. */
@@ -415,10 +184,6 @@ function bind(
 export interface Household {
     /**
      * The child, with its half of every tie on it.
-     *
-     * Returned rather than written, because a newborn is not in `state.npcs`
-     * until the birth pass is finished with it. The other halves ARE written -
-     * the parents and siblings are already in the world.
      */
     child: NpcRecord;
     parentIds: string[];
@@ -427,14 +192,6 @@ export interface Household {
 
 /**
  * Somebody already in this world who could be a parent to a newborn here.
- *
- * Two conditions and both are already facts about the world: old enough, and
- * not already holding {@link SIBLINGS_PER_HOUSEHOLD} children. The second is
- * read off the parent's own relationship rows rather than off the lineage
- * record - `childrenOf` scans every edge a surname has ever accumulated, which
- * over five centuries is thousands, while a person's own ties are a handful.
- *
- * Callers pass the candidates they have; this only sorts out who is eligible.
  */
 export function couldParent(candidates: readonly NpcRecord[], childAge: number, day: number): NpcRecord[] {
     return candidates.filter(n =>
@@ -446,20 +203,6 @@ export function couldParent(candidates: readonly NpcRecord[], childAge: number, 
 
 /**
  * Write the household a birth actually creates.
- *
- * The birth pass has picked a parent and written a lineage edge since long
- * before this existed. What it never did was say that the two people know each
- * other, so a world could hold four hundred descendants and zero families, and
- * an absence could cost a man his sect rank but never his children.
- *
- * Both halves of every pair, because the halves are allowed to disagree later:
- * a child who leaves still has a parent, and the parent's view of that is its
- * own row.
- *
- * Siblings come off the parent's existing `child` ties, which is both cheap and
- * correct - it is exactly the set of people already in this household - and it
- * is bounded by {@link SIBLINGS_PER_HOUSEHOLD}, so the sibling web inside one
- * family never exceeds a dozen rows however long the parent lives.
  */
 export function bindNewbornToHousehold(
     state: WorldState,
@@ -534,21 +277,6 @@ export function bindNewbornToHousehold(
 
 /**
  * Two unattached adults standing in the same place.
- *
- * The only source of `spouse` in the world, and therefore the only thing that
- * puts a tie above `DEFINING_STANDING` for the absence pass to act on. It is
- * also the only tie in the world that can be replaced, which is what makes
- * `took_another_household` a consequence somebody comes home to rather than a
- * branch that never runs.
- *
- * Same PLACE, not same province: a household is people who live together, and
- * pairing across a province would also have quietly broken the absence harness,
- * which draws the people who were told from those standing where the absentee
- * was. Nothing about this is a matchmaking model - there is no compatibility, no
- * preference and no ranking. Two people were there and neither was spoken for.
- *
- * O(n) per year: one grouping pass over the roster, then a bounded walk down
- * each place's list.
  */
 export function applyHouseholds(
     state: WorldState,
@@ -617,18 +345,6 @@ export interface TeachingLine {
 
 /**
  * What this student needs a person for.
- *
- * Two cases, and both are already in `manuals.ts` rather than invented here:
- *
- *   THE BOOKLESS   A house whose admission terms are `a_teacher` hands its
- *                  newest people no object at all. Everything on its shelf that
- *                  suits them has to come through somebody.
- *   THE GAP        Twenty of thirty-two houses hold a shelf a disciple cannot
- *                  walk end to end - the usual shape is a primer capping at 13
- *                  and the next book wanting 21. `newlyEntitled` already lets a
- *                  house carry somebody across that gap if it still has a living
- *                  master of the higher manual. This is the same condition,
- *                  asked so that the master has a name.
  */
 function whatTheyNeedTaught(
     state: WorldState,
@@ -655,17 +371,6 @@ function whatTheyNeedTaught(
 
 /**
  * Who can open a given manual, closest in rank first.
- *
- * THE ORDERING IS THE WHOLE RULING. Sorting by rank ASCENDING - the lowest rank
- * that can do the job - is what makes an apex sect's new intake the student of
- * an outer disciple and a poor sect's the student of its elder, off one rule and
- * with no branch anywhere on how good the house is.
- *
- * In a deep house the primer is held by dozens of people at rank 0 and 1 who
- * stand well above its `requiredOrdinal`, so the search stops immediately and
- * the tie is near-peer. In a one-book house - which `admissionOffer` forces onto
- * `a_teacher` terms - the only manual has a high requirement and only the
- * elders meet it, so the search climbs the whole ladder.
  */
 function teachersByManual(members: readonly NpcRecord[], shelf: readonly Manual[]): Map<string, NpcRecord[]> {
     const wanted = new Map<string, Manual>();
@@ -692,19 +397,6 @@ function teachersByManual(members: readonly NpcRecord[], shelf: readonly Manual[
 
 /**
  * Name the person behind every transmission the world was already modelling.
- *
- * `reachableCeilingFor` builds a set of technique ids somebody in the house can
- * teach and then discards who. That anonymity was doing real damage: 26 houses
- * teach in person, 219 people belonged to them, and not one of those people had
- * a relationship with the person their entire progress ran through.
- *
- * A student is paired ONCE. If the teacher is later promoted, posted or dies,
- * the tie stays and nothing replaces it - being abandoned by the person who was
- * teaching you is an outcome, and a world where everybody always has a current
- * master is a world with no stakes in having one.
- *
- * O(n) per year: one grouping pass, then per house one index over its members'
- * techniques and a bounded lookup per student.
  */
 export function applyTeachingLines(
     state: WorldState,
@@ -864,20 +556,6 @@ export function applyTeachingLines(
 
 /**
  * People at the same rank in the same house, year after year.
- *
- * The only tie in this file earned by nothing but time, and it is deliberately
- * the slowest and the most tightly capped. Two people who share a hall open at
- * {@link SERVICE_OPENING_STANDING} and gain {@link SERVICE_PER_DEEPENING} on a
- * roll that comes up about twice a decade, so reaching the standing the world
- * calls a friendship takes roughly thirty years of standing next to each other -
- * and it stops at {@link SERVICE_CEILING}, below the line at which somebody
- * would wait a lifetime. Service makes colleagues. It does not make family.
- *
- * Bounded at {@link SERVICE_PAIRS_PER_HOUSE} draws per house per year, and a
- * draw prefers to DEEPEN a tie that already exists over opening a new one -
- * without that preference a few centuries of random pairs produce a house where
- * everybody vaguely knows everybody, which is the inflation this module is not
- * allowed to cause.
  */
 export function applyServedTogether(
     state: WorldState,
@@ -972,20 +650,6 @@ function deepenService(
 
 /**
  * Somebody took the seat you had already met the bar for.
- *
- * `assessPromotions` has always returned this and the caller has always thrown
- * it away. `outranked` is the case with a person in it: the house had room and
- * gave it to somebody else who was standing in the same queue at the same rank.
- * `no_seat` is not written, because there is nobody to hold it against - the
- * hall above is simply full, and that is a grievance against the house rather
- * than against a person.
- *
- * Written once, and once PER PERSON rather than once per pair. A queue produces
- * the same standoff every year for decades with a different winner each time,
- * so a per-pair guard still gave a long-serving disciple a new enemy annually -
- * 1,260 rival rows among 498 people, which is a house full of vendettas rather
- * than a promotion ladder. Somebody who has been passed over is already a person
- * with a grievance; being passed over again deepens the one they have.
  */
 const PASSED_OVER_NOTE = 'Took the seat.';
 export function applyPassedOver(
@@ -1049,16 +713,6 @@ export interface OrdinaryLifeYear {
 
 /**
  * Everything in this file, on one walk of the roster.
- *
- * The driver's entry point. Each pass is separately exported and separately
- * testable, and each will build its own {@link Roster} if called alone - but the
- * yearly line should take this one, because the walk is the expensive part and
- * doing it four times is what put a rising row into the cost harness.
- *
- * ORDER MATTERS ONCE. Teaching runs before households so that a year's students
- * are bound to whoever can carry them before the marriage roll moves anybody's
- * relationships around; the other two are independent. Births are NOT here -
- * they happen inside `applyDemography`, which has the parent in hand.
  */
 export function applyOrdinaryLifeTies(
     state: WorldState,
@@ -1082,13 +736,6 @@ export interface TieSupply {
     ties: number;
     /**
      * Rows pointing at somebody still in the world.
-     *
-     * The number that matters, and it is not the one above. A dead master is
-     * still a master and the row is deliberately kept, but a row pointing at a
-     * grave is not somebody who would notice you were gone - and after three
-     * centuries most of a long-lived cultivator's address book is graves. An
-     * audit that counted rows would report a rich social world made almost
-     * entirely of the dead.
      */
     liveTies: number;
     byKind: Record<string, number>;
@@ -1099,10 +746,6 @@ export interface TieSupply {
     withSomebody: number;
     /**
      * People with no living tie above that standing.
-     *
-     * Not a failure. Somebody whose household has died and whose house has
-     * moved on has nobody, and that is one of the states this world is supposed
-     * to be able to put a person in.
      */
     withNobody: number;
     living: number;
@@ -1112,10 +755,6 @@ export interface TieSupply {
 
 /**
  * What the world currently has to lose.
- *
- * The number `scripts/audit-absence.ts` reports, exported so that the audit and
- * the tests ask the same question of the same fields rather than keeping two
- * copies of a filter that can drift.
  */
 export function tieSupply(state: WorldState, friendshipStanding: number): TieSupply {
     const alive = new Set<string>();

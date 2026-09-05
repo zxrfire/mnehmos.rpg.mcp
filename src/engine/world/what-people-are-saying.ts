@@ -1,56 +1,5 @@
 /**
  * The world's news, in the mouths of people who mostly were not there.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT A RUMOUR IS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- *   ONE LEDGER FACT, RENDERED FROM FIELDS THAT MAY HAVE BEEN SWAPPED ON THE
- *   WAY, BY A NAMED TELLER WHO ALWAYS TELLS IT THE SAME WAY.
- *
- * Three properties are load-bearing and none of them is optional.
- *
- * ── SCALE ────────────────────────────────────────────────────────────────
- * The best gossip is about people impossibly far above the listener. A
- * disciple at Qi Condensation hearing that two of the world's four strongest
- * people fought is the whole point: it says the world is enormous and they are
- * nowhere near the top of it. So `circulating` weights a fact UP for the
- * standing of the people in it and for its scale, not down. The far-away and
- * the unreachable are what gets repeated.
- *
- * ── TRUTH IS A SPECTRUM, NOT A BOOLEAN ───────────────────────────────────
- * A rumour that is half right is more useful and more characterful than one
- * that is simply a lie. So there is no `true` field anywhere in this module.
- * There is a count of hands it passed through, and a `RumourDistortion` naming
- * WHICH PART came off - the who, the where, the when, the size, or, at the
- * bottom, the event itself.
- *
- * ── IT IS ATTRIBUTABLE, AND THEREFORE CHECKABLE ──────────────────────────
- * The draw is seeded on (world seed, fact id, teller id) and nothing else, so
- * ONE PERSON ALWAYS TELLS YOU THE SAME VERSION. That is what makes checking it
- * possible rather than a lottery: ask somebody better placed and you get a
- * different version of the same event, and holding two incompatible accounts
- * of one night is the state the knowledge layer already models and declines to
- * reconcile for you.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * NOTHING HERE IS BESPOKE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * There is no rumour table, no authored gossip, and no branch on a faction or
- * a person. Every rumour is a row in `state.history.facts` that some other
- * system already wrote, read back through a renderer. A distortion never
- * invents a name: `misattributed` swaps in somebody the ledger already holds,
- * `misplaced` swaps in a place the world already has, and `invented` is two
- * real facts crossed - which is what a fabricated rumour actually is when you
- * take one apart. Take the ledger away and this module has nothing to say.
- *
- * The renderer deliberately does NOT reuse `fact.summary`. The summary is
- * engine-authored and true, so a distorted rumour built on it would be a true
- * sentence with a lie stapled on, and the staple would be visible. The player
- * must not be able to see which part came off - so the sentence is composed
- * from fields, and the wrong fields render exactly as confidently as the right
- * ones.
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
@@ -65,12 +14,6 @@ const DAYS_PER_YEAR = 365;
 
 /**
  * How much fidelity one hand costs.
- *
- * Fidelity is `1 / (1 + hands * HAND_DECAY)`, so it falls off fast at the
- * start and slowly afterwards - which is the right shape. The difference
- * between hearing it from somebody who was there and hearing it from somebody
- * who was told by somebody who was there is enormous; the difference between
- * the ninth hand and the tenth is nothing, because it is already a story.
  */
 export const HAND_DECAY = 0.4;
 
@@ -82,10 +25,6 @@ export const MOST_A_MARKET_HOLDS = 3;
 
 /**
  * The realm gap at which somebody is not a peer but a rumour in their own right.
- *
- * Nothing branches on this to decide an outcome - it is a weight, and it is the
- * one that makes a market talk about the top of the world rather than about
- * itself.
  */
 export const OUT_OF_REACH_GAP = 12;
 
@@ -104,11 +43,6 @@ const SCALE_REACH: Record<EventScale, number> = {
 
 /**
  * Which part of a rumour came off in the telling.
- *
- * Ordered by how much of the event survives. Note that four of the six are
- * RIGHT ABOUT THE EVENT - somebody did open that ground, somebody was refused
- * and did fight over it - and are wrong about one circumstance. That band is
- * the interesting one and it is where most rumours land.
  */
 export type RumourDistortion =
     /** It happened, to those people, there, then, at that size. */
@@ -133,11 +67,8 @@ export interface RumouredName {
 
 export interface Rumour {
     /**
-     * The ledger row this descends from, or null when nothing in the world
-     * happened as described.
-     *
-     * Carried so a later, better-placed teller can be recognised as talking
-     * about the same night. Never shown to the player.
+     * The ledger row this descends from, or null when nothing in the world happened
+     * as described.
      */
     factId: string | null;
     distortion: RumourDistortion;
@@ -150,17 +81,6 @@ export interface Rumour {
     named: RumouredName[];
     /**
      * Everybody the sentence puts a name to, doer first, as ids.
-     *
-     * Not the same list as {@link named}, and the difference matters. `named`
-     * is what the knowledge layer may write a record about, so it carries only
-     * people the world holds a row for. This is who the SENTENCE spoke of -
-     * `sentenceFor` renders `actors[0]` as the person it is about and
-     * `actors[1]` as the other party - which includes a played cultivator, who
-     * has no world row and whose name is in the text all the same.
-     *
-     * Bent exactly as the sentence is: under `misattributed` the first id is
-     * the person being wrongly named for it, and the rest are untouched,
-     * because no distortion has ever moved them.
      */
     spokenOfIds: string[];
     /** The highest rung anybody in the rumour stands at, as told. */
@@ -183,16 +103,6 @@ export interface TellerStanding {
 
 /**
  * The facts people would actually repeat, best first.
- *
- * Weighted rather than filtered, and weighted UPWARD for distance. A fact
- * about somebody nine realms above the teller, at the other end of the world,
- * two hundred years ago, outranks a fact about the teller's own neighbour last
- * spring - because that is what people talk about, and because a market that
- * only gossips about itself tells the player nothing they could not see.
- *
- * `secret` is excluded outright. Not for balance: a secret that everybody is
- * repeating is not a secret, and the visibility field is the world's own record
- * of which is which.
  */
 export function circulating(
     state: WorldState,
@@ -266,12 +176,6 @@ function highestOrdinalIn(state: WorldState, fact: HistoricalFact): number {
 
 /**
  * How many people this passed through before it reached this teller.
- *
- * Every term is a real distance the world already stores: how long ago, how
- * far away, how far above, and how closely the telling was held at the time.
- * Somebody who was standing there when it happened is one hand, and the count
- * never goes below that, because there is no such thing as a report with
- * nobody in it.
  */
 export function handsItPassedThrough(
     state: WorldState,
@@ -329,12 +233,6 @@ export function regionOf(state: WorldState, locationId: string | null): string |
 
 /**
  * One teller's version of one fact. Deterministic, and stable per teller.
- *
- * The seed is (world seed, fact id, teller id) and holds no day in it, which is
- * what makes the same person tell you the same story next year. That is a
- * requirement rather than an optimisation: a rumour you cannot go back and
- * check twice is not attributable, and a version that resampled every time you
- * asked would make the whole spectrum unreadable.
  */
 export function retell(
     state: WorldState,
@@ -364,19 +262,6 @@ export function retell(
 
 /**
  * Which part comes off.
- *
- * `fidelity` is the chance nothing does. Everything below that is a draw over
- * the distortions this fact can actually afford, and the affordance test is
- * that the distorted sentence DIFFERS FROM THE TRUE ONE.
- *
- * That test is structural rather than a table, and it had to be. The first
- * version listed which distortions each kind of event supports, and it was
- * already wrong when it was written: `misplaced` was offered on a refusal
- * whose sentence names nobody's location, so a third of the tellers in a
- * market were reported as getting the place wrong while saying, word for word,
- * the true thing. A distortion that moves a field the rendering never reads is
- * not a distortion, and rendering both and comparing is the only check that
- * cannot go stale when somebody edits a template.
  */
 function drawDistortion(
     state: WorldState,
@@ -413,16 +298,6 @@ interface Told {
 
 /**
  * Compose the sentence from whatever fields the distortion left standing.
- *
- * Every branch swaps an INPUT and then renders normally. No branch annotates
- * the output, and none of them may: a rumour that told the player which part
- * was wrong would be a rumour with the answer printed underneath it.
- *
- * Pure, and called several times per rumour by `drawDistortion` to find out
- * which swaps this event can even feel. So it draws its own stream rather than
- * taking one: a function the caller runs speculatively must not advance the
- * caller's RNG, or the version somebody tells depends on how many versions were
- * considered and discarded.
  */
 function bend(
     state: WorldState,
@@ -524,12 +399,6 @@ function someoneElseIn(state: WorldState, fact: HistoricalFact): { id: string; n
 
 /**
  * A place the world holds that this could be said to have happened at.
- *
- * Same KIND where the world has one, because that is how a place gets swapped:
- * one sealed ruin is mistaken for another sealed ruin, and nobody ever reports
- * a duel between two immortals as having happened in a granary. Falls back to
- * any other mortal-layer place, so a world with one ruin in it can still get
- * this wrong - it just gets it wrong more obviously.
  */
 function somewhereElseIn(state: WorldState, fact: HistoricalFact): { id: string; name: string } | null {
     const here = fact.locationId ? getLocation(state, fact.locationId) : null;
@@ -575,13 +444,6 @@ interface Saying {
     kind: HistoricalFact['kind'];
     /**
      * The fact names nobody for it.
-     *
-     * A body found on the low road, a vault emptied in the dark. Every template
-     * below renders a single name as the SENTENCE'S SUBJECT, which reads as the
-     * person who did it - so without this a fact naming only the person it was
-     * done to accuses them of it, in a sentence the player is handed as news.
-     * Found by playing: "Prober turned on their own at the low road", about a
-     * wrong done to Prober by somebody nobody could name.
      */
     authorless: boolean;
     who: string | null;
@@ -604,11 +466,6 @@ function whenPhrase(years: number): string {
 
 /**
  * The word for how big, which is the field `inflated` moves.
- *
- * Deliberately says nothing about WHAT kind of event it was. `inflated` shifts
- * one band, and a band that named a consequence - houses ending, borders moving
- * - would be the distortion asserting a second fact rather than exaggerating
- * the one it has.
  */
 function sizePhrase(size: number): string {
     if (size >= 0.85) return 'and nothing has been the same since';
@@ -619,13 +476,6 @@ function sizePhrase(size: number): string {
 
 /**
  * The sentence. Composed from fields, never from `fact.summary`.
- *
- * The generic tail is not a failure case. Most of the ledger's forty-odd kinds
- * are things a person in a market would render in exactly these terms - a name,
- * a place, and a verb - and a template per kind would be forty ways of saying
- * "somebody did something somewhere" that all had to be maintained. The kinds
- * with their own line below are the ones the design owner asked for by name and
- * the ones that carry the world's scale.
  */
 function sentenceFor(s: Saying): string {
     const who = s.who ?? 'somebody';
@@ -702,10 +552,6 @@ function sentenceFor(s: Saying): string {
 
 /**
  * Everything one teller would repeat, best first.
- *
- * Bounded at `MOST_A_MARKET_HOLDS`, because a person who answers "what is
- * happening" with nine items is a briefing, and there is no briefing in this
- * world.
  */
 export function whatTheySay(
     state: WorldState,

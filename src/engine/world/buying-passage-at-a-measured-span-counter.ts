@@ -95,7 +95,7 @@ function asSchedule(cycle: OpeningCycle): LocationRecord {
 // ─────────────────────────────────────────────────────────────────────────
 // A ROUTE
 //
-// The shape is the catalog's own. The Fourhands Terminal in `regions.ts` is
+// The shape is the catalog's own. The Four Graves Terminal in `regions.ts` is
 // "one of the nine stations, at the head of the pass, an hour from a station
 // seventeen days' walk away ... it opens four days in nine" - which is a pair
 // of endpoints, a walked distance the span replaces, and a published schedule.
@@ -375,14 +375,14 @@ export function whatTheBoardDoesNotSay(running: number): string {
  * Recorded rather than quietly left, the way `SEA_CROSSING_ENGINE_GAP` is.
  *
  * A `RegionBranch` in `regions.ts` carries `parentSectId`, `localName` and
- * `doesHere` and nothing else, so the Fourhands Terminal's far end, its
+ * `doesHere` and nothing else, so the Four Graves Terminal's far end, its
  * seventeen days and its four-days-in-nine schedule exist only as prose in a
  * description. Everything above reads structured fields that the catalog does
  * not yet have.
  */
 export const SPAN_COUNTER_CATALOG_GAP = {
     what: 'No Span route in the catalog is machine-readable, so no board can be built for a live world yet.',
-    whereItWouldGo: 'RegionBranchSchema in src/data/cultivation/regions.ts, whose Fourhands Terminal entry already states a far end, a walked distance and a schedule in prose.',
-    whatItWouldTake: 'Optional structured fields on a branch - the far place, the walked days the span replaces, and periodDays/openDays/phaseDay - plus a branch in each major city. The Fourhands entry is the worked example and needs no new prose.',
+    whereItWouldGo: 'RegionBranchSchema in src/data/cultivation/regions.ts, whose Four Graves Terminal entry already states a far end, a walked distance and a schedule in prose.',
+    whatItWouldTake: 'Optional structured fields on a branch - the far place, the walked days the span replaces, and periodDays/openDays/phaseDay - plus a branch in each major city. The Four Graves entry is the worked example and needs no new prose.',
     whyItIsNotDoneHere: 'regions.ts is a shared catalog owned by somebody else, and a schema field is exactly the shared contract that conflicts badly when two agents touch it at once.'
 } as const;

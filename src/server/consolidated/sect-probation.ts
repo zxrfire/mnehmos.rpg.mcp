@@ -1,37 +1,6 @@
 /**
- * The far end of a published door: reading a probation, and applying what the
- * house decided.
- *
- * `sect-guest.ts` owns the roll - who is sitting in, since when, and what they
- * are shown. This file owns the day the house stops watching. The engine half
- * is `engine/encounters/where-a-probation-ends-and-who-is-placed-where.ts`,
- * which is pure and decides nothing about the database; everything here is the
- * write.
- *
- * ── WHY A DECIDED JUDGEMENT APPLIES ON A READ ────────────────────────────
- *
- * Normally a read that writes is a defect. This one is not, and the reason is
- * whose act it is. The Pavilion "takes them, scores them, and places them" -
- * the scoring happens on the house's clock, not on the player's turn, and by
- * the time somebody walks back up the terraces to ask, the decision has
- * already been made about them. There is nothing here for a player to accept
- * or decline, and offering them the choice would be inventing a negotiation
- * the catalog is explicit there is not one of.
- *
- * So: while the judgement reads `carried` nothing is written and the terms
- * come back as they always did. The first call after it stops reading
- * `carried` applies it, once, and the roll is cleared - which makes every
- * later call take a different branch, so it is idempotent by construction.
- *
- * ── AND IT IS REACHED FROM TWO PLACES ON PURPOSE ─────────────────────────
- *
- * `sect_manage({ action: 'guest' })` is somebody presenting themselves. But a
- * probationer who never uses that verb again would otherwise sit in a decided
- * probation forever, so `standing` - "where do I stand", which is the sentence
- * a person in that position actually types - reads it too. Before this, a
- * probationer asking `standing` got "Unaffiliated. No stipend, no array, no
- * elder, and nobody to notice if this run ends badly", which is true, and
- * omits that they are in year thirty of an apex's intake.
+ * The far end of a published door: reading a probation, and applying what the house
+ * decided.
  */
 
 import { rankName } from '../../engine/cultivation/realms.js';
@@ -57,12 +26,8 @@ import {
 const DAYS_IN_A_YEAR = 365;
 
 /**
- * Where this cultivator stands in a probation, or null when they are not in
- * one. Pure: reads the roll and the catalogs and writes nothing.
- *
- * Null for a guest of a house that does not publish a door, because an
- * ordinary guest place has no far end of this kind - it ends when the guest
- * walks out, or when the house offers membership, and neither is a sort.
+ * Where this cultivator stands in a probation, or null when they are not in one.
+ * Pure: reads the roll and the catalogs and writes nothing.
  */
 export function probationOf(
     repos: CultivationRepos,
@@ -127,10 +92,6 @@ export interface AppliedProbation {
 
 /**
  * Write what the house decided, and clear the roll.
- *
- * Called only where {@link probationOf} has already returned something other
- * than `carried`. Returns null otherwise so a caller can fall through without
- * a second check.
  */
 export function applyProbation(
     repos: CultivationRepos,
@@ -149,40 +110,19 @@ export function applyProbation(
     repos.db.transaction(() => {
         if (judgement.outcome === 'placed' && judgement.factionId) {
             const target = getSect(judgement.factionId);
-            // ── THE SAME DOOR A WALK-UP GOES THROUGH ─────────────────────
-            //
-            // This comment already said "seated by the same rule a walk-up is
-            // seated by... a placement that used its own arithmetic would drift
-            // from `handleJoin`" - and it drifted anyway, because it held its
-            // own copy of the CALL rather than sharing a helper. When the
-            // walk-up moved to the roster rule this branch did not, and
-            // placements went on being seated a mean 0.99 ranks high by the
-            // lookup everything else had stopped using. `offerAtTheDoorOf` is
-            // the shared helper, in the engine so that both tool modules can
-            // reach it without `sect-probation.ts` importing `sect-manage.ts`.
-            //
-            // AND A PROBATIONER GETS NO BONUS HERE, WHICH IS THE RULING.
-            // Somebody coming off probation usually does better than a stranger
-            // and a famous enough stranger beats them anyway, and neither of
-            // those is encoded: the advantage is informational. The deciders
-            // have WATCHED a probationer, so what they hold about them is
-            // firsthand rather than hearsay, and there may be a ledger between
-            // them that a stranger cannot have. Both are read by the council,
-            // not by this branch - so there is no `wasOnProbation` anywhere,
-            // and a house passing over its own probationer for somebody whose
-            // name arrived before they did stays possible.
+            // THE SAME DOOR A WALK-UP GOES THROUGH
             rankIndex = target
                 ? offerAtTheDoorOf(target.id, cultivator.realmOrdinal)?.offered ?? 0
                 : 0;
             placedAt = judgement.factionId;
         } else if (judgement.outcome === 'kept') {
-            // HARD ZERO, and not the entry rule. Somebody kept on did not
-            // cross, and seating them by what they visibly are would promote a
-            // washout for having got some of the way. Rank 0 is the menial and
-            // probationary tier that `FIRST_RANK_THE_BAR_GOVERNS` in
-            // `members.ts` already exempts from the admission bar - which is
-            // exactly where `member-yan-shuling` stands, Sword Servant at
-            // ordinal 5, and that row is what this branch produces.
+            // HARD ZERO, and not the entry rule. Somebody kept on did not cross,
+            // and seating them by what they visibly are would promote a washout for
+            // having got some of the way. Rank 0 is the menial and probationary
+            // tier that `FIRST_RANK_THE_BAR_GOVERNS` in `members.ts` already
+            // exempts from the admission bar - which is exactly where
+            // `member-yan-shuling` stands, Sword Servant at ordinal 5, and that row
+            // is what this branch produces.
             rankIndex = 0;
             placedAt = roll.hostFactionId;
         }
@@ -254,10 +194,6 @@ export function carriedProbationFacts(judgement: ProbationJudgement): Record<str
 
 /**
  * Whether somebody placed down the chain has outrun the house holding them.
- *
- * The recall roll, which the Mist keeps and everybody at the Mist can quote
- * the current number of. Read off the shelf: a house sends somebody up the
- * moment there is nothing left it can teach them.
  */
 export function recallDueFor(
     repos: CultivationRepos,

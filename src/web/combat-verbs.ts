@@ -1,32 +1,5 @@
 /**
  * Hitting somebody, and everything the world does about it afterwards.
- *
- * `attack` decides nothing. It resolves the target, hands the exchange to
- * `combat_manage.resolve` - which owns power assessment, edges, the wounds and
- * the obligations that come out the far side - and then reports. The rest of
- * this module is the far side: what the blows did to a body, whether anybody
- * heard, who answers for it, and what the killing MEANT, which is where every
- * consequence in this game actually comes from.
- *
- * The agreed bout is the whole argument in one place. `terms` reaches exactly
- * one thing, `whatFollowedTheBout`, and never the resolver: a bout is combat
- * with both sides meaning to be gentle, and the agreement lives in what the
- * outcome meant rather than in what the blows did. Kill somebody in one and
- * the blows landed as blows land - what is different is that there were
- * witnesses, they had people, and everybody now knows something about you.
- *
- * ── HOW THIS IS ATTACHED ─────────────────────────────────────────────────
- *
- * These are `GameService` methods living in another file, merged onto the
- * prototype at the bottom of `game.ts` with their signatures merged into the
- * class declaration. `this.attack(...)` resolves and typechecks exactly as it
- * did when the bodies sat in the class, and every line of every body below is
- * the line it was. `src/web/README.md` has the argument for the shape and the
- * warning about the `private` keyword.
- *
- * The three module-level declarations were `private static` members. A static
- * has no instance, which is what module scope already means, so they are
- * declarations here rather than properties of the object.
  */
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
@@ -123,24 +96,11 @@ import { writeFlag } from '../server/consolidated/cultivation-support.js';
 
 /**
  * Priority at which a want is the whole of why somebody is standing there.
- *
- * A goal this high is not a preference, it is the thing they are for, and
- * somebody whose life is one errand does not kneel to the person standing
- * between them and it. Read off `NpcGoal.priority`, which the roster has
- * carried since it was written - "what this person drops everything else
- * for" is that field's own description of itself.
  */
 const WOULD_RATHER_DIE_PRIORITY = 0.8;
 
 /**
  * Standing at which somebody answers rather than yields.
- *
- * A tie this bad is a feud, and a feud is the state in which being made to
- * kneel is worse than being finished. `NpcRelationship.standing` is the
- * same axis another agent used this session for whether somebody accepts an
- * arranged match, and it is used the same way here on purpose: one reading
- * of "will this person go along with something they did not choose",
- * consulted twice, rather than two scales that will drift.
  */
 const ANSWERS_RATHER_THAN_YIELDS = -60;
 
@@ -183,15 +143,6 @@ function wouldTheyKneel(
 
 /**
  * A phrase that names a HEIGHT rather than a person.
- *
- * "somebody of my own realm", "a disciple of my rank", "someone my equal" -
- * all of them are a request for a fair fight rather than for a particular
- * body, and answering them with whoever happened to be nearest is what made
- * every duel in the game either suicide or a refusal.
- *
- * Deliberately requires the possessive or the word `equal`: "a Nascent Soul
- * cultivator" names a height too and names a DIFFERENT one, and must go on
- * resolving the way it always has.
  */
 const SOMEBODY_OF_MY_OWN_HEIGHT =
     /\b(?:my (?:own )?(?:realm|rank|rung|level|height|standing)|my equal|an equal|someone equal|of equal (?:rank|realm)|the same (?:realm|rank|rung) as me|my own kind)\b/i;
@@ -199,82 +150,16 @@ const SOMEBODY_OF_MY_OWN_HEIGHT =
 export const combatVerbs = {
     /**
      * Hitting somebody.
-     *
-     * Routed to `combat_manage.resolve`, which owns power assessment, edges,
-     * the exchange, the wounds and the obligations that come out the far side.
-     * Nothing about the outcome is decided here, and nothing about it may be:
-     * this is the single most consequential thing a player can do in one turn
-     * and a second opinion about who wins would be the drift the whole design
-     * is built to prevent.
-     *
-     * The target must resolve to a real person who is actually present. A
-     * confrontation with somebody the player cannot see is not a scene, and
-     * fuzzy-matching a description into a name would pick the fight for them.
-     *
-     * `terms` says whether the two of them arranged this, and it reaches
-     * exactly one thing: `whatFollowedTheBout`, on the far side of the resolve.
-     * It is not passed to `combat_manage`, it does not touch `goal`, and there
-     * is deliberately no branch on it above this line. A bout is combat with
-     * both sides agreeing to be gentle; the agreement lives in what the outcome
-     * MEANT and never in what the blows did.
      */
     /**
      * Whether the person being coerced yields, or would rather die.
-     *
-     * ── WHY THIS IS HERE AND NOT IN THE ENGINE ───────────────────────────
-     *
-     * Because there is no will-to-submit stat and there must not be one.
-     * Submission is a fact about who somebody is, and every fact about who
-     * somebody is already lives on the roster - so the layer that HOLDS the
-     * roster does the reading and hands the engine an answer with the record it
-     * was taken off attached. `resolveConfrontation` takes it and never
-     * computes it, which is what stops a compliance number appearing.
-     *
-     * Two clauses, and both name a row rather than a trait:
-     *
-     *   the want   an active goal at `WOULD_RATHER_DIE_PRIORITY` or above,
-     *              aimed at the person doing this. Somebody whose whole life is
-     *              getting at you does not kneel to you.
-     *   the tie    standing at or under `ANSWERS_RATHER_THAN_YIELDS` toward
-     *              them, which is a feud, and a feud is the state where being
-     *              made to kneel is worse than being finished.
-     *
-     * Everybody else yields, because most people beaten badly enough do. That
-     * is a DEFAULT and not a rule, which is what keeps the interesting case
-     * reachable rather than making submission a button.
-     *
-     * ── AND IT RUNS ONE WAY, WHICH IS THE ONE PLACE THE SYMMETRY BENDS ───
-     *
-     * The engine reads an NPC's character. It does not read the PLAYER's,
-     * because the player has one and the character has not lost it - AGENTS.md
-     * is explicit that the engine may take a choice only where the character
-     * genuinely has none, and somebody being beaten has not lost their
-     * judgement. So when the player is on the receiving end the answer is
-     * theirs to give, which is an offer rather than a reading. That half is not
-     * built here: nothing in the played game coerces the player yet, and
-     * building the reading for them instead of the offer would be exactly the
-     * softening the rule forbids.
      */
     /**
-     * The art this cultivator is actually fighting with.
-     * ── WHAT IT PICKS, AND WHY IT IS NOT A CHOICE TAKEN FROM THE PLAYER ──
-     *
-     * The best-mastered art they are permitted to use, ties broken on id so the
-     * pick is total and stable. That is not the engine deciding tactics for
-     * them: a cultivator in a real fight brings what they are best at, and a
-     * player who wants a different art can say so - `train_technique` and
-     * `learn_technique` are what change this answer. What would be a decision
-     * taken from them is the opposite, which is what was happening: everybody
-     * fought bare whatever they had spent decades on.
+     * The art this cultivator is actually fighting with. ── WHAT IT PICKS, AND WHY
+     * IT IS NOT A CHOICE TAKEN FROM THE PLAYER ──
      */
     /**
      * The art they would actually run with, which is not the one they fight with.
-     *
-     * `attemptFlight` prices a movement art higher than anything else somebody
-     * can be carrying - up to 0.4 on a chance that starts at 0.45 - and it is
-     * the whole reason qinggong manuals sell. Read separately from
-     * `artTheyWouldFightWith` because that one sorts by mastery across every
-     * art and would hand a flight the player's best SWORD.
      */
     artTheyWouldRunWith(this: GameService, cultivator: Cultivator): Technique | null {
         return this.repos.techniques.listKnown(cultivator.id)
@@ -284,18 +169,6 @@ export const combatVerbs = {
 
     /**
      * The ground a fight is standing on, and the roads off it.
-     *
-     * Only this province's other places. A flight is a short thing - you get
-     * clear of the person in front of you and reach the next thing there is -
-     * and offering a province eleven days away as somewhere to run would be a
-     * road nobody could take with somebody's blade at their back.
-     *
-     * `travelDays` is deliberately not invented for these. Nothing in the
-     * catalog prices a road INSIDE a province, which `whereCouldTheyGo` already
-     * records having got wrong once with a fabricated zero, so the days here are
-     * the one honest thing available: `1`, said as what it is - the next place,
-     * not a measured road. An empty list is a legitimate state and the engine
-     * says so rather than inventing somewhere.
      */
     groundUnderAFight(this: GameService, cultivator: Cultivator): FightGround {
         const here = standingOf(cultivator);
@@ -320,12 +193,6 @@ export const combatVerbs = {
 
     /**
      * Who is standing close enough to hear somebody shout, and what they are.
-     *
-     * Read off records the world already keeps and nothing else: who is in the
-     * square, what the relationship row says, and whether this is a house's own
-     * ground. There is no would-they-come number anywhere and this does not
-     * invent one - `whoAnsweredTheShout` asks the categorical gap and the
-     * standing, both of which already exist.
      */
     whoCouldHearAShout(this: GameService, cultivator: Cultivator, exceptId: string): CouldBeCalled[] {
         const mine = this.repos.cultivators.getById(cultivator.id);
@@ -362,11 +229,6 @@ export const combatVerbs = {
         cultivator: Cultivator,
         /**
          * The band the ground is running at.
-         *
-         * Taken now that a fight is held across turns: `assessPower` reads
-         * ambient, and every round of a fight standing on a spirit tide has to
-         * be priced on the ground it is actually being fought on rather than on
-         * whatever the first round happened to see.
          */
         ambient: AmbientQi,
         target: string | undefined,
@@ -380,22 +242,11 @@ export const combatVerbs = {
         opening: 'open' | 'from_concealment' = 'open',
         /**
          * What the compliance was FOR, when the verb was `coerce`.
-         *
-         * A LABEL. Nothing in the engine branches on it - the goal handed to
-         * the resolver is `coerce` whatever it says - and it is carried so the
-         * record and the narrator can state what was wanted rather than having
-         * to guess it from the outcome.
          */
         wanted?: string
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
-        // ── A NAME PHASE 1 DROPPED HAS ALREADY BEEN PUT BACK ─────────────
-        //
-        // This used to recover it here, from the player's own sentence, and
-        // that recovery now lives in `carryWhatOnlyTheSentenceKnows` where it
-        // serves every verb rather than confrontations. Same matcher, same
-        // roster, one home - so `target` is what a player named whether they
-        // typed it into the plan or only into the sentence.
+        // A NAME PHASE 1 DROPPED HAS ALREADY BEEN PUT BACK
         const query = (target ?? '').trim();
 
         if (query.length < 2) {
@@ -407,21 +258,7 @@ export const combatVerbs = {
             ));
         }
 
-        // ── A SET IS NOT ONE PERSON, AND USED TO BECOME THE WORST OF THEM ──
-        //
-        // Measured on world seed `w-a`, fifteen people in Old River Village:
-        // "I kill everyone here" reached `POINTING`, which answers a pointer
-        // with the LAST element of the crowd order - and that order is
-        // rank-ascending, so it is the deepest body present. The turn came back
-        // "5 major realms is not a fight" and fourteen reachable people were
-        // never considered. A set collapsing to the member most certain to
-        // refuse is worse than truncation, because it reads as a ruling.
-        //
-        // Placed above the faction branch on purpose: "all of Iron Gate Sect"
-        // scores as that faction and would take the house refusal, which is the
-        // right answer for "I attack the Iron Gate Sect" - a house is not
-        // standing anywhere - and the wrong one for a quantified sentence,
-        // which names the people in it.
+        // A SET IS NOT ONE PERSON, AND USED TO BECOME THE WORST OF THEM
         const asASet = theSetThisNames(query);
         if (asASet) {
             return await this.attackOverASet(
@@ -429,22 +266,7 @@ export const combatVerbs = {
             );
         }
 
-        // ── a house is not a person ──
-        //
-        // `combat_manage.resolve` takes an opponent, and a faction is not one -
-        // so "I attack the Nine Abyss Flame Sect" resolved to nothing and came
-        // back `Unresolved party "Nine Abyss Flame Sect" for a confrontation`,
-        // identically at every rung from a rogue to an apex head. That reads as
-        // a considered refusal and is not one: standing was never consulted,
-        // because the noun never resolved.
-        //
-        // What is actually true is a fact about the world rather than about the
-        // resolver, and both halves of it are already modelled. You cannot
-        // fight a house, because a house is not standing anywhere - you fight
-        // somebody in it, which is the confrontation resolver, or you set your
-        // house against theirs, which is `posture` and opens at the head. So
-        // the refusal says that, names both routes, and prices the target out
-        // of `sectThreat` where the player can name them.
+        // a house is not a person
         const asFaction = this.factionMeant(query, cultivator);
         if (asFaction && !this.somebodyAtHand(query, cultivator)) {
             const theirs = sectThreat(asFaction.id)?.acting
@@ -483,19 +305,7 @@ export const combatVerbs = {
             ));
         }
 
-        // ── SOMEBODY OF MY OWN HEIGHT ────────────────────────────────────
-        //
-        // `somebodyAtHand` answers a gesture with whoever is NEAREST, which for
-        // a fight is the wrong body: the nearest person is usually far above,
-        // and the categorical-gap rule then correctly declines. So every route
-        // into combat was suicide or a refusal and a player never fought
-        // anybody, in a setting where a bout between equals is how a disciple
-        // measures themselves.
-        //
-        // A peer phrase asks for a HEIGHT rather than a person, so it is
-        // answered with the closest match on the ladder among the people
-        // actually here. It never invents anybody: an empty square still falls
-        // through to the same refusal below.
+        // SOMEBODY OF MY OWN HEIGHT
         const peer = SOMEBODY_OF_MY_OWN_HEIGHT.test(query)
             ? [...this.present(cultivator)]
                 .sort((a, b) =>
@@ -540,34 +350,12 @@ export const combatVerbs = {
             && this.repos.cultivators.getById(party.id) !== null;
         const standing = this.present(cultivator).find(row => row.id === party.id);
 
-        // ── THE PERSON THE WORLD ACTUALLY HOLDS ──────────────────────────
-        //
-        // Where there is no row there is usually still a RECORD, and it is the
-        // one the world has been keeping: their attributes, and what they are
-        // carrying from every fight, crossing and tribulation before this one.
-        // Describing them as a bare name and an ordinal handed the resolver a
-        // stunt double - might 2, insight 2, unwounded - so a man who was
-        // crippled here last week stood up fresh, and no wound this layer wrote
-        // could ever be read back. Only the fields `OpponentSchema` already has
-        // are filled; nothing about the tool's surface changes for this.
+        // THE PERSON THE WORLD ACTUALLY HOLDS
         const theirRecord = !onRecord && this.atHand
             ? this.atHand.npcs.find(npc => npc.id === party.id) ?? null
             : null;
 
-        // ── SWINGING AT SOMEBODY YOU ARE ALREADY FIGHTING ────────────────
-        //
-        // "I hit him again", "I spar with him", "I keep at it" - all of them are
-        // an ordinary round of the fight that is already standing, and none of
-        // them opens a second one. Without this, a player attacking the same
-        // person twice got a FRESH fight each time: both sides back on full,
-        // the round count back to zero, and a fight that could never be won or
-        // lost because it restarted every turn.
-        //
-        // Checked here rather than in `whatTheySaidInTheFight`, because that
-        // reader answers on the words alone and "I spar with someone of my own
-        // rank" is a sentence about who to fight rather than about what to do
-        // this round. Which person it resolves to is this method's question and
-        // it has just answered it.
+        // SWINGING AT SOMEBODY YOU ARE ALREADY FIGHTING
         const alreadyFighting = theFightStillStands(this.fight, run.id, cultivator.id)
             ? this.fight
             : null;
@@ -577,22 +365,7 @@ export const combatVerbs = {
             );
         }
 
-        // ── AND THE BODY THEY ARE ACTUALLY STANDING IN ───────────────────
-        //
-        // `bodyStandingOn` is what the world says is left in them today, mended
-        // forward from the day it was last true; `maxBodyOf` is the pool their
-        // rung buys. The world's OWN bouts have read both since NPCs were given
-        // a persisted body - `gatherings.ts`, at `BOUT_BODY` - and the played
-        // path did not, so a cultivator who paid a crossing toll last spring
-        // stood up whole for the player and worn for everybody else. That is the
-        // "a player can do everything an NPC can" rule running backwards: the
-        // toll made the world's fights honest and the player's harder than
-        // anybody else's.
-        //
-        // Both are passed rather than only `hp`, because `combatantFromOpponent`
-        // derives the maximum off the CLAMPED might below - so passing a wound
-        // count without the pool it belongs to would price the fraction against
-        // the wrong denominator.
+        // AND THE BODY THEY ARE ACTUALLY STANDING IN
         const opponentSpec = onRecord
             ? { cultivatorId: party.id }
             : {
@@ -634,19 +407,7 @@ export const combatVerbs = {
             cultivator, this.repos, techniqueId ?? undefined
         );
 
-        // ── AND NOW IT IS A FIGHT RATHER THAN A RESULT ───────────────────
-        //
-        // Design owner: "combat should also of course resolve across multiple
-        // turns to give the player agency (fleeing, how, to where, using what
-        // ability, or item?). if you fought and it resolves in one turn and you
-        // died it would be unsatisfying cuz there's nothing you can do about
-        // it."
-        //
-        // So this opens a fight and holds it. The physics are unchanged and are
-        // the same function `resolveConfrontation` runs - see
-        // `unfinished-fight.ts` - and the ENDING still goes through
-        // `settleAFight`, which is the persistence path a one-call fight has
-        // always used. What changed is who decides each round.
+        // AND NOW IT IS A FIGHT RATHER THAN A RESULT
         const opened = openFight({
             // Stable for the life of the fight and unique to it, so round four
             // is round four however long the player took over it. Not the row
@@ -669,17 +430,7 @@ export const combatVerbs = {
                 goal: intent,
                 willWithdraw: true,
                 opening,
-                // ── WHETHER THEY WOULD RATHER DIE ────────────────────────
-                //
-                // Design owner: "depending on some character traits some would
-                // rather die." Read HERE rather than in the engine, and read off
-                // records the world already keeps, because there is no
-                // will-to-submit number anywhere and there must not be one - see
-                // `how-far-you-went-to-make-them-comply.ts`.
-                //
-                // Only asked when it can matter. A coercion is the one goal
-                // whose ending turns on it, and passing it on every fight would
-                // put a reading in the log of a fight it decided nothing about.
+                // WHETHER THEY WOULD RATHER DIE
                 ...(intent === 'coerce' && theirRecord
                     ? (() => {
                         const kneel = wouldTheyKneel(theirRecord, cultivator.id);
@@ -748,13 +499,6 @@ export const combatVerbs = {
 
     /**
      * Who a set-shaped target actually names, as this cultivator holds it.
-     *
-     * The candidates differ per shape and nothing else does: each branch hands
-     * `theSetAsThisCultivatorKnowsIt` a list and the two gates, and that
-     * function applies them the same way to a family, a house and a rank. Null
-     * means the phrase named a set the world has nobody for - a house nobody
-     * here has heard of, a pronoun with nobody behind it - which is the
-     * ordinary unresolved-party answer and not a special case.
      */
     theSetAsYouKnowIt(
         this: GameService,
@@ -821,12 +565,6 @@ export const combatVerbs = {
 
     /**
      * The one person a set is described in terms of.
-     *
-     * A pronoun resolves the way every other pronoun in this package resolves -
-     * `somebodyAtHand`, which reads who was addressed last and otherwise the
-     * nearest face - and a name resolves against the square and the records.
-     * An empty anchor is a pronoun with no word in it: "the whole sect" said by
-     * somebody standing in front of one person means that person's.
      */
     whoASetHangsOn(
         this: GameService,
@@ -856,20 +594,6 @@ export const combatVerbs = {
     /**
      * A name for an id, from whichever store holds the person - and null for
      * somebody the world holds as dead.
-     *
-     * ── FOUND BY THE TEST THAT WAS WRITTEN FOR SOMETHING ELSE ────────────
-     *
-     * On world seed `w-f`, Shen Shuchen's only recorded parent is Liang Anya,
-     * who is `physically_dead` at world creation and standing in the same
-     * place. The first version of this reported her as a member of the family
-     * the act did NOT reach - twice wrong, since she was neither reachable nor
-     * a person. A relationship row survives the person on the end of it, which
-     * is what makes an inherited grudge possible and is exactly why this has to
-     * be asked here.
-     *
-     * `status === 'alive'` and not a new predicate: it is the same test
-     * `npcsAt` and `npcsInFaction` already apply, and it is not a third gate -
-     * a corpse is not a person the set was ever about.
      */
     whoThatIsIfTheyAreStillAlive(
         this: GameService,
@@ -883,45 +607,6 @@ export const combatVerbs = {
 
     /**
      * An act aimed at a set completes over the part of it the player can reach.
-     *
-     * `docs/world/what-the-genre-does-and-whether-we-model-it.md`, "Acts over a
-     * set". Not refused, not silently truncated, and the remainder is gated by
-     * the same knowledge the act was - see `acts-over-a-set.ts`, which owns
-     * both gates and the report and has no verb in it.
-     *
-     * ── IT IS ONE COSTLY ACT, AND THAT IS AN ARGUMENT RATHER THAN A GAP ──
-     *
-     * `a-sentence-can-be-more-than-one-call.ts` spends at most one costly act a
-     * turn and asks which comes first where a sentence holds two. This spends
-     * one: the expansion happens HERE, after the plan is fixed, so the budget
-     * sees a single `attack` step whose target is a description. Nothing in
-     * `whatThisTurnMayRun` changes and `MOST_CALLS_IN_ONE_TURN` is not touched.
-     *
-     * The reason it should be one rather than N is the same reason
-     * `oneClauseIsOneAct` exists: the question has nothing in it to answer.
-     * "Which of these six strangers first?" asks the player to re-say a
-     * sentence they already said as one act, and the law is about how much of a
-     * LIFE one sentence may spend rather than about how many calls it makes.
-     *
-     * ── AND IT STILL STOPS WHERE THE WORLD STOPS IT ──────────────────────
-     *
-     * A fight is played, not reported. So the loop runs each member through the
-     * ordinary single-target `attack` against the world the member before them
-     * left, and breaks the moment one becomes a fight that is still standing -
-     * `this.fight` is non-null exactly then. That member is now the fight the
-     * player is in, the rest are named, and nothing was resolved on their
-     * behalf. Where the gap settles a member one-sidedly - which is the
-     * extermination case, somebody walking through people who cannot answer -
-     * `attack` clears the held fight and the loop goes on.
-     *
-     * The order is `present()`'s own, which is rank-ascending then id: a stated
-     * total order that depends only on who is here. Nothing about it is chosen
-     * for this verb.
-     *
-     * Takes no run and no ambient: every member is run against `currentRun()`,
-     * which is `carryOutThePlan`'s rule - a sequence rather than a batch - and
-     * a member fought on the run the FIRST member started from would be fought
-     * on a body that had already changed.
      */
     async attackOverASet(
         this: GameService,
@@ -1004,48 +689,6 @@ export const combatVerbs = {
 
     /**
      * What the person in front of them made of the thing in their hand.
-     *
-     * ── THE RULING ───────────────────────────────────────────────────────
-     *
-     * `docs/world/things/items.md`: **a famous thing is recognised the way a
-     * famous art is** - unevenly, by people with reason to know it. Carrying
-     * one is a statement, and not always one you want to make; somebody who
-     * recognises it knows something you did not tell them.
-     *
-     * The check is `artifact-recognition.ts`, which is the art check pointed at
-     * an object and imports its two axes rather than restating them. Nothing is
-     * decided here.
-     *
-     * ── WHY A FIGHT IS WHERE THIS LANDS FIRST ────────────────────────────
-     *
-     * All three of the ruling's consequences are about being SEEN carrying
-     * something, and a fight is where a carried object is unambiguously on
-     * show: held up, swung, at arm's length, at somebody with every reason to
-     * look at it. A blade in a pouch is not a statement. A blade in your hand
-     * is.
-     *
-     * It is also the one place the turn has already established what they are
-     * holding - `CombatantInput.weapon`, priced two methods up - so this reads
-     * a fact the turn already has rather than going to look for one.
-     *
-     * A player walking into a room is the WIDER consumer and this is not it.
-     * That read belongs beside `look`, and it wants the same call.
-     *
-     * ── AND RECOGNISING IT IS AN EVENT, NOT A SENTENCE ───────────────────
-     *
-     * `AGENTS.md`: a fact reaches a person, and reaching them is an event. So
-     * where the reading lands, `revealOwnership` writes it down - this is that
-     * function's first caller, and its field `knownOwnershipBy` was already the
-     * check's own strongest input. Somebody who has seen your stolen blade goes
-     * on knowing tomorrow, which is the whole of why carrying one is dangerous.
-     *
-     * ── WHAT DOES NOT REACH IT, AND CORRECTLY ────────────────────────────
-     *
-     * A counted thing has no row and no history, so there is nothing to know. A
-     * granted copy has no row either - `items.md` says a granted thing is a
-     * copy and nothing in the world should read as though a register moved -
-     * and it falls out of the same lookup with no branch saying so. Neither is
-     * a gap; both are the object having nothing to be recognised as.
      */
     whatTheySawYouCarrying(
         this: GameService,
@@ -1117,10 +760,6 @@ export const combatVerbs = {
 
     /**
      * One round of a fight the service is holding, and what it left.
-     *
-     * Everything mechanical is `takeAFightTurn`'s. What this does is write the
-     * result where a player can read it, and hand a finished fight to the one
-     * conclusion both entrances use.
      */
     async answerTheFight(
         this: GameService,
@@ -1151,17 +790,7 @@ export const combatVerbs = {
 
         this.fight = { ...held, state: turn.fight! };
 
-        // ── WHAT THE ROUND DID, AND WHERE THAT LEAVES THEM ───────────────
-        //
-        // Onto `lines` AND `prose` AND `required`, and none of the three is
-        // belt and braces. `composeNarrationUser` sends `lines` alone, so a
-        // fact written only to `structure` reaches an operator reading the log
-        // and nobody playing; `prose` is what the deterministic narrator ships;
-        // and `required` is for facts a player cannot play without. The state of
-        // a fight you are standing in is the definition of one - the whole of
-        // the ruling is that you can see you are losing before you have lost,
-        // and a fight whose state only an operator can read is the one-call
-        // fight again with extra turns.
+        // WHAT THE ROUND DID, AND WHERE THAT LEAVES THEM
         const where = whereThisFightStands(this.fight.state, ambient);
         const facts = factsForToolResult(
             `${held.party.name}: the exchange goes on.`,
@@ -1204,17 +833,6 @@ export const combatVerbs = {
 
     /**
      * A round happens to somebody who did something else with their turn.
-     *
-     * AGENTS.md: do not ban. A player who types "I cultivate" with a blade
-     * coming at them has attempted something, and the honest answer is that the
-     * blade arrives and then they do it - not a refusal telling them to answer
-     * the question first, which is the modal jail the crossroads header already
-     * rejects for its own fork.
-     *
-     * The round is taken as a `guard`, and that is the one judgement in here: a
-     * player who was not answering the fight was not swinging either, and
-     * charging them a full exchange they never chose would be the engine
-     * deciding they had attacked somebody.
      */
     async takeTheRoundFirst(
         this: GameService,
@@ -1251,13 +869,6 @@ export const combatVerbs = {
 
     /**
      * A fight is over, whoever ran the rounds.
-     *
-     * The one conclusion. `settleAFight` writes the wounds, the feud, the lesson
-     * and the death gate in a single transaction; `whatItDidToThem` carries the
-     * findings to the world row; `whatFollowedTheBout` says who else now holds
-     * something about it. All three ran before this method existed, in `attack`,
-     * against a fight settled in one call - and they run here unchanged, because
-     * what a fight left cannot depend on how many turns the player spent in it.
      */
     concludeTheFight(
         this: GameService,
@@ -1287,18 +898,7 @@ export const combatVerbs = {
 
         this.whatTheFightBroke(cultivator, held, result, execution);
 
-        // ── A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL ──────────────
-        //
-        // `summariseToolBody` already put these on `lines` and therefore on
-        // `prose`, which is enough for the deterministic narrator. `required` is
-        // what stops a MODEL narrator from writing a well-turned paragraph about
-        // being outclassed and dropping the four sentences that say what to do
-        // instead - which is the same fact-written-and-never-shown failure the
-        // fight's own state line is on `required` for.
-        //
-        // Only on a no-contest. After a fight somebody actually had, the options
-        // are not what the turn was about and printing them would read as the
-        // engine lecturing somebody who just won.
+        // A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL
         if (result.outcome === 'no_contest' && result.gap.options.length > 0) {
             const routes = sayingWhatWouldWork(
                 routesOutOfAGap(result.gap.options), held.party.name
@@ -1335,13 +935,6 @@ export const combatVerbs = {
         }
 
         // -- SOMEBODY KNELT, AND THAT HAS TO OUTLIVE THE SENTENCE --------
-        //
-        // The fight row ends with the submission, so without a note of it the
-        // fact exists for one turn's prose and then nowhere. It is the state a
-        // situated read needs in order to offer what a submission opens.
-        //
-        // Written only for a coercion that actually reached one: a fight the
-        // player won outright leaves somebody hurt, not somebody kneeling.
         if (held.verb === 'coerce' && result.outcome === 'submission') {
             writeFlag(
                 this.db, cultivator.id, FLAG_YIELDING_TO_YOU,
@@ -1362,30 +955,17 @@ export const combatVerbs = {
             }
         }
 
-        // ── AND WHAT LETTING SOMEBODY GO OPENS ───────────────────────────
-        //
-        // The other direction of the same event, and the engine had only one.
-        // `seedObligations` has always opened the grave grudge a spared person
-        // holds - `combat.ts`, in its own words, "beaten and deliberately let
-        // go" - and nothing anywhere opened the FAVOUR, though `spared` has
-        // been a `FavorCause` since the ledger was written.
-        //
-        // Both, on the same act, is the whole of what makes mercy a decision
-        // rather than a good deed: they owe you their life AND they hold an
-        // account against you for how they came to owe it, and they are alive
-        // to act on the second. Nothing here weighs the two against each other
-        // and nothing here makes the grudge smaller.
+        // AND WHAT LETTING SOMEBODY GO OPENS
         if (lastRound?.playerAct === 'spare' && result.outcome === 'humiliation') {
             this.whatSparingThemLeft(run, cultivator, held, execution);
         }
 
-        // LAST, and the order is load-bearing. `afterAFight` writes the
-        // accounts a bout opens because it went past what was agreed, and
-        // `a-bout-two-people-agreed-to.test.ts` reads the ledger in insertion
-        // order to find them. This adds a row for every ending rather than for
-        // the rare one, so writing it first would put it in front of the row
-        // that test is about and hide a real assertion behind an ordering
-        // accident.
+        // LAST, and the order is load-bearing. `afterAFight` writes the accounts a
+        // bout opens because it went past what was agreed, and
+        // `a-bout-two-people-agreed-to.test.ts` reads the ledger in insertion order
+        // to find them. This adds a row for every ending rather than for the rare
+        // one, so writing it first would put it in front of the row that test is
+        // about and hide a real assertion behind an ordering accident.
         const done = this.afterAFight(run, cultivator, held, settled, execution);
         this.whatTheLoserNowHoldsAboutYou(run, cultivator, held, result, done);
         return done;
@@ -1393,41 +973,6 @@ export const combatVerbs = {
 
     /**
      * The account the person you beat now holds, written down.
-     *
-     * ── A FIELD NOTHING WROTE, FOUND BY PLAYING ──────────────────────────
-     *
-     * `seedObligations` in `combat.ts` decides this for every ending a fight
-     * can have and has done since it was written: *"an NPC must be able to
-     * conclude 'I cannot defeat him now, I will remember this' and act on it
-     * forty years later."* Nothing wrote it. `combat_manage.resolve` walks
-     * `result.obligations` and touches only the rows the PLAYER holds, to
-     * update their `feuds` column, so every account pointed the other way was
-     * decided, returned, and dropped.
-     *
-     * Measured on a pinned world, sparing somebody: the ledger held the favour
-     * this file had just opened and nothing else, and the person who had been
-     * beaten and deliberately let go carried a `rival` tie at -0.15 with the
-     * note *"Lost to them."* The engine had priced that moment as a GRAVE
-     * grudge and the database did not contain it.
-     *
-     * That is the softening AGENTS.md names, arriving from the direction
-     * nobody watches: it made every ending a player can reach - a capture, a
-     * submission, a humiliation, a sparing - free of consequence, and it made
-     * mercy free along with the rest.
-     *
-     * ── WHY IT IS NOT NARROWED TO SPARING ────────────────────────────────
-     *
-     * Because the gap is not about sparing. A rule that fired for one outcome
-     * would be the bespoke rule this repo forbids, and the demonstration
-     * covers the whole table: `seedObligations` keys on the outcome and every
-     * one of its rows was going nowhere. This writes what that function
-     * decided, unmodified, and decides nothing itself.
-     *
-     * `whatFollowsFromTheBout` is deliberately not touched and does not
-     * overlap: its own header says *"whatever the loser holds about it is the
-     * resolver's own record and is not this one"*, and it answers the separate
-     * question of who ELSE is owed something because the fight went past what
-     * was agreed.
      */
     whatTheLoserNowHoldsAboutYou(
         this: GameService,
@@ -1476,20 +1021,6 @@ export const combatVerbs = {
 
     /**
      * The favour a spared person owes, written the way every other kindness is.
-     *
-     * No second pricer and no second ledger: `aDeedEntersTheWorld` hands the
-     * deed to `whatADeedLeaves` at `paidBy: 'actor'`, which is what makes it a
-     * favour rather than a grudge, and every row it decides is written with the
-     * fact's id on it. The cost is `irreversible` because what was given back
-     * was a life, which is the field's own definition.
-     *
-     * WITNESSES ARE THE PEOPLE WHO WERE ACTUALLY THERE, and they move the
-     * weight the opposite way from the grudge's: `whatItWasWorth` weighs an
-     * UNwitnessed kindness a step higher, because public virtue is already paid
-     * for by reputation. So sparing somebody in an empty alley is worth more to
-     * them than sparing them in a courtyard, and the grudge they hold for it is
-     * worth less. Neither of those is a rule written here - it is one function
-     * reading two fields.
      */
     whatSparingThemLeft(
         this: GameService,
@@ -1596,50 +1127,6 @@ export const combatVerbs = {
 
     /**
      * What the fight did to what the player was carrying.
-     *
-     * ── THE GAP THIS CLOSES ──────────────────────────────────────────────
-     *
-     * `result.brokenObjects` is filled by the same resolver that fills it for
-     * an NPC bout, and nothing in the played game read it. A player's blade
-     * came apart inside the resolution - the fight was even repriced without
-     * it, mid-round, which is the whole point of the mechanic - and it was
-     * still whole in their pouch when the turn ended. `applyBoutBreakages` in
-     * `gatherings.ts` and `writeBackWhatBroke` in `war-melee.ts` are the
-     * world's two halves of this writeback; the player had none.
-     *
-     * It lives here for the reason `whatItDidToThem` does: this is the only
-     * layer holding both stores. The resolver is pure with respect to
-     * equipment and says so, and `combat_manage` has no world handle.
-     *
-     * ── TWO WRITES, BECAUSE A HOLDING IS WRITTEN DOWN TWICE ──────────────
-     *
-     *   THE POUCH ROW  is what they are carrying, and it goes.
-     *   THE WORLD ROW  is the object, and it is RUINED rather than deleted.
-     *
-     * `docs/world/things/items.md`'s "spent is not gone": the row keeps its
-     * name, its owner, its claims and every link of its provenance, and gains
-     * one more saying where it ended and who was standing there. A house whose
-     * artifact a stranger broke should have a record that says so, and an
-     * object that vanishes cleanly from the record is one nobody can ever be
-     * asked about.
-     *
-     * ── AND THE SECOND WRITE IS ABSENT FOR SOME OBJECTS, ON PURPOSE ──────
-     *
-     * Only a tracked thing has a row. The catalog's ordinary weapons are
-     * `mundane` kinds standing in for several hundred of the thing, and
-     * `artifact-placement.ts` deliberately seats none of them - a tracked row
-     * per notched sabre is ledger rubble. A counted thing cannot be damaged;
-     * it stops existing, and there is nowhere to write the scar. So the pouch
-     * write is unconditional and the ruin is whatever the world happens to
-     * hold, which is the counted/tracked line arriving on its own rather than
-     * a branch anybody wrote. Do not add one.
-     *
-     * ── OWNERSHIP IS NOT TOUCHED ─────────────────────────────────────────
-     *
-     * Breaking somebody's thing does not transfer it, and `ruin` leaves
-     * `ownerId` exactly where it was. That is the same rule the acquisition
-     * side keeps: holding a thing and owning it are two facts, and a pouch row
-     * is not a claim on the world's register.
      */
     whatTheFightBroke(
         this: GameService,
@@ -1671,26 +1158,7 @@ export const combatVerbs = {
                 this.worldDirty = true;
             }
 
-            // ── AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED ──────────
-            //
-            // The round the object went in already narrated it coming apart -
-            // `resolveExchange` puts it in its own `narrationHint` and
-            // `takeAFightTurn` composes the round's line out of those. Saying
-            // it again here would be the same fact twice in one turn, which
-            // reads as a dump.
-            //
-            // What is new is what the player is holding now and what the record
-            // says. An empty hand is a fact they have to play the next fight
-            // with, and who still owns the pieces is the thread somebody could
-            // follow - which is the whole reason the row is kept rather than
-            // deleted, and it is invisible unless it is said.
-            //
-            // Into `prose` and `required` as well as `lines`, and this is not
-            // belt and braces. `lines` is what a model MAY know and `prose` is
-            // what the deterministic narrator ships, so a fact written to only
-            // the first is computed and shown to nobody playing without a model
-            // attached. A player who is not told they are unarmed goes on
-            // playing as though they are not.
+            // AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED
             const owner = at >= 0 ? this.atHand!.objects[at].ownerName : '';
             const line = `You are not carrying ${loss.broke.objectName} any more.`
                 + (owner
@@ -1724,51 +1192,6 @@ export const combatVerbs = {
 
     /**
      * What somebody hands over once they have yielded and been told to.
-     *
-     * -- A ROW THAT PROMISES A ROBBERY HAS TO PERFORM ONE -----------------
-     *
-     * `wanted` is a label, and `afterAFight` says so out loud: nothing in the
-     * engine branches on it. That is honest while a label is all anybody sees.
-     * It stops being honest the moment a strip OFFERS `hand_over` as a
-     * sentence to type, because the turn then reports success - the prose says
-     * they yielded - and nothing has moved. A player has no way to tell that
-     * from a robbery that worked, which makes it worse than a sentence that
-     * fails to parse.
-     *
-     * -- WHAT COMES ACROSS ------------------------------------------------
-     *
-     * The purse and the tracked things they are carrying, on the counted
-     * versus tracked line `items.md` draws and `siphon` and the library theft
-     * already use. Not their techniques and not their standing: neither is a
-     * thing a hand closes around.
-     *
-     * Both halves go through machinery that exists. The purse is
-     * `whatALiftTook`, which is the one function that moves stones off a
-     * person and already knows the two places a person can live. The objects
-     * are `transferPossession`, which is the one function that moves a row. A
-     * second transfer is how a world starts manufacturing its scarcest
-     * objects out of nothing, so there is not one here.
-     *
-     * -- OWNERSHIP DOES NOT MOVE ------------------------------------------
-     *
-     * `transfersOwnership` is left false. Taking a thing at knifepoint does
-     * not make it yours: `ownerId` still names them, `knownOwnershipBy` still
-     * says who could recognise it on sight, and the provenance link says
-     * `stolen` for as long as the object exists.
-     *
-     * -- AND THEY HAVE BEEN WRONGED TWICE ---------------------------------
-     *
-     * The beating is one wrong and the robbery is another, so the ledger
-     * carries both. Severity is not decided here:
-     * `whatTheyDoAboutBeingWronged` weighs the deed and `whatItWasWorth`
-     * weighs what it cost them relative to what they had, exactly as the lift
-     * path pairs them, and the heavier stands. The grudge id is keyed on the
-     * CAUSE, so this row sits beside the fight's rather than overwriting it.
-     *
-     * The reprisal is deliberately NOT run. Somebody who has just knelt is not
-     * also striking back in the same breath, and the fight's own fallout has
-     * already said what the room did. What lasts is the ledger, and that is
-     * the half this writes.
      */
     whatAYieldingHandedOver(
         this: GameService,
@@ -1910,36 +1333,6 @@ export const combatVerbs = {
 
     /**
      * What somebody who has yielded is made to swallow.
-     *
-     * The other thing a submission opens, and the one the design owner named
-     * beside it. Same shape as the strip: the outcome is already decided, this
-     * is what the compliance was FOR, and it runs where the sentence lands.
-     *
-     * -- IT TAKES A PILL OUT OF YOUR POUCH ---------------------------------
-     *
-     * There is no forcing somebody to swallow a thing you are not carrying, so
-     * the row is spent off the player and the refusal names that when there is
-     * nothing to spend. One pill or a named one: where several are carried and
-     * the sentence named none, the act does not guess which, because guessing
-     * between a healing pill and a hollowing pill is not a thing to be wrong
-     * about quietly.
-     *
-     * -- AND THE EFFECT LANDS ON THEM, NOT ON YOU --------------------------
-     *
-     * `handleConsumePill` applies a pill to a stored cultivator and a world
-     * NPC has no such row, so this does not route through it. What it does
-     * instead is set the state the two soul modules already define - a poison
-     * ends, a hollowing empties - and leave every other pill as a thing that
-     * was swallowed and did nothing anybody can see from outside. That is
-     * honest rather than lazy: the engine has no model for an NPC's hit points
-     * being restored, and inventing one to make a healing pill legible would
-     * be a second body model for one verb.
-     *
-     * -- THE LEDGER IS THE POINT ------------------------------------------
-     *
-     * A hollowing opens the largest row this system writes, held by them and
-     * outliving both the freeing and the holder. Everything else here is
-     * bookkeeping around that.
      */
     whatWasPutDownTheirThroat(
         this: GameService,
@@ -1963,12 +1356,6 @@ export const combatVerbs = {
         }
 
         // The only one they are carrying, or nothing. Never guessed.
-        //
-        // A player holding one pill has said which by carrying it. A player
-        // holding four has not, and the difference between a healing pill and
-        // a hollowing pill is not something to be wrong about quietly - so
-        // this asks rather than picking, which is the same shape every other
-        // ambiguous naming in this layer takes.
         const named = carried.length === 1 ? carried[0] : null;
 
         if (!named) {
@@ -2073,31 +1460,12 @@ export const combatVerbs = {
             : this.present(cultivator).find(row => row.id === held.party.id) ?? null;
         const terms = held.terms as BoutTerms;
 
-        // ── WHAT THE COMPLIANCE WAS FOR ──────────────────────────────────
-        //
-        // A label and only a label: no line of engine code read it, the goal
-        // handed to the resolver was `coerce` whatever it said, and the outcome
-        // was decided before this. It is said out loud because the alternative
-        // is a narrator inferring what somebody wanted out of what they got,
-        // which is the model deciding a fact about the world.
+        // WHAT THE COMPLIANCE WAS FOR
         if (intent === 'coerce') {
             const line =
                 `What was wanted out of ${party.name}: ${(wanted ?? 'submit').replace(/_/g, ' ')}.`;
             execution.facts.lines.push(line);
-            // ── IN `prose`, NOT IN `required` ────────────────────────
-            //
-            // Owner, reading it in play: "this is not required - we know this
-            // cuz of what we did and the description." Right on both counts.
-            // The sentence used to go on to explain that force was applied to
-            // get compliance and could fail the way a fight fails - which the
-            // player had just typed and the outcome had just shown - and
-            // `required` is for facts a player cannot play WITHOUT. Somebody
-            // knows what they demanded.
-            //
-            // It stays in `prose`, which is a different question: `prose` is
-            // what the deterministic narrator ships, so dropping it there
-            // would make a coercion read as an ordinary brawl for anybody
-            // playing without a model - and that is the verb not existing.
+            // IN `prose`, NOT IN `required`
             execution.facts.prose = [execution.facts.prose, line].join('\n');
             execution.facts.structure.push(
                 `coerce: intent label "${wanted ?? 'submit'}", goal handed to the resolver `
@@ -2105,19 +1473,7 @@ export const combatVerbs = {
             );
         }
 
-        // ── AND WHAT IT DID TO THEM ──────────────────────────────────────
-        //
-        // The other side of the boundary, crossed here because this is the only
-        // layer that holds both stores. `combat_manage` wrote the player's half
-        // and, for an opponent with a row, theirs; for everybody else it wrote
-        // nothing, which is most of the people a player ever swings at. This
-        // carries the findings it already made to the record that holds them.
-        // Nothing is re-decided - see the module header - and it runs after the
-        // resolve for the same reason the fallout does.
-        // Everybody standing here who is not one of the two of them. Computed
-        // ONCE and handed to both halves, because both ask
-        // `whatFollowsFromTheBout` the same question and two different witness
-        // counts would be two different answers to it.
+        // AND WHAT IT DID TO THEM
         const room = this.present(cultivator)
             .filter(row => row.id !== party.id && row.id !== cultivator.id).length;
         const inTheWorld = this.whatItDidToThem(
@@ -2138,16 +1494,10 @@ export const combatVerbs = {
         fallout.lines.unshift(...inTheWorld.lines);
         if (fallout.lines.length > 0) {
             // Into `prose` as well as `lines`, and this is not belt and braces.
-            // `lines` is what a narrator may know and `prose` is the
-            // deterministic rendering, and appending to only the first is how a
-            // consequence gets computed, written to the ledger and never shown
-            // to anybody playing without a model attached.
-            //
-            // And `required`, which is reserved for facts a player cannot play
-            // without. This is one: the whole of the ruling is that the world
-            // answers, so a narrator that drops the line leaves a player
-            // believing they got away with it - which is the invisible version
-            // of softening and is worse than the visible kind.
+            // `lines` is what a narrator may know and `prose` is the deterministic
+            // rendering, and appending to only the first is how a consequence gets
+            // computed, written to the ledger and never shown to anybody playing
+            // without a model attached.
             execution.facts.lines.push(...fallout.lines);
             execution.facts.required = [...(execution.facts.required ?? []), ...fallout.lines];
             execution.facts.prose = [execution.facts.prose, ...fallout.lines].join('\n');
@@ -2158,40 +1508,6 @@ export const combatVerbs = {
 
     /**
      * Carry what the resolver decided to the record that holds the person.
-     *
-     * ── THE BOUNDARY, AND WHY IT IS CROSSED HERE ─────────────────────────
-     *
-     * `combat_manage.resolve` persists its opponent's half only for an opponent
-     * with a row in the `cultivators` table. Everybody else - which is most of a
-     * square, and effectively all of the people a player actually spars with -
-     * is DESCRIBED to it, because there is no id to pass, and everything it then
-     * decided about them was thrown away on the way out. Beat somebody bloody
-     * and they were whole the next turn; kill them and they were standing there.
-     *
-     * Neither side could close that alone. The tool owns one store, runs its
-     * writes in one synchronous transaction, and has no run handle at all when
-     * it is driven off the MCP surface - so it cannot reach an async per-run
-     * world. The world layer has never heard of a run or a played cultivator.
-     * This method is the only place that holds both, so this is where the two
-     * are joined, and it does no deciding of its own: it reads the findings out
-     * of the body the resolver returned and hands them to the world layer's own
-     * write path.
-     *
-     * ── WHAT IT DOES NOT CARRY ───────────────────────────────────────────
-     *
-     * Hit points, and that sentence used to end "because the world does not
-     * store them". It does now: `NpcCultivation.hp` with a `bodyOnDay` anchor,
-     * mended forward by `bodyStandingOn`, which is how a crossing toll is
-     * carried. The played path READS it - see the body block in `attack` - so a
-     * cultivator the world wore down is met worn down.
-     *
-     * Writing it back is the half that is still missing, and it is named here
-     * rather than left to be discovered: a player can wear somebody down inside
-     * a fight and the wear does not reach the world row afterwards, so the same
-     * person is whole again the next time anybody meets them. Wounds are carried
-     * in full and are the durable half; the bar is not. Closing it means
-     * deciding what a bout SHOULD leave on a body that heals in about five and a
-     * half years, which is a ruling rather than a patch.
      */
     whatItDidToThem(
         this: GameService,
@@ -2206,23 +1522,10 @@ export const combatVerbs = {
         died: boolean;
         /**
          * Who the dead left, in the world's own inheritance order.
-         *
-         * Carried out of here rather than re-derived downstream because
-         * `settleNpcDeath` has already answered it - on the record as it stood
-         * at death, which is the only moment the answer is right - and a second
-         * walk of the lineage after `markDead` would be asking about a corpse.
-         * Empty for anybody who lived and for anybody who left nobody.
          */
         theirPeople: readonly { id: string; relation: InheritanceRelation }[];
         /**
          * The accounts the world decided this fight opened.
-         *
-         * Decided THERE and not here, which is the whole of the design owner's
-         * ruling that a war death is a grudge like any other: `war-melee.ts`
-         * and this path both write their dead through
-         * `whatTheConfrontationDidToThem`, so the rows come out of the one
-         * place both of them already meet. Empty for an opponent the world does
-         * not hold - see `whatFollowedTheBout`, which covers that half.
          */
         opens: readonly ObligationInput[];
         lines: string[];
@@ -2314,46 +1617,6 @@ export const combatVerbs = {
 
     /**
      * Who else holds something about a fight, once it is over.
-     *
-     * ── THE RULING ───────────────────────────────────────────────────────
-     *
-     * AGENTS.md: **"Kill somebody during an agreed bout and you will obviously
-     * face consequences."** Nothing above this line prevents it and nothing
-     * above this line softened it. The bout ran through the same resolver a
-     * killing runs through, with the same exchanges, the same wounds and the
-     * same death gate, and this is where - and the only place where - the
-     * difference between having agreed and not having agreed is charged.
-     *
-     * ── WHAT WAS ACTUALLY MISSING ────────────────────────────────────────
-     *
-     * All of it. "I spar with him" and "I pin him" both parsed to `subdue` and
-     * were indistinguishable from that point on; `seedObligations` keys on the
-     * outcome alone, so a bout that ruined somebody wrote exactly the record a
-     * mugging writes; and a killing wrote NOTHING, because the resolver is
-     * right that the dead hold nothing and nobody else was ever asked. A house
-     * could lose a member in a friendly bout and the ledger would not contain
-     * the fact.
-     *
-     * ── WHAT IT WRITES ───────────────────────────────────────────────────
-     *
-     * Two ordinary rows in tables that already exist, both in the direction the
-     * rest of the codebase writes - the aggrieved party HOLDS it, the offender
-     * is the SUBJECT of it - so every query that reads obligations finds them,
-     * inheritance carries them, and a descendant three generations on can still
-     * be carrying it:
-     *
-     *   THEIR HOUSE   an obligation row against whoever went too far. The loser
-     *                 already has their own record from the resolver and this
-     *                 does not touch it; where the loser is dead they have no
-     *                 record at all, which is exactly the hole this fills.
-     *   YOUR HOUSE    standing, through `spendStanding`, which is the same
-     *                 arithmetic every other act inside a house runs on. Only
-     *                 where the player is the one who went too far, because a
-     *                 house ledger is a thing the played cultivator has and an
-     *                 NPC in a square does not.
-     *
-     * Nothing is invented for this and nothing is grave-specific or bout-
-     * specific in either table. `attentionFor` writes a robbery the same way.
      */
     whatFollowedTheBout(
         this: GameService,
@@ -2366,48 +1629,14 @@ export const combatVerbs = {
         /**
          * Whether the world recorded the opponent's death, for an opponent the
          * world holds and the cultivators table does not.
-         *
-         * The resolve body's own `opponentDied` covers the other half. Both are
-         * the survival layer's answer about the same person reaching this by
-         * different routes, because the person is stored in different places.
          */
         diedInTheWorld = false,
         /**
          * Who the dead left, from `whatItDidToThem`.
-         *
-         * ── THE HOLE THIS CLOSES, MEASURED ───────────────────────────────
-         *
-         * Played, on a pinned world: a cultivator killed two people in front of
-         * eight witnesses and `obligations` held ZERO rows afterwards. The
-         * killings were in the world - `aDeedEntersTheWorld` wrote both facts -
-         * and the world's own report named an heir on the way past
-         * (`heir=npc-232`). Nobody held an account against the player for
-         * either, because `whatFollowsFromTheBout` had only ever been asked
-         * about the loser's HOUSE, and neither of them had one.
-         *
-         * So the heaviest thing a player could do to somebody was the one thing
-         * that opened no account, while robbing them opened one reliably. That
-         * is the agency rule's softening in its most invisible form.
-         *
-         * `whatADeedLeaves` has always said what should happen - *heavy, and
-         * they have people: their family carries it at the same weight* - and
-         * its field for it is `principalCannotHoldIt`. This is that field,
-         * arriving where the bout is priced so the severity is still decided
-         * exactly once, in the module that owns the table.
          */
         theirPeople: readonly { id: string; relation: InheritanceRelation }[] = [],
         /**
          * The rows the world already decided, for an opponent it holds.
-         *
-         * Used verbatim where there are any. The world path is the one both a
-         * war and a played killing come through, so taking its answer here is
-         * what makes the two the same event - and re-deciding it would be the
-         * second opinion the whole ledger is built to prevent.
-         *
-         * Empty for an opponent with a `cultivators` row and no world record,
-         * and that half is written below through the SAME builder. Two callers,
-         * one decider; the branch is on where the person is stored, which is a
-         * fact this file has always had to know.
          */
         worldOpens: readonly ObligationInput[] = [],
         /** The room, computed once by the caller and shared with the world half. */
@@ -2426,21 +1655,9 @@ export const combatVerbs = {
         const loserId = typeof body.loserId === 'string' ? body.loserId : null;
         if (loserId === null) return nothing;
 
-        // `died` is the survival layer's word, written before this ran, and it
-        // is THE PLAYER's - `combat_manage.resolve` has always read that way and
-        // its callers read it that way.
-        //
-        // The opponent's has two homes because the opponent does. Somebody with
-        // a cultivator row is answered by the tool's own death gate and arrives
-        // as `opponentDied`; somebody the world holds is answered on the far
-        // side of the boundary and arrives as `diedInTheWorld`. Both are the
-        // same ruling by the same layer about the same event.
-        //
-        // This is what the header's ruling was waiting for. Until an opponent
-        // could die at all, `loserDied` could only ever be false for the person
-        // a player actually spars with, so the killed-somebody-in-an-agreed-bout
-        // consequence was unreachable against the entire population a player
-        // meets. It is reachable now, and nothing else about the charge changed.
+        // `died` is the survival layer's word, written before this ran, and it is
+        // THE PLAYER's - `combat_manage.resolve` has always read that way and its
+        // callers read it that way.
         const playerDied = body.died === true;
         const opponentDied = body.opponentDied === true || diedInTheWorld;
         const loserIsThePlayer = loserId === cultivator.id || playerDied;
@@ -2493,27 +1710,7 @@ export const combatVerbs = {
         const actorName = loserIsThePlayer ? party.name : cultivator.name;
         const hurtName = loserIsThePlayer ? cultivator.name : party.name;
 
-        // ── AND EVERYONE WHO HEARS ABOUT IT KNOWS SOMETHING ABOUT YOU ────
-        //
-        // AGENTS.md's own worked example ends on that sentence, and it was the
-        // one half of the ruling that had no mechanism: the obligation row said
-        // a house was owed something, and the WORLD did not contain the bout.
-        // Nobody could repeat it, no digest carried it, and a stranger asking
-        // around about this cultivator in forty years found the ledger empty of
-        // the event that the account rests on.
-        //
-        // Written whatever `followed.against` came to, because how far past the
-        // terms it went is not the same question as whether anybody has a claim.
-        // A bout that went too far against somebody who answers to nobody opens
-        // no account at all - `followed.brokenPromise` is exactly that case -
-        // and the world should still contain it. AGENTS.md: write the fact and
-        // no grudge.
-        //
-        // The severity is `whatFollowsFromTheBout`'s where it decided one, and
-        // it is not re-decided here. Where it decided none, the fact still needs
-        // a weight, and the honest floor is the lowest band: nobody is owed
-        // anything, so nothing about it is grave to anybody but the person it
-        // happened to.
+        // AND EVERYONE WHO HEARS ABOUT IT KNOWS SOMETHING ABOUT YOU
         const deed = this.atHand
             ? aDeedEntersTheWorld(this.atHand, {
                 kind: 'betrayal',
@@ -2563,15 +1760,7 @@ export const combatVerbs = {
             });
         }
 
-        // ── AND WHAT ANYBODY IS NOW OWED ─────────────────────────────────
-        //
-        // One decider, two sources, and the branch is on where the person is
-        // stored rather than on what kind of fight it was. The world holds most
-        // of the people a player swings at and has already decided their rows -
-        // through the same function `war-melee.ts` writes its dead with, which
-        // is the whole of the ruling that a war death is a grudge like any
-        // other. The handful of opponents who exist only as a `cultivators` row
-        // are built here, through the identical builder.
+        // AND WHAT ANYBODY IS NOW OWED
         const opens = worldOpens.length > 0
             ? worldOpens
             : theAccountsAFightOpens({
@@ -2636,14 +1825,7 @@ export const combatVerbs = {
             );
         }
 
-        // ── AND WHAT YOUR OWN PEOPLE MAKE OF IT ──────────────────────────
-        //
-        // Only when the player is the one who went too far. A house that put a
-        // disciple in a friendly bout and got a body back has been told
-        // something about that disciple, and standing is where a house keeps
-        // what it thinks. `spendStanding` runs the house's own arithmetic - the
-        // discount a following buys, the floor - so nothing here invents a
-        // curve; this supplies the raw figure and says where it came from.
+        // AND WHAT YOUR OWN PEOPLE MAKE OF IT
         const mine = loserIsThePlayer ? null : positionIn(this.repos, cultivator.id);
         if (mine && followed.ownHouseCost > 0) {
             const credit = creditIn(this.repos, cultivator.id, mine, run.elapsedDays, false);

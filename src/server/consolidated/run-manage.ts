@@ -1,24 +1,5 @@
 /**
  * Consolidated Run Tool - `run_manage`
- *
- * The unit of permadeath.
- *
- * A run carries the seed every stochastic system in the game derives from, the
- * turn counter, the in-world clock, and - once it ends - the row in the death
- * ledger that says how this one finished.
- *
- * WHAT IS DELIBERATELY ABSENT
- * ---------------------------
- * There is no `resume`, `revive`, `reload`, `rollback`, `restore` or
- * `set_status` action, and none may ever be added. `RunRepository.endRun` only
- * writes over an ACTIVE run, so even a caller that reached past this tool could
- * not reopen a closed one. Permadeath is not a rule the narrator is asked to
- * respect; it is a state machine with no edge back.
- *
- * `seed_info` exposes the seed and the stream derivation because reproducibility
- * is a feature of this engine: the same seed and the same inputs produce the
- * same run, which is what makes "you cannot reroll" checkable rather than
- * merely asserted.
  */
 
 import { z } from 'zod';
@@ -199,18 +180,7 @@ export async function handleEnd(args: z.infer<typeof EndSchema>): Promise<object
         return guidingError('unknown_cultivator', `Run ${run.id} has no cultivator record.`);
     }
 
-    // ── The one door out that is not a death. ──
-    //
-    // A run ends when the cultivator dies. The single exception is a True
-    // Immortal, who punched a hole in the sky to earn the choice: they may
-    // settle their affairs, step off the ladder, and close the run by
-    // ascension. Everyone else - including a Grand Ascension cultivator, and
-    // including a False Immortal who survived the last crossing and did not
-    // complete it - plays until something kills them.
-    //
-    // Deliberately NOT generalised into a quit action. There is no honourable
-    // retirement at Core Formation, and offering one would make permadeath a
-    // setting rather than the shape of the game.
+    // The one door out that is not a death.
     const eligibility = canEndRunVoluntarily(cultivator);
     if (!eligibility.legal) {
         return guidingError('voluntary_end_not_permitted', eligibility.detail, {

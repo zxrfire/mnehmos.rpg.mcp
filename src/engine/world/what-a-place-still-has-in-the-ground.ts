@@ -1,134 +1,5 @@
 /**
  * What a place still has in the ground, and what taking it does.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * COUNTED STOCK IS A QUANTITY THE WORLD HOLDS, AND IT GOES DOWN
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `docs/world/things/items.md` divides everything a person can hold into three
- * tiers. This module is the whole of tier two's ground half:
- *
- *   a price and nothing else   Mundane goods. A meal, a robe, a night's board.
- *                              Never counted anywhere, no row, no arithmetic.
- *                              What moves them is an event - a famine, a shut
- *                              pass - and never anybody buying one. That layer
- *                              is `what-is-true-of-a-place-right-now.ts` and
- *                              nothing here duplicates it: a status stops a
- *                              mundane good, and this file has no opinion on
- *                              one. The seam runs the other way too - that
- *                              module deliberately does NOT carry a "worked
- *                              out" status, because the reading below already
- *                              answers it off the count, and two authorities on
- *                              one fact disagree the first time anybody
- *                              forages. What is theirs is a DECISION taken in
- *                              consequence - a house closing a district to
- *                              gathering - which is not recoverable from a
- *                              number.
- *   an amount somewhere        Cultivator materials. Herbs and beast materials
- *                              are the ground half and are this file. Common
- *                              manuals are the other half: also counted, also
- *                              depleting, but restocked by somebody sitting
- *                              down and copying one. Supply there is LABOUR,
- *                              and `what-a-copy-of-a-manual-costs-at-a-stall.ts`
- *                              already prices it in `monthsToCopy` and
- *                              `copyistMonthlyCash`. Do not model a book as a
- *                              plant.
- *   one thing with a history   A specific object somebody can be asked about.
- *                              `possessions.ts`, and not this file at all.
- *
- * Until this existed, the counted tier was infinite in the only sense that
- * matters: a cultivator foraged, material appeared, forever, and a province
- * could not be picked clean. That is not a resource-management omission. It
- * removes a CAUSE the world already has vocabulary for - a district that has
- * been worked out, a reason for a house to put a party on a longer road, and
- * the reading that `BEAST_TIDES` in `beasts.ts` insists on, where a tide is a
- * symptom of something changing on the ground rather than a monster problem.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE SHAPE, AND WHY IT IS THIS CHEAP ON PURPOSE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * One number per place, per kind, per grade. No ids, no provenance, no
- * individuals - a fungible amount, and any one of it is any other. That is the
- * design owner's own statement of the storage shape and it is the point:
- *
- *   herb   mortal earth heaven immortal chaos
- *   beast  mortal earth heaven immortal chaos
- *
- * Ten bands per place. Fifty-odd places in a seeded world are ground anybody
- * would forage or hunt on, so a fully populated table is hundreds of numbers.
- * Keying on the catalog row instead would be 43 herbs plus 26 materials
- * against every place, which is thousands, and would need re-keying every time
- * either catalog grew. The band is the unit because the band is what fungible
- * MEANS.
- *
- * It is stored on `LocationRecord.data`, which is a flat scalar bag already
- * persisted as JSON on `world_locations.data`. So this costs no migration, no
- * table, no repository change and no new column - two scalars on a row that is
- * already written every time the world is saved, and only on places somebody
- * has actually drawn from.
- *
- * ── CAPACITY IS DERIVED, NEVER STORED ────────────────────────────────────
- *
- * AGENTS.md: prefer deriving to storing where the answer moves. A stored
- * capacity goes stale the moment a catalog row is added and then the row lies
- * with a straight face. So what is stored is only what has been TAKEN and WHEN,
- * and everything else is arithmetic:
- *
- *   capacity  = the band's summed `rarityWeight`, scaled by this ground's qi
- *   remaining = capacity - (what was taken, less what has grown back since)
- *
- * `rarityWeight` is used because it is already the catalog's own measured
- * statement of how much of a band the world holds, and it is not a number
- * anybody chose here. Measured off the catalogs, at ordinary ground:
- *
- *   herb    mortal 2340   earth 565   heaven 116   immortal 24   chaos 6
- *   beast   mortal 1070   earth 405   heaven  57   immortal  8   chaos 2
- *
- * That fall of roughly four to five times a grade is `items.md`'s own claim
- * arriving from the supply side rather than being asserted: only the bottom of
- * the ladder has enough ground to restock indefinitely. Nobody tuned it.
- *
- * The RATIOS between bands are that measurement. How big the numbers are in
- * units a person can carry is a separate decision, and the weights are used
- * raw because raw is where it lands correctly:
- *
- *   a band is sustainable when one hard worker takes less in a year than the
- *   band grows back in a year
- *
- * Mortal grade grows back about ten times what a full-time forager takes, so
- * one person cannot make a dent and ten of them can - which is why nobody has
- * ever heard of a district running out of hare pelts. Earth grade grows back a
- * fifth of what that same person takes, so one person working a district for a
- * couple of years strips it and does not live to see it back. Both of those
- * are pinned in the test file.
- *
- * ── NOTHING HERE DRAWS ───────────────────────────────────────────────────
- *
- * Regrowth is linear in elapsed days and takes no sample. There is no new RNG
- * stream in this module and there must not be one: a draw added to this path
- * would shift every later draw on whatever stream it borrowed, which AGENTS.md
- * treats as a regression until proved byte-identical. The variance a player
- * sees is already in the forage and hunt draws upstream; what the ground has
- * left is arithmetic on top of them.
- *
- * ── WHO ACTUALLY DRAWS IT DOWN ───────────────────────────────────────────
- *
- * The world's own people, every year, whether or not anybody is playing. A
- * cultivator's pouch is a rounding error against a district's year and always
- * was: measured, all three call sites in the game ask this table for ONE unit
- * against a mortal band that regrows forty-four over the same span, so for a
- * while the column could not fall by any actor and a thousand world-years
- * produced no worked-out ground anywhere. See the population-pressure section
- * below, and `applyGroundPressure` in `the-world-changing-on-its-own.ts`, which
- * is its one caller.
- *
- * ── AND IT COMES BACK ────────────────────────────────────────────────────
- *
- * A province picked clean that stays clean forever is a worse world than an
- * infinite one, so every band refills. The rate is a design decision and it is
- * pinned by `tests/engine/world/what-a-place-still-has-in-the-ground.test.ts`
- * rather than sitting here as a number nobody reads twice.
  */
 
 import type { LocationRecord } from './locations.js';
@@ -145,11 +16,6 @@ import { TechniqueGradeSchema, type TechniqueGrade } from '../../schema/cultivat
 
 /**
  * What kind of counted stock a band holds.
- *
- * Two, and they are the two things that come out of the ground. A common
- * manual is counted stock as well and is deliberately NOT here: it is restocked
- * by a person copying one, not by a season, and putting it in this table would
- * assert that a book grows.
  */
 export type StockKind = 'herb' | 'beast_material';
 
@@ -160,11 +26,6 @@ export const STOCK_GRADES: readonly TechniqueGrade[] = TechniqueGradeSchema.opti
 
 /**
  * How much of a band untouched ordinary ground holds.
- *
- * Summed `rarityWeight` over the catalog rows of that band. Read off the
- * catalogs at import rather than transcribed, so adding a herb changes what the
- * world holds without anybody editing a constant - which is
- * `items.md`'s "scarcity is measured, not authored" applied to supply.
  */
 export const BAND_CAPACITY_AT_ORDINARY_GROUND: Readonly<
     Record<StockKind, Readonly<Record<TechniqueGrade, number>>>
@@ -185,32 +46,6 @@ function sumWeights(
 
 /**
  * How long an emptied band takes to come all the way back, in years.
- *
- * THE DESIGN DECISION. Each step is roughly ten to twenty times the one below,
- * and the reason is the one `items.md` already gives for the whole
- * counted/tracked boundary: what restocks quickly is what the bottom of the
- * world can produce in quantity, and the top of the ladder cannot be restocked
- * by anybody living.
- *
- *   mortal    a season and a year. A picked-over hillside is green again next
- *             spring, which is why the culling trade and the herb stalls work
- *             at all and why nobody has ever heard of a district running out of
- *             hare pelts.
- *   earth     a working life is long enough to strip a district and not long
- *             enough to see it back. This is the band a house actually argues
- *             about, and the band that makes sending a party further afield a
- *             decision rather than a preference.
- *   heaven    a century and a half. A heaven-grade bed emptied in your lifetime
- *             is emptied for your student's lifetime too.
- *   immortal  three thousand years, which is to say the world is not making
- *             any more of this on any horizon anybody plans against.
- *   chaos     thirty thousand. Longer than the recorded history the world can
- *             still read. This is the Late Age stated as a rate: what is here
- *             is what was left behind, and taking it is spending principal.
- *
- * The two top bands are deliberately outside every horizon a run reaches. They
- * are not "very slow regrowth" wearing a number - they are the claim that the
- * world is running down, expressed where the engine can enforce it.
  */
 export const REGROWTH_YEARS_BY_GRADE: Readonly<Record<TechniqueGrade, number>> = {
     mortal: 1,
@@ -226,11 +61,6 @@ export const REGROWTH_YEARS_BY_GRADE: Readonly<Record<TechniqueGrade, number>> =
 
 /**
  * The two scalars a band keeps on `LocationRecord.data`.
- *
- * `drawn` is how far below capacity this band was at `day`, and NOT the current
- * shortfall - regrowth is applied on read. Storing the current figure would
- * mean touching every band of every place on every world tick to keep it true,
- * which is the expensive version of the same answer.
  */
 export function drawnKey(kind: StockKind, grade: TechniqueGrade): string {
     return `ground.${kind}.${grade}.drawn`;
@@ -251,12 +81,6 @@ function numberAt(place: LocationRecord, key: string): number {
 
 /**
  * What untouched ground of this kind holds here.
- *
- * Geology, not usability: `qiDensity` is what the vein under a place holds, and
- * what grows on a place is a function of that rather than of what somebody
- * standing there can currently draw. A sealed pocket at 100 has had something
- * growing in it undisturbed, which is exactly the fact `beastsOnThisGround`
- * already reads for its own purposes.
  */
 export function capacityFor(
     place: LocationRecord,
@@ -291,11 +115,6 @@ function shortfallOn(
 
 /**
  * How a band reads to somebody who works this ground.
- *
- * Four states, and the boundaries are what a person would notice rather than
- * round numbers: you cannot tell untouched ground from lightly worked ground,
- * you can tell when a place is going, and there is a point past which the
- * honest sentence is that it is finished for now.
  */
 export type GroundReading = 'untouched' | 'worked' | 'thinning' | 'worked_out';
 
@@ -332,10 +151,6 @@ export function standingStock(
 
 /**
  * Every band this place holds, for a caller that wants the whole answer.
- *
- * Bands with no capacity at all are omitted: ground that never held anything of
- * a grade has not been worked out, and saying "worked out" about it would be a
- * lie in the shape of a measurement.
  */
 export function whatTheGroundStillHas(
     place: LocationRecord,
@@ -365,43 +180,12 @@ export interface GroundDrawRequest {
     onDay: number;
     /**
      * Whether the taker is of the flower school.
-     *
-     * WHAT A ROAD BUYS, and the flower road's answer to what the sword road's
-     * flight is. `takesWithoutEndingTheStand` in
-     * `data/cultivation/techniques.ts` is the gate; this is its one consumer,
-     * and the pair is the whole reason the road is a road rather than a tag on
-     * twelve rows.
-     *
-     * NOTE WHAT IT DOES NOT CHANGE. `taken` is untouched - the same armful
-     * comes out of the bed. What changes is what the take WRITES: a cutting
-     * taken by somebody who knows how a stand is kept costs the stand less
-     * than the same cutting taken with a knife. That asymmetry is the entire
-     * grant, and it is why the Orchid Court has worked the same beds for
-     * centuries and they still set.
-     *
-     * It REDUCES AND NEVER ZEROES, which is `AGENTS.md`'s law about defences
-     * pointed at a bed rather than at a body: the ground still goes down, it
-     * goes down more slowly, and nothing here creates a herb that was not
-     * already growing. A valley worked hard enough by the school is still a
-     * valley that runs out.
-     *
-     * Absent means no, which is right for the overwhelming majority of takers
-     * and keeps every existing caller correct without an edit.
      */
     takenByTheSchool?: boolean;
 }
 
 /**
  * What share of an ordinary take the school's hands actually cost the bed.
- *
- * A third, and the figure is doing one job: it has to be worth an art without
- * being worth a subsistence. At a third, a school taker works a bed three
- * times as long before it reads as worked out - which is the difference
- * between a house that has held one valley for centuries and a house that
- * moves on, and is the observable form of the claim `sects.ts` makes.
- *
- * Not zero, and the reason is a law rather than a taste. See
- * `takenByTheSchool`.
  */
 export const THE_SCHOOL_COSTS_THE_BED = 1 / 3;
 
@@ -489,15 +273,6 @@ export function applyGroundDraw(place: LocationRecord, draw: GroundDraw): Locati
 
 /**
  * The same write, into a location record a caller is holding live.
- *
- * For the persistence edge only. `worldForRun` hands back the world handle's
- * own state and `saveWorldForRun` writes that same object, so a caller there
- * cannot swap in a new record and have it persist - it has to write into the
- * one the graph is holding. Both entry points go through `patchFor`, so there
- * is one definition of what a draw stores.
- *
- * Returns whether anything was written, which is what a caller needs to decide
- * about marking the world dirty.
  */
 export function recordGroundDraw(place: LocationRecord, draw: GroundDraw): boolean {
     const patch = patchFor(draw);
@@ -553,28 +328,11 @@ export function recordGroundDraw(place: LocationRecord, draw: GroundDraw): boole
 
 /**
  * What one person standing on this ground takes out of it in a year.
- *
- * NOT CHOSEN HERE. It is the figure this module's own test has used since it
- * was written to decide whether a band is sustainable - *a pass a month, and
- * what a pass yields at the top of the regard band* - and it is stated once
- * rather than retyped either side of the equilibrium it defines.
- *
- * Twelve trips out in a year is not a trade, it is what living somewhere looks
- * like. The people who make a living at it are already counted in this: they
- * are the same people, and what separates a district that holds from one that
- * does not is how many of them there are, which is the point.
  */
 export const TAKEN_PER_PERSON_PER_YEAR = 12 * 20;
 
 /**
  * How the year's take divides between the two kinds, at one grade.
- *
- * By what the ground offers, which is the only non-arbitrary split available:
- * people work what is there. It has one property worth having and it is why it
- * is derived rather than a half - because both kinds are pressed in proportion
- * to their own capacity, both bands at a grade reach break-even at the SAME
- * headcount, so "how many people can this ground carry" is one number per grade
- * rather than two that have to be kept in step.
  */
 export function shareOfTheYearSpentOn(kind: StockKind, grade: TechniqueGrade): number {
     let total = 0;
@@ -585,15 +343,6 @@ export function shareOfTheYearSpentOn(kind: StockKind, grade: TechniqueGrade): n
 
 /**
  * How many people this ground can carry at a grade without losing it.
- *
- * The whole equilibrium in one expression, and every term in it comes from
- * somewhere else: the capacities are summed `rarityWeight` off the catalogs,
- * the regrowth clock is {@link REGROWTH_YEARS_BY_GRADE}, and the per-person
- * year is {@link TAKEN_PER_PERSON_PER_YEAR}.
- *
- * At ordinary ground it reads about 14 people in the mortal band, a third of a
- * person in the earth band and a two-hundredth of one at heaven. Those are not
- * three decisions; they are one clock read at three speeds.
  */
 export function peopleThisGroundCanCarry(
     place: LocationRecord,
@@ -607,10 +356,6 @@ export function peopleThisGroundCanCarry(
 
 /**
  * How many people are working each grade, off the rungs they stand at.
- *
- * The caller supplies the rungs - this module reads no roster and no location
- * - and `gradeForOrdinal` decides which band each of them is in. A grade
- * nobody stands at is absent rather than zero, so a caller can skip it.
  */
 export function whoWorksEachBand(
     ordinals: Iterable<number>
@@ -625,11 +370,6 @@ export function whoWorksEachBand(
 
 /**
  * What the people standing here take out of one band over a span of days.
- *
- * Linear in the span, so a year advanced in one step and a year advanced in
- * twelve take the same amount out of the ground - which is the same property
- * `advanceTime` promises about everything else and is what keeps a split
- * advance honest.
  */
 export function pressureOverDays(input: {
     workers: number;
@@ -654,13 +394,6 @@ export interface GroundPressure {
 
 /**
  * A span of a place's own people working the ground under them, applied.
- *
- * Pure in the same sense the rest of this file is: it takes the record, hands
- * back the draws, and the caller writes them. `recordGroundDraw` is the write.
- *
- * `ordinals` is every living person standing on this ground. A place nobody
- * stands on presses on nothing at all, which is why the wilds keep what the
- * districts around the towns lost.
  */
 export function whatThePeopleHereTake(
     place: LocationRecord,
@@ -706,10 +439,6 @@ const KIND_NOUN: Readonly<Record<StockKind, string>> = {
 
 /**
  * What a place says about itself after somebody has worked it.
- *
- * Silent while the ground is holding up, because a sentence every turn about
- * a district that is fine is noise a player learns to skip, and then the one
- * that matters is skipped with it.
  */
 function lineFor(
     place: LocationRecord,
@@ -740,11 +469,6 @@ function lineFor(
 
 /**
  * One sentence answering "what does this place still have".
- *
- * The player-facing read, and the reason this module is not a simulation
- * nobody can see. Reports only what is worth reporting: a place holding
- * everything it ever held says so in one clause, and a place that has been
- * stripped names the bands it has lost.
  */
 export function howTheGroundReads(place: LocationRecord, onDay: number): string {
     const bands = whatTheGroundStillHas(place, onDay);
@@ -774,30 +498,6 @@ export function howTheGroundReads(place: LocationRecord, onDay: number): string 
 
 /**
  * Whether the ordinary animals are gone from this ground.
- *
- * The consequence worth having, and the reason a falling number is a cause
- * rather than a chore. Hunt a district hard enough and what you have removed is
- * the bottom of its food chain - so what is left out there is the thing that
- * was eating them, and it is still eating.
- *
- * This is not an item changing what it is. Nothing in this world moves up a
- * grade and nothing crosses from counted to tracked: `possessions.ts`'s
- * `shardPower` is the only movement there is and it goes downward. What changes
- * is which beast the ground offers, which is a fact about the PLACE.
- *
- * Said out loud by the hunt, because a player who is suddenly meeting worse
- * things deserves to know they did it.
- *
- * AND IT IS NOW A CAUSE RATHER THAN ONLY A SENTENCE. `tidesWhereTheGameWent`
- * in `what-goes-wrong-with-a-place-and-what-ends-it.ts` reads this, and ground
- * that has been hunted out and still has people standing on it carries a
- * status with the danger on it and the signs a gatherer would notice.
- *
- * WHAT IS STILL AHEAD OF THE MECHANIC. `whatIsOnThisGround` offers the whole
- * reachable pool whatever this says, so the district reports that it has been
- * hunted out and then turns up a hare anyway. Closing that means
- * `GroundForBeasts` carrying the fact, which is `hunting-a-spirit-beast.ts`'s
- * call to make.
  */
 export function theOrdinaryAnimalsAreGone(place: LocationRecord, onDay: number): boolean {
     return standingStock(place, 'beast_material', 'mortal', onDay).reading === 'worked_out';

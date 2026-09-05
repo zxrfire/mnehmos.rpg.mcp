@@ -18,21 +18,21 @@
  * `regions.ts` in the province's own words. They are quoted beside the rows so
  * a reader can check the derivation rather than take it:
  *
- *   FOURHANDS, in the White Stair. The branch entry: *"One of the nine
+ *   FOUR_GRAVES, in the White Stair. The branch entry: *"One of the nine
  *   stations, at the head of the pass, an hour from a station seventeen days'
  *   walk away ... it opens four days in nine."* The White Stair states exactly
- *   one seventeen-day road, and it goes to the Low Fall - so the far end is the
- *   Low Fall's own gate city, which is where that province counts everything
+ *   one seventeen-day road, and it goes to the Jade Gorge - so the far end is the
+ *   Jade Gorge's own gate city, which is where that province counts everything
  *   that arrives.
  *
- *   SCARWATER, in the Low Fall. The province's own connection text: *"The
- *   border road from Scarwater to Kettle: eleven days by cart, four by Measured
+ *   SCARWATER, in the Jade Gorge. The province's own connection text: *"The
+ *   border road from Clear River Ford to Iron Gate: eleven days by cart, four by Measured
  *   Span courier where the Span still runs it."* Two named places, a stated
  *   walked distance, and the house named as the thing that shortens it.
  *
  * THE ABSENCES ARE THE INFORMATION and are not a trimmed menu. Three of the
  * five provinces have no counter at all, because the catalog puts the house in
- * two of them and nowhere else. A player standing in the Wide Field is standing
+ * two of them and nowhere else. A player standing in the Yellow Plain is standing
  * where the survey does not reach, and {@link whatTheBoardDoesNotSay} says so in
  * the house's own voice. See the header of the counter module: what is not on a
  * board is where the inherited table stops.
@@ -51,10 +51,10 @@
  * from a span it folds itself, and the two entries answer it differently for a
  * reason each states:
  *
- *   Fourhands is *"one of the nine stations"* and runs on the station's own
+ *   Four Graves is *"one of the nine stations"* and runs on the station's own
  *   cycle. Nine is the count of the terminals the house inherited and cannot
  *   reopen when one stops answering.
- *   Scarwater to Kettle is a COURIER route - *"four by Measured Span courier
+ *   Clear River Ford to Iron Gate is a COURIER route - *"four by Measured Span courier
  *   where the Span still runs it"* - which is the house's own hand doing the
  *   work, conditionally, and is therefore not a terminal at all.
  *
@@ -66,7 +66,7 @@
  * is not something any caller can turn into a fare. So the rate below is stated
  * in the unit a buyer can check, and is anchored against the line on the price
  * board that prices the same road: caravan passage, 250 per 100 li, *"the border
- * road to Kettle is eleven days and priced as such"*. See {@link
+ * road to Iron Gate is eleven days and priced as such"*. See {@link
  * SPAN_CASH_PER_WALKED_DAY}.
  *
  * PURE. State in, deltas out. No I/O, no DB, no mutation of inputs, and nothing
@@ -81,7 +81,7 @@ import { PLACE } from '../../data/cultivation/place-names.js';
 export const THE_SPAN_HOUSE_ID = 'house-measured-span';
 
 /**
- * Four days in nine, off the Fourhands Terminal entry, and the only Span
+ * Four days in nine, off the Four Graves Terminal entry, and the only Span
  * timetable this world states.
  *
  * `phaseDay` 0 rather than a per-counter offset: nothing anywhere says the two
@@ -99,14 +99,14 @@ export const SPAN_SCHEDULE: OpeningCycle = Object.freeze({
  *
  * FOUR HUNDRED, and it is derived rather than picked. The price board carries
  * caravan passage at 250 per 100 li and says in its own note that the eleven-day
- * border road to Kettle is priced by it, which puts an ordinary crossing of that
+ * border road to Iron Gate is priced by it, which puts an ordinary crossing of that
  * road somewhere near 1,400 cash with food and company thrown in. A Span fare
  * has to sit well above that, because what it sells is not speed on the road -
  * it is not being on the road, and the one journey nothing else in the world
  * offers at any price.
  *
  * What that produces, and it is the figure worth checking: the eleven-day
- * Scarwater road costs 4,400 cash, which is forty-four spirit stones - half
+ * Clear River Ford road costs 4,400 cash, which is forty-four spirit stones - half
  * again the whole starting purse of a new cultivator. So the ticket is out of
  * reach of somebody who has just arrived and comfortably inside a season of
  * wages, which is where a thing that saves eleven days of a life ought to sit.
@@ -129,25 +129,25 @@ export const SPAN_ROUTES: readonly SpanRoute[] = Object.freeze([
     // ── The White Stair, and the pass ────────────────────────────────────
     //
     // "An hour from a station seventeen days' walk away." The seventeen-day
-    // road out of the White Stair is the one to the Low Fall, and it is shut
+    // road out of the White Stair is the one to the Jade Gorge, and it is shut
     // five months a year, which is the whole reason this station is paid for.
     {
         id: 'span-fourhands-low-fall',
-        fromPlace: PLACE.FOURHANDS,
-        toPlace: PLACE.LOW_FALL,
+        fromPlace: PLACE.FOUR_GRAVES,
+        toPlace: PLACE.GREEN_FALL,
         walkedDaysItReplaces: 17,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: true
     },
     {
         id: 'span-low-fall-fourhands',
-        fromPlace: PLACE.LOW_FALL,
-        toPlace: PLACE.FOURHANDS,
+        fromPlace: PLACE.GREEN_FALL,
+        toPlace: PLACE.FOUR_GRAVES,
         walkedDaysItReplaces: 17,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: true
     },
-    // ── The Low Fall, and the border road ────────────────────────────────
+    // ── The Jade Gorge, and the border road ────────────────────────────────
     //
     // "Eleven days by cart, four by Measured Span courier where the Span still
     // runs it." The conditional is the house's weak period showing on a
@@ -156,16 +156,16 @@ export const SPAN_ROUTES: readonly SpanRoute[] = Object.freeze([
     // somebody's hand.
     {
         id: 'span-scarwater-kettle',
-        fromPlace: PLACE.SCARWATER,
-        toPlace: PLACE.KETTLE,
+        fromPlace: PLACE.STONE_FORD,
+        toPlace: PLACE.IRON_GATE,
         walkedDaysItReplaces: 11,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: false
     },
     {
         id: 'span-kettle-scarwater',
-        fromPlace: PLACE.KETTLE,
-        toPlace: PLACE.SCARWATER,
+        fromPlace: PLACE.IRON_GATE,
+        toPlace: PLACE.STONE_FORD,
         walkedDaysItReplaces: 11,
         schedule: SPAN_SCHEDULE,
         inheritedTerminal: false

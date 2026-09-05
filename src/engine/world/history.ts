@@ -1,60 +1,5 @@
 /**
  * The historical record - ground truth, and what survives of it.
- *
- * Every significant thing that happens is appended here as a FACT: a dated,
- * attributed, located statement about what occurred. Nothing here is narrative
- * and nothing here is simulation. The LLM decides what happens and what it
- * means; this module stores it, indexes it, and answers questions about it
- * centuries later.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THREE LAYERS, AND THIS MODULE OWNS TWO OF THEM
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   1. GROUND TRUTH        what actually happened          ← here
- *   2. THE SURVIVING RECORD what can still be recovered    ← here (`fidelity`)
- *   3. BELIEF              what a person or the public holds ← NOT here
- *
- * Layer 3 lives in the social layer's `knowledge.ts` (objective reality / what
- * an NPC knows / believes / suspects / what the public believes). Belief
- * records reference facts by `HistoricalFact.id`; this module deliberately does
- * not model belief, so there is exactly one place that can be wrong about who
- * thinks what.
- *
- * The separation is what lets lived memory diverge from the world's record. The
- * player remembers a mountain. Someone born later says there was never a
- * mountain. Both are correct: the fact is here with `fidelity: 'lost'`, the
- * player's memory is in their memory store, and the younger character's belief
- * is in the belief layer. Nothing has to be reconciled, because they are
- * answering different questions.
- *
- * ── Three kinds of world event ────────────────────────────────────────────
- *
- * `historical`, `concurrent` and `witnessed` are NOT properties of an event.
- * They are the relation between an event and one observer, so they are
- * computed, not stored - see {@link classifyForObserver}. The same mountain
- * breaking is historical to a child born afterwards, concurrent to a cultivator
- * two provinces away who hears about it from a refugee, and witnessed by the
- * three people who were standing under it. Storing one label on the fact would
- * make the world have a protagonist.
- *
- * What IS stored is `witnessIds`: who was physically present. That is a fact
- * about the world and not about anybody's point of view.
- *
- * ── The surviving record ──────────────────────────────────────────────────
- *
- * `fidelity` says how much of an event can still be recovered, and `causeKnown`
- * says whether the reason was ever written down. A fact with
- * `causeKnown: false` is the engine's way of storing "nobody knows why" as a
- * real state of the world - and `explainFact` is the path by which somebody,
- * three thousand years later, finds out.
- *
- * ── The Consequence Test ──────────────────────────────────────────────────
- *
- * An event with no consequences once the scene ends was not a major event.
- * {@link recordMajorEvent} nudges callers through the ten questions and reports
- * which ones went unanswered. It warns rather than refuses: the engine's job is
- * to make the omission visible, not to litigate the LLM's storytelling.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
@@ -74,11 +19,6 @@ export type HistoricalEventKind =
     | 'realm_crossing'
     /**
      * A wound nothing in the world closes, on the day it was taken.
-     *
-     * Only the permanent band. A bruise is not a life event; a severed meridian
-     * is the day somebody's art changed shape forever, and it used to be a field
-     * on the record with no date and no cause attached. See
-     * `recording-the-day-a-wound-was-taken.ts`.
      */
     | 'injury'
     | 'toll_paid'
@@ -86,10 +26,6 @@ export type HistoricalEventKind =
     | 'inheritance'
     /**
      * Somebody who was expecting a return stopped expecting it.
-     *
-     * A dated event and not a mood: the goal closed, the tie was rewritten, and
-     * the number of silent years is on the fact. See
-     * `when-somebody-does-not-come-back.ts`.
      */
     | 'gave_up_waiting'
     /**
@@ -111,11 +47,6 @@ export type HistoricalEventKind =
     | 'faction_fallen'
     /**
      * A house's hold on ground it does not own came up for renewal.
-     *
-     * Its own kind because it used to be filed as `promotion`, which made
-     * `promotion` the third-heaviest kind in the ledger without a single row in
-     * it being about a person - every one was a grant on a vein. See
-     * `factKindFor` in `time.ts`.
      */
     | 'grant_renewed'
     | 'war'
@@ -155,40 +86,11 @@ export type FactVisibility = 'public' | 'regional' | 'faction' | 'secret';
 
 /**
  * How much of the record survives to the present.
- *
- * `lost` does not mean the event did not happen. It means the event happened,
- * it is ground truth, and nothing legible about it remains - which is the
- * normal condition of most of this world's past.
  */
 export type RecordFidelity = 'full' | 'partial' | 'rumour' | 'lost';
 
 /**
  * How the engine itself stands to this fact.
- *
- *   objective       the engine knows this happened as stated
- *   reconstructed   assembled from surviving evidence; may be wrong
- *   unresolved      the engine does not know, and is not pretending to
- *
- * The third is the important one, and it is a correction to the naive model.
- * Without it the simulation degrades into "the database secretly knows
- * everything and NPCs merely hold incorrect copies," which is a much smaller
- * idea than a world with real uncertainty in it.
- *
- *     year 430    an ancient sect disappeared
- *     known       it existed; its territory was abandoned
- *     claimed     destroyed / ascended / sealed itself / migrated
- *     truth       unresolved
- *
- * `summary` on an unresolved fact states only what is known. The candidate
- * answers go in `claimedOutcomes`, none of them endorsed. This also relieves
- * the narrator of inventing an answer prematurely and leaves room for one to be
- * found later - see {@link resolveFact}.
- *
- * Coordination note: the social layer owns the belief tables (`knowledge.ts`,
- * stance x holder kind). An unresolved fact here means there is no objective
- * statement for a belief to be measured against, so a `KnowledgeRecord` about
- * it is neither true nor false - which is exactly the state that layer needs to
- * be able to represent, and why the two are stored separately.
  */
 export type FactTruth = 'objective' | 'reconstructed' | 'unresolved';
 
@@ -201,10 +103,6 @@ export interface HistoricalActor {
 
 /**
  * The ten questions. An event that cannot answer them was not a major event.
- *
- * Every field is free text or ids, because the answers are the LLM's to write.
- * The engine's contribution is that the shape exists, that it is stored beside
- * the fact, and that omissions are reported.
  */
 export interface EventConsequences {
     /** 1. What changed immediately. */
@@ -287,17 +185,6 @@ export interface HistoricalFact {
 
     /**
      * This is a thing that ALMOST happened and did not.
-     *
-     * Not an alternate timeline and not a simulation artifact: an ordinary
-     * history row with a flag on it. A sect that nearly unified the continent.
-     * A cultivator who nearly ascended and died. A house that nearly recovered
-     * its lost discipline and lost the last holder first. Someone who nearly
-     * joined the player and chose otherwise.
-     *
-     * These cost one boolean and they are the strongest available antidote to a
-     * world that looks built to produce the player's success. A world where
-     * everything that was tried worked is a world with an author standing
-     * visibly behind it.
      */
     nearMiss: boolean;
     /** How close it came, and what stopped it. Empty unless `nearMiss`. */
@@ -353,13 +240,8 @@ export interface Era {
     /** Null while the era is still running. */
     endDay: number | null;
     /**
-     * Qi density of the age, 0..1, against the richest ground the world has
-     * ever carried.
-     *
-     * It only ever falls. Veins that ran rich for a thousand years have been
-     * drawn down; what the old civilisations did not consume they monopolised;
-     * ancient wars killed whole regions outright and dead ground does not come
-     * back. The present is thin because most places have already been used.
+     * Qi density of the age, 0..1, against the richest ground the world has ever
+     * carried.
      */
     qiDensity: number;
     note: string;
@@ -401,10 +283,6 @@ export function eraForDay(ledger: HistoryLedger, day: number): Era | null {
 
 /**
  * Append one fact.
- *
- * Mutates the ledger in place. The ledger is owned by the world state and never
- * shared, and a world creation seeds thousands of facts, so copy-on-write here
- * shows up in a profile immediately. Everything else in this module is pure.
  */
 export function appendFact(ledger: HistoryLedger, fact: PendingFact): HistoricalFact {
     const record: HistoricalFact = {
@@ -466,11 +344,6 @@ export interface MajorEventResult {
 
 /**
  * Record an event that claims to be major.
- *
- * The fact is stored either way - refusing would put the engine in the position
- * of arguing with the narrator about whether something happened. What it does
- * instead is answer, precisely, which of the ten questions were left blank, so
- * the caller can either fill them in or stop calling the event major.
  */
 export function recordMajorEvent(
     ledger: HistoryLedger,
@@ -534,12 +407,6 @@ export function classifyForObserver(fact: HistoricalFact, observer: Observer): E
 
 /**
  * Everything that happened while this observer was alive and elsewhere.
- *
- * This is what a player gets on the way out of a thirty-year seclusion: the
- * events they were alive for and were not present at. They reach the player as
- * rumour, refugees, shifted trade and changed borders - and some of them never
- * reach the player at all, which is why `visibility` filtering is the caller's
- * choice rather than a default.
  */
 export function concurrentEventsFor(
     ledger: HistoryLedger,
@@ -565,10 +432,6 @@ export function witnessedEventsFor(ledger: HistoryLedger, observer: Observer): H
 
 /**
  * Mark an observer as having been present.
- *
- * A witnessed catastrophe writes real state elsewhere - the location changes,
- * its history gains an entry. This only records who was standing there, which
- * is the part the ledger owns.
  */
 export function addWitness(fact: HistoricalFact, observerId: string): void {
     if (!fact.witnessIds.includes(observerId)) fact.witnessIds.push(observerId);
@@ -639,11 +502,6 @@ export function queryFacts(ledger: HistoryLedger, q: FactQuery = {}): Historical
 
 /**
  * Record something that almost happened.
- *
- * An ordinary fact with the flag set. It is stored, dated, attributed and
- * queryable exactly like anything else, and it appears in a chronicle beside
- * the things that did happen - which is the point. A history containing only
- * successes reads as authored, because it is.
  */
 export function recordNearMiss(
     ledger: HistoryLedger,
@@ -655,10 +513,6 @@ export function recordNearMiss(
 
 /**
  * Record something the engine does not know the answer to.
- *
- * `summary` says what IS known. `claimedOutcomes` lists the candidate answers
- * people offer, none of them endorsed by the engine. Nothing anywhere in this
- * codebase secretly holds the real answer, because there is not one yet.
  */
 export function recordUnresolved(
     ledger: HistoryLedger,
@@ -675,11 +529,6 @@ export function recordUnresolved(
 
 /**
  * Somebody settled it.
- *
- * Promotes an unresolved fact to `reconstructed` (or, where the evidence is
- * conclusive, `objective`), replaces the summary with the answer, and keeps the
- * candidate list so the record can still show what people used to say. Finding
- * out is a state change like any other.
  */
 export function resolveFact(
     ledger: HistoryLedger,
@@ -718,11 +567,6 @@ export function factsAtLocation(ledger: HistoryLedger, locationId: string): Hist
 
 /**
  * Walk a fact's causal chain back to its roots.
- *
- * The query that makes an old feud legible: hand it the killing this year and
- * it returns the killing forty years ago and the contested vein before that.
- * Facts whose cause was never recorded terminate the walk, which is exactly
- * the shape of a world where some things are simply not known.
  */
 export function causalChain(
     ledger: HistoryLedger,
@@ -760,10 +604,6 @@ export function unexplainedFacts(ledger: HistoryLedger): HistoricalFact[] {
 
 /**
  * Somebody found out.
- *
- * Attaches the recovered cause to a fact that did not have one and raises its
- * fidelity. This is the payoff for three thousand years of "nobody knows why",
- * and it is a state change like any other rather than a narrative flourish.
  */
 export function explainFact(
     ledger: HistoryLedger,
@@ -794,10 +634,6 @@ export interface ChronicleOptions extends FactQuery {
 
 /**
  * A chronological digest.
- *
- * What a player who vanished for thirty years is handed on the way out: not a
- * diff of world state, but an account of what happened while they were not
- * looking, filtered by what could plausibly have reached them.
  */
 export function chronicle(ledger: HistoryLedger, opts: ChronicleOptions = {}): HistoricalFact[] {
     const rows = queryFacts(ledger, opts);
@@ -857,15 +693,6 @@ export interface Scar {
 
 /**
  * Somebody who finished, and the ground they left better than they found it.
- *
- * The exact mirror of {@link Scar}, and the two should be read together: a
- * failed tribulation takes ground permanently, and a completed crossing lends
- * some back for {@link CROSSING_ENRICHMENT_YEARS}. Both are dated events with a
- * name attached and both become real locations - see `locationFromCrossing`.
- *
- * `year` is the load-bearing field. How much is left in the ground now is a
- * function of how long ago this was, so where the qi is still good is a record
- * of when somebody last finished nearby.
  */
 export interface Crossing {
     id: string;
@@ -877,11 +704,6 @@ export interface Crossing {
     crossedName: string | null;
     /**
      * The ruin that grew on the same seat, which is the ground this lifted.
-     *
-     * A crossing makes no new place. Everybody who crossed in a prior age
-     * crossed from the compound of a house that later fell, so the ground is
-     * already on the map as a sealed ruin - and this is why a few of them sit
-     * on a vein nobody can account for.
      */
     groundRuinId: string;
 }
@@ -916,7 +738,7 @@ export interface PriorAges {
 // ─────────────────────────────────────────────────────────────────────────
 // NAMING
 // Deterministic, cheap, and physical. Places in this world are named for what
-// they are: Sweptground, the Low Fall, Scarwater.
+// they are: Burnt Earth, the Jade Gorge, Clear River Ford.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const SURNAMES = [
@@ -926,33 +748,6 @@ export const SURNAMES = [
 
 /**
  * Surnames that belong to somebody, and so must never be handed to a stranger.
- *
- * A prestigious house's name is not decoration - it is the thing a lineage is read
- * by, and in a roguelike it is also the handle the PLAYER's knowledge attaches to.
- * Runs end; what survives is what the person at the keyboard learned, and a name is
- * how they hold it. A randomly generated Ru farmhand would not merely muddle a
- * lineage in the fiction - it would poison recognition the player earned by dying. Somebody checking whether a sect is still the sect they knew looks for its
- * founding families on the roll, because names outlive every person who carries
- * them and faces do not. That check only means something if the name cannot also
- * arrive on a farmhand by a dice roll.
- *
- * These are kept out of SURNAMES rather than filtered at the point of use, so the
- * generator physically cannot produce one. The test that asserts the two sets stay
- * disjoint is the guard - without it this holds by accident, and the next person to
- * widen the pool breaks a lineage silently.
- *
- * ONLY EXCLUSIVE NAMES BELONG HERE, AND THIS SET STAYS SMALL ON PURPOSE. Not every
- * surname is unique, and one that is not should prove nothing - which is what the
- * names row of the trust hierarchy already says about them. So the rule is that a
- * surname is common, and Ru and Meng are the exceptions to it.
- *
- * Xu is deliberately absent despite Xu Ci lying under the Anchorhold's datum stone,
- * because there are Xu at the Measured Span and Held Names too: a name carried by
- * three houses identifies none of them, and reserving it would assert a lineage the
- * roster does not support. Gu and Cao are house lines in members.ts and also in the
- * pool above, so a stranger can be generated into either name - and that is correct
- * rather than a defect. A Gu somewhere is a person called Gu. Only a name nobody
- * else carries can carry a house on its own.
  */
 export const RESERVED_SURNAMES: ReadonlyMap<string, string> = new Map([
     ['Ru', 'Azure Cloud Pavilion'],
@@ -994,22 +789,6 @@ const ERA_ADJ = [
 
 /**
  * A person's name, unique within `taken` when one is supplied.
- *
- * Twenty surnames by twenty heads by twenty tails is eight thousand names, and
- * a seeded world holds about four hundred people. By the birthday paradox that
- * is around ten collisions every time, and it was reliably producing six - two
- * different people, same name, in the same province.
- *
- * That is not a cosmetic problem here. The knowledge system is keyed by id but
- * everything the player reads is keyed by NAME, so a duplicate quietly breaks
- * the guarantee the whole system rests on: that a name you were told is a name
- * you have. It surfaced as an intermittent test failure - the narrator would
- * correctly name somebody the player knew, and a different person standing in
- * the room happened to share it.
- *
- * The re-roll is bounded and the fallback widens the given name to two tails
- * rather than looping forever: a hundred and sixty thousand names, still in the
- * same style, and deterministic for the same stream.
  */
 export function personName(rng: CultivationRNG, taken?: ReadonlySet<string>): string {
     const base = `${rng.pick(SURNAMES)} ${rng.pick(GIVEN_HEAD)}${rng.pick(GIVEN_TAIL)}`;
@@ -1068,31 +847,17 @@ const DEFAULT_PRIOR_AGES: Required<PriorAgesOptions> = {
 
 /**
  * Generate several prior ages of real history.
- *
- * Everything a modern cultivator trips over - a wall someone else built, a
- * sealed door nobody can read, dead ground where the qi does not return - is
- * produced here as the consequence of a dated event with names attached, so
- * that ruins are ordinary rather than special and the true cause of a place is
- * recoverable in principle.
- *
- * Fidelity falls with age. The oldest events are stored at `rumour` or `lost`
- * with `causeKnown: false`: they are ground truth, and nothing legible about
- * them survives - until somebody digs.
  */
 /**
  * Take a name off a table without repeating one inside a world.
- *
- * Deterministic in the id, so the same world always names the same place the
- * same thing, and it degrades to the caller's fallback rather than throwing
- * once a table is exhausted - a world with more ruins than authored names
- * should get a dull name, not a crash.
  */
 function drawPlaceName(
+    worldSeed: string,
     table: readonly { name: string }[],
     used: Set<string>,
     key: string
 ): string | null {
-    const rng = forStream('place-name', key);
+    const rng = forStream(worldSeed, 'place-name', key);
     const free = table.filter(t => !used.has(t.name));
     if (free.length === 0) return null;
     const picked = free[rng.int(0, free.length - 1)].name;
@@ -1216,23 +981,6 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     fidelity,
                     // THE MISATTRIBUTION IS ABOUT THE RECORD, NOT ABOUT EVERY
                     // LIVING PERSON, and the difference is the content.
-                    //
-                    // `causeKnown` is this ledger's own question - "was the
-                    // true cause ever written down" - and the answer is no,
-                    // because `CROSSING_PRACTICE` says people go to a cave they
-                    // told nobody about and stop being seen. So the summary
-                    // carries the world's two wrong guesses, which is what a
-                    // record written by people whose grandparents were not born
-                    // yet actually says.
-                    //
-                    // It is NOT a claim that nobody alive knows. A crossing is
-                    // once in an age and a cultivator high enough on the ladder
-                    // lives across ages, so somebody who was THERE may still be
-                    // standing - and they hold it firsthand while the province
-                    // holds a rumour about rock. That gap is derivable from two
-                    // numbers this engine already has, the crossing's date and
-                    // `lifespanForOrdinal`, and it is asked rather than stored:
-                    // see `whoCouldRememberACrossing`. Do not add a field here.
                     causeKnown: false,
                     magnitude: 1,
                     data: { days: 11 }
@@ -1287,7 +1035,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
                     // collided repeatedly - ten scars against fourteen names,
                     // shuffled separately per age, produced duplicates in most
                     // seeds.
-                    name: drawPlaceName(SCAR_NAMES, scarNames, `scar-${ageIndex}-${s}`)
+                    name: drawPlaceName(seed, SCAR_NAMES, scarNames, `scar-${ageIndex}-${s}`)
                         ?? `the scar at ${scarSite}`,
                     location: scarSite,
                     year: scarYear,
@@ -1394,14 +1142,7 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
             ruins.push({
                 id: `ruin-${ageIndex}-${s}`,
                 // A place is called something. It is not called its own kind.
-                //
-                // This read `the sealed compound at ${seat}` for every one of
-                // the twelve ruins in a world, which is the type system leaking
-                // into the fiction - nobody in this world says "sealed
-                // compound", they say whatever the province has been calling it
-                // for nine hundred years. `RUIN_NAMES` carries those, each with
-                // what it records and why the province settled on it.
-                name: drawPlaceName(RUIN_NAMES, ruinNames, `ruin-${ageIndex}-${s}`)
+                name: drawPlaceName(seed, RUIN_NAMES, ruinNames, `ruin-${ageIndex}-${s}`)
                     ?? `the sealed compound at ${seat}`,
                 location: seat,
                 sealedYear: fallYear,
@@ -1429,49 +1170,10 @@ export function seedPriorAges(seed: string, opts: PriorAgesOptions = {}): PriorA
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ONE OF THEM IS ALREADY OPEN
-//
-// A world used to be created with every ruin sealed and undiscovered, so a run
-// began with nothing to aim at: measured on a live world, twelve ruins, twelve
-// of them shut, and *"what ruins are there around here"* answered with nothing
-// on turn one. The discovery pass produces 4-5 openings per century and that is
-// the right long-run rate; what was wrong was the first day.
-//
-// Three things have to be true at once and only the third is counter-intuitive:
-//
-//   IT IS OPEN            somewhere got into, a long time ago, by somebody with
-//                         a name and a date.
-//   YOU KNOW ABOUT IT     it is in the county, and the county has known about it
-//                         all your life. That is not a discovery, it is
-//                         geography, and `ground-the-world-found.ts` says why the
-//                         two are gated differently.
-//   AND YOU CANNOT TAKE IT
-//                         at the bottom of the ladder it kills you. Knowing a
-//                         thing exists and being able to survive it are separate
-//                         facts, and gossip outrunning capability is the point:
-//                         it turns a ruin into something aimed at for twenty
-//                         rungs instead of a door that says no.
-//
-// ── WHICH ONE, AND WHY THAT ONE ──────────────────────────────────────────
-//
-// THE SHALLOWEST, by `dangerOrdinal`, tie-broken on id so a re-rolled world
-// answers the same way twice. Not an index, and the reason is causal rather
-// than mechanical: **the shallowest is the only one anybody could plausibly have
-// got into.** These places are calibrated for the disciples of houses that no
-// longer exist, and a Late Age province cannot field the people the deep ones
-// were built to stop. Whichever one a province did open, it was the one nearest
-// its own reach - so the choice survives somebody re-rolling the world, because
-// it is a statement about the world rather than about the array.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How long ago somebody got in.
- *
- * Far enough back that anybody now alive grew up with it as an ordinary fact
- * about the county, and near enough that the story is still repeated. The news
- * layer decays a fact over four centuries, so a lifetime ago costs it almost
- * nothing and being older than the province's memory would cost it everything.
  */
 const OPENED_WITHIN_LIVING_MEMORY_YEARS = { min: 40, max: 120 } as const;
 

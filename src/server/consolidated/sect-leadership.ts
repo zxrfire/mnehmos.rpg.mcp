@@ -1,36 +1,5 @@
 /**
  * Authority inside a house: ordering the rungs below, and running the place.
- *
- * The thin tool layer over `src/engine/cultivation/leadership.ts`. Every rule,
- * threshold and price is in the engine module; this file resolves a cultivator,
- * reads the house, calls one pure function, rolls the one roll on a seeded
- * stream, and writes the rows.
- *
- * ── WHERE THE STATE LIVES ─────────────────────────────────────────────────
- *
- * `cultivator_flags` is keyed to a cultivator by foreign key, so per-house state
- * hangs off the acting cultivator - the same shape `siphon` uses for
- * `siphon_taken:<sectId>`. One JSON flag per house, `house:<sectId>`, holds the
- * whole ledger: standing, who this cultivator brought in, which elders were
- * dismissed and which walked, the standard the head set, and the curriculum they
- * decreed.
- *
- * Two things escape the flag because they are genuinely the world's rather than
- * this cultivator's, and the `sects` table already has columns for both:
- * `admission_ordinal`, which `join` and `promote` read and enforce, and
- * `power_ordinal`, which moves when the house grows or is gutted. Those are
- * re-asserted from the ledger on every leadership call, because
- * `ensureSectsSeeded` refreshes sect rows from the catalog once per process.
- *
- * ── WHERE THE PEOPLE COME FROM ────────────────────────────────────────────
- *
- * `members.ts` is a named cast, not a census: three people at the Azure Dew
- * Sect, eight at the Azure Cloud Pavilion. A head count taken from it would say
- * that a sect running four hill villages is three people. So the census comes
- * from `impliedHouseSize`, derived from the ladder, and the named cast is
- * matched into it - a rung's elders are its catalog members first and unnamed
- * fillers after, so the narrator gets a real name to use wherever the world has
- * one and a truthful count where it does not.
  */
 
 import { z } from 'zod';
@@ -178,12 +147,6 @@ function writeLedger(
 
 /**
  * Advance the run and the standing clock together.
- *
- * Standing recovers with time served, and an act that consumes decades must not
- * also be credited with the recovery those decades would have bought - a leader
- * who spends thirty years growing the house has spent thirty years growing the
- * house. Without this the earned standing and the passive accrual stack, and
- * growth pays for the fight that follows it twice over.
  */
 function spendYears(
     repos: CultivationRepos,
@@ -233,11 +196,6 @@ interface HouseView {
 
 /**
  * What THIS house calls the person at the top of it.
- *
- * The same lookup as `headTitleOf` in `web/standing.ts`, against the view this
- * file already assembles. "Seat" belongs to the Hollow Court and is the last
- * entry in that house's own `ranks[]`; every other house has its own word and
- * has carried it in the catalog all along.
  */
 function headTitleOfHouse(view: HouseView): string {
     return view.ranks[view.rankCount - 1] ?? 'the head of the house';
@@ -245,10 +203,6 @@ function headTitleOfHouse(view: HouseView): string {
 
 /**
  * Whether somebody stands above this house who could simply replace its head.
- *
- * `unbacked`, `unassailable` and `outside` answer to nobody, so their heads top
- * out at a challenge - a fight, which can be won. Everybody else holds their
- * ground from a patron, and a patron does not need to fight.
  */
 function houseHasPatron(sectId: string): boolean {
     const parentage = getParentage(sectId);
@@ -351,12 +305,6 @@ function loadHouse(
 
 /**
  * The elders of a house, named where the world named them.
- *
- * The elder rungs are everything from `elderRungOf` up to but not including the
- * head of the house, because the head is whoever holds it. Catalog members fill their own
- * rungs first; the rest of each rung's roster is unnamed, and is returned as
- * unnamed rather than invented, because inventing a person here would make the
- * engine authoritative over somebody the narrator has to keep consistent.
  */
 function seatElders(
     sectId: string,
@@ -580,12 +528,6 @@ export const OrderSchema = z.object({
         .describe('How long they are out. Their time, not the caller\'s.'),
     /**
      * What the sentence CLAIMED, not what is true.
-     *
-     * `personal` is the default and is what an order is unless somebody reaches
-     * for something bigger - "I order you to" against "By order of the Sect".
-     * The engine tests the claim rather than consulting a legitimacy table,
-     * which is what lets the player's own words decide which question gets
-     * asked, and what gives "on what authority?" something real to answer.
      */
     authority: z.enum(['personal', 'delegated']).optional().default('personal')
         .describe('personal: their own rank. delegated: claiming the house\'s own authority.'),
@@ -778,11 +720,6 @@ export async function handleAuthority(args: z.infer<typeof AuthoritySchema>): Pr
  */
 /**
  * The world's row for the district a house's hands were sent out over.
- *
- * Where the order was given, because a house works the ground it stands on.
- * Null with no world layer, which is the same shape every other world-backed
- * read here has: with no world there is nothing that could say the district
- * has been worked out.
  */
 async function theGroundTheHandsWereSentTo(
     run: Run,
@@ -847,17 +784,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
         );
     }
 
-    // ── AND ON WHAT AUTHORITY ────────────────────────────────────────────
-    //
-    // The second question, which the ladder cannot answer. `canOrder` above has
-    // settled that this rung reaches that rung; this settles whether the person
-    // speaks for the part of the house they said they did.
-    //
-    // The roll handed over is the house's own elders plus the caller, which is
-    // what `whoDecidesIn` reads to work out who has a voice. Rooms come from
-    // the compound the world actually built - see `theRoomsThisHouseHas`, and
-    // NOT from `Sect.office`, which is the Protector's chair and is invisible
-    // to members by ruling.
+    // AND ON WHAT AUTHORITY
     const world = await worldForRun(view.run).catch(() => null);
     const portfolios = world
         ? portfoliosIn({
@@ -887,16 +814,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     );
     const applied = applyOutcome(repos, view, outcome, rng);
 
-    // ── AN ORDER NOBODY RECOGNISES IS AN ORDER NOBODY CARRIES OUT ────────
-    //
-    // Nothing arrives, and the standing is still spent: `resolveAct` is
-    // explicit that "the standing is spent whether or not the act lands - an
-    // order that was ignored was still given, and the giving is what cost."
-    // Somebody who claimed the house's authority in front of people who could
-    // check has spent more than somebody who simply asked.
-    //
-    // And it costs the people who declined NOTHING. They were not refusing the
-    // house; there was no house in it to refuse.
+    // AN ORDER NOBODY RECOGNISES IS AN ORDER NOBODY CARRIES OUT
     const delivered = !authority.legitimate
         ? 0
         : applied.obstructed
@@ -909,13 +827,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
     let stones = 0;
     let contribution = 0;
 
-    // ── A HOUSE DRAWS AT A SCALE ONE PERSON CANNOT ───────────────────────
-    //
-    // This is the consumer that makes depletion visible at all. A single
-    // forager takes a tenth of what a district's mortal band grows back in a
-    // year; twenty hands on a standing order do not, and the ground they are
-    // sent to is the ground that runs out. Resolved before the transaction
-    // because the world layer is async and the ledger write is not.
+    // A HOUSE DRAWS AT A SCALE ONE PERSON CANNOT
     const ground = errand === 'gather'
         ? await theGroundTheHandsWereSentTo(view.run, view.cultivator)
         : null;
@@ -997,15 +909,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
             obstructionChanceNextTime: round2(obstructionChance(outcome.standingAfter))
         },
         dismissedFromTheHouse: applied.dismissed,
-        // ── ON WHAT AUTHORITY, REPORTED ──────────────────────────────────
-        //
-        // Carried on the result rather than folded into the delivered figure,
-        // because a nought that means "they went and found nothing" and a
-        // nought that means "nobody went" are different facts and the prose has
-        // to be able to tell them apart. Measured before this existed: an
-        // unrecognised decree narrated as twenty-four servants going out for a
-        // week and coming back with nothing, which reads like bad luck and is
-        // the fallback-in-plain-English defect exactly.
+        // ON WHAT AUTHORITY, REPORTED
         authority: {
             claimed: authority.claim,
             legitimate: authority.legitimate,
@@ -1308,10 +1212,6 @@ export async function handleAdmission(args: z.infer<typeof AdmissionSchema>): Pr
 /** Change what the house hands its intake. The most consequential act here. */
 /**
  * Technique ids as the names a player would say back.
- *
- * An id the catalog does not hold passes through unchanged rather than being
- * dropped: an art a house genuinely teaches is worth naming even when this
- * process cannot resolve it, and inventing a name for it would be worse.
  */
 function namesOf(ids: readonly string[]): string[] {
     return ids.map(id => getTechnique(id)?.name ?? id);
@@ -1325,20 +1225,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
     const teach = args.teach ?? [];
     const retire = args.retire ?? [];
 
-    // ── READING THE SHELF IS NOT DECREEING WHAT IS ON IT ─────────────────
-    //
-    // The authority gate used to run first, so a member asking what their own
-    // house teaches was answered "Dew Servant does not do that in Azure Dew
-    // Sect. It opens at Sect Warden, and not before." That is the right refusal
-    // for rewriting a curriculum and the wrong one for looking at it: what a
-    // house hands its intake is the single most useful fact about belonging to
-    // it, every disciple in the world knows it, and it is not a secret from the
-    // people being taught out of it.
-    //
-    // So the gate moved below the read. Naming nothing is a question and is
-    // free to any member; naming something is a decree and still needs the
-    // head. Same split `site`, `petition`, `posture`, `seal` and `offer` all
-    // follow, and the same one this file's own `expel` already uses.
+    // READING THE SHELF IS NOT DECREEING WHAT IS ON IT
     const decreeing = teach.length > 0 || retire.length > 0;
     if (!decreeing) {
         return {
@@ -1372,22 +1259,7 @@ export async function handleCurriculum(args: z.infer<typeof CurriculumSchema>): 
         );
     }
 
-    // ── A HOUSE MAY TEACH WHAT A HOUSE HOLDS ─────────────────────────────
-    //
-    // The only check here was that the id existed, so a head could decree a
-    // RUIN- or GRAVE-provenance manual onto a taught shelf - which contradicts
-    // the invariant `sects.ts` states in its own header: "no sect teaches a
-    // ruin- or grave-provenance art". Not because those arts are forbidden,
-    // but because of what provenance MEANS. `taught` is a shown art with a
-    // living transmission behind it; `ruin` and `grave` are read ones, and a
-    // house cannot show what nobody in it was ever shown. The manual is in a
-    // hole, waiting for a digger, and a decree does not put a teacher next to
-    // it.
-    //
-    // This is not a new rule and it is not a faction rule. It is one generic
-    // column, read the same way `transmissionModeOf` reads it everywhere else,
-    // and it applies to every house in the world including the head that owns
-    // the strongest thing in it.
+    // A HOUSE MAY TEACH WHAT A HOUSE HOLDS
     const notHeld = teach
         .map(id => getTechnique(id)!)
         .filter(art => art.provenance !== 'taught');

@@ -1,88 +1,5 @@
 /**
  * The world map, as a view over `WorldState.locations`.
- *
- * A view, not a document - the same posture as `register.ts`. Nothing in this
- * file authors a place, a road or a distance. Every node here is a
- * `LocationRecord` the engine seeded, every edge is a `LocationLink` one of
- * those records holds, and a pair of locations with no link between them gets
- * no line. The map renders what the state says and stops there, which is the
- * same rule `auditNarration` enforces on prose: the client is not allowed to
- * be a second author of geography.
- *
- * ── The three things a cultivator actually asks about a place ────────────
- *
- * The record carries about forty fields. Three of them are the reason anyone
- * opens a map at all, and they are what the renderer encodes:
- *
- *   `qiDensity`    how fast you would climb standing there. 1..100, banded by
- *                  `ordinaryBandFor` so the map and the ambient engine cannot
- *                  drift apart.
- *   `thresholds`   whether going there kills you. Four ordinals that fail
- *                  differently - see `locations.ts` - reported raw so the
- *                  client can band them against any ordinal it likes rather
- *                  than against one baked in here.
- *   `travelDays`   what getting there costs. It lives on the edge, because
- *                  that is the only place distance exists in this model.
- *
- * ── There is no coordinate anywhere in this payload, deliberately ────────
- *
- * `LocationRecord` has no position and the engine has never needed one:
- * distance is `travelDays` on a link and containment is `parentId`. Emitting
- * an x/y here would be inventing geography, and a renderer that laid places
- * out by made-up coordinates would be read by an operator as a map of where
- * things are. So the payload is a containment tree plus a weighted graph, and
- * the client is told to say so.
- *
- * ── Arbitrary depth ──────────────────────────────────────────────────────
- *
- * Today the seed is two levels - regions holding places. Interiors
- * (`precinct`/`hall`/`chamber`/`vault`, see `architecture.ts`) nest further,
- * so `depth` is computed by walking parents rather than assumed, and a cycle
- * in `parentId` is survived rather than hung on.
- *
- * ── Admin sees everything; this payload is still built for the player ────
- *
- * `discovered` is carried on every node and never used to filter here. The
- * admin surface shows all of them and marks the undiscovered ones, so the
- * operator can see the fog the player is standing in; a player-facing map
- * drops `discovered === false` at the boundary and needs no other change.
- * `docs/world/houses/discovery.md` is the authority on why that gate exists.
- *
- * ── What is TRUE of a place is not the same as what a place IS ───────────
- *
- * `WorldState.statuses` is the layer in
- * `engine/world/what-is-true-of-a-place-right-now.ts`: a famine, a war on the
- * ground a house stands on, a beast tide running, a district its holder has
- * worked out. Those are the answer to "what is going on here", they change
- * prices and danger while they last, and this view carried none of them - so
- * an operator's map of the world could not report the one thing about it that
- * is currently moving.
- *
- * They are joined here through `statusesInArea`, which is the same call the
- * played `investigate` verb makes, so the map and the game cannot disagree
- * about what is happening. A status is true of its area AND of everything
- * under it, which is why a node inherits its ancestors' and says which of them
- * it owns.
- *
- * `causeKnownLocally` travels raw. This surface is admin and sees everything;
- * masking a cause by a knowing stage is `readStatusAtStage`'s job at the
- * player boundary, and there is exactly one knowledge ladder in this repo.
- *
- * ── The ground scale moved, and old rows did not ─────────────────────────
- *
- * `qiDensity` is 1..100 (`engine/world/qi-scale.ts`, which records why it left
- * 0..1). A world instantiated before that move holds fractions, and every one
- * of them rounds to the bottom of the new scale: measured on a live database,
- * Nine Peaks - "the deepest vein anyone has kept" - and a thin ford town both
- * reported `ground 0 of 100, thin`, which is the map's single most important
- * figure reading as a constant zero for every place in the world.
- *
- * So a value at or below 1 is read as the pre-move fraction it unambiguously
- * is and multiplied by `QI_DENSITY_MAX` - the conversion `qiFraction` already
- * states in the other direction, not a guess. `rescaledGround` counts them, so
- * the panel can say once that it is looking at a world older than the scale
- * rather than repeating a caveat on every row. Nothing is written back: this
- * is a view, and a storage migration is not its business.
  */
 
 import type { WorldState } from '../engine/world/world-state.js';
@@ -149,10 +66,6 @@ export interface PlaceNodeView {
     controllingFactionName: string | null;
     /**
      * Who runs it on the ground, in the record's own words.
-     *
-     * Carried beside `controllingFactionName` rather than folded into it,
-     * because a house can claim what it does not hold and the two fields
-     * disagreeing is the interesting state, not a data error.
      */
     heldBy: string;
     /** True when the paper claim and the words on the ground do not match. */
@@ -160,11 +73,6 @@ export interface PlaceNodeView {
 
     /**
      * What the place was cut for, and how many are in it.
-     *
-     * `architecture.ts` stores capacity and deliberately stores no other
-     * measurement, because capacity against occupancy is the fact that
-     * carries: a practice yard cut for six hundred holding ninety says more
-     * about a sect's century than any number written next to it.
      */
     capacity: number | null;
     occupancy: number;
@@ -184,20 +92,12 @@ export interface PlaceNodeView {
 
     /**
      * What is true of this place today, innermost first.
-     *
-     * Includes what is true of every area above it, because a famine in a
-     * province is a famine in its towns. `ownArea` separates the two so a
-     * reader can tell a war on this ground from a war in the province.
      */
     statuses: PlaceStatusView[];
 }
 
 /**
  * One thing that is true of a place right now.
- *
- * Every figure the status carries is kept - `stops`, the price multiplier and
- * the danger delta are what it DOES, and a status shown without them is a mood
- * rather than a mechanic. See `facts.ts` on keeping every number.
  */
 export interface PlaceStatusView {
     id: string;
@@ -230,16 +130,6 @@ export interface PlaceStatusView {
 
 /**
  * One dated thing that was done to a place.
- *
- * `locations.ts` stores a location as origin plus an append-only list of
- * changes plus the materialised present, and the middle layer is the whole of
- * why the world reads as alive: a valley that was a sect, then a battlefield,
- * then a merchant city is three facts with dates on them rather than one
- * adjective. Nothing surfaced it before this view did.
- *
- * `causeKnown` is carried because "nobody alive can explain it" is a stored
- * state of the world and not a gap in the record, and `attributedCauses` are
- * what the people living there say instead - stories, not truth.
  */
 export interface PlaceChangeView {
     onDay: number;
@@ -338,10 +228,6 @@ export function emptyPlacesView(): PlacesView {
 
 /**
  * Depth by walking parents, with a visited set.
- *
- * The set is not defensive decoration: `parentId` is a plain string field with
- * no constraint behind it, and a cycle put in by a bad change would otherwise
- * hang the request rather than fail it.
  */
 function depthOf(id: string, byId: Map<string, LocationRecord>): number {
     const seen = new Set<string>([id]);
@@ -357,20 +243,11 @@ function depthOf(id: string, byId: Map<string, LocationRecord>): number {
 
 /**
  * How much of a place's history travels with the map.
- *
- * The whole ledger would be correct and would also be the largest thing in a
- * payload that already carries eight hundred locations. The most recent eight
- * is what a panel shows without being asked; `changeCount` says how much more
- * there is, so the view never implies a short history a place does not have.
  */
 const CHANGE_LIMIT = 8;
 
 /**
  * What the place used to be, when that is different from what it is.
- *
- * Null when nothing moved, so an ordinary room does not render a section
- * saying it is still what it was. A valley that was a sect and then a
- * battlefield returns the four fields that moved and the day it started from.
  */
 function originView(loc: LocationRecord): PlaceOriginView | null {
     const o = loc.origin;
@@ -392,17 +269,6 @@ function originView(loc: LocationRecord): PlaceOriginView | null {
 
 /**
  * The ground figure on the scale this view promises, 1..100.
- *
- * The tell is FRACTIONAL, not small. `clampQiDensity` rounds, so every value
- * written on the current scale is an integer; a stored 0.3475 can only be the
- * old fraction, and it is converted by the same constant `qiFraction` divides
- * by - the conversion stated in the other direction, not a guess. An integer
- * is returned untouched, so a fresh world never goes near this branch.
- *
- * The one ambiguous input is exactly 1.0, which is the old scale's ceiling and
- * the new scale's floor. It is read as the floor. That errs toward calling
- * ground dead rather than toward inventing the best vein in the world, which
- * is the direction a map should be wrong in.
  */
 function groundOf(stored: number): { value: number; rescaled: boolean } {
     // The floor is `QI_DENSITY_MIN` on both branches, not zero: the scale says
@@ -510,10 +376,6 @@ function nodeView(
 
 /**
  * One running status, as this node sees it.
- *
- * `daysRunning` and `reviewInDays` are derived here rather than left to the
- * client, because both are arithmetic on the world's current day and the
- * client does not own that arithmetic anywhere else on this payload.
  */
 function statusView(
     status: AreaStatus,
@@ -548,11 +410,6 @@ function statusView(
 
 /**
  * One edge per pair per link kind.
- *
- * A road recorded on both ends is one road. Where the two ends disagree about
- * the cost the larger is kept and the disagreement is flagged, because a
- * traveller does not get to pick the cheaper direction's number and the
- * discrepancy is worth an operator seeing rather than worth averaging away.
  */
 function buildEdges(locations: LocationRecord[], byId: Map<string, LocationRecord>): {
     edges: PlaceEdgeView[];
@@ -608,11 +465,6 @@ function buildEdges(locations: LocationRecord[], byId: Map<string, LocationRecor
 
 /**
  * Everything the map draws, from one world.
- *
- * Pure: state in, view out, nothing mutated and no I/O. `world` being null is
- * the ordinary answer before a run exists and is reported as such rather than
- * as a failure - there is no world to draw, which is different from a world
- * that failed to load.
  */
 export function placesView(world: WorldState | null): PlacesView {
     if (!world) return emptyPlacesView();
