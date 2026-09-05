@@ -322,6 +322,53 @@ export function migrateCultivation(db: Database.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sect_members_cultivator
       ON sect_members(cultivator_id);
 
+    -- ── WHO IS TRAVELLING WITH YOU ───────────────────────────────────────
+    -- NOT the parties table in migrations.ts. That one is the D&D deployment's
+    -- adventuring group - shares, formations, a quest id, a role enum with
+    -- mounts in it - and it is keyed to characters, which cultivators are not
+    -- rows of. It is still live for that surface, so the prefix here is the
+    -- same one cultivation_sites and cultivation_tolls carry and for the same
+    -- reason.
+    --
+    -- A party is who is on the road with you and nothing else. There is no
+    -- size floor: the design owner ruled that one person is a party and so is
+    -- a bunch of unattached ones, so nothing here counts members before
+    -- letting a row exist. The leader is a member of their own party, which is
+    -- why there is no leader column on the membership table: led_by
+    -- is the whole of the distinction.
+    --
+    -- No standing, no loyalty and no morale column. Whether somebody comes and
+    -- whether they stay are already answered by resolveAttempt and by what
+    -- the ledger holds between the two of you; a number here would be a second
+    -- opinion about the same question.
+    CREATE TABLE IF NOT EXISTS cultivation_parties (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      led_by TEXT NOT NULL,
+      formed_on_day INTEGER NOT NULL,
+      disbanded_on_day INTEGER,
+      FOREIGN KEY (run_id) REFERENCES runs(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS cultivation_party_members (
+      party_id TEXT NOT NULL,
+      member_id TEXT NOT NULL,
+      joined_on_day INTEGER NOT NULL,
+      -- How they came to be walking with you, in the words of the thing that
+      -- decided it: asked, ordered, coerced, or bought. Never parsed - it is
+      -- what the narrator is told and what a later reader needs to know before
+      -- asking whether this person would go into a ruin ahead of you.
+      came_by TEXT NOT NULL DEFAULT 'asked',
+      left_on_day INTEGER,
+      PRIMARY KEY (party_id, member_id),
+      FOREIGN KEY (party_id) REFERENCES cultivation_parties(id) ON DELETE CASCADE
+    );
+
+    -- Somebody walks with one party at a time. Enforced on the open rows only,
+    -- so leaving one and joining another is two ordinary writes.
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_cultivation_party_members_open
+      ON cultivation_party_members(member_id) WHERE left_on_day IS NULL;
+
     -- -- DURABLE PER-CULTIVATOR SCALARS ------------------------------------
     -- Small facts that are neither vitals nor rows of their own: a pill held
     -- for the next bottleneck, the day grain abstinence expires, accumulated

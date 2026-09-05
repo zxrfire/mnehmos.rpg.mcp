@@ -12,9 +12,9 @@
  *   precincts, 70 vaults, 8 caves - and 12 do not: every ruin in the world,
  *   every one of them the seat of a power that no longer exists, every one of
  *   them answering an ordinary cultivator with *"Qi Condensation Layer 1 cannot
- *   enter Coldwell; entry requires Foundation Establishment Late."*
+ *   enter Cold Well; entry requires Foundation Establishment Late."*
  *
- * There is nobody in Coldwell. Everybody who could have stopped you is dead;
+ * There is nobody in Cold Well. Everybody who could have stopped you is dead;
  * that is what made it a ruin.
  *
  * ── THESE ARE TWO QUESTIONS AND THEY HAVE DIFFERENT SUBJECTS ─────────────

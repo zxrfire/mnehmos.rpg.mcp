@@ -769,9 +769,25 @@ const PLACE_HEAD = [
     'Black', 'Still', 'Thin', 'Deep', 'Sour', 'Flat', 'Long', 'Near', 'Under', 'Wet'
 ] as const;
 
+/**
+ * The feature the name ends in, and it is a WORD rather than a suffix.
+ *
+ * These were welded onto the head - Sweptfall, Coldmouth, Lowhollow - which is
+ * the English habit (Blackpool, Sheffield) and not the one this world's names
+ * are translated out of. `docs/world/writing/place-names.md` is explicit that
+ * the type noun is what makes a name read as translated at all, and a type noun
+ * fused into the modifier stops being one. Every generated toponym in every
+ * world came out of this table, so every one of them read English.
+ *
+ * `reach`, `fall` and `shelf` are gone with the compounding, by the same
+ * document's rule: they are English landscape words with no type noun behind
+ * them, where Terrace, Ford, Cliff and Peak are the same features under words a
+ * reader takes as translated.
+ */
 const PLACE_TAIL = [
-    'ground', 'fall', 'water', 'reach', 'ridge', 'hollow', 'mouth', 'crossing',
-    'stair', 'shelf', 'gate', 'furrow', 'bank', 'quarry', 'pass', 'yard'
+    'Ground', 'Water', 'Ridge', 'Hollow', 'Mouth', 'Crossing',
+    'Stair', 'Gate', 'Bank', 'Quarry', 'Pass', 'Yard',
+    'Terrace', 'Ford', 'Cliff', 'Peak', 'Spring', 'Valley'
 ] as const;
 
 const FACTION_ADJ = [
@@ -812,7 +828,7 @@ export function surnameOf(fullName: string): string {
 }
 
 export function placeName(rng: CultivationRNG): string {
-    return `${rng.pick(PLACE_HEAD)}${rng.pick(PLACE_TAIL)}`;
+    return `${rng.pick(PLACE_HEAD)} ${rng.pick(PLACE_TAIL)}`;
 }
 
 export function factionName(rng: CultivationRNG): string {

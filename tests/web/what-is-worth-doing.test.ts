@@ -1110,8 +1110,8 @@ describe('a fight is what is happening, and the square stops being the subject',
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('the row offers things that can end badly, because those are live too', () => {
-    const ARUIN = { name: 'The Empty Frame', setAtOrdinal: 21, survivable: false };
-    const OPENABLE = { name: 'The Burned Bench', setAtOrdinal: 3, survivable: true };
+    const ARUIN = { name: 'The Swept Gate', setAtOrdinal: 21, survivable: false };
+    const OPENABLE = { name: 'The Sitting Stone', setAtOrdinal: 3, survivable: true };
 
     it('offers the ground it cannot survive, rather than hiding it', () => {
         // The owner's ruling, and the same one the buy chip already follows:
@@ -1120,7 +1120,7 @@ describe('the row offers things that can end badly, because those are live too',
         // okay." Knowledge running ahead of capability is what turns a thing
         // into something to aim at rather than a door that says no.
         const out = byId({ ...WELL, sitesYouCouldOpen: [ARUIN] }, 'enter_site')!;
-        expect(out.say).toBe('I go into The Empty Frame');
+        expect(out.say).toBe('I go into The Swept Gate');
         // The rung, said the way a person says it. The number is how the engine
         // holds a rung and it is not what somebody standing at a door calls it.
         expect(out.because).toMatch(/pitched at Nascent Soul Early/);
@@ -1138,7 +1138,7 @@ describe('the row offers things that can end badly, because those are live too',
         // `readAdmission` splits being LET IN from surviving it, and the
         // caller sorts on the survivable half first.
         expect(byId({ ...WELL, sitesYouCouldOpen: [OPENABLE, ARUIN] }, 'enter_site')!.say)
-            .toBe('I go into The Burned Bench');
+            .toBe('I go into The Sitting Stone');
     });
 
     it('does not dress a fact about your records as a fact about this square', () => {

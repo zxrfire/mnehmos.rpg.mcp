@@ -810,7 +810,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-audit-bench',
         kind: 'trial',
-        name: 'The Burned Bench',
+        name: 'The Sitting Stone',
         character: 'open_ground',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -883,7 +883,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-swept-frame',
         kind: 'trial',
-        name: 'The Empty Frame',
+        name: 'The Swept Gate',
         character: 'waystation',
         origin: 'abandoned_by_a_house',
         scale: 'a_compound',
@@ -969,7 +969,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-cold-curriculum',
         kind: 'trial',
-        name: 'The Written Ledge',
+        name: 'The Written Face',
         character: 'teaching_hall',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',
@@ -1217,7 +1217,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-door-that-wants-a-refusal',
         kind: 'trial',
-        name: 'The Unlocked Box',
+        name: 'The Unbarred Mouth',
         character: 'vault',
         origin: 'left_addressed',
         scale: 'one_room',
@@ -1551,7 +1551,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-floor-over-the-old-cut',
         kind: 'trial',
-        name: 'The Long Rope',
+        name: 'The Rope Left Down',
         character: 'cut',
         origin: 'overrun_at_work',
         scale: 'a_building',
@@ -1614,7 +1614,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-door-that-only-knows-tokens',
         kind: 'trial',
-        name: 'The Low Slot',
+        name: 'The Tally Slot',
         character: 'vault',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',
@@ -1684,7 +1684,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-reading-room-that-was-not-shut',
         kind: 'trial',
-        name: 'The Steady Draught',
+        name: 'The Downward Chimney',
         character: 'archive',
         origin: 'overrun_at_work',
         scale: 'a_compound',
@@ -2030,7 +2030,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-forge-clan-vault',
         kind: 'grave',
-        name: 'The Worn Leaf',
+        name: 'The Walked Door',
         character: 'vault',
         origin: 'left_addressed',
         scale: 'a_building',
@@ -2537,7 +2537,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-culler-nobody-buried',
         kind: 'grave',
-        name: 'The Ditch Culler',
+        name: 'The Unclaimed Ditch',
         character: 'open_ground',
         origin: 'a_door_nobody_opened_again',
         scale: 'one_room',
@@ -2783,7 +2783,7 @@ export const GRAVES: readonly Grave[] = [
     {
         id: 'grave-the-post-at-the-upper-ford',
         kind: 'grave',
-        name: 'The Chalked Board',
+        name: 'The Standing Roster',
         character: 'waystation',
         origin: 'overrun_at_work',
         scale: 'a_building',
