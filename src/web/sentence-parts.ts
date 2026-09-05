@@ -184,8 +184,35 @@ function extractTarget(input: string): string | undefined {
  */
 export const ANYBODY = /^(?:around|about|someone|somebody|anyone|anybody|people|folk|the locals|the people|a passerby|a stranger|a local|them|him|her|somebody else)$/i;
 
+/**
+ * Asking GENERALLY, with nobody in the sentence at all.
+ *
+ * The two adverbs out of {@link ANYBODY}, and the split matters in `parseAsk`:
+ * every other member of that set is a POINTER, and `somebodyAtHand` resolves
+ * pointers - a pronoun to whoever was last dealt with, `someone` to the nearest
+ * face. Dropping them as though they named nobody threw away who was being
+ * asked. Measured: "I ask him where the sect is" came back with a topic and no
+ * person at all, so the commonest pronoun in the game reached nobody.
+ */
+const ASKING_GENERALLY = /^(?:around|about)$/i;
+
 /** Where a question stops naming who and starts naming what. */
-const ASK_PIVOT = /\s+(?:about|after|regarding|concerning|whether|if|what|where|who|how|why|for)\s+/i;
+/**
+ * Where a question stops naming who and starts naming what.
+ *
+ * TWO KINDS, AND THE DIFFERENCE IS WHETHER THE WORD IS PART OF THE QUESTION.
+ * `about`, `after`, `regarding`, `concerning`, `for` are prepositions and are
+ * swallowed: "ask her about the ruins" is a question about the ruins. A
+ * question word is not - it is the first word of what is being asked, and
+ * swallowing it left the topic a fragment that reads as a noun and is not one.
+ * Measured: "I ask the oldest man here who is in charge" came back with the
+ * topic `is in charge`, and the ask verb then looked for somebody by that name
+ * and reported that he had not heard of it.
+ */
+const ASK_PIVOT_PREPOSITION = /\s+(?:about|after|regarding|concerning|for)\s+/i;
+
+/** Kept with the topic, because it is the first word of the question. */
+const ASK_PIVOT_QUESTION = /\s+(?=(?:whether|if|what|where|who|whom|whose|how|why|when)\s+)/i;
 
 /** The verbs that put a question to a person. */
 const ASK_VERB = /\b(?:ask|asking|asks|enquire of|inquire of|put it to|question|press)\b\s*/i;
@@ -202,13 +229,19 @@ export function parseAsk(input: string): { person?: string; topic?: string } | n
 
     // THE PIVOT CAN BE THE FIRST WORD
     const leading = /^(?:about|after|regarding|concerning|whether|if|for)\s+/i.exec(rest);
-    const pivot = leading ? null : ASK_PIVOT.exec(rest);
+    // A preposition first, because "ask her about who holds this" pivots on
+    // `about` and the question word after it belongs to the topic either way.
+    const pivot = leading
+        ? null
+        : ASK_PIVOT_PREPOSITION.exec(rest) ?? ASK_PIVOT_QUESTION.exec(rest);
     const who = leading ? '' : (pivot ? rest.slice(0, pivot.index) : rest).trim();
     const about = leading
         ? rest.slice(leading[0].length).trim()
         : pivot ? rest.slice(pivot.index + pivot[0].length).trim() : '';
 
-    const person = who.length >= 2 && !ANYBODY.test(who) ? cleanPlace(who) : undefined;
+    const person = who.length >= 2 && !ASKING_GENERALLY.test(who)
+        ? cleanPlace(who)
+        : undefined;
     const topic = about.length >= 2 ? cleanPlace(about) : undefined;
     return { ...(person ? { person } : {}), ...(topic ? { topic } : {}) };
 }

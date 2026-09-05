@@ -206,6 +206,24 @@ export interface RefusalCopy {
 }
 
 /**
+ * A topic that is a QUESTION about the world rather than the name of a thing.
+ *
+ * The gate below asks whether this person has heard of the topic, which is the
+ * right question for `the Hollow Court` and the wrong one for `who is in
+ * charge`. Measured: "I ask the oldest man here who is in charge" came back
+ * with *Yun Lanshan has not heard of who is in charge* - a sentence about the
+ * knowledge gate rather than about the province, and a dead end where the
+ * player had asked the one question the square could answer.
+ *
+ * A question word at the head is the whole test, and it is reliable because
+ * `parseAsk` now keeps that word with the topic instead of swallowing it.
+ */
+export function aQuestionRatherThanAName(topic: string): boolean {
+    return /^(?:who|whom|whose|what|which|where|when|why|how|whether|if)\b/i
+        .test(topic.trim());
+}
+
+/**
  * Nothing to be got, so nothing is attempted.
  *
  * Refused BEFORE the resolver - no day spent, no mark written, no grudge - on

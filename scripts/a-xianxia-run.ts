@@ -36,6 +36,17 @@ const only = process.argv.includes('--scenario')
     : null;
 const WORLD = 'a-xianxia-run';
 
+/**
+ * The engine putting the question back to the player.
+ *
+ * Legitimate every time it happens and never the same thing as the act being
+ * carried out. Kept as one pattern rather than a check per verb, because what
+ * is being measured is a SHAPE of turn - the player typed something, the turn
+ * spent nothing, and the ball is back with them.
+ */
+const THE_ENGINE_ASKED_BACK =
+    /Which comes first\?|Name one\.|waits for you to say which|which of them you mean|say which one/i;
+
 async function freshRun() {
     resetCultivationWorlds();
     const db = new Database(':memory:');
@@ -107,6 +118,14 @@ for (const scenario of SCENARIOS as Scenario[]) {
         }
         const after = snapshot(game);
         const shrug = /does not resolve into anything|thought does not resolve/i.test(narration);
+
+        // A QUESTION BACK IS NOT THE ACT HAPPENING, and scoring it as one hid
+        // three real failures inside a band reading 100%. "I go to Cold Peak
+        // and gather herbs" came back with *which comes first?* - correct for
+        // a reader that cannot tell, and NOT the sentence being carried out -
+        // and the old outcome had no word for the difference, so it read the
+        // same as a turn that travelled and gathered.
+        const asked = !shrug && THE_ENGINE_ASKED_BACK.test(narration);
         total++; if (shrug) shrugged++; else answered++;
 
         rows.push({
@@ -118,11 +137,11 @@ for (const scenario of SCENARIOS as Scenario[]) {
             // family", and the average will not say so.
             asks: scenario.asks ?? 'one_act',
             said,
-            outcome: shrug ? 'shrug' : refused ? 'refused' : 'ran',
+            outcome: shrug ? 'shrug' : asked ? 'asked' : refused ? 'refused' : 'ran',
             calls: ran, moved: movedBetween(before, after), narration
         });
         out.push('', `> ${said}`,
-            `  [${shrug ? 'SHRUG' : refused ? 'refused' : 'ran'}] ${ran}`,
+            `  [${shrug ? 'SHRUG' : asked ? 'ASKED' : refused ? 'refused' : 'ran'}] ${ran}`,
             `  state: ${movedBetween(before, after) || 'unchanged'}`,
             narration.split(String.fromCharCode(10)).map(l => `  | ${l}`).join(String.fromCharCode(10)).slice(0, 1400));
     }

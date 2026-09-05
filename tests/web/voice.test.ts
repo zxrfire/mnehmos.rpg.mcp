@@ -145,7 +145,12 @@ describe('refusals read as the world declining', () => {
 
         // Precision is not lost, it is filed. A developer can still see exactly
         // why nothing happened, and so can a curious player who goes looking.
-        expect(mechanical).toMatch(/Unresolved (?:party|subject)/);
+        //
+        // Either wording is that precision. `someone` used to be discarded
+        // before the resolver saw it, so the account could only say the party
+        // was unresolved; it reaches `somebodyAtHand` now, which answers with
+        // the name it tried and why nobody matched it.
+        expect(mechanical).toMatch(/Unresolved (?:party|subject)|matched nobody/);
         expect(mechanical).toMatch(/Known to this cultivator|heard of nobody/);
     });
 });
