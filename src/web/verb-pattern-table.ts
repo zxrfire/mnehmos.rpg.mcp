@@ -1722,6 +1722,27 @@ export const AN_OATH = new RegExp([
     '\\bpledge\\s+myself\\b'
 ].join('|'));
 
+/**
+ * Swearing a thing rather than doing it.
+ *
+ * THE OATH GOVERNS WHAT IS INSIDE IT. *I swear a dao oath that I will kill him*
+ * is not a killing, it is a promise about one, and the whole point of a dao
+ * oath is that the doing comes later and is owed. Measured before this, that
+ * sentence drew a sword: the violence branch sits five hundred lines above the
+ * oath branch and "kill him" was all it needed.
+ *
+ * The same rule `misparse.test.ts` already states for the verb next door - *a
+ * question about a war is not a declaration of one* - and it wants the same
+ * shape: the wrapper is read first, and what it wraps is its content rather
+ * than a second sentence.
+ *
+ * Deliberately narrow. It takes an explicit swearing with the oath NAMED, which
+ * is the bar {@link AN_OATH} already sets, so "I will kill him" on its own is
+ * untouched and still means it.
+ */
+export const SWEARING_IT_RATHER_THAN_DOING_IT =
+    /\b(?:swear|swears|swearing|swore|take|takes|taking|make|makes|making|give|gives|giving)\s+(?:an?|the|my|our)?\s*(?:dao|blood|binding|great|solemn)?\s*(?:oath|vow|pact)\b/;
+
 /** Who the word is given to, or who holds the one being broken. */
 export const OATH_SUBJECT_VERBS =
     /oath to|oath with|oath before|vow to|swear to|swears to|swore to|pledge myself to|pledge to|my word to|break (?:my |the |our )?(?:oath|vow|word) (?:to|with)|indenture to|bound to|sworn to/;
@@ -2233,7 +2254,11 @@ function planIntent(input: string): PlannedAction {
             // it violence rather than the verb. See `VIOLENCE_TO_A_BODY`.
             || VIOLENCE_TO_A_BODY.test(input)
             || VIOLENCE_WITH_NO_OTHER_READING.test(text)
-            || CRIPPLING_SOMEBODY.test(input))) {
+            || CRIPPLING_SOMEBODY.test(input))
+        // AND IT IS NOT BEING SWORN. See `SWEARING_IT_RATHER_THAN_DOING_IT`:
+        // the oath wrapper is read before what it wraps, so a promise to kill
+        // somebody is a promise and falls through to the oath branch below.
+        && !SWEARING_IT_RATHER_THAN_DOING_IT.test(text)) {
         return {
             action: 'attack',
             // The manner clause is cut off the name. "I attack him from behind"

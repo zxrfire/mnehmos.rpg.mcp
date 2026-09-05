@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeGame } from './harness';
+import { parseIntent } from '../../src/web/verb-pattern-table';
 import {
     DESCENT_TRIBULATION_STRIKES,
     strikesForABrokenDaoOath
@@ -101,5 +102,33 @@ describe('what the sky draws, and off whom', () => {
      */
     it('counts from the breaker rather than from the oath', () => {
         expect(strikesForABrokenDaoOath(8)).toBeGreaterThan(strikesForABrokenDaoOath(1));
+    });
+});
+
+describe('an oath about a thing is not the thing', () => {
+    /**
+     * The design owner: *oaths don't have to be like, I promise I won't do x,
+     * it can also be I promise I WILL do X.* An undertaking names the act it is
+     * an undertaking about, and the act is in the future and owed - which is
+     * the whole of what a dao oath is for.
+     *
+     * Measured before this: "I swear a dao oath that I will kill him" drew a
+     * sword. The violence branch sits five hundred lines above the oath branch
+     * and "kill him" was all it needed.
+     */
+    it('swears about a killing rather than doing one', () => {
+        expect(parseIntent('I swear a dao oath that I will kill him').action).toBe('oath');
+        expect(parseIntent('I swear a blood oath to destroy the Iron Gate').action).toBe('oath');
+        expect(parseIntent('I take an oath that I will bring back the herb').action).toBe('oath');
+    });
+
+    /**
+     * And the guard is narrow. It takes an explicit swearing with the oath
+     * NAMED, so a sentence that means it still means it.
+     */
+    it('leaves a plain killing alone', () => {
+        expect(parseIntent('I kill him').action).toBe('attack');
+        expect(parseIntent('I attack the elder').action).toBe('attack');
+        expect(parseIntent('I challenge him to a duel').action).toBe('attack');
     });
 });
