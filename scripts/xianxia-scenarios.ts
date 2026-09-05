@@ -187,6 +187,60 @@ export const SCENARIOS: Scenario[] = [
     // set, a sequence, or a goal with no verb in it at all.
     // ─────────────────────────────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────────────────────────────
+    // ACTING WHERE YOU ARE NOT
+    //
+    // A flying sword, a nascent soul out of the body, a clone. The reader has
+    // to answer WHICH BODY IS ACTING before it answers what the act was, and
+    // it has two locations to choose between rather than one. Every one of
+    // these is a sentence that reads as ordinary and is not.
+    // ─────────────────────────────────────────────────────────────────────
+
+    {
+        name: 'kill-somebody-a-province-away',
+        sign: 'taking',
+        asks: 'a_set',
+        hope: 'the sword is where they are and the body is not. It must not answer by '
+            + 'walking there, and must not refuse on the grounds that nobody is here',
+        turns: ['where is my sword', 'I send my sword at Shen Yuan']
+    },
+    {
+        name: 'kill-somebody-whose-whereabouts-are-unknown',
+        sign: 'taking',
+        hope: 'reach is knowledge. Not knowing where they are is the honest refusal, and it '
+            + 'is a different sentence from having nothing out there',
+        turns: ['I send my sword to kill the Hollow Court patriarch']
+    },
+    {
+        name: 'the-blade-that-says-whose-it-is',
+        sign: 'taking',
+        hope: 'a recognisable blade puts a name on the deed. The answer should say the thing '
+            + 'was seen and whose it was, rather than treating it as unwitnessed',
+        turns: ['I send Frostmirror at the man in Nine Peaks']
+    },
+    {
+        name: 'the-body-left-behind',
+        sign: 'taking',
+        asks: 'a_set',
+        hope: 'sending the soul out leaves a body nobody is defending, and the answer has to '
+            + 'say so before it says what the soul did',
+        turns: ['I send out my nascent soul to Nine Peaks', 'I kill the elder there']
+    },
+    {
+        name: 'a-sword-carrying-something',
+        sign: 'giving',
+        hope: 'the same reach used to deliver rather than to kill. It must not read as an '
+            + 'attack because a sword is in the sentence',
+        turns: ['I send my sword to carry this letter to the Azure Dew Sect']
+    },
+    {
+        name: 'which-of-me-is-acting',
+        sign: 'indifferent',
+        hope: 'two places are mine at once. Asking what I can do should answer for both '
+            + 'and say which is which, not merge them into one square',
+        turns: ['what can I do here']
+    },
+
     {
         name: 'their-entire-family',
         sign: 'taking',
