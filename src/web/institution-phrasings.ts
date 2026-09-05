@@ -117,6 +117,21 @@ export const TRIBUTE_VERBS =
 export const TRIBUTE_NOUNS =
     /\b(?:tribute|a levy|the levy|dues|a tithe|the tithe|their (?:grant|stones|contribution)|what (?:they|it) owes?)\b/;
 
+/**
+ * Where a house stands with another, which is the READ and the default posture
+ * intent - and had no phrasing, so the only reachable postures were the four
+ * that CHANGE something. A subsystem you can only act on and never look at is
+ * a subsystem nobody will use twice.
+ */
+export const WHERE_WE_STAND =
+    new RegExp([
+        String.raw`\bwhere (?:do |does )?(?:we|my house|our house|the (?:house|sect|clan|order|school)|it) stand\b`,
+        String.raw`\bhow (?:do|does) (?:we|my house|our house|the (?:house|sect|clan|order|school)|it) stand\b`,
+        String.raw`\b(?:our|my house'?s?|the house'?s?) (?:standing|posture|relations?|terms) with\b`,
+        String.raw`\bwho (?:are|is) (?:we|my house|our house) (?:at war with|allied (?:to|with)|holding from)\b`,
+        String.raw`\bare we (?:at war|allied|at peace)\b`
+    ].join('|'), 'i');
+
 export const DEFECT_PATTERN =
     /\b(?:defect(?:s|ing)? to|go(?:es|ing)? over to|went over to|transfer (?:our|the house'?s?|its|the) (?:allegiance|grant|patronage|standing)|change (?:our |the house'?s? )?patrons?|hold from|swear the (?:house|sect|clan|school) to|put (?:us|the house|the sect) under)\b/;
 
@@ -127,6 +142,18 @@ export const SEAL_INTENTS: readonly SealIntent[] = ['read', 'wake'] as const;
  * The priced read, and it must stay the default.
  */
 export const DEFAULT_SEAL_INTENT: SealIntent = 'read';
+
+/**
+ * Reading a seal rather than breaking it, which is the PRICED half and the
+ * default intent - and had no phrasing, so the whole subsystem could only be
+ * reached by the one sentence that opens it. "I read the seal" reached
+ * `investigate`, which is a look at a thing and knows nothing about what is
+ * under a mountain.
+ */
+export const SEAL_READ_VERBS =
+    'read|reads|reading|study|studies|studying|examine|examines|examining|'
+    + 'inspect|inspects|inspecting|look at|looks at|looking at|'
+    + 'measure|measures|measuring|check|checks|checking';
 
 export const WAKE_VERBS =
     'wake|wakes|waking|waken|wakens|awaken|awakens|awakening|rouse|rouses|rousing|'
@@ -237,6 +264,21 @@ function isTheActItself(phrase: string | undefined): boolean {
  * else.
  */
 export function institutionalAct(text: string, input: string): PlannedAction | null {
+    // ── where we stand ──
+    //
+    // The READ first, and that ORDER is the point: "are we at war with the Iron
+    // Gate" is a question and "I declare war on the Iron Gate" is an act, and
+    // the two share every noun. Getting them the wrong way round starts a war
+    // by answering a question.
+    if (WHERE_WE_STAND.test(text)) {
+        const withWhom = partyAfter(input, 'stand with|standing with|posture with|relations with|terms with|at war with|allied to|allied with|holding from|with');
+        return {
+            action: 'posture',
+            intent: 'stance',
+            ...(withWhom ? { target: withWhom } : {})
+        };
+    }
+
     // ── war ──
     //
     // The declaration verb has to be in verb position. Without that, "what do
@@ -268,6 +310,19 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
     if (DEFECT_PATTERN.test(text)) {
         const to = partyAfter(input, 'defect(?:s|ing)? to|go(?:es|ing)? over to|went over to|under|to');
         if (to) return { action: 'posture', intent: 'defect', target: to };
+    }
+
+    // ── reading a seal, before breaking one ──
+    //
+    // Same order and same reason as the stance read above: `open` is on both
+    // verb lists, so the reading has to be asked first or every look at a seal
+    // is an opening of it.
+    if (usedAsVerb(text, SEAL_READ_VERBS)
+        && SEALED_NOUNS.test(text)
+        && !NOT_THE_SEALED_ANCESTOR.test(text)) {
+        const named = partyAfter(input, 'seal (?:at|of|under|beneath)|ancestor (?:at|of|under|beneath)|at|beneath|under');
+        const whose = isTheActItself(named) ? undefined : named;
+        return { action: 'seal', intent: 'read', ...(whose ? { target: whose } : {}) };
     }
 
     // the thing under the mountain

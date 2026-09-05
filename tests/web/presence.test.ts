@@ -199,7 +199,7 @@ describe('the mortal economy is priced in the currency it uses', () => {
         // hundredth of a stone. Anchored on a word boundary, because without
         // one this reads the tail of "10.2 spirit stones" as a fraction and
         // fails on an honest price for a grave plot.
-        expect(shown).not.toMatch(/0\.\d+ spirit stones/);
+        expect(shown).not.toMatch(/\b0\.\d+ spirit stones/);
     });
 
     it('says what is out of reach once, about the purse', async () => {

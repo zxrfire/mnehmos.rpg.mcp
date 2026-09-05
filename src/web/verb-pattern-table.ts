@@ -1883,7 +1883,7 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
      * Ahead of `negotiate` so it does not eat "beg", and ahead of `talk`, which
      * would take every one of these as speech.
      */
-    ['seduce', /\b(?:seduce|seduces|seducing|court|courting|woo|charm|flirt|flatter|win (?:him|her|them) over|make (?:him|her|them) fond of me|get close to)\b/],
+    ['seduce', /\b(?:seduce|seduces|seducing|(?<!the )(?<!a )(?<!their )(?<!its )(?<!our )(?<!my )(?<!high )court(?! (?:ruled|rules|ruling|has|had|sits|sat|met|meets))|courting|woo|charm|flirt|flatter|win (?:him|her|them) over|make (?:him|her|them) fond of me|get close to)\b/],
     // "I make it clear what happens if he refuses" is a threat said the way
     // people say it, and it reached nothing at all - so a promise of harm, the
     // one leverage in the game that costs its maker nothing until it is made
