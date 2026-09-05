@@ -1121,7 +1121,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-halfwater-rail': {
         ancestors: [
             { name: 'Weigher Duan Xi', fate: 'dead', realmOrdinal: 19, yearsAgo: 90, afterCrossing: null, rememberedFor: 'Set the rate at a fortieth and refused four separate offers to raise it, on the argument that the port is worth what passes through it and nothing else. The rate has not moved since and the argument is repeated at every Factors\' table as though somebody had just thought of it.' },
-            { name: 'The Rail Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Thousand Sail Harbour is worth remarking on.' }
+            { name: 'The Rail Master before this one, name kept off the board', fate: 'dead', realmOrdinal: 21, yearsAgo: 22, afterCrossing: null, rememberedFor: 'Refused a lot the Deep Survey was already hunting, in writing, and had the refusal copied to the seller\'s face so that everybody on the quay would know the line existed. Died four years later of nothing in particular, which at Halfwater is worth remarking on.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,

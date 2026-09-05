@@ -48,6 +48,7 @@ import { forStream } from '../engine/cultivation/rng.js';
 import { describeBirth, drawBirth, groundDensityFor } from '../engine/birth/birth.js';
 import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
+import { rollPhysique } from '../engine/cultivation/physiques.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
 import { primaryRoadOf } from '../schema/cultivation.js';
  import {
@@ -801,6 +802,13 @@ import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { recordPerception } from './shown-this-turn.js';
 import {
+    theBearingsThisTurnCanRead,
+    whatThePeopleHereAreAnswering,
+    whoThePlanPointedAt,
+    type BodyInAFight,
+    type DeclaredMovement
+} from './scene-person-readings.js';
+import {
     howStandingHerePutIt,
     whoBeingHereIntroducesYouTo
 } from '../engine/world/being-on-their-ground.js';
@@ -811,8 +819,15 @@ import { crossingVerb } from './crossing.js';
 // is. Re-exported so this module's export surface is what it was.
 export { doorScaleOverStretch } from './seclusion-verbs.js';
 import { combatVerbs } from './combat-verbs.js';
+// 护法 - standing over somebody else's crossing. The giving half of the verb
+// surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
+// which had no caller anywhere in `src/`.
+import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
+import { craftVerbs } from './craft-verbs.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
+// Whose the thing is, asked of the world before anything calls a taking a theft.
+import { takingVerbs } from './a-taking-is-decided-by-ownership.js';
 import { travelVerbs } from './travel-verbs.js';
 
 export {
@@ -866,6 +881,7 @@ import type { MarketPrice } from './market-prices.js';
 // export surface is exactly what it was before the move.
 import { GameError } from './turn-wire-shapes.js';
 import { matchVerbs } from './match-verbs.js';
+import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
 import { institutionVerbs } from './institution-verbs.js';
 import type {
@@ -1211,6 +1227,15 @@ const DUTY_STOPWORDS: ReadonlySet<string> = new Set([
  */
 const MORTAL_WORLD_ACTIONS: readonly ActionName[] = [
     'work', 'market', 'provision', 'eat', 'gather', 'hunt', 'interact', 'sect', 'move',
+    /**
+     * A yard is somewhere in the province, and everything that goes into one
+     * comes off a body a hunting party carried home. `OBJECT_CEILING_BELOW_THE_LID`
+     * is the other half of why: what a True Immortal could make down there is
+     * capped at a rung below them, so the sentence is re-offered as the two
+     * ways an immortal does anything below rather than answered by looking for
+     * a bench in a place where there is nobody.
+     */
+    'craft',
     // An inheritance ground is a hole in a hillside in the province. A True
     // Immortal is not standing near one, and the trip back down costs nine
     // strikes of the heaviest tribulation there is.
@@ -1783,6 +1808,13 @@ export class GameService {
         // whether a child can be of both parents' blood, and which of two
         // Courts would ever have opened their door.
         const sex = rollSex(forStream(seed, 'creation', 'sex').next());
+        // The body itself, on its own named stream beside the other three, and
+        // dealt exactly once. Null for 98 births in a hundred; where it lands it
+        // is read by the cultivation rate, by the lifespan ceiling, and by what
+        // an art that runs on the others takes out of this body. Nothing
+        // anywhere branches on which one it is -
+        // `engine/cultivation/physiques.ts` carries that rule.
+        const physique = rollPhysique(forStream(seed, 'creation', 'physique').next());
         const attributeStream = forStream(seed, 'creation', 'attributes');
         const attributes = rollAttributes([
             attributeStream.next(),
@@ -1813,6 +1845,7 @@ export class GameService {
                 kind: 'pc',
                 spiritRoot: root.key,
                 sex,
+                physique: physique?.key ?? null,
                 attributes,
                 realmOrdinal: 0,
                 cultivationProgress: 0,
@@ -2262,7 +2295,12 @@ export class GameService {
                     ambient,
                     sectName: this.sectNameFor(cultivator),
                     knownTechniques: this.knownTechniqueNames(cultivator),
-                    awareness: this.awarenessOf(cultivator)
+                    awareness: this.awarenessOf(cultivator),
+                    // The square, gated. Without it the classifier is asked to
+                    // bind "everyone here" against a list of every name in the
+                    // cultivator's world with no mark on which are in front of
+                    // them. See `describeWhoIsHere`.
+                    present: this.company(cultivator)
                 }),
                 describeTheLastTurn(before)
             );
@@ -2282,6 +2320,20 @@ export class GameService {
         const theTurnsPlan: PlanWithSteps = resolved && resolved.resolutions.length > 0
             ? resolved.plan
             : plan;
+
+        // ── WHO WAS STANDING HERE BEFORE ANY OF IT ───────────────────────
+        //
+        // The other half of a snapshot, taken here because after phase 2 it is
+        // too late: a purse that emptied and a wound that opened are only
+        // visible against what the square held a moment ago. Read rather than
+        // declared, so a verb written next year that moves somebody puts a
+        // person into the prose without its author knowing the channel exists.
+        // See `scene-person-readings.ts`.
+        const squareBefore = this.present(cultivator);
+        // And the body on the other side of a fight already standing, whose
+        // hit points live in the fight rather than on any row a snapshot of
+        // the square can reach.
+        const bodyOpposite = this.theBodyOpposite(inAFight);
 
         // ── phase 2 ──
         const execution = fightAnswer !== null
@@ -2495,6 +2547,40 @@ export class GameService {
             }
         }
 
+        // ── AND THE PEOPLE WHO WERE IN IT ────────────────────────────────
+        //
+        // One call, at the end of every turn, over everybody standing here -
+        // involved or not. It reads no verb and no intent: what it reads is
+        // what moved, for whom, as a fraction of what they had, with a witness
+        // priced against the loudest thing that happened to anybody.
+        //
+        // Measured before it existed: a three-round fight told the narrator
+        // "You are on 36 of 40; Kong Liekuan is on 39 of 43" and nothing else,
+        // with two people standing in the square for all three rounds who were
+        // never mentioned. Being admitted to a house came back with nobody in
+        // it at all. The prose was dry because there was no person in the
+        // prompt, and there is no instruction that fixes that.
+        //
+        // The two things the roster snapshot cannot see are read HERE, beside
+        // it, rather than reported by whichever verb ran: the fight this turn
+        // was standing in, and the person the plan pointed at. See
+        // `scene-person-readings.ts` for why that distinction is load-bearing.
+        this.sayWhoWasInIt(
+            execution, squareBefore, cultivator, after.cultivator,
+            theBearingsThisTurnCanRead(
+                bodyOpposite,
+                this.theBodyOpposite(
+                    theFightStillStands(this.fight, after.run.id, after.cultivator.id)
+                        ? this.fight
+                        : null
+                ),
+                whoThePlanPointedAt(
+                    stepsOfThePlan(theTurnsPlan).map(step => step.action.target),
+                    squareBefore
+                )
+            )
+        );
+
         const scene = {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -2666,6 +2752,7 @@ export class GameService {
             ? this.crossroads
             : null;
         const clockOnEntry = run.elapsedDays;
+        const squareBefore = this.present(cultivator);
         const execution = await this.runSeclusion(
             run, cultivator, ambient, requested, { acknowledged: options.anyway === true }
         );
@@ -2684,6 +2771,10 @@ export class GameService {
         if (!execution.timeSkip) throw new GameError('The simulation produced no result.', 500);
 
         const after = this.currentRun();
+        // The same channel the typed turn runs, for the same reason: which
+        // control the player pressed must not decide whether the people around
+        // them are in the account of it.
+        this.sayWhoWasInIt(execution, squareBefore, cultivator, after.cultivator);
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -2724,10 +2815,15 @@ export class GameService {
         }
 
         const ambient = this.ambientFor(cultivator, run);
+        const squareBefore = this.present(cultivator);
         const execution = this.strikeBarrier(run, cultivator, ambient);
         if (!execution.breakthrough) throw new GameError('The engine produced no breakthrough result.', 500);
 
         const after = this.currentRun();
+        // A barrier struck in a crowded square is one of the loudest things
+        // that happens in front of anybody, and it used to happen in front of
+        // nobody. `A_RUNG_MOVED` is what prices it for the people watching.
+        this.sayWhoWasInIt(execution, squareBefore, cultivator, after.cultivator);
         const narration = await this.narrator.narrate(execution.facts, {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
@@ -3288,13 +3384,28 @@ export class GameService {
             // reporting its own ceiling as somebody else's intention. Carried
             // so the account can say what was asked and what was capped.
             case 'cultivate':
-                return this.runSeclusion(
-                    run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS,
-                    {
-                        acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput),
-                        askedFor: durationAskedFor(rawInput) ?? undefined
-                    }
-                );
+                // A target on `cultivate` is somebody named as sitting it with
+                // them, and the shared road is the only thing that reads it -
+                // an ordinary stretch names nobody. Every condition on the
+                // partnership is checked there, so a player who names somebody
+                // who is not their dao partner is told which condition failed
+                // rather than quietly given an ordinary sitting.
+                return action.target && action.target.trim().length >= 2
+                    ? this.cultivateWithYourDaoPartner(
+                        run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS,
+                        action.target,
+                        {
+                            acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput),
+                            askedFor: durationAskedFor(rawInput) ?? undefined
+                        }
+                    )
+                    : this.runSeclusion(
+                        run, cultivator, ambient, action.days ?? DEFAULT_CULTIVATION_DAYS,
+                        {
+                            acknowledged: GameService.TAKE_IT_ANYWAY.test(rawInput),
+                            askedFor: durationAskedFor(rawInput) ?? undefined
+                        }
+                    );
 
             case 'seclude':
                 return this.runSeclusion(
@@ -3342,6 +3453,32 @@ export class GameService {
                     action.topic, rawInput
                 );
 
+            case 'guard':
+                // 护法. Naming somebody spends the span and resolves THEIR
+                // crossing; naming nobody is the free read of who would stand
+                // over the player's own. Both live in `standing-guard.ts`, and
+                // the split is here rather than inside the verb so the free
+                // half never touches `loadWorld`.
+                //
+                // AND THE READ IS ASKED FOR, NEVER FALLEN INTO. A sentence
+                // that meant to guard somebody and named a pronoun - "I stand
+                // guard while she crosses" - must be REFUSED with who is
+                // standing here rather than answered with a roster of who
+                // would guard the player, which is a good answer to a question
+                // nobody asked.
+                //
+                // There is no DEFAULT_GUARD_INTENT, and that is on purpose:
+                // the acting branch is already the misparse-safe one. It needs
+                // a person who is actually standing here AND a world record for
+                // them AND a tie that carries the arrangement, none of which a
+                // guessed sentence supplies, and it spends nothing on the way
+                // to any of those refusals. `give` makes the same argument.
+                return action.intent === GUARD_IS_A_QUESTION
+                    ? this.whoWouldStandOverYourCrossing(run, cultivator)
+                    : await this.standGuard(
+                        run, cultivator, ambient, action.target, action.days
+                    );
+
             case 'investigate':
                 return this.investigate(run, cultivator, ambient, action.target);
 
@@ -3379,6 +3516,16 @@ export class GameService {
                 // The span the player named, which this dropped entirely. See
                 // `train`.
                 return this.train(cultivator, action.target, action.days);
+
+            case 'craft':
+                // `days` is a span the player named and nothing else; absent,
+                // `planTheBuild` spends `DAYS_AT_THE_BENCH` and says the figure
+                // out loud. `rawInput` is read for one question - whether they
+                // are walking away from what is on the stocks - because the
+                // word that says so is never the object of the verb.
+                return this.craft(
+                    run, cultivator, ambient, action.target, action.days, rawInput
+                );
 
             case 'refine':
                 return this.refine(run, cultivator, action.target);
@@ -3842,7 +3989,7 @@ ${line}`;
                 // The trust term has been moving the player's odds off this
                 // since it landed and the game would not say it: both callers
                 // of `whoHoldsTheGround` were inside the NPC simulation. A
-                // fresh run opens at the Meet on The Blown Ground, so this is
+                // fresh run opens at Wind Market on The Burial Sands, so this is
                 // turn-one ground.
                 //
                 // Volunteered only where nobody holds it. An absent register is
@@ -4405,7 +4552,72 @@ ${noticed}`;
         // spends real days and has to await the span.
     ): Execution | Promise<Execution> {
         const scope = this.scopeFor(cultivator);
+
+        // ── WHOSE IT IS, ASKED OF THE WORLD, BEFORE IT IS CALLED A THEFT ─
+        //
+        //   "Saying `take` about something that is not yours - and is not
+        //    genuinely free, like an apple in the middle of nowhere - is
+        //    stealing."
+        //
+        // The reader routes a bare taking here with `intent: 'take'`, which
+        // asserts nothing: there is no hostile word in "I pick up the manual on
+        // my way out" and there must not be a list of polite theft verbs, so the
+        // sentence cannot settle it and does not try. `whoseThingIsBeingTaken`
+        // asks the rows - who is standing here, what each of them has within
+        // reach, what is standing free - and answers one of three things.
+        //
+        // Only the middle one is a theft, and it becomes the EXISTING one:
+        // `intent` is rewritten to `steal` and everything below is untouched, so
+        // `resolveAttempt`, `whatALiftTook`, `whatTheyDoAboutBeingWronged` and
+        // `createObligation` are reached exactly as a sentence with the word
+        // `steal` in it reaches them. There is one theft path and this is not a
+        // second one.
+        //
+        // Skipped when the sentence named the owner itself: "I take a sword from
+        // the Cloud River Sect" names who it is being taken from, and the party
+        // resolver below is already the thing that asks the world whether they
+        // exist. Guessing a different holder over the top of a named one would
+        // be the reading layer overruling the player.
+        if (intent === 'take') {
+            const thing = (topic ?? '').trim();
+            topic = undefined;
+            if ((target ?? '').trim().length >= 2) {
+                intent = 'steal';
+                topic = thing;
+            } else {
+                const decided = this.whoseThingIsBeingTaken(cultivator, thing, rawInput);
+                if (decided.state !== 'theirs' || !decided.holder) {
+                    return this.aTakingThatWasNotOne(run, cultivator, decided);
+                }
+                intent = 'steal';
+                topic = thing;
+                target = decided.holder.name;
+            }
+            leverage = leverage ?? 'force';
+        }
+
         const query = (target ?? '').trim();
+
+        // ── A THEFT'S TOPIC IS A THING, NOT A QUESTION ───────────────────
+        //
+        // Every branch below reads `topic` as *the subject somebody is being
+        // asked about* - `demandOf` and four `askAround` short-circuits - and a
+        // theft carries one for a different reason: which of their things is
+        // being taken. Left in the field, "I steal the spirit boat from Cao
+        // Nuolin" was answered by Cao Nuolin turning "spirit boat" over once
+        // and saying something true about the weather, and the taking never
+        // ran.
+        //
+        // Taken off the field once, here, rather than guarded five times: this
+        // is the point where the two uses of one field part company, and a
+        // fifth branch added later would otherwise have to remember.
+        //
+        // `steal` by name because the two uses are genuinely two uses and no
+        // predicate over the string can tell them apart. The rule that `intent`
+        // never decides an OUTCOME is untouched - this picks WHICH ROUTINE
+        // RUNS, which is what all eight readers of `intent` in this class do.
+        const named = intent === 'steal' ? topic : undefined;
+        if (named !== undefined) topic = undefined;
 
         // ── A QUESTION WITH WEIGHT BEHIND IT IS NOT A QUESTION ───────────
         //
@@ -4545,7 +4757,7 @@ ${noticed}`;
         //   "Fang Shutao answers being robbed in the body. Shen Wu does not
         //    walk away from it whole.
         //    Fang Shutao mentions The Fired Terraces the way you would mention
-        //    a bridge - it is out in The Quiet Marches, and people who have
+        //    a bridge - it is out in The Silent Cliffs, and people who have
         //    business with it go and stand on it."
         //
         // The person who had just broken a meridian handed over a place name,
@@ -4580,7 +4792,10 @@ ${noticed}`;
         // The parser sets the leverage; nothing here translates a verb.
         if (party.kind === 'cultivator' && party.party && ATTEMPT_INTENTS.has(intent)) {
             return this.pressSomebody(
-                run, cultivator, ambient, party, intent, leverage, rawInput, spoken
+                run, cultivator, ambient, party, intent, leverage, rawInput, spoken,
+                // No demand, and the thing the sentence named. The parser puts
+                // it on `topic` for a theft and nothing else reads it here.
+                undefined, named
             );
         }
 
@@ -5628,7 +5843,7 @@ ${noticed}`;
         // and ollama wrote:
         //
         //   > if they'll have me, I'll join
-        //   "The offer was met. You are a Lamp Novice of Sweptground Temple."
+        //   "The offer was met. You are a Lamp Novice of Burnt Earth Temple."
         //
         // It collapsed *would seat you as Lamp Novice* into *you are a Lamp
         // Novice*, which is the very failure this whole family is about,
@@ -7675,7 +7890,7 @@ ${line}`;
         // AND THE BAND DECIDES WHICH OF THE TWO FIELDS GOVERNS. A beast at
         // `BEAST_CHANGE_ORDINAL` is a person, so a person's rules apply to its
         // death as much as to its life - measured in a played run: killing The
-        // Reader at Sweptground came back "the body is gone and the person is
+        // Reader at Burnt Earth came back "the body is gone and the person is
         // not, the soul left intact", which is the nascent soul path working
         // correctly on somebody who has one. Reading `finished` there would
         // have handed the player a core off a body whose owner walked away.
@@ -8176,7 +8391,7 @@ ${line}`;
      * and an unrecognised action is answered with the list rather than a guess.
      *
      * A VALUE ENDS AT THE NEXT KEY, NOT AT THE NEXT SPACE. This used to split on
-     * whitespace, so `set_location location=The Dead Verge` sent `"The"` and
+     * whitespace, so `set_location location=The Jade Face` sent `"The"` and
      * quoting it sent `"The` - and most of this world's gazetteer is multi-word,
      * so most of the map was unreachable from the operator surface. Booleans had
      * the same shape of problem: `fill=true` arrived as a string and every
@@ -12415,7 +12630,7 @@ ${fit.line}`;
      * Reads `groundFor` - the SAME `GroundConditions` the rate is computed
      * from - so the sheet and the engine cannot come to disagree about how
      * crowded a place is. That is not a hypothetical: the encounter line said
-     * "Sweptground comfortably carries 3 cultivators and currently holds 9"
+     * "Burnt Earth comfortably carries 3 cultivators and currently holds 9"
      * while the sheet said `Ambient qi: THIN` and nothing else, and a player
      * had no way to know the second sentence was the smaller half of the story.
      *
@@ -13981,7 +14196,7 @@ ${fit.line}`;
      * Everybody standing where the player is standing.
      *
      * Both populations, joined on the place name. This is the call that was
-     * missing: nineteen people were at Sweptground and every social path
+     * missing: nineteen people were at Burnt Earth and every social path
      * dead-ended, because the only population anybody asked about was the
      * `cultivators` table and the world's people were not in it.
      */
@@ -14028,8 +14243,8 @@ ${fit.line}`;
      * knowledge covers everywhere they have been told about, which is how a
      * player reaches somewhere they have only heard named.
      *
-     * Where they are already standing counts too - "I go back to Sweptground"
-     * from Sweptground is a no-op, not a refusal.
+     * Where they are already standing counts too - "I go back to Burnt Earth"
+     * from Burnt Earth is a no-op, not a refusal.
      */
     somewhereReal(name: string, cultivator: Cultivator): boolean {
         // Loose on both sides. The parser strips a leading article and
@@ -14197,6 +14412,92 @@ ${fit.line}`;
 
     present(cultivator: Cultivator): RosterEntry[] {
         return othersPresent(this.repos, cultivator, this.atHand);
+    }
+
+    /**
+     * The body the fight this turn is standing in is being fought against.
+     *
+     * Null whenever there is no fight, which is almost every turn. The roster id
+     * and the combat id are different namespaces - `held.party.id` is the row,
+     * `held.opponent.id` is the body the resolver priced - so the join is made
+     * here rather than left to a caller that has only one of them.
+     */
+    private theBodyOpposite(held: StandingFight | null): BodyInAFight | null {
+        if (!held) return null;
+        const hp = held.state.hp[held.opponent.id];
+        if (!Number.isFinite(hp)) return null;
+        return {
+            personId: held.party.id,
+            hp,
+            maxHp: Math.max(1, held.opponent.maxHp)
+        };
+    }
+
+    /**
+     * Anybody who was standing here as the turn opened and is now dead.
+     *
+     * A QUERY over the same rows the snapshot came from, taken here so that no
+     * verb has to report a killing for the people who watched it to answer it.
+     * Somebody who merely walked out of the square is not in it: the two stores
+     * are asked whether the person is alive, and only a `no` counts.
+     */
+    private theFallenAmong(
+        before: readonly RosterEntry[],
+        now: readonly RosterEntry[]
+    ): RosterEntry[] {
+        const standing = new Set(now.map(row => row.id));
+        const gone = before.filter(row => !standing.has(row.id));
+        if (gone.length === 0) return [];
+
+        const inWorld = new Map((this.atHand?.npcs ?? []).map(npc => [npc.id, npc.status]));
+        const stored = new Map(this.repos.cultivators.roster().map(row => [row.id, row.alive]));
+        return gone.filter(row => {
+            const rowAlive = stored.get(row.id);
+            if (rowAlive !== undefined) return !rowAlive;
+            const status = inWorld.get(row.id);
+            return status !== undefined && status !== 'alive';
+        });
+    }
+
+    /**
+     * Put the people who were in this turn into the account of it.
+     *
+     * ── ONE IMPLEMENTATION, AND THE REASON IT IS A METHOD ────────────────
+     *
+     * Three call sites reach phase 3 with an execution in hand: the typed
+     * turn, the Cultivate button and the Attempt Breakthrough button. A
+     * channel on only the first is a channel whose content depends on which
+     * control the player used, and a barrier struck in a crowded square is one
+     * of the loudest things that happens in front of anybody.
+     *
+     * Both front doors, and NOT `required`. `lines` is the model's licence and
+     * `prose` is what the deterministic narrator ships, so a channel on only
+     * one of them says different things to two players on the same seed.
+     * `required` is for what a player cannot play without - a death, a
+     * payment, a wound - and somebody's bearing is not that.
+     */
+    private sayWhoWasInIt(
+        execution: Execution,
+        squareBefore: readonly RosterEntry[],
+        playerBefore: Cultivator,
+        playerNow: Cultivator,
+        declared: readonly DeclaredMovement[] = []
+    ): void {
+        const now = this.present(playerNow);
+        for (const said of whatThePeopleHereAreAnswering({
+            before: squareBefore,
+            now,
+            fallen: this.theFallenAmong(squareBefore, now),
+            playerBefore,
+            playerNow,
+            gate: this.knowledge,
+            declared
+        })) {
+            execution.facts.lines.push(said);
+            execution.facts.prose = execution.facts.prose.length > 0
+                ? `${execution.facts.prose}\n\n${said}`
+                : said;
+        }
     }
 
     /**
@@ -14823,9 +15124,10 @@ ${fit.line}`;
 // annotation and nothing else - it is erased entirely, so no runtime
 // behaviour changes and nothing becomes reachable that `(service as any)`
 // could not already reach.
-export interface GameService extends TravelVerbs, CombatVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs {}
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
+type CraftVerbs = typeof craftVerbs;
 type InvestigateVerb = typeof investigateVerb;
 type AskingVerbs = typeof askingVerbs;
 type SituatedReads = typeof situatedReads;
@@ -14834,4 +15136,7 @@ type CrossingVerb = typeof crossingVerb;
 type MatchVerbs = typeof matchVerbs;
 type SiteVerbs = typeof siteVerbs;
 type InstitutionVerbs = typeof institutionVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs);
+type DaoPartnerVerbs = typeof daoPartnerVerbs;
+type TakingVerbs = typeof takingVerbs;
+type GuardVerbs = typeof guardVerbs;
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs);

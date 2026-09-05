@@ -23,182 +23,171 @@ import {
     worksBetween
 } from '../../../src/engine/social-leverage/an-art-that-needs-two-people';
 
-/**
- * One rite, said the short way.
- *
- * The two-person case is a one-element `subjects` list, and every assertion
- * below reads `each[0]` - which is the point of the shape: nothing about a
- * pair is special-cased, a pair is a list of length one.
- */
-function rite(opts: {
-    actorSex: 'male' | 'female';
-    subjectSexes: readonly ('male' | 'female')[];
-    type: 'offered' | 'coerced';
-    conceptionSample?: number;
-    deathSample?: number;
-}) {
-    return useAFurnaceTechnique({
-        actor: { personId: 'a1', name: 'Actor', sex: opts.actorSex },
-        subjects: opts.subjectSexes.map((sex, i) => ({
-            personId: `s${i + 1}`,
-            name: `Subject ${i + 1}`,
-            sex,
-            conceptionSample: opts.conceptionSample ?? 0.9,
-            deathSample: opts.deathSample ?? 0.99
-        })),
-        onDay: 100,
-        type: opts.type
+const BASE = {
+    actorId: 'a1',
+    actorName: 'Actor',
+    subjectId: 's1',
+    subjectName: 'Subject',
+    onDay: 100,
+    deathSample: 0.99
+} as const;
+
+describe('worksBetween', () => {
+    it('answers true for two different sexes', () => {
+        expect(worksBetween('male', 'female')).toBe(true);
+        expect(worksBetween('female', 'male')).toBe(true);
     });
-}
+
+    it('answers false for the same sex', () => {
+        expect(worksBetween('male', 'male')).toBe(false);
+        expect(worksBetween('female', 'female')).toBe(false);
+    });
+});
 
 describe('useAFurnaceTechnique', () => {
     it('does nothing between two people of the same sex, offered or not', () => {
-        const offered = rite({
-            actorSex: 'male', subjectSexes: ['male'], type: 'offered', conceptionSample: 0
+        const offered = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'male',
+            consent: 'offered',
+            conceptionSample: 0
         });
         expect(offered.eligible).toBe(false);
         expect(offered.happened).toBe(false);
-        expect(offered.each[0].conceived).toBe(false);
-        expect(offered.each[0].died).toBe(false);
-        expect(offered.grudges).toEqual([]);
+        expect(offered.conceived).toBe(false);
+        expect(offered.subjectDied).toBe(false);
+        expect(offered.grudge).toBeNull();
 
-        const coerced = rite({
-            actorSex: 'female', subjectSexes: ['female'], type: 'coerced', conceptionSample: 0
+        const coerced = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'female',
+            subjectSex: 'female',
+            consent: 'coerced',
+            conceptionSample: 0
         });
         expect(coerced.eligible).toBe(false);
-        expect(coerced.grudges).toEqual([]);
+        expect(coerced.grudge).toBeNull();
     });
 
     it('opens no grudge and never kills the furnace on a willing use', () => {
-        const result = rite({ actorSex: 'male', subjectSexes: ['female'], type: 'offered' });
+        const result = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'offered',
+            conceptionSample: 0.9
+        });
         expect(result.eligible).toBe(true);
         expect(result.happened).toBe(true);
-        expect(result.grudges).toEqual([]);
-        expect(result.each[0].died).toBe(false);
+        expect(result.grudge).toBeNull();
+        expect(result.subjectDied).toBe(false);
     });
 
     it('opens an unforgivable violation grudge, held by the subject, on a coerced use', () => {
-        const result = rite({ actorSex: 'male', subjectSexes: ['female'], type: 'coerced' });
+        const result = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'coerced',
+            conceptionSample: 0.9
+        });
         expect(result.happened).toBe(true);
-        expect(result.grudges).toHaveLength(1);
-        expect(result.grudges[0].kind).toBe('grudge');
-        expect(result.grudges[0].cause).toBe('violated');
-        expect(result.grudges[0].severity).toBe('unforgivable');
-        expect(result.grudges[0].holderId).toBe('s1');
-        expect(result.grudges[0].subjectId).toBe('a1');
+        expect(result.grudge).not.toBeNull();
+        expect(result.grudge?.kind).toBe('grudge');
+        expect(result.grudge?.cause).toBe('violated');
+        expect(result.grudge?.severity).toBe('unforgivable');
+        expect(result.grudge?.holderId).toBe(BASE.subjectId);
+        expect(result.grudge?.subjectId).toBe(BASE.actorId);
     });
 
     it('rolls conception against the fixed threshold, on its own sample', () => {
-        expect(rite({
-            actorSex: 'male', subjectSexes: ['female'], type: 'offered',
+        const took = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'offered',
             conceptionSample: FURNACE_CONCEPTION_CHANCE - 0.001
-        }).each[0].conceived).toBe(true);
+        });
+        expect(took.conceived).toBe(true);
 
-        expect(rite({
-            actorSex: 'male', subjectSexes: ['female'], type: 'offered',
+        const didNotTake = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'offered',
             conceptionSample: FURNACE_CONCEPTION_CHANCE + 0.001
-        }).each[0].conceived).toBe(false);
+        });
+        expect(didNotTake.conceived).toBe(false);
     });
 
     it('steals more days on a coerced use than on a willing one', () => {
-        const offered = rite({ actorSex: 'male', subjectSexes: ['female'], type: 'offered' });
-        const coerced = rite({ actorSex: 'male', subjectSexes: ['female'], type: 'coerced' });
+        const offered = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'offered',
+            conceptionSample: 0.9
+        });
         expect(offered.daysStolen).toBe(FURNACE_DAYS_STOLEN_WILLING);
+
+        const coerced = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'coerced',
+            conceptionSample: 0.9
+        });
         expect(coerced.daysStolen).toBe(FURNACE_DAYS_STOLEN_COERCED);
         expect(coerced.daysStolen).toBeGreaterThan(offered.daysStolen);
     });
 
     it('never rolls death on a willing use, however the death sample lands', () => {
-        const result = rite({
-            actorSex: 'male', subjectSexes: ['female'], type: 'offered', deathSample: 0
+        const result = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'offered',
+            conceptionSample: 0.9,
+            deathSample: 0
         });
-        expect(result.each[0].died).toBe(false);
+        expect(result.subjectDied).toBe(false);
     });
 
     it('rolls death against the fixed threshold on a coerced use, and drops conception when it kills', () => {
-        const died = rite({
-            actorSex: 'male', subjectSexes: ['female'], type: 'coerced',
-            conceptionSample: 0, deathSample: FURNACE_COERCED_DEATH_CHANCE - 0.001
+        const died = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'coerced',
+            conceptionSample: 0,
+            deathSample: FURNACE_COERCED_DEATH_CHANCE - 0.001
         });
-        expect(died.each[0].died).toBe(true);
-        expect(died.each[0].conceived).toBe(false);
-        expect(died.grudges[0].tags).toContain('killed');
+        expect(died.subjectDied).toBe(true);
+        expect(died.conceived).toBe(false);
+        expect(died.grudge?.tags).toContain('killed');
 
-        const survived = rite({
-            actorSex: 'male', subjectSexes: ['female'], type: 'coerced',
-            conceptionSample: 0, deathSample: FURNACE_COERCED_DEATH_CHANCE + 0.001
+        const survived = useAFurnaceTechnique({
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'female',
+            consent: 'coerced',
+            conceptionSample: 0,
+            deathSample: FURNACE_COERCED_DEATH_CHANCE + 0.001
         });
-        expect(survived.each[0].died).toBe(false);
-        expect(survived.grudges[0].tags).not.toContain('killed');
+        expect(survived.subjectDied).toBe(false);
+        expect(survived.grudge?.tags).not.toContain('killed');
     });
 
     it('never conceives when the art was not eligible to happen at all', () => {
-        expect(rite({
-            actorSex: 'male', subjectSexes: ['male'], type: 'offered', conceptionSample: 0
-        }).each[0].conceived).toBe(false);
-    });
-
-    // ── AND THE SAME STATEMENT WITH A DIFFERENT NUMBER IN IT ─────────────
-
-    it('draws off every eligible subject, and the days scale with how many', () => {
-        const three = rite({
-            actorSex: 'male', subjectSexes: ['female', 'female', 'female'], type: 'offered'
-        });
-        expect(three.each).toHaveLength(3);
-        expect(three.daysStolen).toBe(FURNACE_DAYS_STOLEN_WILLING * 3);
-    });
-
-    it('keeps a row for somebody the art could not work on, rather than dropping them', () => {
-        // A missing row and a refused one are different facts, and a list that
-        // silently drops the refusals cannot be counted against the one handed in.
-        const mixed = rite({
-            actorSex: 'male', subjectSexes: ['female', 'male', 'female'], type: 'offered'
-        });
-        expect(mixed.each).toHaveLength(3);
-        expect(mixed.each.map(row => row.eligible)).toEqual([true, false, true]);
-        expect(mixed.eligible).toBe(true);
-        expect(mixed.daysStolen).toBe(FURNACE_DAYS_STOLEN_WILLING * 2);
-    });
-
-    it('opens one grudge per coerced subject it worked on, and none for the rest', () => {
-        const mixed = rite({
-            actorSex: 'male', subjectSexes: ['female', 'male', 'female'], type: 'coerced'
-        });
-        expect(mixed.grudges).toHaveLength(2);
-        expect(mixed.grudges.map(g => g.holderId)).toEqual(['s1', 's3']);
-    });
-
-    it('refuses the whole rite only when it answers between the actor and nobody', () => {
-        const none = rite({
-            actorSex: 'male', subjectSexes: ['male', 'male'], type: 'coerced', conceptionSample: 0
-        });
-        expect(none.eligible).toBe(false);
-        expect(none.happened).toBe(false);
-        expect(none.daysStolen).toBe(0);
-        expect(none.grudges).toEqual([]);
-    });
-
-    it('gives each body its own draws, so two furnaces are not one coin flip', () => {
         const result = useAFurnaceTechnique({
-            actor: { personId: 'a1', name: 'Actor', sex: 'male' },
-            subjects: [
-                { personId: 's1', name: 'One', sex: 'female', conceptionSample: 0, deathSample: 0.99 },
-                { personId: 's2', name: 'Two', sex: 'female', conceptionSample: 0.99, deathSample: 0.99 }
-            ],
-            onDay: 100,
-            type: 'offered'
+            ...BASE,
+            actorSex: 'male',
+            subjectSex: 'male',
+            consent: 'offered',
+            conceptionSample: 0
         });
-        expect(result.each.map(row => row.conceived)).toEqual([true, false]);
-    });
-
-    it('says a sentence about a person for one, and about a count for more', () => {
-        const one = rite({ actorSex: 'male', subjectSexes: ['female'], type: 'coerced' });
-        expect(one.line).toContain('Subject 1');
-
-        const many = rite({
-            actorSex: 'male', subjectSexes: ['female', 'female'], type: 'coerced'
-        });
-        expect(many.line).toContain('2 of them');
+        expect(result.conceived).toBe(false);
     });
 });
 

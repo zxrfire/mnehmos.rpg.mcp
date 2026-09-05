@@ -1084,10 +1084,11 @@ export interface RegisterHouseAdmission {
 /**
  * One faction, and everybody attached to it.
  *
- * **The sect is the unit, and everything that belongs to it sits underneath
- * it.** Cross-cutting tables - all factions here, all sealed ancestors there -
- * answer "who is strongest" well and "what am I dealing with" badly: a person
- * reading about the Frostmirror Court has to find it in four places.
+ * The register used to be a set of cross-cutting tables - all factions here,
+ * all sealed ancestors there - which answers "who is strongest" well and
+ * "what am I dealing with" badly. A person reading about the Frostmirror Court
+ * had to find it in four places. This is the other arrangement: the sect is the
+ * unit, and everything that belongs to it is underneath it.
  *
  * The four states a person can be in are kept separate because they are not
  * degrees of the same thing:
@@ -1319,12 +1320,12 @@ export interface SectDossier {
          * Everybody on the body's roll, strongest first.
          *
          * Read from `rollOf` rather than by filtering the member catalog here.
-         * Membership held only as a property of each PERSON, with nothing able
-         * to ask a HOUSE who is in it, makes every reader rebuild it by
-         * scanning - and a house whose people sit in a catalog none of those
-         * readers reach gets an entry with nobody on it. `source` says which
-         * catalog a row came out of, so the sheet reports state rather than
-         * restating it.
+         * Membership used to be a property of each PERSON and nothing could ask
+         * a HOUSE who was in it, so three readers rebuilt it three different
+         * ways by scanning - and one house's people were in a catalog none of
+         * them read, which is how the highest acting body in the world had an
+         * entry with nobody on it. `source` says which catalog a row came out
+         * of, so the sheet reports state rather than restating it.
          */
         active: {
             name: string;
@@ -1753,10 +1754,13 @@ function findArtifactCeiling(list: RegisterArtifact[]): RegisterArtifactCeiling 
 /**
  * One body's own side of a contested lineage, quoted whole.
  *
- * Read off whichever body is being rendered, never from a joint record: two
- * bodies four provinces apart under different patrons have no shared vantage
- * to narrate from, so each carries its own and a reader compares them. A
- * single top-level section would have to invent the vantage neither has.
+ * This used to be a single top-level `schism` section built from one standalone
+ * catalog record, and the record before that reached no page at all - which is
+ * the exact class of failure this page's suite exists to catch. It is now read
+ * off whichever body is being rendered, because the catalog no longer holds a
+ * joint version: two bodies four provinces apart under different patrons have
+ * no shared vantage to narrate from, so each carries its own and a reader
+ * compares them.
  *
  * Headings are derived from the record's own keys rather than written, so a
  * field added to the catalog turns up here instead of being silently lost. The
@@ -2371,12 +2375,13 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
             stance: 'alongside' as const,
             kind: 'contested_claim' as const,
             source: 'the contested claims' as const,
-            // EMPTY, BECAUSE THE BLOCK UNDERNEATH IS THE ANSWER. Joining one
-            // sentence per THING contended over - one per shared art, one per
-            // shared patron - puts the identical sentence in the cell once per
-            // art, and the contention block then prints all of them again
-            // below. The block is the better rendering: it groups on the
-            // sentence and names what they actually contend over.
+            // EMPTY, BECAUSE THE BLOCK UNDERNEATH IS THE ANSWER. This used to
+            // join one sentence per THING contended over - one per shared art,
+            // one per shared patron - so a pair teaching three of the same arts
+            // got the identical sentence three times in one cell, and then the
+            // contention block printed all three again below it. The block is
+            // the better rendering of the two: it groups on the sentence and
+            // names what they actually contend over.
             what: '',
             // NULL, NOT A SENTENCE. Every row built here is derived rather than
             // authored, so the answer to "since when", "how do they put it" and
@@ -3843,9 +3848,9 @@ function buildDossiers(
     // missing describes a different world.
     //
     // An apex that DOES have a sect row is not synthesised, and the test for
-    // that is `factionId` rather than a name comparison. Stripping "The " off
-    // both spellings matches today and produces the same house twice the day
-    // either name is edited.
+    // that is `factionId` rather than a name comparison. The Pavilion used to be
+    // caught by stripping "The " off both spellings, which worked until one of
+    // them was renamed and would then have produced the same house twice.
     const covered = new Set(fromSects.map(d => d.id));
     const apexOnly: SectDossier[] = APEX_INSTITUTIONS
         .filter(a => !covered.has(a.id) && !(a.factionId && covered.has(a.factionId)))
@@ -3854,11 +3859,11 @@ function buildDossiers(
             name: a.name,
             ordinal: a.powerOrdinal,
             rank: rankName(a.powerOrdinal),
-            // Read off the apex rather than defaulted. A hard 'neutral' here
-            // asserts that the top of the world has no politics: the Azure
-            // Cloud Pavilion is righteous and holds that position against the
-            // other two, and the fact disappears the moment the sheet reads it
-            // as an apex rather than as a house.
+            // Read off the apex rather than defaulted. It used to be a hard
+            // 'neutral' here, which asserted that the top of the world has no
+            // politics - and the Azure Cloud Pavilion is righteous, holds the
+            // position against the other two, and had that fact disappear the
+            // moment the sheet read it as an apex rather than as a house.
             alignment: a.alignment,
             admissionOrdinal: 0,
             recruits: false,
@@ -4590,10 +4595,10 @@ color:var(--datum);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid va
 .node.court>.ncard{border-left-color:var(--datum)}
 /* THE CARD HEAD, WHICH IS THE MOST-READ THING ON THE SHEET.
    Every faction in the world is a row here, so a reader meets this shape
-   thirty-four times before they meet anything else, so it is three ranked
-   lines: the name, the facts with printed separators and named labels, and
-   the want on its own line. Six facts in one undifferentiated run of
-   uppercase micro-type is the shape to keep it out of. */
+   thirty-four times before they meet anything else. It used to be a name, a
+   bare number and then one undifferentiated run of uppercase micro-type
+   holding six facts. Now it is three ranked lines: the name, the facts with
+   printed separators and named labels, and the want on its own line. */
 .nhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 /* Names wrap at their own spaces rather than being held on one line and
    pushing everything else off the card. */
@@ -4972,8 +4977,8 @@ text-transform:uppercase;color:var(--faint);padding-top:2px}
 .evta{margin:0;font-size:14px;line-height:1.55;color:var(--quiet)}
 .demon{margin:12px 0}
 /* ── THE RESUME NOTATION ─────────────────────────────────────────────────
-   Two lines on a faction entry, carrying what were two whole sections. They
-   are read rather than scanned only if something makes them look like data, so
+   Two lines on a faction entry that used to be two whole sections. They are
+   read rather than scanned only if something makes them look like data, so
    they take the sheet's mono face and the label takes the same micro-caps a
    card fact does. The separator is a printed middot in the markup, not a gap:
    this sheet gets copied out of the browser and a gap does not survive that. */
@@ -5226,10 +5231,11 @@ function metaRow(pairs: [string, string][]): string {
  * Copy a stretch of this sheet into anything that keeps links and every one of
  * them comes out resolved against wherever the register happened to be served,
  * host and port included - which are the operator's and are wrong for every
- * other reader - `[The Kiln Court](http://localhost:8787/api/admin/register.html#court-court-kiln)`
- * on every historical event. The href is relative in the markup; it is the COPY
- * that resolves it, so the only fix that survives a copy is not to emit a URL
- * at all.
+ * other reader. What was reported was
+ * `[The Kiln Court](http://localhost:8787/api/admin/register.html#court-court-kiln)`
+ * repeated on every historical event. The href is relative in the markup; it is
+ * the copy that resolves it, and the only fix that survives a copy is not to
+ * emit a URL at all.
  */
 function jumpTo(anchor: string | null, name: string): string {
     return anchor
@@ -5309,12 +5315,15 @@ function artifactTable(list: RegisterArtifact[], ceiling: RegisterArtifactCeilin
             + `<td class="q">${esc(a.description)}${tagChips(a.tags)}</td></tr>`;
     }).join('');
 
-    // WIDTHS, DECLARED, BECAUSE AUTO LAYOUT GETS THEM EXACTLY BACKWARDS.
-    // Auto layout sizes a column to its longest cell, and a nowrap name cell
-    // has no longest line - so the names take the width and the one column
-    // anybody reads as prose pays for it, coming out as eight lines of six
-    // words beside two hundred pixels of nothing. The same fault from the
-    // other end breaks a long owner name across two lines in a narrow column.
+    // WIDTHS, DECLARED, BECAUSE AUTO LAYOUT GOT THEM EXACTLY BACKWARDS.
+    // Measured on the rendered page before this: the artifact name column was
+    // 351px holding "The First Chisel" with two hundred pixels of nothing
+    // beside it, while "What it is" - the only column on the row anybody reads
+    // as prose - was squeezed to 317px and came out as eight lines of six
+    // words. Auto layout sizes a column to its longest cell and a nowrap name
+    // cell has no longest line, so the names took the width and the paragraph
+    // paid for it. Meanwhile "The Hollow Court" in a 104px owner column broke
+    // across two lines, which is the same fault seen from the other end.
     //
     // So: the names get less and are allowed to wrap, and the description gets
     // the rest. `table-layout:fixed` is what makes a browser honour any of it.
@@ -5464,11 +5473,12 @@ function techniqueTables(list: RegisterTechnique[]): string {
         // baseline opacity - so it is the axis a reader is most often sorting
         // by inside a quadrant, and a page that opens on every row of every
         // grade at once has made that sort useless.
-        // THE CAPTION NAMES THE TABLE AND NOTHING ELSE. The grade and the
-        // count belong to the disclosure summary, because a reader wants them
-        // while the band is shut; the ordering belongs to the quadrant,
-        // because it is identical in all seventeen of these tables. A caption
-        // repeating all three says nothing the surrounding chrome has not.
+        // THE CAPTION NAMES THE TABLE AND NOTHING ELSE. It used to read
+        // "<grade> grade - <n> - by the rung the art is written for", inside a
+        // disclosure whose summary already says the grade and the count, with a
+        // trailing clause identical on all seventeen of these tables. The count
+        // is the summary's, because a reader wants it while the band is shut;
+        // the ordering is the quadrant's, because it is the same in every band.
         const HEADS = ['Ord', 'Art', 'Kind', 'Reach', 'Channel', 'Ceiling', 'Taught by', 'What it does'];
         const CLASS = ['pw', 'nm', 'm', 'm', 'm', 'm', 'q', 'q'];
         const cells = rows.map(t => [
@@ -6164,19 +6174,19 @@ function standingSentence(r: RegisterRelationship, name: string): string {
 /**
  * How each side feels, as a sentence, with the meaning of the word beside it.
  *
- * A reader has one question here - do these two like each other, and does it
- * run both ways - and it is answered in a sentence or it is not answered. Two
- * bare tokens with "and back" between them is internal bookkeeping wearing a
- * label.
+ * The two warmth words used to be printed as bare tokens with the string "and
+ * back" between them, which is internal bookkeeping wearing a label. A reader
+ * has one question here - do these two like each other, and does it run both
+ * ways - and it is answered in a sentence or it is not answered.
  */
 function warmthSentence(r: RegisterRelationship, name: string): string {
     const mine = `${esc(name)} is <b>${esc(r.warmth)}</b> toward them (${esc(WARMTH_GLOSS[r.warmth])})`;
-    // The gloss and then stop. Explaining after a mismatch that warmth is
-    // stored at each end and a tie stored once is true, worth saying, and a
-    // fact about the DATABASE rather than the world - and it renders 28 times
-    // on one sheet. The reader can see the two words differ; being told what
-    // that means about the schema is the machine talking. It is said once, in
-    // the section note above.
+    // The gloss and then stop. A mismatch used to be followed by two lines
+    // explaining that warmth is stored at each end and a tie is stored once -
+    // true, worth saying, and a fact about the DATABASE rather than about the
+    // world. It rendered 28 times on one sheet. The reader can see that the two
+    // words differ; being told what that means about the schema is the machine
+    // talking. Said once now, in the section note above.
     const theirs = r.warmth === r.theirWarmth
         ? ', and is met with the same.'
         : `, and is met with <b>${esc(r.theirWarmth)}</b> (${esc(WARMTH_GLOSS[r.theirWarmth])}).`;
@@ -7555,10 +7565,11 @@ function courtPanel(court: RegisterCourt, selfAnchor: string, panelId?: string):
 //
 // THE RULE THIS ENFORCES, and it is the one the previous line broke. A block on
 // the overview may POINT at the page that owns a question or it may ANSWER the
-// question, and never both. Naming the tab that holds an answer and then
-// spelling out the count, the strongest power and a named object is a
-// cross-reference and a copy in one sentence: an incomplete answer here, a
-// fuller one there, and two places to drift apart. The pointer is the whole job.
+// question, and never both. The holdings line used to say "what this house is
+// holding is on the Holdings tab" and then spell out the count, the strongest
+// power, the immortal total and a named object - a cross-reference and a copy in
+// one sentence, which gives the reader an incomplete answer here, a fuller one
+// there, and two places to drift apart. The pointer is the whole job.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -7569,12 +7580,13 @@ function courtPanel(court: RegisterCourt, selfAnchor: string, panelId?: string):
  * one costs, and who is carrying which are the Holdings and Items tabs, which
  * exist to answer exactly that and answer it in full.
  *
- * EVERY COUNT NAMES ITS NOUN. `43 x1 &middot; 4 immortal &middot; 1 sent
- * down` is unreadable in the one way notation must never be - "4 immortal
- * what?" - and a button labelled "what each one is" does not answer it. **A
- * count whose noun is on another tab is not compression, it is a riddle**, and
- * such a button is the pointer-and-a-copy failure in its purest form, because
- * Holdings owns the detail entire.
+ * EVERY COUNT NAMES ITS NOUN. This line used to read `43 x1 &middot; 4
+ * immortal &middot; 1 sent down`, which is unreadable in the one way notation
+ * must never be: the design owner asked "4 immortal what?" and the sheet's
+ * answer was a button labelled "what each one is". A count whose noun is on
+ * another tab is not compression, it is a riddle - and the button was the
+ * pointer-and-a-copy failure in its purest form, because Holdings owns the
+ * detail entire. The noun is in the count now and the button is gone.
  */
 function holdsNotation(d: SectDossier): string {
     // Grouped by rating, strongest first, so two objects at the same rung read
@@ -7652,11 +7664,12 @@ function teachNotation(d: SectDossier): string {
 function dossier(d: SectDossier): string {
     // ── 2. who is in it, and separately WHO THEY ARE ─────────────────
     //
-    // THE ROLL IS ITS OWN PART, not an `h4` inside "Who is in it". Below the
-    // fielding table, the admission bar, the favour stance and the adoption
-    // terms, a list of named people - the one thing on the entry a reader can
-    // go and meet - arrives as the fifth block of a chunk about institutional
-    // machinery and reads as a run-on.
+    // THE ROLL IS ITS OWN PART. It used to be one `h4` group inside "Who is in
+    // it", below the fielding table, the admission bar, the favour stance and
+    // the house's adoption terms - so a list of named people, which is the one
+    // thing on the entry a reader can go and meet, arrived as the fifth block
+    // of a chunk about institutional machinery and read as a run-on. The design
+    // owner asked for it as a section and it is one.
     const roll: string[] = [];
     // Which tables the names came out of, said once on the part rather than in
     // a chip on the group heading that no longer exists. Same discipline the
@@ -7965,8 +7978,9 @@ function dossier(d: SectDossier): string {
 /**
  * One fact on a closed card: what it is called, and what it says.
  *
- * A card head that is a single run of uppercase micro-type in one colour,
- * holding six unrelated facts with nothing between them, flattens to
+ * THE DEFECT THIS EXISTS TO CLOSE. The card head used to be a single run of
+ * uppercase micro-type in one colour, holding six unrelated facts with nothing
+ * between them. Flattened, a reader got
  *
  *   Frostmirror Court36holds from The Deep Surveyceiling 42gate 132 flaggedwants...
  *
@@ -8070,9 +8084,9 @@ function houseCard(d: SectDossier, view: HouseView): string {
 
 /** The four questions a reader scanning thirty-four resumes is asking. */
 function resumeFacts(d: SectDossier): string[] {
-    // How dangerous, whose are they, what do they want, can I get in. All four
-    // are here because leaving any of them out costs an expand, thirty-four
-    // times.
+    // How dangerous, whose are they, what do they want, can I get in. Only the
+    // first two used to be here, so the answer to the other two cost an expand
+    // each, thirty-four times.
     return [
         d.apex ? nfact('standing', 'apex', 'pin') : '',
         nfact('holds from', d.parentName ?? 'nobody'),
@@ -8608,9 +8622,9 @@ export function renderRegisterHtml(
             nfact('officers', String(court.officers.length)),
             nfact('and', 'a faction in its own right')
         ],
-        // Labelled like every other fact, and on its own line. A bare
-        // lowercase "wants" straight after the flag count is where
-        // "132 flaggedwants The third arterial" comes from.
+        // Labelled like every other fact, and on its own line. It used to begin
+        // with a bare lowercase "wants" immediately after the flag count, which
+        // is where "132 flaggedwants The third arterial" came from.
         want: d => d.ambition
             ? `<span class="nwant"><span class="nfl">wants</span> ${esc(d.ambition.wants)}</span>`
             : ''
@@ -8893,11 +8907,13 @@ export function renderRegisterHtml(
      named on this tab and no holder appears on it; a reader opens it to find
      out what a thing is, not who has one.
 
-     The split to hold: specific rows with an owner and a holder column are a
-     ledger and belong on Holdings; the kinds, the counted-or-tracked rule and
-     every catalogued thing described belong here. Put them the other way round
-     and the sheet answers neither question completely, and a reader asking
-     either one has to open both.
+     It used to be neither. This pane held the artifact catalog - twenty-four
+     specific rows with an owner column and a holder column, which is a ledger
+     - while the kinds, the counted-or-tracked rule and every catalogued thing
+     described sat on the Items tab, which had no holder anywhere on it and
+     said so in its own closing sentence. The two tabs were the wrong way
+     round, so the sheet answered neither question completely and a reader
+     asking either one had to open both.
 
      The line is the engine's own and is documented in docs/world/things/items.md
      under "Counted or tracked": whether the movement of this specific object
@@ -9126,12 +9142,14 @@ function showPane(want) {
 // scroll it into view, and flash the border so it is obvious which one was
 // meant.
 //
-// THE PANE IS FOUND FROM THE TARGET, never assumed. Switching to the Factions
-// tab whatever was handed in is right only while every cross-reference on the
-// sheet points at a faction: ties, events and a house's history live on their
-// own tabs, and a jump to one would select Factions and then scroll to an
-// element inside a hidden pane, which has no box and cannot be scrolled to.
-// The failure is invisible - nothing happens - which is the worst kind.
+// THE PANE IS FOUND FROM THE TARGET, not assumed. This used to switch to the
+// Factions tab whatever it had been handed, which was right while every
+// cross-reference on the sheet pointed at a faction and silently wrong the
+// moment one pointed anywhere else: a tie, an event and a house's history all
+// live on their own tabs now, and a jump to one would have selected Factions
+// and then scrolled to an element inside a hidden pane, which has no box and
+// cannot be scrolled to. The failure is invisible - nothing happens - which is
+// the worst kind.
 //
 // A target may also be inside a folded section or a closed disclosure, so both
 // are opened on the way. A jump that lands on a collapsed heading has not

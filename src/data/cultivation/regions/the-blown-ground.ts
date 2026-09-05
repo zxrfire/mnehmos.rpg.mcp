@@ -459,7 +459,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         {
             regionId: SOUTH_REGION_ID,
             what: 'A coast with nothing on it. The sand runs down to the water on the northern side of the eastern passage, and there is no fresh water anywhere along it.',
-            cost: 'It is why the eastern passage has a stretch in the middle with no landfall in it, why that stretch is called The Bitter Crossing, and why the water ration on every hull in the province is counted aloud at the same hour every day. A coast is normally a place a hull can put in. Twenty-one days of this one is not, and the whole arithmetic of the busiest water in the South is set by ground nobody has ever governed.'
+            cost: 'It is why the eastern passage has a stretch in the middle with no landfall in it, why that stretch is called Dryrun, and why the water ration on every hull in the province is counted aloud at the same hour every day. A coast is normally a place a hull can put in. Twenty-one days of this one is not, and the whole arithmetic of the busiest water in the South is set by ground nobody has ever governed.'
         }
     ],
     trueHereFalseThere: [

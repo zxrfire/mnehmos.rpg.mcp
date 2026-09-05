@@ -1,7 +1,7 @@
 /**
  * "I'll take it" is how English speakers buy things, and it reached nothing.
  *
- * Played in Sweetspring Isle with thirty stones and a stall the game had just listed,
+ * Played in Watering with thirty stones and a stall the game had just listed,
  * one turn apart, same item, same purse:
  *
  *   buy the Lesser Qi-Gathering Manual        bought, off Bai Xuping, 4 stones

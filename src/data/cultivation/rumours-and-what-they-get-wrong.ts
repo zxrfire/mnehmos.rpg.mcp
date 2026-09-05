@@ -227,7 +227,7 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
     },
     {
         id: 'rumour-cultivator-blood-heals',
-        saying: 'A cup of it and a broken leg knits in a night. There is a man in Sweetspring Isle who sells it and it is not his.',
+        saying: 'A cup of it and a broken leg knits in a night. There is a man in Watering who sells it and it is not his.',
         saidBy: 'a hawker at the edge of a market',
         aboutId: null,
         aboutName: null,
@@ -759,10 +759,10 @@ const ABOUT_PLACES: readonly Rumour[] = [
         saying: 'There was water there. My grandmother drew from it. Then something upstream took it and the bed is dry and the name is all that is left of the river.',
         saidBy: 'a Drowned Reach villager, pointing',
         aboutId: 'region-drowned-reach',
-        aboutName: 'The Bitter Crossing',
+        aboutName: 'Dryrun',
         accuracy: 'unresolved',
         underneath: 'The bed is dry, the name records a river, and no record in either province says what happened to it. Water moves for reasons the world has plenty of and no evidence survives that points at any of them.',
-        consequence: 'Every dispute about water rights in the Reach eventually cites The Bitter Crossing as precedent for something, and it is cited for opposite conclusions by both sides.',
+        consequence: 'Every dispute about water rights in the Reach eventually cites Dryrun as precedent for something, and it is cited for opposite conclusions by both sides.',
         floorOrdinal: 0,
         regionId: 'region-drowned-reach',
         insiderFactionId: null
@@ -770,7 +770,7 @@ const ABOUT_PLACES: readonly Rumour[] = [
     {
         id: 'rumour-the-sounding-answers',
         saying: 'Shout at it and it answers late. Not an echo. Later than an echo, and not always the same thing you said.',
-        saidBy: 'boys from Sweetspring Isle, who go there on a dare',
+        saidBy: 'boys from Watering, who go there on a dare',
         aboutId: 'region-drowned-reach',
         aboutName: 'the Sounding',
         accuracy: 'unresolved',

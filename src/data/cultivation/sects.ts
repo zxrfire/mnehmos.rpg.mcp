@@ -825,10 +825,24 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'nascent-lotus-canon',
             'mist-runoff-canon',
             'iron-thread-finger',
-            'hundred-cut-flying-blade'
+            'hundred-cut-flying-blade',
+            // The righteous end of the dual-cultivation road, and the Court
+            // rather than the terraces because the mechanic and the house are
+            // the same trade. A dao partnership pays the larger share to
+            // whichever of the two is FURTHER BACK - see
+            // `cultivateWithADaoPartner` - and what the Court holds is
+            // probationers, late admissions and the refused-but-not-
+            // disqualified. Its own description already says teaching somebody
+            // who has failed once is a different trade from teaching somebody
+            // who has not; this is that trade with a rate term behind it.
+            //
+            // Nothing about it is exclusive. The terraces hold the same book
+            // for the plain reason two of their own married, and no register
+            // anywhere bans it.
+            'twin-lotus-cultivation-method'
         ],
         signatureTechniqueId: 'hundred-cut-flying-blade',
-        specialities: ['attack'],
+        specialities: ['attack', 'dual_cultivation'],
         rivals: [],
         territory: 'The lower gorge, below the Azure Cloud terraces and inside the same grant, on the half of the vein that was never worth terracing.',
         recruits: true,
@@ -1826,7 +1840,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // These two are outside that arrangement, and they are outside it for
     // OPPOSITE reasons, which is the whole reason both exist rather than one.
     //
-    //   The Thousand Sail Harbour Rail  is unowned because owning it would destroy it.
+    //   The Halfwater Rail  is unowned because owning it would destroy it.
     //                       Its entire value is that no party holds it, so
     //                       the moment one does, the other parties stop
     //                       coming and what was taken is forty acres of rock
@@ -1857,7 +1871,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
 
     {
         id: 'sect-halfwater-rail',
-        name: 'The Thousand Sail Harbour Rail',
+        name: 'The Halfwater Rail',
         alignment: 'neutral',
         // One Nascent Soul, and the number is doing something specific. It is
         // NOT what defends the port - the port is defended by everybody
@@ -1881,7 +1895,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ],
         // A guard art, and the whole doctrine of the watch is in the choice:
         // the port trains people to stop a thing without ending anybody,
-        // because a death at Thousand Sail Harbour is a party ashore with a grievance and
+        // because a death at Halfwater is a party ashore with a grievance and
         // that is the one commodity the port cannot afford to stock.
         signatureTechniqueId: 'still-water-mirror-guard',
         specialities: ['defense', 'movement', 'support'],
@@ -1898,7 +1912,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nothing inherited and nothing lit. The port stands on ground with no vein under it, so there is no diagram to have lost: what it built, it built - a stone quay, a weigh house, a water cistern cut into the rock, and a bell that is rung for arrivals and for nothing else.'
         },
         description:
-            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Rail is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Thousand Sail Harbour is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Rail does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Rail has no answer for, and the last three killings on the quay were all of that shape.',
+            'An island port at the middle of the eastern passage, holding forty acres and no water beyond the shoal line, where every party in the world buys and sells because none of them owns it. It is the only market of consequence with no apex seat at it: demonic houses, righteous houses, all three apexes\' factors and four courts\' buyers do business across the same rail within sight of each other, and the arrangement holds because taking the port destroys the port. Whoever held it would be holding forty acres of rock with a cistern on it, because the traffic is the asset and the traffic is there for the neutrality. Its income is the spread and not the tax: it buys from people who have no other buyer and sells on at what a thing is worth, and it taxes the traffic lightly on purpose, because the traffic is where the profit already is and squeezing it moves it. The service it actually sells is being a counterparty a weak seller can approach - a Qi Condensation cultivator holding something valuable cannot sell it to an individual, since the individual can simply take it and nobody is coming for them, and the Rail is an institution with a reputation and a funded watch, which is a different proposition. Discretion is priced into the margin rather than offered as a courtesy: a seller who wants no name attached takes less, knows they are taking less, and pays it gladly. Order is bought as far as money buys it and no further. The watch is thirty-odd cultivators on a wage, none above Foundation Establishment, and it handles theft, brawls, debt and the ordinary business of a crowded quay competently. Above that rung the port does not police anybody and says so at the gate: a high cultivator at Halfwater is protected by what they are and by who would come for them, and a theft at that level becomes a private war the Rail does not stop and is not party to. The seam between the two is the thing nobody at the port has solved - somebody at Core Formation, above what the watch can hold, with nobody in the world who would come for them, is exactly the person the Rail has no answer for, and the last three killings on the quay were all of that shape.',
         ambition: {
             wants:
                 'A second anchorage on the northern crossing, so that a hull out of the capes has somewhere to make a market before it reaches anybody\'s coast.',
@@ -1907,7 +1921,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'The thing it is. A second port is a network, a network is a body with reach, and a body with reach is a party rather than a counter - at which point the powers who currently protect the Rail by not touching it acquire a reason to. The Rail Master has put this to the Factors in exactly those words twice and been outvoted once.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'Two Factors have been buying salt flats at The Salt Fields in their own names rather than the port\'s, which is either prudence or the first move of the thing the Rail Master warned about, and nobody has established which.'
+                'Two Factors have been buying salt flats at Salt Reach in their own names rather than the port\'s, which is either prudence or the first move of the thing the Rail Master warned about, and nobody has established which.'
         }
     },
 

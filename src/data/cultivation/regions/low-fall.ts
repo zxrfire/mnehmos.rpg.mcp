@@ -244,7 +244,7 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: SOUTH_REGION_ID,
             description:
-                'Nine days down the river to the mouth and out to Sweetspring Isle, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
+                'Nine days down the river to the mouth and out to Watering, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
             travelDays: 9
         }
     ],

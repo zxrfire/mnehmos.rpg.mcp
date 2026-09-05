@@ -46,6 +46,9 @@ import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // like every other verb family's reader, so the harvested spelling vocabulary
 // is unmoved. See `telling-a-wrong.ts`.
 import { whatIsBeingTold } from './telling-a-wrong.js';
+// Who a player named as sitting an art with them. The match's own vocabulary,
+// because the words are the match's - see that file's own section header.
+import { whoIsSittingWithThem } from './match-phrasings.js';
 import {
     A_TOPIC_ABOUT_THEMSELVES,
     whatIsBeingAskedAboutThem
@@ -173,7 +176,15 @@ export {
     siteNamed
 } from './site-phrasings.js';
 export type { SiteIntent } from './site-phrasings.js';
-import { siteStep, siteNamed } from './site-phrasings.js';
+// `SITE_PRIZE_NOUNS` is imported as well as re-exported above: the taking row
+// vetoes on it, and a re-export is not a binding in this module's scope.
+import {
+    siteStep,
+    siteNamed,
+    SITE_PRIZE_NOUNS,
+    SITE_NOUNS,
+    SITE_FACE_NOUNS
+} from './site-phrasings.js';
 
 // What a member says to their own house, and what a seat may order. By name,
 // so `leadershipIntent` - private before the move - stays out of this module's
@@ -548,7 +559,16 @@ export const A_PORTABLE_THING =
     'purse|purses|pouch|pouches|pocket|pockets|sleeve|sleeves|coin|coins|stones?|'
     + 'spirit stones?|jade|pendant|pendants|ring|rings|token|tokens|talisman|talismans|'
     + 'blade|sword|sabre|saber|dagger|manual|manuals|book|books|scroll|scrolls|'
-    + 'pill|pills|elixir|elixirs|medicine|bag|bags|purseful|belongings|things';
+    + 'pill|pills|elixir|elixirs|medicine|bag|bags|purseful|belongings|things|'
+    // A CRAFT IS A THING, THOUGH NOBODY PUTS ONE IN A SLEEVE. What this list
+    // actually answers is thing-or-person, which is the only question its two
+    // readers ask - who a theft is aimed at, and whether the subject that came
+    // out of the sentence is the object rather than the owner. A carriage and a
+    // hull are the largest things anybody can be robbed of and they were the
+    // two the list could not see, so "Wei Lanya's spirit boat" resolved to
+    // nobody and "the spirit boat" was handed to a resolver looking for a face.
+    + 'carriage|carriages|cart|carts|wagon|wagons|waggon|waggons|coach|coaches|'
+    + 'boat|boats|ship|ships|barge|barges|skiff|skiffs|hull|hulls';
 
 /**
  * WHO A THEFT IS AIMED AT, WHICH IS NEVER THE THING BEING TAKEN.
@@ -592,8 +612,192 @@ export function namesTheThingRatherThanThePerson(target: string | undefined): bo
     return new RegExp(`\\b(?:${A_PORTABLE_THING})\\b`, 'i').test(target);
 }
 
+/**
+ * The thing, without the owner attached: "the spirit boat from Cao Nuolin"
+ * becomes "the spirit boat".
+ *
+ * `extractSubject` reads to the end of the phrase, so a theft's subject arrives
+ * naming two different things at once. The person is already on `target` by
+ * `whoATheftIsAimedAt`; what belongs on `topic` is the thing, and handing the
+ * whole phrase to a matcher scores below the threshold and resolves nothing.
+ */
+export function theThingWithoutItsOwner(said: string): string {
+    return said
+        .replace(/\s+\b(?:from|off|out of|belonging to|owned by)\b.*$/i, '')
+        .trim();
+}
+
 export const POCKET_PICKING =
     /\b(?:pickpocket\w*|(?:pick|picks|picking|picked|lift|lifts|lifting|lifted|cut|cuts|cutting)(?!\s+up\b)\b[^.!?]{0,40}?\b(?:pocket|pockets|purse|purses|sleeve|sleeves))\b/;
+
+// ─────────────────────────────────────────────────────────────────────────
+// A TAKING, WHICH IS NOT YET A THEFT
+//
+//   "Saying `take` about something that is not yours - and is not genuinely
+//    free, like an apple in the middle of nowhere - is stealing."
+//
+// The row above this one recognises a theft by the words in it, and that is
+// correct for the words in it: `steal`, `rob`, `mug` and a cut purse say what
+// they are. This recognises the class the design owner's ruling is about, where
+// nothing in the sentence says anything.
+//
+// Measured, on this table, before it existed:
+//
+//   "I relieve him of his purse"               -> unclear
+//   "I collect what I am owed from his rooms"  -> sect / stipend
+//   "I pick up the manual on my way out"       -> learn_technique
+//   "I help myself to what is on the rack"     -> site / take
+//   "I make free with his jade"                -> unclear
+//   "I take my own sword"                      -> unclear
+//
+// Four benign acts and two nothings, from six sentences of which one is
+// somebody handling their own property and five are not.
+//
+// ── AND WHAT IT DELIBERATELY DOES NOT DECIDE ─────────────────────────────
+//
+// Whose it is. That is `a-taking-is-decided-by-ownership.ts`, which asks the
+// world; this only says a taking was said and hands over what was named. The
+// treadmill this avoids is the obvious fix - a list of polite theft verbs -
+// which grows forever because the class is open, and which cannot work anyway:
+// every verb below is also the ordinary word for handling your own things, and
+// has to keep working when the thing IS yours.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Deliberately NOT `claim`, `pick`, `strip` or `recover`. Every one of those is
+ * a site verb - a grave, a prize behind a door, an inheritance - and this row
+ * runs above the site step, so admitting one would take a whole surface away.
+ */
+export const A_TAKING_VERB =
+    'take|takes|taking|took|collect|collects|collecting|collected|'
+    + 'pick up|picks up|picking up|picked up|scoop up|scoops up|gather up|gathers up|'
+    + 'pocket|pockets|pocketing|pocketed|'
+    + 'help myself to|helping myself to|make free with|making free with|made free with|'
+    + 'walk off with|walks off with|walk out with|walks out with|'
+    + 'carry off|carries off|carrying off|'
+    + 'relieve|relieves|relieving|relieved';
+
+/**
+ * Somebody's, said in front of a noun.
+ *
+ * `my` is admitted only in front of something portable, because "on my way out"
+ * is one of the measured sentences and a way is not a possession. The rest are
+ * admitted in front of any noun at all: "from his rooms" is the whole of what
+ * makes that sentence a taking, and rooms are not carried.
+ */
+const A_TAKING_SAYS_SOMEBODY_ELSES = new RegExp(
+    "\\b(?:his|her|their|its|hers|theirs|somebody(?: else)?'s|someone(?: else)?'s"
+    + "|[a-z]+(?:'s|s'))\\s+\\w+"
+);
+const A_TAKING_SAYS_WHOSE = new RegExp(
+    `${A_TAKING_SAYS_SOMEBODY_ELSES.source}|\\bmy (?:own )?(?:${A_PORTABLE_THING})\\b`
+);
+
+/**
+ * Borrowing is not taking, and the not-giving-back is the whole of what makes
+ * this one.
+ *
+ * `borrow` is deliberately NOT in {@link A_TAKING_VERB}: asking to borrow
+ * somebody's blade is a request and has to keep reaching one. What this matches
+ * is the corpus's own sentence, where the second clause repudiates the first,
+ * and it is the clause that carries the meaning - which is why this is an idiom
+ * and not a verb.
+ */
+const NOT_GIVING_IT_BACK =
+    /\bborrow\w*\b[^.!?]{0,40}?\b(?:and|but)\b[^.!?]{0,20}?\b(?:do not|don'?t|never|no intention of)\b[^.!?]{0,20}?\b(?:giv\w+|hand\w*|bring\w*|return\w*|take\w* it back)\b/;
+
+const A_TAKING = new RegExp([
+    // Idioms that mean one thing and cannot be said about anything else.
+    NOT_GIVING_IT_BACK,
+    /\brelieve[sd]?\s+(?:him|her|them|\w+(?:\s+\w+)?)\s+of\b/,
+    /\b(?:make|makes|making|made)\s+free\s+with\b/,
+    /\bhelp(?:s|ing)?\s+myself\s+to\b/,
+    // A taking verb over something the sentence says is somebody's.
+    new RegExp(`\\b(?:${A_TAKING_VERB})\\b[^.!?]{0,30}?${A_TAKING_SAYS_WHOSE.source}`),
+    // Or over something small enough to be carried, which is the closed list
+    // that already keeps `take` safe in the theft row: a road, a job, a duty and
+    // a contract are all things people take and none of them is on it.
+    // Four words of slack rather than one, because a thing the game printed
+    // arrives with its adjectives on: "the plain iron sword" is the name a
+    // player types back, and it is three words before the noun.
+    new RegExp(`\\b(?:${A_TAKING_VERB})\\s+(?:\\w+\\s+){0,4}(?:${A_PORTABLE_THING})\\b`)
+].map(r => r.source).join('|'));
+
+/**
+ * What the sentence says is being taken, or null if it is not a taking.
+ *
+ * The two vetoes name the branches below that own a portable-thing noun of
+ * their own and would otherwise be jumped: swallowing a pill is not taking one
+ * off anybody, and a shelf of manuals behind a door is a site's prize.
+ */
+/**
+ * The theft row out of the interact table, read rather than restated.
+ *
+ * A function because that table is defined below this point in the file, and a
+ * second copy of the pattern is how the two would start disagreeing about which
+ * sentences are already a theft.
+ */
+function theTheftRow(): RegExp {
+    return INTERACT_INTENT_PATTERNS.find(([name]) => name === 'steal')![1];
+}
+
+export function whatATakingNames(text: string, input: string): string | null {
+    const borrowed = NOT_GIVING_IT_BACK.test(text);
+    if (!borrowed && !usedAsVerb(text, A_TAKING_VERB)) return null;
+    if (!A_TAKING.test(text)) return null;
+    if (usedAsVerb(text, PILL_TAKING_VERBS)
+        && (PILL_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text))) return null;
+    // The site step claims a taking two ways: anchored to a site - a name, a
+    // site noun, a face - which is a prize behind a door and defers to it; and
+    // on a prize noun alone, which is a guess. "I help myself to what is on the
+    // rack" is that guess, and what it produced was a refusal saying there was
+    // no site by that name while a stallholder stood there holding the rack.
+    if (siteNamed(text) !== undefined || SITE_NOUNS.test(text) || SITE_FACE_NOUNS.test(text)) {
+        return null;
+    }
+    if (SITE_PRIZE_NOUNS.test(text) && !/\bwhat(?:'s| is) on\b/.test(text)) return null;
+    // "I take the carriage to Iron Gate" is a journey, and {@link RIDING} owns
+    // the whole shape of it. Deferred to explicitly rather than by ordering,
+    // because that row runs below this one - except where the sentence says
+    // whose the thing is, which is the one reading a journey never has.
+    if (RIDING.test(text) && !A_TAKING_SAYS_SOMEBODY_ELSES.test(text)) return null;
+    // Anything with a house in it. Two rows below own those and both run below
+    // this one: `leadershipIntent` takes a thing off your own shelf, and the
+    // siphon takes counted stock out of a treasury over months. Vetoed on the
+    // noun rather than on either row's verbs, because between them they are the
+    // whole of what a taking inside an institution is - and a taking off a
+    // house you are NOT on the roll of is a sentence this engine does not have,
+    // which `object-theft.ts` says in its own docstring.
+    if (/\b(?:sect|house|clan|school|order|treasury|reserves|coffers|vault|library|archive|storehouse|granary)\b/.test(text)) {
+        return null;
+    }
+    // "I'll take the manual" is said across a counter. {@link OFFERING_TO_BUY}
+    // owns the offer forms and says in its own comment why `take` is not in
+    // `BUYING_VERBS`; it runs below this row, so the deferral is explicit.
+    if (OFFERING_TO_BUY.test(text)) return null;
+    // And every sentence the theft row already reads. Those say what they are -
+    // `steal`, `rob`, a cut purse, `take <somebody's> <thing>` - and have
+    // reached the theft path since the pressure model was wired. This row is
+    // for the class that says nothing; taking a working sentence off a working
+    // row would be relabelling rather than fixing.
+    if (theTheftRow().test(text)) return null;
+
+    // "relieve him of his purse" puts the person between the verb and the
+    // thing, which is the whole shape of the idiom and the reason it needs its
+    // own read: `extractSubject` would hand back "him of his purse".
+    const relieved = /\brelieve[sd]?\s+(?:\w+\s+){1,3}?of\s+(.+)$/i.exec(input);
+    const said = relieved
+        ? relieved[1]
+        : extractSubject(input, new RegExp(borrowed ? 'borrow\\w*' : A_TAKING_VERB)) ?? '';
+    // "the manual on my way out" names one thing and then says when. The when
+    // is not part of the name, and left on it the whole phrase scores below
+    // `matchScore`'s threshold against every row in the world.
+    const thing = theThingWithoutItsOwner(said)
+        .replace(/\s+\b(?:on (?:my|the) way|as i\b|while i\b|before i\b|after i\b|when i\b)\b.*$/i, '')
+        .replace(/[.!?]+\s*$/, '')
+        .trim();
+    return thing.length >= 2 ? thing : null;
+}
 
 /**
  * Asking what your standing entitles you to on your house's ground.
@@ -686,8 +890,8 @@ export const SECT_THEFT_PATTERN =
  *
  * -- AND THE ANSWER ALREADY EXISTS AND IS GOOD ---------------------------
  *
- * `billsOnTheWall` returns real intakes with dates and bars - *"The Sink
- * Carriers is holding an intake at Sweetspring Isle in 8 days, and will hear anybody
+ * `billsOnTheWall` returns real intakes with dates and bars - *"Sand Well
+ * Carriers is holding an intake at Sweet Spring Island in 8 days, and will hear anybody
  * who has reached Qi Condensation at all"*. So this is a routing fix and not
  * a missing surface: the phrasings are added to the rule that already
  * reaches it rather than given a branch of their own.
@@ -1154,7 +1358,7 @@ function theHouseInside(phrase: string | undefined): string | undefined {
 
 // ─── TAKING AN INTAKE THE GAME ITSELF JUST POSTED ─────────────────────────
 //
-// FOUND BY PLAYING, standing in Thousand Sail Harbour. The wall volunteered three bills
+// FOUND BY PLAYING, standing in Silver Island. The wall volunteered three bills
 // unprompted - *"Three bills are tacked to the wall. Three of them state a bar
 // you already clear. The soonest intake listed opens in seventeen days."* - and
 // named all three with their houses, their places and their dates. Then:
@@ -1217,7 +1421,7 @@ export const TAKING_A_POSTED_INTAKE = new RegExp(
  * Which house's intake the sentence means, where it says.
  *
  * Three shapes, because a poster gets pointed at three ways: "the intake at the
- * Thousand Sail Harbour Rail", "the Thousand Sail Harbour Rail's intake", "the Hollow Bell intake".
+ * Silver Island Rail", "the Silver Island Rail's intake", "the Hollow Bell intake".
  * Undefined is the ordinary answer and is not a failure - it means the sentence
  * pointed at the paper rather than at a name, and the listing answers it.
  */
@@ -1834,7 +2038,7 @@ export const RECALL_SUBJECT =
 // house, a place, a person and an art, deterministic reader:
 //
 //   tell me about the Gleaners' Company    -> interact(target="me about the …")
-//   tell me about Thousand Sail Harbour                -> interact(target="me about …")
+//   tell me about Silver Island                -> interact(target="me about …")
 //   tell me about Shen Wanshi              -> interact(target="me about …")
 //   tell me about the Lesser Qi-Gathering  -> interact(target="me about …")
 //   what do you know about Shen Wanshi     -> unclear
@@ -2143,7 +2347,7 @@ export const BUYING_VERBS =
  *
  * -- THE TURN THIS WAS FOUND ON -------------------------------------------
  *
- * Played in Sweetspring Isle with thirty stones and a stall the game had just listed,
+ * Played in Sweet Spring Island with thirty stones and a stall the game had just listed,
  * one turn apart, same item, same purse:
  *
  *   buy the Lesser Qi-Gathering Manual      bought, off Bai Xuping, 4 stones
@@ -2415,7 +2619,7 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  * `mount` as a bare noun is deliberately absent from the verb half. It does
  * not match "mountain", and it does match "I mount the steps", and there is no
  * demonstrated sentence needing it - but it IS accepted as the thing being
- * ridden, because "I ride a mount to Kettle" names one and nothing else in the
+ * ridden, because "I ride a mount to Iron Gate" names one and nothing else in the
  * sentence could be meant.
  */
 export const RIDING = new RegExp([
@@ -2429,7 +2633,7 @@ export const RIDING = new RegExp([
         + '(?:a\\s+|an\\s+|the\\s+|my\\s+|spirit\\s+|drawn\\s+|shod\\s+|named\\s+)*'
         + '(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull)\\b',
     // The destination can sit between the verb and what is under them - "I fly
-    // to Scarwater on my sword" is how somebody actually says it - so the gap
+    // to Clear River Ford on my sword" is how somebody actually says it - so the gap
     // is bounded rather than adjacent. Bounded and not free: `on my sword` has
     // to be in the same clause or the rule starts reading sentences that
     // mention a blade three ideas later.
@@ -2441,6 +2645,63 @@ export const RIDING = new RegExp([
 /** What is under them, when the sentence says. Matched against `CONVEYANCES`. */
 export const WHAT_IS_BEING_RIDDEN =
     /\b(?:ride|rides|riding|rode|saddle|saddles|take|takes|taking|took|hire|hires|hired|board|boards|by|on|aboard|astride)\s+(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|deep-?drawn\s+|broken\s+)*(?:carriage|cart|coach|wagon|mount|beast|horse|boat|barge|craft|hull|sword|blade))\b/i;
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE YARD
+//
+// Building and riding share their nouns and nothing else, which is why these
+// sit beside `RIDING`: the pair to check whenever either is widened is "I take
+// the carriage to Iron Gate" against "I build a carriage", and the two rules are
+// separated by the VERB alone.
+//
+// Every one of these demands a noun. `build`, `make` and `craft` are ordinary
+// English - "I make my way south", "I make an offer", "I craft a pill" - and a
+// verb-only rule would take all three. The noun list is the four bills in
+// `CONVEYANCE_RECIPES` said the way people say them, plus the two words for the
+// thing while it is still in pieces.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The verbs that put a thing on the stocks. */
+export const BUILDING_SOMETHING =
+    /\b(?:build|builds|building|built|make|makes|making|made|craft|crafts|crafting|crafted|construct|constructs|constructing|constructed|assemble|assembles|assembling|assembled|lay down|lays down|laying down|put together|puts together|putting together)\b/;
+
+/**
+ * Going back to one that is already standing, or walking away from it.
+ *
+ * The abandon words are here rather than in a rule of their own because
+ * `planTheBuild` is what decides an abandonment - it reads the raw sentence
+ * through `isAbandoning` - and a second opinion in the table would be a rule
+ * about scrapping in one place and a rule about scrapping in another.
+ */
+export const BACK_TO_THE_STOCKS =
+    /\b(?:finish|finishes|finishing|finished|carry on with|carrying on with|go back to|going back to|goes back to|return to|returning to|work on|working on|works on|abandon|abandons|abandoning|abandoned|scrap|scraps|scrapping|scrapped|break up|breaks up|breaking up)\b/;
+
+/** What a yard makes, in the words somebody standing in one uses. */
+export const WHAT_A_YARD_MAKES =
+    /\b(?:carriages?|carts?|wagons?|waggons?|coach|coaches|boats?|ships?|barges?|skiffs?|hulls?|keels?)\b/;
+
+/**
+ * Which bill, when the sentence names one. Matched against
+ * `CONVEYANCE_RECIPES` by `whichBillTheyMeant`, which owns the grade words.
+ */
+export const WHAT_IS_BEING_BUILT =
+    /\b(?:build|builds|building|built|make|makes|making|made|craft|crafts|crafting|crafted|construct|constructs|constructing|assemble|assembles|assembling|finish|finishes|finishing|go back to|going back to|return to|work on|working on|abandon|abandons|abandoning|scrap|scraps|scrapping|break up|breaking up)\s+(?:up\s+|on\s+|with\s+|to\s+)?(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|earth-?grade\s+|heaven-?grade\s+|mortal-?grade\s+)*(?:carriage|cart|wagon|waggon|coach|boat|ship|barge|skiff|hull|keel))\b/i;
+
+/**
+ * Asking what a yard makes, which is free and names no noun.
+ *
+ * A player with an empty pouch cannot name a bill they have never been told
+ * about, and `theListing` is the answer - the four bills, what each wants, and
+ * which of them this pair of hands could work at all.
+ *
+ * `make` and `craft` are deliberately NOT here. "What can I make" and "what can
+ * I craft" are the alchemy listing and have been since that read was written,
+ * and taking them would be a new verb stealing a finished one's sentence - the
+ * defect this file's header warns about, committed in the act of fixing a
+ * different one. `build` and `construct` are the words nothing else answers to.
+ */
+export const ASKING_WHAT_A_YARD_MAKES =
+    /\b(?:what|which)\b[^.!?]*\b(?:can|could|might|should)\s+i\s+(?:build|construct)\b|\bwhat (?:can|could) be built\b|\bwhat does a yard make\b/;
 
 /**
  * Stepping across the distance rather than covering it.
@@ -2711,6 +2972,18 @@ const HOW_THE_FIGHT_OPENED_TAIL =
  *   a breakthrough, and every pattern below requires a person and a thing
  *   being complied with, so the ladder sentence cannot reach any of them.
  */
+/**
+ * Somebody being MADE to do a thing, in the general.
+ *
+ * Deliberately about the compulsion and never about what was compelled: the
+ * list of things a person can be forced into is the setting, and enumerating it
+ * here would be a pattern per trope, growing forever. What every one of them
+ * shares is this handful of words and the two idioms that mean the same without
+ * using them.
+ */
+const SOMEBODY_WAS_MADE_TO =
+    /\b(?:force|forces|forcing|forced|make|makes|making|made|compel|compels|compelling|coerce|coerces|coercing)\b|\bwhether (?:he|she|they|it) (?:wants?|likes?) (?:it|to) or not\b|\bagainst (?:his|her|their|its) will\b/i;
+
 const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // An animal made to submit is a tamed animal. Same act, same resolver, and
     // `BEAST_CHANGE_ORDINAL` does all the differentiating on its own - above
@@ -2735,7 +3008,7 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // 0.020 to 0.198 - the two intents of this verb that a reader CAN
     // separate, because a thing going in and a thing coming out are both in
     // the words.
-    ['swallow', /\b(?:force|forces|forcing|make|makes|making|push|pushes|pushing|hold|holds|holding)\b[^.!?]*\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take the (?:pill|medicine|tablet)|down (?:his|her|their|its) throat|past (?:his|her|their) teeth)\b|\bforce(?:s|d)? (?:the |a )?(?:pill|tablet|medicine|it) down\b/],
+    ['swallow', /\b(?:force|forces|forcing|make|makes|making|push|pushes|pushing|hold|holds|holding)\b[^.!?]*\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take (?:the|a|an|this|that|his|her|their|my) (?:\w+ )?(?:pill|medicine|tablet|poison|elixir|draught)|down (?:his|her|their|its) throat|past (?:his|her|their) teeth)\b|\bforce(?:s|d)? (?:the |a )?(?:pill|tablet|medicine|it) down\b/],
     ['hand_over', /\b(?:force|forces|forcing|strong-?arm|strong-?arms|strong-?arming|extort|extorts|extorting|shake down|shakes down)\b[^.!?]*\b(?:into (?:handing|giving|paying|opening)|to hand|to give|to pay|to open|out of (?:him|her|them))\b/],
     // `make` is how somebody says this and the pattern had only `force`,
     // `strong-arm`, `extort` and `shake down` - so `hand_over` was a declared
@@ -2745,6 +3018,35 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // the making is for: kneeling and yielding are a submission, handing
     // things over is this.
     ['hand_over', /\b(?:make|makes|making|force|forces|forcing)\b[^.!?]*\b(?:hand(?:s|ing)? (?:it |them |everything |the lot )?over|hand over|give (?:me |up )(?:everything|what|it|all|the lot)|turn out (?:his|her|their|the) (?:pockets|purse|pouch)|empty (?:his|her|their) (?:pockets|purse|pouch))\b/],
+    // ── A MATCH SOMEBODY DID NOT AGREE TO ────────────────────────────────
+    //
+    // Above the `submit` rows and told apart from them by WHAT the making is
+    // for, exactly as `hand_over` is. Without it there was no way to say this:
+    // `familyStep` runs above this block and answered every one of these with
+    // `propose`, which the other party may decline and which opens no account
+    // against anybody. The forcing was deleted on the way in and the engine
+    // was never told there had been any.
+    //
+    // The guard that stops `familyStep` taking these is at its call site in
+    // `planIntent`, and it NEEDS this row to exist. A guard that declines by
+    // falling through to `unclear` is undone by the spelling repair: the
+    // repair runs on exactly the sentences that reached nothing, and cannot
+    // tell a sentence nobody could read from one a guard turned down.
+    ['marry', /\b(?:force|forces|forcing|forced|make|makes|making|made|compel|compels|compelling)\b[^.!?]*\b(?:marry|marries|marrying|wed|weds|wedding|take me as (?:his|her|their) (?:dao )?partner|be my (?:dao )?partner|into (?:a |the )?(?:match|marriage|betrothal|union))\b|\b(?:marry|marries|marrying|wed|weds)\b[^.!?]*(?:\bwhether (?:he|she|they) (?:wants?|likes?) (?:it|to) or not\b|\bagainst (?:his|her|their) will\b)/],
+    // ── BEING SAT AS SOMEBODY ELSE'S FURNACE ─────────────────────────────
+    //
+    // `an-art-that-needs-two-people.ts` is the whole mechanic and
+    // `furnace-technique.ts` writes its result into the world. Neither had a
+    // caller anywhere in `src/web`, because no sentence reached them, while
+    // its willing counterpart `what-a-dao-partner-is-for.ts` was wired. One
+    // mechanic, two signs, and only the comfortable one could be typed - the
+    // genre section of `AGENTS.md` says why that is a defect and not a gap.
+    //
+    // No compulsion verb is required. "I use him as a furnace" names the act
+    // and the absence of consent in one breath, which is what the phrase
+    // means. A willing sitting is `cultivate` with a partner named, and that
+    // route already exists.
+    ['furnace', /\b(?:as|for) (?:a|my|his|her|their) (?:furnace|cauldron)\b|\bfurnace (?:art|arts|technique|techniques|method|methods|rite)\b|\bdraw(?:s|ing)? off (?:his|her|their) cultivation\b/],
     ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
     ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
     ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
@@ -2798,7 +3100,7 @@ const COERCE_SUBJECT_VERBS =
  * sentence reaches the correct verb and aims it at nobody.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
-    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn)\b.*$/i;
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be)\b.*$/i;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
@@ -2927,6 +3229,103 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 const ASKING_AFTER_WORK =
     /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
 
+// ─────────────────────────────────────────────────────────────────────────
+// 护法: STANDING OVER SOMEBODY ELSE'S CROSSING
+//
+// Every one of these needs a GUARDING PHRASE AND a crossing word, or it is one
+// of the two idioms that can mean nothing else - `stand guard` and `dao
+// protector`. That is the discipline this file's own history demands: the last
+// widening here stole sentences from `investigate` and from place resolution,
+// and `protect`, `watch` and `guard` are three of the commonest words in the
+// language. "I watch the road" is not this, "I guard the gate" is not this, and
+// "I protect myself" is emphatically not this.
+//
+// `mine` is separated because it is the READ - "who would stand guard for me" -
+// and it must not be able to name somebody as the subject of a watch.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A word for the thing being stood over. Nothing here matches without one. */
+const A_CROSSING_BEING_MADE =
+    /\b(?:breakthrough|break(?:ing|s)? through|crossing|crosses|cross(?:es|ing)? (?:the |over)|attempt(?:s|ing)? (?:it|the (?:barrier|breakthrough|crossing|next rank))|the barrier|tribulation|closed[- ]door|seclusion|ascend(?:s|ing)?)\b/;
+
+/** The two idioms that cannot mean anything but this. */
+const STANDING_GUARD_IDIOM =
+    /\b(?:stands? guard|standing guard|stood guard|keeps? watch|keeping watch|dao protector|dharma protector|act as (?:his|her|their|my|the|a) protector|be (?:his|her|their) protector)\b/;
+
+/** A guarding phrase that needs a crossing word beside it to count. */
+const A_GUARDING_PHRASE =
+    /\b(?:guard|guards|guarding|guarded|protect|protects|protecting|protected|watch over|watches over|watching over|watched over|shield|shields|shielding|cover|covers|covering|look out for|stand over|stands over|standing over|stand by|see (?:him|her|them) through)\b/;
+
+/**
+ * Asking who would keep a watch over YOUR crossing, which names nobody.
+ *
+ * Its own pattern rather than a question mark on the branch below, because the
+ * two differ in what they may return: the read must never carry a target, and
+ * a sentence with `for me` in it has already said the subject is the speaker.
+ */
+const WHO_WOULD_STAND_FOR_ME =
+    /\b(?:who|anyone|anybody|someone|somebody|is there anyone)\b[^.?!]{0,40}\b(?:stand|stands|standing|guard|guards|protect|protects|watch|watches|keep|keeps)\b[^.?!]{0,40}\b(?:for me|over me|over my|my crossing|my breakthrough|my back|as my protector|my dao protector)\b|\b(?:do i have|have i got|is there)\b[^.?!]{0,20}\b(?:a )?(?:dao |dharma )?protector\b|\bwho would (?:stand|keep)\b[^.?!]{0,20}\b(?:guard|watch)\b(?!\s+over\s+\w)/;
+
+/** Who the watch is being kept over. Trimmed at the clause saying WHILE. */
+const A_WATCHED_PARTY = new RegExp(
+    '\\b(?:stand guard|standing guard|stood guard|keep watch|keeping watch|guard|guards|'
+    + 'guarding|protect|protects|protecting|watch over|watches over|watching over|shield|'
+    + 'shields|cover|covers|stand over|stands over|standing over|see)\\s+'
+    + '(?:over |for |after )?'
+    + '(?:the |a |an |my )?'
+    + '([a-z\'’][a-z\'’ -]{1,40}?)'
+    + '(?:\'s|’s)?'
+    + '\\s*(?:\\b(?:while|whilst|as|through|during|when|until|in|on|at|and|so)\\b.*)?[.!?]?$',
+    'i'
+);
+
+/**
+ * A person, or a pronoun that is not one.
+ *
+ * `A_WATCHED_PARTY` will happily hand back `her`, and the entity resolver
+ * cannot do anything with it. Returning it anyway is still right - the refusal
+ * lists who IS standing here, which is a name the player can type back - and
+ * this exists only to stop the possessive fragments (`his breakthrough`, `the
+ * barrier`) becoming a name nobody will ever match.
+ */
+const NOT_SOMEBODY_BEING_GUARDED =
+    /^(?:it|this|that|there|here|the barrier|the crossing|the breakthrough|the door|the gate|the cave|the room|myself|me)$/;
+
+/**
+ * The tail that says WHEN or HOW LONG rather than WHO.
+ *
+ * `A_WATCHED_PARTY` trims a subordinate clause only when a name came first, so
+ * "I stand guard while she crosses" hands back `while she crosses` and "I keep
+ * watch over Wei Lanya for a year" hands back `Wei Lanya for a year`. Both are
+ * the same defect the attack branch fixed with `HOW_THE_FIGHT_OPENED_TAIL`:
+ * a manner clause resolving as a person's name, so the verb finds nobody and
+ * the whole act disappears.
+ */
+const WHEN_RATHER_THAN_WHO =
+    /\s*\b(?:for|over|during|through|across|in)\s+(?:the\s+)?(?:a\s+|an\s+)?(?:next\s+)?[0-9]*\s*(?:day|days|week|weeks|month|months|year|years|decade|decades|season|seasons|while|stretch|span)\b.*$/i;
+
+function whoIsBeingGuarded(input: string): string | undefined {
+    const found = A_WATCHED_PARTY.exec(input);
+    const name = (found?.[1] ?? '')
+        .trim()
+        .replace(WHEN_RATHER_THAN_WHO, '')
+        .replace(/\b(?:breakthrough|crossing|attempt|tribulation|seclusion)$/i, '')
+        .replace(/(?:'s|’s)$/i, '')
+        .trim();
+    if (name.length < 2) return undefined;
+    // A clause word at the front means the sentence never named anybody - it
+    // said when. Returning it would send the engine looking for a person
+    // called "while she crosses"; returning nothing gets the refusal that
+    // lists who IS standing here, which is a name the player can type back.
+    if (/^(?:while|whilst|as|when|until|during|through|and|so|that|his|her|their|my|the)\b/i
+        .test(name)) {
+        const rest = name.replace(/^(?:his|her|their|my|the)\s+/i, '').trim();
+        if (rest === name || rest.length < 2) return undefined;
+        return NOT_SOMEBODY_BEING_GUARDED.test(rest.toLowerCase()) ? undefined : rest;
+    }
+    return NOT_SOMEBODY_BEING_GUARDED.test(name.toLowerCase()) ? undefined : name;
+}
+
 const INTERACT_SUBJECT_VERBS =/strike up a conversation with|interact with|warn|bow to|nod to|seduce|court|woo|charm|flirt with|flatter|deceive|mislead|bluff|pose as|trick|lie to|threaten|intimidate|bribe|interrogate|question|trade|buy|sell|barter|haggle|negotiate|bargain|petition|ally with|join|apply to|swear to|beg|recruit|hire|apologi[sz]e to|talk|speak|ask|greet|tell|steal from|steal|rob|mug|pickpocket/;
 
 /**
@@ -3035,7 +3434,55 @@ function planIntent(input: string): PlannedAction {
     // a favour - and safe there because every branch of it needs both a verb
     // and its own noun. See `familyStep`.
     const family = familyStep(text, input);
-    if (family !== null) return family;
+    // ── A COMPULSION IS NOT A PROPOSAL ───────────────────────────────────
+    //
+    // `familyStep` sits above the coercion block because a sentence about a
+    // match is full of other verbs' nouns, and that is still right. What it
+    // must not do is take a sentence whose whole content is that somebody was
+    // MADE to do it: measured at every tier, "I force her to marry me", "I make
+    // him take me as his dao partner" and "I marry her whether she wants it or
+    // not" all reached `propose`, which is a thing the other party may decline
+    // and which opens no account against anybody. The forcing was deleted on
+    // the way in and the engine was never told there was any.
+    //
+    // The guard is on the FAMILY's answer rather than on the sentence, so a
+    // plain "I propose to her" is untouched, and it names no act of its own -
+    // anything the coercion rows below can read, they now get a chance to read.
+    if (family !== null && !(family.action === 'propose' && SOMEBODY_WAS_MADE_TO.test(text))) {
+        return family;
+    }
+
+    // ── 护法: STANDING OVER SOMEBODY ELSE'S CROSSING ──────────────────────
+    //
+    // HIGH, because a sentence about guarding a crossing is full of other
+    // verbs' nouns - a breakthrough, a seclusion, a tribulation, a person - and
+    // every one of those branches sits below this line and would take it. "I
+    // watch over his breakthrough" reached `breakthrough` and struck at the
+    // PLAYER'S OWN barrier: a sentence about somebody else's crossing spending
+    // the speaker's, which is the worst shape a misparse has in this file.
+    //
+    // Safe here because it needs both halves - a guarding phrase AND a word for
+    // the thing being crossed - or one of the two idioms that cannot mean
+    // anything else. `theVerbsOwnName` and `familyStep` are above it and
+    // neither owns a word in it.
+    //
+    // The read comes first, because "who would stand guard for me" contains
+    // `stand guard` and must not name anybody.
+    if (WHO_WOULD_STAND_FOR_ME.test(text)) {
+        return { action: 'guard', intent: 'ask' };
+    }
+    if (STANDING_GUARD_IDIOM.test(text)
+        || (A_GUARDING_PHRASE.test(text) && A_CROSSING_BEING_MADE.test(text))) {
+        const who = whoIsBeingGuarded(input);
+        return {
+            action: 'guard',
+            ...(who ? { target: who } : {}),
+            // The span is the player's own and the protector module refuses to
+            // invent one. A sentence with no duration in it reaches
+            // `A_WATCH_WITH_NO_LENGTH_SAID`, in the verb rather than here.
+            ...(parseDuration(text) !== null ? { days: parseDuration(text)! } : {})
+        };
+    }
 
     // ── ASKING SOMEBODY A PLAIN FACT ABOUT THEMSELVES ────────────────────
     //
@@ -3244,6 +3691,31 @@ function planIntent(input: string): PlannedAction {
             intent: 'subdue',
             terms: 'agreed'
         };
+    }
+
+    // ── A TAKING, ROUTED TO THE RESOLVER THAT ASKS WHOSE IT IS ───────────
+    //
+    // Above the sect read and the site step because both of them were eating
+    // one: "I collect what I am owed from his rooms" was a stipend and "I help
+    // myself to what is on the rack" was a prize behind a door. Below the
+    // attack, coercion and duel branches, which own a sentence with a person
+    // being done something to in it, and which say so in words.
+    //
+    // `intent: 'take'` asserts nothing. Where the world answers *theirs*,
+    // `GameService.interact` turns it into the existing `steal` before anything
+    // else reads it, so there is one theft path and this is not a second one.
+    // See {@link whatATakingNames} for why no vocabulary fix works.
+    {
+        const taken = whatATakingNames(text, input);
+        if (taken !== null) {
+            const owner = whoATheftIsAimedAt(input);
+            return {
+                action: 'interact',
+                intent: 'take',
+                topic: taken,
+                ...(owner ? { target: owner } : {})
+            };
+        }
     }
 
     // Sect promotion and stipend, before anything that could read them as
@@ -4105,6 +4577,37 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // ── THE YARD ─────────────────────────────────────────────────────────
+    //
+    // Immediately ahead of the two alchemy rules, which is the only position
+    // that works: the second of them fires on `make|craft|cook|brew` beside an
+    // alchemical noun, and a sentence about a carriage has to be gone before
+    // `resolveRecipe` is asked to find a pill called one. Below the buy rule,
+    // which owns "I buy a carriage" and keeps it - building and purchasing are
+    // the two ways to come by the same thing and they are different verbs.
+    //
+    // The noun is required on every branch. A bare "I build" reaches nothing,
+    // deliberately: `make`, `build` and `craft` are ordinary English and a rule
+    // that took them without an object would swallow "I make my way south" and
+    // "I make an offer".
+    if (WHAT_A_YARD_MAKES.test(text)
+        && (BUILDING_SOMETHING.test(text) || BACK_TO_THE_STOCKS.test(text))) {
+        const what = WHAT_IS_BEING_BUILT.exec(input);
+        const span = parseDuration(text);
+        return {
+            action: 'craft',
+            ...(what ? { target: what[1].trim().toLowerCase() } : {}),
+            ...(span ? { days: span } : {})
+        };
+    }
+
+    // And the read, which is free and is how anybody finds out a yard exists.
+    // Separate from the rule above because it names no noun - "what could I
+    // build" is exactly the question somebody with an empty pouch asks.
+    if (ASKING_WHAT_A_YARD_MAKES.test(text)) {
+        return { action: 'craft' };
+    }
+
     // ── what can I make ──
     //
     // The read that closes the alchemy loop, and it had no phrasing at all:
@@ -4172,7 +4675,7 @@ function planIntent(input: string): PlannedAction {
         // A pocket is not a plant. `pick` carried this branch, so "I pick Xiao
         // Suiya's pocket" - a theft aimed at a named person - came back
         // "Cloudcap Mushroom, pouched" and "7 days bent over the ground around
-        // Kettle". The player attempted a crime against somebody and the engine
+        // Iron Gate". The player attempted a crime against somebody and the engine
         // charged them a week of foraging for it, which is the worst answer
         // available: not a refusal, not the act, and irreversible.
         //
@@ -4466,7 +4969,7 @@ function planIntent(input: string): PlannedAction {
     // stipend, no array, no elder"), because `here` is in that rule's noun
     // list. Ahead of `destinations`, which took "who holds this ground" and
     // answered with the province's realm ceiling. Both measured on a fresh run
-    // standing on The Blown Ground - the one province in the world where the
+    // standing on The Burial Sands - the one province in the world where the
     // answer is nobody, and where a run opens.
     //
     // Deliberately narrow, and the narrowness is the point. "who is in charge"
@@ -4686,14 +5189,30 @@ function planIntent(input: string): PlannedAction {
         // A theft is aimed at a PERSON, and the sentence is about a thing. See
         // `whoATheftIsAimedAt`: the owner where the sentence names one, and
         // nobody where it does not, rather than the purse.
+        const takingAThing = interactIntent === 'steal'
+            && namesTheThingRatherThanThePerson(subject);
         const target = interactIntent === 'steal'
-            ? whoATheftIsAimedAt(input)
-                ?? (namesTheThingRatherThanThePerson(subject) ? undefined : subject)
+            ? whoATheftIsAimedAt(input) ?? (takingAThing ? undefined : subject)
             : subject;
         return {
             action: 'interact',
             target,
             intent: interactIntent,
+            // ── AND WHAT WAS NAMED, WHICH USED TO BE THROWN AWAY ─────────
+            //
+            // `namesTheThingRatherThanThePerson` was written to DROP a subject
+            // that is an object, because a resolver looking for a face cannot
+            // do anything with "his purse" - and dropping it lost the one piece
+            // of the sentence that says which of somebody's things is being
+            // taken. `topic` is where the engine already carries "what this act
+            // is about" on `interact`, and `whatALiftTook` matches it against
+            // real rows, so a named thing nobody holds resolves to nothing and
+            // the lift falls back to the purse.
+            // The owner's half comes off it: `extractSubject` reads to the end
+            // of the phrase, so "the spirit boat from Cao Nuolin" arrives whole
+            // and names two different things at once. The person is already on
+            // `target`; what belongs here is the thing.
+            ...(takingAThing ? { topic: theThingWithoutItsOwner(subject!) } : {}),
             ...(leverage ? { leverage } : {})
         };
     }
@@ -4737,7 +5256,26 @@ function planIntent(input: string): PlannedAction {
         + 'seclude|secludes|circulate|circulates|circulating|absorb|absorbs|absorbing|'
         + 'breathe|breathes|breathing|sit|sits|settle|settles')
         || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)) {
-        return { action: 'cultivate', days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS };
+        // -- AND WHETHER SOMEBODY IS SITTING IT WITH THEM -----------------
+        //
+        // A `target` on `cultivate` is a second person named in the sentence,
+        // and it is the whole of how a shared sitting is reached. The word
+        // that carries it has to be `with` or a partner noun and NOT a bare
+        // trailing name: "I cultivate in the eastern cave" names a place, and
+        // reading that as a person would send a player who asked for an
+        // ordinary stretch through a refusal about a marriage they never
+        // mentioned.
+        //
+        // Every condition on the partnership is checked downstream, so a
+        // sentence that reaches here naming somebody who is not a dao partner
+        // gets a refusal saying which condition failed rather than a silently
+        // ordinary sitting.
+        const alongside = whoIsSittingWithThem(input);
+        return {
+            action: 'cultivate',
+            days: parseDuration(text) ?? DEFAULT_CULTIVATION_DAYS,
+            ...(alongside ? { target: alongside } : {})
+        };
     }
 
     // ── AND THE LANGUAGE OF RECOVERY, WHICH IS NOT THE LANGUAGE OF SITTING ─

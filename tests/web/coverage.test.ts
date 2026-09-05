@@ -93,7 +93,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I ride the horse',
         'I saddle a beast and ride for Kettle',
         'I take a carriage to Scarwater',
-        'I take a spirit boat to Thousand Sail Harbour',
+        'I take a spirit boat to Halfwater',
         'I fly to Scarwater on my sword'
     ],
     fold: [

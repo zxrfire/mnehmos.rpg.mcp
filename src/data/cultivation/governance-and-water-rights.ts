@@ -2063,7 +2063,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // field was added to carry.
     //
     // The Rail is unbacked because it is USEFUL to everybody, so taking it
-    // costs the taker more than it gains: whoever held Thousand Sail Harbour would hold
+    // costs the taker more than it gains: whoever held Halfwater would hold
     // forty acres of rock, because the traffic is the asset and the traffic
     // is there for the neutrality. Its protection is not a garrison and not
     // a patron, it is the standing interest of every party that trades there,

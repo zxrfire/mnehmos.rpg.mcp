@@ -1518,7 +1518,7 @@ const JOINS_TO_AN_OBJECT = /\b(?:to|with|at|on|for|of|into|from)$/i;
  *
  * **"the purchase a physician's visit" is not English.** `PLAINLY` holds two
  * kinds of name and the code glued the target onto both: the object-taking ones
- * read correctly - "the journey to Thousand Sail Harbour", "the approach to Bai Xuping" -
+ * read correctly - "the journey to Halfwater", "the approach to Bai Xuping" -
  * and the self-contained ones did not. "the sale a manual", "the hunt a boar"
  * and "the gathering herbs" were all one played turn away.
  *

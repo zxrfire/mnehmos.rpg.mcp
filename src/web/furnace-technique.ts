@@ -21,14 +21,14 @@
  */
 
 import {
-    type FurnaceUseType,
+    type FurnaceConsent,
     type FurnaceUseResult,
-    type OneBeingDrawnOff,
     useAFurnaceTechnique
 } from '../engine/social-leverage/an-art-that-needs-two-people.js';
 import type { Sex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { appendWorldFact } from '../engine/world/who-was-there-when-it-happened.js';
 import { makeFact } from '../engine/world/history.js';
+import type { ObligationInput } from '../engine/social/grudges.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import type { SectAlignment } from '../schema/cultivation.js';
 import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
@@ -46,16 +46,16 @@ export interface FurnaceUseRequest {
     actorId: string;
     actorName: string;
     actorSex: Sex;
-    /**
-     * Everybody the rite is worked on, each carrying their own two draws.
-     *
-     * A list because `requiresPeople` is a count. One element is the ordinary
-     * case and behaves exactly as a two-person rite always did.
-     */
-    subjects: readonly OneBeingDrawnOff[];
+    subjectId: string;
+    subjectName: string;
+    subjectSex: Sex;
     onDay: number;
     locationId: string | null;
-    type: FurnaceUseType;
+    consent: FurnaceConsent;
+    /** `[0,1)`. Caller-owned stream - see `useAFurnaceTechnique`. */
+    conceptionSample: number;
+    /** `[0,1)`. Caller-owned stream - see `useAFurnaceTechnique`. */
+    deathSample: number;
     /**
      * Somebody with standing present, if anybody is - the same field
      * `TakingInput.seenBy` is in `house-property-theft.ts`. Null is the
@@ -76,6 +76,12 @@ export interface FurnaceUseRequest {
 }
 
 export interface FurnaceUseOutcome extends FurnaceUseResult {
+    /**
+     * The grudge to write to the subject's ledger, converted from the plain
+     * `ObligationInput` the engine returned. `createObligation` is the
+     * caller's to run - this file does not touch the ledger's own store.
+     */
+    grudge: ObligationInput | null;
     /**
      * What whoever holds the ground it happened on does about it, read off
      * `ifCaughtAtSomethingTheHousePunishes` exactly as `house-property-theft.ts`
@@ -100,10 +106,16 @@ export interface FurnaceUseOutcome extends FurnaceUseResult {
  */
 export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome {
     const outcome = useAFurnaceTechnique({
-        actor: { personId: input.actorId, name: input.actorName, sex: input.actorSex },
-        subjects: input.subjects,
+        actorId: input.actorId,
+        actorName: input.actorName,
+        actorSex: input.actorSex,
+        subjectId: input.subjectId,
+        subjectName: input.subjectName,
+        subjectSex: input.subjectSex,
         onDay: input.onDay,
-        type: input.type
+        consent: input.consent,
+        conceptionSample: input.conceptionSample,
+        deathSample: input.deathSample
     });
 
     if (!outcome.happened) {
@@ -117,24 +129,19 @@ export function useFurnaceTechnique(input: FurnaceUseRequest): FurnaceUseOutcome
         summary: outcome.line,
         actors: [
             { id: input.actorId, name: input.actorName, role: 'actor' },
-            // Everybody it was worked on, not only the first: a witness record
-            // that names one of four is a record of a different act.
-            ...outcome.each
-                .filter(row => row.eligible)
-                .map(row => ({ id: row.personId, name: row.name, role: 'subject' as const }))
+            { id: input.subjectId, name: input.subjectName, role: 'subject' }
         ],
-        visibility: input.type === 'coerced' ? 'secret' : 'regional',
+        visibility: input.consent === 'coerced' ? 'secret' : 'regional',
         causeKnown: true,
         data: {
             furnace: true,
-            type: input.type,
-            worked: outcome.each.filter(row => row.eligible).length,
-            conceived: outcome.each.filter(row => row.conceived).length,
-            died: outcome.each.filter(row => row.died).length
+            consent: input.consent,
+            conceived: outcome.conceived,
+            subjectDied: outcome.subjectDied
         }
     }));
 
-    if (input.type === 'offered') {
+    if (input.consent === 'offered') {
         return { ...outcome, groundResponse: 'nothing', factionVerdict: null };
     }
 

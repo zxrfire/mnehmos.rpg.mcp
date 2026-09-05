@@ -42,6 +42,7 @@ import type {
     ManualQuality,
     Technique,
     TechniqueClass,
+    TechniqueFuel,
     TechniqueGrade,
     TechniqueCategory,
     Element
@@ -1240,7 +1241,7 @@ function roadsFromCategory(category: string): string[] {
  * an art with none carries its own reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'furnace'>
+    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'requiresPeople' | 'runsOn'>
         & {
             opacity?: Opacity;
             class?: TechniqueClass;
@@ -1256,8 +1257,15 @@ function art(
              * to grant as well.
              */
             subjects?: readonly string[];
-            /** True for a `dual_cultivation` art that only works on an opposite-sex partner. Defaults false. */
-            furnace?: boolean;
+            /**
+             * How many living people one practice needs, the practitioner
+             * included, and where its qi comes from. Defaults `1` and
+             * `'self'`, which is what almost the whole catalog is - see
+             * `TechniqueSchema.requiresPeople` and `.runsOn` for why these are
+             * a count and an enum rather than a boolean naming a trope.
+             */
+            requiresPeople?: number;
+            runsOn?: TechniqueFuel;
         }
 ): TechniqueEntry {
     const provenance: TechniqueProvenance = GRAVE_ONLY_TECHNIQUE_IDS.has(t.id)
@@ -1303,7 +1311,8 @@ function art(
         // entries that never named one still answer the question, and an
         // entry that wants to be specific overrides it.
         subjects: t.subjects ? [...t.subjects] : roadsFromCategory(t.category),
-        furnace: t.furnace ?? false,
+        requiresPeople: t.requiresPeople ?? 1,
+        runsOn: t.runsOn ?? 'self',
         notDerivableReason: NOT_DERIVABLE_NOTES[t.id] ?? null
     };
 }
@@ -3143,6 +3152,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 20,
         damage: '5d8+10',
         cooldown: 2,
+        // Same tithe, taken off the user rather than off anybody else.
+        runsOn: 'own_lifespan',
         description:
             'Strikes hard for its grade and returns a portion of what it takes to the user\'s own wounds. The tithe is collected from the user\'s lifespan, quietly, and the manual does not mention this until the last page.'
     }),
@@ -3156,7 +3167,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 18,
         damage: null,
         cooldown: 30,
-        furnace: true,
+        requiresPeople: 2,
+        runsOn: 'the_others',
         description:
             'Two channels are opened at once and one is made to run the wrong way. It works only between a man and a woman - the manual is honest about the mechanism and dishonest about everything around it - and it does not ask whether the second channel was offered. What is drawn off the unwilling side is called a tithe on the Hall\'s own ledgers, the same word it uses for coin. Every righteous register in the province lists this rite by name and calls for the head of anybody caught administering it; the Hall teaches it anyway, and its own people are, without exception, spending something they were not told about at the time.'
     }),
@@ -3170,6 +3182,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 8,
         damage: null,
         cooldown: 10,
+        requiresPeople: 2,
+        runsOn: 'everyone',
         description:
             'Two channels are opened at once and both are left running the right way. Practised with a spouse or a bonded partner - the manual is explicit that a stranger gets nothing out of it worth the trouble - and the reason it is one of the oldest, plainest arguments any house has for why a cultivator should marry rather than merely ally: cultivating the same art side by side moves both of them along a hair faster than cultivating it alone. No register anywhere bans it. It works only between a man and a woman, and the manual never claims to know why.'
     }),
@@ -3183,6 +3197,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 90,
         damage: '8d10+22',
         cooldown: 4,
+        // It runs on somebody who cannot be asked, which is the whole objection.
+        runsOn: 'the_dead',
         description:
             'The residue of a recently killed cultivator is bound into a lantern of cold light and spent as a weapon. Righteous sects execute for possession of this manual, and demonic sects charge for it.'
     }),
@@ -3206,6 +3222,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 110,
         damage: null,
         cooldown: 6,
+        // A drain, on the same axis the furnace rite is on: it runs on a
+        // second living cultivator, who gains nothing by it. The rite and this
+        // art are one mechanic through two channels, and `runsOn` is where
+        // that is stated so something can read it.
+        requiresPeople: 2,
+        runsOn: 'the_others',
         description:
             'Takes cultivation directly out of a living cultivator and puts it in the user. The stolen foundation never fully sets, so every rank gained this way makes the next breakthrough worse.'
     }),
@@ -3251,6 +3273,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         qiCost: 780,
         damage: '26d20+180',
         cooldown: 10,
+        // The tithe is the practitioner's own span, collected quietly.
+        runsOn: 'own_lifespan',
         description:
             'Spends years off the end of the user\'s own allotted lifespan as ammunition. At Tribulation Transcendence there is a great deal of lifespan to spend, and cultivators who reach the tribulation with this art rarely have enough left to survive it.'
     }),
@@ -4470,14 +4494,20 @@ export interface TechniqueQuery {
     elementlessOnly?: boolean;
     /**
      * Exclude forbidden arts, which are never legitimately taught - and, with
-     * them, any `dual_cultivation` art whose `furnace` flag is set. A furnace
-     * art is banned by name on every righteous register the same way a
-     * forbidden one is; it just files under a different category because the
-     * mechanism, not the reputation, is what the category axis tracks. A
-     * house that teaches one anyway (`Technique.furnace`, and the Crimson
-     * Abyss Hall's `crimson-bound-union-rite`) still lists it on its own
-     * `teaches` array, which this filter never reads - it only narrows what
-     * counts as ordinarily, legitimately available.
+     * them, any art that `runsOn: 'the_others'`.
+     *
+     * The second half is the same statement as the first on the axis that
+     * actually carries it: an art whose qi comes out of somebody who gains
+     * nothing by it is banned by name on every righteous register, and whether
+     * the catalog happens to file it under `forbidden` or under
+     * `dual_cultivation` is a fact about the mechanism rather than about the
+     * reputation. `crimson-bound-union-rite` is the case that made the
+     * distinction matter: a `dual_cultivation` rite every register calls for a
+     * head over.
+     *
+     * A house that teaches one anyway still lists it on its own `teaches`
+     * array, which this filter never reads - it only narrows what counts as
+     * ordinarily, legitimately available.
      */
     excludeForbidden?: boolean;
     /** Restrict to one source: what a sect can teach, or what must be dug up. */
@@ -4497,7 +4527,7 @@ export function findTechniquesForOrdinal(ordinal: number, opts: TechniqueQuery =
             if (opts.category && t.category !== opts.category) continue;
             if (opts.grade && t.grade !== opts.grade) continue;
             if (opts.provenance && t.provenance !== opts.provenance) continue;
-            if (opts.excludeForbidden && (t.category === 'forbidden' || t.furnace)) continue;
+            if (opts.excludeForbidden && (t.category === 'forbidden' || t.runsOn === 'the_others')) continue;
             if (opts.elementlessOnly && t.element !== null) continue;
             if (opts.elements && t.element !== null && !opts.elements.includes(t.element)) continue;
             out.push(t);
