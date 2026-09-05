@@ -1598,9 +1598,23 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 const SENDINGS_PER_HOUSE_YEAR = 0.2;
 
 /**
- * What a house pays for a carriage, and the rung at which one is worth having.
+ * What a house pays for a carriage of each grade.
+ *
+ * This was ONE number and ONE carriage: every house in the world bought a shod
+ * carriage and nothing else, however rich or poor it was, which is a specific
+ * standing where a system belongs. The catalog carries three grades and a house
+ * buys the best one it can pay for out of what it already holds.
  */
-const A_CARRIAGE_COSTS = 8_000;
+const A_CARRIAGE_COSTS: Readonly<Record<string, number>> = Object.freeze({
+    'conv-carriage-heaven': 40_000,
+    'conv-carriage-earth': 8_000,
+    'conv-carriage-mortal': 1_500
+});
+
+/** Best first, so the first one a house can pay for is the one it gets. */
+const CARRIAGES_BY_GRADE: readonly string[] = [
+    'conv-carriage-heaven', 'conv-carriage-earth', 'conv-carriage-mortal'
+];
 
 /**
  * How heavy a finished sending has to be before anybody repeats it.
@@ -1633,17 +1647,21 @@ function applySendings(state: WorldState, year: number, day: number): number {
         const party0 = roster.get(faction.id);
         if (!party0 || party0.length === 0) continue;
 
-        // A solvent house keeps something in the yard. The writer
-        // `adjustCountedHolding` never had, and the only thing it changes is
-        // how long a posting takes.
-        const carriage = requireConveyance('conv-carriage-earth');
-        if (
-            countedHolding(faction.resources, carriage.id) === 0
-            && (faction.resources.spirit_stones ?? 0) >= A_CARRIAGE_COSTS
-        ) {
-            faction.resources = adjustCountedHolding(faction.resources, carriage.id, 1);
-            faction.resources.spirit_stones =
-                (faction.resources.spirit_stones ?? 0) - A_CARRIAGE_COSTS;
+        // A solvent house keeps something in the yard, and WHICH something is
+        // what it can afford. The writer `adjustCountedHolding` never had, and
+        // what it changes is how long a posting takes - so a house that can
+        // only run to a drawn carriage is a house whose people arrive later,
+        // which is the whole point of there being three grades.
+        const yard = CARRIAGES_BY_GRADE
+            .map(id => requireConveyance(id))
+            .filter(row => countedHolding(faction.resources, row.id) > 0);
+        if (yard.length === 0) {
+            const purse = faction.resources.spirit_stones ?? 0;
+            const bought = CARRIAGES_BY_GRADE.find(id => purse >= A_CARRIAGE_COSTS[id]!);
+            if (bought !== undefined) {
+                faction.resources = adjustCountedHolding(faction.resources, bought, 1);
+                faction.resources.spirit_stones = purse - A_CARRIAGE_COSTS[bought]!;
+            }
         }
 
         if (!rng.chance(SENDINGS_PER_HOUSE_YEAR)) continue;
@@ -1675,9 +1693,12 @@ function applySendings(state: WorldState, year: number, day: number): number {
             house,
             pitchOrdinal: best + rng.int(-5, 1),
             locationId: faction.seatLocationId,
-            // What they went on. Null is walking, and walking is what the
-            // reason's own term already assumes.
-            conveyance: countedHolding(faction.resources, carriage.id) > 0 ? carriage : null
+            // What they went on: the best thing in the yard, which is the best
+            // thing the house could pay for. Null is walking, and walking is
+            // what the reason's own term already assumes.
+            conveyance: CARRIAGES_BY_GRADE
+                .map(id => requireConveyance(id))
+                .find(row => countedHolding(faction.resources, row.id) > 0) ?? null
         });
         const party = whoTheHouseCanSend(posting, party0);
         if (party.length === 0) continue;

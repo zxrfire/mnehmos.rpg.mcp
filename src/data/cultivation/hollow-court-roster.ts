@@ -332,3 +332,15 @@ export function workingNamesInCirculation(): readonly string[] {
         .map(m => m.worksOutsideAs)
         .filter((n): n is string => n !== null);
 }
+
+/**
+ * Houses whose people are seen without being placeable, keyed by house.
+ *
+ * The register rendered this block behind `d.id === 'sect-hollow-court'`, which
+ * is a report branching on WHICH HOUSE it is looking at - so a second masked
+ * house would get nothing and nobody would find out until somebody wrote one.
+ * The sheet asks the map whether it holds anything for this house instead, and
+ * the map has one entry because the world has one such house.
+ */
+export const HOW_A_HOUSE_IS_SEEN: Readonly<Record<string, typeof HOW_THE_COURT_IS_SEEN>> =
+    Object.freeze({ 'sect-hollow-court': HOW_THE_COURT_IS_SEEN });

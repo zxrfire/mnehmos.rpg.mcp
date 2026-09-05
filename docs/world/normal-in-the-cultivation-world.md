@@ -553,3 +553,88 @@ being one: at two major realms it resolves in a single action with nothing conte
 exchange rolled. Somebody who never got an exchange never got a moment to speak in either.
 Below it there were rounds, and a person with rounds in them has a last thing to say - whether
 they say it is the ordinary cost question every other person in the scene is put through.
+
+## What a high-level intention decomposes into
+
+The design owner, on the layer above the verbs:
+
+> The LLM should be able to express high-level intentions, not just individual
+> atomic actions... "I kill all the blacksmiths in the region", "I want to
+> starve this town". Those aren't necessarily MCP functions. They're
+> plans/goals that the LLM decomposes into actions... The game engine doesn't
+> need a `kill_all_blacksmiths()` API.
+
+Two things follow, and only one of them is work.
+
+**A set is a decomposition the engine already does.** "Their whole family",
+"everyone here", "all the righteous sects" are one sentence over many people,
+and `acts-over-a-set.ts` reads the set, gates it twice, runs the act per person
+and reports what it did not reach - for every verb, not just for killing. That
+is the shape the quote asks for and it needs no plan from the model.
+
+**Starving a town is a STATUS, and the status already exists.** We do not track
+grain and should not start. `what-goes-wrong-with-a-place-and-what-ends-it.ts`
+holds `famine` fully priced: it stops the food trade, multiplies prices by four,
+adds to the danger band, carries its own observable signs, and is reviewed at
+the next harvest. What it currently has is one cause - the weather - and
+`StatusCause.decidedById` is the field for the other kind. Houses already set
+it when they close ground.
+
+So the missing piece is not a famine mechanic. It is that **no player act opens
+a status**, and the design owner's own example says which acts should: destroy
+the stores, stop the caravans, kill the hunters, buy up the food. Of those, the
+engine holds robbery, killing, buying and `sect/siphon`. What it does not hold
+is a granary, and adding one to answer this sentence would be exactly the
+`kill_all_blacksmiths()` the quote warns against.
+
+**The rule for whoever builds it:** a player act opens a status the same way a
+house's does - by setting `decidedById` on a cause the world can already price -
+and never by a branch that reads the player's sentence for the word *starve*.
+
+## One action a day is not a rule here, and was not
+
+The design owner: *the 1 action a day thing is unnecessarily restrictive,
+that's a d&d limitation, not a xianxia one. in fact immortals hardly ever sleep
+anyway.*
+
+Measured, and there is no such rule to remove. A turn advances `run.turn` and
+spends whatever DAYS the act itself costs. Looking, greeting, asking, attacking
+and reading an inventory each cost **zero**; travelling to the next place cost
+one day; seven days of gathering cost seven. The clock is spans, not turns, and
+a player can talk to four people, rob one and start a fight without the sun
+moving.
+
+The sleep half is now true as well, and it fell out of the verb pass rather
+than being written: **"I go to sleep" routes to `cultivate`**. For a cultivator
+that is not a euphemism - the night is what the practice is done in, which is
+why nothing in this engine has ever had a rest mechanic to remove.
+
+### The one open question in this layer
+
+Measured with a scripted two-step plan, which is what the phase-1 prompt asks a
+model for:
+
+    > I go to Cold Peak and gather herbs
+      "Which comes first? 'I go to Cold Peak' or 'gather herbs' is answer enough."
+
+`theSentenceSaysItsOwnOrder` counts *and then*, *then*, *first*, *next*,
+*before*, *once* and *because* as ordering, and a bare **and** as no order at
+all. So a sentence whose order English already settles - you cannot gather at a
+place before going to it - is answered by asking the player to say it again.
+
+Treating a bare `and` as sequencing was tried and reverted. It broke five cases
+across three test files, all of them pinning `and` as unordered on purpose, and
+that much deliberate surface is not something to overturn while passing. The
+tension is real and belongs to the design owner:
+
+- **For asking:** two costly acts are a lot to spend on a guess, and the design
+  owner has said elsewhere that ambiguity should be asked about rather than
+  resolved.
+- **For not asking:** the reader was told to answer in the order the sentence
+  put them, and *"I don't type 'I touch the crosswalk button'"* is a complaint
+  about exactly this friction.
+
+Worth knowing before deciding: **the fork is not what stops a year being spent
+by surprise.** A turn spends one costly act whatever happens, so the second is
+held either way. What the question buys is the ORDER, and only where the
+sentence genuinely leaves it open.

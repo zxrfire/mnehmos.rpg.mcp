@@ -59,7 +59,7 @@ import { WANDERERS } from '../data/cultivation/wanderers.js';
 import { MEMBERS } from '../data/cultivation/members.js';
 import { rollOf } from '../data/cultivation/faction-roll.js';
 import {
-    HOW_THE_COURT_IS_SEEN,
+    HOW_A_HOUSE_IS_SEEN,
     getHollowCourtMember
 } from '../data/cultivation/hollow-court-roster.js';
 import { ARTERIALS, PROVINCES, REGIONS } from '../data/cultivation/regions.js';
@@ -4808,14 +4808,21 @@ function fieldedBlock(f: RegisterFielded): string {
 /**
  * How the one body that hardly ever appears is nevertheless known.
  */
-function howTheCourtIsSeenBlock(): string {
+/**
+ * Read off the house rather than branched on its id. See `HOW_A_HOUSE_IS_SEEN`:
+ * this asked `d.id === 'sect-hollow-court'`, so a second masked house would have
+ * rendered nothing and nobody would have found out.
+ */
+function howTheyAreSeenBlock(houseId: string): string {
+    const seen = HOW_A_HOUSE_IS_SEEN[houseId];
+    if (!seen) return '';
     const rows: [string, string][] = [
-        ['Where they are seen at all', HOW_THE_COURT_IS_SEEN.whereTheyAreSeenAtAll],
-        ['Masked', HOW_THE_COURT_IS_SEEN.masked],
-        ['Why the anonymity is worth having', HOW_THE_COURT_IS_SEEN.whyItIsWorthIt],
-        ['Why they do not talk', HOW_THE_COURT_IS_SEEN.whyTheyDoNotTalk],
-        ['And sometimes they do', HOW_THE_COURT_IS_SEEN.andSometimesTheyDo],
-        ['Why nobody can be sure which is which', HOW_THE_COURT_IS_SEEN.andWhyNobodyCanBeSure]
+        ['Where they are seen at all', seen.whereTheyAreSeenAtAll],
+        ['Masked', seen.masked],
+        ['Why the anonymity is worth having', seen.whyItIsWorthIt],
+        ['Why they do not talk', seen.whyTheyDoNotTalk],
+        ['And sometimes they do', seen.andSometimesTheyDo],
+        ['Why nobody can be sure which is which', seen.andWhyNobodyCanBeSure]
     ];
     return '<div class="grp"><h4>How they are seen <span>6</span>'
         + '<span class="gap">famous, and impossible to place</span></h4>'
@@ -6301,7 +6308,7 @@ function dossier(d: SectDossier): string {
       + (d.favour ? favourBlock(d.favour) : '')
       + (d.noPlaceForItsOwn ? noPlaceBlock(d.noPlaceForItsOwn, d.name) : '')
       + (d.house ? houseBlock(d.house) : '')
-      + (d.id === 'sect-hollow-court' ? howTheCourtIsSeenBlock() : '')
+      + howTheyAreSeenBlock(d.id)
       + (d.holdsFrom ? holdsFromBlock(d.holdsFrom) : ''))}
 
   ${roll.length
