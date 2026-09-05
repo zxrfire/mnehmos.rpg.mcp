@@ -138,7 +138,6 @@ export interface ThingHarmed {
     /** Whose it was. The party with standing to be aggrieved. */
     ownerId: string | null;
     ownerName: string;
-    /** Who did it, when anybody did. */
     byId: string | null;
     byName: string;
     /** Engine-authored. Names the thing, the cause, and what would have held. */

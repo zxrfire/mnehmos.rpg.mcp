@@ -36,7 +36,6 @@ export interface ComponentRequirement {
 export interface ConveyanceRecipe {
     id: string;
     name: string;
-    /** The `Conveyance.id` this produces. */
     producesConveyanceId: string;
     /** What the finished thing is made of, which decides everything else. */
     grade: TechniqueGrade;

@@ -692,7 +692,6 @@ export function withOriginAccess(
 export interface PlacementCandidate {
     /** Institution id. */
     id: string;
-    /** Its `powerOrdinal`. */
     powerOrdinal: number;
     /** Its own admission floor, which placement does not move. */
     admissionOrdinal: number;

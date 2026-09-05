@@ -79,26 +79,21 @@ export const ENOUGH_TO_CARRY = 1;
  */
 export const ENOUGH_TO_MUDDY_IT = 0.25;
 
+/** The four weights are on `WHAT_A_RECORD_COUNTS_FOR`'s scale, not a second one. */
 export interface HowTheyFeel {
     feeling: WhatTheyFeel;
-    /** What was taken out of them, on the ledger's own scale. */
     taken: number;
-    /** What was given to them, on the same scale. */
     given: number;
-    /** The heaviest single thing taken, or null. */
     worstTaken: Severity | null;
-    /** The heaviest single thing given, or null. */
     bestGiven: Severity | null;
     /**
-     * How long ago the last of it was, in days. Null where nothing has passed.
-     *
-     * Not part of the feeling and deliberately so - a grudge does not fade on a
-     * timer in this world, and `personal-alignment.ts` says the same. It is
-     * here because a narrator writing somebody who was robbed this morning and
-     * somebody who was robbed nine years ago needs to know which.
+     * Deliberately not part of the feeling: a grudge does not fade on a timer
+     * in this world, and `personal-alignment.ts` says the same. It is here
+     * because a narrator writing somebody robbed this morning and somebody
+     * robbed nine years ago needs to know which.
      */
     daysSince: number | null;
-    /** Engine truth, one line, for the mechanical channel. Never narration. */
+    /** Engine truth, for the mechanical channel. Never narration. */
     line: string;
 }
 

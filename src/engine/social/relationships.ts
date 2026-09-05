@@ -95,7 +95,6 @@ export interface Relationship {
     id: string;
     /** Whose view this is. */
     fromId: string;
-    /** Who it is about. */
     toId: string;
     type: RelationshipType;
     /** Free text when `type` is 'custom', or a refinement otherwise. */
