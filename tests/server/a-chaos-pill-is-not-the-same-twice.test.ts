@@ -73,7 +73,7 @@ async function aLifeHolding(
         action: 'create_cultivator',
         name: 'Shen Yue',
         seed,
-        location: 'Sweptground'
+        location: 'Burnt Earth'
     });
     expect(created.error).toBeUndefined();
     const repos = ensureCultivationDb();

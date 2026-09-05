@@ -187,7 +187,7 @@ describe('the row names something in the place a player is actually standing', (
 
 describe('three places, played', () => {
     /**
-     * Wheatgate is where the file's own header says the miss was found: two
+     * Autumn Gate is where the file's own header says the miss was found: two
      * houses were holding intakes there, the engine knew both, narrated both,
      * and the row went on offering the same three evergreen reads. It is also
      * where a fresh cultivator starts, which makes it the first row anybody

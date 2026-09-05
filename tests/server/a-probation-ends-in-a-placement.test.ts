@@ -69,7 +69,7 @@ function hearOf(cultivatorId: string, factionId: string): void {
 /** A nobody at the floor of the ladder, which is who this intake is for. */
 async function aNobody(name: string, seed: string) {
     const made = await cultivation({
-        action: 'create_cultivator', name, seed, location: 'Low Fall'
+        action: 'create_cultivator', name, seed, location: 'Green Water City'
     });
     expect(made.error).toBeUndefined();
     expect(made.cultivator.realm.ordinal).toBe(0);

@@ -23,7 +23,7 @@ describe('a pocket is not a plant', () => {
     /**
      * `gather` matched on the bare verb `pick`, so a theft aimed at a named
      * person came back "Cloudcap Mushroom, pouched" and "7 days bent over the
-     * ground around Kettle". Not a refusal, not the act, and irreversible.
+     * ground around Iron Gate". Not a refusal, not the act, and irreversible.
      */
     it('does not route pocket-picking to foraging', () => {
         for (const text of [

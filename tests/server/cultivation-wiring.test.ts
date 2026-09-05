@@ -50,7 +50,7 @@ async function newRun(seed: string | null = 'wiring-seed', name = 'Ru Anjing') {
         action: 'create_cultivator',
         name,
         ...(seed === null ? {} : { seed }),
-        location: 'Scarwater'
+        location: 'Clear River Ford'
     });
     expect(created.error).toBeUndefined();
     return created;
@@ -278,7 +278,7 @@ describe('the wiring', () => {
             db.prepare(`
                 INSERT INTO cultivation_sites
                     (id, run_id, kind, name, ordinal, location, discovered, created_on_day)
-                VALUES (?, ?, 'grave', 'A sealed tomb under Scarwater', 3, 'Scarwater', 1, 0)
+                VALUES (?, ?, 'grave', 'A sealed tomb under Clear River Ford', 3, 'Clear River Ford', 1, 0)
             `).run(randomUUID(), created.run.id);
 
             const after = await cultivation({

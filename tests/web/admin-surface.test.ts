@@ -57,26 +57,26 @@ describe('the ADMIN prefix is made of the characters it appears to be made of', 
  *
  * Found by playing, and it was the worst defect on the surface: the command
  * line was split on whitespace and a value taken up to the next space, so
- * `location=The Dead Verge` set the location to "The" and quoting it set it to
- * `"The`. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD - The Dead Verge, Nine
- * Peaks, The Low Fall, The Drowned Reach, Salt Reach - so most of the map was
+ * `location=The Jade Face` set the location to "The" and quoting it set it to
+ * `"The`. MOST OF THIS WORLD'S GAZETTEER IS MULTI-WORD - The Jade Face, Nine
+ * Peaks, The Jade Gorge, The Drowned Sea, Salt Fields - so most of the map was
  * unreachable from the admin surface and no environmental gating could be
  * exercised at all.
  */
 describe('an ADMIN value runs to the next key, not to the next space', () => {
     it('takes a bare multi-word value whole', () => {
-        expect(parseAdminCommand('set_location location=The Dead Verge')).toEqual({
+        expect(parseAdminCommand('set_location location=The Jade Face')).toEqual({
             action: 'set_location',
-            args: { location: 'The Dead Verge' }
+            args: { location: 'The Jade Face' }
         });
     });
 
     it('takes a quoted value and keeps no quotes', () => {
         for (const line of [
-            'set_location location="The Dead Verge"',
-            "set_location location='The Dead Verge'"
+            'set_location location="The Jade Face"',
+            "set_location location='The Jade Face'"
         ]) {
-            expect(parseAdminCommand(line).args.location).toBe('The Dead Verge');
+            expect(parseAdminCommand(line).args.location).toBe('The Jade Face');
         }
     });
 

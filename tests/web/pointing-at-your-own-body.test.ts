@@ -2,10 +2,10 @@
  * "This wound" was searched for as a town.
  *
  * Found by playing, wounded - serious, untreated, 25 of 50 - standing in
- * Ninewatch with `I see a physician` in the live strip at that moment:
+ * Cloud Gate with `I see a physician` in the live strip at that moment:
  *
  *   I need someone to look at this wound
- *   -> "You go over Ninewatch, searching for the place the name implies, but
+ *   -> "You go over Cloud Gate, searching for the place the name implies, but
  *      nothing here answers to it."
  *   -> Unresolved subject "this wound": no knowledge record and nothing
  *      co-located.

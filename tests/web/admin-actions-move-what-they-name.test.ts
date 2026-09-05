@@ -161,11 +161,11 @@ describe('a typed ADMIN action moves the thing it names', () => {
         await withAdmin(true, async () => {
             const { game } = await operating('admin-set-location');
             const from = game.state().cultivator.location;
-            expect(from).not.toBe('The Dead Verge');
+            expect(from).not.toBe('The Jade Face');
 
-            const result = await game.act('ADMIN set_location location=The Dead Verge');
+            const result = await game.act('ADMIN set_location location=The Jade Face');
 
-            expect(game.state().cultivator.location).toBe('The Dead Verge');
+            expect(game.state().cultivator.location).toBe('The Jade Face');
             expect(result.narration).toMatch(/MOVED/i);
             // A placement, not a journey. No road time was charged.
             expect(game.state().run.elapsedDays).toBe(0);

@@ -99,7 +99,7 @@ async function newRun(seed = SINGLE_ROOT_SEED, name = 'Shen Yue') {
         action: 'create_cultivator',
         name,
         seed,
-        location: 'Sweptground'
+        location: 'Burnt Earth'
     });
     expect(created.error).toBeUndefined();
     return created;
@@ -1240,7 +1240,7 @@ describe('cultivation MCP tool surface', () => {
         });
 
         it('enforces the catalog attribute minimums, which never rise', async () => {
-            // Sweptground Temple asks nothing; find a seed whose innate Insight
+            // Burnt Earth Temple asks nothing; find a seed whose innate Insight
             // is below Lantern Hall's minimum of 3 and try the Hall instead.
             const hall = getSect('sect-lantern-hall')!;
             expect(hall.admissionOrdinal).toBeGreaterThan(0);
@@ -1323,7 +1323,7 @@ describe('cultivation MCP tool surface', () => {
                 { action: 'spawn_encounter', ordinal: 44 },
                 { action: 'grant_item', itemId: MINOR_HEALING_PILL_ID },
                 { action: 'set_ambient', band: 'dense' },
-                { action: 'set_location', location: 'Scarwater' },
+                { action: 'set_location', location: 'Clear River Ford' },
                 { action: 'advance_days', days: 10 },
                 { action: 'set_realm', ordinal: 30 },
                 { action: 'audit_log' }
@@ -1442,7 +1442,7 @@ describe('cultivation MCP tool surface', () => {
 
             const result = await admin({ action: 'set_ambient', band: 'spirit_tide' });
             expect(result.set).toBe(true);
-            expect(result.alias).toContain('Sweptground#');
+            expect(result.alias).toContain('Burnt Earth#');
 
             const status = await cultivation({ action: 'status' });
             expect(status.ambient).toBe('spirit_tide');
@@ -1607,7 +1607,7 @@ describe('cultivation MCP tool surface', () => {
         // Found by playing: `set_realm` at 45 and 46 gave the right rank, the
         // right lifespan and the right refusal, and left `immortalStatus:
         // "none"` - so a False Immortal was offered "True Immortal" as a next
-        // rank, and a True Immortal standing in Undersnow was offered farmhand
+        // rank, and a True Immortal standing in Deep Snow Village was offered farmhand
         // work. The rung and the crossing are two facts and admin set one.
         it('writes the immortal status when it places somebody above the Lid', async () => {
             process.env.ADMIN_MODE = 'true';
@@ -1654,19 +1654,19 @@ describe('cultivation MCP tool surface', () => {
             expect(result.moved).toBeUndefined();
 
             const stored = new CultivatorRepository(db).getById(created.cultivator.id)!;
-            expect(stored.location).toBe('Sweptground');
+            expect(stored.location).toBe('Burnt Earth');
         });
 
         it('takes a multi-word place, with or without its article', async () => {
             process.env.ADMIN_MODE = 'true';
             const created = await newRun();
 
-            const result = await admin({ action: 'set_location', location: 'dead verge' });
+            const result = await admin({ action: 'set_location', location: 'jade face' });
             expect(result.moved).toBe(true);
             // Stored under the gazetteer's own spelling, so every later join works.
-            expect(result.to).toBe('The Dead Verge');
+            expect(result.to).toBe('The Jade Face');
             expect(new CultivatorRepository(db).getById(created.cultivator.id)!.location)
-                .toBe('The Dead Verge');
+                .toBe('The Jade Face');
         });
 
         // AGENTS.md: a guard that only exists when the world is enabled is not

@@ -39,7 +39,7 @@ async function standingAt(ordinal: number, seed: string) {
         action: 'create_cultivator',
         name: `Probe ${ordinal}`,
         seed,
-        location: 'Sweptground'
+        location: 'Burnt Earth'
     });
     expect(created.error).toBeUndefined();
     if (ordinal > 0) {

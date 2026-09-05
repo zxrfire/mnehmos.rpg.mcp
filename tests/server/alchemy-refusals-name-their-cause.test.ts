@@ -80,7 +80,7 @@ describe('refusing to refine', () => {
             action: 'create_cultivator',
             name: 'Torn',
             seed: 'alchemy-refusal',
-            location: 'Sweptground'
+            location: 'Burnt Earth'
         });
         return created.cultivator.id as string;
     }

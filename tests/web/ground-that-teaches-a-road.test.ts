@@ -95,7 +95,7 @@ const nobody = (over: Partial<SomebodyStanding> = {}): SomebodyStanding => ({
 
 describe('one rule decides who a ground teaches, and what it is short of', () => {
     it('separates knowing where a landmark is from being able to read it', () => {
-        // The cart drivers of the Quiet Marches have crossed the ford for six
+        // The cart drivers of the Silent Cliffs have crossed the ford for six
         // hundred years and nobody there thinks of it as cultivation. They can
         // all point at it. Almost none of them takes anything off it - and that
         // gap is what makes them a source the player can be told by.
@@ -228,7 +228,7 @@ describe('the refusal names what would work', () => {
             who
         )!;
         expect(wants.shortBy).toBe('somewhere_else');
-        expect(wants.wouldWork).toMatch(/Quiet Marches/);
+        expect(wants.wouldWork).toMatch(/Silent Cliffs/);
     });
 });
 
@@ -246,7 +246,7 @@ describe('standing on one is standing in its province', () => {
         // Loose on both sides, because the parser strips the article off what
         // the player typed and every name in the catalog carries one.
         expect(daoGroundNamed('Grinding Ford')?.id).toBe(FORD.id);
-        expect(daoGroundNamed('Ninewatch')).toBeUndefined();
+        expect(daoGroundNamed('Cloud Gate')).toBeUndefined();
     });
 
     it('puts the ground into the exposure context of somebody standing on it', async () => {
@@ -534,7 +534,7 @@ function tinyWorld(): WorldState {
     }
     state.locations.push(makeLocation({
         id: 'loc-town-marches',
-        name: 'A town in the Marches',
+        name: 'A town in the Silent Cliffs',
         kind: 'settlement',
         parentId: 'loc-region-quiet-marches'
     }));

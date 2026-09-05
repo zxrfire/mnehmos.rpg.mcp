@@ -43,7 +43,7 @@ const SAY: Record<string, string> = {
     cultivate: 'I cultivate for a month',
     seclude: 'I go into closed-door seclusion for a month',
     breakthrough: 'I try to break through',
-    move: 'I travel to Low Fall',
+    move: 'I travel to Green Water City',
     interact: 'I talk to the nearest cultivator',
     investigate: 'I examine the stele',
     train_technique: 'I train',

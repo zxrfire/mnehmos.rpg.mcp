@@ -317,7 +317,7 @@ describe('asking whether somebody could be moved does not move them', () => {
             // move anybody in or out of.
             //
             // Once the seeder stopped stranding the upper stratum on region
-            // nodes, the busiest place became an actual settlement - Scarwater,
+            // nodes, the busiest place became an actual settlement - Clear River Ford,
             // 14 people - and a real settlement churns. Measured across the ten
             // turns below: 14 standing on day 0, 10 on day 1, and the tenth
             // person in the snapshot walked off with the other four.
@@ -865,7 +865,7 @@ describe('a question about what would follow is not the act it names', () => {
             ['I cultivate for ten years', 'cultivate'],
             ['I gather herbs here', 'gather'],
             ['I fight him if he draws', 'attack'],
-            ['I travel to Kettle', 'move']
+            ['I travel to Iron Gate', 'move']
         ] as const) {
             const plan = parseIntent(said);
             expect(plan.action, said).toBe(action);
@@ -946,7 +946,7 @@ describe('a closing question mark means this is not an action', () => {
         'somebody bothers me while I work the season?',
         'nobody comes looking while I cultivate?',
         'I sit here a hundred years and stay whole?',
-        'anybody hunting me in the Low Fall?',
+        'anybody hunting me in the Jade Gorge?',
         'I gather the whole season without trouble?'
     ];
 
@@ -1113,7 +1113,7 @@ describe('a conditional is not a commitment', () => {
 
         // AND IT SAYS NOTHING HAPPENED, which is the half a model will
         // otherwise supply for itself. Played, before this line existed:
-        // "The offer was met. You are a Lamp Novice of Sweptground Temple." -
+        // "The offer was met. You are a Lamp Novice of Burnt Earth Temple." -
         // the engine had enrolled nobody, and the prose collapsed *would seat
         // you as Lamp Novice* into *you are one*, which is this whole family's
         // defect committed one layer along. It is on `required`, so

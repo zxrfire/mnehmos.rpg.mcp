@@ -393,8 +393,8 @@ describe("a place gives the ground it has, not its province's average", () => {
         // Declared dense in the catalog, and the deepest vein in the province.
         expect(await airAt('Nine Peaks')).toMatch(/thick enough to notice/i);
         // Declared thin: a ford town and a temple ground with no vein.
-        expect(await airAt('Scarwater')).toMatch(/gives very little back/i);
-        expect(await airAt('Sweptground')).toMatch(/gives very little back/i);
+        expect(await airAt('Clear River Ford')).toMatch(/gives very little back/i);
+        expect(await airAt('Burnt Earth')).toMatch(/gives very little back/i);
     }, 120_000);
 
     it('and does not flatten them into each other', async () => {
@@ -402,8 +402,8 @@ describe("a place gives the ground it has, not its province's average", () => {
         // mode was every one of them reading identically.
         const said = new Set([
             await airAt('Nine Peaks'),
-            await airAt('Scarwater'),
-            await airAt('Low Fall')
+            await airAt('Clear River Ford'),
+            await airAt('Green Water City')
         ]);
         expect(said.size).toBeGreaterThan(1);
     }, 120_000);
@@ -467,7 +467,7 @@ describe('what is TRUE of a place travels with it', () => {
      * The join is the engine's own `statusesInArea`, so the map and the played
      * `investigate` verb cannot disagree about what is happening.
      */
-    const province = makeLocation({ id: 'prov', name: 'The Low Fall', kind: 'region' });
+    const province = makeLocation({ id: 'prov', name: 'The Jade Gorge', kind: 'region' });
     const town = makeLocation({ id: 'town', name: 'Nine Peaks', kind: 'settlement', parentId: 'prov' });
 
     const famine = {
@@ -508,7 +508,7 @@ describe('what is TRUE of a place travels with it', () => {
         expect(town2.statuses.find(s => s.id === 'st-closed')!.ownArea).toBe(true);
         const inherited = town2.statuses.find(s => s.id === 'st-famine')!;
         expect(inherited.ownArea).toBe(false);
-        expect(inherited.areaName).toBe('The Low Fall');
+        expect(inherited.areaName).toBe('The Jade Gorge');
     });
 
     it('carries every figure the status does, because that is what it DOES', () => {

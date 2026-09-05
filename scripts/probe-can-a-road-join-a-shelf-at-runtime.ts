@@ -25,7 +25,7 @@ import { shelfOf, libraryObjectId, manualCeilingOf, reachableCeilingFor } from '
 const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'shelf-growth', catalog });
 
-// A house with a shallow shelf, and a road it has never held. The Sixmile
+// A house with a shallow shelf, and a road it has never held. The Six Li
 // Wardens teach one primer and stop; `verdant-longevity-canon` is the Verdant
 // Spring Hall's wood road and carries to 17.
 const HOUSE = 'sect-sixmile-wardens';

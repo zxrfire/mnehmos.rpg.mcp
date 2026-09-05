@@ -183,19 +183,19 @@ describe('one clause is one act, however many patterns claim it', () => {
 /**
  * FOUND BY PLAYING. Typed:
  *
- *   > I go to Ninewatch and then sit down and cultivate for a year
+ *   > I go to Cloud Gate and then sit down and cultivate for a year
  *
  * The turn asked which came first. The player had written "and then". Asking
  * somebody to repeat themselves is not handing them a choice, and the question
  * earns its place only where the order is genuinely open.
  */
 describe('where the sentence gives its own order, the turn takes it', () => {
-    const JOURNEY = step('move', { target: 'Ninewatch' }, 'go to Ninewatch');
+    const JOURNEY = step('move', { target: 'Cloud Gate' }, 'go to Cloud Gate');
     const SITTING = step('cultivate', { days: 365 }, 'sit down and cultivate for a year');
 
     it('runs the first act and asks nothing', () => {
         const budget = whatThisTurnMayRun(
-            [JOURNEY, SITTING], 'I go to Ninewatch and then sit down and cultivate for a year'
+            [JOURNEY, SITTING], 'I go to Cloud Gate and then sit down and cultivate for a year'
         );
         expect(budget.askAbout).toHaveLength(0);
         expect(budget.theOrderWasGiven).toBe(true);
@@ -205,7 +205,7 @@ describe('where the sentence gives its own order, the turn takes it', () => {
 
     it('still asks where the sentence gives no order', () => {
         const budget = whatThisTurnMayRun(
-            [JOURNEY, SITTING], 'I go to Ninewatch and sit down and cultivate for a year'
+            [JOURNEY, SITTING], 'I go to Cloud Gate and sit down and cultivate for a year'
         );
         expect(budget.theOrderWasGiven).toBe(false);
         expect(budget.askAbout).toHaveLength(2);
@@ -414,8 +414,8 @@ describe('two costly acts raise a question rather than a truncation', () => {
 
     it('falls back to the verb\'s own name when the reader gave no words', () => {
         expect(whatThisStepIsCalled(step('cultivate'))).toBe('sitting down to cultivate');
-        expect(whatThisStepIsCalled(step('move', { target: 'Scarwater' })))
-            .toBe('the journey to Scarwater');
+        expect(whatThisStepIsCalled(step('move', { target: 'Clear River Ford' })))
+            .toBe('the journey to Clear River Ford');
     });
 });
 
@@ -455,7 +455,7 @@ describe('a plan that stops halfway is an outcome, not an error', () => {
     /**
      * FOUND BY PLAYING, and reported by the coordinator verbatim. Typed:
      *
-     *   > I rob Cao Antao and then run away to Ninewatch
+     *   > I rob Cao Antao and then run away to Cloud Gate
      *
      *   Cao Antao: taken.
      *   Reprisal: injured. Weighed as serious robbery against Shen Kuo.
@@ -879,7 +879,7 @@ describe('a pronoun the table dropped is still a pronoun', () => {
  *   > I find out where I can go, take the road to whichever of them has the
  *   > best air, and sit down there for a year
  *
- *   The Giving ... a spirit tide, triple rate.   Bellhead ... thin qi, half rate.
+ *   The Living Ice ... a spirit tide, triple rate.   Bronze Bell Cliff ... thin qi, half rate.
  *   Which comes first? "the journey to unspecified" or "sitting down to cultivate"?
  *
  * The rows were in hand, on the same turn, with the field on every one of them,

@@ -341,10 +341,10 @@ describe('move', () => {
         const { game } = makeGame();
         await game.newRun('Walker');
 
-        const result = await game.act('I travel to Scarwater.');
+        const result = await game.act('I travel to Clear River Ford.');
         expect(planned(result).action).toBe('move');
         expect(refusedCall(result)).toBeNull();
-        expect(result.state.cultivator.location).toBe('Scarwater');
+        expect(result.state.cultivator.location).toBe('Clear River Ford');
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(result.state.ambient);
     });
 
@@ -362,7 +362,7 @@ describe('move', () => {
     it('resolves every intent through the same engine path', async () => {
         // The label changes; the routine does not. Nothing branches on intent.
         const paths: string[][] = [];
-        for (const text of ['I travel to Scarwater.', 'I flee to Scarwater.', 'I sneak into Scarwater.']) {
+        for (const text of ['I travel to Clear River Ford.', 'I flee to Clear River Ford.', 'I sneak into Clear River Ford.']) {
             const { game } = makeGame({ seed: 'same' });
             await game.newRun('Walker');
             const result = await game.act(text);
@@ -623,7 +623,7 @@ describe('admin roster', () => {
             ) VALUES (
                 'npc-1', NULL, 'Elder Ru', 'npc', 'single_fire',
                 '{"might":2,"insight":3,"fortune":1,"charm":2}', 20,
-                0, 100, 100, 50, 50, 100, 0, 300, 3, 4000, NULL, NULL, 'The Low Fall',
+                0, 100, 100, 50, 50, 100, 0, 300, 3, 4000, NULL, NULL, 'The Jade Gorge',
                 '[]', '[]', 0, 'stagnation_aging', 12, @now, @now
             )
         `).run({ now });

@@ -2,8 +2,8 @@
  * Does the region ceiling reach the code that enforces it, and does anybody climb?
  *
  * `pressure.ts` reads `region.data.localCeilingOrdinal ?? 20` in two places and caps
- * every NPC's advancement at it. The catalog declares 44 for the Low Fall and 6 for
- * the Quiet Marches, so the fallback should never fire. The open question is the
+ * every NPC's advancement at it. The catalog declares 44 for the Jade Gorge and 6 for
+ * the Silent Cliffs, so the fallback should never fire. The open question is the
  * second one: a ceiling that is never approached is the same as no ladder at all,
  * and `audit-world-drift.ts` reporting a strongest of 44 at every era does not
  * distinguish "somebody climbed there" from "somebody was seeded there and lived".

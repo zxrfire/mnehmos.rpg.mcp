@@ -148,7 +148,7 @@ describe('a confrontation replays from its seed', () => {
                 action: 'create_cultivator',
                 name: 'Shen Yue',
                 seed: 'replay-seed',
-                location: 'Sweptground'
+                location: 'Burnt Earth'
             });
             setRank(getDb(), created.cultivator.id, realmStart('foundation_establishment'));
             return whatHappened(await combat({
@@ -183,13 +183,13 @@ describe('a confrontation replays from its seed', () => {
                 action: 'create_cultivator',
                 name: 'Shen Yue',
                 seed: 'replay-seed-2',
-                location: 'Sweptground'
+                location: 'Burnt Earth'
             });
             const rival = await cultivation({
                 action: 'create_cultivator',
                 name: 'Wen Sho',
                 kind: 'npc',
-                location: 'Sweptground'
+                location: 'Burnt Earth'
             });
             setRank(getDb(), created.cultivator.id, realmStart('foundation_establishment'));
             setRank(getDb(), rival.cultivator.id, realmStart('foundation_establishment'));
@@ -218,7 +218,7 @@ describe('a confrontation replays from its seed', () => {
                 action: 'create_cultivator',
                 name: 'Shen Yue',
                 seed: 'replay-seed-3',
-                location: 'Sweptground'
+                location: 'Burnt Earth'
             });
             setRank(getDb(), created.cultivator.id, realmStart('qi_condensation'));
             const result = await combat({
@@ -249,10 +249,10 @@ describe('the death gate is asked about the opponent too', () => {
     async function twoOfThem(seed: string, opponentHp: number) {
         freshDb();
         const created = await cultivation({
-            action: 'create_cultivator', name: 'Shen Yue', seed, location: 'Sweptground'
+            action: 'create_cultivator', name: 'Shen Yue', seed, location: 'Burnt Earth'
         });
         const rival = await cultivation({
-            action: 'create_cultivator', name: 'Wen Sho', kind: 'npc', location: 'Sweptground'
+            action: 'create_cultivator', name: 'Wen Sho', kind: 'npc', location: 'Burnt Earth'
         });
         setRank(getDb(), created.cultivator.id, realmStart('core_formation'), {
             hp: 4000, maxHp: 4000
@@ -341,10 +341,10 @@ describe('the death gate is asked about the opponent too', () => {
     it('does not record a death where the body was destroyed and the person was not', async () => {
         freshDb();
         const created = await cultivation({
-            action: 'create_cultivator', name: 'Shen Yue', seed: 'remnant-seed', location: 'Sweptground'
+            action: 'create_cultivator', name: 'Shen Yue', seed: 'remnant-seed', location: 'Burnt Earth'
         });
         const rival = await cultivation({
-            action: 'create_cultivator', name: 'Elder Rong', kind: 'npc', location: 'Sweptground'
+            action: 'create_cultivator', name: 'Elder Rong', kind: 'npc', location: 'Burnt Earth'
         });
         setRank(getDb(), created.cultivator.id, 44, { hp: 9000, maxHp: 9000 });
         setRank(getDb(), rival.cultivator.id, realmStart('nascent_soul'), {

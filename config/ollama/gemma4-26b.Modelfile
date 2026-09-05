@@ -1,0 +1,11 @@
+# The game's own tag. See README.md in this directory for why it is a tag
+# rather than a request parameter, and where 32768 comes from.
+FROM gemma4:26b
+
+# Sized to the phase-1 and phase-3 prompts this repo sends, doubled. Measured,
+# not guessed: the intent call is a shade under 8,000 tokens.
+PARAMETER num_ctx 32768
+
+# Phase 1 is a classifier and phase 3 is a stylist, and the code sets the
+# temperature per call - 0 for routing, higher for prose. Left at the base
+# model's value here so that neither is overridden by the tag.

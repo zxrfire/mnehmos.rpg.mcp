@@ -19,7 +19,7 @@ describe('a span says the span the player asked for', () => {
      * PLAYED, and it is the reason `shortSkip` now carries `askedForDays`:
      *
      *   > I wait a year
-     *   "Hollowmarket. The qi is thin here; it always has been. Shen Wu sat
+     *   "Willow Village. The qi is thin here; it always has been. Shen Wu sat
      *    down anyway. Waiting of 4 months was intended."
      *   ... and fifty days were spent.
      *

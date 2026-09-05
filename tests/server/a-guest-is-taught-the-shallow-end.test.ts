@@ -63,7 +63,7 @@ function hearOf(cultivatorId: string, factionId: string): void {
 
 async function aNobody(name = 'Du Lin') {
     const made = await cultivation({
-        action: 'create_cultivator', name, seed: 'guest-roll-1', location: 'Sweptground'
+        action: 'create_cultivator', name, seed: 'guest-roll-1', location: 'Burnt Earth'
     });
     expect(made.error).toBeUndefined();
     return made.cultivator.id as string;

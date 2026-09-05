@@ -64,7 +64,7 @@ describe('a mortal pill against a wound above it', () => {
             action: 'create_cultivator',
             name: 'Torn',
             seed: 'grade-reaches-the-wound',
-            location: 'Sweptground'
+            location: 'Burnt Earth'
         });
         const id = created.cultivator.id as string;
         const repos = ensureCultivationDb();

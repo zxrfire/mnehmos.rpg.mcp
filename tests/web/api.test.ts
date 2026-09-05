@@ -443,8 +443,8 @@ describe('GET /api/admin/roster', () => {
         expect(Object.keys(res.body.roster[0]).sort()).toEqual([
             'age', 'alive', 'deathCause', 'existenceState', 'feuds', 'id',
             'identityContinuity', 'isPlayer', 'kind', 'lifespanYears', 'location',
-            'name', 'rankName', 'realmName', 'realmOrdinal', 'sectId', 'sectName',
-            'sectRank', 'sex', 'soulState', 'spiritRoot', 'spiritRootName',
+            'name', 'physique', 'rankName', 'realmName', 'realmOrdinal', 'sectId',
+            'sectName', 'sectRank', 'sex', 'soulState', 'spiritRoot', 'spiritRootName',
             'spiritStones', 'untreatedInjuries'
         ]);
         expect(res.body.roster[0]).toMatchObject({

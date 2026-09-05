@@ -10,7 +10,7 @@
  * price what it costs somebody to say yes to you. Every one of them needs a
  * body the player can point at, and the engine says so, correctly and often:
  *
- *   > 5 people in Low Fall stand above Qi Condensation Layer 1, the deepest of
+ *   > 5 people in Green Water City stand above Qi Condensation Layer 1, the deepest of
  *   > them 10 rungs up, and you have never met any of them. You have no name to
  *   > ask for, which is the whole of what is stopping you.
  *
@@ -90,7 +90,7 @@ describe('getting in front of somebody worth asking', () => {
         // ACROSS the houses this cultivator can name, not the first row that
         // happens to match. A fresh life now knows several local houses rather
         // than one global one, and taking whichever `locations` listed first
-        // picked the Sixmile Wardens (six people, deepest at 14) while the
+        // picked the Six Li Wardens (six people, deepest at 14) while the
         // Gleaners' gate next door held somebody at exactly the rung this test
         // is about. The claim is that SOME house they can name is worth walking
         // to; asserting it of an arbitrary one is a different, weaker claim

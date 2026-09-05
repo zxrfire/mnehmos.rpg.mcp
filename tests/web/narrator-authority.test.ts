@@ -275,7 +275,7 @@ describe('the deterministic path is a first-class way to play', () => {
 
         // Everything about going somewhere is `move` with a label.
         for (const [text, intent] of [
-            ['travel to the Low Fall', 'travel'],
+            ['travel to the Jade Gorge', 'travel'],
             ['I flee the courtyard', 'flee'],
             ['sneak into the sect compound', 'enter'],
             // `approach` and `follow` are gone from this list on purpose. Both
@@ -283,13 +283,13 @@ describe('the deterministic path is a first-class way to play', () => {
             // is exactly how a player ended up standing in a place called
             // `cultivator`, having spent the travel days getting there. They
             // are asserted as `interact` above.
-            ['I depart for Scarwater', 'travel']
+            ['I depart for Clear River Ford', 'travel']
         ] as const) {
             const parsed = parseIntent(text);
             expect(parsed.action).toBe('move');
             expect(parsed.intent).toBe(intent);
         }
-        expect(parseIntent('travel to the Low Fall').target).toBe('Low Fall');
+        expect(parseIntent('travel to the Jade Gorge').target).toBe('Jade Gorge');
 
         // Everything perceptual is `investigate`.
         for (const text of [

@@ -60,7 +60,7 @@ function obligationsAbout(db: unknown, subjectId: string): {
 describe('who answers for a beast you killed', () => {
     it('opens an account against you when the ground had somebody on it', async () => {
         const { say, db } = await standingOnAHousesGround('answer-a');
-        const said = await say('I hunt the Cairn Hound');
+        const said = await say('I hunt the Grave Hound');
 
         // The engine's own line, and it names the two halves the module
         // decides: how many parties can put a name to it, and what the house
@@ -91,7 +91,7 @@ describe('who answers for a beast you killed', () => {
         );
         if (!open) return;
         await say(`ADMIN move ${open.name}`);
-        const said = await say('I hunt the Cairn Hound');
+        const said = await say('I hunt the Grave Hound');
         expect(said.narration ?? '').not.toMatch(/can say whose doing it was/);
     }, 300_000);
 
@@ -102,7 +102,7 @@ describe('who answers for a beast you killed', () => {
         // district is a kindness done to the district, priced by the machinery
         // that prices every other kindness.
         const { say } = await standingOnAHousesGround('answer-c');
-        const righteous = await say('I hunt the Cairn Hound');
+        const righteous = await say('I hunt the Grave Hound');
         const demonic = await say('I hunt the Glacier Lynx');
 
         expect(righteous.narration ?? '').toMatch(/the name on it is the person who did it/);
@@ -117,7 +117,7 @@ describe('who answers for a beast you killed', () => {
         // stranger asking about this cultivator found nothing.
         const { say } = await standingOnAHousesGround('answer-d');
         const before = await say('what do people say about me');
-        await say('I hunt the Cairn Hound');
+        await say('I hunt the Grave Hound');
         const after = await say('what do people say about me');
         expect(after.narration ?? '').not.toBe(before.narration ?? '');
     }, 300_000);

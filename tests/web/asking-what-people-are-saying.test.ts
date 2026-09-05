@@ -85,7 +85,7 @@ function worldWithSomethingWorthSaying(): WorldState {
         id: 'loc-here', name: 'The Province', kind: 'region', qiDensity: 0.4
     }));
     state.locations.push(makeLocation({
-        id: 'square', name: 'Sixmile', kind: 'settlement', parentId: 'loc-here', qiDensity: 0.4
+        id: 'square', name: 'Six Li', kind: 'settlement', parentId: 'loc-here', qiDensity: 0.4
     }));
     state.factions.push(makeFaction({
         id: 'house-high', name: 'The High House', seatLocationId: 'square',
@@ -119,7 +119,7 @@ function worldWithSomethingWorthSaying(): WorldState {
 function carter(id: string, ordinal: number): RosterEntry {
     return {
         id, name: `Teller ${id}`, kind: 'npc', spiritRoot: 'single_water',
-        realmOrdinal: ordinal, location: 'Sixmile', sectId: null, sectName: null,
+        realmOrdinal: ordinal, location: 'Six Li', sectId: null, sectName: null,
         sectRank: null, age: 40, alive: true, existenceState: 'alive',
         soulState: 'intact', identityContinuity: 1, deathCause: null,
         spiritStones: 0, untreatedInjuries: 0, feuds: []

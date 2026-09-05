@@ -47,7 +47,7 @@ const WORLD_SEED = 'walking-up-the-terraces-world';
  * rather than a shortcut: `commonlyNamedHouses` names houses whose
  * `admissionOrdinal` is at the floor, and the Pavilion's is its membership
  * bar, so it is nameable to nobody at birth anywhere - including a child of
- * the Low Fall. Measured: travelling to the gorge and asking "what sects are
+ * the Jade Gorge. Measured: travelling to the gorge and asking "what sects are
  * there" still returned only the two houses from the province they had left.
  * The ruling that needs making is written up in `docs/world/houses/origin.md`.
  */
@@ -57,7 +57,7 @@ async function aNobodyInTheGorge(runSeed: string, worldSeed: string = WORLD_SEED
     });
     const { cultivator } = await harness.game.newRun('Shen Ruo');
     const say = (input: string) => harness.game.act(input).then(r => r.narration);
-    await say('I travel to The Low Fall');
+    await say('I travel to The Jade Gorge');
     await say('ADMIN grant_knowledge kind=sect name=Azure Cloud Pavilion');
     // Provisions for a probation, which is thirty to fifty years long.
     //

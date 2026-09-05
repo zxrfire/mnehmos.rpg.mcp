@@ -7,7 +7,7 @@
  * `dangerDelta: 0.5`. Played on the seat of one, on this seed, standing in it:
  *
  *     WAR  loc-sect-weir-office-ground
- *     "The Weir Office is fighting The Sixmile Wardens, and The Weir Office
+ *     "The Weir Office is fighting The Six Li Wardens, and The Weir Office
  *      grounds is ground they hold. Nothing goes through it that is not theirs."
  *
  * and then nothing happened. Measured before this file existed: the market
@@ -46,7 +46,7 @@ import type { LocationRecord } from '../../src/engine/world/locations';
  * The world's seed, and it is half of the pin.
  *
  * A run seed alone fixes nothing about who is at war with whom - see
- * `makeGameInWorld`. On this world seed The Weir Office and The Sixmile Wardens
+ * `makeGameInWorld`. On this world seed The Weir Office and The Six Li Wardens
  * are openly fighting inside the first advanced year, and each holds a war
  * status on its own seat.
  */
@@ -248,7 +248,7 @@ describe('what a war does to the ground it is fought on', () => {
      * build of the case above printed, in one paragraph:
      *
      *     It is an ordinary day and it intends to stay one.
-     *     The Weir Office is fighting The Sixmile Wardens...
+     *     The Weir Office is fighting The Six Li Wardens...
      *
      * "Nothing lies or contradicts itself" is a floor at every reading tier,
      * and this is the deterministic one: no model is involved in the defect or

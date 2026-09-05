@@ -93,7 +93,7 @@ describe('a sentence the pattern table has no line for', () => {
         // object - so no model, present or future, can move a working parse.
         const alreadyRead = [
             'I cultivate for a year',
-            'I travel to Scarwater',
+            'I travel to Clear River Ford',
             'I look for work',
             'what is for sale',
             'who would teach me',

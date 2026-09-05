@@ -410,7 +410,7 @@ describe('the cure is read off the catalog, never invented', () => {
     /**
      * Affordability is a claim about a purse against a price, so it has to be
      * against the price actually asked. The same 500 stones that covers this
-     * cure at home does not cover it in the Drowned Reach, and the sentence has
+     * cure at home does not cover it in the Drowned Sea, and the sentence has
      * to say so rather than promising "you are carrying enough for one".
      */
     it('decides affordability against the local figure', () => {
@@ -851,10 +851,10 @@ describe('the row names what is here rather than what kind of thing is here', ()
             ...WELL,
             ambient: 'thin',
             thickerGroundWithinReach: [
-                { name: 'Mudsummer', ambient: 'normal', travelDays: 6 }
+                { name: 'Grain Rain', ambient: 'normal', travelDays: 6 }
             ]
         };
-        expect(byId(thin, 'better_ground')?.say).toBe('I travel to Mudsummer');
+        expect(byId(thin, 'better_ground')?.say).toBe('I travel to Grain Rain');
         expect(byId(thin, 'better_ground')?.because).toMatch(/2\.0x what this square gives back/);
         // And the category it replaces is gone rather than sitting beside it.
         // Played on thin ground with a better town six days off, the row
@@ -899,8 +899,8 @@ describe('the row names what is here rather than what kind of thing is here', ()
     });
 
     it('says which ground it is standing on rather than counting it', () => {
-        const on = { ...WELL, groundThatTeachesARoad: 1, roadUnderfoot: 'The Gapwater face' };
-        expect(byId(on, 'roads')?.because).toMatch(/standing on The Gapwater face/);
+        const on = { ...WELL, groundThatTeachesARoad: 1, roadUnderfoot: 'The Jade Face' };
+        expect(byId(on, 'roads')?.because).toMatch(/standing on The Jade Face/);
         // A record for ground somewhere else stays a count: being told about a
         // place is not being told where it is.
         expect(byId({ ...WELL, groundThatTeachesARoad: 2 }, 'roads')?.because)
@@ -917,7 +917,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
             spiritStones: 30,
             peopleHereWithSomethingToSell: 1,
             goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-            thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'normal', travelDays: 6 }],
+            thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'normal', travelDays: 6 }],
             spanCounterHere: true,
             dutiesGoing: 3
         });
@@ -947,7 +947,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
         // The old discipline, restated where it actually falls. Every name in
         // a sentence below was passed in by a caller that had already run the
         // gate; nothing here may compose one out of a count.
-        const handed = ['Cao Fukuan', 'Wei Lanya', 'Mudsummer', 'Lesser Qi-Gathering Manual'];
+        const handed = ['Cao Fukuan', 'Wei Lanya', 'Grain Rain', 'Lesser Qi-Gathering Manual'];
         const out = whatIsWorthDoingStandingHere({
             ...CROWD,
             ambient: 'thin',
@@ -955,7 +955,7 @@ describe('the row names what is here rather than what kind of thing is here', ()
             peopleHereWithSomethingToSell: 4,
             dutiesGoing: 2,
             goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-            thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'normal', travelDays: 6 }]
+            thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'normal', travelDays: 6 }]
         });
         for (const a of out) {
             if (!a.namesSomething) continue;
@@ -1006,7 +1006,7 @@ describe('a fight is what is happening, and the square stops being the subject',
             { name: 'Yun Keqing', realmOrdinal: 9, standsAbove: true, rungsApart: 9 }
         ],
         goodsOnOfferHere: [{ name: 'Lesser Qi-Gathering Manual', askStones: 5 }],
-        thickerGroundWithinReach: [{ name: 'Mudsummer', ambient: 'dense', travelDays: 6 }],
+        thickerGroundWithinReach: [{ name: 'Grain Rain', ambient: 'dense', travelDays: 6 }],
         paperOnTheWall: { bills: 3, withinReach: 2, daysToTheSoonest: 9 },
         spanCounterHere: true,
         dutiesGoing: 4,

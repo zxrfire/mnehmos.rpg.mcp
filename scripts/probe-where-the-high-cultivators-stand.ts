@@ -3,7 +3,7 @@
  *
  * A player's route upward is social - being taught, being introduced, asking
  * somebody for something - and every one of those verbs needs a body in reach.
- * The engine already tells the player so: "5 people in Low Fall stand above Qi
+ * The engine already tells the player so: "5 people in Green Water City stand above Qi
  * Condensation Layer 1 ... you have no name to ask for, which is the whole of
  * what is stopping you."
  *

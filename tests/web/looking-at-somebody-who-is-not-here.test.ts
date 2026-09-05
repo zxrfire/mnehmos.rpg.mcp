@@ -6,7 +6,7 @@
  * Played, one town from somebody known since childhood:
  *
  *   > I look at Fang Nuoshan
- *   "You go over Fourhands looking for it and it is not the kind of place that
+ *   "You go over Four Graves looking for it and it is not the kind of place that
  *    has one. Either it is somewhere else, or it is nowhere..."
  *   Unresolved subject "Fang Nuoshan": no knowledge record and nothing
  *   co-located. Known to this cultivator, or standing here: Liang Yaoru,
@@ -73,7 +73,7 @@ describe('a name they hold, whose bearer is not standing here', () => {
 
         // One town over, they are not here - and the read that used to be a
         // place-shaped denial of a record it listed is now about the person.
-        await game.act('I travel to Fourhands');
+        await game.act('I travel to Four Graves');
         const before = knowledgeRows(db);
         const away = await game.act(`I look at ${who.name}`);
 

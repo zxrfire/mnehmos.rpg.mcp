@@ -33,7 +33,7 @@
  * seventeen settlements a birth can open in: 16 of 102. That is the first test
  * below, and nothing in it is arranged.
  *
- * **AND THE PLAYER CANNOT FIND OUT ABOUT IT.** Measured, standing in Thirdwall,
+ * **AND THE PLAYER CANNOT FIND OUT ABOUT IT.** Measured, standing in Three Walls,
  * in the town where the killing happened, next to the dead man's father, on the
  * pinned pair below - every discovery verb the game has returns nothing:
  *
