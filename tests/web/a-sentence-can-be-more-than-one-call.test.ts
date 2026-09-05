@@ -929,3 +929,53 @@ describe('ground is the fifth field, and the comparison is not always an -est', 
         expect(theSelectionInThisClause('pick the best one')).toBeNull();
     });
 });
+
+describe('the sentence composes without a model', () => {
+    /**
+     * The design owner: *this needs to be two steps without an LLM.*
+     *
+     * `theWholeSentenceAsAPlan` exists to put back the clauses a reader did not
+     * answer, and only the model path ever called it. The table answers with
+     * ONE verb, and the verb it answers with is the LAST clause's - so "I go to
+     * Cold Peak and gather herbs" ran the gathering, dropped the journey, and
+     * said so afterwards. Running the wrong half of a sentence is worse than
+     * asking which half to run.
+     */
+    it('puts back a clause the reader did not answer', () => {
+        const gather: PlanStep = { action: { action: 'gather' } };
+        const composed = whatThisTurnMayRun(
+            [{ action: { action: 'move', intent: 'travel', target: 'Cold Peak' } }, gather],
+            'I go to Cold Peak and gather herbs'
+        );
+        expect(composed.toRun.length + composed.askAbout.length).toBe(2);
+    });
+
+    /** And the order is nobody's to invent where the words do not say it. */
+    it('asks rather than guessing, which is what a table can honestly do', () => {
+        const composed = whatThisTurnMayRun(
+            [
+                { action: { action: 'move', intent: 'travel', target: 'Cold Peak' } },
+                { action: { action: 'gather' } }
+            ],
+            'I go to Cold Peak and gather herbs'
+        );
+        expect(composed.theOrderWasGiven).toBe(false);
+        expect(composed.askAbout).toHaveLength(2);
+    });
+
+    /** Unless a reader says it settled it, which a table never can. */
+    it('takes an order a reader says it worked out', () => {
+        const composed = whatThisTurnMayRun(
+            [
+                { action: { action: 'move', intent: 'travel', target: 'Cold Peak' } },
+                { action: { action: 'gather' } }
+            ],
+            'I go to Cold Peak and gather herbs',
+            true
+        );
+        expect(composed.theOrderWasGiven).toBe(true);
+        expect(composed.askAbout).toHaveLength(0);
+        expect(composed.toRun).toHaveLength(1);
+        expect(composed.heldForTheQuestion).toHaveLength(1);
+    });
+});

@@ -2235,7 +2235,31 @@ export class GameService {
             return only;
         }
 
-        const budget = whatThisTurnMayRun(steps, rawInput);
+        // THE ORDER MAY NOT WORK AT ALL, and a reader that noticed says so
+        // rather than picking one. The design owner: *if the sentence order is
+        // incoherent, say it, like a human would.* Before anything is spent,
+        // because that is the whole of what it buys.
+        if (plan.orderMakesNoSense !== undefined) {
+            const objection = `${plan.orderMakesNoSense} Say it the other way round and it runs.`;
+            const refusal = this.freeAction(run, plan.action.action, factsForRefusal(
+                'That order does not work.',
+                objection,
+                `the reading layer rejected the ORDER of "${rawInput.slice(0, 80)}" rather than `
+                + 'any act in it. Nothing was spent and no step was run.'
+            ));
+            // REQUIRED, for the reason the question beside it is. A turn whose
+            // only fact is an objection hands a narrator nothing to describe,
+            // and a narrator handed nothing writes the acts anyway - measured
+            // on the fork, which is why that has the same line.
+            (refusal.facts.required ??= []).push(objection);
+            return refusal;
+        }
+
+        // A READER THAT SAID SO DECIDED THE ORDER. Merely emitting steps does
+        // not: phase 1 asks for them in the order the SENTENCE put them, so a
+        // step list is a transcription unless the reader says otherwise. See
+        // `orderDecided` on the plan.
+        const budget = whatThisTurnMayRun(steps, rawInput, plan.orderDecided === true);
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
         /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */

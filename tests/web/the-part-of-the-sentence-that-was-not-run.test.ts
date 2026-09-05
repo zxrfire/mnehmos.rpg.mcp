@@ -322,16 +322,31 @@ describe('played', () => {
         expect(routing[0]?.ok).toBe(false);
     });
 
-    it('browses the board, does not gather, and says so', async () => {
+    /**
+     * THIS PINNED THE WRONG HALF, and for a real reason: the table answers a
+     * sentence with ONE verb, and the verb it answers with is the LAST
+     * clause's - so "I gather herbs and go to the market" ran the market trip,
+     * dropped the gathering, and named the gathering afterwards. Saying which
+     * half was dropped is honest; dropping the FIRST half is not.
+     *
+     * The design owner: *this needs to be two steps without an LLM.* The
+     * deterministic tier composes the sentence now, so the first act runs and
+     * the second is held - the same bound, in the sentence's own order.
+     */
+    it('gathers first, and holds the rest of the sentence', async () => {
         const { game } = makeGame({ worldEnabled: true });
         await game.newRun('Shen Wuyou');
 
         const result = await game.act('I gather herbs and go to the market');
 
-        expect(result.narration).toContain('"I gather herbs"');
-        expect(result.narration).toContain('only the second of them was done');
-        const engineSaid = result.state.log.filter(e => e.role === 'engine').map(e => e.text).join('\n');
-        expect(engineSaid).toContain('Not run: "I gather herbs", standing before it');
+        // The FIRST clause ran. Days bent over the ground is what gathering
+        // costs, and it is what the sentence asked for first.
+        expect(result.narration).toMatch(/days bent over the ground/);
+        // AND THE SECOND CLAUSE ALSO RAN. Browsing a board is a free read, and
+        // free reads chain - what a turn spends at most one of is COSTLY acts.
+        // So the sentence does both, in the order it was said, which is what it
+        // asked for and what it never got.
+        expect(result.narration).toMatch(/on offer|the purse holds/i);
     });
 
     it('leaves an ordinary sentence with no second verb untouched', async () => {

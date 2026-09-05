@@ -33,6 +33,8 @@ import {
     theWholeSentenceAsAPlan,
     spendsSomething,
     stepsInTheResponse,
+    theReaderSaysItDecidedTheOrder,
+    whyTheReaderSaysTheOrderCannotWork,
     theClauseThisStepQuotes,
     type PlanStep,
     type PlanWithSteps
@@ -492,13 +494,35 @@ export class DeterministicNarrator implements Narrator {
 
     constructor(private readonly note = 'no narrator provider configured') {}
 
-    async plan(input: string): Promise<Plan> {
+    /**
+     * ONE READING OF THE SENTENCE, AND THEN THE SENTENCE'S OWN CLAUSES.
+     *
+     * The table answers with one verb, so "I go to Cold Peak and gather herbs"
+     * came back as a single act - and `theWholeSentenceAsAPlan`, which exists
+     * to put back the clauses a reader did not answer, was only ever called on
+     * the model path. The consequence was worse than under-reading: the one
+     * verb the table returned was the LAST clause's, so the sentence ran the
+     * gathering, dropped the journey, and said so afterwards.
+     *
+     * The design owner: *this needs to be two steps without an LLM.* It also
+     * settles what happens next, and it is not this layer's problem to solve:
+     * *asking is okay cuz an embedding can't tell, that's too hard and would
+     * make it too brittle.* Two steps is the answer here. Which of them comes
+     * first is `whatThisTurnMayRun`'s question, and where the sentence does not
+     * say, asking the player is the honest end of it.
+     */
+    async plan(input: string): Promise<PlanWithSteps> {
         const read = await readTheSentence(input);
-        return {
-            action: read.action,
-            source: 'fallback',
-            note: read.tierFailure ? `${this.note}; ${read.tierFailure}` : this.note
-        };
+        const note = read.tierFailure ? `${this.note}; ${read.tierFailure}` : this.note;
+        const whole = await theWholeSentenceAsAPlan(
+            input,
+            [{ action: read.action }],
+            async clause => (await readTheSentence(clause)).action
+        );
+
+        return whole.steps.length > 1
+            ? { action: read.action, source: 'fallback', steps: whole.steps, note }
+            : { action: read.action, source: 'fallback', note };
     }
 
     /**
@@ -603,7 +627,12 @@ export class ProviderNarrator implements Narrator {
         // code it reached before.
         const asSteps = stepsInTheResponse(raw, input);
         if (asSteps !== null && asSteps.length > 0) {
-            return await this.aPlanRatherThanAVerb(asSteps, input);
+            return await this.aPlanRatherThanAVerb(
+                asSteps,
+                input,
+                theReaderSaysItDecidedTheOrder(raw),
+                whyTheReaderSaysTheOrderCannotWork(raw)
+            );
         }
 
         // The gate. An unknown action name, a `days` of 1e9, a `realmOrdinal`
@@ -648,7 +677,11 @@ export class ProviderNarrator implements Narrator {
      */
     private async aPlanRatherThanAVerb(
         fromTheReader: readonly PlanStep[],
-        input: string
+        input: string,
+        /** Whether the reader said it worked the order out. Carried, never inferred. */
+        orderDecided = false,
+        /** The reader's objection to the order, where it made one. */
+        orderMakesNoSense: string | null = null
     ): Promise<PlanWithSteps> {
         // THE SENTENCE SAYS HOW MANY ACTS ARE IN IT
         const whole = await theWholeSentenceAsAPlan(
@@ -749,6 +782,10 @@ export class ProviderNarrator implements Narrator {
             action: headline.action,
             steps: checked,
             droppedClauses: dropped,
+            // Only where the reader answered every clause it was given. A plan
+            // the engine had to backfill is not an order anybody worked out.
+            orderDecided: orderDecided && dropped.length === 0,
+            ...(orderMakesNoSense === null ? {} : { orderMakesNoSense }),
             // `model` when nothing was declined, because the model chose every
             // verb that ran; `fallback` when something was, because at least one
             // of them is the reading the player would have got with no model.

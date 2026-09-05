@@ -35,10 +35,40 @@ export interface PlanStep {
  */
 export interface PlanWithSteps extends Plan {
     /**
-     * Every call, in the order the reader put them. Absent means one call, and
-     * absent is what both deterministic tiers always produce.
+     * Every call, in the order the reader put them. Absent means one call.
      */
     readonly steps?: readonly PlanStep[];
+    /**
+     * The reader WORKED OUT the order, as against transcribing the sentence's.
+     *
+     * The distinction is the whole of it, and it is easy to miss. Phase 1 asks
+     * for one step per act *in that order* - the order the sentence put them -
+     * so a step list is a TRANSCRIPTION by default and says nothing about
+     * whether anything turns on which happens first. Absent or false, the turn
+     * asks; a pattern table can never set it, because it cannot reason about
+     * order at all.
+     *
+     * The design owner: *the llm should reason what comes first, right? or if
+     * the order doesn't matter* - and, on the other tier, *asking is okay cuz
+     * an embedding can't tell, that's too hard and would make it too brittle*.
+     * So the question goes to whoever can answer it, and the player is asked
+     * only when nobody could.
+     */
+    readonly orderDecided?: boolean;
+    /**
+     * The reader's own words for why the order the sentence gives cannot work.
+     *
+     * The design owner: *if the sentence order is incoherent, say it, like a
+     * human would, that's the heuristic (for the llm)* - and *the non llm path
+     * would do the same anyway*, which it does, because a table that cannot
+     * reason about order asks about it and asking is the same conversation.
+     *
+     * "I gather the herbs and then walk to where they grow" is not a turn to
+     * spend and it is not a question about which comes first either. It is a
+     * sentence with a mistake in it, and what a person does with one of those
+     * is say so. Present means the turn spends nothing and says this back.
+     */
+    readonly orderMakesNoSense?: string;
     /**
      * Steps the reading layer declined and removed, in the player's own words.
      */
@@ -91,6 +121,35 @@ export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | nu
     return steps;
 }
 
+/**
+ * Whether the reader says it WORKED OUT the order rather than transcribing it.
+ *
+ * One optional boolean beside `steps`, and it has to be said out loud to count:
+ * a reader that answers only with steps has told us the sentence's order and
+ * nothing about whether anything turns on it. See `PlanWithSteps.orderDecided`.
+ */
+export function theReaderSaysItDecidedTheOrder(raw: unknown): boolean {
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return false;
+    return (raw as { orderDecided?: unknown }).orderDecided === true;
+}
+
+/** The most of a reader's objection that is worth carrying back to the player. */
+const AN_OBJECTION_IS_A_SENTENCE = 240;
+
+/**
+ * The reader's reason the sentence's order cannot work, or null.
+ *
+ * Prose, bounded, and never parsed - the same contract every other line the
+ * engine takes from a reader has.
+ */
+export function whyTheReaderSaysTheOrderCannotWork(raw: unknown): string | null {
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const said = (raw as { orderMakesNoSense?: unknown }).orderMakesNoSense;
+    if (typeof said !== 'string') return null;
+    const clean = said.replace(/\s+/g, ' ').trim();
+    return clean.length === 0 ? null : clean.slice(0, AN_OBJECTION_IS_A_SENTENCE);
+}
+
 function arrayOfSteps(raw: unknown): unknown[] | null {
     if (Array.isArray(raw)) return raw;
     if (raw === null || typeof raw !== 'object') return null;
@@ -141,8 +200,36 @@ export function theClausesOf(input: string): string[] {
     return input
         .split(/,|;|\band then\b|\bthen\b|\band\b|\bafter that\b|\bbefore that\b|\bafterwards\b/i)
         .map(part => part.trim())
-        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2);
+        .filter(part => part.split(/\s+/).filter(Boolean).length >= 2)
+        .filter(part => !thisFragmentModifiesTheActBesideIt(part));
 }
+
+/**
+ * A fragment that qualifies the act next to it rather than naming one.
+ *
+ * Latent until the deterministic tier started composing sentences: the model
+ * path anchors every step to the words it quoted, so a mis-split was corrected
+ * by the alignment, and without a model there are no quotes to align to.
+ * Measured on played tests the moment it was turned on -
+ *
+ *     "I stand guard while Shen Liefeng crosses, for a hundred days"
+ *     "By order of the Sect, the disciples are to gather herbs"
+ *
+ * - where the trailing span became a request for seclusion, because a bare
+ * duration IS one, and the leading authority became an act of its own. Both
+ * halves belong to the clause beside them, and neither has a verb in it.
+ */
+function thisFragmentModifiesTheActBesideIt(part: string): boolean {
+    return HOW_LONG_THE_ACT_RUNS.test(part) || ON_WHOSE_AUTHORITY.test(part);
+}
+
+/** How long the act beside it runs. "for a hundred days", "over three years". */
+const HOW_LONG_THE_ACT_RUNS =
+    /^(?:for|over|across|during|lasting)\s+(?:the\s+)?(?:next\s+)?[\w\s-]{1,32}$/i;
+
+/** Whose authority the act beside it is on. "By order of the Sect". */
+const ON_WHOSE_AUTHORITY =
+    /^(?:by\s+(?:order|command|decree|authority|leave)\s+of|on\s+the\s+authority\s+of|in\s+the\s+name\s+of)\b/i;
 
 /**
  * Whether ANY clause of the player's own sentence reads as this verb.
@@ -297,6 +384,19 @@ export async function theWholeSentenceAsAPlan(
                 steps.push(free);
                 why[at] += '; PUT BACK from the sentence itself - it costs nothing, and the '
                     + 'reader answered fewer acts than the sentence has clauses';
+                continue;
+            }
+            // A CLAUSE THAT READS AS A VERB ALREADY IN THE PLAN IS THE SAME
+            // ACT SAID TWICE. "I go back to the carriage and finish it" is one
+            // build in two clauses - the craft verb owns both `go back to` and
+            // `finish` - and putting the second half back made a sentence that
+            // finishes a carriage into a question about which half to do first.
+            // `theSameClause` catches this where two steps QUOTE overlapping
+            // words; a backfilled clause quotes nothing the reader wrote, so
+            // the verb is what is left to compare.
+            if (fromTheReader.some(step => step.action.action === reading.action)) {
+                why[at] += `; not put back - the reader already answered ${reading.action}, `
+                    + 'and one verb over two clauses of one sentence is one act said twice';
                 continue;
             }
             spokenFor.add(at);
@@ -679,7 +779,27 @@ function tellingReasonsFromActs(
  */
 export function whatThisTurnMayRun(
     steps: readonly PlanStep[],
-    input = ''
+    input = '',
+    /**
+     * Whether a READER decided this order, as against the words alone.
+     *
+     * The design owner, settling which layer answers this:
+     *
+     *   > this needs to be two steps without an LLM ... but the llm should
+     *   > reason what comes first, right? or if the order doesn't matter
+     *   > ... asking is okay cuz an embedding can't tell, that's too hard and
+     *   > would make it too brittle
+     *
+     * So the question belongs to whoever can actually answer it. A model was
+     * told to answer with one step per act IN THAT ORDER, so a multi-step plan
+     * from one is a decision already taken - it either worked out what has to
+     * happen first or decided nothing turns on it, and either way it committed.
+     * Asking the player to say it again is asking them to redo work that was
+     * done. A pattern table cannot reason about order at all, and forcing it to
+     * try is the brittleness that ruling warns against, so where the words do
+     * not say, it asks.
+     */
+    theReaderDecidedTheOrder = false
 ): WhatThisTurnMayRun {
     const withoutDoubleReadings = oneClauseIsOneAct(steps);
     // A CLAUSE THAT SAID WHY IS NOT A SECOND THING TO DO. Before the bound and
@@ -702,8 +822,9 @@ export function whatThisTurnMayRun(
 
     const first = kept.findIndex(spendsSomething);
 
-    // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION.
-    if (theOrderIsAlreadySettled(kept, input)) {
+    // THE PLAYER MAY HAVE ALREADY ANSWERED THE QUESTION, or a reader may have
+    // answered it for them. See `theReaderDecidedTheOrder`.
+    if (theReaderDecidedTheOrder || theOrderIsAlreadySettled(kept, input)) {
         const second = kept.findIndex((step, at) => at > first && spendsSomething(step));
         return {
             toRun: kept.slice(0, second),
