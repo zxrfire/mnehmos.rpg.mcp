@@ -79,7 +79,7 @@ const out: string[] = [`model=${model}  world=${WORLD}`, ''];
 let answered = 0, shrugged = 0, total = 0;
 /** One row per turn, for the review page. */
 const rows: Array<{
-    scenario: string; sign: string; said: string; outcome: string;
+    scenario: string; sign: string; asks: string; said: string; outcome: string;
     calls: string; moved: string; narration: string;
 }> = [];
 
@@ -110,7 +110,14 @@ for (const scenario of SCENARIOS as Scenario[]) {
         total++; if (shrug) shrugged++; else answered++;
 
         rows.push({
-            scenario: scenario.name, sign: scenario.sign, said,
+            scenario: scenario.name,
+            sign: scenario.sign,
+            // How much this sentence was asking for. One number over every
+            // scenario hides the split that matters: a reader can be perfect on
+            // one verb with one target and useless on "I kill their entire
+            // family", and the average will not say so.
+            asks: scenario.asks ?? 'one_act',
+            said,
             outcome: shrug ? 'shrug' : refused ? 'refused' : 'ran',
             calls: ran, moved: movedBetween(before, after), narration
         });

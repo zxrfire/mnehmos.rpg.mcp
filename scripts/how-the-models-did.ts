@@ -14,6 +14,8 @@ import { join } from 'node:path';
 interface Row {
     scenario: string; sign: string; said: string; outcome: string;
     calls: string; moved: string; narration: string;
+    /** How much the sentence was asking for. Absent on runs taken before it existed. */
+    asks?: string;
 }
 interface Run {
     model: string; at: string; answered: number; shrugged: number; total: number; rows: Row[];
@@ -49,6 +51,27 @@ const bySign = (r: Run, sign: string) => {
     return { n: of.length, ran: of.filter(answeredWell).length };
 };
 
+/**
+ * THE SPLIT THAT MATTERS MOST, and the one an average hides.
+ *
+ * The design owner: *ones that require multiple MCP calls, cuz that's the big
+ * one, right?* A reader can be perfect on one verb with one target and useless
+ * on "I kill their entire family", and a single answered-rate will not say so.
+ */
+const HOW_MUCH: ReadonlyArray<[string, string]> = [
+    ['one_act', 'one act'],
+    ['a_set', 'a set'],
+    ['several_acts', 'several acts'],
+    ['a_goal', 'a goal'],
+    ['a_description', 'a description'],
+    ['another_word_for_it', 'another word for it']
+];
+
+const byAsk = (r: Run, ask: string) => {
+    const of = r.rows.filter(x => (x.asks ?? 'one_act') === ask);
+    return { n: of.length, ran: of.filter(answeredWell).length };
+};
+
 const scenarios = [...new Set(runs.flatMap(r => r.rows.map(x => x.scenario)))];
 
 const bar = (label: string, value: number, colour: string) =>
@@ -69,6 +92,11 @@ const cards = runs.map(r => {
   ${bar('taking ran', pct(t.ran, t.n), '#a5443b')}
   ${bar('giving ran', pct(g.ran, g.n), '#3b8a5a')}
   ${bar('indifferent ran', pct(i.ran, i.n), '#777')}
+  <p class=split>How much the sentence was asking for</p>
+  ${HOW_MUCH.map(([key, label]) => {
+        const a = byAsk(r, key);
+        return a.n === 0 ? '' : bar(`${label} (${a.n})`, pct(a.ran, a.n), '#5a4fa5');
+    }).join('')}
   <p class="${gap > 15 ? 'bad' : 'ok'}">taking vs giving: ${gap} points apart${
         gap > 15 ? ' &mdash; the reader has a view the engine does not' : ''}</p>
 </section>`;
@@ -96,6 +124,7 @@ writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset=utf-8>
  .track{flex:1;height:12px;background:#eee;border-radius:6px;overflow:hidden}
  .fill{display:block;height:100%}
  .bad{color:#a5443b;font-weight:600} .ok{color:#3b8a5a}
+ .split{margin:.9rem 0 .2rem;font-size:.8rem;color:#666;text-transform:uppercase;letter-spacing:.04em}
  table{border-collapse:collapse;width:100%;margin-top:1.5rem;font-size:.85rem}
  th,td{border:1px solid #ddd;padding:.35rem .5rem;text-align:left}
  td.ran{background:#eaf5ee} td.refused{background:#fdf6e3} td.shrug{background:#fbeaea}
@@ -105,7 +134,10 @@ writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset=utf-8>
 nobody present is crossing, no method means no cultivation. What is always a failure is a
 <strong>target that did not bind</strong>: the right verb reached, and then no one to point it at.
 The other number to read is the <strong>taking / giving</strong> split - the engine does not grade,
-so a reader that resolves one half better than the other has an opinion it does not have.</p>
+so a reader that resolves one half better than the other has an opinion it does not have.
+The <strong>how much was being asked</strong> bars are the split to read next: one verb with one
+target is the floor, and what a player actually types is a set, a sequence, or a goal with no verb
+in it at all.</p>
 ${cards}
 <h2>By scenario</h2>
 ${table}
@@ -118,4 +150,9 @@ for (const r of runs) {
     console.log(`  ${r.model.padEnd(24)} answered ${pct(r.rows.filter(answeredWell).length, r.total)}%  `
         + `taking ${pct(t.ran, t.n)}%  giving ${pct(g.ran, g.n)}%  `
         + `shrugs ${r.shrugged}  unbound ${r.rows.filter(unbound).length}`);
+    const asked = HOW_MUCH
+        .map(([key, label]) => [label, byAsk(r, key)] as const)
+        .filter(([, a]) => a.n > 0)
+        .map(([label, a]) => `${label} ${pct(a.ran, a.n)}%`);
+    if (asked.length > 0) console.log(`    ${asked.join('  ')}`);
 }
